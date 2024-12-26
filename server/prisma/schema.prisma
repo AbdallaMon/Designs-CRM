@@ -1,0 +1,257 @@
+// Keep the generator, datasource and enums as is
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+enum LogType {
+ LEAD_CREATED
+ LEAD_ASSIGNED
+ LEAD_STATUS_CHANGED
+ NOTE_ADDED
+ FILE_UPLOADED
+ LEAD_TRANSFERRED
+}
+
+enum NotificationType {
+ NEW_LEAD
+ LEAD_ASSIGNED
+ LEAD_STATUS_CHANGED
+ NEW_NOTE
+ NEW_FILE
+ REMINDER
+ LEAD_TRANSFERRED
+}
+
+enum LeadCategory {
+ CONSULTATION
+ DESIGN
+}
+
+enum ConsultationType {
+ ROOM
+ BLUEPRINT
+ CITY_VISIT
+}
+
+enum DesignType {
+ RESIDENTIAL
+ COMMERCIAL
+}
+
+enum MediaType {
+ IMAGE
+ VIDEO
+}
+
+enum Emirate {
+ DUBAI
+ ABU_DHABI
+ SHARJAH
+ AJMAN
+ UMM_AL_QUWAIN
+ RAS_AL_KHAIMAH
+ FUJAIRAH
+}
+
+enum UserRole {
+ ADMIN
+ STAFF
+}
+
+enum ClientLeadStatus {
+ NEW
+ IN_PROGRESS
+ INTERESTED
+ NEGOTIATING
+ REJECTED
+ CONVERTED
+}
+// Main lead types
+enum DesignItemType {
+ // Residential
+ UNDER_CONSTRUCTION
+ OCCUPIED_VILLA
+ MASTER_SECTION
+ // Commercial
+ RETAIL_SPACE
+ OFFICE_BUILDING
+ RESTAURANT
+ HOTEL
+ MIXED_USE
+}
+
+model Lead {
+ id              Int              @id @default(autoincrement())
+ category        LeadCategory
+ consultations   Consultation[]
+ designs         Design[]
+ media           Media[]
+ clientLeads     ClientLead[]
+ createdAt       DateTime         @default(now())
+ updatedAt       DateTime         @updatedAt
+}
+
+model Consultation {
+ id        Int              @id @default(autoincrement())
+ lead      Lead             @relation(fields: [leadId], references: [id])
+ leadId    Int
+ type      ConsultationType
+ price     Decimal          @db.Decimal(10, 2)
+ createdAt DateTime         @default(now())
+ updatedAt DateTime         @updatedAt
+}
+
+model Design {
+  id          Int           @id @default(autoincrement())
+  lead        Lead          @relation(fields: [leadId], references: [id])
+  leadId      Int
+  type        DesignType
+  itemType    DesignItemType
+  priceRanges DesignPriceRange[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([leadId])
+  @@index([type, itemType])
+}
+
+model DesignPriceRange {
+  id        Int       @id @default(autoincrement())
+  design    Design    @relation(fields: [designId], references: [id])
+  designId  Int
+  emirate   Emirate
+  minPrice  Decimal   @db.Decimal(10, 2)
+  maxPrice  Decimal   @db.Decimal(10, 2)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([designId])
+}
+// Rest of the models remain the same
+
+model Media {
+ id        Int       @id @default(autoincrement())
+ lead      Lead      @relation(fields: [leadId], references: [id])
+ leadId    Int
+ type      MediaType
+ url       String    @db.VarChar(255)
+ createdAt DateTime  @default(now())
+ updatedAt DateTime  @updatedAt
+}
+
+model ClientLead {
+  id            Int              @id @default(autoincrement())
+  lead          Lead             @relation(fields: [leadId], references: [id])
+  leadId        Int
+  client        Client           @relation(fields: [clientId], references: [id])
+  clientId      Int
+  assignedTo    User?            @relation(fields: [userId], references: [id])
+  userId        Int?
+
+  // Lead type data
+  selectedCategory    LeadCategory
+  consultationType    ConsultationType?
+  consultationPrice   Decimal?         @db.Decimal(10, 2)
+  designType         DesignType?
+  designItemType     DesignItemType?
+  emirate            Emirate?
+  selectedPrice      Decimal?          @db.Decimal(10, 2)
+
+  status        ClientLeadStatus @default(NEW)
+  files     File[]          @relation("files")
+  notes         Note[]
+  logs          Log[]
+  notifications Notification[]
+  assignedAt    DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([leadId])
+  @@index([clientId])
+  @@index([userId])
+}
+
+model File {
+ id           Int        @id @default(autoincrement())
+ name         String     @db.VarChar(255)
+ url          String     @db.VarChar(255)
+ description  String?    @db.Text
+ clientLead    ClientLead @relation("files", fields: [clientLeadId], references: [id])
+ clientLeadId Int
+ isUserFile   Boolean    @default(true)
+ createdAt    DateTime   @default(now())
+
+ @@index([clientLeadId, isUserFile])
+}
+
+model User {
+ id            Int            @id @default(autoincrement())
+ email         String         @unique @db.VarChar(255)
+ name          String         @db.VarChar(255)
+ password      String         @db.VarChar(255)
+ isActive         Boolean           @default(true)
+ role          UserRole       @default(STAFF)
+ clientLeads   ClientLead[]
+ notifications Notification[]
+ notes         Note[]
+ createdAt     DateTime       @default(now())
+ updatedAt     DateTime       @updatedAt
+
+ @@index([email])
+}
+
+model Client {
+ id          Int          @id @default(autoincrement())
+ name        String       @db.VarChar(255)
+ email       String       @db.VarChar(255)
+ phone       String       @db.VarChar(20)
+ clientLeads ClientLead[]
+ createdAt   DateTime     @default(now())
+ updatedAt   DateTime     @updatedAt
+
+ @@index([email])
+}
+
+model Note {
+ id           Int        @id @default(autoincrement())
+ content      String     @db.Text
+ clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+ clientLeadId Int
+ user         User       @relation(fields: [userId], references: [id])
+ userId       Int
+ createdAt    DateTime   @default(now())
+
+ @@index([clientLeadId])
+ @@index([userId])
+}
+
+model Log {
+ id           Int        @id @default(autoincrement())
+ type         LogType
+ text         String     @db.Text
+ clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+ clientLeadId Int
+ createdAt    DateTime   @default(now())
+
+ @@index([clientLeadId])
+}
+
+model Notification {
+ id           Int              @id @default(autoincrement())
+ type         NotificationType
+ content      String           @db.Text
+ link         String?          @db.VarChar(255)
+ isRead       Boolean          @default(false)
+ user         User             @relation(fields: [userId], references: [id])
+ userId       Int
+ clientLead   ClientLead       @relation(fields: [clientLeadId], references: [id])
+ clientLeadId Int
+ createdAt    DateTime         @default(now())
+
+ @@index([userId])
+ @@index([clientLeadId])
+}
