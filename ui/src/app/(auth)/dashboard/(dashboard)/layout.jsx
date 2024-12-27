@@ -11,19 +11,19 @@ import Navbar from "@/app/UiComponents/utility/Navbar.jsx";
 
 let toastId;
 export const adminLinks = [
-    { name: 'Dashboard', href: '/admin/dashboard', icon: <FiGrid size={20} /> },
-    { name: 'Users', href: '/admin/users', icon: <FiUsers size={20} /> },
-    { name: 'Customers', href: '/admin/customers', icon: <FiUserCheck size={20} /> },
-    { name: 'Leads', href: '/admin/leads', icon: <FiTarget size={20} /> },
-    { name: 'Deals', href: '/admin/deals', icon: <FiDollarSign size={20} /> },
+    { name: 'Dashboard', href: '/dashboard', icon: <FiGrid size={20} /> },
+    { name: 'Users', href: '/dashboard/users', icon: <FiUsers size={20} /> },
+    { name: 'Customers', href: '/dashboard/customers', icon: <FiUserCheck size={20} /> },
+    { name: 'Leads', href: '/dashboard/leads', icon: <FiTarget size={20} /> },
+    { name: 'Deals', href: '/dashboard/deals', icon: <FiDollarSign size={20} /> },
 ];
 
 // Regular user navigation links
 export const userLinks = [
     { name: 'Dashboard', href: '/dashboard', icon: <FiGrid size={20} /> },
-    { name: 'Customers', href: '/customers', icon: <FiUserCheck size={20} /> },
-    { name: 'Leads', href: '/leads', icon: <FiTarget size={20} /> },
-    { name: 'Deals', href: '/deals', icon: <FiDollarSign size={20} /> },
+    { name: 'Customers', href: '/dashboard/customers', icon: <FiUserCheck size={20} /> },
+    { name: 'Leads', href: '/dashboard/leads', icon: <FiTarget size={20} /> },
+    { name: 'Deals', href: '/dashboard/deals', icon: <FiDollarSign size={20} /> },
 ];
 export default function Layout({ admin, staff}) {
     const router = useRouter();

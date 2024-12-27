@@ -4,7 +4,6 @@ import React from "react";
 import {
     MdAttachFile as AttachFile,
     MdPictureAsPdf as PictureAsPdf,
-    MdImage as Image
 } from 'react-icons/md';
 
 export const handleSearchParamsChange = (event, key, searchParams, router, onChange) => {
@@ -36,7 +35,7 @@ export const getPropertyValue = (item, propertyPath, enums, type, defaultValue,)
     if (defaultValue) value = defaultValue
 
     if ((propertyPath.toLowerCase().includes('date') || type === "date") && dayjs(value).isValid()) {
-        return dayjs(value).format('YYYY-MM-DD');
+        return dayjs(value).format('DD-MM-YYYY');
     }
     if (enums && type === "boolean") {
         if (value) {
@@ -48,9 +47,6 @@ export const getPropertyValue = (item, propertyPath, enums, type, defaultValue,)
     return value;
 };
 
-export function convertEnumToOptions(enums, propertyKey = "id", valueKey = "name") {
-    return Object.entries(enums).map(([property, value]) => ({[propertyKey]: property, [valueKey]: value}))
-}
 
 
 export const renderFileLink = (url, label, style) => {
@@ -96,4 +92,10 @@ export const renderFileLink = (url, label, style) => {
               </Box>
           </Paper>
     );
+};
+export const enumToKeyValueArray = (enumObj) => {
+    return Object.entries(enumObj).map(([key, value]) => ({
+        id: key, // Enum key becomes `id`
+        name: value, // Enum value becomes `name`
+    }));
 };

@@ -128,6 +128,7 @@ const NotificationsIcon = () => {
                     aria-haspopup="true"
                     color="inherit"
                     aria-expanded={open ? 'true' : undefined}
+sx={{mr:1}}
               >
                   <Badge badgeContent={unreadCount} color="primary">
                       <FaBell size={20}/>

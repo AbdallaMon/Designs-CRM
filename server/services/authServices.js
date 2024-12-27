@@ -17,21 +17,21 @@ export async function loginUser(email, password) {
     });
 
     if (!user) {
-        throw new Error("لم يتم العثور على مستخدم بهذا البريد الإلكتروني");
+        throw new Error("No user found with this email address");
     }
 
     if (!user.password) {
-        throw new Error("ليس لديك كلمة مرور، من فضلك قم بإعادة تعيين كلمة المرور الخاصة بك");
+        throw new Error("You do not have a password, please reset your password");
     }
+
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-        throw new Error("كلمة المرور غير صحيحة");
+        throw new Error("Incorrect password");
     }
 
-
     if (!user.isActive) {
-        throw new Error("تم حظر حسابك، لا يمكنك تسجيل الدخول");
+        throw new Error("Your account is blocked, you cannot log in");
     }
 
 
@@ -63,37 +63,39 @@ export async function generateConfirmationToken(id, email) {
     // Send confirmation email
     const confirmationLink = `${process.env.ORIGIN}/confirm?token=${token}`;
     const emailHtml = `
-        <p>يرجى تأكيد بريدك الإلكتروني بالنقر على الرابط التالي:</p>
-        <a href="${confirmationLink}">تأكيد البريد الإلكتروني</a>
-    `;
-    await sendEmail(email, 'تأكيد البريد الإلكتروني', emailHtml);
+    <p>Please confirm your email by clicking the following link:</p>
+    <a href="${confirmationLink}">Confirm Email</a>
+`;
+    await sendEmail(email, 'Email Confirmation', emailHtml);
+
 }
 
 export const requestPasswordReset = async (email) => {
     const user = await prisma.user.findUnique({where: {email}});
     if (!user) {
-        throw new Error('لا يوجد مستخدم بهذا البريد الإلكتروني');
+        throw new Error('No user found with this email address');
     }
 
     const token = jwt.sign({id: user.id}, SECRET_KEY, {expiresIn: '1h'});
     const resetLink = `${process.env.ORIGIN}/reset?token=${token}`;
 
-    const emailSubject = 'طلب إعادة تعيين كلمة المرور';
+    const emailSubject = 'Password Reset Request';
     const emailHtml = `
-        <p>لقد طلبت أو شخص آخر إعادة تعيين كلمة المرور لحسابك.</p>
-        <p>يرجى النقر على الرابط التالي لإعادة تعيين كلمة المرور:</p>
-        <a href="${resetLink}">إعادة تعيين كلمة المرور</a>
-        <p>ينتهي هذا الرابط بعد ساعة واحدة.</p>
-    `;
+    <p>You or someone else has requested to reset the password for your account.</p>
+    <p>Please click the following link to reset your password:</p>
+    <a href="${resetLink}">Reset Password</a>
+    <p>This link will expire in one hour.</p>
+`;
 
     await sendEmail(email, emailSubject, emailHtml);
-    return "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني";
+    return "A password reset link has been sent to your email address";
+
 };
 
 export const resetPassword = async (token, newPassword) => {
     const decoded = jwt.verify(token, SECRET_KEY);
     if (!decoded) {
-        throw new Error('رابط إعادة تعيين كلمة المرور غير صالح أو منتهي');
+        throw new Error('The password reset link is invalid or expired');
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 8);
@@ -103,6 +105,5 @@ export const resetPassword = async (token, newPassword) => {
         data: {password: hashedPassword},
     });
 
-    return 'تم إعادة تعيين كلمة المرور بنجاح، يرجى تسجيل الدخول';
+    return 'Password reset successfully, please log in';
 };
-

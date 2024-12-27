@@ -16,8 +16,9 @@ const theme = createTheme({
             contrastText: colors.secondaryText,
         },
         text: {
-            primary: colors.heading,
-            secondary: colors.secondaryText,
+            primary: colors.textColor,
+            secondary: colors.heading,
+            white:"#ffffff",
             disabled: colors.textColor,
         },
         background: {
@@ -78,6 +79,13 @@ const theme = createTheme({
             styleOverrides: {
                 root: {
                     backgroundColor: colors.bgPrimary,
+                },
+            },
+        },
+        MuiSvgIcon: {
+            styleOverrides: {
+                root: {
+                    color: colors.textColor, // Set default icon color to textColor
                 },
             },
         },

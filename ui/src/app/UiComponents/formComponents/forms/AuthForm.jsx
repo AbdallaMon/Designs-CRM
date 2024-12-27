@@ -19,14 +19,15 @@ export default function AuthForm({
                 elevation={6}
                 sx={{
                     padding: {xs: 2, md: 4},
-                    maxWidth: 500,
+                    maxWidth: {xs:"90%",md:400},
                     margin: "auto",
                     borderRadius: 2,
                     backgroundColor: "background.default"
-                    , minWidth: {md: 400, lg: 500}
+                    , minWidth: {md: 350, lg: 400},
+
                 }}
           >
-              <Typography variant="h4" align="center">
+              <Typography variant="h4"  my={2}>
                   {formTitle}
               </Typography>
 

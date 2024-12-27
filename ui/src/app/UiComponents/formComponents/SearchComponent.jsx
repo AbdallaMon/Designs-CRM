@@ -12,7 +12,7 @@ const SearchComponent = ({
                              inputLabel,
                              renderKeys,
                              mainKey,
-                             resetTrigger,
+                             resetTrigger,searchKey="userId",
                              localFilters,
                              restOtherFilters = false,
                              withParamsChange = false
@@ -49,21 +49,21 @@ const SearchComponent = ({
         setSelectedItem(newValue);
         if (withParamsChange) {
             const param = {target: {value: newValue && newValue.id}}
-            handleSearchParamsChange(param, "userId", searchParams, router)
+            handleSearchParamsChange(param, searchKey, searchParams, router)
         }
         if (newValue) {
             setSearchTerm(newValue[mainKey] || "");
             if (restOtherFilters) {
-                setFilters({query: newValue})
+                setFilters({query: newValue,[searchKey]:newValue.id})
             } else {
                 setFilters((prevFilters) => ({
                     ...prevFilters,
-                    query: newValue
+                    query: newValue,[searchKey]:newValue.id
                 }));
             }
         } else {
             setSearchTerm("");
-            setFilters((prevFilters) => ({...prevFilters, query: null}));
+            setFilters((prevFilters) => ({...prevFilters, query: null,[searchKey]:null}));
         }
     };
 

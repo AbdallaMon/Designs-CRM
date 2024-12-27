@@ -23,7 +23,7 @@ router.post('/login', async (req, res) => {
 
         res.status(200).json({
             status: 200,
-            message: "تم تسجيل الدخول بنجاح جاري اعادة التوجيه",
+            message: "Login successful, redirecting...",
             user
         });
     } catch (error) {
@@ -36,12 +36,12 @@ router.post('/register', async (req, res) => {
 
         res.status(200).json({
             status: 200,
-            message: "تم تسجيل الحساب بنجاح، يرجى التحقق من بريدك الإلكتروني لتأكيد حسابك",
+            message: "Account successfully created, please check your email to verify your account.",
             user,
         });
     } catch (error) {
         if (error.code === 'P2002' && error.meta?.target?.includes('email')) {
-            res.status(400).json({status: 400, message: "هذا البريد الإلكتروني مسجل بالفعل"});
+            res.status(400).json({status: 400, message: "This email is already registered"});
         } else {
             handlePrismaError(res, error);
         }
@@ -52,9 +52,9 @@ router.post('/logout', (req, res) => {
     try {
         const {token, options} = logoutUser();
         res.cookie('token', token, options);
-        res.status(200).json({status: 200, message: "تم تسجيل الخروج بنجاح"});
+        res.status(200).json({status: 200, message: "Successfully logged out"});
     } catch (error) {
-        res.status(500).json({status: 500, message: `خطأ: ${error.message}`});
+        res.status(500).json({status: 500, message: `Error: ${error.message}`});
     }
 });
 
@@ -62,13 +62,13 @@ router.post('/logout', (req, res) => {
 router.get('/status', (req, res) => {
     const token = req.cookies.token;
     if (!token) {
-        return res.status(401).json({auth: false, message: "أنت لست مسجلاً للدخول"});
+        return res.status(401).json({auth: false, message: "You are not logged in"});
     }
     try {
         const decoded = verifyToken(token);
         res.status(200).json({
-            message: "المستخدم مصدق عليه",
-            user: {
+            message: "User is authenticated"
+,            user: {
                 id: decoded.id,
                 role: decoded.role,
                 accountStatus: decoded.accountStatus
@@ -77,8 +77,8 @@ router.get('/status', (req, res) => {
         });
     } catch (error) {
         res.status(400).json({
-            message: "انتهت صلاحية جلستك",
-            error: error.message,
+            message: "Your session has expired"
+,            error: error.message,
             auth: false,
         });
     }
@@ -90,7 +90,7 @@ router.post('/reset', async (req, res) => {
         const message = await requestPasswordReset(email);
         res.status(200).json({status: 200, message});
     } catch (error) {
-        res.status(500).json({status: 500, message: `خطأ: ${error.message}`});
+        res.status(500).json({status: 500, message: `Error: ${error.message}`});
     }
 });
 
@@ -102,7 +102,7 @@ router.post('/reset/:token', async (req, res) => {
         const message = await resetPassword(token, password);
         res.status(200).json({status: 200, message});
     } catch (error) {
-        res.status(500).json({status: 500, message: `خطأ: ${error.message}`});
+        res.status(500).json({status: 500, message: `Error: ${error.message}`});
     }
 });
 

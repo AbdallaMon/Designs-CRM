@@ -68,11 +68,10 @@ CREATE TABLE `ClientLead` (
     `userId` INTEGER NULL,
     `selectedCategory` ENUM('CONSULTATION', 'DESIGN') NOT NULL,
     `consultationType` ENUM('ROOM', 'BLUEPRINT', 'CITY_VISIT') NULL,
-    `consultationPrice` DECIMAL(10, 2) NULL,
     `designType` ENUM('RESIDENTIAL', 'COMMERCIAL') NULL,
     `designItemType` ENUM('UNDER_CONSTRUCTION', 'OCCUPIED_VILLA', 'MASTER_SECTION', 'RETAIL_SPACE', 'OFFICE_BUILDING', 'RESTAURANT', 'HOTEL', 'MIXED_USE') NULL,
     `emirate` ENUM('DUBAI', 'ABU_DHABI', 'SHARJAH', 'AJMAN', 'UMM_AL_QUWAIN', 'RAS_AL_KHAIMAH', 'FUJAIRAH') NULL,
-    `selectedPrice` DECIMAL(10, 2) NULL,
+    `price` VARCHAR(191) NULL,
     `status` ENUM('NEW', 'IN_PROGRESS', 'INTERESTED', 'NEGOTIATING', 'REJECTED', 'CONVERTED') NOT NULL DEFAULT 'NEW',
     `assignedAt` DATETIME(3) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -118,12 +117,12 @@ CREATE TABLE `User` (
 CREATE TABLE `Client` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(255) NOT NULL,
-    `email` VARCHAR(255) NOT NULL,
     `phone` VARCHAR(20) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
-    INDEX `Client_email_idx`(`email`),
+    UNIQUE INDEX `Client_phone_key`(`phone`),
+    INDEX `Client_phone_idx`(`phone`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

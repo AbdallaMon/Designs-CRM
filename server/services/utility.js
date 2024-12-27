@@ -68,3 +68,116 @@ export function handlePrismaError(res, error) {
     // Send response to the client
     return res.status(response.status).json({message: response.message});
 }
+export const getPagination = (req) => {
+    const page = parseInt(req.query.page, 10) || 1;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const skip = (page - 1) * limit;
+
+    return {page, limit, skip};
+};
+
+export const verifyTokenAndHandleAuthorization = (req, res, next, role) => {
+
+    const token = req.cookies.token
+    if (!token) {
+        return res.status(401).json({message: 'You have to login first'});
+    }
+
+    try {
+        const decoded = jwt.verify(token, SECRET_KEY);
+
+        if (role === "SHARED") {
+            if (decoded.role !== "ADMIN" && decoded.role !== "STAFF") {
+                return res.status(403).json({message: 'Not authorized'});
+            }
+        } else {
+            if (decoded.role !== role) {
+                return res.status(403).json({message: 'Not authorized'});
+            }
+        }
+        req.user = decoded;
+        next();
+    } catch (error) {
+        return res.status(401).json({message: 'Your session ended'});
+    }
+};
+
+export const verifyTokenUsingReq = (req, res, next) => {
+    const token = req.cookies.token
+    if (!token) {
+        return res.status(403).json({message: 'تم رفض صلاحيتك'});
+    }
+    try {
+        const decoded = jwt.verify(token, SECRET_KEY);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        return res.status(401).json({message: 'Invalid token'});
+    }
+};
+const modelMap = {
+    user: prisma.user,
+    client: prisma.client,
+};
+export async function getCurrentUser(req){
+    const token = req.cookies.token
+
+    const decoded = jwt.verify(token, SECRET_KEY);
+    return  decoded
+}
+export async function searchData(body) {
+    const {model, query, filters} = body;
+    const prismaModel = modelMap[model];
+    console.log(body,"body")
+    let where = {};
+    if (query) {
+        if (model === 'user') {
+            where.OR = [
+                {email: {contains: query}},
+                {name: { contains: query}},
+            ];
+        } else if (model === 'client') {
+            where.OR = [
+                {phone: {contains: query}},
+                {name: { contains: query}},
+            ];
+        }
+    }
+
+    if (filters && filters !== "undefined") {
+        const parsedFilters = JSON.parse(filters);
+        if (parsedFilters.role) {
+            where.role = parsedFilters.role;
+        }
+        if (parsedFilters.OR) {
+            where.OR = parsedFilters.OR
+        }
+        if (parsedFilters.userId) {
+            where.clientLeads = {
+                some: {
+                    userId: Number(parsedFilters.userId)
+                }
+            }
+        }
+    }
+
+console.log(where,'where')
+    const selectFields = {
+        user: {
+            id: true,
+            email: true,
+            name:true,
+        },
+        client: {
+            id: true,
+            name: true,
+            phone:true
+        },
+    };
+    const data = await prismaModel.findMany({
+        where,
+        select: selectFields[model],
+    });
+    console.log(data,"data")
+    return data;
+}

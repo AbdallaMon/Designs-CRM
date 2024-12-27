@@ -155,11 +155,10 @@ model ClientLead {
   // Lead type data
   selectedCategory    LeadCategory
   consultationType    ConsultationType?
-  consultationPrice   Decimal?         @db.Decimal(10, 2)
   designType         DesignType?
   designItemType     DesignItemType?
   emirate            Emirate?
-  selectedPrice      Decimal?          @db.Decimal(10, 2)
+  price   String?
 
   status        ClientLeadStatus @default(NEW)
   files     File[]          @relation("files")
@@ -207,13 +206,12 @@ model User {
 model Client {
  id          Int          @id @default(autoincrement())
  name        String       @db.VarChar(255)
- email       String       @db.VarChar(255)
- phone       String       @db.VarChar(20)
+ phone       String       @db.VarChar(20) @unique
  clientLeads ClientLead[]
  createdAt   DateTime     @default(now())
  updatedAt   DateTime     @updatedAt
 
- @@index([email])
+ @@index([phone])
 }
 
 model Note {

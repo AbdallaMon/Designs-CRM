@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { usePathname } from 'next/navigation';
 import {
     AppBar,
     Box,
@@ -12,61 +13,69 @@ import {
     Button,
     useMediaQuery,
     useTheme,
-    Badge,
 } from '@mui/material';
-import {
-    FiMenu,
-    FiBell,
-    FiLogOut
-} from 'react-icons/fi';
+import { FiMenu } from 'react-icons/fi';
 import Logout from "@/app/UiComponents/buttons/Logout.jsx";
 import NotificationsIcon from "@/app/UiComponents/utility/NotificationIcon.jsx";
+import Link from "next/link";
 
-// Admin navigation links
 const Navbar = ({ links }) => {
     const [mobileOpen, setMobileOpen] = useState(false);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-    const [notificationCount] = useState(3); // Example notification count
+    const pathname = usePathname();
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
     };
 
     const navigationList = (
-          <List>
-              {links.map((link) => (
-                    <ListItem
-                          button
-                          key={link.name}
-                          component="a"
-                          href={link.href}
-                          sx={{
-                              borderRadius: 1,
-                              mx: 1,
-                              mb: 1,
-                              '&:hover': {
-                                  bgcolor: 'primary.light',
-                                  '& .MuiListItemIcon-root': {
-                                      color: 'primary.main',
-                                  }
-                              }
-                          }}
-                    >
-                        <ListItemIcon sx={{ color: 'text.secondary', minWidth: 40 }}>
-                            {link.icon}
-                        </ListItemIcon>
-                        <ListItemText
-                              primary={link.name}
+          <List sx={{px:1,overflow:"hidden"}}>
+              {links.map((link) => {
+                  const isActive = pathname === link.href;
+                  return (
+                        <ListItem
+                              button
+                              key={link.name}
+                              component={Link}
+                              href={link.href}
                               sx={{
+                                  borderRadius: 1,
+                                  mx: 1,
+                                  mb: 1.5,
+                                  bgcolor: isActive ? 'primary.light' : 'transparent',
+                                  '& .MuiListItemIcon-root': {
+                                      color: isActive ? 'primary.main' : 'text.secondary',
+                                  },
                                   '& .MuiListItemText-primary': {
-                                      fontSize: '0.875rem',
-                                      fontWeight: 500
+                                      color: isActive ? 'primary.main' : 'inherit',
+                                  },
+                                  '&:hover': {
+                                      bgcolor: 'primary.light',
+                                      '& .MuiListItemIcon-root': {
+                                          color: 'primary.main',
+                                      },
+                                      '& .MuiListItemText-primary': {
+                                          color: 'primary.main',
+                                      }
                                   }
                               }}
-                        />
-                    </ListItem>
-              ))}
+                        >
+                            <ListItemIcon sx={{ minWidth: 40 }}>
+                                {link.icon}
+                            </ListItemIcon>
+                            <ListItemText
+                                  primary={link.name}
+                                  sx={{
+                                      '& .MuiListItemText-primary': {
+                                          fontSize: '0.875rem',
+                                          fontWeight: 500
+                                      }
+                                  }}
+                            />
+                        </ListItem>
+                  );
+              })}
           </List>
     );
 
@@ -93,7 +102,6 @@ const Navbar = ({ links }) => {
                                     <FiMenu size={24} />
                                 </IconButton>
                           )}
-                          {/* Logo or Brand */}
                           <Box
                                 component="img"
                                 src="/logo.png"
@@ -101,33 +109,39 @@ const Navbar = ({ links }) => {
                                 sx={{ height: 40, width: 'auto', mr: 2 }}
                           />
                       </Box>
-
                       {!isMobile && (
                             <Box sx={{ display: 'flex', flexGrow: 1, mx: 4 }}>
-                                {links.map((link) => (
-                                      <Button
-                                            key={link.name}
-                                            href={link.href}
-                                            startIcon={link.icon}
-                                            sx={{
-                                                mx: 1,
-                                                color: 'text.primary',
-                                                '&:hover': {
-                                                    bgcolor: 'primary.light',
-                                                    '& .MuiSvgIcon-root': {
+                                {links.map((link) => {
+                                    const isActive = pathname === link.href;
+                                    return (
+                                          <Button
+                                                key={link.name}
+                                                href={link.href}
+                                                startIcon={link.icon}
+                                                sx={{
+                                                    mx: 1,
+                                                    px: 1.5,
+                                                    borderRadius:1,
+                                                    color: isActive ? 'primary.main' : 'text.primary',
+                                                    bgcolor: isActive ? 'primary.light' : 'transparent',
+                                                    '&:hover': {
+                                                        bgcolor: 'primary.light',
                                                         color: 'primary.main',
+                                                        '& .MuiSvgIcon-root': {
+                                                            color: 'primary.main',
+                                                        }
                                                     }
-                                                }
-                                            }}
-                                      >
-                                          {link.name}
-                                      </Button>
-                                ))}
+                                                }}
+                                          >
+                                              {link.name}
+                                          </Button>
+                                    );
+                                })}
                             </Box>
                       )}
 
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <NotificationsIcon/>
+                          <NotificationsIcon/>
                           <Logout/>
                       </Box>
                   </Toolbar>
@@ -135,11 +149,11 @@ const Navbar = ({ links }) => {
 
               <Drawer
                     variant="temporary"
-                    anchor="right" // RTL support
+                    anchor="left"
                     open={mobileOpen}
                     onClose={handleDrawerToggle}
                     ModalProps={{
-                        keepMounted: true, // Better mobile performance
+                        keepMounted: true,
                     }}
                     sx={{
                         display: { xs: 'block', md: 'none' },
@@ -150,12 +164,9 @@ const Navbar = ({ links }) => {
                         },
                     }}
               >
-                  <Toolbar /> {/* Spacing for AppBar */}
+                  <Toolbar />
                   {navigationList}
               </Drawer>
-
-              {/* Permanent Drawer for desktop */}
-
           </>
     );
 };

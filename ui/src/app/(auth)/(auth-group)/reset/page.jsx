@@ -18,7 +18,7 @@ export default function ResetPage({searchParams: {token}}) {
                   setLoading,
                   !token ? "auth/reset" : `auth/reset/${token}`,
                   false,
-                  !token ? "جاري مراجعة البريد الالكتروني" : "جاري اعادة انشاء كلمة السر",
+                  !token ? "Email is being reviewed" : "Resetting the password"
             );
             if (token) {
                 router.push("/login");
@@ -37,14 +37,14 @@ export default function ResetPage({searchParams: {token}}) {
                 component={Link}
                 href="/login"
           >
-              تسجيل الدخول؟ </Typography>
+              Login? </Typography>
     );
     return (
           <>
               <AuthForm
-                    btnText={"انشاء"}
+                    btnText={"Create"}
                     inputs={token ? resetPasswordInputs : resetInputs}
-                    formTitle={"انشاء كلمة سر جديدة"}
+                    formTitle={"Create new password"}
                     onSubmit={handleReset}
                     subTitle={subTitle}
               />

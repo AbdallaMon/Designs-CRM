@@ -17,7 +17,7 @@ export default function Page() {
               setLoading,
               "auth/login",
               false,
-              "جاري تسجيل الدخول",
+              "Logging",
         );
         if (response.status === 200) {
             setIsLoggedIn(true)
@@ -42,12 +42,12 @@ export default function Page() {
     return (
           <>
               <AuthForm
-                    btnText={"تسجيل الدخول"}
+                    btnText={"Login"}
                     inputs={loginInputs}
-                    formTitle={"تسجيل الدخول"}
+                    formTitle={"Login"}
                     onSubmit={handleLogin}
               >
-                  <Button component={Link} href={"/reset"} color="secondary">نسيت كلمة السر ؟</Button>
+                  <Button component={Link} href={"/reset"} color="secondary">Forgot password ?</Button>
               </AuthForm>
           </>
     );

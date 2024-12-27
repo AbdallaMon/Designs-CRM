@@ -43,7 +43,7 @@ const FilterSelect = ({label, options, param, onChange, loading, setFilters, res
               }}>
                   <InputLabel>{label}</InputLabel>
                   <Select
-                        value={options?.find((option) => option.id == current)?.name || 'الكل '}
+                        value={options?.find((option) => option.id == current)?.name || 'All '}
                         onChange={handleChange}
                         label={label}
                         disabled={loading}
@@ -52,14 +52,14 @@ const FilterSelect = ({label, options, param, onChange, loading, setFilters, res
                                 return (
                                       <Box display="flex" alignItems="center">
                                           <CircularProgress size={20} sx={{marginRight: 2}}/>
-                                          <span>جاري التحميل</span>
+                                          <span>Loading</span>
                                       </Box>
                                 );
                             }
                             return selected || 'All';
                         }}
                   >
-                      <MenuItem value="">الكل</MenuItem>
+                      <MenuItem value="">All</MenuItem>
                       {options.map((option) => (
                             <MenuItem key={option.id} value={option.id}>
                                 {option.name}
