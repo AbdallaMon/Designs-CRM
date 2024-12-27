@@ -31,21 +31,22 @@ export default function Layout({ admin, staff}) {
     useEffect(() => {
         async function fetchData() {
             if (validatingAuth || toastId === undefined) {
-                toastId = toast.loading("يتم التاكد من صلاحيتك");
+                toastId = toast.loading("Validating your session");
             }
             if (!isLoggedIn && !validatingAuth) {
                 window.localStorage.setItem("redirect", window.location.pathname)
-                toast.update(toastId, Failed("يجب عليك تسجيل الدخول اولا , جاري اعادة التوجية..."));
+                toast.update(toastId, Failed("You must log in first, redirecting..."));
                 router.push("/login");
                 return
             }
             if (isLoggedIn && !validatingAuth) {
                 toast.update(
                       toastId,
-                      Success("تم التاكد من صلاحيتك , جاري تحميل البيانات."),
+                      Success("Your session has been validated, loading data."),
                 );
             }
         }
+
 
         fetchData();
     }, [validatingAuth]);

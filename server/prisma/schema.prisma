@@ -66,9 +66,10 @@ enum ClientLeadStatus {
  NEW
  IN_PROGRESS
  INTERESTED
+ NEEDS_IDENTIFIED
  NEGOTIATING
  REJECTED
- CONVERTED
+ FINALIZED
 }
 // Main lead types
 enum DesignItemType {
@@ -84,6 +85,11 @@ enum DesignItemType {
  MIXED_USE
 }
 
+enum CallReminderStatus {
+  IN_PROGRESS
+  DONE
+  MISSED
+}
 model Lead {
  id              Int              @id @default(autoincrement())
  category        LeadCategory
@@ -144,35 +150,54 @@ model Media {
 }
 
 model ClientLead {
-  id            Int              @id @default(autoincrement())
-  lead          Lead             @relation(fields: [leadId], references: [id])
-  leadId        Int
-  client        Client           @relation(fields: [clientId], references: [id])
-  clientId      Int
-  assignedTo    User?            @relation(fields: [userId], references: [id])
-  userId        Int?
+  id                 Int              @id @default(autoincrement())
+  lead               Lead             @relation(fields: [leadId], references: [id])
+  leadId             Int
+  client             Client           @relation(fields: [clientId], references: [id])
+  clientId           Int
+  assignedTo         User?            @relation(fields: [userId], references: [id])
+  userId             Int?
 
   // Lead type data
-  selectedCategory    LeadCategory
-  consultationType    ConsultationType?
+  selectedCategory   LeadCategory
+  consultationType   ConsultationType?
   designType         DesignType?
   designItemType     DesignItemType?
   emirate            Emirate?
-  price   String?
+  price              String?
 
-  status        ClientLeadStatus @default(NEW)
-  files     File[]          @relation("files")
-  notes         Note[]
-  logs          Log[]
-  notifications Notification[]
-  assignedAt    DateTime?
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  status             ClientLeadStatus @default(NEW)
+  files              File[]           @relation("files")
+  notes              Note[]
+  logs               Log[]
+  notifications      Notification[]
+  callReminders      CallReminder[]   @relation("clientLeadCallReminders")
+  assignedAt         DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   @@index([leadId])
   @@index([clientId])
   @@index([userId])
 }
+
+model CallReminder {
+  id            Int              @id @default(autoincrement())
+  clientLead    ClientLead       @relation(fields: [clientLeadId], references: [id], name: "clientLeadCallReminders")
+  clientLeadId  Int
+  time          DateTime
+  status        CallReminderStatus @default(IN_PROGRESS)
+  callResult    String?           @db.Text
+  reminderReason String?          @db.Text
+  reminderBy    User              @relation(fields: [userId], references: [id])
+  userId        Int
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@index([clientLeadId])
+  @@index([userId])
+}
+
 
 model File {
  id           Int        @id @default(autoincrement())
@@ -199,7 +224,7 @@ model User {
  notes         Note[]
  createdAt     DateTime       @default(now())
  updatedAt     DateTime       @updatedAt
-
+ callReminders CallReminder[]
  @@index([email])
 }
 

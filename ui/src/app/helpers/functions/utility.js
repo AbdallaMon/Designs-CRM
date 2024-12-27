@@ -43,6 +43,7 @@ export const getPropertyValue = (item, propertyPath, enums, type, defaultValue,)
         } else return enums.FALSE
 
     }
+
     if (enums) return enums[value]
     return value;
 };

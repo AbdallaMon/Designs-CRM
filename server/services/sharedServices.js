@@ -14,18 +14,19 @@ const {    isNew = false,
         const fifteenDaysAgo = new Date();
         fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
 
-// Base condition
          where = {
             assignedTo: { isNot: null },
             assignedAt: { lt: fifteenDaysAgo },
         };
-        if (filters?.staffId) {
+        if (searchParams?.staffId) {
             where = {
                 ...where,
                 assignedTo: {
-                    isNot: null, // Ensure not null
-                    id: {
-                        not: Number(filters.staffId),
+                    isNot: null,
+                    is: {
+                        id: {
+                            not: Number(searchParams.staffId),
+                        },
                     },
                 },
             };
@@ -104,6 +105,5 @@ export async function assignLeadToAUser (clientLeadId, userId)  {
             },
         },
     });
-
     return updatedClientLead;
 };

@@ -80,7 +80,7 @@ export default function AdminTable({
                       }}>
 
                       <Box
-                            display="flex" width="fit-content" gap={2}  flexWrap="wrap" alignItems="center"
+                            display="flex" width="100%" gap={2}  flexWrap="wrap" alignItems="center"
 
                             sx={{
                           p:{xs:1.5,md:2},

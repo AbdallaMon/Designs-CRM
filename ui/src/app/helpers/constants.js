@@ -56,14 +56,17 @@ export const UserRole = {
     STAFF: "Staff",
 };
 
-export const ClientLeadStatus = {
+const ClientLeadStatus = {
     NEW: "New",
     IN_PROGRESS: "In Progress",
+    CONTACT_INITIATED: "Contact Initiated",
     INTERESTED: "Interested",
+    NEEDS_IDENTIFIED: "Needs Identified",
     NEGOTIATING: "Negotiating",
     REJECTED: "Rejected",
-    CONVERTED: "Converted",
+    FINALIZED: "Finalized",
 };
+
 
 export const DesignItemType = {
     // Residential
@@ -77,6 +80,22 @@ export const DesignItemType = {
     HOTEL: "Hotel",
     MIXED_USE: "Mixed Use",
 };
+export const statusColors = {
+    IN_PROGRESS: "#0d9488",           // Teal
+    INTERESTED: "#10b981",           // Emerald
+    NEEDS_IDENTIFIED: "#f59e0b",     // Amber
+    NEGOTIATING: "#3b82f6",          // Blue
+    REJECTED: "#ef4444",             // Red
+    FINALIZED: "#0f766e",            // Dark teal
+};
+export const KanbanStatusArray= [
+    "IN_PROGRESS",
+    "INTERESTED",
+    "NEEDS_IDENTIFIED",
+    "NEGOTIATING",
+    "FINALIZED",
+    "REJECTED",
+];
 
 export const initialPageLimit = 10
 export const totalLimitPages = [10, 20, 50, 100]

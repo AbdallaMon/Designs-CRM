@@ -83,6 +83,7 @@ const SearchComponent = ({
                     value={selectedItem}
                     sx={{
                         minWidth: 300,
+                        width:"100%"
                     }}
                     onChange={handleSelect}
                     onInputChange={(event, newInputValue) => {

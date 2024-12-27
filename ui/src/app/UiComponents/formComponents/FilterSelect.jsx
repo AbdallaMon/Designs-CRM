@@ -36,6 +36,8 @@ const FilterSelect = ({label, options, param, onChange, loading, setFilters, res
           <Box width="100%">
               <FormControl variant="outlined" margin="normal" sx={{
                   mb: 2,
+                  minWidth: "120px",
+
                   width: {
                       xs: '100%',
                       sm: 200,
