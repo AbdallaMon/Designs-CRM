@@ -15,6 +15,8 @@ import FilterSelect from "@/app/UiComponents/formComponents/FilterSelect.jsx";
 import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks.jsx";
 import {FaBusinessTime} from "react-icons/fa";
 import {useAuth} from "@/app/providers/AuthProvider.jsx";
+import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit.js";
+import {useToastContext} from "@/app/providers/ToastLoadingProvider.js";
 
 dayjs.extend(relativeTime);
 
@@ -107,7 +109,7 @@ const Column = ({status, leads, movelead, admin, setleads}) => {
                                         fontWeight: 500
                                     }}
                               >
-                                  {totalValue.toLocaleString()}
+                                  {totalValue}
                               </Typography>
                           </Box>
                       </Box>
@@ -149,13 +151,16 @@ const KanbanBoard = ({admin}) => {
         setData: setleads,
         setFilters
     } = useDataFetcher("shared/client-leads/deals" + `?staffId=${user.id}&`, false);
-
-    const movelead = (id, newStatus) => {
-        setleads((prev) =>
-              prev.map((task) =>
-                    task.id === id ? {...task, status: newStatus} : task
-              )
-        );
+const {setLoading}=useToastContext()
+    const movelead =async (id, newStatus) => {
+        const request = await handleRequestSubmit({status: newStatus}, setLoading, `staff/client-leads/${id}/status`, false, "Updating",false, "PUT")
+if(request.status===200) {
+    setleads((prev) =>
+          prev.map((task) =>
+                task.id === id ? {...task, status: newStatus} : task
+          )
+    );
+}
     };
     const links = [
         {href: "/dashboard/deals/all", title: "See all deals", icon: <FaBusinessTime/>},

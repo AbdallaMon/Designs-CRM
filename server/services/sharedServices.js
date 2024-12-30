@@ -127,6 +127,11 @@ export async function getClientLeadsByDateRange({ searchParams }) {
             assignedTo: { select: { name: true } },
             status: true,
             price: true,
+            selectedCategory:true,
+            consultationType:true,
+            designType:true,
+            designItemType:true,
+            emirate:true,
             callReminders: {
                 orderBy: { time: 'asc' },
                 take: 2,
@@ -170,7 +175,7 @@ export async function getClientLeadDetails(clientLeadId) {
                 },
             },
             notes: {
-                orderBy: {  createdAt: 'asc' },
+                orderBy: {  createdAt: 'desc' },
                 select: {
                     id: true,
                     content: true,
@@ -193,7 +198,7 @@ export async function getClientLeadDetails(clientLeadId) {
                         select: { name: true },
                     },
                 },
-                orderBy: { time: 'asc' }
+                orderBy: { time: 'desc' }
             },
             createdAt: true,
             updatedAt: true,

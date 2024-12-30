@@ -28,7 +28,13 @@ import {
 
 import {styled} from "@mui/material/styles";
 import dayjs from "dayjs";
-import {KanbanStatusArray, statusColors} from "@/app/helpers/constants.js";
+import {
+    ConsultationType,
+    DesignItemType,
+    DesignType, Emirate,
+    KanbanStatusArray,
+    statusColors
+} from "@/app/helpers/constants.js";
 import PreviewDialog from "@/app/UiComponents/DataViewer/leads/PreviewLead.jsx";
 import {CallResultDialog, NewCallDialog, NewNoteDialog} from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
 import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit.js";
@@ -66,7 +72,6 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
         type: ItemTypes.CARD,
         item: {id: lead.id, status: lead.status},
     });
-    console.log(lead,"lead")
     const {setLoading} = useToastContext()
     const [menuAnchorEl, setMenuAnchorEl] = React.useState(null);
     const [timeLeft, setTimeLeft] = React.useState('');
@@ -81,11 +86,7 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
     };
 
     const handleStatusChange = async (newStatus) => {
-        const request = await handleRequestSubmit({status: newStatus}, setLoading, `staff/client-leads/${lead.id}/status`, false, "Updating")
-        if (request.status === 200) {
             movelead(lead.id, newStatus);
-            handleMenuClose();
-        }
     };
 
     // Process call reminders
@@ -161,6 +162,9 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
                           <Typography variant="h6" component="div">
                               {lead.client.name}
                           </Typography>
+                          <Typography variant="subtitle2" component="div">
+                              {lead?.selectedCategory === "CONSULTATION" ? ConsultationType[lead.consultationType] : `${DesignType[lead.designType]} - ${DesignItemType[lead.designItemType]} - ${Emirate[lead.emirate]}`}
+                          </Typography>
                       </Box>
                       <Box my={1} display="flex" alignItems="center" gap={1}>
                           <Chip
@@ -203,7 +207,6 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
                                         </Typography>
                                         <CallResultDialog setleads={setleads} lead={lead} call={nextCall}
                                                           type={"button"} text={"Update call"}>
-
                                         </CallResultDialog>
                                     </Box>
                                 </CallInfoBox>

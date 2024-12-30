@@ -46,12 +46,10 @@ router.put('/client-leads/call-reminders/:id', async (req, res) => {
         });
     }
 });
-router.patch('/client-leads/:id/status', async (req, res) => {
+router.put('/client-leads/:id/status', async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
-
-
         await updateClientLeadStatus({
             clientLeadId: Number(id),
             status,
