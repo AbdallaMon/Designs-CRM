@@ -3,7 +3,7 @@ import {FormControl, InputLabel, Select, MenuItem, CircularProgress, Box} from '
 import {useRouter, useSearchParams} from "next/navigation";
 import {handleSearchParamsChange} from "@/app/helpers/functions/utility";
 
-const FilterSelect = ({label, options, param, onChange, loading, setFilters, reset}) => {
+const FilterSelect = ({label, options, param, onChange, loading, setFilters, reset,withAll=true}) => {
     const searchParams = useSearchParams()
     const router = useRouter()
     const current = searchParams.get(param)
@@ -61,7 +61,9 @@ const FilterSelect = ({label, options, param, onChange, loading, setFilters, res
                             return selected || 'All';
                         }}
                   >
+                      {withAll&&
                       <MenuItem value="">All</MenuItem>
+                      }
                       {options.map((option) => (
                             <MenuItem key={option.id} value={option.id}>
                                 {option.name}

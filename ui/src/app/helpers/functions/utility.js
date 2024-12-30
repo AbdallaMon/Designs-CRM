@@ -100,3 +100,11 @@ export const enumToKeyValueArray = (enumObj) => {
         name: value, // Enum value becomes `name`
     }));
 };
+export function hideMoreData(content,max=20)
+{
+    if(content?.length>max){
+        return content.slice(0,max) + " ......"
+
+    }
+return  content
+}

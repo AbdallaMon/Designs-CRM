@@ -17,27 +17,29 @@ import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks.jsx";
 // consultationType
 // designItemType
 const columns = [
-    { name: "client.name", label: "Client Name" },
-    { name: "client.phone", label: "Phone" },
-    { name: "selectedCategory", label: "Lead Type",enum:LeadCategory,type:"enum" },
-    {name:"type",label: "Description",type: "function",render:(item)=>{
-        if(item.selectedCategory==="CONSULTATION"){
-            return ConsultationType[item.consultationType]
-        }else{
-            return  `${DesignType[item.designType]} - ${DesignItemType[item.designItemType]} - ${Emirate[item.emirate]}`
+    {name: "client.name", label: "Client Name"},
+    {name: "client.phone", label: "Phone"},
+    {name: "selectedCategory", label: "Lead Type", enum: LeadCategory, type: "enum"},
+    {
+        name: "type", label: "Description", type: "function", render: (item) => {
+            if (item.selectedCategory === "CONSULTATION") {
+                return ConsultationType[item.consultationType]
+            } else {
+                return `${DesignType[item.designType]} - ${DesignItemType[item.designItemType]} - ${Emirate[item.emirate]}`
+            }
         }
-        }},
-    {name:"price",label: "Price"},
+    },
+    {name: "price", label: "Price"},
     {
         name: "createdAt",
         label: "Created At",
-        type:"date"
+        type: "date"
     },
 
 ];
 export default function Leads() {
     const links = [
-        { href: "/dashboard/overdue-deals", title: "See Overdue Deals", icon: <FaBusinessTime /> },
+        {href: "/dashboard/overdue-deals", title: "See Overdue Deals", icon: <FaBusinessTime/>},
     ];
     const {user} = useAuth()
 
@@ -51,16 +53,18 @@ export default function Leads() {
         setLimit,
         total,
         setTotal, totalPages, setFilters
-    } = useDataFetcher("shared/client-leads"+`?staffId=${user.id}&isNew=true&`, false);
+    } = useDataFetcher("shared/client-leads" + `?staffId=${user.id}&isNew=true&`, false);
 
     const {setLoading} = useToastContext()
-const leadTypes=enumToKeyValueArray(LeadCategory)
-  async  function createADeal(item){
-       const assign=await handleRequestSubmit(item,setLoading,`shared/client-leads`,false,"Assigning",false,"PUT")
-      if(assign.status===200){
-          setData((data)=>data.filter((lead)=>lead.id!==item.id))
-      }
-  }
+    const leadTypes = enumToKeyValueArray(LeadCategory)
+
+    async function createADeal(item) {
+        const assign = await handleRequestSubmit(item, setLoading, `shared/client-leads`, false, "Assigning", false, "PUT")
+        if (assign.status === 200) {
+            setData((data) => data.filter((lead) => lead.id !== item.id))
+        }
+    }
+
     return (
           <div>
 
@@ -81,37 +85,37 @@ const leadTypes=enumToKeyValueArray(LeadCategory)
                               <ConfirmWithActionModel
                                     title={"Are you sure you want to get this lead and assign it to you as a new deal?"}
                                     handleConfirm={() => createADeal(item)}
-                                    label={"Start a deal" }
+                                    label={"Start a deal"}
                               />
                           </Box>
                     )}
               >
-                  <Box                     display="flex" width="100%" gap={2}  flexWrap="wrap" alignItems="center"
-                                           justifyContent="space-between"
-                  flexDirection={{xs:"column-reverse",md:"row"}}
+                  <Box display="flex" width="100%" gap={2} flexWrap="wrap" alignItems="center"
+                       justifyContent="space-between"
+                       flexDirection={{xs: "column-reverse", md: "row"}}
                   >
-                      <Box display="flex" gap={2}  flexWrap="wrap" alignItems="center"  flex={1}>
-                      <Box sx={{width:{xs:"100%",md:"fit-content"}}} >
-                          <SearchComponent
-                                apiEndpoint="search?model=client"
-                                setFilters={setFilters}
-                                inputLabel="Search by name or phone"
-                                renderKeys={["name", "phone"]}
-                                mainKey="name"
-                                searchKey={"clientId"}
-                                withParamsChange={true}
-                          />
-                      </Box>
-                      <Box sx={{width:{xs:"100%",md:"fit-content"}}} >
-                        <FilterSelect options={leadTypes} label={"Lead Type"}
-                                loading={false}
-                               param={"type"}
-                            setFilters={setFilters}
-                            />
-                      </Box>
+                      <Box display="flex" gap={2} flexWrap="wrap" alignItems="center" flex={1}>
+                          <Box sx={{width: {xs: "100%", md: "fit-content"}}}>
+                              <SearchComponent
+                                    apiEndpoint="search?model=client"
+                                    setFilters={setFilters}
+                                    inputLabel="Search by name or phone"
+                                    renderKeys={["name", "phone"]}
+                                    mainKey="name"
+                                    searchKey={"clientId"}
+                                    withParamsChange={true}
+                              />
+                          </Box>
+                          <Box sx={{width: {xs: "100%", md: "fit-content"}}}>
+                              <FilterSelect options={leadTypes} label={"Lead Type"}
+                                            loading={false}
+                                            param={"type"}
+                                            setFilters={setFilters}
+                              />
+                          </Box>
                       </Box>
                       <Box>
-                          <TabsWithLinks links={links} />
+                          <TabsWithLinks links={links}/>
                       </Box>
                   </Box>
               </AdminTable>

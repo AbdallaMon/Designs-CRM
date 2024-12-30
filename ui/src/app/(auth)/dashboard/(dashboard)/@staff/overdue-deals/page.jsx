@@ -12,10 +12,7 @@ import FilterSelect from "@/app/UiComponents/formComponents/FilterSelect.jsx";
 import {enumToKeyValueArray} from "@/app/helpers/functions/utility.js";
 import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
 import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit.js";
-import {FaBusinessTime} from "react-icons/fa";
-import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks.jsx";
-// consultationType
-// designItemType
+
 const columns = [
     { name: "client.name", label: "Client Name" },
     { name: "client.phone", label: "Phone" },
@@ -54,6 +51,7 @@ export default function Leads() {
     const {setLoading} = useToastContext()
     const leadTypes=enumToKeyValueArray(LeadCategory)
     async  function createADeal(item){
+        item={...item,overdue:true}
         const assign=await handleRequestSubmit(item,setLoading,`shared/client-leads`,false,"Assigning",false,"PUT")
         if(assign.status===200){
             setData((data)=>data.filter((lead)=>lead.id!==item.id))

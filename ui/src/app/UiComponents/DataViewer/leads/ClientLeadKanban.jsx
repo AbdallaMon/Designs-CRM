@@ -1,22 +1,20 @@
 "use client"
 import React from "react";
-import { DndProvider, useDrag, useDrop } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
-import {
-    Typography,
-    Box,
-    Chip,
-    Paper,
-    Stack,
-    Divider,
-} from "@mui/material";
-import { styled } from "@mui/material/styles";
-import { BsKanban } from 'react-icons/bs';
-import { BiDollarCircle } from 'react-icons/bi';
+import {DndProvider, useDrop} from "react-dnd";
+import {HTML5Backend} from "react-dnd-html5-backend";
+import {Box, Chip, Grid2 as Grid, Stack, Typography,} from "@mui/material";
+import {styled} from "@mui/material/styles";
+import {BsKanban} from 'react-icons/bs';
+import {BiDollarCircle} from 'react-icons/bi';
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { KanbanStatusArray, statusColors } from "@/app/helpers/constants.js";
-import LeadCard from "@/app/UiComponents/DataViewer/KanbanLeadCard.jsx";
+import {KanbanStatusArray, statusColors} from "@/app/helpers/constants.js";
+import LeadCard from "@/app/UiComponents/DataViewer/leads/KanbanLeadCard.jsx";
+import useDataFetcher from "@/app/helpers/hooks/useDataFetcher.js";
+import FilterSelect from "@/app/UiComponents/formComponents/FilterSelect.jsx";
+import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks.jsx";
+import {FaBusinessTime} from "react-icons/fa";
+import {useAuth} from "@/app/providers/AuthProvider.jsx";
 
 dayjs.extend(relativeTime);
 
@@ -24,7 +22,7 @@ const ItemTypes = {
     CARD: "card",
 };
 
-const ColumnHeader = styled(Box)(({ theme, statusColor }) => ({
+const ColumnHeader = styled(Box)(({theme, statusColor}) => ({
     background: theme.palette.background.paper,
     padding: theme.spacing(2),
     borderRadius: theme.shape.borderRadius,
@@ -44,7 +42,7 @@ const ColumnHeader = styled(Box)(({ theme, statusColor }) => ({
     }
 }));
 
-const StatusChip = styled(Chip)(({ theme, statuscolor }) => ({
+const StatusChip = styled(Chip)(({theme, statuscolor}) => ({
     backgroundColor: `${statuscolor}20`,
     color: statuscolor,
     fontWeight: 600,
@@ -54,7 +52,7 @@ const StatusChip = styled(Chip)(({ theme, statuscolor }) => ({
     }
 }));
 
-const Column = ({ status, leads, movelead, admin,setleads }) => {
+const Column = ({status, leads, movelead, admin, setleads}) => {
     const [, drop] = useDrop({
         accept: ItemTypes.CARD,
         drop: (item) => movelead(item.id, status),
@@ -64,25 +62,24 @@ const Column = ({ status, leads, movelead, admin,setleads }) => {
     const statusColor = statusColors[status];
 
     return (
-          <Paper
+          <Grid
+                size={2}
                 ref={drop}
                 elevation={0}
                 sx={{
                     bgcolor: 'grey.50',
-                    p: 2,
-                    minWidth: 320,
+                    p: 0,
+                    minWidth: 250,
                     height: '100vh',
-                    borderRadius: 2,
+                    borderRadius: 0,
                     display: 'flex',
                     flexDirection: 'column',
-                    border: '1px solid',
-                    borderColor: 'divider',
                 }}
           >
               <ColumnHeader statusColor={statusColor}>
                   <Stack spacing={2}>
                       <Box display="flex" alignItems="center" gap={1}>
-                          <BsKanban size={20} color={statusColor} />
+                          <BsKanban size={20} color={statusColor}/>
                           <Typography variant="h6" color="text.primary" sx={{
                               fontSize: '1.1rem',
                               fontWeight: 600
@@ -98,7 +95,7 @@ const Column = ({ status, leads, movelead, admin,setleads }) => {
                                 size="small"
                           />
                           <Box display="flex" alignItems="center" gap={1}>
-                              <BiDollarCircle size={16} style={{ color: statusColor }} />
+                              <BiDollarCircle size={16} style={{color: statusColor}}/>
                               <Typography
                                     variant="body2"
                                     sx={{
@@ -116,7 +113,6 @@ const Column = ({ status, leads, movelead, admin,setleads }) => {
                       </Box>
                   </Stack>
               </ColumnHeader>
-
               <Box sx={{
                   overflowY: 'auto',
                   flexGrow: 1,
@@ -137,138 +133,110 @@ const Column = ({ status, leads, movelead, admin,setleads }) => {
               }}>
                   <Stack spacing={1}>
                       {leads.map((lead) => (
-                            <LeadCard key={lead.id} lead={lead} movelead={movelead} admin={admin} setleads={setleads} />
+                            <LeadCard key={lead.id} lead={lead} movelead={movelead} admin={admin} setleads={setleads}/>
                       ))}
                   </Stack>
               </Box>
-          </Paper>
+          </Grid>
     );
 };
 
-const KanbanBoard = ({ admin }) => {
-    // ... Rest of the KanbanBoard component remains the same ...
-    const [leads, setleads] = React.useState([
-        {
-            id: 1,
-            client: { name: "Acme Corp" },
-            user: { name: "John Smith" },
-            status: "IN_PROGRESS",
-            price: "15,000.00",
-            callReminders: [
-                {
-                    time: "2024-12-25T10:00:00",
-                    status: "COMPLETED",
-                    reminderReason: "Initial consultation",
-                    callResult: "Positive, interested in enterprise plan",
-                },
-                {
-                    time: "2024-12-28T14:00:00",
-                    status: "IN_PROGRESS",
-                    reminderReason: "Discuss proposal details",
-                }
-            ],
-        },
-        {
-            id: 2,
-            client: { name: "TechStart Solutions" },
-            user: { name: "Sarah Johnson" },
-            status: "NEEDS_IDENTIFIED",
-            price: "8,500.00",
-            callReminders: [
-                {
-                    time: "2024-12-20T11:00:00",
-                    status: "COMPLETED",
-                    reminderReason: "Requirements gathering",
-                    callResult: "Need additional features",
-                },
-                {
-                    time: "2024-12-22T15:30:00",
-                    status: "COMPLETED",
-                    reminderReason: "Feature discussion",
-                    callResult: "Approved feature list",
-                }
-            ],
-        },
-        {
-            id: 3,
-            client: { name: "Global Innovations" },
-            user: { name: "Mike Wilson" },
-            status: "INTERESTED",
-            price: "22,000.00",
-            callReminders: [
-                {
-                    time: "2024-12-26T09:00:00",
-                    status: "IN_PROGRESS",
-                    reminderReason: "Present solution demo",
-                }
-            ],
-        },
-        {
-            id: 4,
-            client: { name: "DataFlow Inc" },
-            user: { name: "Emily Chen" },
-            status: "NEGOTIATING",
-            price: "45,000.00",
-            callReminders: [
-                {
-                    time: "2024-12-15T13:00:00",
-                    status: "COMPLETED",
-                    reminderReason: "Budget discussion",
-                    callResult: "Requesting 10% discount",
-                },
-                {
-                    time: "2024-12-18T16:00:00",
-                    status: "COMPLETED",
-                    reminderReason: "Final negotiation",
-                    callResult: "Agreement on terms",
-                }
-            ],
-        },
-        {
-            id: 5,
-            client: { name: "SmartServe Solutions" },
-            user: { name: "Alex Turner" },
-            status: "CONTACT_INITIATED",
-            price: "12,750.00",
-            callReminders: []
-        },
-        {
-            id: 6,
-            client: { name: "Future Tech Ltd" },
-            user: { name: "David Lee" },
-            status: "IN_PROGRESS",
-            price: "33,200.00",
-            callReminders: [
-                {
-                    time: "2024-12-24T14:00:00",
-                    status: "COMPLETED",
-                    reminderReason: "Initial meeting",
-                    callResult: "Very interested, needs technical review",
-                },
-                {
-                    time: "2024-12-29T11:00:00",
-                    status: "IN_PROGRESS",
-                    reminderReason: "Technical walkthrough",
-                }
-            ],
-        }
-    ]);
+const KanbanBoard = ({admin}) => {
+    const {user} = useAuth()
+    const {
+        data: leads,
+        loading,
+        setData: setleads,
+        setFilters
+    } = useDataFetcher("shared/client-leads/deals" + `?staffId=${user.id}&`, false);
 
     const movelead = (id, newStatus) => {
         setleads((prev) =>
               prev.map((task) =>
-                    task.id === id ? { ...task, status: newStatus } : task
+                    task.id === id ? {...task, status: newStatus} : task
               )
         );
     };
+    const links = [
+        {href: "/dashboard/deals/all", title: "See all deals", icon: <FaBusinessTime/>},
+    ];
+    const rangeTypes = [{id: "WEEK", name: "Week"}, {id: "MONTH", name: "Month"}]
     return (
           <DndProvider backend={HTML5Backend}>
-              <Box
+              <Box px={1.5}>
+                  <Box
+                        sx={{
+                            display: 'flex',
+                            width: '100%',
+                            p: {xs: 1.5, md: 3}, // Added padding
+                            mb: 2, // Margin bottom for spacing from Kanban
+                            backgroundColor: 'background.paper', // Added background
+                            borderRadius: 1, // Rounded corners
+                            boxShadow: 1, // Subtle shadow
+                            gap: 1, // Increased gap
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexDirection: {
+                                xs: 'column',
+                                md: 'row'
+                            }
+                        }}
+                  >
+                      {/* Left side with filters */}
+                      <Box
+                            sx={{
+                                display: 'flex',
+                                gap: 2,
+                                flexWrap: 'wrap',
+                                alignItems: 'center',
+                                width: {
+                                    xs: '100%',
+                                    md: 'auto'
+                                }
+                            }}
+                      >
+
+                          <FilterSelect
+                                options={rangeTypes}
+                                label="Date range"
+                                loading={false}
+                                param="type"
+                                setFilters={setFilters}
+                                withAll={false}
+                          />
+
+                      </Box>
+                      <Box
+                            display="flex" justifyContent="flex-end"
+                            sx={{
+
+                                width: {
+                                    xs: '100%',
+                                    md: 'auto'
+                                },
+                            }}
+                      >
+                          <TabsWithLinks
+                                links={links}
+                                sx={{
+                                    '& .MuiTabs-flexContainer': {
+                                        justifyContent: {
+                                            xs: 'center',
+                                            md: 'flex-end'
+                                        }
+                                    }
+                                }}
+                          />
+                      </Box>
+                  </Box>
+              </Box>
+              <Grid
+                    container
+                    spacing={2}
                     sx={{
-                        display: 'flex',
-                        gap: 2,
                         p: 3,
                         bgcolor: 'grey.100',
+                        flexWrap: "noWrap",
                         overflowX: "auto",
                         '::-webkit-scrollbar': {
                             height: '6px',
@@ -286,17 +254,18 @@ const KanbanBoard = ({ admin }) => {
                         },
                     }}
               >
+
                   {KanbanStatusArray.map((status) => (
                         <Column
                               key={status}
                               status={status}
-                              leads={leads.filter((lead) => lead.status === status)}
+                              leads={loading ? [] : leads.filter((lead) => lead.status === status)}
                               movelead={movelead}
                               admin={admin}
                               setleads={setleads}
                         />
                   ))}
-              </Box>
+              </Grid>
           </DndProvider>
     );
 };

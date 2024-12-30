@@ -4,6 +4,7 @@ import ToastProvider from "@/app/providers/ToastLoadingProvider";
 import AuthProvider from "@/app/providers/AuthProvider";
 import MUIContextProvider from "@/app/providers/MUIContext";
 import DotsLoader from "@/app/UiComponents/feedback/loaders/DotsLoading";
+import MuiAlertProvider from "@/app/providers/MuiAlert.jsx";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -27,6 +28,7 @@ export default function RootLayout({children}) {
         <body
               className={`${geistSans.variable} ${geistMono.variable} `}
         >
+                <MuiAlertProvider>
         <MUIContextProvider>
           <ToastProvider>
             <AuthProvider>
@@ -35,6 +37,7 @@ export default function RootLayout({children}) {
             </AuthProvider>
           </ToastProvider>
         </MUIContextProvider>
+                </MuiAlertProvider>
         </body>
         </html>
   );

@@ -1,4 +1,4 @@
-import KanbanBoard from "@/app/UiComponents/DataViewer/ClientLeadKanban.jsx";
+import KanbanBoard from "@/app/UiComponents/DataViewer/leads/ClientLeadKanban.jsx";
 
 export default function page(){
     return <KanbanBoard />

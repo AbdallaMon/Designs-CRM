@@ -1,6 +1,11 @@
 import {Router} from "express";
 import {getCurrentUser, getPagination, verifyTokenAndHandleAuthorization} from "../services/utility.js";
-import {assignLeadToAUser, getClientLeads} from "../services/sharedServices.js";
+import {
+    assignLeadToAUser, getClientLeadDetails,
+    getClientLeads,
+    getClientLeadsByDateRange,
+    markClientLeadAsConverted
+} from "../services/sharedServices.js";
 
 const router = Router();
 
@@ -23,13 +28,48 @@ router.get('/client-leads', async (req, res) => {
         res.status(500).json({ message: 'An error occurred while fetching client leads' });
     }
 });
+router.get('/client-leads/deals', async (req, res) => {
+    try {
+        const searchParams = req.query;
+
+        const clientLeads = await getClientLeadsByDateRange({ searchParams });
+
+        res.status(200).json({data:clientLeads});
+    } catch (error) {
+        console.error('Error fetching client leads:', error);
+        res.status(500).json({ message: 'An error occurred while fetching client leads' });
+    }
+});
+router.get('/client-leads/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const clientLeadDetails = await getClientLeadDetails(Number(id));
+        res.status(200).json({data:clientLeadDetails});
+    } catch (error) {
+        console.error('Error fetching client lead details:', error);
+        res.status(500).json({
+            message: error.message || 'An error occurred while fetching client lead details.',
+        });
+    }
+});
+
 router.put('/client-leads', async (req, res) => {
     try {
         const clientLead=req.body
         const currentUser=await  getCurrentUser(req)
-
-        const result = await assignLeadToAUser(Number(clientLead.id),Number(currentUser.id));
+        const result = await assignLeadToAUser(Number(clientLead.id),Number(currentUser.id),clientLead.overdue);
         res.status(200).json({data:result,message:"Deal assigned to you successfully"});
+    } catch (error) {
+        console.error('Error assigning client leads:', error);
+        res.status(500).json({ message: 'An error occurred while assigning client leads' });
+    }
+});
+router.put('/client-leads/convert', async (req, res) => {
+    try {
+        const body=req.body
+        const result = await markClientLeadAsConverted(Number(body.id),body.reasonToConvert,"ON_HOLD");
+        res.status(200).json({data:result,message:"Deal are now in the converted list"});
     } catch (error) {
         console.error('Error assigning client leads:', error);
         res.status(500).json({ message: 'An error occurred while assigning client leads' });
