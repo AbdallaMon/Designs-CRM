@@ -11,7 +11,6 @@ const NewLeadsList = () => {
     useEffect(()=>{
         async function fetchData(){
             const request=await getData({url:`shared/dashboard/latest-leads?`,setLoading})
-            console.log(request.data)
             if(request)setNewLeads(request.data)
         }
         fetchData()
@@ -51,6 +50,7 @@ const NewLeadsList = () => {
                                       label={lead.status}
                                       color="secondary"
                                       size="small"
+                                      sx={{color:"white"}}
                                 />
                             </ListItem>
                       ))}

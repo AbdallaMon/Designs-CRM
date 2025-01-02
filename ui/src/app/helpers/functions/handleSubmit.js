@@ -7,11 +7,11 @@ export async function handleRequestSubmit(
       path,
       isFileUpload = false,
       toastMessage = "Sending...",
-      setRedirect, method = "POST"
+      setRedirect, method = "POST",header
 ) {
     const toastId = toast.loading(toastMessage);
     const body = isFileUpload ? data : JSON.stringify(data);
-    const headers = isFileUpload ? {} : {"Content-Type": "application/json"};
+    const headers = header? {"Content-Type":header}:isFileUpload ? {} : {"Content-Type": "application/json"};
     setLoading(true);
     const id = toastId;
     try {

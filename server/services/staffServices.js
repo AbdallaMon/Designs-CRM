@@ -33,16 +33,7 @@ export async function createCallReminder({ clientLeadId,userId, time, reminderRe
     if (formattedTime.isBefore(dayjs())) {
         throw new Error('The reminder time must be in the future.');
     }
-    const inProgressReminder = await prisma.callReminder.findFirst({
-        where: {
-            clientLeadId,
-            status: "IN_PROGRESS",
-        },
-    });
 
-    if (inProgressReminder) {
-        throw new Error('Cannot create a new call reminder while there is an IN_PROGRESS reminder.');
-    }
     formattedTime=formattedTime.toISOString()
 
     const newReminder = await prisma.callReminder.create({
@@ -65,9 +56,72 @@ export async function createCallReminder({ clientLeadId,userId, time, reminderRe
         },
 
     });
+    let latestTwo= await prisma.callReminder.findMany({
+            where: {
+                clientLeadId,
+            },
+                orderBy: { time: 'desc' },
+                take: 2,
+        })
 
-    return newReminder;
+ return {latestTwo,newReminder}
 }
+export async function createPriceOffer({ clientLeadId, userId,priceOffer }) {
+    if(priceOffer.minPrice>priceOffer.maxPrice){
+        throw new Error('End price must be bigger or equal to start price');
+
+    }
+    const newPrice = await prisma.PriceOffers.create({
+        data: {
+            clientLeadId,
+            userId,
+            minPrice:Number(priceOffer.minPrice),
+            maxPrice:Number(priceOffer.maxPrice),
+        },
+        select:{
+            id:true,
+            createdAt:true,
+            minPrice:true,
+            maxPrice:true,
+            user:{
+                select:{
+                    name:true
+                }
+            }
+        }
+    });
+    return newPrice;
+}
+export async function createFile({ clientLeadId,url,name,description,userId}) {
+
+    if (!url||!name||!description) {
+        throw new Error('Fill all the fields please');
+    }
+const data=        {
+        name,
+              clientLeadId,
+              url,
+              description,
+    }
+    if(userId){
+        data.userId=Number(userId)
+    }
+    const file = await prisma.file.create({
+        data,
+        select:{
+            id:true,
+            createdAt:true,
+            user:{
+                select:{
+                    name:true
+                }
+            }
+        }
+    });
+
+    return {...file,name,url,description,isUserFile:userId!==null};
+}
+
 
 export async function updateCallReminderStatus({ reminderId, status, callResult = null }) {
 
@@ -94,11 +148,16 @@ export async function updateCallReminderStatus({ reminderId, status, callResult 
     return updatedReminder;
 }
 
-export async function updateClientLeadStatus({ clientLeadId, status }) {
+export async function updateClientLeadStatus({ clientLeadId, status,price }) {
+    const data={
+        status,updatedAt:new Date()
+    }
+    if(price){
+        data.averagePrice=price
+    }
     await prisma.clientLead.update({
         where: { id: clientLeadId },
-        data: { status,updatedAt:new Date() },
-
+        data
     });
 }
 

@@ -124,6 +124,7 @@ export async function getClientLeadsByDateRange({ searchParams }) {
             assignedTo: { select: { name: true } },
             status: true,
             price: true,
+            averagePrice:true,
             selectedCategory:true,
             consultationType:true,
             designType:true,
@@ -163,13 +164,33 @@ export async function getClientLeadDetails(clientLeadId) {
             consultationType:true,
             status: true,
             price: true,
+            averagePrice:true,
             files: {
                 select: {
                     id: true,
                     name: true,
                     url: true,
                     createdAt: true,
+                    description:true,
+                    isUserFile:true,
+                    user:{
+                        select: { name: true },
+                    }
                 },
+            },
+            priceOffers:{
+                orderBy: {  createdAt: 'desc' },
+                select:{
+                id:true,
+                minPrice:true,
+                maxPrice:true,
+                userId: true,
+                user: {
+                    select: { name: true },
+                },
+                createdAt: true,
+                }
+
             },
             notes: {
                 orderBy: {  createdAt: 'desc' },
@@ -321,7 +342,6 @@ export const getKeyMetrics = async (searchParams) => {
 
             },
         });
-console.log(successLeadsCount,"successLeadsCount")
         const nonSuccessLeadsCount = await prisma.clientLead.count({
             where: {
                  ...staffFilter
@@ -669,7 +689,7 @@ export const getPerformanceMetrics = async (searchParams) => {
         ).size;
 
         // Fetch meetings
-        const meetings = await prisma.contactClient.count({
+        const meetings = await prisma.callReminder.count({
             where: {
                 ...staffFilter,
                 time: {

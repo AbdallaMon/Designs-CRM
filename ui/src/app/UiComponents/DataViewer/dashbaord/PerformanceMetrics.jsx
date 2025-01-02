@@ -20,7 +20,6 @@ const PerformanceMetricsCard = ({staff}) => {
     useEffect(()=>{
         async function fetchData(){
             const request=await getData({url:`shared/dashboard/week-performance?${staff&&"staffId="+user.id}&`,setLoading})
-            console.log(request.data,"")
             if(request)setMetrics(request.data)
         }
         fetchData()

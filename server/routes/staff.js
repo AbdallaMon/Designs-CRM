@@ -1,12 +1,16 @@
 import {Router} from "express";
 import {verifyTokenAndHandleAuthorization} from "../services/utility.js";
 import {
-    createCallReminder,
-    createNote, getCallReminders,
+    createCallReminder, createFile,
+    createNote, createPriceOffer, getCallReminders,
     updateCallReminderStatus,
     updateClientLeadStatus
 } from "../services/staffServices.js";
-import {getDashboardLeadStatusData} from "../services/sharedServices.js";
+import { Readable } from 'stream';
+import FormData from 'form-data';
+
+import axios from "axios";
+import multer from "multer";
 
 const router = Router();
 
@@ -36,6 +40,18 @@ router.post('/client-leads/:id/call-reminders', async (req, res) => {
         });
     }
 });
+router.post('/client-leads/:id/price-offers', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const callReminder = await createPriceOffer({clientLeadId:Number(id),...req.body})
+        res.status(200).json({data:callReminder,message:"Price offer added successfully"});
+    } catch (error) {
+        console.error('Error Creating new price offer:', error);
+        res.status(500).json({
+            message: error.message || 'An error occurred while creating call reminder.',
+        });
+    }
+});
 router.put('/client-leads/call-reminders/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -50,16 +66,31 @@ router.put('/client-leads/call-reminders/:id', async (req, res) => {
 router.put('/client-leads/:id/status', async (req, res) => {
     try {
         const { id } = req.params;
-        const { status } = req.body;
+        const { status,price,updatePrice } = req.body;
         await updateClientLeadStatus({
             clientLeadId: Number(id),
             status,
+            price
         });
 
-        res.status(200).json({message:"Status changed successfully"})
+        res.status(200).json({message:updatePrice?"Price updated successfully":"Status changed successfully"})
     } catch (error) {
         console.error('Error updating client lead status:', error);
         res.status(500).json({ message: 'Failed to update client lead status.' });
+    }
+});
+router.post('/client-leads/:id/files', async (req, res) => {
+    try {
+        const { id } = req.params;
+        console.log(req.body,"req.body")
+        await createFile({
+            clientLeadId: Number(id),
+            ...req.body
+        });
+        res.status(200).json({message:"File Saved successfully"})
+    } catch (error) {
+        console.error('Error updating client lead status:', error);
+        res.status(500).json({ message: 'Failed to save the file.' });
     }
 });
 router.get('/dashboard/latest-calls', async (req, res) => {
@@ -75,4 +106,7 @@ router.get('/dashboard/latest-calls', async (req, res) => {
         });
     }
 });
+
+
+
 export default router

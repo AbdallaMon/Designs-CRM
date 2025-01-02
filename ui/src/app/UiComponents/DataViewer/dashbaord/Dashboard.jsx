@@ -23,7 +23,7 @@ import RecentActivities from "@/app/UiComponents/DataViewer/dashbaord/RecenteAct
 
 const Dashboard = ({staff}) => {
     return (
-          <Box sx={{ padding: {xs:2,md:4}, backgroundColor: '#f0f2f5', minHeight: '100vh' }}>
+          <Box sx={{ padding: {xs:2,md:4}, backgroundColor: '#f0f2f5', minHeight: '100vh',mb:"-60px",maxWidth:"1800px",mx:"auto" }}>
               <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold', color: '#333' }}>
                   Dashboard
               </Typography>

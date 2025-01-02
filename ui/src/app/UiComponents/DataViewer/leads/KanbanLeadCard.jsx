@@ -15,7 +15,6 @@ import {
     Typography,
 } from "@mui/material";
 import {
-    AiOutlineClockCircle as ClockIcon,
     AiOutlineDollar as MoneyIcon,
     AiOutlineEllipsis as MoreVertIcon,
     AiOutlineEye as PreviewIcon,
@@ -35,11 +34,11 @@ import {
     KanbanStatusArray,
     statusColors
 } from "@/app/helpers/constants.js";
-import PreviewDialog from "@/app/UiComponents/DataViewer/leads/PreviewLead.jsx";
+import PreviewDialog,  from "@/app/UiComponents/DataViewer/leads/PreviewLead.jsx";
 import {CallResultDialog, NewCallDialog, NewNoteDialog} from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
-import {calculateTimeLeft, hideMoreData} from "@/app/helpers/functions/utility.js";
-import {BsEye} from "react-icons/bs";
+import { hideMoreData} from "@/app/helpers/functions/utility.js";
 import {FaEye} from "react-icons/fa";
+import {InProgressCall} from "@/app/UiComponents/DataViewer/leads/InProgressCall.jsx";
 
 const ItemTypes = {
     CARD: "card",
@@ -73,7 +72,6 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
         item: {id: lead.id, status: lead.status},
     });
     const [menuAnchorEl, setMenuAnchorEl] = React.useState(null);
-    const [timeLeft, setTimeLeft] = React.useState('');
     const [previewDialogOpen, setPreviewDialogOpen] = React.useState(false);
 
     const handleMenuClick = (event) => {
@@ -91,42 +89,17 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
     // Process call reminders
     const getCallInfo = React.useCallback((callReminders) => {
         if (!callReminders || callReminders.length === 0) {
-            return {lastCall: null, nextCall: null};
+            return []
         }
 
         const sortedCalls = [...callReminders].sort((a, b) =>
               new Date(b.time) - new Date(a.time)
         );
-
-        const lastTwoCalls = sortedCalls.slice(0, 2);
-
-        if (lastTwoCalls.length === 1) {
-            if (lastTwoCalls[0].status === 'IN_PROGRESS') {
-                return {lastCall: null, nextCall: lastTwoCalls[0]};
-            }
-            return {lastCall: lastTwoCalls[0], nextCall: null};
-        }
-
-        if (lastTwoCalls[0].status === 'IN_PROGRESS') {
-            return {lastCall: lastTwoCalls[1], nextCall: lastTwoCalls[0]};
-        }
-
-        return {lastCall: lastTwoCalls[0], nextCall: null};
+        return sortedCalls
     }, []);
 
-    const {lastCall, nextCall} = getCallInfo(lead.callReminders);
+    const latestCalls= getCallInfo(lead.callReminders);
 
-    // Update timer - Fixed version
-    React.useEffect(() => {
-        if (!nextCall?.time) return;
-
-
-        calculateTimeLeft(setTimeLeft,nextCall);
-
-        const timer = setInterval(()=>calculateTimeLeft(setTimeLeft,nextCall), 1000);
-
-        return () => clearInterval(timer);
-    }, [nextCall]);
 
     return (
           <div ref={drag}>
@@ -177,48 +150,40 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
                             </Box>
                       )}
                       <Stack spacing={2}>
-                          {nextCall && (
-                                <CallInfoBox variant="next">
-                                    <Box display="flex" alignItems="center" mb={1}>
-                                        <ClockIcon fontSize="small" sx={{mr: 1}}/>
-                                        <Typography variant="subtitle2" color="primary">
-                                            Next Call in {timeLeft}
-                                        </Typography>
-                                    </Box>
-                                    <Box pl={3}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            {dayjs(nextCall.time).format("MMM D, YYYY HH:mm")}
-                                        </Typography>
-                                        <Typography variant="body2">
-                                            Reason: {hideMoreData(nextCall.reminderReason) || "N/A"}
-                                        </Typography>
-                                        {!admin&&
-                                        <CallResultDialog setleads={setleads} lead={lead} call={nextCall}
-                                                          type={"button"} text={"Update call"}>
-                                        </CallResultDialog>
+                          {latestCalls?.map((call,index)=>{
+                              return(
+                                    <CallInfoBox key={index} variant={call.status==="IN_PROGRESS"&&"next"}>
+                                        {call.status==="IN_PROGRESS"?
+                                                  <InProgressCall call={call} simple={true}/>
+                                              :
+                                              <Box display="flex" alignItems="center" mb={1}>
+                                                  <PhoneIcon fontSize="small" sx={{mr: 1}}/>
+                                                  <Typography variant="subtitle2">Last Call</Typography>
+                                              </Box>
                                         }
-                                    </Box>
-                                </CallInfoBox>
-                          )}
-                          {lastCall && (
-                                <CallInfoBox>
-                                    <Box display="flex" alignItems="center" mb={1}>
-                                        <PhoneIcon fontSize="small" sx={{mr: 1}}/>
-                                        <Typography variant="subtitle2">Last Call</Typography>
-                                    </Box>
-                                    <Box pl={3}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            {dayjs(lastCall.time).format("MMM D, YYYY HH:mm")}
-                                        </Typography>
-                                        <Typography  variant="body2" color="text.secondary" my={1.2}>
-                                            Reason: {hideMoreData(lastCall.reminderReason)}
-                                        </Typography>
-                                        <Typography variant="body2">
-                                            Result: {hideMoreData(lastCall.callResult) || "N/A"}
-                                        </Typography>
-                                    </Box>
-                                </CallInfoBox>
-                          )}
+                                        <Box pl={3}>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {dayjs(call.time).format("MMM D, YYYY HH:mm")}
+                                            </Typography>
+                                            <Typography variant="body2">
+                                                Reason: {hideMoreData(call.reminderReason) || "N/A"}
+                                            </Typography>
+                                            {call.result&&
+                                                  <Typography variant="body2">
+                                                      Result: {hideMoreData(call.callResult) || "N/A"}
+                                                  </Typography>
+                                            }
+                                            {(!admin&&call.status==="IN_PROGRESS")&&
+                                                  <CallResultDialog setleads={setleads} lead={lead} call={call}
+                                                                    type={"button"} text={"Update call"}>
+                                                  </CallResultDialog>
+                                            }
+                                        </Box>
+                                    </CallInfoBox>
+                              )
+                          })}
+
+
 
                       </Stack>
                   </CardContent>

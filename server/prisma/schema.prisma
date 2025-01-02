@@ -171,14 +171,13 @@ model ClientLead {
   emirate            Emirate?
   price              String?
   averagePrice  Decimal   @db.Decimal(10, 2)
-  PriceRanges PriceRange[]
+  priceOffers PriceOffers[]
 
   status             ClientLeadStatus @default(NEW)
-  files              File[]           @relation("files")
+  files              File[]
   notes              Note[]
   notifications      Notification[]
   callReminders      CallReminder[]   @relation("clientLeadCallReminders")
-  clientContacts      ContactClient[]   @relation("clientLeadContact")
   assignedAt         DateTime?
   reasonToConvert String?
   createdAt          DateTime         @default(now())
@@ -188,7 +187,7 @@ model ClientLead {
   @@index([clientId])
   @@index([userId])
 }
-model PriceRange {
+model PriceOffers {
   id        Int       @id @default(autoincrement())
   clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
   clientLeadId Int
@@ -201,17 +200,7 @@ model PriceRange {
 
   @@index([clientLeadId])
 }
-model ContactClient {
-  id            Int              @id @default(autoincrement())
-  clientLead    ClientLead       @relation(fields: [clientLeadId], references: [id], name: "clientLeadContact")
-  clientLeadId  Int
-  time          DateTime
-  contactResult    String?           @db.Text
-  user    User              @relation(fields: [userId], references: [id])
-  userId        Int
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  }
+
 model CallReminder {
   id            Int              @id @default(autoincrement())
   clientLead    ClientLead       @relation(fields: [clientLeadId], references: [id], name: "clientLeadCallReminders")
@@ -235,11 +224,12 @@ model File {
  name         String     @db.VarChar(255)
  url          String     @db.VarChar(255)
  description  String?    @db.Text
- clientLead    ClientLead @relation("files", fields: [clientLeadId], references: [id])
+ clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
  clientLeadId Int
  isUserFile   Boolean    @default(true)
  createdAt    DateTime   @default(now())
-
+ user    User              @relation(fields: [userId], references: [id])
+ userId        Int
  @@index([clientLeadId, isUserFile])
 }
 
@@ -254,11 +244,11 @@ model User {
  notifications Notification[]
  notes         Note[]
  logs          Log[]
- PriceRanges PriceRange[]
+ priceOffers PriceOffers[]
  createdAt     DateTime       @default(now())
  updatedAt     DateTime       @updatedAt
  callReminders CallReminder[]
- clientContacts ContactClient[]
+ files File[]
  @@index([email])
 }
 

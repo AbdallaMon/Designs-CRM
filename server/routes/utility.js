@@ -1,7 +1,7 @@
 import prisma from '../prisma/prisma.js';
 import express from 'express';
 import {
-    searchData,
+    searchData, uploadFiles,
 
     verifyTokenUsingReq,
 } from '../services/utility.js';
@@ -18,5 +18,8 @@ router.get('/search', verifyTokenUsingReq, async (req, res) => {
         console.error(`Error fetching data:`, error);
         res.status(500).json({message: `حدثت مشكلة اثناء جلب البيانات: ${error.message}`});
     }
+});
+router.post('/upload', verifyTokenUsingReq, async (req, res) => {
+ await uploadFiles(req, res);
 });
 export default router

@@ -19,6 +19,8 @@ import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit.js";
 import {useAuth} from "@/app/providers/AuthProvider.jsx";
 import {useToastContext} from "@/app/providers/ToastLoadingProvider.js";
 import {IoMdCall} from "react-icons/io";
+import MuiFileField from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
+import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
 
 export const CallResultDialog = ({lead, setleads, call,text="Update call result", type = "button", children, setCallReminders}) => {
     const [result, setResult] = useState('');
@@ -135,26 +137,26 @@ export const NewCallDialog = ({lead, setleads, type = "button", children, setCal
     function handleOpen() {
             setOpen(true)
     }
-function onClose(){
+
+    function onClose(){
     setCallData({time: '', reminderReason: ''})
         setOpen(false)
 }
     const handleAddNewCall = async () => {
 
-
         const request = await handleRequestSubmit({
             reminderReason: callData.reminderReason,
             time: callData.time,
-            userId: user.id
+            userId: user.id,
         }, setLoading, `staff/client-leads/${lead.id}/call-reminders`, false, "Creating")
         if (request.status === 200) {
             if (setCallReminders) {
-                setCallReminders((oldCalls) => [request.data,...oldCalls])
+                setCallReminders((oldCalls) => [request.data.newReminder,...oldCalls])
             }
             if (setleads) {
                 setleads((oldLeads) => oldLeads.map((l) => {
                     if (l.id === lead.id) {
-                        l.callReminders = [request.data, ...l.callReminders]
+                            l.callReminders =request.data.latestTwo
                     }
                     return l
                 }))
@@ -231,7 +233,7 @@ function OpenButton({handleOpen,children}){
         >{children}</Button>
     </>
 }
-export const NewNoteDialog = ({lead, setleads, setNotes, type="button", children}) => {
+export const NewNoteDialog = ({lead,  setNotes, type="button", children}) => {
     const [open, setOpen] = useState(false)
     const {setAlertError} = useAlertContext()
     const {user} = useAuth()
@@ -254,14 +256,6 @@ export const NewNoteDialog = ({lead, setleads, setNotes, type="button", children
         if (request.status === 200) {
             if (setNotes) {
                 setNotes((oldNotes) => [request.data,...oldNotes])
-            }
-            if (setleads) {
-                setleads((oldLeads) => oldLeads.map((l) => {
-                    if (l.id === lead.id) {
-                        l.notes = [request.data, ...l.notes]
-                    }
-                    return l
-                }))
             }
             setNewNote("")
             setOpen(false)
@@ -331,3 +325,179 @@ export const NewNoteDialog = ({lead, setleads, setNotes, type="button", children
           </>
     )
 }
+export const AddPriceOffers = ({lead,  type = "button", children, setPriceOffers}) => {
+    const [priceOffer, setPriceOffer] = useState({minPrice: 0, maxPrice: 0});
+    const [open, setOpen] = useState(false)
+    const {user} = useAuth()
+    const {setLoading} = useToastContext()
+    function handleOpen() {
+        setOpen(true)
+    }
+    function onClose(){
+        setPriceOffer({minPrice: 0, maxPrice: 0})
+        setOpen(false)
+    }
+    const handleAddNewPriceOffer = async () => {
+        const request = await handleRequestSubmit({
+            priceOffer,
+            userId: user.id,
+        }, setLoading, `staff/client-leads/${lead.id}/price-offers`, false, "Adding")
+        if (request.status === 200) {
+            if (setPriceOffers) {
+                setPriceOffers((oldPrices) => [request.data,...oldPrices])
+            }
+            setOpen(false)
+        }
+    };
+
+    return (
+          <>
+              {type === "button" ?
+                    <Button
+                          onClick={handleOpen}
+                          variant="contained"
+                          startIcon={<BsPlus size={20}/>}
+                          sx={{alignSelf: 'flex-start'}}
+                    >
+                        Add New Offer
+                    </Button>
+                    :  <OpenButton handleOpen={handleOpen}>{children}</OpenButton>
+              }
+              {open &&
+                    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+                        <DialogTitle sx={{borderBottom: 1, borderColor: 'divider'}}>
+                            New Price Offer
+                        </DialogTitle>
+                        <DialogContent>
+                            <Stack spacing={3} sx={{mt: 2}}>
+                                <TextField
+                                      type="number"
+                                      label="Start Price"
+                                      value={priceOffer.minPrice}
+                                      onChange={(e) => setPriceOffer({...priceOffer, minPrice: e.target.value})}
+                                      fullWidth
+                                      InputLabelProps={{shrink: true}}
+                                />
+                                <TextField
+                                      type="number"
+                                      label="End Price"
+                                      value={priceOffer.maxPrice}
+                                      onChange={(e) => setPriceOffer({...priceOffer, maxPrice: e.target.value})}
+                                      fullWidth
+                                      InputLabelProps={{shrink: true}}
+
+                                />
+                            </Stack>
+                        </DialogContent>
+                        <DialogActions sx={{p: 2, borderTop: 1, borderColor: 'divider'}}>
+                            <Button onClick={onClose} variant="outlined">Cancel</Button>
+                            <Button
+                                  onClick={handleAddNewPriceOffer}
+                                  variant="contained"
+                                  color="primary"
+                            >
+                                Add
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
+              }
+          </>
+    );
+};
+export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
+    const [fileData, setFileData] = useState({ name: "", file: "", description: "" });
+    const [open, setOpen] = useState(false);
+    const { user } = useAuth();
+    const { setLoading } = useToastContext();
+
+    function handleOpen() {
+        setOpen(true);
+    }
+
+    function onClose() {
+        setFileData({ name: "", file: "", description: "" });
+        setOpen(false);
+    }
+const {setAlertError}=useAlertContext()
+    const handleAddNewFile = async () => {
+        if(!fileData.name||!fileData.file||!fileData.description){
+            setAlertError("You must fill all the inputs")
+        }
+        const formData = new FormData();
+        formData.append('file', fileData.file);
+        const fileUpload=await handleRequestSubmit(formData,setLoading,"utility/upload",true,"Uploading file")
+        if(fileUpload.status===200){
+   const data={...fileData,url:fileUpload.fileUrls.file[0],userId:user.id}
+        const request = await handleRequestSubmit(
+              data,
+              setLoading,
+              `staff/client-leads/${lead.id}/files`,
+              false,
+              "Adding Data"
+              ,false,"POST",
+        );
+        if (request.status === 200) {
+            if (setFiles) {
+                setFiles((oldFiles) => [request.data, ...oldFiles]);
+            }
+            setOpen(false);
+        }
+        }
+    };
+
+    return (
+          <>
+              {type === "button" ? (
+                    <Button
+                          onClick={handleOpen}
+                          variant="contained"
+                          startIcon={<BsPlus size={20} />}
+                          sx={{ alignSelf: "flex-start" }}
+                    >
+                        Add New File
+                    </Button>
+              ) : (
+                    <OpenButton handleOpen={handleOpen}>{children}</OpenButton>
+              )}
+              {open && (
+                    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+                        <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>
+                            New File
+                        </DialogTitle>
+                        <DialogContent>
+                            <Stack spacing={3} sx={{ mt: 2 }}>
+                                <TextField
+                                      label="File Name"
+                                      value={fileData.name}
+                                      onChange={(e) => setFileData({ ...fileData, name: e.target.value })}
+                                      fullWidth
+                                      InputLabelProps={{ shrink: true }}
+                                />
+                                <TextField
+                                      label="Description"
+                                      value={fileData.description}
+                                      onChange={(e) => setFileData({ ...fileData, description: e.target.value })}
+                                      fullWidth
+                                      multiline
+                                      rows={3}
+                                      InputLabelProps={{ shrink: true }}
+                                />
+                                <SimpleFileInput label="File" id="file"  setData={setFileData} variant="outlined" />
+                            </Stack>
+                        </DialogContent>
+                        <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
+                            <Button onClick={onClose} variant="outlined">Cancel</Button>
+                            <Button
+                                  onClick={handleAddNewFile}
+                                  variant="contained"
+                                  color="primary"
+                                  disabled={!fileData.name||!fileData.file||!fileData.description}
+                            >
+                                Add
+                            </Button>
+                        </DialogActions>
+                    </Dialog>
+              )}
+          </>
+    );
+};

@@ -1,14 +1,14 @@
 "use client"
-import React from "react";
+import React, {useState} from "react";
 import {DndProvider, useDrop} from "react-dnd";
 import {HTML5Backend} from "react-dnd-html5-backend";
-import {Box, Chip, Grid2 as Grid, Stack, Typography,} from "@mui/material";
+import {Box, Button, Chip, Grid2 as Grid, Modal, Stack, TextField, Typography,} from "@mui/material";
 import {styled} from "@mui/material/styles";
 import {BsKanban} from 'react-icons/bs';
 import {BiDollarCircle} from 'react-icons/bi';
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import {KanbanStatusArray, statusColors} from "@/app/helpers/constants.js";
+import {KanbanStatusArray, simpleModalStyle, statusColors} from "@/app/helpers/constants.js";
 import LeadCard from "@/app/UiComponents/DataViewer/leads/KanbanLeadCard.jsx";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher.js";
 import FilterSelect from "@/app/UiComponents/formComponents/FilterSelect.jsx";
@@ -18,6 +18,7 @@ import {useAuth} from "@/app/providers/AuthProvider.jsx";
 import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit.js";
 import {useToastContext} from "@/app/providers/ToastLoadingProvider.js";
 import {useAlertContext} from "@/app/providers/MuiAlert.jsx";
+import {FinalizeModal} from "@/app/UiComponents/DataViewer/leads/FinalizeModal.jsx";
 
 dayjs.extend(relativeTime);
 
@@ -159,16 +160,23 @@ const KanbanBoard = ({admin}) => {
         setData: setleads,
         setFilters
     } = useDataFetcher("shared/client-leads/deals" + `${!admin?'?staffId='+user.id+"&":""}`, false);
+    const [finalizeModel,setFinalizeModel]=useState(false)
+    const [currentId,setCurrentId]=useState(null)
 const {setLoading}=useToastContext()
     const movelead =async (id, newStatus) => {
     if(admin)return
+        if(newStatus==="FINALIZED"){
+            setCurrentId(id)
+            setFinalizeModel(true)
+            return
+        }
         const request = await handleRequestSubmit({status: newStatus}, setLoading, `staff/client-leads/${id}/status`, false, "Updating",false, "PUT")
-if(request.status===200) {
-    setleads((prev) =>
-          prev.map((lead) =>
-                lead.id === id ? {...lead, status: newStatus} : lead
-          )
-    );
+            if(request.status===200) {
+                setleads((prev) =>
+                      prev.map((lead) =>
+                            lead.id === id ? {...lead, status: newStatus} : lead
+                      )
+                );
 }
     };
     const links = [
@@ -177,6 +185,7 @@ if(request.status===200) {
     const rangeTypes = [{id: "WEEK", name: "Week"}, {id: "MONTH", name: "Month"}]
     return (
           <DndProvider backend={HTML5Backend}>
+<FinalizeModal open={finalizeModel} setOpen={setFinalizeModel} id={currentId} setId={setCurrentId} setleads={setleads}/>
               <Box px={1.5}>
                   <Box
                         sx={{
@@ -281,5 +290,4 @@ if(request.status===200) {
           </DndProvider>
     );
 };
-
 export default KanbanBoard;
