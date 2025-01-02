@@ -92,7 +92,7 @@ async function main() {
     // Create users
     await prisma.user.create({
         data: {
-            email: 'abdotlos60@gmal.com',
+            email: 'abdotlos60@gmail.com',
             name: 'Admin User',
             password: await bcrypt.hash('01127943935ASDf', 10),
             role: 'ADMIN',
@@ -124,6 +124,7 @@ async function main() {
             selectedCategory: 'CONSULTATION',
             consultationType: 'ROOM',
             price: "100",
+            averagePrice:100,
             status: 'NEW',
         },
     });
@@ -137,6 +138,7 @@ async function main() {
             designItemType: 'UNDER_CONSTRUCTION',
             emirate: 'DUBAI',
             price: "3000 - 4000",
+            averagePrice:3500,
             status: 'IN_PROGRESS',
         },
     });
@@ -150,6 +152,7 @@ async function main() {
             designItemType: 'RETAIL_SPACE',
             emirate: 'ABU_DHABI',
             price: "4500 - 7500",
+            averagePrice:6000,
             status: 'NEW',
         },
     });
@@ -162,6 +165,8 @@ async function main() {
                 consultationType: 'ROOM',
                 price: '1000',
                 status: 'NEW',
+                averagePrice:1000,
+
                 assignedAt: new Date(),
             },
         }),
@@ -174,6 +179,7 @@ async function main() {
                 designItemType: 'UNDER_CONSTRUCTION',
                 emirate: 'DUBAI',
                 price: '3000 - 4000',
+                averagePrice:3500,
                 status: 'IN_PROGRESS',
                 assignedAt: new Date(),
             },
@@ -187,6 +193,7 @@ async function main() {
                 designItemType: 'RETAIL_SPACE',
                 emirate: 'ABU_DHABI',
                 price: '4500 - 7500',
+                averagePrice:6000,
                 status: 'NEW',
                 assignedAt: new Date(),
             },
@@ -198,6 +205,7 @@ async function main() {
                 selectedCategory: 'CONSULTATION',
                 consultationType: 'CITY_VISIT',
                 price: '2000',
+                averagePrice:2000,
                 status: 'NEW',
                 assignedAt: new Date(),
             },
@@ -211,6 +219,7 @@ async function main() {
                 designItemType: 'OCCUPIED_VILLA',
                 emirate: 'SHARJAH',
                 price: '5000 - 6000',
+                averagePrice:5500,
                 status: 'IN_PROGRESS',
                 assignedAt: new Date(),
             },
@@ -224,6 +233,7 @@ async function main() {
                 designItemType: 'HOTEL',
                 emirate: 'FUJAIRAH',
                 price: '8000 - 10000',
+                averagePrice:9000,
                 status: 'NEGOTIATING',
                 assignedAt: new Date(),
             },
@@ -235,6 +245,7 @@ async function main() {
                 selectedCategory: 'CONSULTATION',
                 consultationType: 'BLUEPRINT',
                 price: '1500',
+                averagePrice:1500,
                 status: 'IN_PROGRESS',
                 assignedAt: new Date(),
             },
@@ -248,6 +259,7 @@ async function main() {
                 designItemType: 'MIXED_USE',
                 emirate: 'RAS_AL_KHAIMAH',
                 price: '7000 - 9000',
+                averagePrice:8000,
                 status: 'NEW',
                 assignedAt: new Date(),
             },

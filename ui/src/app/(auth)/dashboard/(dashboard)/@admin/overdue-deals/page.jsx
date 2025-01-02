@@ -1,18 +1,13 @@
 "use client";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
-import {useToastContext} from "@/app/providers/ToastLoadingProvider";
 import {Box} from "@mui/material";
 
 import React from "react";
-import {useAuth} from "@/app/providers/AuthProvider.jsx";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
 import {ConsultationType, DesignItemType, DesignType, Emirate, LeadCategory} from "@/app/helpers/constants.js";
 import FilterSelect from "@/app/UiComponents/formComponents/FilterSelect.jsx";
 import {enumToKeyValueArray} from "@/app/helpers/functions/utility.js";
-import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
-import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit.js";
-
 const columns = [
     { name: "client.name", label: "Client Name" },
     { name: "client.phone", label: "Phone" },
@@ -30,12 +25,9 @@ const columns = [
         label: "Created At",
         type:"date"
     },
-
+    {name: "assignedTo.name", label: "Assigned to",type:"href",linkCondition:(item)=>`/dashboard/users/${item.assignedTo.id}`},
 ];
 export default function Leads() {
-
-    const {user} = useAuth()
-
     const {
         data,
         loading,
@@ -46,18 +38,8 @@ export default function Leads() {
         setLimit,
         total,
         setTotal, totalPages, setFilters
-    } = useDataFetcher("shared/client-leads"+`?staffId=${user.id}&assignedOverdue=true&`, false);
-
-    const {setLoading} = useToastContext()
-    const leadTypes=enumToKeyValueArray(LeadCategory)
-    async  function createADeal(item){
-        item={...item,overdue:true}
-        console.log(item,"item")
-        const assign=await handleRequestSubmit(item,setLoading,`shared/client-leads`,false,"Assigning",false,"PUT")
-        if(assign.status===200){
-            setData((data)=>data.filter((lead)=>lead.id!==item.id))
-        }
-    }
+    } = useDataFetcher("shared/client-leads"+`?assignedOverdue=true&`, false);
+        const leadTypes=enumToKeyValueArray(LeadCategory)
     return (
           <div>
               <AdminTable
@@ -72,15 +54,6 @@ export default function Leads() {
                     totalPages={totalPages}
                     setData={setData}
                     loading={loading}
-                    extraComponent={({item}) => (
-                          <Box sx={{display: "flex", gap: 2}}>
-                              <ConfirmWithActionModel
-                                    title={"Are you sure you want to get this lead and assign it to you as a new deal?"}
-                                    handleConfirm={() => createADeal(item)}
-                                    label={"Start a deal" }
-                              />
-                          </Box>
-                    )}
               >
                   <Box                     display="flex" width="100%" gap={2}  flexWrap="wrap" alignItems="center"
                                            justifyContent="space-between"

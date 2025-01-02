@@ -2,10 +2,11 @@ import {Router} from "express";
 import {verifyTokenAndHandleAuthorization} from "../services/utility.js";
 import {
     createCallReminder,
-    createNote,
+    createNote, getCallReminders,
     updateCallReminderStatus,
     updateClientLeadStatus
 } from "../services/staffServices.js";
+import {getDashboardLeadStatusData} from "../services/sharedServices.js";
 
 const router = Router();
 
@@ -59,6 +60,19 @@ router.put('/client-leads/:id/status', async (req, res) => {
     } catch (error) {
         console.error('Error updating client lead status:', error);
         res.status(500).json({ message: 'Failed to update client lead status.' });
+    }
+});
+router.get('/dashboard/latest-calls', async (req, res) => {
+    try {
+        const searchParams = req.query;
+
+        const data = await getCallReminders(searchParams);
+        res.status(200).json({data});
+    } catch (error) {
+        console.error('Error fetching client lead details:', error);
+        res.status(500).json({
+            message: error.message || 'An error occurred while fetching client lead details.',
+        });
     }
 });
 export default router

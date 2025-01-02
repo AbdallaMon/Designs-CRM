@@ -1,3 +1,6 @@
+import Dashboard from "@/app/UiComponents/DataViewer/dashbaord/Dashboard.jsx";
+
 export default function Page(){
-    return<div>Staff</div>
-}
+    return<Dashboard staff={true}/>
+};
+

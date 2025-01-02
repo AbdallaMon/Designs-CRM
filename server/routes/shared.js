@@ -1,9 +1,14 @@
 import {Router} from "express";
 import {getCurrentUser, getPagination, verifyTokenAndHandleAuthorization} from "../services/utility.js";
 import {
-    assignLeadToAUser, getClientLeadDetails,
+    assignLeadToAUser,
+    getClientLeadDetails,
     getClientLeads,
     getClientLeadsByDateRange,
+    getDashboardLeadStatusData,
+    getEmiratesAnalytics,
+    getKeyMetrics, getLatestNewLeads,
+    getMonthlyPerformanceData, getPerformanceMetrics, getRecentActivities,
     markClientLeadAsConverted
 } from "../services/sharedServices.js";
 
@@ -33,7 +38,6 @@ router.get('/client-leads/deals', async (req, res) => {
         const searchParams = req.query;
 
         const clientLeads = await getClientLeadsByDateRange({ searchParams });
-
         res.status(200).json({data:clientLeads});
     } catch (error) {
         console.error('Error fetching client leads:', error);
@@ -58,6 +62,8 @@ router.put('/client-leads', async (req, res) => {
     try {
         const clientLead=req.body
         const currentUser=await  getCurrentUser(req)
+        console.log(currentUser,"currentUser")
+        console.log(clientLead,"clienmt")
         const result = await assignLeadToAUser(Number(clientLead.id),Number(currentUser.id),clientLead.overdue);
         res.status(200).json({data:result,message:"Deal assigned to you successfully"});
     } catch (error) {
@@ -75,4 +81,100 @@ router.put('/client-leads/convert', async (req, res) => {
         res.status(500).json({ message: 'An error occurred while assigning client leads' });
     }
 });
+
+
+/* dashboard */
+router.get('/dashboard/key-metrics', async (req, res) => {
+    try {
+        const searchParams = req.query;
+
+        const data = await getKeyMetrics(searchParams);
+        res.status(200).json({data});
+    } catch (error) {
+        console.error('Error fetching client lead details:', error);
+        res.status(500).json({
+            message: error.message || 'An error occurred while fetching client lead details.',
+        });
+    }
+});
+
+router.get('/dashboard/leads-status', async (req, res) => {
+    try {
+        const searchParams = req.query;
+
+        const data = await getDashboardLeadStatusData(searchParams);
+        res.status(200).json({data});
+    } catch (error) {
+        console.error('Error fetching client lead details:', error);
+        res.status(500).json({
+            message: error.message || 'An error occurred while fetching client lead details.',
+        });
+    }
+});
+
+router.get('/dashboard/monthly-performance', async (req, res) => {
+    try {
+        const searchParams = req.query;
+
+        const data = await getMonthlyPerformanceData(searchParams);
+        res.status(200).json({data});
+    } catch (error) {
+        console.error('Error fetching client lead details:', error);
+        res.status(500).json({
+            message: error.message || 'An error occurred while fetching client lead details.',
+        });
+    }
+});
+router.get('/dashboard/emirates-analytics', async (req, res) => {
+    try {
+        const searchParams = req.query;
+
+        const data = await getEmiratesAnalytics(searchParams);
+        res.status(200).json({data});
+    } catch (error) {
+        console.error('Error fetching client lead details:', error);
+        res.status(500).json({
+            message: error.message || 'An error occurred while fetching client lead details.',
+        });
+    }
+});
+router.get('/dashboard/week-performance', async (req, res) => {
+    try {
+        const searchParams = req.query;
+
+        const data = await getPerformanceMetrics(searchParams);
+        res.status(200).json({data});
+    } catch (error) {
+        console.error('Error fetching client lead details:', error);
+        res.status(500).json({
+            message: error.message || 'An error occurred while fetching client lead details.',
+        });
+    }
+});
+router.get('/dashboard/latest-leads', async (req, res) => {
+    try {
+
+        const data = await getLatestNewLeads();
+        res.status(200).json({data});
+    } catch (error) {
+        console.error('Error fetching client lead details:', error);
+        res.status(500).json({
+            message: error.message || 'An error occurred while fetching client lead details.',
+        });
+    }
+});
+
+router.get('/dashboard/recent-activities', async (req, res) => {
+    try {
+
+        const data = await getRecentActivities();
+        res.status(200).json({data});
+    } catch (error) {
+        console.error('Error fetching client lead details:', error);
+        res.status(500).json({
+            message: error.message || 'An error occurred while fetching client lead details.',
+        });
+    }
+});
+
 export default router;

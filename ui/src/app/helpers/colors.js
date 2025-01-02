@@ -19,4 +19,26 @@ const colors = {
     "error": "#ef4444",            // Red
     "info": "#3b82f6",             // Blue
 }
+export const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+export const STATUS_COLORS = {
+    NEW: '#8884d8',
+    IN_PROGRESS: '#00C49F',
+    INTERESTED: '#FFBB28',
+    NEEDS_IDENTIFIED: '#FF8042',
+    NEGOTIATING: '#0088FE',
+    CONVERTED: '#00C49F',
+    REJECTED: '#FFBB28',
+    ON_HOLD: '#FF8042',
+};
+export const LogColors = {
+    LEAD_CREATED: '#4caf50', // Green
+    LEAD_ASSIGNED: '#2196f3', // Blue
+    LEAD_STATUS_CHANGED: '#ff9800', // Orange
+    NOTE_ADDED: '#9c27b0', // Purple
+    FILE_UPLOADED: '#3f51b5', // Indigo
+    LEAD_TRANSFERRED: '#f44336', // Red
+    LEAD_CONTACT: '#009688', // Teal
+    CALL_REMINDER_STATUS: '#ff5722', // Deep Orange
+    OTHER: '#607d8b', // Grey
+};
 export default colors;

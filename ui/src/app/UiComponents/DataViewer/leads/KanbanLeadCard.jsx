@@ -37,9 +37,9 @@ import {
 } from "@/app/helpers/constants.js";
 import PreviewDialog from "@/app/UiComponents/DataViewer/leads/PreviewLead.jsx";
 import {CallResultDialog, NewCallDialog, NewNoteDialog} from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
-import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit.js";
-import {useToastContext} from "@/app/providers/ToastLoadingProvider.js";
-import {hideMoreData} from "@/app/helpers/functions/utility.js";
+import {calculateTimeLeft, hideMoreData} from "@/app/helpers/functions/utility.js";
+import {BsEye} from "react-icons/bs";
+import {FaEye} from "react-icons/fa";
 
 const ItemTypes = {
     CARD: "card",
@@ -72,7 +72,6 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
         type: ItemTypes.CARD,
         item: {id: lead.id, status: lead.status},
     });
-    const {setLoading} = useToastContext()
     const [menuAnchorEl, setMenuAnchorEl] = React.useState(null);
     const [timeLeft, setTimeLeft] = React.useState('');
     const [previewDialogOpen, setPreviewDialogOpen] = React.useState(false);
@@ -121,35 +120,10 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
     React.useEffect(() => {
         if (!nextCall?.time) return;
 
-        const calculateTimeLeft = () => {
-            const now = new Date();
-            const callTime = new Date(nextCall.time);
-            const diff = callTime - now;
 
-            if (diff <= 0) {
-                setTimeLeft('Now');
-                return;
-            }
+        calculateTimeLeft(setTimeLeft,nextCall);
 
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-            if (days > 0) {
-                setTimeLeft(`${days}d ${hours}h ${minutes}m`);
-            } else if (hours > 0) {
-                setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
-            } else if (minutes > 0) {
-                setTimeLeft(`${minutes}m ${seconds}s`);
-            } else {
-                setTimeLeft(`${seconds}s`);
-            }
-        };
-
-        calculateTimeLeft();
-
-        const timer = setInterval(calculateTimeLeft, 1000);
+        const timer = setInterval(()=>calculateTimeLeft(setTimeLeft,nextCall), 1000);
 
         return () => clearInterval(timer);
     }, [nextCall]);
@@ -172,6 +146,7 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
                                 label={lead.price}
                                 variant="outlined"
                           />
+                          {!admin?
                           <Tooltip title="Actions">
                               <IconButton
                                     size="small"
@@ -180,6 +155,18 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
                                   <MoreVertIcon/>
                               </IconButton>
                           </Tooltip>
+                                :
+                                <Tooltip title="Preview">
+                                    <IconButton
+                                          size="small"
+                                          onClick={() => {
+                                              setPreviewDialogOpen(true);
+                                          }}
+                                    >
+                                        <FaEye />
+                                    </IconButton>
+                                </Tooltip>
+                          }
                       </Box>
                       {admin && lead.assingedTo && (
                             <Box display="flex" alignItems="center" mb={2}>
@@ -205,9 +192,11 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
                                         <Typography variant="body2">
                                             Reason: {hideMoreData(nextCall.reminderReason) || "N/A"}
                                         </Typography>
+                                        {!admin&&
                                         <CallResultDialog setleads={setleads} lead={lead} call={nextCall}
                                                           type={"button"} text={"Update call"}>
                                         </CallResultDialog>
+                                        }
                                     </Box>
                                 </CallInfoBox>
                           )}
@@ -234,7 +223,7 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
                       </Stack>
                   </CardContent>
               </StyledCard>
-
+              {!admin&&
               <Menu
                     anchorEl={menuAnchorEl}
                     open={Boolean(menuAnchorEl)}
@@ -299,12 +288,13 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
                         </MenuItem>
                   ))}
               </Menu>
-
+              }
               <PreviewDialog
                     open={previewDialogOpen}
                     onClose={() => setPreviewDialogOpen(false)}
                     setleads={setleads}
                     id={lead.id}
+                    admin={admin}
               />
           </div>
     );

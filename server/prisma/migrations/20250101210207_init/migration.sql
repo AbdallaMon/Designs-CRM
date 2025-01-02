@@ -72,14 +72,33 @@ CREATE TABLE `ClientLead` (
     `designItemType` ENUM('UNDER_CONSTRUCTION', 'OCCUPIED_VILLA', 'MASTER_SECTION', 'RETAIL_SPACE', 'OFFICE_BUILDING', 'RESTAURANT', 'HOTEL', 'MIXED_USE') NULL,
     `emirate` ENUM('DUBAI', 'ABU_DHABI', 'SHARJAH', 'AJMAN', 'UMM_AL_QUWAIN', 'RAS_AL_KHAIMAH', 'FUJAIRAH') NULL,
     `price` VARCHAR(191) NULL,
-    `status` ENUM('NEW', 'IN_PROGRESS', 'INTERESTED', 'NEGOTIATING', 'REJECTED', 'CONVERTED') NOT NULL DEFAULT 'NEW',
+    `averagePrice` DECIMAL(10, 2) NOT NULL,
+    `status` ENUM('NEW', 'IN_PROGRESS', 'INTERESTED', 'NEEDS_IDENTIFIED', 'NEGOTIATING', 'REJECTED', 'FINALIZED', 'CONVERTED', 'ON_HOLD') NOT NULL DEFAULT 'NEW',
     `assignedAt` DATETIME(3) NULL,
+    `reasonToConvert` VARCHAR(191) NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
     INDEX `ClientLead_leadId_idx`(`leadId`),
     INDEX `ClientLead_clientId_idx`(`clientId`),
     INDEX `ClientLead_userId_idx`(`userId`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `CallReminder` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `clientLeadId` INTEGER NOT NULL,
+    `time` DATETIME(3) NOT NULL,
+    `status` ENUM('IN_PROGRESS', 'DONE', 'MISSED') NOT NULL DEFAULT 'IN_PROGRESS',
+    `callResult` TEXT NULL,
+    `reminderReason` TEXT NULL,
+    `userId` INTEGER NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL,
+
+    INDEX `CallReminder_clientLeadId_idx`(`clientLeadId`),
+    INDEX `CallReminder_userId_idx`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -144,10 +163,10 @@ CREATE TABLE `Log` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `type` ENUM('LEAD_CREATED', 'LEAD_ASSIGNED', 'LEAD_STATUS_CHANGED', 'NOTE_ADDED', 'FILE_UPLOADED', 'LEAD_TRANSFERRED') NOT NULL,
     `text` TEXT NOT NULL,
-    `clientLeadId` INTEGER NOT NULL,
+    `userId` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    INDEX `Log_clientLeadId_idx`(`clientLeadId`),
+    INDEX `Log_userId_idx`(`userId`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -189,6 +208,12 @@ ALTER TABLE `ClientLead` ADD CONSTRAINT `ClientLead_clientId_fkey` FOREIGN KEY (
 ALTER TABLE `ClientLead` ADD CONSTRAINT `ClientLead_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `CallReminder` ADD CONSTRAINT `CallReminder_clientLeadId_fkey` FOREIGN KEY (`clientLeadId`) REFERENCES `ClientLead`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `CallReminder` ADD CONSTRAINT `CallReminder_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `File` ADD CONSTRAINT `File_clientLeadId_fkey` FOREIGN KEY (`clientLeadId`) REFERENCES `ClientLead`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -198,7 +223,7 @@ ALTER TABLE `Note` ADD CONSTRAINT `Note_clientLeadId_fkey` FOREIGN KEY (`clientL
 ALTER TABLE `Note` ADD CONSTRAINT `Note_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Log` ADD CONSTRAINT `Log_clientLeadId_fkey` FOREIGN KEY (`clientLeadId`) REFERENCES `ClientLead`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Log` ADD CONSTRAINT `Log_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Notification` ADD CONSTRAINT `Notification_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `User`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

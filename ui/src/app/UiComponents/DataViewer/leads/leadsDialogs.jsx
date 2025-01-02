@@ -36,6 +36,7 @@ export const CallResultDialog = ({lead, setleads, call,text="Update call result"
     function handleOpen(){
         setOpen(true)
     }
+
     const changeCallStatus = async () => {
         if (!result.trim() && status === "DONE") {
             setAlertError("Write the result of the call")
@@ -49,8 +50,11 @@ export const CallResultDialog = ({lead, setleads, call,text="Update call result"
         }, setLoading, `staff/client-leads/call-reminders/${call.id}`, false, "Updating",false,"PUT")
         if (request.status === 200) {
             if (setCallReminders) {
-                setCallReminders((oldCalls) => [...oldCalls, request.data])
+                setCallReminders((oldCalls)=>oldCalls.map((c)=>{
+                    return c.id===request.data.id?request.data:c
+                }))
             }
+
             if (setleads) {
                 setleads((oldLeads) => oldLeads.map((l) => {
                     if (l.id === lead.id) {
@@ -126,29 +130,17 @@ export const CallResultDialog = ({lead, setleads, call,text="Update call result"
 export const NewCallDialog = ({lead, setleads, type = "button", children, setCallReminders}) => {
     const [callData, setCallData] = useState({time: '', reminderReason: ''});
     const [open, setOpen] = useState(false)
-    const {setAlertError} = useAlertContext()
     const {user} = useAuth()
     const {setLoading} = useToastContext()
-
     function handleOpen() {
-        const canScheduleNewCall = !lead?.callReminders.some(call => call.status === 'IN_PROGRESS');
-        if (canScheduleNewCall) {
             setOpen(true)
-        } else {
-            setAlertError("Complete or close the in-progress call before scheduling a new one")
-        }
     }
 function onClose(){
     setCallData({time: '', reminderReason: ''})
         setOpen(false)
-
 }
     const handleAddNewCall = async () => {
-        const canScheduleNewCall = !lead?.callReminders.some(call => call.status === 'IN_PROGRESS');
-        if (!canScheduleNewCall) {
-            setAlertError("Complete or close the in-progress call before scheduling a new one.")
-            return
-        }
+
 
         const request = await handleRequestSubmit({
             reminderReason: callData.reminderReason,
@@ -157,7 +149,7 @@ function onClose(){
         }, setLoading, `staff/client-leads/${lead.id}/call-reminders`, false, "Creating")
         if (request.status === 200) {
             if (setCallReminders) {
-                setCallReminders((oldCalls) => [...oldCalls, request.data])
+                setCallReminders((oldCalls) => [request.data,...oldCalls])
             }
             if (setleads) {
                 setleads((oldLeads) => oldLeads.map((l) => {
@@ -261,7 +253,7 @@ export const NewNoteDialog = ({lead, setleads, setNotes, type="button", children
         }, setLoading, `staff/client-leads/${lead.id}/notes`, false, "Creating")
         if (request.status === 200) {
             if (setNotes) {
-                setNotes((oldNotes) => [...oldNotes, request.data])
+                setNotes((oldNotes) => [request.data,...oldNotes])
             }
             if (setleads) {
                 setleads((oldLeads) => oldLeads.map((l) => {

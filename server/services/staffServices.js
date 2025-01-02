@@ -11,6 +11,7 @@ export async function createNote({ clientLeadId, userId, content}) {
             content,
             clientLeadId,
             userId,
+
         },
         select:{
             id:true,
@@ -25,6 +26,7 @@ export async function createNote({ clientLeadId, userId, content}) {
     newNote.content=content
     return newNote;
 }
+
 export async function createCallReminder({ clientLeadId,userId, time, reminderReason }) {
     // Check for any existing IN_PROGRESS reminders
     let formattedTime = dayjs(time);
@@ -50,6 +52,18 @@ export async function createCallReminder({ clientLeadId,userId, time, reminderRe
             time:formattedTime,
             reminderReason,
         },
+        select: {
+            id: true,
+            time: true,
+            status: true,
+            reminderReason: true,
+            callResult: true,
+            userId: true,
+            user: {
+                select: { name: true },
+            },
+        },
+
     });
 
     return newReminder;
@@ -63,6 +77,18 @@ export async function updateCallReminderStatus({ reminderId, status, callResult 
             status,
             callResult: status === 'DONE' ? callResult : "Missed call",
         },
+        select: {
+            id: true,
+            time: true,
+            status: true,
+            reminderReason: true,
+            callResult: true,
+            userId: true,
+            user: {
+                select: { name: true },
+            },
+        },
+
     });
 
     return updatedReminder;
@@ -71,6 +97,42 @@ export async function updateCallReminderStatus({ reminderId, status, callResult 
 export async function updateClientLeadStatus({ clientLeadId, status }) {
     await prisma.clientLead.update({
         where: { id: clientLeadId },
-        data: { status },
+        data: { status,updatedAt:new Date() },
+
     });
 }
+
+export const getCallReminders = async (searchParams) => {
+    const staffFilter = searchParams.staffId ? { userId: Number(searchParams.staffId) } : {};
+
+    try {
+        const callReminders = await prisma.callReminder.findMany({
+            where: {
+                clientLead: {
+                    status: {
+                        notIn: ['CONVERTED', 'ON_HOLD', 'FINALIZED', 'REJECTED'],
+                    },
+                    ...staffFilter,
+                },
+                status: 'IN_PROGRESS',
+            },
+            include: {
+                clientLead: {
+                    select: {
+                        client: {
+                            select: {
+                                name: true,
+                            },
+                        },
+                    },
+                },
+            },
+        });
+
+        return callReminders;
+    } catch (error) {
+        console.error('Error fetching call reminders:', error);
+        throw new Error('Unable to fetch call reminders');
+    }
+};
+

@@ -6,25 +6,51 @@ import {Failed, Success} from "@/app/UiComponents/feedback/loaders/toast/ToastUp
 import {useAuth} from "@/app/providers/AuthProvider";
 import {Box} from "@mui/material";
 import colors from "@/app/helpers/colors";
-import {FiDollarSign, FiGrid, FiTarget, FiUserCheck, FiUsers} from "react-icons/fi";
+import { FiGrid, FiUsers, FiTarget, FiDollarSign, FiClock, FiList } from "react-icons/fi";
 import Navbar from "@/app/UiComponents/utility/Navbar.jsx";
 
 let toastId;
 export const adminLinks = [
     { name: 'Dashboard', href: '/dashboard', icon: <FiGrid size={20} /> },
     { name: 'Users', href: '/dashboard/users', icon: <FiUsers size={20} /> },
-    { name: 'Customers', href: '/dashboard/customers', icon: <FiUserCheck size={20} /> },
     { name: 'Leads', href: '/dashboard/leads', icon: <FiTarget size={20} /> },
-    { name: 'Deals', href: '/dashboard/deals', icon: <FiDollarSign size={20} /> },
-];
+    {
+        name: 'Deals',
+        href: '/dashboard/deals',
+        active:"deals",
+        icon: <FiDollarSign size={20} />,
+        subLinks: [
+            {
+                name: 'Current Deals',
+                href: '/dashboard/deals',
+                active:"deals",
+                icon: <FiDollarSign size={20} />,
+            },
+            { name: 'Overdue Deals', href: '/dashboard/overdue-deals', icon: <FiClock size={18} />,                active:"overdue-deals",
+            },
+            { name: 'All Deals', href: '/dashboard/all-deals', icon: <FiList size={18} />   ,  active:"all-deals", },
+
+        ],
+    },];
 
 // Regular user navigation links
 export const userLinks = [
     { name: 'Dashboard', href: '/dashboard', icon: <FiGrid size={20} /> },
-    { name: 'Customers', href: '/dashboard/customers', icon: <FiUserCheck size={20} /> },
     { name: 'Leads', href: '/dashboard/leads', icon: <FiTarget size={20} /> },
-    { name: 'Deals', href: '/dashboard/deals', icon: <FiDollarSign size={20} /> },
-];
+    {
+        name: 'Deals',
+        href: '/dashboard/deals',
+        icon: <FiDollarSign size={20} />,
+        subLinks: [
+            {
+                name: 'Current Deals',
+                href: '/dashboard/deals',
+                icon: <FiDollarSign size={20} />,
+            },
+            { name: 'Overdue Deals', href: '/dashboard/overdue-deals', icon: <FiClock size={18} /> },
+            { name: 'All Deals', href: '/dashboard/all-deals', icon: <FiList size={18} /> },
+        ],
+    },];
 export default function Layout({ admin, staff}) {
     const router = useRouter();
     let {user, isLoggedIn, validatingAuth} = useAuth()

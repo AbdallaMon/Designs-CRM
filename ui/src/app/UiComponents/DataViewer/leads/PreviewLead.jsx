@@ -1,6 +1,7 @@
 "use client"
 import React, {useEffect, useState} from 'react';
 import {
+    alpha,
     Avatar,
     Box,
     Button,
@@ -8,9 +9,9 @@ import {
     Container,
     Dialog,
     DialogActions,
-    DialogTitle,
+    DialogTitle, Fade,
     Grid2 as Grid,
-    IconButton,
+    IconButton, Menu, MenuItem, Modal,
     Paper,
     Stack,
     Tab,
@@ -23,20 +24,31 @@ import {
     BsArrowLeft,
     BsBuilding,
     BsCalendar,
-    BsChatDots,
     BsCheckCircle,
     BsClock,
     BsFileText,
     BsInfoCircle,
-    BsPerson,
+    BsPerson, BsPersonCheck,
     BsTelephone,
 } from 'react-icons/bs';
-import {ConsultationType, DesignItemType, DesignType, Emirate} from "@/app/helpers/constants.js";
+import {
+    ClientLeadStatus,
+    ConsultationType,
+    DesignItemType,
+    DesignType,
+    Emirate,
+    KanbanLeadsStatus, LeadCategory, simpleModalStyle, statusColors
+} from "@/app/helpers/constants.js";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader.jsx";
 import {getData} from "@/app/helpers/functions/getData.js";
 import {CallResultDialog, NewCallDialog, NewNoteDialog} from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
 import dayjs from "dayjs";
-import {AiOutlineClockCircle as ClockIcon} from "react-icons/ai";
+import {AiOutlineClockCircle as ClockIcon, AiOutlineSwap} from "react-icons/ai";
+import {calculateTimeLeft, enumToKeyValueArray} from "@/app/helpers/functions/utility.js";
+import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit.js";
+import {useToastContext} from "@/app/providers/ToastLoadingProvider.js";
+import {RiAlarmLine, RiCalendarLine, RiCheckboxCircleLine, RiTimeLine, RiUserLine} from "react-icons/ri";
+import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
 
 
 const TabPanel = ({children, value, index}) => (
@@ -53,19 +65,69 @@ const LeadContent = ({
                          setActiveTab,
                          theme,
                          isMobile,
-                         getStatusBgColor,
                          handleClose,
+                         setleads,
+                         setLead,admin
                      }) => {
+    const [anchorEl, setAnchorEl] = React.useState(null);
+    const open = Boolean(anchorEl);
+    const {setLoading} = useToastContext();
+const [openConfirm,setOpenConfirm]=useState(false)
+    const handleClick = (event) => {
+    if(!admin){
+        setAnchorEl(event.currentTarget);
+    }
+    };
 
+    const handleMenuClose = async (value) => {
+        if(admin)return
+
+        const request = await handleRequestSubmit(
+              {status: value},
+              setLoading,
+              `staff/client-leads/${lead.id}/status`,
+              false,
+              "Updating",
+              null,
+              "PUT"
+        );
+        if (request.status === 200) {
+            if (setleads) {
+                setleads((prev) =>
+                      prev.map((l) =>
+                            l.id === lead.id ? {...l, status: value} : l
+                      )
+                );
+            }
+            if (setLead) {
+                setLead((oldLead) => ({...oldLead, status: value}));
+            }
+            setAnchorEl(null);
+        }
+    };
+
+    const handleConvertLead =async () => {
+        if(admin)return
+        const request=await handleRequestSubmit({status:"ON_HOLD"},setLoading,`staff/client-leads/${lead.id}/status`,false,"Converting",false,"PUT")
+   if(request.status===200){
+       window.setTimeout(()=>{
+           window.location.reload()
+       },500)
+   }
+    };
+
+    const leadStatus = enumToKeyValueArray(KanbanLeadsStatus);
 
     return (
           <>
-              <DialogTitle sx={{
-                  borderBottom: 1,
-                  borderColor: 'divider',
-                  pb: 2
-              }}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <DialogTitle
+                    sx={{
+                        borderBottom: 1,
+                        borderColor: 'divider',
+                        pb: 2
+                    }}
+              >
+                  <Stack spacing={2}>
                       <Stack direction="row" spacing={2} alignItems="center">
                           {handleClose && (
                                 <IconButton onClick={handleClose} sx={{mr: 1}}>
@@ -77,17 +139,90 @@ const LeadContent = ({
                           </Avatar>
                           <Typography variant="h6">{lead.client.name}</Typography>
                       </Stack>
-                      <Chip
-                            label={lead.status.replace(/_/g, " ")}
-                            sx={{
-                                bgcolor: getStatusBgColor(lead.status),
-                                color: theme.palette.getContrastText(getStatusBgColor(lead.status)),
-                                fontWeight: 500
-                            }}
-                      />
+
+                      <Stack
+                            direction={"row"}
+                            spacing={1}
+                            alignItems={{ sm: 'center' }}
+                            justifyContent="flex-end"
+                      >
+                          {!admin&&
+                          <Button
+                                fullWidth={isMobile}
+                                variant="outlined"
+                                startIcon={<BsPersonCheck size={18} />}
+                                onClick={()=>setOpenConfirm(true)}
+                                sx={{
+                                    borderRadius: "50px",
+                                    textTransform: 'none'
+                                }}
+                          >
+                              Convert lead
+                          </Button>
+                          }
+                          {!admin&&
+                          <Modal open={openConfirm}              onClose={() => setOpenConfirm(false)}
+                                 closeAfterTransition>
+                              <Fade in={openConfirm}>
+
+                              <Box sx={{...simpleModalStyle}}>
+                                  <Typography variant="h6" component="h2" mb={2}>
+                                      Convert lead so some one else take it?
+                                  </Typography>
+                                  <Box sx={{display: 'flex', justifyContent: 'flex-end', marginTop: '16px'}}>
+                                      <Button variant="contained" color={ "primary"}
+                                              onClick={handleConvertLead}
+                                      >
+                                          Confirm
+                                      </Button>
+                                      <Button variant="contained" onClick={() => setOpenConfirm(false)} sx={{marginLeft: '8px',    color:"text.white"
+                                      }} color="secondary" >
+                                          Cancel
+                                      </Button>
+                                  </Box>
+                              </Box>
+                              </Fade>
+                          </Modal>
+                          }
+                          <Button
+                                fullWidth={isMobile}
+                                variant="contained"
+                                startIcon={!admin&&<AiOutlineSwap/>}
+                                aria-controls={open ? 'basic-menu' : undefined}
+                                aria-haspopup="true"
+                                aria-expanded={open ? 'true' : undefined}
+                                onClick={handleClick}
+                                sx={{
+                                    background: statusColors[lead.status],
+                                    color: theme.palette.getContrastText(statusColors[lead.status]),
+                                    fontWeight: 500,
+                                    borderRadius: "50px"
+                                }}
+                          >
+                              {ClientLeadStatus[lead.status]}
+                          </Button>
+                          <Menu
+                                id="basic-menu"
+                                anchorEl={anchorEl}
+                                open={open}
+                                onClose={() => setAnchorEl(null)}
+                                MenuListProps={{
+                                    'aria-labelledby': 'basic-button',
+                                }}
+                          >
+                              {leadStatus.map((lead) => (
+                                    <MenuItem
+                                          key={lead.id}
+                                          value={lead.id}
+                                          onClick={() => handleMenuClose(lead.id)}
+                                    >
+                                        {lead.name}
+                                    </MenuItem>
+                              ))}
+                          </Menu>
+                      </Stack>
                   </Stack>
               </DialogTitle>
-
               <Tabs
                     value={activeTab}
                     onChange={(e, newValue) => setActiveTab(newValue)}
@@ -96,7 +231,6 @@ const LeadContent = ({
                         borderBottom: 1,
                         borderColor: 'divider',
                         minHeight: "fit-content",
-
                         '& .MuiTab-root': {
                             fontSize: '0.875rem'
                         }
@@ -123,22 +257,19 @@ const LeadContent = ({
 
               <Box sx={{p: {xs: 2, md: 3}, overflowY: "auto", maxHeight: {md: "600px"}}}>
                   <TabPanel value={activeTab} index={0}>
-                      <LeadData lead={lead} />
+                      <LeadData lead={lead} admin={admin}/>
                   </TabPanel>
-
                   <TabPanel value={activeTab} index={1}>
-                      <CallReminders lead={lead}/>
+                      <CallReminders admin={admin} lead={lead} setleads={setleads}/>
                   </TabPanel>
-
                   <TabPanel value={activeTab} index={2}>
-                      <LeadNotes lead={lead}/>
+                      <LeadNotes admin={admin} lead={lead}/>
                   </TabPanel>
               </Box>
           </>
     );
 };
-
-function LeadData({lead}) {
+function LeadData({lead,admin}) {
     let description = lead?.selectedCategory === "CONSULTATION" ? ConsultationType[lead.consultationType] : `${DesignType[lead.designType]} - ${DesignItemType[lead.designItemType]} - ${Emirate[lead.emirate]}`
 const theme=useTheme()
     return (
@@ -150,7 +281,7 @@ const theme=useTheme()
                               Category
                           </Typography>
                           <Typography variant="body1">
-                              {lead.selectedCategory}
+                              {LeadCategory[lead.selectedCategory]}
                           </Typography>
                       </Grid>
 
@@ -215,151 +346,182 @@ const theme=useTheme()
     )
 }
 
-function CallReminders({lead}) {
-    const [callReminders, setCallReminders] = useState(lead?.callReminders)
-    const [nextCall,setNextCall]=useState()
-    const [timeLeft,setTimeLeft]=useState("")
-const theme=useTheme()
+function CallReminders({ lead,setleads,admin }) {
+    const [callReminders, setCallReminders] = useState(lead?.callReminders);
+    const [nextCall, setNextCall] = useState();
+    const [timeLeft, setTimeLeft] = useState("");
+    const theme = useTheme();
+
     useEffect(() => {
-        if (lead?.callReminders) setCallReminders(lead.callReminders)
-    }, [lead])
-    useEffect(()=>{
-        if(!callReminders||callReminders?.length===0)return
-        if(callReminders[0].status==="IN_PROGRESS")setNextCall(callReminders[0])
-    },[callReminders])
-    const getStatusBgColor = (status) => {
-        switch (status) {
-            case 'IN_PROGRESS':
-                return theme.palette.warning.light;
-            case 'DONE':
-                return theme.palette.success.light;
-            default:
-                return theme.palette.grey[200];
-        }
-    };
+        if (lead?.callReminders) setCallReminders(lead.callReminders);
+    }, [lead]);
+
+    useEffect(() => {
+        if (!callReminders || callReminders?.length === 0) return;
+        if (callReminders[0].status === "IN_PROGRESS") setNextCall(callReminders[0]);
+    }, [callReminders]);
+
+    const getStatusStyles = (status) => ({
+        backgroundColor: {
+            'IN_PROGRESS': alpha(theme.palette.warning.main, 0.1),
+            'DONE': alpha(theme.palette.success.main, 0.1),
+        }[status] || alpha(theme.palette.grey[500], 0.1),
+        color: {
+            'IN_PROGRESS': theme.palette.warning.dark,
+            'DONE': theme.palette.success.dark,
+        }[status] || theme.palette.grey[700],
+        borderColor: {
+            'IN_PROGRESS': theme.palette.warning.main,
+            'DONE': theme.palette.success.main,
+        }[status] || theme.palette.grey[300],
+    });
 
     React.useEffect(() => {
         if (!nextCall?.time) return;
-        const calculateTimeLeft = () => {
-            const now = new Date();
-            const callTime = new Date(nextCall.time);
-            const diff = callTime - now;
 
-            if (diff <= 0) {
-                setTimeLeft('Now');
-                return;
-            }
 
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-            if (days > 0) {
-                setTimeLeft(`${days}d ${hours}h ${minutes}m`);
-            } else if (hours > 0) {
-                setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
-            } else if (minutes > 0) {
-                setTimeLeft(`${minutes}m ${seconds}s`);
-            } else {
-                setTimeLeft(`${seconds}s`);
-            }
-        };
-
-        calculateTimeLeft();
-
-        const timer = setInterval(calculateTimeLeft, 1000);
-
+        calculateTimeLeft(setTimeLeft,nextCall);
+        const timer = setInterval(()=>calculateTimeLeft(setTimeLeft,nextCall), 1000);
         return () => clearInterval(timer);
     }, [nextCall]);
+
     return (
           <Stack spacing={3}>
-              <NewCallDialog lead={lead} setCallReminders={setCallReminders}/>
+              {!admin&&
+              <NewCallDialog lead={lead} setCallReminders={setCallReminders}  setleads={setleads}/>
+              }
               <Stack spacing={2}>
                   {callReminders?.map((call) => (
                         <Paper
                               key={call.id}
-                              variant="outlined"
+                              elevation={0}
                               sx={{
-                                  p: 2.5,
+                                  position: 'relative',
+                                  p: 3,
                                   borderRadius: 2,
+                                  border: `1px solid ${theme.palette.divider}`,
+                                  transition: 'all 0.2s ease-in-out',
                                   '&:hover': {
-                                      boxShadow: theme.shadows[2],
-                                      transition: 'box-shadow 0.3s ease-in-out'
+                                      boxShadow: theme.shadows[4],
+                                      transform: 'translateY(-2px)',
+                                      borderColor: theme.palette.primary.main,
                                   }
                               }}
                         >
-
                             <Stack spacing={2}>
-                                {call.status==="IN_PROGRESS"&&
-                                      <Box display="flex" alignItems="center" mb={1}>
-                                          <ClockIcon fontSize="small" sx={{mr: 1}}/>
-                                          <Typography variant="subtitle2" color="primary">
-                                              Next Call in {timeLeft}
-                                          </Typography>
-                                      </Box>
-                                }
                                 <Stack
                                       direction="row"
                                       justifyContent="space-between"
-                                      alignItems="flex-start"
+                                      alignItems="center"
                                 >
-                                    <Stack spacing={1}>
-                                        <Stack direction="row" spacing={1} alignItems="center">
-                                            <BsCalendar size={16} color={theme.palette.primary.main}/>
-                                            <Typography variant="subtitle2">
-                                                      <>
-                                                {dayjs(call.time).format('MM/DD/YYYY, h:mm A')}
-                                                      </>
-                                            </Typography>
-                                        </Stack>
-                                        <Typography color="text.secondary">
-                                          <strong>Reason</strong>: {call.reminderReason}
-                                        </Typography>
-                                    </Stack>
-                                    <Stack direction="row" spacing={1} alignItems="center">
+                                    <Stack direction="row" spacing={2} alignItems="center">
                                         <Chip
                                               size="small"
-                                              icon={call.status === 'DONE' ?
-                                                    <BsCheckCircle size={14}/> :
-                                                    <BsClock size={14}/>
+                                              icon={
+                                                  call.status === 'DONE' ?
+                                                        <RiCheckboxCircleLine size={16} /> :
+                                                        <RiAlarmLine size={16} />
                                               }
                                               label={call.status.replace(/_/g, " ")}
                                               sx={{
-                                                  bgcolor: getStatusBgColor(call.status),
-                                                  color: theme.palette.getContrastText(getStatusBgColor(call.status)),
-                                                  fontWeight: 500
+                                                  ...getStatusStyles(call.status),
+                                                  fontWeight: 600,
+                                                  border: '1px solid',
+                                                  '& .MuiChip-icon': {
+                                                      color: 'inherit'
+                                                  }
                                               }}
                                         />
+                                        {!admin&&
+                                              <>
                                         {call.status === 'IN_PROGRESS' && (
-                                              <CallResultDialog lead={lead} setCallReminders={setCallReminders} call={call} />
+                                              <CallResultDialog
+                                                    lead={lead}
+                                                    setCallReminders={setCallReminders}
+                                                    call={call}
+                                                    setleads={setleads}
+                                              />
                                         )}
+                                        </>
+                                        }
+                                    </Stack>
+                                    <Stack direction="row" spacing={1} alignItems="center">
+                                        <RiUserLine size={16} color={theme.palette.text.secondary} />
+                                        <Typography variant="body2" color="text.secondary">
+                                            {call.user.name}
+                                        </Typography>
                                     </Stack>
                                 </Stack>
-                                {call.callResult && (
+                                {call.status === "IN_PROGRESS" && (
                                       <Box
                                             sx={{
-                                                mt: 1,
-                                                p: 1.5,
-                                                bgcolor: theme.palette.action.hover,
-                                                borderRadius: 1
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                bgcolor: alpha(theme.palette.primary.main, 0.05),
+                                                color: theme.palette.primary.main,
+                                                p: 2,
+                                                borderRadius: 2,
+                                                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
                                             }}
                                       >
-                                          <Typography variant="body2">
-                                              <strong>Result</strong>: {call.callResult}
+                                          <RiTimeLine size={20} style={{ marginRight: theme.spacing(1) }} />
+                                          <Typography variant="subtitle2" fontWeight="600">
+                                              Next Call in {timeLeft}
                                           </Typography>
                                       </Box>
                                 )}
+
+                                {/* Main Content */}
+                                <Stack spacing={2}>
+                                    {/* DateTime */}
+                                    <Stack direction="row" spacing={1} alignItems="center">
+                                        <RiCalendarLine size={18} color={theme.palette.primary.main} />
+                                        <Typography variant="subtitle2">
+                                            {dayjs(call.time).format('MM/DD/YYYY, h:mm A')}
+                                        </Typography>
+                                    </Stack>
+
+                                    {/* Reason */}
+                                    <Box
+                                          sx={{
+                                              bgcolor: alpha(theme.palette.background.default, 0.6),
+                                              p: 2,
+                                              borderRadius: 2,
+                                              border: `1px solid ${theme.palette.divider}`,
+                                          }}
+                                    >
+                                        <Typography variant="body2" sx={{ color: theme.palette.text.primary }}>
+                                            <Box component="span" fontWeight="600">Reason:</Box>{' '}
+                                            {call.reminderReason}
+                                        </Typography>
+                                    </Box>
+
+                                    {/* Call Result */}
+                                    {call.callResult && (
+                                          <Box
+                                                sx={{
+                                                    p: 2,
+                                                    bgcolor: alpha(theme.palette.success.main, 0.05),
+                                                    borderRadius: 2,
+                                                    border: `1px solid ${alpha(theme.palette.success.main, 0.1)}`,
+                                                }}
+                                          >
+                                              <Typography variant="body2" color="success.dark">
+                                                  <Box component="span" fontWeight="600">Result:</Box>{' '}
+                                                  {call.callResult}
+                                              </Typography>
+                                          </Box>
+                                    )}
+                                </Stack>
                             </Stack>
                         </Paper>
                   ))}
               </Stack>
           </Stack>
-
-    )
+    );
 }
-
-function LeadNotes({lead}) {
+function LeadNotes({lead ,admin}) {
     const [notes, setNotes] = useState(lead?.notes)
     const theme=useTheme()
     useEffect(() => {
@@ -367,7 +529,9 @@ function LeadNotes({lead}) {
     }, [lead])
     return (
           <Stack spacing={2}>
+              {!admin&&
               <NewNoteDialog lead={lead} setNotes={setNotes}/>
+              }
               <Stack spacing={2}>
                   {notes?.map((note) => (
                         <Paper
@@ -439,7 +603,7 @@ const InfoCard = ({title, icon: Icon, children, theme}) => (
 
 
 // PreviewDialog Component with Conditional Rendering
-const PreviewDialog = ({open, onClose, id, setleads, page = false}) => {
+const PreviewDialog = ({open, onClose, id, setleads, page = false,admin}) => {
     const [activeTab, setActiveTab] = useState(0);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -448,9 +612,7 @@ const PreviewDialog = ({open, onClose, id, setleads, page = false}) => {
     useEffect(() => {
         async function getALeadDetails() {
             if (open) {
-
                 const leadDetails = await getData({url: `shared/client-leads/${id}`, setLoading})
-                console.log(leadDetails, "leadDetails")
                 setLead(leadDetails.data)
             }
         }
@@ -459,24 +621,9 @@ const PreviewDialog = ({open, onClose, id, setleads, page = false}) => {
     }, [id, open])
     // New States for Notes
 
-
-    const getStatusBgColor = (status) => {
-        switch (status) {
-            case 'IN_PROGRESS':
-                return theme.palette.warning.light;
-            case 'DONE':
-                return theme.palette.success.light;
-            default:
-                return theme.palette.grey[200];
-        }
-    };
-
-
     const handlePageClose = () => {
         if (onClose) onClose();
     };
-
-
     return (
           <>
               {page ? (
@@ -489,8 +636,10 @@ const PreviewDialog = ({open, onClose, id, setleads, page = false}) => {
                                     setActiveTab={setActiveTab}
                                     theme={theme}
                                     isMobile={isMobile}
-                                    getStatusBgColor={getStatusBgColor}
                                     handleClose={handlePageClose}
+                                    setLead={setLead}
+                                    setleads={setleads}
+                                    admin={admin}
                               />
                         }
                     </Container>
@@ -514,8 +663,10 @@ const PreviewDialog = ({open, onClose, id, setleads, page = false}) => {
                                         setActiveTab={setActiveTab}
                                         theme={theme}
                                         isMobile={isMobile}
-                                        getStatusBgColor={getStatusBgColor}
                                         handleClose={handlePageClose}
+                                        setLead={setLead}
+                                        setleads={setleads}
+                                        admin={admin}
                                   />
                                   <DialogActions
                                         sx={{

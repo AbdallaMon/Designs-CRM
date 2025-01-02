@@ -17,6 +17,7 @@ import {FaBusinessTime} from "react-icons/fa";
 import {useAuth} from "@/app/providers/AuthProvider.jsx";
 import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit.js";
 import {useToastContext} from "@/app/providers/ToastLoadingProvider.js";
+import {useAlertContext} from "@/app/providers/MuiAlert.jsx";
 
 dayjs.extend(relativeTime);
 
@@ -55,9 +56,16 @@ const StatusChip = styled(Chip)(({theme, statuscolor}) => ({
 }));
 
 const Column = ({status, leads, movelead, admin, setleads}) => {
+    const {setAlertError}=useAlertContext()
     const [, drop] = useDrop({
         accept: ItemTypes.CARD,
-        drop: (item) => movelead(item.id, status),
+        drop: (item) => {
+            if (admin) {
+                setAlertError("You are not allowed to change lead status")
+                return;
+            }
+            movelead(item.id, status);
+        },
     });
 
     const totalValue = leads.reduce((acc, lead) => acc + parseFloat(lead.price.replace(/,/g, '') || 0), 0);
@@ -150,20 +158,21 @@ const KanbanBoard = ({admin}) => {
         loading,
         setData: setleads,
         setFilters
-    } = useDataFetcher("shared/client-leads/deals" + `?staffId=${user.id}&`, false);
+    } = useDataFetcher("shared/client-leads/deals" + `${!admin?'?staffId='+user.id+"&":""}`, false);
 const {setLoading}=useToastContext()
     const movelead =async (id, newStatus) => {
+    if(admin)return
         const request = await handleRequestSubmit({status: newStatus}, setLoading, `staff/client-leads/${id}/status`, false, "Updating",false, "PUT")
 if(request.status===200) {
     setleads((prev) =>
-          prev.map((task) =>
-                task.id === id ? {...task, status: newStatus} : task
+          prev.map((lead) =>
+                lead.id === id ? {...lead, status: newStatus} : lead
           )
     );
 }
     };
     const links = [
-        {href: "/dashboard/deals/all", title: "See all deals", icon: <FaBusinessTime/>},
+        {href: "/dashboard/all-deals", title: "See all deals", icon: <FaBusinessTime/>},
     ];
     const rangeTypes = [{id: "WEEK", name: "Week"}, {id: "MONTH", name: "Month"}]
     return (
@@ -187,7 +196,6 @@ if(request.status===200) {
                             }
                         }}
                   >
-                      {/* Left side with filters */}
                       <Box
                             sx={{
                                 display: 'flex',
@@ -259,7 +267,6 @@ if(request.status===200) {
                         },
                     }}
               >
-
                   {KanbanStatusArray.map((status) => (
                         <Column
                               key={status}

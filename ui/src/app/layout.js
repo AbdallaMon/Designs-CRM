@@ -5,6 +5,7 @@ import AuthProvider from "@/app/providers/AuthProvider";
 import MUIContextProvider from "@/app/providers/MUIContext";
 import DotsLoader from "@/app/UiComponents/feedback/loaders/DotsLoading";
 import MuiAlertProvider from "@/app/providers/MuiAlert.jsx";
+import colors from "@/app/helpers/colors.js";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -26,6 +27,7 @@ export default function RootLayout({children}) {
   return (
         <html >
         <body
+              style={{backgroundColor:colors.bgSecondary}}
               className={`${geistSans.variable} ${geistMono.variable} `}
         >
                 <MuiAlertProvider>

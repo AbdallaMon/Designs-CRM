@@ -6,14 +6,13 @@
     top: 0;
     left: 0;
     right: 0;
-    background-color: #1E6091; /* Adjust as necessary */
+    background-color: #0d9488; /* Adjust as necessary */
     z-index: 50000;
     justify-content: center;
     display: flex;
     align-items: center;
     transition: display 0s 1s;
 }
-
 
 .dot {
     position: relative;

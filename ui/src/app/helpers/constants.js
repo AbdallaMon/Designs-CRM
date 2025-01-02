@@ -56,16 +56,27 @@ export const UserRole = {
     STAFF: "Staff",
 };
 
-const ClientLeadStatus = {
+export const ClientLeadStatus = {
     NEW: "New",
     IN_PROGRESS: "In Progress",
-    CONTACT_INITIATED: "Contact Initiated",
     INTERESTED: "Interested",
     NEEDS_IDENTIFIED: "Needs Identified",
     NEGOTIATING: "Negotiating",
     REJECTED: "Rejected",
     FINALIZED: "Finalized",
+    CONVERTED: "Converted",
+    ON_HOLD: "On Hold",
 };
+
+export const KanbanLeadsStatus={
+    IN_PROGRESS: "In Progress",
+    INTERESTED: "Interested",
+    NEEDS_IDENTIFIED: "Needs Identified",
+    NEGOTIATING: "Negotiating",
+    REJECTED: "Rejected",
+    FINALIZED: "Finalized",
+}
+
 
 
 export const DesignItemType = {
@@ -116,6 +127,7 @@ export const simpleModalStyle = {
     },
     bgcolor: "background.paper",
     boxShadow: 24,
+    borderRadius:2,
     p: 4,
 }
 

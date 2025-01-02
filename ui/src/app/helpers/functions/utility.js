@@ -108,3 +108,43 @@ export function hideMoreData(content,max=20)
     }
 return  content
 }
+export   const calculateTimeLeft = (setTimeLeft,nextCall) => {
+    if(!nextCall?.time)return;
+    const now = new Date();
+    const callTime = new Date(nextCall.time);
+    const diff = callTime - now;
+    if (diff <= 0 && diff >= -3600000) {
+        // Call is happening now or within the last hour
+        setTimeLeft("Call is now");
+        return;
+    } else if (diff < -3600000) {
+        // Call was more than an hour ago
+        const passedTime = Math.abs(diff);
+        const passedHours = Math.floor(passedTime / (1000 * 60 * 60));
+        const passedMinutes = Math.floor((passedTime % (1000 * 60 * 60)) / (1000 * 60));
+        setTimeLeft(
+              `Passed ${passedHours > 0 ? `${passedHours}h ` : ""}${
+                    passedMinutes > 0 ? `${passedMinutes}m ` : ""
+              }ago`
+        );
+        return;
+    }
+
+    // Upcoming calls
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+    if (diff <= 3600000) {
+        // Call is within the current hour
+        setTimeLeft("Call is now");
+    } else {
+        // Regular time display
+        setTimeLeft(
+              `${days > 0 ? `${days}d ` : ""}${hours > 0 ? `${hours}h ` : ""}${
+                    minutes > 0 ? `${minutes}m ` : ""
+              }${seconds}s`
+        );
+    }
+};
