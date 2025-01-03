@@ -8,7 +8,8 @@ import {initSocket} from "./services/socket.js";
 import authRoutes from './routes/auth.js';
 import sharedRoutes from './routes/shared.js';
 import utilityRoutes from './routes/utility.js';
-import staffRoutes from './routes/staff.js';
+import staffRoutes from './routes/staff.js'
+import adminRountes from './routes/admin.js';
 
 dotenv.config();
 const app = express();
@@ -29,6 +30,7 @@ app.use('/auth', authRoutes);
 app.use('/shared', sharedRoutes);
 app.use('/utility', utilityRoutes);
 app.use('/staff', staffRoutes);
+app.use('/admin', adminRountes);
 
 httpServer.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

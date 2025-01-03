@@ -1,22 +1,29 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {useAlertContext} from "@/app/providers/MuiAlert.jsx";
 import {useToastContext} from "@/app/providers/ToastLoadingProvider.js";
 import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit.js";
-import {Box, Button, Modal, TextField, Typography} from "@mui/material";
+import {Alert, Box, Button, Modal, TextField, Typography} from "@mui/material";
 import {simpleModalStyle} from "@/app/helpers/constants.js";
 
-export function FinalizeModal({ open, setOpen, id, setleads, setId,setLead,setAnchorEl,updatePrice }) {
-    const [price, setPrice] = useState();
+export function FinalizeModal({ open, setOpen, id, setleads, setId,setLead,setAnchorEl,updatePrice ,lead}) {
+    const [price, setPrice] = useState(lead.priceWithOutDiscount);
+    const [discount,setDiscount]=useState(lead.discount)
+    const [averagePrice,setAveragePrice]=useState(lead.averagePrice)
     const { setAlertError } = useAlertContext();
     const { setLoading } = useToastContext();
-
+useEffect(()=>{
+    if(discount>=0&&price>0){
+        const discountValue=price*discount/100
+        setAveragePrice(price-discountValue)
+    }
+},[discount,price])
     async function submit() {
         if (!price || price <= 0) {
             setAlertError("Please enter a valid price agreed upon by the client.");
             return;
         }
         const request = await handleRequestSubmit(
-              { status: "FINALIZED", price,updatePrice },
+              { status: "FINALIZED", averagePrice,updatePrice,discount:discount,priceWithOutDiscount:price },
               setLoading,
               `staff/client-leads/${id}/status`,
               false,
@@ -26,7 +33,7 @@ export function FinalizeModal({ open, setOpen, id, setleads, setId,setLead,setAn
         );
         if (request.status === 200) {
             if (setLead) {
-                setLead((oldLead) => ({...oldLead, status: "FINALIZED",averagePrice:price}));
+                setLead((oldLead) => ({...oldLead, status: "FINALIZED",averagePrice,priceWithOutDiscount:price,discount}));
             }
             setleads((prev) =>
                   prev.map((lead) =>
@@ -65,13 +72,32 @@ export function FinalizeModal({ open, setOpen, id, setleads, setId,setLead,setAn
                         value={price}
                         type="number"
                         fullWidth
-                        label="Agreed Price"
+                        label="Final Price without the discount"
                         placeholder="Enter the agreed price"
                         onChange={(e) => setPrice(e.target.value)}
                         error={!price || price <= 0}
                         helperText={!price || price <= 0 ? "This field is required and must be a positive number." : ""}
                         sx={{ mb: 2 }}
                   />
+                  <TextField
+                        value={discount}
+                        type="number"
+                        fullWidth
+                        label="Discount (Percentage)"
+                        placeholder="Enter the discount"
+                        error={discount>100||discount<0}
+                        onChange={(e) => {
+                            if(e.target.value>100||e.target.value<0) {
+                                setAlertError("Discount must be less than 100 or more than 0")
+                                return
+                            }
+                            setDiscount(e.target.value)
+                        }}
+                        sx={{ mb: 2 }}
+                  />
+                  <Alert severity="info" sx={{mb:2}}>
+                      The current price is : {averagePrice}
+                  </Alert>
                   <Button onClick={submit} variant="contained" fullWidth>
                       {updatePrice?"Update":
                       "Submit"} Final Price

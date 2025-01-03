@@ -27,12 +27,10 @@ const PriceOffersList = ({ admin, lead }) => {
 
     const cardStyles = {
         height: '100%',
-        boxShadow: theme.shadows[3],
+        boxShadow: theme.shadows[1],
         position: 'relative',
-        '&:hover': {
-            boxShadow: theme.shadows[6],
-            transition: 'box-shadow 0.3s ease-in-out'
-        }
+        p:2,
+
     };
 
     const listItemStyles = {

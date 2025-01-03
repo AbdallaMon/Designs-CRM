@@ -41,8 +41,6 @@ export default function Leads() {
     const links = [
         {href: "/dashboard/overdue-deals", title: "See Overdue Deals", icon: <FaBusinessTime/>},
     ];
-    const {user} = useAuth()
-
     const {
         data,
         loading,
@@ -59,7 +57,6 @@ export default function Leads() {
 
     return (
           <div>
-
               <AdminTable
                     data={data}
                     columns={columns}

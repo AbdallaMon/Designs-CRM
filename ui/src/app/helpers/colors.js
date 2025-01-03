@@ -38,7 +38,13 @@ export const LogColors = {
     FILE_UPLOADED: '#3f51b5', // Indigo
     LEAD_TRANSFERRED: '#f44336', // Red
     LEAD_CONTACT: '#009688', // Teal
+    CALL_REMINDER_CREATED: '#00bcd4', // Cyan
     CALL_REMINDER_STATUS: '#ff5722', // Deep Orange
+    PRICE_OFFER_SUBMITTED: '#8bc34a', // Light Green
+    PRICE_OFFER_UPDATED: '#cddc39', // Lime
+    FINAL_PRICE_ADDED: '#ffc107', // Amber
+    FINAL_PRICE_CHANGED: '#e91e63', // Pink
     OTHER: '#607d8b', // Grey
 };
+
 export default colors;

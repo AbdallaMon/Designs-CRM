@@ -125,11 +125,13 @@ export async function getClientLeadsByDateRange({ searchParams }) {
             status: true,
             price: true,
             averagePrice:true,
+            priceWithOutDiscount:true,
             selectedCategory:true,
             consultationType:true,
             designType:true,
             designItemType:true,
             emirate:true,
+            discount:true,
             callReminders: {
                 orderBy: { time: 'desc' },
                 take: 2,
@@ -165,6 +167,8 @@ export async function getClientLeadDetails(clientLeadId) {
             status: true,
             price: true,
             averagePrice:true,
+            priceWithOutDiscount:true,
+            discount:true,
             files: {
                 select: {
                     id: true,

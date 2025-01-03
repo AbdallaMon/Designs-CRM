@@ -28,7 +28,6 @@ export async function createNote({ clientLeadId, userId, content}) {
 }
 
 export async function createCallReminder({ clientLeadId,userId, time, reminderReason }) {
-    // Check for any existing IN_PROGRESS reminders
     let formattedTime = dayjs(time);
     if (formattedTime.isBefore(dayjs())) {
         throw new Error('The reminder time must be in the future.');
@@ -124,7 +123,6 @@ const data=        {
 
 
 export async function updateCallReminderStatus({ reminderId, status, callResult = null }) {
-
     const updatedReminder = await prisma.callReminder.update({
         where: { id: reminderId },
         data: {
@@ -148,12 +146,18 @@ export async function updateCallReminderStatus({ reminderId, status, callResult 
     return updatedReminder;
 }
 
-export async function updateClientLeadStatus({ clientLeadId, status,price }) {
+export async function updateClientLeadStatus({ clientLeadId, status,averagePrice,discount,priceWithOutDiscount }) {
     const data={
         status,updatedAt:new Date()
     }
-    if(price){
-        data.averagePrice=price
+    if(averagePrice){
+        data.averagePrice=Number(averagePrice)
+    }
+    if(discount){
+        data.discount=Number(discount)
+    }
+    if(priceWithOutDiscount){
+        data.priceWithOutDiscount=Number(priceWithOutDiscount)
     }
     await prisma.clientLead.update({
         where: { id: clientLeadId },

@@ -185,7 +185,9 @@ const {setLoading}=useToastContext()
     const rangeTypes = [{id: "WEEK", name: "Week"}, {id: "MONTH", name: "Month"}]
     return (
           <DndProvider backend={HTML5Backend}>
-<FinalizeModal open={finalizeModel} setOpen={setFinalizeModel} id={currentId} setId={setCurrentId} setleads={setleads}/>
+              {currentId&&
+<FinalizeModal  lead={leads?.find((l)=>l.id===currentId)}open={finalizeModel} setOpen={setFinalizeModel} id={currentId} setId={setCurrentId} setleads={setleads}/>
+              }
               <Box px={1.5}>
                   <Box
                         sx={{
@@ -217,7 +219,6 @@ const {setLoading}=useToastContext()
                                 }
                             }}
                       >
-
                           <FilterSelect
                                 options={rangeTypes}
                                 label="Date range"
@@ -226,7 +227,6 @@ const {setLoading}=useToastContext()
                                 setFilters={setFilters}
                                 withAll={false}
                           />
-
                       </Box>
                       <Box
                             display="flex" justifyContent="flex-end"

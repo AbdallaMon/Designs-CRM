@@ -41,21 +41,15 @@ import {
 } from "@/app/helpers/constants.js";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader.jsx";
 import {getData} from "@/app/helpers/functions/getData.js";
-import {CallResultDialog, NewCallDialog, NewNoteDialog} from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
-import dayjs from "dayjs";
 import {  AiOutlineSwap} from "react-icons/ai";
 import { enumToKeyValueArray} from "@/app/helpers/functions/utility.js";
 import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit.js";
 import {useToastContext} from "@/app/providers/ToastLoadingProvider.js";
-import {RiAlarmLine, RiCalendarLine, RiCheckboxCircleLine, RiTimeLine, RiUserLine} from "react-icons/ri";
-import {InProgressCall} from "@/app/UiComponents/DataViewer/leads/InProgressCall.jsx";
 import {FinalizeModal} from "@/app/UiComponents/DataViewer/leads/FinalizeModal.jsx";
 import PriceOffersList from "@/app/UiComponents/DataViewer/leads/PriceOffersList.jsx";
-import {FaDollarSign, FaPaperclip} from "react-icons/fa";
 import CallReminders from "@/app/UiComponents/DataViewer/leads/CallReminders.jsx";
 import LeadNotes from "@/app/UiComponents/DataViewer/leads/LeadNotes.jsx";
 import FileList from "@/app/UiComponents/DataViewer/leads/FileList.jsx";
-import {LuDollarSign} from "react-icons/lu";
 import {GoPaperclip} from "react-icons/go";
 import {PiCurrencyDollarSimpleLight} from "react-icons/pi";
 
@@ -134,8 +128,8 @@ const LeadContent = ({
     const leadStatus = enumToKeyValueArray(KanbanLeadsStatus);
     return (
           <>
-              <FinalizeModal open={finalizeModel} setOpen={setFinalizeModel} id={currentId} setId={setCurrentId} setleads={setleads} setLead={setLead} setAnchorEl={setAnchorEl}/>
-              <FinalizeModal open={openPriceModel} setOpen={setOpenPriceModel} id={lead.id}  setleads={setleads} setLead={setLead}  updatePrice={true}/>
+              <FinalizeModal lead={lead} open={finalizeModel} setOpen={setFinalizeModel} id={currentId} setId={setCurrentId} setleads={setleads} setLead={setLead} setAnchorEl={setAnchorEl}/>
+              <FinalizeModal lead={lead} open={openPriceModel} setOpen={setOpenPriceModel} id={lead.id}  setleads={setleads} setLead={setLead}  updatePrice={true}/>
 
               <DialogTitle
                     sx={{
@@ -176,7 +170,7 @@ const LeadContent = ({
                                           borderRadius: "50px"
                                       }}
                                 >
-                                    {lead.averagePrice}
+                                   Final price : {lead.averagePrice}
                                 </Button>
                           }
                           {!admin&&
@@ -197,7 +191,6 @@ const LeadContent = ({
                           <Modal open={openConfirm}              onClose={() => setOpenConfirm(false)}
                                  closeAfterTransition>
                               <Fade in={openConfirm}>
-
                               <Box sx={{...simpleModalStyle}}>
                                   <Typography variant="h6" component="h2" mb={2}>
                                       Convert lead so some one else take it?
@@ -349,6 +342,22 @@ const theme=useTheme()
                           </Typography>
                           <Typography variant="body1">
                               AED {lead.price}
+                          </Typography>
+                      </Grid>
+                      <Grid size={{xs: 12, md: 3}}>
+                          <Typography color="text.secondary" variant="caption">
+                              Discount
+                          </Typography>
+                          <Typography variant="body1">
+                               {lead.discount}%
+                          </Typography>
+                      </Grid>
+                      <Grid size={{xs: 12, md: 3}}>
+                          <Typography color="text.secondary" variant="caption">
+                              Final price
+                          </Typography>
+                          <Typography variant="body1">
+                             AED {lead.averagePrice}
                           </Typography>
                       </Grid>
                       <Grid size={{xs: 12}}>

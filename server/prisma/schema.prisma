@@ -8,25 +8,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 enum LogType {
- LEAD_CREATED
  LEAD_ASSIGNED
  LEAD_STATUS_CHANGED
  NOTE_ADDED
  FILE_UPLOADED
  LEAD_TRANSFERRED
  LEAD_CONTACT
+ CALL_REMINDER_CREATED
  CALL_REMINDER_STATUS
+ PRICE_OFFER_SUBMITTED
+ PRICE_OFFER_UPDATED
+ FINAL_PRICE_ADDED
+ FINAL_PRICE_CHANGED
  OTHER
 }
 
 enum NotificationType {
  NEW_LEAD
  LEAD_ASSIGNED
- LEAD_STATUS_CHANGED
+ LEAD_STATUS_CHANGE
+ LEAD_TRANSFERRED
+ LEAD_UPDATED
  NEW_NOTE
  NEW_FILE
- REMINDER
- LEAD_TRANSFERRED
+ NEW_REMINDER
 }
 
 enum LeadCategory {
@@ -168,9 +173,11 @@ model ClientLead {
   consultationType   ConsultationType?
   designType         DesignType?
   designItemType     DesignItemType?
+  discount  Decimal   @db.Decimal(10, 2) @default(0)
   emirate            Emirate?
   price              String?
   averagePrice  Decimal   @db.Decimal(10, 2)
+  priceWithOutDiscount  Decimal   @db.Decimal(10, 2) @default(0)
   priceOffers PriceOffers[]
 
   status             ClientLeadStatus @default(NEW)
@@ -228,8 +235,8 @@ model File {
  clientLeadId Int
  isUserFile   Boolean    @default(true)
  createdAt    DateTime   @default(now())
- user    User              @relation(fields: [userId], references: [id])
- userId        Int
+ user         User?       @relation(fields: [userId], references: [id])
+ userId    Int?
  @@index([clientLeadId, isUserFile])
 }
 
@@ -280,8 +287,8 @@ model Log {
   id           Int        @id @default(autoincrement())
   type         LogType
   text         String     @db.Text
-  user         User       @relation(fields: [userId], references: [id])
-  userId       Int
+  user         User?       @relation(fields: [userId], references: [id])
+  userId    Int?
   createdAt    DateTime   @default(now())
 
   @@index([userId])
@@ -292,8 +299,8 @@ model Notification {
  content      String           @db.Text
  link         String?          @db.VarChar(255)
  isRead       Boolean          @default(false)
- user         User             @relation(fields: [userId], references: [id])
- userId       Int
+ user         User?       @relation(fields: [userId], references: [id])
+ userId    Int?
  clientLead   ClientLead       @relation(fields: [clientLeadId], references: [id])
  clientLeadId Int
  createdAt    DateTime         @default(now())

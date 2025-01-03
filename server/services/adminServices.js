@@ -1,4 +1,6 @@
 import bcrypt from "bcrypt";
+import prisma from "../prisma/prisma.js";
+import dayjs from "dayjs";
 
 export async function createStaffUser(user) {
     const hashedPassword = bcrypt.hashSync(user.password, 8);
@@ -55,4 +57,54 @@ export async function changeUserStatus(user, studentId) {
             id: true
         }
     })
+}
+
+export async function getLogs({
+                                         limit = 1,
+                                         skip = 10,
+                                         searchParams
+                                     }) {
+    let where = {};
+
+    const filters = JSON.parse(searchParams.filters);
+
+    if (filters?.userId) {
+        where.userId =Number(filters.userId);
+    }
+    if (filters?.range) {
+        const { startDate, endDate } = filters.range;
+
+        const now = dayjs();
+        let start = startDate ? dayjs(startDate) : now.subtract(30, 'days'); // Default to last 30 days
+        let end = endDate ? dayjs(endDate).endOf('day') : now;
+        where.createdAt = {
+            gte: start.toDate(),
+            lte: end.toDate(),
+        };
+    } else {
+        where.createdAt = {
+            gte: dayjs().subtract(30, 'days').toDate(),
+            lte: dayjs().toDate(),
+        };
+    }
+    const [logs, total] = await Promise.all([
+        prisma.log.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: { createdAt: 'desc' },
+            include:{
+                user:{
+                    select:{
+                        name:true,id:true
+                    }
+                }
+            }
+        }),
+        prisma.log.count({ where }),
+    ]);
+    const totalPages = Math.ceil(total / limit);
+console.log(totalPages,"totalPages")
+    console.log(total,"total")
+    return { data:logs, total, totalPages };
 }

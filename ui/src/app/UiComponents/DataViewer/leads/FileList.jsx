@@ -95,11 +95,8 @@ const [files,setFiles]=useState(lead.files)
 
     const cardStyles = {
         height: '100%',
-        boxShadow: theme.shadows[3],
-        '&:hover': {
-            boxShadow: theme.shadows[6],
-            transition: 'box-shadow 0.3s ease-in-out'
-        }
+        boxShadow: theme.shadows[1],
+
     };
 
     const listItemStyles = {

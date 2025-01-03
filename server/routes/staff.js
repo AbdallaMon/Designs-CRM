@@ -66,11 +66,10 @@ router.put('/client-leads/call-reminders/:id', async (req, res) => {
 router.put('/client-leads/:id/status', async (req, res) => {
     try {
         const { id } = req.params;
-        const { status,price,updatePrice } = req.body;
+        const { updatePrice } = req.body;
         await updateClientLeadStatus({
             clientLeadId: Number(id),
-            status,
-            price
+            ...req.body
         });
 
         res.status(200).json({message:updatePrice?"Price updated successfully":"Status changed successfully"})
