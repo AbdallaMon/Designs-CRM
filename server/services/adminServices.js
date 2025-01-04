@@ -1,6 +1,36 @@
 import bcrypt from "bcrypt";
 import prisma from "../prisma/prisma.js";
 import dayjs from "dayjs";
+export async function getUser(searchParams, limit, skip) {
+    const filters =searchParams.filters && JSON.parse(searchParams.filters);
+    const staffFilter = searchParams.staffId ? {userId: Number(searchParams.staffId)} : {};
+    let where = {
+        role:"STAFF",
+        ...staffFilter,
+    };
+    if (filters.status !== undefined) {
+        if (filters.status === "active") {
+            where.isActive = true;
+        } else if (filters.status === "banned") {
+            where.isActive = false
+        }
+    }
+    const users = await prisma.user.findMany({
+        where: where,
+        skip,
+        take: limit,
+        select: {
+            id: true,
+            name:true,
+            email: true,
+            isActive: true,
+        },
+    });
+    const total = await prisma.user.count({where: where});
+
+    return {users, total};
+}
+
 
 export async function createStaffUser(user) {
     const hashedPassword = bcrypt.hashSync(user.password, 8);
@@ -8,15 +38,15 @@ export async function createStaffUser(user) {
         data: {
             email: user.email,
             password: hashedPassword,
-            role:"STAFF",
-            name:user.name,
+            role: "STAFF",
+            name: user.name,
             emailConfirmed: true,
         },
         select: {
+            id:true,
             email: true,
             isActive: true,
-
-            name:true
+            name: true
         },
     });
 
@@ -33,14 +63,13 @@ export async function editStaffUser(user, userId) {
         data: {
             email: user.email && user.email,
             password: hashedPassword && hashedPassword,
-            name:user.name
+            name: user.name
         },
         select: {
             id: true,
             email: true,
             isActive: true,
-            role: true,
-            name:true
+            name: true
         },
     });
 }
@@ -59,52 +88,3 @@ export async function changeUserStatus(user, studentId) {
     })
 }
 
-export async function getLogs({
-                                         limit = 1,
-                                         skip = 10,
-                                         searchParams
-                                     }) {
-    let where = {};
-
-    const filters = JSON.parse(searchParams.filters);
-
-    if (filters?.userId) {
-        where.userId =Number(filters.userId);
-    }
-    if (filters?.range) {
-        const { startDate, endDate } = filters.range;
-
-        const now = dayjs();
-        let start = startDate ? dayjs(startDate) : now.subtract(30, 'days'); // Default to last 30 days
-        let end = endDate ? dayjs(endDate).endOf('day') : now;
-        where.createdAt = {
-            gte: start.toDate(),
-            lte: end.toDate(),
-        };
-    } else {
-        where.createdAt = {
-            gte: dayjs().subtract(30, 'days').toDate(),
-            lte: dayjs().toDate(),
-        };
-    }
-    const [logs, total] = await Promise.all([
-        prisma.log.findMany({
-            where,
-            skip,
-            take: limit,
-            orderBy: { createdAt: 'desc' },
-            include:{
-                user:{
-                    select:{
-                        name:true,id:true
-                    }
-                }
-            }
-        }),
-        prisma.log.count({ where }),
-    ]);
-    const totalPages = Math.ceil(total / limit);
-console.log(totalPages,"totalPages")
-    console.log(total,"total")
-    return { data:logs, total, totalPages };
-}

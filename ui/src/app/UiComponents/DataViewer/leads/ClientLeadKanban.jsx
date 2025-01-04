@@ -57,15 +57,10 @@ const StatusChip = styled(Chip)(({theme, statuscolor}) => ({
 }));
 
 const Column = ({status, leads, movelead, admin, setleads}) => {
-    const {setAlertError}=useAlertContext()
     const [, drop] = useDrop({
         accept: ItemTypes.CARD,
         drop: (item) => {
-            if (admin) {
-                setAlertError("You are not allowed to change lead status")
-                return;
-            }
-            movelead(item.id, status);
+            movelead(item, status);
         },
     });
 
@@ -163,18 +158,18 @@ const KanbanBoard = ({admin}) => {
     const [finalizeModel,setFinalizeModel]=useState(false)
     const [currentId,setCurrentId]=useState(null)
 const {setLoading}=useToastContext()
-    const movelead =async (id, newStatus) => {
-    if(admin)return
+
+    const movelead =async (l, newStatus) => {
         if(newStatus==="FINALIZED"){
-            setCurrentId(id)
+            setCurrentId(l.id)
             setFinalizeModel(true)
             return
         }
-        const request = await handleRequestSubmit({status: newStatus}, setLoading, `staff/client-leads/${id}/status`, false, "Updating",false, "PUT")
+        const request = await handleRequestSubmit({status: newStatus,oldStatus:l.status,isAdmin:user.role==="ADMIN"}, setLoading, `shared/client-leads/${l.id}/status`, false, "Updating",false, "PUT")
             if(request.status===200) {
                 setleads((prev) =>
                       prev.map((lead) =>
-                            lead.id === id ? {...lead, status: newStatus} : lead
+                            lead.id === l.id ? {...lead, status: newStatus} : lead
                       )
                 );
 }

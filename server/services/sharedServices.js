@@ -1,5 +1,14 @@
 import prisma from "../prisma/prisma.js";
 import dayjs from 'dayjs';
+import {dealsLink, userLink} from "./links.js";
+import {createNotification, getUserDetailsWithSpecificFields} from "./utility.js";
+import {
+    assignLeadNotification,
+    convertALeadNotification,
+    overdueALeadNotification,
+    updateLeadStatusNotification
+} from "./notification.js";
+import {ClientLeadStatus} from "./enums.js";
 
 export async function getClientLeads({
                                          limit = 1,
@@ -7,9 +16,11 @@ export async function getClientLeads({
                                          searchParams
                                      }) {
     let where = {};
-const {    isNew = false,
-    status = null,
-    assignedOverdue = false}=searchParams;
+    const {
+        isNew = false,
+        status = null,
+        assignedOverdue = false
+    } = searchParams;
     const filters = JSON.parse(searchParams.filters);
     if (assignedOverdue) {
         const fifteenDaysAgo = new Date();
@@ -17,9 +28,9 @@ const {    isNew = false,
         where = {
             OR: [
                 {
-                    assignedTo: { isNot: null },
-                    assignedAt: { lt: fifteenDaysAgo },
-                    status: { not: "CONVERTED" }
+                    assignedTo: {isNot: null},
+                    assignedAt: {lt: fifteenDaysAgo},
+                    status: {not: "CONVERTED"}
                 },
                 {
                     status: "ON_HOLD"
@@ -44,34 +55,34 @@ const {    isNew = false,
         } else if (status) {
             where.status = status;
         } else {
-            where.status = { notIn: ['NEW', 'CONVERTED',"ON_HOLD"] };
+            where.status = {notIn: ['NEW', 'CONVERTED', "ON_HOLD"]};
         }
         if (searchParams?.staffId) {
             where.userId = Number(searchParams.staffId);
         }
     }
     if (filters?.clientId) {
-        where.clientId =Number(filters.clientId);
+        where.clientId = Number(filters.clientId);
     }
-    if(filters?.type&&filters.type!=="all"){
-        where.selectedCategory=filters.type
+    if (filters?.type && filters.type !== "all") {
+        where.selectedCategory = filters.type
     }
     const [clientLeads, total] = await Promise.all([
         prisma.clientLead.findMany({
             where,
             skip,
             take: limit,
-            orderBy: { createdAt: 'desc' },
+            orderBy: {createdAt: 'desc'},
             select: {
                 id: true,
                 status: true,
                 createdAt: true,
-                price:true,
-                designItemType:true,
-                designType:true,
-                emirate:true,
-                consultationType:true,
-                selectedCategory:true,
+                price: true,
+                designItemType: true,
+                designType: true,
+                emirate: true,
+                consultationType: true,
+                selectedCategory: true,
                 client: {
                     select: {
                         name: true,
@@ -80,21 +91,21 @@ const {    isNew = false,
                 },
                 assignedTo: {
                     select: {
-                        id:true,
+                        id: true,
                         name: true,
                     }
                 },
             },
         }),
-        prisma.clientLead.count({ where }),
+        prisma.clientLead.count({where}),
     ]);
     const totalPages = Math.ceil(total / limit);
 
-    return { data:clientLeads, total, totalPages };
+    return {data: clientLeads, total, totalPages};
 }
 
-export async function getClientLeadsByDateRange({ searchParams }) {
-    const { range = 'WEEK' } = searchParams;
+export async function getClientLeadsByDateRange({searchParams}) {
+    const {range = 'WEEK'} = searchParams;
 
     // Calculate date range
     const endDate = dayjs().toDate(); // Today
@@ -108,8 +119,8 @@ export async function getClientLeadsByDateRange({ searchParams }) {
             gte: startDate,
             lte: endDate,
         },
-        assignedTo: { isNot: null },
-        status:{ notIn: ['NEW', 'CONVERTED',"ON_HOLD"] }
+        assignedTo: {isNot: null},
+        status: {notIn: ['NEW', 'CONVERTED', "ON_HOLD"]}
     };
     if (searchParams?.staffId) {
         where.userId = Number(searchParams.staffId);
@@ -117,32 +128,33 @@ export async function getClientLeadsByDateRange({ searchParams }) {
     // Fetch data
     const clientLeads = await prisma.clientLead.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: {createdAt: 'desc'},
         select: {
             id: true,
-            client: { select: { name: true } },
-            assignedTo: { select: { name: true } },
+            client: {select: {name: true}},
+            assignedTo: {select: {name: true}},
             status: true,
             price: true,
-            averagePrice:true,
-            priceWithOutDiscount:true,
-            selectedCategory:true,
-            consultationType:true,
-            designType:true,
-            designItemType:true,
-            emirate:true,
-            discount:true,
+            averagePrice: true,
+            priceWithOutDiscount: true,
+            selectedCategory: true,
+            consultationType: true,
+            designType: true,
+            designItemType: true,
+            emirate: true,
+            discount: true,
             callReminders: {
-                orderBy: { time: 'desc' },
+                orderBy: {time: 'desc'},
                 take: 2,
             },
         },
     });
     return clientLeads;
 }
+
 export async function getClientLeadDetails(clientLeadId) {
     const clientLead = await prisma.clientLead.findUnique({
-        where: { id: clientLeadId },
+        where: {id: clientLeadId},
         select: {
             id: true,
             client: {
@@ -163,47 +175,47 @@ export async function getClientLeadDetails(clientLeadId) {
             designType: true,
             designItemType: true,
             emirate: true,
-            consultationType:true,
+            consultationType: true,
             status: true,
             price: true,
-            averagePrice:true,
-            priceWithOutDiscount:true,
-            discount:true,
+            averagePrice: true,
+            priceWithOutDiscount: true,
+            discount: true,
             files: {
                 select: {
                     id: true,
                     name: true,
                     url: true,
                     createdAt: true,
-                    description:true,
-                    isUserFile:true,
-                    user:{
-                        select: { name: true },
+                    description: true,
+                    isUserFile: true,
+                    user: {
+                        select: {name: true},
                     }
                 },
             },
-            priceOffers:{
-                orderBy: {  createdAt: 'desc' },
-                select:{
-                id:true,
-                minPrice:true,
-                maxPrice:true,
-                userId: true,
-                user: {
-                    select: { name: true },
-                },
-                createdAt: true,
+            priceOffers: {
+                orderBy: {createdAt: 'desc'},
+                select: {
+                    id: true,
+                    minPrice: true,
+                    maxPrice: true,
+                    userId: true,
+                    user: {
+                        select: {name: true},
+                    },
+                    createdAt: true,
                 }
 
             },
             notes: {
-                orderBy: {  createdAt: 'desc' },
+                orderBy: {createdAt: 'desc'},
                 select: {
                     id: true,
                     content: true,
                     userId: true,
                     user: {
-                        select: { name: true },
+                        select: {name: true},
                     },
                     createdAt: true,
                 },
@@ -217,10 +229,10 @@ export async function getClientLeadDetails(clientLeadId) {
                     callResult: true,
                     userId: true,
                     user: {
-                        select: { name: true },
+                        select: {name: true},
                     },
                 },
-                orderBy: { time: 'desc' }
+                orderBy: {time: 'desc'}
             },
             createdAt: true,
             updatedAt: true,
@@ -240,10 +252,9 @@ export async function getClientLeadDetails(clientLeadId) {
 export async function markClientLeadAsConverted(clientLeadId, reasonToConvert, status = "CONVERTED", withInclude = false) {
     const reason = reasonToConvert || "Overdue";
 
-    // Base update query
     const updateQuery = {
-        where: { id: clientLeadId },
-        data: { status: status, reasonToConvert: reason },
+        where: {id: clientLeadId},
+        data: {status: status, reasonToConvert: reason},
     };
 
     if (withInclude) {
@@ -254,45 +265,48 @@ export async function markClientLeadAsConverted(clientLeadId, reasonToConvert, s
         };
     }
 
-    return await prisma.clientLead.update(updateQuery);
+
+    const lead=await prisma.clientLead.update(updateQuery);
+    if(status==="ON_HOLD"){
+       await convertALeadNotification(lead)
+    }
+ return lead
 }
 
 export async function assignLeadToAUser(clientLeadId, userId, isOverdue) {
     if (isOverdue) {
-        const convertedLead = await markClientLeadAsConverted(clientLeadId,null,"CONVERTED",true)
-
-            // Create a new lead for the same client but assigned to a different user
-            const newClientLead = await prisma.clientLead.create({
-                data: {
-                    leadId: convertedLead.leadId,
-                    clientId: convertedLead.clientId,
-                    userId: userId,
-                    selectedCategory: convertedLead.selectedCategory,
-                    consultationType: convertedLead.consultationType,
-                    designType: convertedLead.designType,
-                    designItemType: convertedLead.designItemType,
-                    emirate: convertedLead.emirate,
-                    price: convertedLead.price,
-                    status: "IN_PROGRESS",
-                    assignedAt: new Date(),
-                    // Link the new lead to the data of the converted lead
-                    files: {
-                        connect: convertedLead.files.map((file) => ({ id: file.id })),
-                    },
-                    notes: {
-                        connect: convertedLead.notes.map((note) => ({ id: note.id })),
-                    },
-                    callReminders: {
-                        connect: convertedLead.callReminders.map((reminder) => ({ id: reminder.id })),
-                    },
+        const convertedLead = await markClientLeadAsConverted(clientLeadId, null, "CONVERTED", true)
+        const newClientLead = await prisma.clientLead.create({
+            data: {
+                leadId: convertedLead.leadId,
+                clientId: convertedLead.clientId,
+                userId: userId,
+                selectedCategory: convertedLead.selectedCategory,
+                consultationType: convertedLead.consultationType,
+                designType: convertedLead.designType,
+                designItemType: convertedLead.designItemType,
+                emirate: convertedLead.emirate,
+                price: convertedLead.price,
+                status: "IN_PROGRESS",
+                assignedAt: new Date(),
+                files: {
+                    connect: convertedLead.files.map((file) => ({id: file.id})),
                 },
-            });
+                notes: {
+                    connect: convertedLead.notes.map((note) => ({id: note.id})),
+                },
+                callReminders: {
+                    connect: convertedLead.callReminders.map((reminder) => ({id: reminder.id})),
+                },
+            },
+        });
 
-            return newClientLead;
-        }
+       await overdueALeadNotification(convertedLead,newClientLead)
+        return newClientLead;
+    }
 
     const updatedClientLead = await prisma.clientLead.update({
-        where: { id: clientLeadId },
+        where: {id: clientLeadId},
         data: {
             userId: userId,
             assignedAt: new Date(),
@@ -301,10 +315,11 @@ export async function assignLeadToAUser(clientLeadId, userId, isOverdue) {
         select: {
             id: true,
             assignedTo: {
-                select: { id: true, name: true },
+                select: {id: true, name: true},
             },
         },
     });
+    await assignLeadNotification(clientLeadId,userId,updatedClientLead)
 
     return updatedClientLead;
 }
@@ -312,7 +327,8 @@ export async function assignLeadToAUser(clientLeadId, userId, isOverdue) {
 /* dashboard services */
 export const getKeyMetrics = async (searchParams) => {
     try {
-        const staffFilter = searchParams.staffId ? { userId: Number(searchParams.staffId) } : {};
+        const staffFilter = searchParams.staffId ? {userId: Number(searchParams.staffId)} : {};
+        const userProfile=searchParams.profile
 
         const totalRevenueResult = await prisma.clientLead.aggregate({
             _sum: {
@@ -323,16 +339,13 @@ export const getKeyMetrics = async (searchParams) => {
                 ...staffFilter,
             },
         });
-
         const totalRevenue = totalRevenueResult._sum.averagePrice || 0;
-
-        // 2. Average Project Value: Average of 'price' across all ClientLeads
         const avgLeadValueResult = await prisma.clientLead.aggregate({
             _avg: {
                 averagePrice: true,
             },
             where: {
-                 ...staffFilter
+                ...staffFilter
             }
         });
         const averageProjectValue = avgLeadValueResult._avg.averagePrice
@@ -342,28 +355,47 @@ export const getKeyMetrics = async (searchParams) => {
         const successLeadsCount = await prisma.clientLead.count({
             where: {
                 status: 'FINALIZED',
-                 ...staffFilter
+                ...staffFilter
 
             },
         });
         const nonSuccessLeadsCount = await prisma.clientLead.count({
             where: {
-                 ...staffFilter
-,
+                ...staffFilter
+                ,
                 status: {
                     in: ['CONVERTED', 'ON_HOLD', 'REJECTED'],
                 },
             },
         });
-        const leadsCounts = await prisma.clientLead.count({
+
+        let leadsCounts;
+        if(userProfile){
+            const startOfToday = dayjs().startOf('day').toDate(); // Start of the day
+            const endOfToday = dayjs().endOf('day').toDate(); // End of the day
+            leadsCounts = await prisma.clientLead.count({
+                where: {
+                    status: {
+                        notIn: ['NEW'],
+                    },
+                    ...staffFilter,
+                    assignedAt: {
+                        gte: startOfToday,
+                        lte: endOfToday,
+                    },
+                },
+            });
+        }else{
+
+         leadsCounts = await prisma.clientLead.count({
             where: {
                 status: {
-                    notIn: ['NEW', 'ON_HOLD', 'REJECTED'],
+                    notIn: ['NEW'],
                 },
                 ...staffFilter
-
             },
         });
+        }
         const totalProcessedLeadsCount = successLeadsCount + nonSuccessLeadsCount;
 
         // 5. Calculate the success rate
@@ -384,10 +416,8 @@ export const getKeyMetrics = async (searchParams) => {
 };
 
 export const getDashboardLeadStatusData = async (searchParams) => {
-    const staffFilter = searchParams.staffId ? { userId: Number(searchParams.staffId) } : {};
-
+    const staffFilter = searchParams.staffId ? {userId: Number(searchParams.staffId)} : {};
     try {
-        // Fetch raw lead statuses count from the database
         const rawStatuses = await prisma.clientLead.groupBy({
             by: ['status'],
             _count: {
@@ -397,8 +427,6 @@ export const getDashboardLeadStatusData = async (searchParams) => {
                 ...staffFilter,
             },
         });
-
-        // Format the data with rounded counts
         const formattedStatuses = rawStatuses.map((entry) => ({
             status: entry.status.replace(/_/g, ' '), // Replace underscores with spaces for readability
             count: parseFloat(entry._count.status.toFixed(2)), // Round count to 2 decimal places
@@ -412,10 +440,10 @@ export const getDashboardLeadStatusData = async (searchParams) => {
 };
 
 export const getMonthlyPerformanceData = async (searchParams) => {
-    const staffFilter = searchParams.staffId ? { userId: Number(searchParams.staffId) } : {};
+    const staffFilter = searchParams.staffId ? {userId: Number(searchParams.staffId)} : {};
 
     try {
-        const months = Array.from({ length: 12 }, (_, i) => {
+        const months = Array.from({length: 12}, (_, i) => {
             const date = dayjs().subtract(i, 'month');
             return {
                 label: date.format('MMM'), // Format as 'Jan', 'Feb', etc.
@@ -426,7 +454,7 @@ export const getMonthlyPerformanceData = async (searchParams) => {
 
         // Fetch data for each month
         const results = await Promise.all(
-              months.map(async ({ label, start, end }) => {
+              months.map(async ({label, start, end}) => {
                   // Count total leads for the month
                   const totalLeads = await prisma.clientLead.count({
                       where: {
@@ -434,7 +462,7 @@ export const getMonthlyPerformanceData = async (searchParams) => {
                               gte: start,
                               lte: end,
                           },
-                              ...staffFilter,
+                          ...staffFilter,
                       },
                   });
 
@@ -446,7 +474,7 @@ export const getMonthlyPerformanceData = async (searchParams) => {
                               lte: end,
                           },
                           status: 'FINALIZED',
-                              ...staffFilter,
+                          ...staffFilter,
 
                       },
                   });
@@ -457,7 +485,7 @@ export const getMonthlyPerformanceData = async (searchParams) => {
                               gte: start,
                               lte: end,
                           },
-                              ...staffFilter,
+                          ...staffFilter,
 
                           status: {
                               in: ['CONVERTED', 'ON_HOLD', 'REJECTED'],
@@ -474,7 +502,7 @@ export const getMonthlyPerformanceData = async (searchParams) => {
                               gte: start,
                               lte: end,
                           },
-                              ...staffFilter,
+                          ...staffFilter,
                           status: 'FINALIZED',
                       },
                   });
@@ -499,7 +527,7 @@ export const getMonthlyPerformanceData = async (searchParams) => {
 };
 
 export const getEmiratesAnalytics = async (searchParams) => {
-    const staffFilter = searchParams.staffId ? { userId: Number(searchParams.staffId) } : {};
+    const staffFilter = searchParams.staffId ? {userId: Number(searchParams.staffId)} : {};
 
     try {
         const emirates = [
@@ -636,8 +664,7 @@ export const getEmiratesAnalytics = async (searchParams) => {
 };
 
 export const getPerformanceMetrics = async (searchParams) => {
-    const staffFilter = searchParams.staffId ? { userId: Number(searchParams.staffId) } : {};
-
+    const staffFilter = searchParams.staffId ? {userId: Number(searchParams.staffId)} : {};
     try {
         const weekStart = dayjs().subtract(7, 'day').startOf('day').toDate(); // Exactly 7 days ago
         const weekEnd = dayjs().endOf('day').toDate(); // End of today
@@ -664,20 +691,16 @@ export const getPerformanceMetrics = async (searchParams) => {
         });
 
         // Fetch follow-ups
-        const followUps = await prisma.log.groupBy({
+        const followUps = await prisma.notification.groupBy({
             by: ['userId', 'createdAt'],
             _count: {
-                userId: true,
+                staffId: true,
             },
             where: {
                 ...staffFilter,
                 type: {
-                    in: [
-                        'LEAD_STATUS_CHANGED',
-                        'CALL_REMINDER_STATUS',
-                        'LEAD_CONTACT',
-                        'NOTE_ADDED',
-                        'FILE_UPLOADED',
+                    notIn: [
+                         "NEW_LEAD"
                     ],
                 },
                 createdAt: {
@@ -689,7 +712,7 @@ export const getPerformanceMetrics = async (searchParams) => {
 
         // Count unique leads from follow-ups
         const uniqueFollowUps = new Set(
-              followUps.map((log) => `${log.userId}-${dayjs(log.createdAt).format('YYYY-MM-DD')}`)
+              followUps.map((log) => `${log.staffId}-${dayjs(log.createdAt).format('YYYY-MM-DD')}`)
         ).size;
 
         // Fetch meetings
@@ -705,7 +728,7 @@ export const getPerformanceMetrics = async (searchParams) => {
         return {
             currentWeek: `${dayjs(weekStart).format('DD/MM')} : ${dayjs(weekEnd).format('DD/MM')}`,
             weekly: {
-                newLeads:newLeads,
+                newLeads: newLeads,
                 success,
                 followUps: uniqueFollowUps,
                 meetings,
@@ -748,22 +771,72 @@ export const getLatestNewLeads = async () => {
 };
 
 export const getRecentActivities = async (searchParams) => {
-    /* todo move this to admin only*/
-
+    const staffFilter = searchParams.staffId ? {staffId: Number(searchParams.staffId)} : {};
+    const userFilter=searchParams.userId?{userId: Number(searchParams.userId)}: {};
     try {
-        // Fetch recent logs, limit to the latest 10 activities
-        const logs = await prisma.log.findMany({
+        const notifications = await prisma.notification.findMany({
+            where: {
+                ...staffFilter,
+                ...userFilter
+            },
             orderBy: {
                 createdAt: 'desc',
             },
             take: 5,
         });
 
-        return logs;
+        return notifications;
     } catch (error) {
         console.error('Error fetching recent activities:', error);
         throw new Error('Unable to fetch recent activities');
     }
 };
 
-function CreateLogWithClientLeadUpdate(){}
+
+export async function updateClientLeadStatus({clientLeadId, status, averagePrice, discount, priceWithOutDiscount,oldStatus,isAdmin,updatePrice}) {
+    if(!isAdmin){
+        if(oldStatus==="FINALIZED"||oldStatus==="REJECTED")
+        {
+            throw new Error("You cant change the status from rejected or finalized only admin can ,Contact your administrator to take an action")
+        }
+    }else{
+        if(oldStatus!=="FINALIZED"&&oldStatus!=="REJECTED")
+        {
+            throw new Error("You are only allowed to change the status from finalized or rejected")
+        }
+    }
+    const data = {
+        status, updatedAt: new Date()
+    }
+    let heading=isAdmin?"Lead status changed by admin":"Lead status changed"
+    let content=`Lead changed from ${ClientLeadStatus[oldStatus]} to ${ClientLeadStatus[status]}`;
+    if (averagePrice) {
+        data.averagePrice = Number(averagePrice)
+    }
+    if (discount) {
+        data.discount = Number(discount)
+    }
+    if (priceWithOutDiscount) {
+        data.priceWithOutDiscount = Number(priceWithOutDiscount)
+    }
+
+    const lead= await prisma.clientLead.update({
+        where: {id: clientLeadId},
+        data
+    });
+    if(updatePrice){
+        heading="Lead price"
+        content=`
+<div>
+        <strong>Final price</strong>:${lead.averagePrice}
+</div>
+<div>
+        <strong>Dsicoount</strong>:${lead.discount}
+</div><div>
+        <strong>Price before discount</strong>:${lead.priceWithOutDiscount}
+</div>
+        `
+    }
+
+    await updateLeadStatusNotification(lead.id,heading,content,updatePrice?"FINAL_PRICE_ADDED":"LEAD_UPDATED",lead.userId,isAdmin,!isAdmin?lead.userId:null)
+}

@@ -17,7 +17,7 @@ import {getData} from "@/app/helpers/functions/getData.js";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
 import {useAuth} from "@/app/providers/AuthProvider.jsx"; // Ensure the path is correct
 
-const LeadStatusChart = ({staff}) => {
+const LeadStatusChart = ({staff,staffId}) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [loading,setLoading]=useState(true)
@@ -40,7 +40,9 @@ const LeadStatusChart = ({staff}) => {
     })))
     useEffect(()=>{
         async function fetchData(){
-            const request=await getData({url:`shared/dashboard/leads-status?${staff&&"staffId="+user.id}&`,setLoading})
+            const extra=staffId?"staffId="+staffId:staff?"staffId="+user.id:""
+
+            const request=await getData({url:`shared/dashboard/leads-status?${extra}&`,setLoading})
             if(request)setData(request.data)
         }
         fetchData()

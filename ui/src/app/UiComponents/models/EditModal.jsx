@@ -14,7 +14,7 @@ const EditModal = ({
                        setData,
                        href,
                        checkChanges = false, handleAfterEdit,
-                       handleBeforeSubmit, extraEditParams, renderFormTitle, editFormButton = "حفظ التغيرات"
+                       handleBeforeSubmit, extraEditParams, renderFormTitle, editFormButton = "Save"
                    }) => {
     const {setLoading} = useToastContext()
     const [open, setOpen] = useState(false)
@@ -34,7 +34,7 @@ const EditModal = ({
         }
         if (handleBeforeSubmit) dataToSubmit = await handleBeforeSubmit(formData)
         if (extraEditParams === undefined) extraEditParams = ""
-        const result = await handleRequestSubmit(dataToSubmit, setLoading, `${href}/${item.id}${extraEditParams}`, false, "جاري التعديل", null, "PUT");
+        const result = await handleRequestSubmit(dataToSubmit, setLoading, `${href}/${item.id}${extraEditParams}`, false, "Editing", null, "PUT");
         if (result.status === 200) {
             if (setData) {
                 setData((prevData) => prevData.map((dataItem) => dataItem.id === result.data.id ? result.data : dataItem));
@@ -88,7 +88,7 @@ const EditModal = ({
                                           }
                                       }
                                 )}
-                                formTitle={renderFormTitle ? renderFormTitle(item) : `تعديل ${item.title || item.name || item.id}`}
+                                formTitle={renderFormTitle ? renderFormTitle(item) : `Edit ${item.title || item.name || item.id}`}
                                 btnText={editFormButton}
                           >
                           </MainForm>

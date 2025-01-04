@@ -52,6 +52,7 @@ import LeadNotes from "@/app/UiComponents/DataViewer/leads/LeadNotes.jsx";
 import FileList from "@/app/UiComponents/DataViewer/leads/FileList.jsx";
 import {GoPaperclip} from "react-icons/go";
 import {PiCurrencyDollarSimpleLight} from "react-icons/pi";
+import {useAuth} from "@/app/providers/AuthProvider.jsx";
 
 
 const TabPanel = ({children, value, index}) => (
@@ -72,6 +73,7 @@ const LeadContent = ({
                          setleads,
                          setLead,admin,
                      }) => {
+    const {user}=useAuth()
     const [anchorEl, setAnchorEl] = React.useState(null);
     const open = Boolean(anchorEl);
     const {setLoading} = useToastContext();
@@ -85,16 +87,15 @@ const LeadContent = ({
     const [finalizeModel,setFinalizeModel]=useState(false)
     const [currentId,setCurrentId]=useState(null)
     const handleMenuClose = async (value) => {
-        if(admin)return
         if(value==="FINALIZED"){
             setCurrentId(lead.id)
             setFinalizeModel(true)
             return
         }
         const request = await handleRequestSubmit(
-              {status: value},
+              {status: value,oldStatus:lead.status,isAdmin:user.role==="ADMIN"},
               setLoading,
-              `staff/client-leads/${lead.id}/status`,
+              `shared/client-leads/${lead.id}/status`,
               false,
               "Updating",
               null,
@@ -173,7 +174,9 @@ const LeadContent = ({
                                    Final price : {lead.averagePrice}
                                 </Button>
                           }
-                          {!admin&&
+                          {(!admin&&lead.status!=="FINALIZED")&&
+                                <>
+
                           <Button
                                 fullWidth={isMobile}
                                 variant="outlined"
@@ -186,8 +189,7 @@ const LeadContent = ({
                           >
                               Convert lead
                           </Button>
-                          }
-                          {!admin&&
+
                           <Modal open={openConfirm}              onClose={() => setOpenConfirm(false)}
                                  closeAfterTransition>
                               <Fade in={openConfirm}>
@@ -209,6 +211,7 @@ const LeadContent = ({
                               </Box>
                               </Fade>
                           </Modal>
+                                </>
                           }
                           <Button
                                 fullWidth={isMobile}

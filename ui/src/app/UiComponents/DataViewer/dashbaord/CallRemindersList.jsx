@@ -37,7 +37,7 @@ const [callReminders,setCallReminders]=useState([])
                             <ListItem key={reminder.id} divider>
                                 <ListItemText
                                       primary={
-                                          <Link href={`/dashboard/leads/${reminder.clientLeadId}`} underline="hover">
+                                          <Link href={`/dashboard/deals/${reminder.clientLeadId}`} underline="hover">
                                               {reminder.clientLead.client.name}
                                           </Link>
                                       }

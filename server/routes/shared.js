@@ -1,5 +1,10 @@
 import {Router} from "express";
-import {getCurrentUser, getPagination, verifyTokenAndHandleAuthorization} from "../services/utility.js";
+import {
+    getCurrentUser,
+    getNotifications,
+    getPagination,
+    verifyTokenAndHandleAuthorization
+} from "../services/utility.js";
 import {
     assignLeadToAUser,
     getClientLeadDetails,
@@ -9,10 +14,9 @@ import {
     getEmiratesAnalytics,
     getKeyMetrics, getLatestNewLeads,
     getMonthlyPerformanceData, getPerformanceMetrics, getRecentActivities,
-    markClientLeadAsConverted
+    markClientLeadAsConverted, updateClientLeadStatus
 } from "../services/sharedServices.js";
-import axios from "axios"
-import multer from "multer";
+
 const router = Router();
 
 router.use((req, res, next) => {
@@ -63,9 +67,8 @@ router.put('/client-leads', async (req, res) => {
     try {
         const clientLead=req.body
         const currentUser=await  getCurrentUser(req)
-        console.log(currentUser,"currentUser")
-        console.log(clientLead,"clienmt")
         const result = await assignLeadToAUser(Number(clientLead.id),Number(currentUser.id),clientLead.overdue);
+
         res.status(200).json({data:result,message:"Deal assigned to you successfully"});
     } catch (error) {
         console.error('Error assigning client leads:', error);
@@ -167,8 +170,8 @@ router.get('/dashboard/latest-leads', async (req, res) => {
 
 router.get('/dashboard/recent-activities', async (req, res) => {
     try {
-
-        const data = await getRecentActivities();
+        const searchParams=req.query
+        const data = await getRecentActivities(searchParams);
         res.status(200).json({data});
     } catch (error) {
         console.error('Error fetching client lead details:', error);
@@ -177,5 +180,36 @@ router.get('/dashboard/recent-activities', async (req, res) => {
         });
     }
 });
+router.get('/notifications', async (req, res) => {
+    const searchParams = req.query;
+    const {limit = 9, skip = 1} = getPagination(req);
+    try {
+        const {notifications, total} = await getNotifications(searchParams, limit, skip, false);
+        const totalPages = Math.ceil(total / limit);
 
+        if (!notifications) {
+            return res.status(404).json({message: 'No new notifications'});
+        }
+        res.status(200).json({data: notifications, totalPages, total});
+    } catch (error) {
+        console.error('Error fetching notifications:', error);
+        res.status(500).json({message: 'Error getting notification'});
+    }
+});
+router.put('/client-leads/:id/status', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { updatePrice } = req.body;
+
+        await updateClientLeadStatus({
+            clientLeadId: Number(id),
+            ...req.body
+        });
+
+        res.status(200).json({message:updatePrice?"Price updated successfully":"Status changed successfully"})
+    } catch (error) {
+        console.error('Error updating client lead status:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
 export default router;

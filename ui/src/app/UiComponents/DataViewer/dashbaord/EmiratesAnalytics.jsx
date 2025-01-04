@@ -15,7 +15,7 @@ import {useAuth} from "@/app/providers/AuthProvider.jsx";
 import {getData} from "@/app/helpers/functions/getData.js";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
 
-const EmiratesAnalytics = ({staff}) => {
+const EmiratesAnalytics = ({staff,staffId}) => {
     // Simulated data for leads and performance from the last month until today
     const dateRange = "December 2024 - January 2025";
 
@@ -74,7 +74,8 @@ const EmiratesAnalytics = ({staff}) => {
     const {user}=useAuth()
     useEffect(()=>{
         async function fetchData(){
-            const request=await getData({url:`shared/dashboard/emirates-analytics?${staff&&"staffId="+user.id}&`,setLoading})
+            const extra=staffId?"staffId="+staffId:staff?"staffId="+user.id:""
+            const request=await getData({url:`shared/dashboard/emirates-analytics?${extra}&`,setLoading})
             if(request)setData(request.data)
         }
         fetchData()

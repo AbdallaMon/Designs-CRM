@@ -14,7 +14,7 @@ import {useAuth} from "@/app/providers/AuthProvider.jsx";
 import {getData} from "@/app/helpers/functions/getData.js";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
 
-const IncomeOverTimeChart = ({staff}) => {
+const IncomeOverTimeChart = ({staff,staffId}) => {
     const incomeData = [
         { month: 'Jan', leads: 40, finalized: 10, nonSuccess: 30, revenue: 1200000 },
         { month: 'Feb', leads: 35, finalized: 12, nonSuccess: 23, revenue: 1100000 },
@@ -27,7 +27,9 @@ const IncomeOverTimeChart = ({staff}) => {
     const [data,setData]=useState(incomeData)
     useEffect(()=>{
         async function fetchData(){
-            const request=await getData({url:`shared/dashboard/monthly-performance?${staff&&"staffId="+user.id}&`,setLoading})
+            const extra=staffId?"staffId="+staffId:staff?"staffId="+user.id:""
+
+            const request=await getData({url:`shared/dashboard/monthly-performance?${extra}&`,setLoading})
             if(request)setData(request.data)
         }
         fetchData()

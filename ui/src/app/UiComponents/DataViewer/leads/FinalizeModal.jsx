@@ -4,6 +4,7 @@ import {useToastContext} from "@/app/providers/ToastLoadingProvider.js";
 import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit.js";
 import {Alert, Box, Button, Modal, TextField, Typography} from "@mui/material";
 import {simpleModalStyle} from "@/app/helpers/constants.js";
+import {useAuth} from "@/app/providers/AuthProvider.jsx";
 
 export function FinalizeModal({ open, setOpen, id, setleads, setId,setLead,setAnchorEl,updatePrice ,lead}) {
     const [price, setPrice] = useState(lead.priceWithOutDiscount);
@@ -11,6 +12,7 @@ export function FinalizeModal({ open, setOpen, id, setleads, setId,setLead,setAn
     const [averagePrice,setAveragePrice]=useState(lead.averagePrice)
     const { setAlertError } = useAlertContext();
     const { setLoading } = useToastContext();
+    const {user}=useAuth()
 useEffect(()=>{
     if(discount>=0&&price>0){
         const discountValue=price*discount/100
@@ -23,9 +25,9 @@ useEffect(()=>{
             return;
         }
         const request = await handleRequestSubmit(
-              { status: "FINALIZED", averagePrice,updatePrice,discount:discount,priceWithOutDiscount:price },
+              { status: "FINALIZED", averagePrice,updatePrice,discount:discount,priceWithOutDiscount:price,oldStatus:lead.status,isAdmin:user.role==="ADMIN" },
               setLoading,
-              `staff/client-leads/${id}/status`,
+              `shared/client-leads/${id}/status`,
               false,
               "Finalizing the lead",
               false,

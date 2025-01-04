@@ -1,5 +1,4 @@
 import {Server} from 'socket.io';
-import prisma from '../prisma/prisma.js';
 
 let io;
 
@@ -10,8 +9,13 @@ export function initSocket(httpServer) {
             credentials: true,
         },
     });
-
     io.on('connection', (socket) => {
+        // socket.on('join-admin-room', ({userId}) => {
+        //     socket.join(userId.toString());
+        // });
+        socket.on('join-room', ({userId}) => {
+            socket.join(userId.toString());
+        });
 
     });
 }

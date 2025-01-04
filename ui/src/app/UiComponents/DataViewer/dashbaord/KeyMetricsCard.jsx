@@ -1,7 +1,7 @@
 // components/KeyMetricsCard.js
 import React, {useEffect, useState} from 'react';
 import {
-    Grid,
+    Grid2 as Grid,
     Card,
     CardContent,
     Typography,
@@ -16,7 +16,7 @@ import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.j
 import {getData} from "@/app/helpers/functions/getData.js";
 import {useAuth} from "@/app/providers/AuthProvider.jsx";
 
-const KeyMetricsCard = ({staff}) => {
+const KeyMetricsCard = ({staff,staffId}) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 const [loading,setLoading]=useState(true)
@@ -48,7 +48,7 @@ const [loading,setLoading]=useState(true)
             isProgress: true,
         },
         {
-            title: "Total leads",
+            title:staffId?"Today leads": "Total leads",
             value: financialMetrics.leadsCounts,
             icon: <FaTasks size={24} color="#ffffff" />,
             color: theme.palette.info.main,
@@ -56,7 +56,9 @@ const [loading,setLoading]=useState(true)
     ];
 useEffect(()=>{
     async function fetchData(){
-        const request=await getData({url:`shared/dashboard/key-metrics?${staff&&"staffId="+user.id}&`,setLoading})
+        const extra=staffId?"staffId="+staffId:staff?"staffId="+user.id:""
+        const profile=staffId&&`profile=true&`
+        const request=await getData({url:`shared/dashboard/key-metrics?${extra}&${profile}`,setLoading})
         if(request)setMetrics(request.data)
     }
     fetchData()
@@ -76,7 +78,7 @@ useEffect(()=>{
                   </Typography>
                   <Grid container spacing={2}>
                       {metricsData?.map((metric, index) => (
-                            <Grid item xs={12} sm={6} md={3} key={index}>
+                            <Grid size={{xs:12,sm:6,md:3}}  key={index}>
                                 <Box
                                       sx={{
                                           display: 'flex',

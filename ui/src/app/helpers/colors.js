@@ -1,3 +1,9 @@
+import {AiOutlineEdit, AiOutlineFileText, AiOutlineUserAdd} from "react-icons/ai";
+import {BiNote, BiTransfer} from "react-icons/bi";
+import {MdAttachMoney, MdCall} from "react-icons/md";
+import {FaFileUpload} from "react-icons/fa";
+import React from "react";
+
 const colors = {
     "primary": "#0d9488",           // Teal
     "primaryDark": "#0f766e",       // Dark teal
@@ -30,21 +36,23 @@ export const STATUS_COLORS = {
     REJECTED: '#FFBB28',
     ON_HOLD: '#FF8042',
 };
-export const LogColors = {
-    LEAD_CREATED: '#4caf50', // Green
-    LEAD_ASSIGNED: '#2196f3', // Blue
-    LEAD_STATUS_CHANGED: '#ff9800', // Orange
-    NOTE_ADDED: '#9c27b0', // Purple
-    FILE_UPLOADED: '#3f51b5', // Indigo
-    LEAD_TRANSFERRED: '#f44336', // Red
-    LEAD_CONTACT: '#009688', // Teal
-    CALL_REMINDER_CREATED: '#00bcd4', // Cyan
-    CALL_REMINDER_STATUS: '#ff5722', // Deep Orange
-    PRICE_OFFER_SUBMITTED: '#8bc34a', // Light Green
-    PRICE_OFFER_UPDATED: '#cddc39', // Lime
-    FINAL_PRICE_ADDED: '#ffc107', // Amber
-    FINAL_PRICE_CHANGED: '#e91e63', // Pink
-    OTHER: '#607d8b', // Grey
+export const NotificationColors = {
+    NEW_LEAD: "#4caf50",
+    LEAD_ASSIGNED: "#2196f3",
+    LEAD_STATUS_CHANGE: "#ff9800",
+    LEAD_TRANSFERRED: "#f44336",
+    LEAD_UPDATED: "#03a9f4",
+    LEAD_CONTACT: "#009688",
+    NOTE_ADDED: "#9c27b0",
+    NEW_NOTE: "#673ab7",
+    NEW_FILE: "#3f51b5",
+    CALL_REMINDER_CREATED: "#00bcd4",
+    CALL_REMINDER_STATUS: "#ff5722",
+    PRICE_OFFER_SUBMITTED: "#8bc34a",
+    PRICE_OFFER_UPDATED: "#cddc39",
+    FINAL_PRICE_ADDED: "#ffc107",
+    FINAL_PRICE_CHANGED: "#e91e63",
+    OTHER: "#607d8b",
 };
 
 export default colors;

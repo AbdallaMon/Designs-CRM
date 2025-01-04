@@ -83,7 +83,7 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
     };
 
     const handleStatusChange = async (newStatus) => {
-            movelead(lead.id, newStatus);
+            movelead(lead, newStatus);
     };
 
     // Process call reminders

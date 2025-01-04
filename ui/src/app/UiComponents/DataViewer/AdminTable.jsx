@@ -26,7 +26,7 @@ const DocumentRenderer = ({value}) => {
     if (isPDF) {
         return (
               <Button href={value} target="_blank" rel="noopener noreferrer">
-                  رؤية الملف
+                 View file
               </Button>
         );
     }

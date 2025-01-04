@@ -1,22 +1,28 @@
+import {AiOutlineEdit, AiOutlineFileText, AiOutlineUserAdd} from "react-icons/ai";
+import {BiNote, BiTransfer} from "react-icons/bi";
+import {MdAttachMoney, MdCall} from "react-icons/md";
+import {FaFileUpload} from "react-icons/fa";
+import React from "react";
+
 export const NotificationType = {
     NEW_LEAD: "New Lead",
     LEAD_ASSIGNED: "Lead Assigned",
     LEAD_STATUS_CHANGED: "Lead Status Changed",
+    LEAD_TRANSFERRED: "Lead Transferred",
+    LEAD_UPDATED: "Lead Updated",
+    LEAD_CONTACT: "Lead Contact",
+    NOTE_ADDED: "Note Added",
     NEW_NOTE: "New Note",
     NEW_FILE: "New File",
-    REMINDER: "Reminder",
-    LEAD_TRANSFERRED: "Lead Transferred",
+    CALL_REMINDER_CREATED: "Call Reminder Created",
+    CALL_REMINDER_STATUS: "Call Reminder Status",
+    PRICE_OFFER_SUBMITTED: "Price Offer Submitted",
+    PRICE_OFFER_UPDATED: "Price Offer Updated",
+    FINAL_PRICE_ADDED: "Final Price Added",
+    FINAL_PRICE_CHANGED: "Final Price Changed",
+    OTHER: "Other",
 };
 
-
-export const LogType = {
-    LEAD_CREATED: "Lead Created",
-    LEAD_ASSIGNED: "Lead Assigned",
-    LEAD_STATUS_CHANGED: "Lead Status Changed",
-    NOTE_ADDED: "Note Added",
-    FILE_UPLOADED: "File Uploaded",
-    LEAD_TRANSFERRED: "Lead Transferred",
-};
 
 
 
@@ -132,3 +138,21 @@ export const simpleModalStyle = {
 }
 
 
+export const notificationIcons = {
+    NEW_LEAD: <AiOutlineUserAdd size={24} />,
+    LEAD_ASSIGNED: <AiOutlineUserAdd size={24} />,
+    LEAD_STATUS_CHANGE: <AiOutlineFileText size={24} />,
+    LEAD_TRANSFERRED: <BiTransfer size={24} />,
+    LEAD_UPDATED: <AiOutlineEdit size={24} />,
+    LEAD_CONTACT: <MdAttachMoney size={24} />,
+    NOTE_ADDED: <BiNote size={24} />,
+    NEW_NOTE: <BiNote size={24} />,
+    NEW_FILE: <FaFileUpload size={24} />,
+    CALL_REMINDER_CREATED: <MdCall size={24} />,
+    CALL_REMINDER_STATUS: <MdCall size={24} />,
+    PRICE_OFFER_SUBMITTED: <MdAttachMoney size={24} />,
+    PRICE_OFFER_UPDATED: <MdAttachMoney size={24} />,
+    FINAL_PRICE_ADDED: <MdAttachMoney size={24} />,
+    FINAL_PRICE_CHANGED: <MdAttachMoney size={24} />,
+    OTHER: <AiOutlineFileText size={24} />,
+};

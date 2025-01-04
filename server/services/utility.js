@@ -1,13 +1,19 @@
 import jwt from "jsonwebtoken";
-const SECRET_KEY = process.env.SECRET_KEY;
 import multer from 'multer';
-import { fileURLToPath } from 'url';
+import {fileURLToPath} from 'url';
 
 import {v4 as uuidv4} from 'uuid';
 import * as fs from "node:fs";
 import * as path from "node:path";
- const __filename = fileURLToPath(import.meta.url);
- const __dirname = path.dirname(__filename);
+import {getIo} from "./socket.js";
+import {sendEmail} from "./sendMail.js";
+import dayjs from "dayjs";
+
+const SECRET_KEY = process.env.SECRET_KEY;
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 export function verifyToken(token) {
     try {
         const decoded = jwt.verify(token, SECRET_KEY);
@@ -75,6 +81,7 @@ export function handlePrismaError(res, error) {
     // Send response to the client
     return res.status(response.status).json({message: response.message});
 }
+
 export const getPagination = (req) => {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
@@ -126,27 +133,29 @@ const modelMap = {
     user: prisma.user,
     client: prisma.client,
 };
-export async function getCurrentUser(req){
+
+export async function getCurrentUser(req) {
     const token = req.cookies.token
 
     const decoded = jwt.verify(token, SECRET_KEY);
-    return  decoded
+    return decoded
 }
+
 export async function searchData(body) {
     const {model, query, filters} = body;
     const prismaModel = modelMap[model];
-    console.log(body,"body")
     let where = {};
     if (query) {
         if (model === 'user') {
             where.OR = [
                 {email: {contains: query}},
-                {name: { contains: query}},
+                {name: {contains: query}},
             ];
+            where.role="STAFF"
         } else if (model === 'client') {
             where.OR = [
                 {phone: {contains: query}},
-                {name: { contains: query}},
+                {name: {contains: query}},
             ];
         }
     }
@@ -168,31 +177,30 @@ export async function searchData(body) {
         }
     }
 
-console.log(where,'where')
     const selectFields = {
         user: {
             id: true,
             email: true,
-            name:true,
+            name: true,
         },
         client: {
             id: true,
             name: true,
-            phone:true
+            phone: true
         },
     };
     const data = await prismaModel.findMany({
         where,
         select: selectFields[model],
     });
-    console.log(data,"data")
     return data;
 }
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         const uploadPath = path.resolve(__dirname, '../uploads/');
         if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
+            fs.mkdirSync(uploadPath, {recursive: true});
         }
         cb(null, uploadPath);
     },
@@ -203,9 +211,9 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
     storage,
-    limits: { fileSize: 20 * 1024 * 1024 }, // 20MB file size limit
+    limits: {fileSize: 20 * 1024 * 1024}, // 20MB file size limit
     fileFilter: (req, file, cb) => {
-        const allowedMimeTypes = ['image/jpeg', 'image/png','image/webp', 'application/pdf'];
+        const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
         if (allowedMimeTypes.includes(file.mimetype)) {
             cb(null, true);
         } else {
@@ -234,10 +242,10 @@ export const uploadFiles = async (req, res) => {
                 }
             });
         });
-        res.status(200).json({ message: 'Files uploaded successfully.', fileUrls });
+        res.status(200).json({message: 'Files uploaded successfully.', fileUrls});
     } catch (error) {
-        console.log("are we error",error.message)
-        res.status(400).json({ error: error.message });
+        console.log("are we error", error.message)
+        res.status(400).json({error: error.message});
     }
 };
 // next cloud uploads
@@ -302,3 +310,146 @@ export const uploadFiles = async (req, res) => {
 };
 
 */
+
+
+export async function getNotifications(searchParams, limit, skip, unread = true) {
+    const where = {}
+    console.log(searchParams,"sear")
+    const filters =searchParams.filters&& JSON.parse(searchParams.filters);
+    if (filters?.staffId) {
+        where.staffId = Number(filters.staffId);
+    }
+    if(searchParams.staffId){
+        where.staffId = Number(searchParams.staffId);
+    }
+    if (filters?.range) {
+        const {startDate, endDate} = filters.range;
+        const now = dayjs();
+        let start = startDate ? dayjs(startDate) : now.subtract(30, 'days'); // Default to last 30 days
+        let end = endDate ? dayjs(endDate).endOf('day') : now;
+        where.createdAt = {
+            gte: start.toDate(),
+            lte: end.toDate(),
+        };
+    } else {
+        where.createdAt = {
+            gte: dayjs().subtract(30, 'days').toDate(),
+            lte: dayjs().toDate(),
+        };
+    }
+
+    where.userId = Number(searchParams.userId)
+
+    const notifications = await prisma.notification.findMany({
+        where: where,
+        skip,
+        take: limit,
+        orderBy: {
+            createdAt: 'desc',
+        },
+    });
+    const total = await prisma.notification.count({where: where});
+    return {notifications, total};
+}
+
+
+export async function markLatestNotificationsAsRead(userId) {
+    const where = {isRead: false, userId: Number(userId)}
+    const notifications = await prisma.notification.updateMany({
+        where,
+        data: {isRead: true}
+    })
+    return notifications
+}
+
+export async function createNotification(userId, isAdmin, content, href, type, emailSubject, withEmail, contentType = "TEXT",clientId,staffId) {
+
+    const forAll = !userId && !isAdmin&&!staffId
+    if (forAll) {
+        const users = await prisma.findUnique({
+            where: {
+                isActive: true
+            }, select: {
+                id: true,
+            }
+
+        })
+        users?.map(async (user) => {
+            await sendNotification(user.id, content, href, type, emailSubject, withEmail, contentType,clientId)
+        })
+    } else {
+        if (isAdmin) {
+            const admin = await prisma.user.findFirst({
+                where: {
+                    role: "ADMIN"
+                },
+                select: {
+                    id: true
+                }
+            })
+            userId = admin.id
+        }
+
+            await sendNotification(userId, content, href, type, emailSubject, withEmail, contentType,clientId,staffId)
+
+
+    }
+}
+
+async function sendNotification(userId, content, href, type, emailSubject, withEmail, contentType = "TEXT",clientId,staffId) {
+    const link = href ? `<a href="${process.env.ORIGIN}${href}" style="color: #1a73e8; text-decoration: none;">See details from here</a>` : '';
+    const emailContent = `
+        <div style=" color: #333; direction: ltr; text-align: left;">
+            <h2 style="color: #444; margin-bottom: 16px;">${emailSubject}</h2>
+            <p style="font-size: 16px; line-height: 1.5;">${content}</p>
+            ${link ? `<p>${link}</p>` : ''}
+        </div>
+    `;
+    let notification= await prisma.notification.create({
+            data: {
+                userId: userId,
+                content: content,
+                type,
+                link: href,
+                contentType,
+                clientLeadId:clientId&&Number(clientId),
+                staffId:staffId&&Number(staffId)
+            },
+        });
+
+    const io = getIo();
+    io.to(userId.toString()).emit('notification', notification);
+    if (withEmail) {
+        const user = await prisma.user.findUnique({where: {id: Number(userId)}, select: {email: true}});
+        if (user && user.email) {
+            const email = `
+<div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
+    <div>
+        ${emailContent}
+    </div>
+    <div style="margin-top: 10px;">
+        <a href="${process.env.ORIGIN}/notification" style="color: #007bff; text-decoration: none;">
+            Go to notifications?
+        </a>
+    </div>
+</div>
+`;
+
+            setImmediate(() => {
+                sendEmail(user.email, emailSubject, email).catch(error => {
+                    console.error(`Failed to send email to user ${userId}:`, error);
+                });
+            });
+        }
+    }
+}
+function CreateLogWithClientLeadUpdate() {
+}
+export async function getUserDetailsWithSpecificFields(id, fields = {id: true, name: true, email: true}) {
+    return await prisma.user.findUnique({
+        where: {id: Number(id)},
+        select: fields
+    })
+}
+
+

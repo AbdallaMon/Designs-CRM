@@ -4,7 +4,7 @@ import {useAuth} from "@/app/providers/AuthProvider.jsx";
 import {getData} from "@/app/helpers/functions/getData.js";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
 
-const PerformanceMetricsCard = ({staff}) => {
+const PerformanceMetricsCard = ({staff,staffId}) => {
     const data = {
         currentWeek:"27/12 : 1/2",
         weekly: {
@@ -19,7 +19,8 @@ const PerformanceMetricsCard = ({staff}) => {
     const [metrics,setMetrics]=useState(data)
     useEffect(()=>{
         async function fetchData(){
-            const request=await getData({url:`shared/dashboard/week-performance?${staff&&"staffId="+user.id}&`,setLoading})
+            const extra=staffId?"staffId="+staffId:staff?"staffId="+user.id:""
+            const request=await getData({url:`shared/dashboard/week-performance?${extra}&`,setLoading})
             if(request)setMetrics(request.data)
         }
         fetchData()

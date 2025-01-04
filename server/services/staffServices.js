@@ -1,7 +1,15 @@
 import prisma from "../prisma/prisma.js";
 import dayjs from "dayjs";
+import {
+    newCallNotification,
+    newFileUploaded,
+    newNoteNotification,
+    newPriceOffer,
+    updateCallNotification
+} from "./notification.js";
+import {ClientLeadStatus} from "./enums.js";
 
-export async function createNote({ clientLeadId, userId, content}) {
+export async function createNote({clientLeadId, userId, content}) {
     if (!content.trim()) {
         throw new Error('Note content cannot be empty.');
     }
@@ -13,33 +21,34 @@ export async function createNote({ clientLeadId, userId, content}) {
             userId,
 
         },
-        select:{
-            id:true,
-            createdAt:true,
-            user:{
-                select:{
-                    name:true
+        select: {
+            id: true,
+            createdAt: true,
+            user: {
+                select: {
+                    id:true,
+                    name: true
                 }
             }
         }
     });
-    newNote.content=content
+    newNote.content = content
+    await newNoteNotification(clientLeadId,content,newNote.user.id)
     return newNote;
 }
 
-export async function createCallReminder({ clientLeadId,userId, time, reminderReason }) {
+export async function createCallReminder({clientLeadId, userId, time, reminderReason}) {
     let formattedTime = dayjs(time);
     if (formattedTime.isBefore(dayjs())) {
         throw new Error('The reminder time must be in the future.');
     }
-
-    formattedTime=formattedTime.toISOString()
+    formattedTime = formattedTime.toISOString()
 
     const newReminder = await prisma.callReminder.create({
         data: {
             clientLeadId,
             userId,
-            time:formattedTime,
+            time: formattedTime,
             reminderReason,
         },
         select: {
@@ -50,81 +59,87 @@ export async function createCallReminder({ clientLeadId,userId, time, reminderRe
             callResult: true,
             userId: true,
             user: {
-                select: { name: true },
+                select: {name: true},
             },
         },
 
     });
-    let latestTwo= await prisma.callReminder.findMany({
-            where: {
-                clientLeadId,
-            },
-                orderBy: { time: 'desc' },
-                take: 2,
-        })
+await  newCallNotification(clientLeadId,newReminder)
 
- return {latestTwo,newReminder}
+    let latestTwo = await prisma.callReminder.findMany({
+        where: {
+            clientLeadId,
+        },
+        orderBy: {time: 'desc'},
+        take: 2,
+    })
+    return {latestTwo, newReminder}
 }
-export async function createPriceOffer({ clientLeadId, userId,priceOffer }) {
-    if(priceOffer.minPrice>priceOffer.maxPrice){
-        throw new Error('End price must be bigger or equal to start price');
 
+export async function createPriceOffer({clientLeadId, userId, priceOffer}) {
+    if (priceOffer.minPrice > priceOffer.maxPrice) {
+        throw new Error('End price must be bigger or equal to start price');
     }
     const newPrice = await prisma.PriceOffers.create({
         data: {
             clientLeadId,
             userId,
-            minPrice:Number(priceOffer.minPrice),
-            maxPrice:Number(priceOffer.maxPrice),
+            minPrice: Number(priceOffer.minPrice),
+            maxPrice: Number(priceOffer.maxPrice),
         },
-        select:{
-            id:true,
-            createdAt:true,
-            minPrice:true,
-            maxPrice:true,
-            user:{
-                select:{
-                    name:true
+        select: {
+            id: true,
+            createdAt: true,
+            minPrice: true,
+            maxPrice: true,
+            user: {
+                select: {
+                    id:true,
+                    name: true
                 }
             }
         }
     });
+    await newPriceOffer(clientLeadId,newPrice)
     return newPrice;
 }
-export async function createFile({ clientLeadId,url,name,description,userId}) {
 
-    if (!url||!name||!description) {
+export async function createFile({clientLeadId, url, name, description, userId}) {
+
+    if (!url || !name || !description) {
         throw new Error('Fill all the fields please');
     }
-const data=        {
+    const data = {
         name,
-              clientLeadId,
-              url,
-              description,
+        clientLeadId,
+        url,
+        description,
     }
-    if(userId){
-        data.userId=Number(userId)
+    if (userId) {
+        data.userId = Number(userId)
     }
     const file = await prisma.file.create({
         data,
-        select:{
-            id:true,
-            createdAt:true,
-            user:{
-                select:{
-                    name:true
+        select: {
+            id: true,
+            createdAt: true,
+            user: {
+                select: {
+                    name: true
                 }
             }
         }
     });
-
-    return {...file,name,url,description,isUserFile:userId!==null};
+    if(userId!==null){
+await newFileUploaded(clientLeadId,data,userId)
+    }
+    return {...file, name, url, description, isUserFile: userId !== null};
 }
 
 
-export async function updateCallReminderStatus({ reminderId, status, callResult = null }) {
+export async function updateCallReminderStatus({reminderId,currentUser, status, callResult = null}) {
     const updatedReminder = await prisma.callReminder.update({
-        where: { id: reminderId },
+        where: {id: reminderId},
         data: {
             status,
             callResult: status === 'DONE' ? callResult : "Missed call",
@@ -136,37 +151,20 @@ export async function updateCallReminderStatus({ reminderId, status, callResult 
             reminderReason: true,
             callResult: true,
             userId: true,
+            clientLeadId:true,
             user: {
-                select: { name: true },
+                select: {name: true},
             },
         },
 
     });
-
+    await updateCallNotification(updatedReminder.clientLeadId,updatedReminder,currentUser.id)
     return updatedReminder;
 }
 
-export async function updateClientLeadStatus({ clientLeadId, status,averagePrice,discount,priceWithOutDiscount }) {
-    const data={
-        status,updatedAt:new Date()
-    }
-    if(averagePrice){
-        data.averagePrice=Number(averagePrice)
-    }
-    if(discount){
-        data.discount=Number(discount)
-    }
-    if(priceWithOutDiscount){
-        data.priceWithOutDiscount=Number(priceWithOutDiscount)
-    }
-    await prisma.clientLead.update({
-        where: { id: clientLeadId },
-        data
-    });
-}
 
 export const getCallReminders = async (searchParams) => {
-    const staffFilter = searchParams.staffId ? { userId: Number(searchParams.staffId) } : {};
+    const staffFilter = searchParams.staffId ? {userId: Number(searchParams.staffId)} : {};
 
     try {
         const callReminders = await prisma.callReminder.findMany({
