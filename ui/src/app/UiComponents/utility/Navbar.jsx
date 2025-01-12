@@ -1,5 +1,5 @@
 "use client"
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { usePathname } from 'next/navigation';
 import {
     AppBar,
@@ -29,7 +29,10 @@ const Navbar = ({ links }) => {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const pathname = usePathname();
-
+    const [loading,setLoading]=useState(true)
+    useEffect(()=>{
+        if(loading)setLoading(false)
+    },[])
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen);
     };
@@ -72,7 +75,7 @@ const Navbar = ({ links }) => {
             return (
                   <>
                       <ListItem
-                            button
+
                             onClick={() => hasSubLinks ? toggleSubMenu(link.name) : null}
                             component={hasSubLinks ? 'div' : Link}
                             href={hasSubLinks ? undefined : link.href}
@@ -127,7 +130,7 @@ const Navbar = ({ links }) => {
                                 <List component="div" disablePadding>
                                     {link.subLinks.map((subLink) => (
                                           <ListItem
-                                                button
+
                                                 key={subLink.href}
                                                 component={Link}
                                                 href={subLink.href}
@@ -251,7 +254,6 @@ const Navbar = ({ links }) => {
               ))}
           </List>
     );
-
     return (
           <>
               <AppBar

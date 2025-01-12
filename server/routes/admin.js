@@ -1,6 +1,12 @@
 import { Router } from "express";
 import { getPagination, handlePrismaError, verifyTokenAndHandleAuthorization } from "../services/utility.js";
-import { changeUserStatus, createStaffUser, editStaffUser, getUser } from "../services/adminServices.js";
+import {
+    changeUserStatus,
+    createStaffUser,
+    editStaffUser, generateExcelReport,
+    generateLeadReport, generatePDFReport, generateStaffExcelReport, generateStaffPDFReport, generateStaffReport,
+    getUser
+} from "../services/adminServices.js";
 
 const router = Router();
 
@@ -81,4 +87,68 @@ router.patch('/user/:userId', async (req, res) => {
 });
 
 
+
+// Get report data
+router.post('/reports/lead-report', async (req, res) => {
+    try {
+       await generateLeadReport(req, res)
+
+    } catch (error) {
+        console.error('Error generating report:', error);
+        res.status(500).json({ error: 'Failed to generate report' });
+    }
+});
+
+// Generate Excel report
+router.post('/reports/lead-report/excel', async (req, res) => {
+    try {
+       await generateExcelReport(req,res)
+
+    } catch (error) {
+        console.error('Error generating Excel:', error);
+        res.status(500).json({ error: 'Failed to generate Excel report' });
+    }
+});
+
+// Generate PDF report
+router.post('/reports/lead-report/pdf', async (req, res) => {
+    try {
+      await generatePDFReport(req,res)
+
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        res.status(500).json({ error: 'Failed to generate PDF report' });
+    }
+});
+router.post('/reports/staff-report', async (req, res) => {
+    try {
+        await generateStaffReport(req, res)
+console.log('w')
+    } catch (error) {
+        console.error('Error generating report:', error);
+        res.status(500).json({ error: 'Failed to generate report' });
+    }
+});
+
+// Generate Excel report
+router.post('/reports/staff-report/excel', async (req, res) => {
+    try {
+        await generateStaffExcelReport(req,res)
+
+    } catch (error) {
+        console.error('Error generating Excel:', error);
+        res.status(500).json({ error: 'Failed to generate Excel report' });
+    }
+});
+
+// Generate PDF report
+router.post('/reports/staff-report/pdf', async (req, res) => {
+    try {
+        await generateStaffPDFReport(req,res)
+
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        res.status(500).json({ error: 'Failed to generate PDF report' });
+    }
+});
 export default router;

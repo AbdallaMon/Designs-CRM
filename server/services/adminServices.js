@@ -1,6 +1,9 @@
 import bcrypt from "bcrypt";
 import prisma from "../prisma/prisma.js";
-import dayjs from "dayjs";
+import ExcelJS from 'exceljs';
+import PDFDocument from "pdfkit";
+import pkg from 'lodash';
+const { groupBy } = pkg;
 export async function getUser(searchParams, limit, skip) {
     const filters =searchParams.filters && JSON.parse(searchParams.filters);
     const staffFilter = searchParams.staffId ? {userId: Number(searchParams.staffId)} : {};
@@ -88,3 +91,716 @@ export async function changeUserStatus(user, studentId) {
     })
 }
 
+const calculateSummary = (leads) => {
+    const totalLeads = leads.length;
+    const totalValue = leads.reduce((sum, lead) => sum + Number(lead.averagePrice || 0), 0);
+    const totalDiscount = leads.reduce((sum, lead) => sum + Number(lead.discount || 0), 0);
+
+    return {
+        totalLeads,
+        totalValue,
+        averageValue: totalLeads > 0 ? totalValue / totalLeads : 0,
+        totalDiscount,
+        byEmirate: groupBy(leads, 'emirate'),
+        byStatus: groupBy(leads, 'status'),
+        byType: groupBy(leads, 'type')
+    };
+};
+
+const processLeads = (leads) => {
+    return leads.map(lead => ({
+        clientName: lead.client.name,
+        clientPhone: lead.client.phone,
+        status: lead.status,
+        emirate: lead.emirate,
+        type: lead.type,
+        averagePrice: Number(lead.averagePrice || 0),
+        discount: Number(lead.discount || 0),
+        finalPrice: Number(lead.averagePrice || 0) - Number(lead.discount || 0),
+        createdAt: lead.createdAt.toISOString().split('T')[0],
+        assignedTo: lead.assignedTo?.name || 'Unassigned'
+    }));
+};
+
+export const generateLeadReport = async (req, res) => {
+    try {
+        const filters = req.body;
+
+        const where = {
+            AND: [
+                filters.startDate && filters.endDate ? {
+                    createdAt: {
+                        gte: new Date(filters.startDate),
+                        lte: new Date(filters.endDate)
+                    }
+                } : {},
+                filters.emirates?.length > 0 ? {
+                    emirate: { in: filters.emirates }
+                } : {},
+                filters.statuses?.length > 0 ? {
+                    status: { in: filters.statuses }
+                } : {},
+                filters.userIds?.length > 0 ? {
+                    userId: { in: filters.userIds }
+                } : {},
+                filters.clientIds?.length > 0 ? {
+                    clientId: { in: filters.clientIds }
+                } : {},
+                filters.reportType === 'finalized' ? {
+                    status: 'FINALIZED'
+                } : {}
+            ].filter(condition => Object.keys(condition).length > 0)
+        };
+
+        const leads = await prisma.clientLead.findMany({
+            where,
+            include: {
+                client: {
+                    select: {
+                        name: true,
+                        phone: true
+                    }
+                },
+                assignedTo: {
+                    select: {
+                        name: true
+                    }
+                },
+                priceOffers: {
+                    orderBy: {
+                        createdAt: 'desc'
+                    },
+                    take: 1,
+                    select: {
+                        minPrice: true,
+                        maxPrice: true
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: 'desc'
+            }
+        });
+
+        const processedLeads = processLeads(leads);
+        const summary = calculateSummary(leads);
+
+        return res.json({ leads: processedLeads, summary });
+    } catch (error) {
+        console.error('Error generating report:', error);
+        return res.status(500).json({ error: 'Failed to generate report' });
+    }
+};
+// reportUtils.js
+export const generateExcelReport = async (req, res) => {
+    const { data } = req.body;
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Lead Report');
+
+    // Configure columns - kept the same as before
+    worksheet.columns = [
+        { header: 'Client Name', key: 'clientName', width: 25 },
+        { header: 'Phone', key: 'clientPhone', width: 20 },
+        { header: 'Assigned To', key: 'assignedTo', width: 20 },
+        { header: 'Status', key: 'status', width: 15 },
+        { header: 'Emirate', key: 'emirate', width: 15 },
+        { header: 'Type', key: 'type', width: 20 },
+        { header: 'AveragePrice', key: 'averagePrice', width: 15, style: { numFmt: '#,##0.00 "AED"' } },
+        { header: 'Discount', key: 'discount', width: 15, style: { numFmt: '#,##0.00 "%"' } },
+        { header: 'Final Price', key: 'finalPrice', width: 15, style: { numFmt: '#,##0.00 "AED"' } },
+        { header: 'Created At', key: 'createdAt', width: 15 }
+    ];
+
+    // Style header row
+    worksheet.getRow(1).font = { bold: true, size: 12 };
+    worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4B5563' }
+    };
+    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    worksheet.getRow(1).height = 30;
+
+    // Add data
+    worksheet.addRows(data.leads);
+
+    // Style data rows
+    for (let i = 2; i <= worksheet.rowCount; i++) {
+        const row = worksheet.getRow(i);
+        row.height = 25;
+        row.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: i % 2 === 0 ? 'FFF3F4F6' : 'FFFFFFFF' }
+        };
+        row.eachCell(cell => {
+            cell.border = {
+                top: { style: 'thin' },
+                bottom: { style: 'thin' },
+                left: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+            cell.alignment = { vertical: 'middle', horizontal: 'left' };
+        });
+    }
+
+    // Add totals row
+    const totalRow = worksheet.addRow({
+        clientName: 'TOTALS',
+        averagePrice: data.leads.reduce((sum, lead) => sum + (lead.averagePrice || 0), 0),
+        discount: data.leads.reduce((sum, lead) => sum + (lead.discount || 0), 0),
+        finalPrice: data.leads.reduce((sum, lead) => sum + (lead.finalPrice || 0), 0)
+    });
+
+    // Style totals row
+    totalRow.font = { bold: true };
+    totalRow.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4B5563' }
+    };
+    totalRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    totalRow.height = 30;
+    totalRow.eachCell(cell => {
+        cell.border = {
+            top: { style: 'medium' },
+            bottom: { style: 'medium' },
+            left: { style: 'medium' },
+            right: { style: 'medium' }
+        };
+        cell.alignment = { vertical: 'middle', horizontal: 'left' };
+    });
+
+    // Add summary sheet with improved styling (kept as before)
+    const summarySheet = workbook.addWorksheet('Summary');
+    // ... (rest of the summary sheet code remains the same)
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=lead-report.xlsx');
+
+    await workbook.xlsx.write(res);
+    res.end();
+};
+
+export const generatePDFReport = (req, res) => {
+    try {
+        const { data } = req.body;
+        const doc = new PDFDocument({
+            size: 'A4',
+            layout: 'landscape',
+            margin: 10
+        });
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=lead-report.pdf');
+        doc.pipe(res);
+
+        // Title
+        doc.fontSize(24)
+              .font('Helvetica-Bold')
+              .text('Lead Report', { align: 'center' })
+              .moveDown();
+
+        // Summary Section
+        doc.fontSize(16)
+              .font('Helvetica-Bold')
+              .text('Summary', { underline: true })
+              .moveDown();
+
+        const formatValue = (value) => {
+            if (value === null || value === undefined) return 'N/A';
+            if (typeof value === 'number') return value.toLocaleString();
+            return value.toString();
+        };
+
+        // Summary table remains the same
+        const summaryTable = {
+            headers: ['Metric', 'Value'],
+            rows: [
+                ['Total Leads', formatValue(data.summary.totalLeads)],
+                ['Total Value', `${formatValue(data.summary.totalValue)} AED`],
+                ['Average Value', `${formatValue(data.summary.averageValue)} AED`],
+                ['Total Discount', `${formatValue(data.summary.totalDiscount)} %`]
+            ],
+            columnWidths: [0.4, 0.6]
+        };
+
+        drawTable(doc, summaryTable, 100);
+        doc.moveDown(2);
+
+        // Leads Section
+        doc.fontSize(16)
+              .font('Helvetica-Bold')
+              .text('Lead Details', { underline: true })
+              .moveDown();
+
+        // Updated leads table with all columns matching Excel
+        const leadsTable = {
+            headers: ['Client Name', 'Phone', 'Assigned To', 'Status', 'Emirate', 'Type',  'Discount', 'Final Price', 'Created At'],
+            rows: data.leads.map(lead => [
+                formatValue(lead.clientName),
+                formatValue(lead.clientPhone),
+                formatValue(lead.assignedTo),
+                formatValue(lead.status),
+                formatValue(lead.emirate),
+                formatValue(lead.type),
+                `${formatValue(lead.averagePrice)} AED`,
+                `${formatValue(lead.discount)} %`,
+                `${formatValue(lead.finalPrice)} AED`,
+                formatValue(lead.createdAt)
+            ]),
+            columnWidths: [0.15, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.05] // Adjusted widths to fit all columns
+        };
+
+        // Calculate totals
+        const totals = {
+            price: data.leads.reduce((sum, lead) => sum + (lead.averagePrice || 0), 0),
+            discount: data.leads.reduce((sum, lead) => sum + (lead.discount || 0), 0),
+            finalPrice: data.leads.reduce((sum, lead) => sum + (lead.finalPrice || 0), 0)
+        };
+
+        // Add totals row
+        leadsTable.rows.push([
+            'TOTALS',
+            '',
+            '',
+            '',
+            '',
+            '',
+            `${formatValue(totals.price)} AED`,
+            ``,
+            `${formatValue(totals.finalPrice)} AED`,
+            ''
+        ]);
+
+        // Draw leads table with updated drawTable function
+        drawTable(doc, leadsTable, 200);
+
+        doc.end();
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Failed to generate PDF report' });
+        }
+    }
+};
+
+// Updated drawTable function to handle totals row
+function drawTable(doc, table, startY) {
+    try {
+        const cellPadding = 8;
+        const availableWidth = doc.page.width - 100;
+        const columnWidths = table.columnWidths.map(width => width * availableWidth);
+        let currentY = startY;
+
+        // Draw headers
+        doc.font('Helvetica-Bold').fontSize(12);
+        doc.fillColor('#4B5563')
+              .rect(50, currentY, availableWidth, 30)
+              .fill();
+
+        doc.fillColor('white');
+        let currentX = 50;
+        table.headers.forEach((header, i) => {
+            doc.text(
+                  header,
+                  currentX + cellPadding,
+                  currentY + cellPadding,
+                  {
+                      width: columnWidths[i] - (cellPadding * 2),
+                      align: 'left',
+                      ellipsis: true
+                  }
+            );
+            currentX += columnWidths[i];
+        });
+
+        currentY += 30;
+        doc.fillColor('black');
+
+        // Draw rows
+        doc.font('Helvetica').fontSize(10);
+
+        table.rows.forEach((row, rowIndex) => {
+            const isLastRow = rowIndex === table.rows.length - 1;
+            const rowHeight = 25;
+
+            // Special styling for totals row
+            if (isLastRow) {
+                doc.fillColor('#4B5563')
+                      .rect(50, currentY, availableWidth, rowHeight)
+                      .fill();
+                doc.fillColor('white');
+                doc.font('Helvetica-Bold');
+            } else {
+                doc.fillColor(rowIndex % 2 === 0 ? '#F3F4F6' : 'white')
+                      .rect(50, currentY, availableWidth, rowHeight)
+                      .fill();
+                doc.fillColor('black');
+                doc.font('Helvetica');
+            }
+
+            currentX = 50;
+            row.forEach((cell, i) => {
+                doc.rect(currentX, currentY, columnWidths[i], rowHeight)
+                      .stroke();
+
+                doc.text(
+                      cell === null || cell === undefined ? 'N/A' : cell.toString(),
+                      currentX + cellPadding,
+                      currentY + cellPadding,
+                      {
+                          width: columnWidths[i] - (cellPadding * 2),
+                          align: 'left',
+                          ellipsis: true
+                      }
+                );
+                currentX += columnWidths[i];
+            });
+
+            currentY += rowHeight;
+
+            // Handle page breaks
+            if (currentY > doc.page.height - 50) {
+                doc.addPage();
+                currentY = 50;
+                // Redraw headers on new page
+                doc.font('Helvetica-Bold')
+                      .fontSize(12)
+                      .fillColor('#4B5563')
+                      .rect(50, currentY, availableWidth, 30)
+                      .fill();
+
+                currentX = 50;
+                doc.fillColor('white');
+                table.headers.forEach((header, i) => {
+                    doc.text(
+                          header,
+                          currentX + cellPadding,
+                          currentY + cellPadding,
+                          {
+                              width: columnWidths[i] - (cellPadding * 2),
+                              align: 'left',
+                              ellipsis: true
+                          }
+                    );
+                    currentX += columnWidths[i];
+                });
+                currentY += 30;
+                doc.fillColor('black');
+            }
+        });
+    } catch (error) {
+        console.error('Error drawing table:', error);
+        throw error;
+    }
+}
+const calculateStaffStats = (staff, dateRange) => {
+    return staff.map(user => {
+        const userLeads = user.clientLeads || [];
+
+        // Filter leads by date range if provided
+        const filteredLeads = dateRange.startDate && dateRange.endDate
+              ? userLeads.filter(lead => {
+                  const leadDate = new Date(lead.createdAt);
+                  return leadDate >= new Date(dateRange.startDate) &&
+                        leadDate <= new Date(dateRange.endDate);
+              })
+              : userLeads;
+
+        const totalLeads = filteredLeads.length;
+        const finalized = filteredLeads.filter(lead => lead.status === 'FINALIZED').length;
+        const converted = filteredLeads.filter(lead => lead.status === 'CONVERTED').length;
+        const onHold = filteredLeads.filter(lead => lead.status === 'ON_HOLD').length;
+        const rejected = filteredLeads.filter(lead => lead.status === 'REJECTED').length;
+
+        // Calculate success rate
+        const totalClosedLeads = finalized + converted + rejected + onHold;
+        const successRate = totalClosedLeads > 0
+              ? ((finalized - (converted + rejected + onHold)) / totalClosedLeads) * 100
+              : 0;
+
+        // Calculate revenue and discount
+        const totalRevenue = filteredLeads
+              .filter(lead => lead.status === 'FINALIZED')
+              .reduce((sum, lead) => sum + Number(lead.averagePrice || 0), 0);
+
+        const totalDiscount = filteredLeads
+              .filter(lead => lead.status === 'FINALIZED')
+              .reduce((sum, lead) => sum + Number(lead.discount || 0), 0);
+
+        return {
+            userId: user.id,
+            staffName: user.name,
+            email: user.email,
+            totalLeads,
+            activeLeads: filteredLeads.filter(lead =>
+                  !['FINALIZED', 'CONVERTED', 'REJECTED', 'ON_HOLD'].includes(lead.status)
+            ).length,
+            finalized,
+            converted,
+            rejected,
+            onHold,
+            successRate: Math.round(successRate * 100) / 100,
+            totalRevenue,
+            totalDiscount,
+            averageRevenuePerLead: totalLeads > 0 ? totalRevenue / totalLeads : 0,
+            callReminders: {
+                total: filteredLeads.reduce((sum, lead) =>
+                      sum + (lead.callReminders?.length || 0), 0),
+                completed: filteredLeads.reduce((sum, lead) =>
+                      sum + (lead.callReminders?.filter(cr => cr.status === 'DONE')?.length || 0), 0),
+                missed: filteredLeads.reduce((sum, lead) =>
+                      sum + (lead.callReminders?.filter(cr => cr.status === 'MISSED')?.length || 0), 0)
+            }
+        };
+    });
+};
+
+export const generateStaffReport = async (req, res) => {
+    try {
+        const filters = req.body;
+
+        // First, get all staff users
+        const staffUsers = await prisma.user.findMany({
+            where: {
+                role: 'STAFF',
+                isActive: true // Only get active staff members
+            },
+            include: {
+                clientLeads: {
+                    include: {
+                        callReminders: {
+                            select: {
+                                status: true
+                            }
+                        }
+                    },
+                    where: filters.startDate && filters.endDate ? {
+                        createdAt: {
+                            gte: new Date(filters.startDate),
+                            lte: new Date(filters.endDate)
+                        }
+                    } : undefined
+                }
+            }
+        });
+
+        const staffStats = calculateStaffStats(staffUsers, filters);
+
+        // Calculate overall summary
+        const summary = {
+            totalStaff: staffStats.length,
+            activeStaff: staffStats.filter(staff => staff.totalLeads > 0).length,
+            totalLeads: staffStats.reduce((sum, staff) => sum + staff.totalLeads, 0),
+            averageLeadsPerStaff: staffStats.reduce((sum, staff) => sum + staff.totalLeads, 0) /
+                  (staffStats.length || 1),
+            totalRevenue: staffStats.reduce((sum, staff) => sum + staff.totalRevenue, 0),
+            averageSuccessRate: staffStats.reduce((sum, staff) => sum + staff.successRate, 0) /
+                  (staffStats.length || 1),
+            totalCallReminders: staffStats.reduce((sum, staff) =>
+                  sum + staff.callReminders.total, 0),
+            completedCallReminders: staffStats.reduce((sum, staff) =>
+                  sum + staff.callReminders.completed, 0),
+            bestPerformer: staffStats.reduce((best, current) =>
+                  (current.successRate > (best?.successRate || 0)) ? current : best, null)?.staffName,
+            topRevenue: staffStats.reduce((best, current) =>
+                  (current.totalRevenue > (best?.totalRevenue || 0)) ? current : best, null)?.staffName
+        };
+
+        return res.json({
+            staffStats,
+            summary,
+            dateRange: filters.startDate && filters.endDate ? {
+                start: filters.startDate,
+                end: filters.endDate
+            } : null
+        });
+    } catch (error) {
+        console.error('Error generating staff report:', error);
+        return res.status(500).json({ error: 'Failed to generate staff report' });
+    }
+};
+export const generateStaffExcelReport = async (req, res) => {
+    const { data } = req.body;
+    const workbook = new ExcelJS.Workbook();
+
+    // Staff Performance Sheet
+    const worksheet = workbook.addWorksheet('Staff Performance');
+
+    worksheet.columns = [
+        { header: 'Staff Name', key: 'staffName', width: 25 },
+        { header: 'Total Leads', key: 'totalLeads', width: 15 },
+        { header: 'Active Leads', key: 'activeLeads', width: 15 },
+        { header: 'Finalized', key: 'finalized', width: 15 },
+        { header: 'Converted', key: 'converted', width: 15 },
+        { header: 'Success Rate', key: 'successRate', width: 15, style: { numFmt: '0.00"%"' } },
+        { header: 'Total Revenue', key: 'totalRevenue', width: 20, style: { numFmt: '#,##0.00 "AED"' } },
+        { header: 'Avg Revenue/Lead', key: 'averageRevenuePerLead', width: 20, style: { numFmt: '#,##0.00 "AED"' } },
+        { header: 'Total Reminders', key: 'totalReminders', width: 15 },
+        { header: 'Completed Reminders', key: 'completedReminders', width: 15 },
+        { header: 'Missed Reminders', key: 'missedReminders', width: 15 }
+    ];
+
+    // Style header row
+    worksheet.getRow(1).font = { bold: true, size: 12 };
+    worksheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4B5563' }
+    };
+    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    worksheet.getRow(1).height = 30;
+
+    // Add data rows
+    const rows = data.staffStats.map(staff => ({
+        staffName: staff.staffName,
+        totalLeads: staff.totalLeads,
+        activeLeads: staff.activeLeads,
+        finalized: staff.finalized,
+        converted: staff.converted,
+        successRate: staff.successRate,
+        totalRevenue: staff.totalRevenue,
+        averageRevenuePerLead: staff.averageRevenuePerLead,
+        totalReminders: staff.callReminders.total,
+        completedReminders: staff.callReminders.completed,
+        missedReminders: staff.callReminders.missed
+    }));
+
+    worksheet.addRows(rows);
+
+    // Style data rows
+    for (let i = 2; i <= worksheet.rowCount; i++) {
+        const row = worksheet.getRow(i);
+        row.height = 25;
+        row.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: i % 2 === 0 ? 'FFF3F4F6' : 'FFFFFFFF' }
+        };
+        row.eachCell(cell => {
+            cell.border = {
+                top: { style: 'thin' },
+                bottom: { style: 'thin' },
+                left: { style: 'thin' },
+                right: { style: 'thin' }
+            };
+            cell.alignment = { vertical: 'middle', horizontal: 'left' };
+        });
+    }
+
+    // Add summary sheet
+    const summarySheet = workbook.addWorksheet('Summary');
+    summarySheet.columns = [
+        { header: 'Metric', key: 'metric', width: 30 },
+        { header: 'Value', key: 'value', width: 20 }
+    ];
+
+    // Add summary data
+    summarySheet.addRows([
+        { metric: 'Total Staff Members', value: data.summary.totalStaff },
+        { metric: 'Total Leads', value: data.summary.totalLeads },
+        { metric: 'Average Leads per Staff', value: data.summary.averageLeadsPerStaff },
+        { metric: 'Total Revenue', value: data.summary.totalRevenue },
+        { metric: 'Average Success Rate', value: `${data.summary.averageSuccessRate.toFixed(2)}%` },
+        { metric: 'Total Call Reminders', value: data.summary.totalCallReminders },
+        { metric: 'Completed Call Reminders', value: data.summary.completedCallReminders }
+    ]);
+
+    // Style summary sheet
+    summarySheet.getRow(1).font = { bold: true, size: 12 };
+    summarySheet.getRow(1).fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4B5563' }
+    };
+    summarySheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+    // Set response headers
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=staff-report.xlsx');
+
+    await workbook.xlsx.write(res);
+    res.end();
+};
+export const generateStaffPDFReport = (req, res) => {
+    try {
+        const { data } = req.body;
+        const doc = new PDFDocument({
+            size: 'A4',
+            layout: 'landscape',
+            margin: 50
+        });
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=staff-report.pdf');
+        doc.pipe(res);
+
+        // Title
+        doc.fontSize(24)
+              .font('Helvetica-Bold')
+              .text('Staff Performance Report', { align: 'center' })
+              .moveDown();
+
+        // Summary Section
+        doc.fontSize(18)
+              .font('Helvetica-Bold')
+              .text('Summary', { underline: true })
+              .moveDown();
+
+        const summaryTable = {
+            headers: ['Metric', 'Value'],
+            rows: [
+                ['Total Staff Members', data.summary.totalStaff],
+                ['Total Leads', data.summary.totalLeads],
+                ['Average Leads per Staff', data.summary.averageLeadsPerStaff.toFixed(2)],
+                ['Total Revenue', `${data.summary.totalRevenue.toLocaleString()} AED`],
+                ['Average Success Rate', `${data.summary.averageSuccessRate.toFixed(2)}%`],
+                ['Total Call Reminders', data.summary.totalCallReminders],
+                ['Completed Call Reminders', data.summary.completedCallReminders]
+            ],
+            columnWidths: [0.4, 0.6]
+        };
+
+        drawTable(doc, summaryTable, 100);
+        doc.moveDown(2);
+
+        // Staff Details Section
+        doc.fontSize(18)
+              .font('Helvetica-Bold')
+              .text('Staff Details', { underline: true })
+              .moveDown();
+
+        const staffTable = {
+            headers: [
+                'Staff Name',
+                'Total Leads',
+                'Active',
+                'Success Rate',
+                'Revenue',
+                'Reminders',
+                'Completed'
+            ],
+            rows: data.staffStats.map(staff => [
+                staff.staffName,
+                staff.totalLeads,
+                staff.activeLeads,
+                `${staff.successRate.toFixed(2)}%`,
+                `${staff.totalRevenue.toLocaleString()} AED`,
+                staff.callReminders.total,
+                staff.callReminders.completed
+            ]),
+            columnWidths: [0.2, 0.1, 0.1, 0.15, 0.2, 0.1, 0.15]
+        };
+
+        drawTable(doc, staffTable, 200);
+
+        doc.end();
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        if (!res.headersSent) {
+            res.status(500).json({ error: 'Failed to generate PDF report' });
+        }
+    }
+};
