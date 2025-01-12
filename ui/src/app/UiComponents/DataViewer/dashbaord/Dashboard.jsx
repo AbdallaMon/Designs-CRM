@@ -24,7 +24,7 @@ import UserProfile from "@/app/UiComponents/DataViewer/UserProfile.jsx";
 
 const Dashboard = ({staff,staffId}) => {
     return (
-          <Box sx={{ padding: {xs:2,md:4}, backgroundColor: '#f0f2f5', minHeight: '100vh',mb:"-60px",maxWidth:"1800px",mx:"auto" }}>
+          <Box sx={{ padding: {xs:2,md:4}, minHeight: '100vh',mb:"-60px",maxWidth:"1800px",mx:"auto" }}>
               {!staffId?
               <Typography variant="h4" sx={{ mb: 4, fontWeight: 'bold', color: '#333' }}>
                   Dashboard

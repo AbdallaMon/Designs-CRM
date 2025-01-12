@@ -1,9 +1,7 @@
-import prisma from '../prisma/prisma.js';
 import express from 'express';
 import {
     getNotifications, getPagination, handlePrismaError, markLatestNotificationsAsRead,
     searchData, uploadFiles,
-
     verifyTokenUsingReq,
 } from '../services/utility.js';
 

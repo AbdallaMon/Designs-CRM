@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import multer from 'multer';
 import {fileURLToPath} from 'url';
+import prisma from "../prisma/prisma.js";
 
 import {v4 as uuidv4} from 'uuid';
 import * as fs from "node:fs";
@@ -347,6 +348,22 @@ export async function getNotifications(searchParams, limit, skip, unread = true)
         orderBy: {
             createdAt: 'desc',
         },
+        include:{
+            staff:{
+            select: {
+                name: true
+            }
+            },
+            clientLead:{
+             select:{  client:{
+
+                select: {
+                    name: true
+                }
+                }}
+
+            }
+        }
     });
     const total = await prisma.notification.count({where: where});
     return {notifications, total};

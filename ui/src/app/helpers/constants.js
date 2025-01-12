@@ -30,16 +30,65 @@ export const LeadCategory = {
     CONSULTATION: "Consultation",
     DESIGN: "Design",
 };
-
-export const ConsultationType = {
+export const LeadType = {
     ROOM: "Room",
     BLUEPRINT: "Blueprint",
     CITY_VISIT: "City Visit",
+    APARTMENT: "Apartment",
+    OCCUPIED_VILLA: "Occupied Villa",
+    UNDER_CONSTRUCTION_VILLA: "Villa Under Construction",
+    PART_OF_HOME: "Part of Home",
+    COMMERCIAL: "Commercial"
 };
+export const dictionary = {
+    // Leads titles
+    Consultation: "استشارة",
+    Design: "تصميم",
 
-export const DesignType = {
-    RESIDENTIAL: "Residential",
-    COMMERCIAL: "Commercial",
+    // Questions
+    "How can we serve you?": "كيف يمكننا مساعدتك؟",
+    "Choose from options": "اختر من الخيارات",
+
+    // Lead Types
+    Room: "غرفة",
+    Blueprint: "مخطط",
+    "City Visit": "زيارة المدينة",
+    Apartment: "شقة",
+    "Occupied Villa": "فيلا مشغولة",
+    "Villa Under Construction": "فيلا تحت الإنشاء",
+    "Part of Home": "جزء من المنزل",
+    Commercial: "تجاري",
+
+    // Emirates
+    "Out side emirates": "خارج الإمارات",
+    Dubai: "دبي",
+    "Abu Dhabi": "أبو ظبي",
+    Sharjah: "الشارقة",
+    Ajman: "عجمان",
+    "Umm Al Quwain": "أم القيوين",
+    "Ras Al Khaimah": "رأس الخيمة",
+    Fujairah: "الفجيرة",
+
+    // Additional phrases
+    "Please fill all the fields.": "يرجى ملء جميع الحقول.",
+    "Minimum price cannot be greater than maximum price.": "لا يمكن أن يكون الحد الأدنى للسعر أكبر من الحد الأقصى للسعر.",
+    "Uploading file": "جارٍ تحميل الملف",
+    Submitting: "جارٍ الإرسال",
+    "Complete Your Request": "أكمل طلبك",
+    Name: "الاسم",
+    Phone: "الهاتف",
+    "Select Location": "اختر الموقع",
+    "Price Range": "نطاق السعر",
+    Min: "الحد الأدنى",
+    Max: "الحد الأقصى",
+    "Add an attachment": "أضف مرفقًا",
+    "Submit": "تسجيل",
+    Success: "تم بنجاح!",
+    "Thank you for your submission. We will contact you soon.": "شكرًا لك على تقديم طلبك. سنتواصل معك قريبًا.",
+    "You got a 10% discount": "لقد حصلت على خصم 10٪",
+    Sorry: "عذرًا!",
+    "We do not provide services outside the UAE.": "نحن لا نقدم خدمات خارج الإمارات العربية المتحدة.",
+    "Add an attachment (optional)":"اضف مرفقا (اختياري)"
 };
 
 export const MediaType = {
@@ -48,6 +97,7 @@ export const MediaType = {
 };
 
 export const Emirate = {
+    OUTSIDE:"Out side emirates",
     DUBAI: "Dubai",
     ABU_DHABI: "Abu Dhabi",
     SHARJAH: "Sharjah",
@@ -155,4 +205,220 @@ export const notificationIcons = {
     FINAL_PRICE_ADDED: <MdAttachMoney size={24} />,
     FINAL_PRICE_CHANGED: <MdAttachMoney size={24} />,
     OTHER: <AiOutlineFileText size={24} />,
+};
+
+export const serviceCategories = {
+    categories: [
+        {
+            name: "Consultation",
+            value: "CONSULTATION",
+            type: "CATEGORY", // Top-level type
+            subItems: [
+                { name: "Room", value: "ROOM", type: "ITEM",subtext:200 },
+                { name: "Blueprint", value: "BLUEPRINT", type: "ITEM" ,subtext:400},
+                { name: "City Visit", value: "CITY_VISIT", type: "ITEM" ,subtext:600},
+            ],
+        },
+        {
+            name: "Design",
+            value: "DESIGN",
+            type: "CATEGORY", // Top-level type
+            subItems: [
+                {
+                    name: "Residential",
+                    value: "RESIDENTIAL",
+                    type: "SUB_CATEGORY",
+                    subItems: [
+                        {
+                            name: "Under Construction",
+                            value: "UNDER_CONSTRUCTION",
+                            type: "ITEM",
+                            subItems: [
+                                {
+                                    name: "Outside Emirates",
+                                    value: "OUTSIDE_EMIRATES",
+                                    type: "FINAL",
+                                },
+                                {
+                                    name: "Inside Emirates",
+                                    value: "INSIDE_EMIRATES",
+                                    type: "EMIRATES",
+                                    subItems: [
+                                        {
+                                            name: "Dubai",
+                                            value: "DUBAI",
+                                            type: "EMIRATE",
+                                            averagePrice: "1200 - 2400",
+                                            priceRanges: [
+                                                { name: "1000 - 2000", type: "STANDARD" },
+                                                { name: "1500 - 2500", type: "DELUXE" },
+                                                { name: "3000 - 5000", type: "PREMIUM" },
+                                            ],
+                                        },
+                                        {
+                                            name: "Abu Dhabi",
+                                            value: "ABU_DHABI",
+                                            type: "EMIRATE",
+                                            averagePrice: "1100 - 2200",
+                                            priceRanges: [
+                                                { name: "900 - 1800", type: "STANDARD" },
+                                                { name: "1300 - 2400", type: "DELUXE" },
+                                                { name: "4000 - 7000", type: "PREMIUM" },
+                                            ],
+                                        },
+                                        {
+                                            name: "Sharjah",
+                                            value: "SHARJAH",
+                                            type: "EMIRATE",
+                                            averagePrice: "1000 - 2000",
+                                            priceRanges: [
+                                                { name: "800 - 1600", type: "STANDARD" },
+                                                { name: "1100 - 1900", type: "DELUXE" },
+                                                { name: "2500 - 4500", type: "PREMIUM" },
+                                            ],
+                                        },
+                                        {
+                                            name: "Ajman",
+                                            value: "AJMAN",
+                                            type: "EMIRATE",
+                                            averagePrice: "900 - 1800",
+                                            priceRanges: [
+                                                { name: "700 - 1400", type: "STANDARD" },
+                                                { name: "1000 - 1700", type: "DELUXE" },
+                                                { name: "2000 - 4000", type: "PREMIUM" },
+                                            ],
+                                        },
+                                        {
+                                            name: "Umm Al Quwain",
+                                            value: "UMM_AL_QUWAIN",
+                                            type: "EMIRATE",
+                                            averagePrice: "800 - 1600",
+                                            priceRanges: [
+                                                { name: "600 - 1300", type: "STANDARD" },
+                                                { name: "900 - 1500", type: "DELUXE" },
+                                                { name: "1800 - 3500", type: "PREMIUM" },
+                                            ],
+                                        },
+                                        {
+                                            name: "Ras Al Khaimah",
+                                            value: "RAS_AL_KHAIMAH",
+                                            type: "EMIRATE",
+                                            averagePrice: "1100 - 2100",
+                                            priceRanges: [
+                                                { name: "900 - 1700", type: "STANDARD" },
+                                                { name: "1200 - 1900", type: "DELUXE" },
+                                                { name: "2800 - 4800", type: "PREMIUM" },
+                                            ],
+                                        },
+                                        {
+                                            name: "Fujairah",
+                                            value: "FUJAIRAH",
+                                            type: "EMIRATE",
+                                            averagePrice: "950 - 1900",
+                                            priceRanges: [
+                                                { name: "750 - 1400", type: "STANDARD" },
+                                                { name: "1000 - 1600", type: "DELUXE" },
+                                                { name: "2400 - 4400", type: "PREMIUM" },
+                                            ],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                        {
+                            name: "Occupied Villa",
+                            value: "OCCUPIED_VILLA",
+                            type: "ITEM",
+                            subItems: [
+                                {
+                                    name: "Outside Emirates",
+                                    value: "OUTSIDE_EMIRATES",
+                                    type: "FINAL",
+                                },
+                                {
+                                    name: "Inside Emirates",
+                                    value: "INSIDE_EMIRATES",
+                                    type: "EMIRATES",
+                                    subItems: [
+                                        {
+                                            name: "Dubai",
+                                            value: "DUBAI",
+                                            type: "EMIRATE",
+                                            averagePrice: "2000 - 4000",
+                                            priceRanges: [
+                                                { name: "1800 - 3500", type: "STANDARD" },
+                                                { name: "2500 - 4500", type: "DELUXE" },
+                                                { name: "5000 - 7000", type: "PREMIUM" },
+                                            ],
+                                        },
+                                        {
+                                            name: "Abu Dhabi",
+                                            value: "ABU_DHABI",
+                                            type: "EMIRATE",
+                                            averagePrice: "1800 - 3500",
+                                            priceRanges: [
+                                                { name: "1500 - 3200", type: "STANDARD" },
+                                                { name: "2200 - 4000", type: "DELUXE" },
+                                                { name: "6000 - 8000", type: "PREMIUM" },
+                                            ],
+                                        },
+                                        // Add similar emirate data for other emirates here...
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+                {
+                    name: "Commercial",
+                    value: "COMMERCIAL",
+                    type: "SUB_CATEGORY",
+                    subItems: [
+                        {
+                            name: "Retail Space",
+                            value: "RETAIL_SPACE",
+                            type: "ITEM",
+                            subItems: [
+                                {
+                                    name: "Outside Emirates",
+                                    value: "OUTSIDE_EMIRATES",
+                                    type: "FINAL",
+                                },
+                                {
+                                    name: "Inside Emirates",
+                                    value: "INSIDE_EMIRATES",
+                                    type: "EMIRATES",
+                                    subItems: [
+                                        {
+                                            name: "Dubai",
+                                            value: "DUBAI",
+                                            type: "EMIRATE",
+                                            averagePrice: "2500 - 5000",
+                                            priceRanges: [
+                                                { name: "2300 - 4500", type: "STANDARD" },
+                                                { name: "3000 - 5500", type: "DELUXE" },
+                                                { name: "7000 - 10000", type: "PREMIUM" },
+                                            ],
+                                        },
+                                        {
+                                            name: "Abu Dhabi",
+                                            value: "ABU_DHABI",
+                                            type: "EMIRATE",
+                                            averagePrice: "2200 - 4500",
+                                            priceRanges: [
+                                                { name: "2000 - 4000", type: "STANDARD" },
+                                                { name: "2700 - 5000", type: "DELUXE" },
+                                                { name: "6500 - 9000", type: "PREMIUM" },
+                                            ],
+                                        },
+                                        // Add similar emirate data for other emirates here...
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                },
+            ],
+        },
+    ],
 };

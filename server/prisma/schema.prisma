@@ -35,22 +35,21 @@ enum LeadCategory {
  CONSULTATION
  DESIGN
 }
-
-enum ConsultationType {
+enum LeadType{
+// design
  ROOM
  BLUEPRINT
  CITY_VISIT
-}
 
-enum DesignType {
- RESIDENTIAL
+ APARTMENT
+ OCCUPIED_VILLA
+ UNDER_CONSTRUCTION_VILA
+ PART_OF_HOME
  COMMERCIAL
 }
 
-enum MediaType {
- IMAGE
- VIDEO
-}
+
+
 
 enum Emirate {
  DUBAI
@@ -60,6 +59,7 @@ enum Emirate {
  UMM_AL_QUWAIN
  RAS_AL_KHAIMAH
  FUJAIRAH
+ OUTSIDE
 }
 
 enum UserRole {
@@ -78,88 +78,17 @@ enum ClientLeadStatus {
  CONVERTED
  ON_HOLD
 }
-// Main lead types
-enum DesignItemType {
- // Residential
- UNDER_CONSTRUCTION
- OCCUPIED_VILLA
- MASTER_SECTION
- // Commercial
- RETAIL_SPACE
- OFFICE_BUILDING
- RESTAURANT
- HOTEL
- MIXED_USE
-}
+
+
 
 enum CallReminderStatus {
   IN_PROGRESS
   DONE
   MISSED
 }
-model Lead {
- id              Int              @id @default(autoincrement())
- category        LeadCategory
- consultations   Consultation[]
- designs         Design[]
- media           Media[]
- clientLeads     ClientLead[]
- createdAt       DateTime         @default(now())
- updatedAt       DateTime         @updatedAt
-}
-
-model Consultation {
- id        Int              @id @default(autoincrement())
- lead      Lead             @relation(fields: [leadId], references: [id])
- leadId    Int
- type      ConsultationType
- price     Decimal          @db.Decimal(10, 2)
- createdAt DateTime         @default(now())
- updatedAt DateTime         @updatedAt
-}
-
-model Design {
-  id          Int           @id @default(autoincrement())
-  lead        Lead          @relation(fields: [leadId], references: [id])
-  leadId      Int
-  type        DesignType
-  itemType    DesignItemType
-  priceRanges DesignPriceRange[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  @@index([leadId])
-  @@index([type, itemType])
-}
-
-model DesignPriceRange {
-  id        Int       @id @default(autoincrement())
-  design    Design    @relation(fields: [designId], references: [id])
-  designId  Int
-  emirate   Emirate
-  minPrice  Decimal   @db.Decimal(10, 2)
-  maxPrice  Decimal   @db.Decimal(10, 2)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  @@index([designId])
-}
-// Rest of the models remain the same
-
-model Media {
- id        Int       @id @default(autoincrement())
- lead      Lead      @relation(fields: [leadId], references: [id])
- leadId    Int
- type      MediaType
- url       String    @db.VarChar(255)
- createdAt DateTime  @default(now())
- updatedAt DateTime  @updatedAt
-}
 
 model ClientLead {
   id                 Int              @id @default(autoincrement())
-  lead               Lead             @relation(fields: [leadId], references: [id])
-  leadId             Int
   client             Client           @relation(fields: [clientId], references: [id])
   clientId           Int
   assignedTo         User?            @relation(fields: [userId], references: [id])
@@ -167,13 +96,12 @@ model ClientLead {
 
   // Lead type data
   selectedCategory   LeadCategory
-  consultationType   ConsultationType?
-  designType         DesignType?
-  designItemType     DesignItemType?
+  type   LeadType @default(OCCUPIED_VILLA)
+  description String?
   discount  Decimal   @db.Decimal(10, 2) @default(0)
   emirate            Emirate?
   price              String?
-  averagePrice  Decimal   @db.Decimal(10, 2)
+  averagePrice  Decimal?   @db.Decimal(10, 2)
   priceWithOutDiscount  Decimal   @db.Decimal(10, 2) @default(0)
   priceOffers PriceOffers[]
 
@@ -187,7 +115,6 @@ model ClientLead {
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
-  @@index([leadId])
   @@index([clientId])
   @@index([userId])
 }

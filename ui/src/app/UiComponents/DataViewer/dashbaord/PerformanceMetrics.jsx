@@ -3,6 +3,7 @@ import React, {useEffect, useState} from "react";
 import {useAuth} from "@/app/providers/AuthProvider.jsx";
 import {getData} from "@/app/helpers/functions/getData.js";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
+import colors from "@/app/helpers/colors.js";
 
 const PerformanceMetricsCard = ({staff,staffId}) => {
     const data = {
@@ -37,7 +38,7 @@ const PerformanceMetricsCard = ({staff,staffId}) => {
                         sx={{
                             p: 2,
                             borderRadius: 2,
-                            backgroundColor: '#e3f2fd',
+                            backgroundColor: colors.bgSecondary,
                             boxShadow: 1
                         }}
                   >

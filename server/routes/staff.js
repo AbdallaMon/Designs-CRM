@@ -5,9 +5,6 @@ import {
     createNote, createPriceOffer, getCallReminders,
     updateCallReminderStatus,
 } from "../services/staffServices.js";
-import {newNoteNotification} from "../services/notification.js";
-import {updateClientLeadStatus} from "../services/sharedServices.js";
-
 
 const router = Router();
 

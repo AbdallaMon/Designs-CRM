@@ -1,4 +1,3 @@
-import localFont from "next/font/local";
 import "./globals.css";
 import ToastProvider from "@/app/providers/ToastLoadingProvider";
 import AuthProvider from "@/app/providers/AuthProvider";
@@ -7,17 +6,14 @@ import DotsLoader from "@/app/UiComponents/feedback/loaders/DotsLoading";
 import MuiAlertProvider from "@/app/providers/MuiAlert.jsx";
 import colors from "@/app/helpers/colors.js";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+import { Roboto } from 'next/font/google'
 
+const roboto = Roboto({
+    weight: ['400',"500", '700'],
+    style: ['normal', 'italic'],
+    subsets: ['latin'],
+    display: 'swap',
+})
 export const metadata = {
   title: "Welcome",
   description: "",
@@ -25,21 +21,21 @@ export const metadata = {
 
 export default function RootLayout({children}) {
   return (
-        <html >
+        <html>
         <body
-              style={{backgroundColor:colors.bgSecondary}}
-              className={`${geistSans.variable} ${geistMono.variable} `}
+              className={roboto.className}
+              style={{backgroundColor: colors.bgSecondary}}
         >
-                <MuiAlertProvider>
-        <MUIContextProvider>
-          <ToastProvider>
-            <AuthProvider>
-              <DotsLoader/>
-              {children}
-            </AuthProvider>
-          </ToastProvider>
-        </MUIContextProvider>
-                </MuiAlertProvider>
+        <MuiAlertProvider>
+            <MUIContextProvider>
+                <ToastProvider>
+                    <AuthProvider>
+                        <DotsLoader/>
+                        {children}
+                    </AuthProvider>
+                </ToastProvider>
+            </MUIContextProvider>
+        </MuiAlertProvider>
         </body>
         </html>
   );

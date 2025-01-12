@@ -6,7 +6,7 @@ import {Box, Button} from "@mui/material";
 import React, {useState} from "react";
 import {useAuth} from "@/app/providers/AuthProvider.jsx";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
-import {ConsultationType, DesignItemType, DesignType, Emirate, LeadCategory} from "@/app/helpers/constants.js";
+import {  LeadCategory} from "@/app/helpers/constants.js";
 import FilterSelect from "@/app/UiComponents/formComponents/FilterSelect.jsx";
 import {enumToKeyValueArray} from "@/app/helpers/functions/utility.js";
 import {FaBusinessTime} from "react-icons/fa";
@@ -17,15 +17,8 @@ const columns = [
     {name: "client.name", label: "Client Name"},
     {name: "client.phone", label: "Phone"},
     {name: "selectedCategory", label: "Lead Type", enum: LeadCategory, type: "enum"},
-    {
-        name: "type", label: "Description", type: "function", render: (item) => {
-            if (item.selectedCategory === "CONSULTATION") {
-                return ConsultationType[item.consultationType]
-            } else {
-                return `${DesignType[item.designType]} - ${DesignItemType[item.designItemType]} - ${Emirate[item.emirate]}`
-            }
-        }
-    },
+    {name:"description",label:"Description" },
+
     {name: "price", label: "Price"},
     {
         name: "createdAt",

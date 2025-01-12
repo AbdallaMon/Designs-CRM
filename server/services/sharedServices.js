@@ -1,7 +1,5 @@
 import prisma from "../prisma/prisma.js";
 import dayjs from 'dayjs';
-import {dealsLink, userLink} from "./links.js";
-import {createNotification, getUserDetailsWithSpecificFields} from "./utility.js";
 import {
     assignLeadNotification,
     convertALeadNotification,
@@ -78,11 +76,10 @@ export async function getClientLeads({
                 status: true,
                 createdAt: true,
                 price: true,
-                designItemType: true,
-                designType: true,
+                type: true,
                 emirate: true,
-                consultationType: true,
                 selectedCategory: true,
+                description:true,
                 client: {
                     select: {
                         name: true,
@@ -138,9 +135,8 @@ export async function getClientLeadsByDateRange({searchParams}) {
             averagePrice: true,
             priceWithOutDiscount: true,
             selectedCategory: true,
-            consultationType: true,
-            designType: true,
-            designItemType: true,
+            description:true,
+            type: true,
             emirate: true,
             discount: true,
             callReminders: {
@@ -172,10 +168,9 @@ export async function getClientLeadDetails(clientLeadId) {
                 },
             },
             selectedCategory: true,
-            designType: true,
-            designItemType: true,
+            description:true,
+            type: true,
             emirate: true,
-            consultationType: true,
             status: true,
             price: true,
             averagePrice: true,
@@ -282,9 +277,8 @@ export async function assignLeadToAUser(clientLeadId, userId, isOverdue) {
                 clientId: convertedLead.clientId,
                 userId: userId,
                 selectedCategory: convertedLead.selectedCategory,
-                consultationType: convertedLead.consultationType,
-                designType: convertedLead.designType,
-                designItemType: convertedLead.designItemType,
+                description:convertedLead.description,
+                type: convertedLead.type,
                 emirate: convertedLead.emirate,
                 price: convertedLead.price,
                 status: "IN_PROGRESS",

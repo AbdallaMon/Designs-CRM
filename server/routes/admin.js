@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { getPagination, handlePrismaError, verifyTokenAndHandleAuthorization } from "../services/utility.js";
 import { changeUserStatus, createStaffUser, editStaffUser, getUser } from "../services/adminServices.js";
-import {updateClientLeadStatus} from "../services/sharedServices.js";
 
 const router = Router();
 

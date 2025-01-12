@@ -23,9 +23,7 @@ import {
 import {
     BsArrowLeft,
     BsBuilding,
-    BsCalendar,
-    BsCheckCircle,
-    BsClock,
+
     BsFileText,
     BsInfoCircle,
     BsPerson, BsPersonCheck,
@@ -33,10 +31,7 @@ import {
 } from 'react-icons/bs';
 import {
     ClientLeadStatus,
-    ConsultationType,
-    DesignItemType,
-    DesignType,
-    Emirate,
+
     KanbanLeadsStatus, LeadCategory, simpleModalStyle, statusColors
 } from "@/app/helpers/constants.js";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader.jsx";
@@ -315,8 +310,7 @@ const LeadContent = ({
           </>
     );
 };
-function LeadData({lead,admin}) {
-    let description = lead?.selectedCategory === "CONSULTATION" ? ConsultationType[lead.consultationType] : `${DesignType[lead.designType]} - ${DesignItemType[lead.designItemType]} - ${Emirate[lead.emirate]}`
+function LeadData({lead}) {
 const theme=useTheme()
     return (
           <Stack spacing={3}>
@@ -368,7 +362,7 @@ const theme=useTheme()
                               Description
                           </Typography>
                           <Typography variant="body1">
-                              {description}
+                              {lead.description}
                           </Typography>
                       </Grid>
                   </Grid>

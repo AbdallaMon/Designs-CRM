@@ -7,7 +7,6 @@ import {
     newPriceOffer,
     updateCallNotification
 } from "./notification.js";
-import {ClientLeadStatus} from "./enums.js";
 
 export async function createNote({clientLeadId, userId, content}) {
     if (!content.trim()) {

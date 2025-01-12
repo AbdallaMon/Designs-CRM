@@ -28,13 +28,10 @@ import {
 import {styled} from "@mui/material/styles";
 import dayjs from "dayjs";
 import {
-    ConsultationType,
-    DesignItemType,
-    DesignType, Emirate,
     KanbanStatusArray,
     statusColors
 } from "@/app/helpers/constants.js";
-import PreviewDialog,  from "@/app/UiComponents/DataViewer/leads/PreviewLead.jsx";
+import PreviewDialog  from "@/app/UiComponents/DataViewer/leads/PreviewLead.jsx";
 import {CallResultDialog, NewCallDialog, NewNoteDialog} from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
 import { hideMoreData} from "@/app/helpers/functions/utility.js";
 import {FaEye} from "react-icons/fa";
@@ -110,7 +107,7 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
                               {lead.client.name}
                           </Typography>
                           <Typography variant="subtitle2" component="div">
-                              {lead?.selectedCategory === "CONSULTATION" ? ConsultationType[lead.consultationType] : `${DesignType[lead.designType]} - ${DesignItemType[lead.designItemType]} - ${Emirate[lead.emirate]}`}
+                              {lead.description}
                           </Typography>
                       </Box>
                       <Box my={1} display="flex" alignItems="center" gap={1}>

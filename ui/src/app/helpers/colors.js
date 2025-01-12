@@ -1,29 +1,32 @@
-import {AiOutlineEdit, AiOutlineFileText, AiOutlineUserAdd} from "react-icons/ai";
-import {BiNote, BiTransfer} from "react-icons/bi";
-import {MdAttachMoney, MdCall} from "react-icons/md";
-import {FaFileUpload} from "react-icons/fa";
-import React from "react";
 
 const colors = {
-    "primary": "#0d9488",           // Teal
-    "primaryDark": "#0f766e",       // Dark teal
-    "primaryAlt": "#f0fdfa",        // Light teal bg #0d94882b
-    "primaryGradient": "linear-gradient(135deg, #0f766e 0%, #0d9488 100%)",
-    "secondary": "#6366f1",         // Indigo
-    "secondaryDark": "#4f46e5",     // Deep indigo
-    "secondaryAlt": "#eef2ff",      // Light indigo bg
-    "secondaryText": "#334155",     // Slate text
-    "body": "#f9fafb",             // Off-white
-    "bgPrimary": "#ffffff",        // Pure white
-    "bgSecondary": "#f8fafc",      // Light gray
-    "bgTertiary": "#f9fafb",       // Off-white
-    "textColor": "#475569",        // Medium gray
-    "heading": "#134e4a",          // Deep teal-black
-    "paperBg": "#f1f5f9",          // Light gray
-    "success": "#10b981",          // Emerald
-    "warning": "#f59e0b",          // Amber
-    "error": "#ef4444",            // Red
-    "info": "#3b82f6",             // Blue
+    "primary": "#d3ac71",           // Rich caramel (slightly warmer than original)
+    "primaryDark": "#be975c",       // Darker caramel
+    "primaryAlt": "#f7eedd",        // Light caramel bg
+    "primaryGradient": "linear-gradient(135deg, #be975c 0%, #d3ac71 100%)",
+
+    // Secondary Colors - Warm Cedar
+    "secondary": "#e3b79a",         // Cedar brown
+    "secondaryDark": "#a07559",     // Dark cedar
+    "secondaryAlt": "#f4ebe6",      // Light cedar bg
+    "secondaryText": "#785644",     // Deep cedar text
+
+    // Optimized Background Colors
+    "body": "#f4f2ee",             // Soft linen gray
+    "bgPrimary": "#eae7e2",        // Light linen
+    "bgSecondary": "#faf9f7",      // Bright linen
+    "bgTertiary": "#e2dfd9",       // Darker linen
+    "paperBg": "#fcfbf9",          // Pure linen white
+
+    // Text and Utility Colors
+    "textColor": "#584d3f",        // Warm brown-gray
+    "heading": "#383028",          // Deep brown
+
+    // Status Colors
+    "success": "#849178",          // Muted sage
+    "warning": "#d3ac71",          // Caramel tone
+    "error": "#bf776e",            // Muted coral
+    "info": "#768fa1",             // Muted blue-gray
 }
 export const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 export const STATUS_COLORS = {
