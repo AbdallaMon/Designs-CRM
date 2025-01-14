@@ -35,7 +35,7 @@ export const LeadType = {
     BLUEPRINT: "Blueprint",
     CITY_VISIT: "City Visit",
     APARTMENT: "Apartment",
-    OCCUPIED_VILLA: "Occupied Villa",
+    CONSTRUCTION_VILLA: "Construction Villa",
     UNDER_CONSTRUCTION_VILLA: "Villa Under Construction",
     PART_OF_HOME: "Part of Home",
     COMMERCIAL: "Commercial"
@@ -54,7 +54,7 @@ export const dictionary = {
     Blueprint: "مخطط",
     "City Visit": "زيارة المدينة",
     Apartment: "شقة",
-    "Occupied Villa": "فيلا مشغولة",
+    "Construction Villa": "فيلا مكسونة",
     "Villa Under Construction": "فيلا تحت الإنشاء",
     "Part of Home": "جزء من المنزل",
     Commercial: "تجاري",
@@ -135,18 +135,7 @@ export const KanbanLeadsStatus={
 
 
 
-export const DesignItemType = {
-    // Residential
-    UNDER_CONSTRUCTION: "Under Construction",
-    OCCUPIED_VILLA: "Occupied Villa",
-    MASTER_SECTION: "Master Section",
-    // Commercial
-    RETAIL_SPACE: "Retail Space",
-    OFFICE_BUILDING: "Office Building",
-    RESTAURANT: "Restaurant",
-    HOTEL: "Hotel",
-    MIXED_USE: "Mixed Use",
-};
+
 export const statusColors = {
     IN_PROGRESS: "#0d9488",           // Teal
     INTERESTED: "#10b981",           // Emerald
@@ -326,8 +315,8 @@ export const serviceCategories = {
                             ],
                         },
                         {
-                            name: "Occupied Villa",
-                            value: "OCCUPIED_VILLA",
+                            name: "Construction Villa",
+                            value: "CONSTRUCTION_VILLA",
                             type: "ITEM",
                             subItems: [
                                 {

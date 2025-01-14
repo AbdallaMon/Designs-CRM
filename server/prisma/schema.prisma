@@ -42,7 +42,7 @@ enum LeadType{
  CITY_VISIT
 
  APARTMENT
- OCCUPIED_VILLA
+ CONSTRUCTION_VILLA
  UNDER_CONSTRUCTION_VILA
  PART_OF_HOME
  COMMERCIAL
@@ -96,7 +96,7 @@ model ClientLead {
 
   // Lead type data
   selectedCategory   LeadCategory
-  type   LeadType @default(OCCUPIED_VILLA)
+  type   LeadType @default(CONSTRUCTION_VILLA)
   description String?
   discount  Decimal   @db.Decimal(10, 2) @default(0)
   emirate            Emirate?
@@ -186,7 +186,8 @@ model User {
 model Client {
  id          Int          @id @default(autoincrement())
  name        String       @db.VarChar(255)
- phone       String       @db.VarChar(20) @unique
+ phone       String       @db.VarChar(20)
+ email       String       @db.VarChar(255) @unique
  clientLeads ClientLead[]
  createdAt   DateTime     @default(now())
  updatedAt   DateTime     @updatedAt

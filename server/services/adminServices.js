@@ -116,7 +116,7 @@ const processLeads = (leads) => {
         type: lead.type,
         averagePrice: Number(lead.averagePrice || 0),
         discount: Number(lead.discount || 0),
-        finalPrice: Number(lead.averagePrice || 0) - Number(lead.discount || 0),
+        finalPrice: Number(lead.finalPrice || 0),
         createdAt: lead.createdAt.toISOString().split('T')[0],
         assignedTo: lead.assignedTo?.name || 'Unassigned'
     }));

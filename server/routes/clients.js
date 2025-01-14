@@ -10,14 +10,15 @@ router.post("/new-lead",async (req,res)=>{
     try {
         let client=await prisma.client.findUnique({
             where:{
-            phone:body.phone
+                email:body.email,
             }
         })
         if(!client){
          client=await prisma.client.create({
            data:{
                name:body.name,
-               phone:body.phone
+               phone:body.phone,
+               email:body.email
            }
         })
         }
@@ -30,7 +31,7 @@ router.post("/new-lead",async (req,res)=>{
             status: 'IN_PROGRESS',
         }
         if(body.priceRange){
-            data.price=`${body.priceRange[0]} - ${body.priceRange[1]}`
+            data.price=body.priceRange
         }
          const clientLead= await prisma.clientLead.create({
             data

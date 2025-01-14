@@ -1,0 +1,374 @@
+import {gsap} from "gsap";
+
+export function initialAnimation(setIsAnimating){
+    setIsAnimating(true)
+    gsap.fromTo(
+          ".category-title",
+          {
+              opacity: 0,
+              y: 50,
+          },
+          {
+              y: 0,
+              opacity: 1,
+              duration: 0.8,
+              ease: "power3.out",
+          }
+    );
+    const tl = gsap.timeline();
+    tl.fromTo(
+          ".lead-card:first-child",
+          {
+              opacity: 0,
+              x: -50, // Animate from the left
+          },
+          {
+              x: 0,
+              opacity: 1,
+              duration: 0.8,
+              ease: "power3.out",
+          }
+    ).fromTo(
+          ".lead-card:last-child",
+          {
+              opacity: 0,
+              x: 50, // Animate from the right
+          },
+          {
+              x: 0,
+              opacity: 1,
+              duration: 0.8,
+              ease: "power3.out",
+          },
+          "<"
+    );
+    tl.set(".lead-card",{
+        clearProps: "transform"
+    }).then(()=>{
+        setIsAnimating(false)
+    })
+}
+
+export function animateImageCardToFullWidthFullHeight(tl,itemClass,removeElementClass,animatedElementClass,shadowClass="shadow-lead-card") {
+    const removedElement=document.querySelector(`.${removeElementClass}`)
+    const animatedElement=document.querySelector(`.${animatedElementClass}`)
+    const animatedShadowElement=animatedElement.querySelector(`.${shadowClass}`)
+    const removeShadowElement=removedElement.querySelector(`.${shadowClass}`)
+    const {top, left, height, width} = animatedElement.getBoundingClientRect();
+    const {left:l,top:t} = removedElement.getBoundingClientRect();
+    const centerX = window.innerWidth / 2 - width / 2;
+    const centerY = window.innerHeight / 2 - height / 2;
+    tl.set(`.${itemClass} .${shadowClass}`, {
+        boxShadow: "none",
+        borderRadius: "0px",
+        position: "fixed",
+        width:width,
+        height:height,
+    })
+    tl.set(animatedShadowElement, {
+        left: `${left}px`,
+        top:`${top}px`,
+    });
+    tl.set(removeShadowElement, {
+        left: `${l}px`,
+        top:`${t}px`,
+    });
+    tl.fromTo(
+          removeShadowElement,
+          {x: 0, opacity: 1},
+          {
+              x: -100, opacity: 0, duration: 0.8, ease: "power3.inOut", // Smoother easing function
+          }
+    )
+    tl.fromTo(
+          animatedShadowElement,
+          {
+              top: `${top}px`,
+              left: `${left}px`,
+              height: `${height}px`,
+              width: `${width}px`,
+          },
+          {
+              top: `${centerY}px`,
+              left: `${centerX}px`,
+              height: `${height}px`,
+              width: `${width}px`,
+              duration: 0.8,
+              ease: "power3.inOut",
+              margin: 0
+          }
+          , "<"
+    );
+    const leadText = animatedElement.querySelector("h4")
+    tl.to(leadText, {
+        top: "80px",
+        left: "50%",
+        transform: "translate(-50%,0%)",
+    })
+    tl.to(animatedShadowElement, {
+        top: 0,
+        left: 0,
+        height: "100vh",
+        width: "100vw",
+        duration: 0.8,
+        ease: "power3.out",
+    });
+}
+
+export function animateLeadCategoryItem({leadCategory,setIsAnimating,setIsCatAnimated}){
+    setIsAnimating(true)
+    const removedElement = leadCategory === "DESIGN" ? "CONSULTATION" : "DESIGN"
+    const tl = gsap.timeline();
+    animateImageCardToFullWidthFullHeight(tl,"lead-card",removedElement,leadCategory,"shadow-lead-card")
+    tl.fromTo(".reverse-button", {
+              x: -50
+          }
+          , {
+              display: "flex"
+              ,
+              x: 0
+          }
+          , "<"
+    )
+    tl.fromTo(".logo", {
+              marginLeft:0
+          }
+          , {
+
+              marginLeft:12
+          }
+          , "<"
+    )
+          if(leadCategory==="CONSULTATION"){
+              animateLeadItem(tl)
+          }else{
+tl.fromTo(".location",{
+    opacity:0,
+    y:50,
+},{
+    opacity:1,
+    y:0
+})
+              tl.fromTo(".design-cards-container > h4",{
+                  opacity:0,
+                  y:-50,
+              },{
+                  opacity:1,
+                  y:0
+              })
+          }
+          tl.then( () => {
+        setIsAnimating(false);
+        setIsCatAnimated(true);
+    });
+}
+function animateLeadItem(tl){
+    tl.fromTo(
+          ".lead-item",
+          {y: 50, opacity: 0},
+          {
+              y: 0,
+              opacity: 1,
+              stagger: 0.1,
+              ease: "power3.out",
+          }
+    );
+    tl.fromTo(
+          ".item-title",
+          {
+              opacity: 0,
+              y: -50,
+          },
+          {
+              y: 0,
+              opacity: 1,
+              duration: 1,
+              ease: "power3.out",
+          },
+          "<")
+}
+export function animateFormPage({setIsAnimating, setIsItemAnimated}){
+    setIsAnimating(true)
+    const tl = gsap.timeline();
+    tl.fromTo(
+          ".form-page",
+          {
+              top: "100%", // Start from off-screen
+              opacity: 0,  // Invisible initially
+          },
+          {
+              top: 0,        // Move to its final position
+              opacity: 1,    // Fade in
+              display: "block", // Ensure it becomes visible
+              duration: 0.8, // Smooth duration
+              ease: "power3.out", // Smooth easing
+          }
+    );
+    tl.fromTo(
+          ".final-selection-form",
+          {
+              opacity: 0,
+              scale: 0.9,
+          },
+          {
+              opacity: 1,
+              scale: 1,
+              duration: 0.6,
+              ease: "back.out(1.7)",
+          },
+    ).then(() => {
+        setIsAnimating(false);
+        setIsItemAnimated(true);
+    });
+
+}
+function removeLeadItem(tl){
+    tl.fromTo(".item-title", {
+        opacity: 1,
+        y: 0,
+    }, {
+        opacity: 0,
+        y: 50,
+        duration: 0.6,
+        ease: "power3.inOut",
+    })
+    tl.to(".lead-item", {
+        y: 50,
+        opacity: 0,
+        stagger: 0.1,
+        duration: 0.6,
+        ease: "power3.inOut",
+    })
+}
+
+
+
+function disAnimateLeadForm({tl, setLeadItem, setAnimateLeadItem, setIsItemAnimated, setIsReversing}){
+    tl.fromTo(
+          ".form-page",
+          {
+              top: 0,
+              opacity: 1,
+              display: "block",
+          },
+          {
+              top: "100%",
+              opacity: 0,
+              display: "none",
+              duration: 0.8,
+              ease: "power3.inOut",
+          }
+    ).then(() => {
+        setLeadItem("");
+        setAnimateLeadItem("");
+        setIsItemAnimated(false)
+        setIsReversing(false)
+    });
+}
+export function reverseAnimation({location,setLocation,setAnimateLocation,setIsLocationAnimated,leadItem, isItemAnimated, isReversing, isAnimating, setIsReversing,setLeadItem,setAnimateLeadItem,setIsItemAnimated,leadCategory,isCatAnimated,setLeadCategory,setAnimateLeadType,setIsCatAnimated}) {
+    if (leadItem&&isItemAnimated&&!isReversing&&!isAnimating) {
+        setIsReversing(true)
+        const tl = gsap.timeline();
+        disAnimateLeadForm({tl,setLeadItem,setIsReversing,setAnimateLeadItem,setIsItemAnimated})
+    } else if(leadCategory&&isCatAnimated&&!isReversing&&!isAnimating) {
+        setIsReversing(true)
+        const tl = gsap.timeline();
+        const removedElement = leadCategory === "DESIGN" ? "CONSULTATION" : "DESIGN"
+        const leadElement = document.querySelector(`.${leadCategory}`);
+        const { left,height,top,width} = document.querySelector(`.${removedElement}`).getBoundingClientRect();
+        const {top:t,left:l,height:h,width:w}=leadElement.getBoundingClientRect();
+        const shadowLead=leadElement.querySelector(".shadow-lead-card")
+        if(leadCategory==="CONSULTATION"){
+            removeLeadItem(tl)
+        }else {
+            tl.fromTo(".location", {
+                opacity: 1,
+                y: 0,
+            }, {
+                opacity: 0,
+                y: 50
+            })
+            tl.fromTo(".design-cards-container > h4", {
+                opacity: 1,
+                y: 0
+            }, {
+                opacity: 0,
+                y: -50
+            },"<")
+        }
+        tl.to(shadowLead, {
+            top: `${t}px`,
+            left: `${l}px`,
+            height: `${h}px`,
+            width: `${w}px`,
+            borderRadius: "12px",
+            duration: 0.8,
+            ease: "power3.inOut",
+        }).fromTo(".reverse-button", {
+                  x: 0                  }
+              , {
+                  display: "none"
+                  ,
+                  x: -50
+              }
+              , "<").fromTo(".logo", {
+                  marginLeft:12
+              }
+              , {
+                  marginLeft:0
+              }
+              , "<"
+        )
+        tl.set(`.${removedElement} .shadow-lead-card`,{
+            top: `${top}px`,
+            left: `${left}px`,
+            height:  `${height}px`,
+            width: `${width}px`,
+        })
+        tl.set(`.shadow-lead-card`,
+              {
+                  position:"absolute"
+                  ,
+                  top:0,
+                  left:0,
+                  width:"100%",
+                  height:"100%"
+              })
+        tl.to(`.${removedElement} .shadow-lead-card`, {
+            x: 0,
+            borderRadius: "12px",
+            opacity: 1,
+            duration: 0.8,
+            ease: "power3.inOut",
+        })
+        const leadText = leadElement.querySelector("h4")
+        tl.to(leadText, {
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%,-50%)",
+              },
+              "<")
+        tl.fromTo(".category-title", {
+                  opacity: 0,
+                  y: 50,
+                  duration: 0.6,
+                  ease: "power3.inOut",
+              },
+              {
+                  opacity: 1,
+                  y: 0,
+                  duration: 0.6,
+                  ease: "power3.inOut",
+              },
+              "<"
+        )
+              .then(() => {
+                  setLeadCategory("");
+                  setAnimateLeadType("");
+                  setIsCatAnimated(false)
+                  setIsReversing(false)
+                  window.sessionStorage.removeItem("animated")
+
+              });
+    }
+}
