@@ -284,6 +284,9 @@ export const uploadFiles = async (req, res) => {
         // Respond with the URLs of uploaded files
         res.status(200).json({ message: 'Files uploaded successfully.', fileUrls });
     } catch (error) {
+        if (error.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: 'File size exceeds the 50MB limit.' });
+        }
         console.error('Error:', error.message);
         res.status(400).json({ error: error.message });
     }

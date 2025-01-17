@@ -10,8 +10,15 @@ export default function SimpleFileInput({
     const [fileName, setFileName] = useState(""); // Track file name
     const [error, setError] = useState(null); // Track file error
     const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        setError(null); // Reset error on new file selection
+        const file = e.target.files[0]
+        const MAX_FILE_SIZE = 50 * 1024 * 1024;
+        if (file.size > MAX_FILE_SIZE) {
+            setError(`File size exceeds the 50MB limit.`);
+            setPreview(null);
+            setFileName("");
+            return;
+        }
+            setError(null); 
         if (file) {
             setFileName(file.name); // Store file name
             const reader = new FileReader();
