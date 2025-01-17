@@ -181,7 +181,6 @@ const LeadCard = ({lead, movelead, admin, setleads}) => {
                           })}
 
 
-
                       </Stack>
                   </CardContent>
               </StyledCard>

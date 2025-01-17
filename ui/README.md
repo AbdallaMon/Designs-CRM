@@ -5,7 +5,9 @@
 23- search by email
 24- render user attachment
 25- file limit 50mb
-
+26- font from their website
+27- fix error after searching for a staff in the notifications
+28- allow admin to change status from leads/{id}
 dJkmjERCZGCEgaxl
 TCP: 25, TCP: 587, TCP: 465, TCP: 110, TCP: 143 and TCP: 993 for mail service
 TCP: 8090 for CyberPanel

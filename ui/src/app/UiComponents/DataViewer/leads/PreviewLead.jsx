@@ -77,6 +77,8 @@ const LeadContent = ({
     const handleClick = (event) => {
     if(!admin){
         setAnchorEl(event.currentTarget);
+    }else if(admin&&lead.status==="FINALIZED"||lead.status==="REJECTED"){
+        setAnchorEl(event.currentTarget);
     }
     };
     const [finalizeModel,setFinalizeModel]=useState(false)
@@ -171,7 +173,6 @@ const LeadContent = ({
                           }
                           {(!admin&&lead.status!=="FINALIZED")&&
                                 <>
-
                           <Button
                                 fullWidth={isMobile}
                                 variant="outlined"
