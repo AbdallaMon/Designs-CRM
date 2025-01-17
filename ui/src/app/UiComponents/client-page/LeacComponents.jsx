@@ -203,8 +203,12 @@ export function Title({title, class_name}) {
                     fontWeight: 700,
                     color: theme.palette.primary.main,
                     mb: 3,
-                    mt:4,
-                    opacity: 0
+                    mt:4.5,
+                    opacity: 0,
+                    minHeight: "80px",
+                    display:"flex",
+                    justifyContent:"center",
+                    alignItems:"center"
                 }}
           >
               {title}
