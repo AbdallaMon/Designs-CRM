@@ -11,7 +11,7 @@ import {
     IconButton,
     Tooltip,
     Chip,
-    useTheme,
+    useTheme, Link,
 } from '@mui/material';
 import {
     FaFileImage,
@@ -23,10 +23,14 @@ import {AddFiles, AddPriceOffers} from "@/app/UiComponents/DataViewer/leads/lead
 const getFileType = (fileUrl) => {
     const extension = fileUrl.split('.').pop().toLowerCase();
     const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    const videoExtensions = ['mp4', 'mov', 'avi', 'mkv'];
+    const excelExtensions = ['xls', 'xlsx'];
 
-    if (extension === 'pdf') return 'pdf';
     if (imageExtensions.includes(extension)) return 'image';
-    return null;
+    if (extension === 'pdf') return 'pdf';
+    if (videoExtensions.includes(extension)) return 'video';
+    if (excelExtensions.includes(extension)) return 'excel';
+    return 'other';
 };
 
 // Function to get appropriate icon
@@ -55,28 +59,19 @@ const renderFilePreview = (file) => {
                             maxWidth: '100%',
                             maxHeight: '200px',
                             objectFit: 'contain',
-                            borderRadius: '4px'
+                            borderRadius: '4px',
                         }}
                   />
               </Box>
         );
     }
-
-    if (fileType === 'pdf') {
-        return (
-              <Box sx={{ mt: 1 }}>
-                  <iframe
-                        src={file.url}
-                        title={file.name}
-                        width="100%"
-                        height="200px"
-                        style={{ border: 'none', borderRadius: '4px' }}
-                  />
-              </Box>
-        );
-    }
-
-    return null;
+    return (
+          <Box sx={{ mt: 1 }}>
+                  <Link href={file.url} target="_blank" rel="noopener noreferrer">
+                      Open {fileType.toUpperCase()} File
+                  </Link>
+          </Box>
+    );
 };
 
 const FileList = ({ lead,admin }) => {
@@ -108,12 +103,9 @@ const [files,setFiles]=useState(lead.files)
             transition: 'background-color 0.2s ease-in-out'
         }
     };
-
     const renderFileList = (files) => (
           <List>
               {files.map((file) => {
-                  const fileType = getFileType(file.url);
-                  if (!fileType) return null;
 
                   return (
                         <ListItem
@@ -164,7 +156,7 @@ const [files,setFiles]=useState(lead.files)
                                     <Box display="flex" alignItems="center" gap={1}>
                                         User Files
                                         <Chip
-                                              label={userFiles.filter(file => getFileType(file.name)).length}
+                                              label={userFiles.length}
                                               size="small"
                                               color="primary"
                                         />
@@ -176,7 +168,7 @@ const [files,setFiles]=useState(lead.files)
                                     <Box display="flex" alignItems="center" gap={1}>
                                         Client Files
                                         <Chip
-                                              label={clientFiles.filter(file => getFileType(file.name)).length}
+                                              label={clientFiles.length}
                                               size="small"
                                               color="primary"
                                         />

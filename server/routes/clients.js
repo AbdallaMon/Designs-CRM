@@ -37,7 +37,7 @@ router.post("/new-lead",async (req,res)=>{
             data.emirate==="OUTSIDE"
         }
         if(body.priceRange){
-            data.price=body.priceRange
+            data.price=`${body.priceRange[0]} - ${body.priceRange[1]}`
         }
         if(body.priceOption){
             data.price=body.priceOption
