@@ -539,7 +539,7 @@ async function sendNotification(userId, content, href, type, emailSubject, withE
         ${emailContent}
     </div>
     <div style="margin-top: 10px;">
-        <a href="${process.env.ORIGIN}/notification" style="color: #007bff; text-decoration: none;">
+        <a href="${process.env.ORIGIN}/dashboard/notification" style="color: #007bff; text-decoration: none;">
             Go to notifications?
         </a>
     </div>
