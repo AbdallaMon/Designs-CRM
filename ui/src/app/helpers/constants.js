@@ -95,7 +95,7 @@ export const dictionary = {
     "Submit": "تسجيل",
     Success: "تم بنجاح!",
     "Thank you for your submission. We will contact you soon.": "شكرًا لك على تقديم طلبك. سنتواصل معك قريبًا.",
-    "You got a 10% discount": "لقد حصلت على خصم 10٪",
+    "You got a 10% discount!": "لقد حصلت على خصم 10٪",
     Sorry: "عذرًا!",
     "We do not provide services outside the UAE.": "نحن لا نقدم خدمات خارج الإمارات العربية المتحدة.",
     "Add an attachment (optional)":"اضف مرفقا (اختياري)",
