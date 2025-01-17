@@ -31,7 +31,7 @@ export default function AllDealsPage({staff}) {
     const links = [
         {href: "/dashboard/overdue-deals", title: "See Overdue Deals", icon: <FaBusinessTime/>},
     ];
-    const assignedTo=    {name: "assignedTo.name", label: "Assigned to",type:"href",linkCondition:(item)=>`/dashboard/users/${item.assignedTo.id}`}
+    const assignedTo=    {name: "assignedTo?.name", label: "Assigned to",type:"href",linkCondition:(item)=>`/dashboard/users/${item.assignedTo?.id}`}
 
     const {user} = useAuth()
     const {
@@ -58,7 +58,7 @@ export default function AllDealsPage({staff}) {
               }
               <AdminTable
                     data={data}
-                    columns={staff?columns:[columns,...assignedTo]}
+                    columns={staff?columns:data&&data.length>0?[columns,...assignedTo]:columns}
                     page={page}
                     setPage={setPage}
                     limit={limit}

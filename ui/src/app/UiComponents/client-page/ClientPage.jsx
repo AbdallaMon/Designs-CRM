@@ -15,10 +15,9 @@ import {
 } from "@/app/UiComponents/client-page/LeacComponents.jsx";
 import {
     animateFormPage,
-animateLeadCategoryItem,
+    animateLeadCategoryItem, animateLocationItem,
     initialAnimation, reverseAnimation
 } from "@/app/UiComponents/client-page/function.js";
-
 
 export default function ClientPage() {
     const [leadCategory, setLeadCategory] = useState()
@@ -66,12 +65,13 @@ useEffect(()=>{
     }, [animateLeadItem]);
 useEffect(()=>{
     if (animateLocation === "animate"&&!isLocationAnimated&&!isAnimating&&!isReversing) {
+        animateLocationItem({leadCategory,location,setIsAnimating,setIsLocationAnimated})
 
     }
-},[])
+},[animateLocation])
     return (
           <>
-              <Header reverseAnimation={()=>reverseAnimation({location,leadCategory,leadItem,setIsItemAnimated,setIsCatAnimated,isAnimating,isCatAnimated,isItemAnimated,isReversing,setAnimateLeadItem,setAnimateLeadType,setIsReversing,setLeadCategory,setLeadItem,setAnimateLocation,setIsLocationAnimated,setLocation})}/>
+              <Header reverseAnimation={()=>reverseAnimation({location,leadCategory,leadItem,setIsItemAnimated,setIsCatAnimated,isAnimating,isCatAnimated,isItemAnimated,isReversing,setAnimateLeadItem,setAnimateLeadType,setIsReversing,setLeadCategory,setLeadItem,setAnimateLocation,setIsLocationAnimated,setLocation,isLocationAnimated})}/>
               <Container maxWidth="md" sx={{height: "100vh", overflow: "hidden", py: {xs: 3, md: 4}}}>
                   <Paper
                         className="page-container"
@@ -88,9 +88,12 @@ useEffect(()=>{
                       <LeadCardsContainer handleClick={animateLeadCategory}/>
                       {leadCategory &&
                             <>
+
                             {leadCategory==="DESIGN"&&<DesignLeadsContainer handleClick={animateLeadItemAfterLocationClick}/>}
+
                             <LeadCategoryItemsContainer leadCategory={leadCategory}
-                                                        animateLeadCategoryItems={animateLeadCategoryItems}/>
+                                                        animateLeadCategoryItems={animateLeadCategoryItems} location={location}/>
+
                             </>
                       }
                   </Paper>
@@ -118,7 +121,7 @@ useEffect(()=>{
                       justifyContent: "center",
                       alignItems: "center"
                   }}>
-                      <FinalSelectionForm category={leadCategory} item={leadItem}/>
+                      <FinalSelectionForm location={location} category={leadCategory} item={leadItem}/>
                   </Container>
               </Box>
           </>

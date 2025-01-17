@@ -1,4 +1,4 @@
-import {Alert, Box, Snackbar, TextField} from "@mui/material";
+import {Alert, Box, Button, Link, Snackbar, TextField} from "@mui/material";
 import {useState} from "react";
 
 export default function SimpleFileInput({
@@ -13,22 +13,20 @@ export default function SimpleFileInput({
         const file = e.target.files[0];
         setError(null); // Reset error on new file selection
         if (file) {
-            if (!file.type.startsWith("image/") && file.type !== "application/pdf") {
-                setError("Not supported file type,(file must be image or pdf)");
-                setPreview(null);
-                return;
-            }
             setFileName(file.name); // Store file name
             const reader = new FileReader();
-            if (file.type === "application/pdf") {
-                const pdfBlob = URL.createObjectURL(file);
-                setPreview(pdfBlob);
-            } else if (file.type.startsWith("image/")) {
-                reader.onloadend = () => {
-                    setPreview(reader.result);
-                };
-                reader.readAsDataURL(file);
-            }
+            const fileBlob = URL.createObjectURL(file);
+            setPreview(fileBlob);
+
+            // if (file.type === "application/pdf") {
+            //     const pdfBlob = URL.createObjectURL(file);
+            //     setPreview(pdfBlob);
+            // } else if (file.type.startsWith("image/")) {
+            //     reader.onloadend = () => {
+            //         setPreview(reader.result);
+            //     };
+            //     reader.readAsDataURL(file);
+            // }
             if(setData){
             setData((old)=>({...old,[id]:file}))
             }
@@ -36,26 +34,24 @@ export default function SimpleFileInput({
             setPreview(null);
         }
     };
-    const isPdf = preview && (preview.startsWith("blob:") || preview.endsWith(".pdf"));
+    // const isPdf = preview && (preview.startsWith("blob:") || preview.endsWith(".pdf"));
     const renderPreview = () => {
         if (!preview) return null;
-
-        if (isPdf) {
             return (
-                  <a href={preview} target="_blank" rel="noopener noreferrer">
+                  <Link  sx={{}} href={preview}  target="_blank" rel="noopener noreferrer">
                       {fileName || "Show file"}
-                  </a>
+                  </Link>
             );
-        }
-        return (
-              <img
-                    src={preview}
-                    alt="Preview"
-                    width={60}
-                    height={60}
-                    style={{objectFit: "cover", maxHeight: "60px"}}
-              />
-        );
+
+        // return (
+        //       <img
+        //             src={preview}
+        //             alt="Preview"
+        //             width={60}
+        //             height={60}
+        //             style={{objectFit: "cover", maxHeight: "60px"}}
+        //       />
+        // );
     };
 
     return (
@@ -70,6 +66,7 @@ export default function SimpleFileInput({
                                         type="file"
                                         InputLabelProps={{shrink: true}}
                                         variant={variant}
+                                        helperText="Max file uploads : 50mb"
                                         fullWidth
                                         accept={input&&input?.accept}
                                         onChange={(e) => {

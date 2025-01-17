@@ -2,7 +2,8 @@ import jwt from "jsonwebtoken";
 import multer from 'multer';
 import {fileURLToPath} from 'url';
 import prisma from "../prisma/prisma.js";
-
+import { Client } from 'basic-ftp';
+import { Readable } from 'stream';
 import {v4 as uuidv4} from 'uuid';
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -197,58 +198,150 @@ export async function searchData(body) {
     return data;
 }
 
+
+
+// FTP Configuration
+const ftpConfig = {
+    host: process.env.FTP_HOST,
+    user: process.env.FTP_USER,
+    password: process.env.FTP_PASSWORD,
+    secure: false, // Set to true if using FTPS
+};
+const tmpFolder = path.resolve(__dirname, "tmp");
+if (!fs.existsSync(tmpFolder)) {
+    fs.mkdirSync(tmpFolder, { recursive: true });
+}
+// Multer configuration for handling file uploads in memory
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const uploadPath = path.resolve(__dirname, '../uploads/');
-        if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, {recursive: true});
+        // Ensure the tmp folder exists
+        if (!fs.existsSync(tmpFolder)) {
+            fs.mkdirSync(tmpFolder, { recursive: true });
         }
-        cb(null, uploadPath);
+        cb(null, tmpFolder);
     },
     filename: (req, file, cb) => {
-        const uniqueSuffix = `${uuidv4()}${path.extname(file.originalname)}`;
-        cb(null, uniqueSuffix);
+        const uniqueFilename = `${uuidv4()}-${Date.now()}${path.extname(file.originalname)}`;
+        cb(null, uniqueFilename);
     },
 });
 const upload = multer({
     storage,
-    limits: {fileSize: 20 * 1024 * 1024}, // 20MB file size limit
-    fileFilter: (req, file, cb) => {
-        const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-        if (allowedMimeTypes.includes(file.mimetype)) {
-            cb(null, true);
-        } else {
-            cb(new Error('Invalid file type.'));
-        }
-    },
-}).any();
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB file size limit
+}).any(); // Allow any file type
 
+// FTP Upload Function
+async function uploadToFTP(localFilePath, remotePath) {
+    const client = new Client();
+    try {
+        await client.access(ftpConfig);
+
+        // Upload file directly from disk
+        await client.uploadFrom(localFilePath, remotePath);
+    } catch (err) {
+        console.error('FTP upload error:', err);
+        throw new Error('Failed to upload to FTP server.');
+    } finally {
+        client.close();
+    }
+}
+
+// Upload API
 export const uploadFiles = async (req, res) => {
     try {
-        const fileUrls = {};
+        const fileUrls = {}; // Object to store URLs of uploaded files
+
         await new Promise((resolve, reject) => {
-            upload(req, res, (err) => {
+            upload(req, res, async (err) => {
                 if (err) {
-                    reject(err);
+                    reject(err); // Reject on upload error
                 } else if (!req.files || req.files.length === 0) {
                     reject(new Error('No files uploaded.'));
                 } else {
-                    req.files.forEach(file => {
-                        const fieldName = file.fieldname;
-                        const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
-                        if (!fileUrls[fieldName]) fileUrls[fieldName] = [];
-                        fileUrls[fieldName].push(fileUrl);
-                    });
-                    resolve();
+                    try {
+                        for (const file of req.files) {
+                            const uniqueFilename = `${uuidv4()}${path.extname(file.originalname)}`;
+                            const remotePath = `public_html/uploads/${uniqueFilename}`;
+
+                            // Upload file buffer to FTP server
+                            await uploadToFTP(file.path, remotePath);
+
+                            const fileUrl = `http://dreamstudiio.com/uploads/${uniqueFilename}`;
+                            const fieldName = file.fieldname;
+
+                            // Group file URLs by field name
+                            if (!fileUrls[fieldName]) fileUrls[fieldName] = [];
+                            fileUrls[fieldName].push(fileUrl);
+                        }
+                        resolve(); // Resolve the promise once all files are uploaded
+                    } catch (uploadErr) {
+                        reject(uploadErr);
+                    }
                 }
             });
         });
-        res.status(200).json({message: 'Files uploaded successfully.', fileUrls});
+
+        // Respond with the URLs of uploaded files
+        res.status(200).json({ message: 'Files uploaded successfully.', fileUrls });
     } catch (error) {
-        console.log("are we error", error.message)
-        res.status(400).json({error: error.message});
+        console.error('Error:', error.message);
+        res.status(400).json({ error: error.message });
     }
 };
+
+
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => {
+//         const uploadPath = path.resolve(__dirname, '../uploads/');
+//         if (!fs.existsSync(uploadPath)) {
+//             fs.mkdirSync(uploadPath, {recursive: true});
+//         }
+//         cb(null, uploadPath);
+//     },
+//     filename: (req, file, cb) => {
+//         const uniqueSuffix = `${uuidv4()}${path.extname(file.originalname)}`;
+//         cb(null, uniqueSuffix);
+//     },
+// });
+// const upload = multer({
+//     storage,
+//     limits: {fileSize: 20 * 1024 * 1024}, // 20MB file size limit
+//     fileFilter: (req, file, cb) => {
+//         const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+//         if (allowedMimeTypes.includes(file.mimetype)) {
+//             cb(null, true);
+//         } else {
+//             cb(new Error('Invalid file type.'));
+//         }
+//     },
+// }).any();
+//
+// export const uploadFiles = async (req, res) => {
+//     try {
+//         const fileUrls = {};
+//         await new Promise((resolve, reject) => {
+//             upload(req, res, (err) => {
+//                 if (err) {
+//                     reject(err);
+//                 } else if (!req.files || req.files.length === 0) {
+//                     reject(new Error('No files uploaded.'));
+//                 } else {
+//                     req.files.forEach(file => {
+//                         const fieldName = file.fieldname;
+//                         const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${file.filename}`;
+//                         if (!fileUrls[fieldName]) fileUrls[fieldName] = [];
+//                         fileUrls[fieldName].push(fileUrl);
+//                     });
+//                     resolve();
+//                 }
+//             });
+//         });
+//         res.status(200).json({message: 'Files uploaded successfully.', fileUrls});
+//     } catch (error) {
+//         console.log("are we error", error.message)
+//         res.status(400).json({error: error.message});
+//     }
+// };
 // next cloud uploads
 /* upload files
 const upload = multer({storage: multer.memoryStorage()}).any();
@@ -379,11 +472,11 @@ export async function markLatestNotificationsAsRead(userId) {
     return notifications
 }
 
-export async function createNotification(userId, isAdmin, content, href, type, emailSubject, withEmail, contentType = "TEXT",clientId,staffId) {
+export async function createNotification(userId, isAdmin, content, href, type, emailSubject, withEmail, contentType = "TEXT",clientLeadId,staffId) {
 
     const forAll = !userId && !isAdmin&&!staffId
     if (forAll) {
-        const users = await prisma.findUnique({
+        const users = await prisma.user.findMany({
             where: {
                 isActive: true
             }, select: {
@@ -392,7 +485,8 @@ export async function createNotification(userId, isAdmin, content, href, type, e
 
         })
         users?.map(async (user) => {
-            await sendNotification(user.id, content, href, type, emailSubject, withEmail, contentType,clientId)
+            await sendNotification(user.id, content, href, type, emailSubject, withEmail, contentType,clientLeadId)
+
         })
     } else {
         if (isAdmin) {
@@ -407,13 +501,13 @@ export async function createNotification(userId, isAdmin, content, href, type, e
             userId = admin.id
         }
 
-            await sendNotification(userId, content, href, type, emailSubject, withEmail, contentType,clientId,staffId)
+            await sendNotification(userId, content, href, type, emailSubject, withEmail, contentType,clientLeadId,staffId)
 
 
     }
 }
 
-async function sendNotification(userId, content, href, type, emailSubject, withEmail, contentType = "TEXT",clientId,staffId) {
+async function sendNotification(userId, content, href, type, emailSubject, withEmail, contentType = "TEXT",clientLeadId,staffId) {
     const link = href ? `<a href="${process.env.ORIGIN}${href}" style="color: #1a73e8; text-decoration: none;">See details from here</a>` : '';
     const emailContent = `
         <div style=" color: #333; direction: ltr; text-align: left;">
@@ -429,7 +523,7 @@ async function sendNotification(userId, content, href, type, emailSubject, withE
                 type,
                 link: href,
                 contentType,
-                clientLeadId:clientId&&Number(clientId),
+                clientLeadId:clientLeadId&&Number(clientLeadId),
                 staffId:staffId&&Number(staffId)
             },
         });

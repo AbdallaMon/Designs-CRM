@@ -1,5 +1,5 @@
 import {createNotification, getUserDetailsWithSpecificFields} from "./utility.js";
-import {dealsLink, userLink} from "./links.js";
+import {dealsLink, newLeadLink, userLink} from "./links.js";
 import dayjs from "dayjs";
 
 export async function convertALeadNotification(lead){
@@ -90,4 +90,17 @@ export async function updateLeadStatusNotification(leadId,heading,content,type,u
 </div>
     </div>`
     await createNotification(isAdmin?userId:null, !isAdmin,  notificationHtml, null, type?"LEAD_STATUS_CHANGE":"LEAD_UPDATED", "Lead updated", true,"HTML",null,staffId)
+}
+export async function newLeadNotification(leadId,client){
+const leadHref=`${newLeadLink +"?leadId="+leadId}`
+    const notificationHtml = `<div>
+       <strong>New lead created</strong> <a href="${leadHref}" >#${leadId}</a> 
+       <div class="sub-text">
+       New lead created by 
+       ${client.name} - 
+       ${client.email}
+</div>
+    </div>`
+
+    await createNotification(null, null, notificationHtml, null , "NEW_LEAD","New lead",true,"HTML",leadId)
 }

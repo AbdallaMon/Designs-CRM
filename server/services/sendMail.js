@@ -3,16 +3,21 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
+    host: process.env.SMTP_HOST, // Your iRedMail server's hostname or IP
+    port: 587, // Port for STARTTLS
+    secure: false, // Use STARTTLS instead of SSL
     auth: {
-        user: process.env.EMAIL_USERNAME, // Your Gmail address
-        pass: process.env.EMAIL_PASSWORD, // Your Gmail App Password (if 2FA is enabled)
+        user: process.env.EMAIL_USERNAME, // Full email address (e.g., admin@example.com)
+        pass: process.env.EMAIL_PASSWORD, // Email account's password
+    },
+    tls: {
+        rejectUnauthorized: false, // Accept self-signed certificates if applicable
     },
 });
 
 export const sendEmail = async (to, subject, html) => {
     const mailOptions = {
-        from: process.env.EMAIL_USERNAME, // Gmail address (no need for display name)
+        from: process.env.EMAIL_USERNAME+`<${process.env.EMAIL_USERNAME}>`,
         to,
         subject,
         html,
@@ -20,7 +25,7 @@ export const sendEmail = async (to, subject, html) => {
 
     try {
         const info = await transporter.sendMail(mailOptions);
-        return {success: true, messageId: info.messageId};
+        return { success: true, messageId: info.messageId };
     } catch (error) {
         console.error(`Error sending email to ${to}:`, error);
         throw new Error(`Failed to send email to ${to}`);

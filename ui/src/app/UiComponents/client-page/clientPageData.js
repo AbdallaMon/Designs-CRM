@@ -52,7 +52,6 @@ export const priceRange={
     "APARTMENT":{
         type:"input"
     },
-
     "CONSTRUCTION_VILLA": {
         type: "options",
         options:["400,000 or less", "400,000 to 600,000", "600,000 to 800,000", "800,000 and above"]

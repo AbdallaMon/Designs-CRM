@@ -62,9 +62,10 @@ export function LeadCard({lead, handleClick,class_name="lead-card"}) {
               my: isMobile?"12px":0,
               mx: isMobile?0:"12px",
               overflow: "hidden",
+              zIndex:class_name==="location"&&15
           }}
     >
-        <Box className="shadow-lead-card"           sx={{
+        <Box className={"shadow-"+class_name}       sx={{
             position: "absolute",
             left:0,
             top:0,
@@ -112,6 +113,7 @@ export function LeadCard({lead, handleClick,class_name="lead-card"}) {
                   justifyContent: "center",
                   alignItems: "center",
                   width: "fit-content",
+                  whiteSpace:"nowrap",
                   height: "fit-content",
                   zIndex: 3000,
                   top: "50%",
@@ -127,13 +129,13 @@ export function LeadCard({lead, handleClick,class_name="lead-card"}) {
 }
 
 
-export function LeadCategoryItemsContainer({leadCategory, animateLeadCategoryItems}) {
+export function LeadCategoryItemsContainer({location,leadCategory, animateLeadCategoryItems}) {
     const {translate}=useLanguageContext()
     const leadsItems = leadCategory === "DESIGN" ? designLead : consultationLead
     const theme=useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
     return (
-          <Box sx={{mt:isMobile?"-500px":"-200px"}}>
+          <Box sx={{mt:isMobile?location?"-550px":"-500px":location?"-350px":"-200px",overflowY:"auto",height:"100%"}}>
               <Title title={translate(questions.type)} class_name={"item-title"}/>
               <Box sx={{display: "flex", flexDirection: {xs: "column"}, gap: 2}}>
                   {leadsItems.map((item) => {
@@ -149,11 +151,13 @@ export function LeadCategoryItemsContainer({leadCategory, animateLeadCategoryIte
 }
 
 export function LeadCategoryItem({title, value, animateLeadCategoryItems,subtitle}) {
+    const theme=useTheme()
+    const isMobile = useMediaQuery(theme.breakpoints.down("md"));
     return (
           <Box
                 sx={{
                     width: "100%",
-                    padding: "24px",
+                    padding:isMobile?"16px": "24px",
                     borderRadius: "8px",
                     boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
                     display: "flex",
@@ -198,8 +202,8 @@ export function Title({title, class_name}) {
                     textAlign: "center",
                     fontWeight: 700,
                     color: theme.palette.primary.main,
-                    mb: 4,
-                    mt:5,
+                    mb: 3,
+                    mt:4,
                     opacity: 0
                 }}
           >
@@ -223,8 +227,6 @@ export function Header({reverseAnimation}) {
                     zIndex:30
                 }}
           >
-
-
               <Toolbar sx={{ justifyContent: 'space-between' ,
                   background: theme.palette.background.paper,
                   borderRadius: '16px',

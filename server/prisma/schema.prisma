@@ -43,7 +43,7 @@ enum LeadType{
 
  APARTMENT
  CONSTRUCTION_VILLA
- UNDER_CONSTRUCTION_VILA
+ UNDER_CONSTRUCTION_VILLA
  PART_OF_HOME
  COMMERCIAL
 }
@@ -188,11 +188,12 @@ model Client {
  name        String       @db.VarChar(255)
  phone       String       @db.VarChar(20)
  email       String       @db.VarChar(255) @unique
+ dateOfBirth DateTime
  clientLeads ClientLead[]
  createdAt   DateTime     @default(now())
  updatedAt   DateTime     @updatedAt
 
- @@index([phone])
+ @@index([email])
 }
 
 model Note {

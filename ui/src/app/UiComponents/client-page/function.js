@@ -265,12 +265,126 @@ function disAnimateLeadForm({tl, setLeadItem, setAnimateLeadItem, setIsItemAnima
         setIsReversing(false)
     });
 }
-export function reverseAnimation({location,setLocation,setAnimateLocation,setIsLocationAnimated,leadItem, isItemAnimated, isReversing, isAnimating, setIsReversing,setLeadItem,setAnimateLeadItem,setIsItemAnimated,leadCategory,isCatAnimated,setLeadCategory,setAnimateLeadType,setIsCatAnimated}) {
+export function animateLocationItem({leadCategory,location,setIsAnimating,setIsLocationAnimated}){
+    setIsAnimating(true)
+    console.log("we are here right?")
+    const removedElement = location === "INSIDE_UAE" ? "INSIDE_UAE" : "OUTSIDE_UAE"
+    const tl = gsap.timeline();
+       animateLocation({location,tl,leadCategory})
+        animateLeadItem(tl)
+
+    tl.then( () => {
+        setIsAnimating(false);
+        setIsLocationAnimated(true);
+    });
+}
+function animateLocation({location,tl,leadCategory}){
+    const locationQuestionTitle=document.querySelector(".design-title")
+    const animatedElement=document.querySelector(`.${location}`)
+    const locationTitle=animatedElement.querySelector("h4")
+    const leadTitle=document.querySelector(`.${leadCategory} h4`)
+    const clonedTitle = locationTitle.cloneNode(true);
+    const rect = locationTitle.getBoundingClientRect();
+    const leadTittleRect=leadTitle.getBoundingClientRect();
+    clonedTitle.style.position = "fixed";
+    clonedTitle.classList.add("cloned-location-title")
+    clonedTitle.style.width = `${rect.width}px`;
+    clonedTitle.style.height = `${rect.height}px`;
+    clonedTitle.style.margin = "0";
+    clonedTitle.style.transform="none"
+    clonedTitle.style.zIndex=16
+
+    document.body.appendChild(clonedTitle);
+    tl.set(clonedTitle,{
+        left:rect.left,
+        top:rect.top,
+    })
+    tl.fromTo(locationQuestionTitle,{
+        y:0,opacity:1
+    },{
+        y:-100,opacity:0,duration:0.8,ease:"power3.inOut"
+    })
+    tl.set(locationTitle,{
+        opacity:0
+    })
+    tl.fromTo(clonedTitle,{
+        top:rect.top,
+        left:rect.left,
+    },{
+        top:leadTittleRect.top,
+        left:leadTittleRect.left+leadTittleRect.width+12
+          ,duration: 1.2,
+          ease: "power3.inOut",
+        x:"-50%"
+    })
+    tl.to(leadTitle,{x:-100},"<")
+    tl.fromTo(".location",{
+        opacity:1,
+        y:0,
+    },{opacity:0,y:100 ,duration: 0.8,zIndex:-15,
+        ease: "power3.inOut",},"<"
+    )
+
+}
+function reverseLocation({tl,location,leadCategory}){
+    const animatedElement=document.querySelector(`.${location}`)
+    const locationTitle=animatedElement.querySelector("h4")
+    const leadTitle=document.querySelector(`.${leadCategory} h4`)
+
+    const clonedTitle=document.querySelector(".cloned-location-title")
+    const locationQuestionTitle=document.querySelector(".design-title")
+    const leadTittleRect=leadTitle.getBoundingClientRect();
+
+    tl.fromTo(locationQuestionTitle,{
+        y:-100,opacity:0
+    },{
+        y:0,opacity:1,duration:0.8,ease:"power3.inOut"
+    })
+    tl.fromTo(".location",{
+              opacity:0,
+              y:100,
+          },{opacity:1,y:0 ,duration: 0.8,zIndex:15,
+              ease: "power3.inOut",},"<"
+    )
+    const rect = locationTitle.getBoundingClientRect();
+    tl.to(leadTitle,{x:0},"<")
+    tl.fromTo(clonedTitle,{
+        top:leadTittleRect.top,
+        left:leadTittleRect.right+leadTittleRect.width-5,
+    },{
+              top:rect.top-100,
+              left:rect.left,
+        x:0
+        ,duration: 1.2,
+        ease: "power3.inOut",
+        onComplete: () => {
+            clonedTitle.remove();
+        },
+    },"<")
+    tl.set(locationTitle,{
+        opacity:1
+    })
+    tl.then(()=>{
+    clonedTitle.remove()
+    })
+}
+export function reverseAnimation({location,isLocationAnimated,setLocation,setAnimateLocation,setIsLocationAnimated,leadItem, isItemAnimated, isReversing, isAnimating, setIsReversing,setLeadItem,setAnimateLeadItem,setIsItemAnimated,leadCategory,isCatAnimated,setLeadCategory,setAnimateLeadType,setIsCatAnimated}) {
     if (leadItem&&isItemAnimated&&!isReversing&&!isAnimating) {
         setIsReversing(true)
         const tl = gsap.timeline();
         disAnimateLeadForm({tl,setLeadItem,setIsReversing,setAnimateLeadItem,setIsItemAnimated})
-    } else if(leadCategory&&isCatAnimated&&!isReversing&&!isAnimating) {
+    } else if(location&&isLocationAnimated&&!isAnimating&&!isReversing){
+        setIsReversing(true)
+        const tl = gsap.timeline();
+        removeLeadItem(tl)
+        reverseLocation({tl,location,leadCategory})
+    tl.then(() => {
+        setAnimateLocation("");
+        setIsLocationAnimated(false)
+            setIsReversing(false)
+        setLocation("")
+        });
+    }else if(leadCategory&&isCatAnimated&&!isReversing&&!isAnimating) {
         setIsReversing(true)
         const tl = gsap.timeline();
         const removedElement = leadCategory === "DESIGN" ? "CONSULTATION" : "DESIGN"

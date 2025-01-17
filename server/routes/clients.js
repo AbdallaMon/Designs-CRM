@@ -2,10 +2,10 @@ import {uploadFiles} from "../services/utility.js";
 import express from "express";
 const router = express.Router();
 import prisma from "../prisma/prisma.js";
+import {newLeadNotification} from "../services/notification.js";
 
 router.post("/new-lead",async (req,res)=>{
     const body= req.body;
-    console.log(body,"body")
 
     try {
         let client=await prisma.client.findUnique({
@@ -18,20 +18,29 @@ router.post("/new-lead",async (req,res)=>{
            data:{
                name:body.name,
                phone:body.phone,
-               email:body.email
+               email:body.email,
+               dateOfBirth:body.dateOfBirth
            }
         })
         }
-        console.log(client,"client")
         const data={
             client: {connect: {id:client.id}},
             selectedCategory: body.category,
             type: body.item,
-            emirate: body.emirate,
-            status: 'IN_PROGRESS',
+            status: 'NEW',
+            description:`${body.category} ${body.item} ${body.category==="DESIGN"?body.emirate:""}`
+        }
+        if(body.emirate){
+            data.emirate=body.emirate
+        }
+        if(body.location==="OUTSIDE_UAE"){
+            data.emirate==="OUTSIDE"
         }
         if(body.priceRange){
             data.price=body.priceRange
+        }
+        if(body.priceOption){
+            data.price=body.priceOption
         }
          const clientLead= await prisma.clientLead.create({
             data
@@ -39,10 +48,10 @@ router.post("/new-lead",async (req,res)=>{
         if(body.url){
         await uploadFile(body,clientLead.id)
         }
+        await newLeadNotification(clientLead.id,client)
         const message = body.lng === 'ar'
               ? 'تم تسجيل بياناتك بنجاح'
               : 'Your data has been successfully submitted';
-
         res.status(200).json({  message });
     } catch (error) {
         console.error('Error fetching client form:', error);
@@ -68,7 +77,6 @@ async function uploadFile(body,clientLeadId){
     return file
 }
 router.post('/upload', async (req, res) => {
-    console.log("are we her")
     await uploadFiles(req, res);
 });
 
