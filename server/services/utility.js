@@ -266,7 +266,7 @@ export const uploadFiles = async (req, res) => {
                             // Upload file buffer to FTP server
                             await uploadToFTP(file.path, remotePath);
 
-                            const fileUrl = `http://dreamstudiio.com/uploads/${uniqueFilename}`;
+                            const fileUrl = `http://panel.dreamstudiio.com/uploads/${uniqueFilename}`;
                             const fieldName = file.fieldname;
 
                             // Group file URLs by field name
