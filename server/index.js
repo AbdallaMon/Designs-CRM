@@ -12,7 +12,7 @@ import staffRoutes from './routes/staff.js'
 import adminRoutes from './routes/admin.js';
 dotenv.config();
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 
 app.use(cors({
     origin: process.env.ORIGIN,

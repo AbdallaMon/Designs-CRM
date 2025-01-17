@@ -35,12 +35,12 @@ export const designLeadTypes = [
     {
         title: "Inside UAE",
         value: "INSIDE_UAE",
-        image: "/consultation.jpg"
+        image: "/inside-uae.jpg"
     },
     {
         title: "Out side UAE",
         value: "OUTSIDE_UAE",
-        image: "/design.jpg"
+        image: "/outside-uae.jpg"
     }
 ]
 export const questions = {
