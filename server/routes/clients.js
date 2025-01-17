@@ -23,6 +23,12 @@ router.post("/new-lead",async (req,res)=>{
            }
         })
         }
+         const consultationLeadPrices = {
+             ROOM: "800",
+             BLUEPRINT: "1200",
+             CITY_VISIT: "1800"
+         }
+
         const data={
             client: {connect: {id:client.id}},
             selectedCategory: body.category,
@@ -41,6 +47,9 @@ router.post("/new-lead",async (req,res)=>{
         }
         if(body.priceOption){
             data.price=body.priceOption
+        }
+        if(body.category==="CONSULTATION"){
+            body.price=consultationLeadPrices[body.item]
         }
          const clientLead= await prisma.clientLead.create({
             data

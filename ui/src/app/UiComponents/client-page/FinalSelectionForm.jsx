@@ -71,7 +71,6 @@ function DesignLeadForm({category ,item,location}){
         });
     };
     const handleSelectPriceChange = ( e) => {
-        console.log(e.target.value,"value")
         setFormData((prev) => ({...prev, priceOption: e.target.value}));
     };
     const handleSubmit =async () => {

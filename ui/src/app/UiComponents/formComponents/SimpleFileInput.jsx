@@ -18,7 +18,7 @@ export default function SimpleFileInput({
             setFileName("");
             return;
         }
-            setError(null); 
+            setError(null);
         if (file) {
             setFileName(file.name); // Store file name
             const reader = new FileReader();
