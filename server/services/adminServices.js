@@ -43,7 +43,6 @@ export async function createStaffUser(user) {
             password: hashedPassword,
             role: "STAFF",
             name: user.name,
-            emailConfirmed: true,
         },
         select: {
             id:true,
