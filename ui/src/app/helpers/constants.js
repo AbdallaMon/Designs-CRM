@@ -102,6 +102,8 @@ export const dictionary = {
     "Date of birth":"تاريخ الميلاد",
     "Email":"البريد الالكتروني",
     "Select a price ranges":"اختر نطاق سعر"
+    ,"Inside UAE":"داخل الامارات"
+    ,"Out side UAE":"خارج الامارات"
 };
 
 export const MediaType = {

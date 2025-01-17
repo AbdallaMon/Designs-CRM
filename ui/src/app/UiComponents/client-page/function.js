@@ -267,7 +267,6 @@ function disAnimateLeadForm({tl, setLeadItem, setAnimateLeadItem, setIsItemAnima
 }
 export function animateLocationItem({leadCategory,location,setIsAnimating,setIsLocationAnimated}){
     setIsAnimating(true)
-    console.log("we are here right?")
     const removedElement = location === "INSIDE_UAE" ? "INSIDE_UAE" : "OUTSIDE_UAE"
     const tl = gsap.timeline();
        animateLocation({location,tl,leadCategory})
