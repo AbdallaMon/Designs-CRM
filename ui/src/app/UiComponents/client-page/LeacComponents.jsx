@@ -239,7 +239,7 @@ export function Header({reverseAnimation}) {
                   backgroundImage: "url('/logo-bg-6.jpg')", // Replace with your image URL
                   backgroundSize: "cover", // Ensures the image covers the entire container
                   backgroundRepeat: "no-repeat", // Prevents the image from repeating
-                  backgroundPosition: "left",
+                  backgroundPosition:lng==="ar"?"right": "left",
               }}>
                   <Box sx={{display:"flex",alignItems:"center"}}>
                       <Box className="reverse-button"
