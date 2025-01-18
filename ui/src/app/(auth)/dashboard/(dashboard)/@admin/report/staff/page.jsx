@@ -14,7 +14,7 @@ import {
     TableHead,
     TableRow,
     Paper,
-    TablePagination,
+    TablePagination, FormControl, InputLabel, Select, Chip, MenuItem,
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { MdDownload, MdSearch, MdRefresh } from 'react-icons/md';
@@ -31,7 +31,6 @@ const StaffReportFilters = () => {
     const [reportData, setReportData] = useState(null);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-
     const handleChangePage = (event, newPage) => {
         setPage(newPage);
     };
@@ -47,6 +46,7 @@ const StaffReportFilters = () => {
             [field]: date
         }));
     };
+
 
     const resetFilters = () => {
         setFilters({
@@ -132,7 +132,7 @@ const StaffReportFilters = () => {
 
                       <Grid container spacing={3}>
                           <Grid item xs={12}>
-                              <Box sx={{ display: 'flex', gap: 2 }}>
+                              <Box sx={{ display: 'flex', gap: 2,flexDirection:{xs:"column",md:"row"} }}>
                                   <DatePicker
                                         label="Start Date"
                                         value={filters.startDate}
@@ -193,9 +193,9 @@ const StaffReportFilters = () => {
                                     </Grid>
                                     <Grid item xs={12} sm={6} md={3}>
                                         <Paper sx={{ p: 2, textAlign: 'center', height: '100%', bgcolor: "background.default" }}>
-                                            <Typography variant="subtitle2" color="textSecondary">Call Completion Rate</Typography>
+                                            <Typography variant="subtitle2" color="textSecondary">Conversion Rate</Typography>
                                             <Typography variant="h4" sx={{ mt: 1 }}>
-                                                {((reportData.summary.completedCallReminders / reportData.summary.totalCallReminders) * 100).toFixed(2)}%
+                                                {reportData.summary.conversionRate}%
                                             </Typography>
                                         </Paper>
                                     </Grid>
@@ -213,13 +213,13 @@ const StaffReportFilters = () => {
                                         >
                                             Export as Excel
                                         </Button>
-                                        <Button
-                                              variant="outlined"
-                                              startIcon={<MdDownload />}
-                                              onClick={downloadPDF}
-                                        >
-                                            Export as PDF
-                                        </Button>
+                                        {/*<Button*/}
+                                        {/*      variant="outlined"*/}
+                                        {/*      startIcon={<MdDownload />}*/}
+                                        {/*      onClick={downloadPDF}*/}
+                                        {/*>*/}
+                                        {/*    Export as PDF*/}
+                                        {/*</Button>*/}
                                     </Box>
                                 </Box>
 
@@ -233,8 +233,7 @@ const StaffReportFilters = () => {
                                                 <TableCell align="right">Success Rate</TableCell>
                                                 <TableCell align="right">Revenue</TableCell>
                                                 <TableCell align="right">Avg Revenue/Lead</TableCell>
-                                                <TableCell align="right">Call Reminders</TableCell>
-                                                <TableCell align="right">Completion Rate</TableCell>
+                                                <TableCell align="right">Conversion Rate</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -248,9 +247,8 @@ const StaffReportFilters = () => {
                                                             <TableCell align="right">{staff.successRate.toFixed(2)}%</TableCell>
                                                             <TableCell align="right">{staff.totalRevenue.toLocaleString()} AED</TableCell>
                                                             <TableCell align="right">{staff.averageRevenuePerLead.toLocaleString()} AED</TableCell>
-                                                            <TableCell align="right">{staff.callReminders.total}</TableCell>
                                                             <TableCell align="right">
-                                                                {((staff.callReminders.completed / staff.callReminders.total) * 100).toFixed(2)}%
+                                                                {staff.conversionRate}%
                                                             </TableCell>
                                                         </TableRow>
                                                   ))}

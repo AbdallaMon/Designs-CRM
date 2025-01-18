@@ -6,7 +6,7 @@ export default function ToastContainerLocal() {
                 position="top-center"
                 style={{width: "80%", maxWidth: "600px", zIndex: 999999}}
                 closeOnClick={true}
-                pauseOnFocusLoss={false}
+                pauseOnHover={false}
                 autoClose={3000}
           />
     );

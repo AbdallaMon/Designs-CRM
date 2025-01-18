@@ -104,6 +104,7 @@ export function LeadCard({lead, handleClick,class_name="lead-card"}) {
         <Typography
               variant="h4"
               sx={{
+                  fontSize:isMobile&&"1.8rem",
                   color: theme.palette.secondary.main,
                   fontWeight: 700,
                   textAlign: "center",

@@ -156,7 +156,7 @@ export async function searchData(body) {
             where.role="STAFF"
         } else if (model === 'client') {
             where.OR = [
-                {phone: {contains: query}},
+                {email: {contains: query}},
                 {name: {contains: query}},
             ];
         }
@@ -188,7 +188,7 @@ export async function searchData(body) {
         client: {
             id: true,
             name: true,
-            phone: true
+            email: true
         },
     };
     const data = await prismaModel.findMany({
@@ -411,7 +411,6 @@ export const uploadFiles = async (req, res) => {
 
 export async function getNotifications(searchParams, limit, skip, unread = true) {
     const where = {}
-    console.log(searchParams,"sear")
     const filters =searchParams.filters&& JSON.parse(searchParams.filters);
     if (filters?.staffId) {
         where.staffId = Number(filters.staffId);

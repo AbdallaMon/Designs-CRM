@@ -34,7 +34,11 @@ export async function getUser(searchParams, limit, skip) {
     return {users, total};
 }
 
-
+export async function getUserById(userId){
+    return await prisma.user.findUnique({where:{
+        id:Number(userId)
+        }})
+}
 export async function createStaffUser(user) {
     const hashedPassword = bcrypt.hashSync(user.password, 8);
     const newUser = await prisma.user.create({
@@ -301,12 +305,6 @@ export const generatePDFReport = (req, res) => {
               .text('Lead Report', { align: 'center' })
               .moveDown();
 
-        // Summary Section
-        doc.fontSize(16)
-              .font('Helvetica-Bold')
-              .text('Summary', { underline: true })
-              .moveDown();
-
         const formatValue = (value) => {
             if (value === null || value === undefined) return 'N/A';
             if (typeof value === 'number') return value.toLocaleString();
@@ -334,9 +332,8 @@ export const generatePDFReport = (req, res) => {
               .text('Lead Details', { underline: true })
               .moveDown();
 
-        // Updated leads table with all columns matching Excel
         const leadsTable = {
-            headers: ['Client Name', 'Phone', 'Assigned To', 'Status', 'Emirate', 'Type',  'Discount', 'Final Price', 'Created At'],
+            headers: ['Client Name', 'Phone', 'Assigned To', 'Status', 'Emirate', 'Type', "Price", 'Discount',  'Created At'],
             rows: data.leads.map(lead => [
                 formatValue(lead.clientName),
                 formatValue(lead.clientPhone),
@@ -346,10 +343,9 @@ export const generatePDFReport = (req, res) => {
                 formatValue(lead.type),
                 `${formatValue(lead.averagePrice)} AED`,
                 `${formatValue(lead.discount)} %`,
-                `${formatValue(lead.finalPrice)} AED`,
                 formatValue(lead.createdAt)
             ]),
-            columnWidths: [0.15, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.05] // Adjusted widths to fit all columns
+            columnWidths: [0.15, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
         };
 
         // Calculate totals
@@ -370,11 +366,9 @@ export const generatePDFReport = (req, res) => {
             `${formatValue(totals.price)} AED`,
             ``,
             `${formatValue(totals.finalPrice)} AED`,
-            ''
         ]);
 
-        // Draw leads table with updated drawTable function
-        drawTable(doc, leadsTable, 200);
+        drawTable(doc, leadsTable, 220);
 
         doc.end();
     } catch (error) {
@@ -529,6 +523,8 @@ const calculateStaffStats = (staff, dateRange) => {
               .filter(lead => lead.status === 'FINALIZED')
               .reduce((sum, lead) => sum + Number(lead.discount || 0), 0);
 
+        const conversionRate=converted/totalLeads*100
+
         return {
             userId: user.id,
             staffName: user.name,
@@ -544,15 +540,7 @@ const calculateStaffStats = (staff, dateRange) => {
             successRate: Math.round(successRate * 100) / 100,
             totalRevenue,
             totalDiscount,
-            averageRevenuePerLead: totalLeads > 0 ? totalRevenue / totalLeads : 0,
-            callReminders: {
-                total: filteredLeads.reduce((sum, lead) =>
-                      sum + (lead.callReminders?.length || 0), 0),
-                completed: filteredLeads.reduce((sum, lead) =>
-                      sum + (lead.callReminders?.filter(cr => cr.status === 'DONE')?.length || 0), 0),
-                missed: filteredLeads.reduce((sum, lead) =>
-                      sum + (lead.callReminders?.filter(cr => cr.status === 'MISSED')?.length || 0), 0)
-            }
+            averageRevenuePerLead: totalLeads > 0 ? totalRevenue / totalLeads : 0,conversionRate
         };
     });
 };
@@ -560,6 +548,20 @@ const calculateStaffStats = (staff, dateRange) => {
 export const generateStaffReport = async (req, res) => {
     try {
         const filters = req.body;
+        const where = {
+
+            AND: [
+                filters.startDate && filters.endDate ? {
+                    createdAt: {
+                        gte: new Date(filters.startDate),
+                        lte: new Date(filters.endDate)
+                    }
+                } : {},
+                filters.emirates?.length > 0 ? {
+                    emirate: {in: filters.emirates}
+                } : {},
+            ]
+        }
 
         // First, get all staff users
         const staffUsers = await prisma.user.findMany({
@@ -569,19 +571,7 @@ export const generateStaffReport = async (req, res) => {
             },
             include: {
                 clientLeads: {
-                    include: {
-                        callReminders: {
-                            select: {
-                                status: true
-                            }
-                        }
-                    },
-                    where: filters.startDate && filters.endDate ? {
-                        createdAt: {
-                            gte: new Date(filters.startDate),
-                            lte: new Date(filters.endDate)
-                        }
-                    } : undefined
+                    where
                 }
             }
         });
@@ -598,14 +588,12 @@ export const generateStaffReport = async (req, res) => {
             totalRevenue: staffStats.reduce((sum, staff) => sum + staff.totalRevenue, 0),
             averageSuccessRate: staffStats.reduce((sum, staff) => sum + staff.successRate, 0) /
                   (staffStats.length || 1),
-            totalCallReminders: staffStats.reduce((sum, staff) =>
-                  sum + staff.callReminders.total, 0),
-            completedCallReminders: staffStats.reduce((sum, staff) =>
-                  sum + staff.callReminders.completed, 0),
+            conversionRate: staffStats.reduce((sum, staff) =>
+                  sum + staff.conversionRate, 0),
             bestPerformer: staffStats.reduce((best, current) =>
-                  (current.successRate > (best?.successRate || 0)) ? current : best, null)?.staffName,
+                  (current.successRate > (best?.successRate || 0)) ? current : best, null),
             topRevenue: staffStats.reduce((best, current) =>
-                  (current.totalRevenue > (best?.totalRevenue || 0)) ? current : best, null)?.staffName
+                  (current.totalRevenue > (best?.totalRevenue || 0)) ? current : best, null)
         };
 
         return res.json({
@@ -637,9 +625,7 @@ export const generateStaffExcelReport = async (req, res) => {
         { header: 'Success Rate', key: 'successRate', width: 15, style: { numFmt: '0.00"%"' } },
         { header: 'Total Revenue', key: 'totalRevenue', width: 20, style: { numFmt: '#,##0.00 "AED"' } },
         { header: 'Avg Revenue/Lead', key: 'averageRevenuePerLead', width: 20, style: { numFmt: '#,##0.00 "AED"' } },
-        { header: 'Total Reminders', key: 'totalReminders', width: 15 },
-        { header: 'Completed Reminders', key: 'completedReminders', width: 15 },
-        { header: 'Missed Reminders', key: 'missedReminders', width: 15 }
+        { header: 'Conversion rate', key: 'conversionRate', width: 15 },
     ];
 
     // Style header row
@@ -662,9 +648,7 @@ export const generateStaffExcelReport = async (req, res) => {
         successRate: staff.successRate,
         totalRevenue: staff.totalRevenue,
         averageRevenuePerLead: staff.averageRevenuePerLead,
-        totalReminders: staff.callReminders.total,
-        completedReminders: staff.callReminders.completed,
-        missedReminders: staff.callReminders.missed
+        conversionRate: staff.conversionRate,
     }));
 
     worksheet.addRows(rows);
@@ -703,8 +687,7 @@ export const generateStaffExcelReport = async (req, res) => {
         { metric: 'Average Leads per Staff', value: data.summary.averageLeadsPerStaff },
         { metric: 'Total Revenue', value: data.summary.totalRevenue },
         { metric: 'Average Success Rate', value: `${data.summary.averageSuccessRate.toFixed(2)}%` },
-        { metric: 'Total Call Reminders', value: data.summary.totalCallReminders },
-        { metric: 'Completed Call Reminders', value: data.summary.completedCallReminders }
+        { metric: 'Conversion rate', value: `${data.summary.conversionRate}%` }
     ]);
 
     // Style summary sheet
@@ -756,8 +739,7 @@ export const generateStaffPDFReport = (req, res) => {
                 ['Average Leads per Staff', data.summary.averageLeadsPerStaff.toFixed(2)],
                 ['Total Revenue', `${data.summary.totalRevenue.toLocaleString()} AED`],
                 ['Average Success Rate', `${data.summary.averageSuccessRate.toFixed(2)}%`],
-                ['Total Call Reminders', data.summary.totalCallReminders],
-                ['Completed Call Reminders', data.summary.completedCallReminders]
+                ['Conversion rate', data.summary.conversionRate]
             ],
             columnWidths: [0.4, 0.6]
         };
@@ -778,8 +760,7 @@ export const generateStaffPDFReport = (req, res) => {
                 'Active',
                 'Success Rate',
                 'Revenue',
-                'Reminders',
-                'Completed'
+                'Conversion rate'
             ],
             rows: data.staffStats.map(staff => [
                 staff.staffName,
@@ -787,8 +768,7 @@ export const generateStaffPDFReport = (req, res) => {
                 staff.activeLeads,
                 `${staff.successRate.toFixed(2)}%`,
                 `${staff.totalRevenue.toLocaleString()} AED`,
-                staff.callReminders.total,
-                staff.callReminders.completed
+                staff.conversionRate
             ]),
             columnWidths: [0.2, 0.1, 0.1, 0.15, 0.2, 0.1, 0.15]
         };

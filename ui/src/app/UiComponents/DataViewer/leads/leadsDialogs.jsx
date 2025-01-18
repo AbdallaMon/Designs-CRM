@@ -326,10 +326,11 @@ export const NewNoteDialog = ({lead,  setNotes, type="button", children}) => {
     )
 }
 export const AddPriceOffers = ({lead,  type = "button", children, setPriceOffers}) => {
-    const [priceOffer, setPriceOffer] = useState({minPrice: 0, maxPrice: 0});
+    const [priceOffer, setPriceOffer] = useState({minPrice: 0, maxPrice: 0,file:null});
     const [open, setOpen] = useState(false)
     const {user} = useAuth()
     const {setLoading} = useToastContext()
+    const {setAlertError}=useAlertContext()
     function handleOpen() {
         setOpen(true)
     }
@@ -338,6 +339,24 @@ export const AddPriceOffers = ({lead,  type = "button", children, setPriceOffers
         setOpen(false)
     }
     const handleAddNewPriceOffer = async () => {
+        if(!priceOffer.minPrice||!priceOffer.maxPrice||priceOffer.minPrice===0||priceOffer.maxPrice===0){
+            setAlertError("You must enter min and max price")
+            return
+        }
+        if(priceOffer.minPrice>priceOffer.maxPrice){
+            setAlertError("Min price must be less than or equal max price")
+            return
+        }
+        if(priceOffer.file){
+            const formData = new FormData();
+            formData.append('file', priceOffer.file);
+            const fileUpload=await handleRequestSubmit(formData,setLoading,"utility/upload",true,"Uploading file")
+            if(fileUpload.status===200){
+              priceOffer.url=fileUpload.fileUrls.file[0]
+            }else{
+                return;
+            }
+        }
         const request = await handleRequestSubmit({
             priceOffer,
             userId: user.id,
@@ -387,6 +406,8 @@ export const AddPriceOffers = ({lead,  type = "button", children, setPriceOffers
                                       InputLabelProps={{shrink: true}}
 
                                 />
+                                <SimpleFileInput label="File" id="file"  setData={setPriceOffer} variant="outlined" />
+
                             </Stack>
                         </DialogContent>
                         <DialogActions sx={{p: 2, borderTop: 1, borderColor: 'divider'}}>
@@ -438,7 +459,7 @@ const {setAlertError}=useAlertContext()
         );
         if (request.status === 200) {
             if (setFiles) {
-                setFiles((oldFiles) => [request.data, ...oldFiles]);
+                setFiles((oldFiles) => [{...request.data,isUserFile:true}, ...oldFiles]);
             }
             setOpen(false);
         }

@@ -18,6 +18,7 @@ import {
     animateLeadCategoryItem, animateLocationItem,
     initialAnimation, reverseAnimation
 } from "@/app/UiComponents/client-page/function.js";
+import {useLanguageContext} from "@/app/providers/LanguageProvider.jsx";
 
 export default function ClientPage() {
     const [leadCategory, setLeadCategory] = useState()
@@ -31,6 +32,7 @@ export default function ClientPage() {
     const [location,setLocation]=useState("")
     const [animateLocation,setAnimateLocation]=useState("")
     const [isLocationAnimated,setIsLocationAnimated]=useState(false)
+    const {translate}=useLanguageContext()
 useEffect(()=>{
     if(typeof window!=="undefined"){
         initialAnimation(setIsAnimating)
@@ -65,14 +67,14 @@ useEffect(()=>{
     }, [animateLeadItem]);
 useEffect(()=>{
     if (animateLocation === "animate"&&!isLocationAnimated&&!isAnimating&&!isReversing) {
-        animateLocationItem({leadCategory,location,setIsAnimating,setIsLocationAnimated})
+        animateLocationItem({leadCategory,location,setIsAnimating,setIsLocationAnimated,translate})
 
     }
 },[animateLocation])
     return (
           <>
               <Header reverseAnimation={()=>reverseAnimation({location,leadCategory,leadItem,setIsItemAnimated,setIsCatAnimated,isAnimating,isCatAnimated,isItemAnimated,isReversing,setAnimateLeadItem,setAnimateLeadType,setIsReversing,setLeadCategory,setLeadItem,setAnimateLocation,setIsLocationAnimated,setLocation,isLocationAnimated})}/>
-              <Container maxWidth="md" sx={{ overflow: "hidden", py: {xs: 3, md: 4}}}>
+              <Container maxWidth="md" sx={{height:(!leadCategory)||(leadCategory!=="DESIGN"&&!leadItem)?"100vh":"auto", overflow: "hidden", py: {xs: 3, md: 4}}}>
                   <Paper
                         className="page-container"
                         elevation={2}

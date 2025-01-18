@@ -83,7 +83,7 @@ export async function getClientLeads({
                 client: {
                     select: {
                         name: true,
-                        phone: true,
+                        email: true,
                     }
                 },
                 assignedTo: {
@@ -102,13 +102,12 @@ export async function getClientLeads({
 }
 
 export async function getClientLeadsByDateRange({searchParams}) {
-    const {range = 'WEEK'} = searchParams;
+    const filters = JSON.parse(searchParams.filters);
 
-    // Calculate date range
     const endDate = dayjs().toDate(); // Today
-    const startDate = range !== 'MONTH'
-          ? dayjs().subtract(1, 'week').toDate()
-          : dayjs().subtract(1, 'month').toDate();
+    const startDate = filters&&filters.type === 'MONTH'
+          ? dayjs().subtract(1, 'month').toDate()
+          : dayjs().subtract(1, 'week').toDate();
 
     // Construct where clause
     const where = {
@@ -196,6 +195,7 @@ export async function getClientLeadDetails(clientLeadId) {
                     minPrice: true,
                     maxPrice: true,
                     userId: true,
+                    url:true,
                     user: {
                         select: {name: true},
                     },

@@ -15,7 +15,7 @@ import {FaBusinessTime} from "react-icons/fa";
 import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks.jsx";
 const columns = [
     {name: "client.name", label: "Client Name"},
-    {name: "client.phone", label: "Phone"},
+    {name: "client.email", label: "Email"},
     {name: "selectedCategory", label: "Lead Type", enum: LeadCategory, type: "enum"},
     {name:"description",label:"Description" },
 
@@ -42,7 +42,6 @@ export default function NewLeadsPage({searchParams,staff}) {
         total,
         setTotal, totalPages, setFilters
     } = useDataFetcher("shared/client-leads" + `?isNew=true&`, false,{clientId:searchParams.clientId?searchParams.clientId:null});
-
     const {setLoading} = useToastContext()
     const leadTypes = enumToKeyValueArray(LeadCategory)
     async function createADeal(item) {
@@ -90,8 +89,8 @@ export default function NewLeadsPage({searchParams,staff}) {
                               <SearchComponent
                                     apiEndpoint="search?model=client"
                                     setFilters={setFilters}
-                                    inputLabel="Search by name or phone"
-                                    renderKeys={["name", "phone"]}
+                                    inputLabel="Search by name or email"
+                                    renderKeys={["name", "email"]}
                                     mainKey="name"
                                     searchKey={"clientId"}
                                     withParamsChange={true}

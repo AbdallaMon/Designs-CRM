@@ -37,8 +37,8 @@ router.post('/client-leads/:id/call-reminders', async (req, res) => {
 router.post('/client-leads/:id/price-offers', async (req, res) => {
     try {
         const { id } = req.params;
-        const callReminder = await createPriceOffer({clientLeadId:Number(id),...req.body})
-        res.status(200).json({data:callReminder,message:"Price offer added successfully"});
+        const priceOffers = await createPriceOffer({clientLeadId:Number(id),...req.body})
+        res.status(200).json({data:priceOffers,message:"Price offer added successfully"});
     } catch (error) {
         console.error('Error Creating new price offer:', error);
         res.status(500).json({
@@ -63,12 +63,11 @@ router.put('/client-leads/call-reminders/:id', async (req, res) => {
 router.post('/client-leads/:id/files', async (req, res) => {
     try {
         const { id } = req.params;
-        console.log(req.body,"req.body")
-        await createFile({
+const file=        await createFile({
             clientLeadId: Number(id),
             ...req.body
         });
-        res.status(200).json({message:"File Saved successfully"})
+        res.status(200).json({data:file,message:"File Saved successfully"})
     } catch (error) {
         console.error('Error updating client lead status:', error);
         res.status(500).json({ message: 'Failed to save the file.' });

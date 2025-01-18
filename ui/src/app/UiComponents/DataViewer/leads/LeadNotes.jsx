@@ -29,7 +29,9 @@ export default function LeadNotes({lead ,admin}) {
                               }}
                         >
                             <Stack spacing={1}>
-                                <Typography variant="body1">
+                                <Typography variant="body1" sx={{
+                                    wordWrap:"break-word"
+                                }}>
                                     {note.content}
                                 </Typography>
                                 <Stack

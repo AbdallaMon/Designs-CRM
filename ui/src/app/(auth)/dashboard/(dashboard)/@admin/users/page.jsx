@@ -65,7 +65,6 @@ const inputs = [
 
 
 export default function UsersPage() {
-    const {user} = useAuth()
     const {
         data,
         loading,
@@ -134,8 +133,8 @@ export default function UsersPage() {
                               <SearchComponent
                                     apiEndpoint="search?model=user"
                                     setFilters={setFilters}
-                                    inputLabel="Search by name or phone"
-                                    renderKeys={["name", "phone"]}
+                                    inputLabel="Search by name or email"
+                                    renderKeys={["name", "email"]}
                                     mainKey="name"
                                     searchKey={"userId"}
                                     withParamsChange={true}

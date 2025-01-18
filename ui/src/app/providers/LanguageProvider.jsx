@@ -18,6 +18,17 @@ export  default function LanguageProvider({ children }) {
     function changeLanguage(value){
         setLang(value)
         window.localStorage.setItem("lng",value)
+        const clonedLocationTitle=document.querySelector(".cloned-location-title")
+        const locationDic={
+              "Inside UAE":"داخل الامارات"
+              ,"Out side UAE":"خارج الامارات",
+            "داخل الامارات":"Inside UAE",
+            "خارج الامارات":"Out side UAE"
+        }
+        if(clonedLocationTitle){
+            clonedLocationTitle.textContent=locationDic[clonedLocationTitle.textContent];
+            console.log(clonedLocationTitle,"clonedLocationTitle")
+        }
     }
     function translate(text) {
         return lng === "ar" ? dictionary[text] : text

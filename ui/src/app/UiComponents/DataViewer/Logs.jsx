@@ -1,5 +1,5 @@
 "use client"
-import React from "react";
+import React, {useEffect} from "react";
 import {
     Card,
     CardContent,
@@ -9,7 +9,7 @@ import {
     ListItem,
     Avatar,
     Grid2 as Grid,
-    Container, Divider, CardHeader,
+    Container, Divider, CardHeader, Button,
 } from "@mui/material";
 import parse from "html-react-parser";
 import dayjs from "dayjs";
@@ -35,9 +35,22 @@ const NotificationPage = ({searchParams}) => {
         setLimit,
         total,
          totalPages, setFilters
-    } = useDataFetcher("shared/notifications?userId="+user.id+"&"+(staffId&&`staffId=${staffId}&`) , false);
-    return (
+    } = useDataFetcher("shared/notifications?userId="+user.id+"&",false,{staffId})
 
+    const handleClearAllSearchParams = () => {
+        if (typeof window !== 'undefined') {
+            const url = new URL(window.location.href);
+            // Clear all search parameters
+            url.search = '';
+            // Replace the URL in the browser without reloading
+            window.history.replaceState(null, '', url.pathname);
+            // Reload the page
+            window.location.reload();
+        }
+    };
+
+
+    return (
           <Container maxWidth="xl" sx={{ marginY: 4 ,position:"relative"}}>
               {loading&&<FullScreenLoader/>}
               <Card sx={{ boxShadow: 3, padding: 2 }}>
@@ -59,7 +72,11 @@ const NotificationPage = ({searchParams}) => {
                           </Box>
                           }
                       <DateRangeFilter setFilters={setFilters}/>
-
+                          {staffId&&
+                          <Button onClick={handleClearAllSearchParams}>
+                              Clear filter
+                          </Button>
+                          }
                       </Box>
                       <List className="notifications">
                           {notifications.map((notification) => (

@@ -5,7 +5,7 @@ import {
     createStaffUser,
     editStaffUser, generateExcelReport,
     generateLeadReport, generatePDFReport, generateStaffExcelReport, generateStaffPDFReport, generateStaffReport,
-    getUser
+    getUser, getUserById
 } from "../services/adminServices.js";
 
 const router = Router();
@@ -49,7 +49,15 @@ router.post('/users', async (req, res) => {
         }
     }
 });
-
+router.get("/users/:userId/profile",async (req,res)=>{
+    try{
+        const {userId}=req.params
+        const user=await getUserById(userId)
+        return res.status(200).json({data:user})
+    }catch (error){
+        handlePrismaError(res, error);
+    }
+})
 router.put('/users/:userId', async (req, res) => {
     const user = req.body;
     const { userId } = req.params;

@@ -31,7 +31,7 @@ const Dashboard = ({staff,staffId}) => {
               </Typography>
                     :
                     <>
-                    <UserProfile id={staff}/>
+                    <UserProfile id={staffId}/>
                     </>
               }
 

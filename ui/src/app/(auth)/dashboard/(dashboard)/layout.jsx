@@ -6,7 +6,7 @@ import {Failed, Success} from "@/app/UiComponents/feedback/loaders/toast/ToastUp
 import {useAuth} from "@/app/providers/AuthProvider";
 import {Box} from "@mui/material";
 import colors from "@/app/helpers/colors";
-import { FiGrid, FiUsers, FiTarget, FiDollarSign, FiClock, FiList } from "react-icons/fi";
+import { FiGrid, FiUsers, FiTarget, FiDollarSign, FiClock, FiList,FiFileText, FiTrendingUp } from "react-icons/fi";
 import Navbar from "@/app/UiComponents/utility/Navbar.jsx";
 
 let toastId;
@@ -29,9 +29,29 @@ export const adminLinks = [
             { name: 'Overdue Deals', href: '/dashboard/overdue-deals', icon: <FiClock size={18} />,                active:"overdue-deals",
             },
             { name: 'All Deals', href: '/dashboard/all-deals', icon: <FiList size={18} />   ,  active:"all-deals", },
-
         ],
-    },];
+    },
+    {
+        name: 'Reports',
+        href: '/dashboard/report',
+        active: "report",
+        icon: <FiFileText size={20} />, // General report icon
+        subLinks: [
+            {
+                name: 'Leads report',
+                href: '/dashboard/report',
+                active: "report",
+                icon: <FiTrendingUp size={20} />, // Icon representing trends or growth for leads
+            },
+            {
+                name: 'Staff report',
+                href: '/dashboard/report/staff',
+                icon: <FiUsers size={18} />,  // Icon representing a group of people for staff
+                active: "report/staff",
+            },
+        ],
+    },
+];
 
 // Regular user navigation links
 export const userLinks = [

@@ -10,7 +10,7 @@ import {
     IconButton,
     Chip,
     Tooltip,
-    useTheme
+    useTheme, Link
 } from '@mui/material';
 import {
     FaMoneyBillWave,
@@ -75,6 +75,7 @@ const PriceOffersList = ({ admin, lead }) => {
                                   disablePadding
                             >
                                 <Box sx={{ width: '100%', p: 2 }}>
+                                    {offer.url&&<Box sx={{display:"flex",justifyContent:"flex-end"}}><Link href={offer.url} target="_blank" >Preview attachment</Link></Box>}
                                     <Grid container spacing={3}>
                                         <Grid size={{xs:12,md:4}}>
                                             <Box display="flex" alignItems="center">

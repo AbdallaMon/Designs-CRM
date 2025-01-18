@@ -58,7 +58,7 @@ function DesignLeadForm({category ,item,location}){
         setFormData((prev) => ({...prev, [name]: value}));
     };
     const handleEmirateChange = (event, newValue) => {
-        setFormData((prev) => ({...prev, emirate: newValue?newValue.key:null}));
+        setFormData((prev) => ({...prev, emirate: event.target.value}))
     };
     const handlePriceChange = (index, value) => {
         setFormData((prev) => {
@@ -72,7 +72,7 @@ function DesignLeadForm({category ,item,location}){
     };
     const handleSubmit =async () => {
         const { name, phone, priceRange,file,emirate,priceOption,email } = formData;
-        if (!name || !phone ||!email || (!emirate && location==="INSIDE_UAE"||(priceRange[0]===0&&priceRange[1]===0&&!priceOption))) {
+        if (!name || !phone ||!email || (!emirate && location==="INSIDE_UAE"||(location==="INSIDE_UAE"&&priceRange[0]===0&&priceRange[1]===0&&!priceOption))) {
             setAlertError(translate("Please fill all the fields."));
             return;
         }
@@ -110,7 +110,7 @@ function DesignLeadForm({category ,item,location}){
                 }}
                 className="final-selection-form"
           >
-              {renderSuccess?<SuccessPage formData={formData}/>:
+              {renderSuccess?<SuccessPage category={category} formData={formData}/>:
                     <Paper
                           elevation={4}
                           sx={{
@@ -209,7 +209,7 @@ function DesignLeadForm({category ,item,location}){
                                           >
                                               {
                                                   emiratesOptions.map((option) => (
-                                                        <MenuItem value={option.value} key={option.value}>
+                                                        <MenuItem value={option.key} key={option.key}>
                                                             {translate(option.label)}
                                                         </MenuItem>
                                                   ))
@@ -301,6 +301,7 @@ function ConsultLeadForm({item,category}){
         email:"",
         file:null,
     });
+    console.log(category,"category")
     const [renderSuccess,setRenderSuccess]=useState(false)
     const {setAlertError}=useAlertContext()
     const {setLoading}=useToastContext()
@@ -350,7 +351,7 @@ function ConsultLeadForm({item,category}){
                 }}
                 className="final-selection-form"
           >
-              {renderSuccess?<SuccessPage formData={formData}/>:
+              {renderSuccess?<SuccessPage category={category} formData={formData}/>:
                     <Paper
                           elevation={4}
                           sx={{
@@ -372,7 +373,7 @@ function ConsultLeadForm({item,category}){
                             {translate("Complete Your Request")}
                         </Typography>
                         <Box sx={{ marginBottom: 3, textAlign: "center",display:"flex",gap:2,alignItems:"center",justifyContent:"center" }}>
-                            <Typography variant="subtitle1">{translate("CONSULTATION") || ""}</Typography> -
+                            <Typography variant="subtitle1">{translate("Consultation") || ""}</Typography> -
                             <Typography variant="subtitle1">{translate(LeadType[item]) || ""}</Typography>
                         </Box>
                         <Stack spacing={3}>
@@ -459,8 +460,9 @@ function ConsultLeadForm({item,category}){
           </Box>
     );
 }
-function SuccessPage({ formData }) {
-    const isInsideEmirates = formData.emirate !== "OUTSIDE";
+function SuccessPage({ category,formData }) {
+
+    const isInsideEmirates = category==="CONSULTATION"||formData.emirate;
     const { translate } = useLanguageContext();
 
     useEffect(() => {
@@ -527,8 +529,27 @@ function SuccessPage({ formData }) {
                             {translate("Sorry!")}
                         </Typography>
                         <Typography variant="body1">
-                            {translate("We do not provide services outside the UAE.")}
+                            {translate("We do not provide services outside the UAE, But we will contact you soon.")}
                         </Typography>
+                        <Box
+                              sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  marginTop: 2,
+                              }}
+                        >
+                            <FaPercentage  />
+                            <Typography
+                                  variant="body1"
+                                  sx={{
+                                      fontWeight: 600,
+                                      color: "green",
+                                  }}
+                            >
+                                {translate("You got a 10% discount!")}
+                            </Typography>
+                        </Box>
                     </>
               )}
           </Paper>

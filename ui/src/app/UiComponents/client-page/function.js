@@ -265,10 +265,10 @@ function disAnimateLeadForm({tl, setLeadItem, setAnimateLeadItem, setIsItemAnima
         setIsReversing(false)
     });
 }
-export function animateLocationItem({leadCategory,location,setIsAnimating,setIsLocationAnimated}){
+export function animateLocationItem({leadCategory,location,setIsAnimating,setIsLocationAnimated,translate}){
     setIsAnimating(true)
     const tl = gsap.timeline();
-       animateLocation({location,tl,leadCategory})
+       animateLocation({location,tl,leadCategory,translate})
         animateLeadItem(tl)
 
     tl.then( () => {
@@ -276,7 +276,7 @@ export function animateLocationItem({leadCategory,location,setIsAnimating,setIsL
         setIsLocationAnimated(true);
     });
 }
-function animateLocation({location,tl,leadCategory}){
+function animateLocation({location,tl,leadCategory,translate}){
     const locationQuestionTitle=document.querySelector(".design-title")
     const animatedElement=document.querySelector(`.${location}`)
     const locationTitle=animatedElement.querySelector("h4")
@@ -291,7 +291,6 @@ function animateLocation({location,tl,leadCategory}){
     clonedTitle.style.margin = "0";
     clonedTitle.style.transform="none"
     clonedTitle.style.zIndex=16
-
     document.body.appendChild(clonedTitle);
     tl.set(clonedTitle,{
         left:rect.left,

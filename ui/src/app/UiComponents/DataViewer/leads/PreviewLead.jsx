@@ -48,6 +48,7 @@ import FileList from "@/app/UiComponents/DataViewer/leads/FileList.jsx";
 import {GoPaperclip} from "react-icons/go";
 import {PiCurrencyDollarSimpleLight} from "react-icons/pi";
 import {useAuth} from "@/app/providers/AuthProvider.jsx";
+import {generatePDF} from "@/app/UiComponents/buttons/GenerateLeadPdf.jsx";
 
 
 const TabPanel = ({children, value, index}) => (
@@ -115,7 +116,7 @@ const LeadContent = ({
 
     const handleConvertLead =async () => {
         if(admin)return
-        const request=await handleRequestSubmit({status:"ON_HOLD"},setLoading,`staff/client-leads/${lead.id}/status`,false,"Converting",false,"PUT")
+        const request=await handleRequestSubmit({status:"ON_HOLD"},setLoading,`shared/client-leads/${lead.id}/status`,false,"Converting",false,"PUT")
    if(request.status===200){
        window.setTimeout(()=>{
            window.location.reload()
@@ -186,6 +187,7 @@ const LeadContent = ({
                               Convert lead
                           </Button>
 
+
                           <Modal open={openConfirm}              onClose={() => setOpenConfirm(false)}
                                  closeAfterTransition>
                               <Fade in={openConfirm}>
@@ -244,7 +246,9 @@ const LeadContent = ({
                                     </MenuItem>
                               ))}
                           </Menu>
-
+                          <Button onClick={()=>generatePDF(lead)}>
+                              Generate pdf
+                          </Button>
                       </Stack>
                   </Stack>
               </DialogTitle>

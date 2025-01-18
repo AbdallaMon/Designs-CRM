@@ -158,7 +158,7 @@ const LeadReportFilters = () => {
                       <Grid container spacing={3}>
 
                           <Grid item xs={12} >
-                              <Box sx={{ display: 'flex', gap: 2 }}>
+                              <Box sx={{ display: 'flex', gap: 2,flexDirection:{xs:"column",md:"row"} }}>
                                   <DatePicker
                                         label="Start Date"
                                         value={filters.startDate}
@@ -270,7 +270,7 @@ const LeadReportFilters = () => {
                                     <Grid item xs={12} sm={6} md={3}>
                                         <Paper sx={{ p: 2, textAlign: 'center', height: '100%' ,bgcolor:"background.default"}}>
                                             <Typography variant="subtitle2" color="textSecondary">Total Discount</Typography>
-                                            <Typography variant="h4" sx={{ mt: 1 }}>${reportData.summary.totalDiscount.toLocaleString()}</Typography>
+                                            <Typography variant="h4" sx={{ mt: 1 }}>%{reportData.summary.totalDiscount}</Typography>
                                         </Paper>
                                     </Grid>
                                 </Grid>
@@ -287,13 +287,13 @@ const LeadReportFilters = () => {
                                         >
                                             Export as Excel
                                         </Button>
-                                        <Button
-                                              variant="outlined"
-                                              startIcon={<MdDownload />}
-                                              onClick={downloadPDF}
-                                        >
-                                            Export as PDF
-                                        </Button>
+                                        {/*<Button*/}
+                                        {/*      variant="outlined"*/}
+                                        {/*      startIcon={<MdDownload />}*/}
+                                        {/*      onClick={downloadPDF}*/}
+                                        {/*>*/}
+                                        {/*    Export as PDF*/}
+                                        {/*</Button>*/}
                                     </Box>
                                 </Box>
 

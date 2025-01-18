@@ -10,7 +10,7 @@ import FilterSelect from "@/app/UiComponents/formComponents/FilterSelect.jsx";
 import {enumToKeyValueArray} from "@/app/helpers/functions/utility.js";
 const columns = [
     { name: "client.name", label: "Client Name" },
-    { name: "client.phone", label: "Phone" },
+    { name: "client.email", label: "Email" },
     { name: "selectedCategory", label: "Lead Type",enum:LeadCategory,type:"enum" },
     {name:"description",label:"Description" },
     {name:"price",label: "Price"},
@@ -58,8 +58,8 @@ export default function Leads() {
                               <SearchComponent
                                     apiEndpoint="search?model=client"
                                     setFilters={setFilters}
-                                    inputLabel="Search by name or phone"
-                                    renderKeys={["name", "phone"]}
+                                    inputLabel="Search by name or email"
+                                    renderKeys={["name", "email"]}
                                     mainKey="name"
                                     searchKey={"clientId"}
                                     withParamsChange={true}

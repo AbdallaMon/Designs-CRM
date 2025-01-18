@@ -3,6 +3,24 @@ import express from "express";
 const router = express.Router();
 import prisma from "../prisma/prisma.js";
 import {newLeadNotification} from "../services/notification.js";
+const priceRangeValues = {
+    "400,000 or less": 200000, // Average of 0 to 400,000
+    "400,000 to 600,000": 500000, // Midpoint of 400,000 and 600,000
+    "600,000 to 800,000": 700000, // Midpoint of 600,000 and 800,000
+    "800,000 and above": 900000, // Arbitrarily above 800,000
+    "25,000 or less": 12500, // Average of 0 to 25,000
+    "25,000 to 45,000": 35000, // Midpoint of 25,000 and 45,000
+    "45,000 to 65,000": 55000, // Midpoint of 45,000 and 65,000
+    "65,000 to 85,000": 75000, // Midpoint of 65,000 and 85,000
+    "85,000 and above": 100000 // Arbitrarily above 85,000
+};
+
+
+const consultationLeadPrices = {
+    ROOM: "800",
+    BLUEPRINT: "1200",
+    CITY_VISIT: "1800"
+}
 
 router.post("/new-lead",async (req,res)=>{
     const body= req.body;
@@ -22,18 +40,13 @@ router.post("/new-lead",async (req,res)=>{
            }
         })
         }
-         const consultationLeadPrices = {
-             ROOM: "800",
-             BLUEPRINT: "1200",
-             CITY_VISIT: "1800"
-         }
 
         const data={
             client: {connect: {id:client.id}},
             selectedCategory: body.category,
             type: body.item,
             status: 'NEW',
-            description:`${body.category} ${body.item} ${body.category==="DESIGN"?body.emirate:""}`
+            description:`${body.category} ${body.item} ${body.category==="DESIGN"?body.emirate?body.emirate:"OUTSIDE UAE":""}`
         }
         if(body.emirate){
             data.emirate=body.emirate
@@ -46,9 +59,11 @@ router.post("/new-lead",async (req,res)=>{
         }
         if(body.priceOption){
             data.price=body.priceOption
+            data.averagePrice=priceRangeValues[body.priceOption]
         }
         if(body.category==="CONSULTATION"){
-            body.price=consultationLeadPrices[body.item]
+            data.price=consultationLeadPrices[body.item]
+            data.averagePrice=Number(consultationLeadPrices[body.item])
         }
          const clientLead= await prisma.clientLead.create({
             data

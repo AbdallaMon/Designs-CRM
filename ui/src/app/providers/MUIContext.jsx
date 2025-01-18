@@ -41,7 +41,7 @@ const theme = createTheme({
         snackbar: 1500,
     },
     typography: {
-        fontFamily: ["Cairo", "sans-serif"].join(","),
+        fontFamily: ["Noto Kufi Arabic", "sans-serif"].join(","),
         // You can also customize typography colors
         h1: {
             color: colors.heading,
