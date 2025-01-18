@@ -54,6 +54,7 @@ export default function AllDealsPage({staff}) {
                     onClose={() => setDialogId(null)}
                     setleads={setData}
                     id={dialogId}
+                    admin={!staff}
               />
               }
               <AdminTable
