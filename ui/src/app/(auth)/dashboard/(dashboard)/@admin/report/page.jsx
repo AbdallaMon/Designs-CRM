@@ -308,7 +308,7 @@ const LeadReportFilters = () => {
                                                 <TableCell>Type</TableCell>
                                                 <TableCell align="right">Price</TableCell>
                                                 <TableCell align="right">Discount</TableCell>
-                                                <TableCell align="right">Final Price</TableCell>
+                                                <TableCell align="right">Price without discount</TableCell>
                                                 <TableCell>Created Date</TableCell>
                                                 <TableCell>Assigned To</TableCell>
                                             </TableRow>
@@ -333,7 +333,7 @@ const LeadReportFilters = () => {
                                                             <TableCell>{lead.type}</TableCell>
                                                             <TableCell align="right">${lead.averagePrice.toLocaleString()}</TableCell>
                                                             <TableCell align="right">${lead.discount.toLocaleString()}</TableCell>
-                                                            <TableCell align="right">${lead.finalPrice.toLocaleString()}</TableCell>
+                                                            <TableCell align="right">${lead.priceWithOutDiscount.toLocaleString()}</TableCell>
                                                             <TableCell>{lead.createdAt}</TableCell>
                                                             <TableCell>{lead.assignedTo}</TableCell>
                                                         </TableRow>

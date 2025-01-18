@@ -119,7 +119,7 @@ const processLeads = (leads) => {
         type: lead.type,
         averagePrice: Number(lead.averagePrice || 0),
         discount: Number(lead.discount || 0),
-        finalPrice: Number(lead.finalPrice || 0),
+        priceWithOutDiscount: Number(lead.priceWithOutDiscount || 0),
         createdAt: lead.createdAt.toISOString().split('T')[0],
         assignedTo: lead.assignedTo?.name || 'Unassigned'
     }));
@@ -211,7 +211,7 @@ export const generateExcelReport = async (req, res) => {
         { header: 'Type', key: 'type', width: 20 },
         { header: 'AveragePrice', key: 'averagePrice', width: 15, style: { numFmt: '#,##0.00 "AED"' } },
         { header: 'Discount', key: 'discount', width: 15, style: { numFmt: '#,##0.00 "%"' } },
-        { header: 'Final Price', key: 'finalPrice', width: 15, style: { numFmt: '#,##0.00 "AED"' } },
+        { header: 'Price without discount', key: 'priceWithOutDiscount', width: 15, style: { numFmt: '#,##0.00 "AED"' } },
         { header: 'Created At', key: 'createdAt', width: 15 }
     ];
 
@@ -253,7 +253,7 @@ export const generateExcelReport = async (req, res) => {
         clientName: 'TOTALS',
         averagePrice: data.leads.reduce((sum, lead) => sum + (lead.averagePrice || 0), 0),
         discount: data.leads.reduce((sum, lead) => sum + (lead.discount || 0), 0),
-        finalPrice: data.leads.reduce((sum, lead) => sum + (lead.finalPrice || 0), 0)
+        priceWithOutDiscount: data.leads.reduce((sum, lead) => sum + (lead.priceWithOutDiscount || 0), 0)
     });
 
     // Style totals row
@@ -352,7 +352,7 @@ export const generatePDFReport = (req, res) => {
         const totals = {
             price: data.leads.reduce((sum, lead) => sum + (lead.averagePrice || 0), 0),
             discount: data.leads.reduce((sum, lead) => sum + (lead.discount || 0), 0),
-            finalPrice: data.leads.reduce((sum, lead) => sum + (lead.finalPrice || 0), 0)
+            priceWithOutDiscount: data.leads.reduce((sum, lead) => sum + (lead.priceWithOutDiscount || 0), 0)
         };
 
         // Add totals row
@@ -365,7 +365,7 @@ export const generatePDFReport = (req, res) => {
             '',
             `${formatValue(totals.price)} AED`,
             ``,
-            `${formatValue(totals.finalPrice)} AED`,
+            `${formatValue(totals.priceWithOutDiscount)} AED`,
         ]);
 
         drawTable(doc, leadsTable, 220);

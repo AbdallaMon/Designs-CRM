@@ -52,18 +52,23 @@ router.post("/new-lead",async (req,res)=>{
             data.emirate=body.emirate
         }
         if(body.location==="OUTSIDE_UAE"){
-            data.emirate==="OUTSIDE"
+            data.emirate="OUTSIDE"
         }
         if(body.priceRange){
             data.price=`${body.priceRange[0]} - ${body.priceRange[1]}`
+            const averagePrice = (minPrice + maxPrice) / 2;
+            data.averagePrice=averagePrice
+            data.priceWithOutDiscount=averagePrice
         }
         if(body.priceOption){
             data.price=body.priceOption
             data.averagePrice=priceRangeValues[body.priceOption]
+            data.priceWithOutDiscount=priceRangeValues[body.priceOption]
         }
         if(body.category==="CONSULTATION"){
             data.price=consultationLeadPrices[body.item]
             data.averagePrice=Number(consultationLeadPrices[body.item])
+            data.priceWithOutDiscount=Number(consultationLeadPrices[body.item])
         }
          const clientLead= await prisma.clientLead.create({
             data
