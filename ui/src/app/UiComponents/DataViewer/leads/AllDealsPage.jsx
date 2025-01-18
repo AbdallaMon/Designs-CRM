@@ -27,12 +27,11 @@ const columns = [
     },
 
 ];
+    const assignedTo=    {name: "assignedTo.name", label: "Assigned to",type:"href",linkCondition:(item)=>`/dashboard/users/${item.assignedTo?.id}`}
 export default function AllDealsPage({staff}) {
     const links = [
         {href: "/dashboard/overdue-deals", title: "See Overdue Deals", icon: <FaBusinessTime/>},
     ];
-    const assignedTo=    {name: "assignedTo?.name", label: "Assigned to",type:"href",linkCondition:(item)=>`/dashboard/users/${item.assignedTo?.id}`}
-
     const {user} = useAuth()
     const {
         data,
@@ -45,6 +44,7 @@ export default function AllDealsPage({staff}) {
         total,
         setTotal, totalPages, setFilters
     } = useDataFetcher("shared/client-leads" + (staff ? `?staffId=${user.id}&` : ''), false);
+
     const [dialogId,setDialogId]=useState(null)
     const leadTypes = enumToKeyValueArray(LeadCategory)
     return (
@@ -58,7 +58,7 @@ export default function AllDealsPage({staff}) {
               }
               <AdminTable
                     data={data}
-                    columns={staff?columns:data&&data.length>0?[columns,...assignedTo]:columns}
+                    columns={staff?columns:data&&data.length>0?[...columns,assignedTo]:columns}
                     page={page}
                     setPage={setPage}
                     limit={limit}
