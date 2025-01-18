@@ -56,7 +56,7 @@ router.post("/new-lead",async (req,res)=>{
         }
         if(body.priceRange){
             data.price=`${body.priceRange[0]} - ${body.priceRange[1]}`
-            const averagePrice = (minPrice + maxPrice) / 2;
+            const averagePrice = (body.priceRange[0] + body.priceRange[1]) / 2;
             data.averagePrice=averagePrice
             data.priceWithOutDiscount=averagePrice
         }
