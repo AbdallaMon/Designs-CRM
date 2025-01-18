@@ -135,7 +135,7 @@ export function LeadCategoryItemsContainer({location,leadCategory, animateLeadCa
     const theme=useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
     return (
-          <Box sx={{mt:isMobile?location?"-550px":"-500px":location?"-350px":"-200px",overflowY:"auto",height:"100%"}}>
+          <Box sx={{mt:isMobile?location?"-550px":"-500px":location?"-350px":"-200px",}}>
               <Title title={translate(questions.type)} class_name={"item-title"}/>
               <Box sx={{display: "flex", flexDirection: {xs: "column"}, gap: 2}}>
                   {leadsItems.map((item) => {
