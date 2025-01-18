@@ -54,7 +54,7 @@ export const dictionary = {
     Blueprint: "مخطط",
     "City Visit": "زيارة المدينة",
     Apartment: "شقة",
-    "Construction Villa": "فيلا مكسونة",
+    "Construction Villa": "فيلا مسكونة",
     "Villa Under Construction": "فيلا تحت الإنشاء",
     "Part of Home": "جزء من المنزل",
     Commercial: "تجاري",

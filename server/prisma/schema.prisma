@@ -188,7 +188,6 @@ model Client {
  name        String       @db.VarChar(255)
  phone       String       @db.VarChar(20)
  email       String       @db.VarChar(255) @unique
- dateOfBirth DateTime
  clientLeads ClientLead[]
  createdAt   DateTime     @default(now())
  updatedAt   DateTime     @updatedAt

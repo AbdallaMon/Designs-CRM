@@ -9,6 +9,7 @@
 27- fix error after searching for a staff in the notifications
 28- allow admin to change status from leads/{id}
 29- generate metadata
+30- user name
 dJkmjERCZGCEgaxl
 TCP: 25, TCP: 587, TCP: 465, TCP: 110, TCP: 143 and TCP: 993 for mail service
 TCP: 8090 for CyberPanel

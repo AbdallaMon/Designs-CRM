@@ -267,7 +267,6 @@ function disAnimateLeadForm({tl, setLeadItem, setAnimateLeadItem, setIsItemAnima
 }
 export function animateLocationItem({leadCategory,location,setIsAnimating,setIsLocationAnimated}){
     setIsAnimating(true)
-    const removedElement = location === "INSIDE_UAE" ? "INSIDE_UAE" : "OUTSIDE_UAE"
     const tl = gsap.timeline();
        animateLocation({location,tl,leadCategory})
         animateLeadItem(tl)
@@ -311,12 +310,12 @@ function animateLocation({location,tl,leadCategory}){
         left:rect.left,
     },{
         top:leadTittleRect.top,
-        left:leadTittleRect.left+leadTittleRect.width+12
+        left:leadTittleRect.right-leadTittleRect.width-15
           ,duration: 1.2,
           ease: "power3.inOut",
         x:"-50%"
     })
-    tl.to(leadTitle,{x:-100},"<")
+    tl.to(leadTitle,{x:100},"<")
     tl.fromTo(".location",{
         opacity:1,
         y:0,
@@ -333,7 +332,7 @@ function reverseLocation({tl,location,leadCategory}){
     const clonedTitle=document.querySelector(".cloned-location-title")
     const locationQuestionTitle=document.querySelector(".design-title")
     const leadTittleRect=leadTitle.getBoundingClientRect();
-
+    const clonedTitleRect=clonedTitle.getBoundingClientRect()
     tl.fromTo(locationQuestionTitle,{
         y:-100,opacity:0
     },{
@@ -349,7 +348,7 @@ function reverseLocation({tl,location,leadCategory}){
     tl.to(leadTitle,{x:0},"<")
     tl.fromTo(clonedTitle,{
         top:leadTittleRect.top,
-        left:leadTittleRect.right+leadTittleRect.width-5,
+        left:clonedTitleRect.left+clonedTitleRect.width/2,
     },{
               top:rect.top-100,
               left:rect.left,

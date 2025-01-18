@@ -72,7 +72,7 @@ useEffect(()=>{
     return (
           <>
               <Header reverseAnimation={()=>reverseAnimation({location,leadCategory,leadItem,setIsItemAnimated,setIsCatAnimated,isAnimating,isCatAnimated,isItemAnimated,isReversing,setAnimateLeadItem,setAnimateLeadType,setIsReversing,setLeadCategory,setLeadItem,setAnimateLocation,setIsLocationAnimated,setLocation,isLocationAnimated})}/>
-              <Container maxWidth="md" sx={{height: "100vh", overflow: "hidden", py: {xs: 3, md: 4}}}>
+              <Container maxWidth="md" sx={{ overflow: "hidden", py: {xs: 3, md: 4}}}>
                   <Paper
                         className="page-container"
                         elevation={2}
@@ -81,8 +81,7 @@ useEffect(()=>{
                             borderRadius: "12px",
                             backgroundColor: colors.bgPrimary,
                             width: "100%",
-                            overflow: "hidden",
-                            height: "calc(100vh - 48px)",
+                            minHeight: "calc(100vh - 48px)",
                         }}
                   >
                       <LeadCardsContainer handleClick={animateLeadCategory}/>
@@ -108,14 +107,14 @@ useEffect(()=>{
                        height: "100vh",
                        background:colors.bgPrimary
                        ,                       zIndex: 20,
-                       display: "none"
+                       display: "none",
+                       overflowY:"auto"
 
                    }}
               >
                   <Container maxWidth="md" sx={{
-                      height: "100vh",
                       overflow: "hidden",
-                      pb: {xs: 3, md: 4},
+                      pb: {xs: 10, md: 10},
                       pt:10,
                       display: "flex",
                       justifyContent: "center",

@@ -19,7 +19,6 @@ router.post("/new-lead",async (req,res)=>{
                name:body.name,
                phone:body.phone,
                email:body.email,
-               dateOfBirth:body.dateOfBirth
            }
         })
         }

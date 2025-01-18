@@ -20,10 +20,8 @@ import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput.j
 import {gsap} from "gsap";
 import {FaPercentage} from "react-icons/fa";
 import {priceRange} from "@/app/UiComponents/client-page/clientPageData.js";
-import {DatePicker} from "@mui/x-date-pickers/DatePicker";
 import {AdapterDayjs} from "@mui/x-date-pickers/AdapterDayjs";
 import {LocalizationProvider} from "@mui/x-date-pickers/LocalizationProvider";
-import dayjs from "dayjs";
 
 export function FinalSelectionForm({category, item,location}) {
 
@@ -40,7 +38,6 @@ function DesignLeadForm({category ,item,location}){
         phone: "",
         emirate: null,
         email:"",
-        dateOfBirth:"",
         priceRange: [0, 0],
         priceOption:null,
         file:null,
@@ -74,8 +71,8 @@ function DesignLeadForm({category ,item,location}){
         setFormData((prev) => ({...prev, priceOption: e.target.value}));
     };
     const handleSubmit =async () => {
-        const { name, phone, priceRange,file,emirate,priceOption,dateOfBirth,email } = formData;
-        if (!name || !phone ||!email||!dateOfBirth || (!emirate && location==="INSIDE_UAE"||(priceRange[0]===0&&priceRange[1]===0&&!priceOption))) {
+        const { name, phone, priceRange,file,emirate,priceOption,email } = formData;
+        if (!name || !phone ||!email || (!emirate && location==="INSIDE_UAE"||(priceRange[0]===0&&priceRange[1]===0&&!priceOption))) {
             setAlertError(translate("Please fill all the fields."));
             return;
         }
@@ -199,32 +196,27 @@ function DesignLeadForm({category ,item,location}){
                                       },
                                   }}
                             />
-                            <DatePicker
-                                  label={translate("Date of birth")}
-                                  value={formData.dateOfBirth ? dayjs(formData.dateOfBirth) : null}
-                                  onChange={(newValue) => {
-                                      setFormData((prev) => ({
-                                          ...prev,
-                                          dateOfBirth: newValue ? newValue.toISOString() : null,
-                                      }));
-                                  }}
-                                  renderInput={(params) => <TextField {...params} />}
-                            />
+
                             {location==="INSIDE_UAE"&&
                                   <>
-                                      <Autocomplete
-                                            options={emiratesOptions}
-                                            getOptionLabel={(option) => translate(option.label)}
-                                            onChange={handleEmirateChange}
-                                            renderInput={(params) => (
-                                                  <TextField {...params} label={translate("Select Location")} variant="outlined"/>
-                                            )}
-                                            sx={{
-                                                "& .MuiOutlinedInput-root": {
-                                                    borderRadius: 2,
-                                                },
-                                            }}
-                                      />
+                                      <FormControl fullWidth variant="outlined">
+                                          <InputLabel id="emirate">{translate("Select Location")}</InputLabel>
+                                          <Select
+                                                labelId="emirate"
+                                                id="emirate"
+                                                value={formData.emirate} // Ensure you define this state
+                                                onChange={handleEmirateChange}
+                                          >
+                                              {
+                                                  emiratesOptions.map((option) => (
+                                                        <MenuItem value={option.value} key={option.value}>
+                                                            {translate(option.label)}
+                                                        </MenuItem>
+                                                  ))
+                                              }
+                                          </Select>
+                                      </FormControl>
+
                                           {priceRange[item].type==="input"?
                                       <Box sx={{mb:1}}>
                                           <Typography variant="subtitle1" gutterBottom sx={{mt:-1.8,mb:2}} >
@@ -307,7 +299,6 @@ function ConsultLeadForm({item,category}){
         name: "",
         phone: "",
         email:"",
-        dateOfBirth:"",
         file:null,
     });
     const [renderSuccess,setRenderSuccess]=useState(false)
@@ -325,8 +316,8 @@ function ConsultLeadForm({item,category}){
         setFormData((prev) => ({...prev, [name]: value}));
     };
     const handleSubmit =async () => {
-        const { name, phone ,email,dateOfBirth} = formData;
-        if (!name || !phone ||!email||!dateOfBirth) {
+        const { name, phone ,email} = formData;
+        if (!name || !phone ||!email) {
             setAlertError(translate("Please fill all the fields."));
             return;
         }
@@ -444,21 +435,8 @@ function ConsultLeadForm({item,category}){
                                       },
                                   }}
                             />
-                            <DatePicker
-                                  label={translate("Date of birth")}
-                                  value={formData.dateOfBirth ? dayjs(formData.dateOfBirth) : null}
-                                  onChange={(newValue) => {
-                                      setFormData((prev) => ({
-                                          ...prev,
-                                          dateOfBirth: newValue ? newValue.toISOString() : null,
-                                      }));
-                                  }}
-                                  renderInput={(params) => <TextField {...params} />}
-                            />
-                            <Typography>
-                                {translate("Add an attachment (optional)")}
-                            </Typography>
-                            <SimpleFileInput label={translate("Add an attachment")} id="file"  setData={setFormData} variant="outlined" />
+
+                            <SimpleFileInput label={translate("Add an attachment (optional)")} id="file"  setData={setFormData} variant="outlined" />
                             <Button
                                   variant="contained"
                                   onClick={handleSubmit}

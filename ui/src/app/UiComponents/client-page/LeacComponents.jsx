@@ -228,14 +228,18 @@ export function Header({reverseAnimation}) {
                     left: 0,
                     right: 0,
                     position:"fixed",
-                    zIndex:30
+                    zIndex:30,
                 }}
           >
               <Toolbar sx={{ justifyContent: 'space-between' ,
                   background: theme.palette.background.paper,
                   borderRadius: '16px',
                   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                  margin:"0 12px"
+                  margin:"0 12px",
+                  backgroundImage: "url('/logo-bg-6.jpg')", // Replace with your image URL
+                  backgroundSize: "cover", // Ensures the image covers the entire container
+                  backgroundRepeat: "no-repeat", // Prevents the image from repeating
+                  backgroundPosition: "left",
               }}>
                   <Box sx={{display:"flex",alignItems:"center"}}>
                       <Box className="reverse-button"
@@ -255,12 +259,13 @@ export function Header({reverseAnimation}) {
                            }}>
                           <IoArrowBackOutline size={26}/>
                       </Box>
+
                       <Box
                             component="img"
-                            src="/logo.png"
+                            src="/logo-dark.png"
                             alt="Logo"
                             className="logo"
-                            sx={{
+                            sx={{display:"none",
                                 height: 40,
                                 width: 'auto'
                             }}
@@ -272,6 +277,7 @@ export function Header({reverseAnimation}) {
                         variant="outlined"
                         size="small"
                         sx={{
+                            color:"white",
                             minWidth: 80,
                             '& .MuiOutlinedInput-notchedOutline': {
                                 borderColor: 'transparent'
