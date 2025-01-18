@@ -90,7 +90,6 @@ CREATE TABLE `Client` (
     `name` VARCHAR(255) NOT NULL,
     `phone` VARCHAR(20) NOT NULL,
     `email` VARCHAR(255) NOT NULL,
-    `dateOfBirth` DATETIME(3) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL,
 
