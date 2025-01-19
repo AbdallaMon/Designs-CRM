@@ -116,7 +116,7 @@ useEffect(()=>{
               >
                   <Container maxWidth="md" sx={{
                       overflow: "hidden",
-                      pb: {xs: 14, md: 10},
+                      pb: {xs: 16, md: 10},
                       pt:10,
                       display: "flex",
                       justifyContent: "center",
