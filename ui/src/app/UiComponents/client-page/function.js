@@ -276,6 +276,10 @@ export function animateLocationItem({leadCategory,location,setIsAnimating,setIsL
         setIsLocationAnimated(true);
     });
 }
+function isMobile() {
+    const mediaQuery = `(max-width: ${900 - 1}px)`;
+    return window.matchMedia(mediaQuery).matches;
+}
 function animateLocation({location,tl,leadCategory,translate}){
     const locationQuestionTitle=document.querySelector(".design-title")
     const animatedElement=document.querySelector(`.${location}`)
@@ -304,12 +308,14 @@ function animateLocation({location,tl,leadCategory,translate}){
     tl.set(locationTitle,{
         opacity:0
     })
+    const space=!isMobile()&&clonedTitle.textContent!=="Inside UAE"?-2:isMobile()&&clonedTitle.textContent==="Inside UAE"?-12:!isMobile()&&clonedTitle.textContent!=="Out side UAE"?-5:isMobile()&&clonedTitle.textContent!=="Out side UAE"?-20:isMobile()?7:15
+    console.log(space,"space")
     tl.fromTo(clonedTitle,{
         top:rect.top,
         left:rect.left,
     },{
         top:leadTittleRect.top,
-        left:leadTittleRect.right-leadTittleRect.width-15
+        left:leadTittleRect.right-leadTittleRect.width-space
           ,duration: 1.2,
           ease: "power3.inOut",
         x:"-50%"

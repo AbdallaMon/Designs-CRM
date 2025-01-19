@@ -301,7 +301,6 @@ function ConsultLeadForm({item,category}){
         email:"",
         file:null,
     });
-    console.log(category,"category")
     const [renderSuccess,setRenderSuccess]=useState(false)
     const {setAlertError}=useAlertContext()
     const {setLoading}=useToastContext()

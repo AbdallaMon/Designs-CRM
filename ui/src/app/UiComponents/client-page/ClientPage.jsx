@@ -74,7 +74,7 @@ useEffect(()=>{
     return (
           <>
               <Header reverseAnimation={()=>reverseAnimation({location,leadCategory,leadItem,setIsItemAnimated,setIsCatAnimated,isAnimating,isCatAnimated,isItemAnimated,isReversing,setAnimateLeadItem,setAnimateLeadType,setIsReversing,setLeadCategory,setLeadItem,setAnimateLocation,setIsLocationAnimated,setLocation,isLocationAnimated})}/>
-              <Container maxWidth="md" sx={{height:(!leadCategory)||(leadCategory!=="DESIGN"&&!leadItem)?"100vh":"auto", overflow: "hidden", py: {xs: 3, md: 4}}}>
+              <Container maxWidth="md" sx={{height:(!leadCategory)||(leadCategory!=="DESIGN"&&!leadItem)||leadItem?"100vh":"auto", overflow: "hidden", py: {xs: 3, md: 4}}}>
                   <Paper
                         className="page-container"
                         elevation={2}
@@ -116,7 +116,7 @@ useEffect(()=>{
               >
                   <Container maxWidth="md" sx={{
                       overflow: "hidden",
-                      pb: {xs: 10, md: 10},
+                      pb: {xs: 14, md: 10},
                       pt:10,
                       display: "flex",
                       justifyContent: "center",

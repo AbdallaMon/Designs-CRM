@@ -34,6 +34,7 @@ export function DesignLeadsContainer({handleClick}) {
     const {translate}=useLanguageContext()
     return (
           <Box className="design-cards-container" sx={{mt:isMobile?"-500px":"-200px"}}>
+
               <Title title={translate(questions.category)} class_name={"design-title"}/>
               <Box>
                   {designLeadTypes.map((lead) => {
@@ -194,6 +195,7 @@ export function LeadCategoryItem({title, value, animateLeadCategoryItems,subtitl
 
 export function Title({title, class_name}) {
     const theme = useTheme()
+    const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
     return (
           <Typography
@@ -209,7 +211,8 @@ export function Title({title, class_name}) {
                     minHeight: "80px",
                     display:"flex",
                     justifyContent:"center",
-                    alignItems:"center"
+                    alignItems:"center",
+                    fontSize:isMobile&&(class_name==="design-title"||class_name==="item-title")&&"1.75rem"
                 }}
           >
               {title}
@@ -260,7 +263,6 @@ export function Header({reverseAnimation}) {
                            }}>
                           <IoArrowBackOutline size={26}/>
                       </Box>
-
                       <Box
                             component="img"
                             src="/logo-dark.png"
