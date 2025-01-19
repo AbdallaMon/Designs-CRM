@@ -18,17 +18,18 @@ const roboto = Noto_Kufi_Arabic({
 export const metadata = {
   title: "Dream Studio - Create Your Dream with Us",
   description: "Dream Studio offers luxurious home designs, including furniture and decor, blending elegance with comfort and well-being.",
+    icon:"/logo-full.jpg"
 };
 
 export default function RootLayout({children}) {
   return (
         <html>
         <head>
-            <link rel="icon" href="/logo-full.jpg"/>
+            <link rel="icon" href="/logo-full.jpg" type="image/png" sizes="32x32"/>
         </head>
-            <body
-                  className={roboto.className}
-                  style={{backgroundColor: colors.bgSecondary}}
+        <body
+              className={roboto.className}
+              style={{backgroundColor: colors.bgSecondary}}
             >
             <MuiAlertProvider>
                 <MUIContextProvider>
