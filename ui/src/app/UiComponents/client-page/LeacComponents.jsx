@@ -280,7 +280,7 @@ export function Header({reverseAnimation}) {
                         variant="outlined"
                         size="small"
                         sx={{
-                            color:"white",
+                            color:"secondary.main",
                             minWidth: 80,
                             '& .MuiOutlinedInput-notchedOutline': {
                                 borderColor: 'transparent'

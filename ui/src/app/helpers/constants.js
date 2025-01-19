@@ -97,6 +97,7 @@ export const dictionary = {
     "Thank you for your submission. We will contact you soon.": "شكرًا لك على تقديم طلبك. سنتواصل معك قريبًا.",
     "You got a 10% discount!": "لقد حصلت على خصم 10٪",
     "Sorry!": "عذرًا!",
+    "Budget":"الميزانية",
     "We do not provide services outside the UAE.": "نحن لا نقدم خدمات خارج الإمارات العربية المتحدة.",
       "We do not provide services outside the UAE, But we will contact you soon.":"نحن لا نقدم خدمات خارج الإمارات العربية المتحدة, لكن سنتواصل معك قريبا.",
     "Add an attachment (optional)":"اضف مرفقا (اختياري)",
@@ -105,6 +106,7 @@ export const dictionary = {
     "Select a price ranges":"اختر نطاق سعر"
     ,"Inside UAE":"داخل الامارات"
     ,"Out side UAE":"خارج الامارات"
+    ,"How much would you like to invest in your dream home?":"كم حابب تستثمر في منزل احلامك؟"
 };
 
 export const MediaType = {

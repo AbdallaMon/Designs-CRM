@@ -219,8 +219,11 @@ function DesignLeadForm({category ,item,location}){
 
                                           {priceRange[item].type==="input"?
                                       <Box sx={{mb:1}}>
+                                          <Typography variant="subtitle1" gutterBottom sx={{mb:1,mt:-1}} >
+                                              {translate("How much would you like to invest in your dream home?")}
+                                          </Typography>
                                           <Typography variant="subtitle1" gutterBottom sx={{mt:-1.8,mb:2}} >
-                                              {translate("Price Range")}
+                                              {translate("Budget")}
                                           </Typography>
                                           <Stack direction="row" spacing={2} alignItems="center" sx={{mt:-1.5}}>
                                               <TextField
@@ -246,10 +249,13 @@ function DesignLeadForm({category ,item,location}){
 
                                           </Stack>
                                       </Box>
-
                                                 :
+                                                <>
+                                                    <Typography variant="subtitle1"  sx={{marginTop:"8px !important",mb:"-15px !important"}} >
+                                                        {translate("How much would you like to invest in your dream home?")}
+                                                    </Typography>
                                                 <FormControl fullWidth variant="outlined">
-                                                    <InputLabel id="price-range-label">{translate("Select a price ranges")}</InputLabel>
+                                                    <InputLabel id="price-range-label">{translate("Budget")}</InputLabel>
                                                     <Select
                                                           labelId="price-range-label"
                                                           id="price-range-select"
@@ -265,7 +271,7 @@ function DesignLeadForm({category ,item,location}){
                                                         }
                                                     </Select>
                                                 </FormControl>
-
+                                                </>
                                           }
                                   </>
                             }
