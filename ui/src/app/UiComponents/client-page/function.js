@@ -121,12 +121,12 @@ export function animateLeadCategoryItem({leadCategory,setIsAnimating,setIsCatAni
     const tl = gsap.timeline();
     animateImageCardToFullWidthFullHeight(tl,"lead-card",removedElement,leadCategory,"shadow-lead-card")
     tl.fromTo(".reverse-button", {
-              x: -50
+              x: -80
           }
           , {
               display: "flex"
               ,
-              x: 0
+              x: -30
           }
           , "<"
     )
@@ -422,11 +422,11 @@ export function reverseAnimation({location,isLocationAnimated,setLocation,setAni
             duration: 0.8,
             ease: "power3.inOut",
         }).fromTo(".reverse-button", {
-                  x: 0                  }
+                  x: -30                  }
               , {
                   display: "none"
                   ,
-                  x: -50
+                  x: -80
               }
               , "<").fromTo(".logo", {
                   marginLeft:12
