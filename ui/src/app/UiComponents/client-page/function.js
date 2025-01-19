@@ -104,6 +104,7 @@ export function animateImageCardToFullWidthFullHeight(tl,itemClass,removeElement
         top: "80px",
         left: "50%",
         transform: "translate(-50%,0%)",
+
     })
     tl.to(animatedShadowElement, {
         top: 0,
@@ -113,6 +114,10 @@ export function animateImageCardToFullWidthFullHeight(tl,itemClass,removeElement
         duration: 0.8,
         ease: "power3.out",
     });
+    tl.to(leadText,{
+        opacity:0,
+        top:0,
+    })
 }
 
 export function animateLeadCategoryItem({leadCategory,setIsAnimating,setIsCatAnimated}){
@@ -128,17 +133,9 @@ export function animateLeadCategoryItem({leadCategory,setIsAnimating,setIsCatAni
               ,
               x: -30
           }
-          , "<"
+          , "<-0.5"
     )
-    tl.fromTo(".logo", {
-              marginLeft:0
-          }
-          , {
 
-              marginLeft:12
-          }
-          , "<"
-    )
           if(leadCategory==="CONSULTATION"){
               animateLeadItem(tl)
           }else{
@@ -148,14 +145,15 @@ tl.fromTo(".location",{
 },{
     opacity:1,
     y:0
-})
+}          , "<"
+)
               tl.fromTo(".design-cards-container > h4",{
                   opacity:0,
                   y:-50,
               },{
                   opacity:1,
                   y:0
-              })
+              }  , "<")
           }
           tl.then( () => {
         setIsAnimating(false);
@@ -171,7 +169,8 @@ function animateLeadItem(tl){
               opacity: 1,
               stagger: 0.1,
               ease: "power3.out",
-          }
+          }          , "<"
+
     );
     tl.fromTo(
           ".item-title",
@@ -308,19 +307,21 @@ function animateLocation({location,tl,leadCategory,translate}){
     tl.set(locationTitle,{
         opacity:0
     })
-    const space=!isMobile()&&clonedTitle.textContent!=="Inside UAE"?-2:isMobile()&&clonedTitle.textContent==="Inside UAE"?-12:!isMobile()&&clonedTitle.textContent!=="Out side UAE"?-5:isMobile()&&clonedTitle.textContent!=="Out side UAE"?-20:isMobile()?7:15
-    console.log(space,"space")
+    // const space=!isMobile()&&clonedTitle.textContent!=="Inside UAE"?-2:isMobile()&&clonedTitle.textContent==="Inside UAE"?-12:!isMobile()&&clonedTitle.textContent!=="Out side UAE"?-5:isMobile()&&clonedTitle.textContent!=="Out side UAE"?-20:isMobile()?7:15
     tl.fromTo(clonedTitle,{
         top:rect.top,
         left:rect.left,
     },{
         top:leadTittleRect.top,
-        left:leadTittleRect.right-leadTittleRect.width-space
+        left:"50%"
           ,duration: 1.2,
           ease: "power3.inOut",
-        x:"-50%"
+        x:"-50%",
     })
     tl.to(leadTitle,{x:100},"<")
+    tl.set(clonedTitle,{
+        opacity:0
+    })
     tl.fromTo(".location",{
         opacity:1,
         y:0,
@@ -351,6 +352,9 @@ function reverseLocation({tl,location,leadCategory}){
     )
     const rect = locationTitle.getBoundingClientRect();
     tl.to(leadTitle,{x:0},"<")
+    tl.set(clonedTitle,{
+        opacity:1
+    },"<")
     tl.fromTo(clonedTitle,{
         top:leadTittleRect.top,
         left:clonedTitleRect.left+clonedTitleRect.width/2,
@@ -395,6 +399,11 @@ export function reverseAnimation({location,isLocationAnimated,setLocation,setAni
         const { left,height,top,width} = document.querySelector(`.${removedElement}`).getBoundingClientRect();
         const {top:t,left:l,height:h,width:w}=leadElement.getBoundingClientRect();
         const shadowLead=leadElement.querySelector(".shadow-lead-card")
+        const leadText = leadElement.querySelector("h4")
+tl.to(leadText,{
+    opacity:1,
+    top:"80px"
+},"<")
         if(leadCategory==="CONSULTATION"){
             removeLeadItem(tl)
         }else {
@@ -458,7 +467,6 @@ export function reverseAnimation({location,isLocationAnimated,setLocation,setAni
             duration: 0.8,
             ease: "power3.inOut",
         })
-        const leadText = leadElement.querySelector("h4")
         tl.to(leadText, {
                   top: "50%",
                   left: "50%",
