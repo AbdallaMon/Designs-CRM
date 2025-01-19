@@ -33,7 +33,7 @@ export function DesignLeadsContainer({handleClick}) {
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
     const {translate}=useLanguageContext()
     return (
-          <Box className="design-cards-container" sx={{mt:isMobile?"-500px":"-200px"}}>
+          <Box className="design-cards-container" sx={{mt:isMobile?"-550px":"-300px"}}>
 
               <Title title={translate(questions.category)} class_name={"design-title"}/>
               <Box>
@@ -137,7 +137,7 @@ export function LeadCategoryItemsContainer({location,leadCategory, animateLeadCa
     const theme=useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
     return (
-          <Box sx={{mt:isMobile?location?"-550px":"-500px":location?"-350px":"-200px",}}>
+          <Box sx={{mt:isMobile?location?"-550px":"-500px":location?"-350px":"-300px",}}>
               <Title title={translate(questions.type)} class_name={"item-title"}/>
               <Box sx={{display: "flex", flexDirection: {xs: "column"}, gap: 2}}>
                   {leadsItems.map((item) => {
@@ -205,7 +205,7 @@ export function Title({title, class_name}) {
                     textAlign: "center",
                     fontWeight: 700,
                     color: theme.palette.primary.main,
-                    mb: 3,
+                    mb: 1,
                     mt:4.5,
                     opacity: 0,
                     minHeight: "80px",
