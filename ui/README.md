@@ -19,13 +19,14 @@
 39 - lead card date(assigned at)
 38 - filter leads by user
 33 - import via excel
+36- start end date deals
+37- ban a user
 
 
 35 - check reports
 
-
-
-36- start end date delas
+38- search by client in deals
+39- dates
 
 
 dJkmjERCZGCEgaxl

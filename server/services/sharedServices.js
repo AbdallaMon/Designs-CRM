@@ -25,17 +25,6 @@ export async function getClientLeads({
         fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
         where = {
             status: "ON_HOLD"
-
-            // OR: [
-            //     {
-            //         assignedTo: {isNot: null},
-            //         // assignedAt: {lt: fifteenDaysAgo},
-            //         status: {not: "CONVERTED"}
-            //     },
-            //     {
-            //         status: "ON_HOLD"
-            //     }
-            // ]
         };
         if (searchParams?.staffId) {
             where.assignedTo = {
@@ -58,12 +47,26 @@ export async function getClientLeads({
             where.userId = Number(searchParams.staffId);
         }
     }
-    if (filters?.clientId) {
+    if (filters?.clientId&&filters.clientId!=="all"&&filters.clientId!==null) {
         where.clientId = Number(filters.clientId);
+    }
+    if (filters?.staffId&&filters.staffId!=="all") {
+        where.userId = Number(filters.staffId);
     }
     if (filters?.type && filters.type !== "all") {
         where.selectedCategory = filters.type
     }
+    if (filters?.range) {
+        const {startDate, endDate} = filters.range;
+        const now = dayjs();
+        let start = startDate ? dayjs(startDate) : now.subtract(30, 'days');
+        let end = endDate ? dayjs(endDate).endOf('day') : now;
+        where.assignedAt = {
+            gte: start.toDate(),
+            lte: end.toDate(),
+        };
+    }
+
     const [clientLeads, total] = await Promise.all([
         prisma.clientLead.findMany({
             where,
@@ -117,9 +120,12 @@ export async function getClientLeadsByDateRange({searchParams}) {
         };
     } else {
         where.assignedAt = {
-            gte: dayjs().subtract(12, 'month').toDate(),
+            gte: dayjs().subtract(3, 'month').toDate(),
             lte: dayjs().toDate(),
         };
+    }
+    if(filters?.clientId&&filters.clientId!=="all"){
+        where.clientId = Number(filters.clientId);
     }
     if (searchParams?.staffId&&searchParams?.staffId!=="all"&&searchParams?.staffId!=="undefined") {
         where.userId = Number(searchParams.staffId);

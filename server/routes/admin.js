@@ -95,7 +95,7 @@ router.put('/users/:userId', async (req, res) => {
     }
 });
 
-router.patch('/user/:userId', async (req, res) => {
+router.patch('/users/:userId', async (req, res) => {
     const { userId } = req.params;
     const { user } = req.body;
 

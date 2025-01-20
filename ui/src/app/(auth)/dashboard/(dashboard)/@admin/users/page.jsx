@@ -4,7 +4,6 @@ import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
 import {Box, Button} from "@mui/material";
 
 import React from "react";
-import {useAuth} from "@/app/providers/AuthProvider.jsx";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
 import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit.js";
 import {useToastContext} from "@/app/providers/ToastLoadingProvider.js";
@@ -16,7 +15,7 @@ const columns = [
     {name: "name", label: "User Name"},
     {name: "email", label: "Email"},
     {
-        name: "isActive", label: "حالة الحساب", type: "boolean", enum: {TRUE: "Active", FALSE: "Banned"}
+        name: "isActive", label: "Account status", type: "boolean", enum: {TRUE: "Active", FALSE: "Banned"}
     }
 ];
 const inputs = [
@@ -77,8 +76,18 @@ export default function UsersPage() {
         setTotal, totalPages, setFilters
     } = useDataFetcher("admin/users" , false);
     const {setLoading}=useToastContext()
-    async function banAStudent(item) {
+    async function banAUser(item) {
         const request = await handleRequestSubmit({user: item}, setLoading, `admin/users/${item.id}`, false, "Banning", null, "PATCH")
+        if (request.status === 200) {
+            setData((oldData) =>
+                  oldData.map((lead) => {
+                      if (lead.id === item.id) {
+                          return { ...lead, isActive: !lead.isActive };
+                      }
+                      return lead;
+                  })
+            );
+        }
 
         return request;
     }
@@ -116,7 +125,7 @@ export default function UsersPage() {
           </Button>
                 <ConfirmWithActionModel
                       title={item.isActive ? "Are you sure you want to ban this user?" : "Are you sure you want to unban this user?"}
-                      handleConfirm={() => banAStudent(item)}
+                      handleConfirm={() => banAUser(item)}
                       isDelete={item.isActive}
                       label={item.isActive ? "Ban User" : "Unban User"}
                 />

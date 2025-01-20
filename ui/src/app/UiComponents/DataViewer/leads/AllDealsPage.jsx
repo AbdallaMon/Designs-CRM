@@ -12,6 +12,7 @@ import {enumToKeyValueArray} from "@/app/helpers/functions/utility.js";
 import {FaBusinessTime} from "react-icons/fa";
 import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks.jsx";
 import PreviewDialog from "@/app/UiComponents/DataViewer/leads/PreviewLead.jsx";
+import DateRangeFilter from "@/app/UiComponents/formComponents/DateRangeFilter.jsx";
 
 const columns = [
     {name: "client.name", label: "Client Name"},
@@ -81,22 +82,30 @@ export default function AllDealsPage({staff}) {
                   >
                       <Box display="flex" gap={2} flexWrap="wrap" alignItems="center" flex={1}>
                           <Box sx={{width: {xs: "100%", md: "fit-content"}}}>
+                              {!staff&&
+                                    <SearchComponent
+                                          apiEndpoint="search?model=user"
+                                          setFilters={setFilters}
+                                          inputLabel="Search staff by name or email"
+                                          renderKeys={["name", "email"]}
+                                          mainKey="name"
+                                          searchKey={"staffId"}
+                                          withParamsChange={true}
+                                    />
+                              }</Box>
+                              <Box sx={{width: {xs: "100%", md: "fit-content"}}}>
+
                               <SearchComponent
                                     apiEndpoint="search?model=client"
                                     setFilters={setFilters}
-                                    inputLabel="Search by name or email"
+                                    inputLabel="Search by client name or email"
                                     renderKeys={["name", "email"]}
                                     mainKey="name"
                                     searchKey={"clientId"}
                                     withParamsChange={true}
                               />
-                          </Box>
-                          <Box sx={{width: {xs: "100%", md: "fit-content"}}}>
-                              <FilterSelect options={leadTypes} label={"Lead Type"}
-                                            loading={false}
-                                            param={"type"}
-                                            setFilters={setFilters}
-                              />
+                              </Box>                          <Box sx={{width: {xs: "100%", md: "fit-content"}}}>
+                          <DateRangeFilter noMargin={true} setFilters={setFilters} lastThreeMonth={true}/>
                           </Box>
                       </Box>
                       <Box>

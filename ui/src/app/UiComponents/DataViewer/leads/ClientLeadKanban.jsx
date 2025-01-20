@@ -220,6 +220,15 @@ const {setLoading}=useToastContext()
                                 }
                             }}
                       >
+                          <SearchComponent
+                                apiEndpoint="search?model=client"
+                                setFilters={setFilters}
+                                inputLabel="Search client by name or email"
+                                renderKeys={["name", "email"]}
+                                mainKey="name"
+                                searchKey={"clientId"}
+                                withParamsChange={true}
+                          />
                           {admin&&
                                 <SearchComponent
                                       apiEndpoint="search?model=user"
@@ -231,7 +240,7 @@ const {setLoading}=useToastContext()
                                       withParamsChange={true}
                                 />
                           }
-                          <DateRangeFilter noMargin={true} setFilters={setFilters}/>
+                          <DateRangeFilter noMargin={true} setFilters={setFilters} lastThreeMonth={true}/>
                       </Box>
                       <Box
                             display="flex" justifyContent="flex-end"

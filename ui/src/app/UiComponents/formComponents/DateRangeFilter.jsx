@@ -4,9 +4,9 @@ import { DatePicker } from '@mui/x-date-pickers';
 import dayjs from 'dayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-const DateRangeFilter = ({ setFilters,noMargin }) => {
+const DateRangeFilter = ({ setFilters,noMargin,lastThreeMonth }) => {
     const [range, setRange] = useState({
-        start: dayjs().subtract(1, 'month').startOf('month'),
+        start: dayjs().subtract(lastThreeMonth?3:1, 'month').startOf('month'),
         end: dayjs()
     });
 useEffect(()=>{
