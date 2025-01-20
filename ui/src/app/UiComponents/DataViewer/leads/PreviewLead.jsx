@@ -389,6 +389,12 @@ const theme=useTheme()
                           <Typography variant="body1">
                               {lead.client.phone}
                           </Typography>
+                          <Typography color="text.secondary" variant="caption">
+                              Client Email
+                          </Typography>
+                          <Typography variant="body1">
+                              {lead.client.email}
+                          </Typography>
                       </Grid>
                       <Grid size={{xs: 12, md: 6}}>
                           <Typography color="text.secondary" variant="caption">

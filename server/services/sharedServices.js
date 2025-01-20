@@ -167,6 +167,7 @@ export async function getClientLeadDetails(clientLeadId) {
                     id: true,
                     name: true,
                     phone: true,
+                    email:true,
                 },
             },
             assignedTo: {
