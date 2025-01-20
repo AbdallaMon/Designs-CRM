@@ -3,7 +3,9 @@ import prisma from "../prisma/prisma.js";
 import ExcelJS from 'exceljs';
 import PDFDocument from "pdfkit";
 import pkg from 'lodash';
+import dayjs from "dayjs";
 const { groupBy } = pkg;
+import  XLSX from "xlsx"
 export async function getUser(searchParams, limit, skip) {
     const filters =searchParams.filters && JSON.parse(searchParams.filters);
     const staffFilter = searchParams.staffId ? {userId: Number(searchParams.staffId)} : {};
@@ -783,3 +785,133 @@ export const generateStaffPDFReport = (req, res) => {
         }
     }
 };
+
+export async function getNotificationForTodayByStaffId(userId){
+    const where = {};
+    where.staffId = Number(userId);
+    const startOfToday = dayjs().startOf('day').toDate();
+    const endOfToday = dayjs().endOf('day').toDate();
+    where.createdAt = {
+        gte: startOfToday,
+        lte: endOfToday,
+    };
+    const notifications = await prisma.notification.findMany({
+        where: where,
+        orderBy: {
+            createdAt: 'desc',
+        },
+        include: {
+            staff: {
+                select: {
+                    name: true,
+                },
+            },
+            clientLead: {
+                select: {
+                    client: {
+                        select: {
+                            name: true,
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+
+return notifications
+}
+export async function createLeadFromExcelData(req, res) {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: "No file uploaded" });
+        }
+
+        const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const fileData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        // Header row
+        const headers = fileData[0];
+        // Rows of data (excluding the header)
+        const rows = fileData.slice(1);
+
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+
+            // Extract client fields
+            const phone = row[0] ? String(row[0]) : "unknown";
+            const name = row[2] || "unknown";
+
+            // Generate fake email based on last client ID
+            const lastClient = await prisma.client.findFirst({
+                orderBy: { id: "desc" },
+            });
+            const newClientId = lastClient ? lastClient.id + 1 : 1;
+            const email = `fakeEmail${newClientId}@example.com`;
+
+            // Create client
+            const client = await prisma.client.create({
+                data: {
+                    phone,
+                    name,
+                    email,
+                },
+            });
+
+            // Extract client lead fields
+            const price = row[4]?.toString() ||"0"
+            const priceWithoutDiscount = !isNaN(parseFloat(row[4])) ? parseFloat(row[4]) : 0;
+            const averagePrice = !isNaN(parseFloat(row[4])) ? parseFloat(row[4]) : 0;
+            const modifiedDate = row[9] ? XLSX.SSF.format("yyyy-mm-dd", row[9]) : new Date().toISOString();
+
+            const clientLead = await prisma.clientLead.create({
+                data: {
+                    clientId: client.id,
+                    selectedCategory: "OLDLEAD",
+                    type: "NONE",
+                    description: row[3] || null,
+                    price,
+                    priceWithOutDiscount: priceWithoutDiscount,
+                    averagePrice,
+                    createdAt: new Date(modifiedDate),
+                },
+            });
+
+            // Extract notes
+            const notes = [];
+            if (row[5] && row[5].toString().trim()) {
+                notes.push({
+                    content: `${headers[5]}: ${row[5]}`,
+                });
+            }
+            if (row[6] && row[6].toString().trim()) {
+                notes.push({
+                    content: `${headers[6]}: ${row[6]}`,
+                });
+            }
+            if (row[8] && row[8].toString().trim()) {
+                notes.push({
+                    content: `${headers[8]}: ${row[8]}`,
+                });
+            }
+
+            for (const note of notes) {
+                await prisma.note.create({
+                    data: {
+                        content: note.content,
+                        clientLeadId: clientLead.id,
+                        userId: 1, // Default user ID (adjust as needed)
+                    },
+                });
+            }
+        }
+
+        console.log("Data processing completed.");
+        return res.status(200).json({ message: "Data processed successfully" });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "An error occurred while processing the data" });
+    }
+}

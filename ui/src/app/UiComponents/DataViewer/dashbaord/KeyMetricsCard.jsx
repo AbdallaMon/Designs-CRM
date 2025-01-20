@@ -48,7 +48,7 @@ const [loading,setLoading]=useState(true)
             isProgress: true,
         },
         {
-            title:staffId?"Today leads": "Total leads",
+            title:staffId?"Today interacted leads": "Total leads",
             value: financialMetrics.leadsCounts,
             icon: <FaTasks size={24} color="#ffffff" />,
             color: theme.palette.info.main,

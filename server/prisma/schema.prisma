@@ -34,6 +34,7 @@ enum ContentType {
 enum LeadCategory {
  CONSULTATION
  DESIGN
+ OLDLEAD
 }
 enum LeadType{
 // design
@@ -46,9 +47,8 @@ enum LeadType{
  UNDER_CONSTRUCTION_VILLA
  PART_OF_HOME
  COMMERCIAL
+ NONE
 }
-
-
 
 
 enum Emirate {
@@ -86,37 +86,36 @@ enum CallReminderStatus {
   DONE
   MISSED
 }
-
 model ClientLead {
-  id                 Int              @id @default(autoincrement())
-  client             Client           @relation(fields: [clientId], references: [id])
-  clientId           Int
-  assignedTo         User?            @relation(fields: [userId], references: [id])
-  userId             Int?
+      id                 Int              @id @default(autoincrement())
+      client             Client           @relation(fields: [clientId], references: [id])
+      clientId           Int
+      assignedTo         User?            @relation(fields: [userId], references: [id])
+      userId             Int?
 
-  // Lead type data
-  selectedCategory   LeadCategory
-  type   LeadType @default(CONSTRUCTION_VILLA)
-  description String?
-  discount  Decimal   @db.Decimal(10, 2) @default(0)
-  emirate            Emirate?
-  price              String?
-  averagePrice  Decimal?   @db.Decimal(10, 2)
-  priceWithOutDiscount  Decimal   @db.Decimal(10, 2) @default(0)
-  priceOffers PriceOffers[]
+      // Lead type data
+      selectedCategory   LeadCategory
+      type   LeadType @default(CONSTRUCTION_VILLA)
+      description String?
+      discount  Decimal   @db.Decimal(10, 2) @default(0)
+      emirate            Emirate?
+      price              String?
+      averagePrice  Decimal?   @db.Decimal(10, 2)
+      priceWithOutDiscount  Decimal   @db.Decimal(10, 2) @default(0)
+      priceOffers PriceOffers[]
 
-  status             ClientLeadStatus @default(NEW)
-  files              File[]
-  notes              Note[]
-  notifications      Notification[]
-  callReminders      CallReminder[]   @relation("clientLeadCallReminders")
-  assignedAt         DateTime?
-  reasonToConvert String?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+      status             ClientLeadStatus @default(NEW)
+      files              File[]
+      notes              Note[]
+      notifications      Notification[]
+      callReminders      CallReminder[]   @relation("clientLeadCallReminders")
+      assignedAt         DateTime?
+      reasonToConvert String?
+      createdAt          DateTime         @default(now())
+      updatedAt          DateTime         @updatedAt
 
-  @@index([clientId])
-  @@index([userId])
+      @@index([clientId])
+      @@index([userId])
 }
 model PriceOffers {
   id        Int       @id @default(autoincrement())

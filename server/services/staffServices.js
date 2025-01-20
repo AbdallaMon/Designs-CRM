@@ -7,6 +7,7 @@ import {
     newPriceOffer,
     updateCallNotification
 } from "./notification.js";
+import {updateLead} from "./utility.js";
 
 export async function createNote({clientLeadId, userId, content}) {
     if (!content.trim()) {
@@ -18,7 +19,6 @@ export async function createNote({clientLeadId, userId, content}) {
             content,
             clientLeadId,
             userId,
-
         },
         select: {
             id: true,
@@ -31,6 +31,7 @@ export async function createNote({clientLeadId, userId, content}) {
             }
         }
     });
+    await updateLead(clientLeadId)
     newNote.content = content
     await newNoteNotification(clientLeadId,content,newNote.user.id)
     return newNote;
@@ -42,7 +43,6 @@ export async function createCallReminder({clientLeadId, userId, time, reminderRe
         throw new Error('The reminder time must be in the future.');
     }
     formattedTime = formattedTime.toISOString()
-
     const newReminder = await prisma.callReminder.create({
         data: {
             clientLeadId,
@@ -63,8 +63,7 @@ export async function createCallReminder({clientLeadId, userId, time, reminderRe
         },
 
     });
-await  newCallNotification(clientLeadId,newReminder)
-
+    await  newCallNotification(clientLeadId,newReminder)
     let latestTwo = await prisma.callReminder.findMany({
         where: {
             clientLeadId,
@@ -72,6 +71,7 @@ await  newCallNotification(clientLeadId,newReminder)
         orderBy: {time: 'desc'},
         take: 2,
     })
+    await updateLead(clientLeadId)
     return {latestTwo, newReminder}
 }
 
@@ -101,6 +101,7 @@ export async function createPriceOffer({clientLeadId, userId, priceOffer}) {
             }
         }
     });
+    await updateLead(clientLeadId)
     await newPriceOffer(clientLeadId,newPrice)
     return newPrice;
 }
@@ -134,6 +135,7 @@ export async function createFile({clientLeadId, url, name, description, userId})
     if(userId!==null){
 await newFileUploaded(clientLeadId,data,userId)
     }
+    await updateLead(clientLeadId)
     return {...file, name, url, description, isUserFile: userId !== null};
 }
 
@@ -159,6 +161,7 @@ export async function updateCallReminderStatus({reminderId,currentUser, status, 
         },
 
     });
+    await updateLead(updatedReminder.clientLeadId)
     await updateCallNotification(updatedReminder.clientLeadId,updatedReminder,currentUser.id)
     return updatedReminder;
 }

@@ -125,15 +125,23 @@ export function animateLeadCategoryItem({leadCategory,setIsAnimating,setIsCatAni
     const removedElement = leadCategory === "DESIGN" ? "CONSULTATION" : "DESIGN"
     const tl = gsap.timeline();
     animateImageCardToFullWidthFullHeight(tl,"lead-card",removedElement,leadCategory,"shadow-lead-card")
+    tl.fromTo(".logo", {
+              marginLeft:-25
+          }
+          , {
+              marginLeft:10
+          }
+          , "<"
+    )
     tl.fromTo(".reverse-button", {
-              x: -80
+              x: -60
           }
           , {
               display: "flex"
               ,
-              x: -30
+              x: 5
           }
-          , "<-0.5"
+          , "<"
     )
 
           if(leadCategory==="CONSULTATION"){
@@ -431,17 +439,17 @@ tl.to(leadText,{
             duration: 0.8,
             ease: "power3.inOut",
         }).fromTo(".reverse-button", {
-                  x: -30                  }
+                  x: 5                  }
               , {
                   display: "none"
                   ,
-                  x: -80
+                  x: -50
               }
               , "<").fromTo(".logo", {
-                  marginLeft:12
+                  marginLeft:10
               }
               , {
-                  marginLeft:0
+                  marginLeft:-25
               }
               , "<"
         )

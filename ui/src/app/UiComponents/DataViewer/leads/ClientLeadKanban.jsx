@@ -1,5 +1,5 @@
 "use client"
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {DndProvider, useDrop} from "react-dnd";
 import {HTML5Backend} from "react-dnd-html5-backend";
 import {Box, Button, Chip, Grid2 as Grid, Modal, Stack, TextField, Typography,} from "@mui/material";
@@ -18,6 +18,8 @@ import {useAuth} from "@/app/providers/AuthProvider.jsx";
 import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit.js";
 import {useToastContext} from "@/app/providers/ToastLoadingProvider.js";
 import {FinalizeModal} from "@/app/UiComponents/DataViewer/leads/FinalizeModal.jsx";
+import DateRangeFilter from "@/app/UiComponents/formComponents/DateRangeFilter.jsx";
+import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
 
 dayjs.extend(relativeTime);
 
@@ -146,14 +148,19 @@ const Column = ({status, leads, movelead, admin, setleads}) => {
     );
 };
 
-const KanbanBoard = ({admin}) => {
+const KanbanBoard = ({admin,staffId}) => {
     const {user} = useAuth()
     const {
         data: leads,
         loading,
         setData: setleads,
         setFilters
-    } = useDataFetcher("shared/client-leads/deals" + `${!admin?'?staffId='+user.id+"&":""}`, false);
+    } = useDataFetcher("shared/client-leads/deals" +`?staffId=${admin?staffId:user.id}&`, false);
+    useEffect(()=>{
+        if(admin){
+            setFilters((old)=>({...old,staffId}))
+        }
+    },[staffId])
     const [finalizeModel,setFinalizeModel]=useState(false)
     const [currentId,setCurrentId]=useState(null)
 const {setLoading}=useToastContext()
@@ -213,14 +220,18 @@ const {setLoading}=useToastContext()
                                 }
                             }}
                       >
-                          <FilterSelect
-                                options={rangeTypes}
-                                label="Date range"
-                                loading={false}
-                                param="type"
-                                setFilters={setFilters}
-                                withAll={false}
-                          />
+                          {admin&&
+                                <SearchComponent
+                                      apiEndpoint="search?model=user"
+                                      setFilters={setFilters}
+                                      inputLabel="Search staff by name or email"
+                                      renderKeys={["name", "email"]}
+                                      mainKey="name"
+                                      searchKey={"staffId"}
+                                      withParamsChange={true}
+                                />
+                          }
+                          <DateRangeFilter noMargin={true} setFilters={setFilters}/>
                       </Box>
                       <Box
                             display="flex" justifyContent="flex-end"

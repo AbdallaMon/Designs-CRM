@@ -26,7 +26,7 @@ export const adminLinks = [
                 active:"deals",
                 icon: <FiDollarSign size={20} />,
             },
-            { name: 'Overdue Deals', href: '/dashboard/overdue-deals', icon: <FiClock size={18} />,                active:"overdue-deals",
+            { name: 'On hold Deals', href: '/dashboard/on-hold-deals', icon: <FiClock size={18} />,                active:"on-hold",
             },
             { name: 'All Deals', href: '/dashboard/all-deals', icon: <FiList size={18} />   ,  active:"all-deals", },
         ],
@@ -65,10 +65,10 @@ export const userLinks = [
             {
                 name: 'Current Deals',
                 href: '/dashboard/deals',
-                icon: <FiDollarSign size={20} />,
+                icon: <FiDollarSign size={20} />,      active:"deals",
             },
-            { name: 'Overdue Deals', href: '/dashboard/overdue-deals', icon: <FiClock size={18} /> },
-            { name: 'All Deals', href: '/dashboard/all-deals', icon: <FiList size={18} /> },
+            { name: 'On hold Deals', href: '/dashboard/on-hold-deals', icon: <FiClock size={18} /> ,      active:"on-hold",},
+            { name: 'All Deals', href: '/dashboard/all-deals', icon: <FiList size={18} />,  active:"all-deals",},
         ],
     },];
 export default function Layout({ admin, staff}) {

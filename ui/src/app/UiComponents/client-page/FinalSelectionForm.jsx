@@ -222,9 +222,6 @@ function DesignLeadForm({category ,item,location}){
                                           <Typography variant="subtitle1" gutterBottom sx={{mb:1,mt:-1}} >
                                               {translate("How much would you like to invest in your dream home?")}
                                           </Typography>
-                                          <Typography variant="subtitle1" gutterBottom sx={{mt:-1.8,mb:2}} >
-                                              {translate("Budget")}
-                                          </Typography>
                                           <Stack direction="row" spacing={2} alignItems="center" sx={{mt:-1.5}}>
                                               <TextField
                                                     type="number"
@@ -501,25 +498,25 @@ function SuccessPage({ category,formData }) {
                         <Typography variant="body1">
                             {translate("Thank you for your submission. We will contact you soon.")}
                         </Typography>
-                        <Box
-                              sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  marginTop: 2,
-                              }}
-                        >
-                            <FaPercentage  />
-                            <Typography
-                                  variant="body1"
-                                  sx={{
-                                      fontWeight: 600,
-                                      color: "green",
-                                  }}
-                            >
-                                {translate("You got a 10% discount!")}
-                            </Typography>
-                        </Box>
+                        {/*<Box*/}
+                        {/*      sx={{*/}
+                        {/*          display: "flex",*/}
+                        {/*          alignItems: "center",*/}
+                        {/*          justifyContent: "center",*/}
+                        {/*          marginTop: 2,*/}
+                        {/*      }}*/}
+                        {/*>*/}
+                        {/*    <FaPercentage  />*/}
+                        {/*    <Typography*/}
+                        {/*          variant="body1"*/}
+                        {/*          sx={{*/}
+                        {/*              fontWeight: 600,*/}
+                        {/*              color: "green",*/}
+                        {/*          }}*/}
+                        {/*    >*/}
+                        {/*        {translate("You got a 10% discount!")}*/}
+                        {/*    </Typography>*/}
+                        {/*</Box>*/}
                     </>
               ) : (
                     <>
@@ -536,25 +533,25 @@ function SuccessPage({ category,formData }) {
                         <Typography variant="body1">
                             {translate("We do not provide services outside the UAE, But we will contact you soon.")}
                         </Typography>
-                        <Box
-                              sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  marginTop: 2,
-                              }}
-                        >
-                            <FaPercentage  />
-                            <Typography
-                                  variant="body1"
-                                  sx={{
-                                      fontWeight: 600,
-                                      color: "green",
-                                  }}
-                            >
-                                {translate("You got a 10% discount!")}
-                            </Typography>
-                        </Box>
+                        {/*<Box*/}
+                        {/*      sx={{*/}
+                        {/*          display: "flex",*/}
+                        {/*          alignItems: "center",*/}
+                        {/*          justifyContent: "center",*/}
+                        {/*          marginTop: 2,*/}
+                        {/*      }}*/}
+                        {/*>*/}
+                        {/*    <FaPercentage  />*/}
+                        {/*    <Typography*/}
+                        {/*          variant="body1"*/}
+                        {/*          sx={{*/}
+                        {/*              fontWeight: 600,*/}
+                        {/*              color: "green",*/}
+                        {/*          }}*/}
+                        {/*    >*/}
+                        {/*        {translate("You got a 10% discount!")}*/}
+                        {/*    </Typography>*/}
+                        {/*</Box>*/}
                     </>
               )}
           </Paper>

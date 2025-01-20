@@ -5,11 +5,9 @@ import MUIContextProvider from "@/app/providers/MUIContext";
 import DotsLoader from "@/app/UiComponents/feedback/loaders/DotsLoading";
 import MuiAlertProvider from "@/app/providers/MuiAlert.jsx";
 import colors from "@/app/helpers/colors.js";
-
-import { Roboto } from 'next/font/google'
 import { Noto_Kufi_Arabic } from 'next/font/google';
 
-const roboto = Noto_Kufi_Arabic({
+const noto = Noto_Kufi_Arabic({
     weight: ['400',"500", '700'],
     style: ['normal'],
     subsets: ['arabic'],
@@ -28,7 +26,7 @@ export default function RootLayout({children}) {
             <link rel="icon" href="/logo-full.jpg" type="image/png" sizes="32x32"/>
         </head>
         <body
-              className={roboto.className}
+              className={noto.className}
               style={{backgroundColor: colors.bgSecondary}}
             >
             <MuiAlertProvider>

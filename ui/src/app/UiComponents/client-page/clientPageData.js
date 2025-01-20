@@ -23,25 +23,26 @@ export const leads = [
     {
         title: "Consultation",
         value: "CONSULTATION",
-        image: "/consultation.jpg"
+        image: "/consultation.jfif"
     },
     {
         title: "Design",
         value: "DESIGN",
-        image: "/design.jpg"
+        image: "/design.jfif"
     }
 ]
 export const designLeadTypes = [
     {
-        title: "Inside UAE",
-        value: "INSIDE_UAE",
-        image: "/inside-uae.jpg"
-    },
-    {
         title: "Out side UAE",
         value: "OUTSIDE_UAE",
         image: "/outside-uae.jpg"
-    }
+    },
+    {
+        title: "Inside UAE",
+        value: "INSIDE_UAE",
+        image: "/inside-uae.webp"
+    },
+
 ]
 export const questions = {
     category: "How can we serve you?"

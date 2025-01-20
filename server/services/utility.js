@@ -207,42 +207,44 @@ const ftpConfig = {
     password: process.env.FTP_PASSWORD,
     secure: false, // Set to true if using FTPS
 };
-const tmpFolder = path.resolve(__dirname, "tmp");
+
+const tmpFolder = path.resolve(__dirname, 'tmp');
 if (!fs.existsSync(tmpFolder)) {
     fs.mkdirSync(tmpFolder, { recursive: true });
 }
-// Multer configuration for handling file uploads in memory
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // Ensure the tmp folder exists
-        if (!fs.existsSync(tmpFolder)) {
-            fs.mkdirSync(tmpFolder, { recursive: true });
-        }
-        cb(null, tmpFolder);
+        cb(null, tmpFolder); // Save files to the tmp directory
     },
     filename: (req, file, cb) => {
         const uniqueFilename = `${uuidv4()}-${Date.now()}${path.extname(file.originalname)}`;
         cb(null, uniqueFilename);
     },
 });
-const upload = multer({
-    storage,
-    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB file size limit
-}).any(); // Allow any file type
+const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } }).any();
+
 
 // FTP Upload Function
 async function uploadToFTP(localFilePath, remotePath) {
     const client = new Client();
     try {
         await client.access(ftpConfig);
-
-        // Upload file directly from disk
         await client.uploadFrom(localFilePath, remotePath);
     } catch (err) {
-        console.error('FTP upload error:', err);
-        throw new Error('Failed to upload to FTP server.');
+        console.error(`Failed to upload ${localFilePath}:`, err.message);
     } finally {
         client.close();
+    }
+}
+
+function deleteFile(filePath) {
+    try {
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
+    } catch (err) {
+        console.error(`Error deleting file: ${filePath}`, err.message);
     }
 }
 
@@ -250,7 +252,6 @@ async function uploadToFTP(localFilePath, remotePath) {
 export const uploadFiles = async (req, res) => {
     try {
         const fileUrls = {}; // Object to store URLs of uploaded files
-
         await new Promise((resolve, reject) => {
             upload(req, res, async (err) => {
                 if (err) {
@@ -272,6 +273,9 @@ export const uploadFiles = async (req, res) => {
                             // Group file URLs by field name
                             if (!fileUrls[fieldName]) fileUrls[fieldName] = [];
                             fileUrls[fieldName].push(fileUrl);
+                            deleteFile(file.path);
+
+
                         }
                         resolve(); // Resolve the promise once all files are uploaded
                     } catch (uploadErr) {
@@ -541,7 +545,7 @@ async function sendNotification(userId, content, href, type, emailSubject, withE
         ${emailContent}
     </div>
     <div style="margin-top: 10px;">
-        <a href="${process.env.ORIGIN}/dashboard/notification" style="color: #007bff; text-decoration: none;">
+        <a href="${process.env.ORIGIN}/dashboard/notifications" style="color: #007bff; text-decoration: none;">
             Go to notifications?
         </a>
     </div>
@@ -556,8 +560,7 @@ async function sendNotification(userId, content, href, type, emailSubject, withE
         }
     }
 }
-function CreateLogWithClientLeadUpdate() {
-}
+
 export async function getUserDetailsWithSpecificFields(id, fields = {id: true, name: true, email: true}) {
     return await prisma.user.findUnique({
         where: {id: Number(id)},
@@ -565,4 +568,11 @@ export async function getUserDetailsWithSpecificFields(id, fields = {id: true, n
     })
 }
 
+export async function updateLead(clientLeadId){
+    await prisma.clientLead.update({
+        where: { id: Number(clientLeadId) },
+        data: {}, // This triggers the `@updatedAt` behavior
+    });
+
+}
 

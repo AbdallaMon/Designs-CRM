@@ -1,12 +1,20 @@
 import { Router } from "express";
 import { getPagination, handlePrismaError, verifyTokenAndHandleAuthorization } from "../services/utility.js";
 import {
-    changeUserStatus,
+    changeUserStatus, createLeadFromExcelData,
     createStaffUser,
-    editStaffUser, generateExcelReport,
-    generateLeadReport, generatePDFReport, generateStaffExcelReport, generateStaffPDFReport, generateStaffReport,
-    getUser, getUserById
+    editStaffUser,
+    generateExcelReport,
+    generateLeadReport,
+    generatePDFReport,
+    generateStaffExcelReport,
+    generateStaffPDFReport,
+    generateStaffReport,
+    getNotificationForTodayByStaffId,
+    getUser,
+    getUserById
 } from "../services/adminServices.js";
+import multer from "multer";
 
 const router = Router();
 
@@ -53,6 +61,15 @@ router.get("/users/:userId/profile",async (req,res)=>{
     try{
         const {userId}=req.params
         const user=await getUserById(userId)
+        return res.status(200).json({data:user})
+    }catch (error){
+        handlePrismaError(res, error);
+    }
+})
+router.get("/users/:userId/logs",async (req,res)=>{
+    try{
+        const {userId}=req.params
+        const user=await getNotificationForTodayByStaffId(userId)
         return res.status(200).json({data:user})
     }catch (error){
         handlePrismaError(res, error);
@@ -159,4 +176,10 @@ router.post('/reports/staff-report/pdf', async (req, res) => {
         res.status(500).json({ error: 'Failed to generate PDF report' });
     }
 });
+const upload = multer({ storage: multer.memoryStorage() });
+
+router.post("/leads/excel", upload.single("file"), async (req, res) => {
+    await createLeadFromExcelData(req, res);
+});
+
 export default router;

@@ -39,7 +39,7 @@ const {user}=useAuth()
                   <Typography variant="h6" gutterBottom>
                       Recent Activities
                   </Typography>
-                  <Button component={Link} href="/dashboard/notifications">
+                  <Button component={Link} href={staffId?`/dashboard/notifications?staffId=${staffId}`:"/dashboard/notifications"}>
                       View All activities
                   </Button>
                   </Box>

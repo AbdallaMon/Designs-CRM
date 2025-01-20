@@ -31,7 +31,8 @@
     "react-toastify": "^11.0.2",
     "recharts": "^2.15.0",
     "socket.io-client": "^4.8.1",
-    "stylis-plugin-rtl": "^2.1.1"
+    "stylis-plugin-rtl": "^2.1.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "eslint": "^8",

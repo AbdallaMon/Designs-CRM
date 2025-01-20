@@ -106,7 +106,7 @@ export function LeadCard({lead, handleClick,class_name="lead-card"}) {
               variant="h4"
               sx={{
                   fontSize:isMobile&&"1.8rem",
-                  color: theme.palette.secondary.main,
+                  color: theme.palette.primary.main,
                   fontWeight: 700,
                   textAlign: "center",
                   letterSpacing: "0.5px",
@@ -240,14 +240,18 @@ export function Header({reverseAnimation}) {
                   borderRadius: '16px',
                   boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
                   margin:"0 12px",
-                  backgroundImage: "url('/logo-bg-6.jpg')", // Replace with your image URL
+                  backgroundImage: "url('/logo-bg-full.jpg')", // Replace with your image URL
                   backgroundSize: "cover", // Ensures the image covers the entire container
                   backgroundRepeat: "no-repeat", // Prevents the image from repeating
                   backgroundPosition:lng==="ar"?"right": "left",
+                  overflow:"hidden"
               }}>
                   <Box sx={{display:"flex",alignItems:"center"}}>
                       <Box className="reverse-button"
                            onClick={reverseAnimation}
+                           style={{
+                               left:0
+                           }}
                            sx={{
                                display: "none",
                                zIndex: 2000,
@@ -259,7 +263,8 @@ export function Header({reverseAnimation}) {
                                height: "40px",
                                borderRadius: "50%",
                                boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.2)",
-                               cursor: "pointer"
+                               cursor: "pointer",
+                               position:"absolute",
                            }}>
                           <IoArrowBackOutline size={26}/>
                       </Box>
@@ -268,8 +273,11 @@ export function Header({reverseAnimation}) {
                             src="/logo-dark.png"
                             alt="Logo"
                             className="logo"
-                            sx={{display:"none",
-                                height: 40,
+                            style={{
+                                marginLeft:"-25px"
+                            }}
+                            sx={{
+                                height: 60,
                                 width: 'auto'
                             }}
                       />
@@ -280,7 +288,7 @@ export function Header({reverseAnimation}) {
                         variant="outlined"
                         size="small"
                         sx={{
-                            color:"secondary.main",
+                            color:"primary.main",
                             minWidth: 80,
                             '& .MuiOutlinedInput-notchedOutline': {
                                 borderColor: 'transparent'

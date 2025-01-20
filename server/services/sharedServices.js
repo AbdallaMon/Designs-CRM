@@ -24,16 +24,18 @@ export async function getClientLeads({
         const fifteenDaysAgo = new Date();
         fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
         where = {
-            OR: [
-                {
-                    assignedTo: {isNot: null},
-                    assignedAt: {lt: fifteenDaysAgo},
-                    status: {not: "CONVERTED"}
-                },
-                {
-                    status: "ON_HOLD"
-                }
-            ]
+            status: "ON_HOLD"
+
+            // OR: [
+            //     {
+            //         assignedTo: {isNot: null},
+            //         // assignedAt: {lt: fifteenDaysAgo},
+            //         status: {not: "CONVERTED"}
+            //     },
+            //     {
+            //         status: "ON_HOLD"
+            //     }
+            // ]
         };
         if (searchParams?.staffId) {
             where.OR.forEach(condition => {
@@ -103,24 +105,29 @@ export async function getClientLeads({
 
 export async function getClientLeadsByDateRange({searchParams}) {
     const filters = JSON.parse(searchParams.filters);
-
-    const endDate = dayjs().toDate(); // Today
-    const startDate = filters&&filters.type === 'MONTH'
-          ? dayjs().subtract(1, 'month').toDate()
-          : dayjs().subtract(1, 'week').toDate();
-
-    // Construct where clause
     const where = {
-        assignedAt: {
-            gte: startDate,
-            lte: endDate,
-        },
         assignedTo: {isNot: null},
         status: {notIn: ['NEW', 'CONVERTED', "ON_HOLD"]}
     };
-    if (searchParams?.staffId) {
+    if (filters?.range) {
+        const {startDate, endDate} = filters.range;
+        const now = dayjs();
+        let start = startDate ? dayjs(startDate) : now.subtract(30, 'days');
+        let end = endDate ? dayjs(endDate).endOf('day') : now;
+        where.assignedAt = {
+            gte: start.toDate(),
+            lte: end.toDate(),
+        };
+    } else {
+        where.assignedAt = {
+            gte: dayjs().subtract(12, 'month').toDate(),
+            lte: dayjs().toDate(),
+        };
+    }
+    if (searchParams?.staffId&&searchParams?.staffId!=="all"&&searchParams?.staffId!=="undefined") {
         where.userId = Number(searchParams.staffId);
     }
+
     // Fetch data
     const clientLeads = await prisma.clientLead.findMany({
         where,
@@ -231,6 +238,7 @@ export async function getClientLeadDetails(clientLeadId) {
             },
             createdAt: true,
             updatedAt: true,
+            assignedAt:true,
         },
     });
 
@@ -373,7 +381,7 @@ export const getKeyMetrics = async (searchParams) => {
                         notIn: ['NEW'],
                     },
                     ...staffFilter,
-                    assignedAt: {
+                    updatedAt: {
                         gte: startOfToday,
                         lte: endOfToday,
                     },

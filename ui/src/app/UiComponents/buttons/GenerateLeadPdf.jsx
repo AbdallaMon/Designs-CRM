@@ -1,10 +1,16 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import dayjs from "dayjs";
+import arabicFontBase64 from "@/app/fonts/arabicFont.js";
 
 export function generatePDF(clientLead) {
     const doc = new jsPDF();
-
+    doc.addFileToVFS("Amiri-Regular.ttf", arabicFontBase64);
+    doc.addFont("Amiri-Regular.ttf", "Amiri", "normal");
+    doc.setFont("Amiri");
+    doc.autoTableSetDefaults({
+        styles: {font: 'Amiri', fontStyle: 'normal', halign: 'left', cellPadding: 3},
+    });
     // Helper functions
     const formatField = (field) => (field ? field.toString() : 'This field is empty');
     const formatDate = (date) => date ? dayjs(date).format('YYYY-MM-DD HH:mm:ss') : 'Date not specified';
@@ -53,9 +59,9 @@ export function generatePDF(clientLead) {
         doc.setFillColor(240, 240, 240);
         doc.rect(margin, y - 5, doc.internal.pageSize.width - (margin * 2), 8, 'F');
         doc.setFontSize(11);
-        doc.setFont(undefined, 'bold');
+        doc.setFont("Amiri", 'bold');
         doc.text(title, margin, y);
-        doc.setFont(undefined, 'normal');
+        doc.setFont("Amiri", 'normal', );
         y += 10;
     };
 
@@ -137,6 +143,8 @@ export function generatePDF(clientLead) {
         ]);
 
         doc.autoTable({
+            font: 'Amiri',
+            fontStyle: 'normal',
             head: [offerColumns],
             body: offerRows,
             startY: y,
@@ -158,9 +166,9 @@ export function generatePDF(clientLead) {
             doc.rect(margin, y - 3, doc.internal.pageSize.width - (margin * 2), 20, 'F');
 
             const noteHeader = `${formatDate(note.createdAt)} - ${note.user?.name || 'Unknown'}`;
-            doc.setFont(undefined, 'bold');
+            doc.setFont("Amiri", 'bold');
             doc.text(noteHeader, margin + 5, y);
-            doc.setFont(undefined, 'normal');
+            doc.setFont("Amiri", 'normal');
             y += 7;
 
             const wrappedContent = doc.splitTextToSize(note.content, doc.internal.pageSize.width - (margin * 2) - 10);
@@ -183,6 +191,8 @@ export function generatePDF(clientLead) {
         ]);
 
         doc.autoTable({
+            font: 'Amiri',
+            fontStyle: 'normal',
             head: [reminderColumns],
             body: reminderRows,
             startY: y,

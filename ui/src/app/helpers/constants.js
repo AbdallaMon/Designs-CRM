@@ -29,6 +29,7 @@ export const NotificationType = {
 export const LeadCategory = {
     CONSULTATION: "Consultation",
     DESIGN: "Design",
+    OLDLEAD:"Lead via excel"
 };
 export const LeadType = {
     ROOM: "Room",
@@ -38,7 +39,8 @@ export const LeadType = {
     CONSTRUCTION_VILLA: "Construction Villa",
     UNDER_CONSTRUCTION_VILLA: "Villa Under Construction",
     PART_OF_HOME: "Part of Home",
-    COMMERCIAL: "Commercial"
+    COMMERCIAL: "Commercial",
+    NONE:"None"
 };
 export const dictionary = {
     // Leads titles

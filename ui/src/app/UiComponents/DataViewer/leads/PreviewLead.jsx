@@ -49,6 +49,7 @@ import {GoPaperclip} from "react-icons/go";
 import {PiCurrencyDollarSimpleLight} from "react-icons/pi";
 import {useAuth} from "@/app/providers/AuthProvider.jsx";
 import {generatePDF} from "@/app/UiComponents/buttons/GenerateLeadPdf.jsx";
+import dayjs from "dayjs";
 
 
 const TabPanel = ({children, value, index}) => (
@@ -398,6 +399,9 @@ const theme=useTheme()
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                               {lead.assignedTo.email}
+                          </Typography>
+                          <Typography variant="subtitle2"  color="text.secondary">
+                          Assigned at :    {dayjs(lead.assignedAt).format("DD/MM/YYYY")}
                           </Typography>
                       </Grid>
                   </Grid>

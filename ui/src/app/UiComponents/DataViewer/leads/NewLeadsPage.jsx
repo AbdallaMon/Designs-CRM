@@ -13,6 +13,7 @@ import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithAction
 import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit.js";
 import {FaBusinessTime} from "react-icons/fa";
 import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks.jsx";
+import ExcelAnalyzer from "@/app/UiComponents/buttons/UploadExcelFile.jsx";
 const columns = [
     {name: "client.name", label: "Client Name"},
     {name: "client.email", label: "Email"},
@@ -106,7 +107,14 @@ export default function NewLeadsPage({searchParams,staff}) {
                           </Box>
                       </Box>
                       <Box>
+                          <Box display={"flex"}  alignItems="center">
+
                           <TabsWithLinks links={links}/>
+                              {!staff&&
+                          <ExcelAnalyzer/>
+                              }
+                          </Box>
+
                       </Box>
                   </Box>
               </AdminTable>

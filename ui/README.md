@@ -10,9 +10,18 @@
 26- font from their website
 30- user name
 15 - عروض الأسعار فيها اضافة فايلات ايضا
+36 - logo animation
+31 - No automatic
+34 - arabic in pdf
+36 - upload functionality
+37 - delete temp file
+32 - Today statics for each user
+39 - lead card date(assigned at)
+38 - filter leads by user
+33 - import via excel
 
 
-
+35 - check reports
 
 
 dJkmjERCZGCEgaxl

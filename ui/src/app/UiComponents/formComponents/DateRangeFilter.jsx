@@ -4,7 +4,7 @@ import { DatePicker } from '@mui/x-date-pickers';
 import dayjs from 'dayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-const DateRangeFilter = ({ setFilters }) => {
+const DateRangeFilter = ({ setFilters,noMargin }) => {
     const [range, setRange] = useState({
         start: dayjs().subtract(1, 'month').startOf('month'),
         end: dayjs()
@@ -25,7 +25,7 @@ useEffect(()=>{
 
     return (
           <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <Box mb={2}>
+          <Box mb={noMargin?0:2}>
 
               <Box sx={{
                   display:"flex",
