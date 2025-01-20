@@ -38,17 +38,14 @@ export async function getClientLeads({
             // ]
         };
         if (searchParams?.staffId) {
-            where.OR.forEach(condition => {
-                condition.assignedTo = {
-                    isNot: null,
+            where.assignedTo = {
                     is: {
                         id: {
                             not: Number(searchParams.staffId),
                         },
                     },
                 };
-            });
-        }
+            }
     } else {
         if (isNew) {
             where.status = 'NEW';

@@ -24,5 +24,9 @@
 35 - check reports
 
 
+
+36- start end date delas
+
+
 dJkmjERCZGCEgaxl
 root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

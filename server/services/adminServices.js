@@ -859,8 +859,6 @@ export async function createLeadFromExcelData(req, res) {
                     email,
                 },
             });
-
-            // Extract client lead fields
             const price = row[4]?.toString() ||"0"
             const priceWithoutDiscount = !isNaN(parseFloat(row[4])) ? parseFloat(row[4]) : 0;
             const averagePrice = !isNaN(parseFloat(row[4])) ? parseFloat(row[4]) : 0;
