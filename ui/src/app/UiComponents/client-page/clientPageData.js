@@ -23,7 +23,7 @@ export const leads = [
     {
         title: "Consultation",
         value: "CONSULTATION",
-        image: "/consultation.jfif"
+        image: "/consultation.jpg"
     },
     {
         title: "Design",
@@ -33,15 +33,16 @@ export const leads = [
 ]
 export const designLeadTypes = [
     {
-        title: "Out side UAE",
-        value: "OUTSIDE_UAE",
-        image: "/outside-uae.jpg"
-    },
-    {
         title: "Inside UAE",
         value: "INSIDE_UAE",
         image: "/inside-uae.webp"
     },
+    {
+        title: "Out side UAE",
+        value: "OUTSIDE_UAE",
+        image: "/outside-uae.jpg"
+    },
+
 
 ]
 export const questions = {

@@ -32,12 +32,22 @@ export function DesignLeadsContainer({handleClick}) {
     const theme = useTheme()
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
     const {translate}=useLanguageContext()
+const items=!isMobile?[
+    {
+        title: "Out side UAE",
+        value: "OUTSIDE_UAE",
+        image: "/outside-uae.jpg"
+    },{
+        title: "Inside UAE",
+        value: "INSIDE_UAE",
+        image: "/inside-uae.webp"
+    },
+    ]:designLeadTypes
     return (
           <Box className="design-cards-container" sx={{mt:isMobile?"-550px":"-300px"}}>
-
               <Title title={translate(questions.category)} class_name={"design-title"}/>
               <Box>
-                  {designLeadTypes.map((lead) => {
+                  {items.map((lead) => {
                       return (
                             <LeadCard key={lead.value} lead={lead} handleClick={handleClick} class_name="location"/>
                       )

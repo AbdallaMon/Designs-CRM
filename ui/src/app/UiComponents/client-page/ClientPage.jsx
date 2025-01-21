@@ -89,9 +89,7 @@ useEffect(()=>{
                       <LeadCardsContainer handleClick={animateLeadCategory}/>
                       {leadCategory &&
                             <>
-
                             {leadCategory==="DESIGN"&&<DesignLeadsContainer handleClick={animateLeadItemAfterLocationClick}/>}
-
                             <LeadCategoryItemsContainer leadCategory={leadCategory}
                                                         animateLeadCategoryItems={animateLeadCategoryItems} location={location}/>
 

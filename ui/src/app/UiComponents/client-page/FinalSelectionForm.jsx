@@ -219,7 +219,7 @@ function DesignLeadForm({category ,item,location}){
 
                                           {priceRange[item].type==="input"?
                                       <Box sx={{mb:1}}>
-                                          <Typography variant="subtitle1" gutterBottom sx={{mb:1,mt:-1}} >
+                                          <Typography variant="subtitle1" gutterBottom sx={{mb:2.5,mt:-1}} >
                                               {translate("How much would you like to invest in your dream home?")}
                                           </Typography>
                                           <Stack direction="row" spacing={2} alignItems="center" sx={{mt:-1.5}}>

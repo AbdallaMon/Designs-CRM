@@ -334,7 +334,7 @@ function animateLocation({location,tl,leadCategory,translate}){
         opacity:1,
         y:0,
     },{opacity:0,y:100 ,duration: 0.8,zIndex:-15,
-        ease: "power3.inOut",},"<"
+        ease: "power3.inOut",},"<-0.5"
     )
 
 }

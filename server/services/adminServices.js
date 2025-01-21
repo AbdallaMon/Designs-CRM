@@ -495,7 +495,6 @@ const calculateStaffStats = (staff, dateRange) => {
     return staff.map(user => {
         const userLeads = user.clientLeads || [];
 
-        // Filter leads by date range if provided
         const filteredLeads = dateRange.startDate && dateRange.endDate
               ? userLeads.filter(lead => {
                   const leadDate = new Date(lead.createdAt);
@@ -513,19 +512,23 @@ const calculateStaffStats = (staff, dateRange) => {
         // Calculate success rate
         const totalClosedLeads = finalized + converted + rejected + onHold;
         const successRate = totalClosedLeads > 0
-              ? ((finalized - (converted + rejected + onHold)) / totalClosedLeads) * 100
-              : 0;
+              ? parseFloat(((finalized - (converted + rejected + onHold)) / totalClosedLeads * 100).toFixed(2))
+              : 0.00;
 
         // Calculate revenue and discount
         const totalRevenue = filteredLeads
               .filter(lead => lead.status === 'FINALIZED')
-              .reduce((sum, lead) => sum + Number(lead.averagePrice || 0), 0);
+              .reduce((sum, lead) => sum + parseFloat(Number(lead.averagePrice || 0).toFixed(2)), 0);
 
+// Calculate discount
         const totalDiscount = filteredLeads
               .filter(lead => lead.status === 'FINALIZED')
-              .reduce((sum, lead) => sum + Number(lead.discount || 0), 0);
+              .reduce((sum, lead) => sum + parseFloat(Number(lead.discount || 0).toFixed(2)), 0);
 
-        const conversionRate=converted/totalLeads*100
+// Calculate conversion rate
+        const conversionRate = totalLeads > 0
+              ? parseFloat(((converted / totalLeads) * 100).toFixed(2))
+              : 0.00;
 
         return {
             userId: user.id,
@@ -569,7 +572,7 @@ export const generateStaffReport = async (req, res) => {
         const staffUsers = await prisma.user.findMany({
             where: {
                 role: 'STAFF',
-                isActive: true // Only get active staff members
+                isActive: true
             },
             include: {
                 clientLeads: {
@@ -580,7 +583,6 @@ export const generateStaffReport = async (req, res) => {
 
         const staffStats = calculateStaffStats(staffUsers, filters);
 
-        // Calculate overall summary
         const summary = {
             totalStaff: staffStats.length,
             activeStaff: staffStats.filter(staff => staff.totalLeads > 0).length,
@@ -590,8 +592,8 @@ export const generateStaffReport = async (req, res) => {
             totalRevenue: staffStats.reduce((sum, staff) => sum + staff.totalRevenue, 0),
             averageSuccessRate: staffStats.reduce((sum, staff) => sum + staff.successRate, 0) /
                   (staffStats.length || 1),
-            conversionRate: staffStats.reduce((sum, staff) =>
-                  sum + staff.conversionRate, 0),
+            conversionRate: staffStats.reduce((sumConverted, staff) => sumConverted + (staff.converted || 0), 0) /
+                  (staffStats.reduce((sumLeads, staff) => sumLeads + (staff.totalLeads || 0), 0) || 1) * 100,
             bestPerformer: staffStats.reduce((best, current) =>
                   (current.successRate > (best?.successRate || 0)) ? current : best, null),
             topRevenue: staffStats.reduce((best, current) =>
