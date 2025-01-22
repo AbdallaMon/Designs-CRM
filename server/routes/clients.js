@@ -4,15 +4,15 @@ const router = express.Router();
 import prisma from "../prisma/prisma.js";
 import {newLeadNotification} from "../services/notification.js";
 const priceRangeValues = {
-    "400,000 or less": 200000, // Average of 0 to 400,000
-    "400,000 to 600,000": 500000, // Midpoint of 400,000 and 600,000
-    "600,000 to 800,000": 700000, // Midpoint of 600,000 and 800,000
-    "800,000 and above": 900000, // Arbitrarily above 800,000
-    "25,000 or less": 12500, // Average of 0 to 25,000
-    "25,000 to 45,000": 35000, // Midpoint of 25,000 and 45,000
-    "45,000 to 65,000": 55000, // Midpoint of 45,000 and 65,000
-    "65,000 to 85,000": 75000, // Midpoint of 65,000 and 85,000
-    "85,000 and above": 100000 // Arbitrarily above 85,000
+    "400,000 AED or less": 200000, // Average of 0 to 400,000
+    "400,000 to 600,000 AED": 500000, // Midpoint of 400,000 and 600,000
+    "600,000 to 800,000 AED": 700000, // Midpoint of 600,000 and 800,000
+    "800,000 AED and above": 900000, // Arbitrarily above 800,000
+    "25,000 AED or less": 12500, // Average of 0 to 25,000
+    "25,000 to 45,000 AED": 35000, // Midpoint of 25,000 and 45,000
+    "45,000 to 65,000 AED": 55000, // Midpoint of 45,000 and 65,000
+    "65,000 to 85,000 AED": 75000, // Midpoint of 65,000 and 85,000
+    "85,000 AED and above": 100000 // Arbitrarily above 85,000
 };
 
 

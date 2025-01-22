@@ -56,20 +56,20 @@ export const priceRange={
     },
     "CONSTRUCTION_VILLA": {
         type: "options",
-        options:["400,000 or less", "400,000 to 600,000", "600,000 to 800,000", "800,000 and above"]
+        options:["400,000 AED or less", "400,000 to 600,000 AED", "600,000 to 800,000 AED", "800,000 AED and above"]
     },
     "UNDER_CONSTRUCTION_VILLA": {
         type: "options",
-        options: ["400,000 or less", "400,000 to 600,000", "600,000 to 800,000", "800,000 and above"]
+        options: ["400,000 AED or less", "400,000 to 600,000 AED", "600,000 to 800,000 AED", "800,000 AED and above"]
     },
     "PART_OF_HOME": {
         type: "options",
         options: [
-            "25,000 or less",
-            "25,000 to 45,000",
-            "45,000 to 65,000",
-            "65,000 to 85,000",
-            "85,000 and above"
+            "25,000 AED or less",
+            "25,000 to 45,000 AED",
+            "45,000 to 65,000 AED",
+            "65,000 to 85,000 AED",
+            "85,000 AED and above"
         ]
     },
     "COMMERCIAL":{
