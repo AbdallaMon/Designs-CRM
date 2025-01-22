@@ -54,7 +54,7 @@ export const dictionary = {
     // Lead Types
     Room: "غرفة",
     Blueprint: "مخطط",
-    "City Visit": "زيارة المدينة",
+    "City Visit": "زيارة ميدانية",
     Apartment: "شقة",
     "Construction Villa": "فيلا مسكونة",
     "Villa Under Construction": "فيلا تحت الإنشاء",

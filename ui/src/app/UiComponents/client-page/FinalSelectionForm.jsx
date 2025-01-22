@@ -199,11 +199,12 @@ function DesignLeadForm({category ,item,location}){
 
                             {location==="INSIDE_UAE"&&
                                   <>
-                                      <FormControl fullWidth variant="outlined">
-                                          <InputLabel id="emirate">{translate("Select Location")}</InputLabel>
+                                      <FormControl fullWidth variant="outlined" >
+                                          <InputLabel id="emirate-label">{translate("Select Location")}</InputLabel>
                                           <Select
-                                                labelId="emirate"
+                                                labelId="emirate-label"
                                                 id="emirate"
+                                                label={translate("Select Location")}
                                                 value={formData.emirate} // Ensure you define this state
                                                 onChange={handleEmirateChange}
                                           >
@@ -256,6 +257,7 @@ function DesignLeadForm({category ,item,location}){
                                                     <Select
                                                           labelId="price-range-label"
                                                           id="price-range-select"
+                                                          label={translate("Budget")}
                                                           value={formData.priceOption} // Ensure you define this state
                                                           onChange={handleSelectPriceChange}
                                                     >
@@ -303,6 +305,7 @@ function ConsultLeadForm({item,category}){
         phone: "",
         email:"",
         file:null,
+        emirate:null
     });
     const [renderSuccess,setRenderSuccess]=useState(false)
     const {setAlertError}=useAlertContext()
@@ -310,13 +313,19 @@ function ConsultLeadForm({item,category}){
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-
+    const emiratesOptions = Object.entries(Emirate).map(([key, value]) => ({
+        key,
+        label: value,
+    }));
     const handleChange = (e) => {
         const {name, value} = e.target;
         if (name === "phone" && !/^\d*$/.test(value)) {
             return;
         }
         setFormData((prev) => ({...prev, [name]: value}));
+    };
+    const handleEmirateChange = (event, newValue) => {
+        setFormData((prev) => ({...prev, emirate: event.target.value}))
     };
     const handleSubmit =async () => {
         const { name, phone ,email} = formData;
@@ -438,7 +447,24 @@ function ConsultLeadForm({item,category}){
                                       },
                                   }}
                             />
-
+                            {item==="CITY_VISIT"&&                                      <FormControl fullWidth variant="outlined" >
+                                <InputLabel id="emirate-label">{translate("Select Location")}</InputLabel>
+                                <Select
+                                      labelId="emirate-label"
+                                      id="emirate"
+                                      label={translate("Select Location")}
+                                      value={formData.emirate} // Ensure you define this state
+                                      onChange={handleEmirateChange}
+                                >
+                                    {
+                                        emiratesOptions.map((option) => (
+                                              <MenuItem value={option.key} key={option.key}>
+                                                  {translate(option.label)}
+                                              </MenuItem>
+                                        ))
+                                    }
+                                </Select>
+                            </FormControl>}
                             <SimpleFileInput label={translate("Add an attachment (optional)")} id="file"  setData={setFormData} variant="outlined" />
                             <Button
                                   variant="contained"
