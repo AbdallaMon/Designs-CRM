@@ -33,7 +33,7 @@ export const LeadCategory = {
 };
 export const LeadType = {
     ROOM: "Room",
-    BLUEPRINT: "Blueprint",
+    PLAN: "Plan",
     CITY_VISIT: "City Visit",
     APARTMENT: "Apartment",
     CONSTRUCTION_VILLA: "Construction Villa",
@@ -53,7 +53,7 @@ export const dictionary = {
 
     // Lead Types
     Room: "غرفة",
-    Blueprint: "مخطط",
+    Plan: "مخطط",
     "City Visit": "زيارة ميدانية",
     Apartment: "شقة",
     "Construction Villa": "فيلا مسكونة",
@@ -172,8 +172,8 @@ export const KanbanStatusArray= [
     "REJECTED",
 ];
 
-export const initialPageLimit = 10
-export const totalLimitPages = [10, 20, 50, 100]
+export const initialPageLimit = 1
+export const totalLimitPages = [1, 20, 50, 100]
 export const simpleModalStyle = {
     position: "absolute",
     top: "50%",

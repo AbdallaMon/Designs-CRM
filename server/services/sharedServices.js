@@ -162,6 +162,7 @@ export async function getClientLeadDetails(clientLeadId) {
         where: {id: clientLeadId},
         select: {
             id: true,
+            userId:true,
             client: {
                 select: {
                     id: true,

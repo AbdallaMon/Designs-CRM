@@ -50,6 +50,7 @@ import {PiCurrencyDollarSimpleLight} from "react-icons/pi";
 import {useAuth} from "@/app/providers/AuthProvider.jsx";
 import {generatePDF} from "@/app/UiComponents/buttons/GenerateLeadPdf.jsx";
 import dayjs from "dayjs";
+import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
 
 
 const TabPanel = ({children, value, index}) => (
@@ -68,7 +69,7 @@ const LeadContent = ({
                          isMobile,
                          handleClose,
                          setleads,
-                         setLead,admin,
+                         setLead,admin,isPage
                      }) => {
     const {user}=useAuth()
     const [anchorEl, setAnchorEl] = React.useState(null);
@@ -76,6 +77,13 @@ const LeadContent = ({
     const {setLoading} = useToastContext();
     const [openConfirm,setOpenConfirm]=useState(false)
     const [openPriceModel,setOpenPriceModel]=useState(null)
+    async function createADeal(lead) {
+        const assign = await handleRequestSubmit(lead, setLoading, `shared/client-leads`, false, "Assigning", false, "PUT")
+        if (assign.status === 200) {
+            window.location.reload()
+        }
+        return assign
+    }
     const handleClick = (event) => {
     if(!admin){
         setAnchorEl(event.currentTarget);
@@ -128,9 +136,12 @@ const LeadContent = ({
     const leadStatus = enumToKeyValueArray(KanbanLeadsStatus);
     return (
           <>
+              {isPage&&user.id!==lead.userId?"":
+                    <>
               <FinalizeModal lead={lead} open={finalizeModel} setOpen={setFinalizeModel} id={currentId} setId={setCurrentId} setleads={setleads} setLead={setLead} setAnchorEl={setAnchorEl}/>
               <FinalizeModal lead={lead} open={openPriceModel} setOpen={setOpenPriceModel} id={lead.id}  setleads={setleads} setLead={setLead}  updatePrice={true}/>
-
+                    </>
+}
               <DialogTitle
                     sx={{
                         borderBottom: 1,
@@ -156,6 +167,16 @@ const LeadContent = ({
                             alignItems={{ sm: 'center' }}
                             justifyContent="flex-end"
                       >
+                          {isPage&&user.id!==lead.userId&&!admin?              <ConfirmWithActionModel
+                                      title={"Are you sure you want to get this lead and assign it to you as a new deal?"}
+                                      handleConfirm={() => createADeal(lead)}
+                                      label={"Start a deal"}
+                                      fullWidth={false}
+                                      size="small"
+                                />
+                                :
+                                <>
+
                           {lead.status==="FINALIZED" &&
                                 <Button
                                       fullWidth={isMobile}
@@ -187,8 +208,6 @@ const LeadContent = ({
                           >
                               Convert lead
                           </Button>
-
-
                           <Modal open={openConfirm}              onClose={() => setOpenConfirm(false)}
                                  closeAfterTransition>
                               <Fade in={openConfirm}>
@@ -247,6 +266,7 @@ const LeadContent = ({
                                     </MenuItem>
                               ))}
                           </Menu>
+                  </>}
                           <Button onClick={()=>generatePDF(lead)}>
                               Generate pdf
                           </Button>
@@ -300,17 +320,19 @@ const LeadContent = ({
                       <LeadData lead={lead} admin={admin}/>
                   </TabPanel>
                   <TabPanel value={activeTab} index={1}>
-                      <CallReminders admin={admin} lead={lead} setleads={setleads}/>
+                      <CallReminders admin={admin} lead={lead} setleads={setleads} notUser={isPage&&user.id!==lead.userId}/>
                   </TabPanel>
                   <TabPanel value={activeTab} index={2}>
-                      <LeadNotes admin={admin} lead={lead}/>
+                      <LeadNotes admin={admin} lead={lead} notUser={isPage&&user.id!==lead.userId}/>
                   </TabPanel>
                   <TabPanel value={activeTab} index={3}>
-                      <PriceOffersList admin={admin} lead={lead}/>
+                      <PriceOffersList admin={admin} lead={lead} notUser={isPage&&user.id!==lead.userId}/>
                   </TabPanel>
                   <TabPanel value={activeTab} index={4}>
-                      <FileList admin={admin} lead={lead}/>
+                      <FileList admin={admin} lead={lead} notUser={isPage&&user.id!==lead.userId}/>
                   </TabPanel>
+
+
 
               </Box>
           </>
@@ -396,20 +418,23 @@ const theme=useTheme()
                               {lead.client.email}
                           </Typography>
                       </Grid>
-                      <Grid size={{xs: 12, md: 6}}>
-                          <Typography color="text.secondary" variant="caption">
-                              Assigned To
-                          </Typography>
-                          <Typography variant="body1">
-                              {lead.assignedTo.name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                              {lead.assignedTo.email}
-                          </Typography>
-                          <Typography variant="subtitle2"  color="text.secondary">
-                          Assigned at :    {dayjs(lead.assignedAt).format("DD/MM/YYYY")}
-                          </Typography>
-                      </Grid>
+                      {
+                          lead.assignedTo &&
+                                <Grid size={{xs: 12, md: 6}}>
+                                    <Typography color="text.secondary" variant="caption">
+                                        Assigned To
+                                    </Typography>
+                                    <Typography variant="body1">
+                                        {lead.assignedTo.name}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        {lead.assignedTo.email}
+                                    </Typography>
+                                    <Typography variant="subtitle2" color="text.secondary">
+                                        Assigned at : {dayjs(lead.assignedAt).format("DD/MM/YYYY")}
+                                    </Typography>
+                                </Grid>
+                      }
                   </Grid>
               </InfoCard>
           </Stack>
@@ -446,6 +471,7 @@ const InfoCard = ({title, icon: Icon, children, theme}) => (
 const PreviewDialog = ({open, onClose, id, setleads, page = false,admin}) => {
     const [activeTab, setActiveTab] = useState(0);
     const theme = useTheme();
+    const {user}=useAuth()
     const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const [loading, setLoading] = useState(true)
     const [lead, setLead] = useState(null)
@@ -456,10 +482,8 @@ const PreviewDialog = ({open, onClose, id, setleads, page = false,admin}) => {
                 setLead(leadDetails.data)
             }
         }
-
         getALeadDetails()
     }, [id, open])
-    // New States for Notes
 
     const handlePageClose = () => {
         if (onClose) onClose();
@@ -469,7 +493,6 @@ const PreviewDialog = ({open, onClose, id, setleads, page = false,admin}) => {
               {page ? (
                     <Container maxWidth="md" sx={{mt: 4, mb: 4}}>
                         {loading ? <FullScreenLoader/> :
-
                               <LeadContent
                                     lead={lead}
                                     activeTab={activeTab}
@@ -480,6 +503,7 @@ const PreviewDialog = ({open, onClose, id, setleads, page = false,admin}) => {
                                     setLead={setLead}
                                     setleads={setleads}
                                     admin={admin}
+                                    isPage={page}
                               />
                         }
                     </Container>

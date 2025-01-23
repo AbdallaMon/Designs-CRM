@@ -8,7 +8,7 @@ export default function ConfirmWithActionModel({
                                                    isDelete,
                                                    handleConfirm,
                                                    removeAfterConfirm = true,
-                                                   label, color
+                                                   label, color,fullWidth,size
                                                }) {
     const [open, setOpen] = useState(false)
 
@@ -24,7 +24,8 @@ export default function ConfirmWithActionModel({
               <Button
                     variant="contained"
                     color={color ? color : isDelete ? "error" : "secondary"}
-
+                    fullWidth={fullWidth}
+                    size={size}
                     onClick={() => setOpen(true)}
                     sx={{textTransform: 'none',color:"text.white"}}
               >

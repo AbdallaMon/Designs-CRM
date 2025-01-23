@@ -29,5 +29,20 @@
 39- dates
 
 
+
+40- leads
+41- commission 5%
+42- حساب البنك
+43- سعر المتر
+اضافة اجزاء من قبل الادمن
+
+فتح الايميلات علي الجيميل
+
+43- client enter data one time per day
+
+plan
+
+pays
+
 dJkmjERCZGCEgaxl
 root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

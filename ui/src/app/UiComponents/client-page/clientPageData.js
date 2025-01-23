@@ -1,7 +1,17 @@
-export const consultationLead = [{name: "Room", value: "ROOM", subtext: "800"},
-    {value: "BLUEPRINT", subtext: "1200"},
-    {value: "CITY_VISIT", subtext: "1800"},
+// export const consultationLead = [{name: "Room", value: "ROOM", subtext: "800",variantId:"48447274647863"},
+//     {value: "PLAN", subtext: "1200",variantId:"48447274615095"},
+//     {value: "CITY_VISIT", subtext: "1800",variantId: "48447274680631"},
+// ]
+
+export const consultationLead = [{name: "Room", value: "ROOM", subtext: "800",variantId:"48447274647863"},
+    {value: "PLAN", subtext: "1200",variantId:"48447274615095"},
+    {value: "CITY_VISIT", subtext: "1800",variantId: "48447274680631"},
 ]
+export const variants={
+    ROOM:48447274647863,
+    PLAN:48447274615095,
+    CITY_VISIT:48447274680631
+}
 export const designLead = [
     {
         value: "APARTMENT",

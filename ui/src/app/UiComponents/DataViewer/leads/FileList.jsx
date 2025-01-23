@@ -74,7 +74,7 @@ const renderFilePreview = (file) => {
     );
 };
 
-const FileList = ({ lead,admin }) => {
+const FileList = ({ lead,admin,notUser }) => {
     const [currentTab, setCurrentTab] = useState(0);
     const theme = useTheme();
 const [files,setFiles]=useState(lead.files)
@@ -106,7 +106,6 @@ const [files,setFiles]=useState(lead.files)
     const renderFileList = (files) => (
           <List>
               {files.map((file) => {
-
                   return (
                         <ListItem
                               key={file.id}
@@ -180,7 +179,7 @@ const [files,setFiles]=useState(lead.files)
 
                   {currentTab === 0 && (
                         <Box>
-                            {!admin && <AddFiles lead={lead} setFiles={setFiles} />}
+                            {!admin&&!notUser&&<AddFiles lead={lead} setFiles={setFiles} />}
                             {userFiles.length === 0 ? (
                                   <Typography variant="body1" color="textSecondary" textAlign="center">
                                       No user files available

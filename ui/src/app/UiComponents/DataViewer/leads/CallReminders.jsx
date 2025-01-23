@@ -5,7 +5,7 @@ import {RiAlarmLine, RiCalendarLine, RiCheckboxCircleLine, RiUserLine} from "rea
 import {InProgressCall} from "@/app/UiComponents/DataViewer/leads/InProgressCall.jsx";
 import dayjs from "dayjs";
 
-export default function CallReminders({ lead,setleads,admin }) {
+export default function CallReminders({ lead,setleads,admin,notUser }) {
     const [callReminders, setCallReminders] = useState(lead?.callReminders);
     const theme = useTheme();
 
@@ -33,7 +33,7 @@ export default function CallReminders({ lead,setleads,admin }) {
 
     return (
           <Stack spacing={3}>
-              {!admin&&
+              {!admin&&!notUser&&
                     <NewCallDialog lead={lead} setCallReminders={setCallReminders}  setleads={setleads}/>
               }
               <Stack spacing={2}>

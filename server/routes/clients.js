@@ -3,6 +3,9 @@ import express from "express";
 const router = express.Router();
 import prisma from "../prisma/prisma.js";
 import {newLeadNotification} from "../services/notification.js";
+import axios from "axios";
+import dayjs from "dayjs";
+
 const priceRangeValues = {
     "400,000 AED or less": 200000, // Average of 0 to 400,000
     "400,000 to 600,000 AED": 500000, // Midpoint of 400,000 and 600,000
@@ -39,8 +42,27 @@ router.post("/new-lead",async (req,res)=>{
                email:body.email,
            }
         })
-        }
+        }else {
+            const todayStart = dayjs().startOf('day');
+            const todayEnd = dayjs().endOf('day');
+            const existingLead = await prisma.clientLead.findFirst({
+                where: {
+                    client: {email: body.email},
+                    createdAt: {
+                        gte: todayStart.toDate(),
+                        lte: todayEnd.toDate(),
+                    },
+                },
+            });
 
+            if (existingLead) {
+                const message = body.lng === 'ar'
+                      ? 'عذراً ، لقد قمت بالفعل بإنشاء استفسار اليوم. يمكنك المحاولة مرة أخرى غدًا.'
+                      : 'Sorry, you have already created a lead today. You can try again tomorrow.';
+                return res.status(422).json({ message });
+
+            }
+        }
         const data={
             client: {connect: {id:client.id}},
             selectedCategory: body.category,
@@ -89,6 +111,136 @@ router.post("/new-lead",async (req,res)=>{
         res.status(500).json({ message});
     }
 })
+
+router.get('/products', async (req, res) => {
+    try {
+        const response = await axios.post(
+              `https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2023-01/graphql.json`,
+              {
+                  query: `
+        {
+          product(id: "gid://shopify/Product/8739939942638") {
+            id
+            title
+            description
+            variants(first: 100) {
+              edges {
+                node {
+                  id
+                  title
+                  price {
+                    amount
+                    currencyCode
+                  }
+                }
+              }
+            }
+          }
+        }
+        `,
+              },
+              {
+                  headers: {
+                      'X-Shopify-Storefront-Access-Token': process.env.SHOPIFY_STOREFRONT_TOKEN,
+                      'Content-Type': 'application/json',
+                  },
+              }
+        );
+
+        const product = response.data.data?.product;
+        const formattedProduct = {
+            id: product.id,
+            title: product.title,
+            description: product.description,
+            variants: product.variants.edges.map((variant) => ({
+                id: variant.node.id,
+                title: variant.node.title,
+                price: variant.node.price.amount,
+                currency: variant.node.price.currencyCode,
+            })),
+        };
+
+        res.json(formattedProduct);
+    } catch (error) {
+        console.error('Error fetching product:', error.response?.data || error.message);
+        res.status(500).send('Internal Server Error');
+    }
+});
+router.post('/checkout', async (req, res) => {
+    try {
+        const { variantId } = req.body;
+        const globalVariantId = `gid://shopify/ProductVariant/${variantId}`;
+        const cartCreateMutation = `
+      mutation {
+        cartCreate(input: {
+          lines: [{ merchandiseId: "${globalVariantId}", quantity: ${1} }]
+        }) {
+          userErrors {
+            message
+            code
+            field
+          }
+          cart {
+            id
+            checkoutUrl
+          }
+        }
+      }
+    `;
+
+        const response = await axios.post(
+              `https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2025-01/graphql.json`, // Update API version
+              {
+                  query: cartCreateMutation,
+              },
+              {
+                  headers: {
+                      'X-Shopify-Storefront-Access-Token': process.env.SHOPIFY_STOREFRONT_TOKEN,
+                      'Content-Type': 'application/json',
+                  },
+              }
+        );
+        if(response.data.data.cartCreate.userErrors.length>0){
+            console.log(response.data.data.cartCreate.userErrors)
+            throw  new Error("Something wrong happen try again later")
+        }
+        return res.json({data:response.data.data.cartCreate.cart})
+    } catch (error) {
+        console.error('Error creating checkout:', error.response?.data || error.message);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+router.get('/confirm', async (req, res) => {
+    try {
+        const { orderId } = req.query; // Extract checkout_id from query string
+
+        if (!orderId) {
+            return res.status(400).json({ error: 'Missing checkout_id' });
+        }
+
+        const response = await axios.get(
+              `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/2023-01/orders/${orderId}.json`,
+              {
+                  headers: {
+                      'X-Shopify-Access-Token': process.env.SHOPIFY_ADMIN_API_TOKEN,
+                  },
+              }
+        );
+        console.log(response,"response")
+        const checkoutData = response.data.data?.node;
+
+        if (!checkoutData) {
+            return res.status(404).send('Checkout not found');
+        }
+
+        res.json(checkoutData);
+    } catch (error) {
+        console.error('Error fetching checkout details:', error.response?.data || error.message);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
 async function uploadFile(body,clientLeadId){
     const data = {
         name:"Client File",

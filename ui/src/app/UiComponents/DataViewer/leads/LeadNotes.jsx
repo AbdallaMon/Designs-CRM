@@ -3,7 +3,7 @@ import {Avatar, Paper, Stack, Typography, useTheme} from "@mui/material";
 import {NewNoteDialog} from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
 import dayjs from "dayjs";
 
-export default function LeadNotes({lead ,admin}) {
+export default function LeadNotes({lead ,admin,notUser}) {
     const [notes, setNotes] = useState(lead?.notes)
     const theme=useTheme()
     useEffect(() => {
@@ -11,7 +11,7 @@ export default function LeadNotes({lead ,admin}) {
     }, [lead])
     return (
           <Stack spacing={2}>
-              {!admin&&
+              {!admin&&!notUser&&
                     <NewNoteDialog lead={lead} setNotes={setNotes}/>
               }
               <Stack spacing={2}>

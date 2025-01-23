@@ -21,7 +21,7 @@ import {
 import dayjs from 'dayjs';
 import {AddPriceOffers} from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
 
-const PriceOffersList = ({ admin, lead }) => {
+const PriceOffersList = ({ admin, lead ,notUser}) => {
     const [offers, setOffers] = useState(lead.priceOffers);
     const theme = useTheme();
 
@@ -51,7 +51,7 @@ const PriceOffersList = ({ admin, lead }) => {
 
     return (
           <Card sx={cardStyles}>
-              {!admin && <AddPriceOffers lead={lead} setPriceOffers={setOffers} />}
+              {!admin&&!notUser&& <AddPriceOffers lead={lead} setPriceOffers={setOffers} />}
 
               <CardContent>
                   <Box display="flex" alignItems="center" mb={3}>

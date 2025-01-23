@@ -46,7 +46,6 @@ export default function Leads() {
     const leadTypes=enumToKeyValueArray(LeadCategory)
     async  function createADeal(item){
         item={...item,overdue:true}
-        console.log(item,"item")
         const assign=await handleRequestSubmit(item,setLoading,`shared/client-leads`,false,"Assigning",false,"PUT")
         if(assign.status===200){
             setData((data)=>data.filter((lead)=>lead.id!==item.id))
