@@ -5,10 +5,8 @@ import {
     CardContent,
     CardActions,
     Typography,
-
     Box,
-
-    useTheme
+    useTheme, IconButton, Snackbar, Alert
 } from '@mui/material';
 import DeleteModal from "@/app/UiComponents/models/DeleteModal.jsx";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher.js";
@@ -18,10 +16,11 @@ import {Swiper, SwiperSlide} from "swiper/react";
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
-import 'swiper/css/scrollbar';
 import {Navigation, Pagination, Scrollbar} from "swiper/modules";
 import CreateModal from "@/app/UiComponents/models/CreateModal.jsx";
 import EditModal from "@/app/UiComponents/models/EditModal.jsx";
+import {FiCopy} from "react-icons/fi";
+import {Tooltip} from "recharts";
 
 // Sample data to render
 const inputs = [
@@ -57,46 +56,87 @@ export function FixedData(){
      </FixedDataSlider>
     )
 }
-function FixedCardData({ data, setData,admin }) {
+function FixedCardData({ data }) {
+    const theme = useTheme();
+    const [snackbarOpen, setSnackbarOpen] = useState(false);
+    const [snackbarMessage, setSnackbarMessage] = useState('');
+
+    const handleCopy = (text) => {
+        navigator.clipboard.writeText(text);
+        setSnackbarMessage(`Text copied successfully!`); // Set the alert message
+        setSnackbarOpen(true); // Open the Snackbar
+    };
+
+    const handleCloseSnackbar = () => {
+        setSnackbarOpen(false); // Close the Snackbar
+    };
     return (
           <Card
-          sx={{
-              boxShadow: 3,
-              borderRadius: 2,
-          }}
+                sx={{
+                    boxShadow: 3,
+                    borderRadius: 2,
+                    padding: 2,
+                }}
           >
-              <CardContent sx={{
-                  height:"120px",
-                  overflowY:"auto"
-              }}>
-                  <Typography variant="h5" component="div" sx={{
-                      wordBreak:"break-word"
-                  }}>
+              <Snackbar
+                    open={snackbarOpen}
+                    autoHideDuration={3000} // Auto-close after 3000ms
+                    onClose={handleCloseSnackbar}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+              >
+                  <Alert
+                        onClose={handleCloseSnackbar}
+                        severity="success"
+                        sx={{ width: '100%' }}
+                  >
+                      {snackbarMessage}
+                  </Alert>
+              </Snackbar>
+              <CardContent sx={{ height: '120px', overflowY: 'auto' }}>
+                  {/* Title with Copy Icon */}
+                  <Typography
+                        variant="h5"
+                        component="div"
+                        sx={{
+                            position: 'relative', // Needed for the icon
+                            wordBreak: 'break-word',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap:0.2
+                        }}
+                  >
+                          <IconButton
+                                size="small"
+                                onClick={() => handleCopy(data.title)}
+                          >
+                              <FiCopy />
+                          </IconButton>
                       {data.title}
+
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{
-                      wordBreak:"break-word"
-                  }}>
+
+                  <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                            position: 'relative', // Needed for the icon
+                            wordBreak: 'break-word',
+                            display: 'flex',
+                            alignItems: 'center',
+                            mt: 1,
+                            gap:0.2
+                        }}
+                  >
+                      <IconButton
+                            size="small"
+                            onClick={() => handleCopy(data.description)}
+                      >
+                          <FiCopy />
+                      </IconButton>
                       {data.description || 'No description provided'}
+
                   </Typography>
               </CardContent>
-                  {admin&&
-              <CardActions>
-                  <EditModal
-                        editButtonText={"Edit"}
-                        item={data}
-                        inputs={inputs}
-                        setData={setData}
-                        href={"admin/fixed-data"}
-                        editFormButton={"Edit"}
-                  />
-                  <DeleteModal
-                        item={data}
-                        setData={setData}
-                        href={"admin/fixed-data"}
-                  />
-              </CardActions>
-                  }
           </Card>
     );
 }
