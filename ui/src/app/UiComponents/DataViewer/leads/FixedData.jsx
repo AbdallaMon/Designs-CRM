@@ -56,7 +56,7 @@ export function FixedData(){
      </FixedDataSlider>
     )
 }
-function FixedCardData({ data }) {
+function FixedCardData({ data,admin,setData }) {
     const theme = useTheme();
     const [snackbarOpen, setSnackbarOpen] = useState(false);
     const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -75,7 +75,7 @@ function FixedCardData({ data }) {
                 sx={{
                     boxShadow: 3,
                     borderRadius: 2,
-                    padding: 2,
+                    padding: 1.5,
                 }}
           >
               <Snackbar
@@ -92,7 +92,7 @@ function FixedCardData({ data }) {
                       {snackbarMessage}
                   </Alert>
               </Snackbar>
-              <CardContent sx={{ height: '120px', overflowY: 'auto' }}>
+              <CardContent sx={{ height: '120px', overflowY: 'auto',padding:"4px !important" }}>
                   {/* Title with Copy Icon */}
                   <Typography
                         variant="h5"
@@ -137,6 +137,23 @@ function FixedCardData({ data }) {
 
                   </Typography>
               </CardContent>
+              {admin&&
+                    <CardActions>
+                        <EditModal
+                              editButtonText={"Edit"}
+                              item={data}
+                              inputs={inputs}
+                              setData={setData}
+                              href={"admin/fixed-data"}
+                              editFormButton={"Edit"}
+                        />
+                        <DeleteModal
+                              item={data}
+                              setData={setData}
+                              href={"admin/fixed-data"}
+                        />
+                    </CardActions>
+              }
           </Card>
     );
 }
