@@ -508,7 +508,6 @@ const calculateStaffStats = (staff, dateRange) => {
         const converted = filteredLeads.filter(lead => lead.status === 'CONVERTED').length;
         const onHold = filteredLeads.filter(lead => lead.status === 'ON_HOLD').length;
         const rejected = filteredLeads.filter(lead => lead.status === 'REJECTED').length;
-
         // Calculate success rate
         const totalClosedLeads = finalized + converted + rejected + onHold;
         const successRate = totalClosedLeads > 0
@@ -529,6 +528,7 @@ const calculateStaffStats = (staff, dateRange) => {
         const conversionRate = totalLeads > 0
               ? parseFloat(((converted / totalLeads) * 100).toFixed(2))
               : 0.00;
+        const totalCommission = parseFloat((totalRevenue * 0.05).toFixed(2));
 
         return {
             userId: user.id,
@@ -545,7 +545,7 @@ const calculateStaffStats = (staff, dateRange) => {
             successRate: Math.round(successRate * 100) / 100,
             totalRevenue,
             totalDiscount,
-            averageRevenuePerLead: totalLeads > 0 ? totalRevenue / totalLeads : 0,conversionRate
+            averageRevenuePerLead: totalLeads > 0 ? totalRevenue / totalLeads : 0,conversionRate,totalCommission
         };
     });
 };
@@ -597,7 +597,8 @@ export const generateStaffReport = async (req, res) => {
             bestPerformer: staffStats.reduce((best, current) =>
                   (current.successRate > (best?.successRate || 0)) ? current : best, null),
             topRevenue: staffStats.reduce((best, current) =>
-                  (current.totalRevenue > (best?.totalRevenue || 0)) ? current : best, null)
+                  (current.totalRevenue > (best?.totalRevenue || 0)) ? current : best, null),
+            totalCommission:staffStats.reduce((sum, staff) => sum + staff.totalCommission, 0),
         };
 
         return res.json({
@@ -628,19 +629,20 @@ export const generateStaffExcelReport = async (req, res) => {
         { header: 'Converted', key: 'converted', width: 15 },
         { header: 'Success Rate', key: 'successRate', width: 15, style: { numFmt: '0.00"%"' } },
         { header: 'Total Revenue', key: 'totalRevenue', width: 20, style: { numFmt: '#,##0.00 "AED"' } },
-        { header: 'Avg Revenue/Lead', key: 'averageRevenuePerLead', width: 20, style: { numFmt: '#,##0.00 "AED"' } },
+        { header: 'Total commission', key: 'totalCommission', width: 20, style: { numFmt: '#,##0.00 "AED"' } },
         { header: 'Conversion rate', key: 'conversionRate', width: 15 },
     ];
 
     // Style header row
-    worksheet.getRow(1).font = { bold: true, size: 12 };
-    worksheet.getRow(1).fill = {
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true, size: 12 };
+    headerRow.fill = {
         type: 'pattern',
         pattern: 'solid',
-        fgColor: { argb: 'FF4B5563' }
+        fgColor: { argb: 'FF4B5563' },
     };
-    worksheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    worksheet.getRow(1).height = 30;
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.height = 30;
 
     // Add data rows
     const rows = data.staffStats.map(staff => ({
@@ -651,7 +653,7 @@ export const generateStaffExcelReport = async (req, res) => {
         converted: staff.converted,
         successRate: staff.successRate,
         totalRevenue: staff.totalRevenue,
-        averageRevenuePerLead: staff.averageRevenuePerLead,
+        totalCommission: staff.totalCommission,
         conversionRate: staff.conversionRate,
     }));
 
@@ -664,52 +666,67 @@ export const generateStaffExcelReport = async (req, res) => {
         row.fill = {
             type: 'pattern',
             pattern: 'solid',
-            fgColor: { argb: i % 2 === 0 ? 'FFF3F4F6' : 'FFFFFFFF' }
+            fgColor: { argb: i % 2 === 0 ? 'FFF3F4F6' : 'FFFFFFFF' },
         };
         row.eachCell(cell => {
             cell.border = {
                 top: { style: 'thin' },
                 bottom: { style: 'thin' },
                 left: { style: 'thin' },
-                right: { style: 'thin' }
+                right: { style: 'thin' },
             };
             cell.alignment = { vertical: 'middle', horizontal: 'left' };
         });
     }
 
-    // Add summary sheet
-    const summarySheet = workbook.addWorksheet('Summary');
-    summarySheet.columns = [
-        { header: 'Metric', key: 'metric', width: 30 },
-        { header: 'Value', key: 'value', width: 20 }
-    ];
+    // Add an empty row for spacing before the summary
+    worksheet.addRow({});
 
-    // Add summary data
-    summarySheet.addRows([
-        { metric: 'Total Staff Members', value: data.summary.totalStaff },
-        { metric: 'Total Leads', value: data.summary.totalLeads },
-        { metric: 'Average Leads per Staff', value: data.summary.averageLeadsPerStaff },
-        { metric: 'Total Revenue', value: data.summary.totalRevenue },
-        { metric: 'Average Success Rate', value: `${data.summary.averageSuccessRate.toFixed(2)}%` },
-        { metric: 'Conversion rate', value: `${data.summary.conversionRate}%` }
-    ]);
-
-    // Style summary sheet
-    summarySheet.getRow(1).font = { bold: true, size: 12 };
-    summarySheet.getRow(1).fill = {
+    // Add summary header
+    const summaryHeaderRow = worksheet.addRow(['Summary']);
+    summaryHeaderRow.font = { bold: true, size: 12 };
+    summaryHeaderRow.fill = {
         type: 'pattern',
         pattern: 'solid',
-        fgColor: { argb: 'FF4B5563' }
+        fgColor: { argb: 'FF4B5563' },
     };
-    summarySheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    summaryHeaderRow.font = { color: { argb: 'FFFFFFFF' } };
+    summaryHeaderRow.height = 25;
+
+    // Add summary rows
+    const summaryRows = [
+        { metric: 'Total Staff Members', value: data.summary.totalStaff || 0 },
+        { metric: 'Total Leads', value: data.summary.totalLeads || 0 },
+        { metric: 'Average Leads per Staff', value: data.summary.averageLeadsPerStaff || 0 },
+        { metric: 'Total Revenue', value: `AED ${data.summary.totalRevenue || 0}` },
+        { metric: 'Total Commission', value: `AED ${data.summary.totalCommission || 0}` },
+        { metric: 'Average Success Rate', value: `${Math.max(data.summary.averageSuccessRate, 0).toFixed(2)}%` },
+        { metric: 'Conversion rate', value: `${Math.max(data.summary.conversionRate, 0)}%` },
+    ];
+
+    summaryRows.forEach(({ metric, value }) => {
+        const row = worksheet.addRow([metric, value]); // Add summary metric and value
+        row.eachCell((cell, colNumber) => {
+            cell.border = {
+                top: { style: 'thin' },
+                bottom: { style: 'thin' },
+                left: { style: 'thin' },
+                right: { style: 'thin' },
+            };
+            cell.alignment = { vertical: 'middle', horizontal: colNumber === 1 ? 'left' : 'right' };
+        });
+        row.height = 20;
+    });
 
     // Set response headers
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=staff-report.xlsx');
 
+    // Write workbook to response
     await workbook.xlsx.write(res);
     res.end();
 };
+
 export const generateStaffPDFReport = (req, res) => {
     try {
         const { data } = req.body;
@@ -742,6 +759,7 @@ export const generateStaffPDFReport = (req, res) => {
                 ['Total Leads', data.summary.totalLeads],
                 ['Average Leads per Staff', data.summary.averageLeadsPerStaff.toFixed(2)],
                 ['Total Revenue', `${data.summary.totalRevenue.toLocaleString()} AED`],
+                ['Total Commission', `${data.summary.totalCommission.toLocaleString()} AED`],
                 ['Average Success Rate', `${data.summary.averageSuccessRate.toFixed(2)}%`],
                 ['Conversion rate', data.summary.conversionRate]
             ],
@@ -914,4 +932,28 @@ export async function createLeadFromExcelData(req, res) {
         console.error(error);
         return res.status(500).json({ error: "An error occurred while processing the data" });
     }
+}
+
+
+export async function  createAFixedData({data}) {
+    return prisma.fixedData.create({
+        data: {
+            title: data.title,
+            description: data.description || null
+        }
+    })
+}
+export async function editAFixedData({id,data}){
+    return prisma.fixedData.update({
+        where: { id },
+        data: {
+            ...(data.title && { title: data.title }),
+            ...(data.description !== undefined && { description: data.description })
+        }
+    })
+}
+export async function deleteAFixedData({id}){
+    return prisma.fixedData.delete({
+        where: { id }
+    })
 }

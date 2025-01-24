@@ -332,8 +332,6 @@ const LeadContent = ({
                       <FileList admin={admin} lead={lead} notUser={isPage&&user.id!==lead.userId}/>
                   </TabPanel>
 
-
-
               </Box>
           </>
     );
@@ -352,7 +350,6 @@ const theme=useTheme()
                               {LeadCategory[lead.selectedCategory]}
                           </Typography>
                       </Grid>
-
                       <Grid size={{xs: 12, md: 6}}>
                           <Typography color="text.secondary" variant="caption">
                               Location
@@ -369,6 +366,8 @@ const theme=useTheme()
                               AED {lead.price}
                           </Typography>
                       </Grid>
+                      {lead.status==="FINALIZED"&&
+                            <>
                       <Grid size={{xs: 12, md: 3}}>
                           <Typography color="text.secondary" variant="caption">
                               Discount
@@ -385,6 +384,8 @@ const theme=useTheme()
                              AED {lead.averagePrice}
                           </Typography>
                       </Grid>
+                            </>
+                      }
                       <Grid size={{xs: 12}}>
                           <Typography color="text.secondary" variant="caption">
                               Description
@@ -393,6 +394,16 @@ const theme=useTheme()
                               {lead.description}
                           </Typography>
                       </Grid>
+                      {lead.clientDescription&&
+                      <Grid size={{xs: 12}}>
+                          <Typography color="text.secondary" variant="caption">
+                              Client description
+                          </Typography>
+                          <Typography variant="body1">
+                              {lead.clientDescription}
+                          </Typography>
+                      </Grid>
+                      }
                   </Grid>
               </InfoCard>
 

@@ -11,7 +11,7 @@ import {
     Avatar,
     LinearProgress,
 } from "@mui/material";
-import { FaDollarSign, FaProjectDiagram, FaChartLine, FaTasks } from 'react-icons/fa';
+import {FaDollarSign, FaProjectDiagram, FaChartLine, FaTasks, FaMoneyBillWave} from 'react-icons/fa';
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
 import {getData} from "@/app/helpers/functions/getData.js";
 import {useAuth} from "@/app/providers/AuthProvider.jsx";
@@ -25,7 +25,8 @@ const [loading,setLoading]=useState(true)
         totalRevenue: 0,
         averageProjectValue: 0,
         successRate: 0,
-        leadsCounts: 0
+        leadsCounts: 0,
+        totalCommission:0
     })
     const metricsData = [
         {
@@ -52,6 +53,12 @@ const [loading,setLoading]=useState(true)
             value: financialMetrics.leadsCounts,
             icon: <FaTasks size={24} color="#ffffff" />,
             color: theme.palette.info.main,
+        },
+        {
+            title: "Total Commission",
+            value: `AED ${financialMetrics.totalCommission}`,
+            icon: <FaMoneyBillWave size={24} color="#ffffff" />,
+            color: theme.palette.warning.main,
         },
     ];
 useEffect(()=>{

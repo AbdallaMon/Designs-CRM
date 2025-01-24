@@ -6,14 +6,14 @@ import {
     verifyTokenAndHandleAuthorization
 } from "../services/utility.js";
 import {
-    assignLeadToAUser,
+    assignLeadToAUser, getAllFixedData,
     getClientLeadDetails,
     getClientLeads,
     getClientLeadsByDateRange,
     getDashboardLeadStatusData,
     getEmiratesAnalytics,
     getKeyMetrics, getLatestNewLeads,
-    getMonthlyPerformanceData, getPerformanceMetrics, getRecentActivities,
+    getMonthlyPerformanceData, getNextCalls, getPerformanceMetrics, getRecentActivities,
     markClientLeadAsConverted, updateClientLeadStatus
 } from "../services/sharedServices.js";
 
@@ -49,6 +49,24 @@ router.get('/client-leads/deals', async (req, res) => {
         res.status(500).json({ message: 'An error occurred while fetching client leads' });
     }
 });
+
+router.get('/client-leads/calls', async (req, res) => {
+    try {
+        const searchParams= req.query;
+        const {limit, skip} = getPagination(req);
+        const result = await getNextCalls({
+            limit: Number(limit),
+            skip: Number(skip),
+            searchParams
+        });
+        res.status(200).json(result);
+
+    } catch (error) {
+        console.error('Error fetching client leads:', error);
+        res.status(500).json({ message: 'An error occurred while fetching client leads' });
+    }
+});
+
 router.get('/client-leads/:id', async (req, res) => {
     try {
         const { id } = req.params;
@@ -210,6 +228,15 @@ router.put('/client-leads/:id/status', async (req, res) => {
     } catch (error) {
         console.error('Error updating client lead status:', error);
         res.status(500).json({ message: error.message });
+    }
+});
+router.get('/fixed-data', async (req, res) => {
+    try {
+        const result = await getAllFixedData()
+        res.status(200).json({data:result});
+    } catch (error) {
+        console.error('Error fetching client leads:', error);
+        res.status(500).json({ message: 'An error occurred while fetching client leads' });
     }
 });
 export default router;

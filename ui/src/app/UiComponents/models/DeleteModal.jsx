@@ -20,7 +20,7 @@ export default function DeleteModal({
     const handleDeleteOrArchive = async () => {
         const url = archive ? `${href}/${item.id}` : `${href}/${item.id}`;
         const method = archive ? "PATCH" : "DELETE";
-        const message = archive ? "جاري الارشفة..." : "جاري الحذف...";
+        const message = archive ? "جاري الارشفة..." : "Deleting";
         const result = await handleRequestSubmit({}, setLoading, url, false, message, null, method);
         if (result.status === 200) {
             setOpen(false)
@@ -45,7 +45,7 @@ export default function DeleteModal({
                 onClick={() => handleDeleteOpen(item)}
                 sx={{textTransform: 'none'}}
           >
-              {!archive ? "حذف" : "ارشفة"}
+              {!archive ? "Delete" : "ارشفة"}
           </Button>
     )
     return (
@@ -58,15 +58,15 @@ export default function DeleteModal({
                   <Fade in={open}>
                       <Box sx={{...simpleModalStyle}}>
                           <Typography variant="h6" component="h2">
-                              {archive ? "هل انت متاكد انك تريد عمل ارشفة لهذا العنصر" : "هل انت متاكد انك تريد حذف هذا العنصر"}
+                              {archive ? "هل انت متاكد انك تريد عمل ارشفة لهذا العنصر" : "Are u sure u want to delete this item?"}
                           </Typography>
                           <Box sx={{display: 'flex', justifyContent: 'flex-end', marginTop: '16px'}}>
                               <Button variant="contained" color={archive ? "warning" : "secondary"}
                                       onClick={handleDeleteOrArchive}>
-                                  {archive ? "ارشفه" : "حذف"}
+                                  {archive ? "ارشفه" : "Delete"}
                               </Button>
                               <Button variant="contained" onClick={() => setOpen(false)} sx={{marginLeft: '8px'}}>
-                                  الغاء
+                                  Cancel
                               </Button>
                           </Box>
                       </Box>

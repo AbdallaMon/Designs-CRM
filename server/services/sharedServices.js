@@ -7,6 +7,7 @@ import {
     updateLeadStatusNotification
 } from "./notification.js";
 import {ClientLeadStatus} from "./enums.js";
+import Prisma from "../prisma/prisma.js";
 
 export async function getClientLeads({
                                          limit = 1,
@@ -163,6 +164,7 @@ export async function getClientLeadDetails(clientLeadId) {
         select: {
             id: true,
             userId:true,
+            clientDescription:true,
             client: {
                 select: {
                     id: true,
@@ -410,11 +412,14 @@ export const getKeyMetrics = async (searchParams) => {
               totalProcessedLeadsCount > 0
                     ? ((successLeadsCount / totalProcessedLeadsCount) * 100).toFixed(2)
                     : '0.00';
+        const totalCommission = parseFloat((totalRevenue * 0.05).toFixed(2));
+
         return {
             totalRevenue,
             averageProjectValue,
             successRate,
             leadsCounts,
+            totalCommission
         };
     } catch (error) {
         console.error('Error fetching key metrics:', error);
@@ -846,4 +851,65 @@ export async function updateClientLeadStatus({clientLeadId, status, averagePrice
     }
 
     await updateLeadStatusNotification(lead.id,heading,content,updatePrice?"FINAL_PRICE_ADDED":"LEAD_UPDATED",lead.userId,isAdmin,!isAdmin?lead.userId:null)
+}
+
+export const getNextCalls = async ({limit,skip,searchParams}) => {
+    const staffFilter = searchParams.staffId&&searchParams.staffId!=="undefined" ? {staffId: Number(searchParams.staffId)} : {};
+
+    const nearestCallReminders = await prisma.clientLead.findMany({
+        where: {
+            status: {
+                notIn: ['CONVERTED', 'ON_HOLD', 'FINALIZED', 'REJECTED']
+            },
+            ...staffFilter,
+            callReminders: {
+                some: {
+                    status: 'IN_PROGRESS'
+                }
+            }
+        },
+        include: {
+            callReminders: {
+                where: {
+                    status: 'IN_PROGRESS'
+                },
+                orderBy: {
+                    time: 'asc'
+                },
+                take: 1
+            },
+            client: true
+        },
+        take: limit,
+        skip: skip
+    });
+console.log(nearestCallReminders,"nearestCallReminders")
+    const total = await prisma.clientLead.count({
+        where: {
+            status: {
+                notIn: ['CONVERTED', 'ON_HOLD', 'FINALIZED', 'REJECTED']
+            },
+            ...staffFilter,
+
+            callReminders: {
+                some: {
+                    status: 'IN_PROGRESS'
+                }
+            }
+        }
+    });
+console.log(total,"total")
+    const totalPages = Math.ceil(total / limit);
+
+    return{
+        data: nearestCallReminders,
+            limit,
+            total,
+        totalPages
+    };
+};
+export async function getAllFixedData(){
+    return prisma.fixedData.findMany({
+        orderBy: { createdAt: 'desc' }
+    })
 }

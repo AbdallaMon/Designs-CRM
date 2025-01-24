@@ -12,14 +12,16 @@ export default function MuiTextAreaField({
     const inputData = input.data;
     const fullWidth = input.fullWidth
     const {label, id} = inputData;
+
     return (
           <Controller
-                name={label}
+                name={id}
                 control={control}
                 render={({field: {value, onChange}}) => (
                       <TextField
                             id={id}
                             label={label}
+                            defaultValue={inputData.defaultValue}
                             multiline
                             rows={4}
                             fullWidth={fullWidth ? fullWidth : true}

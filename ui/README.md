@@ -37,8 +37,10 @@
 اضافة اجزاء من قبل الادمن
 
 فتح الايميلات علي الجيميل
-
-43- client enter data one time per day
+حابب ضيف معلومات اضافية
+44- client enter data one time per day
+commission 5 %
+remove final price
 
 plan
 

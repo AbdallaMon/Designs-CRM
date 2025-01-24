@@ -70,6 +70,9 @@ router.post("/new-lead",async (req,res)=>{
             status: 'NEW',
             description:`${body.category} ${body.item} ${body.category==="DESIGN"?body.emirate?body.emirate:"OUTSIDE UAE":""}`
         }
+        if(body.clientDescription){
+            data.clientDescription=body.clientDescription
+        }
         if(body.emirate){
             data.emirate=body.emirate
         }

@@ -232,7 +232,7 @@ const StaffReportFilters = () => {
                                                 <TableCell align="right">Active Leads</TableCell>
                                                 <TableCell align="right">Success Rate</TableCell>
                                                 <TableCell align="right">Revenue</TableCell>
-                                                <TableCell align="right">Avg Revenue/Lead</TableCell>
+                                                <TableCell align="right">Total commission</TableCell>
                                                 <TableCell align="right">Conversion Rate</TableCell>
                                             </TableRow>
                                         </TableHead>
@@ -246,7 +246,7 @@ const StaffReportFilters = () => {
                                                             <TableCell align="right">{staff.activeLeads}</TableCell>
                                                             <TableCell align="right">{staff.successRate.toFixed(2)}%</TableCell>
                                                             <TableCell align="right">{staff.totalRevenue.toLocaleString()} AED</TableCell>
-                                                            <TableCell align="right">{staff.averageRevenuePerLead.toLocaleString()} AED</TableCell>
+                                                            <TableCell align="right">{staff.totalCommission.toLocaleString()} AED</TableCell>
                                                             <TableCell align="right">
                                                                 {staff.conversionRate}%
                                                             </TableCell>

@@ -79,8 +79,6 @@ enum ClientLeadStatus {
  ON_HOLD
 }
 
-
-
 enum CallReminderStatus {
   IN_PROGRESS
   DONE
@@ -97,6 +95,7 @@ model ClientLead {
       selectedCategory   LeadCategory
       type   LeadType @default(CONSTRUCTION_VILLA)
       description String?
+      clientDescription  String?
       discount  Decimal   @db.Decimal(10, 2) @default(0)
       emirate            Emirate?
       price              String?
@@ -226,4 +225,12 @@ model Notification {
 
  @@index([userId])
  @@index([clientLeadId])
+}
+
+model FixedData {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

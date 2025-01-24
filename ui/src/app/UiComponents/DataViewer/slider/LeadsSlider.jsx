@@ -10,22 +10,25 @@ import { Box, Typography, useTheme } from "@mui/material";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
 import PaginationWithLimit from "@/app/UiComponents/DataViewer/PaginationWithLimit.jsx";
 
-function LeadsSlider({ title, children, loading,withPagination=true,total,limit,setPage,totalPages,page ,setLimit  }) {
+function LeadsSlider({ title, children, loading,withPagination=true,total,limit,setPage,totalPages,page ,setLimit,NextCalls  }) {
     const theme = useTheme();
-
     return (
           <Box
                 sx={{
                     width: '100%',
                     margin: 'auto',
-                    py: 3,
-                    pb: 5,
+                    py: 1,
+                    pb: NextCalls?1:3,
                     background: theme.palette.background.default,
                     position: "relative",
+                    mb:2,
+                    borderRadius: 3, // Rounded corners
+                    boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)', // Subtle shadow
+
                 }}
           >
               {loading && <LoadingOverlay />}
-              <Typography variant="h4" sx={{ pl: 2, mb: 2 }}>
+              <Typography variant="h5" sx={{ pl: 2, mb: 0.5 }}>
                   {title}
               </Typography>
               <Swiper
@@ -71,7 +74,7 @@ function LeadsSlider({ title, children, loading,withPagination=true,total,limit,
                     style={{
                         '--swiper-navigation-color': theme.palette.primary.main,
                         '--swiper-pagination-color': theme.palette.primary.main,
-                        padding:"20px 12px 50px"
+                        padding:NextCalls?"20px 12px 35px":"20px 12px 50px"
                     }}
               >
                   {children.map((child, index) => (

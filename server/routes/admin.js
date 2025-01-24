@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { getPagination, handlePrismaError, verifyTokenAndHandleAuthorization } from "../services/utility.js";
 import {
-    changeUserStatus, createLeadFromExcelData,
-    createStaffUser,
+    changeUserStatus, createAFixedData, createLeadFromExcelData,
+    createStaffUser, deleteAFixedData, editAFixedData,
     editStaffUser,
     generateExcelReport,
     generateLeadReport,
@@ -15,6 +15,7 @@ import {
     getUserById
 } from "../services/adminServices.js";
 import multer from "multer";
+import {updateClientLeadStatus} from "../services/sharedServices.js";
 
 const router = Router();
 
@@ -148,7 +149,6 @@ router.post('/reports/lead-report/pdf', async (req, res) => {
 router.post('/reports/staff-report', async (req, res) => {
     try {
         await generateStaffReport(req, res)
-console.log('w')
     } catch (error) {
         console.error('Error generating report:', error);
         res.status(500).json({ error: 'Failed to generate report' });
@@ -182,4 +182,34 @@ router.post("/leads/excel", upload.single("file"), async (req, res) => {
     await createLeadFromExcelData(req, res);
 });
 
+router.post('/fixed-data', async (req, res) => {
+    try {
+        const createdData=await createAFixedData({data:req.body})
+        res.status(200).json({data:createdData,message:"Created successfully"})
+    } catch (error) {
+        console.error('Error updating client lead status:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+router.put('/fixed-data/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updateData=await editAFixedData({data:req.body,id:Number(id)})
+        res.status(200).json({data:updateData,message:"Updated successfully"})
+    } catch (error) {
+        console.error('Error updating client lead status:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+router.delete('/fixed-data/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedData=await deleteAFixedData({id:Number(id)})
+        res.status(200).json({data:deletedData,message:"Deleted successfully"})
+    } catch (error) {
+        console.error('Error updating client lead status:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
 export default router;

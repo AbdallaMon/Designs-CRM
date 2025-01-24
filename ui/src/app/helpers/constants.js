@@ -109,6 +109,7 @@ export const dictionary = {
     ,"Inside UAE":"داخل الامارات"
     ,"Out side UAE":"خارج الامارات"
     ,"How much would you like to invest in your dream home?":"كم حابب تستثمر في منزل احلامك؟"
+    ,"Additional information (optional)":"معلومات اضافية (اختياري)"
 };
 
 export const MediaType = {

@@ -42,6 +42,7 @@ function DesignLeadForm({category ,item,location}){
         priceRange: [0, 0],
         priceOption:null,
         file:null,
+        clientDescription:null
     });
     const [renderSuccess,setRenderSuccess]=useState(false)
     const {setAlertError}=useAlertContext()
@@ -273,6 +274,25 @@ function DesignLeadForm({category ,item,location}){
                                                 </FormControl>
                                                 </>
                                           }
+                                      <TextField
+                                            fullWidth
+                                            label={translate("Additional information (optional)")}
+                                            name="clientDescription"
+                                            type="clientDescription"
+                                            variant="outlined"
+                                            value={formData.clientDescription}
+                                            onChange={handleChange}
+                                            InputProps={{
+                                                sx: {
+                                                    borderRadius: 2,
+                                                    "&:hover": {
+                                                        "& fieldset": {
+                                                            borderColor: "primary.main",
+                                                        },
+                                                    },
+                                                },
+                                            }}
+                                      />
                                   </>
                             }
                             <SimpleFileInput label={translate("Add an attachment (optional)")} id="file"  setData={setFormData} variant="outlined" />
