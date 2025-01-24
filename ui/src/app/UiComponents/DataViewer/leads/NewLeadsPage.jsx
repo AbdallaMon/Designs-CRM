@@ -21,6 +21,7 @@ import Link from "next/link";
 import OnHoldLeads from "@/app/UiComponents/DataViewer/leads/OnHoldLeads.jsx";
 import NextCalls from "@/app/UiComponents/DataViewer/leads/NextCalls.jsx";
 import {FixedData} from "@/app/UiComponents/DataViewer/leads/FixedData.jsx";
+import {useAuth} from "@/app/providers/AuthProvider.jsx";
 
 export default function NewLeadsPage({searchParams,staff}) {
 
@@ -32,8 +33,7 @@ export default function NewLeadsPage({searchParams,staff}) {
         setPage,
         limit,
         setLimit,
-        total,
-        setTotal, totalPages, setFilters
+        total, totalPages, setFilters
     } = useDataFetcher("shared/client-leads" + `?isNew=true&`, false,{clientId:searchParams.clientId?searchParams.clientId:null});
 
 
@@ -43,7 +43,7 @@ export default function NewLeadsPage({searchParams,staff}) {
               <LeadsSlider title="New leads" loading={loading} data={data} total={total} limit={limit} page={page} setLimit={setLimit}
                            setPage={setPage}
                            totalPages={totalPages}>
-                  {data?.map((lead)=><LeadSliderCard lead={lead} key={lead.id} setData={setData} />)}
+                  {data?.map((lead)=><LeadSliderCard  lead={lead} key={lead.id} setData={setData} />)}
               </LeadsSlider>
               <NextCalls staff={staff}/>
               <OnHoldLeads/>
@@ -53,6 +53,7 @@ export default function NewLeadsPage({searchParams,staff}) {
 
 export function LeadSliderCard({ lead,setData }) {
     const formattedDate = dayjs(lead.createdAt).format('YYYY-MM-DD');
+    const {user}=useAuth()
     const {setLoading} = useToastContext()
     async function createADeal(lead) {
         const assign = await handleRequestSubmit(lead, setLoading, `shared/client-leads`, false, "Assigning", false, "PUT")
@@ -111,6 +112,7 @@ export function LeadSliderCard({ lead,setData }) {
 
               {/* Card Actions */}
               <CardActions sx={{ justifyContent: "flex-end", gap: 1, paddingTop: 1.5 }}>
+                  {user.role==="STAFF"&&
                   <ConfirmWithActionModel
                         title="Are you sure you want to get this lead and assign it to you as a new deal?"
                         handleConfirm={() => createADeal(lead)}
@@ -119,6 +121,7 @@ export function LeadSliderCard({ lead,setData }) {
                         size="small"
                         variant="outlined" // Outlined style for better contrast
                   />
+                  }
                   <Button
                         component={Link}
                         href={`/dashboard/deals/${lead.id}`}

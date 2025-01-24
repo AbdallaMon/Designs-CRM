@@ -883,7 +883,6 @@ export const getNextCalls = async ({limit,skip,searchParams}) => {
         take: limit,
         skip: skip
     });
-console.log(nearestCallReminders,"nearestCallReminders")
     const total = await prisma.clientLead.count({
         where: {
             status: {
@@ -898,7 +897,6 @@ console.log(nearestCallReminders,"nearestCallReminders")
             }
         }
     });
-console.log(total,"total")
     const totalPages = Math.ceil(total / limit);
 
     return{

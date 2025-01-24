@@ -926,7 +926,6 @@ export async function createLeadFromExcelData(req, res) {
             }
         }
 
-        console.log("Data processing completed.");
         return res.status(200).json({ message: "Data processed successfully" });
     } catch (error) {
         console.error(error);

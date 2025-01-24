@@ -92,7 +92,7 @@ function FixedCardData({ data,admin,setData }) {
                       {snackbarMessage}
                   </Alert>
               </Snackbar>
-              <CardContent sx={{ height: '120px', overflowY: 'auto',padding:"4px !important" }}>
+              <CardContent sx={{ height: '100px', overflowY: 'auto',padding:"4px !important" }}>
                   {/* Title with Copy Icon */}
                   <Typography
                         variant="h5"
@@ -166,13 +166,11 @@ function FixedDataSlider({data,loading,setData}) {
                     width: '100%',
                     margin: 'auto',
                     py: 1,
-                    pb: 2,
                     background: theme.palette.background.default,
                     position: "relative",
                     mb:2,
                     borderRadius: 3, // Rounded corners
                     boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.1)', // Subtle shadow
-
                 }}
           >
               {loading && <LoadingOverlay />}
