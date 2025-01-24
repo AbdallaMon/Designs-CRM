@@ -173,8 +173,8 @@ export const KanbanStatusArray= [
     "REJECTED",
 ];
 
-export const initialPageLimit = 1
-export const totalLimitPages = [1, 20, 50, 100]
+export const initialPageLimit = 9
+export const totalLimitPages = [9, 20, 50, 100]
 export const simpleModalStyle = {
     position: "absolute",
     top: "50%",
