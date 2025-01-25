@@ -21,30 +21,24 @@
 33 - import via excel
 36- start end date deals
 37- ban a user
-
-
 35 - check reports
-
 38- search by client in deals
 39- dates
-
-
-
 40- leads
 41- commission 5%
 42- حساب البنك
 43- سعر المتر
 اضافة اجزاء من قبل الادمن
-
 فتح الايميلات علي الجيميل
 حابب ضيف معلومات اضافية
 44- client enter data one time per day
 commission 5 %
 remove final price
-
 plan
-
 pays
+
+
+
 
 dJkmjERCZGCEgaxl
 root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

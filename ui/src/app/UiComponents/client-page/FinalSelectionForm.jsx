@@ -374,7 +374,7 @@ function ConsultLeadForm({item,category}){
                     }}
               >
     <Typography
-          variant="h4"
+          variant="h5"
           sx={{ fontWeight: 'bold', marginBottom: 1,display:"flex",gap:2,alignItems:"center" }}
     >
               <CircularProgress sx={{ marginBottom: 2 }} />

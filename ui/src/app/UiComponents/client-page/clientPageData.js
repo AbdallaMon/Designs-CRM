@@ -33,24 +33,28 @@ export const leads = [
     {
         title: "Consultation",
         value: "CONSULTATION",
-        image: "/consultation.jpg"
+        image: "/consultation.jpg",
+        alt:"Dream studio consultation with eng ahmed"
     },
     {
         title: "Design",
         value: "DESIGN",
-        image: "/design.jfif"
+        image: "/design.jfif",
+        alt:"Dream Studio - Dream Design & Luxurious Home Solutions"
     }
 ]
 export const designLeadTypes = [
     {
         title: "Inside UAE",
         value: "INSIDE_UAE",
-        image: "/inside-uae.webp"
+        image: "/inside-uae.webp",
+        alt:"Dream studio create your dream design inside UAE"
     },
     {
         title: "Out side UAE",
         value: "OUTSIDE_UAE",
-        image: "/outside-uae.jpg"
+        image: "/outside-uae.jpg",
+        alt:"Dream Studio - Dream Design & Luxurious Home Solutions."
     },
 
 

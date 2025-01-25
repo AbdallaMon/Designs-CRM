@@ -37,10 +37,12 @@ const items=!isMobile?[
         title: "Out side UAE",
         value: "OUTSIDE_UAE",
         image: "/outside-uae.jpg"
+        ,  alt:"Dream studio create your dream design inside UAE"
     },{
         title: "Inside UAE",
         value: "INSIDE_UAE",
-        image: "/inside-uae.webp"
+        image: "/inside-uae.webp",
+        alt:"Dream Studio - Dream Design & Luxurious Home Solutions."
     },
     ]:designLeadTypes
     return (
@@ -90,6 +92,7 @@ export function LeadCard({lead, handleClick,class_name="lead-card"}) {
             overflow: "hidden",
         }}
         >
+            <img src={lead.image} alt={lead.alt} />
         <Box
               className="lead-card-image"
               sx={{
@@ -281,7 +284,7 @@ export function Header({reverseAnimation}) {
                       <Box
                             component="img"
                             src="/logo-dark.png"
-                            alt="Logo"
+                            alt="Dream Studio - Dream Design & Luxurious Home Solutions"
                             className="logo"
                             style={{
                                 marginLeft:"-25px"
