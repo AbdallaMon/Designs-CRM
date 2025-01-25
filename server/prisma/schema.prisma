@@ -113,6 +113,8 @@ model ClientLead {
       createdAt          DateTime         @default(now())
       updatedAt          DateTime         @updatedAt
 
+      timeToContact       DateTime?
+      country             String?
       @@index([clientId])
       @@index([userId])
 }

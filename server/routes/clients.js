@@ -79,6 +79,16 @@ router.post("/new-lead",async (req,res)=>{
         if(body.location==="OUTSIDE_UAE"){
             data.emirate="OUTSIDE"
         }
+        if (body.timeToContact) {
+            const date = new Date(body.timeToContact);
+            if (!isNaN(date)) {
+                data.timeToContact = date.toISOString(); // Convert to ISO-8601 format
+            }
+        }
+
+        if(body.country){
+            data.country=body.country
+        }
         if(body.priceRange){
             data.price=`${body.priceRange[0]} - ${body.priceRange[1]}`
             const averagePrice = (body.priceRange[0] + body.priceRange[1]) / 2;

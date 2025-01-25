@@ -1,6 +1,6 @@
 "use client"
 import {useLanguageContext} from "@/app/providers/LanguageProvider.jsx";
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {useAlertContext} from "@/app/providers/MuiAlert.jsx";
 import {useToastContext} from "@/app/providers/ToastLoadingProvider.js";
 
@@ -42,7 +42,9 @@ function DesignLeadForm({category ,item,location}){
         priceRange: [0, 0],
         priceOption:null,
         file:null,
-        clientDescription:null
+        clientDescription:null,
+        timeToContact:null,
+        country:null
     });
     const [renderSuccess,setRenderSuccess]=useState(false)
     const {setAlertError}=useAlertContext()
@@ -50,7 +52,14 @@ function DesignLeadForm({category ,item,location}){
 
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+    const dateRef = useRef(null);
 
+    useEffect(() => {
+        // Focus the TextField when the component is mounted
+        if (dateRef.current) {
+            dateRef.current.focus();
+        }
+    }, []);
     const handleChange = (e) => {
         const {name, value} = e.target;
 
@@ -75,6 +84,10 @@ function DesignLeadForm({category ,item,location}){
     const handleSubmit =async () => {
         const { name, phone, priceRange,file,emirate,priceOption,email } = formData;
         if (!name || !phone ||!email || (!emirate && location==="INSIDE_UAE"||(location==="INSIDE_UAE"&&priceRange[0]===0&&priceRange[1]===0&&!priceOption))) {
+            setAlertError(translate("Please fill all the fields."));
+            return;
+        }
+        if(location!=="INSIDE_UAE"&&!formData.country){
             setAlertError(translate("Please fill all the fields."));
             return;
         }
@@ -278,7 +291,7 @@ function DesignLeadForm({category ,item,location}){
                                             fullWidth
                                             label={translate("Additional information (optional)")}
                                             name="clientDescription"
-                                            type="clientDescription"
+                                            type="text"
                                             variant="outlined"
                                             value={formData.clientDescription}
                                             onChange={handleChange}
@@ -295,7 +308,56 @@ function DesignLeadForm({category ,item,location}){
                                       />
                                   </>
                             }
-                            <SimpleFileInput label={translate("Add an attachment (optional)")} id="file"  setData={setFormData} variant="outlined" />
+                            {location==="INSIDE_UAE"?
+<>
+    <TextField
+          fullWidth
+          label={translate("Choose a time to contact you? (optional)")}
+          name="timeToContact"
+          type="datetime-local"
+          variant="outlined"
+          value={formData.timeToContact}
+          onChange={handleChange}
+          slotProps={{
+              inputLabel: {
+                  shrink: true,
+              },
+          }}
+          InputProps={{
+              sx: {
+                  borderRadius: 2,
+                  "&:hover": {
+                      "& fieldset": {
+                          borderColor: "primary.main",
+                      },
+                  },
+              },
+          }}
+    />
+</>
+                                  :<>
+                                      <TextField
+                                            fullWidth
+                                            label={translate("Country")}
+                                            name="country"
+                                            type="text"
+                                            variant="outlined"
+                                            value={formData.country}
+                                            onChange={handleChange}
+                                            InputProps={{
+                                                sx: {
+                                                    borderRadius: 2,
+                                                    "&:hover": {
+                                                        "& fieldset": {
+                                                            borderColor: "primary.main",
+                                                        },
+                                                    },
+                                                },
+                                            }}
+                                      />
+                                  </>
+                            }
+                                  <SimpleFileInput label={translate("Add an attachment (optional)")} id="file"  setData={setFormData} variant="outlined" />
 
                             <Button
                                   variant="contained"

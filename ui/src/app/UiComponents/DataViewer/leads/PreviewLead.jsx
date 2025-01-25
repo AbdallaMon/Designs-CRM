@@ -355,7 +355,7 @@ const theme=useTheme()
                               Location
                           </Typography>
                           <Typography variant="body1">
-                              {lead.emirate}
+                              {lead.country?lead.country:lead.emirate}
                           </Typography>
                       </Grid>
                       <Grid size={{xs: 12, md: 6}}>
@@ -403,6 +403,16 @@ const theme=useTheme()
                               {lead.clientDescription}
                           </Typography>
                       </Grid>
+                      }
+                      {lead.timeToContact&&
+                            <Grid size={{xs: 12,sm:6}}>
+                                <Typography color="text.secondary" variant="caption">
+                                    Client selected time to contact
+                                </Typography>
+                                <Typography variant="body1">
+                                    {dayjs(lead.timeToContact).format("DD-MM-YYYY, HH:mm")}
+                                </Typography>
+                            </Grid>
                       }
                   </Grid>
               </InfoCard>

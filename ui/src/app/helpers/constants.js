@@ -110,6 +110,8 @@ export const dictionary = {
     ,"Out side UAE":"خارج الامارات"
     ,"How much would you like to invest in your dream home?":"كم حابب تستثمر في منزل احلامك؟"
     ,"Additional information (optional)":"معلومات اضافية (اختياري)"
+    ,"Choose a time to contact you? (optional)":"اختيار وقت للتواصل معك (اختياري)",
+    "Country":"الدولة"
 };
 
 export const MediaType = {

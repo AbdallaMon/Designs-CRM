@@ -165,6 +165,8 @@ export async function getClientLeadDetails(clientLeadId) {
             id: true,
             userId:true,
             clientDescription:true,
+            country:true,
+            timeToContact:true,
             client: {
                 select: {
                     id: true,
