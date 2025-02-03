@@ -37,8 +37,20 @@ remove final price
 plan
 pays
 
+- Upcomming call reminders
+- Interior design instead of design
+- Remove sorry from outside emirates
+- Redirect to consult page directly
 
-
-
-dJkmjERCZGCEgaxl
-root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
+- Courses and store boxes
+- Change time piker
+- Chat button
+- Email link undelivered
+- Email Image
+- 300 : 400 and
+- less than 300 instead of less than 400
+- whatsapp button for the staff,email too
+- make it pages (to enhance the back functioanlity)
+- country code for outside emirates
+  dJkmjERCZGCEgaxl
+  root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
