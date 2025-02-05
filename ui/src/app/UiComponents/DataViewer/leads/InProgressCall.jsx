@@ -1,6 +1,5 @@
 import { useCallTimer } from "@/app/helpers/hooks/useCallTimer.js";
 import { alpha, Box, Typography, useTheme } from "@mui/material";
-import { RiTimeLine } from "react-icons/ri";
 import React from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
