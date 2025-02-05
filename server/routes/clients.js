@@ -61,10 +61,21 @@ router.post("/new-lead", async (req, res) => {
             ? "عذراً ، لقد قمت بالفعل بإنشاء استفسار اليوم. يمكنك المحاولة مرة أخرى غدًا."
             : "Sorry, you have already created a lead today. You can try again tomorrow.";
         return res.status(422).json({ message });
+      } else {
+        await prisma.client.update({
+          where: {
+            id: client.id,
+          },
+          data: {
+            phone: body.phone,
+          },
+        });
       }
     }
     const data = {
-      client: { connect: { id: client.id } },
+      client: {
+        connect: { id: client.id },
+      },
       selectedCategory: body.category,
       type: body.item,
       status: "NEW",

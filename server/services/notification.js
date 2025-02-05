@@ -1,60 +1,157 @@
-import {createNotification, getUserDetailsWithSpecificFields} from "./utility.js";
-import {dealsLink, newLeadLink, userLink} from "./links.js";
+import {
+  createNotification,
+  getUserDetailsWithSpecificFields,
+} from "./utility.js";
+import { dealsLink, newLeadLink, userLink } from "./links.js";
 import dayjs from "dayjs";
 
-export async function convertALeadNotification(lead){
-    const user=await getUserDetailsWithSpecificFields(lead.userId)
-    const notificationHtml = `<div>
-    <a href="${userLink + user.id}">#${user.name}</a> has marked their lead <a href="${dealsLink + lead.id}">#${lead.id}</a> as overdue. It is now on hold for another user to take it.
+export async function convertALeadNotification(lead) {
+  const user = await getUserDetailsWithSpecificFields(lead.userId);
+  const notificationHtml = `<div>
+    <a href="${userLink + user.id}">#${
+    user.name
+  }</a> has marked their lead <a href="${dealsLink + lead.id}">#${
+    lead.id
+  }</a> as overdue. It is now on hold for another user to take it.
 </div>`;
-    await createNotification(null, true,  notificationHtml, null, "LEAD_STATUS_CHANGE", "Lead on hold", true,"HTML",null,lead.userId)
+  await createNotification(
+    null,
+    true,
+    notificationHtml,
+    null,
+    "LEAD_STATUS_CHANGE",
+    "Lead on hold",
+    true,
+    "HTML",
+    null,
+    lead.userId
+  );
 }
-export async function overdueALeadNotification(convertedLead,newClientLead){
-    const notificationHtml = `<div>
-Deal <a href="${dealsLink + convertedLead.id}" >#${convertedLead.id}</a> is overdue and converted from user <a href="${userLink + convertedLead.userId}">#${convertedLead.userId}</a> to 
-<a href="${userLink + convertedLead.userId}">#${convertedLead.userId}</a> with new id #<a href="${dealsLink + newClientLead.id}" >#${newClientLead.id}</a>
-</div>`
-    await createNotification(null, true,  notificationHtml, null, "LEAD_TRANSFERRED", "Lead transferred", true,"HTML",null,newClientLead.userId)
+export async function overdueALeadNotification(convertedLead, newClientLead) {
+  const notificationHtml = `<div>
+Deal <a href="${dealsLink + convertedLead.id}" >#${
+    convertedLead.id
+  }</a> is overdue and converted from user <a href="${
+    userLink + convertedLead.userId
+  }">#${convertedLead.userId}</a> to 
+<a href="${userLink + convertedLead.userId}">#${
+    convertedLead.userId
+  }</a> with new id #<a href="${dealsLink + newClientLead.id}" >#${
+    newClientLead.id
+  }</a>
+</div>`;
+  await createNotification(
+    null,
+    true,
+    notificationHtml,
+    null,
+    "LEAD_TRANSFERRED",
+    "Lead transferred",
+    true,
+    "HTML",
+    null,
+    newClientLead.userId
+  );
 }
-export async function assignLeadNotification(clientLeadId,userId,updatedClientLead){
-    const notificationHtml = `<div>
-    Lead <a href="${dealsLink + clientLeadId}" >#${clientLeadId}</a> assigned to user <a href="${userLink + userId}">#${updatedClientLead.assignedTo.name}</a> 
-    </div>`
+export async function assignLeadNotification(
+  clientLeadId,
+  userId,
+  updatedClientLead
+) {
+  const notificationHtml = `<div>
+    Lead <a href="${
+      dealsLink + clientLeadId
+    }" >#${clientLeadId}</a> assigned to user <a href="${userLink + userId}">#${
+    updatedClientLead.assignedTo.name
+  }</a> 
+    </div>`;
 
-    await createNotification(null, true,  notificationHtml, null, "LEAD_TRANSFERRED", "Lead transferred", true,"HTML",null,Number(userId))
+  await createNotification(
+    null,
+    true,
+    notificationHtml,
+    null,
+    "LEAD_TRANSFERRED",
+    "Lead transferred",
+    true,
+    "HTML",
+    null,
+    Number(userId)
+  );
 }
-export async function newNoteNotification(leadId,content,userId){
-    const notificationHtml = `<div>
-       <strong>Note</strong> was added to Lead <a href="${dealsLink + leadId}" >#${leadId}</a> 
+export async function newNoteNotification(leadId, content, userId) {
+  const notificationHtml = `<div>
+       <strong>Note</strong> was added to Lead <a href="${
+         dealsLink + leadId
+       }" >#${leadId}</a> 
        <q>${content}<q/>
     </div>
-`
-    await createNotification(null, true,  notificationHtml, null, "NEW_NOTE", "New note", true,"HTML",null,userId)
+`;
+  await createNotification(
+    null,
+    true,
+    notificationHtml,
+    null,
+    "NEW_NOTE",
+    "New note",
+    true,
+    "HTML",
+    null,
+    userId
+  );
 }
-export async function newCallNotification(leadId,callReminder){
-    const notificationHtml = `<div>
-       <strong>Call reminder</strong> was added to Lead <a href="${dealsLink + leadId}" >#${leadId}</a> 
+export async function newCallNotification(leadId, callReminder) {
+  const notificationHtml = `<div>
+       <strong>Call reminder</strong> was added to Lead <a href="${
+         dealsLink + leadId
+       }" >#${leadId}</a> 
        <div class="sub-text">
-    Call time: ${dayjs(callReminder.time).format('YYYY-MM-DD HH:mm')}
+    Call time: ${dayjs(callReminder.time).format("YYYY-MM-DD HH:mm")}
 </div>
      <div class="sub-text">
     Reason of the call : ${callReminder.reminderReason}
 </div>
-    </div>`
-    await createNotification(null, true,  notificationHtml, null, "CALL_REMINDER_CREATED", "New call reminder", true,"HTML",null,callReminder.userId)
+    </div>`;
+  await createNotification(
+    null,
+    true,
+    notificationHtml,
+    null,
+    "CALL_REMINDER_CREATED",
+    "New call reminder",
+    true,
+    "HTML",
+    null,
+    callReminder.userId
+  );
 }
-export async function newPriceOffer(leadId,priceOffer){
-    const notificationHtml = `<div>
-       <strong>New Price offer</strong> was added to Lead <a href="${dealsLink + leadId}" >#${leadId}</a> 
+export async function newPriceOffer(leadId, priceOffer) {
+  const notificationHtml = `<div>
+       <strong>New Price offer</strong> was added to Lead <a href="${
+         dealsLink + leadId
+       }" >#${leadId}</a> 
        <div class="sub-text">
     Price range: ${priceOffer.minPrice} : ${priceOffer.maxPrice}
 </div>
-    </div>`
-    await createNotification(null, true,  notificationHtml, null, "PRICE_OFFER_SUBMITTED", "New price offer", true,"HTML",null,priceOffer.user.id)
+    </div>`;
+  await createNotification(
+    null,
+    true,
+    notificationHtml,
+    null,
+    "PRICE_OFFER_SUBMITTED",
+    "New price offer",
+    true,
+    "HTML",
+    null,
+    priceOffer.user.id
+  );
 }
-export async function newFileUploaded(leadId,file,userId){
-    const notificationHtml = `<div>
-       <strong>New File</strong> was added to Lead <a href="${dealsLink + leadId}" >#${leadId}</a> 
+export async function newFileUploaded(leadId, file, userId) {
+  const notificationHtml = `<div>
+       <strong>New File</strong> was added to Lead <a href="${
+         dealsLink + leadId
+       }" >#${leadId}</a> 
        <div class="sub-text">
        <a href="${file.url}">
     File name: ${file.name} 
@@ -63,14 +160,27 @@ export async function newFileUploaded(leadId,file,userId){
      <div class="sub-text">
     File description: ${file.description} 
 </div>
-    </div>`
-    await createNotification(null, true,  notificationHtml, null, "NEW_FILE", "New file upload", true,"HTML",null,Number(userId))
+    </div>`;
+  await createNotification(
+    null,
+    true,
+    notificationHtml,
+    null,
+    "NEW_FILE",
+    "New file upload",
+    true,
+    "HTML",
+    null,
+    Number(userId)
+  );
 }
-export async function updateCallNotification(leadId,callReminder,userId){
-    const notificationHtml = `<div>
-       <strong>Call reminder</strong> updated in Lead <a href="${dealsLink + leadId}" >#${leadId}</a> 
+export async function updateCallNotification(leadId, callReminder, userId) {
+  const notificationHtml = `<div>
+       <strong>Call reminder</strong> updated in Lead <a href="${
+         dealsLink + leadId
+       }" >#${leadId}</a> 
        <div class="sub-text">
-    Call time: ${dayjs(callReminder.time).format('YYYY-MM-DD HH:mm')}
+    Call time: ${dayjs(callReminder.time).format("YYYY-MM-DD HH:mm")}
 </div>
      <div class="sub-text">
     Reason of the call : ${callReminder.reminderReason}
@@ -78,29 +188,70 @@ export async function updateCallNotification(leadId,callReminder,userId){
      <div class="sub-text">
     Result of the call : ${callReminder.callResult}
 </div>
-    </div>`
-    await createNotification(null, true,  notificationHtml, null, "CALL_REMINDER_STATUS", "Call reminder status changed", true,"HTML",null,Number(userId))
+    </div>`;
+  await createNotification(
+    null,
+    true,
+    notificationHtml,
+    null,
+    "CALL_REMINDER_STATUS",
+    "Call reminder status changed",
+    true,
+    "HTML",
+    null,
+    Number(userId)
+  );
 }
-export async function updateLeadStatusNotification(leadId,heading,content,type,userId,isAdmin,staffId){
-
-    const notificationHtml = `<div>
-       <strong>${heading}</strong> updated in Lead <a href="${dealsLink + leadId}" >#${leadId}</a> 
+export async function updateLeadStatusNotification(
+  leadId,
+  heading,
+  content,
+  type,
+  userId,
+  isAdmin,
+  staffId
+) {
+  const notificationHtml = `<div>
+       <strong>${heading}</strong> updated in Lead <a href="${
+    dealsLink + leadId
+  }" >#${leadId}</a> 
        <div class="sub-text">
   ${content}
 </div>
-    </div>`
-    await createNotification(isAdmin?userId:null, !isAdmin,  notificationHtml, null, type?"LEAD_STATUS_CHANGE":"LEAD_UPDATED", "Lead updated", true,"HTML",null,staffId)
+    </div>`;
+  await createNotification(
+    isAdmin ? userId : null,
+    !isAdmin,
+    notificationHtml,
+    null,
+    type ? "LEAD_STATUS_CHANGE" : "LEAD_UPDATED",
+    "Lead updated",
+    true,
+    "HTML",
+    null,
+    staffId
+  );
 }
-export async function newLeadNotification(leadId,client){
-const leadHref=`${newLeadLink +"?leadId="+leadId}`
-    const notificationHtml = `<div>
+export async function newLeadNotification(leadId, client) {
+  const leadHref = `${dealsLink + leadId}`;
+  const notificationHtml = `<div>
        <strong>New lead created</strong> <a href="${leadHref}" >#${leadId}</a> 
        <div class="sub-text">
        New lead created by 
        ${client.name} - 
        ${client.email}
 </div>
-    </div>`
+    </div>`;
 
-    await createNotification(null, null, notificationHtml, null , "NEW_LEAD","New lead",true,"HTML",leadId)
+  await createNotification(
+    null,
+    null,
+    notificationHtml,
+    null,
+    "NEW_LEAD",
+    "New lead",
+    true,
+    "HTML",
+    leadId
+  );
 }

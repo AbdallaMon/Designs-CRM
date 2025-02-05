@@ -71,7 +71,7 @@ export const dictionary = {
   "Umm Al Quwain": "أم القيوين",
   "Ras Al Khaimah": "رأس الخيمة",
   Fujairah: "الفجيرة",
-
+  "Khor Fakkan": "خورفكان",
   // Price Ranges
 
   //   "400,000 AED or less": "أقل من  400,000 درهم اماراتي",
@@ -122,6 +122,10 @@ export const dictionary = {
   "Choose a time to contact you? (optional)":
     "اختيار وقت للتواصل معك (اختياري)",
   Country: "الدولة",
+  "Invalid phone": "رقم الهاتف غير صحيح",
+  "Courses & Books": "الدورات والكتب",
+  Store: "المتجر",
+  "Coming Soon": "سيتوفر قريبًا",
 };
 
 export const MediaType = {
@@ -137,6 +141,7 @@ export const Emirate = {
   UMM_AL_QUWAIN: "Umm Al Quwain",
   RAS_AL_KHAIMAH: "Ras Al Khaimah",
   FUJAIRAH: "Fujairah",
+  KHOR_FAKKAN: "Khor Fakkan",
 };
 
 export const UserRole = {

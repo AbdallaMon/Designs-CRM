@@ -17,10 +17,10 @@ export function initialAnimation(setIsAnimating) {
   );
   const tl = gsap.timeline();
   tl.fromTo(
-    ".lead-card:first-child",
+    ".lead-card:nth-child(odd)",
     {
       opacity: 0,
-      x: -50, // Animate from the left
+      x: -50,
     },
     {
       x: 0,
@@ -29,10 +29,10 @@ export function initialAnimation(setIsAnimating) {
       ease: "power3.out",
     }
   ).fromTo(
-    ".lead-card:last-child",
+    ".lead-card:nth-child(even)",
     {
       opacity: 0,
-      x: 50, // Animate from the right
+      x: 50,
     },
     {
       x: 0,
@@ -56,14 +56,18 @@ export function animateImageCardToFullWidthFullHeight(
   animatedElementClass,
   shadowClass = "shadow-lead-card"
 ) {
-  const removedElement = document.querySelector(`.${removeElementClass}`);
+  // const removedElement = document.querySelector(`.${removeElementClass}`);
+  const allItems = document.querySelectorAll(
+    `.${itemClass}:not(.${animatedElementClass})`
+  );
   const animatedElement = document.querySelector(`.${animatedElementClass}`);
   const animatedShadowElement = animatedElement.querySelector(
     `.${shadowClass}`
   );
-  const removeShadowElement = removedElement.querySelector(`.${shadowClass}`);
   const { top, left, height, width } = animatedElement.getBoundingClientRect();
-  const { left: l, top: t } = removedElement.getBoundingClientRect();
+  const removeShadowElements = document.querySelectorAll(
+    `.${itemClass}:not(.${animatedElementClass}) .${shadowClass}`
+  );
   const centerX = window.innerWidth / 2 - width / 2;
   const centerY = window.innerHeight / 2 - height / 2;
   tl.set(`.${itemClass} .${shadowClass}`, {
@@ -77,12 +81,16 @@ export function animateImageCardToFullWidthFullHeight(
     left: `${left}px`,
     top: `${top}px`,
   });
-  tl.set(removeShadowElement, {
-    left: `${l}px`,
-    top: `${t}px`,
+  allItems.forEach((removedElement) => {
+    const { left: l, top: t } = removedElement.getBoundingClientRect();
+    const removeShadowElement = removedElement.querySelector(`.${shadowClass}`);
+    tl.set(removeShadowElement, {
+      left: `${l}px`,
+      top: `${t}px`,
+    });
   });
   tl.fromTo(
-    removeShadowElement,
+    removeShadowElements,
     { x: 0, opacity: 1 },
     {
       x: -100,
@@ -129,7 +137,6 @@ export function animateImageCardToFullWidthFullHeight(
     top: 0,
   });
 }
-``;
 
 export function animateLeadCategoryItem({
   leadCategory,
@@ -198,6 +205,7 @@ export function animateLeadCategoryItem({
     );
   }
   tl.then(() => {
+    console.log("so?");
     setIsAnimating(false);
     setIsCatAnimated(true);
   });
@@ -509,12 +517,15 @@ export function reverseAnimation({
   } else if (leadCategory && isCatAnimated && !isReversing && !isAnimating) {
     setIsReversing(true);
     const tl = gsap.timeline();
-    const removedElement =
-      leadCategory === "DESIGN" ? "CONSULTATION" : "DESIGN";
+    const allItems = document.querySelectorAll(
+      `.lead-card:not(.${leadCategory})`
+    );
+    console.log(allItems, "al");
+    const removedElements = document.querySelectorAll(
+      `.lead-card:not(.${leadCategory}) .shadow-lead-card`
+    );
+
     const leadElement = document.querySelector(`.${leadCategory}`);
-    const { left, height, top, width } = document
-      .querySelector(`.${removedElement}`)
-      .getBoundingClientRect();
     const {
       top: t,
       left: l,
@@ -588,12 +599,19 @@ export function reverseAnimation({
         },
         "<"
       );
-    tl.set(`.${removedElement} .shadow-lead-card`, {
-      top: `${top}px`,
-      left: `${left}px`,
-      height: `${height}px`,
-      width: `${width}px`,
+    allItems.forEach((removedElement) => {
+      const { top, left, height, width } =
+        removedElement.getBoundingClientRect();
+      const removeShadowElement =
+        removedElement.querySelector(`.shadow-lead-card`);
+      tl.set(removeShadowElement, {
+        top: `${top}px`,
+        left: `${left}px`,
+        height: `${height}px`,
+        width: `${width}px`,
+      });
     });
+
     tl.set(`.shadow-lead-card`, {
       position: "absolute",
       top: 0,
@@ -601,7 +619,8 @@ export function reverseAnimation({
       width: "100%",
       height: "100%",
     });
-    tl.to(`.${removedElement} .shadow-lead-card`, {
+
+    tl.to(removedElements, {
       x: 0,
       borderRadius: "12px",
       opacity: 1,

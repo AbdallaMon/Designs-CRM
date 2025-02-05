@@ -47,31 +47,30 @@ export default function NextCalls({ staff }) {
       setPage={setPage}
       totalPages={totalPages}
       NextCalls={true}
-      danger={true}
     >
-      {data?.map((lead) => (
-        <NextCall lead={lead} key={lead.id} />
+      {data?.map((call) => (
+        <NextCall call={call} key={call.id} />
       ))}
     </LeadsSlider>
   );
 }
-function NextCall({ lead }) {
+function NextCall({ call }) {
   return (
     <Card>
       <CardContent>
         <Box>
           <Typography variant="h6" component="div">
-            {lead.client.name}
+            {call.clientLead.client.name}
           </Typography>
         </Box>
         <Typography variant="body2">
-          Reason: {hideMoreData(lead.callReminders[0].reminderReason) || "N/A"}
+          Reason: {hideMoreData(call.reminderReason) || "N/A"}
         </Typography>
-        <InProgressCall call={lead.callReminders[0]} simple={true} />
+        <InProgressCall call={call} simple={true} />
         <CardActions>
           <Button
             component={Link}
-            href={`/dashboard/deals/${lead.id}`}
+            href={`/dashboard/deals/${call.clientLead.id}`}
             variant="contained"
             size="small"
             color="primary"

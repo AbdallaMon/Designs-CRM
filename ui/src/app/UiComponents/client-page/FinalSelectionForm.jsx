@@ -1,6 +1,6 @@
 "use client";
 import { useLanguageContext } from "@/app/providers/LanguageProvider.jsx";
-import React, { useEffect, useRef, useState } from "react";
+import React, { use, useEffect, useRef, useState } from "react";
 import { useAlertContext } from "@/app/providers/MuiAlert.jsx";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 
@@ -30,6 +30,7 @@ import {
 } from "@/app/UiComponents/client-page/clientPageData.js";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { matchIsValidTel, MuiTelInput } from "mui-tel-input";
 
 export function FinalSelectionForm({ category, item, location }) {
   return (
@@ -70,6 +71,10 @@ function DesignLeadForm({ category, item, location }) {
       dateRef.current.focus();
     }
   }, []);
+  function handlePhoneChange(value) {
+    setFormData((prev) => ({ ...prev, phone: value }));
+  }
+  const [defaultCountry, setDefaultCountry] = useState("AE");
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -91,9 +96,28 @@ function DesignLeadForm({ category, item, location }) {
   const handleSelectPriceChange = (e) => {
     setFormData((prev) => ({ ...prev, priceOption: e.target.value }));
   };
+  async function getDefaultCountryCode() {
+    const defaultCountry = "AE";
+    if (location === "INSIDE_UAE") {
+      return defaultCountry;
+    } else {
+      const response = await fetch("https://geolocation-db.com/json/");
+      const data = await response.json();
+      return data.country_code;
+    }
+  }
+  useEffect(() => {
+    getDefaultCountryCode().then((code) => {
+      setDefaultCountry(code);
+    });
+  }, []);
   const handleSubmit = async () => {
     const { name, phone, priceRange, file, emirate, priceOption, email } =
       formData;
+    if (!matchIsValidTel(phone)) {
+      setAlertError(translate("Invalid phone"));
+      return;
+    }
     if (
       !name ||
       !phone ||
@@ -230,7 +254,30 @@ function DesignLeadForm({ category, item, location }) {
                 },
               }}
             />
-            <TextField
+            <MuiTelInput
+              defaultCountry={defaultCountry}
+              value={formData.phone}
+              id="phone"
+              name="phone"
+              label={translate("Phone")}
+              onChange={handlePhoneChange}
+              error={
+                matchIsValidTel(formData.phone) || formData.phone === ""
+                  ? false
+                  : true
+              }
+              helperText={
+                matchIsValidTel(formData.phone) || formData.phone === ""
+                  ? ""
+                  : translate("Invalid phone")
+              }
+              fullWidth
+              sx={{
+                "& .MuiInputBase-root": { borderRadius: 2 },
+                "&:hover fieldset": { borderColor: "primary.main" },
+              }}
+            />
+            {/* <TextField
               fullWidth
               label={translate("Phone")}
               name="phone"
@@ -251,7 +298,7 @@ function DesignLeadForm({ category, item, location }) {
                   },
                 },
               }}
-            />
+            /> */}
             <TextField
               fullWidth
               label={translate("Email")}

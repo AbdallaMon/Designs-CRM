@@ -911,47 +911,48 @@ export const getNextCalls = async ({ limit, skip, searchParams }) => {
       ? { userId: Number(searchParams.staffId) }
       : {};
 
-  const nearestCallReminders = await prisma.clientLead.findMany({
+  const nearestCallReminders = await prisma.callReminder.findMany({
     where: {
-      status: {
-        notIn: ["CONVERTED", "ON_HOLD", "FINALIZED", "REJECTED"],
-      },
-      ...staffFilter,
-      callReminders: {
-        some: {
-          status: "IN_PROGRESS",
+      status: "IN_PROGRESS",
+      clientLead: {
+        status: {
+          notIn: ["CONVERTED", "ON_HOLD", "REJECTED"],
         },
+        ...staffFilter,
       },
     },
     include: {
-      callReminders: {
-        where: {
-          status: "IN_PROGRESS",
+      clientLead: {
+        select: {
+          id: true,
+          client: {
+            select: {
+              name: true,
+            },
+          },
+          status: true,
         },
-        orderBy: {
-          time: "asc",
-        },
-        take: 1,
       },
-      client: true,
+    },
+    orderBy: {
+      time: "asc",
     },
     take: limit,
     skip: skip,
   });
-  const total = await prisma.clientLead.count({
-    where: {
-      status: {
-        notIn: ["CONVERTED", "ON_HOLD", "FINALIZED", "REJECTED"],
-      },
-      ...staffFilter,
 
-      callReminders: {
-        some: {
-          status: "IN_PROGRESS",
+  const total = await prisma.callReminder.count({
+    where: {
+      status: "IN_PROGRESS",
+      clientLead: {
+        status: {
+          notIn: ["CONVERTED", "ON_HOLD", "FINALIZED", "REJECTED"],
         },
+        ...staffFilter,
       },
     },
   });
+
   const totalPages = Math.ceil(total / limit);
 
   return {
@@ -961,6 +962,7 @@ export const getNextCalls = async ({ limit, skip, searchParams }) => {
     totalPages,
   };
 };
+
 export async function getAllFixedData() {
   return prisma.fixedData.findMany({
     orderBy: { createdAt: "desc" },

@@ -17,6 +17,7 @@ import {
   reverseAnimation,
 } from "@/app/UiComponents/client-page/function.js";
 import { useLanguageContext } from "@/app/providers/LanguageProvider.jsx";
+import FloatingWhatsAppButton from "../buttons/FloatingWhatsappButton";
 
 export default function ClientPage() {
   const [leadCategory, setLeadCategory] = useState();
@@ -37,11 +38,7 @@ export default function ClientPage() {
     }
   }, []);
   function animateLeadCategory(value) {
-    console.log(value, "value");
-    if (value === "CONSULTATION") {
-      setLeadCategory(value);
-
-      animateFormPage({ setIsAnimating, setIsItemAnimated });
+    if (value !== "DESIGN") {
       return;
     }
     if (isCatAnimated || isAnimating || isReversing) return;
@@ -102,6 +99,7 @@ export default function ClientPage() {
   }, [animateLocation]);
   return (
     <>
+      <FloatingWhatsAppButton />
       <Header
         reverseAnimation={() =>
           reverseAnimation({
@@ -129,14 +127,14 @@ export default function ClientPage() {
       <Container
         maxWidth="md"
         sx={{
-          height:
-            !leadCategory ||
-            (leadCategory !== "DESIGN" && !leadItem) ||
-            leadItem
-              ? "100vh"
-              : "auto",
-          overflow: "hidden",
+          height: !leadCategory
+            ? "auto"
+            : (leadCategory !== "DESIGN" && !leadItem) || leadItem
+            ? "100vh"
+            : "auto",
+          overflow: { md: "hidden" },
           py: { xs: 3, md: 4 },
+          pb: { xs: 16, md: 10 },
         }}
       >
         <Paper

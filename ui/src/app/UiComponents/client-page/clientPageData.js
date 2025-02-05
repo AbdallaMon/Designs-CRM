@@ -36,14 +36,33 @@ export const leads = [
     value: "CONSULTATION",
     image: "/consultation.jpg",
     alt: "Dream studio consultation with eng ahmed",
+    type: "LINK",
+    href: "https://decorstores.ltd/products/consultation-with-engineer-ahmed",
   },
   {
     title: "Interior design",
     value: "DESIGN",
     image: "/design.jfif",
     alt: "Dream Studio - Dream Design & Luxurious Home Solutions",
+    type: "ANIMATION",
+  },
+  {
+    title: "Courses & Books",
+    value: "COURSES_BOOKS",
+    image: "/books.jpg",
+    alt: "Courses & Books by Dream Studio",
+    type: "COMING_SOON",
+  },
+  {
+    title: "Store",
+    value: "STORE",
+    image: "/store.webp",
+    alt: "Dream Studio Store",
+    type: "LINK",
+    href: "https://decorstores.ltd/collections/all",
   },
 ];
+
 export const designLeadTypes = [
   {
     title: "Inside UAE",
