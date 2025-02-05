@@ -123,7 +123,8 @@ export const dictionary = {
     "اختيار وقت للتواصل معك (اختياري)",
   Country: "الدولة",
   "Invalid phone": "رقم الهاتف غير صحيح",
-  "Courses & Books": "الدورات والكتب",
+  Courses: "الدورات",
+  Books: "الكتب",
   Store: "المتجر",
   "Coming Soon": "سيتوفر قريبًا",
   "Choose a time between 10 AM to 7 PM.":

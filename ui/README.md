@@ -48,7 +48,6 @@ pays
 - whatsapp button for the staff,email too
 - country code for outside emirates
 - خورفقان as emirate
-
 - Courses and store cards
 - Chat button(whats app)
 - best time to contact

@@ -12,9 +12,10 @@ const FloatingWhatsAppButton = () => {
   };
 
   // Construct the WhatsApp URL based on device type
-  const whatsappUrl = isMobileDevice()
-    ? `whatsapp://send?phone=${phoneNumber}`
-    : `https://web.whatsapp.com/send?phone=${phoneNumber}`;
+  const whatsappUrl = `whatsapp://send?phone=${phoneNumber}`;
+  //  isMobileDevice()
+  //   ? `whatsapp://send?phone=${phoneNumber}`
+  //   : `https://web.whatsapp.com/send?phone=${phoneNumber}`;
 
   return (
     <Fab

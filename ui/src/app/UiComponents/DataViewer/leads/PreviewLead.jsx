@@ -421,7 +421,6 @@ const LeadContent = ({
 
 function WhatsAppRedirect({ lead }) {
   const [openSnackbar, setOpenSnackbar] = React.useState(false);
-  console.log(lead, "lead");
   // UAE Country Code
   const UAE_COUNTRY_CODE = "+971";
 
@@ -466,9 +465,9 @@ function WhatsAppRedirect({ lead }) {
     }
 
     // Open WhatsApp URL based on device type
-    const whatsappUrl = isMobileDevice()
-      ? `whatsapp://send?phone=${formattedPhone}`
-      : `https://web.whatsapp.com/send?phone=${formattedPhone}`;
+    // const whatsappUrl = isMobileDevice()
+    //   ? `whatsapp://send?phone=${formattedPhone}`
+    //   : `https://web.whatsapp.com/send?phone=${formattedPhone}`;
 
     // Copy phone number to clipboard
     navigator.clipboard.writeText(formattedPhone).then(() => {
@@ -476,8 +475,8 @@ function WhatsAppRedirect({ lead }) {
 
       // Redirect after 1.5 seconds
       setTimeout(() => {
-        window.open(whatsappUrl, "_blank");
-      }, 1500);
+        window.open(`whatsapp://send?phone=${formattedPhone}`, "_blank");
+      }, 100);
     });
   };
 
