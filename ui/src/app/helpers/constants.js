@@ -126,6 +126,8 @@ export const dictionary = {
   "Courses & Books": "الدورات والكتب",
   Store: "المتجر",
   "Coming Soon": "سيتوفر قريبًا",
+  "Choose a time between 10 AM to 7 PM.":
+    "اختر وقت بين الساعة 10 صباحًا و 7 مساءً.",
 };
 
 export const MediaType = {

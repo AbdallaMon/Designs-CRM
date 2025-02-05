@@ -1,9 +1,8 @@
 "use client";
 import { useLanguageContext } from "@/app/providers/LanguageProvider.jsx";
-import React, { use, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useAlertContext } from "@/app/providers/MuiAlert.jsx";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
-
 import {
   Autocomplete,
   Box,
@@ -28,10 +27,12 @@ import {
   priceRange,
   variants,
 } from "@/app/UiComponents/client-page/clientPageData.js";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { matchIsValidTel, MuiTelInput } from "mui-tel-input";
-
+import "dayjs/locale/en-gb";
+import { MobileDateTimePicker } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 export function FinalSelectionForm({ category, item, location }) {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -63,14 +64,14 @@ function DesignLeadForm({ category, item, location }) {
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const dateRef = useRef(null);
+  // const dateRef = useRef(null);
 
-  useEffect(() => {
-    // Focus the TextField when the component is mounted
-    if (dateRef.current) {
-      dateRef.current.focus();
-    }
-  }, []);
+  // useEffect(() => {
+  //   // Focus the TextField when the component is mounted
+  //   if (dateRef.current) {
+  //     dateRef.current.focus();
+  //   }
+  // }, []);
   function handlePhoneChange(value) {
     setFormData((prev) => ({ ...prev, phone: value }));
   }
@@ -83,6 +84,9 @@ function DesignLeadForm({ category, item, location }) {
     }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
+  function handleDateChange(value) {
+    setFormData((prev) => ({ ...prev, timeToContact: value }));
+  }
   const handleEmirateChange = (event, newValue) => {
     setFormData((prev) => ({ ...prev, emirate: event.target.value }));
   };
@@ -186,98 +190,99 @@ function DesignLeadForm({ category, item, location }) {
   }));
   if (!item) return;
   return (
-    <Box
-      sx={{
-        height: "100%",
-        overflowY: "auto",
-        minWidth: isMobile ? "100%" : "800px",
-      }}
-      className="final-selection-form"
-    >
-      {renderSuccess ? (
-        <SuccessPage category={category} formData={formData} />
-      ) : (
-        <Paper
-          elevation={4}
-          sx={{
-            padding: { xs: 2, md: 4 },
-            borderRadius: 3,
-            background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
-            direction: lng === "ar" ? "ltr" : "ltr",
-          }}
-        >
-          <Typography
-            variant="h4"
+    <>
+      <Box
+        sx={{
+          height: "100%",
+          overflowY: "auto",
+          minWidth: isMobile ? "100%" : "800px",
+        }}
+        className="final-selection-form"
+      >
+        {renderSuccess ? (
+          <SuccessPage category={category} formData={formData} />
+        ) : (
+          <Paper
+            elevation={4}
             sx={{
-              marginBottom: 1,
-              textAlign: "center",
-              fontWeight: 700,
-              color: theme.palette.primary.main,
+              padding: { xs: 2, md: 4 },
+              borderRadius: 3,
+              background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
+              direction: lng === "ar" ? "ltr" : "ltr",
             }}
           >
-            {translate("Complete Your Request")}
-          </Typography>
-          <Box
-            sx={{
-              marginBottom: 3,
-              textAlign: "center",
-              display: "flex",
-              gap: 2,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Typography variant="subtitle1">
-              {translate(LeadCategory[category]) || ""}
-            </Typography>{" "}
-            -
-            <Typography variant="subtitle1">
-              {translate(LeadType[item]) || ""}
+            <Typography
+              variant="h4"
+              sx={{
+                marginBottom: 1,
+                textAlign: "center",
+                fontWeight: 700,
+                color: theme.palette.primary.main,
+              }}
+            >
+              {translate("Complete Your Request")}
             </Typography>
-          </Box>
-          <Stack spacing={3}>
-            <TextField
-              fullWidth
-              label={translate("Name")}
-              name="name"
-              variant="outlined"
-              value={formData.name}
-              onChange={handleChange}
-              InputProps={{
-                sx: {
-                  borderRadius: 2,
-                  "&:hover": {
-                    "& fieldset": {
-                      borderColor: "primary.main",
+            <Box
+              sx={{
+                marginBottom: 3,
+                textAlign: "center",
+                display: "flex",
+                gap: 2,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Typography variant="subtitle1">
+                {translate(LeadCategory[category]) || ""}
+              </Typography>{" "}
+              -
+              <Typography variant="subtitle1">
+                {translate(LeadType[item]) || ""}
+              </Typography>
+            </Box>
+            <Stack spacing={3}>
+              <TextField
+                fullWidth
+                label={translate("Name")}
+                name="name"
+                variant="outlined"
+                value={formData.name}
+                onChange={handleChange}
+                InputProps={{
+                  sx: {
+                    borderRadius: 2,
+                    "&:hover": {
+                      "& fieldset": {
+                        borderColor: "primary.main",
+                      },
                     },
                   },
-                },
-              }}
-            />
-            <MuiTelInput
-              defaultCountry={defaultCountry}
-              value={formData.phone}
-              id="phone"
-              name="phone"
-              label={translate("Phone")}
-              onChange={handlePhoneChange}
-              error={
-                matchIsValidTel(formData.phone) || formData.phone === ""
-                  ? false
-                  : true
-              }
-              helperText={
-                matchIsValidTel(formData.phone) || formData.phone === ""
-                  ? ""
-                  : translate("Invalid phone")
-              }
-              fullWidth
-              sx={{
-                "& .MuiInputBase-root": { borderRadius: 2 },
-                "&:hover fieldset": { borderColor: "primary.main" },
-              }}
-            />
-            {/* <TextField
+                }}
+              />
+              <MuiTelInput
+                defaultCountry={defaultCountry}
+                value={formData.phone}
+                id="phone"
+                name="phone"
+                label={translate("Phone")}
+                onChange={handlePhoneChange}
+                error={
+                  matchIsValidTel(formData.phone) || formData.phone === ""
+                    ? false
+                    : true
+                }
+                helperText={
+                  matchIsValidTel(formData.phone) || formData.phone === ""
+                    ? ""
+                    : translate("Invalid phone")
+                }
+                fullWidth
+                sx={{
+                  "& .MuiInputBase-root": { borderRadius: 2 },
+                  "&:hover fieldset": { borderColor: "primary.main" },
+                }}
+              />
+              {/* <TextField
               fullWidth
               label={translate("Phone")}
               name="phone"
@@ -299,217 +304,210 @@ function DesignLeadForm({ category, item, location }) {
                 },
               }}
             /> */}
-            <TextField
-              fullWidth
-              label={translate("Email")}
-              name="email"
-              type="email"
-              variant="outlined"
-              value={formData.email}
-              onChange={handleChange}
-              InputProps={{
-                sx: {
-                  borderRadius: 2,
-                  "&:hover": {
-                    "& fieldset": {
-                      borderColor: "primary.main",
+              <TextField
+                fullWidth
+                label={translate("Email")}
+                name="email"
+                type="email"
+                variant="outlined"
+                value={formData.email}
+                onChange={handleChange}
+                InputProps={{
+                  sx: {
+                    borderRadius: 2,
+                    "&:hover": {
+                      "& fieldset": {
+                        borderColor: "primary.main",
+                      },
                     },
                   },
-                },
-              }}
-            />
+                }}
+              />
 
-            {location === "INSIDE_UAE" && (
-              <>
-                <FormControl fullWidth variant="outlined">
-                  <InputLabel id="emirate-label">
-                    {translate("Select Location")}
-                  </InputLabel>
-                  <Select
-                    labelId="emirate-label"
-                    id="emirate"
-                    label={translate("Select Location")}
-                    value={formData.emirate} // Ensure you define this state
-                    onChange={handleEmirateChange}
-                  >
-                    {emiratesOptions.map((option) => (
-                      <MenuItem value={option.key} key={option.key}>
-                        {translate(option.label)}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+              {location === "INSIDE_UAE" && (
+                <>
+                  <FormControl fullWidth variant="outlined">
+                    <InputLabel id="emirate-label">
+                      {translate("Select Location")}
+                    </InputLabel>
+                    <Select
+                      labelId="emirate-label"
+                      id="emirate"
+                      label={translate("Select Location")}
+                      value={formData.emirate} // Ensure you define this state
+                      onChange={handleEmirateChange}
+                    >
+                      {emiratesOptions.map((option) => (
+                        <MenuItem value={option.key} key={option.key}>
+                          {translate(option.label)}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
 
-                {priceRange[item].type === "input" ? (
-                  <Box sx={{ mb: 1 }}>
-                    <Typography
-                      variant="subtitle1"
-                      gutterBottom
-                      sx={{ mb: 2.5, mt: -1 }}
-                    >
-                      {translate(
-                        "How much would you like to invest in your dream home?"
-                      )}
-                    </Typography>
-                    <Stack
-                      direction="row"
-                      spacing={2}
-                      alignItems="center"
-                      sx={{ mt: -1.5 }}
-                    >
-                      <TextField
-                        type="number"
-                        label={translate("Min")}
-                        value={formData.priceRange[0]}
-                        onChange={(e) => handlePriceChange(0, e.target.value)}
-                        sx={{ flex: 1 }}
-                        InputProps={{
-                          sx: { borderRadius: 2 },
-                        }}
-                      />
-                      <TextField
-                        type="number"
-                        label={translate("Max")}
-                        value={formData.priceRange[1]}
-                        onChange={(e) => handlePriceChange(1, e.target.value)}
-                        sx={{ flex: 1 }}
-                        InputProps={{
-                          sx: { borderRadius: 2 },
-                        }}
-                      />
-                    </Stack>
-                  </Box>
-                ) : (
-                  <>
-                    <Typography
-                      variant="subtitle1"
-                      sx={{
-                        marginTop: "8px !important",
-                        mb: "-15px !important",
-                      }}
-                    >
-                      {translate(
-                        "How much would you like to invest in your dream home?"
-                      )}
-                    </Typography>
-                    <FormControl fullWidth variant="outlined">
-                      <InputLabel id="price-range-label">
-                        {translate("Budget")}
-                      </InputLabel>
-                      <Select
-                        labelId="price-range-label"
-                        id="price-range-select"
-                        label={translate("Budget")}
-                        value={formData.priceOption} // Ensure you define this state
-                        onChange={handleSelectPriceChange}
+                  {priceRange[item].type === "input" ? (
+                    <Box sx={{ mb: 1 }}>
+                      <Typography
+                        variant="subtitle1"
+                        gutterBottom
+                        sx={{ mb: 2.5, mt: -1 }}
                       >
-                        {priceRange[item].options.map((price) => (
-                          <MenuItem value={price} key={price}>
-                            {translate(price)}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </>
-                )}
-                <TextField
-                  fullWidth
-                  label={translate("Additional information (optional)")}
-                  name="clientDescription"
-                  type="text"
-                  variant="outlined"
-                  value={formData.clientDescription}
-                  onChange={handleChange}
-                  InputProps={{
-                    sx: {
-                      borderRadius: 2,
-                      "&:hover": {
-                        "& fieldset": {
-                          borderColor: "primary.main",
+                        {translate(
+                          "How much would you like to invest in your dream home?"
+                        )}
+                      </Typography>
+                      <Stack
+                        direction="row"
+                        spacing={2}
+                        alignItems="center"
+                        sx={{ mt: -1.5 }}
+                      >
+                        <TextField
+                          type="number"
+                          label={translate("Min")}
+                          value={formData.priceRange[0]}
+                          onChange={(e) => handlePriceChange(0, e.target.value)}
+                          sx={{ flex: 1 }}
+                          InputProps={{
+                            sx: { borderRadius: 2 },
+                          }}
+                        />
+                        <TextField
+                          type="number"
+                          label={translate("Max")}
+                          value={formData.priceRange[1]}
+                          onChange={(e) => handlePriceChange(1, e.target.value)}
+                          sx={{ flex: 1 }}
+                          InputProps={{
+                            sx: { borderRadius: 2 },
+                          }}
+                        />
+                      </Stack>
+                    </Box>
+                  ) : (
+                    <>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{
+                          marginTop: "8px !important",
+                          mb: "-15px !important",
+                        }}
+                      >
+                        {translate(
+                          "How much would you like to invest in your dream home?"
+                        )}
+                      </Typography>
+                      <FormControl fullWidth variant="outlined">
+                        <InputLabel id="price-range-label">
+                          {translate("Budget")}
+                        </InputLabel>
+                        <Select
+                          labelId="price-range-label"
+                          id="price-range-select"
+                          label={translate("Budget")}
+                          value={formData.priceOption} // Ensure you define this state
+                          onChange={handleSelectPriceChange}
+                        >
+                          {priceRange[item].options.map((price) => (
+                            <MenuItem value={price} key={price}>
+                              {translate(price)}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </>
+                  )}
+                  <TextField
+                    fullWidth
+                    label={translate("Additional information (optional)")}
+                    name="clientDescription"
+                    type="text"
+                    variant="outlined"
+                    value={formData.clientDescription}
+                    onChange={handleChange}
+                    InputProps={{
+                      sx: {
+                        borderRadius: 2,
+                        "&:hover": {
+                          "& fieldset": {
+                            borderColor: "primary.main",
+                          },
                         },
                       },
-                    },
-                  }}
-                />
-              </>
-            )}
-            {location === "INSIDE_UAE" ? (
-              <>
-                <TextField
-                  fullWidth
-                  label={translate("Choose a time to contact you? (optional)")}
-                  name="timeToContact"
-                  type="datetime-local"
-                  variant="outlined"
-                  value={formData.timeToContact}
-                  onChange={handleChange}
-                  slotProps={{
-                    inputLabel: {
-                      shrink: true,
-                    },
-                  }}
-                  InputProps={{
-                    sx: {
-                      borderRadius: 2,
-                      "&:hover": {
-                        "& fieldset": {
-                          borderColor: "primary.main",
+                    }}
+                  />
+                </>
+              )}
+              {location === "INSIDE_UAE" ? (
+                <>
+                  <MobileDateTimePicker
+                    label={translate(
+                      "Choose a time to contact you? (optional)"
+                    )}
+                    disablePast
+                    name="timeToContact"
+                    value={formData.timeToContact}
+                    onChange={handleDateChange}
+                    orientation=""
+                  />
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ margin: "8px 0 -10px !important" }}
+                  >
+                    {translate("Choose a time between 10 AM to 7 PM.")}
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <TextField
+                    fullWidth
+                    label={translate("Country")}
+                    name="country"
+                    type="text"
+                    variant="outlined"
+                    value={formData.country}
+                    onChange={handleChange}
+                    InputProps={{
+                      sx: {
+                        borderRadius: 2,
+                        "&:hover": {
+                          "& fieldset": {
+                            borderColor: "primary.main",
+                          },
                         },
                       },
-                    },
-                  }}
-                />
-              </>
-            ) : (
-              <>
-                <TextField
-                  fullWidth
-                  label={translate("Country")}
-                  name="country"
-                  type="text"
-                  variant="outlined"
-                  value={formData.country}
-                  onChange={handleChange}
-                  InputProps={{
-                    sx: {
-                      borderRadius: 2,
-                      "&:hover": {
-                        "& fieldset": {
-                          borderColor: "primary.main",
-                        },
-                      },
-                    },
-                  }}
-                />
-              </>
-            )}
-            <SimpleFileInput
-              label={translate("Add an attachment (optional)")}
-              id="file"
-              setData={setFormData}
-              variant="outlined"
-            />
+                    }}
+                  />
+                </>
+              )}
+              <SimpleFileInput
+                label={translate("Add an attachment (optional)")}
+                id="file"
+                setData={setFormData}
+                variant="outlined"
+              />
 
-            <Button
-              variant="contained"
-              onClick={handleSubmit}
-              size="large"
-              sx={{
-                borderRadius: 2,
-                padding: "16px",
-                fontSize: "1.2rem",
-                fontWeight: 600,
-                textTransform: "none",
-                boxShadow:
-                  "0 4px 20px 0 rgba(61, 71, 82, 0.1), 0 0 0 0 rgba(0, 127, 255, 0)",
-              }}
-            >
-              {translate("Submit")}
-            </Button>
-          </Stack>
-        </Paper>
-      )}
-    </Box>
+              <Button
+                variant="contained"
+                onClick={handleSubmit}
+                size="large"
+                sx={{
+                  borderRadius: 2,
+                  padding: "16px",
+                  fontSize: "1.2rem",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  boxShadow:
+                    "0 4px 20px 0 rgba(61, 71, 82, 0.1), 0 0 0 0 rgba(0, 127, 255, 0)",
+                }}
+              >
+                {translate("Submit")}
+              </Button>
+            </Stack>
+          </Paper>
+        )}
+      </Box>
+    </>
   );
 }
 function ConsultLeadForm({ category }) {
