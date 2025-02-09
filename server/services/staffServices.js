@@ -93,15 +93,17 @@ export async function createPriceOffer({ clientLeadId, userId, priceOffer }) {
     data: {
       clientLeadId,
       userId,
-      minPrice: Number(priceOffer.minPrice),
-      maxPrice: Number(priceOffer.maxPrice),
+      // minPrice: Number(priceOffer.minPrice),
+      // maxPrice: Number(priceOffer.maxPrice),
       url: priceOffer.url,
+      note: priceOffer.note,
     },
     select: {
       id: true,
       createdAt: true,
       minPrice: true,
       maxPrice: true,
+      note: true,
       url: true,
       user: {
         select: {

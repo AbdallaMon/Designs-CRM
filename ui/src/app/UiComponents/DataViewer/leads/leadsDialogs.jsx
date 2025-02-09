@@ -6,6 +6,10 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
   MenuItem,
   Paper,
   Select,
@@ -23,6 +27,7 @@ import { IoMdCall } from "react-icons/io";
 import MuiFileField from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
 import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
 import dayjs from "dayjs";
+import { MdDelete } from "react-icons/md";
 
 export const CallResultDialog = ({
   lead,
@@ -407,8 +412,7 @@ export const AddPriceOffers = ({
   setPriceOffers,
 }) => {
   const [priceOffer, setPriceOffer] = useState({
-    minPrice: 0,
-    maxPrice: 0,
+    note: null,
     file: null,
   });
   const [open, setOpen] = useState(false);
@@ -423,17 +427,8 @@ export const AddPriceOffers = ({
     setOpen(false);
   }
   const handleAddNewPriceOffer = async () => {
-    if (
-      !priceOffer.minPrice ||
-      !priceOffer.maxPrice ||
-      priceOffer.minPrice === 0 ||
-      priceOffer.maxPrice === 0
-    ) {
-      setAlertError("You must enter min and max price");
-      return;
-    }
-    if (priceOffer.minPrice > priceOffer.maxPrice) {
-      setAlertError("Min price must be less than or equal max price");
+    if (!priceOffer.note) {
+      setAlertError("You must enter note");
       return;
     }
     if (priceOffer.file) {
@@ -492,23 +487,14 @@ export const AddPriceOffers = ({
           <DialogContent>
             <Stack spacing={3} sx={{ mt: 2 }}>
               <TextField
-                type="number"
-                label="Start Price"
-                value={priceOffer.minPrice}
+                label="Note"
+                value={priceOffer.note}
                 onChange={(e) =>
-                  setPriceOffer({ ...priceOffer, minPrice: e.target.value })
+                  setPriceOffer({ ...priceOffer, note: e.target.value })
                 }
                 fullWidth
-                InputLabelProps={{ shrink: true }}
-              />
-              <TextField
-                type="number"
-                label="End Price"
-                value={priceOffer.maxPrice}
-                onChange={(e) =>
-                  setPriceOffer({ ...priceOffer, maxPrice: e.target.value })
-                }
-                fullWidth
+                multiline
+                rows={3}
                 InputLabelProps={{ shrink: true }}
               />
               <SimpleFileInput
@@ -542,57 +528,81 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
     file: "",
     description: "",
   });
+  const [fileList, setFileList] = useState([]);
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
   const { setLoading } = useToastContext();
-
+  const { setAlertError } = useAlertContext();
   function handleOpen() {
     setOpen(true);
   }
 
   function onClose() {
     setFileData({ name: "", file: "", description: "" });
+    setFileList([]);
     setOpen(false);
   }
-  const { setAlertError } = useAlertContext();
-  const handleAddNewFile = async () => {
+
+  const handleAddNewFile = () => {
     if (!fileData.name || !fileData.file || !fileData.description) {
       setAlertError("You must fill all the inputs");
+      return;
     }
-    const formData = new FormData();
-    formData.append("file", fileData.file);
-    const fileUpload = await handleRequestSubmit(
-      formData,
-      setLoading,
-      "utility/upload",
-      true,
-      "Uploading file"
-    );
-    if (fileUpload.status === 200) {
-      const data = {
-        ...fileData,
-        url: fileUpload.fileUrls.file[0],
-        userId: user.id,
-      };
-      const request = await handleRequestSubmit(
-        data,
+
+    setFileList([...fileList, fileData]);
+    setFileData({ name: "", file: null, description: "" }); // Clear form for new entry
+  };
+
+  const handleRemoveFile = (index) => {
+    setFileList(fileList.filter((_, i) => i !== index));
+  };
+
+  const handleSaveAllFiles = async () => {
+    if (fileList.length === 0) {
+      setAlertError("No files to upload");
+      return;
+    }
+
+    for (const fileItem of fileList) {
+      const formData = new FormData();
+      formData.append("file", fileItem.file);
+
+      const fileUpload = await handleRequestSubmit(
+        formData,
         setLoading,
-        `staff/client-leads/${lead.id}/files`,
-        false,
-        "Adding Data",
-        false,
-        "POST"
+        "utility/upload",
+        true,
+        "Uploading file"
       );
-      if (request.status === 200) {
-        if (setFiles) {
+
+      if (fileUpload.status === 200) {
+        const data = {
+          ...fileItem,
+          url: fileUpload.fileUrls.file[0],
+          userId: user.id,
+        };
+
+        const request = await handleRequestSubmit(
+          data,
+          setLoading,
+          `staff/client-leads/${lead.id}/files`,
+          false,
+          "Adding Data",
+          false,
+          "POST"
+        );
+
+        if (request.status === 200 && setFiles) {
           setFiles((oldFiles) => [
             { ...request.data, isUserFile: true },
             ...oldFiles,
           ]);
         }
-        setOpen(false);
       }
     }
+
+    setOpen(false);
+    setFileList([]);
   };
 
   return (
@@ -642,21 +652,64 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
                 setData={setFileData}
                 variant="outlined"
               />
+              <Button
+                onClick={handleAddNewFile}
+                variant="contained"
+                color="primary"
+                disabled={
+                  !fileData.name || !fileData.file || !fileData.description
+                }
+              >
+                Add File
+              </Button>
             </Stack>
+            {fileList.length > 0 && (
+              <List
+                sx={{
+                  mt: 2,
+                  border: "1px solid #ddd",
+                  borderRadius: "4px",
+                  maxHeight: 200,
+                  overflow: "auto",
+                }}
+              >
+                {fileList.map((file, index) => (
+                  <ListItem
+                    key={index}
+                    secondaryAction={
+                      <IconButton
+                        edge="end"
+                        onClick={() => handleRemoveFile(index)}
+                      >
+                        <MdDelete />
+                      </IconButton>
+                    }
+                  >
+                    <ListItemText
+                      primary={`Name: ${file.name}`}
+                      secondary={
+                        <>
+                          <div>{`File Name: ${file.file.name}`}</div>
+                          <div>{`Description: ${file.description}`}</div>
+                        </>
+                      }
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            )}
           </DialogContent>
           <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
             <Button onClick={onClose} variant="outlined">
               Cancel
             </Button>
             <Button
-              onClick={handleAddNewFile}
+              onClick={handleSaveAllFiles}
               variant="contained"
               color="primary"
-              disabled={
-                !fileData.name || !fileData.file || !fileData.description
-              }
+              disabled={fileList.length === 0}
             >
-              Add
+              Save All
             </Button>
           </DialogActions>
         </Dialog>

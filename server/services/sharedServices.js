@@ -214,6 +214,7 @@ export async function getClientLeadDetails(clientLeadId) {
           id: true,
           minPrice: true,
           maxPrice: true,
+          note: true,
           userId: true,
           url: true,
           user: {
