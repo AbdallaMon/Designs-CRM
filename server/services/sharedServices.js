@@ -87,6 +87,7 @@ export async function getClientLeads({ limit = 1, skip = 10, searchParams }) {
           select: {
             name: true,
             email: true,
+            phone: true,
           },
         },
         assignedTo: {
@@ -171,6 +172,7 @@ export async function getClientLeadDetails(clientLeadId) {
       clientDescription: true,
       country: true,
       timeToContact: true,
+      priceNote: true,
       client: {
         select: {
           id: true,
@@ -845,6 +847,7 @@ export async function updateClientLeadStatus({
   oldStatus,
   isAdmin,
   updatePrice,
+  priceNote,
 }) {
   if (!isAdmin) {
     if (oldStatus === "FINALIZED" || oldStatus === "REJECTED") {
@@ -869,6 +872,9 @@ export async function updateClientLeadStatus({
   let content = `Lead changed from ${ClientLeadStatus[oldStatus]} to ${ClientLeadStatus[status]}`;
   if (averagePrice) {
     data.averagePrice = Number(averagePrice);
+  }
+  if (priceNote) {
+    data.priceNote = priceNote;
   }
   if (discount) {
     data.discount = Number(discount);

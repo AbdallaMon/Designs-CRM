@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Avatar,
   Button,
@@ -24,7 +24,6 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 import { IoMdCall } from "react-icons/io";
-import MuiFileField from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
 import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
 import dayjs from "dayjs";
 import { MdDelete } from "react-icons/md";
@@ -536,7 +535,11 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
   function handleOpen() {
     setOpen(true);
   }
-
+  useEffect(() => {
+    if (fileData.file?.name) {
+      setFileData((old) => ({ ...old, name: fileData.file.name }));
+    }
+  }, [fileData.file]);
   function onClose() {
     setFileData({ name: "", file: "", description: "" });
     setFileList([]);
@@ -544,7 +547,7 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
   }
 
   const handleAddNewFile = () => {
-    if (!fileData.name || !fileData.file || !fileData.description) {
+    if (!fileData.name || !fileData.file) {
       setAlertError("You must fill all the inputs");
       return;
     }
@@ -656,9 +659,7 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
                 onClick={handleAddNewFile}
                 variant="contained"
                 color="primary"
-                disabled={
-                  !fileData.name || !fileData.file || !fileData.description
-                }
+                disabled={!fileData.name || !fileData.file}
               >
                 Add File
               </Button>

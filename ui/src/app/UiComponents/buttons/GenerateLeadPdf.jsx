@@ -126,17 +126,26 @@ export function generatePDF(clientLead) {
   }
 
   // Price Information
+
   addSectionTitle("Price Information");
-  addField("Price", formatCurrency(clientLead.price));
-  addField("Average Price", formatCurrency(clientLead.averagePrice));
-  addField(
-    "Price Without Discount",
-    formatCurrency(clientLead.priceWithOutDiscount)
-  );
-  addField(
-    "Discount",
-    clientLead.discount ? `${clientLead.discount}%` : "No discount"
-  );
+  // addField("Price", formatCurrency(clientLead.price));
+  if (clientLead.status === "FINALIZED") {
+    addField("Price", formatCurrency(clientLead.averagePrice));
+    addField("Price Note", clientLead.priceNote);
+    if (clientLead.discount) {
+      addField("Discount", clientLead.discount);
+    }
+  } else {
+    addField("Client Suggested Price", clientLead.price);
+  }
+  // addField(
+  //   "Price Without Discount",
+  //   formatCurrency(clientLead.priceWithOutDiscount)
+  // );
+  // addField(
+  //   "Discount",
+  //   clientLead.discount ? `${clientLead.discount}%` : "No discount"
+  // );
 
   // Files
   if (clientLead.files?.length > 0) {

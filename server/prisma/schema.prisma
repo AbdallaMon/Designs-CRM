@@ -101,6 +101,7 @@ model ClientLead {
       emirate            Emirate?
       price              String?
       averagePrice  Decimal?   @db.Decimal(10, 2)
+      priceNote String?  @db.Text
       priceWithOutDiscount  Decimal   @db.Decimal(10, 2) @default(0)
       priceOffers PriceOffers[]
 

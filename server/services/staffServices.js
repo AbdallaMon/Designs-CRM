@@ -125,7 +125,7 @@ export async function createFile({
   description,
   userId,
 }) {
-  if (!url || !name || !description) {
+  if (!url || !name) {
     throw new Error("Fill all the fields please");
   }
   const data = {

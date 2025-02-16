@@ -26,7 +26,7 @@ const getFileType = (fileUrl) => {
   if (extension === "pdf") return "pdf";
   if (videoExtensions.includes(extension)) return "video";
   if (excelExtensions.includes(extension)) return "excel";
-  return "other";
+  return "";
 };
 
 // Function to get appropriate icon

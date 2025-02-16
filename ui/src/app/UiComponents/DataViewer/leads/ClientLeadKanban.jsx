@@ -223,8 +223,8 @@ const {setLoading}=useToastContext()
                           <SearchComponent
                                 apiEndpoint="search?model=client"
                                 setFilters={setFilters}
-                                inputLabel="Search client by name or email"
-                                renderKeys={["name", "email"]}
+                                inputLabel="Search client by name or phone"
+                                renderKeys={["name", "phone"]}
                                 mainKey="name"
                                 searchKey={"clientId"}
                                 withParamsChange={true}

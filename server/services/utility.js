@@ -1,14 +1,14 @@
 import jwt from "jsonwebtoken";
-import multer from 'multer';
-import {fileURLToPath} from 'url';
+import multer from "multer";
+import { fileURLToPath } from "url";
 import prisma from "../prisma/prisma.js";
-import { Client } from 'basic-ftp';
-import { Readable } from 'stream';
-import {v4 as uuidv4} from 'uuid';
+import { Client } from "basic-ftp";
+import { Readable } from "stream";
+import { v4 as uuidv4 } from "uuid";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import {getIo} from "./socket.js";
-import {sendEmail} from "./sendMail.js";
+import { getIo } from "./socket.js";
+import { sendEmail } from "./sendMail.js";
 import dayjs from "dayjs";
 
 const SECRET_KEY = process.env.SECRET_KEY;
@@ -17,285 +17,324 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export function verifyToken(token) {
-    try {
-        const decoded = jwt.verify(token, SECRET_KEY);
-        return decoded;
-    } catch (error) {
-        throw new Error("Invalid token");
-    }
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY);
+    return decoded;
+  } catch (error) {
+    throw new Error("Invalid token");
+  }
 }
 
 export function handlePrismaError(res, error) {
-    console.error("Prisma error: x ", error);
-    if (error.name === 'PrismaClientValidationError') {
-        return res.status(400).json({message: "هناك خطأ في البيانات المرسلة. يرجى التحقق من البيانات وإعادة المحاولة."});
-    }
+  console.error("Prisma error: x ", error);
+  if (error.name === "PrismaClientValidationError") {
+    return res.status(400).json({
+      message:
+        "هناك خطأ في البيانات المرسلة. يرجى التحقق من البيانات وإعادة المحاولة.",
+    });
+  }
 
-    let response;
-    switch (error.code) {
-        case 'P2002':
-            if (error.meta && error.meta.target && error.meta.target.includes('email')) {
-                response = {status: 409, message: "البريد الإلكتروني مسجل بالفعل"};
-            } else {
-                response = {status: 409, message: `فشل القيد الفريد في الحقل: ${error.meta.target}`};
-            }
-            break;
+  let response;
+  switch (error.code) {
+    case "P2002":
+      if (
+        error.meta &&
+        error.meta.target &&
+        error.meta.target.includes("email")
+      ) {
+        response = { status: 409, message: "البريد الإلكتروني مسجل بالفعل" };
+      } else {
+        response = {
+          status: 409,
+          message: `فشل القيد الفريد في الحقل: ${error.meta.target}`,
+        };
+      }
+      break;
 
-        case 'P2003':
-            response = {status: 400, message: `فشل القيد المرجعي في الحقل: ${error.meta.field_name}`};
-            break;
+    case "P2003":
+      response = {
+        status: 400,
+        message: `فشل القيد المرجعي في الحقل: ${error.meta.field_name}`,
+      };
+      break;
 
-        case 'P2004':
-            response = {status: 400, message: `فشل قيد على قاعدة البيانات: ${error.meta.constraint}`};
-            break;
+    case "P2004":
+      response = {
+        status: 400,
+        message: `فشل قيد على قاعدة البيانات: ${error.meta.constraint}`,
+      };
+      break;
 
-        case 'P2025':
-            response = {status: 404, message: `لم يتم العثور على السجل: ${error.meta.cause}`};
-            break;
+    case "P2025":
+      response = {
+        status: 404,
+        message: `لم يتم العثور على السجل: ${error.meta.cause}`,
+      };
+      break;
 
-        case 'P2016':
-            response = {status: 400, message: `خطأ في تفسير الاستعلام: ${error.meta.details}`};
-            break;
+    case "P2016":
+      response = {
+        status: 400,
+        message: `خطأ في تفسير الاستعلام: ${error.meta.details}`,
+      };
+      break;
 
-        case 'P2000':
-            response = {status: 400, message: `القيمة خارج النطاق للعمود: ${error.meta.column}`};
-            break;
+    case "P2000":
+      response = {
+        status: 400,
+        message: `القيمة خارج النطاق للعمود: ${error.meta.column}`,
+      };
+      break;
 
-        case 'P2017':
-            response = {status: 400, message: `انتهاك العلاقة: ${error.meta.relation_name}`};
-            break;
+    case "P2017":
+      response = {
+        status: 400,
+        message: `انتهاك العلاقة: ${error.meta.relation_name}`,
+      };
+      break;
 
-        case 'P2014':
-            response = {
-                status: 400,
-                message: `التغيير الذي تحاول إجراؤه سينتهك العلاقة المطلوبة: ${error.meta.relation_name}`
-            };
-            break;
+    case "P2014":
+      response = {
+        status: 400,
+        message: `التغيير الذي تحاول إجراؤه سينتهك العلاقة المطلوبة: ${error.meta.relation_name}`,
+      };
+      break;
 
-        case 'P2026':
-            response = {status: 500, message: `خطأ في مهلة قاعدة البيانات: ${error.meta.details}`};
-            break;
+    case "P2026":
+      response = {
+        status: 500,
+        message: `خطأ في مهلة قاعدة البيانات: ${error.meta.details}`,
+      };
+      break;
 
-        default:
-            response = {status: 500, message: `حدث خطأ غير متوقع: ${error.message}`};
-    }
+    default:
+      response = {
+        status: 500,
+        message: `حدث خطأ غير متوقع: ${error.message}`,
+      };
+  }
 
-    // Send response to the client
-    return res.status(response.status).json({message: response.message});
+  // Send response to the client
+  return res.status(response.status).json({ message: response.message });
 }
 
 export const getPagination = (req) => {
-    const page = parseInt(req.query.page, 10) || 1;
-    const limit = parseInt(req.query.limit, 10) || 10;
-    const skip = (page - 1) * limit;
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 10;
+  const skip = (page - 1) * limit;
 
-    return {page, limit, skip};
+  return { page, limit, skip };
 };
 
 export const verifyTokenAndHandleAuthorization = (req, res, next, role) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(401).json({ message: "You have to login first" });
+  }
 
-    const token = req.cookies.token
-    if (!token) {
-        return res.status(401).json({message: 'You have to login first'});
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY);
+
+    if (role === "SHARED") {
+      if (decoded.role !== "ADMIN" && decoded.role !== "STAFF") {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+    } else {
+      if (decoded.role !== role) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
     }
-
-    try {
-        const decoded = jwt.verify(token, SECRET_KEY);
-
-        if (role === "SHARED") {
-            if (decoded.role !== "ADMIN" && decoded.role !== "STAFF") {
-                return res.status(403).json({message: 'Not authorized'});
-            }
-        } else {
-            if (decoded.role !== role) {
-                return res.status(403).json({message: 'Not authorized'});
-            }
-        }
-        req.user = decoded;
-        next();
-    } catch (error) {
-        return res.status(401).json({message: 'Your session ended'});
-    }
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: "Your session ended" });
+  }
 };
 
 export const verifyTokenUsingReq = (req, res, next) => {
-    const token = req.cookies.token
-    if (!token) {
-        return res.status(403).json({message: 'تم رفض صلاحيتك'});
-    }
-    try {
-        const decoded = jwt.verify(token, SECRET_KEY);
-        req.user = decoded;
-        next();
-    } catch (error) {
-        return res.status(401).json({message: 'Invalid token'});
-    }
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(403).json({ message: "تم رفض صلاحيتك" });
+  }
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
 };
 const modelMap = {
-    user: prisma.user,
-    client: prisma.client,
+  user: prisma.user,
+  client: prisma.client,
 };
 
 export async function getCurrentUser(req) {
-    const token = req.cookies.token
+  const token = req.cookies.token;
 
-    const decoded = jwt.verify(token, SECRET_KEY);
-    return decoded
+  const decoded = jwt.verify(token, SECRET_KEY);
+  return decoded;
 }
 
 export async function searchData(body) {
-    const {model, query, filters} = body;
-    const prismaModel = modelMap[model];
-    let where = {};
-    if (query) {
-        if (model === 'user') {
-            where.OR = [
-                {email: {contains: query}},
-                {name: {contains: query}},
-            ];
-            where.role="STAFF"
-        } else if (model === 'client') {
-            where.OR = [
-                {email: {contains: query}},
-                {name: {contains: query}},
-            ];
-        }
+  const { model, query, filters } = body;
+  const prismaModel = modelMap[model];
+  let where = {};
+  if (query) {
+    if (model === "user") {
+      where.OR = [
+        { email: { contains: query } },
+        { name: { contains: query } },
+      ];
+      where.role = "STAFF";
+    } else if (model === "client") {
+      where.OR = [
+        { email: { contains: query } },
+        { name: { contains: query } },
+        { phone: { contains: query } },
+      ];
     }
+  }
 
-    if (filters && filters !== "undefined") {
-        const parsedFilters = JSON.parse(filters);
-        if (parsedFilters.role) {
-            where.role = parsedFilters.role;
-        }
-        if (parsedFilters.OR) {
-            where.OR = parsedFilters.OR
-        }
-        if (parsedFilters.userId) {
-            where.clientLeads = {
-                some: {
-                    userId: Number(parsedFilters.userId)
-                }
-            }
-        }
+  if (filters && filters !== "undefined") {
+    const parsedFilters = JSON.parse(filters);
+    if (parsedFilters.role) {
+      where.role = parsedFilters.role;
     }
+    if (parsedFilters.OR) {
+      where.OR = parsedFilters.OR;
+    }
+    if (parsedFilters.userId) {
+      where.clientLeads = {
+        some: {
+          userId: Number(parsedFilters.userId),
+        },
+      };
+    }
+  }
 
-    const selectFields = {
-        user: {
-            id: true,
-            email: true,
-            name: true,
-        },
-        client: {
-            id: true,
-            name: true,
-            email: true
-        },
-    };
-    const data = await prismaModel.findMany({
-        where,
-        select: selectFields[model],
-    });
-    return data;
+  const selectFields = {
+    user: {
+      id: true,
+      email: true,
+      name: true,
+      phone: true,
+    },
+    client: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+    },
+  };
+  const data = await prismaModel.findMany({
+    where,
+    select: selectFields[model],
+  });
+  return data;
 }
-
-
 
 // FTP Configuration
 const ftpConfig = {
-    host: process.env.FTP_HOST,
-    user: process.env.FTP_USER,
-    password: process.env.FTP_PASSWORD,
-    secure: false, // Set to true if using FTPS
+  host: process.env.FTP_HOST,
+  user: process.env.FTP_USER,
+  password: process.env.FTP_PASSWORD,
+  secure: false, // Set to true if using FTPS
 };
 
-const tmpFolder = path.resolve(__dirname, 'tmp');
+const tmpFolder = path.resolve(__dirname, "tmp");
 if (!fs.existsSync(tmpFolder)) {
-    fs.mkdirSync(tmpFolder, { recursive: true });
+  fs.mkdirSync(tmpFolder, { recursive: true });
 }
 
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, tmpFolder); // Save files to the tmp directory
-    },
-    filename: (req, file, cb) => {
-        const uniqueFilename = `${uuidv4()}-${Date.now()}${path.extname(file.originalname)}`;
-        cb(null, uniqueFilename);
-    },
+  destination: (req, file, cb) => {
+    cb(null, tmpFolder); // Save files to the tmp directory
+  },
+  filename: (req, file, cb) => {
+    const uniqueFilename = `${uuidv4()}-${Date.now()}${path.extname(
+      file.originalname
+    )}`;
+    cb(null, uniqueFilename);
+  },
 });
-const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } }).any();
-
+const upload = multer({
+  storage,
+  limits: { fileSize: 50 * 1024 * 1024 },
+}).any();
 
 // FTP Upload Function
 async function uploadToFTP(localFilePath, remotePath) {
-    const client = new Client();
-    try {
-        await client.access(ftpConfig);
-        await client.uploadFrom(localFilePath, remotePath);
-    } catch (err) {
-        console.error(`Failed to upload ${localFilePath}:`, err.message);
-    } finally {
-        client.close();
-    }
+  const client = new Client();
+  try {
+    await client.access(ftpConfig);
+    await client.uploadFrom(localFilePath, remotePath);
+  } catch (err) {
+    console.error(`Failed to upload ${localFilePath}:`, err.message);
+  } finally {
+    client.close();
+  }
 }
 
 function deleteFile(filePath) {
-    try {
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
-    } catch (err) {
-        console.error(`Error deleting file: ${filePath}`, err.message);
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
     }
+  } catch (err) {
+    console.error(`Error deleting file: ${filePath}`, err.message);
+  }
 }
 
 // Upload API
 export const uploadFiles = async (req, res) => {
-    try {
-        const fileUrls = {}; // Object to store URLs of uploaded files
-        await new Promise((resolve, reject) => {
-            upload(req, res, async (err) => {
-                if (err) {
-                    reject(err); // Reject on upload error
-                } else if (!req.files || req.files.length === 0) {
-                    reject(new Error('No files uploaded.'));
-                } else {
-                    try {
-                        for (const file of req.files) {
-                            const uniqueFilename = `${uuidv4()}${path.extname(file.originalname)}`;
-                            const remotePath = `public_html/uploads/${uniqueFilename}`;
+  try {
+    const fileUrls = {}; // Object to store URLs of uploaded files
+    await new Promise((resolve, reject) => {
+      upload(req, res, async (err) => {
+        if (err) {
+          reject(err); // Reject on upload error
+        } else if (!req.files || req.files.length === 0) {
+          reject(new Error("No files uploaded."));
+        } else {
+          try {
+            for (const file of req.files) {
+              const uniqueFilename = `${uuidv4()}${path.extname(
+                file.originalname
+              )}`;
+              const remotePath = `public_html/uploads/${uniqueFilename}`;
 
-                            // Upload file buffer to FTP server
-                            await uploadToFTP(file.path, remotePath);
+              // Upload file buffer to FTP server
+              await uploadToFTP(file.path, remotePath);
 
-                            const fileUrl = `http://panel.dreamstudiio.com/uploads/${uniqueFilename}`;
-                            const fieldName = file.fieldname;
+              const fileUrl = `http://panel.dreamstudiio.com/uploads/${uniqueFilename}`;
+              const fieldName = file.fieldname;
 
-                            // Group file URLs by field name
-                            if (!fileUrls[fieldName]) fileUrls[fieldName] = [];
-                            fileUrls[fieldName].push(fileUrl);
-                            deleteFile(file.path);
-
-
-                        }
-                        resolve(); // Resolve the promise once all files are uploaded
-                    } catch (uploadErr) {
-                        reject(uploadErr);
-                    }
-                }
-            });
-        });
-
-        // Respond with the URLs of uploaded files
-        res.status(200).json({ message: 'Files uploaded successfully.', fileUrls });
-    } catch (error) {
-        if (error.code === 'LIMIT_FILE_SIZE') {
-            return res.status(400).json({ error: 'File size exceeds the 50MB limit.' });
+              // Group file URLs by field name
+              if (!fileUrls[fieldName]) fileUrls[fieldName] = [];
+              fileUrls[fieldName].push(fileUrl);
+              deleteFile(file.path);
+            }
+            resolve(); // Resolve the promise once all files are uploaded
+          } catch (uploadErr) {
+            reject(uploadErr);
+          }
         }
-        console.error('Error:', error.message);
-        res.status(400).json({ error: error.message });
-    }
-};
+      });
+    });
 
+    // Respond with the URLs of uploaded files
+    res.status(200).json({ message: "Files uploaded successfully.", fileUrls });
+  } catch (error) {
+    if (error.code === "LIMIT_FILE_SIZE") {
+      return res
+        .status(400)
+        .json({ error: "File size exceeds the 50MB limit." });
+    }
+    console.error("Error:", error.message);
+    res.status(400).json({ error: error.message });
+  }
+};
 
 // const storage = multer.diskStorage({
 //     destination: (req, file, cb) => {
@@ -412,134 +451,178 @@ export const uploadFiles = async (req, res) => {
 
 */
 
+export async function getNotifications(
+  searchParams,
+  limit,
+  skip,
+  unread = true
+) {
+  const where = {};
+  const filters = searchParams.filters && JSON.parse(searchParams.filters);
+  if (filters?.staffId) {
+    where.staffId = Number(filters.staffId);
+  }
+  if (searchParams.staffId) {
+    where.staffId = Number(searchParams.staffId);
+  }
+  if (filters?.range) {
+    const { startDate, endDate } = filters.range;
+    const now = dayjs();
+    let start = startDate ? dayjs(startDate) : now.subtract(30, "days"); // Default to last 30 days
+    let end = endDate ? dayjs(endDate).endOf("day") : now;
+    where.createdAt = {
+      gte: start.toDate(),
+      lte: end.toDate(),
+    };
+  } else {
+    where.createdAt = {
+      gte: dayjs().subtract(30, "days").toDate(),
+      lte: dayjs().toDate(),
+    };
+  }
 
-export async function getNotifications(searchParams, limit, skip, unread = true) {
-    const where = {}
-    const filters =searchParams.filters&& JSON.parse(searchParams.filters);
-    if (filters?.staffId) {
-        where.staffId = Number(filters.staffId);
-    }
-    if(searchParams.staffId){
-        where.staffId = Number(searchParams.staffId);
-    }
-    if (filters?.range) {
-        const {startDate, endDate} = filters.range;
-        const now = dayjs();
-        let start = startDate ? dayjs(startDate) : now.subtract(30, 'days'); // Default to last 30 days
-        let end = endDate ? dayjs(endDate).endOf('day') : now;
-        where.createdAt = {
-            gte: start.toDate(),
-            lte: end.toDate(),
-        };
-    } else {
-        where.createdAt = {
-            gte: dayjs().subtract(30, 'days').toDate(),
-            lte: dayjs().toDate(),
-        };
-    }
+  where.userId = Number(searchParams.userId);
 
-    where.userId = Number(searchParams.userId)
-
-    const notifications = await prisma.notification.findMany({
-        where: where,
-        skip,
-        take: limit,
-        orderBy: {
-            createdAt: 'desc',
+  const notifications = await prisma.notification.findMany({
+    where: where,
+    skip,
+    take: limit,
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      staff: {
+        select: {
+          name: true,
         },
-        include:{
-            staff:{
+      },
+      clientLead: {
+        select: {
+          client: {
             select: {
-                name: true
-            }
+              name: true,
             },
-            clientLead:{
-             select:{  client:{
-
-                select: {
-                    name: true
-                }
-                }}
-
-            }
-        }
-    });
-    const total = await prisma.notification.count({where: where});
-    return {notifications, total};
+          },
+        },
+      },
+    },
+  });
+  const total = await prisma.notification.count({ where: where });
+  return { notifications, total };
 }
-
 
 export async function markLatestNotificationsAsRead(userId) {
-    const where = {isRead: false, userId: Number(userId)}
-    const notifications = await prisma.notification.updateMany({
-        where,
-        data: {isRead: true}
-    })
-    return notifications
+  const where = { isRead: false, userId: Number(userId) };
+  const notifications = await prisma.notification.updateMany({
+    where,
+    data: { isRead: true },
+  });
+  return notifications;
 }
 
-export async function createNotification(userId, isAdmin, content, href, type, emailSubject, withEmail, contentType = "TEXT",clientLeadId,staffId) {
-
-    const forAll = !userId && !isAdmin&&!staffId
-    if (forAll) {
-        const users = await prisma.user.findMany({
-            where: {
-                isActive: true
-            }, select: {
-                id: true,
-            }
-
-        })
-        users?.map(async (user) => {
-            await sendNotification(user.id, content, href, type, emailSubject, withEmail, contentType,clientLeadId)
-
-        })
-    } else {
-        if (isAdmin) {
-            const admin = await prisma.user.findFirst({
-                where: {
-                    role: "ADMIN"
-                },
-                select: {
-                    id: true
-                }
-            })
-            userId = admin.id
-        }
-
-            await sendNotification(userId, content, href, type, emailSubject, withEmail, contentType,clientLeadId,staffId)
-
-
+export async function createNotification(
+  userId,
+  isAdmin,
+  content,
+  href,
+  type,
+  emailSubject,
+  withEmail,
+  contentType = "TEXT",
+  clientLeadId,
+  staffId
+) {
+  const forAll = !userId && !isAdmin && !staffId;
+  if (forAll) {
+    const users = await prisma.user.findMany({
+      where: {
+        isActive: true,
+      },
+      select: {
+        id: true,
+      },
+    });
+    users?.map(async (user) => {
+      await sendNotification(
+        user.id,
+        content,
+        href,
+        type,
+        emailSubject,
+        withEmail,
+        contentType,
+        clientLeadId
+      );
+    });
+  } else {
+    if (isAdmin) {
+      const admin = await prisma.user.findFirst({
+        where: {
+          role: "ADMIN",
+        },
+        select: {
+          id: true,
+        },
+      });
+      userId = admin.id;
     }
+
+    await sendNotification(
+      userId,
+      content,
+      href,
+      type,
+      emailSubject,
+      withEmail,
+      contentType,
+      clientLeadId,
+      staffId
+    );
+  }
 }
 
-async function sendNotification(userId, content, href, type, emailSubject, withEmail, contentType = "TEXT",clientLeadId,staffId) {
-    const link = href ? `<a href="${process.env.ORIGIN}${href}" style="color: #1a73e8; text-decoration: none;">See details from here</a>` : '';
-    const emailContent = `
+async function sendNotification(
+  userId,
+  content,
+  href,
+  type,
+  emailSubject,
+  withEmail,
+  contentType = "TEXT",
+  clientLeadId,
+  staffId
+) {
+  const link = href
+    ? `<a href="${process.env.ORIGIN}${href}" style="color: #1a73e8; text-decoration: none;">See details from here</a>`
+    : "";
+  const emailContent = `
         <div style=" color: #333; direction: ltr; text-align: left;">
             <h2 style="color: #444; margin-bottom: 16px;">${emailSubject}</h2>
             <p style="font-size: 16px; line-height: 1.5;">${content}</p>
-            ${link ? `<p>${link}</p>` : ''}
+            ${link ? `<p>${link}</p>` : ""}
         </div>
     `;
-    let notification= await prisma.notification.create({
-            data: {
-                userId: userId,
-                content: content,
-                type,
-                link: href,
-                contentType,
-                clientLeadId:clientLeadId&&Number(clientLeadId),
-                staffId:staffId&&Number(staffId)
-            },
-        });
+  let notification = await prisma.notification.create({
+    data: {
+      userId: userId,
+      content: content,
+      type,
+      link: href,
+      contentType,
+      clientLeadId: clientLeadId && Number(clientLeadId),
+      staffId: staffId && Number(staffId),
+    },
+  });
 
-    const io = getIo();
-    io.to(userId.toString()).emit('notification', notification);
-    if (withEmail) {
-        const user = await prisma.user.findUnique({where: {id: Number(userId)}, select: {email: true}});
-        if (user && user.email) {
-            const email = `
+  const io = getIo();
+  io.to(userId.toString()).emit("notification", notification);
+  if (withEmail) {
+    const user = await prisma.user.findUnique({
+      where: { id: Number(userId) },
+      select: { email: true },
+    });
+    if (user && user.email) {
+      const email = `
 <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
     <div>
         ${emailContent}
@@ -552,27 +635,28 @@ async function sendNotification(userId, content, href, type, emailSubject, withE
 </div>
 `;
 
-            setImmediate(() => {
-                sendEmail(user.email, emailSubject, email).catch(error => {
-                    console.error(`Failed to send email to user ${userId}:`, error);
-                });
-            });
-        }
+      setImmediate(() => {
+        sendEmail(user.email, emailSubject, email).catch((error) => {
+          console.error(`Failed to send email to user ${userId}:`, error);
+        });
+      });
     }
+  }
 }
 
-export async function getUserDetailsWithSpecificFields(id, fields = {id: true, name: true, email: true}) {
-    return await prisma.user.findUnique({
-        where: {id: Number(id)},
-        select: fields
-    })
+export async function getUserDetailsWithSpecificFields(
+  id,
+  fields = { id: true, name: true, email: true }
+) {
+  return await prisma.user.findUnique({
+    where: { id: Number(id) },
+    select: fields,
+  });
 }
 
-export async function updateLead(clientLeadId){
-    await prisma.clientLead.update({
-        where: { id: Number(clientLeadId) },
-        data: {}, // This triggers the `@updatedAt` behavior
-    });
-
+export async function updateLead(clientLeadId) {
+  await prisma.clientLead.update({
+    where: { id: Number(clientLeadId) },
+    data: {}, // This triggers the `@updatedAt` behavior
+  });
 }
-

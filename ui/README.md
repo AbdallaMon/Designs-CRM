@@ -52,10 +52,14 @@ pays
 - Chat button(whats app)
 - best time to contact
 - when back to consult still redirecting
+- More than one file upload
+- Optioanl file name and description
+- Search by name or phone
+- Remove from pdf the final price
+- Note with discount
 
 - Email Image
 - make it pages (to enhance the back functioanlity)
-- More than one file upload
 
   dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
