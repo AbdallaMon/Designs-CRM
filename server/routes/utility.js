@@ -55,21 +55,4 @@ router.post("/notification/users/:userId", async (req, res) => {
     handlePrismaError(res, error);
   }
 });
-router.get("/update", async (req, res) => {
-  const clients = await prisma.client.findMany();
-
-  // Loop through each client
-  for (let client of clients) {
-    // Remove spaces from the phone number
-    const updatedPhone = client.phone.replace(/\s+/g, "");
-
-    // Update the client record
-    await prisma.client.update({
-      where: { id: client.id },
-      data: { phone: updatedPhone },
-    });
-  }
-  res.status(200).json({ message: "nice" });
-});
-
 export default router;
