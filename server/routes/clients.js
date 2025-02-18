@@ -38,7 +38,7 @@ router.post("/new-lead", async (req, res) => {
       client = await prisma.client.create({
         data: {
           name: body.name,
-          phone: body.phone,
+          phone: body.phone.replace(/\s+/g, ""),
           email: body.email,
         },
       });
