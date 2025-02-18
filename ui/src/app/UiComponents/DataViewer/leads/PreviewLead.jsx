@@ -203,7 +203,11 @@ const LeadContent = ({
             <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
               {lead.client.name[0]}
             </Avatar>
-            <Typography variant="h6">{lead.client.name}</Typography>
+            {lead.status === "NEW" && user.role !== "ADMIN" ? (
+              ""
+            ) : (
+              <Typography variant="h6">{lead.client.name}</Typography>
+            )}
           </Stack>
           <Stack
             direction={isMobile ? "column" : "row"}
@@ -564,6 +568,7 @@ export function EmailRedirect({ email }) {
 }
 function LeadData({ lead }) {
   const theme = useTheme();
+  const { user } = useAuth();
   return (
     <Stack spacing={3}>
       <InfoCard title="Lead Information" icon={BsBuilding} theme={theme}>
@@ -633,36 +638,44 @@ function LeadData({ lead }) {
         </Grid>
       </InfoCard>
 
-      <InfoCard title="Contact Information" icon={BsPerson} theme={theme}>
-        <Grid container spacing={4}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Typography color="text.secondary" variant="caption">
-              Client Name
-            </Typography>
-            <Typography variant="body1">{lead.client.name}</Typography>
+      {lead.status === "NEW" && user.role !== "ADMIN" ? (
+        ""
+      ) : (
+        <>
+          <InfoCard title="Contact Information" icon={BsPerson} theme={theme}>
+            <Grid container spacing={4}>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <Typography color="text.secondary" variant="caption">
+                  Client Name
+                </Typography>
+                <Typography variant="body1">{lead.client.name}</Typography>
 
-            <WhatsAppRedirect lead={lead} />
-            <Typography color="text.secondary" variant="caption">
-              Client Email
-            </Typography>
-            <EmailRedirect email={lead.client.email} />
-          </Grid>
-          {lead.assignedTo && (
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Typography color="text.secondary" variant="caption">
-                Assigned To
-              </Typography>
-              <Typography variant="body1">{lead.assignedTo.name}</Typography>
-              <Typography variant="caption" color="text.secondary">
-                {lead.assignedTo.email}
-              </Typography>
-              <Typography variant="subtitle2" color="text.secondary">
-                Assigned at : {dayjs(lead.assignedAt).format("DD/MM/YYYY")}
-              </Typography>
+                <WhatsAppRedirect lead={lead} />
+                <Typography color="text.secondary" variant="caption">
+                  Client Email
+                </Typography>
+                <EmailRedirect email={lead.client.email} />
+              </Grid>
+              {lead.assignedTo && (
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Typography color="text.secondary" variant="caption">
+                    Assigned To
+                  </Typography>
+                  <Typography variant="body1">
+                    {lead.assignedTo.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {lead.assignedTo.email}
+                  </Typography>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Assigned at : {dayjs(lead.assignedAt).format("DD/MM/YYYY")}
+                  </Typography>
+                </Grid>
+              )}
             </Grid>
-          )}
-        </Grid>
-      </InfoCard>
+          </InfoCard>
+        </>
+      )}
     </Stack>
   );
 }

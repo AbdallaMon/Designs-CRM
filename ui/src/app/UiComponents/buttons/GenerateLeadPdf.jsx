@@ -94,11 +94,12 @@ export function generatePDF(clientLead) {
 
   // Start PDF generation
   addHeader();
-
-  // Client Information
-  addSectionTitle("Client Information");
-  addField("Name", clientLead.client?.name);
-  addField("Phone", clientLead.client?.phone);
+  if (clientLead.status === "NEW") {
+  } else {
+    addSectionTitle("Client Information");
+    addField("Name", clientLead.client?.name);
+    addField("Phone", clientLead.client?.phone);
+  }
 
   // Assigned To
   if (clientLead.assignedTo) {
