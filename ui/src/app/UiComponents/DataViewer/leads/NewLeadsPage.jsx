@@ -84,9 +84,9 @@ export function LeadSliderCard({ lead, setData }) {
   return (
     <Card
       sx={{
-        boxShadow: 3, // Subtle shadow
-        borderRadius: 2, // Rounded corners
-        padding: 2, // Consistent padding
+        boxShadow: 3,
+        borderRadius: 2,
+        padding: 2,
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",

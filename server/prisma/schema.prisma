@@ -96,7 +96,7 @@ model ClientLead {
       selectedCategory   LeadCategory
       type   LeadType @default(CONSTRUCTION_VILLA)
       description String?
-      clientDescription  String?
+      clientDescription  String? @db.Text   
       discount  Decimal   @db.Decimal(10, 2) @default(0)
       emirate            Emirate?
       price              String?

@@ -622,7 +622,13 @@ function LeadData({ lead }) {
               <Typography color="text.secondary" variant="caption">
                 Client description
               </Typography>
-              <Typography variant="body1">{lead.clientDescription}</Typography>
+              <Typography
+                variant="body1"
+                component="pre"
+                sx={{ textWrap: "auto", wordBreak: "break-all" }}
+              >
+                {lead.clientDescription}
+              </Typography>
             </Grid>
           )}
           {lead.timeToContact && (

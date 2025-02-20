@@ -296,6 +296,17 @@ export async function markClientLeadAsConverted(
 }
 
 export async function assignLeadToAUser(clientLeadId, userId, isOverdue) {
+  const activeLeadsCount = await prisma.clientLead.count({
+    where: {
+      userId: userId,
+      status: {
+        notIn: ["FINALIZED", "REJECTED", "ON_HOLD", "CONVERTED"],
+      },
+    },
+  });
+  if (activeLeadsCount >= 50) {
+    throw new Error("You cannot take more than 50 active leads.");
+  }
   if (isOverdue) {
     const convertedLead = await markClientLeadAsConverted(
       clientLeadId,
