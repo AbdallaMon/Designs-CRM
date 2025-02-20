@@ -185,6 +185,8 @@ model User {
  updatedAt     DateTime       @updatedAt
  callReminders CallReminder[]
  files File[]
+ lastSeenAt    DateTime?    
+ maxLeadsCounts Int?             @default(50)
  @@index([email])
 }
 

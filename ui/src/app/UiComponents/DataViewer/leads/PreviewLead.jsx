@@ -157,7 +157,6 @@ const LeadContent = ({
       }, 500);
     }
   };
-
   const leadStatus = enumToKeyValueArray(KanbanLeadsStatus);
   return (
     <>
@@ -203,7 +202,8 @@ const LeadContent = ({
             <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
               {lead.client.name[0]}
             </Avatar>
-            {lead.status === "NEW" && user.role !== "ADMIN" ? (
+            {(lead.status === "NEW" || lead.status === "ON_HOLD") &&
+            user.role !== "ADMIN" ? (
               ""
             ) : (
               <Typography variant="h6">{lead.client.name}</Typography>
@@ -644,7 +644,8 @@ function LeadData({ lead }) {
         </Grid>
       </InfoCard>
 
-      {lead.status === "NEW" && user.role !== "ADMIN" ? (
+      {(lead.status === "NEW" || lead.status === "ON_HOLD") &&
+      user.role !== "ADMIN" ? (
         ""
       ) : (
         <>
@@ -738,7 +739,6 @@ const PreviewDialog = ({
   }, [id, open]);
 
   const handlePageClose = (isPage) => {
-    console.log(isPage, "isPage");
     if (isPage) {
       window.history.back();
       return;

@@ -304,8 +304,18 @@ export async function assignLeadToAUser(clientLeadId, userId, isOverdue) {
       },
     },
   });
-  if (activeLeadsCount >= 50) {
-    throw new Error("You cannot take more than 50 active leads.");
+  const maxUserLeadsCount = await prisma.user.findUnique({
+    where: { id: Number(userId) },
+    select: {
+      maxLeadsCounts: true,
+    },
+  });
+  if (activeLeadsCount >= (maxUserLeadsCount.maxLeadsCounts || 50)) {
+    throw new Error(
+      `You cannot take more than ${
+        maxUserLeadsCount.maxLeadsCounts || 50
+      } active leads.`
+    );
   }
   if (isOverdue) {
     const convertedLead = await markClientLeadAsConverted(

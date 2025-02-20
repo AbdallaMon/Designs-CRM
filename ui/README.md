@@ -61,5 +61,21 @@ pays
 - Email Image
 - make it pages (to enhance the back functioanlity)
 
-  dJkmjERCZGCEgaxl
-  root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
+- Number of leads (maximux for each staff by admin)
+- To check when last staff logged in and when not logged in
+
+ALTER TABLE User
+ADD COLUMN lastSeenAt DATETIME NULL,
+ADD COLUMN maxLeadsCounts INT NULL;
+
+1- مرحلة التواصل مع العميل
+2- رسم المخططات المبدائية
+3- تصميم ثري دي
+4- موافقه الثري دي
+بعد الثري دي ينتقل لموظف اخر
+1- رسم مخطط دروب شوبينج
+2- تم التسليم
+عند التسليم شو دفع العميل واسمه موقعه وتاريخ الدفع وهل متبقي دفع عدد الدفعات هل سيتدفع مره اخري لم يتم استلام الدفعه
+
+dJkmjERCZGCEgaxl
+root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

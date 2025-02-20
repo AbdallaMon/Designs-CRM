@@ -95,7 +95,7 @@ export function LeadSliderCard({ lead, setData }) {
     >
       {/* Card Header */}
       <CardHeader
-        title={lead.client.name}
+        title={""}
         titleTypographyProps={{
           variant: "h6",
           fontWeight: "bold",
@@ -103,12 +103,7 @@ export function LeadSliderCard({ lead, setData }) {
         }}
         sx={{ paddingBottom: 0 }}
       />
-
-      {/* Card Content */}
       <CardContent sx={{ paddingTop: 0, height: "100px", overflowY: "hidden" }}>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-          <strong>Email:</strong> {lead.client.email}
-        </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
           <strong>Created at:</strong> {formattedDate}
         </Typography>

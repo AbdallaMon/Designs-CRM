@@ -657,6 +657,6 @@ export async function getUserDetailsWithSpecificFields(
 export async function updateLead(clientLeadId) {
   await prisma.clientLead.update({
     where: { id: Number(clientLeadId) },
-    data: {}, // This triggers the `@updatedAt` behavior
+    data: {},
   });
 }
