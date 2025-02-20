@@ -145,7 +145,7 @@ export function animateLeadCategoryItem({
 }) {
   setIsAnimating(true);
   const removedElement = leadCategory === "DESIGN" ? "CONSULTATION" : "DESIGN";
-
+  const mobile = isMobile();
   const tl = gsap.timeline();
   animateImageCardToFullWidthFullHeight(
     tl,
@@ -157,7 +157,7 @@ export function animateLeadCategoryItem({
   tl.fromTo(
     ".logo",
     {
-      marginLeft: -25,
+      marginLeft: mobile ? -20 : -24,
     },
     {
       marginLeft: 10,
@@ -520,11 +520,10 @@ export function reverseAnimation({
     const allItems = document.querySelectorAll(
       `.lead-card:not(.${leadCategory})`
     );
-    console.log(allItems, "al");
     const removedElements = document.querySelectorAll(
       `.lead-card:not(.${leadCategory}) .shadow-lead-card`
     );
-
+    const mobile = isMobile();
     const leadElement = document.querySelector(`.${leadCategory}`);
     const {
       top: t,
@@ -595,7 +594,7 @@ export function reverseAnimation({
           marginLeft: 10,
         },
         {
-          marginLeft: -25,
+          marginLeft: mobile ? -20 : -24,
         },
         "<"
       );

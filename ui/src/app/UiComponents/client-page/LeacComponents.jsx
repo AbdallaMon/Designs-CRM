@@ -352,6 +352,8 @@ export function Title({ title, class_name }) {
 export function Header({ reverseAnimation }) {
   const theme = useTheme();
   const { lng, changeLanguage } = useLanguageContext();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
   return (
     <Container
       position="fixed"
@@ -405,14 +407,12 @@ export function Header({ reverseAnimation }) {
           </Box>
           <Box
             component="img"
-            src="/logo-dark.png"
+            src="/main-logo.jpg"
             alt="Dream Studio - Dream Design & Luxurious Home Solutions"
             className="logo"
-            style={{
-              marginLeft: "-25px",
-            }}
+            style={{ marginLeft: isMobile ? "-20px" : "-24px" }}
             sx={{
-              height: 60,
+              height: 65,
               width: "auto",
             }}
           />
