@@ -239,7 +239,6 @@ export async function newLeadNotification(leadId, client) {
        <div class="sub-text">
        New lead created by 
        ${client.name} - 
-       ${client.email}
 </div>
     </div>`;
 

@@ -174,13 +174,12 @@ export function generatePDF(clientLead) {
   if (clientLead.priceOffers?.length > 0) {
     addSectionTitle("Price Offers");
 
-    const offerColumns = ["Date", "By", "Note", "Min Price", "Max Price"];
+    const offerColumns = ["Date", "By", "Note", "Attachement"];
     const offerRows = clientLead.priceOffers.map((offer) => [
       formatDate(offer.createdAt),
       offer.user?.name || "Unknown",
       offer.note || "-",
-      formatCurrency(offer.minPrice),
-      formatCurrency(offer.maxPrice),
+      offer.url || "No Attachments",
     ]);
 
     doc.autoTable({
