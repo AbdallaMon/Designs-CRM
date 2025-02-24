@@ -24,6 +24,11 @@ enum NotificationType {
  PRICE_OFFER_UPDATED
  FINAL_PRICE_ADDED
  FINAL_PRICE_CHANGED
+ PAYMENT_ADDED         // New payment recorded
+ PAYMENT_STATUS_UPDATED // Payment status updated
+ EXTRA_FINAL_PRICE_ADDED // Extra final price added
+ EXTRA_FINAL_PRICE_EDITED // Extra final price edited
+ WORK_STAGE_UPDATED   // Work stage updated for 3D or 2D
  OTHER
 }
 enum ContentType {
@@ -64,9 +69,14 @@ enum Emirate {
 }
 
 enum UserRole {
- ADMIN
- STAFF
+  ADMIN          
+  STAFF          
+  THREE_D_DESIGNER  // 3D Designer role, can handle 3D design projects
+  TWO_D_DESIGNER    // 2D Designer role, works after 3D stage is complete
+  ACCOUNTANT        // Accountant role, manages payments and installments
+  SUPER_ADMIN       // Super Admin role, can monitor actions but not see users
 }
+
 
 enum ClientLeadStatus {
  NEW
@@ -85,12 +95,45 @@ enum CallReminderStatus {
   DONE
   MISSED
 }
+
+// Work Stages for 3D Designer
+enum ThreeDWorkStage {
+  CLIENT_COMMUNICATION
+  DESIGN_STAGE
+  THREE_D_STAGE
+  THREE_D_APPROVAL
+}
+
+// Work Stages for 2D Designer
+enum TwoDWorkStage {
+  DRAWING_PLAN
+  FINAL_DELIVERY
+}
+
+enum PaymentStatus {
+  PENDING        // Payment is pending
+  PARTIALLY_PAID // Payment partially made
+  FULLY_PAID     // Payment fully made
+}
+
+
 model ClientLead {
       id                 Int              @id @default(autoincrement())
       client             Client           @relation(fields: [clientId], references: [id])
       clientId           Int
       assignedTo         User?            @relation(fields: [userId], references: [id])
       userId             Int?
+
+      threeDDesigner     User?            @relation("ThreeDLeads", fields: [threeDDesignerId], references: [id]) // Assigned 3D Designer
+      threeDDesignerId   Int?
+      twoDDesigner       User?            @relation("TwoDLeads", fields: [twoDDesignerId], references: [id]) // Assigned 2D Designer
+      twoDDesignerId     Int?
+      accountant         User?            @relation("AccountantLeads", fields: [accountantId], references: [id]) // Assigned Accountant
+      accountantId       Int?
+      
+      // Work Stages
+      threeDWorkStage   ThreeDWorkStage?
+      twoDWorkStage     TwoDWorkStage?
 
       // Lead type data
       selectedCategory   LeadCategory
@@ -105,11 +148,16 @@ model ClientLead {
       priceWithOutDiscount  Decimal   @db.Decimal(10, 2) @default(0)
       priceOffers PriceOffers[]
 
+      payments         Payment[]
+
       status             ClientLeadStatus @default(NEW)
       files              File[]
       notes              Note[]
       notifications      Notification[]
       callReminders      CallReminder[]   @relation("clientLeadCallReminders")
+
+      extraServices     ExtraService[]
+
       assignedAt         DateTime?
       reasonToConvert String?
       createdAt          DateTime         @default(now())
@@ -120,6 +168,40 @@ model ClientLead {
       @@index([clientId])
       @@index([userId])
 }
+model Payment {
+  id             Int        @id @default(autoincrement())
+  clientLead     ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId   Int
+  status         PaymentStatus @default(PENDING)
+  amount         Decimal    @db.Decimal(10, 2)
+  amountPaid     Decimal    @db.Decimal(10, 2) @default(0)
+  amountLeft     Decimal    @db.Decimal(10, 2)
+  dueDate        DateTime
+  invoices       Invoice[]
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+// Invoice Model
+model Invoice {
+  id          Int        @id @default(autoincrement())
+  payment     Payment    @relation(fields: [paymentId], references: [id])
+  paymentId   Int
+  issuedDate  DateTime   @default(now())
+  amount      Decimal    @db.Decimal(10, 2)
+  createdAt   DateTime   @default(now())
+}
+
+
+model ExtraService {
+  id          Int        @id @default(autoincrement())
+  clientLead  ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
+  price       Decimal    @db.Decimal(10, 2)
+  note        String?    @db.Text
+  createdAt   DateTime   @default(now())
+}
+
 model PriceOffers {
   id           Int        @id @default(autoincrement())
   clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
@@ -176,6 +258,7 @@ model User {
  password      String         @db.VarChar(255)
  isActive         Boolean           @default(true)
  role          UserRole       @default(STAFF)
+ logs        UserLog[] 
  clientLeads   ClientLead[]
  notifications   Notification[]   @relation("UserNotifications")
  staffNotifications Notification[] @relation("StaffNotifications")
@@ -187,7 +270,21 @@ model User {
  files File[]
  lastSeenAt    DateTime?    
  maxLeadsCounts Int?             @default(50)
+ threeDLeads ClientLead[] @relation("ThreeDLeads")
+ twoDLeads ClientLead[] @relation("TwoDLeads")
+ accountantLeads ClientLead[] @relation("AccountantLeads")
  @@index([email])
+}
+
+model UserLog {
+  id          Int      @id @default(autoincrement())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
+  signInAt    DateTime
+  signOutAt   DateTime?
+  totalHours  Decimal?  @db.Decimal(5, 2) 
+
+  @@index([userId])
 }
 
 model Client {
