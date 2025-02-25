@@ -79,6 +79,35 @@ export async function assignLeadNotification(
     Number(userId)
   );
 }
+export async function assignWorkStageNotification(
+  clientLeadId,
+  userId,
+  updatedClientLead,
+  type
+) {
+  const notificationHtml = `<div>
+    Lead <a href="${
+      dealsLink + clientLeadId
+    }" >#${clientLeadId}</a> assigned to user <a href="${userLink + userId}">#${
+    type === "three-d"
+      ? updatedClientLead.threeDDesigner.name
+      : updateCallNotification.twoDDesigner.name
+  }</a> 
+    </div>`;
+
+  await createNotification(
+    null,
+    true,
+    notificationHtml,
+    null,
+    "LEAD_TRANSFERRED",
+    "Lead transferred",
+    true,
+    "HTML",
+    null,
+    Number(userId)
+  );
+}
 export async function newNoteNotification(leadId, content, userId) {
   const notificationHtml = `<div>
        <strong>Note</strong> was added to Lead <a href="${

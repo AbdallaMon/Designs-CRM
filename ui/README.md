@@ -35,5 +35,8 @@
 - Extra final prices(user can add more final prices with notes) can edit old prices
 - Add logs online (for users when he each sign in and sign out saved as a log from 8 to 10 for examble then total work for today)
 
-dJkmjERCZGCEgaxl
-root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
+- When sales(staff) finalize a lead they add number of payments we disscussed with the client
+- Admin can make a user have more than one role
+- Show for each user his own calls only
+  dJkmjERCZGCEgaxl
+  root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

@@ -159,3 +159,7 @@ export const calculateTimeLeft = (setTimeLeft, nextCall) => {
     );
   }
 };
+
+export const checkIfADesigner = (user) => {
+  return user.role !== "TWO_D_DESIGNER" || user.role !== "THREE_D_DESIGNER";
+};

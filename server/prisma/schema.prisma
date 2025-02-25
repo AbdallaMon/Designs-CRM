@@ -159,6 +159,10 @@ model ClientLead {
       extraServices     ExtraService[]
 
       assignedAt         DateTime?
+      threeDAssignedAt   DateTime?
+      twoDAssignedAt     DateTime?
+      accountantAssignedAt DateTime?
+
       reasonToConvert String?
       createdAt          DateTime         @default(now())
       updatedAt          DateTime         @updatedAt
@@ -177,6 +181,7 @@ model Payment {
   amountPaid     Decimal    @db.Decimal(10, 2) @default(0)
   amountLeft     Decimal    @db.Decimal(10, 2)
   dueDate        DateTime
+  paymentReason  String?    @db.Text
   invoices       Invoice[]
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt

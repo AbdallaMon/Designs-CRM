@@ -164,6 +164,20 @@ export const ClientLeadStatus = {
   ON_HOLD: "On Hold",
 };
 
+// Work Stages for 3D Designer
+export const ThreeDWorkStages = {
+  CLIENT_COMMUNICATION: "Client Communication",
+  DESIGN_STAGE: "Design Stage",
+  THREE_D_STAGE: "3D Stage",
+  THREE_D_APPROVAL: "3D Approval",
+};
+
+// Work Stages for 2D Designer
+export const TwoDWorkStages = {
+  DRAWING_PLAN: "Drawing Plan",
+  FINAL_DELIVERY: "Final Delivery",
+};
+
 export const KanbanLeadsStatus = {
   IN_PROGRESS: "In Progress",
   INTERESTED: "Interested",
@@ -174,13 +188,20 @@ export const KanbanLeadsStatus = {
 };
 
 export const statusColors = {
-  IN_PROGRESS: "#0d9488", // Teal
-  INTERESTED: "#10b981", // Emerald
-  NEEDS_IDENTIFIED: "#f59e0b", // Amber
-  NEGOTIATING: "#3b82f6", // Blue
-  REJECTED: "#ef4444", // Red
-  FINALIZED: "#0f766e", // Dark teal
+  IN_PROGRESS: "#0d9488",
+  INTERESTED: "#10b981",
+  NEEDS_IDENTIFIED: "#f59e0b",
+  NEGOTIATING: "#3b82f6",
+  REJECTED: "#ef4444",
+  FINALIZED: "#0f766e",
+  CLIENT_COMMUNICATION: "#3b82f6",
+  DESIGN_STAGE: "#10b981",
+  THREE_D_STAGE: "#f59e0b",
+  THREE_D_APPROVAL: "#0d9488",
+  DRAWING_PLAN: "#f97316",
+  FINAL_DELIVERY: "#0f766e",
 };
+
 export const KanbanStatusArray = [
   "IN_PROGRESS",
   "INTERESTED",

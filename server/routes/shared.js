@@ -3,10 +3,12 @@ import {
   getCurrentUser,
   getNotifications,
   getPagination,
+  getTokenData,
   verifyTokenAndHandleAuthorization,
 } from "../services/utility.js";
 import {
   assignLeadToAUser,
+  assignWorkStageLeadToAUser,
   getAllFixedData,
   getClientLeadDetails,
   getClientLeads,
@@ -16,11 +18,16 @@ import {
   getKeyMetrics,
   getLatestNewLeads,
   getMonthlyPerformanceData,
+  getNewWorkStagesLeads,
   getNextCalls,
+  getNextCallsForDesigners,
   getPerformanceMetrics,
   getRecentActivities,
+  getWorkStageLeadDetails,
+  getWorkStagesLeadsByDateRange,
   markClientLeadAsConverted,
   updateClientLeadStatus,
+  updateLeadWorkStage,
 } from "../services/sharedServices.js";
 
 const router = Router();
@@ -48,7 +55,10 @@ router.get("/client-leads", async (req, res) => {
 router.get("/client-leads/deals", async (req, res) => {
   try {
     const searchParams = req.query;
-
+    const token = getTokenData(req, res);
+    if (token.role === "STAFF") {
+      searchParams.userId = token.id;
+    }
     const clientLeads = await getClientLeadsByDateRange({ searchParams });
     res.status(200).json({ data: clientLeads });
   } catch (error) {
@@ -281,6 +291,121 @@ router.get("/fixed-data", async (req, res) => {
   try {
     const result = await getAllFixedData();
     res.status(200).json({ data: result });
+  } catch (error) {
+    console.error("Error fetching client leads:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching client leads" });
+  }
+});
+
+/////////////////// Work stages routes ///////////////////
+
+router.get("/work-stages/new", async (req, res) => {
+  try {
+    const searchParams = req.query;
+    const { limit, skip } = getPagination(req);
+    const result = await getNewWorkStagesLeads({
+      limit: Number(limit),
+      skip: Number(skip),
+      searchParams,
+    });
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching work stages leads:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching work stages leads" });
+  }
+});
+router.get("/work-stages", async (req, res) => {
+  try {
+    const searchParams = req.query;
+    const token = getTokenData(req, res);
+    if (token.role === "THREE_D_DESIGNER" || token.role === "TWO_D_DESIGNER") {
+      searchParams.userId = token.id;
+    }
+    const clientLeads = await getWorkStagesLeadsByDateRange({ searchParams });
+    res.status(200).json({ data: clientLeads });
+  } catch (error) {
+    console.error("Error fetching work stages leads:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching work stages leads" });
+  }
+});
+
+router.get("/work-stage-leads/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const clientLeadDetails = await getWorkStageLeadDetails(Number(id));
+    res.status(200).json({ data: clientLeadDetails });
+  } catch (error) {
+    console.error("Error fetching client lead details:", error);
+    res.status(500).json({
+      message:
+        error.message ||
+        "An error occurred while fetching client lead details.",
+    });
+  }
+});
+router.put("/work-stages/:leadId/status", async (req, res) => {
+  try {
+    const { leadId } = req.params;
+    let type;
+    const token = getTokenData(req, res);
+    if (token.role === "THREE_D_DESIGNER") {
+      type = "three-d";
+    } else {
+      type = "two-d";
+    }
+    await updateLeadWorkStage({
+      clientLeadId: Number(leadId),
+      type: type,
+      ...req.body,
+    });
+
+    res.status(200).json({
+      message: "Status changed successfully",
+    });
+  } catch (error) {
+    console.error("Error updating work stage status:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+router.put("/work-stages/assign", async (req, res) => {
+  try {
+    const clientLead = req.body;
+    const currentUser = await getCurrentUser(req);
+    const result = await assignWorkStageLeadToAUser(
+      Number(clientLead.id),
+      Number(currentUser.id),
+      req.query.type
+    );
+
+    res
+      .status(200)
+      .json({ data: result, message: "Lead assigned to you successfully" });
+  } catch (error) {
+    console.error("Error assigning client leads:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+router.get("/work-stages/calls", async (req, res) => {
+  try {
+    const searchParams = req.query;
+    const { limit, skip } = getPagination(req);
+    const token = getTokenData(req, res);
+    if (token.role === "THREE_D_DESIGNER") {
+      searchParams.userId = token.id;
+    }
+    const result = await getNextCallsForDesigners({
+      limit: Number(limit),
+      skip: Number(skip),
+      searchParams,
+    });
+    res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching client leads:", error);
     res

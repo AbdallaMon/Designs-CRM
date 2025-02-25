@@ -1,5 +1,5 @@
-import KanbanBoard from "@/app/UiComponents/DataViewer/leads/ClientLeadKanban.jsx";
+import DealsKanbanBoard from "@/app/UiComponents/DataViewer/leads/ClientLeadKanban.jsx";
 
-export default function page(){
-    return <KanbanBoard />
+export default function page() {
+  return <DealsKanbanBoard />;
 }

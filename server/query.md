@@ -101,3 +101,11 @@ MODIFY COLUMN type ENUM(
 'WORK_STAGE_UPDATED', -- Work stage updated for 3D or 2D
 'OTHER'
 ) NOT NULL;
+
+ALTER TABLE Payment
+ADD COLUMN paymentReason TEXT NULL;
+
+ALTER TABLE ClientLead
+ADD COLUMN threeDAssignedAt DATETIME NULL,
+ADD COLUMN twoDAssignedAt DATETIME NULL,
+ADD COLUMN accountantAssignedAt DATETIME NULL;

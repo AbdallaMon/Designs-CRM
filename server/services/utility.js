@@ -136,7 +136,12 @@ export const verifyTokenAndHandleAuthorization = (req, res, next, role) => {
     const decoded = jwt.verify(token, SECRET_KEY);
 
     if (role === "SHARED") {
-      if (decoded.role !== "ADMIN" && decoded.role !== "STAFF") {
+      if (
+        decoded.role !== "ADMIN" &&
+        decoded.role !== "STAFF" &&
+        decoded.role !== "THREE_D_DESIGNER" &&
+        decoded.role !== "TWO_D_DESIGNER"
+      ) {
         return res.status(403).json({ message: "Not authorized" });
       }
     } else {
@@ -193,6 +198,12 @@ export async function searchData(body) {
         { name: { contains: query } },
         { phone: { contains: query } },
       ];
+    } else {
+      where.OR = [
+        { email: { contains: query } },
+        { name: { contains: query } },
+      ];
+      where.role = model.toUpperCase();
     }
   }
 
@@ -218,7 +229,6 @@ export async function searchData(body) {
       id: true,
       email: true,
       name: true,
-      phone: true,
     },
     client: {
       id: true,
@@ -229,7 +239,7 @@ export async function searchData(body) {
   };
   const data = await prismaModel.findMany({
     where,
-    select: selectFields[model],
+    select: selectFields[model] || selectFields["user"],
   });
   return data;
 }
@@ -660,3 +670,16 @@ export async function updateLead(clientLeadId) {
     data: {},
   });
 }
+
+export const getTokenData = (req, res) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(401).json({ message: "You have to login first" });
+  }
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY);
+    return decoded; // Return token data
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+};

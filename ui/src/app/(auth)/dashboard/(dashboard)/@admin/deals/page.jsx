@@ -1,5 +1,5 @@
-import KanbanBoard from "@/app/UiComponents/DataViewer/leads/ClientLeadKanban.jsx";
+import DealsKanbanBoard from "@/app/UiComponents/DataViewer/leads/ClientLeadKanban.jsx";
 
-export default function page({searchParams}) {
-    return <KanbanBoard admin={true} staffId={searchParams.staffId}/>
+export default function page({ searchParams }) {
+  return <DealsKanbanBoard staffId={searchParams.staffId} />;
 }

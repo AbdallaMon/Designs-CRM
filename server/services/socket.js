@@ -14,7 +14,6 @@ export function initSocket(httpServer) {
     if (userId) {
       updateLastSeen(userId); // Update user activity on connect
     }
-    console.log(socket.handshake.query, "handShake");
 
     // Update lastSeenAt every 10 minutes
 
@@ -25,15 +24,12 @@ export function initSocket(httpServer) {
       socket.join(userId.toString());
     });
     socket.on("heartbeat", ({ userId }) => {
-      console.log("heartBeat", userId);
       if (userId) {
         updateLastSeen(userId);
       }
     });
 
     socket.on("disconnect", (s) => {
-      console.log(s, "s");
-      console.log(userId, "userId");
       if (userId) {
         updateLastSeen(userId); // Optional: mark user as inactive on disconnect
       }

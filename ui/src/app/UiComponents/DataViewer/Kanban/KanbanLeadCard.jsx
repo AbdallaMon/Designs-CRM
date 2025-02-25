@@ -38,6 +38,7 @@ import {
 import { hideMoreData } from "@/app/helpers/functions/utility.js";
 import { FaEye } from "react-icons/fa";
 import { InProgressCall } from "@/app/UiComponents/DataViewer/leads/InProgressCall.jsx";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 const ItemTypes = {
   CARD: "card",
@@ -70,6 +71,7 @@ const LeadCard = ({ lead, movelead, admin, setleads }) => {
     type: ItemTypes.CARD,
     item: { id: lead.id, status: lead.status },
   });
+  const { user } = useAuth();
   const [menuAnchorEl, setMenuAnchorEl] = React.useState(null);
   const [previewDialogOpen, setPreviewDialogOpen] = React.useState(false);
 
@@ -98,7 +100,6 @@ const LeadCard = ({ lead, movelead, admin, setleads }) => {
   }, []);
 
   const latestCalls = getCallInfo(lead.callReminders);
-
   return (
     <div ref={drag}>
       <StyledCard status={lead.status}>
@@ -145,6 +146,13 @@ const LeadCard = ({ lead, movelead, admin, setleads }) => {
           )}
           <Stack spacing={2}>
             {latestCalls?.map((call, index) => {
+              // if (
+              //   user.role !== "ADMIN" &&
+              //   user.role !== "SUPERVISOR" &&
+              //   call.userId !== user.id
+              // ) {
+              //   return;
+              // }
               return (
                 <CallInfoBox
                   key={index}

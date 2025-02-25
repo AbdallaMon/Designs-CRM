@@ -16,25 +16,16 @@ import { InProgressCall } from "@/app/UiComponents/DataViewer/leads/InProgressCa
 import Link from "next/link.js";
 import { hideMoreData } from "@/app/helpers/functions/utility.js";
 
-export default function NextCalls({ staff }) {
+export default function NextCalls({ staff, designer = false }) {
   const { user } = useAuth();
 
-  const {
-    data,
-    loading,
-    setData,
-    page,
-    setPage,
-    limit,
-    setLimit,
-    total,
-    setTotal,
-    totalPages,
-    setFilters,
-  } = useDataFetcher(
-    "shared/client-leads/calls" + `?staffId=${staff && user.id}&`,
-    false
-  );
+  const { data, loading, page, setPage, limit, setLimit, total, totalPages } =
+    useDataFetcher(
+      designer
+        ? "shared/work-stages/calls"
+        : "shared/client-leads/calls" + `?staffId=${staff && user.id}&`,
+      false
+    );
 
   return (
     <LeadsSlider
@@ -49,12 +40,12 @@ export default function NextCalls({ staff }) {
       NextCalls={true}
     >
       {data?.map((call) => (
-        <NextCall call={call} key={call.id} />
+        <NextCall call={call} key={call.id} designer={designer} />
       ))}
     </LeadsSlider>
   );
 }
-function NextCall({ call }) {
+function NextCall({ call, designer }) {
   return (
     <Card>
       <CardContent>
