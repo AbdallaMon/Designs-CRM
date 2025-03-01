@@ -163,3 +163,6 @@ export const calculateTimeLeft = (setTimeLeft, nextCall) => {
 export const checkIfADesigner = (user) => {
   return user.role !== "TWO_D_DESIGNER" || user.role !== "THREE_D_DESIGNER";
 };
+export const checkIfAdmin = (user) => {
+  return user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+};

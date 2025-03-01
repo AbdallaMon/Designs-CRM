@@ -155,6 +155,7 @@ const KanbanBoard = ({
             movelead={movelead}
             admin={admin}
             setleads={setleads}
+            type={type}
           />
         ))}
       </Grid>

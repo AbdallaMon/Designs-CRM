@@ -2,8 +2,9 @@ import jsPDF from "jspdf";
 import "jspdf-autotable";
 import dayjs from "dayjs";
 import arabicFontBase64 from "@/app/fonts/arabicFont.js";
+import { checkIfADesigner } from "@/app/helpers/functions/utility";
 
-export function generatePDF(clientLead) {
+export function generatePDF(clientLead, user) {
   const doc = new jsPDF();
   doc.addFileToVFS("Amiri-Regular.ttf", arabicFontBase64);
   doc.addFont("Amiri-Regular.ttf", "Amiri", "normal");
@@ -127,17 +128,18 @@ export function generatePDF(clientLead) {
   }
 
   // Price Information
-
-  addSectionTitle("Price Information");
-  // addField("Price", formatCurrency(clientLead.price));
-  if (clientLead.status === "FINALIZED") {
-    addField("Price", formatCurrency(clientLead.averagePrice));
-    addField("Price Note", clientLead.priceNote);
-    if (clientLead.discount) {
-      addField("Discount", clientLead.discount);
+  if (!checkIfADesigner(user)) {
+    addSectionTitle("Price Information");
+    // addField("Price", formatCurrency(clientLead.price));
+    if (clientLead.status === "FINALIZED") {
+      addField("Price", formatCurrency(clientLead.averagePrice));
+      addField("Price Note", clientLead.priceNote);
+      if (clientLead.discount) {
+        addField("Discount", clientLead.discount);
+      }
+    } else {
+      addField("Client Suggested Price", clientLead.price);
     }
-  } else {
-    addField("Client Suggested Price", clientLead.price);
   }
   // addField(
   //   "Price Without Discount",
@@ -169,32 +171,32 @@ export function generatePDF(clientLead) {
       y += 5;
     });
   }
+  if (!checkIfADesigner(user)) {
+    if (clientLead.priceOffers?.length > 0) {
+      addSectionTitle("Price Offers");
 
-  // Price Offers
-  if (clientLead.priceOffers?.length > 0) {
-    addSectionTitle("Price Offers");
+      const offerColumns = ["Date", "By", "Note", "Attachement"];
+      const offerRows = clientLead.priceOffers.map((offer) => [
+        formatDate(offer.createdAt),
+        offer.user?.name || "Unknown",
+        offer.note || "-",
+        offer.url || "No Attachments",
+      ]);
 
-    const offerColumns = ["Date", "By", "Note", "Attachement"];
-    const offerRows = clientLead.priceOffers.map((offer) => [
-      formatDate(offer.createdAt),
-      offer.user?.name || "Unknown",
-      offer.note || "-",
-      offer.url || "No Attachments",
-    ]);
+      doc.autoTable({
+        font: "Amiri",
+        fontStyle: "normal",
+        head: [offerColumns],
+        body: offerRows,
+        startY: y,
+        margin: { left: margin },
+        theme: "grid",
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [51, 122, 183] },
+      });
 
-    doc.autoTable({
-      font: "Amiri",
-      fontStyle: "normal",
-      head: [offerColumns],
-      body: offerRows,
-      startY: y,
-      margin: { left: margin },
-      theme: "grid",
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [51, 122, 183] },
-    });
-
-    y = doc.lastAutoTable.finalY + 10;
+      y = doc.lastAutoTable.finalY + 10;
+    }
   }
 
   // Notes

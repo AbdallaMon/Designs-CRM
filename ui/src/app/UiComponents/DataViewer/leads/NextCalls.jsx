@@ -61,7 +61,11 @@ function NextCall({ call, designer }) {
         <CardActions>
           <Button
             component={Link}
-            href={`/dashboard/deals/${call.clientLead.id}`}
+            href={
+              designer
+                ? `/dashboard/work-stages/${call.clientLead.id}`
+                : `/dashboard/deals/${call.clientLead.id}`
+            }
             variant="contained"
             size="small"
             color="primary"

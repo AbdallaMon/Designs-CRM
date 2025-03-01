@@ -61,6 +61,7 @@ import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { generatePDF } from "@/app/UiComponents/buttons/GenerateLeadPdf.jsx";
 import dayjs from "dayjs";
 import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
+import Link from "next/link";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -86,8 +87,6 @@ const LeadContent = ({
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
   const { setLoading } = useToastContext();
-  const [openConfirm, setOpenConfirm] = useState(false);
-  const [openPriceModel, setOpenPriceModel] = useState(null);
   async function createADeal(lead) {
     const type = user.role === "THREE_D_DESIGNER" ? "three-d" : "two-d";
 
@@ -110,7 +109,12 @@ const LeadContent = ({
   };
   const handleMenuClose = async (value) => {
     const request = await handleRequestSubmit(
-      { status: value, oldStatus: lead.status, isAdmin: user.role === "ADMIN" },
+      {
+        status: value,
+        oldStatus:
+          type === "three-d" ? lead.threeDWorkStage : lead.twoDWorkStage,
+        isAdmin: user.role === "ADMIN",
+      },
       setLoading,
       `shared/work-stages/${lead.id}/status`,
       false,
@@ -119,13 +123,17 @@ const LeadContent = ({
       "PUT"
     );
     if (request.status === 200) {
+      const update =
+        type === "three-d"
+          ? { threeDWorkStage: value }
+          : { twoDWorkStage: value };
       if (setleads) {
         setleads((prev) =>
-          prev.map((l) => (l.id === lead.id ? { ...l, status: value } : l))
+          prev.map((l) => (l.id === lead.id ? { ...l, ...update } : l))
         );
       }
       if (setLead) {
-        setLead((oldLead) => ({ ...oldLead, status: value }));
+        setLead((oldLead) => ({ ...oldLead, ...update }));
       }
       setAnchorEl(null);
     }
@@ -176,7 +184,8 @@ const LeadContent = ({
             justifyContent="flex-end"
           >
             {isPage &&
-            (!lead.twoDDesignerId || !lead.threeDDesignerId) &&
+            ((!lead.twoDDesignerId && type === "two-d") ||
+              (!lead.threeDDesignerId && type === "three-d")) &&
             !admin ? (
               <ConfirmWithActionModel
                 title={
@@ -189,6 +198,28 @@ const LeadContent = ({
               />
             ) : (
               <>
+                {admin && (
+                  <>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      type={Link}
+                      href={`/dashboard/deals/${lead.id}`}
+                    >
+                      See the deal
+                    </Button>
+                    {lead.twoDDesignerId && (
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        type={Link}
+                        href={`/dashboard/work-stages/two-d/${lead.id}`}
+                      >
+                        See the two d lead
+                      </Button>
+                    )}
+                  </>
+                )}
                 <Button
                   fullWidth={isMobile}
                   variant="contained"
@@ -233,7 +264,9 @@ const LeadContent = ({
                 </Menu>
               </>
             )}
-            <Button onClick={() => generatePDF(lead)}>Generate pdf</Button>
+            <Button onClick={() => generatePDF(lead, user)}>
+              Generate pdf
+            </Button>
           </Stack>
         </Stack>
       </DialogTitle>
@@ -468,12 +501,6 @@ function LeadData({ lead }) {
             <Typography variant="body1">
               {lead.country ? lead.country : lead.emirate}
             </Typography>
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Typography color="text.secondary" variant="caption">
-              Client price range
-            </Typography>
-            <Typography variant="body1">AED {lead.price}</Typography>
           </Grid>
           {lead.status === "FINALIZED" && (
             <>

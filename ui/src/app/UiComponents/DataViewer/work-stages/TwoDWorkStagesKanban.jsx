@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/app/providers/AuthProvider";
 import KanbanBoard from "../Kanban/KanbanBoard";
-import { ThreeDWorkStages } from "@/app/helpers/constants";
+import { ThreeDWorkStages, TwoDWorkStages } from "@/app/helpers/constants";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import { useEffect } from "react";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
@@ -51,7 +51,7 @@ function TwoDWorkStagesKanban({ staffId }) {
         loading={loading}
         movelead={movelead}
         setleads={setleads}
-        statusArray={Object.keys(ThreeDWorkStages)}
+        statusArray={Object.keys(TwoDWorkStages)}
         setFilters={setFilters}
         type="two-d"
       />

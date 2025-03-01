@@ -54,6 +54,26 @@ export const adminLinks = [
     ],
   },
   {
+    name: "Work stages",
+    href: "/dashboard/work-stages",
+    active: "work-stages",
+    icon: <FiDollarSign size={20} />,
+    subLinks: [
+      {
+        name: "Three D work stages",
+        href: "/dashboard/work-stages/three-d",
+        active: "three-d",
+        icon: <FiDollarSign size={20} />,
+      },
+      {
+        name: "Two D work stages",
+        href: "/dashboard/work-stages/twp-d",
+        icon: <FiClock size={18} />,
+        active: "two-d",
+      },
+    ],
+  },
+  {
     name: "Reports",
     href: "/dashboard/report",
     active: "report",

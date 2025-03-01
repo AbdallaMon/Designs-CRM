@@ -47,10 +47,11 @@ const StatusChip = styled(Chip)(({ theme, statuscolor }) => ({
   },
 }));
 
-const KanbanColumn = ({ status, leads, movelead, admin, setleads }) => {
+const KanbanColumn = ({ status, leads, movelead, admin, setleads, type }) => {
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,
     drop: (item) => {
+      console.log(item, "item");
       movelead(item, status);
     },
   });
@@ -149,6 +150,7 @@ const KanbanColumn = ({ status, leads, movelead, admin, setleads }) => {
               movelead={movelead}
               admin={admin}
               setleads={setleads}
+              type={type}
             />
           ))}
         </Stack>

@@ -39,6 +39,7 @@ import { hideMoreData } from "@/app/helpers/functions/utility.js";
 import { FaEye } from "react-icons/fa";
 import { InProgressCall } from "@/app/UiComponents/DataViewer/leads/InProgressCall.jsx";
 import { useAuth } from "@/app/providers/AuthProvider";
+import PreviewWorkStage from "../work-stages/PreviewWorkStage";
 
 const ItemTypes = {
   CARD: "card",
@@ -66,12 +67,20 @@ const CallInfoBox = styled(Box)(({ theme, variant }) => ({
   marginTop: theme.spacing(1),
 }));
 
-const LeadCard = ({ lead, movelead, admin, setleads }) => {
+const LeadCard = ({ lead, movelead, admin, setleads, type }) => {
   const [, drag] = useDrag({
     type: ItemTypes.CARD,
-    item: { id: lead.id, status: lead.status },
+    item: {
+      id: lead.id,
+      status:
+        type === "three-d"
+          ? lead.threeDWorkStage
+          : type === "two-d"
+          ? lead.twoDWorkStage
+          : lead.status,
+      ...lead,
+    },
   });
-  const { user } = useAuth();
   const [menuAnchorEl, setMenuAnchorEl] = React.useState(null);
   const [previewDialogOpen, setPreviewDialogOpen] = React.useState(false);
 
@@ -264,13 +273,24 @@ const LeadCard = ({ lead, movelead, admin, setleads }) => {
           ))}
         </Menu>
       )}
-      <PreviewDialog
-        open={previewDialogOpen}
-        onClose={() => setPreviewDialogOpen(false)}
-        setleads={setleads}
-        id={lead.id}
-        admin={admin}
-      />
+      {type === "three-d" || type === "two-d" ? (
+        <PreviewWorkStage
+          type={type}
+          open={previewDialogOpen}
+          onClose={() => setPreviewDialogOpen(false)}
+          setleads={setleads}
+          id={lead.id}
+          admin={admin}
+        />
+      ) : (
+        <PreviewDialog
+          open={previewDialogOpen}
+          onClose={() => setPreviewDialogOpen(false)}
+          setleads={setleads}
+          id={lead.id}
+          admin={admin}
+        />
+      )}
     </div>
   );
 };

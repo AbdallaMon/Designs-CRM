@@ -259,6 +259,17 @@ export async function getClientLeadDetails(clientLeadId) {
       createdAt: true,
       updatedAt: true,
       assignedAt: true,
+      payments: {
+        select: {
+          id: true,
+          status: true,
+          amount: true,
+          amountPaid: true,
+          amountLeft: true,
+          dueDate: true,
+          paymentReason: true,
+        },
+      },
     },
   });
 
@@ -378,6 +389,17 @@ export async function assignLeadToAUser(clientLeadId, userId, isOverdue) {
   return updatedClientLead;
 }
 
+export async function makePayments(data, leadId) {
+  data.map((payment) => {
+    payment.amountLeft = Number(payment.amount);
+    payment.amount = Number(payment.amount);
+    payment.paymentReason = "Final price payment";
+    payment.clientLeadId = Number(leadId);
+    payment.dueDate = new Date(payment.dueDate).toISOString();
+  });
+  const addedPayments = await prisma.payment.createMany({ data });
+  return addedPayments;
+}
 /* dashboard services */
 export const getKeyMetrics = async (searchParams) => {
   try {
@@ -926,7 +948,13 @@ export async function updateClientLeadStatus({
 </div>
         `;
   }
-
+  if (isAdmin) {
+    await prisma.payment.deleteMany({
+      where: {
+        clientLeadId,
+      },
+    });
+  }
   await updateLeadStatusNotification(
     lead.id,
     heading,
@@ -1015,6 +1043,12 @@ export async function getNewWorkStagesLeads({
   where = {
     status: "FINALIZED",
   };
+  if (searchParams.type === "two-d") {
+    where.threeDWorkStage = {
+      in: ["THREE_D_APPROVAL"],
+    };
+    where.twoDDesignerId = null;
+  }
 
   if (
     filters?.clientId &&
@@ -1081,6 +1115,7 @@ export async function getNewWorkStagesLeads({
     }),
     prisma.clientLead.count({ where }),
   ]);
+  console.log(clientLeads, "clientLeads");
   const totalPages = Math.ceil(total / limit);
 
   return { data: clientLeads, total, totalPages };
@@ -1295,6 +1330,7 @@ export async function updateLeadWorkStage({
   isAdmin,
   type,
 }) {
+  console.log(oldStatus, "oldStatus");
   if (!isAdmin) {
     if (oldStatus === "THREE_D_APPROVAL" || oldStatus === "FINAL_DELIVERY") {
       throw new Error(
@@ -1313,8 +1349,14 @@ export async function updateLeadWorkStage({
   };
   if (type === "three-d") {
     data.threeDWorkStage = status;
-  } else {
+  } else if (type === "two-d") {
     data.twoDWorkStage = status;
+  } else {
+    if (oldStatus === "THREE_D_APPROVAL") {
+      data.threeDWorkStage = status;
+    } else {
+      data.twoDWorkStage = status;
+    }
   }
   let heading = isAdmin
     ? "Lead status changed by admin"

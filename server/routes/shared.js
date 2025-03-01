@@ -25,6 +25,7 @@ import {
   getRecentActivities,
   getWorkStageLeadDetails,
   getWorkStagesLeadsByDateRange,
+  makePayments,
   markClientLeadAsConverted,
   updateClientLeadStatus,
   updateLeadWorkStage,
@@ -100,6 +101,19 @@ router.get("/client-leads/:id", async (req, res) => {
         error.message ||
         "An error occurred while fetching client lead details.",
     });
+  }
+});
+router.post("/client-leads/:id/payments", async (req, res) => {
+  const { id } = req.params;
+  const payments = await makePayments(req.body.payments, Number(id));
+  try {
+    res.status(200).json({
+      data: payments,
+      message: "Payments added successfully",
+    });
+  } catch (error) {
+    console.error("Error Creating payments:", error);
+    res.status(500).json({ message: "Error Creating payments" });
   }
 });
 
@@ -357,7 +371,7 @@ router.put("/work-stages/:leadId/status", async (req, res) => {
     const token = getTokenData(req, res);
     if (token.role === "THREE_D_DESIGNER") {
       type = "three-d";
-    } else {
+    } else if (token.role === "TWO_D_DESIGNER") {
       type = "two-d";
     }
     await updateLeadWorkStage({

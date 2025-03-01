@@ -59,6 +59,8 @@ import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { generatePDF } from "@/app/UiComponents/buttons/GenerateLeadPdf.jsx";
 import dayjs from "dayjs";
 import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
+import AddPayments from "./AddPayments";
+import PaymentDialog from "./PaymentsDialog";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -112,6 +114,8 @@ const LeadContent = ({
   };
   const [finalizeModel, setFinalizeModel] = useState(false);
   const [currentId, setCurrentId] = useState(null);
+  const [payments, seyPayments] = useState(lead.payments);
+  const [paymentModal, setPaymentModal] = useState(false);
   const handleMenuClose = async (value) => {
     if (value === "FINALIZED") {
       setCurrentId(lead.id);
@@ -185,6 +189,7 @@ const LeadContent = ({
           />
         </>
       )}
+
       <DialogTitle
         sx={{
           borderBottom: 1,
@@ -228,21 +233,39 @@ const LeadContent = ({
             ) : (
               <>
                 {lead.status === "FINALIZED" && (
-                  <Button
-                    fullWidth={isMobile}
-                    variant="outlined"
-                    startIcon={!admin && <AiOutlineSwap />}
-                    aria-controls={openPriceModel ? "basic-menu" : undefined}
-                    aria-haspopup="true"
-                    aria-expanded={openPriceModel ? "true" : undefined}
-                    onClick={() => setOpenPriceModel(true)}
-                    sx={{
-                      fontWeight: 500,
-                      borderRadius: "50px",
-                    }}
-                  >
-                    Final price : {lead.averagePrice}
-                  </Button>
+                  <>
+                    <Button
+                      fullWidth={isMobile}
+                      variant="outlined"
+                      startIcon={!admin && <AiOutlineSwap />}
+                      aria-controls={openPriceModel ? "basic-menu" : undefined}
+                      aria-haspopup="true"
+                      aria-expanded={openPriceModel ? "true" : undefined}
+                      // onClick={() => setOpenPriceModel(true)}
+                      sx={{
+                        fontWeight: 500,
+                        borderRadius: "50px",
+                      }}
+                    >
+                      Final price : {lead.averagePrice}
+                    </Button>
+                    {payments?.length > 0 ? (
+                      <PaymentDialog payments={payments} />
+                    ) : (
+                      <>
+                        {user.role === "STAFF" && (
+                          <AddPayments
+                            lead={lead}
+                            open={paymentModal}
+                            paymentType={"final-price"}
+                            setOpen={setPaymentModal}
+                            totalAmount={lead.averagePrice}
+                            setOldPayments={seyPayments}
+                          />
+                        )}
+                      </>
+                    )}
+                  </>
                 )}
                 {!admin && lead.status !== "FINALIZED" && (
                   <>
@@ -333,7 +356,9 @@ const LeadContent = ({
                 </Menu>
               </>
             )}
-            <Button onClick={() => generatePDF(lead)}>Generate pdf</Button>
+            <Button onClick={() => generatePDF(lead, user)}>
+              Generate pdf
+            </Button>
           </Stack>
         </Stack>
       </DialogTitle>

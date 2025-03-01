@@ -22,6 +22,7 @@ export default function NewWrokstagesLeadsPage({
   searchParams,
   staff,
   nextCall,
+  type,
 }) {
   const {
     data,
@@ -33,7 +34,7 @@ export default function NewWrokstagesLeadsPage({
     setLimit,
     total,
     totalPages,
-  } = useDataFetcher("shared/work-stages/new", false, {
+  } = useDataFetcher(`shared/work-stages/new?type=${type}&`, false, {
     clientId: searchParams.clientId ? searchParams.clientId : null,
   });
 

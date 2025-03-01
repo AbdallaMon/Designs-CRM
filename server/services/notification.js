@@ -91,7 +91,7 @@ export async function assignWorkStageNotification(
     }" >#${clientLeadId}</a> assigned to user <a href="${userLink + userId}">#${
     type === "three-d"
       ? updatedClientLead.threeDDesigner.name
-      : updateCallNotification.twoDDesigner.name
+      : updatedClientLead.twoDDesigner.name
   }</a> 
     </div>`;
 
