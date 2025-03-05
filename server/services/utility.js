@@ -140,12 +140,20 @@ export const verifyTokenAndHandleAuthorization = (req, res, next, role) => {
         decoded.role !== "ADMIN" &&
         decoded.role !== "STAFF" &&
         decoded.role !== "THREE_D_DESIGNER" &&
-        decoded.role !== "TWO_D_DESIGNER"
+        decoded.role !== "TWO_D_DESIGNER" &&
+        decoded.role !== "ACCOUNTANT" &&
+        decoded.role !== "SUPER_ADMIN"
       ) {
         return res.status(403).json({ message: "Not authorized" });
       }
     } else {
-      if (decoded.role !== role) {
+      if (
+        role === "ADMIN" &&
+        decoded.role !== "ADMIN" &&
+        decored.role !== "SUPER_ADMIN"
+      ) {
+        return res.status(403).json({ message: "Not authorized" });
+      } else if (decoded.role !== role) {
         return res.status(403).json({ message: "Not authorized" });
       }
     }
@@ -183,7 +191,7 @@ export async function getCurrentUser(req) {
 
 export async function searchData(body) {
   const { model, query, filters } = body;
-  const prismaModel = modelMap[model];
+  const prismaModel = modelMap[model] || modelMap["user"];
   let where = {};
   if (query) {
     if (model === "user") {
@@ -237,6 +245,7 @@ export async function searchData(body) {
       phone: true,
     },
   };
+  console.log(prismaModel, "prismaModel");
   const data = await prismaModel.findMany({
     where,
     select: selectFields[model] || selectFields["user"],
@@ -540,13 +549,39 @@ export async function createNotification(
   withEmail,
   contentType = "TEXT",
   clientLeadId,
-  staffId
+  staffId,
+  role = ["STAFF"],
+  specifiRole
 ) {
+  let subAdmins = [];
   const forAll = !userId && !isAdmin && !staffId;
-  if (forAll) {
+  if (specifiRole) {
     const users = await prisma.user.findMany({
       where: {
         isActive: true,
+        role: { in: role },
+      },
+      select: {
+        id: true,
+      },
+    });
+    users?.map(async (user) => {
+      await sendNotification(
+        user.id,
+        content,
+        href,
+        type,
+        emailSubject,
+        withEmail,
+        contentType,
+        clientLeadId
+      );
+    });
+  } else if (forAll) {
+    const users = await prisma.user.findMany({
+      where: {
+        isActive: true,
+        role: { in: ["STAFF", "ADMIN", "SUPERADMIN"] },
       },
       select: {
         id: true,
@@ -574,6 +609,15 @@ export async function createNotification(
           id: true,
         },
       });
+      subAdmins = await prisma.user.findMany({
+        where: {
+          role: "SUPER_ADMIN",
+        },
+        select: {
+          id: true,
+        },
+      });
+
       userId = admin.id;
     }
 
@@ -588,6 +632,21 @@ export async function createNotification(
       clientLeadId,
       staffId
     );
+    if (subAdmins?.length > 0) {
+      subAdmins.forEach(async (admin) => {
+        await sendNotification(
+          admin.id,
+          content,
+          href,
+          type,
+          emailSubject,
+          withEmail,
+          contentType,
+          clientLeadId,
+          staffId
+        );
+      });
+    }
   }
 }
 

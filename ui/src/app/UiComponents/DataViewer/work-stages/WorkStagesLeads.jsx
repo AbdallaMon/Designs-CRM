@@ -17,6 +17,7 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import Link from "next/link";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import NextCalls from "../leads/NextCalls";
+import { checkIfAdmin } from "@/app/helpers/functions/utility";
 
 export default function NewWrokstagesLeadsPage({
   searchParams,
@@ -68,6 +69,7 @@ function WorkStageLeadSliderCard({ lead, setData }) {
   const formattedDate = dayjs(lead.createdAt).format("YYYY-MM-DD");
   const { user } = useAuth();
   const { setLoading } = useToastContext();
+  const isAdmin = checkIfAdmin(user);
   const type = user.role === "THREE_D_DESIGNER" ? "three-d" : "two-d";
   async function createADeal(lead) {
     const assign = await handleRequestSubmit(
@@ -129,7 +131,7 @@ function WorkStageLeadSliderCard({ lead, setData }) {
 
       {/* Card Actions */}
       <CardActions sx={{ justifyContent: "flex-end", gap: 1, paddingTop: 1.5 }}>
-        {user.role !== "ADMIN" && (
+        {!isAdmin && (
           <ConfirmWithActionModel
             title="Are you sure you want to get this lead and assign it to you as a new work stage?"
             handleConfirm={() => createADeal(lead)}
@@ -142,7 +144,7 @@ function WorkStageLeadSliderCard({ lead, setData }) {
         <Button
           component={Link}
           href={
-            user.role === "ADMIN"
+            isAdmin
               ? `/dashboard/work-stages/${type}/${lead.id}`
               : `/dashboard/work-stages/${lead.id}`
           }

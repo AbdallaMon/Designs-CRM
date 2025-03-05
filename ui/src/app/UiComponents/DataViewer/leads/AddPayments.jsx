@@ -43,6 +43,7 @@ function AddPayments({
   setOldPayments,
   totalAmount,
   paymentType,
+  extraData,
 }) {
   const [error, setError] = useState(null);
   const [payments, setPayments] = useState([]);
@@ -137,6 +138,7 @@ function AddPayments({
         startDate,
         endDate,
         paymentType,
+        ...extraData,
       },
       setLoading,
       `shared/client-leads/${lead.id}/payments`,
@@ -145,10 +147,10 @@ function AddPayments({
     );
     if (request.status === 200) {
       if (setOldPayments) {
-        setOldPayments(request.data);
+        setOldPayments((old) => [...old, ...request.data]);
       }
       if (onClose) {
-        onClose();
+        onClose(true);
       }
       setOpen(false);
     }

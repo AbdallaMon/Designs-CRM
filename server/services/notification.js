@@ -2,7 +2,15 @@ import {
   createNotification,
   getUserDetailsWithSpecificFields,
 } from "./utility.js";
-import { dealsLink, newLeadLink, userLink } from "./links.js";
+import {
+  dashboardLink,
+  dealsLink,
+  newLeadLink,
+  threeDworkStageLink,
+  twoDworkStageLink,
+  userLink,
+  workStagesLink,
+} from "./links.js";
 import dayjs from "dayjs";
 
 export async function convertALeadNotification(lead) {
@@ -261,6 +269,42 @@ export async function updateLeadStatusNotification(
     staffId
   );
 }
+export async function updateWorkStageStatusNotification(
+  leadId,
+  heading,
+  content,
+  type,
+  userId,
+  isAdmin,
+  staffId,
+  workType
+) {
+  const link = isAdmin
+    ? workStagesLink
+    : workType === "THREE_D"
+    ? threeDworkStageLink
+    : twoDworkStageLink;
+  const notificationHtml = `<div>
+       <strong>${heading}</strong> updated in Lead <a href="${
+    link + leadId
+  }" >#${leadId}</a> 
+       <div class="sub-text">
+  ${content}
+</div>
+    </div>`;
+  await createNotification(
+    isAdmin ? userId : null,
+    !isAdmin,
+    notificationHtml,
+    null,
+    type ? "LEAD_STATUS_CHANGE" : "LEAD_UPDATED",
+    "Lead updated",
+    true,
+    "HTML",
+    null,
+    staffId
+  );
+}
 export async function newLeadNotification(leadId, client) {
   const leadHref = `${dealsLink + leadId}`;
   const notificationHtml = `<div>
@@ -281,5 +325,28 @@ export async function newLeadNotification(leadId, client) {
     true,
     "HTML",
     leadId
+  );
+}
+
+export async function finalizedLeadCreated(leadId, userId, type = "THREE_D") {
+  const notificationHtml = `<div>
+       <strong>New lead finalized</strong>  Lead <a href="${dashboardLink}" >#${leadId}</a> 
+       <div class="sub-text">
+  A lead has been finalized and u can now take it for a work stage
+</div>
+    </div>`;
+  await createNotification(
+    userId,
+    false,
+    notificationHtml,
+    null,
+    "NEW_LEAD",
+    "New Lead finalized",
+    true,
+    "HTML",
+    null,
+    null,
+    type === "TWO_D" ? ["TWO_D_DESIGNER"] : ["THREE_D_DESIGNER", "ACCOUNTANT"],
+    true
   );
 }

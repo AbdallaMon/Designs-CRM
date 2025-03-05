@@ -9,7 +9,7 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 
 function TwoDWorkStagesKanban({ staffId }) {
   const { user } = useAuth();
-  const admin = user.role === "ADMIN";
+  const admin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
   const {
     data: leads,
     loading,
@@ -23,11 +23,15 @@ function TwoDWorkStagesKanban({ staffId }) {
   }, [staffId]);
   const { setLoading } = useToastContext();
   const movelead = async (l, newStatus) => {
+    if (user.role === "SUPER_ADMIN") {
+      return;
+    }
     const request = await handleRequestSubmit(
       {
         status: newStatus,
         oldStatus: l.twoDWorkStage,
         isAdmin: user.role === "ADMIN",
+        type: "two-d",
       },
       setLoading,
       `shared/work-stages/${l.id}/status`,

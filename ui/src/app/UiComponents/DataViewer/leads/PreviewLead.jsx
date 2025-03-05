@@ -45,14 +45,13 @@ import {
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader.jsx";
 import { getData } from "@/app/helpers/functions/getData.js";
 import { AiOutlineSwap } from "react-icons/ai";
-import { enumToKeyValueArray } from "@/app/helpers/functions/utility.js";
+import {
+  checkIfAdmin,
+  enumToKeyValueArray,
+} from "@/app/helpers/functions/utility.js";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 import { FinalizeModal } from "@/app/UiComponents/DataViewer/leads/FinalizeModal.jsx";
-import PriceOffersList from "@/app/UiComponents/DataViewer/leads/PriceOffersList.jsx";
-import CallReminders from "@/app/UiComponents/DataViewer/leads/CallReminders.jsx";
-import LeadNotes from "@/app/UiComponents/DataViewer/leads/LeadNotes.jsx";
-import FileList from "@/app/UiComponents/DataViewer/leads/FileList.jsx";
 import { GoPaperclip } from "react-icons/go";
 import { PiCurrencyDollarSimpleLight } from "react-icons/pi";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
@@ -61,6 +60,14 @@ import dayjs from "dayjs";
 import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
 import AddPayments from "./AddPayments";
 import PaymentDialog from "./PaymentsDialog";
+import { FaServicestack } from "react-icons/fa";
+import {
+  LeadNotes,
+  PriceOffersList,
+  CallReminders,
+  FileList,
+  ExtraServicesList,
+} from "./LeadTabs";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -78,10 +85,11 @@ const LeadContent = ({
   handleClose,
   setleads,
   setLead,
-  admin,
+
   isPage,
 }) => {
   const { user } = useAuth();
+  const admin = checkIfAdmin(user);
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
   const { setLoading } = useToastContext();
@@ -114,16 +122,19 @@ const LeadContent = ({
   };
   const [finalizeModel, setFinalizeModel] = useState(false);
   const [currentId, setCurrentId] = useState(null);
-  const [payments, seyPayments] = useState(lead.payments);
+  const [payments, setPayments] = useState(lead.payments);
   const [paymentModal, setPaymentModal] = useState(false);
   const handleMenuClose = async (value) => {
+    if (user.role === "SUPER_ADMIN") {
+      return;
+    }
     if (value === "FINALIZED") {
       setCurrentId(lead.id);
       setFinalizeModel(true);
       return;
     }
     const request = await handleRequestSubmit(
-      { status: value, oldStatus: lead.status, isAdmin: user.role === "ADMIN" },
+      { status: value, oldStatus: lead.status, isAdmin: admin },
       setLoading,
       `shared/client-leads/${lead.id}/status`,
       false,
@@ -207,8 +218,7 @@ const LeadContent = ({
             <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
               {lead.client.name[0]}
             </Avatar>
-            {(lead.status === "NEW" || lead.status === "ON_HOLD") &&
-            user.role !== "ADMIN" ? (
+            {(lead.status === "NEW" || lead.status === "ON_HOLD") && !admin ? (
               ""
             ) : (
               <Typography variant="h6">{lead.client.name}</Typography>
@@ -220,7 +230,10 @@ const LeadContent = ({
             alignItems={{ sm: "center" }}
             justifyContent="flex-end"
           >
-            {isPage && user.id !== lead.userId && !admin ? (
+            {isPage &&
+            user.id !== lead.userId &&
+            !admin &&
+            user.role !== "ACCOUNTANT" ? (
               <ConfirmWithActionModel
                 title={
                   "Are you sure you want to get this lead and assign it to you as a new deal?"
@@ -260,7 +273,7 @@ const LeadContent = ({
                             paymentType={"final-price"}
                             setOpen={setPaymentModal}
                             totalAmount={lead.averagePrice}
-                            setOldPayments={seyPayments}
+                            setOldPayments={setPayments}
                           />
                         )}
                       </>
@@ -319,41 +332,45 @@ const LeadContent = ({
                     </Modal>
                   </>
                 )}
-                <Button
-                  fullWidth={isMobile}
-                  variant="contained"
-                  startIcon={!admin && <AiOutlineSwap />}
-                  aria-controls={open ? "basic-menu" : undefined}
-                  aria-haspopup="true"
-                  aria-expanded={open ? "true" : undefined}
-                  onClick={handleClick}
-                  sx={{
-                    background: statusColors[lead.status],
-                    fontWeight: 500,
-                    borderRadius: "50px",
-                  }}
-                >
-                  {ClientLeadStatus[lead.status]}
-                </Button>
-                <Menu
-                  id="basic-menu"
-                  anchorEl={anchorEl}
-                  open={open}
-                  onClose={() => setAnchorEl(null)}
-                  MenuListProps={{
-                    "aria-labelledby": "basic-button",
-                  }}
-                >
-                  {leadStatus.map((lead) => (
-                    <MenuItem
-                      key={lead.id}
-                      value={lead.id}
-                      onClick={() => handleMenuClose(lead.id)}
+                {user.role !== "ACCOUNTANT" && (
+                  <>
+                    <Button
+                      fullWidth={isMobile}
+                      variant="contained"
+                      startIcon={!admin && <AiOutlineSwap />}
+                      aria-controls={open ? "basic-menu" : undefined}
+                      aria-haspopup="true"
+                      aria-expanded={open ? "true" : undefined}
+                      onClick={handleClick}
+                      sx={{
+                        background: statusColors[lead.status],
+                        fontWeight: 500,
+                        borderRadius: "50px",
+                      }}
                     >
-                      {lead.name}
-                    </MenuItem>
-                  ))}
-                </Menu>
+                      {ClientLeadStatus[lead.status]}
+                    </Button>
+                    <Menu
+                      id="basic-menu"
+                      anchorEl={anchorEl}
+                      open={open}
+                      onClose={() => setAnchorEl(null)}
+                      MenuListProps={{
+                        "aria-labelledby": "basic-button",
+                      }}
+                    >
+                      {leadStatus.map((lead) => (
+                        <MenuItem
+                          key={lead.id}
+                          value={lead.id}
+                          onClick={() => handleMenuClose(lead.id)}
+                        >
+                          {lead.name}
+                        </MenuItem>
+                      ))}
+                    </Menu>
+                  </>
+                )}
               </>
             )}
             <Button onClick={() => generatePDF(lead, user)}>
@@ -402,6 +419,13 @@ const LeadContent = ({
           label="Attatchments"
           sx={{ textTransform: "none" }}
         />
+        {payments?.length > 0 && (
+          <Tab
+            icon={<FaServicestack size={20} />}
+            label="Another services"
+            sx={{ textTransform: "none" }}
+          />
+        )}
       </Tabs>
 
       <Box
@@ -443,6 +467,16 @@ const LeadContent = ({
             notUser={isPage && user.id !== lead.userId}
           />
         </TabPanel>
+        {payments?.length > 0 && (
+          <TabPanel value={activeTab} index={5}>
+            <ExtraServicesList
+              admin={admin}
+              lead={lead}
+              notUser={isPage && user.id !== lead.userId}
+              setPayments={setPayments}
+            />
+          </TabPanel>
+        )}
       </Box>
     </>
   );
@@ -594,6 +628,7 @@ export function EmailRedirect({ email }) {
 function LeadData({ lead }) {
   const theme = useTheme();
   const { user } = useAuth();
+  const admin = checkIfAdmin(user);
   return (
     <Stack spacing={3}>
       <InfoCard title="Lead Information" icon={BsBuilding} theme={theme}>
@@ -669,8 +704,7 @@ function LeadData({ lead }) {
         </Grid>
       </InfoCard>
 
-      {(lead.status === "NEW" || lead.status === "ON_HOLD") &&
-      user.role !== "ADMIN" ? (
+      {(lead.status === "NEW" || lead.status === "ON_HOLD") && !admin ? (
         ""
       ) : (
         <>

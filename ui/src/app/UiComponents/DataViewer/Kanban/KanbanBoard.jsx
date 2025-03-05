@@ -24,7 +24,7 @@ const KanbanBoard = ({
   type,
 }) => {
   const { user } = useAuth();
-  const admin = user.role === "ADMIN";
+  const admin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -70,7 +70,7 @@ const KanbanBoard = ({
             />
             {admin && (
               <SearchComponent
-                apiEndpoint="search?model=user"
+                apiEndpoint="search?model=THREE_D_DESIGNER"
                 setFilters={setFilters}
                 inputLabel="Search staff by name or email"
                 renderKeys={["name", "email"]}

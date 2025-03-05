@@ -12,7 +12,7 @@ export async function getUser(searchParams, limit, skip) {
     ? { userId: Number(searchParams.staffId) }
     : {};
   let where = {
-    role: "STAFF",
+    role: { not: "ADMIN" },
     ...staffFilter,
   };
   if (filters.status !== undefined) {
@@ -32,6 +32,8 @@ export async function getUser(searchParams, limit, skip) {
       email: true,
       isActive: true,
       lastSeenAt: true,
+      role: true,
+      subRoles: true,
     },
   });
   const total = await prisma.user.count({ where: where });
@@ -52,14 +54,17 @@ export async function createStaffUser(user) {
     data: {
       email: user.email,
       password: hashedPassword,
-      role: "STAFF",
+      role: user.role,
       name: user.name,
     },
     select: {
       id: true,
+      name: true,
       email: true,
       isActive: true,
-      name: true,
+      lastSeenAt: true,
+      role: true,
+      subRoles: true,
     },
   });
 
@@ -77,13 +82,34 @@ export async function editStaffUser(user, userId) {
       email: user.email && user.email,
       password: hashedPassword && hashedPassword,
       name: user.name,
+      role: user.role && user.role,
     },
     select: {
       id: true,
+      name: true,
       email: true,
       isActive: true,
-      name: true,
+      lastSeenAt: true,
+      role: true,
+      subRoles: true,
     },
+  });
+}
+
+export async function updateUserRoles(userId, roles) {
+  await prisma.UserSubRole.deleteMany({
+    where: {
+      userId: Number(userId),
+      subRole: { in: roles.removed },
+    },
+  });
+  const newRoles = roles.added.map((role) => ({
+    userId: Number(userId),
+    subRole: role,
+  }));
+  return await prisma.UserSubRole.createMany({
+    data: newRoles,
+    skipDuplicates: true,
   });
 }
 

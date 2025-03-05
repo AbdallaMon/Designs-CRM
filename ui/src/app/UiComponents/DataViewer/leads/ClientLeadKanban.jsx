@@ -11,12 +11,13 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
+import { checkIfAdmin } from "@/app/helpers/functions/utility";
 
 dayjs.extend(relativeTime);
 
 const DealsKanbanBoard = ({ staffId }) => {
   const { user } = useAuth();
-  const admin = user?.role === "ADMIN";
+  const admin = checkIfAdmin(user);
   const [finalizeModel, setFinalizeModel] = useState(false);
   const [currentId, setCurrentId] = useState(null);
   const {
@@ -33,6 +34,9 @@ const DealsKanbanBoard = ({ staffId }) => {
 
   const { setLoading } = useToastContext();
   const movelead = async (l, newStatus) => {
+    if (user.role === "SUPER_ADMIN") {
+      return;
+    }
     if (newStatus === "FINALIZED") {
       setCurrentId(l.id);
       setFinalizeModel(true);

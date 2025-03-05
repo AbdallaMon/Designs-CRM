@@ -36,10 +36,7 @@ import {
   BsTelephone,
 } from "react-icons/bs";
 import {
-  ClientLeadStatus,
-  KanbanLeadsStatus,
   LeadCategory,
-  simpleModalStyle,
   statusColors,
   ThreeDWorkStages,
   TwoDWorkStages,
@@ -47,21 +44,19 @@ import {
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader.jsx";
 import { getData } from "@/app/helpers/functions/getData.js";
 import { AiOutlineSwap } from "react-icons/ai";
-import { enumToKeyValueArray } from "@/app/helpers/functions/utility.js";
+import {
+  checkIfAdmin,
+  enumToKeyValueArray,
+} from "@/app/helpers/functions/utility.js";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
-import { FinalizeModal } from "@/app/UiComponents/DataViewer/leads/FinalizeModal.jsx";
-import PriceOffersList from "@/app/UiComponents/DataViewer/leads/PriceOffersList.jsx";
-import CallReminders from "@/app/UiComponents/DataViewer/leads/CallReminders.jsx";
-import LeadNotes from "@/app/UiComponents/DataViewer/leads/LeadNotes.jsx";
-import FileList from "@/app/UiComponents/DataViewer/leads/FileList.jsx";
 import { GoPaperclip } from "react-icons/go";
-import { PiCurrencyDollarSimpleLight } from "react-icons/pi";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { generatePDF } from "@/app/UiComponents/buttons/GenerateLeadPdf.jsx";
 import dayjs from "dayjs";
 import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
 import Link from "next/link";
+import { CallReminders, FileList, LeadNotes } from "../leads/LeadTabs";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -79,11 +74,12 @@ const LeadContent = ({
   handleClose,
   setleads,
   setLead,
-  admin,
   isPage,
   type,
 }) => {
   const { user } = useAuth();
+  const isAdmin = checkIfAdmin(user);
+
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
   const { setLoading } = useToastContext();
@@ -108,12 +104,15 @@ const LeadContent = ({
     setAnchorEl(event.currentTarget);
   };
   const handleMenuClose = async (value) => {
+    if (user.role === "SUPER_ADMIN") {
+      return;
+    }
     const request = await handleRequestSubmit(
       {
         status: value,
         oldStatus:
           type === "three-d" ? lead.threeDWorkStage : lead.twoDWorkStage,
-        isAdmin: user.role === "ADMIN",
+        isAdmin: isAdmin,
       },
       setLoading,
       `shared/work-stages/${lead.id}/status`,
@@ -171,7 +170,7 @@ const LeadContent = ({
               {lead.client.name[0]}
             </Avatar>
             {(lead.status === "NEW" || lead.status === "ON_HOLD") &&
-            user.role !== "ADMIN" ? (
+            !isAdmin ? (
               ""
             ) : (
               <Typography variant="h6">{lead.client.name}</Typography>
@@ -186,7 +185,7 @@ const LeadContent = ({
             {isPage &&
             ((!lead.twoDDesignerId && type === "two-d") ||
               (!lead.threeDDesignerId && type === "three-d")) &&
-            !admin ? (
+            !isAdmin ? (
               <ConfirmWithActionModel
                 title={
                   "Are you sure you want to get this lead and assign it to you as a new deal?"
@@ -198,7 +197,7 @@ const LeadContent = ({
               />
             ) : (
               <>
-                {admin && (
+                {isAdmin && (
                   <>
                     <Button
                       variant="outlined"
@@ -223,7 +222,7 @@ const LeadContent = ({
                 <Button
                   fullWidth={isMobile}
                   variant="contained"
-                  startIcon={!admin && <AiOutlineSwap />}
+                  startIcon={!isAdmin && <AiOutlineSwap />}
                   aria-controls={open ? "basic-menu" : undefined}
                   aria-haspopup="true"
                   aria-expanded={open ? "true" : undefined}
@@ -315,21 +314,21 @@ const LeadContent = ({
         }}
       >
         <TabPanel value={activeTab} index={0}>
-          <LeadData lead={lead} admin={admin} />
+          <LeadData lead={lead} admin={isAdmin} />
         </TabPanel>
         <TabPanel value={activeTab} index={1}>
           <CallReminders
-            admin={admin}
+            admin={isAdmin}
             lead={lead}
             setleads={setleads}
             notUser={isPage && notUser}
           />
         </TabPanel>
         <TabPanel value={activeTab} index={2}>
-          <LeadNotes admin={admin} lead={lead} notUser={isPage && notUser} />
+          <LeadNotes admin={isAdmin} lead={lead} notUser={isPage && notUser} />
         </TabPanel>
         <TabPanel value={activeTab} index={3}>
-          <FileList admin={admin} lead={lead} notUser={isPage && notUser} />
+          <FileList admin={isAdmin} lead={lead} notUser={isPage && notUser} />
         </TabPanel>
       </Box>
     </>
@@ -551,8 +550,7 @@ function LeadData({ lead }) {
         </Grid>
       </InfoCard>
 
-      {(lead.status === "NEW" || lead.status === "ON_HOLD") &&
-      user.role !== "ADMIN" ? (
+      {(lead.status === "NEW" || lead.status === "ON_HOLD") && !isAdmin ? (
         ""
       ) : (
         <>
@@ -667,7 +665,7 @@ const PreviewWorkStage = ({
               handleClose={handlePageClose}
               setLead={setLead}
               setleads={setleads}
-              admin={admin}
+              admin={isAdmin}
               isPage={page}
               type={type}
             />
@@ -698,7 +696,7 @@ const PreviewWorkStage = ({
                 handleClose={handlePageClose}
                 setLead={setLead}
                 setleads={setleads}
-                admin={admin}
+                admin={isAdmin}
                 type={type}
               />
               <DialogActions

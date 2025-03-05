@@ -114,6 +114,7 @@ enum PaymentStatus {
   PENDING        // Payment is pending
   PARTIALLY_PAID // Payment partially made
   FULLY_PAID     // Payment fully made
+  OVERDUE
 }
 
 
@@ -195,6 +196,7 @@ model Invoice {
   issuedDate  DateTime   @default(now())
   amount      Decimal    @db.Decimal(10, 2)
   createdAt   DateTime   @default(now())
+  invoiceNumber    String             @unique
 }
 
 
@@ -263,6 +265,7 @@ model User {
  password      String         @db.VarChar(255)
  isActive         Boolean           @default(true)
  role          UserRole       @default(STAFF)
+ subRoles      UserSubRole[]
  logs        UserLog[] 
  clientLeads   ClientLead[]
  notifications   Notification[]   @relation("UserNotifications")
@@ -279,6 +282,15 @@ model User {
  twoDLeads ClientLead[] @relation("TwoDLeads")
  accountantLeads ClientLead[] @relation("AccountantLeads")
  @@index([email])
+}
+
+model UserSubRole {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  subRole  UserRole
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, subRole]) // Ensure a user cannot have the same sub-role twice
 }
 
 model UserLog {

@@ -21,10 +21,12 @@ import {
   getNewWorkStagesLeads,
   getNextCalls,
   getNextCallsForDesigners,
+  getOtherRoles,
   getPerformanceMetrics,
   getRecentActivities,
   getWorkStageLeadDetails,
   getWorkStagesLeadsByDateRange,
+  makeExtraServicePayments,
   makePayments,
   markClientLeadAsConverted,
   updateClientLeadStatus,
@@ -60,6 +62,13 @@ router.get("/client-leads/deals", async (req, res) => {
     if (token.role === "STAFF") {
       searchParams.userId = token.id;
     }
+    if (
+      token.role !== "ADMIN" &&
+      token.role !== "SUPER_ADMIN" &&
+      token.role !== "ACCOUNTANT"
+    ) {
+      searchParams.selfId = token.id;
+    }
     const clientLeads = await getClientLeadsByDateRange({ searchParams });
     res.status(200).json({ data: clientLeads });
   } catch (error) {
@@ -91,8 +100,19 @@ router.get("/client-leads/calls", async (req, res) => {
 router.get("/client-leads/:id", async (req, res) => {
   try {
     const { id } = req.params;
-
-    const clientLeadDetails = await getClientLeadDetails(Number(id));
+    const token = getTokenData(req, res);
+    const searchParams = req.query;
+    if (
+      token.role !== "ADMIN" &&
+      token.role !== "SUPER_ADMIN" &&
+      token.role !== "ACCOUNTANT"
+    ) {
+      searchParams.userId = token.id;
+    }
+    const clientLeadDetails = await getClientLeadDetails(
+      Number(id),
+      searchParams
+    );
     res.status(200).json({ data: clientLeadDetails });
   } catch (error) {
     console.error("Error fetching client lead details:", error);
@@ -105,7 +125,16 @@ router.get("/client-leads/:id", async (req, res) => {
 });
 router.post("/client-leads/:id/payments", async (req, res) => {
   const { id } = req.params;
-  const payments = await makePayments(req.body.payments, Number(id));
+  let payments;
+  if (req.body.paymentType === "extra-service") {
+    payments = await makeExtraServicePayments({
+      data: req.body.payments,
+      leadId: Number(id),
+      ...req.body,
+    });
+  } else {
+    payments = await makePayments(req.body.payments, Number(id));
+  }
   try {
     res.status(200).json({
       data: payments,
@@ -367,16 +396,8 @@ router.get("/work-stage-leads/:id", async (req, res) => {
 router.put("/work-stages/:leadId/status", async (req, res) => {
   try {
     const { leadId } = req.params;
-    let type;
-    const token = getTokenData(req, res);
-    if (token.role === "THREE_D_DESIGNER") {
-      type = "three-d";
-    } else if (token.role === "TWO_D_DESIGNER") {
-      type = "two-d";
-    }
     await updateLeadWorkStage({
       clientLeadId: Number(leadId),
-      type: type,
       ...req.body,
     });
 
@@ -425,6 +446,16 @@ router.get("/work-stages/calls", async (req, res) => {
     res
       .status(500)
       .json({ message: "An error occurred while fetching client leads" });
+  }
+});
+router.get("/roles", async (req, res) => {
+  try {
+    const token = getTokenData(req, res);
+    const roles = await getOtherRoles(token.id);
+    res.status(200).json({ data: roles });
+  } catch (error) {
+    console.error("Error fetching roles:", error);
+    res.status(500).json({ message: "An error occurred while fetching roles" });
   }
 });
 export default router;

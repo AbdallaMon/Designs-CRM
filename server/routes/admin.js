@@ -23,6 +23,7 @@ import {
   getUserById,
   getUserLastSeen,
   updateUserMaxLeads,
+  updateUserRoles,
 } from "../services/adminServices.js";
 import multer from "multer";
 
@@ -84,6 +85,18 @@ router.post("/users", async (req, res) => {
     } else {
       handlePrismaError(res, error);
     }
+  }
+});
+router.put("/users/:userId/roles", async (req, res) => {
+  const { userId } = req.params;
+  try {
+    console.log(req.body, "body");
+    const update = await updateUserRoles(userId, req.body);
+    return res
+      .status(200)
+      .json({ data: update, message: "Roles updated succussfully" });
+  } catch (e) {
+    handlePrismaError(res, e);
   }
 });
 router.put("/users/max-leads/:userId", async (req, res) => {

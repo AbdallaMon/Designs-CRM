@@ -1,9 +1,26 @@
 "use client";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
-import { Box, Button } from "@mui/material";
+import {
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  IconButton,
+  InputLabel,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  MenuItem,
+  Select,
+  Typography,
+} from "@mui/material";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
@@ -11,10 +28,13 @@ import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithAction
 import Link from "next/link";
 import CreateModal from "@/app/UiComponents/models/CreateModal.jsx";
 import LastSeen from "@/app/UiComponents/buttons/LastSeen";
+import { userRoles, userRolesEnum } from "@/app/helpers/constants";
+import { MdAddCircleOutline, MdDelete } from "react-icons/md";
 
 const columns = [
   { name: "name", label: "User Name" },
   { name: "email", label: "Email" },
+  { name: "role", label: "Main role", type: "enum", enum: userRolesEnum },
   {
     name: "isActive",
     label: "Account status",
@@ -42,6 +62,20 @@ const inputs = [
       pattern: {
         value: /\w+@[a-z]+\.[a-z]{2,}/gi,
         message: "Please enter a valid email address",
+      },
+    },
+  },
+  {
+    data: {
+      id: "role",
+      type: "SelectField",
+      label: "Main role",
+      options: userRoles,
+    },
+    pattern: {
+      required: {
+        value: true,
+        message: "Please select a role",
       },
     },
   },
@@ -142,6 +176,12 @@ export default function UsersPage() {
                 isDelete={item.isActive}
                 label={item.isActive ? "Ban User" : "Unban User"}
               />
+              <RoleManagerDialog
+                role={item.role}
+                setData={setData}
+                subRoles={item.subRoles?.map((r) => r.subRole)}
+                userId={item.id}
+              />
               <Button component={Link} href={"/dashboard/users/" + item.id}>
                 View Details
               </Button>
@@ -196,3 +236,131 @@ export default function UsersPage() {
     </div>
   );
 }
+
+const roleIcons = {
+  STAFF: "👷",
+  THREE_D_DESIGNER: "🎨",
+  TWO_D_DESIGNER: "🖌",
+  ACCOUNTANT: "💰",
+  SUPER_ADMIN: "🛡",
+};
+
+export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
+  const allRoles = Object.keys(roleIcons); // Available roles
+  const [open, setOpen] = useState(false);
+  const [selectedSubRoles, setSelectedSubRoles] = useState([...subRoles]); // SubRoles state
+  const [tempRole, setTempRole] = useState(""); // Temp role to add
+  const { setLoading } = useToastContext();
+  function onClose() {
+    setOpen(false);
+  }
+  async function onSave(updatedRoles) {
+    const request = await handleRequestSubmit(
+      updatedRoles,
+      setLoading,
+      `admin/users/${userId}/roles`,
+      false,
+      "Updating roles",
+      null,
+      "PUT"
+    );
+    if (request.status === 200) {
+      window.location.reload();
+      onClose();
+    }
+  }
+  useEffect(() => {
+    setSelectedSubRoles([...subRoles]); // Sync when props change
+  }, [subRoles]);
+
+  // Add a new role if not already in the list
+  const handleAddRole = () => {
+    if (tempRole && !selectedSubRoles.includes(tempRole)) {
+      setSelectedSubRoles([...selectedSubRoles, tempRole]);
+      setTempRole(""); // Reset selection
+    }
+  };
+
+  // Remove role from subRoles list
+  const handleRemoveRole = (roleToRemove) => {
+    setSelectedSubRoles(selectedSubRoles.filter((r) => r !== roleToRemove));
+  };
+
+  // Save changes and send to API
+  const handleSave = () => {
+    const updatedRoles = {
+      added: selectedSubRoles.filter((r) => !subRoles.includes(r)), // New roles
+      removed: subRoles.filter((r) => !selectedSubRoles.includes(r)), // Deleted roles
+    };
+    onSave(updatedRoles);
+  };
+  if (!open) return <Button onClick={() => setOpen(true)}>Manage Roles</Button>;
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle>Manage User Roles</DialogTitle>
+      <DialogContent>
+        <Typography variant="h6">Main Role:</Typography>
+        <List>
+          <ListItem>
+            <ListItemIcon>{roleIcons[role]}</ListItemIcon>
+            <ListItemText primary={role} />
+          </ListItem>
+        </List>
+
+        <Typography variant="h6">Sub Roles:</Typography>
+        <List>
+          {selectedSubRoles.length > 0 ? (
+            selectedSubRoles.map((r) => (
+              <ListItem key={r}>
+                <ListItemIcon>{roleIcons[r]}</ListItemIcon>
+                <ListItemText primary={r} />
+                <IconButton onClick={() => handleRemoveRole(r)} color="error">
+                  <MdDelete />
+                </IconButton>
+              </ListItem>
+            ))
+          ) : (
+            <Typography variant="body2" color="textSecondary">
+              No sub-roles assigned.
+            </Typography>
+          )}
+        </List>
+
+        <FormControl fullWidth margin="normal">
+          <InputLabel>Add Sub-Role</InputLabel>
+          <Select
+            value={tempRole}
+            onChange={(e) => setTempRole(e.target.value)}
+          >
+            {allRoles
+              .filter((r) => r !== role && !selectedSubRoles.includes(r)) // Exclude main role & already selected ones
+              .map((r) => (
+                <MenuItem key={r} value={r}>
+                  {roleIcons[r]} {r}
+                </MenuItem>
+              ))}
+          </Select>
+        </FormControl>
+
+        <Button
+          variant="contained"
+          startIcon={<MdAddCircleOutline />}
+          onClick={handleAddRole}
+          fullWidth
+          disabled={!tempRole}
+        >
+          Add Role
+        </Button>
+      </DialogContent>
+
+      <DialogActions>
+        <Button onClick={onClose} color="secondary">
+          Cancel
+        </Button>
+        <Button onClick={handleSave} color="primary" variant="contained">
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};

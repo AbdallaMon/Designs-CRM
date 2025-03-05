@@ -13,6 +13,7 @@ import {
 import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import dayjs from "dayjs";
+import Link from "next/link";
 
 const PaymentDialog = ({ payments }) => {
   const [open, setOpen] = useState(false);
@@ -41,9 +42,20 @@ const PaymentDialog = ({ payments }) => {
               {payments.map((payment) => (
                 <ListItem key={payment.id} sx={{ bgcolor: "white", mb: 1.2 }}>
                   <ListItemText
-                    primary={`Payment #${payment.id} - ${
-                      isAdmin ? payment.status : ""
-                    }`}
+                    primary={
+                      user.role === "ACCOUNTANT" ? (
+                        <Button
+                          component={Link}
+                          href={`/dashboard?paymentId=${payment.id}`}
+                        >
+                          Payment #{payment.id} - {payment.status}
+                        </Button>
+                      ) : (
+                        `Payment #${payment.id} - ${
+                          isAdmin ? payment.status : ""
+                        }`
+                      )
+                    }
                     secondary={
                       <React.Fragment>
                         <Typography variant="body2" color="text.secondary">

@@ -4,8 +4,10 @@ import {
   assignLeadNotification,
   assignWorkStageNotification,
   convertALeadNotification,
+  finalizedLeadCreated,
   overdueALeadNotification,
   updateLeadStatusNotification,
+  updateWorkStageStatusNotification,
 } from "./notification.js";
 import { ClientLeadStatus, LeadWorkStages } from "./enums.js";
 import { ThreeDWorkStage } from "@prisma/client";
@@ -141,7 +143,10 @@ export async function getClientLeadsByDateRange({ searchParams }) {
   if (searchParams.userId) {
     where.userId = searchParams.userId;
   }
-
+  const callRemindersWhere = {};
+  if (searchParams.selfId) {
+    callRemindersWhere.userId = searchParams.selfId;
+  }
   // Fetch data
   const clientLeads = await prisma.clientLead.findMany({
     where,
@@ -160,6 +165,7 @@ export async function getClientLeadsByDateRange({ searchParams }) {
       emirate: true,
       discount: true,
       callReminders: {
+        where: callRemindersWhere,
         orderBy: { time: "desc" },
         take: 2,
       },
@@ -168,7 +174,11 @@ export async function getClientLeadsByDateRange({ searchParams }) {
   return clientLeads;
 }
 
-export async function getClientLeadDetails(clientLeadId) {
+export async function getClientLeadDetails(clientLeadId, searchParams) {
+  const where = {};
+  if (searchParams.userId) {
+    where.userId = Number(searchParams.userId);
+  }
   const clientLead = await prisma.clientLead.findUnique({
     where: { id: clientLeadId },
     select: {
@@ -203,6 +213,7 @@ export async function getClientLeadDetails(clientLeadId) {
       priceWithOutDiscount: true,
       discount: true,
       files: {
+        where,
         select: {
           id: true,
           name: true,
@@ -216,6 +227,7 @@ export async function getClientLeadDetails(clientLeadId) {
         },
       },
       priceOffers: {
+        where,
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
@@ -231,6 +243,7 @@ export async function getClientLeadDetails(clientLeadId) {
         },
       },
       notes: {
+        where,
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
@@ -243,6 +256,7 @@ export async function getClientLeadDetails(clientLeadId) {
         },
       },
       callReminders: {
+        where,
         select: {
           id: true,
           time: true,
@@ -268,6 +282,13 @@ export async function getClientLeadDetails(clientLeadId) {
           amountLeft: true,
           dueDate: true,
           paymentReason: true,
+        },
+      },
+      extraServices: {
+        select: {
+          id: true,
+          price: true,
+          note: true,
         },
       },
     },
@@ -397,8 +418,32 @@ export async function makePayments(data, leadId) {
     payment.clientLeadId = Number(leadId);
     payment.dueDate = new Date(payment.dueDate).toISOString();
   });
-  const addedPayments = await prisma.payment.createMany({ data });
-  return addedPayments;
+  await prisma.payment.createMany({ data });
+  return data;
+}
+export async function makeExtraServicePayments({
+  data,
+  leadId,
+  paymentReason,
+  price,
+  note,
+}) {
+  data.map((payment) => {
+    payment.amountLeft = Number(payment.amount);
+    payment.amount = Number(payment.amount);
+    payment.paymentReason = paymentReason || "Extra service";
+    payment.clientLeadId = Number(leadId);
+    payment.dueDate = new Date(payment.dueDate).toISOString();
+  });
+  await prisma.payment.createMany({ data });
+  await prisma.extraService.create({
+    data: {
+      clientLeadId: Number(leadId),
+      price: Number(price),
+      note: note,
+    },
+  });
+  return data;
 }
 /* dashboard services */
 export const getKeyMetrics = async (searchParams) => {
@@ -954,6 +999,11 @@ export async function updateClientLeadStatus({
         clientLeadId,
       },
     });
+    await prisma.extraService.deleteMany({
+      where: {
+        clientLeadId,
+      },
+    });
   }
   await updateLeadStatusNotification(
     lead.id,
@@ -964,6 +1014,9 @@ export async function updateClientLeadStatus({
     isAdmin,
     !isAdmin ? lead.userId : null
   );
+  if (status === "FINALIZED") {
+    await finalizedLeadCreated(lead.id, lead.userId);
+  }
 }
 
 export const getNextCalls = async ({ limit, skip, searchParams }) => {
@@ -975,6 +1028,8 @@ export const getNextCalls = async ({ limit, skip, searchParams }) => {
   const nearestCallReminders = await prisma.callReminder.findMany({
     where: {
       status: "IN_PROGRESS",
+      ...staffFilter,
+
       clientLead: {
         status: {
           notIn: ["CONVERTED", "ON_HOLD", "REJECTED"],
@@ -1330,7 +1385,6 @@ export async function updateLeadWorkStage({
   isAdmin,
   type,
 }) {
-  console.log(oldStatus, "oldStatus");
   if (!isAdmin) {
     if (oldStatus === "THREE_D_APPROVAL" || oldStatus === "FINAL_DELIVERY") {
       throw new Error(
@@ -1347,9 +1401,9 @@ export async function updateLeadWorkStage({
   const data = {
     updatedAt: new Date(),
   };
-  if (type === "three-d") {
+  if (type === "three-d" && !isAdmin) {
     data.threeDWorkStage = status;
-  } else if (type === "two-d") {
+  } else if (type === "two-d" && !isAdmin) {
     data.twoDWorkStage = status;
   } else {
     if (oldStatus === "THREE_D_APPROVAL") {
@@ -1368,7 +1422,7 @@ export async function updateLeadWorkStage({
     data,
   });
 
-  await updateLeadStatusNotification(
+  await updateWorkStageStatusNotification(
     lead.id,
     heading,
     content,
@@ -1379,8 +1433,12 @@ export async function updateLeadWorkStage({
       ? type === "three-d"
         ? lead.threeDDesignerId
         : lead.twoDDesignerId
-      : null
+      : null,
+    type === "three-d" ? "THREE_D" : "TWO_D"
   );
+  if (status === "THREE_D_APPROVAL") {
+    await finalizedLeadCreated(lead.id, lead.userId, "TWO_D");
+  }
 }
 
 export async function assignWorkStageLeadToAUser(clientLeadId, userId, type) {
@@ -1501,3 +1559,23 @@ export const getNextCallsForDesigners = async ({
     totalPages,
   };
 };
+
+export async function getOtherRoles(userId) {
+  const mainRole = await prisma.user.findUnique({
+    where: {
+      id: Number(userId),
+    },
+    select: {
+      role: true,
+    },
+  });
+  let subRoles = await prisma.UserSubRole.findMany({
+    where: {
+      userId: Number(userId),
+    },
+  });
+  if (subRoles.length > 0) {
+    subRoles = subRoles.map((subRole) => subRole.subRole);
+  }
+  return [...subRoles, mainRole.role];
+}

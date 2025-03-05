@@ -26,7 +26,12 @@ export const NotificationType = {
   FINAL_PRICE_CHANGED: "Final Price Changed",
   OTHER: "Other",
 };
-
+export const PaymentStatus = {
+  PENDING: "Pending",
+  PARTIALLY_PAID: "Partially paid",
+  FULLY_PAID: "Fully paid",
+  OVERDUE: "Overdue",
+};
 export const LeadCategory = {
   CONSULTATION: "Consultation",
   DESIGN: "Design",
@@ -183,8 +188,8 @@ export const KanbanLeadsStatus = {
   INTERESTED: "Interested",
   NEEDS_IDENTIFIED: "Needs Identified",
   NEGOTIATING: "Negotiating",
-  REJECTED: "Rejected",
   FINALIZED: "Finalized",
+  REJECTED: "Rejected",
 };
 
 export const statusColors = {
@@ -251,4 +256,19 @@ export const notificationIcons = {
   FINAL_PRICE_ADDED: <MdAttachMoney size={24} />,
   FINAL_PRICE_CHANGED: <MdAttachMoney size={24} />,
   OTHER: <AiOutlineFileText size={24} />,
+};
+
+export const userRoles = [
+  { value: "STAFF", label: "Staff" },
+  { value: "THREE_D_DESIGNER", label: "3D Designer" },
+  { value: "TWO_D_DESIGNER", label: "2D Designer" },
+  { value: "ACCOUNTANT", label: "Accountant" },
+  { value: "SUPER_ADMIN", label: "Admin" },
+];
+export const userRolesEnum = {
+  STAFF: "Staff",
+  THREE_D_DESIGNER: "3D Designer",
+  TWO_D_DESIGNER: "2D Designer",
+  ACCOUNTANT: "Accountant",
+  SUPER_ADMIN: "Admin",
 };
