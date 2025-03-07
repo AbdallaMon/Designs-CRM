@@ -144,26 +144,6 @@ export const superAdminLinks = [
       },
     ],
   },
-  {
-    name: "Reports",
-    href: "/dashboard/report",
-    active: "report",
-    icon: <FiFileText size={20} />, // General report icon
-    subLinks: [
-      {
-        name: "Leads report",
-        href: "/dashboard/report",
-        active: "report",
-        icon: <FiTrendingUp size={20} />, // Icon representing trends or growth for leads
-      },
-      {
-        name: "Staff report",
-        href: "/dashboard/report/staff",
-        icon: <FiUsers size={18} />, // Icon representing a group of people for staff
-        active: "report/staff",
-      },
-    ],
-  },
 ];
 // Regular user navigation links
 export const staffLinks = [

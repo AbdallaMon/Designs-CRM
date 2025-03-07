@@ -4,44 +4,67 @@ import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { Button, Typography, CircularProgress, Box } from "@mui/material";
-import { getData } from "@/app/helpers/functions/getData";
 import { BiRefresh } from "react-icons/bi";
+import { getData } from "@/app/helpers/functions/getData";
 
 dayjs.extend(relativeTime);
 dayjs.locale("en");
-export default function LastSeen({ userId, initialLastSeen }) {
-  const [lastSeen, setLastSeen] = useState(initialLastSeen);
-  const [loading, setLoading] = useState(false);
-  useEffect(() => {
-    const interval = setInterval(fetchLastSeen, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, []);
 
+export default function LastSeen({ userId, initialLastSeen }) {
+  const [userLog, setUserLog] = useState(initialLastSeen);
+  const [loading, setLoading] = useState(true); // Start with loading state
+
+  // Function to fetch last seen data
   const fetchLastSeen = async () => {
+    setLoading(true);
     try {
       const res = await getData({
         url: `admin/users/${userId}/last-seen`,
         setLoading,
       });
-      setLastSeen(res.lastSeenAt);
+      setUserLog(res);
     } catch (error) {
       console.error("Failed to fetch last seen", error);
     }
+    setLoading(false);
   };
 
-  const updateLastSeen = async () => {
-    await fetchLastSeen();
-  };
+  useEffect(() => {
+    // Fetch data immediately on component mount
+    fetchLastSeen();
 
-  const isOnline = lastSeen && dayjs().diff(dayjs(lastSeen), "minute") < 5;
+    // Set interval to update every 5 minutes
+    const interval = setInterval(() => {
+      fetchLastSeen();
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [userId]);
+  const isOnline =
+    userLog &&
+    userLog.lastSeen &&
+    dayjs().diff(dayjs(userLog.lastSeen), "minute") < 5;
 
   return (
     <Box display="flex" alignItems="center" gap={1}>
-      <Typography variant="body2" color={isOnline ? "green" : "gray"}>
-        {isOnline ? "Online" : `Last seen: ${dayjs(lastSeen).fromNow()}`}
-      </Typography>
+      {loading ? (
+        <CircularProgress size={20} />
+      ) : (
+        <>
+          <Typography variant="body2" color={isOnline ? "green" : "gray"}>
+            {isOnline
+              ? "Online"
+              : `Last seen: ${dayjs(userLog.lastSeen).fromNow()}`}
+          </Typography>
+          <Typography variant="body2" color={isOnline ? "green" : "gray"}>
+            {`Total hours: ${userLog.totalHours}`}
+          </Typography>
+        </>
+      )}
       <Button
-        onClick={updateLastSeen}
+        onClick={fetchLastSeen}
         variant="outlined"
         size="small"
         startIcon={<BiRefresh />}

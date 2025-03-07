@@ -10,11 +10,12 @@ ALTER TABLE User MODIFY COLUMN role ENUM(
 CREATE TABLE UserLog (
 id INT AUTO_INCREMENT PRIMARY KEY,
 userId INT NOT NULL,
-signInAt DATETIME NOT NULL,
-signOutAt DATETIME NULL,
-totalHours DECIMAL(5,2) NULL,
-FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE,
-INDEX (userId)
+date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, -- Track daily logs
+totalMinutes INT NOT NULL DEFAULT 0, -- Track minutes spent
+
+UNIQUE KEY idx_user_date (userId, date), -- Ensure one entry per user per day
+INDEX idx_user (userId),
+CONSTRAINT fk_user FOREIGN KEY (userId) REFERENCES User(id) ON DELETE CASCADE
 );
 
 ALTER TABLE User ADD COLUMN hasLogs BOOLEAN DEFAULT FALSE;

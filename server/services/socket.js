@@ -1,6 +1,8 @@
+import dayjs from "dayjs";
 import { Server } from "socket.io";
 
 let io;
+const userSessions = new Map(); // Store last heartbeat timestamps
 
 export function initSocket(httpServer) {
   io = new Server(httpServer, {
@@ -9,45 +11,86 @@ export function initSocket(httpServer) {
       credentials: true,
     },
   });
-  io.on("connection", (socket) => {
-    const userId = socket.handshake.query.userId;
-    if (userId) {
-      updateLastSeen(userId); // Update user activity on connect
-    }
 
-    // Update lastSeenAt every 10 minutes
+  io.on("connection", async (socket) => {
+    const userId = Number(socket.handshake.query.userId);
+    if (!userId) return;
 
-    // socket.on('join-admin-room', ({userId}) => {
-    //     socket.join(userId.toString());
-    // });
-    socket.on("join-room", ({ userId }) => {
-      socket.join(userId.toString());
-    });
-    socket.on("heartbeat", ({ userId }) => {
-      if (userId) {
-        updateLastSeen(userId);
+    updateLastSeen(userId);
+    await ensureUserLogExists(userId);
+
+    // Store user session start time
+    userSessions.set(userId, Date.now());
+
+    // Set interval to update total minutes every 5 minutes
+    const interval = setInterval(() => {
+      if (userSessions.has(userId)) {
+        updateTotalMinutes(userId);
       }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    socket.on("heartbeat", () => {
+      updateLastSeen(userId);
+      userSessions.set(userId, Date.now()); // Refresh last active time
     });
 
-    socket.on("disconnect", (s) => {
-      if (userId) {
-        updateLastSeen(userId); // Optional: mark user as inactive on disconnect
-      }
+    socket.on("disconnect", () => {
+      clearInterval(interval);
+      updateTotalMinutes(userId);
+      userSessions.delete(userId);
     });
   });
 }
+
 function updateLastSeen(userId) {
   prisma.user
     .update({
-      where: { id: Number(userId) },
+      where: { id: userId },
       data: { lastSeenAt: new Date() },
     })
     .catch(console.error);
 }
 
-export function getIo() {
-  if (!io) {
-    throw new Error("Socket.io not initialized");
+async function ensureUserLogExists(userId) {
+  const today = dayjs().startOf("day").toDate();
+
+  try {
+    const existingLog = await prisma.userLog.findFirst({
+      where: { userId, date: today },
+    });
+
+    if (!existingLog) {
+      await prisma.userLog.create({
+        data: { userId, date: today, totalMinutes: 0 },
+      });
+    }
+  } catch (error) {
+    console.error("Error ensuring user log:", error);
   }
+}
+
+// ✅ Only update `totalMinutes` if the user was active for 5 minutes
+async function updateTotalMinutes(userId) {
+  const lastActive = userSessions.get(userId);
+  if (!lastActive || Date.now() - lastActive < 5 * 60 * 1000) return; // Skip if less than 5 minutes
+
+  const todayStart = dayjs().startOf("day").toDate();
+  const tomorrowStart = dayjs().add(1, "day").startOf("day").toDate();
+
+  try {
+    await prisma.userLog.updateMany({
+      where: {
+        userId,
+        date: { gte: todayStart, lt: tomorrowStart },
+      },
+      data: { totalMinutes: { increment: 5 } },
+    });
+  } catch (error) {
+    console.error("Error updating total minutes:", error);
+  }
+}
+
+export function getIo() {
+  if (!io) throw new Error("Socket.io not initialized");
   return io;
 }

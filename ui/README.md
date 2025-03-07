@@ -38,8 +38,8 @@
 - Fix the search of each user role according to type(for admin i mean when search in work stage we send type )
 - Notification after each lead change for each type i mean for 2 d they wait 3d and 3d wait finalize
 - Admin can make a user have more than one role
-
 - Super admin cant see users and can only see 3d and 2d actions
+
 - Add logs online (for users when he sign in and sign out saved as a log from 8 to 10 for examble then total work for today)
 - Fix notifications to redirect for new staff roles
 

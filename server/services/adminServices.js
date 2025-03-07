@@ -1157,14 +1157,26 @@ export async function deleteAFixedData({ id }) {
   });
 }
 export async function getUserLastSeen(userId) {
-  return await prisma.user.findUnique({
-    where: {
-      id: Number(userId),
-    },
+  const today = dayjs().startOf("day").toDate(); // Get today's date at midnight
+
+  const user = await prisma.user.findUnique({
+    where: { id: Number(userId) },
     select: {
       lastSeenAt: true,
+      logs: {
+        where: { date: today }, // Get logs for today
+        select: { totalMinutes: true },
+      },
     },
   });
+  console.log(user, "user");
+  const totalMinutes = user?.logs?.[0]?.totalMinutes || 0;
+  const totalHours = (totalMinutes / 60).toFixed(2); // Convert to hours
+
+  return {
+    lastSeenAt: user?.lastSeenAt || null,
+    totalHours,
+  };
 }
 
 export async function updateUserMaxLeads(userId, maxLeadCount) {

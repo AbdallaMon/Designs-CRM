@@ -266,7 +266,7 @@ model User {
  isActive         Boolean           @default(true)
  role          UserRole       @default(STAFF)
  subRoles      UserSubRole[]
- logs        UserLog[] 
+ logs          UserLog[]      
  clientLeads   ClientLead[]
  notifications   Notification[]   @relation("UserNotifications")
  staffNotifications Notification[] @relation("StaffNotifications")
@@ -294,15 +294,16 @@ model UserSubRole {
 }
 
 model UserLog {
-  id          Int      @id @default(autoincrement())
-  user        User     @relation(fields: [userId], references: [id])
-  userId      Int
-  signInAt    DateTime
-  signOutAt   DateTime?
-  totalHours  Decimal?  @db.Decimal(5, 2) 
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         DateTime @default(now()) // Unique per user per day
+  totalMinutes Int      @default(0)     // Track minutes spent
 
+  @@unique([userId, date]) // Ensure only one entry per day per user
   @@index([userId])
 }
+
 
 model Client {
  id          Int          @id @default(autoincrement())

@@ -56,8 +56,8 @@ router.get("/users/:userId/last-seen", async (req, res) => {
   const { userId } = req.params;
 
   try {
-    const user = await getUserLastSeen(userId);
-    res.status(200).json({ lastSeenAt: user.lastSeenAt });
+    const userData = await getUserLastSeen(userId);
+    res.status(200).json(userData);
   } catch (error) {
     console.error("Error fetching supervisors:", error);
     res

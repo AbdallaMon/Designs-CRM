@@ -185,7 +185,7 @@ export default function UsersPage() {
               <Button component={Link} href={"/dashboard/users/" + item.id}>
                 View Details
               </Button>
-              <LastSeen initialLastSeen={item.lastSeenAt} userId={item.id} />
+              <LastSeen initialLastSeen={item} userId={item.id} />
             </Box>
           </>
         )}
