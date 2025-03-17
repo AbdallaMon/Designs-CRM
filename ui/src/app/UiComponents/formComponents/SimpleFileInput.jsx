@@ -7,6 +7,7 @@ export default function SimpleFileInput({
   label,
   variant = "filled",
   setData,
+  handleUpload,
 }) {
   const [preview, setPreview] = useState();
   const [fileName, setFileName] = useState(""); // Track file name
@@ -28,6 +29,9 @@ export default function SimpleFileInput({
       setPreview(fileBlob);
       if (setData) {
         setData((old) => ({ ...old, [id]: file }));
+      }
+      if (handleUpload) {
+        handleUpload(file);
       }
     } else {
       setPreview(null);

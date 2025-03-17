@@ -595,7 +595,7 @@ export async function createNotification(
     const users = await prisma.user.findMany({
       where: {
         isActive: true,
-        role: { in: ["STAFF", "ADMIN", "SUPERADMIN"] },
+        role: { in: ["STAFF", "ADMIN", "SUPER_ADMIN"] },
       },
       select: {
         id: true,

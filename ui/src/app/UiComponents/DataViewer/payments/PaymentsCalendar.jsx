@@ -19,6 +19,8 @@ import ConfirmWithActionModel from "../../models/ConfirmsWithActionModel";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import SearchComponent from "../../formComponents/SearchComponent";
+import { IncomeOutcomeSummary } from "../accountant/IncomeOutComeSummary";
+import CreateModal from "../../models/CreateModal";
 
 const inputs = [
   {
@@ -30,9 +32,7 @@ const inputs = [
       id: "issuedDate",
       label: "Payment date",
       type: "date",
-      defaultValue: new Date(),
     },
-    useDefault: true,
     pattern: { required: { value: true, message: "Date is required" } },
   },
   {
@@ -128,6 +128,8 @@ const PaymentCalendar = () => {
   }
   return (
     <Container maxWidth="xxl" px={{ xs: 2, md: 4 }}>
+      <IncomeOutcomeSummary />
+
       <Box
         mb={3}
         display="flex"
@@ -201,16 +203,24 @@ const PaymentCalendar = () => {
         setTotal={setTotal}
         setData={setData}
         totalPages={totalPages}
-        withEdit={true}
-        handleAfterEdit={(data) => handleAfterEdit(data)}
-        editHref={"accountant/payments/pay"}
-        editButtonText={"Pay"}
-        renderFormTitle={(item) => `Payment number # ${item.id}`}
         inputs={inputs}
-        editFormButton="Pay"
         extraComponent={({ item }) => (
           <>
             <Box sx={{ display: "flex", gap: 2 }}>
+              <CreateModal
+                label={"Pay"}
+                inputs={inputs}
+                href={`accountant/payments/pay/${item.id}`}
+                handleSubmit={(data) => {
+                  handleAfterEdit(data);
+                }}
+                setData={setData}
+                extraProps={{
+                  formTitle: `Payment number # ${item.id}`,
+                  btnText: "Pay",
+                  variant: "outlined",
+                }}
+              />
               <ConfirmWithActionModel
                 label="Mark as over due"
                 title="Mark payment as over due"

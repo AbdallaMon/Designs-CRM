@@ -243,6 +243,7 @@ const roleIcons = {
   TWO_D_DESIGNER: "🖌",
   ACCOUNTANT: "💰",
   SUPER_ADMIN: "🛡",
+  TWO_D_EXECUTOR: "🖌",
 };
 
 export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {

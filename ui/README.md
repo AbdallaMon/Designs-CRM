@@ -61,7 +61,8 @@
   - مصاريف التشغيليه
   - الايجارات
 
-- check notifications
 - remove whatsapp icon
+- call reminders and notes for one person only who added them
+- two files to be added for قيد التسعير
   dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

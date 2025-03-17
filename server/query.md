@@ -342,3 +342,9 @@ ADD CONSTRAINT `Note_rentId_fkey` FOREIGN KEY (`rentId`) REFERENCES `Rent` (`id`
 ADD CONSTRAINT `Note_rentPeriodId_fkey` FOREIGN KEY (`rentPeriodId`) REFERENCES `RentPeriod` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
 ADD CONSTRAINT `Note_operationalExpensesId_fkey` FOREIGN KEY (`operationalExpensesId`) REFERENCES `OperationalExpenses` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
 ADD CONSTRAINT `Note_paymentId_fkey` FOREIGN KEY (`paymentId`) REFERENCES `Payment` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- Step 2: Remove the `userId` column from the `MonthlySalary` table
+ALTER TABLE MonthlySalary DROP FOREIGN KEY monthlysalary_ibfk_1;
+
+ALTER TABLE MonthlySalary
+DROP COLUMN userId;

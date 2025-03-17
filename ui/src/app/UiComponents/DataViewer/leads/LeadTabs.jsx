@@ -40,6 +40,11 @@ import { NewNoteDialog } from "@/app/UiComponents/DataViewer/leads/leadsDialogs.
 import { Grid2 as Grid, Button } from "@mui/material";
 import { FaMoneyBillWave, FaUserAlt, FaCalendarAlt } from "react-icons/fa";
 import { AddPriceOffers } from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
+import { MdAttachFile } from "react-icons/md";
+import SimpleFileInput from "../../formComponents/SimpleFileInput";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import { useAlertContext } from "@/app/providers/MuiAlert";
+import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 export function CallReminders({ lead, setleads, admin, notUser }) {
   const [callReminders, setCallReminders] = useState(lead?.callReminders);
   const theme = useTheme();
@@ -703,5 +708,117 @@ export function ExtraServicesList({ admin, lead, notUser, setPayments }) {
         </List>
       </CardContent>
     </Card>
+  );
+}
+
+export function OurCostAndContractorCost({ lead, setLead }) {
+  const { setLoading } = useToastContext();
+  const { setAlertError } = useAlertContext();
+
+  const handleUpload = async (file, type) => {
+    if (!file) {
+      setAlertError("Please select a file.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    setLoading(true);
+    const uploadResponse = await handleRequestSubmit(
+      formData,
+      setLoading,
+      "utility/upload",
+      true,
+      "Uploading file"
+    );
+
+    if (uploadResponse.status === 200) {
+      const fileUrl = uploadResponse.fileUrls.file[0];
+
+      const updateData = {
+        [type]: fileUrl,
+      };
+
+      const updateResponse = await handleRequestSubmit(
+        updateData,
+        setLoading,
+        `shared/work-stages/${lead.id}/cost`,
+        false,
+        "Updating Lead",
+        false,
+        "PUT"
+      );
+
+      if (updateResponse.status === 200) {
+        setLead((prevLead) => ({
+          ...prevLead,
+          [type]: fileUrl,
+        }));
+      }
+    }
+  };
+
+  return (
+    <Paper sx={{ p: 3, mt: 2, borderLeft: "6px solid #1976d2" }}>
+      <Typography
+        variant="h6"
+        sx={{ mb: 2, fontWeight: "bold", color: "#1976d2" }}
+      >
+        Cost Documents
+      </Typography>
+
+      <Stack spacing={3}>
+        {/* Our Cost */}
+        <Box display="flex" alignItems="center" gap={2}>
+          <Typography variant="body1">Our Cost:</Typography>
+          {lead.ourCost ? (
+            <Button
+              href={lead.ourCost}
+              target="_blank"
+              variant="contained"
+              color="primary"
+              startIcon={<MdAttachFile />}
+            >
+              View File
+            </Button>
+          ) : (
+            <>
+              <SimpleFileInput
+                label="File"
+                id="file"
+                handleUpload={(file) => handleUpload(file, "ourCost")}
+                variant="outlined"
+              />
+            </>
+          )}
+        </Box>
+
+        {/* Contractor Cost */}
+        <Box display="flex" alignItems="center" gap={2}>
+          <Typography variant="body1">Contractor Cost:</Typography>
+          {lead.contractorCost ? (
+            <Button
+              href={lead.contractorCost}
+              target="_blank"
+              variant="contained"
+              color="success"
+              startIcon={<MdAttachFile />}
+            >
+              View File
+            </Button>
+          ) : (
+            <>
+              <SimpleFileInput
+                label="File"
+                id="file"
+                handleUpload={(file) => handleUpload(file, "contractorCost")}
+                variant="outlined"
+              />
+            </>
+          )}
+        </Box>
+      </Stack>
+    </Paper>
   );
 }

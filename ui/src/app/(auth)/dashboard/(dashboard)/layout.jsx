@@ -19,7 +19,11 @@ import {
   FiFileText,
   FiTrendingUp,
   FiBriefcase,
+  FiShoppingCart,
+  FiHome,
+  FiTrendingDown,
 } from "react-icons/fi";
+
 import Navbar from "@/app/UiComponents/utility/Navbar.jsx";
 
 let toastId;
@@ -206,31 +210,31 @@ export const exacuterLinks = [
   },
 ];
 export const accountantLinks = [
-  { name: "Payments", href: "/dashboard", icon: <FiTarget size={20} /> },
+  { name: "Payments", href: "/dashboard", icon: <FiDollarSign size={20} /> }, // Dollar sign for payments
   {
     name: "Overdue Payments",
     href: "/dashboard/overdue",
-    icon: <FiTarget size={20} />,
+    icon: <FiClock size={20} />, // Clock for overdue payments
   },
   {
     name: "Operational Expenses",
     href: "/dashboard/operational-expenses",
-    icon: <FiTarget size={20} />,
+    icon: <FiShoppingCart size={20} />, // Shopping cart for expenses
   },
   {
     name: "Rents",
     href: "/dashboard/rents",
-    icon: <FiTarget size={20} />,
+    icon: <FiHome size={20} />, // Home icon for rents
   },
   {
     name: "Salaries",
     href: "/dashboard/salaries",
-    icon: <FiTarget size={20} />,
+    icon: <FiUsers size={20} />, // Users for salaries (employees)
   },
   {
     name: "Outstanding Payments",
     href: "/dashboard/outcome",
-    icon: <FiTarget size={20} />,
+    icon: <FiTrendingDown size={20} />, // Trending down for outstanding payments
   },
 ];
 export default function Layout({

@@ -417,8 +417,8 @@ model BaseEmployeeSalary {
   baseSalary      Decimal         @db.Decimal(10, 2)
   taxAmount       Decimal         @db.Decimal(10, 2) @default(0) // Add taxAmount field for transparency
   baseWorkHours   Int
- notes           Note[] 
-   monthlySalaries MonthlySalary[] 
+  notes           Note[] 
+  monthlySalaries MonthlySalary[] 
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 }

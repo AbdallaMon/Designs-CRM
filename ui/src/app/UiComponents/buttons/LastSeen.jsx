@@ -10,7 +10,7 @@ import { getData } from "@/app/helpers/functions/getData";
 dayjs.extend(relativeTime);
 dayjs.locale("en");
 
-export default function LastSeen({ userId, initialLastSeen }) {
+export default function LastSeen({ userId, initialLastSeen, accountant }) {
   const [userLog, setUserLog] = useState(initialLastSeen);
   const [loading, setLoading] = useState(true); // Start with loading state
 
@@ -19,7 +19,9 @@ export default function LastSeen({ userId, initialLastSeen }) {
     setLoading(true);
     try {
       const res = await getData({
-        url: `admin/users/${userId}/last-seen`,
+        url: accountant
+          ? `accountant/users/${userId}/last-seen`
+          : `admin/users/${userId}/last-seen`,
         setLoading,
       });
       setUserLog(res);
@@ -59,6 +61,9 @@ export default function LastSeen({ userId, initialLastSeen }) {
           </Typography>
           <Typography variant="body2" color={isOnline ? "green" : "gray"}>
             {`Total hours: ${userLog.totalHours}`}
+          </Typography>
+          <Typography variant="body2" color={isOnline ? "green" : "gray"}>
+            {`Month hours: ${userLog.totalMonthHours}`}
           </Typography>
         </>
       )}

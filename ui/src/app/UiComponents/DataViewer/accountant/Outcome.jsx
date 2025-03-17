@@ -13,6 +13,7 @@ import {
 import { FaCalendarMonth, FaMoneyBillWave } from "react-icons/fa6";
 import dayjs from "dayjs";
 import { MdCalendarMonth, MdMoney } from "react-icons/md";
+import { IncomeOutcomeSummary } from "./IncomeOutComeSummary";
 const columns = [
   { name: "amount", label: "Amount" },
   { name: "type", label: "Type" },
@@ -32,16 +33,11 @@ const OutCome = () => {
     total,
     setTotal,
     totalPages,
-    extraData,
     setFilters,
   } = useDataFetcher(`accountant/outcome?`);
-  console.log(extraData, "extraData");
   return (
     <Container maxWidth="xxl" px={{ xs: 2, md: 4 }}>
-      <OutcomeSummary
-        totalAmount={extraData?.totalAmount}
-        currentMonthAmount={extraData?.currentMonthAmount}
-      />
+      <IncomeOutcomeSummary />
       <Box>
         <DateRangeFilter setFilters={setFilters} lastThreeMonth={true} />
       </Box>

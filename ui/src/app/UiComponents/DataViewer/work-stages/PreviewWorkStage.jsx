@@ -57,7 +57,12 @@ import { generatePDF } from "@/app/UiComponents/buttons/GenerateLeadPdf.jsx";
 import dayjs from "dayjs";
 import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
 import Link from "next/link";
-import { CallReminders, FileList, LeadNotes } from "../leads/LeadTabs";
+import {
+  CallReminders,
+  FileList,
+  LeadNotes,
+  OurCostAndContractorCost,
+} from "../leads/LeadTabs";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -327,6 +332,13 @@ const LeadContent = ({
           label="Attatchments"
           sx={{ textTransform: "none" }}
         />
+        {type === "exacuter" && (
+          <Tab
+            icon={<GoPaperclip size={20} />}
+            label="Our cost and constructor cost"
+            sx={{ textTransform: "none" }}
+          />
+        )}
       </Tabs>
 
       <Box
@@ -353,6 +365,11 @@ const LeadContent = ({
         <TabPanel value={activeTab} index={3}>
           <FileList admin={isAdmin} lead={lead} notUser={isPage && notUser} />
         </TabPanel>
+        {type === "exacuter" && (
+          <TabPanel value={activeTab} index={4}>
+            <OurCostAndContractorCost lead={lead} setLead={setLead} />
+          </TabPanel>
+        )}
       </Box>
     </>
   );
@@ -642,7 +659,6 @@ const PreviewWorkStage = ({
   id,
   setleads,
   page = false,
-  admin,
   type,
 }) => {
   const [activeTab, setActiveTab] = useState(0);

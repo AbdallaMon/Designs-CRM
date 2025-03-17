@@ -175,6 +175,7 @@ export async function getClientLeadsByDateRange({ searchParams }) {
 
 export async function getClientLeadDetails(clientLeadId, searchParams) {
   const where = {};
+  console.log(searchParams, "searchParams");
   if (searchParams.userId) {
     where.userId = Number(searchParams.userId);
   }
@@ -953,6 +954,7 @@ export async function updateClientLeadStatus({
       );
     }
   }
+
   const data = {
     status,
     updatedAt: new Date(),
@@ -1091,7 +1093,6 @@ export async function getNewWorkStagesLeads({
   searchParams,
 }) {
   let where = {};
-  console.log(searchParams, "searchParams");
   const filters = JSON.parse(searchParams.filters);
   where = {
     status: "FINALIZED",
@@ -1298,7 +1299,12 @@ export async function getWorkStagesLeadsByDateRange({ searchParams }) {
   return clientLeads;
 }
 
-export async function getWorkStageLeadDetails(clientLeadId) {
+export async function getWorkStageLeadDetails(clientLeadId, searchParams) {
+  const where = {};
+  console.log(searchParams, "searchParams");
+  if (searchParams.userId) {
+    where.userId = Number(searchParams.userId);
+  }
   const clientLead = await prisma.clientLead.findUnique({
     where: { id: clientLeadId },
     select: {
@@ -1310,6 +1316,8 @@ export async function getWorkStageLeadDetails(clientLeadId) {
       country: true,
       timeToContact: true,
       priceNote: true,
+      ourCost: true,
+      contractorCost: true,
       client: {
         select: {
           id: true,
@@ -1351,6 +1359,7 @@ export async function getWorkStageLeadDetails(clientLeadId) {
       priceWithOutDiscount: true,
       discount: true,
       files: {
+        where,
         select: {
           id: true,
           name: true,
@@ -1364,6 +1373,7 @@ export async function getWorkStageLeadDetails(clientLeadId) {
         },
       },
       priceOffers: {
+        where,
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
@@ -1379,6 +1389,7 @@ export async function getWorkStageLeadDetails(clientLeadId) {
         },
       },
       notes: {
+        where,
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
@@ -1391,6 +1402,7 @@ export async function getWorkStageLeadDetails(clientLeadId) {
         },
       },
       callReminders: {
+        where,
         select: {
           id: true,
           time: true,
@@ -1428,8 +1440,6 @@ export async function updateLeadWorkStage({
   isAdmin,
   type,
 }) {
-  console.log(oldStatus, "oldStatus");
-  console.log(type, "stuats");
   if (!isAdmin) {
     if (
       oldStatus === "THREE_D_APPROVAL" ||
@@ -1474,6 +1484,26 @@ export async function updateLeadWorkStage({
       );
     }
   }
+  if (oldStatus === "PRICING") {
+    const lead = await prisma.clientLead.findUnique({
+      where: { id: Number(clientLeadId) },
+      select: {
+        ourCost: true,
+        contractorCost: true,
+      },
+    });
+    console.log(lead);
+    if (
+      !lead.ourCost ||
+      lead.ourCost.trim() === "" ||
+      !lead.contractorCost ||
+      lead.contractorCost.trim() === ""
+    ) {
+      throw new Error(
+        "Both 'Our Cost' and 'Contractor Cost' must be provided and cannot be empty."
+      );
+    }
+  }
   const data = {
     updatedAt: new Date(),
   };
@@ -1511,8 +1541,19 @@ export async function updateLeadWorkStage({
   if (status === "THREE_D_APPROVAL") {
     await finalizedLeadCreated(lead.id, lead.userId, "TWO_D");
   }
+  if (status === "FINAL_DELIVERY") {
+    await finalizedLeadCreated(lead.id, lead.userId, "TWO_D_EXACUTER");
+  }
 }
 
+export async function addCostFiles({ clientLeadId, body }) {
+  const update = await prisma.clientLead.update({
+    where: {
+      id: Number(clientLeadId),
+    },
+    data: body,
+  });
+}
 export async function assignWorkStageLeadToAUser(clientLeadId, userId, type) {
   const activeLeadsWhere = {};
   if (type === "three-d") {

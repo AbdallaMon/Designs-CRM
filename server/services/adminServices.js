@@ -1169,16 +1169,45 @@ export async function getUserLastSeen(userId) {
       },
     },
   });
-  console.log(user, "user");
   const totalMinutes = user?.logs?.[0]?.totalMinutes || 0;
   const totalHours = (totalMinutes / 60).toFixed(2); // Convert to hours
-
+  const totalMonthHours = await getUserMonthlyTotalHours(Number(userId));
   return {
     lastSeenAt: user?.lastSeenAt || null,
     totalHours,
+    ...totalMonthHours,
   };
 }
+export async function getUserMonthlyTotalHours(userId) {
+  // Get the first and last day of the current month
+  const startOfMonth = dayjs().startOf("month").toDate();
+  const endOfMonth = dayjs().endOf("month").toDate();
 
+  const user = await prisma.user.findUnique({
+    where: { id: Number(userId) },
+    select: {
+      logs: {
+        where: {
+          date: {
+            gte: startOfMonth,
+            lte: endOfMonth,
+          },
+        },
+        select: { totalMinutes: true },
+      },
+    },
+  });
+
+  // Calculate total minutes across all logs for the month
+  const totalMinutes =
+    user?.logs?.reduce((sum, log) => sum + (log.totalMinutes || 0), 0) || 0;
+  const totalMonthHours = (totalMinutes / 60).toFixed(2); // Convert to hours
+
+  return {
+    totalMonthHours,
+    month: dayjs().format("MMMM YYYY"),
+  };
+}
 export async function updateUserMaxLeads(userId, maxLeadCount) {
   return await prisma.user.update({
     where: { id: Number(userId) },

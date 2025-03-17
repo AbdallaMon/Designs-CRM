@@ -6,17 +6,24 @@ import {
 import {
   addNote,
   createARent,
+  createBaseSalary,
   createOperationalExpense,
+  editBaseSalary,
+  generateMonthlySalary,
+  getIncomeOutcomeSummary,
   getNotes,
   getOperationalExpenses,
   getOutcomes,
   getPayments,
   getRents,
+  getSalaryData,
+  getUsersWithSalaries,
   markPaymentAsOverdue,
   processPayment,
   renewRentAndMakeOutCome,
 } from "../services/accountantServices.js";
 import dayjs from "dayjs";
+import { getUserLastSeen } from "../services/adminServices.js";
 
 const router = Router();
 
@@ -47,12 +54,11 @@ router.get("/payments", async (req, res) => {
     });
     res.status(200).json(payments);
   } catch (error) {
-    console.log(error, "error in payments");
     res.status(500).json({ message: error.message });
   }
 });
 
-router.put("/payments/pay/:paymentId", async (req, res) => {
+router.post("/payments/pay/:paymentId", async (req, res) => {
   const { paymentId } = req.params;
   const { amount, issuedDate } = req.body;
 
@@ -94,20 +100,17 @@ router.get("/notes", async (req, res) => {
     const notes = await getNotes(searchParams);
     res.status(200).json({ data: notes });
   } catch (error) {
-    console.log(error, "error in notes");
     res.status(500).json({ message: error.message });
   }
 });
 router.post("/notes", async (req, res) => {
   try {
-    console.log(req.user, "req");
     const newNote = await addNote({
       ...req.body,
       userId: req.user.id,
     });
     res.status(200).json(newNote);
   } catch (error) {
-    console.log(error, "error in creating note");
     res.status(500).json({ message: error.message });
   }
 });
@@ -120,17 +123,14 @@ router.get("/operational-expenses", async (req, res) => {
     });
     res.status(200).json(operationalExpenses);
   } catch (error) {
-    console.log(error, "error in operational expenses");
     res.status(500).json({ message: error.message });
   }
 });
 router.post("/operational-expenses", async (req, res) => {
   try {
-    console.log(req.body, "req");
     const newExpense = await createOperationalExpense(req.body);
     res.status(200).json(newExpense);
   } catch (error) {
-    console.log(error, "error in creating operational expenses");
     res.status(500).json({ message: error.message });
   }
 });
@@ -143,7 +143,6 @@ router.get("/rents", async (req, res) => {
     });
     res.status(200).json(operationalExpenses);
   } catch (error) {
-    console.log(error, "error in operational expenses");
     res.status(500).json({ message: error.message });
   }
 });
@@ -152,7 +151,6 @@ router.post("/rents", async (req, res) => {
     const newExpense = await createARent(req.body);
     res.status(200).json(newExpense);
   } catch (error) {
-    console.log(error, "error in creating operational expenses");
     res.status(500).json({ message: error.message });
   }
 });
@@ -180,7 +178,6 @@ router.put("/rents/:rentId", async (req, res) => {
 router.get("/outcome", async (req, res) => {
   try {
     const { filters } = req.query;
-    console.log(req.query, "query");
     const { limit, skip } = getPagination(req);
     const outcome = await getOutcomes({
       limit: Number(limit),
@@ -191,6 +188,98 @@ router.get("/outcome", async (req, res) => {
   } catch (error) {
     console.error("Error processing payment:", error);
     return res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/users", async (req, res) => {
+  const searchParams = req.query;
+  const { limit, skip } = getPagination(req);
+
+  try {
+    const { users, total } = await getUsersWithSalaries(
+      searchParams,
+      limit,
+      skip
+    );
+    const totalPages = Math.ceil(total / limit);
+
+    if (!users) {
+      return res.status(404).json({ message: "No users found" });
+    }
+    res.status(200).json({ data: users, totalPages, total });
+  } catch (error) {
+    console.error("Error fetching supervisors:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching supervisors" });
+  }
+});
+
+router.get("/users/:userId/last-seen", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const userData = await getUserLastSeen(userId);
+    res.status(200).json(userData);
+  } catch (error) {
+    console.error("Error fetching supervisors:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching supervisors" });
+  }
+});
+
+router.get("/salaries/data", async (req, res) => {
+  const searchParams = req.query;
+  try {
+    const userData = await getSalaryData(searchParams);
+    res.status(200).json(userData);
+  } catch (error) {
+    console.error("Error fetching supervisors:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching supervisors" });
+  }
+});
+router.post("/salaries/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    req.body.userId = userId;
+
+    const newSalary = await createBaseSalary(req.body);
+    res.status(200).json(newSalary);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+router.put("/salaries/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    req.body.id = id;
+    const newSalary = await editBaseSalary(req.body);
+    res.status(200).json(newSalary);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+router.post("/salaries/monthly/pay", async (req, res) => {
+  try {
+    const newMonthlySalary = await generateMonthlySalary(req.body);
+    res.status(200).json(newMonthlySalary);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.get("/summary", async (req, res) => {
+  try {
+    const summary = await getIncomeOutcomeSummary();
+    res.status(200).json(summary);
+  } catch (error) {
+    console.error("Error fetching supervisors:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching supervisors" });
   }
 });
 export default router;

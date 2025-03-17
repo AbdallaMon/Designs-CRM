@@ -7,6 +7,7 @@ import {
   verifyTokenAndHandleAuthorization,
 } from "../services/utility.js";
 import {
+  addCostFiles,
   assignLeadToAUser,
   assignWorkStageLeadToAUser,
   getAllFixedData,
@@ -385,8 +386,19 @@ router.get("/work-stages", async (req, res) => {
 router.get("/work-stage-leads/:id", async (req, res) => {
   try {
     const { id } = req.params;
-
-    const clientLeadDetails = await getWorkStageLeadDetails(Number(id));
+    const token = getTokenData(req, res);
+    const searchParams = req.query;
+    if (
+      token.role !== "ADMIN" &&
+      token.role !== "SUPER_ADMIN" &&
+      token.role !== "ACCOUNTANT"
+    ) {
+      searchParams.userId = token.id;
+    }
+    const clientLeadDetails = await getWorkStageLeadDetails(
+      Number(id),
+      searchParams
+    );
     res.status(200).json({ data: clientLeadDetails });
   } catch (error) {
     console.error("Error fetching client lead details:", error);
@@ -407,6 +419,22 @@ router.put("/work-stages/:leadId/status", async (req, res) => {
 
     res.status(200).json({
       message: "Status changed successfully",
+    });
+  } catch (error) {
+    console.error("Error updating work stage status:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+router.put("/work-stages/:leadId/cost", async (req, res) => {
+  try {
+    const { leadId } = req.params;
+    await addCostFiles({
+      clientLeadId: Number(leadId),
+      body: req.body,
+    });
+
+    res.status(200).json({
+      message: "File uploaded successfully",
     });
   } catch (error) {
     console.error("Error updating work stage status:", error);

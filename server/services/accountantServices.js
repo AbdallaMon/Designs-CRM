@@ -123,6 +123,13 @@ function getNextPaymentLevel(currentLevel) {
 }
 
 export async function processPayment(paymentId, amount, issuedDate) {
+  if (!amount || !issuedDate) {
+    throw new Error("Please fill all data");
+  }
+  if (issuedDate === "1970-01-01T00:00:00.000Z") {
+    throw new Error("Please enter a date");
+  }
+  console.log(issuedDate, "issu");
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
   });
@@ -468,17 +475,283 @@ export async function getOutcomes({ limit = 1, skip = 10, filters }) {
       createdAt: "desc",
     },
   });
-  const aggregations = await prisma.outcome.aggregate({
-    _sum: {
-      amount: true,
+  const total = await prisma.outcome.count();
+  const totalPages = Math.ceil(total / limit);
+  return {
+    data: outcomes,
+    total,
+    totalPages,
+  };
+}
+
+export async function getUsersWithSalaries(searchParams, limit, skip) {
+  const filters = searchParams.filters && JSON.parse(searchParams.filters);
+  const staffFilter = searchParams.staffId
+    ? { userId: Number(searchParams.staffId) }
+    : {};
+  let where = {
+    role: { not: "ADMIN" },
+    ...staffFilter,
+  };
+  if (filters.status !== undefined) {
+    if (filters.status === "active") {
+      where.isActive = true;
+    } else if (filters.status === "banned") {
+      where.isActive = false;
+    }
+  }
+  const users = await prisma.user.findMany({
+    where: where,
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      isActive: true,
+      lastSeenAt: true,
+      role: true,
+      baseSalary: {
+        select: {
+          baseSalary: true,
+          taxAmount: true,
+          baseWorkHours: true,
+        },
+      },
     },
   });
-  const now = dayjs();
-  const startOfMonth = now.startOf("month").toDate();
-  const endOfMonth = now.endOf("month").toDate();
+  const total = await prisma.user.count({ where: where });
 
-  // Get aggregation for the current month
-  const currentMonthAggregation = await prisma.outcome.aggregate({
+  return { users, total };
+}
+
+export async function createBaseSalary({
+  userId,
+  taxAmount,
+  baseSalary,
+  baseWorkHours,
+}) {
+  // Force all number fields to be numbers, even if undefined or null
+  userId = Number(userId);
+  baseSalary = Number(baseSalary);
+  baseWorkHours = Number(baseWorkHours);
+  taxAmount = Number(taxAmount || 0); // Default to 0 if not provided
+
+  // Ensure taxAmount is not negative
+  if (taxAmount < 0) {
+    taxAmount = 0;
+  }
+
+  // Create the base salary record after conversion
+  const salary = await prisma.BaseEmployeeSalary.create({
+    data: {
+      userId: userId,
+      baseSalary: baseSalary,
+      baseWorkHours: baseWorkHours,
+      taxAmount: taxAmount,
+    },
+  });
+
+  return { data: salary, message: "Created succssfully" };
+}
+export async function editBaseSalary({
+  id,
+  taxAmount,
+  baseSalary,
+  baseWorkHours,
+}) {
+  if (!id || !baseSalary || !baseWorkHours || !taxAmount) {
+    throw new Error("Please fill all fiels");
+  }
+  // Force all number fields to be numbers, even if undefined or null
+  baseSalary = Number(baseSalary);
+  baseWorkHours = Number(baseWorkHours);
+  taxAmount = Number(taxAmount || 0); // Default to 0 if not provided
+
+  // Ensure taxAmount is not negative
+  if (taxAmount < 0) {
+    taxAmount = 0;
+  }
+  // Create the base salary record after conversion
+  const salary = await prisma.BaseEmployeeSalary.update({
+    where: {
+      id: Number(id),
+    },
+    data: {
+      baseSalary: baseSalary,
+      baseWorkHours: baseWorkHours,
+      taxAmount: taxAmount,
+    },
+  });
+
+  return { data: salary, message: "Updated succssfully" };
+}
+
+export async function generateMonthlySalary({
+  totalHoursWorked,
+  overtimeHours,
+  bonuses,
+  baseSalaryId,
+  deductions,
+  netSalary,
+  isFulfilled,
+  paymentDate,
+}) {
+  if (!baseSalaryId || !totalHoursWorked || !netSalary) {
+    throw new Error("Fill all the fileds please");
+  }
+  totalHoursWorked = Number(totalHoursWorked);
+  overtimeHours = Number(overtimeHours || 0); // Default to 0 if not provided
+  bonuses = Number(bonuses || 0); // Default to 0 if not provided
+  deductions = Number(deductions || 0); // Default to 0 if not provided
+  netSalary = Number(netSalary); // Ensure netSalary is a number
+  baseSalaryId = Number(baseSalaryId);
+
+  // Ensure `isFulfilled` is set to a boolean value (default to false if undefined)
+  isFulfilled = isFulfilled === undefined ? false : Boolean(isFulfilled);
+
+  // Handle paymentDate (it can be null)
+  paymentDate = paymentDate ? new Date(paymentDate) : null;
+
+  const startOfMonth = dayjs().startOf("month").toDate();
+  const endOfMonth = dayjs().endOf("month").toDate();
+
+  const hasMonthly = await prisma.monthlySalary.findFirst({
+    where: {
+      baseSalary: {
+        id: baseSalaryId,
+      },
+      createdAt: {
+        gte: startOfMonth,
+        lte: endOfMonth,
+      },
+    },
+  });
+
+  // If monthly salary already exists, throw an error
+  if (hasMonthly) {
+    throw new Error(
+      `Monthly salary for ${dayjs().format(
+        "MMMM YYYY"
+      )} already exists for this user`
+    );
+  }
+  if (paymentDate) {
+    paymentDate = new Date(paymentDate);
+  }
+  // Create a transaction to ensure both salary and outcome are created together
+  return await prisma.$transaction(async (prisma) => {
+    // Create the new monthly salary record
+    const monthlySalary = await prisma.monthlySalary.create({
+      data: {
+        baseSalaryId: baseSalaryId,
+        totalHoursWorked: totalHoursWorked,
+        overtimeHours: overtimeHours,
+        bonuses: bonuses,
+        deductions: deductions,
+        netSalary: netSalary,
+        isFulfilled: isFulfilled,
+        paymentDate: paymentDate,
+      },
+    });
+
+    // Generate an outcome record linked to the monthly salary
+    const outcome = await prisma.outcome.create({
+      data: {
+        type: "Salary",
+        amount: netSalary,
+        description: `Monthly salary payment for ${dayjs().format(
+          "MMMM YYYY"
+        )}`,
+        monthlySalaries: {
+          connect: {
+            id: monthlySalary.id,
+          },
+        },
+      },
+    });
+
+    const updatedMonthlySalary = await prisma.monthlySalary.update({
+      where: {
+        id: monthlySalary.id,
+      },
+      data: {
+        outcomeId: outcome.id,
+      },
+      include: {
+        outcome: true,
+        baseSalary: {
+          include: {
+            employee: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return { data: updatedMonthlySalary, message: "Paid succesffully" };
+  });
+}
+
+export async function getSalaryData(data) {
+  const { userId, startDate, endDate } = data;
+
+  const start = startDate
+    ? new Date(startDate)
+    : dayjs().startOf("month").toDate();
+  const end = endDate ? new Date(endDate) : dayjs().endOf("month").toDate();
+
+  // Get base salary and monthly salaries for the user
+  const salaryData = await prisma.baseEmployeeSalary.findUnique({
+    where: {
+      userId: Number(userId),
+    },
+    include: {
+      employee: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+      },
+      monthlySalaries: {
+        where: {
+          createdAt: {
+            gte: start,
+            lte: end,
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: {
+          outcome: true,
+        },
+      },
+    },
+  });
+
+  return salaryData;
+}
+
+export const getIncomeOutcomeSummary = async () => {
+  const startOfMonth = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth(),
+    1
+  );
+  const endOfMonth = new Date(
+    new Date().getFullYear(),
+    new Date().getMonth() + 1,
+    0
+  );
+
+  const currentMonthIncome = await prisma.invoice.aggregate({
     where: {
       createdAt: {
         gte: startOfMonth,
@@ -489,26 +762,43 @@ export async function getOutcomes({ limit = 1, skip = 10, filters }) {
       amount: true,
     },
   });
-  const total = await prisma.outcome.count();
-  const totalPages = Math.ceil(total / limit);
+
+  // Fetch Total Income Accumulation (All-Time Invoices)
+  const totalIncome = await prisma.invoice.aggregate({
+    _sum: {
+      amount: true,
+    },
+  });
+
+  // Fetch Current Month Outcome (Expenses)
+  const currentMonthOutcome = await prisma.outcome.aggregate({
+    where: {
+      createdAt: {
+        gte: startOfMonth,
+        lte: endOfMonth,
+      },
+    },
+    _sum: {
+      amount: true,
+    },
+  });
+
+  // Fetch Total Outcome Accumulation (All-Time Expenses)
+  const totalOutcome = await prisma.outcome.aggregate({
+    _sum: {
+      amount: true,
+    },
+  });
+  const currentMonthYear = dayjs().format("MMMM YYYY");
+
+  // Return all values in JSON response
   return {
-    data: outcomes,
-    total,
-    totalPages,
-    extraData: {
-      totalAmount: aggregations._sum.amount || 0,
-      currentMonthAmount: currentMonthAggregation._sum.amount || 0,
+    data: {
+      currentMonthIncome: currentMonthIncome._sum.amount || 0,
+      totalIncome: totalIncome._sum.amount || 0,
+      currentMonthOutcome: currentMonthOutcome._sum.amount || 0,
+      totalOutcome: totalOutcome._sum.amount || 0,
+      currentMonthYear,
     },
   };
-}
-// model Outcome {
-//   id              Int             @id @default(autoincrement())
-//   type            String?          @db.VarChar(50) // e.g., "Salary", "Rent", "Operational Expense"
-//   amount          Decimal         @db.Decimal(10, 2)
-//   description     String?         @db.Text // Optional description
-//   createdAt       DateTime        @default(now())
-//   updatedAt       DateTime        @updatedAt
-//   rentPeriods     RentPeriod[]    // Optional relation back to RentPeriod, making it optional
-//   operationalExpenses OperationalExpenses[]  // Optional relation back to OperationalExpenses, making it optional
-//   monthlySalaries MonthlySalary[]  // Optional relation back to OperationalExpenses, making it optional
-// }
+};
