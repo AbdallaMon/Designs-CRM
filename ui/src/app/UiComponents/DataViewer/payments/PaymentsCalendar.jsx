@@ -1,24 +1,24 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Button,
-  Typography,
   Container,
   Select,
   MenuItem,
+  FormControl,
+  InputLabel,
+  Grid2,
 } from "@mui/material";
-import { Calendar as BigCalendar, momentLocalizer } from "react-big-calendar";
-import moment from "moment";
-import "react-big-calendar/lib/css/react-big-calendar.css";
-import { getData } from "@/app/helpers/functions/getData";
 import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
-import { useAuth } from "@/app/providers/AuthProvider";
-import { useRouter, useSearchParams } from "next/navigation";
-import { PaymentStatus } from "@/app/helpers/constants";
+import { useSearchParams } from "next/navigation";
+import { PaymentLevels, PaymentStatus } from "@/app/helpers/constants";
 import Link from "next/link";
-
-const localizer = momentLocalizer(moment);
+import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
+import ConfirmWithActionModel from "../../models/ConfirmsWithActionModel";
+import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import SearchComponent from "../../formComponents/SearchComponent";
 
 const inputs = [
   {
@@ -48,11 +48,14 @@ const columns = [
   { name: "clientLead.description", label: "Description" },
   { name: "clientLead.averagePrice", label: "Price" },
   { name: "paymentReason", label: "Payment reason" },
-
   { name: "amount", label: "Amount" },
   { name: "amountPaid", label: "Amount paid" },
-
-  { name: "dueDate", label: "Due date" },
+  {
+    name: "paymentLevel",
+    label: "Payment level",
+    type: "enum",
+    enum: PaymentLevels,
+  },
   {
     name: "status",
     label: "Payment status",
@@ -62,131 +65,69 @@ const columns = [
 ];
 
 const PaymentCalendar = () => {
-  const { user } = useAuth();
-  const [currentMonth, setCurrentMonth] = useState(moment());
-  const [payments, setPayments] = useState([]);
-  const [filteredPayments, setFilteredPayments] = useState([]);
-  const [loading, setLoading] = useState(true);
   const searchParams = useSearchParams();
   const paymentId = searchParams.get("paymentId");
-  const router = useRouter();
-  const [status, setStatus] = useState("ALL");
-  const fetchPayments = async (month, paymentId = null) => {
-    let response;
-    if (paymentId) {
-      response = await getData({
-        url: `accountant/payments?paymentId=${paymentId}&`,
-        setLoading,
-      });
-      const payment = response.data ? response.data[0] : null;
-
-      if (payment) {
-        const paymentMonth = moment(payment.dueDate);
-        if (!currentMonth.isSame(paymentMonth, "month")) {
-          setCurrentMonth(paymentMonth); // Set current month only if different
-        }
-        setFilteredPayments([payment]); // Filter by specific payment
-      }
-    } else {
-      // Fetch all payments for the specified month
-      response = await getData({
-        url: `accountant/payments?month=${month.format(
-          "YYYY-MM"
-        )}&status=${status}&`,
-        setLoading,
-      });
-      setPayments(response.data || []);
-      setFilteredPayments(response.data || []);
-    }
-  };
-  useEffect(() => {
-    if (paymentId) {
-      fetchPayments(currentMonth, paymentId);
-    } else {
-      fetchPayments(currentMonth);
-    }
-  }, [currentMonth, status, paymentId]);
-
+  const {
+    data,
+    loading,
+    setData,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    setTotal,
+    totalPages,
+    setFilters,
+  } = useDataFetcher(`accountant/payments?paymentId=${paymentId}&`, false, {
+    status: "PENDING",
+  });
+  const [status, setStatus] = useState("PENDING");
+  const [paymentLevel, setPaymentLevel] = useState("ALL");
+  const { setLoading } = useToastContext();
   const handleResetFilter = () => {
     window.location.href = window.location.pathname;
   };
   const handleStatusChange = (event) => {
     setStatus(event.target.value);
+    setFilters({ status: event.target.value });
   };
-  const handleDateSelect = (slotInfo) => {
-    const selectedDateString = moment(slotInfo.start).format("YYYY-MM-DD");
-    const filtered = payments.filter(
-      (payment) =>
-        moment(payment.dueDate).format("YYYY-MM-DD") === selectedDateString
-    );
-    setFilteredPayments(filtered);
+  const handlePaymentLevel = (event) => {
+    setPaymentLevel(event.target.value);
+    setFilters({ level: event.target.value });
   };
 
-  const handleNextMonth = () => {
-    const nextMonth = currentMonth.clone().add(1, "month");
-    setCurrentMonth(nextMonth);
-  };
-
-  const handlePrevMonth = () => {
-    const prevMonth = currentMonth.clone().subtract(1, "month");
-    setCurrentMonth(prevMonth);
-  };
-
-  const events = payments.map((payment) => ({
-    title: `Amount: ${payment.amount}`,
-    start: new Date(payment.dueDate),
-    end: new Date(payment.dueDate),
-    allDay: true,
-  }));
-
-  function handleAfterEdit(data) {
-    const newPayments = filteredPayments.map((payment) => {
-      if (payment.id === data.id) {
-        payment.amountPaid = data.amountPaid;
-        payment.status = data.status;
+  function handleAfterEdit(newData) {
+    const newPayments = data.map((payment) => {
+      if (payment.id === newData.id) {
+        payment.amountPaid = newData.amountPaid;
+        payment.status = newData.status;
+        payment.paymentLevel = newData.paymentLevel;
       }
       return payment;
     });
-    setFilteredPayments(newPayments);
+    setData(newPayments);
   }
-
+  async function overDuePayment(id) {
+    const request = await handleRequestSubmit(
+      {},
+      setLoading,
+      `accountant/payments/overdue/${id}`,
+      false,
+      "Marking as over due"
+    );
+    if (request.status === 200) {
+      const newPayments = data.map((payment) => {
+        if (payment.id === id) {
+          payment.status = "OVERDUE";
+        }
+        return payment;
+      });
+      setData(newPayments);
+    }
+  }
   return (
     <Container maxWidth="xxl" px={{ xs: 2, md: 4 }}>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-      >
-        <Button variant="contained" onClick={handlePrevMonth}>
-          Prevouis month
-        </Button>
-        <Typography variant="h6">{currentMonth.format("MMMM YYYY")}</Typography>
-        <Button variant="contained" onClick={handleNextMonth}>
-          Next month
-        </Button>
-      </Box>
-      <Box mb={3} sx={{ overflow: "auto" }}>
-        <BigCalendar
-          localizer={localizer}
-          events={events}
-          startAccessor="start"
-          endAccessor="end"
-          views={["month"]}
-          date={currentMonth.toDate()} // Pass the current month to the calendar
-          onNavigate={(date) => {
-            const newMonth = moment(date);
-            if (!currentMonth.isSame(newMonth, "month")) {
-              setCurrentMonth(newMonth);
-            }
-          }}
-          onSelectEvent={handleDateSelect}
-          selectable
-          style={{ height: 500, minWidth: 800 }}
-          popup
-          toolbar={false}
-        />
-      </Box>
       <Box
         mb={3}
         display="flex"
@@ -196,23 +137,70 @@ const PaymentCalendar = () => {
         <Button variant="outlined" onClick={handleResetFilter}>
           Reset filter
         </Button>
-        <Select
-          value={status}
-          onChange={handleStatusChange}
-          displayEmpty
-          inputProps={{ "aria-label": "Filter by status" }}
-        >
-          <MenuItem value="ALL">All</MenuItem>
-          <MenuItem value="PENDING">Pending</MenuItem>
-          <MenuItem value="FULLY_PAID">Paid</MenuItem>
-          <MenuItem value="OVERDUE">Over rude</MenuItem>
-        </Select>
+        <Grid2 spacing={2} container sx={{ flex: 1, maxWidth: "1200px" }}>
+          <Grid2 size={4}>
+            <SearchComponent
+              apiEndpoint="search?model=client"
+              setFilters={setFilters}
+              inputLabel="Search client by name or phone"
+              renderKeys={["name", "phone"]}
+              mainKey="name"
+              searchKey={"clientId"}
+              withParamsChange={true}
+            />
+          </Grid2>
+          <Grid2 size={4}>
+            <FormControl fullWidth={true}>
+              <InputLabel id="status">Status</InputLabel>
+              <Select
+                value={status}
+                onChange={handleStatusChange}
+                labelId="status"
+                label="Status"
+                displayEmpty
+                inputProps={{ "aria-label": "Filter by status" }}
+              >
+                <MenuItem value="ALL">All</MenuItem>
+                <MenuItem value="PENDING">Pending</MenuItem>
+                <MenuItem value="FULLY_PAID">Paid</MenuItem>
+                <MenuItem value="OVERDUE">Over rude</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid2>
+          <Grid2 size={4}>
+            <FormControl fullWidth={true}>
+              <InputLabel id="paymentLevel">Payment level</InputLabel>
+              <Select
+                value={paymentLevel}
+                onChange={handlePaymentLevel}
+                labelId="paymentLevel"
+                label="Payment level"
+                displayEmpty
+                inputProps={{ "aria-label": "Filter by status" }}
+              >
+                <MenuItem value="ALL">All</MenuItem>
+                {Object.keys(PaymentLevels).map((key) => (
+                  <MenuItem key={key} value={key}>
+                    {PaymentLevels[key]}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid2>
+        </Grid2>
       </Box>
       <AdminTable
-        data={filteredPayments} // Use filtered payments based on selected date
+        data={data}
         columns={columns}
         loading={loading}
-        noPagination={true}
+        limit={limit}
+        page={page}
+        total={total}
+        setPage={setPage}
+        setLimit={setLimit}
+        setTotal={setTotal}
+        setData={setData}
+        totalPages={totalPages}
         withEdit={true}
         handleAfterEdit={(data) => handleAfterEdit(data)}
         editHref={"accountant/payments/pay"}
@@ -223,6 +211,12 @@ const PaymentCalendar = () => {
         extraComponent={({ item }) => (
           <>
             <Box sx={{ display: "flex", gap: 2 }}>
+              <ConfirmWithActionModel
+                label="Mark as over due"
+                title="Mark payment as over due"
+                description="Are you sure you want to mark this payment as over due?"
+                handleConfirm={() => overDuePayment(item.id)}
+              />
               <Button
                 component={Link}
                 href={"/dashboard/deals/" + item.clientLead.id}

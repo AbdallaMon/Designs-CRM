@@ -148,6 +148,8 @@ const KanbanBoard = ({
                     }
                     if (type === "two-d") {
                       return lead.twoDWorkStage === status;
+                    } else if (type === "exacuter") {
+                      return lead.twoDExacuterStage === status;
                     }
                     return lead.status === status;
                   })

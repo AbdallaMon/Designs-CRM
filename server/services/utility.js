@@ -142,7 +142,8 @@ export const verifyTokenAndHandleAuthorization = (req, res, next, role) => {
         decoded.role !== "THREE_D_DESIGNER" &&
         decoded.role !== "TWO_D_DESIGNER" &&
         decoded.role !== "ACCOUNTANT" &&
-        decoded.role !== "SUPER_ADMIN"
+        decoded.role !== "SUPER_ADMIN" &&
+        decoded.role !== "TWO_D_EXECUTOR"
       ) {
         return res.status(403).json({ message: "Not authorized" });
       }
@@ -153,6 +154,16 @@ export const verifyTokenAndHandleAuthorization = (req, res, next, role) => {
         decored.role !== "SUPER_ADMIN"
       ) {
         return res.status(403).json({ message: "Not authorized" });
+      } else if (role === "STAFF") {
+        if (
+          decoded.role !== "STAFF" &&
+          decoded.role !== "THREE_D_DESIGNER" &&
+          decoded.role !== "TWO_D_DESIGNER" &&
+          decoded.role !== "ACCOUNTANT" &&
+          decoded.role !== "TWO_D_EXECUTOR"
+        ) {
+          return res.status(403).json({ message: "Not authorized" });
+        }
       } else if (decoded.role !== role) {
         return res.status(403).json({ message: "Not authorized" });
       }
@@ -559,7 +570,10 @@ export async function createNotification(
     const users = await prisma.user.findMany({
       where: {
         isActive: true,
-        role: { in: role },
+        OR: [
+          { role: { in: role } }, // Search in the main role
+          { subRoles: { some: { subRole: { in: role } } } }, // Search in subRoles
+        ],
       },
       select: {
         id: true,

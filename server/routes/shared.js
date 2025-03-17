@@ -365,7 +365,11 @@ router.get("/work-stages", async (req, res) => {
   try {
     const searchParams = req.query;
     const token = getTokenData(req, res);
-    if (token.role === "THREE_D_DESIGNER" || token.role === "TWO_D_DESIGNER") {
+    if (
+      token.role === "THREE_D_DESIGNER" ||
+      token.role === "TWO_D_DESIGNER" ||
+      token.role === "TWO_D_EXECUTOR"
+    ) {
       searchParams.userId = token.id;
     }
     const clientLeads = await getWorkStagesLeadsByDateRange({ searchParams });

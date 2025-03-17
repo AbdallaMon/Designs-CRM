@@ -70,10 +70,7 @@ const PaymentDialog = ({ payments }) => {
                             </>
                           )}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Due Date:{" "}
-                          {dayjs(payment.dueDate).format("DD/MM/YYYY")}
-                        </Typography>
+
                         <Typography variant="body2" color="text.secondary">
                           Payment Reason: {payment.paymentReason}
                         </Typography>

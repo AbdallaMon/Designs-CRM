@@ -77,6 +77,8 @@ const LeadCard = ({ lead, movelead, admin, setleads, type }) => {
           ? lead.threeDWorkStage
           : type === "two-d"
           ? lead.twoDWorkStage
+          : type === "exacuter"
+          ? lead.twoDExacuterStage
           : lead.status,
       ...lead,
     },
@@ -273,7 +275,7 @@ const LeadCard = ({ lead, movelead, admin, setleads, type }) => {
           ))}
         </Menu>
       )}
-      {type === "three-d" || type === "two-d" ? (
+      {type === "three-d" || type === "two-d" || type === "exacuter" ? (
         <PreviewWorkStage
           type={type}
           open={previewDialogOpen}

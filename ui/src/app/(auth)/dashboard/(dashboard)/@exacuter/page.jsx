@@ -6,7 +6,7 @@ export default function Page({ searchParams }) {
       searchParams={searchParams}
       staff={true}
       nextCall={true}
-      type="three-d"
+      type="exacuter"
     />
   );
 }

@@ -39,6 +39,7 @@ import {
   LeadCategory,
   statusColors,
   ThreeDWorkStages,
+  TwoDExacuterStages,
   TwoDWorkStages,
 } from "@/app/helpers/constants.js";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader.jsx";
@@ -84,7 +85,12 @@ const LeadContent = ({
   const open = Boolean(anchorEl);
   const { setLoading } = useToastContext();
   async function createADeal(lead) {
-    const type = user.role === "THREE_D_DESIGNER" ? "three-d" : "two-d";
+    const type =
+      user.role === "THREE_D_DESIGNER"
+        ? "three-d"
+        : user.role === "TWO_D_DESIGNER"
+        ? "two-d"
+        : "exacuter";
 
     const assign = await handleRequestSubmit(
       lead,
@@ -111,7 +117,11 @@ const LeadContent = ({
       {
         status: value,
         oldStatus:
-          type === "three-d" ? lead.threeDWorkStage : lead.twoDWorkStage,
+          type === "three-d"
+            ? lead.threeDWorkStage
+            : type === "two-d"
+            ? lead.twoDWorkStage
+            : lead.twoDExacuterStage,
         isAdmin: isAdmin,
       },
       setLoading,
@@ -125,7 +135,9 @@ const LeadContent = ({
       const update =
         type === "three-d"
           ? { threeDWorkStage: value }
-          : { twoDWorkStage: value };
+          : type === "two-d"
+          ? { twoDWorkStage: value }
+          : { twoDExacuterStage: value };
       if (setleads) {
         setleads((prev) =>
           prev.map((l) => (l.id === lead.id ? { ...l, ...update } : l))
@@ -141,12 +153,16 @@ const LeadContent = ({
   const leadStatus =
     type === "three-d"
       ? enumToKeyValueArray(ThreeDWorkStages)
-      : enumToKeyValueArray(TwoDWorkStages);
+      : type === "two-d"
+      ? enumToKeyValueArray(TwoDWorkStages)
+      : enumToKeyValueArray(TwoDExacuterStages);
   const isNotUser = () => {
     if (type === "three-d") {
       return user.id !== lead.threeDDesignerId;
-    } else {
+    } else if (type === "two-d") {
       return user.id !== lead.twoDDesignerId;
+    } else {
+      return user.id !== lead.twoDExacuterId;
     }
   };
   const notUser = isNotUser();
@@ -173,7 +189,9 @@ const LeadContent = ({
             !isAdmin ? (
               ""
             ) : (
-              <Typography variant="h6">{lead.client.name}</Typography>
+              <Typography variant="h6">
+                #{lead.id} {lead.client.name}
+              </Typography>
             )}
           </Stack>
           <Stack
@@ -184,7 +202,8 @@ const LeadContent = ({
           >
             {isPage &&
             ((!lead.twoDDesignerId && type === "two-d") ||
-              (!lead.threeDDesignerId && type === "three-d")) &&
+              (!lead.threeDDesignerId && type === "three-d") ||
+              (!lead.twoDExacuterId && type === "excauter")) &&
             !isAdmin ? (
               <ConfirmWithActionModel
                 title={
@@ -232,7 +251,9 @@ const LeadContent = ({
                       statusColors[
                         type === "three-d"
                           ? lead.threeDWorkStage
-                          : lead.twoDWorkStage
+                          : type === "two-d"
+                          ? lead.twoDWorkStage
+                          : lead.twoDExacuterStage
                       ],
                     fontWeight: 500,
                     borderRadius: "50px",
@@ -240,7 +261,9 @@ const LeadContent = ({
                 >
                   {type === "three-d"
                     ? ThreeDWorkStages[lead.threeDWorkStage]
-                    : TwoDWorkStages[lead.twoDWorkStage]}
+                    : type == "two-d"
+                    ? TwoDWorkStages[lead.twoDWorkStage]
+                    : TwoDExacuterStages[lead.twoDExacuterStage]}
                 </Button>
                 <Menu
                   id="basic-menu"
@@ -480,7 +503,6 @@ export function EmailRedirect({ email }) {
 }
 function LeadData({ lead }) {
   const theme = useTheme();
-  const { user } = useAuth();
   return (
     <Stack spacing={3}>
       <InfoCard title="Lead Information" icon={BsBuilding} theme={theme}>
@@ -561,7 +583,6 @@ function LeadData({ lead }) {
                   Client Name
                 </Typography>
                 <Typography variant="body1">{lead.client.name}</Typography>
-
                 <WhatsAppRedirect lead={lead} />
                 <Typography color="text.secondary" variant="caption">
                   Client Email
@@ -629,6 +650,8 @@ const PreviewWorkStage = ({
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [loading, setLoading] = useState(true);
   const [lead, setLead] = useState(null);
+  const { user } = useAuth();
+  const isAdmin = checkIfAdmin(user);
   useEffect(() => {
     async function getALeadDetails() {
       if (open) {

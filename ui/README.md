@@ -39,9 +39,29 @@
 - Notification after each lead change for each type i mean for 2 d they wait 3d and 3d wait finalize
 - Admin can make a user have more than one role
 - Super admin cant see users and can only see 3d and 2d actions
-
 - Add logs online (for users when he sign in and sign out saved as a log from 8 to 10 for examble then total work for today)
 - Fix notifications to redirect for new staff roles
+- three d designer تعديل اول تعديل تاني تعديل ثالث (cant back from two to one ect)
+  THREE D => 3D
 
+  - two d
+    quantatiy
+  - new account التنفيذ
+  - progress
+  - قيد التسعير اجباري رفع 2 بي دي اف تكلفه علينا وتكلفه علي المقاول
+  - مقبول
+  - مرفوض
+
+- Actual update call date
+- Client lead id before client name
+- Remove dates on payments and add payment reason
+
+  - payments
+  - الاجور
+  - مصاريف التشغيليه
+  - الايجارات
+
+- check notifications
+- remove whatsapp icon
   dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

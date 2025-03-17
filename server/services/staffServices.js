@@ -167,6 +167,7 @@ export async function updateCallReminderStatus({
     data: {
       status,
       callResult: status === "DONE" ? callResult : "Missed call",
+      updatedAt: new Date(),
     },
     select: {
       id: true,
@@ -176,6 +177,7 @@ export async function updateCallReminderStatus({
       callResult: true,
       userId: true,
       clientLeadId: true,
+      updatedAt: true,
       user: {
         select: { name: true },
       },

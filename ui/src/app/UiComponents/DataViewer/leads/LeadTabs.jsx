@@ -108,25 +108,32 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
                   alignItems="center"
                 >
                   <Stack direction="row" spacing={2} alignItems="center">
-                    <Chip
-                      size="small"
-                      icon={
-                        call.status === "DONE" ? (
-                          <RiCheckboxCircleLine size={16} />
-                        ) : (
-                          <RiAlarmLine size={16} />
-                        )
-                      }
-                      label={call.status.replace(/_/g, " ")}
-                      sx={{
-                        ...getStatusStyles(call.status),
-                        fontWeight: 600,
-                        border: "1px solid",
-                        "& .MuiChip-icon": {
-                          color: "inherit",
-                        },
-                      }}
-                    />
+                    <Box>
+                      <Chip
+                        size="small"
+                        icon={
+                          call.status === "DONE" ? (
+                            <RiCheckboxCircleLine size={16} />
+                          ) : (
+                            <RiAlarmLine size={16} />
+                          )
+                        }
+                        label={call.status.replace(/_/g, " ")}
+                        sx={{
+                          ...getStatusStyles(call.status),
+                          fontWeight: 600,
+                          border: "1px solid",
+                          "& .MuiChip-icon": {
+                            color: "inherit",
+                          },
+                        }}
+                      />
+                      {call.status !== "IN_PROGRESS" && (
+                        <Typography variant="body2" fontWeight="600">
+                          Done at ,{dayjs(call.updatedAt).format("DD/MM/YYYY")}
+                        </Typography>
+                      )}
+                    </Box>
                     {!admin && user.role !== "ACCOUNTANT" && (
                       <>
                         {call.status === "IN_PROGRESS" && (

@@ -1,15 +1,12 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Box, Button, Container } from "@mui/material";
-import moment from "moment";
-import "react-big-calendar/lib/css/react-big-calendar.css";
-import { getData } from "@/app/helpers/functions/getData";
 import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
-import { useAuth } from "@/app/providers/AuthProvider";
-import { useSearchParams } from "next/navigation";
-import { PaymentStatus } from "@/app/helpers/constants";
+import { PaymentLevels, PaymentStatus } from "@/app/helpers/constants";
 import DateRangeFilter from "../../formComponents/DateRangeFilter";
 import Link from "next/link";
+import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
+import SearchComponent from "../../formComponents/SearchComponent";
 
 const inputs = [
   {
@@ -43,7 +40,12 @@ const columns = [
   { name: "amount", label: "Amount" },
   { name: "amountPaid", label: "Amount paid" },
 
-  { name: "dueDate", label: "Due date" },
+  {
+    name: "paymentLevel",
+    label: "Payment level",
+    type: "enum",
+    enum: PaymentLevels,
+  },
   {
     name: "status",
     label: "Payment status",
@@ -53,22 +55,25 @@ const columns = [
 ];
 
 const OverduePayments = () => {
-  const [payments, setPayments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState();
-  const fetchPayments = async (month, paymentId = null) => {
-    let response;
-    response = await getData({
-      url: `accountant/payments?type=OVERDUE&status=OVERDUE&range=${
-        filters?.range ? JSON.stringify(filters.range) : ""
-      }&`,
-      setLoading,
-    });
-    setPayments(response.data || []);
-  };
-  useEffect(() => {
-    fetchPayments();
-  }, [filters]);
+  const {
+    data,
+    loading,
+    setData,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    setTotal,
+    totalPages,
+    setFilters,
+  } = useDataFetcher(
+    `accountant/payments?type=OVERDUE&status=OVERDUE&`,
+    false,
+    {
+      status: "OVERDUE",
+    }
+  );
 
   function handleAfterEdit(data) {
     const newPayments = payments.map((payment) => {
@@ -78,17 +83,43 @@ const OverduePayments = () => {
       }
       return payment;
     });
-    setPayments(newPayments);
+    setData(newPayments);
   }
 
   return (
     <Container maxWidth="xxl" px={{ xs: 2, md: 4 }}>
-      <DateRangeFilter setFilters={setFilters} lastThreeMonth={true} />
+      <Box
+        mb={3}
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+      >
+        <Button variant="outlined" onClick={handleResetFilter}>
+          Reset filter
+        </Button>
+
+        <SearchComponent
+          apiEndpoint="search?model=client"
+          setFilters={setFilters}
+          inputLabel="Search client by name or phone"
+          renderKeys={["name", "phone"]}
+          mainKey="name"
+          searchKey={"clientId"}
+          withParamsChange={true}
+        />
+      </Box>
       <AdminTable
-        data={payments}
+        data={data}
         columns={columns}
         loading={loading}
-        noPagination={true}
+        limit={limit}
+        page={page}
+        total={total}
+        setPage={setPage}
+        setLimit={setLimit}
+        setTotal={setTotal}
+        setData={setData}
+        totalPages={totalPages}
         withEdit={true}
         handleAfterEdit={(data) => handleAfterEdit(data)}
         editHref={"accountant/payments/pay"}

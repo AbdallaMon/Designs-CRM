@@ -10,7 +10,6 @@ import {
   updateWorkStageStatusNotification,
 } from "./notification.js";
 import { ClientLeadStatus, LeadWorkStages } from "./enums.js";
-import { ThreeDWorkStage } from "@prisma/client";
 
 export async function getClientLeads({ limit = 1, skip = 10, searchParams }) {
   let where = {};
@@ -264,6 +263,7 @@ export async function getClientLeadDetails(clientLeadId, searchParams) {
           reminderReason: true,
           callResult: true,
           userId: true,
+          updatedAt: true,
           user: {
             select: { name: true },
           },
@@ -280,7 +280,6 @@ export async function getClientLeadDetails(clientLeadId, searchParams) {
           amount: true,
           amountPaid: true,
           amountLeft: true,
-          dueDate: true,
           paymentReason: true,
         },
       },
@@ -414,10 +413,10 @@ export async function makePayments(data, leadId) {
   data.map((payment) => {
     payment.amountLeft = Number(payment.amount);
     payment.amount = Number(payment.amount);
-    payment.paymentReason = "Final price payment";
+    payment.paymentReason = payment.paymentReason;
     payment.clientLeadId = Number(leadId);
-    payment.dueDate = new Date(payment.dueDate).toISOString();
   });
+  console.log(data, "data");
   await prisma.payment.createMany({ data });
   return data;
 }
@@ -433,7 +432,6 @@ export async function makeExtraServicePayments({
     payment.amount = Number(payment.amount);
     payment.paymentReason = paymentReason || "Extra service";
     payment.clientLeadId = Number(leadId);
-    payment.dueDate = new Date(payment.dueDate).toISOString();
   });
   await prisma.payment.createMany({ data });
   await prisma.extraService.create({
@@ -1093,7 +1091,7 @@ export async function getNewWorkStagesLeads({
   searchParams,
 }) {
   let where = {};
-
+  console.log(searchParams, "searchParams");
   const filters = JSON.parse(searchParams.filters);
   where = {
     status: "FINALIZED",
@@ -1103,6 +1101,11 @@ export async function getNewWorkStagesLeads({
       in: ["THREE_D_APPROVAL"],
     };
     where.twoDDesignerId = null;
+  } else if (searchParams.type === "exacuter") {
+    where.twoDWorkStage = {
+      in: ["FINAL_DELIVERY"],
+    };
+    where.twoDExacuterId = null;
   }
 
   if (
@@ -1127,6 +1130,11 @@ export async function getNewWorkStagesLeads({
       };
     } else if (searchParams.type === "two-d") {
       where.twoDAssignedAt = {
+        gte: start.toDate(),
+        lte: end.toDate(),
+      };
+    } else if (searchParams.type === "exacuter") {
+      where.twoDExacuterAssignedAt = {
         gte: start.toDate(),
         lte: end.toDate(),
       };
@@ -1166,11 +1174,16 @@ export async function getNewWorkStagesLeads({
             name: true,
           },
         },
+        twoDExacuter: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     }),
     prisma.clientLead.count({ where }),
   ]);
-  console.log(clientLeads, "clientLeads");
   const totalPages = Math.ceil(total / limit);
 
   return { data: clientLeads, total, totalPages };
@@ -1179,12 +1192,14 @@ export async function getNewWorkStagesLeads({
 export async function getWorkStagesLeadsByDateRange({ searchParams }) {
   const filters = JSON.parse(searchParams.filters);
   const where = {};
-  console.log(searchParams, "search");
   if (searchParams.type === "three-d") {
     where.threeDDesigner = { isNot: null };
   }
   if (searchParams.type === "two-d") {
     where.twoDDesigner = { isNot: null };
+  }
+  if (searchParams.type === "exacuter") {
+    where.twoDExacuter = { isNot: null };
   }
   if (filters?.range) {
     const { startDate, endDate } = filters.range;
@@ -1203,6 +1218,12 @@ export async function getWorkStagesLeadsByDateRange({ searchParams }) {
         lte: end.toDate(),
       };
     }
+    if (searchParams.type === "exacuter") {
+      where.twoDExacuterAssignedAt = {
+        gte: start.toDate(),
+        lte: end.toDate(),
+      };
+    }
   } else {
     if (searchParams.type === "three-d") {
       where.threeDAssignedAt = {
@@ -1212,6 +1233,12 @@ export async function getWorkStagesLeadsByDateRange({ searchParams }) {
     }
     if (searchParams.type === "two-d") {
       where.twoDAssignedAt = {
+        gte: dayjs().subtract(3, "month").toDate(),
+        lte: dayjs().toDate(),
+      };
+    }
+    if (searchParams.type === "exacuter") {
+      where.twoDExacuterAssignedAt = {
         gte: dayjs().subtract(3, "month").toDate(),
         lte: dayjs().toDate(),
       };
@@ -1227,15 +1254,19 @@ export async function getWorkStagesLeadsByDateRange({ searchParams }) {
   ) {
     if (searchParams.type === "three-d") {
       where.threeDDesignerId = Number(filters.staffId);
-    } else {
+    } else if (searchParams.type === "two-d") {
       where.twoDDesignerId = Number(filters.staffId);
+    } else if (searchParams.type === "exacuter") {
+      where.twoDExacuterId = Number(filters.staffId);
     }
   }
   if (searchParams.userId) {
     if (searchParams.type === "three-d") {
       where.threeDDesignerId = Number(searchParams.userId);
-    } else {
+    } else if (searchParams.type === "two-d") {
       where.twoDDesignerId = Number(searchParams.userId);
+    } else if (searchParams.type === "exacuter") {
+      where.twoDExacuterId = Number(searchParams.userId);
     }
   }
 
@@ -1248,6 +1279,8 @@ export async function getWorkStagesLeadsByDateRange({ searchParams }) {
       client: { select: { name: true } },
       threeDWorkStage: true,
       twoDWorkStage: true,
+      twoDExacuterStage: true,
+
       price: true,
       averagePrice: true,
       priceWithOutDiscount: true,
@@ -1272,6 +1305,7 @@ export async function getWorkStageLeadDetails(clientLeadId) {
       id: true,
       threeDDesignerId: true,
       twoDDesignerId: true,
+      twoDExacuterId: true,
       clientDescription: true,
       country: true,
       timeToContact: true,
@@ -1298,12 +1332,20 @@ export async function getWorkStageLeadDetails(clientLeadId) {
           email: true,
         },
       },
+      twoDExacuter: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
       selectedCategory: true,
       description: true,
       type: true,
       emirate: true,
       threeDWorkStage: true,
       twoDWorkStage: true,
+      twoDExacuterStage: true,
       price: true,
       averagePrice: true,
       priceWithOutDiscount: true,
@@ -1378,6 +1420,7 @@ export async function getWorkStageLeadDetails(clientLeadId) {
   ];
   return clientLead;
 }
+
 export async function updateLeadWorkStage({
   clientLeadId,
   status,
@@ -1385,32 +1428,61 @@ export async function updateLeadWorkStage({
   isAdmin,
   type,
 }) {
+  console.log(oldStatus, "oldStatus");
+  console.log(type, "stuats");
   if (!isAdmin) {
-    if (oldStatus === "THREE_D_APPROVAL" || oldStatus === "FINAL_DELIVERY") {
+    if (
+      oldStatus === "THREE_D_APPROVAL" ||
+      oldStatus === "FINAL_DELIVERY" ||
+      oldStatus === "REJECTED" ||
+      oldStatus === "ACCEPTED"
+    ) {
       throw new Error(
         "You cant change the status after approval only admin can ,Contact your administrator to take an action"
       );
     }
+    if (
+      oldStatus === "FIRST_MODIFICATION" &&
+      status !== "SECOND_MODIFICATION" &&
+      status !== "THIRD_MODIFICATION" &&
+      status !== "THREE_D_APPROVAL"
+    ) {
+      throw new Error("You can only change the status to SECOND_MODIFICATION");
+    }
+    if (
+      oldStatus === "SECOND_MODIFICATION" &&
+      status !== "THIRD_MODIFICATION" &&
+      status !== "THREE_D_APPROVAL"
+    ) {
+      throw new Error("You can only change the status to THIRD_MODIFICATION");
+    }
+    if (oldStatus === "THIRD_MODIFICATION" && status !== "THREE_D_APPROVAL") {
+      throw new Error("You can only change the status to THREE_D_APPROVAL");
+    }
   } else {
-    if (oldStatus !== "THREE_D_APPROVAL" && oldStatus !== "FINAL_DELIVERY") {
+    if (
+      oldStatus !== "THREE_D_APPROVAL" &&
+      oldStatus !== "FINAL_DELIVERY" &&
+      oldStatus !== "THIRD_MODIFICATION" &&
+      oldStatus !== "SECOND_MODIFICATION" &&
+      oldStatus !== "FIRST_MODIFICATION" &&
+      oldStatus !== "REJECTED" &&
+      oldStatus !== "ACCEPTED"
+    ) {
       throw new Error(
-        "You are only allowed to change the status from APPROVAL or FINAL DELIVERY"
+        "You are only allowed to change the status from APPROVAL, FINAL DELIVERY or the modification stages"
       );
     }
   }
   const data = {
     updatedAt: new Date(),
   };
-  if (type === "three-d" && !isAdmin) {
+  if (type === "three-d") {
     data.threeDWorkStage = status;
-  } else if (type === "two-d" && !isAdmin) {
+  } else if (type === "two-d") {
     data.twoDWorkStage = status;
-  } else {
-    if (oldStatus === "THREE_D_APPROVAL") {
-      data.threeDWorkStage = status;
-    } else {
-      data.twoDWorkStage = status;
-    }
+  } else if (type === "exacuter") {
+    data.twoDExacuterStage = status;
   }
   let heading = isAdmin
     ? "Lead status changed by admin"
@@ -1490,6 +1562,15 @@ export async function assignWorkStageLeadToAUser(clientLeadId, userId, type) {
       select: { id: true, name: true },
     };
   }
+  if (type === "exacuter") {
+    updateLeadData.twoDExacuterId = userId;
+    updateLeadData.twoDExacuterAssignedAt = new Date();
+    updateLeadData.twoDExacuterStage = "PROGRESS";
+    leadSelect.twoDExacuter = {
+      select: { id: true, name: true },
+    };
+  }
+
   const updatedClientLead = await prisma.clientLead.update({
     where: { id: clientLeadId },
     data: updateLeadData,

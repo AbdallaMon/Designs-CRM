@@ -38,7 +38,7 @@ export default function NewWrokstagesLeadsPage({
   } = useDataFetcher(`shared/work-stages/new?type=${type}&`, false, {
     clientId: searchParams.clientId ? searchParams.clientId : null,
   });
-
+  console.log(data, "data");
   return (
     <Container maxWidth="xxl">
       <LeadsSlider
@@ -57,6 +57,7 @@ export default function NewWrokstagesLeadsPage({
             lead={lead}
             key={lead.id}
             setData={setData}
+            type={type}
           />
         ))}
       </LeadsSlider>
@@ -65,12 +66,11 @@ export default function NewWrokstagesLeadsPage({
   );
 }
 
-function WorkStageLeadSliderCard({ lead, setData }) {
+function WorkStageLeadSliderCard({ lead, setData, type }) {
   const formattedDate = dayjs(lead.createdAt).format("YYYY-MM-DD");
   const { user } = useAuth();
   const { setLoading } = useToastContext();
   const isAdmin = checkIfAdmin(user);
-  const type = user.role === "THREE_D_DESIGNER" ? "three-d" : "two-d";
   async function createADeal(lead) {
     const assign = await handleRequestSubmit(
       lead,

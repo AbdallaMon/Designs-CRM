@@ -60,16 +60,22 @@ export const adminLinks = [
     icon: <FiDollarSign size={20} />,
     subLinks: [
       {
-        name: "Three D work stages",
+        name: "3D work stages",
         href: "/dashboard/work-stages/three-d",
         active: "three-d",
         icon: <FiDollarSign size={20} />,
       },
       {
-        name: "Two D work stages",
+        name: "2D work stages",
         href: "/dashboard/work-stages/twp-d",
         icon: <FiClock size={18} />,
         active: "two-d",
+      },
+      {
+        name: "2D exacuter work stages",
+        href: "/dashboard/work-stages/exacuter",
+        icon: <FiClock size={18} />,
+        active: "exacuter",
       },
     ],
   },
@@ -191,11 +197,39 @@ export const twoDLinks = [
     icon: <FiBriefcase size={20} />,
   },
 ];
+export const exacuterLinks = [
+  { name: "Leads", href: "/dashboard", icon: <FiTarget size={20} /> },
+  {
+    name: "Work stage",
+    href: "/dashboard/work-stages",
+    icon: <FiBriefcase size={20} />,
+  },
+];
 export const accountantLinks = [
   { name: "Payments", href: "/dashboard", icon: <FiTarget size={20} /> },
   {
     name: "Overdue Payments",
     href: "/dashboard/overdue",
+    icon: <FiTarget size={20} />,
+  },
+  {
+    name: "Operational Expenses",
+    href: "/dashboard/operational-expenses",
+    icon: <FiTarget size={20} />,
+  },
+  {
+    name: "Rents",
+    href: "/dashboard/rents",
+    icon: <FiTarget size={20} />,
+  },
+  {
+    name: "Salaries",
+    href: "/dashboard/salaries",
+    icon: <FiTarget size={20} />,
+  },
+  {
+    name: "Outstanding Payments",
+    href: "/dashboard/outcome",
     icon: <FiTarget size={20} />,
   },
 ];
@@ -206,6 +240,7 @@ export default function Layout({
   twoD,
   accountant,
   super_admin,
+  exacuter,
 }) {
   const router = useRouter();
   let { user, isLoggedIn, validatingAuth } = useAuth();
@@ -252,6 +287,8 @@ export default function Layout({
             ? twoDLinks
             : role === "ACCOUNTANT"
             ? accountantLinks
+            : role === "TWO_D_EXECUTOR"
+            ? exacuterLinks
             : superAdminLinks
         }
       />
@@ -265,6 +302,8 @@ export default function Layout({
         ? twoD
         : role === "ACCOUNTANT"
         ? accountant
+        : role === "TWO_D_EXECUTOR"
+        ? exacuter
         : super_admin}
     </Box>
   );

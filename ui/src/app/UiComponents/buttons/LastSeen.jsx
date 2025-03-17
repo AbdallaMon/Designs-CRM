@@ -44,9 +44,8 @@ export default function LastSeen({ userId, initialLastSeen }) {
   }, [userId]);
   const isOnline =
     userLog &&
-    userLog.lastSeen &&
-    dayjs().diff(dayjs(userLog.lastSeen), "minute") < 5;
-
+    userLog.lastSeenAt &&
+    dayjs().diff(dayjs(userLog.lastSeenAt), "minute") < 5;
   return (
     <Box display="flex" alignItems="center" gap={1}>
       {loading ? (
@@ -56,7 +55,7 @@ export default function LastSeen({ userId, initialLastSeen }) {
           <Typography variant="body2" color={isOnline ? "green" : "gray"}>
             {isOnline
               ? "Online"
-              : `Last seen: ${dayjs(userLog.lastSeen).fromNow()}`}
+              : `Last seen: ${dayjs(userLog.lastSeenAt).fromNow()}`}
           </Typography>
           <Typography variant="body2" color={isOnline ? "green" : "gray"}>
             {`Total hours: ${userLog.totalHours}`}

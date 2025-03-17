@@ -32,6 +32,15 @@ export const PaymentStatus = {
   FULLY_PAID: "Fully paid",
   OVERDUE: "Overdue",
 };
+export const PaymentLevels = {
+  LEVEL_1: "First Payment",
+  LEVEL_2: "Second Payment",
+  LEVEL_3: "Third Payment",
+  LEVEL_4: "Fourth Payment",
+  LEVEL_5: "Fifth Payment",
+  LEVEL_6: "Sixth Payment",
+  LEVEL_7_OR_MORE: "Seventh Payment or more",
+};
 export const LeadCategory = {
   CONSULTATION: "Consultation",
   DESIGN: "Design",
@@ -174,13 +183,23 @@ export const ThreeDWorkStages = {
   CLIENT_COMMUNICATION: "Client Communication",
   DESIGN_STAGE: "Design Stage",
   THREE_D_STAGE: "3D Stage",
+  FIRST_MODIFICATION: "First Modification",
+  SECOND_MODIFICATION: "Second Modification",
+  THIRD_MODIFICATION: "Third Modification",
   THREE_D_APPROVAL: "3D Approval",
 };
 
 // Work Stages for 2D Designer
 export const TwoDWorkStages = {
   DRAWING_PLAN: "Drawing Plan",
+  QUANTITY: "Quantity",
   FINAL_DELIVERY: "Final Delivery",
+};
+export const TwoDExacuterStages = {
+  PROGRESS: "Progress",
+  PRICING: "Pricing",
+  ACCEPTED: "Accepted",
+  REJECTED: "Rejected",
 };
 
 export const KanbanLeadsStatus = {
@@ -205,6 +224,14 @@ export const statusColors = {
   THREE_D_APPROVAL: "#0d9488",
   DRAWING_PLAN: "#f97316",
   FINAL_DELIVERY: "#0f766e",
+  FIRST_MODIFICATION: "#3b82f6",
+  SECOND_MODIFICATION: "#10b981",
+  THIRD_MODIFICATION: "#f59e0b",
+  PROGRESS: "#0d9488",
+  PRICING: "#3b82f6",
+  ACCEPTED: "#10b981",
+  REJECTED: "#ef4444",
+  QUANTITY: "#f97316",
 };
 
 export const KanbanStatusArray = [
@@ -263,6 +290,7 @@ export const userRoles = [
   { value: "THREE_D_DESIGNER", label: "3D Designer" },
   { value: "TWO_D_DESIGNER", label: "2D Designer" },
   { value: "ACCOUNTANT", label: "Accountant" },
+  { value: "TWO_D_EXECUTOR", label: "Two d executor" },
   { value: "SUPER_ADMIN", label: "Admin" },
 ];
 export const userRolesEnum = {
@@ -270,5 +298,6 @@ export const userRolesEnum = {
   THREE_D_DESIGNER: "3D Designer",
   TWO_D_DESIGNER: "2D Designer",
   ACCOUNTANT: "Accountant",
+  TWO_D_EXECUTOR: "Two d executor",
   SUPER_ADMIN: "Admin",
 };
