@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { FaCalendarMonth, FaMoneyBillWave } from "react-icons/fa6";
 import dayjs from "dayjs";
+import { MdCalendarMonth, MdMoney } from "react-icons/md";
 const columns = [
   { name: "amount", label: "Amount" },
   { name: "type", label: "Type" },
@@ -60,7 +61,7 @@ const OutCome = () => {
     </Container>
   );
 };
-const OutcomeSummary = ({ totalAmount, currentMonthAmount }) => {
+function OutcomeSummary({ totalAmount, currentMonthAmount }) {
   // Format currency values with AED
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-AE", {
@@ -72,9 +73,10 @@ const OutcomeSummary = ({ totalAmount, currentMonthAmount }) => {
 
   // Current month and year using dayjs
   const currentMonthYear = dayjs().format("MMMM YYYY");
+  if (!totalAmount) return null;
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+    <Box sx={{ mb: 6 }}>
       <Grid container spacing={3}>
         {/* Current Month Box */}
         <Grid size={{ xs: 12, md: 6 }}>
@@ -83,13 +85,13 @@ const OutcomeSummary = ({ totalAmount, currentMonthAmount }) => {
               p: 3,
               display: "flex",
               flexDirection: "column",
-              height: 140,
+              height: 160,
               bgcolor: "#f5f5f5",
               borderLeft: "4px solid #1976d2",
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <FaCalendarMonth size={24} color="#1976d2" />
+              <MdCalendarMonth size={24} color="#1976d2" />
               <Typography variant="h6" sx={{ ml: 1, color: "#555" }}>
                 Current Month Expenses
               </Typography>
@@ -101,7 +103,11 @@ const OutcomeSummary = ({ totalAmount, currentMonthAmount }) => {
             >
               {formatCurrency(currentMonthAmount)}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mt: 1, mb: 3 }}
+            >
               Total expenses for {currentMonthYear}
             </Typography>
           </Paper>
@@ -114,13 +120,13 @@ const OutcomeSummary = ({ totalAmount, currentMonthAmount }) => {
               p: 3,
               display: "flex",
               flexDirection: "column",
-              height: 140,
+              height: 160,
               bgcolor: "#f5f5f5",
               borderLeft: "4px solid #2e7d32",
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <FaMoneyBillWave size={24} color="#2e7d32" />
+              <MdMoney size={24} color="#2e7d32" />
               <Typography variant="h6" sx={{ ml: 1, color: "#555" }}>
                 Total Accumulation
               </Typography>
@@ -132,13 +138,18 @@ const OutcomeSummary = ({ totalAmount, currentMonthAmount }) => {
             >
               {formatCurrency(totalAmount)}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mt: 1, mb: 3 }}
+            >
+              {" "}
               All-time expense accumulation
             </Typography>
           </Paper>
         </Grid>
       </Grid>
-    </Container>
+    </Box>
   );
-};
+}
 export default OutCome;
