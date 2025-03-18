@@ -55,14 +55,23 @@
 - Actual update call date
 - Client lead id before client name
 - Remove dates on payments and add payment reason
-
   - payments
   - الاجور
   - مصاريف التشغيليه
   - الايجارات
-
-- remove whatsapp icon
 - call reminders and notes for one person only who added them
 - two files to be added for قيد التسعير
+
+- remove whatsapp icon
+- user profiles (for designer ect)
+- add default values to createModel in payment table
+
+- Select country for each user only by admin
+- Attacthments for payments
+- Admin and super admin generate pdf all thing related for the client
+- Accountant kanban levels
+- Attatchments for all
+- Every 3 hour ask user what he did in the past three hours (8-5) after 5 ask user for over time what he did
+
   dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

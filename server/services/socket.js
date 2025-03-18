@@ -22,20 +22,21 @@ export function initSocket(httpServer) {
     // Store user session start time
     userSessions.set(userId, Date.now());
 
-    // Set interval to update total minutes every 5 minutes
-    const interval = setInterval(() => {
-      if (userSessions.has(userId)) {
-        updateTotalMinutes(userId);
-      }
-    }, 5 * 60 * 1000); // 5 minutes
+    // const interval = setInterval(() => {
+    //   console.log(userSessions, "userSessions");
+    //   if (userSessions.has(userId)) {
+    //     updateTotalMinutes(userId);
+    //   }
+    // }, 5 * 60 * 1000);
 
     socket.on("heartbeat", () => {
       updateLastSeen(userId);
+      updateTotalMinutes(userId);
+
       userSessions.set(userId, Date.now()); // Refresh last active time
     });
 
     socket.on("disconnect", () => {
-      clearInterval(interval);
       updateTotalMinutes(userId);
       userSessions.delete(userId);
     });

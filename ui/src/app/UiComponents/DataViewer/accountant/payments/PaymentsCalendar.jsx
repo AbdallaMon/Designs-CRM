@@ -9,19 +9,34 @@ import {
   FormControl,
   InputLabel,
   Grid2,
+  Modal,
+  Typography,
+  IconButton,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  Paper,
+  Chip,
 } from "@mui/material";
 import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
 import { useSearchParams } from "next/navigation";
 import { PaymentLevels, PaymentStatus } from "@/app/helpers/constants";
 import Link from "next/link";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
-import ConfirmWithActionModel from "../../models/ConfirmsWithActionModel";
+import ConfirmWithActionModel from "../../../models/ConfirmsWithActionModel";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import SearchComponent from "../../formComponents/SearchComponent";
-import { IncomeOutcomeSummary } from "../accountant/IncomeOutComeSummary";
-import CreateModal from "../../models/CreateModal";
-
+import SearchComponent from "../../../formComponents/SearchComponent";
+import { IncomeOutcomeSummary } from "../IncomeOutComeSummary";
+import CreateModal from "../../../models/CreateModal";
+import dayjs from "dayjs";
+import {
+  MdClose,
+  MdCalendarToday,
+  MdAttachMoney,
+  MdReceipt,
+} from "react-icons/md";
 const inputs = [
   {
     data: { id: "amount", label: "Amount to be paid", type: "number" },
@@ -206,21 +221,24 @@ const PaymentCalendar = () => {
         inputs={inputs}
         extraComponent={({ item }) => (
           <>
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <CreateModal
-                label={"Pay"}
-                inputs={inputs}
-                href={`accountant/payments/pay/${item.id}`}
-                handleSubmit={(data) => {
-                  handleAfterEdit(data);
-                }}
-                setData={setData}
-                extraProps={{
-                  formTitle: `Payment number # ${item.id}`,
-                  btnText: "Pay",
-                  variant: "outlined",
-                }}
-              />
+            <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+              <Box>
+                <CreateModal
+                  label={"Pay"}
+                  inputs={inputs}
+                  href={`accountant/payments/pay/${item.id}`}
+                  handleSubmit={(data) => {
+                    handleAfterEdit(data);
+                  }}
+                  setData={setData}
+                  extraProps={{
+                    formTitle: `Payment number # ${item.id}`,
+                    btnText: "Pay",
+                    variant: "outlined",
+                  }}
+                />
+              </Box>
+              <PaymentHistoryModal payment={item} />
               <ConfirmWithActionModel
                 label="Mark as over due"
                 title="Mark payment as over due"
@@ -238,6 +256,155 @@ const PaymentCalendar = () => {
         )}
       />
     </Container>
+  );
+};
+
+export const PaymentHistoryModal = ({ payment }) => {
+  const [open, setOpen] = useState(false);
+
+  const handleOpen = () => setOpen(true);
+  const handleClose = () => setOpen(false);
+
+  return (
+    <>
+      <Button
+        variant="contained"
+        onClick={handleOpen}
+        startIcon={<MdReceipt />}
+        sx={{
+          borderRadius: 1.5,
+          textTransform: "none",
+          fontWeight: 500,
+        }}
+      >
+        View History
+      </Button>
+
+      <Modal
+        open={open}
+        onClose={handleClose}
+        aria-labelledby="payment-history-modal"
+      >
+        <Paper
+          elevation={6}
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: { xs: "90%", sm: 450 },
+            maxHeight: "80vh",
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            borderRadius: 3,
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          {/* Header */}
+          <Box
+            sx={{
+              p: 2.5,
+              bgcolor: "primary.main",
+              color: "primary.contrastText",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <Typography variant="h6" component="h2" sx={{ fontWeight: 600 }}>
+              Payment History
+            </Typography>
+            <IconButton
+              onClick={handleClose}
+              size="small"
+              sx={{ color: "white" }}
+              aria-label="close"
+            >
+              <MdClose />
+            </IconButton>
+          </Box>
+
+          {/* Body */}
+          <Box sx={{ p: 0, maxHeight: "60vh", overflow: "auto" }}>
+            {payment && payment.invoices && payment.invoices.length > 0 ? (
+              <List sx={{ pt: 0 }}>
+                {payment.invoices.map((invoice, index) => (
+                  <React.Fragment key={invoice.id || index}>
+                    <ListItem
+                      alignItems="flex-start"
+                      sx={{
+                        py: 2,
+                        px: 3,
+                        transition: "background-color 0.2s",
+                        "&:hover": {
+                          bgcolor: "action.hover",
+                        },
+                      }}
+                    >
+                      <Box sx={{ width: "100%" }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            mb: 1,
+                          }}
+                        >
+                          <Typography
+                            variant="subtitle1"
+                            sx={{ fontWeight: 600 }}
+                          >
+                            Invoice #{invoice.invoiceNumber}
+                          </Typography>
+                        </Box>
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            mb: 0.5,
+                            color: "text.secondary",
+                          }}
+                        >
+                          <MdCalendarToday
+                            size={16}
+                            style={{ marginRight: 8 }}
+                          />
+                          <Typography variant="body2">
+                            {dayjs(invoice.issuedDate).format("MMMM D, YYYY")}
+                          </Typography>
+                        </Box>
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            color: "text.secondary",
+                          }}
+                        >
+                          <MdAttachMoney size={16} style={{ marginRight: 8 }} />
+                          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                            ${parseFloat(invoice.amount).toFixed(2)}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </ListItem>
+                    {index < payment.invoices.length - 1 && <Divider />}
+                  </React.Fragment>
+                ))}
+              </List>
+            ) : (
+              <Box sx={{ p: 4, textAlign: "center" }}>
+                <Typography variant="body1" color="textSecondary">
+                  No payment history available.
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </Paper>
+      </Modal>
+    </>
   );
 };
 

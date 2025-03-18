@@ -8,7 +8,7 @@ import {
   TextField,
   Box,
   Typography,
-  Grid,
+  Grid2 as Grid,
   CircularProgress,
   Alert,
   Divider,
@@ -38,8 +38,6 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
   const [fetchLoading, setFetchLoading] = useState(false);
   const { setLoading } = useToastContext();
   const [monthlyData, setMonthlyData] = useState();
-  console.log(salaryData, "salarydata");
-  // Form state
   const [formData, setFormData] = useState({
     totalHoursWorked: 0,
     overtimeHours: 0,
@@ -193,7 +191,7 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                   Employee Information
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <Typography variant="body2" color="textSecondary">
                       Name:
                     </Typography>
@@ -201,7 +199,7 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                       {salaryData.employee.name}
                     </Typography>
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <Typography variant="body2" color="textSecondary">
                       Email:
                     </Typography>
@@ -209,7 +207,7 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                       {salaryData.employee.email}
                     </Typography>
                   </Grid>
-                  <Grid item xs={12} sm={4}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
                     <Typography variant="body2" color="textSecondary">
                       Base Salary:
                     </Typography>
@@ -217,7 +215,7 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                       {formatCurrency(salaryData.baseSalary)}
                     </Typography>
                   </Grid>
-                  <Grid item xs={12} sm={4}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
                     <Typography variant="body2" color="textSecondary">
                       Tax Amount:
                     </Typography>
@@ -225,7 +223,7 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                       {formatCurrency(salaryData.taxAmount)}
                     </Typography>
                   </Grid>
-                  <Grid item xs={12} sm={4}>
+                  <Grid size={{ xs: 12, sm: 4 }}>
                     <Typography variant="body2" color="textSecondary">
                       Base Work Hours:
                     </Typography>
@@ -271,7 +269,7 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                 </Typography>
 
                 <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="Total Hours Worked"
@@ -289,7 +287,7 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                     />
                   </Grid>
 
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="Overtime Hours"
@@ -307,7 +305,7 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                     />
                   </Grid>
 
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="Bonuses"
@@ -325,7 +323,7 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                     />
                   </Grid>
 
-                  <Grid item xs={12} sm={6}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       label="Deductions"
@@ -343,7 +341,7 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                     />
                   </Grid>
 
-                  <Grid item xs={12}>
+                  <Grid size={12}>
                     <TextField
                       fullWidth
                       label="Net Salary"
@@ -375,7 +373,7 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                 </Typography>
 
                 <Grid container spacing={3}>
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <FormControlLabel
                       control={
                         <Switch
@@ -389,13 +387,12 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                     />
                   </Grid>
 
-                  <Grid item xs={6}>
+                  <Grid size={{ xs: 6 }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                       <DatePicker
                         label="Payment Date"
                         value={formData.paymentDate}
                         onChange={handleDateChange}
-                        disabled={!formData.isFulfilled}
                         renderInput={(params) => (
                           <TextField {...params} fullWidth />
                         )}

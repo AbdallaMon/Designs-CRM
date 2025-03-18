@@ -3,10 +3,12 @@ import React from "react";
 import { Box, Button, Container } from "@mui/material";
 import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
 import { PaymentLevels, PaymentStatus } from "@/app/helpers/constants";
-import DateRangeFilter from "../../formComponents/DateRangeFilter";
+import DateRangeFilter from "../../../formComponents/DateRangeFilter";
 import Link from "next/link";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
-import SearchComponent from "../../formComponents/SearchComponent";
+import SearchComponent from "../../../formComponents/SearchComponent";
+import { PaymentHistoryModal } from "./PaymentsCalendar";
+import CreateModal from "@/app/UiComponents/models/CreateModal";
 
 const inputs = [
   {
@@ -75,11 +77,12 @@ const OverduePayments = () => {
     }
   );
 
-  function handleAfterEdit(data) {
-    const newPayments = payments.map((payment) => {
-      if (payment.id === data.id) {
-        payment.amountPaid = data.amountPaid;
-        payment.status = data.status;
+  function handleAfterEdit(newData) {
+    const newPayments = data.map((payment) => {
+      if (payment.id === newData.id) {
+        payment.amountPaid = newData.amountPaid;
+        payment.status = newData.status;
+        payment.paymentLevel = newData.paymentLevel;
       }
       return payment;
     });
@@ -94,10 +97,6 @@ const OverduePayments = () => {
         justifyContent="space-between"
         alignItems="center"
       >
-        <Button variant="outlined" onClick={handleResetFilter}>
-          Reset filter
-        </Button>
-
         <SearchComponent
           apiEndpoint="search?model=client"
           setFilters={setFilters}
@@ -120,16 +119,28 @@ const OverduePayments = () => {
         setTotal={setTotal}
         setData={setData}
         totalPages={totalPages}
-        withEdit={true}
-        handleAfterEdit={(data) => handleAfterEdit(data)}
-        editHref={"accountant/payments/pay"}
-        editButtonText={"Pay"}
-        renderFormTitle={(item) => `Payment number # ${item.id}`}
         inputs={inputs}
-        editFormButton="Pay"
         extraComponent={({ item }) => (
           <>
             <Box sx={{ display: "flex", gap: 2 }}>
+              <Box>
+                <CreateModal
+                  label={"Pay"}
+                  inputs={inputs}
+                  href={`accountant/payments/pay/${item.id}`}
+                  handleSubmit={(data) => {
+                    handleAfterEdit(data);
+                  }}
+                  setData={setData}
+                  extraProps={{
+                    formTitle: `Payment number # ${item.id}`,
+                    btnText: "Pay",
+                    variant: "outlined",
+                  }}
+                />
+              </Box>
+              <PaymentHistoryModal payment={item} />
+
               <Button
                 component={Link}
                 href={"/dashboard/deals/" + item.clientLead.id}

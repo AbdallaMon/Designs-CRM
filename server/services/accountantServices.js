@@ -51,6 +51,13 @@ export async function getPayments({
       paymentLevel: true,
       createdAt: true,
       paymentReason: true,
+      invoices: {
+        select: {
+          amount: true,
+          issuedDate: true,
+          invoiceNumber: true,
+        },
+      },
       clientLead: {
         select: {
           id: true,
@@ -129,7 +136,6 @@ export async function processPayment(paymentId, amount, issuedDate) {
   if (issuedDate === "1970-01-01T00:00:00.000Z") {
     throw new Error("Please enter a date");
   }
-  console.log(issuedDate, "issu");
   const payment = await prisma.payment.findUnique({
     where: { id: paymentId },
   });
@@ -166,7 +172,12 @@ export async function processPayment(paymentId, amount, issuedDate) {
     where: { id: payment.id },
     data: {
       amountPaid: newAmountPaid,
-      status: isFullyPaid ? "FULLY_PAID" : "PENDING",
+      status:
+        payment.status === "OVERDUE" && !isFullyPaid
+          ? "OVERDUE"
+          : isFullyPaid
+          ? "FULLY_PAID"
+          : "PENDING",
       amountLeft: payment.amount - newAmountPaid,
       paymentLevel: getNextPaymentLevel(payment.paymentLevel),
     },
@@ -597,7 +608,7 @@ export async function generateMonthlySalary({
   isFulfilled,
   paymentDate,
 }) {
-  if (!baseSalaryId || !totalHoursWorked || !netSalary) {
+  if (!baseSalaryId || !totalHoursWorked || !netSalary || paymentDate) {
     throw new Error("Fill all the fileds please");
   }
   totalHoursWorked = Number(totalHoursWorked);

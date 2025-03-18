@@ -79,15 +79,14 @@ const Rents = () => {
     totalPages,
   } = useDataFetcher(`accountant/rents?`);
   function handleAfterEdit(newData) {
-    console.log(newData, "newData");
-    const newRents = data.map((item) => {
-      if (item.id === newData.rentId) {
-        item.rentPeriods = newData;
-      }
-      return item;
-    });
-    setData(newRents);
-    // window.location.reload();
+    // const newRents = data.map((item) => {
+    //   if (item.id === newData.rentId) {
+    //     item.rentPeriods = newData;
+    //   }
+    //   return item;
+    // });
+    // setData(newRents);
+    window.location.reload();
   }
   return (
     <Container maxWidth="xxl" px={{ xs: 2, md: 4 }}>
