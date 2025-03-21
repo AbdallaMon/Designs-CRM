@@ -113,7 +113,17 @@ const LeadCard = ({ lead, movelead, admin, setleads, type, statusArray }) => {
   const latestCalls = getCallInfo(lead.callReminders);
   return (
     <div ref={drag}>
-      <StyledCard status={lead.status}>
+      <StyledCard
+        status={
+          type === "three-d"
+            ? lead.threeDWorkStage
+            : type === "two-d"
+            ? lead.twoDWorkStage
+            : type === "exacuter"
+            ? lead.twoDExacuterStage
+            : lead.status
+        }
+      >
         <CardContent>
           <Box>
             <Typography variant="h6" component="div">
