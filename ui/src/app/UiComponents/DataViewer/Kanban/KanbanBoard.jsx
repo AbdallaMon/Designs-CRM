@@ -139,6 +139,7 @@ const KanbanBoard = ({
           <KanbanColumn
             key={status}
             status={status}
+            statusArray={statusArray}
             leads={
               loading
                 ? []

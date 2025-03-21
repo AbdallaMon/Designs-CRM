@@ -67,7 +67,7 @@ const CallInfoBox = styled(Box)(({ theme, variant }) => ({
   marginTop: theme.spacing(1),
 }));
 
-const LeadCard = ({ lead, movelead, admin, setleads, type }) => {
+const LeadCard = ({ lead, movelead, admin, setleads, type, statusArray }) => {
   const [, drag] = useDrag({
     type: ItemTypes.CARD,
     item: {
@@ -258,7 +258,7 @@ const LeadCard = ({ lead, movelead, admin, setleads, type }) => {
               Change Status
             </Typography>
           </Box>
-          {KanbanStatusArray.map((status) => (
+          {statusArray.map((status) => (
             <MenuItem
               key={status}
               onClick={() => handleStatusChange(status)}

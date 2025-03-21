@@ -208,6 +208,9 @@ const AccountantKanbanLeadCard = ({
             <Typography variant="body2" color="text.secondary">
               {payment.clientLead.description}
             </Typography>
+            <Typography variant="subtitle2" color="text.secondary">
+              <strong>Payment reason:</strong> {payment.paymentReason}
+            </Typography>
           </Box>
 
           <Box mb={2}>
@@ -220,11 +223,25 @@ const AccountantKanbanLeadCard = ({
               </Typography>
             </Stack>
 
-            <LinearProgress
-              variant="determinate"
-              value={(payment.amountPaid / payment.amount) * 100}
-              sx={{ height: 8, borderRadius: 4 }}
-            />
+            <Box mb={2}>
+              <Stack direction="row" justifyContent="flex-end">
+                <Typography variant="body2" fontWeight="medium">
+                  {Math.round((payment.amountPaid / payment.amount) * 100)}%
+                </Typography>
+              </Stack>
+              <LinearProgress
+                variant="determinate"
+                value={(payment.amountPaid / payment.amount) * 100}
+                sx={{
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: `${statusColors[payment.status]}20`,
+                  "& .MuiLinearProgress-bar": {
+                    backgroundColor: statusColors[payment.status],
+                  },
+                }}
+              />
+            </Box>
           </Box>
 
           <Box>
