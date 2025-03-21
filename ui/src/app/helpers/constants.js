@@ -232,9 +232,24 @@ export const statusColors = {
   ACCEPTED: "#10b981",
   REJECTED: "#ef4444",
   QUANTITY: "#f97316",
+  LEVEL_1: "#f97316", // First Payment - Orange
+  LEVEL_2: "#f59e0b", // Second Payment - Yellow
+  LEVEL_3: "#10b981", // Third Payment - Green
+  LEVEL_4: "#3b82f6", // Fourth Payment - Blue
+  LEVEL_5: "#0d9488", // Fifth Payment - Teal
+  LEVEL_6: "#0f766e", // Sixth Payment - Dark Teal
+  LEVEL_7_OR_MORE: "#ef4444", // Seventh
 };
 
 export const KanbanStatusArray = [
+  "IN_PROGRESS",
+  "INTERESTED",
+  "NEEDS_IDENTIFIED",
+  "NEGOTIATING",
+  "FINALIZED",
+  "REJECTED",
+];
+export const AccountantKanbanStatusArray = [
   "IN_PROGRESS",
   "INTERESTED",
   "NEEDS_IDENTIFIED",

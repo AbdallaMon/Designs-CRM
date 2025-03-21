@@ -127,6 +127,9 @@ const Rents = () => {
         editHref={`accountant/rents`}
         editFormButton={"Renew"}
         inputs={renewInputs}
+        handleBeforeSubmit={(data, item) => {
+          return { ...data, name: item.name };
+        }}
         handleAfterEdit={handleAfterEdit}
         renderFormTitle={(item) => `Renew rent for ${item.name}`}
         editButtonText="Renew"

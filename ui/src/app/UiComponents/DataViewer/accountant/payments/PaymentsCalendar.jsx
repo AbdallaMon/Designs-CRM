@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Button,
@@ -18,11 +18,12 @@ import {
   Divider,
   Paper,
   Chip,
+  CircularProgress,
+  Link,
 } from "@mui/material";
 import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
 import { useSearchParams } from "next/navigation";
 import { PaymentLevels, PaymentStatus } from "@/app/helpers/constants";
-import Link from "next/link";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import ConfirmWithActionModel from "../../../models/ConfirmsWithActionModel";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
@@ -37,24 +38,33 @@ import {
   MdAttachMoney,
   MdReceipt,
 } from "react-icons/md";
-const inputs = [
-  {
-    data: { id: "amount", label: "Amount to be paid", type: "number" },
-    pattern: { required: { value: true, message: "Amount is required" } },
-  },
-  {
-    data: {
-      id: "issuedDate",
-      label: "Payment date",
-      type: "date",
-    },
-    pattern: { required: { value: true, message: "Date is required" } },
-  },
-  {
-    data: { id: "paymentId", key: "id", type: "number" },
-    sx: { display: "none" },
-  },
-];
+import { getData } from "@/app/helpers/functions/getData";
+// const inputs = [
+//   {
+//     data: { id: "amount", label: "Amount to be paid", type: "number" },
+//     pattern: { required: { value: true, message: "Amount is required" } },
+//   },
+//   {
+//     data: {
+//       id: "issuedDate",
+//       label: "Payment date",
+//       type: "date",
+//     },
+//     pattern: { required: { value: true, message: "Date is required" } },
+//   },
+//   {
+//     data: {
+//       id: "file",
+//       label: "Attatchment",
+//       type: "file",
+//     },
+//     pattern: { required: { value: true, message: "Attatchment is required" } },
+//   },
+//   {
+//     data: { id: "paymentId", key: "id", type: "number" },
+//     sx: { display: "none" },
+//   },
+// ];
 
 const columns = [
   { name: "id", label: "Payment number" },
@@ -79,7 +89,7 @@ const columns = [
   },
 ];
 
-const PaymentCalendar = () => {
+const PaymentCalendar = ({ status = "PENDING" }) => {
   const searchParams = useSearchParams();
   const paymentId = searchParams.get("paymentId");
   const {
@@ -95,10 +105,10 @@ const PaymentCalendar = () => {
     totalPages,
     setFilters,
   } = useDataFetcher(`accountant/payments?paymentId=${paymentId}&`, false, {
-    status: "PENDING",
+    status: status,
   });
-  const [status, setStatus] = useState("PENDING");
-  const [paymentLevel, setPaymentLevel] = useState("ALL");
+  // const [status, setStatus] = useState("PENDING");
+  // const [paymentLevel, setPaymentLevel] = useState("ALL");
   const { setLoading } = useToastContext();
   const handleResetFilter = () => {
     window.location.href = window.location.pathname;
@@ -166,7 +176,7 @@ const PaymentCalendar = () => {
               withParamsChange={true}
             />
           </Grid2>
-          <Grid2 size={4}>
+          {/* <Grid2 size={4}>
             <FormControl fullWidth={true}>
               <InputLabel id="status">Status</InputLabel>
               <Select
@@ -203,7 +213,7 @@ const PaymentCalendar = () => {
                 ))}
               </Select>
             </FormControl>
-          </Grid2>
+          </Grid2> */}
         </Grid2>
       </Box>
       <AdminTable
@@ -218,17 +228,29 @@ const PaymentCalendar = () => {
         setTotal={setTotal}
         setData={setData}
         totalPages={totalPages}
-        inputs={inputs}
         extraComponent={({ item }) => (
           <>
             <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-              <Box>
+              {/* <Box>
                 <CreateModal
                   label={"Pay"}
                   inputs={inputs}
                   href={`accountant/payments/pay/${item.id}`}
                   handleSubmit={(data) => {
                     handleAfterEdit(data);
+                  }}
+                  handleBeforeSubmit={async (data) => {
+                    const formData = new FormData();
+                    formData.append("file", data.file[0]);
+                    const fileUpload = await handleRequestSubmit(
+                      formData,
+                      setLoading,
+                      "utility/upload",
+                      true,
+                      "Uploading file"
+                    );
+                    data.file = fileUpload.fileUrls.file[0];
+                    return data;
                   }}
                   setData={setData}
                   extraProps={{
@@ -237,14 +259,14 @@ const PaymentCalendar = () => {
                     variant: "outlined",
                   }}
                 />
-              </Box>
+              </Box> */}
               <PaymentHistoryModal payment={item} />
-              <ConfirmWithActionModel
+              {/* <ConfirmWithActionModel
                 label="Mark as over due"
                 title="Mark payment as over due"
                 description="Are you sure you want to mark this payment as over due?"
                 handleConfirm={() => overDuePayment(item.id)}
-              />
+              /> */}
               <Button
                 component={Link}
                 href={"/dashboard/deals/" + item.clientLead.id}
@@ -261,9 +283,25 @@ const PaymentCalendar = () => {
 
 export const PaymentHistoryModal = ({ payment }) => {
   const [open, setOpen] = useState(false);
-
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+  useEffect(() => {
+    async function getInvoices() {
+      const request = await getData({
+        url: `accountant/payments/${payment.id}/invoices`,
+        setLoading,
+      });
+      if (request.status === 200) {
+        console.log(request.data, "req.data");
+        setInvoices(request.data);
+      }
+    }
+    if (open) {
+      getInvoices();
+    }
+  }, [open]);
 
   return (
     <>
@@ -292,7 +330,7 @@ export const PaymentHistoryModal = ({ payment }) => {
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            width: { xs: "90%", sm: 450 },
+            width: { xs: "90%", sm: 450, md: 550 },
             maxHeight: "80vh",
             bgcolor: "background.paper",
             boxShadow: 24,
@@ -302,7 +340,6 @@ export const PaymentHistoryModal = ({ payment }) => {
             flexDirection: "column",
           }}
         >
-          {/* Header */}
           <Box
             sx={{
               p: 2.5,
@@ -328,9 +365,11 @@ export const PaymentHistoryModal = ({ payment }) => {
 
           {/* Body */}
           <Box sx={{ p: 0, maxHeight: "60vh", overflow: "auto" }}>
-            {payment && payment.invoices && payment.invoices.length > 0 ? (
+            {loading ? (
+              <CircularProgress />
+            ) : invoices && invoices.length > 0 ? (
               <List sx={{ pt: 0 }}>
-                {payment.invoices.map((invoice, index) => (
+                {invoices.map((invoice, index) => (
                   <React.Fragment key={invoice.id || index}>
                     <ListItem
                       alignItems="flex-start"
@@ -348,6 +387,7 @@ export const PaymentHistoryModal = ({ payment }) => {
                           sx={{
                             display: "flex",
                             justifyContent: "space-between",
+                            alignItems: "center",
                             mb: 1,
                           }}
                         >
@@ -357,6 +397,16 @@ export const PaymentHistoryModal = ({ payment }) => {
                           >
                             Invoice #{invoice.invoiceNumber}
                           </Typography>
+                          {invoice.notes?.length > 0 &&
+                            invoice.notes[0].attachment && (
+                              <Button
+                                component={Link}
+                                target="_blank"
+                                href={invoice.notes[0].attachment}
+                              >
+                                View attatchment
+                              </Button>
+                            )}
                         </Box>
 
                         <Box

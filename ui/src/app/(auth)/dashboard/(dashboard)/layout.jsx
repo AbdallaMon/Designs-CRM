@@ -211,11 +211,7 @@ export const exacuterLinks = [
 ];
 export const accountantLinks = [
   { name: "Payments", href: "/dashboard", icon: <FiDollarSign size={20} /> }, // Dollar sign for payments
-  {
-    name: "Overdue Payments",
-    href: "/dashboard/overdue",
-    icon: <FiClock size={20} />, // Clock for overdue payments
-  },
+
   {
     name: "Operational Expenses",
     href: "/dashboard/operational-expenses",

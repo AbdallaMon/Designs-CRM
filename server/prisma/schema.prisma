@@ -215,7 +215,7 @@ model Payment {
   paymentLevel   PaymentLevel? 
   paymentReason   String?   @db.Text
   invoices       Invoice[]
-   notes           Note[] 
+  notes           Note[] 
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 }
@@ -227,6 +227,7 @@ model Invoice {
   paymentId   Int
   issuedDate  DateTime   @default(now())
   amount      Decimal    @db.Decimal(10, 2)
+  notes       Note[]
   createdAt   DateTime   @default(now())
   invoiceNumber    String             @unique
 }
@@ -353,7 +354,8 @@ model Client {
 
 model Note {
   id            Int         @id @default(autoincrement())
-  content       String      @db.Text
+  content       String?     @db.Text // Optional content field
+  attachment    String?     @db.Text // Optional attachment field
   clientLead    ClientLead? @relation(fields: [clientLeadId], references: [id])
   clientLeadId  Int?
   user          User        @relation(fields: [userId], references: [id])
@@ -371,6 +373,8 @@ model Note {
   operationalExpensesId Int?
   payment              Payment?           @relation(fields: [paymentId], references: [id])
   paymentId            Int?
+  invoice            Invoice?   @relation( fields: [invoiceId], references: [id])
+  invoiceId          Int?
 
   @@index([clientLeadId])
   @@index([userId])
@@ -379,6 +383,7 @@ model Note {
   @@index([rentPeriodId])
   @@index([operationalExpensesId])
   @@index([paymentId])
+  @@index([invoiceId])
 }
 
 

@@ -268,11 +268,16 @@ FOREIGN KEY (outcomeId) REFERENCES Outcome(id) ON DELETE SET NULL
 ALTER TABLE Outcome
 ADD COLUMN rentPeriods INT NULL,  
 ADD COLUMN operationalExpenses INT NULL;
+
+ALTER TABLE Outcome
 ADD COLUMN monthlySalaries INT NULL;
 
+// dublicate
 -- Step 2: Optionally, add foreign key constraints if needed
 ALTER TABLE Outcome
-ADD CONSTRAINT fk_rent_period FOREIGN KEY (rentPeriods) REFERENCES RentPeriod(id),
+ADD CONSTRAINT fk_rent_period FOREIGN KEY (rentPeriods) REFERENCES RentPeriod(id);
+
+ALTER TABLE Outcome
 ADD CONSTRAINT fk_operational_expense FOREIGN KEY (operationalExpenses) REFERENCES OperationalExpenses(id);
 
 CREATE INDEX idx_monthly_salaries ON Outcome (monthlySalaries);
@@ -280,21 +285,29 @@ CREATE INDEX idx_monthly_salaries ON Outcome (monthlySalaries);
 ALTER TABLE Outcome
 ADD CONSTRAINT fk_monthly_salaries FOREIGN KEY (monthlySalaries) REFERENCES MonthlySalary(id);
 
+error here
+
 -- Add the twoDExacuterId field to the ClientLead table
-ALTER TABLE `ClientLead` ADD COLUMN `twoDExacuterId` INT NULL;
+ALTER TABLE `ClientLead`
+ADD COLUMN `twoDExacuterId` INT NULL;
 
 -- Add the twoDExacuterAssignedAt timestamp
-ALTER TABLE `ClientLead` ADD COLUMN `twoDExacuterAssignedAt` DATETIME NULL;
+ALTER TABLE `ClientLead`
+ADD COLUMN `twoDExacuterAssignedAt` DATETIME NULL;
 
 -- Add the twoDExacuterStage enum field
-ALTER TABLE `ClientLead` ADD COLUMN `twoDExacuterStage` ENUM('PROGRESS', 'PRICING', 'ACCEPTED', 'REJECTED') NULL;
+ALTER TABLE `ClientLead`
+ADD COLUMN `twoDExacuterStage` ENUM('PROGRESS', 'PRICING', 'ACCEPTED', 'REJECTED') NULL;
 
 -- Add the cost fields
-ALTER TABLE `ClientLead` ADD COLUMN `ourCost` VARCHAR(255) NULL;
-ALTER TABLE `ClientLead` ADD COLUMN `contractorCost` VARCHAR(255) NULL;
+ALTER TABLE `ClientLead`
+ADD COLUMN `ourCost` VARCHAR(255) NULL;
+ALTER TABLE `ClientLead`
+ADD COLUMN `contractorCost` VARCHAR(255) NULL;
 
 -- Add foreign key constraint for twoDExacuterId
-ALTER TABLE `ClientLead` ADD CONSTRAINT `ClientLead_twoDExacuterId_fkey` FOREIGN KEY (`twoDExacuterId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE `ClientLead`
+ADD CONSTRAINT `ClientLead_twoDExacuterId_fkey` FOREIGN KEY (`twoDExacuterId`) REFERENCES `User`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- Add index for better performance (optional)
 CREATE INDEX `ClientLead_twoDExacuterId_idx` ON `ClientLead` (`twoDExacuterId`);

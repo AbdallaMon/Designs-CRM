@@ -280,58 +280,60 @@ const LeadContent = ({
                     )}
                   </>
                 )}
-                {!admin && lead.status !== "FINALIZED" && (
-                  <>
-                    <Button
-                      fullWidth={isMobile}
-                      variant="outlined"
-                      startIcon={<BsPersonCheck size={18} />}
-                      onClick={() => setOpenConfirm(true)}
-                      sx={{
-                        borderRadius: "50px",
-                        textTransform: "none",
-                      }}
-                    >
-                      Convert lead
-                    </Button>
-                    <Modal
-                      open={openConfirm}
-                      onClose={() => setOpenConfirm(false)}
-                      closeAfterTransition
-                    >
-                      <Fade in={openConfirm}>
-                        <Box sx={{ ...simpleModalStyle }}>
-                          <Typography variant="h6" component="h2" mb={2}>
-                            Convert lead so some one else take it?
-                          </Typography>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "flex-end",
-                              marginTop: "16px",
-                            }}
-                          >
-                            <Button
-                              variant="contained"
-                              color={"primary"}
-                              onClick={handleConvertLead}
+                {!admin &&
+                  user.role == "STAFF" &&
+                  lead.status !== "FINALIZED" && (
+                    <>
+                      <Button
+                        fullWidth={isMobile}
+                        variant="outlined"
+                        startIcon={<BsPersonCheck size={18} />}
+                        onClick={() => setOpenConfirm(true)}
+                        sx={{
+                          borderRadius: "50px",
+                          textTransform: "none",
+                        }}
+                      >
+                        Convert lead
+                      </Button>
+                      <Modal
+                        open={openConfirm}
+                        onClose={() => setOpenConfirm(false)}
+                        closeAfterTransition
+                      >
+                        <Fade in={openConfirm}>
+                          <Box sx={{ ...simpleModalStyle }}>
+                            <Typography variant="h6" component="h2" mb={2}>
+                              Convert lead so some one else take it?
+                            </Typography>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "flex-end",
+                                marginTop: "16px",
+                              }}
                             >
-                              Confirm
-                            </Button>
-                            <Button
-                              variant="contained"
-                              onClick={() => setOpenConfirm(false)}
-                              sx={{ marginLeft: "8px", color: "text.white" }}
-                              color="secondary"
-                            >
-                              Cancel
-                            </Button>
+                              <Button
+                                variant="contained"
+                                color={"primary"}
+                                onClick={handleConvertLead}
+                              >
+                                Confirm
+                              </Button>
+                              <Button
+                                variant="contained"
+                                onClick={() => setOpenConfirm(false)}
+                                sx={{ marginLeft: "8px", color: "text.white" }}
+                                color="secondary"
+                              >
+                                Cancel
+                              </Button>
+                            </Box>
                           </Box>
-                        </Box>
-                      </Fade>
-                    </Modal>
-                  </>
-                )}
+                        </Fade>
+                      </Modal>
+                    </>
+                  )}
                 {user.role !== "ACCOUNTANT" && (
                   <>
                     <Button

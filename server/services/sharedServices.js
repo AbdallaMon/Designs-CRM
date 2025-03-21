@@ -416,8 +416,8 @@ export async function makePayments(data, leadId) {
     payment.amount = Number(payment.amount);
     payment.paymentReason = payment.paymentReason;
     payment.clientLeadId = Number(leadId);
+    payment.paymentLevel = "LEVEL_1";
   });
-  console.log(data, "data");
   await prisma.payment.createMany({ data });
   return data;
 }
@@ -433,6 +433,7 @@ export async function makeExtraServicePayments({
     payment.amount = Number(payment.amount);
     payment.paymentReason = paymentReason || "Extra service";
     payment.clientLeadId = Number(leadId);
+    payment.paymentLevel = "LEVEL_1";
   });
   await prisma.payment.createMany({ data });
   await prisma.extraService.create({

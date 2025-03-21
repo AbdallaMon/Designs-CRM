@@ -127,12 +127,13 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
       false,
       "Paying"
     );
-    if (request.staut === 200) {
+    if (request.status === 200) {
       setSalaryData((old) => ({
         ...old,
-        monthlySalaries: [request.data, ...old.monthlySalary], // Prepend the new salary to the top of the array
+        monthlySalaries: [request.data, ...old.monthlySalaries], // Prepend the new salary to the top of the array
       }));
       (old) => ({ ...old });
+      handleClose();
     }
   };
 

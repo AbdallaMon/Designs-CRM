@@ -99,7 +99,6 @@ export default function ClientPage() {
   }, [animateLocation]);
   return (
     <>
-      <FloatingWhatsAppButton />
       <Header
         reverseAnimation={() =>
           reverseAnimation({

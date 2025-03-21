@@ -1,16 +1,19 @@
 import { Router } from "express";
 import {
   getPagination,
+  getTokenData,
   verifyTokenAndHandleAuthorization,
 } from "../services/utility.js";
 import {
   addNote,
+  changePaymentLevel,
   createARent,
   createBaseSalary,
   createOperationalExpense,
   editBaseSalary,
   generateMonthlySalary,
   getIncomeOutcomeSummary,
+  getListOfPaymentInvoices,
   getNotes,
   getOperationalExpenses,
   getOutcomes,
@@ -57,16 +60,32 @@ router.get("/payments", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+router.get("/payments/:paymentId/invoices", async (req, res) => {
+  const { paymentId } = req.params;
+  try {
+    const invoices = await getListOfPaymentInvoices(Number(paymentId));
 
+    return res.status(200).json({
+      data: invoices,
+    });
+  } catch (error) {
+    console.error("Error getting payment:", error);
+    return res.status(500).json({ message: error.message });
+  }
+});
 router.post("/payments/pay/:paymentId", async (req, res) => {
   const { paymentId } = req.params;
-  const { amount, issuedDate } = req.body;
+  const { amount, issuedDate, file } = req.body;
 
   try {
+    const user = getTokenData(req, res);
+
     const payment = await processPayment(
       Number(paymentId),
       +amount,
-      new Date(issuedDate)
+      new Date(issuedDate),
+      file,
+      user.id
     );
 
     return res.status(200).json({
@@ -86,6 +105,28 @@ router.post("/payments/overdue/:paymentId", async (req, res) => {
 
     return res.status(200).json({
       message: "Payment marked as overdue",
+      data: payment,
+    });
+  } catch (error) {
+    console.error("Error processing payment:", error);
+    return res.status(500).json({ message: error.message });
+  }
+});
+router.put("/payments/status/:paymentId", async (req, res) => {
+  const { paymentId } = req.params;
+  const { newPaymentLevel, oldPaymentLevel } = req.body;
+
+  try {
+    const user = getTokenData(req, res);
+
+    const payment = await changePaymentLevel(
+      paymentId,
+      newPaymentLevel,
+      oldPaymentLevel
+    );
+
+    return res.status(200).json({
+      message: "Payment level changed succussfully",
       data: payment,
     });
   } catch (error) {
@@ -156,7 +197,7 @@ router.post("/rents", async (req, res) => {
 });
 router.put("/rents/:rentId", async (req, res) => {
   const { rentId } = req.params;
-  let { amount, startDate, endDate, paymentDate } = req.body;
+  let { amount, startDate, endDate, paymentDate, name } = req.body;
   try {
     const updatedRent = await renewRentAndMakeOutCome({
       rentId: Number(rentId),
@@ -164,6 +205,7 @@ router.put("/rents/:rentId", async (req, res) => {
       startDate,
       endDate,
       paymentDate,
+      name,
     });
     return res.status(200).json({
       message: "Rent updated successfully",

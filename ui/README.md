@@ -43,7 +43,6 @@
 - Fix notifications to redirect for new staff roles
 - three d designer تعديل اول تعديل تاني تعديل ثالث (cant back from two to one ect)
   THREE D => 3D
-
   - two d
     quantatiy
   - new account التنفيذ
@@ -51,7 +50,6 @@
   - قيد التسعير اجباري رفع 2 بي دي اف تكلفه علينا وتكلفه علي المقاول
   - مقبول
   - مرفوض
-
 - Actual update call date
 - Client lead id before client name
 - Remove dates on payments and add payment reason
@@ -61,17 +59,19 @@
   - الايجارات
 - call reminders and notes for one person only who added them
 - two files to be added for قيد التسعير
+- Attacthments for payments and for any thing has money
+- Make the out come with more detail like rent name ect
 
+- Accountant kanban levels instead of payment table
+- Select country for each user only by admin
+- Every 3 hour ask user what he did in the past three hours (8-5) after 5 ask user for over time what he did
+- Admin and super admin generate pdf all thing related for the client
+- More vertical status needs to be dynamic
 - remove whatsapp icon
+
+- Fix pdf for other roles
 - user profiles (for designer ect)
 - add default values to createModel in payment table
-
-- Select country for each user only by admin
-- Attacthments for payments
-- Admin and super admin generate pdf all thing related for the client
-- Accountant kanban levels
-- Attatchments for all
-- Every 3 hour ask user what he did in the past three hours (8-5) after 5 ask user for over time what he did
 
   dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

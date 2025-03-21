@@ -37,7 +37,8 @@ const EditModal = ({
         }
       }
     }
-    if (handleBeforeSubmit) dataToSubmit = await handleBeforeSubmit(formData);
+    if (handleBeforeSubmit)
+      dataToSubmit = await handleBeforeSubmit(formData, item);
     if (extraEditParams === undefined) extraEditParams = "";
     const result = await handleRequestSubmit(
       dataToSubmit,

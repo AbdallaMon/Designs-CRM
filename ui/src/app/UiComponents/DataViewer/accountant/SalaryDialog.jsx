@@ -38,6 +38,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { getData } from "@/app/helpers/functions/getData";
 import EditModal from "../../models/EditModal";
 import ProcessMonthlySalaryButton from "./MonthlySalaryDialog";
+import { AddNotes, Notes } from "./Notes";
 const inputs = [
   {
     data: {
@@ -233,6 +234,16 @@ const SalaryInfoButton = ({ userId }) => {
                         salaryData={salaryData}
                         setSalaryData={setSalaryData}
                       />
+                      <Box sx={{ display: "flex", gap: 2 }}>
+                        <Notes
+                          idKey={"baseEmployeeSalaryId"}
+                          id={salaryData.id}
+                        />
+                        <AddNotes
+                          idKey={"baseEmployeeSalaryId"}
+                          id={salaryData.id}
+                        />
+                      </Box>
                     </Box>
                   </Paper>
                 </Grid>

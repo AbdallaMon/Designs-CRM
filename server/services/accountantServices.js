@@ -13,13 +13,16 @@ export async function getPayments({
   let where = {};
 
   if (!status || status === "ALL") status = undefined;
-
-  where =
-    paymentId && paymentId !== "null"
-      ? { id: Number(paymentId) }
-      : {
-          status: status,
-        };
+  if (status === "NOT_PAID") {
+    where = { status: { in: ["PENDING", "OVERDUE", "PARTIALLY_PAID"] } };
+  } else {
+    where =
+      paymentId && paymentId !== "null"
+        ? { id: Number(paymentId) }
+        : {
+            status: status,
+          };
+  }
   if (level && level !== "ALL") {
     where.paymentLevel = level;
   }
@@ -29,6 +32,7 @@ export async function getPayments({
       clientId: Number(clientId),
     };
   }
+  console.log(where, "where");
   if (
     filters?.clientId &&
     filters.clientId !== "all" &&
@@ -38,10 +42,16 @@ export async function getPayments({
       clientId: Number(filters.clientId),
     };
   }
+  let pagination = {};
+  if (status !== "NOT_PAID") {
+    pagination = {
+      skip,
+      take: limit,
+    };
+  }
   const payments = await prisma.payment.findMany({
     where,
-    skip,
-    take: limit,
+    ...pagination,
     select: {
       id: true,
       amount: true,
@@ -61,6 +71,7 @@ export async function getPayments({
       clientLead: {
         select: {
           id: true,
+          threeDWorkStage: true,
           description: true,
           selectedCategory: true,
           type: true,
@@ -88,7 +99,7 @@ export async function getPayments({
   });
   const total = await prisma.payment.count({ where });
   const totalPages = Math.ceil(total / limit);
-
+  console.log(payments, "payments");
   return {
     data: payments,
     total,
@@ -129,7 +140,13 @@ function getNextPaymentLevel(currentLevel) {
   }
 }
 
-export async function processPayment(paymentId, amount, issuedDate) {
+export async function processPayment(
+  paymentId,
+  amount,
+  issuedDate,
+  file,
+  userId
+) {
   if (!amount || !issuedDate) {
     throw new Error("Please fill all data");
   }
@@ -179,7 +196,7 @@ export async function processPayment(paymentId, amount, issuedDate) {
           ? "FULLY_PAID"
           : "PENDING",
       amountLeft: payment.amount - newAmountPaid,
-      paymentLevel: getNextPaymentLevel(payment.paymentLevel),
+      // paymentLevel: getNextPaymentLevel(payment.paymentLevel),
     },
   });
 
@@ -189,6 +206,13 @@ export async function processPayment(paymentId, amount, issuedDate) {
       paymentId: payment.id,
       amount: amount,
       issuedDate: issuedDate,
+    },
+  });
+  const note = await prisma.note.create({
+    data: {
+      attachment: file,
+      invoiceId: invoice.id,
+      userId: Number(userId),
     },
   });
   return {
@@ -202,6 +226,41 @@ export async function processPayment(paymentId, amount, issuedDate) {
 
 function generateInvoiceNumber() {
   return "INV-" + Date.now();
+}
+
+export async function changePaymentLevel(
+  paymentId,
+  newPaymentLevel,
+  oldPaymentLevel
+) {
+  const newPayment = await prisma.payment.update({
+    where: { id: Number(paymentId) },
+    data: {
+      paymentLevel: newPaymentLevel,
+    },
+  });
+  return newPayment;
+}
+
+export async function getListOfPaymentInvoices(paymentId) {
+  return await prisma.invoice.findMany({
+    where: {
+      paymentId: Number(paymentId),
+    },
+    orderBy: {
+      issuedDate: "desc",
+    },
+    select: {
+      issuedDate: true,
+      amount: true,
+      invoiceNumber: true,
+      notes: {
+        select: {
+          attachment: true,
+        },
+      },
+    },
+  });
 }
 
 export async function markPaymentAsOverdue(paymentId) {
@@ -234,10 +293,14 @@ export async function getNotes({ idKey, id }) {
     where: {
       [idKey]: Number(id),
     },
+    orderBy: {
+      createdAt: "desc",
+    },
     select: {
       id: true,
       content: true,
       createdAt: true,
+      attachment: true,
       user: {
         select: {
           id: true,
@@ -248,10 +311,11 @@ export async function getNotes({ idKey, id }) {
   });
   return notes;
 }
-export async function addNote({ userId, content, idKey, id }) {
+export async function addNote({ attachment, userId, content, idKey, id }) {
   const data = {
     content,
     userId: Number(userId),
+    attachment,
   };
   if (idKey && id) {
     data[idKey] = Number(id);
@@ -309,7 +373,7 @@ export async function createOperationalExpense({
   const outcome = await prisma.outcome.create({
     data: {
       amount,
-      description,
+      description: `${category} - ${description}`,
       type: "OPERATIONAL_EXPENSE",
       createdAt: new Date(paymentDate),
       operationalExpenses: {
@@ -379,6 +443,7 @@ export async function createARent(data) {
 
   const newRentPeriod = await renewRentAndMakeOutCome({
     rentId: newRent.id,
+    name,
     amount,
     description,
     startDate,
@@ -421,7 +486,7 @@ export async function renewRentAndMakeOutCome({
   startDate,
   endDate,
   paymentDate,
-  description,
+  name,
 }) {
   if (!rentId || !amount || !startDate || !endDate) {
     throw new Error("Fill all the fields please");
@@ -449,7 +514,7 @@ export async function renewRentAndMakeOutCome({
   const outcome = await prisma.outcome.create({
     data: {
       amount,
-      description: description || "Renewing rent",
+      description: name || "Renewing rent",
       type: "RENT",
       createdAt: new Date(paymentDate),
       rentPeriods: {
@@ -608,7 +673,7 @@ export async function generateMonthlySalary({
   isFulfilled,
   paymentDate,
 }) {
-  if (!baseSalaryId || !totalHoursWorked || !netSalary || paymentDate) {
+  if (!baseSalaryId || !totalHoursWorked || !netSalary || !paymentDate) {
     throw new Error("Fill all the fileds please");
   }
   totalHoursWorked = Number(totalHoursWorked);
@@ -665,15 +730,29 @@ export async function generateMonthlySalary({
         paymentDate: paymentDate,
       },
     });
+    const user = await prisma.monthlySalary.findUnique({
+      where: { id: monthlySalary.id },
+      select: {
+        baseSalary: {
+          select: {
+            employee: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
     // Generate an outcome record linked to the monthly salary
     const outcome = await prisma.outcome.create({
       data: {
         type: "Salary",
         amount: netSalary,
-        description: `Monthly salary payment for ${dayjs().format(
-          "MMMM YYYY"
-        )}`,
+        description: `Monthly salary payment for ${
+          user.baseSalary.employee.name
+        } ,${dayjs().format("MMMM YYYY")}`,
         monthlySalaries: {
           connect: {
             id: monthlySalary.id,

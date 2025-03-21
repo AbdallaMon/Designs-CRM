@@ -131,6 +131,20 @@ const OverduePayments = () => {
                   handleSubmit={(data) => {
                     handleAfterEdit(data);
                   }}
+                  handleBeforeSubmit={async (data) => {
+                    const formData = new FormData();
+                    formData.append("file", data.file[0]);
+                    const fileUpload = await handleRequestSubmit(
+                      formData,
+                      setLoading,
+                      "utility/upload",
+                      true,
+                      "Uploading file"
+                    );
+
+                    data.file = fileUpload.fileUrls.file[0];
+                    return data;
+                  }}
                   setData={setData}
                   extraProps={{
                     formTitle: `Payment number # ${item.id}`,
