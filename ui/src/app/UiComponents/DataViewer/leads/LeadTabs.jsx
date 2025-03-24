@@ -5,6 +5,7 @@ import {
   Chip,
   Paper,
   Stack,
+  Switch,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -521,8 +522,12 @@ export function PriceOffersList({ admin, lead, notUser }) {
           {offers?.map((offer) => (
             <ListItem key={offer.id} sx={listItemStyles} disablePadding>
               <Box sx={{ width: "100%", p: 2 }}>
-                {offer.url && (
-                  <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                  <PriceOfferSwitch
+                    priceOffer={offer}
+                    setPriceOffers={setOffers}
+                  />
+                  {offer.url && (
                     <Button
                       variant="outlined"
                       component="a"
@@ -531,8 +536,8 @@ export function PriceOffersList({ admin, lead, notUser }) {
                     >
                       Preview attachment
                     </Button>
-                  </Box>
-                )}
+                  )}
+                </Box>
                 <Grid container spacing={3}>
                   <Grid size={{ xs: 12, md: 6 }}>
                     <Box display="flex" alignItems="center">
@@ -615,6 +620,49 @@ export function PriceOffersList({ admin, lead, notUser }) {
         </List>
       </CardContent>
     </Card>
+  );
+}
+function PriceOfferSwitch({ priceOffer, setPriceOffers }) {
+  const [checked, setChecked] = React.useState(priceOffer.isAccepted);
+  const { user } = useAuth();
+  const { setLoading } = useToastContext();
+  const handleChange = async (event) => {
+    const request = await handleRequestSubmit(
+      { priceOfferId: priceOffer.id, isAccepted: event.target.checked },
+      setLoading,
+      `shared/client-lead/price-offers/change-status`,
+      false,
+      "Updating"
+    );
+    if (request.status === 200) {
+      setChecked(request.data.isAccepted);
+      if (setPriceOffers) {
+        setPriceOffers((oldPrices) =>
+          oldPrices.map((offer) => {
+            if (offer.id === priceOffer.id) {
+              offer.isAccepted = checked;
+            }
+            return offer;
+          })
+        );
+      }
+    }
+  };
+
+  return (
+    <Box display="flex" alignItems="center" gap={1}>
+      <Typography variant="body1" color="textPrimary">
+        {checked ? "Offer Accepted" : "Accept Offer"}
+      </Typography>
+      <Tooltip title="Toggle to accept or reject the price offer">
+        <Switch
+          checked={checked}
+          onChange={handleChange}
+          inputProps={{ "aria-label": "Accept Price Offer" }}
+          disabled={user.role !== "STAFF"}
+        />
+      </Tooltip>
+    </Box>
   );
 }
 

@@ -20,7 +20,12 @@ import {
   useTheme,
 } from "@mui/material";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
-import { Emirate, LeadCategory, LeadType } from "@/app/helpers/constants.js";
+import {
+  countriesByRegion,
+  Emirate,
+  LeadCategory,
+  LeadType,
+} from "@/app/helpers/constants.js";
 import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
 import { gsap } from "gsap";
 import {
@@ -64,14 +69,6 @@ function DesignLeadForm({ category, item, location }) {
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  // const dateRef = useRef(null);
-
-  // useEffect(() => {
-  //   // Focus the TextField when the component is mounted
-  //   if (dateRef.current) {
-  //     dateRef.current.focus();
-  //   }
-  // }, []);
   function handlePhoneChange(value) {
     setFormData((prev) => ({ ...prev, phone: value }));
   }
@@ -459,7 +456,14 @@ function DesignLeadForm({ category, item, location }) {
                 </>
               ) : (
                 <>
-                  <TextField
+                  <CountrySelector
+                    label={translate("Country")}
+                    name="country"
+                    onChange={handleChange}
+                    value={formData.country}
+                    fullWidth={true}
+                  />
+                  {/* <TextField
                     fullWidth
                     label={translate("Country")}
                     name="country"
@@ -477,7 +481,7 @@ function DesignLeadForm({ category, item, location }) {
                         },
                       },
                     }}
-                  />
+                  /> */}
                 </>
               )}
               <SimpleFileInput
@@ -559,267 +563,79 @@ function ConsultLeadForm({ category }) {
     </Box>
   );
 }
+const orderedCountriesWithRegions = [];
+Object.keys(countriesByRegion).forEach((region) => {
+  countriesByRegion[region].forEach((country) => {
+    orderedCountriesWithRegions.push({
+      region,
+      country,
+    });
+  });
+});
 
-// function ConsultLeadForm({item,category}){
-//     const {lng}=useLanguageContext()
-//         useEffect(() => {
-//             const createCheckoutAndRedirect = async () => {
-//                 if (!item || !variants[item]) {
-//                     console.error('Invalid item or variantId');
-//                     return;
-//                 }
+// Extract just the country names for the options list while preserving order
+const allCountriesOrdered = orderedCountriesWithRegions.map(
+  (item) => item.country
+);
 
-//                 try {
-//                     const requestData = {
-//                         variantId: variants[item],
-//                         quantity: 1, // Adjust quantity if needed
-//                         returnUrl: `${window.location.origin}/order-confirmation`,
-//                     };
-//                     const response = await fetch(
-//                           `${process.env.NEXT_PUBLIC_URL}/client/checkout`,
-//                           {
-//                               method: 'POST', // Specify the HTTP method
-//                               credentials: 'include', // Include cookies in the request
-//                               headers: {
-//                                   'Content-Type': 'application/json', // Specify the content type
-//                               },
-//                               body: JSON.stringify(requestData),
-//                           }
-//                     );
-//                     const request=await response.json()
-//                     const checkoutUrl = request.data.checkoutUrl;
+const CountrySelector = ({
+  value,
+  onChange,
+  label,
+  name,
+  translate,
+  fullWidth = true,
+}) => {
+  const handleCountryChange = (event, newValue) => {
+    // Create a synthetic event object that mimics the structure expected by handleChange
+    const syntheticEvent = {
+      target: {
+        name: name || "country",
+        value: newValue,
+      },
+    };
 
-//                     if (checkoutUrl) {
-//                          window.location.href = checkoutUrl;
-//                     } else {
-//                         console.error('Checkout URL not found');
-//                     }
-//                 } catch (error) {
-//                     console.error('Error creating checkout:', error.message);
-//                 }
-//             };
+    onChange(syntheticEvent);
+  };
 
-//             // Call the function when the component mounts
-//             createCheckoutAndRedirect();
-//         }, [item]);
+  // Find the region for a country
+  const getRegionForCountry = (country) => {
+    const item = orderedCountriesWithRegions.find(
+      (item) => item.country === country
+    );
+    return item ? item.region : "Other";
+  };
 
-//         return (
-//               <Box
-//                     sx={{
-//                         display: 'flex',
-//                         flexDirection: 'column',
-//                         justifyContent: 'center',
-//                         alignItems: 'center',
-//                         textAlign: 'center',
-//                         padding: '16px',
-//                     }}
-//               >
-//     <Typography
-//           variant="h5"
-//           sx={{ fontWeight: 'bold', marginBottom: 1,display:"flex",gap:2,alignItems:"center" }}
-//     >
-//               <CircularProgress sx={{ marginBottom: 2 }} />
-//         {lng === 'ar' ? '...نقوم بإعادة توجيهك' : 'We are redirecting you...'}
-//     </Typography>
-//     <Typography variant="body1" sx={{ color: 'gray', marginBottom: 2 }}>
-//         {lng === 'ar'
-//               ? '.يرجى الانتظار قليلاً بينما نقوم بتحضير الصفحة'
-//               : 'Please wait while we prepare the page for you.'}
-//     </Typography>
-//               </Box>
-//         );
-//     }
-
-// function ConsultLeadForm({item,category}){
-//     const {translate,lng}=useLanguageContext()
-//     const [formData, setFormData] = useState({
-//         name: "",
-//         phone: "",
-//         email:"",
-//         file:null,
-//         emirate:null
-//     });
-//     const [renderSuccess,setRenderSuccess]=useState(false)
-//     const {setAlertError}=useAlertContext()
-//     const {setLoading}=useToastContext()
-//
-//     const theme = useTheme();
-//     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-//     const emiratesOptions = Object.entries(Emirate).map(([key, value]) => ({
-//         key,
-//         label: value,
-//     }));
-//     const handleChange = (e) => {
-//         const {name, value} = e.target;
-//         if (name === "phone" && !/^\d*$/.test(value)) {
-//             return;
-//         }
-//         setFormData((prev) => ({...prev, [name]: value}));
-//     };
-//     const handleEmirateChange = (event, newValue) => {
-//         setFormData((prev) => ({...prev, emirate: event.target.value}))
-//     };
-//     const handleSubmit =async () => {
-//         const { name, phone ,email} = formData;
-//         if (!name || !phone ||!email) {
-//             setAlertError(translate("Please fill all the fields."));
-//             return;
-//         }
-//         if(formData.file){
-//             const form = new FormData();
-//             form.append('file', formData.file);
-//             const fileUpload = await handleRequestSubmit(form, setLoading, "client/upload", true, translate("Uploading file"))
-//             if (fileUpload.status === 200) {
-//                 const data={...formData,url:fileUpload.fileUrls.file[0],category,item,lng}
-//                 const request= await handleRequestSubmit(data, setLoading, "client/new-lead", false, translate("Submitting"))
-//                 if(request.status===200){
-//                     setRenderSuccess(true)
-//                 }
-//             }
-//         }else{
-//             const data={...formData,category,item,lng}
-//             const request= await handleRequestSubmit(data, setLoading, "client/new-lead", false, translate("Submitting"))
-//             if(request.status===200){
-//                 setRenderSuccess(true)
-//             }
-//         }
-//     };
-//
-//     return (
-//           <Box
-//                 sx={{
-//                     height:"100%",
-//                     overflowY:"auto",
-//                     minWidth:isMobile?"100%":"800px",
-//                 }}
-//                 className="final-selection-form"
-//           >
-//               {renderSuccess?<SuccessPage category={category} formData={formData}/>:
-//                     <Paper
-//                           elevation={4}
-//                           sx={{
-//                               padding: {xs:2,md:4},
-//                               borderRadius: 3,
-//                               background: "linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)",
-//                               direction:lng==="ar"?"ltr":"ltr"
-//                           }}
-//                     >
-//                         <Typography
-//                               variant="h4"
-//                               sx={{
-//                                   marginBottom: 1,
-//                                   textAlign: "center",
-//                                   fontWeight: 700,
-//                                   color: theme.palette.primary.main,
-//                               }}
-//                         >
-//                             {translate("Complete Your Request")}
-//                         </Typography>
-//                         <Box sx={{ marginBottom: 3, textAlign: "center",display:"flex",gap:2,alignItems:"center",justifyContent:"center" }}>
-//                             <Typography variant="subtitle1">{translate("Consultation") || ""}</Typography> -
-//                             <Typography variant="subtitle1">{translate(LeadType[item]) || ""}</Typography>
-//                         </Box>
-//                         <Stack spacing={3}>
-//                             <TextField
-//                                   fullWidth
-//                                   label={translate("Name")}
-//                                   name="name"
-//                                   variant="outlined"
-//                                   value={formData.name}
-//                                   onChange={handleChange}
-//                                   InputProps={{
-//                                       sx: {
-//                                           borderRadius: 2,
-//                                           "&:hover": {
-//                                               "& fieldset": {
-//                                                   borderColor: "primary.main",
-//                                               },
-//                                           },
-//                                       },
-//                                   }}
-//                             />
-//                             <TextField
-//                                   fullWidth
-//                                   label={translate("Phone")}
-//                                   name="phone"
-//                                   type="tel"
-//                                   variant="outlined"
-//                                   value={formData.phone}
-//                                   onChange={handleChange}
-//                                   sx={{
-//                                       direction:lng==="ar"?"ltr":"rtl"
-//                                   }}
-//                                   InputProps={{
-//                                       sx: {
-//                                           borderRadius: 2,
-//                                           "&:hover": {
-//                                               "& fieldset": {
-//                                                   borderColor: "primary.main",
-//                                               },
-//                                           },
-//                                       },
-//                                   }}
-//                             />
-//                             <TextField
-//                                   fullWidth
-//                                   label={translate("Email")}
-//                                   name="email"
-//                                   type="email"
-//                                   variant="outlined"
-//                                   value={formData.email}
-//                                   onChange={handleChange}
-//                                   InputProps={{
-//                                       sx: {
-//                                           borderRadius: 2,
-//                                           "&:hover": {
-//                                               "& fieldset": {
-//                                                   borderColor: "primary.main",
-//                                               },
-//                                           },
-//                                       },
-//                                   }}
-//                             />
-//                             {item==="CITY_VISIT"&&                                      <FormControl fullWidth variant="outlined" >
-//                                 <InputLabel id="emirate-label">{translate("Select Location")}</InputLabel>
-//                                 <Select
-//                                       labelId="emirate-label"
-//                                       id="emirate"
-//                                       label={translate("Select Location")}
-//                                       value={formData.emirate} // Ensure you define this state
-//                                       onChange={handleEmirateChange}
-//                                 >
-//                                     {
-//                                         emiratesOptions.map((option) => (
-//                                               <MenuItem value={option.key} key={option.key}>
-//                                                   {translate(option.label)}
-//                                               </MenuItem>
-//                                         ))
-//                                     }
-//                                 </Select>
-//                             </FormControl>}
-//                             <SimpleFileInput label={translate("Add an attachment (optional)")} id="file"  setData={setFormData} variant="outlined" />
-//                             <Button
-//                                   variant="contained"
-//                                   onClick={handleSubmit}
-//                                   size="large"
-//                                   sx={{
-//                                       borderRadius: 2,
-//                                       padding: "16px",
-//                                       fontSize: "1.2rem",
-//                                       fontWeight: 600,
-//                                       textTransform: "none",
-//                                       boxShadow:
-//                                             "0 4px 20px 0 rgba(61, 71, 82, 0.1), 0 0 0 0 rgba(0, 127, 255, 0)",
-//                                   }}
-//                             >
-//                                 {translate("Submit")}
-//                             </Button>
-//                         </Stack>
-//                     </Paper>
-//               }
-//           </Box>
-//     );
-// }
+  return (
+    <Autocomplete
+      id="country-selector"
+      options={allCountriesOrdered}
+      value={value || null}
+      onChange={handleCountryChange}
+      groupBy={getRegionForCountry}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label={translate ? translate("Country") : label || "Country"}
+          name={name || "country"}
+          variant="outlined"
+          fullWidth={fullWidth}
+          InputProps={{
+            ...params.InputProps,
+            sx: {
+              borderRadius: 2,
+              "&:hover": {
+                "& fieldset": {
+                  borderColor: "primary.main",
+                },
+              },
+            },
+          }}
+        />
+      )}
+    />
+  );
+};
 function SuccessPage({ category, formData }) {
   const isInsideEmirates = category === "CONSULTATION" || formData.emirate;
   const { translate } = useLanguageContext();

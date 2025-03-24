@@ -11,7 +11,12 @@ import {
 } from "./notification.js";
 import { ClientLeadStatus, LeadWorkStages } from "./enums.js";
 
-export async function getClientLeads({ limit = 1, skip = 10, searchParams }) {
+export async function getClientLeads({
+  limit = 1,
+  skip = 10,
+  searchParams,
+  userId,
+}) {
   let where = {};
   const {
     isNew = false,
@@ -21,8 +26,6 @@ export async function getClientLeads({ limit = 1, skip = 10, searchParams }) {
 
   const filters = JSON.parse(searchParams.filters);
   if (assignedOverdue) {
-    const fifteenDaysAgo = new Date();
-    fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
     where = {
       status: "ON_HOLD",
     };
@@ -68,6 +71,24 @@ export async function getClientLeads({ limit = 1, skip = 10, searchParams }) {
     where.assignedAt = {
       gte: start.toDate(),
       lte: end.toDate(),
+    };
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { notAllowedCountries: true, role: true },
+  });
+  if (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN") {
+    where = {
+      ...where, // Preserve existing filters
+      AND: [
+        {
+          OR: [
+            { country: { notIn: user.notAllowedCountries ?? [] } },
+            { country: { equals: null } },
+          ],
+        },
+      ],
     };
   }
 
@@ -173,11 +194,26 @@ export async function getClientLeadsByDateRange({ searchParams }) {
   return clientLeads;
 }
 
-export async function getClientLeadDetails(clientLeadId, searchParams) {
-  const where = {};
-  console.log(searchParams, "searchParams");
+export async function getClientLeadDetails(
+  clientLeadId,
+  searchParams,
+  role,
+  userId
+) {
+  let where = {};
   if (searchParams.userId) {
     where.userId = Number(searchParams.userId);
+  }
+  if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
+    const clientLeadShuffle = await prisma.clientLead.findUnique({
+      where: { id: Number(clientLeadId) },
+      select: {
+        userId: true,
+      },
+    });
+    if (clientLeadShuffle.userId !== Number(userId)) {
+      where = {};
+    }
   }
   const clientLead = await prisma.clientLead.findUnique({
     where: { id: clientLeadId },
@@ -235,6 +271,7 @@ export async function getClientLeadDetails(clientLeadId, searchParams) {
           maxPrice: true,
           note: true,
           userId: true,
+          isAccepted: true,
           url: true,
           user: {
             select: { name: true },
@@ -444,6 +481,16 @@ export async function makeExtraServicePayments({
     },
   });
   return data;
+}
+export async function editPriceOfferStatus(priceOfferId, isAccepted) {
+  return await prisma.priceOffers.update({
+    where: {
+      id: Number(priceOfferId),
+    },
+    data: {
+      isAccepted,
+    },
+  });
 }
 /* dashboard services */
 export const getKeyMetrics = async (searchParams) => {
@@ -1702,3 +1749,47 @@ export async function getOtherRoles(userId) {
   }
   return [...subRoles, mainRole.role];
 }
+
+export async function checkIfUserAllowedToTakeALead(userId, country) {
+  const user = await prisma.user.findUnique({
+    where: { id: Number(userId) },
+    select: { notAllowedCountries: true },
+  });
+  const notAllowed = user?.notAllowedCountries ?? [];
+
+  const allowed = !notAllowed.includes(country);
+  return allowed;
+}
+
+export const checkUserLog = async (userId, startTime, endTime) => {
+  const log = await prisma.userLog.findFirst({
+    where: {
+      userId: Number(userId),
+      date: {
+        gte: new Date(startTime),
+        lte: new Date(endTime),
+      },
+    },
+  });
+  return !!log;
+};
+export const submitUserLog = async (
+  userId,
+  date,
+  description,
+  totalMinutes
+) => {
+  if (!description || !description.trim()) {
+    throw new Error("Please enter a description");
+  }
+  const newLog = await prisma.userLog.create({
+    data: {
+      userId: Number(userId),
+      date: new Date(date),
+      description,
+      totalMinutes,
+    },
+  });
+
+  return { data: newLog, message: "response saved" };
+};

@@ -10,6 +10,9 @@ import {
   addCostFiles,
   assignLeadToAUser,
   assignWorkStageLeadToAUser,
+  checkIfUserAllowedToTakeALead,
+  checkUserLog,
+  editPriceOfferStatus,
   getAllFixedData,
   getClientLeadDetails,
   getClientLeads,
@@ -30,9 +33,11 @@ import {
   makeExtraServicePayments,
   makePayments,
   markClientLeadAsConverted,
+  submitUserLog,
   updateClientLeadStatus,
   updateLeadWorkStage,
 } from "../services/sharedServices.js";
+import { getAdminClientLeadDetails } from "../services/adminServices.js";
 
 const router = Router();
 
@@ -42,11 +47,14 @@ router.use((req, res, next) => {
 router.get("/client-leads", async (req, res) => {
   try {
     const searchParams = req.query;
+    const user = getTokenData(req, res);
+
     const { limit, skip } = getPagination(req);
     const result = await getClientLeads({
       limit: Number(limit),
       skip: Number(skip),
       searchParams,
+      userId: user.id,
     });
     res.status(200).json(result);
   } catch (error) {
@@ -79,7 +87,28 @@ router.get("/client-leads/deals", async (req, res) => {
       .json({ message: "An error occurred while fetching client leads" });
   }
 });
+router.post("/:userId/client-leads/countries", async (req, res) => {
+  const { userId } = req.params;
 
+  try {
+    const isAllowed = await checkIfUserAllowedToTakeALead(
+      userId,
+      req.body.country
+    );
+    console.log(isAllowed, "is");
+    res.status(200).json({
+      allowed: isAllowed,
+      message: isAllowed
+        ? "You are allowed to take this lead"
+        : "You are restricetd to take lead from this country",
+    });
+  } catch (error) {
+    console.error("Error fetching supervisors:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching supervisors" });
+  }
+});
 router.get("/client-leads/calls", async (req, res) => {
   try {
     const searchParams = req.query;
@@ -110,10 +139,15 @@ router.get("/client-leads/:id", async (req, res) => {
     ) {
       searchParams.userId = token.id;
     }
-    const clientLeadDetails = await getClientLeadDetails(
-      Number(id),
-      searchParams
-    );
+    const clientLeadDetails =
+      token.role === "ADMIN" || token.role === "SUPER_ADMIN"
+        ? await getAdminClientLeadDetails(Number(id))
+        : await getClientLeadDetails(
+            Number(id),
+            searchParams,
+            token.role,
+            token.id
+          );
     res.status(200).json({ data: clientLeadDetails });
   } catch (error) {
     console.error("Error fetching client lead details:", error);
@@ -124,6 +158,7 @@ router.get("/client-leads/:id", async (req, res) => {
     });
   }
 });
+
 router.post("/client-leads/:id/payments", async (req, res) => {
   const { id } = req.params;
   let payments;
@@ -144,6 +179,22 @@ router.post("/client-leads/:id/payments", async (req, res) => {
   } catch (error) {
     console.error("Error Creating payments:", error);
     res.status(500).json({ message: "Error Creating payments" });
+  }
+});
+router.post("/client-lead/price-offers/change-status", async (req, res) => {
+  let priceOffer = await editPriceOfferStatus(
+    req.body.priceOfferId,
+    req.body.isAccepted
+  );
+
+  try {
+    res.status(200).json({
+      data: priceOffer,
+      message: "Price offer status changed successfully",
+    });
+  } catch (error) {
+    console.error("Error editing Price offer:", error);
+    res.status(500).json({ message: "Error editing Price offer" });
   }
 });
 
@@ -181,6 +232,43 @@ router.put("/client-leads/convert", async (req, res) => {
     res
       .status(500)
       .json({ message: "An error occurred while assigning client leads" });
+  }
+});
+router.get("/user-logs", async (req, res) => {
+  try {
+    const searchParams = req.query;
+
+    const data = await checkUserLog(
+      searchParams.userId,
+      searchParams.startTime,
+      searchParams.endTime
+    );
+    res.status(200).json({ data });
+  } catch (error) {
+    console.error("Error fetching client lead details:", error);
+    res.status(500).json({
+      message:
+        error.message ||
+        "An error occurred while fetching client lead details.",
+    });
+  }
+});
+router.post("/user-logs", async (req, res) => {
+  try {
+    const data = await submitUserLog(
+      req.body.userId,
+      req.body.date,
+      req.body.description,
+      req.body.totalMinutes
+    );
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error fetching client lead details:", error);
+    res.status(500).json({
+      message:
+        error.message ||
+        "An error occurred while fetching client lead details.",
+    });
   }
 });
 

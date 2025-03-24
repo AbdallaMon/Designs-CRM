@@ -12,7 +12,6 @@ import {
 } from "@mui/material";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
-import dayjs from "dayjs";
 import Link from "next/link";
 
 const PaymentDialog = ({ payments }) => {

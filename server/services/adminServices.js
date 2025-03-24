@@ -1156,26 +1156,109 @@ export async function deleteAFixedData({ id }) {
     where: { id },
   });
 }
-export async function getUserLastSeen(userId) {
-  const today = dayjs().startOf("day").toDate(); // Get today's date at midnight
+export async function getUserLogs(userId, month, year) {
+  // Default to current month/year if not provided
+  const requestedMonth = month ? parseInt(month) - 1 : dayjs().month(); // 0-indexed month
+  const requestedYear = year ? parseInt(year) : dayjs().year();
 
+  // Get start and end dates for the requested month
+  const startOfMonth = dayjs()
+    .year(requestedYear)
+    .month(requestedMonth)
+    .startOf("month")
+    .toDate();
+  const endOfMonth = dayjs()
+    .year(requestedYear)
+    .month(requestedMonth)
+    .endOf("month")
+    .toDate();
+
+  // Fetch user for last seen info
   const user = await prisma.user.findUnique({
     where: { id: Number(userId) },
     select: {
       lastSeenAt: true,
-      logs: {
-        where: { date: today }, // Get logs for today
-        select: { totalMinutes: true },
-      },
     },
   });
-  const totalMinutes = user?.logs?.[0]?.totalMinutes || 0;
-  const totalHours = (totalMinutes / 60).toFixed(2); // Convert to hours
-  const totalMonthHours = await getUserMonthlyTotalHours(Number(userId));
+
+  // Fetch all logs for the specified month
+  const logs = await prisma.userLog.findMany({
+    where: {
+      userId: Number(userId),
+      date: {
+        gte: startOfMonth,
+        lte: endOfMonth,
+      },
+    },
+    select: {
+      id: true,
+      date: true,
+      totalMinutes: true,
+      description: true,
+    },
+    orderBy: {
+      date: "desc",
+    },
+  });
+
+  // Calculate total month hours
+  const totalMonthMinutes = logs.reduce(
+    (total, log) => total + log.totalMinutes,
+    0
+  );
+  const totalMonthHours = (totalMonthMinutes / 60).toFixed(2);
+
+  // Group logs by date
+  const logsByDate = {};
+  logs.forEach((log) => {
+    const dateStr = dayjs(log.date).format("YYYY-MM-DD");
+    if (!logsByDate[dateStr]) {
+      logsByDate[dateStr] = {
+        date: dateStr,
+        formattedDate: dayjs(log.date).format("MMM DD, YYYY"),
+        totalMinutes: 0,
+        entries: [],
+      };
+    }
+
+    logsByDate[dateStr].totalMinutes += log.totalMinutes;
+    logsByDate[dateStr].entries.push({
+      id: log.id,
+      time: log.date,
+      formattedTime: dayjs(log.date).format("h:mm A"),
+      description: log.description || "Activity logged",
+      totalHours: log.totalMinutes / 60,
+    });
+  });
+
+  // Convert to array and calculate hours
+  const formattedLogs = Object.values(logsByDate).map((day) => ({
+    ...day,
+    totalHours: (day.totalMinutes / 60).toFixed(2),
+  }));
+
+  // Get today's hours from getUserLastSeen for consistency
+  const today = dayjs().startOf("day").toDate();
+  const todayLog = await prisma.userLog.findFirst({
+    where: {
+      userId: Number(userId),
+      date: today,
+    },
+    select: {
+      totalMinutes: true,
+    },
+  });
+  const todayHours = todayLog
+    ? (todayLog.totalMinutes / 60).toFixed(2)
+    : "0.00";
+
   return {
     lastSeenAt: user?.lastSeenAt || null,
-    totalHours,
-    ...totalMonthHours,
+    logs: formattedLogs,
+    totalMonthHours,
+    totalHours: todayHours,
+    month: requestedMonth + 1, // Convert back to 1-indexed for display
+    year: requestedYear,
   };
 }
 export async function getUserMonthlyTotalHours(userId) {
@@ -1213,4 +1296,70 @@ export async function updateUserMaxLeads(userId, maxLeadCount) {
     where: { id: Number(userId) },
     data: { maxLeadsCounts: Number(maxLeadCount) },
   });
+}
+
+export async function getNotAllowedCountries(userId) {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: Number(userId),
+    },
+    select: {
+      notAllowedCountries: true,
+    },
+  });
+  return user.notAllowedCountries;
+}
+
+export async function updateNotAllowedCountries(userId, countries) {
+  const user = await prisma.user.update({
+    where: {
+      id: Number(userId),
+    },
+    data: {
+      notAllowedCountries: countries,
+    },
+  });
+}
+
+export async function getAdminClientLeadDetails(clientLeadId) {
+  const clientLead = await prisma.clientLead.findUnique({
+    where: { id: Number(clientLeadId) },
+    include: {
+      client: true,
+      assignedTo: true,
+      threeDDesigner: true,
+      twoDDesigner: true,
+      twoDExacuter: true,
+      priceOffers: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          user: { select: { name: true } },
+        },
+      },
+      payments: {
+        include: {
+          invoices: true,
+        },
+      },
+      extraServices: true,
+      notes: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          user: { select: { name: true } },
+        },
+      },
+      callReminders: {
+        orderBy: { time: "desc" },
+        include: {
+          user: { select: { name: true } },
+        },
+      },
+      files: {
+        include: {
+          user: { select: { name: true } },
+        },
+      },
+    },
+  });
+  return clientLead;
 }

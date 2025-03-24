@@ -25,6 +25,7 @@ import {
 } from "react-icons/fi";
 
 import Navbar from "@/app/UiComponents/utility/Navbar.jsx";
+import ActivityLogDialog from "@/app/UiComponents/feedback/UserLogsUpdate";
 
 let toastId;
 export const adminLinks = [
@@ -275,6 +276,9 @@ export default function Layout({
         backgroundColor: colors.bgSecondary,
       }}
     >
+      {user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && (
+        <ActivityLogDialog userId={user.id} />
+      )}
       <Navbar
         links={
           role === "ADMIN"

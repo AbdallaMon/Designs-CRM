@@ -3,6 +3,7 @@ import "jspdf-autotable";
 import dayjs from "dayjs";
 import arabicFontBase64 from "@/app/fonts/arabicFont.js";
 import { checkIfADesigner } from "@/app/helpers/functions/utility";
+import { PaymentLevels } from "@/app/helpers/constants";
 
 export function generatePDF(clientLead, user) {
   const doc = new jsPDF();
@@ -17,7 +18,7 @@ export function generatePDF(clientLead, user) {
       cellPadding: 3,
     },
   });
-  // Helper functions
+
   const formatField = (field) =>
     field ? field.toString() : "This field is empty";
   const formatDate = (date) =>
@@ -29,7 +30,6 @@ export function generatePDF(clientLead, user) {
         })}`
       : "Not specified";
 
-  // Set document properties
   doc.setProperties({
     title: `Client Lead Details - ${clientLead.id}`,
     subject: "Client Lead Report",
@@ -38,13 +38,11 @@ export function generatePDF(clientLead, user) {
     creator: "PDF Generator",
   });
 
-  // Initialize tracking variables
   let currentPage = 1;
   let y = 20;
   const margin = 10;
   const pageHeight = doc.internal.pageSize.height;
 
-  // Add header to each page
   const addHeader = () => {
     doc.setFillColor(51, 122, 183);
     doc.rect(0, 0, doc.internal.pageSize.width, 15, "F");
@@ -55,7 +53,6 @@ export function generatePDF(clientLead, user) {
     y = 25;
   };
 
-  // Check page break
   const checkPageBreak = (height = 10) => {
     if (y + height >= pageHeight - margin) {
       doc.addPage();
@@ -66,7 +63,6 @@ export function generatePDF(clientLead, user) {
     return false;
   };
 
-  // Add section title
   const addSectionTitle = (title) => {
     checkPageBreak(15);
     doc.setFillColor(240, 240, 240);
@@ -78,14 +74,12 @@ export function generatePDF(clientLead, user) {
     y += 10;
   };
 
-  // Add field
   const addField = (label, value, indent = 0) => {
     const textWidth = doc.internal.pageSize.width - margin * 2 - indent;
     const wrappedText = doc.splitTextToSize(
       `${label}: ${formatField(value)}`,
       textWidth
     );
-
     checkPageBreak(wrappedText.length * 7);
     wrappedText.forEach((line) => {
       doc.text(line, margin + indent, y);
@@ -93,23 +87,17 @@ export function generatePDF(clientLead, user) {
     });
   };
 
-  // Start PDF generation
   addHeader();
-  if (clientLead.status === "NEW") {
-  } else {
+
+  if (clientLead.status !== "NEW") {
     addSectionTitle("Client Information");
     addField("Name", clientLead.client?.name);
     addField("Phone", clientLead.client?.phone);
+    addField("Email", clientLead.client?.email);
+    addField("Country", clientLead.country);
+    addField("Time To Contact", formatDate(clientLead.timeToContact));
   }
 
-  // Assigned To
-  if (clientLead.assignedTo) {
-    addSectionTitle("Assigned To");
-    addField("Name", clientLead.assignedTo.name);
-    addField("Email", clientLead.assignedTo.email);
-  }
-
-  // Lead Details
   addSectionTitle("Lead Details");
   addField("Category", clientLead.selectedCategory);
   addField("Type", clientLead.type);
@@ -127,33 +115,80 @@ export function generatePDF(clientLead, user) {
     y += wrappedDesc.length * 7 + 5;
   }
 
-  // Price Information
   if (!checkIfADesigner(user)) {
     addSectionTitle("Price Information");
-    // addField("Price", formatCurrency(clientLead.price));
     if (clientLead.status === "FINALIZED") {
-      addField("Price", formatCurrency(clientLead.averagePrice));
+      addField("Final Price", formatCurrency(clientLead.averagePrice));
       addField("Price Note", clientLead.priceNote);
-      if (clientLead.discount) {
-        addField("Discount", clientLead.discount);
-      }
+      addField("Discount", `${clientLead.discount || 0}%`);
     } else {
-      addField("Client Suggested Price", clientLead.price);
+      addField("Suggested Price", formatCurrency(clientLead.price));
+    }
+    addField(
+      "Price Without Discount",
+      formatCurrency(clientLead.priceWithOutDiscount)
+    );
+  }
+
+  // Admin-specific
+  if (["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
+    addSectionTitle("Assigned Staff");
+    addField("Lead staff", clientLead.assignedTo.name);
+
+    if (clientLead.threeDDesigner)
+      addField("3D Designer", clientLead.threeDDesigner.name);
+    if (clientLead.twoDDesigner)
+      addField("2D Designer", clientLead.twoDDesigner.name);
+    if (clientLead.twoDExacuter)
+      addField("2D Executer", clientLead.twoDExacuter.name);
+
+    addSectionTitle("Work Stages");
+    if (clientLead.threeDWorkStage) {
+      addField("3D Stage", clientLead.threeDWorkStage);
+    }
+    if (clientLead.twoDWorkStage) {
+      addField("2D Stage", clientLead.twoDWorkStage);
+    }
+    if (clientLead.twoDExacuterStage) {
+      addField("2D Executer Stage", clientLead.twoDExacuterStage);
+    }
+
+    if (clientLead.payments?.length) {
+      addSectionTitle("Payments");
+      clientLead.payments.forEach((p, i) => {
+        addField(`Payment #${i + 1} - Status`, p.status);
+        addField("Amount", formatCurrency(p.amount), 5);
+        addField("Paid", formatCurrency(p.amountPaid), 5);
+        addField("Left", formatCurrency(p.amountLeft), 5);
+        addField("Reason", p.paymentReason, 5);
+        addField("Payment level", PaymentLevels[p.paymentLevel], 5);
+
+        if (p.invoices?.length) {
+          p.invoices.forEach((inv, idx) => {
+            const issuedDate = formatDate(inv.issuedDate || inv.createdAt); // fallback to createdAt if issuedDate is missing
+            addField(
+              `  Invoice #${idx + 1}`,
+              `Amount: ${formatCurrency(inv.amount)} - Issued: ${issuedDate}`,
+              10
+            );
+          });
+        }
+      });
+    }
+
+    if (clientLead.extraServices?.length) {
+      addSectionTitle("Extra Services");
+      clientLead.extraServices.forEach((s, i) => {
+        addField(`Extra Service #${i + 1}`, s.note);
+        addField("Price", formatCurrency(s.price), 5);
+      });
     }
   }
-  // addField(
-  //   "Price Without Discount",
-  //   formatCurrency(clientLead.priceWithOutDiscount)
-  // );
-  // addField(
-  //   "Discount",
-  //   clientLead.discount ? `${clientLead.discount}%` : "No discount"
-  // );
 
   // Files
   if (clientLead.files?.length > 0) {
     addSectionTitle("Files");
-    clientLead.files.forEach((file, index) => {
+    clientLead.files.forEach((file) => {
       checkPageBreak(25);
       doc.setFillColor(245, 245, 245);
       doc.rect(
@@ -171,38 +206,33 @@ export function generatePDF(clientLead, user) {
       y += 5;
     });
   }
-  if (!checkIfADesigner(user)) {
-    if (clientLead.priceOffers?.length > 0) {
-      addSectionTitle("Price Offers");
 
-      const offerColumns = ["Date", "By", "Note", "Attachement"];
-      const offerRows = clientLead.priceOffers.map((offer) => [
-        formatDate(offer.createdAt),
-        offer.user?.name || "Unknown",
-        offer.note || "-",
-        offer.url || "No Attachments",
-      ]);
-
-      doc.autoTable({
-        font: "Amiri",
-        fontStyle: "normal",
-        head: [offerColumns],
-        body: offerRows,
-        startY: y,
-        margin: { left: margin },
-        theme: "grid",
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [51, 122, 183] },
-      });
-
-      y = doc.lastAutoTable.finalY + 10;
-    }
+  // Price Offers
+  if (!checkIfADesigner(user) && clientLead.priceOffers?.length > 0) {
+    addSectionTitle("Price Offers");
+    const offerColumns = ["Date", "By", "Note", "Attachment"];
+    const offerRows = clientLead.priceOffers.map((offer) => [
+      formatDate(offer.createdAt),
+      offer.user?.name || "Unknown",
+      offer.note || "-",
+      offer.url || "No Attachment",
+    ]);
+    doc.autoTable({
+      head: [offerColumns],
+      body: offerRows,
+      startY: y,
+      margin: { left: margin },
+      theme: "grid",
+      styles: { fontSize: 9 },
+      headStyles: { fillColor: [51, 122, 183] },
+    });
+    y = doc.lastAutoTable.finalY + 10;
   }
 
   // Notes
   if (clientLead.notes?.length > 0) {
     addSectionTitle("Notes");
-    clientLead.notes.forEach((note, index) => {
+    clientLead.notes.forEach((note) => {
       checkPageBreak(30);
       doc.setFillColor(245, 245, 245);
       doc.rect(
@@ -212,7 +242,6 @@ export function generatePDF(clientLead, user) {
         20,
         "F"
       );
-
       const noteHeader = `${formatDate(note.createdAt)} - ${
         note.user?.name || "Unknown"
       }`;
@@ -220,7 +249,6 @@ export function generatePDF(clientLead, user) {
       doc.text(noteHeader, margin + 5, y);
       doc.setFont("Amiri", "normal");
       y += 7;
-
       const wrappedContent = doc.splitTextToSize(
         note.content,
         doc.internal.pageSize.width - margin * 2 - 10
@@ -233,7 +261,6 @@ export function generatePDF(clientLead, user) {
   // Call Reminders
   if (clientLead.callReminders?.length > 0) {
     addSectionTitle("Call Reminders");
-
     const reminderColumns = ["Time", "Status", "User", "Reason", "Result"];
     const reminderRows = clientLead.callReminders.map((reminder) => [
       formatDate(reminder.time),
@@ -242,10 +269,7 @@ export function generatePDF(clientLead, user) {
       reminder.reminderReason || "-",
       reminder.callResult || "-",
     ]);
-
     doc.autoTable({
-      font: "Amiri",
-      fontStyle: "normal",
       head: [reminderColumns],
       body: reminderRows,
       startY: y,
@@ -254,11 +278,10 @@ export function generatePDF(clientLead, user) {
       styles: { fontSize: 9 },
       headStyles: { fillColor: [51, 122, 183] },
     });
-
     y = doc.lastAutoTable.finalY + 10;
   }
 
-  // Add footer to each page
+  // Footer
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
@@ -276,7 +299,7 @@ export function generatePDF(clientLead, user) {
     );
   }
 
-  // Save the PDF
+  // Save
   doc.save(
     `ClientLead_${clientLead.id}_${new Date().toISOString().split("T")[0]}.pdf`
   );

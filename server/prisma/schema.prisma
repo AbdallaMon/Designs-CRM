@@ -252,6 +252,7 @@ model PriceOffers {
   minPrice     Decimal?   @db.Decimal(10, 2)  // Made optional
   maxPrice     Decimal?   @db.Decimal(10, 2)  // Made optional
   note         String?    @db.Text  // Added this field
+  isAccepted   Boolean    @default(false) 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
@@ -316,6 +317,7 @@ model User {
  twoDExacuterLeads ClientLead[] @relation("TwoDExacuterLeads") // New relation
  accountantLeads ClientLead[] @relation("AccountantLeads")
  baseSalary    BaseEmployeeSalary? 
+ notAllowedCountries Json?
  @@index([email])
 }
 
@@ -332,10 +334,11 @@ model UserLog {
   id           Int      @id @default(autoincrement())
   userId       Int
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date         DateTime @default(now()) // Unique per user per day
-  totalMinutes Int      @default(0)     // Track minutes spent
+  date         DateTime @default(now()) // Not unique anymore
+  totalMinutes Int      @default(0)       // Track minutes spent
+  description  String?   // New field to store descripti
 
-  @@unique([userId, date]) // Ensure only one entry per day per user
+  @@unique([userId]) // Ensure only one entry per day per user
   @@index([userId])
 }
 

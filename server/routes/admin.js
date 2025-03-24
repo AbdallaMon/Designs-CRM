@@ -18,10 +18,12 @@ import {
   generateStaffExcelReport,
   generateStaffPDFReport,
   generateStaffReport,
+  getNotAllowedCountries,
   getNotificationForTodayByStaffId,
   getUser,
   getUserById,
-  getUserLastSeen,
+  getUserLogs,
+  updateNotAllowedCountries,
   updateUserMaxLeads,
   updateUserRoles,
 } from "../services/adminServices.js";
@@ -54,15 +56,48 @@ router.get("/users", async (req, res) => {
 });
 router.get("/users/:userId/last-seen", async (req, res) => {
   const { userId } = req.params;
+  const searchParams = req.query;
 
   try {
-    const userData = await getUserLastSeen(userId);
+    const userData = await getUserLogs(
+      userId,
+      searchParams.month,
+      searchParams.year
+    );
     res.status(200).json(userData);
   } catch (error) {
     console.error("Error fetching supervisors:", error);
     res
       .status(500)
       .json({ message: "An error occurred while fetching supervisors" });
+  }
+});
+router.get("/users/:userId/restricted-countries", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const countries = await getNotAllowedCountries(userId);
+    res.status(200).json(countries);
+  } catch (error) {
+    console.error("Error fetching supervisors:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching supervisors" });
+  }
+});
+
+router.post("/users/:userId/restricted-countries", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const newUser = await updateNotAllowedCountries(userId, req.body.countries);
+    res.status(200).json({
+      data: newUser,
+      message: "Restricted countries updated successfully",
+    });
+  } catch (error) {
+    console.error("Error fetching personal info:", error);
+    handlePrismaError(res, error);
   }
 });
 

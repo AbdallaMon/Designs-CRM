@@ -68,6 +68,7 @@ import {
   FileList,
   ExtraServicesList,
 } from "./LeadTabs";
+import { MdBlock } from "react-icons/md";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -95,6 +96,8 @@ const LeadContent = ({
   const { setLoading } = useToastContext();
   const [openConfirm, setOpenConfirm] = useState(false);
   const [openPriceModel, setOpenPriceModel] = useState(null);
+  const [isAllowed, setIsAllowed] = useState(true);
+  const [isAllowedLoading, setIsAllowedLoading] = useState(true);
   async function createADeal(lead) {
     const assign = await handleRequestSubmit(
       lead,
@@ -110,6 +113,36 @@ const LeadContent = ({
     }
     return assign;
   }
+
+  useEffect(() => {
+    const checkAccess = async () => {
+      try {
+        setIsAllowedLoading(true);
+        const res = await handleRequestSubmit(
+          { country: lead.country },
+          setLoading,
+          `shared/${user.id}/client-leads/countries`,
+          false,
+
+          "Checking if u allowed to take this lead"
+        );
+        if (res.status === 200) {
+          console.log(res, "Res");
+          setIsAllowed(res.allowed);
+        }
+      } catch (err) {
+        console.error("Failed to check access", err);
+        setIsAllowed(false);
+      } finally {
+        setIsAllowedLoading(false);
+      }
+    };
+    if (user.id !== lead.userId && user.role === "STAFF") {
+      checkAccess();
+    } else {
+      setIsAllowedLoading(false);
+    }
+  }, [user.id, lead.country]);
   const handleClick = (event) => {
     if (!admin) {
       setAnchorEl(event.currentTarget);
@@ -173,6 +206,14 @@ const LeadContent = ({
     }
   };
   const leadStatus = enumToKeyValueArray(KanbanLeadsStatus);
+  if (isAllowedLoading) return <FullScreenLoader />;
+  if (!isAllowed && user.id !== lead.userId && user.role === "STAFF") {
+    return (
+      <Alert severity="error" icon={<MdBlock size={20} />}>
+        Access to this lead is <b>Not Allowed</b>.
+      </Alert>
+    );
+  }
   return (
     <>
       {isPage && user.id !== lead.userId ? (
@@ -221,7 +262,9 @@ const LeadContent = ({
             {(lead.status === "NEW" || lead.status === "ON_HOLD") && !admin ? (
               ""
             ) : (
-              <Typography variant="h6">{lead.client.name}</Typography>
+              <Typography variant="h6">
+                #{lead.id} {lead.client.name}
+              </Typography>
             )}
           </Stack>
           <Stack

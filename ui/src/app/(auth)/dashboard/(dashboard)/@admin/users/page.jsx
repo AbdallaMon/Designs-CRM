@@ -30,6 +30,7 @@ import CreateModal from "@/app/UiComponents/models/CreateModal.jsx";
 import LastSeen from "@/app/UiComponents/buttons/LastSeen";
 import { userRoles, userRolesEnum } from "@/app/helpers/constants";
 import { MdAddCircleOutline, MdDelete } from "react-icons/md";
+import UserRestrictedCountries from "@/app/UiComponents/DataViewer/UserRestrictedCountries";
 
 const columns = [
   { name: "name", label: "User Name" },
@@ -185,6 +186,7 @@ export default function UsersPage() {
               <Button component={Link} href={"/dashboard/users/" + item.id}>
                 View Details
               </Button>
+              <UserRestrictedCountries userId={item.id} />
               <LastSeen initialLastSeen={item} userId={item.id} />
             </Box>
           </>

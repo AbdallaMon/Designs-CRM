@@ -26,7 +26,7 @@ import {
   renewRentAndMakeOutCome,
 } from "../services/accountantServices.js";
 import dayjs from "dayjs";
-import { getUserLastSeen } from "../services/adminServices.js";
+import { getUserLogs } from "../services/adminServices.js";
 
 const router = Router();
 
@@ -259,9 +259,13 @@ router.get("/users", async (req, res) => {
 
 router.get("/users/:userId/last-seen", async (req, res) => {
   const { userId } = req.params;
-
+  const searchParams = req.query;
   try {
-    const userData = await getUserLastSeen(userId);
+    const userData = await getUserLogs(
+      userId,
+      searchParams.month,
+      searchParams.year
+    );
     res.status(200).json(userData);
   } catch (error) {
     console.error("Error fetching supervisors:", error);

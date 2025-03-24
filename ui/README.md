@@ -61,15 +61,15 @@
 - two files to be added for قيد التسعير
 - Attacthments for payments and for any thing has money
 - Make the out come with more detail like rent name ect
-
 - Accountant kanban levels instead of payment table
-- Select country for each user only by admin
-- Every 3 hour ask user what he did in the past three hours (8-5) after 5 ask user for over time what he did
-- Admin and super admin generate pdf all thing related for the client
 - More vertical status needs to be dynamic
-- remove whatsapp icon
+- Select country for each user only by admin
+- Remove whatsapp icon
+- Admin and super admin generate pdf all thing related for the client
+- Show notes and calls in shuffle
+- Add button to accept one offer
 
-- Fix pdf for other roles
+- Every 3 hour ask user what he did in the past three hours (8-5) after 5 ask user for over time what he did
 - user profiles (for designer ect)
 - add default values to createModel in payment table
 
