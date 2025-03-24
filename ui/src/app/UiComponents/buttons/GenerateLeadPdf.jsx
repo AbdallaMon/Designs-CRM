@@ -207,15 +207,15 @@ export function generatePDF(clientLead, user) {
     });
   }
 
-  // Price Offers
   if (!checkIfADesigner(user) && clientLead.priceOffers?.length > 0) {
     addSectionTitle("Price Offers");
-    const offerColumns = ["Date", "By", "Note", "Attachment"];
+    const offerColumns = ["Date", "By", "Note", "Attachment", "Is Accepted"];
     const offerRows = clientLead.priceOffers.map((offer) => [
       formatDate(offer.createdAt),
       offer.user?.name || "Unknown",
       offer.note || "-",
       offer.url || "No Attachment",
+      offer.isAccetped,
     ]);
     doc.autoTable({
       head: [offerColumns],
