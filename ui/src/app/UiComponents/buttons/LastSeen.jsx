@@ -57,7 +57,6 @@ export default function LastSeen({ userId, initialLastSeen, accountant }) {
       });
       setUserLog(res);
       setLogsData(res);
-      console.log(res, "res");
     } catch (error) {
       console.error("Failed to fetch last seen", error);
     }
@@ -79,7 +78,6 @@ export default function LastSeen({ userId, initialLastSeen, accountant }) {
   // Handle month change
   const handleMonthChange = (event) => {
     const newMonth = event.target.value;
-    console.log(newMonth, "newMonth");
     setSelectedMonth(newMonth);
     fetchLastSeen(newMonth, selectedYear);
   };
@@ -92,7 +90,6 @@ export default function LastSeen({ userId, initialLastSeen, accountant }) {
   };
 
   useEffect(() => {
-    // Fetch data immediately on component mount
     fetchLastSeen(selectedMonth, selectedYear);
 
     // Set interval to update every 5 minutes

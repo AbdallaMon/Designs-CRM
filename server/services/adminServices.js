@@ -1307,7 +1307,8 @@ export async function getNotAllowedCountries(userId) {
       notAllowedCountries: true,
     },
   });
-  return user.notAllowedCountries;
+  console.log(user, "user");
+  return user.notAllowedCountries || [];
 }
 
 export async function updateNotAllowedCountries(userId, countries) {
