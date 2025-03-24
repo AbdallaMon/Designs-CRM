@@ -206,6 +206,7 @@ export function generatePDF(clientLead, user) {
       y += 5;
     });
   }
+  console.log(clientLead.priceOffers);
 
   if (!checkIfADesigner(user) && clientLead.priceOffers?.length > 0) {
     addSectionTitle("Price Offers");
@@ -215,7 +216,7 @@ export function generatePDF(clientLead, user) {
       offer.user?.name || "Unknown",
       offer.note || "-",
       offer.url || "No Attachment",
-      offer.isAccetped,
+      offer.isAccetped ? "Accepted" : "Not accepted",
     ]);
     doc.autoTable({
       head: [offerColumns],
