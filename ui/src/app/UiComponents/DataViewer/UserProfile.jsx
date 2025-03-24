@@ -6,6 +6,7 @@ import UserLogs from "@/app/UiComponents/DataViewer/UserLogs.jsx";
 import Link from "next/link";
 import LastSeen from "../buttons/LastSeen";
 import EditModal from "../models/EditModal";
+import UserRestrictedCountries from "./UserRestrictedCountries";
 
 export default function UserProfile({ id }) {
   const [user, setUser] = useState(null);
@@ -35,6 +36,8 @@ export default function UserProfile({ id }) {
             {!loading && (
               <>
                 <LastSeen initialLastSeen={user.lastSeenAt} userId={user.id} />
+                <UserRestrictedCountries userId={user.id} />
+
                 <UpdateUserMaxLeadsCounts setUser={setUser} user={user} />
                 <Button
                   variant="outlined"

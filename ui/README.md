@@ -68,8 +68,8 @@
 - Admin and super admin generate pdf all thing related for the client
 - Show notes and calls in shuffle
 - Add button to accept one offer
-
 - Every 3 hour ask user what he did in the past three hours (8-5) after 5 ask user for over time what he did
+
 - user profiles (for designer ect)
 - add default values to createModel in payment table
 
