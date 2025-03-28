@@ -150,6 +150,9 @@ export async function getClientLeadsByDateRange({ searchParams }) {
       lte: dayjs().toDate(),
     };
   }
+  if (filters.id && filters.id !== "all") {
+    where.id = Number(filters.id);
+  }
   if (filters?.clientId && filters.clientId !== "all") {
     where.clientId = Number(filters.clientId);
   }
@@ -493,23 +496,56 @@ export async function editPriceOfferStatus(priceOfferId, isAccepted) {
   });
 }
 /* dashboard services */
+async function updateKeyFilterForUserFilter(
+  userFilter,
+  searchParams,
+  key = "staffId"
+) {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: Number(searchParams[key]),
+    },
+  });
+  if (user?.role === "THREE_D_DESIGNER") {
+    userFilter = { threeDDesignerId: Number(searchParams[key]) };
+  } else if (user?.role === "TWO_D_DESIGNER") {
+    userFilter = { twoDDesignerId: Number(searchParams[key]) };
+  } else if (user?.role === "TWO_D_EXECUTOR") {
+    userFilter = { twoDExacuterId: Number(searchParams[key]) };
+  } else {
+    const filterKey = key === "staffId" ? "userId" : key;
+    userFilter = { [filterKey]: Number(searchParams[key]) };
+  }
+  return userFilter;
+}
 export const getKeyMetrics = async (searchParams) => {
   try {
-    const staffFilter = searchParams.staffId
-      ? { userId: Number(searchParams.staffId) }
+    let userFilter = {};
+    if (searchParams.staffId) {
+      userFilter = await updateKeyFilterForUserFilter(
+        updateKeyFilterForUserFilter,
+        searchParams
+      );
+    }
+    const staffFilter = userFilter;
+    const invoicesFilters = searchParams.staffId
+      ? {
+          payment: {
+            clientLead: userFilter,
+          },
+        }
       : {};
-    const userProfile = searchParams.profile;
 
-    const totalRevenueResult = await prisma.clientLead.aggregate({
+    const userProfile = searchParams.profile;
+    const totalRevenueResult = await prisma.invoice.aggregate({
       _sum: {
-        averagePrice: true,
+        amount: true,
       },
       where: {
-        status: "FINALIZED",
-        ...staffFilter,
+        ...invoicesFilters,
       },
     });
-    const totalRevenue = totalRevenueResult._sum.averagePrice || 0;
+    const totalRevenue = totalRevenueResult._sum.amount || 0;
     const avgLeadValueResult = await prisma.clientLead.aggregate({
       _avg: {
         averagePrice: true,
@@ -570,7 +606,35 @@ export const getKeyMetrics = async (searchParams) => {
       totalProcessedLeadsCount > 0
         ? ((successLeadsCount / totalProcessedLeadsCount) * 100).toFixed(2)
         : "0.00";
-    const totalCommission = parseFloat((totalRevenue * 0.05).toFixed(2));
+
+    const invoicesCommsissionFilters = searchParams.staffId
+      ? {
+          payment: {
+            clientLead: {
+              ...userFilter,
+              commissionCleared: false,
+            },
+          },
+        }
+      : {
+          payment: {
+            clientLead: {
+              commissionCleared: false,
+            },
+          },
+        };
+    const totalRevenueCommisionResult = await prisma.invoice.aggregate({
+      _sum: {
+        amount: true,
+      },
+      where: {
+        ...invoicesCommsissionFilters,
+      },
+    });
+    const totalCommisionRevenue = totalRevenueCommisionResult._sum.amount || 0;
+    const totalCommission = parseFloat(
+      (totalCommisionRevenue * 0.05).toFixed(2)
+    );
 
     return {
       totalRevenue,
@@ -586,9 +650,14 @@ export const getKeyMetrics = async (searchParams) => {
 };
 
 export const getDashboardLeadStatusData = async (searchParams) => {
-  const staffFilter = searchParams.staffId
-    ? { userId: Number(searchParams.staffId) }
-    : {};
+  let userFilter = {};
+  if (searchParams.staffId) {
+    userFilter = await updateKeyFilterForUserFilter(
+      updateKeyFilterForUserFilter,
+      searchParams
+    );
+  }
+  const staffFilter = userFilter;
   try {
     const rawStatuses = await prisma.clientLead.groupBy({
       by: ["status"],
@@ -612,9 +681,14 @@ export const getDashboardLeadStatusData = async (searchParams) => {
 };
 
 export const getMonthlyPerformanceData = async (searchParams) => {
-  const staffFilter = searchParams.staffId
-    ? { userId: Number(searchParams.staffId) }
-    : {};
+  let userFilter = {};
+  if (searchParams.staffId) {
+    userFilter = await updateKeyFilterForUserFilter(
+      updateKeyFilterForUserFilter,
+      searchParams
+    );
+  }
+  const staffFilter = userFilter;
 
   try {
     const months = Array.from({ length: 12 }, (_, i) => {
@@ -700,10 +774,14 @@ export const getMonthlyPerformanceData = async (searchParams) => {
 };
 
 export const getEmiratesAnalytics = async (searchParams) => {
-  const staffFilter = searchParams.staffId
-    ? { userId: Number(searchParams.staffId) }
-    : {};
-
+  let userFilter = {};
+  if (searchParams.staffId) {
+    userFilter = await updateKeyFilterForUserFilter(
+      updateKeyFilterForUserFilter,
+      searchParams
+    );
+  }
+  const staffFilter = userFilter;
   try {
     const emirates = [
       "DUBAI",
@@ -844,9 +922,14 @@ export const getEmiratesAnalytics = async (searchParams) => {
 };
 
 export const getPerformanceMetrics = async (searchParams) => {
-  const staffFilter = searchParams.staffId
-    ? { userId: Number(searchParams.staffId) }
-    : {};
+  let userFilter = {};
+  if (searchParams.staffId) {
+    userFilter = await updateKeyFilterForUserFilter(
+      updateKeyFilterForUserFilter,
+      searchParams
+    );
+  }
+  const staffFilter = userFilter;
   try {
     const weekStart = dayjs().subtract(7, "day").startOf("day").toDate(); // Exactly 7 days ago
     const weekEnd = dayjs().endOf("day").toDate(); // End of today
@@ -1296,6 +1379,9 @@ export async function getWorkStagesLeadsByDateRange({ searchParams }) {
   if (filters?.clientId && filters.clientId !== "all") {
     where.clientId = Number(filters.clientId);
   }
+  if (filters.id && filters.id !== "all") {
+    where.id = Number(filters.id);
+  }
   if (
     filters?.staffId &&
     filters?.staffId !== "all" &&
@@ -1350,9 +1436,14 @@ export async function getWorkStagesLeadsByDateRange({ searchParams }) {
 export async function getWorkStageLeadDetails(clientLeadId, searchParams) {
   const where = {};
   console.log(searchParams, "searchParams");
+  let filesAndNotesWhere = {};
   if (searchParams.userId) {
     where.userId = Number(searchParams.userId);
+    if (searchParams.type !== "three-d") {
+      filesAndNotesWhere.userId = Number(searchParams.userId);
+    }
   }
+
   const clientLead = await prisma.clientLead.findUnique({
     where: { id: clientLeadId },
     select: {
@@ -1407,7 +1498,7 @@ export async function getWorkStageLeadDetails(clientLeadId, searchParams) {
       priceWithOutDiscount: true,
       discount: true,
       files: {
-        where,
+        where: filesAndNotesWhere,
         select: {
           id: true,
           name: true,
@@ -1437,7 +1528,7 @@ export async function getWorkStageLeadDetails(clientLeadId, searchParams) {
         },
       },
       notes: {
-        where,
+        where: filesAndNotesWhere,
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
@@ -1793,3 +1884,56 @@ export const submitUserLog = async (
 
   return { data: newLog, message: "response saved" };
 };
+
+export async function getWorkStageStatus(clientLeadId) {
+  const workStages = await prisma.workStageStatus.findMany({
+    where: { clientLeadId: Number(clientLeadId) },
+  });
+  return workStages;
+}
+
+export async function updateWorkStageStatus(clientLeadId, body) {
+  const { communicationStatus, designStageStatus, renderStatus, stage } = body;
+
+  // First, fetch the current stage
+  let currentStage = await prisma.workStageStatus.findFirst({
+    where: { clientLeadId: Number(clientLeadId), stage },
+  });
+
+  if (!currentStage) {
+    currentStage = await prisma.workStageStatus.create({
+      data: { stage, clientLeadId: Number(clientLeadId) },
+    });
+  }
+
+  // Prepare update data
+  const updateData = {};
+  if (updateData.designStageStatus && !currentStage.communicationStatus) {
+    throw new Error("You must update communcation status first");
+  }
+  if (updateData.renderStatus && !currentStage.designStageStatus) {
+    throw new Error("You must update design stage status first");
+  }
+  if (communicationStatus !== undefined) {
+    updateData.communicationStatus = communicationStatus;
+    updateData.communicationUpdatedAt = new Date();
+  }
+  if (designStageStatus !== undefined) {
+    updateData.designStageStatus = designStageStatus;
+    updateData.designStageUpdatedAt = new Date();
+  }
+  if (renderStatus !== undefined) {
+    updateData.renderStatus = renderStatus;
+    updateData.renderUpdatedAt = new Date();
+  }
+
+  // Update the work stage
+  await prisma.workStageStatus.update({
+    where: { id: Number(currentStage.id) },
+    data: updateData,
+  });
+  const newUpdated = await prisma.workStageStatus.findUnique({
+    where: { id: Number(currentStage.id) },
+  });
+  return newUpdated;
+}

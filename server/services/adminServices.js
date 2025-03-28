@@ -1307,7 +1307,6 @@ export async function getNotAllowedCountries(userId) {
       notAllowedCountries: true,
     },
   });
-  console.log(user, "user");
   return user.notAllowedCountries || [];
 }
 

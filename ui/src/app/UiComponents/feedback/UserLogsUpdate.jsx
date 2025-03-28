@@ -37,8 +37,7 @@ const ActivityLogDialog = ({ userId }) => {
     const checkUserLog = async () => {
       let currentTime = dayjs().tz("Asia/Dubai");
       let timeCheckStart, timeCheckEnd;
-      if (currentTime.hour() >= 8 && currentTime.hour() < 17) {
-        // Between 8 AM and 5 PM, check in 3-hour intervals
+      if (currentTime.hour() >= 8 && currentTime.hour() <= 17) {
         const minutes = currentTime.minute();
         let hours = currentTime.hour();
         if (minutes >= 55) {
@@ -79,6 +78,7 @@ const ActivityLogDialog = ({ userId }) => {
           timeCheckEnd = currentTime.minute(15).second(0).millisecond(0);
         }
       }
+
       if (!timeCheckStart && !timeCheckEnd) {
         return;
       }
@@ -127,7 +127,7 @@ const ActivityLogDialog = ({ userId }) => {
       let minutes = currentTime.minute();
       let hourToSubmit = currentTime.hour();
       if (minutes > 55) {
-        hourToSubmit = hours + 1;
+        hourToSubmit = hourToSubmit + 1;
       }
 
       const submissionTime = currentTime.hour(hourToSubmit).minute(0).second(0);
@@ -138,7 +138,7 @@ const ActivityLogDialog = ({ userId }) => {
           description: !didWork ? "no thing" : description,
           totalMinutes: !didWork
             ? 0
-            : currentTime.hour() >= 8 && currentTime.hour() < 17
+            : currentTime.hour() > 8 && currentTime.hour() <= 17
             ? 60 * 3
             : 60,
         },
@@ -168,7 +168,7 @@ const ActivityLogDialog = ({ userId }) => {
         <Box display="flex" alignItems="center" gap={1}>
           <Typography variant="body1" color="textPrimary">
             Did u worked from
-            {currentTime >= 8 && currentTime < 17
+            {currentTime > 8 && currentTime <= 17
               ? currentTime - 3
               : currentTime - 1}{" "}
             to {currentTime}
@@ -183,8 +183,10 @@ const ActivityLogDialog = ({ userId }) => {
           <>
             <Typography variant="h6" gutterBottom>
               Please describe what you did between{" "}
-              {currentTime >= 8 && currentTime < 17 ? currentTime - 3 : 1} to{" "}
-              {currentTime}
+              {currentTime > 8 && currentTime <= 17
+                ? currentTime - 3
+                : currentTime - 1}{" "}
+              to {currentTime}
             </Typography>
             <TextField
               label="Activity Description"

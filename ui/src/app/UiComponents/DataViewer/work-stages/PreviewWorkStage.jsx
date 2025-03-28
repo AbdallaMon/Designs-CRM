@@ -63,6 +63,8 @@ import {
   LeadNotes,
   OurCostAndContractorCost,
 } from "../leads/LeadTabs";
+import { MdWorkHistory } from "react-icons/md";
+import WorkStageComponent from "./WorkStageStatus";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -332,6 +334,13 @@ const LeadContent = ({
           label="Attatchments"
           sx={{ textTransform: "none" }}
         />
+        {type === "three-d" && (
+          <Tab
+            icon={<MdWorkHistory size={20} />}
+            label="Work status"
+            sx={{ textTransform: "none" }}
+          />
+        )}
         {type === "exacuter" && (
           <Tab
             icon={<GoPaperclip size={20} />}
@@ -365,6 +374,15 @@ const LeadContent = ({
         <TabPanel value={activeTab} index={3}>
           <FileList admin={isAdmin} lead={lead} notUser={isPage && notUser} />
         </TabPanel>
+        {type === "three-d" && (
+          <TabPanel value={activeTab} index={4}>
+            <WorkStageComponent
+              clientLeadId={lead.id}
+              stage={lead.threeDWorkStage}
+              userId={lead.threeDDesignerId}
+            />
+          </TabPanel>
+        )}
         {type === "exacuter" && (
           <TabPanel value={activeTab} index={4}>
             <OurCostAndContractorCost lead={lead} setLead={setLead} />
@@ -672,7 +690,7 @@ const PreviewWorkStage = ({
     async function getALeadDetails() {
       if (open) {
         const leadDetails = await getData({
-          url: `shared/work-stage-leads/${id}`,
+          url: `shared/work-stage-leads/${id}?type=${type}&`,
           setLoading,
         });
         setLead(leadDetails.data);

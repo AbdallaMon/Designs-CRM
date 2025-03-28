@@ -60,14 +60,23 @@ const KanbanBoard = ({
             }}
           >
             <SearchComponent
+              apiEndpoint="search?model=clientLead"
+              setFilters={setFilters}
+              inputLabel="Search lead by id ,name or phone"
+              renderKeys={["id", "client.name", "client.phone", "client.email"]}
+              mainKey="id"
+              searchKey={"id"}
+              withParamsChange={true}
+            />
+            {/* <SearchComponent
               apiEndpoint="search?model=client"
               setFilters={setFilters}
               inputLabel="Search client by name or phone"
-              renderKeys={["name", "phone"]}
+              renderKeys={["name", "phone", ""]}
               mainKey="name"
               searchKey={"clientId"}
               withParamsChange={true}
-            />
+            /> */}
             {admin && (
               <SearchComponent
                 apiEndpoint="search?model=THREE_D_DESIGNER"

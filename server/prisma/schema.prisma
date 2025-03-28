@@ -141,6 +141,30 @@ enum PaymentLevel {
 }
 
 
+model WorkStageStatus {
+  id             Int             @id @default(autoincrement())
+  
+  // Relation to ClientLead
+  clientLead     ClientLead      @relation(fields: [clientLeadId], references: [id])
+  clientLeadId   Int
+  
+  // Work Stage
+  stage          ThreeDWorkStage
+  
+  communicationStatus Boolean            @default(false)
+  communicationUpdatedAt DateTime?       // Timestamp for last update
+  designStageStatus   Boolean            @default(false)
+  designStageUpdatedAt DateTime?        // Timestamp for last update
+  renderStatus        Boolean            @default(false)
+  renderUpdatedAt     DateTime?         // Timestamp for last update
+  
+  // Unique constraint to prevent duplicate stages for the same client lead
+  @@unique([clientLeadId, stage])
+  
+  // Indexes for performance
+  @@index([clientLeadId])
+  @@index([stage])
+}
 model ClientLead {
       id                 Int              @id @default(autoincrement())
       client             Client           @relation(fields: [clientId], references: [id])
@@ -161,6 +185,7 @@ model ClientLead {
       threeDWorkStage   ThreeDWorkStage?
       twoDWorkStage     TwoDWorkStage?
       twoDExacuterStage    TwoDExacuterStage? // New work stage
+      workStageStatuses WorkStageStatus[]
 
       // Lead type data
       selectedCategory   LeadCategory
@@ -201,6 +226,8 @@ model ClientLead {
 
       timeToContact       DateTime?
       country             String?
+      commissionCleared     Boolean            @default(false) 
+
       @@index([clientId])
       @@index([userId])
 }

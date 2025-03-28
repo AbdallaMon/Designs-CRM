@@ -231,42 +231,8 @@ const PaymentCalendar = ({ status = "PENDING" }) => {
         extraComponent={({ item }) => (
           <>
             <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-              {/* <Box>
-                <CreateModal
-                  label={"Pay"}
-                  inputs={inputs}
-                  href={`accountant/payments/pay/${item.id}`}
-                  handleSubmit={(data) => {
-                    handleAfterEdit(data);
-                  }}
-                  handleBeforeSubmit={async (data) => {
-                    const formData = new FormData();
-                    formData.append("file", data.file[0]);
-                    const fileUpload = await handleRequestSubmit(
-                      formData,
-                      setLoading,
-                      "utility/upload",
-                      true,
-                      "Uploading file"
-                    );
-                    data.file = fileUpload.fileUrls.file[0];
-                    return data;
-                  }}
-                  setData={setData}
-                  extraProps={{
-                    formTitle: `Payment number # ${item.id}`,
-                    btnText: "Pay",
-                    variant: "outlined",
-                  }}
-                />
-              </Box> */}
               <PaymentHistoryModal payment={item} />
-              {/* <ConfirmWithActionModel
-                label="Mark as over due"
-                title="Mark payment as over due"
-                description="Are you sure you want to mark this payment as over due?"
-                handleConfirm={() => overDuePayment(item.id)}
-              /> */}
+
               <Button
                 component={Link}
                 href={"/dashboard/deals/" + item.clientLead.id}

@@ -191,6 +191,7 @@ export const verifyTokenUsingReq = (req, res, next) => {
 const modelMap = {
   user: prisma.user,
   client: prisma.client,
+  clientLead: prisma.clientLead,
 };
 
 export async function getCurrentUser(req) {
@@ -217,6 +218,21 @@ export async function searchData(body) {
         { name: { contains: query } },
         { phone: { contains: query } },
       ];
+    } else if (model === "clientLead") {
+      where.OR = [
+        {
+          client: {
+            OR: [
+              { email: { contains: query } },
+              { name: { contains: query } },
+              { phone: { contains: query } },
+            ],
+          },
+        },
+      ];
+      if (!isNaN(query)) {
+        where.OR.push({ id: { equals: Number(query) } });
+      }
     } else {
       where.OR = [
         { email: { contains: query } },
@@ -225,7 +241,6 @@ export async function searchData(body) {
       where.role = model.toUpperCase();
     }
   }
-
   if (filters && filters !== "undefined") {
     const parsedFilters = JSON.parse(filters);
     if (parsedFilters.role) {
@@ -255,8 +270,17 @@ export async function searchData(body) {
       email: true,
       phone: true,
     },
+    clientLead: {
+      id: true,
+      client: {
+        select: {
+          name: true,
+          email: true,
+          phone: true,
+        },
+      },
+    },
   };
-  console.log(prismaModel, "prismaModel");
   const data = await prismaModel.findMany({
     where,
     select: selectFields[model] || selectFields["user"],

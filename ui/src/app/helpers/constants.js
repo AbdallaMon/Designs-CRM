@@ -182,7 +182,6 @@ export const ClientLeadStatus = {
 export const ThreeDWorkStages = {
   CLIENT_COMMUNICATION: "Client Communication",
   DESIGN_STAGE: "Design Stage",
-  THREE_D_STAGE: "3D Stage",
   FIRST_MODIFICATION: "First Modification",
   SECOND_MODIFICATION: "Second Modification",
   THIRD_MODIFICATION: "Third Modification",

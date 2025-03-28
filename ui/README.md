@@ -69,9 +69,18 @@
 - Show notes and calls in shuffle
 - Add button to accept one offer
 - Every 3 hour ask user what he did in the past three hours (8-5) after 5 ask user for over time what he did
+- User logs fixes
+- Notes and attatchemnts for 3d
+- Invoices in dashboard
+- Communication ,Design stage ,render
+  ( three d stage) remove; for each status renew with dates for each edit;
+- Search by client lead code
 
+- Add commission to staff and allow admin to calc it
 - user profiles (for designer ect)
-- add default values to createModel in payment table
+- Add default values to createModel in payment table
 
-  dJkmjERCZGCEgaxl
-  root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
+dJkmjERCZGCEgaxl
+root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
+
+$2b$08$KXiH7ITBGRIwW3pHol3bCOWE5qhNE3I4Vr.6jxSBKlDoGZhJNh20q

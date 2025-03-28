@@ -30,12 +30,14 @@ import {
   getRecentActivities,
   getWorkStageLeadDetails,
   getWorkStagesLeadsByDateRange,
+  getWorkStageStatus,
   makeExtraServicePayments,
   makePayments,
   markClientLeadAsConverted,
   submitUserLog,
   updateClientLeadStatus,
   updateLeadWorkStage,
+  updateWorkStageStatus,
 } from "../services/sharedServices.js";
 import { getAdminClientLeadDetails } from "../services/adminServices.js";
 
@@ -468,6 +470,29 @@ router.get("/work-stages", async (req, res) => {
     res
       .status(500)
       .json({ message: "An error occurred while fetching work stages leads" });
+  }
+});
+router.get("/work-stages/:clientLeadId/status", async (req, res) => {
+  try {
+    const { clientLeadId } = req.params;
+    const workStatus = await getWorkStageStatus(clientLeadId);
+    res.status(200).json({ data: workStatus });
+  } catch (error) {
+    console.error("Error fetching work stages leads:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching work stages leads" });
+  }
+});
+router.post("/work-stages/:leadId/work-status", async (req, res) => {
+  try {
+    const { leadId } = req.params;
+    const data = await updateWorkStageStatus(Number(leadId), req.body);
+
+    res.status(200).json({ data, message: "Status changed successfully" });
+  } catch (error) {
+    console.error("Error updating work stage status:", error);
+    res.status(500).json({ message: error.message });
   }
 });
 
