@@ -50,7 +50,7 @@ router.get("/users", async (req, res) => {
     console.error("Error fetching supervisors:", error);
     res
       .status(500)
-      .json({ message: "An error occurred while fetching supervisors" });
+      .json({ message: "An error occurred while fetching supervisors", error });
   }
 });
 router.get("/users/:userId/last-seen", async (req, res) => {
