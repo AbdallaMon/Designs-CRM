@@ -43,16 +43,16 @@ const ActivityLogDialog = ({ userId }) => {
         if (minutes >= 55) {
           hours = hours + 1;
         }
-        if (hours === 11 || hours === 14 || hours === 17) {
+        if (hours === 17) {
           timeCheckStart = currentTime
             .hour(hours)
             .subtract(1, "hour")
-            .minute(55)
+            .minute(50)
             .second(0)
             .millisecond(0);
           timeCheckEnd = currentTime
             .hour(hours)
-            .minute(30)
+            .minute(40)
             .second(0)
             .millisecond(0);
         }
@@ -139,7 +139,7 @@ const ActivityLogDialog = ({ userId }) => {
           totalMinutes: !didWork
             ? 0
             : currentTime.hour() > 8 && currentTime.hour() <= 17
-            ? 60 * 3
+            ? 60 * 8
             : 60,
         },
         setLoading,
@@ -169,7 +169,7 @@ const ActivityLogDialog = ({ userId }) => {
           <Typography variant="body1" color="textPrimary">
             Did u worked from
             {currentTime > 8 && currentTime <= 17
-              ? currentTime - 3
+              ? currentTime - 8
               : currentTime - 1}{" "}
             to {currentTime}
           </Typography>
@@ -184,7 +184,7 @@ const ActivityLogDialog = ({ userId }) => {
             <Typography variant="h6" gutterBottom>
               Please describe what you did between{" "}
               {currentTime > 8 && currentTime <= 17
-                ? currentTime - 3
+                ? currentTime - 8
                 : currentTime - 1}{" "}
               to {currentTime}
             </Typography>
