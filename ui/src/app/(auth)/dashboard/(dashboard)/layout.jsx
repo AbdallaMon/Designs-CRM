@@ -72,7 +72,7 @@ export const adminLinks = [
       },
       {
         name: "2D work stages",
-        href: "/dashboard/work-stages/twp-d",
+        href: "/dashboard/work-stages/two-d",
         icon: <FiClock size={18} />,
         active: "two-d",
       },
@@ -149,7 +149,7 @@ export const superAdminLinks = [
       },
       {
         name: "Two D work stages",
-        href: "/dashboard/work-stages/twp-d",
+        href: "/dashboard/work-stages/two-d",
         icon: <FiClock size={18} />,
         active: "two-d",
       },
