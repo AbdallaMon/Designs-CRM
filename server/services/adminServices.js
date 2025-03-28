@@ -7,38 +7,43 @@ import dayjs from "dayjs";
 const { groupBy } = pkg;
 import XLSX from "xlsx";
 export async function getUser(searchParams, limit, skip) {
-  const filters = searchParams.filters && JSON.parse(searchParams.filters);
-  const staffFilter = searchParams.staffId
-    ? { userId: Number(searchParams.staffId) }
-    : {};
-  let where = {
-    role: { not: "ADMIN" },
-    ...staffFilter,
-  };
-  if (filters.status !== undefined) {
-    if (filters.status === "active") {
-      where.isActive = true;
-    } else if (filters.status === "banned") {
-      where.isActive = false;
-    }
-  }
-  const users = await prisma.user.findMany({
-    where: where,
-    skip,
-    take: limit,
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      isActive: true,
-      lastSeenAt: true,
-      role: true,
-      subRoles: true,
-    },
-  });
-  const total = await prisma.user.count({ where: where });
+  try {
+    const filters = searchParams.filters && JSON.parse(searchParams.filters);
+    const staffFilter = searchParams.staffId
+      ? { userId: Number(searchParams.staffId) }
+      : {};
+    let where = {
+      role: { not: "ADMIN" },
+      ...staffFilter,
+    };
 
-  return { users, total };
+    if (filters.status !== undefined) {
+      if (filters.status === "active") {
+        where.isActive = true;
+      } else if (filters.status === "banned") {
+        where.isActive = false;
+      }
+    }
+    const users = await prisma.user.findMany({
+      where: where,
+      skip,
+      take: limit,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isActive: true,
+        lastSeenAt: true,
+        role: true,
+        subRoles: true,
+      },
+    });
+    const total = await prisma.user.count({ where });
+
+    return { users, total };
+  } catch (e) {
+    throw new Error(e);
+  }
 }
 
 export async function getUserById(userId) {
