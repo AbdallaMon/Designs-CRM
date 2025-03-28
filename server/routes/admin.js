@@ -42,7 +42,6 @@ router.get("/users", async (req, res) => {
   try {
     const { users, total } = await getUser(searchParams, limit, skip);
     const totalPages = Math.ceil(total / limit);
-
     if (!users) {
       return res.status(404).json({ message: "No users found" });
     }
