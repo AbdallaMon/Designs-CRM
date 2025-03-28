@@ -7,43 +7,38 @@ import dayjs from "dayjs";
 const { groupBy } = pkg;
 import XLSX from "xlsx";
 export async function getUser(searchParams, limit, skip) {
-  try {
-    const filters = searchParams.filters && JSON.parse(searchParams.filters);
-    const staffFilter = searchParams.staffId
-      ? { userId: Number(searchParams.staffId) }
-      : {};
-    let where = {
-      role: { not: "ADMIN" },
-      ...staffFilter,
-    };
-    if (filters.status !== undefined) {
-      if (filters.status === "active") {
-        where.isActive = true;
-      } else if (filters.status === "banned") {
-        where.isActive = false;
-      }
+  const filters = searchParams.filters && JSON.parse(searchParams.filters);
+  const staffFilter = searchParams.staffId
+    ? { userId: Number(searchParams.staffId) }
+    : {};
+  let where = {
+    role: { not: "ADMIN" },
+    ...staffFilter,
+  };
+  if (filters.status !== undefined) {
+    if (filters.status === "active") {
+      where.isActive = true;
+    } else if (filters.status === "banned") {
+      where.isActive = false;
     }
-    const users = await prisma.user.findMany({
-      where: where,
-      skip,
-      take: limit,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        isActive: true,
-        lastSeenAt: true,
-        role: true,
-        subRoles: true,
-      },
-    });
-    const total = await prisma.user.count({ where: where });
-
-    return { users, total };
-  } catch (error) {
-    console.error("Error getting users :", error);
-    return res.status(500).json({ error: "error getting users" });
   }
+  const users = await prisma.user.findMany({
+    where: where,
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      isActive: true,
+      lastSeenAt: true,
+      role: true,
+      subRoles: true,
+    },
+  });
+  const total = await prisma.user.count({ where: where });
+
+  return { users, total };
 }
 
 export async function getUserById(userId) {
