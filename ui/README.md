@@ -78,7 +78,6 @@
 
 - Add commission to staff and allow admin to calc it
 - user profiles (for designer ect)
-- Add default values to createModel in payment table
 
 dJkmjERCZGCEgaxl
 root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

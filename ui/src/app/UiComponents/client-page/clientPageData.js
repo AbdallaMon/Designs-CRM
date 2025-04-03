@@ -59,7 +59,8 @@ export const leads = [
     value: "COURSES",
     image: "/courses.jpg",
     alt: "Courses ",
-    type: "COMING_SOON",
+    href: "https://decorstores.ltd/products/animation",
+    type: "LINK",
   },
 ];
 
