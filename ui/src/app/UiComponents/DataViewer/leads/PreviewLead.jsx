@@ -68,7 +68,8 @@ import {
   FileList,
   ExtraServicesList,
 } from "./LeadTabs";
-import { MdBlock } from "react-icons/md";
+import { MdBlock, MdWork } from "react-icons/md";
+import LeadProjects from "../work-stages/projects/LeadProjects";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -464,6 +465,14 @@ const LeadContent = ({
           label="Attatchments"
           sx={{ textTransform: "none" }}
         />
+        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") &&
+          lead.status === "FINALIZED" && (
+            <Tab
+              icon={<MdWork size={20} />}
+              label="Projects"
+              sx={{ textTransform: "none" }}
+            />
+          )}
         {payments?.length > 0 && (
           <Tab
             icon={<FaServicestack size={20} />}
@@ -512,8 +521,11 @@ const LeadContent = ({
             notUser={isPage && user.id !== lead.userId}
           />
         </TabPanel>
+        <TabPanel value={activeTab} index={5}>
+          <LeadProjects clientLeadId={lead.id} />
+        </TabPanel>
         {payments?.length > 0 && (
-          <TabPanel value={activeTab} index={5}>
+          <TabPanel value={activeTab} index={6}>
             <ExtraServicesList
               admin={admin}
               lead={lead}

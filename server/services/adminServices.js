@@ -46,6 +46,25 @@ export async function getUser(searchParams, limit, skip) {
   }
 }
 
+export async function getAllUsers(searchParams) {
+  let where = {
+    role: searchParams.role || "STAFF",
+  };
+  where.isActive = true;
+  const users = await prisma.user.findMany({
+    where: where,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      subRoles: true,
+    },
+  });
+
+  return users;
+}
+
 export async function getUserById(userId) {
   return await prisma.user.findUnique({
     where: {

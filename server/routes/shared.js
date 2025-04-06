@@ -8,10 +8,13 @@ import {
 } from "../services/utility.js";
 import {
   addCostFiles,
+  addNote,
   assignLeadToAUser,
+  assignProjectToUser,
   assignWorkStageLeadToAUser,
   checkIfUserAllowedToTakeALead,
   checkUserLog,
+  createNewTask,
   editPriceOfferStatus,
   getAllFixedData,
   getClientLeadDetails,
@@ -21,15 +24,18 @@ import {
   getEmiratesAnalytics,
   getKeyMetrics,
   getLatestNewLeads,
+  getLeadByPorjects,
+  getLeadDetailsByProject,
   getMonthlyPerformanceData,
   getNewWorkStagesLeads,
   getNextCalls,
   getNextCallsForDesigners,
+  getNotes,
   getOtherRoles,
   getPerformanceMetrics,
+  getProjectsByClientLeadId,
   getRecentActivities,
-  getWorkStageLeadDetails,
-  getWorkStagesLeadsByDateRange,
+  getTasksWithNotesIncluded,
   getWorkStageStatus,
   makeExtraServicePayments,
   makePayments,
@@ -37,6 +43,8 @@ import {
   submitUserLog,
   updateClientLeadStatus,
   updateLeadWorkStage,
+  updateProject,
+  updateTask,
   updateWorkStageStatus,
 } from "../services/sharedServices.js";
 import { getAdminClientLeadDetails } from "../services/adminServices.js";
@@ -452,7 +460,7 @@ router.get("/work-stages/new", async (req, res) => {
       .json({ message: "An error occurred while fetching work stages leads" });
   }
 });
-router.get("/work-stages", async (req, res) => {
+router.get("/client-leads/projects", async (req, res) => {
   try {
     const searchParams = req.query;
     const token = getTokenData(req, res);
@@ -463,7 +471,7 @@ router.get("/work-stages", async (req, res) => {
     ) {
       searchParams.userId = token.id;
     }
-    const clientLeads = await getWorkStagesLeadsByDateRange({ searchParams });
+    const clientLeads = await getLeadByPorjects({ searchParams });
     res.status(200).json({ data: clientLeads });
   } catch (error) {
     console.error("Error fetching work stages leads:", error);
@@ -472,6 +480,150 @@ router.get("/work-stages", async (req, res) => {
       .json({ message: "An error occurred while fetching work stages leads" });
   }
 });
+router.get("/client-leads/projects/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const token = getTokenData(req, res);
+    const searchParams = req.query;
+    if (
+      token.role !== "ADMIN" &&
+      token.role !== "SUPER_ADMIN" &&
+      token.role !== "ACCOUNTANT"
+    ) {
+      searchParams.userId = token.id;
+    }
+    const clientLeadDetails = await getLeadDetailsByProject(
+      Number(id),
+      searchParams
+    );
+    res.status(200).json({ data: clientLeadDetails });
+  } catch (error) {
+    console.error("Error fetching client lead details:", error);
+    res.status(500).json({
+      message:
+        error.message ||
+        "An error occurred while fetching client lead details.",
+    });
+  }
+});
+router.get("/projects", async (req, res) => {
+  try {
+    const searchParams = req.query;
+    const token = getTokenData(req, res);
+    if (
+      token.role === "THREE_D_DESIGNER" ||
+      token.role === "TWO_D_DESIGNER" ||
+      token.role === "TWO_D_EXECUTOR"
+    ) {
+      searchParams.userId = token.id;
+    }
+    const projects = await getProjectsByClientLeadId({ searchParams });
+    res.status(200).json({ data: projects });
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching work stages leads" });
+  }
+});
+router.put("/projects/:id", async (req, res) => {
+  try {
+    const project = req.body;
+    const newProject = await updateProject({ data: project });
+    res
+      .status(200)
+      .json({ data: newProject, message: "Project updated successfully" });
+  } catch (error) {
+    console.error("Error updating work stage status:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+router.put("/projects/:id/assign-designer", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const project = req.body;
+    const newProject = await assignProjectToUser({
+      userId: project.designerId,
+      projectId: id,
+    });
+    res
+      .status(200)
+      .json({ data: newProject, message: "Project updated successfully" });
+  } catch (error) {
+    console.error("Error updating work stage status:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+router.get("/tasks", async (req, res) => {
+  try {
+    const searchParams = req.query;
+    const token = getTokenData(req, res);
+    if (
+      token.role === "THREE_D_DESIGNER" ||
+      token.role === "TWO_D_DESIGNER" ||
+      token.role === "STAFF"
+    ) {
+      searchParams.userId = token.id;
+    }
+    const tasks = await getTasksWithNotesIncluded({ searchParams });
+    res.status(200).json({ data: tasks });
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching work stages leads" });
+  }
+});
+router.post("/tasks", async (req, res) => {
+  try {
+    const token = getTokenData(req, res);
+    const task = req.body;
+    task.createdById = Number(token.id);
+    const newTask = await createNewTask({ data: task });
+    res
+      .status(200)
+      .json({ data: newTask, message: "Task created successfully" });
+  } catch (error) {
+    console.error("Error updating work stage status:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+router.put("/tasks/:taskId", async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const task = req.body;
+    const newTask = await updateTask({ data: task, taskId });
+    res
+      .status(200)
+      .json({ data: newTask, message: "Task updated successfully" });
+  } catch (error) {
+    console.error("Error updating work stage status:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+router.get("/notes", async (req, res) => {
+  try {
+    const searchParams = req.query;
+    const notes = await getNotes(searchParams);
+    res.status(200).json({ data: notes });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+router.post("/notes", async (req, res) => {
+  try {
+    const token = getTokenData(req, res);
+
+    const newNote = await addNote({
+      ...req.body,
+      userId: token.id,
+    });
+    res.status(200).json(newNote);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+///////
 router.get("/work-stages/:clientLeadId/status", async (req, res) => {
   try {
     const { clientLeadId } = req.params;
@@ -496,32 +648,6 @@ router.post("/work-stages/:leadId/work-status", async (req, res) => {
   }
 });
 
-router.get("/work-stage-leads/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const token = getTokenData(req, res);
-    const searchParams = req.query;
-    if (
-      token.role !== "ADMIN" &&
-      token.role !== "SUPER_ADMIN" &&
-      token.role !== "ACCOUNTANT"
-    ) {
-      searchParams.userId = token.id;
-    }
-    const clientLeadDetails = await getWorkStageLeadDetails(
-      Number(id),
-      searchParams
-    );
-    res.status(200).json({ data: clientLeadDetails });
-  } catch (error) {
-    console.error("Error fetching client lead details:", error);
-    res.status(500).json({
-      message:
-        error.message ||
-        "An error occurred while fetching client lead details.",
-    });
-  }
-});
 router.put("/work-stages/:leadId/status", async (req, res) => {
   try {
     const { leadId } = req.params;

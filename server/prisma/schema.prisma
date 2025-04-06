@@ -140,6 +140,19 @@ enum PaymentLevel {
   LEVEL_7_OR_MORE
 }
 
+enum Priority {
+  VERY_LOW
+  LOW
+  MEDIUM
+  HIGH
+  VERY_HIGH
+}
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
 
 model WorkStageStatus {
   id             Int             @id @default(autoincrement())
@@ -187,6 +200,8 @@ model ClientLead {
       twoDExacuterStage    TwoDExacuterStage? // New work stage
       workStageStatuses WorkStageStatus[]
 
+      projects     Project[]
+
       // Lead type data
       selectedCategory   LeadCategory
       type   LeadType @default(CONSTRUCTION_VILLA)
@@ -231,6 +246,62 @@ model ClientLead {
       @@index([clientId])
       @@index([userId])
 }
+
+model Project {
+  id          Int       @id @default(autoincrement())
+  
+  user        User?      @relation(fields: [userId], references: [id])
+  userId      Int?
+  
+  clientLead  ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
+  
+  // Fields
+  deliveryTime DateTime? // time to deliver the project (optional)
+  priority     Priority  @default(MEDIUM) // enum with default value
+  area         Decimal?  @db.Decimal(10, 2) // optional decimal field
+  startedAt    DateTime? // optional
+  endedAt      DateTime? // optional
+  status       String
+  type        String 
+  role    UserRole @default(THREE_D_DESIGNER)
+  tasks     Task[]
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  @@index([userId])
+  @@index([clientLeadId])
+}
+
+model Task {
+  id          Int       @id @default(autoincrement())
+  title       String    @db.VarChar(255)
+  description String?   @db.Text
+  status      TaskStatus @default(TODO)
+  priority    Priority  @default(MEDIUM)
+  type        String    @default("NORMAL")  // New field with default value
+
+  // Dates
+  createdAt   DateTime  @default(now())
+  dueDate     DateTime?
+  finishedAt  DateTime?
+  
+  // Relations
+  project     Project?  @relation(fields: [projectId], references: [id])
+  projectId   Int?
+  
+  user        User?     @relation(fields: [userId], references: [id])
+  userId      Int?
+  createdBy         User?           @relation("CreatedTasks", fields: [createdById], references: [id]) 
+  createdById       Int?
+  notes       Note[]
+  
+  @@index([projectId])
+  @@index([userId])
+}
+
+
 model Payment {
   id             Int        @id @default(autoincrement())
   clientLead     ClientLead @relation(fields: [clientLeadId], references: [id])
@@ -332,6 +403,8 @@ model User {
  notifications   Notification[]   @relation("UserNotifications")
  staffNotifications Notification[] @relation("StaffNotifications")
  notes         Note[]
+ tasks     Task[]
+ createdTasks Task[] @relation("CreatedTasks") 
  priceOffers PriceOffers[]
  createdAt     DateTime       @default(now())
  updatedAt     DateTime       @updatedAt
@@ -341,8 +414,9 @@ model User {
  maxLeadsCounts Int?             @default(50)
  threeDLeads ClientLead[] @relation("ThreeDLeads")
  twoDLeads ClientLead[] @relation("TwoDLeads")
- twoDExacuterLeads ClientLead[] @relation("TwoDExacuterLeads") // New relation
+ twoDExacuterLeads ClientLead[] @relation("TwoDExacuterLeads") 
  accountantLeads ClientLead[] @relation("AccountantLeads")
+ projects     Project[]
  baseSalary    BaseEmployeeSalary? 
  notAllowedCountries Json?
  @@index([email])
@@ -405,7 +479,10 @@ model Note {
   paymentId            Int?
   invoice            Invoice?   @relation( fields: [invoiceId], references: [id])
   invoiceId          Int?
+  task      Task?    @relation(fields: [taskId], references: [id])
+  taskId    Int?
 
+  @@index([taskId])
   @@index([clientLeadId])
   @@index([userId])
   @@index([baseEmployeeSalaryId])

@@ -79,7 +79,15 @@ const KanbanBoard = ({
             /> */}
             {admin && (
               <SearchComponent
-                apiEndpoint="search?model=THREE_D_DESIGNER"
+                apiEndpoint={`search?model=${
+                  type === "three-d"
+                    ? "THREE_D_DESIGNER"
+                    : type === "two-d"
+                    ? "TWO_D_DESIGNER"
+                    : type === "exacuter"
+                    ? "TWO_D_EXECUTOR"
+                    : "STAFF"
+                }`}
                 setFilters={setFilters}
                 inputLabel="Search staff by name or email"
                 renderKeys={["name", "email"]}

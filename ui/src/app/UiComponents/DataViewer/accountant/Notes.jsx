@@ -16,14 +16,14 @@ import { simpleModalStyle } from "@/app/helpers/constants";
 import SimpleFileInput from "../../formComponents/SimpleFileInput";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 
-export function Notes({ idKey, id }) {
+export function Notes({ idKey, id, slug = "accountant" }) {
   const [openModal, setOpenModal] = useState(false);
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(false);
   async function fetchNotes() {
     setLoading(true);
     const data = await getData({
-      url: `accountant/notes?idKey=${idKey}&id=${id}&`,
+      url: `${slug}/notes?idKey=${idKey}&id=${id}&`,
       setLoading,
     });
     setNotes(data.data);
@@ -41,7 +41,7 @@ export function Notes({ idKey, id }) {
         variant="contained"
         color="primary"
       >
-        View attatchments
+        View Notes and Attatchments
       </Button>
       <Modal
         open={openModal}

@@ -210,6 +210,41 @@ export const KanbanLeadsStatus = {
   REJECTED: "Rejected",
 };
 
+// Projects
+
+export const PROJECT_TYPES = [
+  "3D_Designer",
+  "3D_Modification",
+  "2D_Study",
+  "2D_Final_Plans",
+  "2D_Quantity_Calculation",
+];
+
+export const PROJECT_STATUSES = {
+  "3D_Designer": [
+    "To Do",
+    "3D",
+    "Render",
+    "Delivery",
+    "Hold",
+    "Modification",
+    "Completed",
+  ],
+  "3D_Modification": ["To Do", "Modification", "Completed"],
+  "2D_Study": [
+    "To Do",
+    "Studying",
+    "Delivery",
+    "Hold",
+    "Modification",
+    "Completed",
+  ],
+  "2D_Final_Plans": ["To Do", "Started", "In Progress", "Completed"],
+  "2D_Quantity_Calculation": ["To Do", "Started", "In Progress", "Completed"],
+};
+
+export const PRIORITY = ["VERY_LOW", "LOW", "MEDIUM", "HIGH", "VERY_HIGH"];
+export const TASKSTATUS = ["TODO", "IN_PROGRESS", "DONE"];
 export const statusColors = {
   IN_PROGRESS: "#0d9488",
   INTERESTED: "#10b981",

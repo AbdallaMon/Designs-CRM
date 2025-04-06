@@ -63,8 +63,9 @@ import {
   LeadNotes,
   OurCostAndContractorCost,
 } from "../leads/LeadTabs";
-import { MdWorkHistory } from "react-icons/md";
+import { MdWork, MdWorkHistory } from "react-icons/md";
 import WorkStageComponent from "./WorkStageStatus";
+import LeadProjects from "./projects/LeadProjects";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -334,6 +335,14 @@ const LeadContent = ({
           label="Attatchments"
           sx={{ textTransform: "none" }}
         />
+        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") &&
+          lead.status === "FINALIZED" && (
+            <Tab
+              icon={<MdWork size={20} />}
+              label="Projects"
+              sx={{ textTransform: "none" }}
+            />
+          )}
         {type === "three-d" && (
           <Tab
             icon={<MdWorkHistory size={20} />}
@@ -374,8 +383,11 @@ const LeadContent = ({
         <TabPanel value={activeTab} index={3}>
           <FileList admin={isAdmin} lead={lead} notUser={isPage && notUser} />
         </TabPanel>
+        <TabPanel value={activeTab} index={4}>
+          <LeadProjects clientLeadId={lead.id} />
+        </TabPanel>
         {type === "three-d" && (
-          <TabPanel value={activeTab} index={4}>
+          <TabPanel value={activeTab} index={5}>
             <WorkStageComponent
               clientLeadId={lead.id}
               stage={lead.threeDWorkStage}
@@ -383,8 +395,9 @@ const LeadContent = ({
             />
           </TabPanel>
         )}
+
         {type === "exacuter" && (
-          <TabPanel value={activeTab} index={4}>
+          <TabPanel value={activeTab} index={5}>
             <OurCostAndContractorCost lead={lead} setLead={setLead} />
           </TabPanel>
         )}

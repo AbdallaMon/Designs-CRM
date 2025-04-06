@@ -1937,3 +1937,425 @@ export async function updateWorkStageStatus(clientLeadId, body) {
   });
   return newUpdated;
 }
+
+// Projects
+
+export async function getLeadByPorjects({ searchParams }) {
+  const filters = JSON.parse(searchParams.filters);
+  const where = {};
+  if (searchParams.type) {
+    where.projects = {
+      some: {
+        type: searchParams.type,
+      },
+    };
+  }
+
+  if (filters?.clientId && filters.clientId !== "all") {
+    where.clientId = Number(filters.clientId);
+  }
+  if (filters.id && filters.id !== "all") {
+    where.id = Number(filters.id);
+  }
+  if (
+    filters?.staffId &&
+    filters?.staffId !== "all" &&
+    filters?.staffId !== "undefined"
+  ) {
+    if (filters.userId) {
+      where.projects = {
+        some: {
+          userId: Number(filters.staffId),
+        },
+      };
+    }
+  }
+  if (searchParams.userId) {
+    if (searchParams.userId) {
+      where.projects = {
+        some: {
+          userId: Number(searchParams.userId),
+        },
+      };
+    }
+  }
+  const clientLeads = await prisma.clientLead.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      client: { select: { name: true } },
+      projects: {
+        select: {
+          id: true,
+          type: true,
+          name: true,
+          description: true,
+          status: true,
+          area: true,
+          deliveryTime: true,
+          priority: true,
+          startedAt: true,
+          endedAt: true,
+          clientLeadId: true,
+          userId: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+      price: true,
+      averagePrice: true,
+      priceWithOutDiscount: true,
+      selectedCategory: true,
+      description: true,
+      type: true,
+      emirate: true,
+      discount: true,
+      callReminders: {
+        orderBy: { time: "desc" },
+        take: 2,
+      },
+    },
+  });
+  return clientLeads;
+}
+
+export async function getLeadDetailsByProject(clientLeadId, searchParams) {
+  const where = {};
+  let filesAndNotesWhere = {};
+  if (searchParams.type) {
+    where.projects = {
+      some: {
+        type: searchParams.type,
+      },
+    };
+  }
+
+  if (searchParams.userId) {
+    where.projects = {
+      some: {
+        userId: Number(searchParams.userId),
+      },
+    };
+    if (
+      searchParams.type !== "3D_Designer" &&
+      searchParams.type !== "3D_Modification"
+    ) {
+      filesAndNotesWhere.userId = Number(searchParams.userId);
+    }
+  }
+
+  const clientLead = await prisma.clientLead.findUnique({
+    where: { id: clientLeadId },
+    select: {
+      id: true,
+      clientDescription: true,
+      country: true,
+      timeToContact: true,
+      priceNote: true,
+      ourCost: true,
+      contractorCost: true,
+      projects: {
+        select: {
+          id: true,
+          type: true,
+          name: true,
+          description: true,
+          status: true,
+          area: true,
+          deliveryTime: true,
+          priority: true,
+          startedAt: true,
+          endedAt: true,
+          clientLeadId: true,
+          userId: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+      client: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          email: true,
+        },
+      },
+      selectedCategory: true,
+      description: true,
+      type: true,
+      emirate: true,
+      threeDWorkStage: true,
+      twoDWorkStage: true,
+      twoDExacuterStage: true,
+      price: true,
+      averagePrice: true,
+      priceWithOutDiscount: true,
+      discount: true,
+      files: {
+        where: filesAndNotesWhere,
+        select: {
+          id: true,
+          name: true,
+          url: true,
+          createdAt: true,
+          description: true,
+          isUserFile: true,
+          user: {
+            select: { name: true },
+          },
+        },
+      },
+      priceOffers: {
+        where,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          minPrice: true,
+          maxPrice: true,
+          note: true,
+          userId: true,
+          url: true,
+          user: {
+            select: { name: true },
+          },
+          createdAt: true,
+        },
+      },
+      notes: {
+        where: filesAndNotesWhere,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          content: true,
+          userId: true,
+          user: {
+            select: { name: true },
+          },
+          createdAt: true,
+        },
+      },
+      callReminders: {
+        where,
+        select: {
+          id: true,
+          time: true,
+          status: true,
+          reminderReason: true,
+          callResult: true,
+          userId: true,
+          user: {
+            select: { name: true },
+          },
+        },
+        orderBy: { time: "desc" },
+      },
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  if (!clientLead) {
+    throw new Error(`ClientLead with ID ${clientLeadId} not found`);
+  }
+  clientLead.callReminders = [
+    ...clientLead.callReminders.filter((call) => call.status === "IN_PROGRESS"),
+    ...clientLead.callReminders.filter((call) => call.status !== "IN_PROGRESS"),
+  ];
+  return clientLead;
+}
+
+const PROJECT_TYPES = [
+  "3D_Designer",
+  "3D_Modification",
+  "2D_Study",
+  "2D_Final_Plans",
+  "2D_Quantity_Calculation",
+];
+
+async function getProjects(clientLeadId) {
+  return await prisma.project.findMany({
+    where: {
+      clientLeadId: Number(clientLeadId),
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+}
+export async function getProjectsByClientLeadId({ searchParams }) {
+  const { clientLeadId } = searchParams;
+  let projects = await getProjects(clientLeadId);
+  if (!projects || projects.length === 0) {
+    const newProjects = [];
+    PROJECT_TYPES.forEach((type) => {
+      newProjects.push({
+        type,
+        status: "TO_DO",
+        priority: "MEDIUM",
+        startedAt: null,
+        endedAt: null,
+        role:
+          type === "3D_Designer" || type === "3D_Modification"
+            ? "THREE_D_DESIGNER"
+            : "TWO_D_DESIGNER",
+      });
+    });
+    await prisma.project.createMany({
+      data: newProjects.map((project) => ({
+        ...project,
+        clientLeadId: Number(clientLeadId),
+      })),
+    });
+    projects = await getProjects(clientLeadId);
+  }
+  console.log(projects, "projects");
+  return projects;
+}
+export async function assignProjectToUser({ projectId, userId }) {
+  const updatedProject = await prisma.project.update({
+    where: { id: Number(projectId) },
+    data: { userId: Number(userId), startedAt: new Date() },
+  });
+  const project = await prisma.project.findUnique({
+    where: { id: Number(projectId) },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+  return project;
+}
+export async function updateProject({ data }) {
+  const { id, status, deliveryTime, ...rest } = data;
+  console.log(data, "Data");
+  // Handle deliveryTime if provided
+  const updatedData = {
+    ...rest,
+    deliveryTime: deliveryTime
+      ? new Date(deliveryTime).toISOString()
+      : undefined,
+    ...(status === "Completed" && { endedAt: new Date() }),
+  };
+  delete updatedData.id;
+  delete updatedData.userId;
+  delete updatedData.startedAt;
+  delete updatedData.user;
+
+  const updatedProject = await prisma.project.update({
+    where: { id: Number(id) },
+    data: updatedData,
+  });
+
+  console.log(updatedProject, "updatedProject");
+  return updatedProject;
+}
+
+export async function getTasksWithNotesIncluded({ searchParams }) {
+  const where = {};
+  console.log(searchParams, "searchParams");
+  if (searchParams.projectId) {
+    where.projectId = Number(searchParams.projectId);
+  }
+  if (searchParams.userId && searchParams.userId !== "null") {
+    where.userId = Number(searchParams.userId);
+  }
+  if (searchParams.type) {
+    where.type = searchParams.type;
+  }
+  const tasks = await prisma.task.findMany({
+    where,
+    include: {
+      notes: true,
+    },
+  });
+  return tasks;
+}
+
+export async function createNewTask({ data }) {
+  const { projectId, ...rest } = data;
+  const newTask = await prisma.task.create({
+    data: {
+      ...rest,
+    },
+  });
+  if (projectId) {
+    await prisma.project.update({
+      where: { id: Number(projectId) },
+      data: {
+        tasks: {
+          connect: {
+            id: newTask.id,
+          },
+        },
+      },
+    });
+  }
+  return newTask;
+}
+export async function updateTask({ data, taskId }) {
+  const updatedTask = await prisma.task.update({
+    where: { id: Number(taskId) },
+    data,
+  });
+  return updatedTask;
+}
+export async function getNotes({ idKey, id }) {
+  const notes = await prisma.note.findMany({
+    where: {
+      [idKey]: Number(id),
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    select: {
+      id: true,
+      content: true,
+      createdAt: true,
+      attachment: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+  return notes;
+}
+export async function addNote({ attachment, userId, content, idKey, id }) {
+  const data = {
+    content,
+    userId: Number(userId),
+    attachment,
+  };
+  if (idKey && id) {
+    data[idKey] = Number(id);
+  }
+  const note = await prisma.note.create({
+    data,
+  });
+
+  return { data: note, message: "Note created successfully" };
+}

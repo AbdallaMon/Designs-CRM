@@ -18,6 +18,7 @@ import {
   generateStaffExcelReport,
   generateStaffPDFReport,
   generateStaffReport,
+  getAllUsers,
   getNotAllowedCountries,
   getNotificationForTodayByStaffId,
   getUser,
@@ -47,7 +48,21 @@ router.get("/users", async (req, res) => {
     }
     res.status(200).json({ data: users, totalPages, total });
   } catch (error) {
-    console.error("Error fetching supervisors:", error);
+    console.error("Error fetching users:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching supervisors", error });
+  }
+});
+router.get("/all-users", async (req, res) => {
+  const searchParams = req.query;
+
+  try {
+    const users = await getAllUsers(searchParams);
+
+    res.status(200).json({ data: users });
+  } catch (error) {
+    console.error("Error fetching users:", error);
     res
       .status(500)
       .json({ message: "An error occurred while fetching supervisors", error });

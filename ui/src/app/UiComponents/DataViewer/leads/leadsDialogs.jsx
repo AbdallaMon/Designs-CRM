@@ -298,6 +298,7 @@ export const NewNoteDialog = ({
   setNotes,
   type = "button",
   children,
+  handleClose,
 }) => {
   const [open, setOpen] = useState(false);
   const { setAlertError } = useAlertContext();
@@ -327,6 +328,9 @@ export const NewNoteDialog = ({
     if (request.status === 200) {
       if (setNotes) {
         setNotes((oldNotes) => [request.data, ...oldNotes]);
+      }
+      if (handleClose) {
+        handleClose(request.data);
       }
       setNewNote("");
       setOpen(false);
