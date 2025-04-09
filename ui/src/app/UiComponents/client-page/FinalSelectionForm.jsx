@@ -104,6 +104,11 @@ function DesignLeadForm({ category, item, location }) {
     } else {
       const response = await fetch("https://geolocation-db.com/json/");
       const data = await response.json();
+      console.log(response, "response");
+      console.log(data, "data");
+      if (data?.country_code === "Not found") {
+        return defaultCountry;
+      }
       return data.country_code;
     }
   }
