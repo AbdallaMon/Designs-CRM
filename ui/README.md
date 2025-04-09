@@ -178,7 +178,8 @@ General Features and Workflow
 - Notification to admin when user change task status
 - Fix pdf
 
-dJkmjERCZGCEgaxl
-root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
+- Commision not when finalized and show total for month
+  dJkmjERCZGCEgaxl
+  root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
 
 $2b$08$KXiH7ITBGRIwW3pHol3bCOWE5qhNE3I4Vr.6jxSBKlDoGZhJNh20q
