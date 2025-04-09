@@ -465,6 +465,14 @@ const LeadContent = ({
           label="Attatchments"
           sx={{ textTransform: "none" }}
         />
+
+        {payments?.length > 0 && (
+          <Tab
+            icon={<FaServicestack size={20} />}
+            label="Another services"
+            sx={{ textTransform: "none" }}
+          />
+        )}
         {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") &&
           lead.status === "FINALIZED" && (
             <Tab
@@ -473,13 +481,6 @@ const LeadContent = ({
               sx={{ textTransform: "none" }}
             />
           )}
-        {payments?.length > 0 && (
-          <Tab
-            icon={<FaServicestack size={20} />}
-            label="Another services"
-            sx={{ textTransform: "none" }}
-          />
-        )}
       </Tabs>
 
       <Box
@@ -521,11 +522,9 @@ const LeadContent = ({
             notUser={isPage && user.id !== lead.userId}
           />
         </TabPanel>
-        <TabPanel value={activeTab} index={5}>
-          <LeadProjects clientLeadId={lead.id} />
-        </TabPanel>
+
         {payments?.length > 0 && (
-          <TabPanel value={activeTab} index={6}>
+          <TabPanel value={activeTab} index={5}>
             <ExtraServicesList
               admin={admin}
               lead={lead}
@@ -534,6 +533,9 @@ const LeadContent = ({
             />
           </TabPanel>
         )}
+        <TabPanel value={activeTab} index={payments?.length > 0 ? 6 : 5}>
+          <LeadProjects clientLeadId={lead.id} />
+        </TabPanel>
       </Box>
     </>
   );

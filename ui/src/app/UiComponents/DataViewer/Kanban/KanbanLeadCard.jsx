@@ -28,7 +28,7 @@ import {
 
 import { styled } from "@mui/material/styles";
 import dayjs from "dayjs";
-import { KanbanStatusArray, statusColors } from "@/app/helpers/constants.js";
+import { statusColors } from "@/app/helpers/constants.js";
 import PreviewDialog from "@/app/UiComponents/DataViewer/leads/PreviewLead.jsx";
 import {
   CallResultDialog,
@@ -72,14 +72,7 @@ const LeadCard = ({ lead, movelead, admin, setleads, type, statusArray }) => {
     type: ItemTypes.CARD,
     item: {
       id: lead.id,
-      status:
-        type === "three-d"
-          ? lead.threeDWorkStage
-          : type === "two-d"
-          ? lead.twoDWorkStage
-          : type === "exacuter"
-          ? lead.twoDExacuterStage
-          : lead.status,
+      status: type === "STAFF" ? lead.status : lead.projects[0].status,
       ...lead,
     },
   });
@@ -114,15 +107,7 @@ const LeadCard = ({ lead, movelead, admin, setleads, type, statusArray }) => {
   return (
     <div ref={drag}>
       <StyledCard
-        status={
-          type === "three-d"
-            ? lead.threeDWorkStage
-            : type === "two-d"
-            ? lead.twoDWorkStage
-            : type === "exacuter"
-            ? lead.twoDExacuterStage
-            : lead.status
-        }
+        status={type === "STAFF" ? lead.status : lead.projects[0].status}
       >
         <CardContent>
           <Box>
@@ -167,13 +152,6 @@ const LeadCard = ({ lead, movelead, admin, setleads, type, statusArray }) => {
           )}
           <Stack spacing={2}>
             {latestCalls?.map((call, index) => {
-              // if (
-              //   user.role !== "ADMIN" &&
-              //   user.role !== "SUPERVISOR" &&
-              //   call.userId !== user.id
-              // ) {
-              //   return;
-              // }
               return (
                 <CallInfoBox
                   key={index}
@@ -285,9 +263,8 @@ const LeadCard = ({ lead, movelead, admin, setleads, type, statusArray }) => {
           ))}
         </Menu>
       )}
-      {type === "three-d" || type === "two-d" || type === "exacuter" ? (
-        <PreviewWorkStage
-          type={type}
+      {type === "STAFF" ? (
+        <PreviewDialog
           open={previewDialogOpen}
           onClose={() => setPreviewDialogOpen(false)}
           setleads={setleads}
@@ -295,7 +272,8 @@ const LeadCard = ({ lead, movelead, admin, setleads, type, statusArray }) => {
           admin={admin}
         />
       ) : (
-        <PreviewDialog
+        <PreviewWorkStage
+          type={type}
           open={previewDialogOpen}
           onClose={() => setPreviewDialogOpen(false)}
           setleads={setleads}

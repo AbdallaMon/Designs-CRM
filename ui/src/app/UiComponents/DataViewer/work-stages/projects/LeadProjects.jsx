@@ -32,7 +32,6 @@ export const LeadProjects = ({ clientLeadId }) => {
       url: `shared/projects?clientLeadId=${clientLeadId}&`,
       setLoading,
     });
-    console.log("Projects Data:", projectsReq);
     if (projectsReq.status === 200) {
       setProjects(projectsReq.data);
     }

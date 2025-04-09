@@ -33,10 +33,12 @@ import {
   BsInfoCircle,
   BsPerson,
   BsPersonCheck,
+  BsPersonCheckFill,
   BsTelephone,
 } from "react-icons/bs";
 import {
   LeadCategory,
+  PROJECT_STATUSES,
   statusColors,
   ThreeDWorkStages,
   TwoDExacuterStages,
@@ -63,9 +65,11 @@ import {
   LeadNotes,
   OurCostAndContractorCost,
 } from "../leads/LeadTabs";
-import { MdWork, MdWorkHistory } from "react-icons/md";
+import { MdTask, MdWork, MdWorkHistory } from "react-icons/md";
 import WorkStageComponent from "./WorkStageStatus";
 import LeadProjects from "./projects/LeadProjects";
+import { TasksList } from "./projects/TasksList";
+import { ProjectDetails } from "./projects/ProjectDetails";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -92,28 +96,6 @@ const LeadContent = ({
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
   const { setLoading } = useToastContext();
-  async function createADeal(lead) {
-    const type =
-      user.role === "THREE_D_DESIGNER"
-        ? "three-d"
-        : user.role === "TWO_D_DESIGNER"
-        ? "two-d"
-        : "exacuter";
-
-    const assign = await handleRequestSubmit(
-      lead,
-      setLoading,
-      `shared/work-stages/assign?type=${type}&`,
-      false,
-      "Assigning",
-      false,
-      "PUT"
-    );
-    if (assign.status === 200) {
-      window.location.reload();
-    }
-    return assign;
-  }
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -124,54 +106,46 @@ const LeadContent = ({
     const request = await handleRequestSubmit(
       {
         status: value,
-        oldStatus:
-          type === "three-d"
-            ? lead.threeDWorkStage
-            : type === "two-d"
-            ? lead.twoDWorkStage
-            : lead.twoDExacuterStage,
+        oldStatus: lead.projects[0].status,
         isAdmin: isAdmin,
+        id: lead.projects[0].id,
       },
       setLoading,
-      `shared/work-stages/${lead.id}/status`,
+      `shared/client-leads/designers/${lead.id}/status`,
       false,
       "Updating",
       null,
       "PUT"
     );
     if (request.status === 200) {
-      const update =
-        type === "three-d"
-          ? { threeDWorkStage: value }
-          : type === "two-d"
-          ? { twoDWorkStage: value }
-          : { twoDExacuterStage: value };
       if (setleads) {
         setleads((prev) =>
-          prev.map((l) => (l.id === lead.id ? { ...l, ...update } : l))
+          prev.map((l) =>
+            l.id === lead.id
+              ? {
+                  ...l,
+                  projects: l.projects.map((project, index) =>
+                    index === 0 ? { ...project, status: value } : project
+                  ),
+                }
+              : l
+          )
         );
       }
       if (setLead) {
-        setLead((oldLead) => ({ ...oldLead, ...update }));
+        setLead((oldLead) => ({
+          ...oldLead,
+          projects: oldLead.projects.map((project, index) =>
+            index === 0 ? { ...project, status: value } : project
+          ),
+        }));
       }
       setAnchorEl(null);
     }
   };
-
-  const leadStatus =
-    type === "three-d"
-      ? enumToKeyValueArray(ThreeDWorkStages)
-      : type === "two-d"
-      ? enumToKeyValueArray(TwoDWorkStages)
-      : enumToKeyValueArray(TwoDExacuterStages);
+  const leadStatus = PROJECT_STATUSES[type];
   const isNotUser = () => {
-    if (type === "three-d") {
-      return user.id !== lead.threeDDesignerId;
-    } else if (type === "two-d") {
-      return user.id !== lead.twoDDesignerId;
-    } else {
-      return user.id !== lead.twoDExacuterId;
-    }
+    return user.id !== lead.projects[0].userId;
   };
   const notUser = isNotUser();
   return (
@@ -208,21 +182,7 @@ const LeadContent = ({
             alignItems={{ sm: "center" }}
             justifyContent="flex-end"
           >
-            {isPage &&
-            ((!lead.twoDDesignerId && type === "two-d") ||
-              (!lead.threeDDesignerId && type === "three-d") ||
-              (!lead.twoDExacuterId && type === "excauter")) &&
-            !isAdmin ? (
-              <ConfirmWithActionModel
-                title={
-                  "Are you sure you want to get this lead and assign it to you as a new deal?"
-                }
-                handleConfirm={() => createADeal(lead)}
-                label={"Start a deal"}
-                fullWidth={false}
-                size="small"
-              />
-            ) : (
+            {
               <>
                 {isAdmin && (
                   <>
@@ -255,23 +215,12 @@ const LeadContent = ({
                   aria-expanded={open ? "true" : undefined}
                   onClick={handleClick}
                   sx={{
-                    background:
-                      statusColors[
-                        type === "three-d"
-                          ? lead.threeDWorkStage
-                          : type === "two-d"
-                          ? lead.twoDWorkStage
-                          : lead.twoDExacuterStage
-                      ],
+                    background: statusColors[lead.projects[0].status],
                     fontWeight: 500,
                     borderRadius: "50px",
                   }}
                 >
-                  {type === "three-d"
-                    ? ThreeDWorkStages[lead.threeDWorkStage]
-                    : type == "two-d"
-                    ? TwoDWorkStages[lead.twoDWorkStage]
-                    : TwoDExacuterStages[lead.twoDExacuterStage]}
+                  {lead.projects[0].status}
                 </Button>
                 <Menu
                   id="basic-menu"
@@ -282,18 +231,18 @@ const LeadContent = ({
                     "aria-labelledby": "basic-button",
                   }}
                 >
-                  {leadStatus.map((lead) => (
+                  {leadStatus.map((status) => (
                     <MenuItem
-                      key={lead.id}
-                      value={lead.id}
-                      onClick={() => handleMenuClose(lead.id)}
+                      key={status}
+                      value={status}
+                      onClick={() => handleMenuClose(status)}
                     >
-                      {lead.name}
+                      {status}
                     </MenuItem>
                   ))}
                 </Menu>
               </>
-            )}
+            }
             <Button onClick={() => generatePDF(lead, user)}>
               Generate pdf
             </Button>
@@ -335,6 +284,13 @@ const LeadContent = ({
           label="Attatchments"
           sx={{ textTransform: "none" }}
         />
+        {user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && (
+          <Tab
+            icon={<MdTask size={20} />}
+            label="Tasks"
+            sx={{ textTransform: "none" }}
+          />
+        )}
         {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") &&
           lead.status === "FINALIZED" && (
             <Tab
@@ -383,11 +339,18 @@ const LeadContent = ({
         <TabPanel value={activeTab} index={3}>
           <FileList admin={isAdmin} lead={lead} notUser={isPage && notUser} />
         </TabPanel>
-        <TabPanel value={activeTab} index={4}>
-          <LeadProjects clientLeadId={lead.id} />
-        </TabPanel>
-        {type === "three-d" && (
-          <TabPanel value={activeTab} index={5}>
+        {user.role === "ADMIN" && user.role === "SUPER_ADMIN" && (
+          <TabPanel value={activeTab} index={4}>
+            <LeadProjects clientLeadId={lead.id} />
+          </TabPanel>
+        )}
+        {user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && (
+          <TabPanel value={activeTab} index={4}>
+            <TasksList projectId={lead.projects[0].id} type="PROJECT" />
+          </TabPanel>
+        )}
+        {/* {type === "three-d" && (
+          <TabPanel value={activeTab} index={4}>
             <WorkStageComponent
               clientLeadId={lead.id}
               stage={lead.threeDWorkStage}
@@ -397,10 +360,10 @@ const LeadContent = ({
         )}
 
         {type === "exacuter" && (
-          <TabPanel value={activeTab} index={5}>
+          <TabPanel value={activeTab} index={4}>
             <OurCostAndContractorCost lead={lead} setLead={setLead} />
           </TabPanel>
-        )}
+        )} */}
       </Box>
     </>
   );
@@ -657,6 +620,9 @@ function LeadData({ lead }) {
           </InfoCard>
         </>
       )}
+      <InfoCard title="Project info" icon={BsPersonCheckFill} theme={theme}>
+        <ProjectDetails project={lead.projects[0]} isStaff={true} />
+      </InfoCard>
     </Stack>
   );
 }
@@ -703,7 +669,7 @@ const PreviewWorkStage = ({
     async function getALeadDetails() {
       if (open) {
         const leadDetails = await getData({
-          url: `shared/work-stage-leads/${id}?type=${type}&`,
+          url: `shared/client-leads/projects/designers/${id}?type=${type}&`,
           setLoading,
         });
         setLead(leadDetails.data);

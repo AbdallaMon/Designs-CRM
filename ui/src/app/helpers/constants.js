@@ -58,15 +58,12 @@ export const LeadType = {
   NONE: "None",
 };
 export const dictionary = {
-  // Leads titles
   Consultation: "استشارة",
   Design: "تصميم",
   "Interior design": "تصميم داخلي",
-  // Questions
   "How can we serve you?": "كيف يمكننا مساعدتك؟",
   "Choose from options": "اختر من الخيارات",
 
-  // Lead Types
   Room: "غرفة",
   Plan: "مخطط",
   "City Visit": "زيارة ميدانية",
@@ -219,7 +216,17 @@ export const PROJECT_TYPES = [
   "2D_Final_Plans",
   "2D_Quantity_Calculation",
 ];
-
+export const PROJECT_TYPES_ENUM = {
+  ThreeD: {
+    DESIGNER: "3D_Designer",
+    MODIFICATION: "3D_Modification",
+  },
+  TwoD: {
+    STUDY: "2D_Study",
+    FINAL_PLANS: "2D_Final_Plans",
+    QUANTITY_CALCULATION: "2D_Quantity_Calculation",
+  },
+};
 export const PROJECT_STATUSES = {
   "3D_Designer": [
     "To Do",
@@ -273,6 +280,27 @@ export const statusColors = {
   LEVEL_5: "#0d9488", // Fifth Payment - Teal
   LEVEL_6: "#0f766e", // Sixth Payment - Dark Teal
   LEVEL_7_OR_MORE: "#ef4444", // Seventh
+
+  VERY_LOW: "#d1d5db", // Light Gray
+  LOW: "#f59e0b", // Yellow
+  MEDIUM: "#3b82f6", // Blue
+  HIGH: "#10b981", // Green
+  VERY_HIGH: "#ef4444", // Red
+  TODO: "#f97316", // Orange
+  IN_PROGRESS: "#0d9488", // Teal
+  DONE: "#10b981", // Green
+
+  "To Do": "#f59e0b", // Yellow
+  "3D": "#10b981", // Green
+  Render: "#3b82f6", // Blue
+  Delivery: "#0d9488", // Teal
+  Hold: "#ef4444", // Red
+  Completed: "#10b981", // Green
+  Modification: "#f97316", // Orange
+  Studying: "#3b82f6", // Blue
+  Delivery: "#0d9488", // Teal
+  Started: "#3b82f6", // Blue
+  "In Progress": "#0d9488", // Teal
 };
 
 export const KanbanStatusArray = [

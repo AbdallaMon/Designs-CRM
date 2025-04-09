@@ -1943,12 +1943,16 @@ export async function updateWorkStageStatus(clientLeadId, body) {
 export async function getLeadByPorjects({ searchParams }) {
   const filters = JSON.parse(searchParams.filters);
   const where = {};
+  const projectWhere = {};
   if (searchParams.type) {
     where.projects = {
       some: {
         type: searchParams.type,
       },
     };
+    if (searchParams.userId) {
+      projectWhere.type = searchParams.type;
+    }
   }
 
   if (filters?.clientId && filters.clientId !== "all") {
@@ -1971,13 +1975,12 @@ export async function getLeadByPorjects({ searchParams }) {
     }
   }
   if (searchParams.userId) {
-    if (searchParams.userId) {
-      where.projects = {
-        some: {
-          userId: Number(searchParams.userId),
-        },
-      };
-    }
+    where.projects = {
+      some: {
+        userId: Number(searchParams.userId),
+      },
+    };
+    projectWhere.userId = Number(searchParams.userId);
   }
   const clientLeads = await prisma.clientLead.findMany({
     where,
@@ -1986,11 +1989,10 @@ export async function getLeadByPorjects({ searchParams }) {
       id: true,
       client: { select: { name: true } },
       projects: {
+        where: projectWhere,
         select: {
           id: true,
           type: true,
-          name: true,
-          description: true,
           status: true,
           area: true,
           deliveryTime: true,
@@ -2027,13 +2029,16 @@ export async function getLeadByPorjects({ searchParams }) {
 
 export async function getLeadDetailsByProject(clientLeadId, searchParams) {
   const where = {};
+  const userIdWhere = {};
   let filesAndNotesWhere = {};
+  let projectsWhere = {};
   if (searchParams.type) {
     where.projects = {
       some: {
         type: searchParams.type,
       },
     };
+    projectsWhere.type = searchParams.type;
   }
 
   if (searchParams.userId) {
@@ -2042,6 +2047,8 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
         userId: Number(searchParams.userId),
       },
     };
+    projectsWhere.userId = Number(searchParams.userId);
+    userIdWhere.userId = Number(searchParams.userId);
     if (
       searchParams.type !== "3D_Designer" &&
       searchParams.type !== "3D_Modification"
@@ -2049,7 +2056,7 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
       filesAndNotesWhere.userId = Number(searchParams.userId);
     }
   }
-
+  console.log(projectsWhere, "projectsWhere");
   const clientLead = await prisma.clientLead.findUnique({
     where: { id: clientLeadId },
     select: {
@@ -2061,11 +2068,10 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
       ourCost: true,
       contractorCost: true,
       projects: {
+        where: projectsWhere,
         select: {
           id: true,
           type: true,
-          name: true,
-          description: true,
           status: true,
           area: true,
           deliveryTime: true,
@@ -2117,7 +2123,7 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
         },
       },
       priceOffers: {
-        where,
+        where: userIdWhere,
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
@@ -2146,7 +2152,7 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
         },
       },
       callReminders: {
-        where,
+        where: userIdWhere,
         select: {
           id: true,
           time: true,
@@ -2249,37 +2255,58 @@ export async function assignProjectToUser({ projectId, userId }) {
 }
 export async function updateProject({ data }) {
   const { id, status, deliveryTime, ...rest } = data;
-  console.log(data, "Data");
-  // Handle deliveryTime if provided
+  console.log(data, "data");
+  if (data.oldStatus) {
+    if (
+      data.oldStatus === "Completed" ||
+      data.oldStatus === "Canceled" ||
+      data.oldStatus === "Rejected"
+    ) {
+      throw new Error(
+        "You can't change the status after completion or cancellation or rejection"
+      );
+    }
+    if (data.isAdmin && data.oldStatus !== "Completed") {
+      throw new Error(
+        "You can only change the status from COMPLETED or CANCELED or REJECTED"
+      );
+    }
+    delete rest.oldStatus;
+    delete rest.isAdmin;
+  }
+  console.log(data, "data");
+
+  console.log(rest, "rest");
   const updatedData = {
     ...rest,
     deliveryTime: deliveryTime
       ? new Date(deliveryTime).toISOString()
       : undefined,
+    status,
     ...(status === "Completed" && { endedAt: new Date() }),
   };
+  console.log(updatedData, "updatedData");
+
   delete updatedData.id;
   delete updatedData.userId;
   delete updatedData.startedAt;
   delete updatedData.user;
-
   const updatedProject = await prisma.project.update({
     where: { id: Number(id) },
     data: updatedData,
   });
 
-  console.log(updatedProject, "updatedProject");
   return updatedProject;
 }
 
 export async function getTasksWithNotesIncluded({ searchParams }) {
   const where = {};
-  console.log(searchParams, "searchParams");
-  if (searchParams.projectId) {
-    where.projectId = Number(searchParams.projectId);
-  }
   if (searchParams.userId && searchParams.userId !== "null") {
     where.userId = Number(searchParams.userId);
+  }
+  if (searchParams.projectId) {
+    where.projectId = Number(searchParams.projectId);
+    delete where.userId;
   }
   if (searchParams.type) {
     where.type = searchParams.type;
@@ -2288,6 +2315,13 @@ export async function getTasksWithNotesIncluded({ searchParams }) {
     where,
     include: {
       notes: true,
+      createdBy: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
     },
   });
   return tasks;

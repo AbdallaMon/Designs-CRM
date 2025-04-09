@@ -31,6 +31,7 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { PRIORITY, TASKSTATUS } from "@/app/helpers/constants";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 export const TasksList = ({ projectId, type = "NORMAL", userId = null }) => {
   const [tasks, setTasks] = useState([]);
@@ -46,7 +47,6 @@ export const TasksList = ({ projectId, type = "NORMAL", userId = null }) => {
       url: `shared/tasks?projectId=${projectId}&type=${type}&userId=${userId}&`,
       setLoading,
     });
-    console.log(tasksData, "taskData");
     if (tasksData.status === 200) {
       setTasks(tasksData.data);
     }
@@ -114,7 +114,19 @@ const TaskItem = ({ task, setTasks }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [open, setOpen] = useState({ status: false, priority: false });
   const { setLoading } = useToastContext();
+  const { setAlertError } = useAlertContext();
+  const { user } = useAuth();
   async function handleMenuClose(value, type) {
+    if (
+      user.role !== "ADMIN" &&
+      user.role !== "SUPER_ADMIN" &&
+      type === "priority"
+    ) {
+      setAlertError(
+        "You are not allowed to change this task priority only task status can be changed"
+      );
+      return;
+    }
     const request = await handleRequestSubmit(
       { [type]: value },
       setLoading,

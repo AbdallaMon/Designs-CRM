@@ -176,6 +176,7 @@ General Features and Workflow
 - Notification for each task created
 - Notification for each project assignment
 - Notification to admin when user change task status
+- Fix pdf
 
 dJkmjERCZGCEgaxl
 root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

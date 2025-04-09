@@ -36,7 +36,7 @@ import { TasksList } from "./TasksList";
 import { getData } from "@/app/helpers/functions/getData";
 import dayjs from "dayjs";
 
-export const ProjectDetails = ({ project, onUpdate }) => {
+export const ProjectDetails = ({ project, onUpdate, isStaff }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showTasks, setShowTasks] = useState(false);
   const [editedProject, setEditedProject] = useState({ ...project });
@@ -66,14 +66,9 @@ export const ProjectDetails = ({ project, onUpdate }) => {
     }
   };
 
-  const formatDate = (dateString) => {
-    return dateString.split("T")[0]; // Format YYYY-MM-DD
-  };
-
   const renderEditForm = () => (
     <form onSubmit={handleSubmit}>
       <Grid container spacing={3}>
-        {/* Status Field */}
         <Grid size={{ xs: 12, md: 6 }}>
           <FormControl fullWidth>
             <InputLabel id="status-label">Status</InputLabel>
@@ -221,23 +216,25 @@ export const ProjectDetails = ({ project, onUpdate }) => {
               : "Not set"}
           </Typography>
         </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Button
-            onClick={() => setOpen(true)}
-            variant="outlined"
-            color="primary"
-          >
-            {!project.user ? "Assign to" : "Change"} Designer
-          </Button>
-          {open && (
-            <AssignDesignerModal
-              open={open}
-              project={project}
-              setOpen={setOpen}
-              onUpdate={onUpdate}
-            />
-          )}
-        </Grid>
+        {!isStaff && (
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Button
+              onClick={() => setOpen(true)}
+              variant="outlined"
+              color="primary"
+            >
+              {!project.user ? "Assign to" : "Change"} Designer
+            </Button>
+            {open && (
+              <AssignDesignerModal
+                open={open}
+                project={project}
+                setOpen={setOpen}
+                onUpdate={onUpdate}
+              />
+            )}
+          </Grid>
+        )}
       </Grid>
       <Grid size={{ xs: 12, md: 6 }}>
         <Typography variant="subtitle2" color="textSecondary">
@@ -271,48 +268,53 @@ export const ProjectDetails = ({ project, onUpdate }) => {
           title={project.type.replace(/_/g, " ")}
           subheader={``}
           action={
-            <Button
-              variant="outlined"
-              color="primary"
-              startIcon={isEditing ? <MdCancel /> : <MdEdit />}
-              onClick={() => {
-                setIsEditing(!isEditing);
-                setEditedProject({ ...project });
-              }}
-            >
-              {isEditing ? "Cancel" : "Edit Details"}
-            </Button>
+            <>
+              {!isStaff && (
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={isEditing ? <MdCancel /> : <MdEdit />}
+                  onClick={() => {
+                    setIsEditing(!isEditing);
+                    setEditedProject({ ...project });
+                  }}
+                >
+                  {isEditing ? "Cancel" : "Edit Details"}
+                </Button>
+              )}
+            </>
           }
         />
         <CardContent>
           {isEditing ? renderEditForm() : renderProjectInfo()}
         </CardContent>
       </Card>
-
-      <Card sx={{ mt: 3 }}>
-        <CardHeader
-          title="Tasks"
-          subheader="Manage tasks for this project"
-          action={
-            <Box>
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={showTasks ? <MdVisibilityOff /> : <MdVisibility />}
-                onClick={() => setShowTasks(!showTasks)}
-                sx={{ mr: 1 }}
-              >
-                {showTasks ? "Hide Tasks" : "Show Tasks"}
-              </Button>
-            </Box>
-          }
-        />
-        {showTasks && (
-          <CardContent>
-            <TasksList projectId={project.id} type="PROJECT" />
-          </CardContent>
-        )}
-      </Card>
+      {!isStaff && (
+        <Card sx={{ mt: 3 }}>
+          <CardHeader
+            title="Tasks"
+            subheader="Manage tasks for this project"
+            action={
+              <Box>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={showTasks ? <MdVisibilityOff /> : <MdVisibility />}
+                  onClick={() => setShowTasks(!showTasks)}
+                  sx={{ mr: 1 }}
+                >
+                  {showTasks ? "Hide Tasks" : "Show Tasks"}
+                </Button>
+              </Box>
+            }
+          />
+          {showTasks && (
+            <CardContent>
+              <TasksList projectId={project.id} type="PROJECT" />
+            </CardContent>
+          )}
+        </Card>
+      )}
     </Box>
   );
 };

@@ -2,7 +2,11 @@
 
 import { useAuth } from "@/app/providers/AuthProvider";
 import KanbanBoard from "../Kanban/KanbanBoard";
-import { ThreeDWorkStages } from "@/app/helpers/constants";
+import {
+  PROJECT_STATUSES,
+  PROJECT_TYPES_ENUM,
+  ThreeDWorkStages,
+} from "@/app/helpers/constants";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import { useEffect } from "react";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
@@ -16,7 +20,10 @@ function ThreeDWorkStagesKanban({ staffId }) {
     loading,
     setData: setleads,
     setFilters,
-  } = useDataFetcher("shared/work-stages?type=three-d&", false);
+  } = useDataFetcher(
+    `shared/client-leads/projects/designers?type=${PROJECT_TYPES_ENUM.ThreeD.DESIGNER}&`,
+    false
+  );
 
   useEffect(() => {
     if (admin) {
@@ -24,19 +31,19 @@ function ThreeDWorkStagesKanban({ staffId }) {
     }
   }, [staffId]);
   const { setLoading } = useToastContext();
-  const movelead = async (l, newStatus) => {
+  const movelead = async (lead, newStatus) => {
     if (user.role === "SUPER_ADMIN") {
       return;
     }
     const request = await handleRequestSubmit(
       {
         status: newStatus,
-        oldStatus: l.threeDWorkStage,
+        oldStatus: lead.projects[0].status,
         isAdmin: user.role === "ADMIN",
-        type: "three-d",
+        id: lead.projects[0].id,
       },
       setLoading,
-      `shared/work-stages/${l.id}/status`,
+      `shared/client-leads/designers/${lead.id}/status`,
       false,
       "Updating",
       false,
@@ -45,8 +52,15 @@ function ThreeDWorkStagesKanban({ staffId }) {
 
     if (request.status === 200) {
       setleads((prev) =>
-        prev.map((lead) =>
-          lead.id === l.id ? { ...lead, threeDWorkStage: newStatus } : lead
+        prev.map((l) =>
+          l.id === lead.id
+            ? {
+                ...l,
+                projects: l.projects.map((project, index) =>
+                  index === 0 ? { ...project, status: value } : project
+                ),
+              }
+            : l
         )
       );
     }
@@ -58,9 +72,9 @@ function ThreeDWorkStagesKanban({ staffId }) {
         loading={loading}
         movelead={movelead}
         setleads={setleads}
-        statusArray={Object.keys(ThreeDWorkStages)}
+        statusArray={PROJECT_STATUSES["3D_Designer"]}
         setFilters={setFilters}
-        type="three-d"
+        type="3D_Designer"
       />
     </>
   );

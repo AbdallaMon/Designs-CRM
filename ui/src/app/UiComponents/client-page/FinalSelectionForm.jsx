@@ -28,16 +28,12 @@ import {
 } from "@/app/helpers/constants.js";
 import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
 import { gsap } from "gsap";
-import {
-  priceRange,
-  variants,
-} from "@/app/UiComponents/client-page/clientPageData.js";
+import { priceRange } from "@/app/UiComponents/client-page/clientPageData.js";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { matchIsValidTel, MuiTelInput } from "mui-tel-input";
 import "dayjs/locale/en-gb";
 import { MobileDateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import dayjs from "dayjs";
 export function FinalSelectionForm({ category, item, location }) {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -104,7 +100,10 @@ function DesignLeadForm({ category, item, location }) {
     } else {
       const response = await fetch("https://geolocation-db.com/json/");
       const data = await response.json();
-      return data.country_code;
+      if (data?.country_code === "Not found") {
+        return defaultCountry;
+      }
+      return data?.country_code || defaultCountry;
     }
   }
   useEffect(() => {
@@ -180,7 +179,7 @@ function DesignLeadForm({ category, item, location }) {
       }
     }
   };
-
+  console.log(defaultCountry, "defaultCountry");
   const emiratesOptions = Object.entries(Emirate).map(([key, value]) => ({
     key,
     label: value,

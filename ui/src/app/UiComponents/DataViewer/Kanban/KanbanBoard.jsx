@@ -25,7 +25,6 @@ const KanbanBoard = ({
 }) => {
   const { user } = useAuth();
   const admin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
-
   return (
     <DndProvider backend={HTML5Backend}>
       <Box px={1.5}>
@@ -79,15 +78,7 @@ const KanbanBoard = ({
             /> */}
             {admin && (
               <SearchComponent
-                apiEndpoint={`search?model=${
-                  type === "three-d"
-                    ? "THREE_D_DESIGNER"
-                    : type === "two-d"
-                    ? "TWO_D_DESIGNER"
-                    : type === "exacuter"
-                    ? "TWO_D_EXECUTOR"
-                    : "STAFF"
-                }`}
+                apiEndpoint={`search?model=${type ? type : "STAFF"}`}
                 setFilters={setFilters}
                 inputLabel="Search staff by name or email"
                 renderKeys={["name", "email"]}
@@ -161,15 +152,10 @@ const KanbanBoard = ({
               loading
                 ? []
                 : leads.filter((lead) => {
-                    if (type === "three-d") {
-                      return lead.threeDWorkStage === status;
+                    if (type === "STAFF") {
+                      return lead.status === status;
                     }
-                    if (type === "two-d") {
-                      return lead.twoDWorkStage === status;
-                    } else if (type === "exacuter") {
-                      return lead.twoDExacuterStage === status;
-                    }
-                    return lead.status === status;
+                    return lead.projects[0].status === status;
                   })
             }
             movelead={movelead}

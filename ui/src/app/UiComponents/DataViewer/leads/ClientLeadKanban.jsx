@@ -90,6 +90,7 @@ const DealsKanbanBoard = ({ staffId }) => {
         setleads={setleads}
         statusArray={Object.keys(KanbanLeadsStatus)}
         setFilters={setFilters}
+        type="STAFF"
       />
     </>
   );
