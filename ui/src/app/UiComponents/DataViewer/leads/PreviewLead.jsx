@@ -4,6 +4,7 @@ import {
   Alert,
   alpha,
   Avatar,
+  Badge,
   Box,
   Button,
   Chip,
@@ -68,8 +69,9 @@ import {
   FileList,
   ExtraServicesList,
 } from "./LeadTabs";
-import { MdBlock, MdWork } from "react-icons/md";
+import { MdBlock, MdModeEdit, MdWork } from "react-icons/md";
 import LeadProjects from "../work-stages/projects/LeadProjects";
+import { TasksList } from "../work-stages/projects/TasksList";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -128,7 +130,6 @@ const LeadContent = ({
           "Checking if u allowed to take this lead"
         );
         if (res.status === 200) {
-          console.log(res, "Res");
           setIsAllowed(res.allowed);
         }
       } catch (err) {
@@ -266,6 +267,11 @@ const LeadContent = ({
               <Typography variant="h6">
                 #{lead.id} {lead.client.name}
               </Typography>
+            )}
+            {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+              <Badge color="primary" badgeContent={lead.paymentStatus}>
+                Initial payment
+              </Badge>
             )}
           </Stack>
           <Stack
@@ -437,7 +443,7 @@ const LeadContent = ({
             fontSize: { xs: "0.75rem", md: "0.875rem" }, // Smaller font size on mobile
           },
         }}
-        variant={isMobile ? "scrollable" : "standard"}
+        variant={"scrollable"}
         scrollButtons="auto"
       >
         <Tab
@@ -478,6 +484,14 @@ const LeadContent = ({
             <Tab
               icon={<MdWork size={20} />}
               label="Projects"
+              sx={{ textTransform: "none" }}
+            />
+          )}
+        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") &&
+          lead.status === "FINALIZED" && (
+            <Tab
+              icon={<MdModeEdit size={20} />}
+              label="Modificaions"
               sx={{ textTransform: "none" }}
             />
           )}
@@ -535,6 +549,13 @@ const LeadContent = ({
         )}
         <TabPanel value={activeTab} index={payments?.length > 0 ? 6 : 5}>
           <LeadProjects clientLeadId={lead.id} />
+        </TabPanel>
+        <TabPanel value={activeTab} index={payments?.length > 0 ? 7 : 6}>
+          <TasksList
+            name="Modifcation"
+            type="MODIFICATION"
+            clientLeadId={lead.id}
+          />
         </TabPanel>
       </Box>
     </>
@@ -839,7 +860,6 @@ const PreviewDialog = ({
 }) => {
   const [activeTab, setActiveTab] = useState(0);
   const theme = useTheme();
-  const { user } = useAuth();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [loading, setLoading] = useState(true);
   const [lead, setLead] = useState(null);
@@ -863,6 +883,7 @@ const PreviewDialog = ({
     }
     if (onClose) onClose();
   };
+  if (!lead) return;
   return (
     <>
       {page ? (
@@ -885,7 +906,6 @@ const PreviewDialog = ({
           )}
         </Container>
       ) : (
-        // Render as a Dialog
         <Dialog
           open={open}
           onClose={onClose}

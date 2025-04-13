@@ -8,7 +8,7 @@ import { useEffect } from "react";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 
-function ThreeDWorkStagesKanban({ staffId }) {
+function WorkStagesKanban({ staffId, type }) {
   const { user } = useAuth();
   const admin = user.role === "ADMIN";
   const {
@@ -17,10 +17,9 @@ function ThreeDWorkStagesKanban({ staffId }) {
     setData: setleads,
     setFilters,
   } = useDataFetcher(
-    `shared/client-leads/projects/designers?type=${PROJECT_TYPES_ENUM.ThreeD.DESIGNER}&`,
+    `shared/client-leads/projects/designers?type=${type}&`,
     false
   );
-
   useEffect(() => {
     if (admin) {
       setFilters((old) => ({ ...old, staffId }));
@@ -53,7 +52,7 @@ function ThreeDWorkStagesKanban({ staffId }) {
             ? {
                 ...l,
                 projects: l.projects.map((project, index) =>
-                  index === 0 ? { ...project, status: value } : project
+                  index === 0 ? { ...project, status: newStatus } : project
                 ),
               }
             : l
@@ -68,11 +67,11 @@ function ThreeDWorkStagesKanban({ staffId }) {
         loading={loading}
         movelead={movelead}
         setleads={setleads}
-        statusArray={PROJECT_STATUSES["3D_Designer"]}
+        statusArray={PROJECT_STATUSES[type]}
         setFilters={setFilters}
-        type="3D_Designer"
+        type={type}
       />
     </>
   );
 }
-export default ThreeDWorkStagesKanban;
+export default WorkStagesKanban;

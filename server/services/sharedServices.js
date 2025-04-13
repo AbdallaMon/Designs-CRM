@@ -107,6 +107,7 @@ export async function getClientLeads({
         emirate: true,
         selectedCategory: true,
         description: true,
+        paymentStatus: true,
         client: {
           select: {
             name: true,
@@ -187,6 +188,8 @@ export async function getClientLeadsByDateRange({ searchParams }) {
       type: true,
       emirate: true,
       discount: true,
+      paymentStatus: true,
+
       callReminders: {
         where: callRemindersWhere,
         orderBy: { time: "desc" },
@@ -204,22 +207,23 @@ export async function getClientLeadDetails(
   userId
 ) {
   let where = {};
-  if (searchParams.userId) {
+
+  if (searchParams.userId && role !== "ADMIN" && role !== "SUPER_ADMIN") {
     where.userId = Number(searchParams.userId);
   }
   if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
     const clientLeadShuffle = await prisma.clientLead.findUnique({
-      where: { id: Number(clientLeadId) },
+      where: { id: Number(clientLeadId), status: "ON_HOLD" },
       select: {
         userId: true,
       },
     });
-    if (clientLeadShuffle.userId !== Number(userId)) {
+    if (clientLeadShuffle && clientLeadShuffle.userId !== Number(userId)) {
       where = {};
     }
   }
   const clientLead = await prisma.clientLead.findUnique({
-    where: { id: clientLeadId },
+    where: { id: clientLeadId, ...where },
     select: {
       id: true,
       userId: true,
@@ -227,6 +231,8 @@ export async function getClientLeadDetails(
       country: true,
       timeToContact: true,
       priceNote: true,
+      paymentStatus: true,
+
       client: {
         select: {
           id: true,
@@ -373,6 +379,18 @@ export async function markClientLeadAsConverted(
 }
 
 export async function assignLeadToAUser(clientLeadId, userId, isOverdue) {
+  const clientLead = await prisma.clientLead.findUnique({
+    where: {
+      id: Number(clientLeadId),
+    },
+    select: {
+      userId: true,
+      status: true,
+    },
+  });
+  if (clientLead.status !== "NEW" && clientLead.status !== "ON_HOLD") {
+    throw new Error("This lead has already been assigned to a user");
+  }
   const activeLeadsCount = await prisma.clientLead.count({
     where: {
       userId: userId,
@@ -1435,7 +1453,6 @@ export async function getWorkStagesLeadsByDateRange({ searchParams }) {
 
 export async function getWorkStageLeadDetails(clientLeadId, searchParams) {
   const where = {};
-  console.log(searchParams, "searchParams");
   let filesAndNotesWhere = {};
   if (searchParams.userId) {
     where.userId = Number(searchParams.userId);
@@ -1631,7 +1648,6 @@ export async function updateLeadWorkStage({
         contractorCost: true,
       },
     });
-    console.log(lead);
     if (
       !lead.ourCost ||
       lead.ourCost.trim() === "" ||
@@ -1950,8 +1966,10 @@ export async function getLeadByPorjects({ searchParams }) {
         type: searchParams.type,
       },
     };
+
     if (searchParams.userId) {
       projectWhere.type = searchParams.type;
+      where.projects.some.userId = Number(searchParams.userId);
     }
   }
 
@@ -1967,21 +1985,22 @@ export async function getLeadByPorjects({ searchParams }) {
     filters?.staffId !== "undefined"
   ) {
     if (filters.userId) {
-      where.projects = {
-        some: {
-          userId: Number(filters.staffId),
-        },
-      };
+      if (where.projects && where.projects.some) {
+        where.projects.some.userId = Number(filters.staffId);
+      } else {
+        where.projects = {
+          some: {
+            userId: Number(filters.staffId),
+          },
+        };
+      }
     }
   }
-  if (searchParams.userId) {
-    where.projects = {
-      some: {
-        userId: Number(searchParams.userId),
-      },
-    };
-    projectWhere.userId = Number(searchParams.userId);
-  }
+  // if (searchParams.userId) {
+  //   where.projects.some.userId = Number(searchParams.userId);
+  //   projectWhere.userId = Number(searchParams.userId);
+  // }
+
   const clientLeads = await prisma.clientLead.findMany({
     where,
     orderBy: { createdAt: "desc" },
@@ -2056,7 +2075,6 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
       filesAndNotesWhere.userId = Number(searchParams.userId);
     }
   }
-  console.log(projectsWhere, "projectsWhere");
   const clientLead = await prisma.clientLead.findUnique({
     where: { id: clientLeadId },
     select: {
@@ -2213,7 +2231,7 @@ export async function getProjectsByClientLeadId({ searchParams }) {
     PROJECT_TYPES.forEach((type) => {
       newProjects.push({
         type,
-        status: "TO_DO",
+        status: "To Do",
         priority: "MEDIUM",
         startedAt: null,
         endedAt: null,
@@ -2231,7 +2249,6 @@ export async function getProjectsByClientLeadId({ searchParams }) {
     });
     projects = await getProjects(clientLeadId);
   }
-  console.log(projects, "projects");
   return projects;
 }
 export async function assignProjectToUser({ projectId, userId }) {
@@ -2255,7 +2272,6 @@ export async function assignProjectToUser({ projectId, userId }) {
 }
 export async function updateProject({ data }) {
   const { id, status, deliveryTime, ...rest } = data;
-  console.log(data, "data");
   if (data.oldStatus) {
     if (
       data.oldStatus === "Completed" ||
@@ -2274,9 +2290,7 @@ export async function updateProject({ data }) {
     delete rest.oldStatus;
     delete rest.isAdmin;
   }
-  console.log(data, "data");
 
-  console.log(rest, "rest");
   const updatedData = {
     ...rest,
     deliveryTime: deliveryTime
@@ -2285,10 +2299,11 @@ export async function updateProject({ data }) {
     status,
     ...(status === "Completed" && { endedAt: new Date() }),
   };
-  console.log(updatedData, "updatedData");
 
+  console.log(updatedData, "updated data");
   delete updatedData.id;
   delete updatedData.userId;
+
   delete updatedData.startedAt;
   delete updatedData.user;
   const updatedProject = await prisma.project.update({
@@ -2311,6 +2326,9 @@ export async function getTasksWithNotesIncluded({ searchParams }) {
   if (searchParams.type) {
     where.type = searchParams.type;
   }
+  if (searchParams.clientLeadId) {
+    where.clientLeadId = Number(searchParams.clientLeadId);
+  }
   const tasks = await prisma.task.findMany({
     where,
     include: {
@@ -2328,24 +2346,44 @@ export async function getTasksWithNotesIncluded({ searchParams }) {
 }
 
 export async function createNewTask({ data }) {
-  const { projectId, ...rest } = data;
-  const newTask = await prisma.task.create({
+  const { userId, projectId, ...rest } = data;
+  const createdTask = await prisma.task.create({
     data: {
       ...rest,
     },
   });
+  const update = {};
   if (projectId) {
-    await prisma.project.update({
-      where: { id: Number(projectId) },
-      data: {
-        tasks: {
-          connect: {
-            id: newTask.id,
-          },
-        },
+    update.projectId = Number(projectId);
+  }
+  if (userId) {
+    update.userId = Number(userId);
+  }
+  if (Object.keys(update).length > 0) {
+    await prisma.task.update({
+      where: {
+        id: newTask.id,
       },
+      data: update,
     });
   }
+  // if (projectId) {
+  //   await prisma.project.update({
+  //     where: { id: Number(projectId) },
+  //     data: {
+  //       tasks: {
+  //         connect: {
+  //           id: newTask.id,
+  //         },
+  //       },
+  //     },
+  //   });
+  // }
+  const newTask = await prisma.task.findUnique({
+    where: {
+      id: createdTask.id,
+    },
+  });
   return newTask;
 }
 export async function updateTask({ data, taskId }) {
@@ -2384,6 +2422,7 @@ export async function addNote({ attachment, userId, content, idKey, id }) {
     userId: Number(userId),
     attachment,
   };
+
   if (idKey && id) {
     data[idKey] = Number(id);
   }

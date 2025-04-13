@@ -1,6 +1,6 @@
 // Frontend: src/components/ClientProjects/TasksList.tsx
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Card,
@@ -33,18 +33,24 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { PRIORITY, TASKSTATUS } from "@/app/helpers/constants";
 import { useAuth } from "@/app/providers/AuthProvider";
 
-export const TasksList = ({ projectId, type = "NORMAL", userId = null }) => {
+export const TasksList = ({
+  projectId = null,
+  type = "NORMAL",
+  userId = null,
+  clientLeadId = null,
+  name = "Task",
+}) => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [taskOpen, setTaskOpen] = useState(false);
 
   useEffect(() => {
     loadTasks();
-  }, [projectId]);
+  }, [clientLeadId, projectId, userId]);
 
   const loadTasks = async () => {
     const tasksData = await getData({
-      url: `shared/tasks?projectId=${projectId}&type=${type}&userId=${userId}&`,
+      url: `shared/tasks?projectId=${projectId}&type=${type}&userId=${userId}&clientLeadId=${clientLeadId}&`,
       setLoading,
     });
     if (tasksData.status === 200) {
@@ -60,7 +66,7 @@ export const TasksList = ({ projectId, type = "NORMAL", userId = null }) => {
     return (
       <Box textAlign="center" py={4}>
         <Typography variant="body1" color="textSecondary">
-          No tasks found .
+          No {name}s found .
         </Typography>
         <CreatTaskModel
           open={taskOpen}
@@ -68,6 +74,8 @@ export const TasksList = ({ projectId, type = "NORMAL", userId = null }) => {
           setOpen={setTaskOpen}
           setTasks={setTasks}
           type={type}
+          clientLeadId={clientLeadId}
+          name={name}
         />
         <Button
           variant="contained"
@@ -77,7 +85,7 @@ export const TasksList = ({ projectId, type = "NORMAL", userId = null }) => {
             setTaskOpen(true);
           }}
         >
-          Create First Task
+          Create First {name}
         </Button>
       </Box>
     );
@@ -91,6 +99,8 @@ export const TasksList = ({ projectId, type = "NORMAL", userId = null }) => {
         setOpen={setTaskOpen}
         setTasks={setTasks}
         type={type}
+        clientLeadId={clientLeadId}
+        name={name}
       />
       <Button
         variant="contained"
@@ -100,16 +110,16 @@ export const TasksList = ({ projectId, type = "NORMAL", userId = null }) => {
           setTaskOpen(true);
         }}
       >
-        Create Task
+        Create {name}
       </Button>
       {tasks.map((task) => (
-        <TaskItem key={task.id} task={task} setTasks={setTasks} />
+        <TaskItem name={name} key={task.id} task={task} setTasks={setTasks} />
       ))}
     </Box>
   );
 };
 
-const TaskItem = ({ task, setTasks }) => {
+const TaskItem = ({ task, setTasks, name }) => {
   const [expanded, setExpanded] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [open, setOpen] = useState({ status: false, priority: false });
@@ -120,10 +130,11 @@ const TaskItem = ({ task, setTasks }) => {
     if (
       user.role !== "ADMIN" &&
       user.role !== "SUPER_ADMIN" &&
-      type === "priority"
+      type === "priority" &&
+      user.id !== task.createdById
     ) {
       setAlertError(
-        "You are not allowed to change this task priority only task status can be changed"
+        `You are not allowed to change this ${name} priority only ${name} status can be changed`
       );
       return;
     }
@@ -266,6 +277,7 @@ const TaskItem = ({ task, setTasks }) => {
                 : "Not set"}
             </Typography>
             <Typography variant="caption" color="textSecondary">
+              {" "}
               Created By:{" "}
               {task.createdBy
                 ? task.createdBy.role === "ADMIN" ||
@@ -301,11 +313,16 @@ const TaskItem = ({ task, setTasks }) => {
           <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
             Notes
           </Typography>
-          <Notes idKey={"taskId"} id={task.id} />
+          <Notes idKey={"taskId"} id={task.id} slug="shared" />
 
           <Box display="flex" justifyContent="flex-end" mt={2} gap={1}>
             <Box sx={{ display: "flex", gap: 2 }}>
-              <AddNotes idKey={"taskId"} id={task.id} />
+              <AddNotes
+                idKey={"taskId"}
+                id={task.id}
+                mustAddFile={false}
+                slug="shared"
+              />
             </Box>
           </Box>
         </CardContent>
@@ -314,32 +331,73 @@ const TaskItem = ({ task, setTasks }) => {
   );
 };
 
-function CreatTaskModel({ open, setOpen, setTasks, projectId, type }) {
+function CreatTaskModel({
+  open,
+  setOpen,
+  setTasks,
+  projectId,
+  type,
+  clientLeadId,
+  name,
+}) {
   const { setLoading } = useToastContext();
   const { setAlertError } = useAlertContext();
-  const [newTask, setNewTask] = useState({
-    title: "",
-    description: "",
-    dueDate: null,
-    priority: "LOW",
-  });
-  const handleSubmit = async (data) => {
-    if (!data.dueDate) {
+
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [dueDate, setDueDate] = useState(null);
+  const [priority, setPriority] = useState("MEDIUM");
+
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setTitle("");
+      setDescription("");
+      setDueDate(null);
+      setPriority("MEDIUM");
+    }
+  }, [open]);
+
+  // Memoize handlers to prevent recreation on every render
+  const handleTitleChange = useCallback((e) => {
+    setTitle(e.target.value);
+  }, []);
+
+  const handleDescriptionChange = useCallback((e) => {
+    setDescription(e.target.value);
+  }, []);
+
+  const handlePriorityChange = useCallback((e) => {
+    setPriority(e.target.value);
+  }, []);
+
+  const handleDueDateChange = useCallback((newValue) => {
+    setDueDate(newValue);
+  }, []);
+  const handleClose = useCallback(() => {
+    setOpen(false);
+  }, [setOpen]);
+
+  const handleSubmit = useCallback(async () => {
+    if (!dueDate) {
       setAlertError("Due date is required");
       return;
     }
-    if (!data.title || !data.description) {
+    if (!title || !description) {
       setAlertError("Title and description are required");
       return;
     }
     if (projectId) {
       data.projectId = projectId;
     }
+    if (clientLeadId) {
+      data.clientLeadId = clientLeadId;
+    }
     if (type) {
       data.type = type;
     }
     const request = await handleRequestSubmit(
-      newTask,
+      { title, dueDate, description, priority },
       setLoading,
       `shared/tasks`,
       false,
@@ -351,24 +409,34 @@ function CreatTaskModel({ open, setOpen, setTasks, projectId, type }) {
       setTasks((prev) => [...prev, request.data]);
       setOpen(false);
     }
-  };
+  }, [
+    title,
+    description,
+    dueDate,
+    priority,
+    projectId,
+    clientLeadId,
+    type,
+    setLoading,
+    setTasks,
+    setOpen,
+    setAlertError,
+  ]);
 
   return (
-    <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-      <DialogTitle>Create Task</DialogTitle>
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
+      <DialogTitle>Create {name}</DialogTitle>
       <DialogContent>
         <Box>
-          <Box mb={2}>
+          <Box mb={2} py={2}>
             <TextField
               fullWidth
-              label="Task Title"
+              label="Title"
               name="title"
               required
               id="title"
-              value={newTask.title}
-              onChange={(e) =>
-                setNewTask({ ...newTask, title: e.target.value })
-              }
+              value={title}
+              onChange={handleTitleChange}
             />
           </Box>
           <Box mb={2}>
@@ -378,10 +446,8 @@ function CreatTaskModel({ open, setOpen, setTasks, projectId, type }) {
               name="description"
               required
               id="description"
-              value={newTask.description}
-              onChange={(e) =>
-                setNewTask({ ...newTask, description: e.target.value })
-              }
+              value={description}
+              onChange={handleDescriptionChange}
               multiline
               rows={4}
             />
@@ -392,10 +458,8 @@ function CreatTaskModel({ open, setOpen, setTasks, projectId, type }) {
                 label="Due Date"
                 name="dueDate"
                 renderInput={(params) => <TextField {...params} />}
-                value={newTask.dueDate}
-                onChange={(newValue) => {
-                  setNewTask({ ...newTask, dueDate: newValue });
-                }}
+                value={dueDate}
+                onChange={handleDueDateChange}
                 format="DD/MM/YYYY"
                 required
               />
@@ -409,10 +473,8 @@ function CreatTaskModel({ open, setOpen, setTasks, projectId, type }) {
               name="priority"
               required
               id="priority"
-              value={newTask.priority}
-              onChange={(e) =>
-                setNewTask({ ...newTask, priority: e.target.value })
-              }
+              value={priority}
+              onChange={handlePriorityChange}
             >
               <MenuItem value="VERY_LOW">Very Low</MenuItem>
               <MenuItem value="LOW">Low</MenuItem>
@@ -424,12 +486,8 @@ function CreatTaskModel({ open, setOpen, setTasks, projectId, type }) {
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={() => setOpen(false)}>Cancel</Button>
-        <Button
-          type="submit"
-          onClick={() => handleSubmit(newTask)}
-          startIcon={<MdTask />}
-        >
+        <Button onClick={handleClose}>Cancel</Button>
+        <Button type="submit" onClick={handleSubmit} startIcon={<MdTask />}>
           Create
         </Button>
       </DialogActions>

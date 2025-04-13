@@ -58,32 +58,32 @@ export const adminLinks = [
       },
     ],
   },
-  {
-    name: "Work stages",
-    href: "/dashboard/work-stages",
-    active: "work-stages",
-    icon: <FiDollarSign size={20} />,
-    subLinks: [
-      {
-        name: "3D work stages",
-        href: "/dashboard/work-stages/three-d",
-        active: "three-d",
-        icon: <FiDollarSign size={20} />,
-      },
-      {
-        name: "2D work stages",
-        href: "/dashboard/work-stages/two-d",
-        icon: <FiClock size={18} />,
-        active: "two-d",
-      },
-      {
-        name: "2D exacuter work stages",
-        href: "/dashboard/work-stages/exacuter",
-        icon: <FiClock size={18} />,
-        active: "exacuter",
-      },
-    ],
-  },
+  // {
+  //   name: "Work stages",
+  //   href: "/dashboard/work-stages",
+  //   active: "work-stages",
+  //   icon: <FiDollarSign size={20} />,
+  //   subLinks: [
+  //     {
+  //       name: "3D work stages",
+  //       href: "/dashboard/work-stages/three-d",
+  //       active: "three-d",
+  //       icon: <FiDollarSign size={20} />,
+  //     },
+  //     {
+  //       name: "2D work stages",
+  //       href: "/dashboard/work-stages/two-d",
+  //       icon: <FiClock size={18} />,
+  //       active: "two-d",
+  //     },
+  //     {
+  //       name: "2D exacuter work stages",
+  //       href: "/dashboard/work-stages/exacuter",
+  //       icon: <FiClock size={18} />,
+  //       active: "exacuter",
+  //     },
+  //   ],
+  // },
   {
     name: "Reports",
     href: "/dashboard/report",
@@ -135,26 +135,26 @@ export const superAdminLinks = [
       },
     ],
   },
-  {
-    name: "Work stages",
-    href: "/dashboard/work-stages",
-    active: "work-stages",
-    icon: <FiDollarSign size={20} />,
-    subLinks: [
-      {
-        name: "Three D work stages",
-        href: "/dashboard/work-stages/three-d",
-        active: "three-d",
-        icon: <FiDollarSign size={20} />,
-      },
-      {
-        name: "Two D work stages",
-        href: "/dashboard/work-stages/two-d",
-        icon: <FiClock size={18} />,
-        active: "two-d",
-      },
-    ],
-  },
+  // {
+  //   name: "Work stages",
+  //   href: "/dashboard/work-stages",
+  //   active: "work-stages",
+  //   icon: <FiDollarSign size={20} />,
+  //   subLinks: [
+  //     {
+  //       name: "Three D work stages",
+  //       href: "/dashboard/work-stages/three-d",
+  //       active: "three-d",
+  //       icon: <FiDollarSign size={20} />,
+  //     },
+  //     {
+  //       name: "Two D work stages",
+  //       href: "/dashboard/work-stages/two-d",
+  //       icon: <FiClock size={18} />,
+  //       active: "two-d",
+  //     },
+  //   ],
+  // },
 ];
 // Regular user navigation links
 export const staffLinks = [
@@ -187,19 +187,50 @@ export const staffLinks = [
   },
 ];
 export const threeDLinks = [
-  { name: "Leads", href: "/dashboard", icon: <FiTarget size={20} /> },
+  { name: "Dashboard", href: "/dashboard", icon: <FiTarget size={20} /> },
   {
-    name: "Work stage",
+    name: "Work stages",
     href: "/dashboard/work-stages",
-    icon: <FiBriefcase size={20} />,
+    active: "work",
+    icon: <FiDollarSign size={20} />,
+    subLinks: [
+      {
+        name: "3D Work stage",
+        href: "/dashboard/work-stages",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
+        name: "Modifcation stage",
+        href: "/dashboard/modification",
+        icon: <FiBriefcase size={20} />,
+      },
+    ],
   },
 ];
 export const twoDLinks = [
-  { name: "Leads", href: "/dashboard", icon: <FiTarget size={20} /> },
+  { name: "Dashboard", href: "/dashboard", icon: <FiTarget size={20} /> },
   {
-    name: "Work stage",
+    name: "Work stages",
     href: "/dashboard/work-stages",
-    icon: <FiBriefcase size={20} />,
+    active: "work",
+    icon: <FiDollarSign size={20} />,
+    subLinks: [
+      {
+        name: "Plan study department",
+        href: "/dashboard/study",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
+        name: "Quantity calcualtion department",
+        href: "/dashboard/quantity",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
+        name: "Fian plan department",
+        href: "/dashboard/final-plan",
+        icon: <FiBriefcase size={20} />,
+      },
+    ],
   },
 ];
 export const exacuterLinks = [

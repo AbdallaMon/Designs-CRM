@@ -135,6 +135,7 @@ export const dictionary = {
   Country: "الدولة",
   "Invalid phone": "رقم الهاتف غير صحيح",
   Courses: "الدورات",
+  "Engineers courses": "دورات للمهندسين",
   Books: "الكتب",
   Store: "المتجر",
   "Coming Soon": "سيتوفر قريبًا",

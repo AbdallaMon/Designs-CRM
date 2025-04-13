@@ -1,6 +1,6 @@
 import { gsap } from "gsap";
 
-export function initialAnimation(setIsAnimating) {
+export function initialAnimation(setIsAnimating, extraFunction) {
   setIsAnimating(true);
   gsap.fromTo(
     ".category-title",
@@ -46,6 +46,9 @@ export function initialAnimation(setIsAnimating) {
     clearProps: "transform",
   }).then(() => {
     setIsAnimating(false);
+    if (extraFunction) {
+      extraFunction();
+    }
   });
 }
 

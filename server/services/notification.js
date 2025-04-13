@@ -329,6 +329,28 @@ export async function newLeadNotification(leadId, client) {
     leadId
   );
 }
+export async function leadPaymentSuccessed(leadId) {
+  const leadHref = `${dealsLink + leadId}`;
+  const notificationHtml = `<div>
+       <strong>New lead payment successed </strong> <a href="${leadHref}" >#${leadId}</a> 
+       <div class="sub-text">
+       Lead id 
+       ${leadId} - 
+</div>
+    </div>`;
+
+  await createNotification(
+    null,
+    true,
+    notificationHtml,
+    null,
+    "PAYMENT_STATUS_UPDATED",
+    "Payment process done successfully",
+    true,
+    "HTML",
+    leadId
+  );
+}
 
 export async function finalizedLeadCreated(leadId, userId, type = "THREE_D") {
   const notificationHtml = `<div>

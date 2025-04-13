@@ -1,0 +1,423 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Collapse,
+  IconButton,
+  Paper,
+  Button,
+  CircularProgress,
+  Fade,
+  Zoom,
+  Divider,
+  useMediaQuery,
+  useTheme,
+  Grid2 as Grid,
+  Badge,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
+import {
+  FaChevronDown,
+  FaChevronUp,
+  FaCreditCard,
+  FaArrowDown,
+  FaInfoCircle,
+  FaCheckCircle,
+  FaQuestion,
+} from "react-icons/fa";
+import { consultLevelsData, enConsultLevelsData } from "./data";
+import colors from "@/app/helpers/colors";
+import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+
+export function ConsultLevels({ lng, clientLead }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const data = lng === "ar" ? consultLevelsData : enConsultLevelsData;
+  const [activeStage, setActiveStage] = useState(null);
+  const [showScrollHint, setShowScrollHint] = useState(true);
+  const contentRef = useRef(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (contentRef.current && contentRef.current.scrollTop > 100) {
+        setShowScrollHint(false);
+      }
+    };
+
+    const contentElement = contentRef.current;
+    if (contentElement) {
+      contentElement.addEventListener("scroll", handleScroll);
+      return () => contentElement.removeEventListener("scroll", handleScroll);
+    }
+  }, []);
+
+  return (
+    <>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          height: "calc(100vh - 100px)",
+          maxHeight: 800,
+          bgcolor: colors.bgSecondary,
+          borderRadius: 3,
+          overflow: "hidden",
+          boxShadow: "0px 5px 20px rgba(0, 0, 0, 0.15)",
+        }}
+      >
+        {/* Header Section */}
+        <Box
+          sx={{
+            padding: 3,
+            textAlign: "center",
+            background: `linear-gradient(135deg, ${colors.primary}22, ${colors.bgSecondary})`,
+            borderBottom: `1px solid ${colors.primary}33`,
+          }}
+        >
+          <Typography
+            variant="h3"
+            fontSize={isMobile ? 24 : 32}
+            fontWeight={700}
+          >
+            {data.title.firstLine}
+            {data.title.secondLine && (
+              <>
+                <br />
+                {data.title.secondLine}
+              </>
+            )}
+          </Typography>
+          <Typography
+            variant="subtitle1"
+            color={colors.secondaryText}
+            fontSize={isMobile ? 18 : 22}
+            fontWeight={600}
+            sx={{ mt: 1 }}
+          >
+            {data.subTitle}
+          </Typography>
+
+          {showScrollHint && (
+            <Fade in={showScrollHint} timeout={1000}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  mt: 2,
+                  color: colors.primary,
+                  animation: "bounce 2s infinite",
+                }}
+              >
+                <Typography variant="body2" sx={{ mr: 1 }}>
+                  Scroll to explore
+                </Typography>
+                <FaArrowDown />
+              </Box>
+            </Fade>
+          )}
+        </Box>
+
+        {/* Scrollable Content */}
+        <Box
+          ref={contentRef}
+          sx={{
+            flex: 1,
+            overflowY: "auto",
+            p: { xs: 1.5, sm: 3 },
+            "&::-webkit-scrollbar": {
+              width: "8px",
+            },
+            "&::-webkit-scrollbar-track": {
+              background: "#f1f1f1",
+              borderRadius: "4px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              background: colors.primary + "99",
+              borderRadius: "4px",
+            },
+            "&::-webkit-scrollbar-thumb:hover": {
+              background: colors.primary,
+            },
+          }}
+        >
+          {data.levels.map((level, index) => (
+            <CollapsibleStage
+              key={index}
+              stage={level}
+              isActive={activeStage === index}
+              onClick={() =>
+                setActiveStage(activeStage === index ? null : index)
+              }
+              number={index + 1}
+            />
+          ))}
+          <Box sx={{ height: 80 }} />{" "}
+        </Box>
+
+        <Zoom in={true} timeout={500}>
+          <Box
+            sx={{
+              p: { xs: 2, sm: 3 },
+              borderTop: `1px solid ${colors.primary}33`,
+              backgroundColor: "white",
+              boxShadow: "0px -2px 10px rgba(0, 0, 0, 0.08)",
+              position: "relative",
+              zIndex: 10,
+            }}
+          >
+            <PaymentSection
+              payment={data.paymentData}
+              lng={lng}
+              clientLead={clientLead}
+            />
+          </Box>
+        </Zoom>
+      </Box>
+    </>
+  );
+}
+
+function PaymentSection({ payment, clientLead, lng }) {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
+        alignItems: { xs: "stretch", sm: "center" },
+        justifyContent: "space-between",
+        gap: 2,
+      }}
+    >
+      <Box sx={{ flex: 1 }}>
+        <Typography
+          variant="body1"
+          fontWeight={500}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
+          {payment.description}
+        </Typography>
+      </Box>
+
+      <PayButton
+        text={payment.button}
+        clientLeadId={clientLead.id}
+        clientId={clientLead.clientId}
+        lng={lng}
+      />
+
+      {/* <Dialog open={showTooltip} onClose={() => setShowTooltip(false)}>
+        <DialogTitle>Payment Information</DialogTitle>
+        <DialogContent>
+          <Typography variant="body1">
+            Secure payment processing with all major credit cards accepted. Your
+            consultation will be scheduled immediately after payment
+            confirmation.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setShowTooltip(false)}>Close</Button>
+        </DialogActions>
+      </Dialog> */}
+    </Box>
+  );
+}
+
+export function PayButton({
+  text = "Pay",
+  clientLeadId,
+  clientId,
+  lng = "ar",
+}) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { setLoading } = useToastContext();
+  const handlePayment = async () => {
+    const data = await handleRequestSubmit(
+      { clientLeadId, clientId, lng },
+      setLoading,
+      `client/pay`,
+      false,
+      "Redirecting..."
+    );
+    console.log(data, "data");
+    if (data.url) {
+      window.location.href = data.url;
+    }
+  };
+  return (
+    <Button
+      size={isMobile ? "large" : "medium"}
+      sx={{
+        px: { xs: 3, sm: 4 },
+        py: { xs: 1.5, sm: 1 },
+        borderRadius: 2,
+        bgcolor: colors.primary,
+        color: "white",
+        transition: "all 0.3s ease",
+        "&:hover": {
+          bgcolor: colors.primary + "dd",
+          transform: "translateY(-3px)",
+          boxShadow: `0 4px 8px rgba(0, 0, 0, 0.2)`,
+        },
+        "&:active": {
+          transform: "translateY(0)",
+        },
+      }}
+      variant="contained"
+      onClick={handlePayment}
+      startIcon={<FaCreditCard />}
+    >
+      {text}
+    </Button>
+  );
+}
+function CollapsibleStage({ stage, isActive, onClick, number }) {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  return (
+    <Paper
+      elevation={isActive ? 4 : 2}
+      sx={{
+        mb: 3,
+        borderRadius: 2,
+        overflow: "hidden",
+        transition: "all 0.3s ease",
+        width: "100%",
+        borderLeft: isActive ? `4px solid ${colors.primary}` : "none",
+        "&:hover": {
+          boxShadow: 6,
+          transform: "translateY(-2px)",
+        },
+      }}
+    >
+      <Box
+        sx={{
+          p: { xs: 2, sm: 3 },
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          cursor: "pointer",
+          bgcolor: isActive ? colors.primary + "0a" : "background.paper",
+        }}
+        onClick={onClick}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Badge
+            badgeContent={number}
+            color="primary"
+            sx={{
+              "& .MuiBadge-badge": {
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                fontSize: 16,
+              },
+              display: { xs: "none", sm: "block" },
+            }}
+          />
+
+          <Box>
+            <Typography
+              variant="h5"
+              component="h2"
+              fontWeight="bold"
+              fontSize={isMobile ? 18 : 22}
+              gutterBottom
+            >
+              {stage.title}
+            </Typography>
+            <Box display="flex" alignItems="center" gap={1}>
+              <Typography
+                variant="subtitle1"
+                fontSize={isMobile ? 14 : 16}
+                sx={{
+                  display: "-webkit-box",
+                  WebkitLineClamp: isActive ? 100 : 2,
+                  WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }}
+              >
+                <strong>{stage.description.bold}</strong>{" "}
+                {stage.description.normal}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        <IconButton
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick();
+          }}
+          sx={{
+            transition: "transform 0.3s, background-color 0.3s",
+            transform: isActive ? "rotate(180deg)" : "rotate(0deg)",
+            bgcolor: colors.primary,
+            color: "white",
+            "&:hover": {
+              bgcolor: colors.primary + "dd",
+            },
+            width: { xs: 32, sm: 40 },
+            height: { xs: 32, sm: 40 },
+            flexShrink: 0,
+          }}
+        >
+          {isActive ? <FaChevronUp /> : <FaChevronDown />}
+        </IconButton>
+      </Box>
+
+      <Collapse in={isActive} timeout={300}>
+        <Box
+          sx={{
+            p: { xs: 2, sm: 3 },
+            bgcolor: "background.default",
+            borderTop: `1px solid ${colors.primary}22`,
+          }}
+        >
+          <Grid container spacing={2}>
+            {stage.details.map((detail, index) => (
+              <Grid key={index}>
+                <Card
+                  elevation={1}
+                  sx={{
+                    borderRadius: 2,
+                    border: `1px solid ${colors.primary}22`,
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      boxShadow: 3,
+                      borderColor: colors.primary + "44",
+                    },
+                  }}
+                >
+                  <CardContent sx={{ display: "flex", gap: 2 }}>
+                    <FaCheckCircle
+                      color={colors.primary}
+                      style={{ marginTop: 3, flexShrink: 0 }}
+                    />
+                    <Typography variant="body1" sx={{ whiteSpace: "pre-line" }}>
+                      {detail}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        </Box>
+      </Collapse>
+    </Paper>
+  );
+}

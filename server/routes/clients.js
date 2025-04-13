@@ -2,10 +2,14 @@ import { uploadFiles } from "../services/utility.js";
 import express from "express";
 const router = express.Router();
 import prisma from "../prisma/prisma.js";
-import { newLeadNotification } from "../services/notification.js";
+import {
+  leadPaymentSuccessed,
+  newLeadNotification,
+} from "../services/notification.js";
 import axios from "axios";
 import dayjs from "dayjs";
-
+import Stripe from "stripe";
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const priceRangeValues = {
   "300,000 AED or less": 200000,
   "300,000 to 400,000 AED": 350000,
@@ -133,7 +137,7 @@ router.post("/new-lead", async (req, res) => {
       body.lng === "ar"
         ? "تم تسجيل بياناتك بنجاح"
         : "Your data has been successfully submitted";
-    res.status(200).json({ message });
+    res.status(200).json({ data: clientLead, message });
   } catch (error) {
     console.error("Error fetching client form:", error);
     const message =
@@ -144,104 +148,212 @@ router.post("/new-lead", async (req, res) => {
   }
 });
 
-router.get("/products", async (req, res) => {
+// router.get("/products", async (req, res) => {
+//   try {
+//     // const response = await axios.post(
+//     //   `https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2023-01/graphql.json`,
+//     //   {
+//     //     query: `
+//     //     {
+//     //       product(id: "gid://shopify/Product/8739939942638") {
+//     //         id
+//     //         title
+//     //         description
+//     //         variants(first: 100) {
+//     //           edges {
+//     //             node {
+//     //               id
+//     //               title
+//     //               price {
+//     //                 amount
+//     //                 currencyCode
+//     //               }
+//     //             }
+//     //           }
+//     //         }
+//     //       }
+//     //     }
+//     //     `,
+//     //   },
+//     //   {
+//     //     headers: {
+//     //       "X-Shopify-Storefront-Access-Token":
+//     //         process.env.SHOPIFY_STOREFRONT_TOKEN,
+//     //       "Content-Type": "application/json",
+//     //     },
+//     //   }
+//     // );
+//     const response = await axios.post(
+//       `https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2023-01/graphql.json`,
+//       {
+//         query: `
+//         {
+//           products(first: 10, sortKey: UPDATED_AT) {
+//             edges {
+//               node {
+//                 id
+//                 title
+//                 description
+//                 variants(first: 100) {
+//                   edges {
+//                     node {
+//                       id
+//                       title
+//                       price {
+//                         amount
+//                         currencyCode
+//                       }
+//                     }
+//                   }
+//                 }
+//               }
+//             }
+//           }
+//         }
+//         `,
+//       },
+//       {
+//         headers: {
+//           "X-Shopify-Storefront-Access-Token":
+//             process.env.SHOPIFY_STOREFRONT_TOKEN,
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
+//     res.json(response.data.data.products.edges);
+//     const product = response.data.data?.product;
+//     const formattedProduct = {
+//       id: product.id,
+//       title: product.title,
+//       description: product.description,
+//       variants: product.variants.edges.map((variant) => ({
+//         id: variant.node.id,
+//         title: variant.node.title,
+//         price: variant.node.price.amount,
+//         currency: variant.node.price.currencyCode,
+//       })),
+//     };
+
+//     res.json(formattedProduct);
+//   } catch (error) {
+//     console.error(
+//       "Error fetching product:",
+//       error.response?.data || error.message
+//     );
+//     res.status(500).send("Internal Server Error");
+//   }
+// });
+// router.post("/checkout", async (req, res) => {
+//   try {
+//     const { variantId } = req.body;
+//     const globalVariantId = `gid://shopify/ProductVariant/${variantId}`;
+//     const cartCreateMutation = `
+//       mutation {
+//         cartCreate(input: {
+//           lines: [{ merchandiseId: "${globalVariantId}", quantity: ${1} }]
+//         }) {
+//           userErrors {
+//             message
+//             code
+//             field
+//           }
+//           cart {
+//             id
+//             checkoutUrl
+//           }
+//         }
+//       }
+//     `;
+
+//     const response = await axios.post(
+//       `https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2025-01/graphql.json`, // Update API version
+//       {
+//         query: cartCreateMutation,
+//       },
+//       {
+//         headers: {
+//           "X-Shopify-Storefront-Access-Token":
+//             process.env.SHOPIFY_STOREFRONT_TOKEN,
+//           "Content-Type": "application/json",
+//         },
+//       }
+//     );
+//     if (response.data.data.cartCreate.userErrors.length > 0) {
+//       console.log(response.data.data.cartCreate.userErrors);
+//       throw new Error("Something wrong happen try again later");
+//     }
+//     return res.json({ data: response.data.data.cartCreate.cart });
+//   } catch (error) {
+//     console.error(
+//       "Error creating checkout:",
+//       error.response?.data || error.message
+//     );
+//     res.status(500).send("Internal Server Error");
+//   }
+// });
+
+// router.get("/confirm", async (req, res) => {
+//   try {
+//     const { orderId } = req.query; // Extract checkout_id from query string
+
+//     if (!orderId) {
+//       return res.status(400).json({ error: "Missing checkout_id" });
+//     }
+
+//     const response = await axios.get(
+//       `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/2023-01/orders/${orderId}.json`,
+//       {
+//         headers: {
+//           "X-Shopify-Access-Token": process.env.SHOPIFY_ADMIN_API_TOKEN,
+//         },
+//       }
+//     );
+//     console.log(response, "response");
+//     const checkoutData = response.data.data?.node;
+
+//     if (!checkoutData) {
+//       return res.status(404).send("Checkout not found");
+//     }
+
+//     res.json(checkoutData);
+//   } catch (error) {
+//     console.error(
+//       "Error fetching checkout details:",
+//       error.response?.data || error.message
+//     );
+//     res.status(500).send("Internal Server Error");
+//   }
+// });
+
+router.post("/pay", async (req, res) => {
   try {
-    const response = await axios.post(
-      `https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2023-01/graphql.json`,
-      {
-        query: `
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+      metadata: {
+        clientId: req.body.clientId,
+        clientLeadId: req.body.clientLeadId,
+        lng: req.body.lng,
+      },
+      line_items: [
         {
-          product(id: "gid://shopify/Product/8739939942638") {
-            id
-            title
-            description
-            variants(first: 100) {
-              edges {
-                node {
-                  id
-                  title
-                  price {
-                    amount
-                    currencyCode
-                  }
-                }
-              }
-            }
-          }
-        }
-        `,
-      },
-      {
-        headers: {
-          "X-Shopify-Storefront-Access-Token":
-            process.env.SHOPIFY_STOREFRONT_TOKEN,
-          "Content-Type": "application/json",
+          price_data: {
+            currency: "usd",
+            product_data: {
+              name:
+                req.body.lng === "en"
+                  ? "First-Stage Design Analysis with Eng. Ahmed"
+                  : "حجز المرحلة الاولي من استشارة التصميم مع المهندس احمد",
+            },
+            unit_amount: 10000, // $20.00 2000
+          },
+          quantity: 1,
         },
-      }
-    );
-
-    const product = response.data.data?.product;
-    const formattedProduct = {
-      id: product.id,
-      title: product.title,
-      description: product.description,
-      variants: product.variants.edges.map((variant) => ({
-        id: variant.node.id,
-        title: variant.node.title,
-        price: variant.node.price.amount,
-        currency: variant.node.price.currencyCode,
-      })),
-    };
-
-    res.json(formattedProduct);
-  } catch (error) {
-    console.error(
-      "Error fetching product:",
-      error.response?.data || error.message
-    );
-    res.status(500).send("Internal Server Error");
-  }
-});
-router.post("/checkout", async (req, res) => {
-  try {
-    const { variantId } = req.body;
-    const globalVariantId = `gid://shopify/ProductVariant/${variantId}`;
-    const cartCreateMutation = `
-      mutation {
-        cartCreate(input: {
-          lines: [{ merchandiseId: "${globalVariantId}", quantity: ${1} }]
-        }) {
-          userErrors {
-            message
-            code
-            field
-          }
-          cart {
-            id
-            checkoutUrl
-          }
-        }
-      }
-    `;
-
-    const response = await axios.post(
-      `https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2025-01/graphql.json`, // Update API version
-      {
-        query: cartCreateMutation,
-      },
-      {
-        headers: {
-          "X-Shopify-Storefront-Access-Token":
-            process.env.SHOPIFY_STOREFRONT_TOKEN,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    if (response.data.data.cartCreate.userErrors.length > 0) {
-      console.log(response.data.data.cartCreate.userErrors);
-      throw new Error("Something wrong happen try again later");
-    }
-    return res.json({ data: response.data.data.cartCreate.cart });
+      ],
+      success_url: `${process.env.ORIGIN}/success?session_id={CHECKOUT_SESSION_ID}&clientId=${req.body.clientId}&clientLeadId=${req.body.clientLeadId}&lng=${req.body.lng}`,
+      cancel_url: `${process.env.ORIGIN}/cancel?session_id={CHECKOUT_SESSION_ID}&clientId=${req.body.clientId}&clientLeadId=${req.body.clientLeadId}&lng=${req.body.lng}`,
+    });
+    return res.json({ url: session.url });
   } catch (error) {
     console.error(
       "Error creating checkout:",
@@ -250,40 +362,42 @@ router.post("/checkout", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+router.get("/payment-status", async (req, res) => {
+  const { sessionId, clientLeadId } = req.query;
+  if (!sessionId || !clientLeadId) {
+    return res.status(400).json({ error: "Missing required parameters" });
+  }
 
-router.get("/confirm", async (req, res) => {
   try {
-    const { orderId } = req.query; // Extract checkout_id from query string
-
-    if (!orderId) {
-      return res.status(400).json({ error: "Missing checkout_id" });
-    }
-
-    const response = await axios.get(
-      `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/2023-01/orders/${orderId}.json`,
-      {
-        headers: {
-          "X-Shopify-Access-Token": process.env.SHOPIFY_ADMIN_API_TOKEN,
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (session.payment_status === "paid") {
+      const lead = await prisma.clientLead.update({
+        where: {
+          id: Number(clientLeadId),
         },
-      }
-    );
-    console.log(response, "response");
-    const checkoutData = response.data.data?.node;
-
-    if (!checkoutData) {
-      return res.status(404).send("Checkout not found");
+        data: {
+          paymentStatus: "FULLY_PAID",
+          paymentSessionId: session.id,
+        },
+      });
+      await leadPaymentSuccessed(clientLeadId);
+      return res.status(200).json({
+        paymentStatus: "PAID",
+        success: true,
+        message: "Payment verified",
+      });
+    } else {
+      return res.status(402).json({
+        status: "ERROR",
+        success: false,
+        message: "Payment not completed",
+      });
     }
-
-    res.json(checkoutData);
   } catch (error) {
-    console.error(
-      "Error fetching checkout details:",
-      error.response?.data || error.message
-    );
-    res.status(500).send("Internal Server Error");
+    console.error("Error verifying payment:", error);
+    return res.status(500).json({ error: "Failed to verify payment" });
   }
 });
-
 async function uploadFile(body, clientLeadId) {
   const data = {
     name: "Client File",

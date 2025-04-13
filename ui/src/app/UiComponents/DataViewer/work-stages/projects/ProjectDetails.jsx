@@ -1,5 +1,4 @@
-// Frontend: src/components/ClientProjects/ProjectDetails.tsx
-
+"use client";
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -19,6 +18,12 @@ import {
   DialogTitle,
   Dialog,
   CircularProgress,
+  Stepper,
+  Step,
+  StepLabel,
+  StepConnector,
+  stepConnectorClasses,
+  styled,
 } from "@mui/material";
 
 import {
@@ -28,6 +33,8 @@ import {
   MdSave,
   MdVisibility,
   MdVisibilityOff,
+  MdPause,
+  MdError,
 } from "react-icons/md";
 import { PROJECT_STATUSES } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
@@ -35,6 +42,163 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { TasksList } from "./TasksList";
 import { getData } from "@/app/helpers/functions/getData";
 import dayjs from "dayjs";
+
+// Custom connector for the stepper
+const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
+  [`&.${stepConnectorClasses.alternativeLabel}`]: {
+    top: 22,
+  },
+  [`&.${stepConnectorClasses.active}`]: {
+    [`& .${stepConnectorClasses.line}`]: {
+      backgroundImage: "linear-gradient(to right, #4caf50, #2196f3)",
+    },
+  },
+  [`&.${stepConnectorClasses.completed}`]: {
+    [`& .${stepConnectorClasses.line}`]: {
+      backgroundImage: "linear-gradient(to right, #4caf50, #2196f3)",
+    },
+  },
+  [`& .${stepConnectorClasses.line}`]: {
+    height: 3,
+    border: 0,
+    backgroundColor:
+      theme.palette.mode === "dark" ? theme.palette.grey[800] : "#eaeaf0",
+    borderRadius: 1,
+  },
+}));
+
+// Custom styled step icon
+const ColorlibStepIconRoot = styled("div")(({ theme, ownerState }) => ({
+  backgroundColor:
+    theme.palette.mode === "dark" ? theme.palette.grey[700] : "#ccc",
+  zIndex: 1,
+  color: "#fff",
+  width: 40,
+  height: 40,
+  display: "flex",
+  borderRadius: "50%",
+  justifyContent: "center",
+  alignItems: "center",
+  ...(ownerState.active && {
+    backgroundImage: "linear-gradient(136deg, #2196f3 0%, #4caf50 100%)",
+    boxShadow: "0 4px 10px 0 rgba(0,0,0,.25)",
+  }),
+  ...(ownerState.completed && {
+    backgroundImage: "linear-gradient(136deg, #4caf50 0%, #2196f3 100%)",
+  }),
+  ...(ownerState.status === "hold" && {
+    backgroundImage: "linear-gradient(136deg, #ff9800 0%, #ffc107 100%)",
+  }),
+  ...(ownerState.status === "rejected" && {
+    backgroundImage: "linear-gradient(136deg, #f44336 0%, #e91e63 100%)",
+  }),
+}));
+
+function ColorlibStepIcon(props) {
+  const { active, completed, className, icon, status } = props;
+
+  // Custom icon based on status
+  let displayIcon = String(icon);
+  if (status === "hold") {
+    return (
+      <ColorlibStepIconRoot
+        ownerState={{ active, completed, status }}
+        className={className}
+      >
+        <MdPause />
+      </ColorlibStepIconRoot>
+    );
+  } else if (status === "Rejected") {
+    return (
+      <ColorlibStepIconRoot
+        ownerState={{ active, completed, status }}
+        className={className}
+      >
+        <MdError />
+      </ColorlibStepIconRoot>
+    );
+  }
+
+  return (
+    <ColorlibStepIconRoot
+      ownerState={{ active, completed, status }}
+      className={className}
+    >
+      {displayIcon}
+    </ColorlibStepIconRoot>
+  );
+}
+
+// Progress Tracker Component
+const ProjectProgressTracker = ({ project }) => {
+  // Filter out Hold and get only completion statuses
+  const getCompletionStatuses = (projectType) => {
+    return PROJECT_STATUSES[projectType].filter(
+      (status) => status !== "Hold" && status !== "Rejected"
+    );
+  };
+
+  const completionStatuses = getCompletionStatuses(project.type);
+  const currentStatusIndex = completionStatuses.indexOf(project.status);
+
+  const isOnHold = project.status === "Hold";
+
+  return (
+    <Box sx={{ width: "100%", mb: 2, mt: -0.5 }}>
+      <Typography variant="h6" gutterBottom>
+        {isOnHold && (
+          <Typography component="span" color="warning.main" sx={{ ml: 2 }}>
+            (On Hold)
+          </Typography>
+        )}
+      </Typography>
+      <Stepper
+        alternativeLabel
+        activeStep={currentStatusIndex}
+        connector={<ColorlibConnector />}
+      >
+        {completionStatuses.map((label, index) => {
+          const statusType =
+            project.status === "Hold" && index === currentStatusIndex - 1
+              ? "hold"
+              : project.status === "Rejected"
+              ? "rejected"
+              : "normal";
+
+          return (
+            <Step key={label}>
+              <StepLabel
+                StepIconComponent={ColorlibStepIcon}
+                StepIconProps={{ status: statusType }}
+              >
+                {label}
+              </StepLabel>
+            </Step>
+          );
+        })}
+      </Stepper>
+
+      {/* Additional status info */}
+      {project.status === "Hold" && (
+        <Box sx={{ mt: 2, p: 2, bgcolor: "warning.light", borderRadius: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            This project is currently on hold. Progress will resume when the
+            hold is lifted.
+          </Typography>
+        </Box>
+      )}
+
+      {project.status === "Rejected" && (
+        <Box sx={{ mt: 2, p: 2, bgcolor: "error.light", borderRadius: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            This project has been rejected and requires attention before
+            proceeding.
+          </Typography>
+        </Box>
+      )}
+    </Box>
+  );
+};
 
 export const ProjectDetails = ({ project, onUpdate, isStaff }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -168,7 +332,6 @@ export const ProjectDetails = ({ project, onUpdate, isStaff }) => {
 
   const renderProjectInfo = () => (
     <Grid container spacing={3}>
-      {/* Status */}
       <Grid size={{ xs: 12, md: 6 }}>
         <Typography variant="subtitle2" color="textSecondary">
           Status
@@ -176,7 +339,6 @@ export const ProjectDetails = ({ project, onUpdate, isStaff }) => {
         <Typography variant="body1">{project.status}</Typography>
       </Grid>
 
-      {/* Priority */}
       <Grid size={{ xs: 12, md: 6 }}>
         <Typography variant="subtitle2" color="textSecondary">
           Priority
@@ -286,6 +448,9 @@ export const ProjectDetails = ({ project, onUpdate, isStaff }) => {
           }
         />
         <CardContent>
+          {/* Add the progress tracker component */}
+          <ProjectProgressTracker project={project} />
+
           {isEditing ? renderEditForm() : renderProjectInfo()}
         </CardContent>
       </Card>

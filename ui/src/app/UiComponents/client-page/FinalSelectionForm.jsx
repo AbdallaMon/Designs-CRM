@@ -27,13 +27,13 @@ import {
   LeadType,
 } from "@/app/helpers/constants.js";
 import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
-import { gsap } from "gsap";
 import { priceRange } from "@/app/UiComponents/client-page/clientPageData.js";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { matchIsValidTel, MuiTelInput } from "mui-tel-input";
 import "dayjs/locale/en-gb";
 import { MobileDateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { ConsultLevels } from "./consult-levels/ConsultLevels";
 export function FinalSelectionForm({ category, item, location }) {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -60,6 +60,7 @@ function DesignLeadForm({ category, item, location }) {
     country: null,
   });
   const [renderSuccess, setRenderSuccess] = useState(false);
+  const [clientLead, setClientLead] = useState(null);
   const { setAlertError } = useAlertContext();
   const { setLoading } = useToastContext();
 
@@ -163,6 +164,7 @@ function DesignLeadForm({ category, item, location }) {
         );
         if (request.status === 200) {
           setRenderSuccess(true);
+          setClientLead(request.data);
         }
       }
     } else {
@@ -176,10 +178,10 @@ function DesignLeadForm({ category, item, location }) {
       );
       if (request.status === 200) {
         setRenderSuccess(true);
+        setClientLead(request.data);
       }
     }
   };
-  console.log(defaultCountry, "defaultCountry");
   const emiratesOptions = Object.entries(Emirate).map(([key, value]) => ({
     key,
     label: value,
@@ -196,7 +198,12 @@ function DesignLeadForm({ category, item, location }) {
         className="final-selection-form"
       >
         {renderSuccess ? (
-          <SuccessPage category={category} formData={formData} />
+          <SuccessPage
+            category={category}
+            formData={formData}
+            clientLead={clientLead}
+            lng={lng}
+          />
         ) : (
           <Paper
             elevation={4}
@@ -635,39 +642,45 @@ const CountrySelector = ({
     />
   );
 };
-function SuccessPage({ category, formData }) {
-  const isInsideEmirates = category === "CONSULTATION" || formData.emirate;
-  const { translate } = useLanguageContext();
-
-  useEffect(() => {
-    gsap.set(".reverse-button", {
-      display: "none",
-    });
-  }, []);
-
+function SuccessPage({ lng, clientLead }) {
   return (
-    <Paper
-      elevation={4}
-      sx={{
-        padding: 3,
-        borderRadius: 3,
-        backgroundColor: "#fff",
-        textAlign: "center",
-      }}
-    >
-      <Typography
-        variant="h4"
-        sx={{
-          color: "green",
-          fontWeight: 700,
-          marginBottom: 2,
-        }}
-      >
-        {translate("Success!")}
-      </Typography>
-      <Typography variant="body1">
-        {translate("Thank you for your submission. We will contact you soon.")}
-      </Typography>
-    </Paper>
+    <Box>
+      <ConsultLevels lng={lng} clientLead={clientLead} />
+    </Box>
   );
 }
+// function SuccessPage({ category, formData }) {
+//   const { translate } = useLanguageContext();
+
+//   useEffect(() => {
+//     gsap.set(".reverse-button", {
+//       display: "none",
+//     });
+//   }, []);
+
+//   return (
+//     <Paper
+//       elevation={4}
+//       sx={{
+//         padding: 3,
+//         borderRadius: 3,
+//         backgroundColor: "#fff",
+//         textAlign: "center",
+//       }}
+//     >
+//       <Typography
+//         variant="h4"
+//         sx={{
+//           color: "green",
+//           fontWeight: 700,
+//           marginBottom: 2,
+//         }}
+//       >
+//         {translate("Success!")}
+//       </Typography>
+//       <Typography variant="body1">
+//         {translate("Thank you for your submission. We will contact you soon.")}
+//       </Typography>
+//     </Paper>
+//   );
+// }

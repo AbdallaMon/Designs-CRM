@@ -76,12 +76,9 @@
   ( three d stage) remove; for each status renew with dates for each edit;
 - Search by client lead code
 - Users page pagination error
-
 - Admin give designers the lead not they how select
 - Select time to deliver the project show it in the kanban card selected by admin for 2d,3d and exacuter
-- Can add and show Priority and area to the designers and show how much area designer worked for current month each designer work stage has its own area and time and designer
-- Calc time always for each project start and end (when completed)(each project status on its own)
-- Work stages progress according to status
+- Can add and show Priority and area to the designers
 - 3D designer work stages two sections (two pages)
 - first section :(to do,3d,Render,delivery,hold,modification,completed)
 - second section : Modifcation which is another part of 3d designers (modification,completed)
@@ -89,96 +86,36 @@
 - first section قسم دراسة المخططات (Studying,delivery,hold,modification,completed)
 - second section فسم المخططات النهائية = تم بدا المشروع او بدا المشروع او تم اكتمال المشروع
 - thrid sections قسم حساب كمية المشاريع
+
+- show how much area designer worked for current month each designer work stage has its own area and time and designer
+- Calc time always for each project start and end (when completed)(each project status on its own)
+- Work stages progress according to status
 - Tasks for designers added by admin and link to lead and on the dashboard and designer can change status with url and message and status and can be asked from another designer
 - For quantity allow admin to add to user what needed from him and also allow user or admin to update what done and when
 - قسم التعديلات يكون عباره عن قسم متواصل بين الشخص الي بيعدل والشخص الي بيقوم بالتنفيذ
   ويكون هناك طريقه لانشاء تعديل (اكثر من تعديل ويربط هذا التعديل بالملاحظات وايضا يكون هناك امكانية هل تم هذا التعديل اما لا يعني بمعني حالة تتبع)
+- payment notifcation(for client lead)
 
-- Add commission to staff and allow admin to clear it
+- Search users in the leads page has some problems
 - Client lead id number four 0 before each 3 numbers
 - Can add a shared telegram link to the lead w
+- Final price show full price(another service and the final price) and what paid and what not
 - Dashboard summary for 2d,3d work stages (number of work stages done , area of them and total work stages)
 - user profiles (for designer ect)
-- Final price show full price(another service and the final price) and what paid and what not
-- Search users in the leads page has some problems
-- Notification if new modification added or with each update between users also
+- Add commission to staff and allow admin to clear it
 - Show user name in the kanban card
 - Can add a lead from the admin
-- Filters
+- Notification if new modification added or with each update between users also
 
 - Show notications on desktop
-
-3D Designer Work Stages (Two Sections / Two Pages)
-First Section:
-1- To Do
-2- 3D
-3- Render
-4- Delivery
-5- Hold
-6- Modification
-7- Completed
-
-Second Section (Modification - a separate part for 3D designers):
-1- Modification(need more details)(First ,second,third)
-2- Completed
-
-2D Work (Three Sections)
-First Section: Plan Study Department
-1-Studying
-2-Delivery
-3-Hold
-4-Modification
-5-Completed
-
-Second Section: Final Plans Department
-1-Project Started
-2-Project In Progress
-3-Project Completed
-
-Third Section: Project Quantity Calculation
-1-Project Started
-2-Project In Progress
-3-Project Completed
-
-General Features and Workflow
-1- Tasks for designers are added by the admin, linked to the lead, and shown on the dashboard.
-
-2- Final price includes the full price, additional services, paid and unpaid amounts.
-
-3- Delivery time is selected by the admin and displayed on the Kanban card for 2D, 3D, and executer roles.
-
-4- Admin can set and show:
-
-- Priority
-- Area assigned to each designer
-  5- Show Total area worked by each designer for the current month (based on work stage)
-
-6- Time calculation for each project (start and end time based on when it's marked as completed).
-
-7- Progress tracking based on status for each work stage.
-
-8- Dashboard summary for 2D and 3D:
-
-- Number of work stages completed
-
-- Total area covered
-
-- Total number of work stages
-
-9- Ability to show commission for staff and let the admin clear it.
-
-10- Client lead ID format: Add four zeros before every 3-digit number (e.g., 0000123).
-
-11- Only the admin assigns leads to designers; designers cannot choose their own leads.
-
-12- Option to add a shared Telegram link to the lead.
-
 - Notification for each task created
 - Notification for each project assignment
 - Notification to admin when user change task status
 - Fix pdf
+- Filters
 
 - Commision not when finalized and show total for month
+
   dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
 

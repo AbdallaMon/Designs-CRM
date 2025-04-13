@@ -55,7 +55,7 @@ export const leads = [
     href: "https://decorstores.ltd/products/book",
   },
   {
-    title: "Courses",
+    title: "Engineers courses",
     value: "COURSES",
     image: "/courses.jpg",
     alt: "Courses ",

@@ -1,4 +1,5 @@
-"use client";
+"use client";;
+import { use } from "react";
 import {resetInputs, resetPasswordInputs} from "./data";
 import Link from "next/link";
 import {useRouter} from "next/navigation";
@@ -7,7 +8,13 @@ import {handleRequestSubmit} from "@/app/helpers/functions/handleSubmit";
 import AuthForm from "@/app/UiComponents/formComponents/forms/AuthForm";
 import {Typography} from "@mui/material";
 
-export default function ResetPage({searchParams: {token}}) {
+export default function ResetPage(props) {
+    const searchParams = use(props.searchParams);
+
+    const {
+        token
+    } = searchParams;
+
     const {setLoading} = useToastContext();
     const router = useRouter();
 

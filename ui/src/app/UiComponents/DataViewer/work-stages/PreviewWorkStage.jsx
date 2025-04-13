@@ -65,7 +65,7 @@ import {
   LeadNotes,
   OurCostAndContractorCost,
 } from "../leads/LeadTabs";
-import { MdTask, MdWork, MdWorkHistory } from "react-icons/md";
+import { MdModeEdit, MdTask, MdWork, MdWorkHistory } from "react-icons/md";
 import WorkStageComponent from "./WorkStageStatus";
 import LeadProjects from "./projects/LeadProjects";
 import { TasksList } from "./projects/TasksList";
@@ -313,6 +313,15 @@ const LeadContent = ({
             sx={{ textTransform: "none" }}
           />
         )}
+        {(type === "3D_Modification" ||
+          (type === "3D_Designer" &&
+            lead.projects[0].status === "Modification")) && (
+          <Tab
+            icon={<MdModeEdit size={20} />}
+            label="Modificaions"
+            sx={{ textTransform: "none" }}
+          />
+        )}
       </Tabs>
 
       <Box
@@ -347,6 +356,17 @@ const LeadContent = ({
         {user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && (
           <TabPanel value={activeTab} index={4}>
             <TasksList projectId={lead.projects[0].id} type="PROJECT" />
+          </TabPanel>
+        )}
+        {(type === "3D_Modification" ||
+          (type === "3D_Designer" &&
+            lead.projects[0].status === "Modification")) && (
+          <TabPanel value={activeTab} index={5}>
+            <TasksList
+              name="Modifcation"
+              type="MODIFICATION"
+              clientLeadId={lead.id}
+            />
           </TabPanel>
         )}
         {/* {type === "three-d" && (

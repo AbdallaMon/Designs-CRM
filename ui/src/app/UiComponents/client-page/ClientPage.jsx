@@ -17,7 +17,7 @@ import {
   reverseAnimation,
 } from "@/app/UiComponents/client-page/function.js";
 import { useLanguageContext } from "@/app/providers/LanguageProvider.jsx";
-import FloatingWhatsAppButton from "../buttons/FloatingWhatsappButton";
+import { useSearchParams } from "next/navigation";
 
 export default function ClientPage() {
   const [leadCategory, setLeadCategory] = useState();
@@ -32,11 +32,17 @@ export default function ClientPage() {
   const [animateLocation, setAnimateLocation] = useState("");
   const [isLocationAnimated, setIsLocationAnimated] = useState(false);
   const { translate } = useLanguageContext();
+  const searchParams = useSearchParams();
+  const type = searchParams.get("type");
   useEffect(() => {
     if (typeof window !== "undefined") {
-      initialAnimation(setIsAnimating);
+      initialAnimation(
+        setIsAnimating,
+        type === "interior" ? () => animateLeadCategory("DESIGN") : null
+      );
     }
   }, []);
+
   function animateLeadCategory(value) {
     if (value !== "DESIGN") {
       return;

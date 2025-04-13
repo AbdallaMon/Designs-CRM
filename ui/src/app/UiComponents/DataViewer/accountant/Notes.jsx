@@ -50,7 +50,7 @@ export function Notes({ idKey, id, slug = "accountant" }) {
         aria-describedby="modal-modal-description"
       >
         <Box sx={simpleModalStyle}>
-          <h2 id="modal-modal-title">Attatchments</h2>
+          <h2 id="modal-modal-title">Notes and Attatchments</h2>
           <List id="modal-modal-description">
             {loading ? (
               <LoadingOverlay />
@@ -92,7 +92,12 @@ export function Notes({ idKey, id, slug = "accountant" }) {
   );
 }
 
-export function AddNotes({ idKey, id }) {
+export function AddNotes({
+  idKey,
+  id,
+  mustAddFile = true,
+  slug = "accountant",
+}) {
   const [openModal, setOpenModal] = useState(false);
   const { setLoading } = useToastContext();
   const [content, setContent] = useState("");
@@ -103,28 +108,32 @@ export function AddNotes({ idKey, id }) {
       setAlertError("You must enter note or title");
       return;
     }
-    if (!file) {
+    if (!file && mustAddFile) {
       setAlertError("You must upload file");
       return;
     }
-    const formData = new FormData();
-    formData.append("file", file.file);
+    const data = { idKey, id, content };
+    if (file) {
+      const formData = new FormData();
+      formData.append("file", file.file);
 
-    const uploadResponse = await handleRequestSubmit(
-      formData,
-      setLoading,
-      "utility/upload",
-      true,
-      "Uploading file"
-    );
-    if (uploadResponse.status !== 200) {
-      setAlertError("Error uploading file");
-      return;
+      const uploadResponse = await handleRequestSubmit(
+        formData,
+        setLoading,
+        "utility/upload",
+        true,
+        "Uploading file"
+      );
+      if (uploadResponse.status !== 200) {
+        setAlertError("Error uploading file");
+        return;
+      }
+      data.attachment = uploadResponse.fileUrls.file[0];
     }
     const request = await handleRequestSubmit(
-      { idKey, id, content, attachment: uploadResponse.fileUrls.file[0] },
+      data,
       setLoading,
-      `accountant/notes`,
+      `${slug}/notes`,
       false,
       "Creating"
     );
@@ -136,10 +145,11 @@ export function AddNotes({ idKey, id }) {
     <>
       <Button
         onClick={() => setOpenModal(true)}
-        variant="outlined"
+        variant="contained"
         color="primary"
+        mt={-1}
       >
-        Add attatchment
+        {mustAddFile ? "Add attachment" : "Add note or attachment"}
       </Button>
       <Modal
         open={openModal}

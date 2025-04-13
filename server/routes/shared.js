@@ -618,9 +618,11 @@ router.put("/tasks/:taskId", async (req, res) => {
 router.get("/notes", async (req, res) => {
   try {
     const searchParams = req.query;
+    console.log(searchParams, "searchParams");
     const notes = await getNotes(searchParams);
     res.status(200).json({ data: notes });
   } catch (error) {
+    console.log(error, "error");
     res.status(500).json({ message: error.message });
   }
 });
