@@ -345,7 +345,7 @@ router.post("/pay", async (req, res) => {
                   ? "First-Stage Design Analysis with Eng. Ahmed"
                   : "حجز المرحلة الاولي من استشارة التصميم مع المهندس احمد",
             },
-            unit_amount: 10000, // $20.00 2000
+            unit_amount: 17900, // $20.00 2000
           },
           quantity: 1,
         },
