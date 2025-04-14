@@ -47,20 +47,20 @@ export const leads = [
   //   type: "ANIMATION",
   // },
   {
-    title: "Books",
-    value: "BOOKS",
-    image: "/books.jpg",
-    alt: "Dream Studio Books for interior design by Ahmed (dream studio)",
-    type: "LINK",
-    href: "https://decorstores.ltd/products/book",
-  },
-  {
     title: "Interior design",
     value: "DESIGN",
     image: "/design.jfif",
     alt: "Dream Studio - Dream Design & Luxurious Home Solutions",
     type: "LINK",
     href: "https://eng.ahmed.dreamstudiio.com/",
+  },
+  {
+    title: "Books",
+    value: "BOOKS",
+    image: "/books.jpg",
+    alt: "Dream Studio Books for interior design by Ahmed (dream studio)",
+    type: "LINK",
+    href: "https://decorstores.ltd/products/book",
   },
   {
     title: "Engineers courses",

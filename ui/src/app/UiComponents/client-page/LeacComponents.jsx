@@ -24,6 +24,9 @@ import { IoArrowBackOutline } from "react-icons/io5";
 
 export function LeadCardsContainer({ handleClick }) {
   const { translate } = useLanguageContext();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
   return (
     <Box className="leads-cards-container">
       <Title
