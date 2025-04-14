@@ -58,6 +58,7 @@ export default function ClientPage() {
     setAnimateLocation("animate");
   }
   function animateLeadCategoryItems(value) {
+    console.log("wqhatt");
     if (isItemAnimated || isAnimating || isReversing) return;
     setLeadItem(value);
     setAnimateLeadItem("animate");

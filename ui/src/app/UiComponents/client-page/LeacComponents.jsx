@@ -288,7 +288,9 @@ export function LeadCategoryItemsContainer({
               key={item.value}
               title={translate(LeadType[item.value])}
               value={item.value}
-              animateLeadCategoryItems={animateLeadCategoryItems}
+              animateLeadCategoryItems={
+                !location ? () => null : animateLeadCategoryItems
+              }
               subtitle={item.subtext}
             />
           );
