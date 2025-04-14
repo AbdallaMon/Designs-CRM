@@ -126,7 +126,6 @@ const LeadContent = ({
           setLoading,
           `shared/${user.id}/client-leads/countries`,
           false,
-
           "Checking if u allowed to take this lead"
         );
         if (res.status === 200) {
