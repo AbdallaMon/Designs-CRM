@@ -25,7 +25,6 @@ import { IoArrowBackOutline } from "react-icons/io5";
 export function LeadCardsContainer({ handleClick, isCatAnimated }) {
   const { translate } = useLanguageContext();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   return (
     <Box className="leads-cards-container">
@@ -71,7 +70,7 @@ export function DesignLeadsContainer({ handleClick }) {
   return (
     <Box
       className="design-cards-container"
-      sx={{ mt: isMobile ? "-946px" : "-540px" }}
+      sx={{ mt: isMobile ? "-700px" : "-540px" }}
     >
       <Title
         title={translate(questions.category)}
