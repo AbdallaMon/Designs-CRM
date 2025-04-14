@@ -342,7 +342,7 @@ export function animateLocationItem({
     setIsLocationAnimated(true);
   });
 }
-function isMobile() {
+export function isMobile() {
   const mediaQuery = `(max-width: ${900 - 1}px)`;
   return window.matchMedia(mediaQuery).matches;
 }
@@ -518,6 +518,8 @@ export function reverseAnimation({
       setLocation("");
     });
   } else if (leadCategory && isCatAnimated && !isReversing && !isAnimating) {
+    window.location.href = "https://eng.ahmed.dreamstudiio.com/";
+    return;
     setIsReversing(true);
     const tl = gsap.timeline();
     const allItems = document.querySelectorAll(

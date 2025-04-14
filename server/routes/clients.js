@@ -370,6 +370,7 @@ router.get("/payment-status", async (req, res) => {
 
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
+    console.log(session, "session");
     if (session.payment_status === "paid") {
       const lead = await prisma.clientLead.update({
         where: {
