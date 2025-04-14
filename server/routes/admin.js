@@ -24,6 +24,7 @@ import {
   getUser,
   getUserById,
   getUserLogs,
+  updateLeadField,
   updateNotAllowedCountries,
   updateUserMaxLeads,
   updateUserRoles,
@@ -319,6 +320,22 @@ router.delete("/fixed-data/:id", async (req, res) => {
   } catch (error) {
     console.error("Error updating client lead status:", error);
     res.status(500).json({ message: error.message });
+  }
+});
+
+// random
+
+router.post("/leads/update/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedLead = await updateLeadField({ data: req.body, leadId: id });
+    res.status(200).json({
+      data: updatedLead,
+      message: "Telegram link updated successfully",
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({ message: e.message });
   }
 });
 export default router;

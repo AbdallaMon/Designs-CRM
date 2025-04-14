@@ -189,7 +189,6 @@ export async function getClientLeadsByDateRange({ searchParams }) {
       emirate: true,
       discount: true,
       paymentStatus: true,
-
       callReminders: {
         where: callRemindersWhere,
         orderBy: { time: "desc" },
@@ -232,7 +231,7 @@ export async function getClientLeadDetails(
       timeToContact: true,
       priceNote: true,
       paymentStatus: true,
-
+      telegramLink: true,
       client: {
         select: {
           id: true,
@@ -2085,6 +2084,8 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
       priceNote: true,
       ourCost: true,
       contractorCost: true,
+      telegramLink: true,
+
       projects: {
         where: projectsWhere,
         select: {

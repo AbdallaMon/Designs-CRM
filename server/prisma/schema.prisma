@@ -224,14 +224,15 @@ model ClientLead {
       notifications      Notification[]
       callReminders      CallReminder[]   @relation("clientLeadCallReminders")
       paymentStatus      PaymentStatus @default(PENDING)
-      paymentSessionId   String?       
+      paymentSessionId   String?     
+      telegramLink String?  
 
       extraServices     ExtraService[]
 
       assignedAt         DateTime?
       threeDAssignedAt   DateTime?
       twoDAssignedAt     DateTime?
-      twoDExacuterAssignedAt DateTime?     // New assigned at timestamp
+      twoDExacuterAssignedAt DateTime?     
       accountantAssignedAt DateTime?
 
       reasonToConvert String?

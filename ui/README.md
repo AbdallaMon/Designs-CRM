@@ -86,31 +86,38 @@
 - first section قسم دراسة المخططات (Studying,delivery,hold,modification,completed)
 - second section فسم المخططات النهائية = تم بدا المشروع او بدا المشروع او تم اكتمال المشروع
 - thrid sections قسم حساب كمية المشاريع
-
-- show how much area designer worked for current month each designer work stage has its own area and time and designer
-- Calc time always for each project start and end (when completed)(each project status on its own)
-- Work stages progress according to status
-- Tasks for designers added by admin and link to lead and on the dashboard and designer can change status with url and message and status and can be asked from another designer
-- For quantity allow admin to add to user what needed from him and also allow user or admin to update what done and when
+- each designer work stage has its own area and time and designer
+- Tasks linked to lead or projects .
 - قسم التعديلات يكون عباره عن قسم متواصل بين الشخص الي بيعدل والشخص الي بيقوم بالتنفيذ
   ويكون هناك طريقه لانشاء تعديل (اكثر من تعديل ويربط هذا التعديل بالملاحظات وايضا يكون هناك امكانية هل تم هذا التعديل اما لا يعني بمعني حالة تتبع)
-- payment notifcation(for client lead)
+- Client lead id number four 0 before each 3 numbers
+- Show user name in the kanban card
+- Can add a shared telegram link to the designers leads
+- For quantity allow admin to add to user what needed from him and also allow user or admin to update what done and when
+- Final price show full price
+
+الميزانية صفر
+لو دفع الادمن هو الي ينزله
+لو مدفعش
 
 - Search users in the leads page has some problems
-- Client lead id number four 0 before each 3 numbers
-- Can add a shared telegram link to the lead w
-- Final price show full price(another service and the final price) and what paid and what not
-- Dashboard summary for 2d,3d work stages (number of work stages done , area of them and total work stages)
-- user profiles (for designer ect)
-- Add commission to staff and allow admin to clear it
-- Show user name in the kanban card
-- Can add a lead from the admin
-- Notification if new modification added or with each update between users also
 
+- Dashboard summary for 2d,3d work stages (number of work stages done , area of them and total work stages)
+- Calc time always for each project start and end (when completed)(each project status on its own)
+- show how much area designer worked for current month
+- Add commission to staff and allow admin to clear it
+
+- Can add a lead from the admin
+- Create Tasks for designers added by admin
+- Return all payments and what paid and what not
+
+- Notification if new modification added or with each update between users also
 - Show notications on desktop
 - Notification for each task created
 - Notification for each project assignment
 - Notification to admin when user change task status
+- Payment notifcation(for client lead)
+
 - Fix pdf
 - Filters
 

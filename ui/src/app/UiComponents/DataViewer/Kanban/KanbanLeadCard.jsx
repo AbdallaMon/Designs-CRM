@@ -49,9 +49,13 @@ const ItemTypes = {
 const StyledCard = styled(Card)(({ theme, status }) => ({
   margin: theme.spacing(1),
   padding: theme.spacing(0.2),
+  paddingLeft: theme.spacing(0.15),
   borderLeft: `5px solid ${statusColors[status]}`,
   transition: "all 0.3s",
   cursor: "grab",
+  "& .MuiCardContent-root": {
+    paddingLeft: "10px",
+  },
   "&:hover": {
     transform: "translateY(-2px)",
     boxShadow: theme.shadows[4],
@@ -68,7 +72,7 @@ const CallInfoBox = styled(Box)(({ theme, variant }) => ({
   marginTop: theme.spacing(1),
 }));
 
-const LeadCard = ({ lead, movelead, admin, setleads, type, statusArray }) => {
+const LeadCard = ({ lead, movelead, setleads, type, statusArray }) => {
   const [, drag] = useDrag({
     type: ItemTypes.CARD,
     item: {
@@ -78,6 +82,7 @@ const LeadCard = ({ lead, movelead, admin, setleads, type, statusArray }) => {
     },
   });
   const { user } = useAuth();
+  const admin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
   const [menuAnchorEl, setMenuAnchorEl] = React.useState(null);
   const [previewDialogOpen, setPreviewDialogOpen] = React.useState(false);
 
@@ -156,14 +161,14 @@ const LeadCard = ({ lead, movelead, admin, setleads, type, statusArray }) => {
               </Tooltip>
             )}
           </Box>
-          {admin && lead.assingedTo && (
+          {admin && lead.assignedTo && (
             <Box display="flex" alignItems="center" mb={2}>
               <UserIcon
                 fontSize="small"
-                sx={{ mr: 1, color: "text.secondary" }}
+                sx={{ mx: 1, color: "text.secondary" }}
               />
               <Typography variant="body2" color="text.secondary">
-                {lead.assingedTo.name}
+                {lead.assignedTo.name}
               </Typography>
             </Box>
           )}

@@ -283,10 +283,16 @@ export default function LastSeen({ userId, initialLastSeen, accountant }) {
                                     <Typography
                                       variant="body2"
                                       color="text.secondary"
+                                      component="span"
+                                      display="block"
                                     >
                                       {renderTimeInUAE(entry.time)}
                                     </Typography>
-                                    <Typography variant="subtitle2">
+                                    <Typography
+                                      variant="subtitle2"
+                                      component="span"
+                                      display="block"
+                                    >
                                       <strong>Total hours :</strong>
                                       {entry.totalHours}
                                     </Typography>

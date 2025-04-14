@@ -1,24 +1,16 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import {
-  Alert,
-  alpha,
   Avatar,
   Box,
   Button,
-  Chip,
   Container,
   Dialog,
   DialogActions,
   DialogTitle,
-  Fade,
-  Grid2 as Grid,
   IconButton,
   Menu,
   MenuItem,
-  Modal,
-  Paper,
-  Snackbar,
   Stack,
   Tab,
   Tabs,
@@ -28,48 +20,32 @@ import {
 } from "@mui/material";
 import {
   BsArrowLeft,
-  BsBuilding,
   BsFileText,
   BsInfoCircle,
-  BsPerson,
-  BsPersonCheck,
   BsPersonCheckFill,
   BsTelephone,
 } from "react-icons/bs";
-import {
-  LeadCategory,
-  PROJECT_STATUSES,
-  statusColors,
-  ThreeDWorkStages,
-  TwoDExacuterStages,
-  TwoDWorkStages,
-} from "@/app/helpers/constants.js";
+import { PROJECT_STATUSES, statusColors } from "@/app/helpers/constants.js";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader.jsx";
 import { getData } from "@/app/helpers/functions/getData.js";
 import { AiOutlineSwap } from "react-icons/ai";
-import {
-  checkIfAdmin,
-  enumToKeyValueArray,
-} from "@/app/helpers/functions/utility.js";
+import { checkIfAdmin } from "@/app/helpers/functions/utility.js";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 import { GoPaperclip } from "react-icons/go";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { generatePDF } from "@/app/UiComponents/buttons/GenerateLeadPdf.jsx";
-import dayjs from "dayjs";
-import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
 import Link from "next/link";
-import {
-  CallReminders,
-  FileList,
-  LeadNotes,
-  OurCostAndContractorCost,
-} from "../leads/LeadTabs";
+import { CallReminders, FileList, LeadNotes } from "../leads/LeadTabs";
 import { MdModeEdit, MdTask, MdWork, MdWorkHistory } from "react-icons/md";
-import WorkStageComponent from "./WorkStageStatus";
 import LeadProjects from "./projects/LeadProjects";
 import { TasksList } from "./projects/TasksList";
 import { ProjectDetails } from "./projects/ProjectDetails";
+import TelegramLink from "./TelegramLink";
+import { InfoCard } from "../leads/extra/InfoCard";
+import { LeadContactInfo } from "../leads/extra/LeadContactInfo";
+import { LeadInfo } from "../leads/extra/LeadInfo";
+import { PreviewLead } from "../leads/extra/PreviewLead";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -172,9 +148,12 @@ const LeadContent = ({
               ""
             ) : (
               <Typography variant="h6">
-                #{lead.id} {lead.client.name}
+                #{lead.id.toString().padStart(7, "0")} {lead.client.name}
               </Typography>
             )}
+          </Stack>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <TelegramLink lead={lead} setLead={setLead} />
           </Stack>
           <Stack
             direction={isMobile ? "column" : "row"}
@@ -389,257 +368,12 @@ const LeadContent = ({
   );
 };
 
-function WhatsAppRedirect({ lead }) {
-  const [openSnackbar, setOpenSnackbar] = React.useState(false);
-  // UAE Country Code
-  const UAE_COUNTRY_CODE = "+971";
-
-  // Function to format the phone number correctly
-  const formatPhoneNumber = (phone, emirates) => {
-    if (!phone) return null;
-
-    let formattedPhone = phone.trim();
-
-    // If lead is OUTSIDE UAE, assume number is already formatted
-    if (emirates === "OUTSIDE") {
-      return formattedPhone.startsWith("+")
-        ? formattedPhone
-        : `+${formattedPhone}`;
-    }
-
-    // If lead is inside UAE, check if the number already has country code
-    if (!formattedPhone.startsWith(UAE_COUNTRY_CODE)) {
-      // If number starts with 0, remove it and add the country code
-      if (formattedPhone.startsWith("0")) {
-        formattedPhone = formattedPhone.slice(1);
-      }
-      formattedPhone = UAE_COUNTRY_CODE + formattedPhone;
-    }
-
-    return formattedPhone;
-  };
-
-  // Function to detect device type
-  const isMobileDevice = () => {
-    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  };
-
-  // Handle click to open WhatsApp
-  const handleWhatsAppClick = (e) => {
-    e.preventDefault();
-
-    const formattedPhone = formatPhoneNumber(lead.client.phone, lead.emirate);
-    if (!formattedPhone) {
-      alert("Invalid phone number");
-      return;
-    }
-
-    // Open WhatsApp URL based on device type
-    // const whatsappUrl = isMobileDevice()
-    //   ? `whatsapp://send?phone=${formattedPhone}`
-    //   : `https://web.whatsapp.com/send?phone=${formattedPhone}`;
-
-    // Copy phone number to clipboard
-    navigator.clipboard.writeText(formattedPhone).then(() => {
-      setOpenSnackbar(true); // Show notification
-
-      // Redirect after 1.5 seconds
-      setTimeout(() => {
-        window.open(`whatsapp://send?phone=${formattedPhone}`, "_blank");
-      }, 100);
-    });
-  };
-
-  return (
-    <>
-      <Typography color="text.secondary" variant="caption">
-        Client Phone
-      </Typography>
-      <Typography
-        variant="body1"
-        component="a"
-        onClick={handleWhatsAppClick}
-        sx={{
-          display: "block",
-          color: "green",
-          textDecoration: "underline",
-          cursor: "pointer",
-        }}
-      >
-        {lead.client.phone} 📱
-      </Typography>
-
-      {/* Snackbar Notification */}
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={2000}
-        onClose={() => setOpenSnackbar(false)}
-      >
-        <Alert severity="success" sx={{ width: "100%" }}>
-          📋 Copied Phone Number! Redirecting to WhatsApp...
-        </Alert>
-      </Snackbar>
-    </>
-  );
-}
-
-export function EmailRedirect({ email }) {
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-
-  const handleClick = (e) => {
-    e.preventDefault(); // Prevent default link behavior
-
-    // Copy email to clipboard
-    navigator.clipboard.writeText(email).then(() => {
-      setOpenSnackbar(true); // Show notification
-
-      // Redirect after a short delay
-      setTimeout(() => {
-        window.open(
-          "https://panel.dreamstudiio.com:8090/snappymail/",
-          "_blank"
-        );
-      }, 1500);
-    });
-  };
-
-  return (
-    <>
-      <Typography
-        variant="body1"
-        component="a"
-        onClick={handleClick}
-        sx={{
-          display: "block",
-          color: "blue",
-          textDecoration: "underline",
-          cursor: "pointer",
-        }}
-      >
-        {email}
-      </Typography>
-
-      {/* Snackbar Notification */}
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={2000}
-        onClose={() => setOpenSnackbar(false)}
-      >
-        <Alert severity="success" sx={{ width: "100%" }}>
-          📋 Copied Email! Redirecting to SnappyMail...
-        </Alert>
-      </Snackbar>
-    </>
-  );
-}
 function LeadData({ lead }) {
   const theme = useTheme();
   return (
     <Stack spacing={3}>
-      <InfoCard title="Lead Information" icon={BsBuilding} theme={theme}>
-        <Grid container spacing={4}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Typography color="text.secondary" variant="caption">
-              Category
-            </Typography>
-            <Typography variant="body1">
-              {LeadCategory[lead.selectedCategory]}
-            </Typography>
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Typography color="text.secondary" variant="caption">
-              Location
-            </Typography>
-            <Typography variant="body1">
-              {lead.country ? lead.country : lead.emirate}
-            </Typography>
-          </Grid>
-          {lead.status === "FINALIZED" && (
-            <>
-              <Grid size={{ xs: 12, md: 3 }}>
-                <Typography color="text.secondary" variant="caption">
-                  Discount
-                </Typography>
-                <Typography variant="body1">{lead.discount}%</Typography>
-              </Grid>
-              <Grid size={{ xs: 12, md: 3 }}>
-                <Typography color="text.secondary" variant="caption">
-                  Final price
-                </Typography>
-                <Typography variant="body1">AED {lead.averagePrice}</Typography>
-              </Grid>
-            </>
-          )}
-          <Grid size={{ xs: 12 }}>
-            <Typography color="text.secondary" variant="caption">
-              Description
-            </Typography>
-            <Typography variant="body1">{lead.description}</Typography>
-          </Grid>
-          {lead.clientDescription && (
-            <Grid size={{ xs: 12 }}>
-              <Typography color="text.secondary" variant="caption">
-                Client description
-              </Typography>
-              <Typography
-                variant="body1"
-                component="pre"
-                sx={{ textWrap: "auto", wordBreak: "break-all" }}
-              >
-                {lead.clientDescription}
-              </Typography>
-            </Grid>
-          )}
-          {lead.timeToContact && (
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Typography color="text.secondary" variant="caption">
-                Client selected time to contact
-              </Typography>
-              <Typography variant="body1">
-                {dayjs(lead.timeToContact).format("DD-MM-YYYY, HH:mm")}
-              </Typography>
-            </Grid>
-          )}
-        </Grid>
-      </InfoCard>
-
-      {(lead.status === "NEW" || lead.status === "ON_HOLD") && !isAdmin ? (
-        ""
-      ) : (
-        <>
-          <InfoCard title="Contact Information" icon={BsPerson} theme={theme}>
-            <Grid container spacing={4}>
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Typography color="text.secondary" variant="caption">
-                  Client Name
-                </Typography>
-                <Typography variant="body1">{lead.client.name}</Typography>
-                <WhatsAppRedirect lead={lead} />
-                <Typography color="text.secondary" variant="caption">
-                  Client Email
-                </Typography>
-                <EmailRedirect email={lead.client.email} />
-              </Grid>
-              {lead.assignedTo && (
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <Typography color="text.secondary" variant="caption">
-                    Assigned To
-                  </Typography>
-                  <Typography variant="body1">
-                    {lead.assignedTo.name}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {lead.assignedTo.email}
-                  </Typography>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Assigned at : {dayjs(lead.assignedAt).format("DD/MM/YYYY")}
-                  </Typography>
-                </Grid>
-              )}
-            </Grid>
-          </InfoCard>
-        </>
-      )}
+      <LeadInfo lead={lead} />
+      <LeadContactInfo lead={lead} />
       <InfoCard title="Project info" icon={BsPersonCheckFill} theme={theme}>
         <ProjectDetails project={lead.projects[0]} isStaff={true} />
       </InfoCard>
@@ -648,27 +382,6 @@ function LeadData({ lead }) {
 }
 
 // InfoCard Component (No major changes, just accept theme as prop)
-const InfoCard = ({ title, icon: Icon, children, theme }) => (
-  <Paper
-    variant="outlined"
-    sx={{
-      p: 2,
-      borderRadius: 2,
-      "&:hover": {
-        boxShadow: theme.shadows[2],
-        transition: "box-shadow 0.3s ease-in-out",
-      },
-    }}
-  >
-    <Stack spacing={2}>
-      <Stack direction="row" spacing={1} alignItems="center">
-        <Icon size={18} color={theme.palette.primary.main} />
-        <Typography variant="subtitle1">{title}</Typography>
-      </Stack>
-      {children}
-    </Stack>
-  </Paper>
-);
 
 const PreviewWorkStage = ({
   open,
@@ -678,100 +391,17 @@ const PreviewWorkStage = ({
   page = false,
   type,
 }) => {
-  const [activeTab, setActiveTab] = useState(0);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const [loading, setLoading] = useState(true);
-  const [lead, setLead] = useState(null);
-  const { user } = useAuth();
-  const isAdmin = checkIfAdmin(user);
-  useEffect(() => {
-    async function getALeadDetails() {
-      if (open) {
-        const leadDetails = await getData({
-          url: `shared/client-leads/projects/designers/${id}?type=${type}&`,
-          setLoading,
-        });
-        setLead(leadDetails.data);
-      }
-    }
-    getALeadDetails();
-  }, [id, open]);
-
-  const handlePageClose = (isPage) => {
-    if (isPage) {
-      window.history.back();
-      return;
-    }
-    if (onClose) onClose();
-  };
   return (
-    <>
-      {page ? (
-        <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-          {loading ? (
-            <FullScreenLoader />
-          ) : (
-            <LeadContent
-              lead={lead}
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              theme={theme}
-              isMobile={isMobile}
-              handleClose={handlePageClose}
-              setLead={setLead}
-              setleads={setleads}
-              admin={isAdmin}
-              isPage={page}
-              type={type}
-            />
-          )}
-        </Container>
-      ) : (
-        // Render as a Dialog
-        <Dialog
-          open={open}
-          onClose={onClose}
-          fullWidth
-          maxWidth="md"
-          PaperProps={{
-            sx: { borderRadius: 2 },
-          }}
-          fullScreen={isMobile}
-        >
-          {loading ? (
-            <FullScreenLoader />
-          ) : (
-            <>
-              <LeadContent
-                lead={lead}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                theme={theme}
-                isMobile={isMobile}
-                handleClose={handlePageClose}
-                setLead={setLead}
-                setleads={setleads}
-                admin={isAdmin}
-                type={type}
-              />
-              <DialogActions
-                sx={{
-                  p: 2,
-                  borderTop: 1,
-                  borderColor: "divider",
-                  gap: 1,
-                }}
-              >
-                <Button onClick={onClose} variant="outlined">
-                  Close
-                </Button>
-              </DialogActions>
-            </>
-          )}
-        </Dialog>
-      )}
-    </>
+    <PreviewLead
+      leadContent={LeadContent}
+      id={id}
+      open={open}
+      onClose={onClose}
+      setleads={setleads}
+      page={page}
+      url={`shared/client-leads/projects/designers/${id}?type=${type}&`}
+      type={type}
+    />
   );
 };
 

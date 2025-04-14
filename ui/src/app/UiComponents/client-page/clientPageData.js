@@ -31,21 +31,21 @@ export const designLead = [
   },
 ];
 export const leads = [
-  {
-    title: "Consultation",
-    value: "CONSULTATION",
-    image: "/consultation.jpg",
-    alt: "Dream studio consultation with eng ahmed",
-    type: "LINK",
-    href: "https://decorstores.ltd/products/consultation-with-engineer-ahmed",
-  },
-  {
-    title: "Interior design",
-    value: "DESIGN",
-    image: "/design.jfif",
-    alt: "Dream Studio - Dream Design & Luxurious Home Solutions",
-    type: "ANIMATION",
-  },
+  // {
+  //   title: "Consultation",
+  //   value: "CONSULTATION",
+  //   image: "/consultation.jpg",
+  //   alt: "Dream studio consultation with eng ahmed",
+  //   type: "LINK",
+  //   href: "https://decorstores.ltd/products/consultation-with-engineer-ahmed",
+  // },
+  // {
+  //   title: "Interior design",
+  //   value: "DESIGN",
+  //   image: "/design.jfif",
+  //   alt: "Dream Studio - Dream Design & Luxurious Home Solutions",
+  //   type: "ANIMATION",
+  // },
   {
     title: "Books",
     value: "BOOKS",
@@ -53,6 +53,14 @@ export const leads = [
     alt: "Dream Studio Books for interior design by Ahmed (dream studio)",
     type: "LINK",
     href: "https://decorstores.ltd/products/book",
+  },
+  {
+    title: "Interior design",
+    value: "DESIGN",
+    image: "/design.jfif",
+    alt: "Dream Studio - Dream Design & Luxurious Home Solutions",
+    type: "LINK",
+    href: "https://eng.ahmed.dreamstudiio.com/",
   },
   {
     title: "Engineers courses",

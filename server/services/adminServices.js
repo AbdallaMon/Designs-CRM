@@ -1387,3 +1387,17 @@ export async function getAdminClientLeadDetails(clientLeadId) {
   });
   return clientLead;
 }
+
+export async function updateLeadField({ data, leadId }) {
+  try {
+    const updatedLead = await prisma.clientLead.update({
+      where: {
+        id: Number(leadId),
+      },
+      data,
+    });
+    return updatedLead;
+  } catch (e) {
+    throw new Error(e);
+  }
+}

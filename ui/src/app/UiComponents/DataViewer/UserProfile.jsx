@@ -41,7 +41,8 @@ export default function UserProfile({ id }) {
                 <UpdateUserMaxLeadsCounts setUser={setUser} user={user} />
                 <Button
                   variant="outlined"
-                  component={Link}
+                  component="a"
+                  target="_blank"
                   href={`/dashboard/deals?staffId=${user.id}`}
                 >
                   View user current deals

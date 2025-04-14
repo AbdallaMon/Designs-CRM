@@ -53,7 +53,6 @@ const UserRestrictedCountries = ({ userId }) => {
         url: `admin/users/${userId}/restricted-countries`,
         setLoading,
       });
-      console.log(response, "response");
       setRestrictedCountries(response);
       setSelectedCountries([]);
     } catch (error) {
@@ -85,7 +84,6 @@ const UserRestrictedCountries = ({ userId }) => {
       false,
       "Updating"
     );
-    console.log(request, "reuqest");
     if (request.status === 200) {
       handleClose();
     }
