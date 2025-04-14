@@ -176,7 +176,10 @@ export default function ClientPage() {
             minHeight: "calc(100vh - 48px)",
           }}
         >
-          <LeadCardsContainer handleClick={animateLeadCategory} />
+          <LeadCardsContainer
+            handleClick={animateLeadCategory}
+            isCatAnimated={isCatAnimated}
+          />
           {leadCategory && (
             <>
               {leadCategory === "DESIGN" && (

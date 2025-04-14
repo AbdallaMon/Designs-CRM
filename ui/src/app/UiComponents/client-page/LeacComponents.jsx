@@ -22,7 +22,7 @@ import colors from "@/app/helpers/colors.js";
 import React from "react";
 import { IoArrowBackOutline } from "react-icons/io5";
 
-export function LeadCardsContainer({ handleClick }) {
+export function LeadCardsContainer({ handleClick, isCatAnimated }) {
   const { translate } = useLanguageContext();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -36,7 +36,12 @@ export function LeadCardsContainer({ handleClick }) {
       <Box>
         {leads.map((lead) => {
           return (
-            <LeadCard key={lead.value} lead={lead} handleClick={handleClick} />
+            <LeadCard
+              key={lead.value}
+              lead={lead}
+              handleClick={handleClick}
+              isCatAnimated={isCatAnimated}
+            />
           );
         })}
       </Box>
@@ -87,7 +92,12 @@ export function DesignLeadsContainer({ handleClick }) {
     </Box>
   );
 }
-export function LeadCard({ lead, handleClick, class_name = "lead-card" }) {
+export function LeadCard({
+  lead,
+  handleClick,
+  class_name = "lead-card",
+  isCatAnimated,
+}) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { translate } = useLanguageContext();
@@ -198,6 +208,18 @@ export function LeadCard({ lead, handleClick, class_name = "lead-card" }) {
         component="a"
         href={lead.href}
         target="_blank"
+        onClick={(e) => {
+          if (isCatAnimated) {
+            e.preventDefault();
+            return;
+          }
+        }}
+        onContextMenu={(e) => {
+          if (isCatAnimated) {
+            e.preventDefault();
+            return;
+          }
+        }}
         rel="noreferrer"
         sx={{
           position: "relative",
