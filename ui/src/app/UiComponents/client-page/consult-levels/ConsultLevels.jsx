@@ -71,7 +71,7 @@ export function ConsultLevels({ lng, clientLead }) {
         sx={{
           display: "flex",
           flexDirection: "column",
-          height: "calc(100vh - 100px)",
+          height: "calc(100vh - 150px)",
           maxHeight: 800,
           bgcolor: colors.bgSecondary,
           borderRadius: 3,
