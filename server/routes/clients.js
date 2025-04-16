@@ -135,8 +135,9 @@ router.post("/new-lead", async (req, res) => {
     await newLeadNotification(clientLead.id, client);
     const message =
       body.lng === "ar"
-        ? "تم تسجيل بياناتك بنجاح"
-        : "Your data has been successfully submitted";
+        ? "خطوة واحدة تفصلنا عن بدء العمل على مشروعك!، يرجى إتمام الدفع الآن."
+        : "You're just one step away from starting your project! Complete the payment now to proceed.";
+
     res.status(200).json({ data: clientLead, message });
   } catch (error) {
     console.error("Error fetching client form:", error);
@@ -370,7 +371,6 @@ router.get("/payment-status", async (req, res) => {
 
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
-    console.log(session, "session");
     if (session.payment_status === "paid") {
       const lead = await prisma.clientLead.update({
         where: {
