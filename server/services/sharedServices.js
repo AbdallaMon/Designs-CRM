@@ -73,7 +73,16 @@ export async function getClientLeads({
       lte: end.toDate(),
     };
   }
-
+  if (searchParams.checkConsult) {
+    where.initialConsult = true;
+  }
+  console.log(searchParams, "searchParams");
+  if (searchParams.noConsulted && searchParams.noConsulted === "true") {
+    where = {
+      initialConsult: false,
+    };
+  }
+  console.log(where, "where");
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { notAllowedCountries: true, role: true },
@@ -108,6 +117,7 @@ export async function getClientLeads({
         selectedCategory: true,
         description: true,
         paymentStatus: true,
+        initialConsult: true,
         client: {
           select: {
             name: true,
@@ -221,8 +231,24 @@ export async function getClientLeadDetails(
       where = {};
     }
   }
+  const checkIfLeadIsNew = await prisma.clientLead.findUnique({
+    where: {
+      id: clientLeadId,
+      status: "NEW",
+      userId: null,
+    },
+  });
+  if (checkIfLeadIsNew) {
+    delete where.userId;
+  }
+  const initialConsultWhere = {};
+  if (searchParams.checkConsult) {
+    initialConsultWhere.initialConsult = true;
+  }
+  console.log(searchParams, "searchParams");
+  console.log(where, "where");
   const clientLead = await prisma.clientLead.findUnique({
-    where: { id: clientLeadId, ...where },
+    where: { id: clientLeadId, ...initialConsultWhere, ...where },
     select: {
       id: true,
       userId: true,
@@ -232,6 +258,7 @@ export async function getClientLeadDetails(
       priceNote: true,
       paymentStatus: true,
       telegramLink: true,
+      initialConsult: true,
       client: {
         select: {
           id: true,
@@ -385,10 +412,21 @@ export async function assignLeadToAUser(clientLeadId, userId, isOverdue) {
     select: {
       userId: true,
       status: true,
+      country: true,
     },
   });
   if (clientLead.status !== "NEW" && clientLead.status !== "ON_HOLD") {
     throw new Error("This lead has already been assigned to a user");
+  }
+  const isAlloedToTakeThisLead = await checkIfUserAllowedToTakeALead(
+    Number(userId),
+    clientLead.country
+  );
+  console.log(isAlloedToTakeThisLead, "isAlloedToTakeThisLead");
+  if (!isAlloedToTakeThisLead) {
+    throw new Error(
+      "You are not allowed to take this lead cause it is out of your allowed countries range"
+    );
   }
   const activeLeadsCount = await prisma.clientLead.count({
     where: {

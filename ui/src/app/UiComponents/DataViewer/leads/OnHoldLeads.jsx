@@ -4,7 +4,7 @@ import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import LeadsSlider from "@/app/UiComponents/DataViewer/slider/LeadsSlider.jsx";
 import PaginationWithLimit from "@/app/UiComponents/DataViewer/PaginationWithLimit.jsx";
 import React from "react";
-import { LeadSliderCard } from "@/app/UiComponents/DataViewer/leads/NewLeadsPage.jsx";
+import { LeadSliderCard } from "@/app/UiComponents/DataViewer/leads/new-leads/NewLeadsPage.jsx";
 
 export default function OnHoldLeads() {
   const { user } = useAuth();

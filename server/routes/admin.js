@@ -331,7 +331,7 @@ router.post("/leads/update/:id", async (req, res) => {
     const updatedLead = await updateLeadField({ data: req.body, leadId: id });
     res.status(200).json({
       data: updatedLead,
-      message: "Telegram link updated successfully",
+      message: "Lead updated successfully",
     });
   } catch (e) {
     console.log(e, "e");

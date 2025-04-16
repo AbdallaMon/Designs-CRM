@@ -71,6 +71,7 @@ import TelegramLink from "../work-stages/TelegramLink";
 import { LeadContactInfo } from "./extra/LeadContactInfo";
 import { LeadInfo } from "./extra/LeadInfo";
 import { PreviewLead } from "./extra/PreviewLead";
+import UpdateInitialConsultButton from "../../buttons/UpdateInitialConsultLead";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -99,7 +100,11 @@ const LeadContent = ({
   const [openConfirm, setOpenConfirm] = useState(false);
   const [openPriceModel, setOpenPriceModel] = useState(null);
   const [isAllowed, setIsAllowed] = useState(true);
-  const [isAllowedLoading, setIsAllowedLoading] = useState(true);
+  const [isAllowedLoading, setIsAllowedLoading] = useState(false);
+  const [finalizeModel, setFinalizeModel] = useState(false);
+  const [currentId, setCurrentId] = useState(null);
+  const [payments, setPayments] = useState(lead ? lead.payments : []);
+  const [paymentModal, setPaymentModal] = useState(false);
   async function createADeal(lead) {
     const assign = await handleRequestSubmit(
       lead,
@@ -137,12 +142,14 @@ const LeadContent = ({
         setIsAllowedLoading(false);
       }
     };
-    if (user.id !== lead.userId && user.role === "STAFF") {
-      checkAccess();
-    } else {
-      setIsAllowedLoading(false);
+    if (lead) {
+      if (user.id !== lead.userId && user.role === "STAFF") {
+        // checkAccess();
+      } else {
+        setIsAllowedLoading(false);
+      }
     }
-  }, [user.id, lead.country]);
+  }, [user.id, lead, lead?.country]);
   const handleClick = (event) => {
     if (!admin) {
       setAnchorEl(event.currentTarget);
@@ -153,10 +160,7 @@ const LeadContent = ({
       setAnchorEl(event.currentTarget);
     }
   };
-  const [finalizeModel, setFinalizeModel] = useState(false);
-  const [currentId, setCurrentId] = useState(null);
-  const [payments, setPayments] = useState(lead.payments);
-  const [paymentModal, setPaymentModal] = useState(false);
+
   const handleMenuClose = async (value) => {
     if (user.role === "SUPER_ADMIN") {
       return;
@@ -205,6 +209,8 @@ const LeadContent = ({
       }, 500);
     }
   };
+  if (!lead) return;
+
   const leadStatus = enumToKeyValueArray(KanbanLeadsStatus);
   if (isAllowedLoading) return <FullScreenLoader />;
   if (!isAllowed && user.id !== lead.userId && user.role === "STAFF") {
@@ -274,6 +280,7 @@ const LeadContent = ({
           </Stack>
           <Stack direction="row" spacing={2} alignItems="center">
             <TelegramLink lead={lead} setLead={setLead} />
+            <UpdateInitialConsultButton clientLead={lead} />
           </Stack>
           <Stack
             direction={isMobile ? "column" : "row"}

@@ -60,6 +60,8 @@ router.get("/client-leads", async (req, res) => {
     const user = getTokenData(req, res);
 
     const { limit, skip } = getPagination(req);
+    searchParams.checkConsult = true;
+
     const result = await getClientLeads({
       limit: Number(limit),
       skip: Number(skip),
@@ -149,9 +151,12 @@ router.get("/client-leads/:id", async (req, res) => {
     ) {
       searchParams.userId = token.id;
     }
+    if (token.role !== "ADMIN") {
+      searchParams.checkConsult = true;
+    }
     const clientLeadDetails =
       token.role === "ADMIN" || token.role === "SUPER_ADMIN"
-        ? await getAdminClientLeadDetails(Number(id))
+        ? await getAdminClientLeadDetails(Number(id), searchParams)
         : await getClientLeadDetails(
             Number(id),
             searchParams,

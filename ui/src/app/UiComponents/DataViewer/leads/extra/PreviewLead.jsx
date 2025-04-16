@@ -3,14 +3,17 @@ import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 import {
+  Box,
   Button,
   Container,
   Dialog,
   DialogActions,
+  Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import { FaExclamationTriangle } from "react-icons/fa";
 
 export const PreviewLead = ({
   open,
@@ -39,7 +42,9 @@ export const PreviewLead = ({
           // url: `shared/client-leads/projects/designers/${id}?type=${type}&`,
           setLoading,
         });
-        setLead(leadDetails.data);
+        if (leadDetails && leadDetails.status === 200) {
+          setLead(leadDetails.data);
+        }
       }
     }
     getALeadDetails();
@@ -52,6 +57,37 @@ export const PreviewLead = ({
     }
     if (onClose) onClose();
   };
+  // if(!lead)return
+  if (loading) return <></>;
+  if (
+    (!loading && !lead) ||
+    (!loading &&
+      (lead?.status === "CONVERTED" ||
+        (lead.status === "ON_HOLD" && user.id === lead.userId)))
+  ) {
+    return (
+      <Container maxWidth="md">
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexDirection: "column",
+            p: 2,
+            border: "1px solid #ddd",
+            borderRadius: "8px",
+            backgroundColor: "#f8d7da",
+          }}
+        >
+          <FaExclamationTriangle size={40} color="#721c24" />
+          <Typography variant="h6" sx={{ color: "#721c24", mt: 1 }}>
+            You are not allowed to access this page or the lead doesn&apos;t
+            exist
+          </Typography>
+        </Box>
+      </Container>
+    );
+  }
   return (
     <>
       {page ? (

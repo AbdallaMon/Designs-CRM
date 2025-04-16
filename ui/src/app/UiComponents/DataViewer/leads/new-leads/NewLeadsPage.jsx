@@ -2,6 +2,7 @@
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import {
+  Box,
   Button,
   Card,
   CardActions,
@@ -21,6 +22,8 @@ import OnHoldLeads from "@/app/UiComponents/DataViewer/leads/OnHoldLeads.jsx";
 import NextCalls from "@/app/UiComponents/DataViewer/leads/NextCalls.jsx";
 import { FixedData } from "@/app/UiComponents/DataViewer/leads/FixedData.jsx";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
+import { NonConsultedLeads } from "./Non-consulted-leads";
+import UpdateInitialConsultButton from "@/app/UiComponents/buttons/UpdateInitialConsultLead";
 
 export default function NewLeadsPage({ searchParams, staff }) {
   const {
@@ -41,6 +44,7 @@ export default function NewLeadsPage({ searchParams, staff }) {
   return (
     <Container maxWidth="xxl">
       <FixedData />
+      <NonConsultedLeads />
       <LeadsSlider
         title="New leads"
         loading={loading}
@@ -93,7 +97,6 @@ export function LeadSliderCard({ lead, setData }) {
         transition: "transform 0.3s ease",
       }}
     >
-      {/* Card Header */}
       <CardHeader
         title={""}
         titleTypographyProps={{
@@ -103,7 +106,23 @@ export function LeadSliderCard({ lead, setData }) {
         }}
         sx={{ paddingBottom: 0 }}
       />
-      <CardContent sx={{ paddingTop: 0, height: "100px", overflowY: "hidden" }}>
+      <CardContent
+        sx={{
+          paddingTop: 0,
+          height: user.role === "ADMIN" ? "140px" : "100px",
+          overflowY: "hidden",
+        }}
+      >
+        {user.role === "ADMIN" && (
+          <>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+              {lead.client.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+              {lead.client.phone}
+            </Typography>
+          </>
+        )}
         <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
           <strong>Created at:</strong> {formattedDate}
         </Typography>
@@ -136,15 +155,18 @@ export function LeadSliderCard({ lead, setData }) {
             variant="outlined" // Outlined style for better contrast
           />
         )}
-        <Button
-          component={Link}
-          href={`/dashboard/deals/${lead.id}`}
-          variant="contained"
-          size="small"
-          color="primary"
-        >
-          Preview
-        </Button>
+        <Box display="flex" flexDirection="column" gap={2}>
+          <UpdateInitialConsultButton clientLead={lead} />
+          <Button
+            component={Link}
+            href={`/dashboard/deals/${lead.id}`}
+            variant="contained"
+            size="small"
+            color="primary"
+          >
+            Preview
+          </Button>
+        </Box>
       </CardActions>
     </Card>
   );

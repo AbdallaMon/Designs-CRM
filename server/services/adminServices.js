@@ -1345,9 +1345,13 @@ export async function updateNotAllowedCountries(userId, countries) {
   });
 }
 
-export async function getAdminClientLeadDetails(clientLeadId) {
+export async function getAdminClientLeadDetails(clientLeadId, searchParams) {
+  const where = { id: Number(clientLeadId) };
+  if (searchParams.checkConsult) {
+    where.ininitialConsult = true;
+  }
   const clientLead = await prisma.clientLead.findUnique({
-    where: { id: Number(clientLeadId) },
+    where,
     include: {
       client: true,
       assignedTo: true,
