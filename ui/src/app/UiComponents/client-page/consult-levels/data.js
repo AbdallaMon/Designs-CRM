@@ -106,8 +106,8 @@ export const consultLevelsData = {
   ],
   paymentData: {
     description:
-      "يتم حجز الخدمة بمبلغ 179 دولار لبدا المرحلة الاولي من المشروع.",
-    button: "احجز الان 179 دولار",
+      "يتم حجز الخدمة بمبلغ 190 دولار لبدا المرحلة الاولي من المشروع.",
+    button: "احجز الان 190 دولار",
   },
 };
 
@@ -220,7 +220,7 @@ export const enConsultLevelsData = {
   ],
   paymentData: {
     description:
-      "The service is reserved with an amount of 179 dollars to start the first stage of the project.",
-    button: "Book Now 179 AED",
+      "The service is reserved with an amount of 190 dollars to start the first stage of the project.",
+    button: "Book Now 190 DOLLAR",
   },
 };
