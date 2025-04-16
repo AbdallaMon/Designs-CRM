@@ -247,6 +247,8 @@ model ClientLead {
       country             String?
       commissionCleared     Boolean            @default(false) 
 
+      initialConsult      Boolean @default(true)
+      
       @@index([clientId])
       @@index([userId])
 }

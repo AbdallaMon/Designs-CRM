@@ -126,6 +126,7 @@ router.post("/new-lead", async (req, res) => {
       data.averagePrice = Number(consultationLeadPrices[body.item]);
       data.priceWithOutDiscount = Number(consultationLeadPrices[body.item]);
     }
+    data.initialConsult = false;
     const clientLead = await prisma.clientLead.create({
       data,
     });
