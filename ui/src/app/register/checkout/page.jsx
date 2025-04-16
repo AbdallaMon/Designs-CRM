@@ -26,7 +26,7 @@ export default function CheckoutPage({ searchParams }) {
         maxWidth="md"
         sx={{
           height: "100%",
-          py: { xs: 6, md: 6 },
+          py: { xs: 5, md: 6 },
           pb: { xs: 16, md: 10 },
           position: "relative",
         }}
