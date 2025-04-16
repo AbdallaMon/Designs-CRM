@@ -307,7 +307,7 @@ export async function updateWorkStageStatusNotification(
     staffId
   );
 }
-export async function newLeadNotification(leadId, client) {
+export async function newLeadNotification(leadId, client, isAdmin) {
   const leadHref = `${dealsLink + leadId}`;
   const notificationHtml = `<div>
        <strong>New lead created</strong> <a href="${leadHref}" >#${leadId}</a> 
@@ -319,7 +319,7 @@ export async function newLeadNotification(leadId, client) {
 
   await createNotification(
     null,
-    null,
+    isAdmin,
     notificationHtml,
     null,
     "NEW_LEAD",

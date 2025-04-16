@@ -30,6 +30,8 @@ import {
   updateUserRoles,
 } from "../services/adminServices.js";
 import multer from "multer";
+import prisma from "../prisma/prisma.js";
+import { newLeadNotification } from "../services/notification.js";
 
 const router = Router();
 
@@ -329,6 +331,23 @@ router.post("/leads/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const updatedLead = await updateLeadField({ data: req.body, leadId: id });
+    if (req.body.initialConsult) {
+      const lead = await prisma.clientLead.findUnique({
+        where: {
+          id: Number(id),
+        },
+        select: {
+          client: {
+            select: {
+              name: true,
+              phone: true,
+              email: true,
+            },
+          },
+        },
+      });
+      await newLeadNotification(Number(id), lead.client);
+    }
     res.status(200).json({
       data: updatedLead,
       message: "Lead updated successfully",

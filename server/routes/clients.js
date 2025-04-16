@@ -133,7 +133,7 @@ router.post("/new-lead", async (req, res) => {
     if (body.url) {
       await uploadFile(body, clientLead.id);
     }
-    await newLeadNotification(clientLead.id, client);
+    await newLeadNotification(clientLead.id, client, true);
     const message =
       body.lng === "ar"
         ? "خطوة واحدة تفصلنا عن بدء العمل على مشروعك!، يرجى إتمام الدفع الآن."
