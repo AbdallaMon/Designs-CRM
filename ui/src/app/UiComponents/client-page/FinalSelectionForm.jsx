@@ -643,9 +643,39 @@ const CountrySelector = ({
   );
 };
 function SuccessPage({ lng, clientLead }) {
+  const message =
+    lng === "ar"
+      ? "خطوة واحدة تفصلنا عن بدء العمل على مشروعك!، يرجى إتمام الدفع الآن."
+      : "You're just one step away from starting your project! Complete the payment now to proceed.";
+
+  useEffect(() => {
+    if (lng && clientLead) {
+      window.location.href = `/register/checkout?leadId=${clientLead.id}&clientId=${clientLead.clientId}&lng=${lng}`;
+    }
+  }, [lng, clientLead]);
+
   return (
-    <Box>
-      <ConsultLevels lng={lng} clientLead={clientLead} />
+    <Box
+      sx={{
+        textAlign: "center",
+        py: 8,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 4,
+        direction: lng === "ar" ? "rtl" : "ltr",
+        backgroundColor: "white",
+      }}
+    >
+      <Typography variant="h5" component="h1" gutterBottom>
+        {message}
+      </Typography>
+
+      <CircularProgress color="primary" />
+
+      <Typography variant="body2" color="text.secondary">
+        {lng === "ar" ? "جاري التحويل..." : "Redirecting..."}
+      </Typography>
     </Box>
   );
 }

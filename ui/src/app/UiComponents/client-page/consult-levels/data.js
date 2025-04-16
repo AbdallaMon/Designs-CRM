@@ -1,7 +1,9 @@
 export const consultLevelsData = {
   title: {
-    firstLine: "مراحل العمل",
+    firstLine: "خطوة واحدة تفصلنا عن بدء العمل على مشروعك",
+    secondLine: "يرجى إتمام الدفع الآن",
   },
+  subTitle: "مراحل العمل",
   levels: [
     {
       title: "المرحلة الأولى",
@@ -113,9 +115,10 @@ export const consultLevelsData = {
 
 export const enConsultLevelsData = {
   title: {
-    firstLine: "Consultation Stages",
+    firstLine: "You're just one step away from starting your project!",
+    secondLine: "Complete the payment now to proceed",
   },
-  subTitle: "Projects and Hotels",
+  subTitle: "Consultation Stages",
   levels: [
     {
       title: "First Stage",

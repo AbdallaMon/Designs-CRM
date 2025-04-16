@@ -30,7 +30,6 @@ export default function LanguageProvider({ children }) {
     if (clonedLocationTitle) {
       clonedLocationTitle.textContent =
         locationDic[clonedLocationTitle.textContent];
-      console.log(clonedLocationTitle, "clonedLocationTitle");
     }
   }
   function translate(text) {

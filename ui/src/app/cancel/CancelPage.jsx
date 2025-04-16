@@ -8,7 +8,7 @@ const translations = {
   en: {
     title: "Payment Cancelled",
     message: "Your payment was cancelled or not completed.",
-    backHome: "Back to Home",
+    backHome: "Back to register page",
     tryAgain: "Try Payment Again",
     loading: "Loading...",
     note: "Note: You can complete your payment at any time.",
@@ -16,7 +16,7 @@ const translations = {
   ar: {
     title: "تم إلغاء الدفع",
     message: "تم إلغاء الدفع الخاص بك أو لم يكتمل.",
-    backHome: "العودة إلى الصفحة الرئيسية",
+    backHome: "العودة إلى صفحة التسجيل ",
     tryAgain: "حاول الدفع مرة أخرى",
     loading: "جاري التحميل...",
     note: "ملاحظة: يمكنك إكمال الدفع في أي وقت.",
@@ -65,9 +65,9 @@ export default function CancelPage() {
           <Typography variant="body1" paragraph>
             {content.message}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          {/* <Typography variant="body2" color="text.secondary">
             {content.note}
-          </Typography>
+          </Typography> */}
         </Box>
 
         <Box
@@ -84,18 +84,19 @@ export default function CancelPage() {
             variant="outlined"
             size="large"
             component="a"
-            href="/"
+            href="/register"
             startIcon={<FaHome />}
           >
             {content.backHome}
           </Button>
-
-          <PayButton
-            text={lng === "en" ? "Try again" : "اعادة محاولة الدفع"}
-            clientLeadId={clientLeadId}
-            userId={userId}
-            lng={lng}
-          />
+          {clientLeadId && (
+            <PayButton
+              text={lng === "en" ? "Try again" : "اعادة محاولة الدفع"}
+              clientLeadId={clientLeadId}
+              userId={userId}
+              lng={lng}
+            />
+          )}
         </Box>
       </Paper>
     </Container>

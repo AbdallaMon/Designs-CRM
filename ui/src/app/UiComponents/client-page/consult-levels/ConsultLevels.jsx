@@ -44,7 +44,12 @@ export function ConsultLevels({ lng, clientLead }) {
   const [activeStage, setActiveStage] = useState(null);
   const [showScrollHint, setShowScrollHint] = useState(true);
   const contentRef = useRef(null);
-
+  useEffect(() => {
+    if (typeof window !== undefined)
+      if (!clientLead || !clientLead?.id) {
+        window.location.href = "/cancel";
+      }
+  }, [clientLead]);
   useEffect(() => {
     const handleScroll = () => {
       if (contentRef.current && contentRef.current.scrollTop > 100) {
@@ -58,6 +63,7 @@ export function ConsultLevels({ lng, clientLead }) {
       return () => contentElement.removeEventListener("scroll", handleScroll);
     }
   }, []);
+  if (!clientLead || !clientLead?.id) return;
 
   return (
     <>
@@ -76,7 +82,7 @@ export function ConsultLevels({ lng, clientLead }) {
         {/* Header Section */}
         <Box
           sx={{
-            padding: 3,
+            padding: { xs: 2, md: 3 },
             textAlign: "center",
             background: `linear-gradient(135deg, ${colors.primary}22, ${colors.bgSecondary})`,
             borderBottom: `1px solid ${colors.primary}33`,
@@ -84,7 +90,7 @@ export function ConsultLevels({ lng, clientLead }) {
         >
           <Typography
             variant="h3"
-            fontSize={isMobile ? 24 : 32}
+            fontSize={isMobile ? 22 : 28}
             fontWeight={700}
           >
             {data.title.firstLine}
@@ -118,7 +124,7 @@ export function ConsultLevels({ lng, clientLead }) {
                 }}
               >
                 <Typography variant="body2" sx={{ mr: 1 }}>
-                  Scroll to explore
+                  {lng === "ar" ? "مرر للأسفل لاستكشاف" : "Scroll to explore"}
                 </Typography>
                 <FaArrowDown />
               </Box>
