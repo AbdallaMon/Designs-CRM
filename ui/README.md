@@ -95,8 +95,8 @@
 - Can add a shared telegram link to the designers leads
 - For quantity allow admin to add to user what needed from him and also allow user or admin to update what done and when
 - Final price show full price
-
 - Redirect client to another page for payment to be done after submitting redirect with clientLeadId and clientId
+
   الميزانية صفر
   لو دفع الادمن هو الي ينزله
   لو مدفعش
