@@ -5,6 +5,7 @@ import prisma from "../prisma/prisma.js";
 import {
   leadPaymentSuccessed,
   newClientLeadNotification,
+  newLeadCompletedNotification,
   newLeadNotification,
 } from "../services/notification.js";
 import axios from "axios";
@@ -298,7 +299,7 @@ router.post("/new-lead/complete-register/:leadId", async (req, res) => {
         id: lead.clientId,
       },
     });
-    await newLeadNotification(clientLead.id, client, true);
+    await newLeadCompletedNotification(clientLead.id, client, true);
     const message =
       body.lng === "ar"
         ? "تم تسجيل بياناتك بنجاح وسنقوم بالتواصل معك في اقرب وقت"
@@ -526,7 +527,7 @@ router.post("/pay", async (req, res) => {
                   : "١٨٠ دولار 💵 – تُخصم بالكامل عند التعاقد",
             },
 
-            unit_amount: 18000, // 18000
+            unit_amount: 0, // 18000
           },
           quantity: 1,
         },

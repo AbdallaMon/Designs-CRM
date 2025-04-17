@@ -351,6 +351,28 @@ export async function newClientLeadNotification(leadId, client, isAdmin) {
     leadId
   );
 }
+export async function newLeadCompletedNotification(leadId, client, isAdmin) {
+  const leadHref = `${dealsLink + leadId}`;
+  const notificationHtml = `<div>
+       <strong>New lead register completed with sucussfull payment </strong> <a href="${leadHref}" >#${leadId}</a> 
+       <div class="sub-text">
+      Lead register completed 
+       ${client.name} - 
+</div>
+    </div>`;
+
+  await createNotification(
+    null,
+    isAdmin,
+    notificationHtml,
+    null,
+    "NEW_LEAD",
+    "New lead",
+    true,
+    "HTML",
+    leadId
+  );
+}
 export async function leadPaymentSuccessed(leadId) {
   const leadHref = `${dealsLink + leadId}`;
   const notificationHtml = `<div>
