@@ -4,6 +4,7 @@ const router = express.Router();
 import prisma from "../prisma/prisma.js";
 import {
   leadPaymentSuccessed,
+  newClientLeadNotification,
   newLeadNotification,
 } from "../services/notification.js";
 import axios from "axios";
@@ -139,6 +140,169 @@ router.post("/new-lead", async (req, res) => {
         ? "خطوة واحدة تفصلنا عن بدء العمل على مشروعك!، يرجى إتمام الدفع الآن."
         : "You're just one step away from starting your project! Complete the payment now to proceed.";
 
+    res.status(200).json({ data: clientLead, message });
+  } catch (error) {
+    console.error("Error fetching client form:", error);
+    const message =
+      body.lng === "ar"
+        ? "حدث خطا غير متوقع حاول مره اخره لاحقا"
+        : "Some thing wrong happen try again later";
+    res.status(500).json({ message });
+  }
+});
+router.post("/new-lead/register", async (req, res) => {
+  const body = req.body;
+  try {
+    let client = await prisma.client.findUnique({
+      where: {
+        email: body.email,
+      },
+    });
+    if (!client) {
+      client = await prisma.client.create({
+        data: {
+          name: body.name,
+          phone: body.phone.replace(/\s+/g, ""),
+          email: body.email,
+        },
+      });
+    } else {
+      const todayStart = dayjs().startOf("day");
+      const todayEnd = dayjs().endOf("day");
+      const existingLead = await prisma.clientLead.findFirst({
+        where: {
+          client: { email: body.email },
+          createdAt: {
+            gte: todayStart.toDate(),
+            lte: todayEnd.toDate(),
+          },
+        },
+      });
+
+      if (existingLead) {
+        const message =
+          body.lng === "ar"
+            ? "عذراً ، لقد قمت بالفعل بإنشاء استفسار اليوم. يمكنك المحاولة مرة أخرى غدًا."
+            : "Sorry, you have already created a lead today. You can try again tomorrow.";
+        return res.status(422).json({ message });
+      } else {
+        await prisma.client.update({
+          where: {
+            id: client.id,
+          },
+          data: {
+            phone: body.phone,
+          },
+        });
+      }
+    }
+    const data = {
+      client: {
+        connect: { id: client.id },
+      },
+      selectedCategory: "DESIGN",
+      status: "NEW",
+      description: `Didn't complete register yet`,
+    };
+    data.initialConsult = false;
+    const clientLead = await prisma.clientLead.create({
+      data,
+    });
+    await newClientLeadNotification(clientLead.id, client, true);
+    const message =
+      body.lng === "ar"
+        ? " .يرجى إتمام الدفع الآن."
+        : "Complete the payment now to proceed.";
+    res.status(200).json({ data: clientLead, message });
+  } catch (error) {
+    console.error("Error fetching client form:", error);
+    const message =
+      body.lng === "ar"
+        ? "حدث خطا غير متوقع حاول مره اخره لاحقا"
+        : "Some thing wrong happen try again later";
+    res.status(500).json({ message });
+  }
+});
+router.post("/new-lead/complete-register/:leadId", async (req, res) => {
+  const body = req.body;
+  const { leadId } = req.params;
+  try {
+    const data = {
+      type: body.item,
+      status: "NEW",
+      description: `${body.category} ${body.item} ${
+        body.category === "DESIGN"
+          ? body.emirate
+            ? body.emirate
+            : "OUTSIDE UAE"
+          : ""
+      }`,
+    };
+    const lead = await prisma.clientLead.findUnique({
+      where: {
+        id: Number(leadId),
+      },
+    });
+    if (lead.description !== "Didn't complete register yet") {
+      // Check if price and averagePrice are set (non-null)
+      if (lead.price && lead.averagePrice) {
+        const message =
+          body.lng === "ar"
+            ? "لقد قمت بإكمال التسجيل بالفعل ولا يمكنك إعادة تقديم نفس النموذج."
+            : "You have already completed the registration and cannot resubmit the same form.";
+        return res.status(400).json({ message });
+      }
+    }
+    if (body.clientDescription) {
+      data.clientDescription = body.clientDescription;
+    }
+    if (body.emirate) {
+      data.emirate = body.emirate;
+    }
+    if (body.location === "OUTSIDE_UAE") {
+      data.emirate = "OUTSIDE";
+    }
+    if (body.timeToContact) {
+      const date = new Date(body.timeToContact);
+      if (!isNaN(date)) {
+        data.timeToContact = date.toISOString(); // Convert to ISO-8601 format
+      }
+    }
+
+    if (body.country) {
+      data.country = body.country;
+    }
+    if (body.priceRange) {
+      data.price = `${body.priceRange[0]} - ${body.priceRange[1]}`;
+      const averagePrice = (body.priceRange[0] + body.priceRange[1]) / 2;
+      data.averagePrice = averagePrice;
+      data.priceWithOutDiscount = averagePrice;
+    }
+    if (body.priceOption) {
+      data.price = body.priceOption;
+      data.averagePrice = priceRangeValues[body.priceOption];
+      data.priceWithOutDiscount = priceRangeValues[body.priceOption];
+    }
+    const clientLead = await prisma.clientLead.update({
+      where: {
+        id: Number(leadId),
+      },
+      data,
+    });
+    if (body.url) {
+      await uploadFile(body, clientLead.id);
+    }
+
+    const client = await prisma.client.findUnique({
+      where: {
+        id: lead.clientId,
+      },
+    });
+    await newLeadNotification(clientLead.id, client, true);
+    const message =
+      body.lng === "ar"
+        ? "تم تسجيل بياناتك بنجاح وسنقوم بالتواصل معك في اقرب وقت"
+        : "Your information has been successfully recorded, and we will contact you as soon as possible.";
     res.status(200).json({ data: clientLead, message });
   } catch (error) {
     console.error("Error fetching client form:", error);
@@ -341,13 +505,28 @@ router.post("/pay", async (req, res) => {
         {
           price_data: {
             currency: "usd",
+            // product_data: {
+            //   name:
+            //     req.body.lng === "en"
+            //       ? "First-Stage Design Analysis with Eng. Ahmed"
+            //       : "حجز المرحلة الاولي من استشارة التصميم مع المهندس احمد",
+            //   description:
+            //     req.body.lng === "en"
+            //       ? "[Book now and start your design] $180 - Fully deducted upon contract"
+            //       : "[احجز الآن وابدأ تصميمك] 💵 180 دولار – تُخصم بالكامل عند التعاقد",
+            // },١٨٠
             product_data: {
               name:
                 req.body.lng === "en"
-                  ? "First-Stage Design Analysis with Eng. Ahmed"
-                  : "حجز المرحلة الاولي من استشارة التصميم مع المهندس احمد",
+                  ? "[Book now and start your design]"
+                  : "[احجز الآن وابدأ تصميمك]",
+              description:
+                req.body.lng === "en"
+                  ? "$180 - Fully deducted upon contract"
+                  : "١٨٠ دولار 💵 – تُخصم بالكامل عند التعاقد",
             },
-            unit_amount: 19000, // $20.00 2000
+
+            unit_amount: 0, // 18000
           },
           quantity: 1,
         },

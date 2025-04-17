@@ -2,7 +2,7 @@
 import { Box, Container, Typography, Paper, Button } from "@mui/material";
 import { FaExclamationTriangle, FaHome } from "react-icons/fa";
 import { useSearchParams } from "next/navigation";
-import { PayButton } from "../UiComponents/client-page/consult-levels/ConsultLevels";
+import { PayButton } from "../UiComponents/client-page/new-register/CheckoutPage";
 
 const translations = {
   en: {

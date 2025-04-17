@@ -15,9 +15,10 @@ import {
   reverseAnimation,
 } from "@/app/UiComponents/client-page/function.js";
 import { useLanguageContext } from "@/app/providers/LanguageProvider.jsx";
-import { animateRegisterLeadCategoryItem } from "./registerFunctions";
+import { animateRegisterLeadCategoryItem } from "../registerFunctions";
+import { CompleteRegisterForm } from "./CompleteRegisterForm";
 
-export default function ClientPage() {
+export default function CompleteRegister({ leadId }) {
   const [leadCategory, setLeadCategory] = useState("DESIGN");
   const [animateLeadType, setAnimateLeadType] = useState("");
   const [isCatAnimated, setIsCatAnimated] = useState(false);
@@ -218,10 +219,11 @@ export default function ClientPage() {
             alignItems: "center",
           }}
         >
-          <FinalSelectionForm
+          <CompleteRegisterForm
             location={location}
             category={leadCategory}
             item={leadItem}
+            leadId={leadId}
           />
         </Container>
       </Box>

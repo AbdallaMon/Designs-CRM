@@ -1,6 +1,6 @@
 import LanguageProvider from "@/app/providers/LanguageProvider.jsx";
 import { Suspense } from "react";
-import RegisterPage from "../UiComponents/client-page/RegisterPage";
+import { NewRegisterForm } from "../UiComponents/client-page/new-register/NewRegisterForm";
 export const metadata = {
   title:
     "Book an Interior Design Consultation with Eng. احمد المبيض - Dream Studio",
@@ -23,7 +23,8 @@ export default function page() {
   return (
     <LanguageProvider>
       <Suspense>
-        <RegisterPage />
+        {/* <RegisterPage /> */}
+        <NewRegisterForm />
       </Suspense>
     </LanguageProvider>
   );

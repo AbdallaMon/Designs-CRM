@@ -10,60 +10,20 @@ import {
   IconButton,
   Paper,
   Button,
-  CircularProgress,
-  Fade,
-  Zoom,
-  Divider,
   useMediaQuery,
   useTheme,
   Grid2 as Grid,
   Badge,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from "@mui/material";
-import {
-  FaChevronDown,
-  FaChevronUp,
-  FaCreditCard,
-  FaArrowDown,
-  FaInfoCircle,
-  FaCheckCircle,
-  FaQuestion,
-} from "react-icons/fa";
+import { FaChevronDown, FaChevronUp, FaCheckCircle } from "react-icons/fa";
 import { consultLevelsData, enConsultLevelsData } from "./data";
 import colors from "@/app/helpers/colors";
-import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 
-export function ConsultLevels({ lng, clientLead }) {
+export function ConsultLevels({ lng }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const data = lng === "ar" ? consultLevelsData : enConsultLevelsData;
   const [activeStage, setActiveStage] = useState(null);
-  const [showScrollHint, setShowScrollHint] = useState(true);
-  const contentRef = useRef(null);
-  useEffect(() => {
-    if (typeof window !== undefined)
-      if (!clientLead || !clientLead?.id) {
-        window.location.href = "/cancel";
-      }
-  }, [clientLead]);
-  useEffect(() => {
-    const handleScroll = () => {
-      if (contentRef.current && contentRef.current.scrollTop > 100) {
-        setShowScrollHint(false);
-      }
-    };
-
-    const contentElement = contentRef.current;
-    if (contentElement) {
-      contentElement.addEventListener("scroll", handleScroll);
-      return () => contentElement.removeEventListener("scroll", handleScroll);
-    }
-  }, []);
-  if (!clientLead || !clientLead?.id) return;
 
   return (
     <>
@@ -71,15 +31,14 @@ export function ConsultLevels({ lng, clientLead }) {
         sx={{
           display: "flex",
           flexDirection: "column",
-          height: "calc(100vh - 150px)",
-          maxHeight: 800,
+          // height: "calc(100vh - 150px)",
+          // maxHeight: 800,
           bgcolor: colors.bgSecondary,
           borderRadius: 3,
           overflow: "hidden",
           boxShadow: "0px 5px 20px rgba(0, 0, 0, 0.15)",
         }}
       >
-        {/* Header Section */}
         <Box
           sx={{
             padding: { xs: 2, md: 3 },
@@ -89,19 +48,6 @@ export function ConsultLevels({ lng, clientLead }) {
           }}
         >
           <Typography
-            variant="h3"
-            fontSize={isMobile ? 22 : 28}
-            fontWeight={700}
-          >
-            {data.title.firstLine}
-            {data.title.secondLine && (
-              <>
-                <br />
-                {data.title.secondLine}
-              </>
-            )}
-          </Typography>
-          <Typography
             variant="subtitle1"
             color={colors.secondaryText}
             fontSize={isMobile ? 18 : 22}
@@ -110,31 +56,8 @@ export function ConsultLevels({ lng, clientLead }) {
           >
             {data.subTitle}
           </Typography>
-
-          {showScrollHint && (
-            <Fade in={showScrollHint} timeout={1000}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  mt: 2,
-                  color: colors.primary,
-                  animation: "bounce 2s infinite",
-                }}
-              >
-                <Typography variant="body2" sx={{ mr: 1 }}>
-                  {lng === "ar" ? "مرر للأسفل لاستكشاف" : "Scroll to explore"}
-                </Typography>
-                <FaArrowDown />
-              </Box>
-            </Fade>
-          )}
         </Box>
-
-        {/* Scrollable Content */}
         <Box
-          ref={contentRef}
           sx={{
             flex: 1,
             overflowY: "auto",
@@ -168,127 +91,11 @@ export function ConsultLevels({ lng, clientLead }) {
           ))}
           <Box sx={{ height: 80 }} />{" "}
         </Box>
-
-        <Zoom in={true} timeout={500}>
-          <Box
-            sx={{
-              p: { xs: 2, sm: 3 },
-              borderTop: `1px solid ${colors.primary}33`,
-              backgroundColor: "white",
-              boxShadow: "0px -2px 10px rgba(0, 0, 0, 0.08)",
-              position: "relative",
-              zIndex: 10,
-            }}
-          >
-            <PaymentSection
-              payment={data.paymentData}
-              lng={lng}
-              clientLead={clientLead}
-            />
-          </Box>
-        </Zoom>
       </Box>
     </>
   );
 }
 
-function PaymentSection({ payment, clientLead, lng }) {
-  return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: { xs: "column", sm: "row" },
-        alignItems: { xs: "stretch", sm: "center" },
-        justifyContent: "space-between",
-        gap: 2,
-      }}
-    >
-      <Box sx={{ flex: 1 }}>
-        <Typography
-          variant="body1"
-          fontWeight={500}
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-          }}
-        >
-          {payment.description}
-        </Typography>
-      </Box>
-
-      <PayButton
-        text={payment.button}
-        clientLeadId={clientLead.id}
-        clientId={clientLead.clientId}
-        lng={lng}
-      />
-
-      {/* <Dialog open={showTooltip} onClose={() => setShowTooltip(false)}>
-        <DialogTitle>Payment Information</DialogTitle>
-        <DialogContent>
-          <Typography variant="body1">
-            Secure payment processing with all major credit cards accepted. Your
-            consultation will be scheduled immediately after payment
-            confirmation.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowTooltip(false)}>Close</Button>
-        </DialogActions>
-      </Dialog> */}
-    </Box>
-  );
-}
-
-export function PayButton({
-  text = "Pay",
-  clientLeadId,
-  clientId,
-  lng = "ar",
-}) {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { setLoading } = useToastContext();
-  const handlePayment = async () => {
-    const data = await handleRequestSubmit(
-      { clientLeadId, clientId, lng },
-      setLoading,
-      `client/pay`,
-      false,
-      "Redirecting..."
-    );
-    if (data.url) {
-      window.location.href = data.url;
-    }
-  };
-  return (
-    <Button
-      size={isMobile ? "large" : "medium"}
-      sx={{
-        px: { xs: 3, sm: 4 },
-        py: { xs: 1.5, sm: 1 },
-        borderRadius: 2,
-        bgcolor: colors.primary,
-        color: "white",
-        transition: "all 0.3s ease",
-        "&:hover": {
-          bgcolor: colors.primary + "dd",
-          transform: "translateY(-3px)",
-          boxShadow: `0 4px 8px rgba(0, 0, 0, 0.2)`,
-        },
-        "&:active": {
-          transform: "translateY(0)",
-        },
-      }}
-      variant="contained"
-      onClick={handlePayment}
-      startIcon={<FaCreditCard />}
-    >
-      {text}
-    </Button>
-  );
-}
 function CollapsibleStage({ stage, isActive, onClick, number }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));

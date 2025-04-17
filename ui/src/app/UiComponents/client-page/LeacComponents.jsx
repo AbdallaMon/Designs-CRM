@@ -410,7 +410,11 @@ export function Header({ reverseAnimation }) {
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <Box
             className="reverse-button"
-            onClick={reverseAnimation}
+            onClick={() => {
+              if (reverseAnimation) {
+                reverseAnimation();
+              }
+            }}
             style={{
               left: 0,
             }}

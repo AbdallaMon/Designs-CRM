@@ -63,7 +63,7 @@ export const dictionary = {
   "Interior design": "تصميم داخلي",
   "How can we serve you?": "كيف يمكننا مساعدتك؟",
   "Choose from options": "اختر من الخيارات",
-
+  "Complete your register": "اكمل بياناتك للتسجيل",
   Room: "غرفة",
   Plan: "مخطط",
   "City Visit": "زيارة ميدانية",
@@ -72,6 +72,8 @@ export const dictionary = {
   "Villa Under Construction": "فيلا تحت الإنشاء",
   "Part of Home": "جزء من المنزل",
   Commercial: "تجاري",
+
+  "Success!": "نجاح!",
 
   // Emirates
   "Out side emirates": "خارج الإمارات",
@@ -141,6 +143,10 @@ export const dictionary = {
   "Coming Soon": "سيتوفر قريبًا",
   "Choose a time between 10 AM to 7 PM.":
     "اختر وقت بين الساعة 10 صباحًا و 7 مساءً.",
+  "Book Your Consultation": "احجز استشارتك",
+  "Make your home your personal brand": "اجعل منزلك براندك الخاص",
+  "You're just one step away from starting your project!":
+    "خطوة واحدة تفصلنا عن بدء العمل على مشروعك!",
 };
 
 export const MediaType = {

@@ -185,6 +185,44 @@ model ClientLead {
       assignedTo         User?            @relation(fields: [userId], references: [id])
       userId             Int?
 
+      selectedCategory   LeadCategory
+      type   LeadType @default(CONSTRUCTION_VILLA)
+      description String?
+      clientDescription  String? @db.Text   
+      emirate            Emirate?
+
+      discount  Decimal   @db.Decimal(10, 2) @default(0)
+      price              String?
+      averagePrice  Decimal?   @db.Decimal(10, 2)
+      priceNote String?  @db.Text
+      priceWithOutDiscount  Decimal   @db.Decimal(10, 2) @default(0)
+
+      projects     Project[]
+      priceOffers PriceOffers[]
+      payments         Payment[]
+      tasks         Task[]
+      status             ClientLeadStatus @default(NEW)
+      files              File[]
+      notes              Note[]
+      notifications      Notification[]
+      callReminders      CallReminder[]   @relation("clientLeadCallReminders")
+      extraServices     ExtraService[]
+
+      reasonToConvert String?
+      paymentStatus      PaymentStatus @default(PENDING)
+      paymentSessionId   String?     
+      telegramLink String?  
+      ourCost              String?         // تكلفه علينا - new optional field
+      contractorCost       String?   
+      country             String?
+      commissionCleared     Boolean            @default(false) 
+      initialConsult      Boolean @default(true)
+
+      assignedAt         DateTime?
+      timeToContact       DateTime?
+      createdAt          DateTime         @default(now())
+      updatedAt          DateTime         @updatedAt
+
       threeDDesigner     User?            @relation("ThreeDLeads", fields: [threeDDesignerId], references: [id]) // Assigned 3D Designer
       threeDDesignerId   Int?
       twoDDesigner       User?            @relation("TwoDLeads", fields: [twoDDesignerId], references: [id]) // Assigned 2D Designer
@@ -200,54 +238,10 @@ model ClientLead {
       twoDExacuterStage    TwoDExacuterStage? // New work stage
       workStageStatuses WorkStageStatus[]
 
-      projects     Project[]
-
-      // Lead type data
-      selectedCategory   LeadCategory
-      type   LeadType @default(CONSTRUCTION_VILLA)
-      description String?
-      clientDescription  String? @db.Text   
-      discount  Decimal   @db.Decimal(10, 2) @default(0)
-      emirate            Emirate?
-      price              String?
-      averagePrice  Decimal?   @db.Decimal(10, 2)
-      priceNote String?  @db.Text
-      priceWithOutDiscount  Decimal   @db.Decimal(10, 2) @default(0)
-      priceOffers PriceOffers[]
-
-      payments         Payment[]
-      tasks         Task[]
-
-      status             ClientLeadStatus @default(NEW)
-      files              File[]
-      notes              Note[]
-      notifications      Notification[]
-      callReminders      CallReminder[]   @relation("clientLeadCallReminders")
-      paymentStatus      PaymentStatus @default(PENDING)
-      paymentSessionId   String?     
-      telegramLink String?  
-
-      extraServices     ExtraService[]
-
-      assignedAt         DateTime?
       threeDAssignedAt   DateTime?
       twoDAssignedAt     DateTime?
       twoDExacuterAssignedAt DateTime?     
       accountantAssignedAt DateTime?
-
-      reasonToConvert String?
-
-      ourCost              String?         // تكلفه علينا - new optional field
-      contractorCost       String?   
-
-      createdAt          DateTime         @default(now())
-      updatedAt          DateTime         @updatedAt
-
-      timeToContact       DateTime?
-      country             String?
-      commissionCleared     Boolean            @default(false) 
-
-      initialConsult      Boolean @default(true)
       
       @@index([clientId])
       @@index([userId])

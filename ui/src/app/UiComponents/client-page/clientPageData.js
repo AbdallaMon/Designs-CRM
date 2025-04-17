@@ -87,7 +87,7 @@ export const designLeadTypes = [
   },
 ];
 export const questions = {
-  category: "How can we serve you?",
+  category: "Complete your register",
   type: "Choose from options",
 };
 export const priceRange = {

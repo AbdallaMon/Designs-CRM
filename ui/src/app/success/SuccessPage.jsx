@@ -11,10 +11,13 @@ import {
 import { FaCheckCircle, FaHome, FaTimesCircle } from "react-icons/fa";
 import { useSearchParams } from "next/navigation";
 import { getData } from "../helpers/functions/getData";
+
 const translations = {
   en: {
     title: "Payment Successful!",
-    message: "We have received your order and will contact you shortly.",
+    // message: "We have received your order and will contact you shortly.",
+    redirectMessage:
+      "You will be redirected to complete your registration in a few seconds...",
     backHome: "Back to Home",
     loading: "Processing your payment...",
     errorTitle: "Payment Verification Issue",
@@ -22,7 +25,8 @@ const translations = {
   },
   ar: {
     title: "تمت عملية الدفع بنجاح!",
-    message: "لقد استلمنا طلبك وسنتواصل معك قريباً.",
+    // message: "لقد استلمنا طلبك وسنتواصل معك قريباً.",
+    redirectMessage: "سيتم إعادة توجيهك لإكمال التسجيل خلال ثوانٍ...",
     backHome: "العودة إلى الصفحة الرئيسية",
     loading: "جاري معالجة الدفع الخاص بك...",
     errorTitle: "مشكلة في التحقق من الدفع",
@@ -33,21 +37,19 @@ const translations = {
 export default function SuccessPage() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState("cheking");
+  const [status, setStatus] = useState("checking");
+  const [redirectCountdown, setRedirectCountdown] = useState(3);
   const session_id = searchParams.get("session_id");
   const clientLeadId = searchParams.get("clientLeadId");
 
   const lng = searchParams.get("lng") || "ar";
 
-  // Choose the appropriate language content
   const content = translations[lng] || translations.ar;
 
-  // Set the direction based on language
   const direction = lng === "en" ? "ltr" : "rtl";
 
   useEffect(() => {
     if (session_id && clientLeadId) {
-      // Send payment status to your API
       const updatePaymentStatus = async () => {
         const request = await getData({
           url: `client/payment-status?sessionId=${session_id}&clientLeadId=${clientLeadId}&`,
@@ -55,6 +57,19 @@ export default function SuccessPage() {
         });
         if (request.status === 200) {
           setStatus(request.paymentStatus);
+
+          if (request.paymentStatus === "PAID") {
+            const countdownInterval = setInterval(() => {
+              setRedirectCountdown((prevCount) => {
+                if (prevCount <= 1) {
+                  clearInterval(countdownInterval);
+                  window.location.href = `/register/complete?leadId=${clientLeadId}`;
+                  return 0;
+                }
+                return prevCount - 1;
+              });
+            }, 1000);
+          }
         }
       };
 
@@ -115,8 +130,28 @@ export default function SuccessPage() {
             <Typography variant="h4" component="h1" gutterBottom>
               {content.title}
             </Typography>
-            <Typography variant="body1" paragraph>
+            {/* <Typography variant="body1" paragraph>
               {content.message}
+            </Typography> */}
+            <Typography
+              variant="body1"
+              sx={{
+                mt: 2,
+                fontWeight: "medium",
+                color: "text.secondary",
+              }}
+            >
+              {content.redirectMessage}
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                mt: 1,
+                color: "text.secondary",
+                fontWeight: "bold",
+              }}
+            >
+              {redirectCountdown}
             </Typography>
           </Box>
         ) : (

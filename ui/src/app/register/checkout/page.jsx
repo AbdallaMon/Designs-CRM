@@ -1,9 +1,10 @@
 import colors from "@/app/helpers/colors";
 import { ConsultLevels } from "@/app/UiComponents/client-page/consult-levels/ConsultLevels";
+import { CheckoutPage } from "@/app/UiComponents/client-page/new-register/CheckoutPage";
 import { Button, Container, Paper } from "@mui/material";
 import { MdArrowBack } from "react-icons/md";
 
-export default function CheckoutPage({ searchParams }) {
+export default function page({ searchParams }) {
   const { lng, leadId, clientId } = searchParams;
   const clientLead = {
     id: leadId,
@@ -18,8 +19,6 @@ export default function CheckoutPage({ searchParams }) {
         width: "100%",
         height: "100vh",
         overflowY: "hidden",
-
-        // minHeight: "calc(100vh - 48px)",
       }}
     >
       <Container
@@ -43,7 +42,7 @@ export default function CheckoutPage({ searchParams }) {
         >
           <MdArrowBack size={20} />
         </Button>
-        <ConsultLevels lng={lng} clientLead={clientLead} />
+        <CheckoutPage lng={lng} clientLead={clientLead} />
       </Container>
     </Paper>
   );

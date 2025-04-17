@@ -272,7 +272,9 @@ const LeadContent = ({
                 #{lead.id.toString().padStart(7, "0")} {lead.client.name}
               </Typography>
             )}
-            {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+            {(user.role === "ADMIN" ||
+              user.role === "SUPER_ADMIN" ||
+              user.role === "STAFF") && (
               <Badge color="primary" badgeContent={lead.paymentStatus}>
                 Initial payment
               </Badge>

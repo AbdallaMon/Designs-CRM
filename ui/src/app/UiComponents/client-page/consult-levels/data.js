@@ -1,7 +1,7 @@
 export const consultLevelsData = {
   title: {
     firstLine: "خطوة واحدة تفصلنا عن بدء العمل على مشروعك",
-    secondLine: "يرجى إتمام الدفع الآن",
+    secondLine: "احجز الآن وابدأ تصميمك",
   },
   subTitle: "مراحل العمل",
   levels: [
@@ -107,18 +107,17 @@ export const consultLevelsData = {
     },
   ],
   paymentData: {
-    description:
-      "يتم حجز الخدمة بمبلغ 190 دولار لبدا المرحلة الاولي من المشروع.",
-    button: "احجز الان 190 دولار",
+    description: "١٨٠ دولار تُخصم بالكامل عند التعاقد",
+    button: "احجز الان 180 دولار",
   },
 };
 
 export const enConsultLevelsData = {
   title: {
     firstLine: "You're just one step away from starting your project!",
-    secondLine: "Complete the payment now to proceed",
+    secondLine: "Book now and start your design.",
   },
-  subTitle: "Consultation Stages",
+  subTitle: "Work Stages",
   levels: [
     {
       title: "First Stage",
@@ -222,8 +221,7 @@ export const enConsultLevelsData = {
     },
   ],
   paymentData: {
-    description:
-      "The service is reserved with an amount of 190 dollars to start the first stage of the project.",
-    button: "Book Now 190 DOLLAR",
+    description: "180 dollars – fully deducted upon contracting.",
+    button: "Book Now 180 DOLLAR",
   },
 };
