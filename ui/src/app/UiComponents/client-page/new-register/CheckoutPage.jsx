@@ -76,7 +76,9 @@ export function CheckoutPage({ lng, clientLead }) {
             fontWeight={600}
             sx={{ mt: 1 }}
           >
-            {data.subTitle}
+            {lng === "ar"
+              ? "استشارة مع المهندس احمد"
+              : "Consultation with eng Ahmed"}
           </Typography>
         </Box>
         <Box
@@ -143,7 +145,7 @@ function PaymentSection({ payment, clientLead, lng }) {
       sx={{
         display: "flex",
         flexDirection: { xs: "column", sm: "column" },
-        alignItems: { xs: "stretch", sm: "flex-end" },
+        alignItems: { xs: "stretch", sm: "center" },
         justifyContent: "center",
         gap: 2,
       }}
