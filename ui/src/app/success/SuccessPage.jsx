@@ -180,7 +180,7 @@ export default function SuccessPage() {
           </Box>
         )}
 
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+        {/* <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <Button
             variant="contained"
             size="large"
@@ -190,7 +190,7 @@ export default function SuccessPage() {
           >
             {content.backHome}
           </Button>
-        </Box>
+        </Box> */}
       </Paper>
     </Container>
   );
