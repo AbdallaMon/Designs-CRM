@@ -553,16 +553,26 @@ router.get("/payment-status", async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     if (session.payment_status === "paid") {
-      const lead = await prisma.clientLead.update({
+      const oldLead = await prisma.clientLead.findUnique({
         where: {
           id: Number(clientLeadId),
         },
-        data: {
-          paymentStatus: "FULLY_PAID",
-          paymentSessionId: session.id,
+        select: {
+          paymentStatus: true,
         },
       });
-      await leadPaymentSuccessed(clientLeadId);
+      if (oldLead.paymentStatus !== "FULLY_PAID") {
+        const lead = await prisma.clientLead.update({
+          where: {
+            id: Number(clientLeadId),
+          },
+          data: {
+            paymentStatus: "FULLY_PAID",
+            paymentSessionId: session.id,
+          },
+        });
+        await leadPaymentSuccessed(clientLeadId);
+      }
       return res.status(200).json({
         paymentStatus: "PAID",
         success: true,
