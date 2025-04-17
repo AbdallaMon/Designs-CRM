@@ -77,8 +77,8 @@ export function CheckoutPage({ lng, clientLead }) {
             sx={{ mt: 1 }}
           >
             {lng === "ar"
-              ? "استشارة مع المهندس احمد"
-              : "Consultation with eng Ahmed"}
+              ? "استشارة مع المهندس احمد نفسه"
+              : "A Consultation with eng Ahmed him self"}
           </Typography>
         </Box>
         <Box
