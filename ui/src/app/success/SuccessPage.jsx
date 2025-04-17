@@ -15,9 +15,8 @@ import { getData } from "../helpers/functions/getData";
 const translations = {
   en: {
     title: "Payment Successful!",
-    // message: "We have received your order and will contact you shortly.",
-    redirectMessage:
-      "You will be redirected to complete your registration in a few seconds...",
+    redirectMessage: "You will be redirected to complete your registration in",
+    seconds: "seconds",
     backHome: "Back to Home",
     loading: "Processing your payment...",
     errorTitle: "Payment Verification Issue",
@@ -25,8 +24,8 @@ const translations = {
   },
   ar: {
     title: "تمت عملية الدفع بنجاح!",
-    // message: "لقد استلمنا طلبك وسنتواصل معك قريباً.",
-    redirectMessage: "سيتم إعادة توجيهك لإكمال التسجيل خلال ثوانٍ...",
+    redirectMessage: "سيتم إعادة توجيهك لإكمال التسجيل خلال",
+    seconds: "ثوانٍ",
     backHome: "العودة إلى الصفحة الرئيسية",
     loading: "جاري معالجة الدفع الخاص بك...",
     errorTitle: "مشكلة في التحقق من الدفع",
@@ -38,7 +37,7 @@ export default function SuccessPage() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("checking");
-  const [redirectCountdown, setRedirectCountdown] = useState(3);
+  const [redirectCountdown, setRedirectCountdown] = useState(2);
   const session_id = searchParams.get("session_id");
   const clientLeadId = searchParams.get("clientLeadId");
 
@@ -130,28 +129,67 @@ export default function SuccessPage() {
             <Typography variant="h4" component="h1" gutterBottom>
               {content.title}
             </Typography>
-            {/* <Typography variant="body1" paragraph>
-              {content.message}
-            </Typography> */}
+
             <Typography
               variant="body1"
               sx={{
-                mt: 2,
+                mt: 3,
                 fontWeight: "medium",
                 color: "text.secondary",
               }}
             >
               {content.redirectMessage}
             </Typography>
+
+            {/* Enhanced countdown display */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                mt: 2,
+                mb: 2,
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  width: "60px",
+                  height: "60px",
+                  borderRadius: "50%",
+                  backgroundColor: "primary.main",
+                  color: "white",
+                  fontWeight: "bold",
+                  fontSize: "24px",
+                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+                  animation: "pulse 1s infinite",
+                  "@keyframes pulse": {
+                    "0%": {
+                      boxShadow: "0 0 0 0 rgba(25, 118, 210, 0.7)",
+                    },
+                    "70%": {
+                      boxShadow: "0 0 0 10px rgba(25, 118, 210, 0)",
+                    },
+                    "100%": {
+                      boxShadow: "0 0 0 0 rgba(25, 118, 210, 0)",
+                    },
+                  },
+                }}
+              >
+                {redirectCountdown}
+              </Box>
+            </Box>
+
             <Typography
               variant="body2"
               sx={{
-                mt: 1,
                 color: "text.secondary",
-                fontWeight: "bold",
+                fontWeight: "medium",
               }}
             >
-              {redirectCountdown}
+              {content.seconds}
             </Typography>
           </Box>
         ) : (
@@ -179,18 +217,6 @@ export default function SuccessPage() {
             </Typography>
           </Box>
         )}
-
-        {/* <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-          <Button
-            variant="contained"
-            size="large"
-            href="/"
-            component="a"
-            startIcon={<FaHome />}
-          >
-            {content.backHome}
-          </Button>
-        </Box> */}
       </Paper>
     </Container>
   );
