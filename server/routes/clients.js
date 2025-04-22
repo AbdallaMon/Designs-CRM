@@ -527,7 +527,7 @@ router.post("/pay", async (req, res) => {
                   : "٢٩ دولار 💵 – تُخصم بالكامل عند التعاقد",
             },
 
-            unit_amount: req.body.test ? 0 : 2900, // 18000 // 2900
+            unit_amount: 2900, // 18000 // 2900
           },
           quantity: 1,
         },
