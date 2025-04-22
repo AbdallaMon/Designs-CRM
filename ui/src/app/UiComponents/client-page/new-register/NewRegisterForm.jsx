@@ -101,6 +101,7 @@ export function NewRegisterForm() {
         mx: "auto",
         padding: { xs: 2, md: 3 },
         pt: { xs: 10, md: 11 },
+        pb: { xs: 10, md: 11 },
       }}
     >
       {renderSuccess ? (
@@ -129,7 +130,19 @@ export function NewRegisterForm() {
                 letterSpacing: "-0.5px",
               }}
             >
-              {translate("Book Your Consultation")}
+              {translate("Ask for consultation")}
+            </Typography>
+            <Typography
+              variant="h5"
+              component="h4"
+              sx={{
+                fontWeight: 700,
+                color: theme.palette.primary.main,
+                mb: 1,
+                letterSpacing: "-0.5px",
+              }}
+            >
+              {translate("With eng ahmed")}
             </Typography>
             <Typography
               variant="subtitle1"
@@ -140,7 +153,7 @@ export function NewRegisterForm() {
                 mb: 1,
               }}
             >
-              {translate("Make your home your personal brand")}
+              {translate("Planning - Design - Implementation - Consulting")}
             </Typography>
             <Divider
               sx={{
@@ -253,9 +266,89 @@ export function NewRegisterForm() {
                 }}
               />
             </Grid>
-
-            <Grid size={12} mt={2}>
-              <Button
+            <Box
+              sx={{
+                flex: 1,
+                overflowY: "auto",
+              }}
+            >
+              <iframe
+                style={{
+                  width: "100%",
+                  height: isMobile ? "200px" : "300px",
+                  borderRadius: "8px",
+                  border: "none",
+                }}
+                // style={{
+                //   position: "absolute",
+                //   top: 0,
+                //   left: 0,
+                //   width: "100%",
+                //   height: "100%",
+                //   borderRadius: "8px",
+                //   border: "none",
+                // }}
+                src="https://www.youtube.com/embed/n7uwPCkOv28"
+                title="YouTube Shorts video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </Box>
+            <Grid size={12}>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "column" },
+                  alignItems: { xs: "stretch", sm: "center" },
+                  justifyContent: "center",
+                  gap: 2,
+                }}
+              >
+                <Button
+                  variant="contained"
+                  onClick={handleSubmit}
+                  size="large"
+                  fullWidth
+                  sx={{
+                    borderRadius: 2,
+                    padding: "16px",
+                    fontSize: "1.1rem",
+                    fontWeight: 700,
+                    textTransform: "none",
+                    boxShadow: "0 4px 14px rgba(0, 0, 0, 0.1)",
+                    transition: "all 0.3s ease",
+                    display: "flex",
+                    gap: 0.5,
+                    flexDirection: lng === "ar" ? "row" : "row-reverse",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 6px 20px rgba(0, 0, 0, 0.15)",
+                    },
+                  }}
+                >
+                  {lng === "ar" ? (
+                    <IoArrowBackCircleOutline />
+                  ) : (
+                    <IoArrowForwardCircleOutline />
+                  )}
+                  {translate("Book Now 29 DOLLAR")}
+                </Button>
+                <Box sx={{ flex: 1 }}>
+                  <Typography
+                    variant="body1"
+                    fontWeight={500}
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 1,
+                    }}
+                  >
+                    {translate("29 dollars – fully deducted upon contracting.")}{" "}
+                  </Typography>
+                </Box>
+              </Box>
+              {/* <Button
                 variant="contained"
                 onClick={handleSubmit}
                 size="large"
@@ -282,8 +375,8 @@ export function NewRegisterForm() {
                 ) : (
                   <IoArrowForwardCircleOutline />
                 )}
-                {translate("Submit")}
-              </Button>
+                {translate("Book Now 29 DOLLAR")}
+              </Button> */}
             </Grid>
           </Grid>
         </Paper>

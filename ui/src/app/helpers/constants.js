@@ -72,6 +72,9 @@ export const dictionary = {
   "Villa Under Construction": "فيلا تحت الإنشاء",
   "Part of Home": "جزء من المنزل",
   Commercial: "تجاري",
+  "29 dollars – fully deducted upon contracting.":
+    "٢٩ دولار تُخصم بالكامل عند التعاقد",
+  "Book Now 29 DOLLAR": "احجز الان ٢٩ دولار",
 
   "Success!": "نجاح!",
 
@@ -113,6 +116,11 @@ export const dictionary = {
   Max: "الحد الأقصى",
   "Add an attachment": "أضف مرفقًا",
   Submit: "تسجيل",
+  "Submit Now": "سجل الأن",
+  "Ask for consultation": "اطلب استشارة مباشرة",
+  "With eng ahmed": "مع م.أحمد المبيض",
+  "Planning - Design - Implementation - Consulting":
+    "تخطيط - تصميم - تنفيذ - استشارات",
   Success: "تم بنجاح!",
   "Thank you for your submission. We will contact you soon.":
     "شكرًا لك على تقديم طلبك. سنتواصل معك قريبًا.",

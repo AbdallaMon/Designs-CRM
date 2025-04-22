@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect } from "react";
 import {
   Box,
   Typography,
@@ -9,6 +9,7 @@ import {
   useTheme,
   Grid2 as Grid,
   Button,
+  CircularProgress,
 } from "@mui/material";
 
 import colors from "@/app/helpers/colors";
@@ -90,6 +91,36 @@ export function CheckoutPage({ lng, clientLead }) {
         >
           <Box
             sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+              height: 300,
+              borderRadius: 2,
+              p: 4,
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <CircularProgress size={60} sx={{ mb: 3 }} />
+
+              {/* English text */}
+              <Typography variant="h5" fontWeight="bold">
+                {lng === "ar"
+                  ? "جاري التحويل الي صفحة الدفع..."
+                  : "Redirecting to payment page..."}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* <Box
+            sx={{
               position: "relative",
               width: "100%",
               paddingTop: { xs: "177.78%", sm: "56.25%" }, // 16:9 aspect ratio for desktop, 9:16 for mobile
@@ -113,7 +144,7 @@ export function CheckoutPage({ lng, clientLead }) {
               allowFullScreen
             ></iframe>
           </Box>
-          <Box sx={{ height: { xs: 40, md: 80 } }} />
+          <Box sx={{ height: { xs: 40, md: 80 } }} /> */}
         </Box>
 
         <Zoom in={true} timeout={500}>
@@ -155,6 +186,7 @@ function PaymentSection({ payment, clientLead, lng }) {
         clientLeadId={clientLead.id}
         clientId={clientLead.clientId}
         lng={lng}
+        pay={true}
       />
       <Box sx={{ flex: 1 }}>
         <Typography
@@ -179,6 +211,7 @@ export function PayButton({
   clientLeadId,
   clientId,
   lng = "ar",
+  pay,
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -195,6 +228,14 @@ export function PayButton({
       window.location.href = data.url;
     }
   };
+  useEffect(() => {
+    if (lng && clientLeadId && pay) {
+      handlePayment();
+    }
+  }, [lng, clientLeadId]);
+  if (pay) {
+    return <></>;
+  }
   return (
     <Button
       size={isMobile ? "large" : "medium"}

@@ -653,7 +653,7 @@ export function SuccessPage({ lng, clientLead }) {
       window.location.href = `/register/checkout?leadId=${clientLead.id}&clientId=${clientLead.clientId}&lng=${lng}`;
     }
   }, [lng, clientLead]);
-
+  return <></>;
   return (
     <Box
       sx={{

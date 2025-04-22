@@ -54,9 +54,8 @@ export default function SuccessPage() {
           url: `client/payment-status?sessionId=${session_id}&clientLeadId=${clientLeadId}&`,
           setLoading,
         });
-        if (request.status === 200) {
+        if (request && request.status === 200) {
           setStatus(request.paymentStatus);
-
           if (request.paymentStatus === "PAID") {
             const countdownInterval = setInterval(() => {
               setRedirectCountdown((prevCount) => {
