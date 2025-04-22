@@ -1,5 +1,4 @@
 import colors from "@/app/helpers/colors";
-import { ConsultLevels } from "@/app/UiComponents/client-page/consult-levels/ConsultLevels";
 import { CheckoutPage } from "@/app/UiComponents/client-page/new-register/CheckoutPage";
 import { Button, Container, Paper } from "@mui/material";
 import { MdArrowBack } from "react-icons/md";
@@ -42,7 +41,11 @@ export default function page({ searchParams }) {
         >
           <MdArrowBack size={20} />
         </Button>
-        <CheckoutPage lng={lng} clientLead={clientLead} />
+        <CheckoutPage
+          lng={lng}
+          clientLead={clientLead}
+          test={searchParams.test}
+        />
       </Container>
     </Paper>
   );

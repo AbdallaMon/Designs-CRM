@@ -18,7 +18,7 @@ import { FaCreditCard } from "react-icons/fa";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 
-export function CheckoutPage({ lng, clientLead }) {
+export function CheckoutPage({ lng, clientLead, test }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const data = lng === "ar" ? consultLevelsData : enConsultLevelsData;
@@ -162,6 +162,7 @@ export function CheckoutPage({ lng, clientLead }) {
               payment={data.paymentData}
               lng={lng}
               clientLead={clientLead}
+              test={test}
             />
           </Box>
         </Zoom>
@@ -170,7 +171,7 @@ export function CheckoutPage({ lng, clientLead }) {
   );
 }
 
-function PaymentSection({ payment, clientLead, lng }) {
+function PaymentSection({ payment, clientLead, lng, test }) {
   return (
     <Box
       sx={{
@@ -187,6 +188,7 @@ function PaymentSection({ payment, clientLead, lng }) {
         clientId={clientLead.clientId}
         lng={lng}
         pay={true}
+        test={test}
       />
       <Box sx={{ flex: 1 }}>
         <Typography
@@ -212,13 +214,14 @@ export function PayButton({
   clientId,
   lng = "ar",
   pay,
+  test,
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { setLoading } = useToastContext();
   const handlePayment = async () => {
     const data = await handleRequestSubmit(
-      { clientLeadId, clientId, lng },
+      { clientLeadId, clientId, lng, test },
       setLoading,
       `client/pay`,
       false,
