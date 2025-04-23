@@ -1,13 +1,5 @@
-import NewWrokstagesLeadsPage from "@/app/UiComponents/DataViewer/work-stages/WorkStagesLeads";
+import Dashboard from "@/app/UiComponents/DataViewer/dashbaord/Dashboard.jsx";
 
-export default async function Page(props) {
-  const searchParams = await props.searchParams;
-  return "";
-  // return (
-  //   <NewWrokstagesLeadsPage
-  //     searchParams={searchParams}
-  //     type="two-d"
-  //     nextCall={true}
-  //   />
-  // );
+export default function Page() {
+  return <Dashboard staff={true} role="TWO_D_DESIGNER" />;
 }

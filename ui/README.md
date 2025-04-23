@@ -96,20 +96,18 @@
 - For quantity allow admin to add to user what needed from him and also allow user or admin to update what done and when
 - Final price show full price
 - Redirect client to another page for payment to be done after submitting redirect with clientLeadId and clientId
+- Payment notifcation(for client lead)
+- Search users in the leads page has some problems
+- Search client return all client? fix search clients for all users
 
   الميزانية صفر
-  لو دفع الادمن هو الي ينزله
-  لو مدفعش
-
-- Search users in the leads page has some problems
 
 - Dashboard summary for 2d,3d work stages (number of work stages done , area of them and total work stages)
 - Calc time always for each project start and end (when completed)(each project status on its own)
-- show how much area designer worked for current month
-- Add commission to staff and allow admin to clear it
+- Show how much area designer worked for current month
+- Mark a lead with payment staus
 
 - Can add a lead from the admin
-- Create Tasks for designers added by admin
 - Return all payments and what paid and what not
 
 - Notification if new modification added or with each update between users also
@@ -117,12 +115,12 @@
 - Notification for each task created
 - Notification for each project assignment
 - Notification to admin when user change task status
-- Payment notifcation(for client lead)
 
 - Fix pdf
 - Filters
 
 - Commision not when finalized and show total for month
+- Add commission to staff and allow admin to clear it
 
   dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

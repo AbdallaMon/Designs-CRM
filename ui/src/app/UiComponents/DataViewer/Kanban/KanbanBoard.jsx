@@ -65,6 +65,7 @@ const KanbanBoard = ({
               renderKeys={["id", "client.name", "client.phone", "client.email"]}
               mainKey="id"
               searchKey={"id"}
+              localFilters={{ staffId: user.id, userRole: user.role }}
               withParamsChange={true}
             />
             {/* <SearchComponent

@@ -1,16 +1,14 @@
-import { Container} from "@mui/material";
+import { Container } from "@mui/material";
 import Dashboard from "@/app/UiComponents/DataViewer/dashbaord/Dashboard.jsx";
 
 export default async function page(props) {
-      const params = await props.params;
+  const params = await props.params;
+  const searchParams = await props.searchParams;
+  const { id } = params;
 
-      const {
-            id
-      } = params;
-
-      return(
-            <Container maxWidth="xl">
-                  <Dashboard staffId={id} staff={false}/>
-            </Container>
-      )
+  return (
+    <Container maxWidth="xl">
+      <Dashboard staffId={id} staff={false} role={searchParams.role} />
+    </Container>
+  );
 }

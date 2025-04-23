@@ -76,13 +76,14 @@ export async function getClientLeads({
   if (searchParams.checkConsult) {
     where.initialConsult = true;
   }
-  console.log(searchParams, "searchParams");
   if (searchParams.noConsulted && searchParams.noConsulted === "true") {
     where = {
       initialConsult: false,
     };
   }
-  console.log(where, "where");
+  if (filters.id && filters.id !== "all") {
+    where.id = Number(filters.id);
+  }
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { notAllowedCountries: true, role: true },
@@ -1115,6 +1116,157 @@ export const getRecentActivities = async (searchParams) => {
     throw new Error("Unable to fetch recent activities");
   }
 };
+
+// designer dashboard
+export const getDesignerMetrics = async (searchParams) => {
+  try {
+    const userId = searchParams.staffId ? parseInt(searchParams.staffId) : null;
+
+    // Base filter - if userId is provided, filter by that user, otherwise get all
+    const userFilter = userId ? { userId } : {};
+
+    // Get completed projects count
+    const completedProjects = await prisma.project.count({
+      where: {
+        ...userFilter,
+        status: "Completed",
+      },
+    });
+
+    // Get total projects count
+    const totalProjects = await prisma.project.count({
+      where: {
+        ...userFilter,
+      },
+    });
+
+    // Calculate total area of all projects
+    const areaResult = await prisma.project.aggregate({
+      _sum: {
+        area: true,
+      },
+      where: {
+        ...userFilter,
+      },
+    });
+    const totalArea = areaResult._sum.area
+      ? parseFloat(areaResult._sum.area.toFixed(2))
+      : 0;
+
+    // Calculate time spent (in hours)
+    const projectsWithTime = await prisma.project.findMany({
+      where: {
+        ...userFilter,
+        startedAt: { not: null },
+        endedAt: { not: null },
+      },
+      select: {
+        startedAt: true,
+        endedAt: true,
+        createdAt: true,
+      },
+    });
+
+    let totalTimeSpent = 0;
+    projectsWithTime.forEach((project) => {
+      const startTime = new Date(project.startedAt);
+      const endTime = new Date(project.endedAt);
+      const diffInHours = (endTime - startTime) / (1000 * 60 * 60);
+      totalTimeSpent += diffInHours;
+    });
+    totalTimeSpent = parseFloat(totalTimeSpent.toFixed(2));
+
+    // Calculate current month area and time spent
+    const currentMonthStart = dayjs().startOf("month").toDate();
+    const currentMonthEnd = dayjs().endOf("month").toDate();
+
+    const currentMonthAreaResult = await prisma.project.aggregate({
+      _sum: {
+        area: true,
+      },
+      where: {
+        ...userFilter,
+        createdAt: {
+          gte: currentMonthStart,
+          lte: currentMonthEnd,
+        },
+      },
+    });
+    const currentMonthArea = currentMonthAreaResult._sum.area
+      ? parseFloat(currentMonthAreaResult._sum.area.toFixed(2))
+      : 0;
+
+    // Calculate current month time spent
+    let currentMonthTimeSpent = 0;
+    projectsWithTime.forEach((project) => {
+      const projectDate = new Date(project.createdAt);
+      if (projectDate >= currentMonthStart && projectDate <= currentMonthEnd) {
+        const startTime = new Date(project.startedAt);
+        const endTime = new Date(project.endedAt);
+        const diffInHours = (endTime - startTime) / (1000 * 60 * 60);
+        currentMonthTimeSpent += diffInHours;
+      }
+    });
+    currentMonthTimeSpent = parseFloat(currentMonthTimeSpent.toFixed(2));
+
+    // Calculate previous month area and time spent
+    const previousMonthStart = dayjs()
+      .subtract(1, "month")
+      .startOf("month")
+      .toDate();
+    const previousMonthEnd = dayjs()
+      .subtract(1, "month")
+      .endOf("month")
+      .toDate();
+
+    const previousMonthAreaResult = await prisma.project.aggregate({
+      _sum: {
+        area: true,
+      },
+      where: {
+        ...userFilter,
+        createdAt: {
+          gte: previousMonthStart,
+          lte: previousMonthEnd,
+        },
+      },
+    });
+    const previousMonthArea = previousMonthAreaResult._sum.area
+      ? parseFloat(previousMonthAreaResult._sum.area.toFixed(2))
+      : 0;
+
+    // Calculate previous month time spent
+    let previousMonthTimeSpent = 0;
+    projectsWithTime.forEach((project) => {
+      const projectDate = new Date(project.createdAt);
+      if (
+        projectDate >= previousMonthStart &&
+        projectDate <= previousMonthEnd
+      ) {
+        const startTime = new Date(project.startedAt);
+        const endTime = new Date(project.endedAt);
+        const diffInHours = (endTime - startTime) / (1000 * 60 * 60);
+        previousMonthTimeSpent += diffInHours;
+      }
+    });
+    previousMonthTimeSpent = parseFloat(previousMonthTimeSpent.toFixed(2));
+
+    return {
+      completedProjects,
+      totalArea,
+      totalProjects,
+      totalTimeSpent,
+      currentMonthArea,
+      previousMonthArea,
+      currentMonthTimeSpent,
+      previousMonthTimeSpent,
+    };
+  } catch (error) {
+    console.error("Error fetching designer metrics:", error);
+    throw new Error("Unable to fetch designer metrics");
+  }
+};
+// end of designer dashboard
 
 export async function updateClientLeadStatus({
   clientLeadId,
@@ -2351,6 +2503,43 @@ export async function updateProject({ data }) {
   });
 
   return updatedProject;
+}
+
+export async function getUserProjects(searchParams, limit, skip) {
+  const where = {};
+  if (searchParams.userId) {
+    where.userId = Number(searchParams.userId);
+  }
+  if (searchParams.leadId) {
+    searchParams.clientLeadId = Number(searchParams.leadId);
+  }
+  const projects = await prisma.project.findMany({
+    where,
+    take: limit,
+    skip: skip,
+    include: {
+      clientLead: {
+        include: {
+          client: true,
+        },
+      },
+      user: true,
+      tasks: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+  const total = await prisma.project.count({
+    where,
+  });
+  const totalPages = Math.ceil(total / limit);
+  return {
+    data: projects,
+    limit,
+    total,
+    totalPages,
+  };
 }
 
 export async function getTasksWithNotesIncluded({ searchParams }) {

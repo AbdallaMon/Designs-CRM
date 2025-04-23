@@ -21,6 +21,7 @@ import {
   getClientLeads,
   getClientLeadsByDateRange,
   getDashboardLeadStatusData,
+  getDesignerMetrics,
   getEmiratesAnalytics,
   getKeyMetrics,
   getLatestNewLeads,
@@ -36,6 +37,7 @@ import {
   getProjectsByClientLeadId,
   getRecentActivities,
   getTasksWithNotesIncluded,
+  getUserProjects,
   getWorkStageStatus,
   makeExtraServicePayments,
   makePayments,
@@ -393,6 +395,22 @@ router.get("/dashboard/recent-activities", async (req, res) => {
     });
   }
 });
+
+//desginer dashboard
+router.get("/dashboard/designer-metrics", async (req, res) => {
+  try {
+    const searchParams = req.query;
+    const data = await getDesignerMetrics(searchParams);
+    res.status(200).json({ data });
+  } catch (error) {
+    console.error("Error fetching designer metrics:", error);
+    res.status(500).json({
+      message:
+        error.message || "An error occurred while fetching designer metrics.",
+    });
+  }
+});
+// end of desginer dashboard
 router.get("/notifications", async (req, res) => {
   const searchParams = req.query;
   const { limit = 9, skip = 1 } = getPagination(req);
@@ -524,6 +542,26 @@ router.get("/projects", async (req, res) => {
     }
     const projects = await getProjectsByClientLeadId({ searchParams });
     res.status(200).json({ data: projects });
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching work stages leads" });
+  }
+});
+router.get("/projects/user-profile/:userId", async (req, res) => {
+  try {
+    const searchParams = req.query;
+    const { userId } = req.params;
+    searchParams.userId = userId;
+
+    const { limit, skip } = getPagination(req);
+    const projects = await getUserProjects(
+      searchParams,
+      Number(limit),
+      Number(skip)
+    );
+    res.status(200).json(projects);
   } catch (error) {
     console.error("Error fetching projects:", error);
     res

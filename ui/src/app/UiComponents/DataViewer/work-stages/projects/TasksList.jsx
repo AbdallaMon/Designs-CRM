@@ -45,18 +45,17 @@ export const TasksList = ({
   const [taskOpen, setTaskOpen] = useState(false);
 
   useEffect(() => {
+    const loadTasks = async () => {
+      const tasksData = await getData({
+        url: `shared/tasks?projectId=${projectId}&type=${type}&userId=${userId}&clientLeadId=${clientLeadId}&`,
+        setLoading,
+      });
+      if (tasksData && tasksData.status === 200) {
+        setTasks(tasksData.data);
+      }
+    };
     loadTasks();
   }, [clientLeadId, projectId, userId]);
-
-  const loadTasks = async () => {
-    const tasksData = await getData({
-      url: `shared/tasks?projectId=${projectId}&type=${type}&userId=${userId}&clientLeadId=${clientLeadId}&`,
-      setLoading,
-    });
-    if (tasksData.status === 200) {
-      setTasks(tasksData.data);
-    }
-  };
 
   if (loading) {
     return <LinearProgress />;

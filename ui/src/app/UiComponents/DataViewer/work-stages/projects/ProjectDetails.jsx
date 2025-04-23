@@ -18,12 +18,14 @@ import {
   DialogTitle,
   Dialog,
   CircularProgress,
-  Stepper,
-  Step,
-  StepLabel,
-  StepConnector,
-  stepConnectorClasses,
   styled,
+  LinearProgress,
+  Collapse,
+  Divider,
+  Chip,
+  IconButton,
+  Tooltip,
+  Paper,
 } from "@mui/material";
 
 import {
@@ -35,6 +37,13 @@ import {
   MdVisibilityOff,
   MdPause,
   MdError,
+  MdOutlineCalendarToday,
+  MdOutlineSquareFoot,
+  MdPerson,
+  MdOutlineAccessTime,
+  MdCheck,
+  MdKeyboardArrowDown,
+  MdKeyboardArrowUp,
 } from "react-icons/md";
 import { PROJECT_STATUSES } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
@@ -42,94 +51,9 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { TasksList } from "./TasksList";
 import { getData } from "@/app/helpers/functions/getData";
 import dayjs from "dayjs";
+import colors from "@/app/helpers/colors";
 
-// Custom connector for the stepper
-const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
-  [`&.${stepConnectorClasses.alternativeLabel}`]: {
-    top: 22,
-  },
-  [`&.${stepConnectorClasses.active}`]: {
-    [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage: "linear-gradient(to right, #4caf50, #2196f3)",
-    },
-  },
-  [`&.${stepConnectorClasses.completed}`]: {
-    [`& .${stepConnectorClasses.line}`]: {
-      backgroundImage: "linear-gradient(to right, #4caf50, #2196f3)",
-    },
-  },
-  [`& .${stepConnectorClasses.line}`]: {
-    height: 3,
-    border: 0,
-    backgroundColor:
-      theme.palette.mode === "dark" ? theme.palette.grey[800] : "#eaeaf0",
-    borderRadius: 1,
-  },
-}));
-
-// Custom styled step icon
-const ColorlibStepIconRoot = styled("div")(({ theme, ownerState }) => ({
-  backgroundColor:
-    theme.palette.mode === "dark" ? theme.palette.grey[700] : "#ccc",
-  zIndex: 1,
-  color: "#fff",
-  width: 40,
-  height: 40,
-  display: "flex",
-  borderRadius: "50%",
-  justifyContent: "center",
-  alignItems: "center",
-  ...(ownerState.active && {
-    backgroundImage: "linear-gradient(136deg, #2196f3 0%, #4caf50 100%)",
-    boxShadow: "0 4px 10px 0 rgba(0,0,0,.25)",
-  }),
-  ...(ownerState.completed && {
-    backgroundImage: "linear-gradient(136deg, #4caf50 0%, #2196f3 100%)",
-  }),
-  ...(ownerState.status === "hold" && {
-    backgroundImage: "linear-gradient(136deg, #ff9800 0%, #ffc107 100%)",
-  }),
-  ...(ownerState.status === "rejected" && {
-    backgroundImage: "linear-gradient(136deg, #f44336 0%, #e91e63 100%)",
-  }),
-}));
-
-function ColorlibStepIcon(props) {
-  const { active, completed, className, icon, status } = props;
-
-  // Custom icon based on status
-  let displayIcon = String(icon);
-  if (status === "hold") {
-    return (
-      <ColorlibStepIconRoot
-        ownerState={{ active, completed, status }}
-        className={className}
-      >
-        <MdPause />
-      </ColorlibStepIconRoot>
-    );
-  } else if (status === "Rejected") {
-    return (
-      <ColorlibStepIconRoot
-        ownerState={{ active, completed, status }}
-        className={className}
-      >
-        <MdError />
-      </ColorlibStepIconRoot>
-    );
-  }
-
-  return (
-    <ColorlibStepIconRoot
-      ownerState={{ active, completed, status }}
-      className={className}
-    >
-      {displayIcon}
-    </ColorlibStepIconRoot>
-  );
-}
-
-// Progress Tracker Component
+// Project Progress Tracker Component
 const ProjectProgressTracker = ({ project }) => {
   // Filter out Hold and get only completion statuses
   const getCompletionStatuses = (projectType) => {
@@ -141,59 +65,127 @@ const ProjectProgressTracker = ({ project }) => {
   const completionStatuses = getCompletionStatuses(project.type);
   const currentStatusIndex = completionStatuses.indexOf(project.status);
 
+  // Calculate percentage completion
+  const calculatePercentage = () => {
+    if (currentStatusIndex === -1) return 0;
+    if (completionStatuses.length <= 1) return 100;
+    return Math.round(
+      (currentStatusIndex / (completionStatuses.length - 1)) * 100
+    );
+  };
+
+  // Calculate project duration
+  const calculateProjectDuration = (startDate, endDate) => {
+    if (!startDate) {
+      return { text: "Not started yet", color: "text.secondary" };
+    }
+
+    if (!endDate) {
+      const start = dayjs(startDate);
+      const now = dayjs();
+      const days = now.diff(start, "day");
+
+      return {
+        text: `In progress (${days} days so far)`,
+        color: "info.main",
+      };
+    }
+
+    const start = dayjs(startDate);
+    const end = dayjs(endDate);
+    const days = end.diff(start, "day");
+    const months = end.diff(start, "month");
+
+    if (days < 0) {
+      return { text: "Invalid dates", color: "error.main" };
+    }
+
+    if (days > 30) {
+      return {
+        text: `Completed in ${months} ${
+          months === 1 ? "month" : "months"
+        } (${days} days)`,
+        color: "success.main",
+      };
+    }
+
+    return {
+      text: `Completed in ${days} days`,
+      color: "success.main",
+    };
+  };
+
+  const percentageComplete = calculatePercentage();
   const isOnHold = project.status === "Hold";
+  const isRejected = project.status === "Rejected";
+  const duration = calculateProjectDuration(project.startedAt, project.endedAt);
 
   return (
-    <Box sx={{ width: "100%", mb: 2, mt: -0.5 }}>
-      <Typography variant="h6" gutterBottom>
-        {isOnHold && (
-          <Typography component="span" color="warning.main" sx={{ ml: 2 }}>
-            (On Hold)
-          </Typography>
-        )}
-      </Typography>
-      <Stepper
-        alternativeLabel
-        activeStep={currentStatusIndex}
-        connector={<ColorlibConnector />}
-      >
-        {completionStatuses.map((label, index) => {
-          const statusType =
-            project.status === "Hold" && index === currentStatusIndex - 1
-              ? "hold"
-              : project.status === "Rejected"
-              ? "rejected"
-              : "normal";
-
-          return (
-            <Step key={label}>
-              <StepLabel
-                StepIconComponent={ColorlibStepIcon}
-                StepIconProps={{ status: statusType }}
-              >
-                {label}
-              </StepLabel>
-            </Step>
-          );
-        })}
-      </Stepper>
-
-      {/* Additional status info */}
-      {project.status === "Hold" && (
-        <Box sx={{ mt: 2, p: 2, bgcolor: "warning.light", borderRadius: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            This project is currently on hold. Progress will resume when the
-            hold is lifted.
+    <Box sx={{ width: "100%", mb: 2 }}>
+      {/* Status Message for Hold or Rejected */}
+      {isOnHold || isRejected ? (
+        <Box
+          sx={{
+            p: 2,
+            bgcolor: isOnHold ? "warning.light" : "error.light",
+            borderRadius: 1,
+            mb: 1,
+          }}
+        >
+          <Typography variant="body2">
+            {isOnHold
+              ? "This project is currently on hold. Progress will resume when the hold is lifted."
+              : "This project has been rejected and requires attention before proceeding."}
           </Typography>
         </Box>
-      )}
+      ) : (
+        <Box sx={{ mb: 1 }}>
+          {/* Combined Progress and Duration */}
+          <Box
+            sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}
+          >
+            <Typography variant="body2" fontWeight="medium">
+              {percentageComplete}% Complete
+            </Typography>
+            <Typography variant="body2" color={duration.color}>
+              {duration.text}
+            </Typography>
+          </Box>
 
-      {project.status === "Rejected" && (
-        <Box sx={{ mt: 2, p: 2, bgcolor: "error.light", borderRadius: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            This project has been rejected and requires attention before
-            proceeding.
-          </Typography>
+          {/* Progress bar */}
+          <LinearProgress
+            variant="determinate"
+            value={percentageComplete}
+            sx={{ height: 8, borderRadius: 4, mb: 1 }}
+          />
+
+          {/* Ultra simplified stepper - just as a row of dots */}
+          <Box
+            sx={{ display: "flex", justifyContent: "space-between", px: 0.5 }}
+          >
+            {completionStatuses.map((label, index) => (
+              <Box key={label} sx={{ textAlign: "center", flex: 1 }}>
+                <Box
+                  sx={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: "50%",
+                    bgcolor:
+                      index <= currentStatusIndex ? "primary.main" : "grey.300",
+                    mx: "auto",
+                    mb: 0.5,
+                  }}
+                />
+                <Typography
+                  variant="caption"
+                  display="block"
+                  sx={{ fontSize: "0.65rem" }}
+                >
+                  {label}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
         </Box>
       )}
     </Box>
@@ -206,6 +198,7 @@ export const ProjectDetails = ({ project, onUpdate, isStaff }) => {
   const [editedProject, setEditedProject] = useState({ ...project });
   const [open, setOpen] = useState(false);
   const { setLoading } = useToastContext();
+
   const handleInputChange = (field, value) => {
     setEditedProject({
       ...editedProject,
@@ -227,260 +220,330 @@ export const ProjectDetails = ({ project, onUpdate, isStaff }) => {
     );
     if (updatedProject.status === 200) {
       onUpdate(updatedProject.data);
+      setIsEditing(false);
     }
   };
 
   const renderEditForm = () => (
-    <form onSubmit={handleSubmit}>
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <FormControl fullWidth>
-            <InputLabel id="status-label">Status</InputLabel>
-            <Select
-              labelId="status-label"
-              value={editedProject.status}
-              label="Status"
-              onChange={(e) => handleInputChange("status", e.target.value)}
-            >
-              {PROJECT_STATUSES[project.type].map((status) => (
-                <MenuItem key={status} value={status}>
-                  {status}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
+    <Paper sx={{ p: 2, mt: 2 }}>
+      <form onSubmit={handleSubmit}>
+        <Grid container spacing={3}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormControl fullWidth>
+              <InputLabel id="status-label">Status</InputLabel>
+              <Select
+                labelId="status-label"
+                value={editedProject.status}
+                label="Status"
+                onChange={(e) => handleInputChange("status", e.target.value)}
+              >
+                {PROJECT_STATUSES[project.type].map((status) => (
+                  <MenuItem key={status} value={status}>
+                    {status}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
 
-        {/* Priority Field */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <FormControl fullWidth>
-            <InputLabel id="priority-label">Priority</InputLabel>
-            <Select
-              labelId="priority-label"
-              value={editedProject.priority}
-              label="Priority"
-              onChange={(e) => handleInputChange("priority", e.target.value)}
-            >
-              <MenuItem value="VERY_LOW">Very Low</MenuItem>
-              <MenuItem value="LOW">Low</MenuItem>
-              <MenuItem value="MEDIUM">Medium</MenuItem>
-              <MenuItem value="HIGH">High</MenuItem>
-              <MenuItem value="VERY_HIGH">Very High</MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormControl fullWidth>
+              <InputLabel id="priority-label">Priority</InputLabel>
+              <Select
+                labelId="priority-label"
+                value={editedProject.priority}
+                label="Priority"
+                onChange={(e) => handleInputChange("priority", e.target.value)}
+              >
+                <MenuItem value="VERY_LOW">Very Low</MenuItem>
+                <MenuItem value="LOW">Low</MenuItem>
+                <MenuItem value="MEDIUM">Medium</MenuItem>
+                <MenuItem value="HIGH">High</MenuItem>
+                <MenuItem value="VERY_HIGH">Very High</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
 
-        {/* Delivery Time */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <TextField
-            fullWidth
-            label="Delivery Time"
-            type="datetime-local"
-            value={
-              editedProject.deliveryTime
-                ? new Date(editedProject.deliveryTime)
-                    .toISOString()
-                    .slice(0, 16)
-                : ""
-            }
-            onChange={(e) => handleInputChange("deliveryTime", e.target.value)}
-            InputLabelProps={{ shrink: true }}
-          />
-        </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <TextField
+              fullWidth
+              label="Delivery Time"
+              type="datetime-local"
+              value={
+                editedProject.deliveryTime
+                  ? new Date(editedProject.deliveryTime)
+                      .toISOString()
+                      .slice(0, 16)
+                  : ""
+              }
+              onChange={(e) =>
+                handleInputChange("deliveryTime", e.target.value)
+              }
+              InputLabelProps={{ shrink: true }}
+            />
+          </Grid>
 
-        {/* Area */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <TextField
-            fullWidth
-            label="Area (m²)"
-            type="number"
-            inputProps={{ step: 0.01 }}
-            value={editedProject.area || ""}
-            onChange={(e) =>
-              handleInputChange(
-                "area",
-                e.target.value ? parseFloat(e.target.value) : null
-              )
-            }
-          />
-        </Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <TextField
+              fullWidth
+              label="Area (m²)"
+              type="number"
+              inputProps={{ step: 0.01 }}
+              value={editedProject.area || ""}
+              onChange={(e) =>
+                handleInputChange(
+                  "area",
+                  e.target.value ? parseFloat(e.target.value) : null
+                )
+              }
+            />
+          </Grid>
 
-        {/* Buttons */}
-        <Grid size={12}>
-          <Box display="flex" justifyContent="flex-end" gap={2}>
-            <Button
-              variant="outlined"
-              color="secondary"
-              startIcon={<MdCancel />}
-              onClick={() => setIsEditing(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              startIcon={<MdSave />}
-            >
-              Save Changes
-            </Button>
-          </Box>
+          <Grid size={12}>
+            <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
+              <Button
+                variant="outlined"
+                color="secondary"
+                startIcon={<MdCancel />}
+                onClick={() => setIsEditing(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                startIcon={<MdSave />}
+              >
+                Save Changes
+              </Button>
+            </Box>
+          </Grid>
         </Grid>
-      </Grid>
-    </form>
+      </form>
+    </Paper>
   );
 
   const renderProjectInfo = () => (
-    <Grid container spacing={3}>
-      <Grid size={{ xs: 12, md: 6 }}>
-        <Typography variant="subtitle2" color="textSecondary">
-          Status
-        </Typography>
-        <Typography variant="body1">{project.status}</Typography>
-      </Grid>
-
-      <Grid size={{ xs: 12, md: 6 }}>
-        <Typography variant="subtitle2" color="textSecondary">
-          Priority
-        </Typography>
-        <Typography variant="body1">{project.priority}</Typography>
-      </Grid>
-
-      {/* Delivery Time */}
-      <Grid size={{ xs: 12, md: 6 }}>
-        <Typography variant="subtitle2" color="textSecondary">
-          Delivery Time
-        </Typography>
-        <Typography variant="body1">
-          {project.deliveryTime
-            ? dayjs(project.deliveryTime).format("DD/MM/YYYY")
-            : "Not set"}
-        </Typography>
-      </Grid>
-
-      {/* Area */}
-      <Grid size={{ xs: 12, md: 6 }}>
-        <Typography variant="subtitle2" color="textSecondary">
-          Area
-        </Typography>
-        <Typography variant="body1">
-          {project.area ? `${project.area} m²` : "Not set"}
-        </Typography>
-      </Grid>
-      <Grid size={{ xs: 12 }} container spacing={3}>
-        <Grid size={{ xs: 12, md: 8 }}>
-          <Typography variant="subtitle2" color="textSecondary">
-            Designer
-          </Typography>
-          <Typography variant="body1">
-            {project.user
-              ? `${project.user.name} - ${project.user.email}`
-              : "Not set"}
-          </Typography>
-        </Grid>
-        {!isStaff && (
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Button
-              onClick={() => setOpen(true)}
-              variant="outlined"
-              color="primary"
+    <Box sx={{ mt: 2 }}>
+      <Grid container spacing={2}>
+        <Grid size={12}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                bgcolor: "background.paper",
+                p: 1,
+                borderRadius: 1,
+                boxShadow: 1,
+                minWidth: 150,
+              }}
             >
-              {!project.user ? "Assign to" : "Change"} Designer
-            </Button>
-            {open && (
-              <AssignDesignerModal
-                open={open}
-                project={project}
-                setOpen={setOpen}
-                onUpdate={onUpdate}
-              />
-            )}
-          </Grid>
-        )}
-      </Grid>
-      <Grid size={{ xs: 12, md: 6 }}>
-        <Typography variant="subtitle2" color="textSecondary">
-          Start Date
-        </Typography>
-        <Typography variant="body1">
-          {project.startedAt
-            ? dayjs(project.startedAt).format("DD/MM/YYYY")
-            : "Not started"}
-        </Typography>
+              <MdOutlineCalendarToday color={colors.primary} size={20} />
+              <Box sx={{ ml: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Delivery Time
+                </Typography>
+                <Typography variant="body2" fontWeight="medium">
+                  {project.deliveryTime
+                    ? dayjs(project.deliveryTime).format("DD/MM/YYYY")
+                    : "Not set"}
+                </Typography>
+              </Box>
+            </Box>
+
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                bgcolor: "background.paper",
+                p: 1,
+                borderRadius: 1,
+                boxShadow: 1,
+                minWidth: 120,
+              }}
+            >
+              <MdOutlineSquareFoot color={colors.primary} size={20} />
+              <Box sx={{ ml: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Area
+                </Typography>
+                <Typography variant="body2" fontWeight="medium">
+                  {project.area ? `${project.area} m²` : "Not set"}
+                </Typography>
+              </Box>
+            </Box>
+
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                bgcolor: "background.paper",
+                p: 1,
+                borderRadius: 1,
+                boxShadow: 1,
+              }}
+            >
+              <MdOutlineAccessTime color={colors.primary} size={20} />
+              <Box sx={{ ml: 1 }}>
+                <Typography variant="caption" color="text.secondary">
+                  Timeline
+                </Typography>
+                <Typography variant="body2" fontWeight="medium">
+                  {project.startedAt
+                    ? dayjs(project.startedAt).format("DD/MM/YY")
+                    : "Not started"}
+                  {project.endedAt
+                    ? ` - ${dayjs(project.endedAt).format("DD/MM/YY")}`
+                    : " - Ongoing"}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        </Grid>
+
+        <Grid size={12} sx={{ mt: 2 }}>
+          <Paper sx={{ p: 2, bgcolor: "#f5f5f5" }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <MdPerson color={colors.primary} size={20} />
+                <Typography variant="subtitle2" sx={{ ml: 1 }}>
+                  Designer
+                </Typography>
+              </Box>
+
+              {!isStaff && (
+                <Button
+                  onClick={() => setOpen(true)}
+                  variant="outlined"
+                  color="primary"
+                  size="small"
+                >
+                  {!project.user ? "Assign" : "Change"}
+                </Button>
+              )}
+            </Box>
+
+            <Typography variant="body2" sx={{ mt: 1 }}>
+              {project.user
+                ? `${project.user.name} - ${project.user.email}`
+                : "Not assigned yet"}
+            </Typography>
+          </Paper>
+        </Grid>
       </Grid>
 
-      {/* Ended At */}
-      <Grid size={{ xs: 12, md: 6 }}>
-        <Typography variant="subtitle2" color="textSecondary">
-          End Date
-        </Typography>
-        <Typography variant="body1">
-          {project.endedAt
-            ? dayjs(project.endedAt).format("DD/MM/YYYY")
-            : "In progress"}
-        </Typography>
-      </Grid>
-    </Grid>
+      {open && (
+        <AssignDesignerModal
+          open={open}
+          project={project}
+          setOpen={setOpen}
+          onUpdate={onUpdate}
+        />
+      )}
+    </Box>
   );
 
   return (
-    <Box sx={{ mt: 2 }}>
-      <Card>
-        <CardHeader
-          title={project.type.replace(/_/g, " ")}
-          subheader={``}
-          action={
-            <>
-              {!isStaff && (
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  startIcon={isEditing ? <MdCancel /> : <MdEdit />}
-                  onClick={() => {
-                    setIsEditing(!isEditing);
-                    setEditedProject({ ...project });
-                  }}
-                >
-                  {isEditing ? "Cancel" : "Edit Details"}
-                </Button>
-              )}
-            </>
-          }
-        />
-        <CardContent>
-          {/* Add the progress tracker component */}
-          <ProjectProgressTracker project={project} />
+    <>
+      <Box sx={{ mb: 3 }}>
+        <ProjectProgressTracker project={project} />
 
-          {isEditing ? renderEditForm() : renderProjectInfo()}
-        </CardContent>
-      </Card>
+        {isEditing ? (
+          renderEditForm()
+        ) : (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Chip
+                label={project.status}
+                color={
+                  project.status === "Completed"
+                    ? "success"
+                    : project.status === "Hold"
+                    ? "warning"
+                    : project.status === "Rejected"
+                    ? "error"
+                    : "primary"
+                }
+              />
+              <Chip
+                label={project.priority}
+                variant="outlined"
+                color={
+                  project.priority.includes("HIGH") ||
+                  project.priority.includes("VERY_HIGH")
+                    ? "error"
+                    : project.priority.includes("MEDIUM")
+                    ? "warning"
+                    : "success"
+                }
+              />
+            </Box>
+
+            {!isStaff && (
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<MdEdit />}
+                size="small"
+                onClick={() => {
+                  setIsEditing(true);
+                  setEditedProject({ ...project });
+                }}
+              >
+                Edit
+              </Button>
+            )}
+          </Box>
+        )}
+
+        {!isEditing && renderProjectInfo()}
+      </Box>
+
       {!isStaff && (
-        <Card sx={{ mt: 3 }}>
-          <CardHeader
-            title="Tasks"
-            subheader="Manage tasks for this project"
-            action={
-              <Box>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  startIcon={showTasks ? <MdVisibilityOff /> : <MdVisibility />}
-                  onClick={() => setShowTasks(!showTasks)}
-                  sx={{ mr: 1 }}
-                >
-                  {showTasks ? "Hide Tasks" : "Show Tasks"}
-                </Button>
-              </Box>
-            }
-          />
-          {showTasks && (
-            <CardContent>
+        <Paper sx={{ mt: 2, overflow: "hidden" }}>
+          <Box
+            sx={{
+              p: 2,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              cursor: "pointer",
+              bgcolor: "#f9f9f9",
+              borderBottom: showTasks ? "1px solid #e0e0e0" : "none",
+            }}
+            onClick={() => setShowTasks(!showTasks)}
+          >
+            <Typography variant="subtitle1" fontWeight="medium">
+              Project Tasks
+            </Typography>
+            <IconButton size="small">
+              {showTasks ? <MdKeyboardArrowUp /> : <MdKeyboardArrowDown />}
+            </IconButton>
+          </Box>
+
+          <Collapse in={showTasks}>
+            <Box sx={{ p: 2 }}>
               <TasksList projectId={project.id} type="PROJECT" />
-            </CardContent>
-          )}
-        </Card>
+            </Box>
+          </Collapse>
+        </Paper>
       )}
-    </Box>
+    </>
   );
 };
 
@@ -489,6 +552,7 @@ function AssignDesignerModal({ open, setOpen, project, onUpdate }) {
   const [users, setUsers] = useState([]);
   const { setLoading: setToastLoading } = useToastContext();
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     async function getUsers() {
       const usersRequest = await getData({
@@ -502,7 +566,8 @@ function AssignDesignerModal({ open, setOpen, project, onUpdate }) {
     if (open) {
       getUsers();
     }
-  }, [open]);
+  }, [open, project.role]);
+
   const handleDesignerChange = (event) => {
     setDesignerId(event.target.value);
   };
@@ -522,27 +587,26 @@ function AssignDesignerModal({ open, setOpen, project, onUpdate }) {
       setOpen(false);
     }
   };
+
   if (loading) {
     return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        height="400px"
-      >
-        <CircularProgress />
-      </Box>
+      <Dialog open={open} onClose={() => setOpen(false)}>
+        <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
+          <CircularProgress />
+        </Box>
+      </Dialog>
     );
   }
+
   return (
     <Dialog
-      sx={{ width: "400px", maxWidth: "100%" }}
       open={open}
       onClose={() => setOpen(false)}
+      PaperProps={{ sx: { width: "400px", maxWidth: "100%" } }}
     >
       <DialogTitle>Assign Designer</DialogTitle>
       <DialogContent>
-        <FormControl fullWidth>
+        <FormControl fullWidth sx={{ mt: 1 }}>
           <InputLabel id="designer-label">Select Designer</InputLabel>
           <Select
             labelId="designer-label"
@@ -560,7 +624,9 @@ function AssignDesignerModal({ open, setOpen, project, onUpdate }) {
       </DialogContent>
       <DialogActions>
         <Button onClick={() => setOpen(false)}>Cancel</Button>
-        <Button onClick={handleSubmit}>Assign</Button>
+        <Button onClick={handleSubmit} variant="contained">
+          Assign
+        </Button>
       </DialogActions>
     </Dialog>
   );

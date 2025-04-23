@@ -23,7 +23,8 @@ export default function SignInWithDifferentUserRole() {
   useEffect(() => {
     async function getUserRoles() {
       const rolesReq = await getData({ url: "shared/roles", setLoading });
-      if (rolesReq.status === 200) setRoles(rolesReq.data);
+
+      if (rolesReq && rolesReq.status === 200) setRoles(rolesReq.data);
     }
     getUserRoles();
   }, []);

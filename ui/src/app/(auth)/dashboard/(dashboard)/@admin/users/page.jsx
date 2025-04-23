@@ -183,11 +183,14 @@ export default function UsersPage() {
                 subRoles={item.subRoles?.map((r) => r.subRole)}
                 userId={item.id}
               />
-              <Button component={Link} href={"/dashboard/users/" + item.id}>
+              <Button
+                component={Link}
+                href={`/dashboard/users/${item.id}?role=${item.role}&`}
+              >
                 View Details
               </Button>
               <UserRestrictedCountries userId={item.id} />
-              <LastSeen initialLastSeen={item} userId={item.id} />
+              {/* <LastSeen initialLastSeen={item} userId={item.id} /> */}
             </Box>
           </>
         )}

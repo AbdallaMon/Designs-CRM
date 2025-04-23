@@ -92,46 +92,7 @@ export default function Leads() {
             />
           </Box>
         )}
-      >
-        <Box
-          display="flex"
-          width="100%"
-          gap={2}
-          flexWrap="wrap"
-          alignItems="center"
-          justifyContent="space-between"
-          flexDirection={{ xs: "column-reverse", md: "row" }}
-        >
-          <Box
-            display="flex"
-            gap={2}
-            flexWrap="wrap"
-            alignItems="center"
-            flex={1}
-          >
-            <Box sx={{ width: { xs: "100%", md: "fit-content" } }}>
-              <SearchComponent
-                apiEndpoint="search?model=client"
-                setFilters={setFilters}
-                inputLabel="Search by name or phone"
-                renderKeys={["name", "phone"]}
-                mainKey="name"
-                searchKey={"clientId"}
-                withParamsChange={true}
-              />
-            </Box>
-            <Box sx={{ width: { xs: "100%", md: "fit-content" } }}>
-              <FilterSelect
-                options={leadTypes}
-                label={"Lead Type"}
-                loading={false}
-                param={"type"}
-                setFilters={setFilters}
-              />
-            </Box>
-          </Box>
-        </Box>
-      </AdminTable>
+      ></AdminTable>
     </div>
   );
 }

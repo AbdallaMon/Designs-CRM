@@ -256,8 +256,31 @@ export async function searchData(body) {
         },
       };
     }
+    if (
+      parsedFilters.userRole === "STAFF" &&
+      parsedFilters.staffId &&
+      model === "clientLead"
+    ) {
+      where.userId = Number(parsedFilters.staffId);
+    }
+    if (
+      (parsedFilters.userRole === "THREE_D_DESIGNER" ||
+        parsedFilters.userRole === "TWO_D_DESIGNER") &&
+      parsedFilters.staffId &&
+      model === "clientLead"
+    ) {
+      where.projects = {
+        some: {
+          userId: parsedFilters.staffId,
+          role: parsedFilters.userRole,
+        },
+      };
+    }
+    console.log(parsedFilters, "parsedFilters");
   }
+  console.log(filters, "filters");
 
+  console.log(where, "where");
   const selectFields = {
     user: {
       id: true,

@@ -8,7 +8,7 @@ import LastSeen from "../buttons/LastSeen";
 import EditModal from "../models/EditModal";
 import UserRestrictedCountries from "./UserRestrictedCountries";
 
-export default function UserProfile({ id }) {
+export default function UserProfile({ id, role }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   async function getUser() {
@@ -21,6 +21,7 @@ export default function UserProfile({ id }) {
   useEffect(() => {
     getUser();
   }, [id]);
+  console.log(user, "user");
   return (
     <Box mb={2}>
       {loading && <LoadingOverlay />}
@@ -36,17 +37,20 @@ export default function UserProfile({ id }) {
             {!loading && (
               <>
                 <LastSeen initialLastSeen={user.lastSeenAt} userId={user.id} />
-                <UserRestrictedCountries userId={user.id} />
-
-                <UpdateUserMaxLeadsCounts setUser={setUser} user={user} />
-                <Button
-                  variant="outlined"
-                  component="a"
-                  target="_blank"
-                  href={`/dashboard/deals?staffId=${user.id}`}
-                >
-                  View user current deals
-                </Button>
+                {user.role === "STAFF" && (
+                  <>
+                    <UserRestrictedCountries userId={user.id} />
+                    <UpdateUserMaxLeadsCounts setUser={setUser} user={user} />
+                    <Button
+                      variant="outlined"
+                      component="a"
+                      target="_blank"
+                      href={`/dashboard/deals?staffId=${user.id}`}
+                    >
+                      View user current deals
+                    </Button>
+                  </>
+                )}
                 <UserLogs staff={user} staffId={id} />
               </>
             )}
