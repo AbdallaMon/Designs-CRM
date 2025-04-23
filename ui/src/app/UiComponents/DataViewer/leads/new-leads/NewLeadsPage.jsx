@@ -25,7 +25,7 @@ import { FixedData } from "@/app/UiComponents/DataViewer/leads/FixedData.jsx";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { NonConsultedLeads } from "./Non-consulted-leads";
 import UpdateInitialConsultButton from "@/app/UiComponents/buttons/UpdateInitialConsultLead";
-import { MdCheck } from "react-icons/md";
+import { MdCheck, MdHourglassEmpty, MdTimelapse } from "react-icons/md";
 
 export default function NewLeadsPage({ searchParams, staff }) {
   const {
@@ -109,27 +109,25 @@ export function LeadSliderCard({ lead, setData }) {
       }}
     >
       {/* Payment Status Badge */}
-      {isFullyPaid && (
-        <Box
-          sx={{
-            position: "absolute",
-            top: 10,
-            right: 10,
-            backgroundColor: "#4caf50",
-            color: "white",
-            borderRadius: 10,
-            padding: "4px 10px",
-            fontSize: "0.75rem",
-            fontWeight: "bold",
-            display: "flex",
-            alignItems: "center",
-            gap: 0.5,
-          }}
-        >
-          <MdCheck size={16} />
-          Paid
-        </Box>
-      )}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 10,
+          right: 10,
+          backgroundColor: isFullyPaid ? "#4caf50" : "#9e9e9e",
+          color: "white",
+          borderRadius: 10,
+          padding: "4px 10px",
+          fontSize: "0.75rem",
+          fontWeight: "bold",
+          display: "flex",
+          alignItems: "center",
+          gap: 0.5,
+        }}
+      >
+        {isFullyPaid ? <MdCheck size={16} /> : <MdHourglassEmpty size={16} />}
+        {lead.paymentStatus}
+      </Box>
 
       <CardHeader
         title={""}

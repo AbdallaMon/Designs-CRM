@@ -58,7 +58,7 @@ const KanbanBoard = ({
               },
             }}
           >
-            <SearchComponent
+            {/* <SearchComponent
               apiEndpoint="search?model=clientLead"
               setFilters={setFilters}
               inputLabel="Search lead by id ,name or phone"
@@ -67,7 +67,7 @@ const KanbanBoard = ({
               searchKey={"id"}
               localFilters={{ staffId: user.id, userRole: user.role }}
               withParamsChange={true}
-            />
+            /> */}
             {/* <SearchComponent
               apiEndpoint="search?model=client"
               setFilters={setFilters}

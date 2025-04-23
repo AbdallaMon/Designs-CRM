@@ -70,6 +70,7 @@ const DealsKanbanBoard = ({ staffId }) => {
       icon: <FaBusinessTime />,
     },
   ];
+  if (!leads) return;
   return (
     <>
       {currentId && (
