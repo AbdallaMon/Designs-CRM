@@ -64,11 +64,11 @@ const KanbanColumn = ({
   });
 
   const totalValue = leads.reduce(
-    (acc, lead) => acc + parseFloat(lead.price.replace(/,/g, "") || 0),
+    (acc, lead) =>
+      acc + parseFloat(lead?.price ? lead.price.replace(/,/g, "") : 0),
     0
   );
   const statusColor = statusColors[status];
-
   return (
     <Grid
       size={2}
