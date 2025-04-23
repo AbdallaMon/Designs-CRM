@@ -77,7 +77,7 @@ const KanbanBoard = ({
               searchKey={"clientId"}
               withParamsChange={true}
             /> */}
-            {admin && (
+            {/* {admin && (
               <SearchComponent
                 apiEndpoint={`search?model=${type ? type : "STAFF"}`}
                 setFilters={setFilters}
@@ -92,9 +92,9 @@ const KanbanBoard = ({
               noMargin={true}
               setFilters={setFilters}
               lastThreeMonth={true}
-            />
+            /> */}
           </Box>
-          {links && (
+          {/* {links && (
             <Box
               display="flex"
               justifyContent="flex-end"
@@ -117,7 +117,7 @@ const KanbanBoard = ({
                 }}
               />
             </Box>
-          )}
+          )} */}
         </Box>
       </Box>
       <Grid
