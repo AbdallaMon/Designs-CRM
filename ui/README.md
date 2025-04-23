@@ -99,13 +99,12 @@
 - Payment notifcation(for client lead)
 - Search users in the leads page has some problems
 - Search client return all client? fix search clients for all users
-
-  الميزانية صفر
-
 - Dashboard summary for 2d,3d work stages (number of work stages done , area of them and total work stages)
 - Calc time always for each project start and end (when completed)(each project status on its own)
 - Show how much area designer worked for current month
-- Mark a lead with payment staus
+- Mark a lead with payment status
+
+  الميزانية صفر
 
 - Can add a lead from the admin
 - Return all payments and what paid and what not

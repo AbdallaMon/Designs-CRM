@@ -121,7 +121,9 @@ export default function LastSeen({ userId, initialLastSeen, accountant }) {
             <Typography variant="body2" color={isOnline ? "green" : "gray"}>
               {isOnline
                 ? "Online"
-                : `Last seen: ${dayjs(userLog.lastSeenAt).fromNow()}`}
+                : `Last seen: ${
+                    userLog && dayjs(userLog.lastSeenAt).fromNow()
+                  }`}
             </Typography>
           </>
         )}

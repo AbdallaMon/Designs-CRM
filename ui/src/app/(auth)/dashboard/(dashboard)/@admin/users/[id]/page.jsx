@@ -5,7 +5,6 @@ export default async function page(props) {
   const params = await props.params;
   const searchParams = await props.searchParams;
   const { id } = params;
-
   return (
     <Container maxWidth="xl">
       <Dashboard staffId={id} staff={false} role={searchParams.role} />

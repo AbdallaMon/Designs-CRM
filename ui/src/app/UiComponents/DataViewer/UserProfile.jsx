@@ -16,12 +16,14 @@ export default function UserProfile({ id, role }) {
       url: `admin/users/${id}/profile`,
       setLoading,
     });
-    setUser(user.data);
+    if (user) {
+      setUser(user.data);
+    }
   }
   useEffect(() => {
     getUser();
   }, [id]);
-  console.log(user, "user");
+  if (!user) return;
   return (
     <Box mb={2}>
       {loading && <LoadingOverlay />}

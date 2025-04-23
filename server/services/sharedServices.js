@@ -2541,7 +2541,17 @@ export async function getUserProjects(searchParams, limit, skip) {
     totalPages,
   };
 }
-
+export async function getUserRole(userId) {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: Number(userId),
+    },
+    select: {
+      role: true,
+    },
+  });
+  return user;
+}
 export async function getTasksWithNotesIncluded({ searchParams }) {
   const where = {};
   if (searchParams.userId && searchParams.userId !== "null") {

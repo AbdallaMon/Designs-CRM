@@ -26,6 +26,9 @@ import {
   IconButton,
   Tooltip,
   Paper,
+  AppBar,
+  Toolbar,
+  Container,
 } from "@mui/material";
 
 import {
@@ -42,8 +45,8 @@ import {
   MdPerson,
   MdOutlineAccessTime,
   MdCheck,
-  MdKeyboardArrowDown,
-  MdKeyboardArrowUp,
+  MdClose,
+  MdList,
 } from "react-icons/md";
 import { PROJECT_STATUSES } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
@@ -194,7 +197,7 @@ const ProjectProgressTracker = ({ project }) => {
 
 export const ProjectDetails = ({ project, onUpdate, isStaff }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [showTasks, setShowTasks] = useState(false);
+  const [tasksDialogOpen, setTasksDialogOpen] = useState(false);
   const [editedProject, setEditedProject] = useState({ ...project });
   const [open, setOpen] = useState(false);
   const { setLoading } = useToastContext();
@@ -451,6 +454,36 @@ export const ProjectDetails = ({ project, onUpdate, isStaff }) => {
     </Box>
   );
 
+  // Full screen dialog for tasks
+  const TasksDialog = () => (
+    <Dialog
+      fullScreen
+      open={tasksDialogOpen}
+      onClose={() => setTasksDialogOpen(false)}
+    >
+      <AppBar sx={{ position: "relative" }}>
+        <Toolbar>
+          <IconButton
+            edge="start"
+            color="inherit"
+            onClick={() => setTasksDialogOpen(false)}
+            aria-label="close"
+          >
+            <MdClose />
+          </IconButton>
+          <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
+            Project Tasks
+          </Typography>
+        </Toolbar>
+      </AppBar>
+      <DialogContent sx={{ p: 3 }}>
+        <Container maxWidth="lg">
+          <TasksList projectId={project.id} type="PROJECT" />
+        </Container>
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
     <>
       <Box sx={{ mb: 3 }}>
@@ -515,34 +548,21 @@ export const ProjectDetails = ({ project, onUpdate, isStaff }) => {
       </Box>
 
       {!isStaff && (
-        <Paper sx={{ mt: 2, overflow: "hidden" }}>
-          <Box
-            sx={{
-              p: 2,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              cursor: "pointer",
-              bgcolor: "#f9f9f9",
-              borderBottom: showTasks ? "1px solid #e0e0e0" : "none",
-            }}
-            onClick={() => setShowTasks(!showTasks)}
+        <Paper sx={{ mt: 2, p: 2 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<MdList />}
+            fullWidth
+            onClick={() => setTasksDialogOpen(true)}
           >
-            <Typography variant="subtitle1" fontWeight="medium">
-              Project Tasks
-            </Typography>
-            <IconButton size="small">
-              {showTasks ? <MdKeyboardArrowUp /> : <MdKeyboardArrowDown />}
-            </IconButton>
-          </Box>
-
-          <Collapse in={showTasks}>
-            <Box sx={{ p: 2 }}>
-              <TasksList projectId={project.id} type="PROJECT" />
-            </Box>
-          </Collapse>
+            View Project Tasks
+          </Button>
         </Paper>
       )}
+
+      {/* Tasks Dialog */}
+      <TasksDialog />
     </>
   );
 };

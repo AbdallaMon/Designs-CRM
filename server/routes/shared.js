@@ -38,6 +38,7 @@ import {
   getRecentActivities,
   getTasksWithNotesIncluded,
   getUserProjects,
+  getUserRole,
   getWorkStageStatus,
   makeExtraServicePayments,
   makePayments,
@@ -396,6 +397,19 @@ router.get("/dashboard/recent-activities", async (req, res) => {
   }
 });
 
+router.get("/users/role/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const newUser = await getUserRole(userId);
+    res.status(200).json({
+      data: newUser,
+      message: "Restricted countries updated successfully",
+    });
+  } catch (error) {
+    console.error("Error fetching personal info:", error);
+  }
+});
 //desginer dashboard
 router.get("/dashboard/designer-metrics", async (req, res) => {
   try {

@@ -1,7 +1,7 @@
 // pages/dashboard.js
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Grid2 as Grid, Typography, Box } from "@mui/material";
 
 import LeadStatusChart from "@/app/UiComponents/DataViewer/dashbaord/LeadStatusChart.jsx";
@@ -14,8 +14,32 @@ import NewLeadsList from "@/app/UiComponents/DataViewer/dashbaord/NewLeadsList.j
 import RecentActivities from "@/app/UiComponents/DataViewer/dashbaord/RecenteActivity.jsx";
 import UserProfile from "@/app/UiComponents/DataViewer/UserProfile.jsx";
 import DesignerDashboard from "./designers/DesignerDashboard";
+import FullScreenLoader from "../../feedback/loaders/FullscreenLoader";
+import { getData } from "@/app/helpers/functions/getData";
 
-const Dashboard = ({ staff, staffId, role }) => {
+const Dashboard = ({ staff, staffId }) => {
+  const [role, setRole] = useState("STAFF");
+  const [loading, setLoading] = useState(true);
+  console.log(staffId, "staffId");
+  useEffect(() => {
+    async function getUserRole() {
+      const userRequest = await getData({
+        url: `shared/users/role/${staffId}?`,
+        setLoading,
+      });
+      console.log(userRequest, "userRequest");
+      if (userRequest && userRequest.status === 200) {
+        setRole(userRequest.data.role);
+      }
+    }
+
+    if (staffId) {
+      getUserRole();
+    } else {
+      setLoading(false);
+    }
+  }, [staffId]);
+  if (loading) return <FullScreenLoader />;
   return (
     <Box
       sx={{

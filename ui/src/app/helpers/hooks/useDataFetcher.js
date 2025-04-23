@@ -31,14 +31,16 @@ export default function useDataFetcher(url, noArr, initialFilters = {}) {
         sort,
         others,
       });
-      if (res.status !== 200) {
-        setError(res.message);
-      } else {
-        setData(res.data);
-        setTotalPages(res.totalPages);
-        setTotal(res.total);
-        setExtraData(res.extraData);
-        setError(null);
+      if (res) {
+        if (res.status !== 200) {
+          setError(res.message);
+        } else {
+          setData(res.data);
+          setTotalPages(res.totalPages);
+          setTotal(res.total);
+          setExtraData(res.extraData);
+          setError(null);
+        }
       }
     }
 

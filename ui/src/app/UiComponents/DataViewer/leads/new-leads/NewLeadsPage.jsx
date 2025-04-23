@@ -8,6 +8,7 @@ import {
   CardActions,
   CardContent,
   CardHeader,
+  Chip,
   Container,
   Typography,
 } from "@mui/material";
@@ -24,6 +25,7 @@ import { FixedData } from "@/app/UiComponents/DataViewer/leads/FixedData.jsx";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { NonConsultedLeads } from "./Non-consulted-leads";
 import UpdateInitialConsultButton from "@/app/UiComponents/buttons/UpdateInitialConsultLead";
+import { MdCheck } from "react-icons/md";
 
 export default function NewLeadsPage({ searchParams, staff }) {
   const {
@@ -70,6 +72,10 @@ export function LeadSliderCard({ lead, setData }) {
   const formattedDate = dayjs(lead.createdAt).format("YYYY-MM-DD");
   const { user } = useAuth();
   const { setLoading } = useToastContext();
+
+  // Check if the lead is fully paid
+  const isFullyPaid = lead.paymentStatus === "FULLY_PAID";
+
   async function createADeal(lead) {
     const assign = await handleRequestSubmit(
       lead,
@@ -85,18 +91,46 @@ export function LeadSliderCard({ lead, setData }) {
     }
     return assign;
   }
+
   return (
     <Card
       sx={{
-        boxShadow: 3,
+        boxShadow: isFullyPaid
+          ? "0 0 0 2px #4caf50, 0 4px 10px rgba(0,0,0,0.12)"
+          : 3,
         borderRadius: 2,
         padding: 2,
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
         transition: "transform 0.3s ease",
+        position: "relative",
+        backgroundColor: isFullyPaid ? "rgba(76, 175, 80, 0.05)" : "inherit",
       }}
     >
+      {/* Payment Status Badge */}
+      {isFullyPaid && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            backgroundColor: "#4caf50",
+            color: "white",
+            borderRadius: 10,
+            padding: "4px 10px",
+            fontSize: "0.75rem",
+            fontWeight: "bold",
+            display: "flex",
+            alignItems: "center",
+            gap: 0.5,
+          }}
+        >
+          <MdCheck size={16} />
+          Paid
+        </Box>
+      )}
+
       <CardHeader
         title={""}
         titleTypographyProps={{
@@ -143,7 +177,6 @@ export function LeadSliderCard({ lead, setData }) {
         )}
       </CardContent>
 
-      {/* Card Actions */}
       <CardActions sx={{ justifyContent: "flex-end", gap: 1, paddingTop: 1.5 }}>
         {user.role === "STAFF" && (
           <ConfirmWithActionModel

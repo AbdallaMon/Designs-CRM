@@ -1285,6 +1285,7 @@ export async function getUserLogs(userId, month, year) {
     year: requestedYear,
   };
 }
+
 export async function getUserMonthlyTotalHours(userId) {
   // Get the first and last day of the current month
   const startOfMonth = dayjs().startOf("month").toDate();
