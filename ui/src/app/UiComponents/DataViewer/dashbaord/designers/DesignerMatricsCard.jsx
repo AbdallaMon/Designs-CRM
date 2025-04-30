@@ -35,7 +35,6 @@ import { useAuth } from "@/app/providers/AuthProvider";
 const DesignerMetricsCard = ({ staff, staffId }) => {
   const theme = useTheme();
   const { user } = useAuth();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [loading, setLoading] = useState(true);
   const [designerMetrics, setDesignerMetrics] = useState({
     completedProjects: 0,

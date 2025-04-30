@@ -1406,3 +1406,79 @@ export async function updateLeadField({ data, leadId }) {
     throw new Error(e);
   }
 }
+
+export async function deleteALead(leadId) {
+  const clientLeadId = Number(leadId);
+  return await prisma.$transaction(async (prisma) => {
+    try {
+      // Find all associated records
+      const clientLead = await prisma.clientLead.findUnique({
+        where: { id: clientLeadId },
+        include: {
+          payments: true,
+        },
+      });
+
+      if (!clientLead) {
+        throw new Error(`Client Lead with ID ${clientLeadId} not found`);
+      }
+
+      // Step 1: Handle Invoice dependencies first
+      // Get all payments associated with this client lead
+      const paymentIds = clientLead.payments.map((p) => p.id);
+
+      if (paymentIds.length > 0) {
+        // Find all invoices related to these payments
+        const invoices = await prisma.invoice.findMany({
+          where: { paymentId: { in: paymentIds } },
+          include: { notes: true },
+        });
+
+        // Delete notes associated with invoices first
+        for (const invoice of invoices) {
+          if (invoice.notes && invoice.notes.length > 0) {
+            await prisma.note.deleteMany({
+              where: {
+                id: { in: invoice.notes.map((note) => note.id) },
+              },
+            });
+          }
+        }
+
+        // Now delete all invoices
+        await prisma.invoice.deleteMany({
+          where: { paymentId: { in: paymentIds } },
+        });
+      }
+
+      // Step 2: Delete all other related records
+
+      // Delete notes related to various entities
+      await prisma.note.deleteMany({
+        where: { clientLeadId },
+      });
+
+      await prisma.task.deleteMany({ where: { clientLeadId } });
+      await prisma.file.deleteMany({ where: { clientLeadId } });
+      await prisma.notification.deleteMany({ where: { clientLeadId } });
+      await prisma.callReminder.deleteMany({ where: { clientLeadId } });
+      await prisma.extraService.deleteMany({ where: { clientLeadId } });
+      await prisma.workStageStatus.deleteMany({ where: { clientLeadId } });
+      await prisma.priceOffers.deleteMany({ where: { clientLeadId } });
+
+      // Delete projects
+      await prisma.project.deleteMany({ where: { clientLeadId } });
+
+      // Now it's safe to delete payments
+      await prisma.payment.deleteMany({ where: { clientLeadId } });
+
+      // Finally, delete the ClientLead
+      return await prisma.clientLead.delete({
+        where: { id: clientLeadId },
+      });
+    } catch (error) {
+      console.error("Error in transaction:", error);
+      throw error; // Re-throw to let the transaction fail
+    }
+  });
+}

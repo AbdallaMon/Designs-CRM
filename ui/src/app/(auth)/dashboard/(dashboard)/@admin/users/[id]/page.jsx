@@ -7,7 +7,7 @@ export default async function page(props) {
   const { id } = params;
   return (
     <Container maxWidth="xl">
-      <Dashboard staffId={id} staff={false} role={searchParams.role} />
+      <Dashboard staffId={id} staff={false} userRole={searchParams.role} />
     </Container>
   );
 }

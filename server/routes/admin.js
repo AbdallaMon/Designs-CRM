@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getPagination,
+  getTokenData,
   handlePrismaError,
   verifyTokenAndHandleAuthorization,
 } from "../services/utility.js";
@@ -10,6 +11,7 @@ import {
   createLeadFromExcelData,
   createStaffUser,
   deleteAFixedData,
+  deleteALead,
   editAFixedData,
   editStaffUser,
   generateExcelReport,
@@ -351,6 +353,25 @@ router.post("/leads/update/:id", async (req, res) => {
     res.status(200).json({
       data: updatedLead,
       message: "Lead updated successfully",
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({ message: e.message });
+  }
+});
+router.delete("/client-leads/:id", async (req, res) => {
+  try {
+    const token = await getTokenData(req, res);
+    console.log(req.params, "params");
+    const { id } = req.params;
+    if (token.role !== "ADMIN") {
+      throw new Error("Not allowed");
+    }
+    const deletedLead = await deleteALead(id);
+
+    res.status(200).json({
+      data: deletedLead,
+      message: "Lead Deleted successfully",
     });
   } catch (e) {
     console.log(e, "e");

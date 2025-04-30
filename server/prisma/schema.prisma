@@ -308,7 +308,7 @@ model Task {
 
 model Payment {
   id             Int        @id @default(autoincrement())
-  clientLead     ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLead     ClientLead @relation(fields: [clientLeadId], references: [id],onDelete: Cascade)
   clientLeadId   Int
   status         PaymentStatus @default(PENDING)
   amount         Decimal    @db.Decimal(10, 2)
@@ -325,7 +325,7 @@ model Payment {
 // Invoice Model
 model Invoice {
   id          Int        @id @default(autoincrement())
-  payment     Payment    @relation(fields: [paymentId], references: [id])
+  payment     Payment    @relation(fields: [paymentId], references: [id], onDelete: Cascade)
   paymentId   Int
   issuedDate  DateTime   @default(now())
   amount      Decimal    @db.Decimal(10, 2)

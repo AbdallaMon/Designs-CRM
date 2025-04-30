@@ -386,6 +386,12 @@ function CreatTaskModel({
       setAlertError("Title and description are required");
       return;
     }
+    const data = {
+      title,
+      dueDate,
+      description,
+      priority,
+    };
     if (projectId) {
       data.projectId = projectId;
     }
@@ -396,7 +402,7 @@ function CreatTaskModel({
       data.type = type;
     }
     const request = await handleRequestSubmit(
-      { title, dueDate, description, priority },
+      data,
       setLoading,
       `shared/tasks`,
       false,

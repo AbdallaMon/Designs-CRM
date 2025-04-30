@@ -613,8 +613,11 @@ router.put("/projects/:id/assign-designer", async (req, res) => {
 });
 router.put("/client-leads/designers/:leadId/status", async (req, res) => {
   try {
+    const token = getTokenData(req, res);
+    const isAdmin = token.role === "ADMIN" || token.role === "SUPER_ADMIN";
     await updateProject({
       data: req.body,
+      isAdmin,
     });
 
     res.status(200).json({
@@ -650,10 +653,16 @@ router.post("/tasks", async (req, res) => {
     const token = getTokenData(req, res);
     const task = req.body;
     task.createdById = Number(token.id);
-    const newTask = await createNewTask({ data: task });
+    const isAdmin = token.role === "ADMIN" || token.role === "SUPER_ADMIN";
+    const newTask = await createNewTask({
+      data: task,
+      isAdmin,
+      staffId: token.id,
+    });
+    const name = newTask.type === "MODIFICATION" ? "Modification" : "Task";
     res
       .status(200)
-      .json({ data: newTask, message: "Task created successfully" });
+      .json({ data: newTask, message: `${name} created successfully` });
   } catch (error) {
     console.error("Error updating work stage status:", error);
     res.status(500).json({ message: error.message });
@@ -661,12 +670,22 @@ router.post("/tasks", async (req, res) => {
 });
 router.put("/tasks/:taskId", async (req, res) => {
   try {
+    const token = getTokenData(req, res);
+
     const { taskId } = req.params;
     const task = req.body;
-    const newTask = await updateTask({ data: task, taskId });
+    const isAdmin = token.role === "ADMIN" || token.role === "SUPER_ADMIN";
+    const newTask = await updateTask({
+      data: task,
+      taskId,
+      isAdmin,
+      userId: token.id,
+    });
+    const name = newTask.type === "MODIFICATION" ? "Modification" : "Task";
+
     res
       .status(200)
-      .json({ data: newTask, message: "Task updated successfully" });
+      .json({ data: newTask, message: `${name} updated successfully` });
   } catch (error) {
     console.error("Error updating work stage status:", error);
     res.status(500).json({ message: error.message });
@@ -675,7 +694,6 @@ router.put("/tasks/:taskId", async (req, res) => {
 router.get("/notes", async (req, res) => {
   try {
     const searchParams = req.query;
-    console.log(searchParams, "searchParams");
     const notes = await getNotes(searchParams);
     res.status(200).json({ data: notes });
   } catch (error) {
@@ -686,10 +704,12 @@ router.get("/notes", async (req, res) => {
 router.post("/notes", async (req, res) => {
   try {
     const token = getTokenData(req, res);
+    const isAdmin = token.role === "ADMIN" || token.role === "SUPER_ADMIN";
 
     const newNote = await addNote({
       ...req.body,
       userId: token.id,
+      isAdmin,
     });
     res.status(200).json(newNote);
   } catch (error) {

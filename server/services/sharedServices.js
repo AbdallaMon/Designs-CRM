@@ -5,11 +5,16 @@ import {
   assignWorkStageNotification,
   convertALeadNotification,
   finalizedLeadCreated,
+  newProjectAssingmentNotification,
+  newTaskCreatedNotification,
   overdueALeadNotification,
   updateLeadStatusNotification,
+  updateProjectNotification,
+  updateTaskNotification,
   updateWorkStageStatusNotification,
 } from "./notification.js";
 import { ClientLeadStatus, LeadWorkStages } from "./enums.js";
+import { dealsLink } from "./links.js";
 
 export async function getClientLeads({
   limit = 1,
@@ -2459,9 +2464,15 @@ export async function assignProjectToUser({ projectId, userId }) {
       },
     },
   });
+  const content = project.clientLeadId
+    ? `This project is also linked to a lead <a href="${
+        dealsLink + "/" + project.clientLeadId
+      }" >#${project.clientLeadId}</a> `
+    : "";
+  await newProjectAssingmentNotification(project.id, project.user.id, content);
   return project;
 }
-export async function updateProject({ data }) {
+export async function updateProject({ data, isAdmin }) {
   const { id, status, deliveryTime, ...rest } = data;
   if (data.oldStatus) {
     if (
@@ -2491,7 +2502,6 @@ export async function updateProject({ data }) {
     ...(status === "Completed" && { endedAt: new Date() }),
   };
 
-  console.log(updatedData, "updated data");
   delete updatedData.id;
   delete updatedData.userId;
 
@@ -2501,7 +2511,26 @@ export async function updateProject({ data }) {
     where: { id: Number(id) },
     data: updatedData,
   });
-
+  const project = await prisma.project.findUnique({
+    where: { id: Number(id) },
+  });
+  const content = updatedData.status
+    ? `Project status has been changed to ${project.status}`
+    : updatedData.priority
+    ? `Project priority has been changed to ${project.priority}`
+    : "New updates on the project";
+  let extra = "";
+  if (project.clientLeadId) {
+    extra = ` This project is also linked to a lead <a href="${
+      dealsLink + "/" + project.clientLeadId
+    }" >#${project.clientLeadId}</a> `;
+  }
+  await updateProjectNotification(
+    project.id,
+    project.userId,
+    content + extra,
+    isAdmin
+  );
   return updatedProject;
 }
 
@@ -2583,7 +2612,7 @@ export async function getTasksWithNotesIncluded({ searchParams }) {
   return tasks;
 }
 
-export async function createNewTask({ data }) {
+export async function createNewTask({ data, isAdmin = false, staffId }) {
   const { userId, projectId, ...rest } = data;
   const createdTask = await prisma.task.create({
     data: {
@@ -2591,8 +2620,17 @@ export async function createNewTask({ data }) {
     },
   });
   const update = {};
+  let project = null;
   if (projectId) {
     update.projectId = Number(projectId);
+    project = await prisma.project.findUnique({
+      where: {
+        id: Number(projectId),
+      },
+      select: {
+        userId: true,
+      },
+    });
   }
   if (userId) {
     update.userId = Number(userId);
@@ -2600,7 +2638,7 @@ export async function createNewTask({ data }) {
   if (Object.keys(update).length > 0) {
     await prisma.task.update({
       where: {
-        id: newTask.id,
+        id: createdTask.id,
       },
       data: update,
     });
@@ -2622,13 +2660,58 @@ export async function createNewTask({ data }) {
       id: createdTask.id,
     },
   });
+  await newTaskCreatedNotification(
+    newTask.id,
+    project && project.userId
+      ? project.userId
+      : staffId && !isAdmin
+      ? staffId
+      : null,
+    projectId,
+    newTask.title,
+    isAdmin,
+    newTask.type === "MODIFICATION"
+  );
+
   return newTask;
 }
-export async function updateTask({ data, taskId }) {
+export async function updateTask({ data, taskId, isAdmin = false, userId }) {
   const updatedTask = await prisma.task.update({
     where: { id: Number(taskId) },
     data,
   });
+  const task = await prisma.task.findUnique({
+    where: {
+      id: Number(taskId),
+    },
+    select: {
+      id: true,
+      projectId: true,
+      title: true,
+    },
+  });
+  let project = null;
+  if (task.projectId) {
+    project = await prisma.project.findUnique({
+      where: {
+        id: Number(task.projectId),
+      },
+      select: { userId: true },
+    });
+  }
+  await updateTaskNotification(
+    task.id,
+    project && project.userId
+      ? project.userId
+      : userId && !isAdmin
+      ? userId
+      : null,
+    task.projectId,
+    task.title,
+    isAdmin,
+    task.type === "MODIFICATION"
+  );
+
   return updatedTask;
 }
 export async function getNotes({ idKey, id }) {
@@ -2654,7 +2737,14 @@ export async function getNotes({ idKey, id }) {
   });
   return notes;
 }
-export async function addNote({ attachment, userId, content, idKey, id }) {
+export async function addNote({
+  attachment,
+  userId,
+  content,
+  idKey,
+  id,
+  isAdmin,
+}) {
   const data = {
     content,
     userId: Number(userId),
@@ -2667,6 +2757,14 @@ export async function addNote({ attachment, userId, content, idKey, id }) {
   const note = await prisma.note.create({
     data,
   });
+  const actualNote = await prisma.note.findUnique({
+    where: {
+      id: Number(note.id),
+    },
+  });
+  if (actualNote.taskId) {
+    await updateTask({ data: {}, taskId: actualNote.taskId, isAdmin, userId });
+  }
 
   return { data: note, message: "Note created successfully" };
 }

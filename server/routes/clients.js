@@ -8,7 +8,6 @@ import {
   newLeadCompletedNotification,
   newLeadNotification,
 } from "../services/notification.js";
-import axios from "axios";
 import dayjs from "dayjs";
 import Stripe from "stripe";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);

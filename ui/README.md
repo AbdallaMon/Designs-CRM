@@ -103,20 +103,19 @@
 - Calc time always for each project start and end (when completed)(each project status on its own)
 - Show how much area designer worked for current month
 - Mark a lead with payment status
-
-  الميزانية صفر
+- Notification if new modification added or with each update between users also
+- Notification for each task created
+- Notification to admin when user change task status
+- Notification for each project assignment
 
 - Can add a lead from the admin
 - Return all payments and what paid and what not
+- Allow admin to delete a lead
 
-- Notification if new modification added or with each update between users also
-- Show notications on desktop
-- Notification for each task created
-- Notification for each project assignment
-- Notification to admin when user change task status
+- Create a page that render task details
+- Create a page that render project details
 
 - Fix pdf
-- Filters
 
 - Commision not when finalized and show total for month
 - Add commission to staff and allow admin to clear it

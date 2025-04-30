@@ -72,6 +72,7 @@ import { LeadContactInfo } from "./extra/LeadContactInfo";
 import { LeadInfo } from "./extra/LeadInfo";
 import { PreviewLead } from "./extra/PreviewLead";
 import UpdateInitialConsultButton from "../../buttons/UpdateInitialConsultLead";
+import DeleteModal from "../../models/DeleteModal";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -220,6 +221,7 @@ const LeadContent = ({
       </Alert>
     );
   }
+
   return (
     <>
       {isPage && user.id !== lead.userId ? (
@@ -434,6 +436,15 @@ const LeadContent = ({
                   </>
                 )}
               </>
+            )}
+            {user.role === "ADMIN" && (
+              <DeleteModal
+                item={lead}
+                href={"admin/client-leads"}
+                handleClose={() => {
+                  window.location.reload();
+                }}
+              />
             )}
             <Button onClick={() => generatePDF(lead, user)}>
               Generate pdf

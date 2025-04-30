@@ -17,17 +17,15 @@ import DesignerDashboard from "./designers/DesignerDashboard";
 import FullScreenLoader from "../../feedback/loaders/FullscreenLoader";
 import { getData } from "@/app/helpers/functions/getData";
 
-const Dashboard = ({ staff, staffId }) => {
-  const [role, setRole] = useState("STAFF");
+const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {
+  const [role, setRole] = useState(userRole);
   const [loading, setLoading] = useState(true);
-  console.log(staffId, "staffId");
   useEffect(() => {
     async function getUserRole() {
       const userRequest = await getData({
         url: `shared/users/role/${staffId}?`,
         setLoading,
       });
-      console.log(userRequest, "userRequest");
       if (userRequest && userRequest.status === 200) {
         setRole(userRequest.data.role);
       }
