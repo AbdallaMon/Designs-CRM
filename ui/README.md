@@ -107,13 +107,13 @@
 - Notification for each task created
 - Notification to admin when user change task status
 - Notification for each project assignment
-
-- Can add a lead from the admin
-- Return all payments and what paid and what not
 - Allow admin to delete a lead
 
+- Can add a lead from the admin
 - Create a page that render task details
 - Create a page that render project details
+- Commission and pdf part
+- Return all payments and what paid and what not
 
 - Fix pdf
 

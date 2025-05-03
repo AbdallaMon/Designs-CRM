@@ -130,7 +130,7 @@ export function NewRegisterForm() {
                 letterSpacing: "-0.5px",
               }}
             >
-              {translate("Ask for consultation")}
+              {translate("Book a meeting")}
             </Typography>
             <Typography
               variant="h5"
@@ -155,7 +155,7 @@ export function NewRegisterForm() {
             >
               {translate("Planning - Design - Implementation - Consulting")}
             </Typography>
-            <Divider
+            {/* <Divider
               sx={{
                 width: "60px",
                 mx: "auto",
@@ -163,7 +163,7 @@ export function NewRegisterForm() {
                 borderColor: theme.palette.primary.main,
                 mb: 4,
               }}
-            />
+            /> */}
           </Box>
 
           <Grid container spacing={3}>

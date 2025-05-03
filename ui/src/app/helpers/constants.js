@@ -117,7 +117,7 @@ export const dictionary = {
   "Add an attachment": "أضف مرفقًا",
   Submit: "تسجيل",
   "Submit Now": "سجل الأن",
-  "Ask for consultation": "اطلب استشارة مباشرة",
+  "Book a meeting": "احجز اجتماع",
   "With eng ahmed": "مع م.أحمد المبيض",
   "Planning - Design - Implementation - Consulting":
     "تخطيط - تصميم - تنفيذ - استشارات",
