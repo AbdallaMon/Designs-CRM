@@ -11,6 +11,7 @@ import {
   CircularProgress,
   Paper,
   Alert,
+  Container,
 } from "@mui/material";
 
 import { RelatedLinks } from "./RelatedLinks";
@@ -90,7 +91,7 @@ export default function TaskDetails({ id }) {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Container maxWidth="lg">
       <Box
         sx={{
           display: "flex",
@@ -99,11 +100,17 @@ export default function TaskDetails({ id }) {
           mb: 3,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
           <Typography variant="h4" component="h1">
             Task Details
           </Typography>
           <TaskActions name={"Task"} setTask={setTask} task={task} />
+          <NotesComponent
+            idKey={"taskId"}
+            id={task.id}
+            slug="shared"
+            showAddNotes={true}
+          />
         </Box>
 
         <Button variant="outlined" onClick={() => window.history.back()}>
@@ -200,22 +207,14 @@ export default function TaskDetails({ id }) {
               </Typography>
             </Box>
           </Paper>
-
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
           <RelatedLinks
             projectId={task.projectId}
             clientLeadId={task.clientLeadId}
           />
         </Grid>
-
-        <Grid size={12}>
-          <NotesComponent
-            idKey={"taskId"}
-            id={task.id}
-            slug="shared"
-            showAddNotes={true}
-          />
-        </Grid>
       </Grid>
-    </Box>
+    </Container>
   );
 }

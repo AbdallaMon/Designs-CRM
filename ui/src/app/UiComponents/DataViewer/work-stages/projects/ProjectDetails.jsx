@@ -103,7 +103,9 @@ const ProjectProgressTracker = ({ project }) => {
     const end = dayjs(endDate);
     const days = end.diff(start, "day");
     const months = end.diff(start, "month");
-
+    console.log(days, months, "days months");
+    console.log(start, end, "start end");
+    console.log(startDate, endDate, "startDate endDate");
     if (days < 0) {
       return { text: "Invalid dates", color: "error.main" };
     }

@@ -17,7 +17,6 @@ export default function ProjectPage({ id, isStaff }) {
         url: `shared/projects/${id}`,
         setLoading,
       });
-      console.log(res, "res");
       if (res && res.status === 200) {
         setProject(res.data);
       }

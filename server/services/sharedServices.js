@@ -664,8 +664,6 @@ export const getKeyMetrics = async (searchParams) => {
       totalProcessedLeadsCount > 0
         ? ((successLeadsCount / totalProcessedLeadsCount) * 100).toFixed(2)
         : "0.00";
-    console.log(staffFilter, "staffFilter");
-    console.log(searchParams, "searchParams");
 
     const commissions = await prisma.commission.aggregate({
       where: staffFilter,
