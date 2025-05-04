@@ -6,5 +6,5 @@ export default async function page(props) {
 
   const { id } = params;
 
-  return <PreviewWorkStage type="two-d" open={true} page={true} id={id} />;
+  return <PreviewWorkStage type="three-d" open={true} page={true} id={id} />;
 }

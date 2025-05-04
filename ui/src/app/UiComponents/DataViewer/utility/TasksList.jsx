@@ -21,17 +21,23 @@ import {
   Menu,
 } from "@mui/material";
 
-import { MdEdit, MdExpandLess, MdExpandMore, MdTask } from "react-icons/md";
+import {
+  MdAccessTime,
+  MdEdit,
+  MdExpandLess,
+  MdExpandMore,
+  MdTask,
+} from "react-icons/md";
 import { getData } from "@/app/helpers/functions/getData";
 import dayjs from "dayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { useAlertContext } from "@/app/providers/MuiAlert";
-import { AddNotes, Notes } from "../../accountant/Notes";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { PRIORITY, TASKSTATUS } from "@/app/helpers/constants";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { TaskActions } from "./TaskActions";
+import { NotesComponent } from "./Notes";
 
 export const TasksList = ({
   projectId = null,
@@ -125,64 +131,6 @@ const TaskItem = ({ task, setTasks, name }) => {
   const { setLoading } = useToastContext();
   const { setAlertError } = useAlertContext();
   const { user } = useAuth();
-  async function handleMenuClose(value, type) {
-    if (
-      user.role !== "ADMIN" &&
-      user.role !== "SUPER_ADMIN" &&
-      type === "priority" &&
-      user.id !== task.createdById
-    ) {
-      setAlertError(
-        `You are not allowed to change this ${name} priority only ${name} status can be changed`
-      );
-      return;
-    }
-    const request = await handleRequestSubmit(
-      { [type]: value },
-      setLoading,
-      `shared/tasks/${task.id}`,
-      false,
-      "Updating",
-      false,
-      "PUT"
-    );
-    if (request.status === 200) {
-      setTasks((prev) =>
-        prev.map((t) => (t.id === task.id ? { ...t, [type]: value } : t))
-      );
-      setAnchorEl(null);
-      setOpen({ ...open, [type]: false });
-    }
-  }
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case "VERY_HIGH":
-        return "error";
-      case "HIGH":
-        return "warning";
-      case "MEDIUM":
-        return "info";
-      case "LOW":
-        return "success";
-      case "VERY_LOW":
-        return "default";
-      default:
-        return "default";
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "TODO":
-        return "default";
-      case "IN_PROGRESS":
-        return "primary";
-      case "COMPLETED":
-        return "success";
-      default:
-        return "default";
-    }
-  };
 
   return (
     <Card sx={{ mb: 2 }}>
@@ -194,77 +142,7 @@ const TaskItem = ({ task, setTasks, name }) => {
             justifyContent="space-between"
           >
             <Typography variant="subtitle1">{task.title}</Typography>
-            <Box>
-              <Chip
-                label={task.status}
-                color={getStatusColor(task.status)}
-                icon={<MdEdit />}
-                onClick={(event) => {
-                  setAnchorEl(event.currentTarget);
-                  setOpen({ status: true, priority: false });
-                }}
-                sx={{ mr: 1 }}
-              />
-              <Menu
-                id="basic-menu"
-                anchorEl={anchorEl}
-                open={open["status"]}
-                icon={<MdEdit />}
-                onClose={() => {
-                  setAnchorEl(null);
-                  setOpen({ status: false, priority: false });
-                }}
-                MenuListProps={{
-                  "aria-labelledby": "basic-button",
-                }}
-              >
-                {TASKSTATUS.map((status) => (
-                  <MenuItem
-                    key={status}
-                    value={status}
-                    onClick={() => handleMenuClose(status, "status")}
-                  >
-                    {status}
-                  </MenuItem>
-                ))}
-              </Menu>
-              <Chip
-                open={open["priority"]}
-                label={task.priority}
-                color={getPriorityColor(task.priority)}
-                icon={<MdEdit />}
-                onClose={() => {
-                  setAnchorEl(null);
-                  setOpen({ status: false, priority: false });
-                }}
-                onClick={(event) => {
-                  setAnchorEl(event.currentTarget);
-                  setOpen({ status: false, priority: true });
-                }}
-              />
-              <Menu
-                id="basic-menu"
-                anchorEl={anchorEl}
-                open={open["priority"]}
-                onClose={() => {
-                  setAnchorEl(null);
-                  setOpen({ status: false, priority: false });
-                }}
-                MenuListProps={{
-                  "aria-labelledby": "basic-button",
-                }}
-              >
-                {PRIORITY.map((priority) => (
-                  <MenuItem
-                    key={priority}
-                    value={priority}
-                    onClick={() => handleMenuClose(priority, "priority")}
-                  >
-                    {priority}
-                  </MenuItem>
-                ))}
-              </Menu>
-            </Box>
+            <TaskActions name={name} task={task} setTasks={setTasks} />
           </Box>
         }
         subheader={
@@ -285,6 +163,12 @@ const TaskItem = ({ task, setTasks, name }) => {
                   : task.createdBy.name
                 : "Not set"}
             </Typography>
+            {task.finishedAt && (
+              <Typography variant="caption" color="textSecondary">
+                {" "}
+                Finished At: {dayjs(task.finishedAt).format("DD/MM/YYYY")}
+              </Typography>
+            )}
           </>
         }
         action={
@@ -312,18 +196,12 @@ const TaskItem = ({ task, setTasks, name }) => {
           <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
             Notes
           </Typography>
-          <Notes idKey={"taskId"} id={task.id} slug="shared" />
-
-          <Box display="flex" justifyContent="flex-end" mt={2} gap={1}>
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <AddNotes
-                idKey={"taskId"}
-                id={task.id}
-                mustAddFile={false}
-                slug="shared"
-              />
-            </Box>
-          </Box>
+          <NotesComponent
+            showAddNotes={true}
+            idKey={"taskId"}
+            id={task.id}
+            slug="shared"
+          />
         </CardContent>
       </Collapse>
     </Card>

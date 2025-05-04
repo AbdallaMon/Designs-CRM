@@ -108,17 +108,19 @@
 - Notification to admin when user change task status
 - Notification for each project assignment
 - Allow admin to delete a lead
-
 - Can add a lead from the admin
 - Create a page that render task details
 - Create a page that render project details
-- Commission and pdf part
-- Return all payments and what paid and what not
-
-- Fix pdf
-
+- Notification after each task created for users related to this project
 - Commision not when finalized and show total for month
 - Add commission to staff and allow admin to clear it
+- add finsihed at to tasks and prevent change it from done by user only by admin
+
+- Return all payments and what paid and what not
+- Fix pdf
+
+- utility:
+- allow admin to generate payment page with clientLead id
 
   dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

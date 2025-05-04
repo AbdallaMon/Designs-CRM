@@ -1482,3 +1482,143 @@ export async function deleteALead(leadId) {
     }
   });
 }
+
+// commissions
+export async function getCommissionByUserId(userId) {
+  const userIdNumber = parseInt(userId, 10);
+  const eligibleLeads = await prisma.clientLead.findMany({
+    where: {
+      userId: userIdNumber,
+      status: "FINALIZED",
+      commissionCleared: false,
+      averagePrice: {
+        not: null,
+      },
+    },
+  });
+  for (const lead of eligibleLeads) {
+    const existingCommission = await prisma.commission.findFirst({
+      where: {
+        leadId: lead.id,
+        userId: userIdNumber,
+      },
+    });
+
+    if (!existingCommission && lead.averagePrice) {
+      const commissionAmount = parseFloat(lead.averagePrice) * 0.05;
+
+      await prisma.commission.create({
+        data: {
+          userId: userIdNumber,
+          leadId: lead.id,
+          amount: commissionAmount,
+          amountPaid: 0,
+          isCleared: false,
+        },
+      });
+
+      await prisma.clientLead.update({
+        where: { id: lead.id },
+        data: { commissionCleared: true },
+      });
+    }
+  }
+  const commissions = await prisma.commission.findMany({
+    where: {
+      userId: userIdNumber,
+    },
+    select: {
+      id: true,
+      amount: true,
+      amountPaid: true,
+      isCleared: true,
+      createdAt: true,
+      leadId: true,
+      userId: true,
+      commissionReason: true,
+
+      lead: {
+        select: {
+          id: true,
+          client: {
+            select: {
+              name: true,
+              phone: true,
+            },
+          },
+        },
+      },
+    },
+  });
+  return commissions;
+}
+
+export async function updateCommission({ commissionId, amount }) {
+  const commissionIdNumber = parseInt(commissionId, 10);
+  const paymentAmount = parseFloat(amount);
+  if (isNaN(commissionIdNumber) || isNaN(paymentAmount) || paymentAmount <= 0) {
+    throw new Error("Invalid commission ID or payment amount");
+  }
+
+  const commission = await prisma.commission.findUnique({
+    where: { id: commissionIdNumber },
+  });
+  const remainingAmount =
+    parseFloat(commission.amount) - parseFloat(commission.amountPaid);
+
+  if (paymentAmount > remainingAmount) {
+    throw new Error("Payment amount exceeds remaining balance");
+  }
+  const newAmountPaid = parseFloat(commission.amountPaid) + paymentAmount;
+
+  const isCleared = newAmountPaid >= parseFloat(commission.amount);
+  await prisma.commission.update({
+    where: { id: commissionIdNumber },
+    data: {
+      amountPaid: newAmountPaid,
+      isCleared: isCleared,
+    },
+  });
+  return await prisma.commission.findUnique({
+    where: {
+      id: commissionIdNumber,
+    },
+  });
+}
+export async function createCommissionByAdmin({
+  userId,
+  leadId,
+  amount,
+  commissionReason,
+}) {
+  const userIdNumber = parseInt(userId, 10);
+  const clientLeadIdNumber = parseInt(leadId, 10);
+  const commissionAmount = parseFloat(amount);
+  if (
+    isNaN(userIdNumber) ||
+    isNaN(clientLeadIdNumber) ||
+    isNaN(commissionAmount) ||
+    commissionAmount <= 0 ||
+    !commissionReason ||
+    commissionReason.trim() === ""
+  ) {
+    throw new Error("Invalid user ID, lead ID, or commission amount");
+  }
+  const clientLead = await prisma.clientLead.findUnique({
+    where: { id: clientLeadIdNumber, userId: userIdNumber },
+  });
+
+  if (!clientLead) {
+    throw new Error("Client lead not found or does not belong to the user");
+  }
+  return await prisma.commission.create({
+    data: {
+      userId: userIdNumber,
+      leadId: clientLeadIdNumber,
+      amount: commissionAmount,
+      amountPaid: 0,
+      isCleared: false,
+      commissionReason: commissionReason,
+    },
+  });
+}

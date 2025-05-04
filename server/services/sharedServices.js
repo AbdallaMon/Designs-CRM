@@ -251,8 +251,6 @@ export async function getClientLeadDetails(
   if (searchParams.checkConsult) {
     initialConsultWhere.initialConsult = true;
   }
-  console.log(searchParams, "searchParams");
-  console.log(where, "where");
   const clientLead = await prisma.clientLead.findUnique({
     where: { id: clientLeadId, ...initialConsultWhere, ...where },
     select: {
@@ -428,7 +426,6 @@ export async function assignLeadToAUser(clientLeadId, userId, isOverdue) {
     Number(userId),
     clientLead.country
   );
-  console.log(isAlloedToTakeThisLead, "isAlloedToTakeThisLead");
   if (!isAlloedToTakeThisLead) {
     throw new Error(
       "You are not allowed to take this lead cause it is out of your allowed countries range"
@@ -667,42 +664,26 @@ export const getKeyMetrics = async (searchParams) => {
       totalProcessedLeadsCount > 0
         ? ((successLeadsCount / totalProcessedLeadsCount) * 100).toFixed(2)
         : "0.00";
+    console.log(staffFilter, "staffFilter");
+    console.log(searchParams, "searchParams");
 
-    const invoicesCommsissionFilters = searchParams.staffId
-      ? {
-          payment: {
-            clientLead: {
-              ...userFilter,
-              commissionCleared: false,
-            },
-          },
-        }
-      : {
-          payment: {
-            clientLead: {
-              commissionCleared: false,
-            },
-          },
-        };
-    const totalRevenueCommisionResult = await prisma.invoice.aggregate({
+    const commissions = await prisma.commission.aggregate({
+      where: staffFilter,
       _sum: {
         amount: true,
-      },
-      where: {
-        ...invoicesCommsissionFilters,
+        amountPaid: true,
       },
     });
-    const totalCommisionRevenue = totalRevenueCommisionResult._sum.amount || 0;
-    const totalCommission = parseFloat(
-      (totalCommisionRevenue * 0.05).toFixed(2)
-    );
 
+    const totalCommission = commissions._sum.amount || 0;
+    const totalClreadCommission = commissions._sum.amountPaid || 0;
     return {
       totalRevenue,
       averageProjectValue,
       successRate,
       leadsCounts,
       totalCommission,
+      totalClreadCommission,
     };
   } catch (error) {
     console.error("Error fetching key metrics:", error);
@@ -2241,11 +2222,28 @@ export async function getLeadByPorjects({ searchParams }) {
 }
 
 export async function getLeadDetailsByProject(clientLeadId, searchParams) {
-  const where = {};
+  const where = { id: clientLeadId };
   const userIdWhere = {};
   let filesAndNotesWhere = {};
   let projectsWhere = {};
-  if (searchParams.type) {
+
+  if (searchParams.type === "three-d") {
+    const some = {
+      type: { in: ["3D_Designer", "3D_Modification"] },
+    };
+    where.projects = {
+      some,
+    };
+    projectsWhere.type = some.type;
+  } else if (searchParams.type === "two-d") {
+    const some = {
+      type: { in: ["2D_Study", "2D_Final_Plans", "2D_Quantity_Calculation"] },
+    };
+    where.projects = {
+      some,
+    };
+    projectsWhere.type = some.type;
+  } else {
     where.projects = {
       some: {
         type: searchParams.type,
@@ -2255,22 +2253,32 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
   }
 
   if (searchParams.userId) {
-    where.projects = {
-      some: {
-        userId: Number(searchParams.userId),
-      },
-    };
+    // where.projects = {
+    //   some: {
+    //     userId: Number(searchParams.userId),
+    //   },
+    // };
+    if (where.projects) {
+      where.projects.some.userId = Number(searchParams.userId);
+    } else {
+      where.projects = {
+        some: {
+          userId: Number(searchParams.userId),
+        },
+      };
+    }
     projectsWhere.userId = Number(searchParams.userId);
     userIdWhere.userId = Number(searchParams.userId);
     if (
       searchParams.type !== "3D_Designer" &&
-      searchParams.type !== "3D_Modification"
+      searchParams.type !== "3D_Modification" &&
+      searchParams.type !== "three-d"
     ) {
       filesAndNotesWhere.userId = Number(searchParams.userId);
     }
   }
   const clientLead = await prisma.clientLead.findUnique({
-    where: { id: clientLeadId },
+    where,
     select: {
       id: true,
       clientDescription: true,
@@ -2280,7 +2288,6 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
       ourCost: true,
       contractorCost: true,
       telegramLink: true,
-
       projects: {
         where: projectsWhere,
         select: {
@@ -2570,6 +2577,30 @@ export async function getUserProjects(searchParams, limit, skip) {
     totalPages,
   };
 }
+export async function getProjectDetailsById({ id, searchParams }) {
+  const where = {
+    id: Number(id),
+  };
+  if (searchParams.userId && searchParams.userId !== "null") {
+    where.userId = Number(searchParams.userId);
+  }
+  if (searchParams.clientLeadId) {
+    where.clientLeadId = Number(searchParams.clientLeadId);
+  }
+  const project = await prisma.project.findUnique({
+    where,
+    include: {
+      clientLead: {
+        select: {
+          id: true,
+        },
+      },
+      user: true,
+      tasks: true,
+    },
+  });
+  return project;
+}
 export async function getUserRole(userId) {
   const user = await prisma.user.findUnique({
     where: {
@@ -2612,6 +2643,65 @@ export async function getTasksWithNotesIncluded({ searchParams }) {
   return tasks;
 }
 
+export async function getTaskDetails({ searchParams, id }) {
+  const taskId = Number(id);
+  if (!searchParams.userId || searchParams.userId === "null") {
+    return await prisma.task.findUnique({
+      where: { id: taskId },
+      include: {
+        notes: true,
+        clientLead: {
+          select: { id: true },
+        },
+        createdBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
+
+  const userId = Number(searchParams.userId);
+
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: {
+      notes: true,
+      project: true,
+      clientLead: {
+        select: { id: true },
+      },
+      createdBy: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+  if (!task) {
+    return null;
+  }
+
+  if (task.projectId) {
+    const projectUser = await prisma.project.findFirst({
+      where: {
+        id: task.projectId,
+      },
+    });
+
+    if (projectUser.userId === Number(userId)) {
+      return task;
+    }
+  }
+
+  throw new Error("You are not allowed to see this task");
+}
+
 export async function createNewTask({ data, isAdmin = false, staffId }) {
   const { userId, projectId, ...rest } = data;
   const createdTask = await prisma.task.create({
@@ -2643,18 +2733,7 @@ export async function createNewTask({ data, isAdmin = false, staffId }) {
       data: update,
     });
   }
-  // if (projectId) {
-  //   await prisma.project.update({
-  //     where: { id: Number(projectId) },
-  //     data: {
-  //       tasks: {
-  //         connect: {
-  //           id: newTask.id,
-  //         },
-  //       },
-  //     },
-  //   });
-  // }
+
   const newTask = await prisma.task.findUnique({
     where: {
       id: createdTask.id,
@@ -2672,14 +2751,37 @@ export async function createNewTask({ data, isAdmin = false, staffId }) {
     isAdmin,
     newTask.type === "MODIFICATION"
   );
-
+  if (project && project.userId && isAdmin) {
+    await newTaskCreatedNotification(
+      newTask.id,
+      project.userId,
+      projectId,
+      newTask.title,
+      null,
+      newTask.type === "MODIFICATION"
+    );
+  }
   return newTask;
 }
 export async function updateTask({ data, taskId, isAdmin = false, userId }) {
+  const oldTask = await prisma.task.findUnique({
+    where: { id: Number(taskId) },
+    select: {
+      status: true,
+    },
+  });
+  if (!isAdmin && oldTask.status === "DONE") {
+    throw new Error("You can't change the task after DONE only admin can");
+  }
+
+  if (data.status && data.status === "DONE") {
+    data.finishedAt = new Date();
+  }
   const updatedTask = await prisma.task.update({
     where: { id: Number(taskId) },
     data,
   });
+
   const task = await prisma.task.findUnique({
     where: {
       id: Number(taskId),
@@ -2696,7 +2798,7 @@ export async function updateTask({ data, taskId, isAdmin = false, userId }) {
       where: {
         id: Number(task.projectId),
       },
-      select: { userId: true },
+      select: { userId: true, id: true },
     });
   }
   await updateTaskNotification(
@@ -2711,7 +2813,16 @@ export async function updateTask({ data, taskId, isAdmin = false, userId }) {
     isAdmin,
     task.type === "MODIFICATION"
   );
-
+  if (project && project.userId && isAdmin) {
+    await updateTaskNotification(
+      task.id,
+      project.userId,
+      task.projectId,
+      task.title,
+      false,
+      task.type === "MODIFICATION"
+    );
+  }
   return updatedTask;
 }
 export async function getNotes({ idKey, id }) {

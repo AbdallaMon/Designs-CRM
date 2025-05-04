@@ -7,6 +7,7 @@ import Link from "next/link";
 import LastSeen from "../buttons/LastSeen";
 import EditModal from "../models/EditModal";
 import UserRestrictedCountries from "./UserRestrictedCountries";
+import Commission from "./utility/Commission";
 
 export default function UserProfile({ id, role }) {
   const [user, setUser] = useState(null);
@@ -43,6 +44,7 @@ export default function UserProfile({ id, role }) {
                   <>
                     <UserRestrictedCountries userId={user.id} />
                     <UpdateUserMaxLeadsCounts setUser={setUser} user={user} />
+                    <Commission userId={user.id} />
                     <Button
                       variant="outlined"
                       component="a"

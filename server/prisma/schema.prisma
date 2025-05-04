@@ -207,12 +207,13 @@ model ClientLead {
       notifications      Notification[]
       callReminders      CallReminder[]   @relation("clientLeadCallReminders")
       extraServices     ExtraService[]
+      commissions Commission[]
 
       reasonToConvert String?
       paymentStatus      PaymentStatus @default(PENDING)
       paymentSessionId   String?     
       telegramLink String?  
-      ourCost              String?         // تكلفه علينا - new optional field
+      ourCost              String?      
       contractorCost       String?   
       country             String?
       commissionCleared     Boolean            @default(false) 
@@ -245,6 +246,24 @@ model ClientLead {
       
       @@index([clientId])
       @@index([userId])
+}
+
+model Commission {
+  id          Int         @id @default(autoincrement())
+  user        User        @relation(fields: [userId], references: [id])
+  userId      Int
+  lead        ClientLead  @relation(fields: [leadId], references: [id])
+  leadId      Int
+  amount      Decimal     @db.Decimal(10, 2)
+  amountPaid  Decimal     @db.Decimal(10, 2) @default(0)
+  createdAt   DateTime    @default(now())
+  isCleared   Boolean     @default(false)
+  commissionReason String     @default("Finalized Lead Commission") @db.VarChar(255) 
+  
+  notes       Note[]
+
+  @@index([userId])
+  @@index([leadId])
 }
 
 model Project {
@@ -282,12 +301,10 @@ model Task {
   priority    Priority  @default(MEDIUM)
   type        String    @default("NORMAL")  // New field with default value
 
-  // Dates
   createdAt   DateTime  @default(now())
   dueDate     DateTime?
   finishedAt  DateTime?
   
-  // Relations
   project     Project?  @relation(fields: [projectId], references: [id])
   projectId   Int?
   
@@ -304,7 +321,6 @@ model Task {
   @@index([projectId])
   @@index([userId])
 }
-
 
 model Payment {
   id             Int        @id @default(autoincrement())
@@ -421,6 +437,8 @@ model User {
  twoDExacuterLeads ClientLead[] @relation("TwoDExacuterLeads") 
  accountantLeads ClientLead[] @relation("AccountantLeads")
  projects     Project[]
+ commissions Commission[]
+
  baseSalary    BaseEmployeeSalary? 
  notAllowedCountries Json?
  @@index([email])
@@ -485,6 +503,8 @@ model Note {
   invoiceId          Int?
   task      Task?    @relation(fields: [taskId], references: [id])
   taskId    Int?
+  commission           Commission?         @relation(fields: [commissionId], references: [id])
+  commissionId         Int?
 
   @@index([taskId])
   @@index([clientLeadId])
@@ -495,9 +515,8 @@ model Note {
   @@index([operationalExpensesId])
   @@index([paymentId])
   @@index([invoiceId])
+  @@index([commissionId])
 }
-
-
 
 model Notification {
  id           Int              @id @default(autoincrement())

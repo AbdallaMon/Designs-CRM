@@ -8,6 +8,7 @@ import {
 import {
   changeUserStatus,
   createAFixedData,
+  createCommissionByAdmin,
   createLeadFromExcelData,
   createStaffUser,
   deleteAFixedData,
@@ -21,11 +22,13 @@ import {
   generateStaffPDFReport,
   generateStaffReport,
   getAllUsers,
+  getCommissionByUserId,
   getNotAllowedCountries,
   getNotificationForTodayByStaffId,
   getUser,
   getUserById,
   getUserLogs,
+  updateCommission,
   updateLeadField,
   updateNotAllowedCountries,
   updateUserMaxLeads,
@@ -144,7 +147,6 @@ router.post("/users", async (req, res) => {
 router.put("/users/:userId/roles", async (req, res) => {
   const { userId } = req.params;
   try {
-    console.log(req.body, "body");
     const update = await updateUserRoles(userId, req.body);
     return res
       .status(200)
@@ -362,7 +364,6 @@ router.post("/leads/update/:id", async (req, res) => {
 router.delete("/client-leads/:id", async (req, res) => {
   try {
     const token = await getTokenData(req, res);
-    console.log(req.params, "params");
     const { id } = req.params;
     if (token.role !== "ADMIN") {
       throw new Error("Not allowed");
@@ -378,4 +379,48 @@ router.delete("/client-leads/:id", async (req, res) => {
     res.status(500).json({ message: e.message });
   }
 });
+// commission routes
+router.get("/commissions", async (req, res) => {
+  try {
+    const commission = await getCommissionByUserId(req.query.userId);
+    res.status(200).json({ data: commission });
+  } catch (error) {
+    console.error("Error fetching commission:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+router.post("/commissions", async (req, res) => {
+  try {
+    const { userId, amount, leadId, commissionReason } = req.body;
+    const createdCommision = await createCommissionByAdmin({
+      amount: amount,
+      userId: userId,
+      leadId: leadId,
+      commissionReason: commissionReason,
+    });
+    res
+      .status(200)
+      .json({ data: createdCommision, message: "Created successfully" });
+  } catch (error) {
+    console.error("Error fetching commission:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+router.put("/commissions/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { amount } = req.body;
+    const updatedCommission = await updateCommission({
+      amount,
+      commissionId: id,
+    });
+    res
+      .status(200)
+      .json({ data: updatedCommission, message: "Updated successfully" });
+  } catch (error) {
+    console.error("Error fetching commission:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router;

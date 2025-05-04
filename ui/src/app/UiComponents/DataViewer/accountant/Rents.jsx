@@ -4,7 +4,7 @@ import { Box, Container } from "@mui/material";
 import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import CreateModal from "../../models/CreateModal";
-import { AddNotes, Notes } from "./Notes";
+import { NotesComponent } from "../utility/Notes";
 
 const renewInputs = [
   {
@@ -136,8 +136,11 @@ const Rents = () => {
         extraComponent={({ item }) => (
           <>
             <Box sx={{ display: "flex", gap: 2 }}>
-              <Notes idKey={"rentId"} id={item.id} />
-              <AddNotes idKey={"rentId"} id={item.id} />
+              <NotesComponent
+                showAddNotes={true}
+                idKey={"rentId"}
+                id={item.id}
+              />
             </Box>
           </>
         )}

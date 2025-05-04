@@ -66,7 +66,7 @@ import {
 } from "./LeadTabs";
 import { MdBlock, MdModeEdit, MdWork } from "react-icons/md";
 import LeadProjects from "../work-stages/projects/LeadProjects";
-import { TasksList } from "../work-stages/projects/TasksList";
+import { TasksList } from "../utility/TasksList";
 import TelegramLink from "../work-stages/TelegramLink";
 import { LeadContactInfo } from "./extra/LeadContactInfo";
 import { LeadInfo } from "./extra/LeadInfo";

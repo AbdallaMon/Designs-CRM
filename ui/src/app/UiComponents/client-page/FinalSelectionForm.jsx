@@ -28,25 +28,35 @@ import {
 } from "@/app/helpers/constants.js";
 import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
 import { priceRange } from "@/app/UiComponents/client-page/clientPageData.js";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { matchIsValidTel, MuiTelInput } from "mui-tel-input";
-import "dayjs/locale/en-gb";
 import { MobileDateTimePicker } from "@mui/x-date-pickers";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import "dayjs/locale/en-gb";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { ConsultLevels } from "./consult-levels/ConsultLevels";
-export function FinalSelectionForm({ category, item, location }) {
+export function FinalSelectionForm({
+  category,
+  item,
+  location,
+  notClientPage,
+}) {
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       {category === "DESIGN" ? (
-        <DesignLeadForm category={category} item={item} location={location} />
+        <DesignLeadForm
+          category={category}
+          item={item}
+          location={location}
+          notClientPage={notClientPage}
+        />
       ) : (
         <ConsultLeadForm category={category} />
       )}
     </LocalizationProvider>
   );
 }
-function DesignLeadForm({ category, item, location }) {
+export function DesignLeadForm({ category, item, location, notClientPage }) {
   const { translate, lng } = useLanguageContext();
+
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -154,6 +164,7 @@ function DesignLeadForm({ category, item, location }) {
           item,
           lng,
           location,
+          notClientPage,
         };
         const request = await handleRequestSubmit(
           data,
@@ -168,7 +179,14 @@ function DesignLeadForm({ category, item, location }) {
         }
       }
     } else {
-      const data = { ...formData, category, item, lng, location };
+      const data = {
+        ...formData,
+        category,
+        item,
+        lng,
+        location,
+        notClientPage,
+      };
       const request = await handleRequestSubmit(
         data,
         setLoading,
@@ -203,6 +221,7 @@ function DesignLeadForm({ category, item, location }) {
             formData={formData}
             clientLead={clientLead}
             lng={lng}
+            notClientPage={notClientPage}
           />
         ) : (
           <Paper
@@ -642,7 +661,7 @@ export const CountrySelector = ({
     />
   );
 };
-export function SuccessPage({ lng, clientLead }) {
+export function SuccessPage({ lng, clientLead, notClientPage }) {
   const message =
     lng === "ar"
       ? "خطوة واحدة تفصلنا عن بدء العمل على مشروعك!، يرجى إتمام الدفع الآن."
@@ -650,7 +669,11 @@ export function SuccessPage({ lng, clientLead }) {
 
   useEffect(() => {
     if (lng && clientLead) {
-      window.location.href = `/register/checkout?leadId=${clientLead.id}&clientId=${clientLead.clientId}&lng=${lng}`;
+      if (notClientPage) {
+        window.location.reload();
+      } else {
+        window.location.href = `/register/checkout?leadId=${clientLead.id}&clientId=${clientLead.clientId}&lng=${lng}`;
+      }
     }
   }, [lng, clientLead]);
   return <></>;

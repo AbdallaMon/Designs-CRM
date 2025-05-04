@@ -13,8 +13,14 @@ const cacheRtl = createCache({
   stylisPlugins: [rtlPlugin],
 });
 
-export default function LanguageProvider({ children }) {
-  const [lng, setLang] = useState("ar");
+export default function LanguageProvider({
+  children,
+  initialLng = "ar",
+  dontChecklocalStorage = false,
+}) {
+  const [lng, setLang] = useState(initialLng);
+  console.log(lng, "lng");
+  console.log(initialLng, "initialLng");
   function changeLanguage(value) {
     setLang(value);
     window.localStorage.setItem("lng", value);
@@ -36,7 +42,7 @@ export default function LanguageProvider({ children }) {
     return lng === "ar" ? dictionary[text] : text;
   }
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && !dontChecklocalStorage) {
       setLang(window.localStorage.getItem("lng") || "ar");
     }
   }, []);

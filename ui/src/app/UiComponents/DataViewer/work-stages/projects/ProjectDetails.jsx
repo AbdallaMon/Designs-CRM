@@ -29,6 +29,7 @@ import {
   AppBar,
   Toolbar,
   Container,
+  Menu,
 } from "@mui/material";
 
 import {
@@ -48,13 +49,17 @@ import {
   MdClose,
   MdList,
 } from "react-icons/md";
-import { PROJECT_STATUSES } from "@/app/helpers/constants";
+import { PROJECT_STATUSES, statusColors } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { TasksList } from "./TasksList";
+import { TasksList } from "../../utility/TasksList";
 import { getData } from "@/app/helpers/functions/getData";
 import dayjs from "dayjs";
 import colors from "@/app/helpers/colors";
+import { RelatedLinks } from "../../utility/RelatedLinks";
+import { AiOutlineSwap } from "react-icons/ai";
+import { useAuth } from "@/app/providers/AuthProvider";
+import { checkIfAdmin } from "@/app/helpers/functions/utility";
 
 // Project Progress Tracker Component
 const ProjectProgressTracker = ({ project }) => {
@@ -195,13 +200,50 @@ const ProjectProgressTracker = ({ project }) => {
   );
 };
 
-export const ProjectDetails = ({ project, onUpdate, isStaff }) => {
+export const ProjectDetails = ({
+  project,
+  onUpdate,
+  isStaff,
+  withReleventLinks,
+  renderTasks = true,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tasksDialogOpen, setTasksDialogOpen] = useState(false);
   const [editedProject, setEditedProject] = useState({ ...project });
   const [open, setOpen] = useState(false);
   const { setLoading } = useToastContext();
 
+  const { user } = useAuth();
+  const isAdmin = checkIfAdmin(user);
+
+  const [anchorEl, setAnchorEl] = useState(null);
+  const menuOpen = Boolean(anchorEl);
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleMenuClose = async (value) => {
+    if (user.role === "SUPER_ADMIN") {
+      return;
+    }
+    const request = await handleRequestSubmit(
+      {
+        status: value,
+        oldStatus: project.status,
+        isAdmin: isAdmin,
+        id: project.id,
+      },
+      setLoading,
+      `shared/client-leads/designers/${project.clientLeadId}/status`,
+      false,
+      "Updating",
+      null,
+      "PUT"
+    );
+    if (request.status === 200) {
+      window.location.reload();
+      setAnchorEl(null);
+    }
+  };
   const handleInputChange = (field, value) => {
     setEditedProject({
       ...editedProject,
@@ -442,7 +484,9 @@ export const ProjectDetails = ({ project, onUpdate, isStaff }) => {
           </Paper>
         </Grid>
       </Grid>
-
+      {withReleventLinks && (
+        <RelatedLinks clientLeadId={project.clientLeadId} />
+      )}
       {open && (
         <AssignDesignerModal
           open={open}
@@ -454,7 +498,6 @@ export const ProjectDetails = ({ project, onUpdate, isStaff }) => {
     </Box>
   );
 
-  // Full screen dialog for tasks
   const TasksDialog = () => (
     <Dialog
       fullScreen
@@ -501,8 +544,13 @@ export const ProjectDetails = ({ project, onUpdate, isStaff }) => {
             }}
           >
             <Box sx={{ display: "flex", gap: 1 }}>
-              <Chip
-                label={project.status}
+              <Button
+                variant="contained"
+                startIcon={!isAdmin && <AiOutlineSwap />}
+                aria-controls={menuOpen ? "basic-menu" : undefined}
+                aria-haspopup="true"
+                aria-expanded={menuOpen ? "true" : undefined}
+                onClick={handleClick}
                 color={
                   project.status === "Completed"
                     ? "success"
@@ -512,7 +560,34 @@ export const ProjectDetails = ({ project, onUpdate, isStaff }) => {
                     ? "error"
                     : "primary"
                 }
-              />
+                sx={{
+                  background: statusColors[project.status],
+                  fontWeight: 500,
+                  borderRadius: "50px",
+                }}
+              >
+                {project.status}
+              </Button>
+              <Menu
+                id="basic-menu"
+                anchorEl={anchorEl}
+                key={project.id}
+                open={menuOpen}
+                onClose={() => setAnchorEl(null)}
+                MenuListProps={{
+                  "aria-labelledby": "basic-button",
+                }}
+              >
+                {PROJECT_STATUSES[project.type].map((status) => (
+                  <MenuItem
+                    key={status}
+                    value={status}
+                    onClick={() => handleMenuClose(status)}
+                  >
+                    {status}
+                  </MenuItem>
+                ))}
+              </Menu>
               <Chip
                 label={project.priority}
                 variant="outlined"
@@ -547,7 +622,7 @@ export const ProjectDetails = ({ project, onUpdate, isStaff }) => {
         {!isEditing && renderProjectInfo()}
       </Box>
 
-      {!isStaff && (
+      {renderTasks && (
         <Paper sx={{ mt: 2, p: 2 }}>
           <Button
             variant="contained"

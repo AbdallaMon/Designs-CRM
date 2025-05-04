@@ -31,14 +31,14 @@ export const designLead = [
   },
 ];
 export const leads = [
-  {
-    title: "Consultation",
-    value: "CONSULTATION",
-    image: "/consultation.jpg",
-    alt: "Dream studio consultation with eng ahmed",
-    type: "LINK",
-    href: "https://decorstores.ltd/products/consultation-with-engineer-ahmed",
-  },
+  // {
+  //   title: "Consultation",
+  //   value: "CONSULTATION",
+  //   image: "/consultation.jpg",
+  //   alt: "Dream studio consultation with eng ahmed",
+  //   type: "LINK",
+  //   href: "https://decorstores.ltd/products/consultation-with-engineer-ahmed",
+  // },
   // {
   //   title: "Interior design",
   //   value: "DESIGN",

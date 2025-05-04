@@ -31,6 +31,7 @@ import LastSeen from "@/app/UiComponents/buttons/LastSeen";
 import { userRoles, userRolesEnum } from "@/app/helpers/constants";
 import { MdAddCircleOutline, MdDelete } from "react-icons/md";
 import UserRestrictedCountries from "@/app/UiComponents/DataViewer/UserRestrictedCountries";
+import Commission from "@/app/UiComponents/DataViewer/utility/Commission";
 
 const columns = [
   { name: "name", label: "User Name" },
@@ -190,7 +191,7 @@ export default function UsersPage() {
                 View Details
               </Button>
               <UserRestrictedCountries userId={item.id} />
-              {/* <LastSeen initialLastSeen={item} userId={item.id} /> */}
+              {item.role === "STAFF" && <Commission userId={item.id} />}
             </Box>
           </>
         )}

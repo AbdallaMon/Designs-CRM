@@ -39,7 +39,7 @@ import Link from "next/link";
 import { CallReminders, FileList, LeadNotes } from "../leads/LeadTabs";
 import { MdModeEdit, MdTask, MdWork, MdWorkHistory } from "react-icons/md";
 import LeadProjects from "./projects/LeadProjects";
-import { TasksList } from "./projects/TasksList";
+import { TasksList } from "../utility/TasksList";
 import { ProjectDetails } from "./projects/ProjectDetails";
 import TelegramLink from "./TelegramLink";
 import { InfoCard } from "../leads/extra/InfoCard";
@@ -119,11 +119,15 @@ const LeadContent = ({
       setAnchorEl(null);
     }
   };
-  const leadStatus = PROJECT_STATUSES[type];
   const isNotUser = () => {
+    if (lead.projects.length === 0) return false;
     return user.id !== lead.projects[0].userId;
   };
-  const notUser = isNotUser();
+  const notUser = isNotUser(user);
+  const modificationProject = lead.projects?.filter(
+    (project) => project.status === "Modification"
+  );
+
   return (
     <>
       <DialogTitle
@@ -185,7 +189,28 @@ const LeadContent = ({
                     )}
                   </>
                 )}
-                <Button
+                {lead.projects?.map((project) => {
+                  return (
+                    <Button
+                      key={project.id}
+                      fullWidth={isMobile}
+                      variant="contained"
+                      startIcon={!isAdmin && <AiOutlineSwap />}
+                      aria-controls={open ? "basic-menu" : undefined}
+                      aria-haspopup="true"
+                      aria-expanded={open ? "true" : undefined}
+                      onClick={handleClick}
+                      sx={{
+                        background: statusColors[project.status],
+                        fontWeight: 500,
+                        borderRadius: "50px",
+                      }}
+                    >
+                      {project.type} -{project.status}
+                    </Button>
+                  );
+                })}
+                {/* <Button
                   fullWidth={isMobile}
                   variant="contained"
                   startIcon={!isAdmin && <AiOutlineSwap />}
@@ -200,26 +225,31 @@ const LeadContent = ({
                   }}
                 >
                   {lead.projects[0].status}
-                </Button>
-                <Menu
-                  id="basic-menu"
-                  anchorEl={anchorEl}
-                  open={open}
-                  onClose={() => setAnchorEl(null)}
-                  MenuListProps={{
-                    "aria-labelledby": "basic-button",
-                  }}
-                >
-                  {leadStatus.map((status) => (
-                    <MenuItem
-                      key={status}
-                      value={status}
-                      onClick={() => handleMenuClose(status)}
+                </Button> */}
+                {lead.projects?.map((project) => {
+                  return (
+                    <Menu
+                      id="basic-menu"
+                      anchorEl={anchorEl}
+                      key={project.id}
+                      open={open}
+                      onClose={() => setAnchorEl(null)}
+                      MenuListProps={{
+                        "aria-labelledby": "basic-button",
+                      }}
                     >
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Menu>
+                      {PROJECT_STATUSES[project.type].map((status) => (
+                        <MenuItem
+                          key={status}
+                          value={status}
+                          onClick={() => handleMenuClose(status)}
+                        >
+                          Type :{project.type} - {status}
+                        </MenuItem>
+                      ))}
+                    </Menu>
+                  );
+                })}
               </>
             }
             <Button onClick={() => generatePDF(lead, user)}>
@@ -338,8 +368,7 @@ const LeadContent = ({
           </TabPanel>
         )}
         {(type === "3D_Modification" ||
-          (type === "3D_Designer" &&
-            lead.projects[0].status === "Modification")) && (
+          (type === "3D_Designer" && modificationProject)) && (
           <TabPanel value={activeTab} index={5}>
             <TasksList
               name="Modifcation"
@@ -374,8 +403,24 @@ function LeadData({ lead }) {
     <Stack spacing={3}>
       <LeadInfo lead={lead} />
       <LeadContactInfo lead={lead} />
-      <InfoCard title="Project info" icon={BsPersonCheckFill} theme={theme}>
-        <ProjectDetails project={lead.projects[0]} isStaff={true} />
+      <InfoCard title="Projects info" icon={BsPersonCheckFill} theme={theme}>
+        {lead.projects?.map((project) => {
+          return (
+            <>
+              <Button
+                variant="outlined"
+                color="primary"
+                type="a"
+                href={`/dashboard/projects/${project.id}`}
+                sx={{ mb: 2, textTransform: "none" }}
+              >
+                See the project <strong>#</strong> {project.id}
+              </Button>
+              <strong>Type:</strong> {project.type} <br />
+              <ProjectDetails project={lead.projects[0]} isStaff={true} />
+            </>
+          );
+        })}
       </InfoCard>
     </Stack>
   );

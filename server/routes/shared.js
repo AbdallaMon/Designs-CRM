@@ -34,8 +34,10 @@ import {
   getNotes,
   getOtherRoles,
   getPerformanceMetrics,
+  getProjectDetailsById,
   getProjectsByClientLeadId,
   getRecentActivities,
+  getTaskDetails,
   getTasksWithNotesIncluded,
   getUserProjects,
   getUserRole,
@@ -110,7 +112,6 @@ router.post("/:userId/client-leads/countries", async (req, res) => {
       userId,
       req.body.country
     );
-    console.log(isAllowed, "is");
     res.status(200).json({
       allowed: isAllowed,
       message: isAllowed
@@ -583,6 +584,27 @@ router.get("/projects/user-profile/:userId", async (req, res) => {
       .json({ message: "An error occurred while fetching work stages leads" });
   }
 });
+router.get("/projects/:id", async (req, res) => {
+  try {
+    const searchParams = req.query;
+    const token = getTokenData(req, res);
+    if (
+      token.role === "THREE_D_DESIGNER" ||
+      token.role === "TWO_D_DESIGNER" ||
+      token.role === "STAFF"
+    ) {
+      searchParams.userId = token.id;
+    }
+    const project = await getProjectDetailsById({
+      id: req.params.id,
+      searchParams: req.query,
+    });
+    res.status(200).json({ data: project });
+  } catch (error) {
+    console.error("Error updating work stage status:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
 router.put("/projects/:id", async (req, res) => {
   try {
     const project = req.body;
@@ -666,6 +688,26 @@ router.post("/tasks", async (req, res) => {
   } catch (error) {
     console.error("Error updating work stage status:", error);
     res.status(500).json({ message: error.message });
+  }
+});
+router.get("/tasks/:id", async (req, res) => {
+  try {
+    const searchParams = req.query;
+    const token = getTokenData(req, res);
+    if (
+      token.role === "THREE_D_DESIGNER" ||
+      token.role === "TWO_D_DESIGNER" ||
+      token.role === "STAFF"
+    ) {
+      searchParams.userId = token.id;
+    }
+    const tasks = await getTaskDetails({ searchParams, id: req.params.id });
+    res.status(200).json({ data: tasks });
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching work stages leads" });
   }
 });
 router.put("/tasks/:taskId", async (req, res) => {

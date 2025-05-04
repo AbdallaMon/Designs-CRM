@@ -26,6 +26,7 @@ import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { NonConsultedLeads } from "./Non-consulted-leads";
 import UpdateInitialConsultButton from "@/app/UiComponents/buttons/UpdateInitialConsultLead";
 import { MdCheck, MdHourglassEmpty, MdTimelapse } from "react-icons/md";
+import CreateNewLead from "../extra/AddNewLead";
 
 export default function NewLeadsPage({ searchParams, staff }) {
   const {
@@ -46,6 +47,7 @@ export default function NewLeadsPage({ searchParams, staff }) {
   return (
     <Container maxWidth="xxl">
       <FixedData />
+      <CreateNewLead />
       <NonConsultedLeads />
       <LeadsSlider
         title="New leads"

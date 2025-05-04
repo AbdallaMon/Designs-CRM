@@ -135,10 +135,11 @@ router.post("/new-lead", async (req, res) => {
       await uploadFile(body, clientLead.id);
     }
     await newLeadNotification(clientLead.id, client, true);
-    const message =
-      body.lng === "ar"
-        ? "خطوة واحدة تفصلنا عن بدء العمل على مشروعك!، يرجى إتمام الدفع الآن."
-        : "You're just one step away from starting your project! Complete the payment now to proceed.";
+    const message = body.notClientPage
+      ? "Lead added successfully"
+      : body.lng === "ar"
+      ? "خطوة واحدة تفصلنا عن بدء العمل على مشروعك!، يرجى إتمام الدفع الآن."
+      : "You're just one step away from starting your project! Complete the payment now to proceed.";
 
     res.status(200).json({ data: clientLead, message });
   } catch (error) {
