@@ -4,8 +4,7 @@ import { Fab } from "@mui/material";
 import { FaWhatsapp } from "react-icons/fa";
 
 const FloatingWhatsAppButton = () => {
-  const phoneNumber = "+971585530447"; // Your WhatsApp number
-
+  const phoneNumber = "+971585564778"; // Your WhatsApp number
   // Detect if the user is on a mobile device
   const isMobileDevice = () => {
     return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);

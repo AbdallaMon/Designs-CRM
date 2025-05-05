@@ -114,15 +114,22 @@
 - Notification after each task created for users related to this project
 - Commision not when finalized and show total for month
 - Add commission to staff and allow admin to clear it
-- add finsihed at to tasks and prevent change it from done by user only by admin
+- add finsihedAt to tasks and prevent change it from done by user only by admin
 
-- Return all payments and what paid and what not
 - Fix pdf
 
 - utility:
 - allow admin to generate payment page with clientLead id
+- recheck client page form
+
+accountant part:
+
+- Return all payments and what paid and what not
+- Create commisssion when ever admin login
 
   dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
 
 $2b$08$KXiH7ITBGRIwW3pHol3bCOWE5qhNE3I4Vr.6jxSBKlDoGZhJNh20q
+dreamstudiio.com has SSL from Let's Encrypt.
+Your SSL will expire in 42 days

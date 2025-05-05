@@ -77,7 +77,8 @@ export const dictionary = {
   "Book Now 29 DOLLAR": "احجز الان ٢٩ دولار",
 
   "Success!": "نجاح!",
-
+  "Your time and ours is valuable, which is why this appointment is reserved for serious clients with a small symbolic fee that will be fully deducted upon signing a contract.":
+    "وقتك ووقتنا ثمين، ولهذا الحجز مخصص للعملاء الجادين بمبلغ رمزي بسيط يُخصم بالكامل عند التعاقد.",
   // Emirates
   "Out side emirates": "خارج الإمارات",
   Dubai: "دبي",
