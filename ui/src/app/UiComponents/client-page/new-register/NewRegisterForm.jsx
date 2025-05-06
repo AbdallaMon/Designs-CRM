@@ -342,9 +342,12 @@ export function NewRegisterForm() {
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 1,
+                      textAlign: "center",
                     }}
                   >
-                    {translate("29 dollars – fully deducted upon contracting.")}{" "}
+                    {translate(
+                      "Your time and ours is valuable, which is why this appointment is reserved for serious clients with a small symbolic fee that will be fully deducted upon signing a contract."
+                    )}{" "}
                   </Typography>
                 </Box>
               </Box>

@@ -127,7 +127,18 @@ accountant part:
 - Return all payments and what paid and what not
 - Create commisssion when ever admin login
 
-  dJkmjERCZGCEgaxl
+main :
+
+- Fix error when updating project by admin!
+- Only admin can change lead status from modification to back
+- Projects pages
+- Can add more than one user to a project (and can add my self as admin to project)
+- Data in dashboard for projects
+- Data in dashboard for successed leads and the one with statics make it as data
+- Record a video for modification part and sent it on the group
+- Can add projects again different from the main after finish
+
+- dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
 
 $2b$08$KXiH7ITBGRIwW3pHol3bCOWE5qhNE3I4Vr.6jxSBKlDoGZhJNh20q

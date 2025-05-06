@@ -308,7 +308,7 @@ const LeadContent = ({
               sx={{ textTransform: "none" }}
             />
           )}
-        {type === "three-d" && (
+        {/* {type === "three-d" && (
           <Tab
             icon={<MdWorkHistory size={20} />}
             label="Work status"
@@ -321,7 +321,7 @@ const LeadContent = ({
             label="Our cost and constructor cost"
             sx={{ textTransform: "none" }}
           />
-        )}
+        )} */}
         {(type === "3D_Modification" ||
           (type === "3D_Designer" &&
             lead.projects[0].status === "Modification")) && (
