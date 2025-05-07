@@ -1107,7 +1107,15 @@ export const getDesignerMetrics = async (searchParams) => {
     const userId = searchParams.staffId ? parseInt(searchParams.staffId) : null;
 
     // Base filter - if userId is provided, filter by that user, otherwise get all
-    const userFilter = userId ? { userId } : {};
+    const userFilter = userId
+      ? {
+          assignments: {
+            some: {
+              userId: Number(userId),
+            },
+          },
+        }
+      : {};
 
     // Get completed projects count
     const completedProjects = await prisma.project.count({
@@ -2142,7 +2150,11 @@ export async function getLeadByPorjects({ searchParams }) {
 
     if (searchParams.userId) {
       projectWhere.type = searchParams.type;
-      where.projects.some.userId = Number(searchParams.userId);
+      where.projects.some.assignments = {
+        some: {
+          userId: Number(searchParams.userId),
+        },
+      };
     }
   }
 
@@ -2159,11 +2171,15 @@ export async function getLeadByPorjects({ searchParams }) {
   ) {
     if (filters.userId) {
       if (where.projects && where.projects.some) {
-        where.projects.some.userId = Number(filters.staffId);
-      } else {
-        where.projects = {
+        where.projects.some.assignments = {
           some: {
-            userId: Number(filters.staffId),
+            userId: Number(filters.userId),
+          },
+        };
+      } else {
+        where.projects.some.assignments = {
+          some: {
+            userId: Number(filters.userId),
           },
         };
       }
@@ -2192,12 +2208,15 @@ export async function getLeadByPorjects({ searchParams }) {
           startedAt: true,
           endedAt: true,
           clientLeadId: true,
-          userId: true,
-          user: {
+          assignments: {
             select: {
-              id: true,
-              name: true,
-              email: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
             },
           },
         },
@@ -2251,21 +2270,30 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
   }
 
   if (searchParams.userId) {
-    // where.projects = {
-    //   some: {
-    //     userId: Number(searchParams.userId),
-    //   },
-    // };
     if (where.projects) {
-      where.projects.some.userId = Number(searchParams.userId);
-    } else {
-      where.projects = {
+      // where.projects.some.userId = Number(searchParams.userId);
+      where.projects.some.assignments = {
         some: {
           userId: Number(searchParams.userId),
         },
       };
+    } else {
+      where.projects = {
+        some: {
+          assignments: {
+            some: {
+              userId: Number(searchParams.userId),
+            },
+          },
+        },
+      };
     }
-    projectsWhere.userId = Number(searchParams.userId);
+    projectsWhere.assignments = {
+      some: {
+        userId: Number(searchParams.userId),
+      },
+    };
+    // projectsWhere.userId = Number(searchParams.userId);
     userIdWhere.userId = Number(searchParams.userId);
     if (
       searchParams.type !== "3D_Designer" &&
@@ -2298,12 +2326,16 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
           startedAt: true,
           endedAt: true,
           clientLeadId: true,
-          userId: true,
-          user: {
+          assignments: {
             select: {
               id: true,
-              name: true,
-              email: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
             },
           },
         },
@@ -2414,11 +2446,16 @@ async function getProjects(clientLeadId) {
       clientLeadId: Number(clientLeadId),
     },
     include: {
-      user: {
+      assignments: {
         select: {
           id: true,
-          name: true,
-          email: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
         },
       },
     },
@@ -2452,19 +2489,48 @@ export async function getProjectsByClientLeadId({ searchParams }) {
   }
   return projects;
 }
-export async function assignProjectToUser({ projectId, userId }) {
-  const updatedProject = await prisma.project.update({
-    where: { id: Number(projectId) },
-    data: { userId: Number(userId), startedAt: new Date() },
-  });
+export async function assignProjectToUser({
+  projectId,
+  userId,
+  assignmentId,
+  deleteDesigner,
+}) {
+  if (deleteDesigner) {
+    await prisma.assignment.delete({
+      where: {
+        id: Number(assignmentId),
+      },
+    });
+  } else if (assignmentId) {
+    await prisma.assignment.update({
+      where: {
+        id: Number(assignmentId),
+      },
+      data: {
+        userId: Number(userId),
+      },
+    });
+  } else {
+    await prisma.assignment.create({
+      data: {
+        userId: Number(userId),
+        projectId: Number(projectId),
+      },
+    });
+  }
   const project = await prisma.project.findUnique({
     where: { id: Number(projectId) },
     include: {
-      user: {
+      assignments: {
         select: {
           id: true,
-          name: true,
-          email: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
         },
       },
     },
@@ -2474,7 +2540,9 @@ export async function assignProjectToUser({ projectId, userId }) {
         dealsLink + "/" + project.clientLeadId
       }" >#${project.clientLeadId}</a> `
     : "";
-  await newProjectAssingmentNotification(project.id, project.user.id, content);
+  if (!deleteDesigner) {
+    await newProjectAssingmentNotification(project.id, Number(userId), content);
+  }
   return project;
 }
 export async function updateProject({ data, isAdmin }) {
@@ -2512,12 +2580,30 @@ export async function updateProject({ data, isAdmin }) {
 
   delete updatedData.startedAt;
   delete updatedData.user;
+  delete updatedData.clientLeadId;
+  delete updatedData.clientLead;
+  delete updatedData.assignments;
+  delete updatedData.tasks;
   const updatedProject = await prisma.project.update({
     where: { id: Number(id) },
     data: updatedData,
   });
   const project = await prisma.project.findUnique({
     where: { id: Number(id) },
+    include: {
+      assignments: {
+        select: {
+          id: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+    },
   });
   const content = updatedData.status
     ? `Project status has been changed to ${project.status}`
@@ -2530,19 +2616,29 @@ export async function updateProject({ data, isAdmin }) {
       dealsLink + "/" + project.clientLeadId
     }" >#${project.clientLeadId}</a> `;
   }
-  await updateProjectNotification(
-    project.id,
-    project.userId,
-    content + extra,
-    isAdmin
-  );
+  if (project.assignments && !isAdmin) {
+    project.assignments.forEach(async (assigmnet) => {
+      await updateProjectNotification(
+        project.id,
+        assigmnet.userId,
+        content + extra,
+        false
+      );
+    });
+  } else if (isAdmin) {
+    await updateProjectNotification(project.id, null, content + extra, isAdmin);
+  }
   return updatedProject;
 }
 
 export async function getUserProjects(searchParams, limit, skip) {
   const where = {};
   if (searchParams.userId) {
-    where.userId = Number(searchParams.userId);
+    where.assignments = {
+      some: {
+        userId: Number(searchParams.userId),
+      },
+    };
   }
   if (searchParams.leadId) {
     searchParams.clientLeadId = Number(searchParams.leadId);
@@ -2557,8 +2653,19 @@ export async function getUserProjects(searchParams, limit, skip) {
           client: true,
         },
       },
-      user: true,
       tasks: true,
+      assignments: {
+        select: {
+          id: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
     },
     orderBy: {
       createdAt: "desc",
@@ -2580,7 +2687,11 @@ export async function getProjectDetailsById({ id, searchParams }) {
     id: Number(id),
   };
   if (searchParams.userId && searchParams.userId !== "null") {
-    where.userId = Number(searchParams.userId);
+    where.assignments = {
+      some: {
+        userId: Number(searchParams.userId),
+      },
+    };
   }
   if (searchParams.clientLeadId) {
     where.clientLeadId = Number(searchParams.clientLeadId);
@@ -2593,7 +2704,18 @@ export async function getProjectDetailsById({ id, searchParams }) {
           id: true,
         },
       },
-      user: true,
+      assignments: {
+        select: {
+          id: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
       tasks: true,
     },
   });
@@ -2716,7 +2838,16 @@ export async function createNewTask({ data, isAdmin = false, staffId }) {
         id: Number(projectId),
       },
       select: {
-        userId: true,
+        assignments: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
       },
     });
   }
@@ -2737,27 +2868,26 @@ export async function createNewTask({ data, isAdmin = false, staffId }) {
       id: createdTask.id,
     },
   });
+
   await newTaskCreatedNotification(
     newTask.id,
-    project && project.userId
-      ? project.userId
-      : staffId && !isAdmin
-      ? staffId
-      : null,
+    staffId && !isAdmin ? staffId : null,
     projectId,
     newTask.title,
     isAdmin,
     newTask.type === "MODIFICATION"
   );
-  if (project && project.userId && isAdmin) {
-    await newTaskCreatedNotification(
-      newTask.id,
-      project.userId,
-      projectId,
-      newTask.title,
-      null,
-      newTask.type === "MODIFICATION"
-    );
+  if (project && project.assignments && isAdmin) {
+    project.assignments.forEach(async (assignment) => {
+      await newTaskCreatedNotification(
+        newTask.id,
+        assignment.userId,
+        projectId,
+        newTask.title,
+        null,
+        newTask.type === "MODIFICATION"
+      );
+    });
   }
   return newTask;
 }
@@ -2796,30 +2926,40 @@ export async function updateTask({ data, taskId, isAdmin = false, userId }) {
       where: {
         id: Number(task.projectId),
       },
-      select: { userId: true, id: true },
+      select: {
+        id: true,
+        assignments: {
+          select: {
+            id: true,
+            user: {
+              select: {
+                id: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
   await updateTaskNotification(
     task.id,
-    project && project.userId
-      ? project.userId
-      : userId && !isAdmin
-      ? userId
-      : null,
+    userId && !isAdmin ? userId : null,
     task.projectId,
     task.title,
     isAdmin,
     task.type === "MODIFICATION"
   );
-  if (project && project.userId && isAdmin) {
-    await updateTaskNotification(
-      task.id,
-      project.userId,
-      task.projectId,
-      task.title,
-      false,
-      task.type === "MODIFICATION"
-    );
+  if (project && project.assignments && isAdmin) {
+    project.assignments.forEach(async (assignment) => {
+      await updateTaskNotification(
+        task.id,
+        assignment.userId,
+        task.projectId,
+        task.title,
+        false,
+        task.type === "MODIFICATION"
+      );
+    });
   }
   return updatedTask;
 }

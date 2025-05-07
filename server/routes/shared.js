@@ -624,6 +624,8 @@ router.put("/projects/:id/assign-designer", async (req, res) => {
     const newProject = await assignProjectToUser({
       userId: project.designerId,
       projectId: id,
+      assignmentId: project.assignmentId,
+      deleteDesigner: project.deleteDesigner,
     });
     res
       .status(200)

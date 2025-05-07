@@ -517,10 +517,6 @@ export async function updateProjectNotification(
      ${content}
 </div>
   </div>`;
-  console.log(projectId, "projectId");
-  console.log(userId, "userId");
-  console.log(content, "content");
-  console.log(isAdmin, "isAdmin");
 
   await createNotification(
     userId,

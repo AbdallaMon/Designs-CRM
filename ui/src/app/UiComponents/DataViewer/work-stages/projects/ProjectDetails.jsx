@@ -211,8 +211,9 @@ export const ProjectDetails = ({
   const [tasksDialogOpen, setTasksDialogOpen] = useState(false);
   const [editedProject, setEditedProject] = useState({ ...project });
   const [open, setOpen] = useState(false);
+  const [assignmentId, setAssignmentId] = useState(null);
   const { setLoading } = useToastContext();
-
+  const [deleteDesigner, setDeleteDesigner] = useState(false);
   const { user } = useAuth();
   const isAdmin = checkIfAdmin(user);
 
@@ -447,42 +448,104 @@ export const ProjectDetails = ({
             </Box>
           </Box>
         </Grid>
-
-        <Grid size={12} sx={{ mt: 2 }}>
-          <Paper sx={{ p: 2, bgcolor: "#f5f5f5" }}>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <MdPerson color={colors.primary} size={20} />
-                <Typography variant="subtitle2" sx={{ ml: 1 }}>
-                  Designer
-                </Typography>
-              </Box>
-
-              {!isStaff && (
-                <Button
-                  onClick={() => setOpen(true)}
-                  variant="outlined"
-                  color="primary"
-                  size="small"
+        {!isStaff && (
+          <>
+            <Grid size={12} sx={{ mt: 2, mb: 1 }}>
+              <Paper sx={{ p: 2, bgcolor: "#f5f5f5" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
                 >
-                  {!project.user ? "Assign" : "Change"}
-                </Button>
-              )}
-            </Box>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                    }}
+                  >
+                    <MdPerson color={colors.primary} size={20} />
+                    <Typography variant="subtitle2" sx={{ ml: 1 }}>
+                      Designers
+                    </Typography>
+                    <Box sx={{ ml: "auto" }}>
+                      <Button
+                        onClick={() => {
+                          setOpen(true);
+                          setAssignmentId(null);
+                          setDeleteDesigner(false);
+                        }}
+                        variant="outlined"
+                        color="primary"
+                        size="small"
+                      >
+                        Assign new designer
+                      </Button>
+                    </Box>
+                  </Box>
+                  <Divider sx={{ my: 1 }} />
 
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              {project.user
-                ? `${project.user.name} - ${project.user.email}`
-                : "Not assigned yet"}
-            </Typography>
-          </Paper>
-        </Grid>
+                  {project.assignments?.map((assingment) => {
+                    return (
+                      <>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            gap: 1,
+                            mb: 1,
+                            p: 1.5,
+                            backgroundColor: "background.paper",
+                            borderRadius: 1,
+                            boxShadow: 1,
+                            width: "100%",
+                          }}
+                        >
+                          <Typography variant="body2" sx={{ mt: 1 }}>
+                            {assingment.user.name} - {assingment.user.email}
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              gap: 1,
+                              alignItems: "center",
+                            }}
+                          >
+                            <Button
+                              onClick={() => {
+                                setOpen(true);
+                                setAssignmentId(assingment.id);
+                                setDeleteDesigner(true);
+                              }}
+                              variant="outlined"
+                              color="error"
+                              size="small"
+                            >
+                              Remove
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                setOpen(true);
+                                setAssignmentId(assingment.id);
+                                setDeleteDesigner(false);
+                              }}
+                              variant="outlined"
+                              color="primary"
+                              size="small"
+                            >
+                              Change
+                            </Button>
+                          </Box>
+                        </Box>
+                      </>
+                    );
+                  })}
+                </Box>
+              </Paper>
+            </Grid>
+          </>
+        )}
       </Grid>
       {withReleventLinks && (
         <RelatedLinks clientLeadId={project.clientLeadId} />
@@ -493,6 +556,8 @@ export const ProjectDetails = ({
           project={project}
           setOpen={setOpen}
           onUpdate={onUpdate}
+          assignmentId={assignmentId}
+          deleteDesigner={deleteDesigner}
         />
       )}
     </Box>
@@ -642,7 +707,14 @@ export const ProjectDetails = ({
   );
 };
 
-function AssignDesignerModal({ open, setOpen, project, onUpdate }) {
+function AssignDesignerModal({
+  open,
+  setOpen,
+  project,
+  onUpdate,
+  assignmentId,
+  deleteDesigner,
+}) {
   const [designerId, setDesignerId] = useState("");
   const [users, setUsers] = useState([]);
   const { setLoading: setToastLoading } = useToastContext();
@@ -669,7 +741,7 @@ function AssignDesignerModal({ open, setOpen, project, onUpdate }) {
 
   const handleSubmit = async () => {
     const updatedProject = await handleRequestSubmit(
-      { designerId },
+      { designerId, assignmentId, deleteDesigner },
       setToastLoading,
       `shared/projects/${project.id}/assign-designer`,
       false,
@@ -701,26 +773,42 @@ function AssignDesignerModal({ open, setOpen, project, onUpdate }) {
     >
       <DialogTitle>Assign Designer</DialogTitle>
       <DialogContent>
-        <FormControl fullWidth sx={{ mt: 1 }}>
-          <InputLabel id="designer-label">Select Designer</InputLabel>
-          <Select
-            labelId="designer-label"
-            value={designerId}
-            label="Select Designer"
-            onChange={handleDesignerChange}
-          >
-            {users.map((user) => (
-              <MenuItem key={user.id} value={user.id}>
-                {user.name} - {user.email}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+        <>
+          {deleteDesigner ? (
+            <>
+              <Typography variant="body2" color="text.secondary">
+                Are you sure you want to remove the designer from this project?
+              </Typography>
+            </>
+          ) : (
+            <>
+              <FormControl fullWidth sx={{ mt: 1 }}>
+                <InputLabel id="designer-label">Select Designer</InputLabel>
+                <Select
+                  labelId="designer-label"
+                  value={designerId}
+                  label="Select Designer"
+                  onChange={handleDesignerChange}
+                >
+                  {users.map((user) => (
+                    <MenuItem key={user.id} value={user.id}>
+                      {user.name} - {user.email}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </>
+          )}
+        </>
       </DialogContent>
       <DialogActions>
         <Button onClick={() => setOpen(false)}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained">
-          Assign
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          color={deleteDesigner ? "error" : "primary"}
+        >
+          {deleteDesigner ? "Remove" : "Assign"}
         </Button>
       </DialogActions>
     </Dialog>

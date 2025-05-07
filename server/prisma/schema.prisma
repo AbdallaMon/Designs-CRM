@@ -268,14 +268,14 @@ model Commission {
 
 model Project {
   id          Int       @id @default(autoincrement())
-  
-  user        User?      @relation(fields: [userId], references: [id])
-  userId      Int?
-  
-  clientLead  ClientLead @relation(fields: [clientLeadId], references: [id])
+  groupTitle   String    @default("Initial Project") @db.VarChar(255)
+  groupId      Int       @default(1)
+
+  assignments  Assignment[]
+
   clientLeadId Int
+  clientLead  ClientLead @relation(fields: [clientLeadId], references: [id])
   
-  // Fields
   deliveryTime DateTime? // time to deliver the project (optional)
   priority     Priority  @default(MEDIUM) // enum with default value
   area         Decimal?  @db.Decimal(10, 2) // optional decimal field
@@ -289,8 +289,9 @@ model Project {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   
-  @@index([userId])
   @@index([clientLeadId])
+  @@index([groupId])
+
 }
 
 model Task {
@@ -436,8 +437,8 @@ model User {
  twoDLeads ClientLead[] @relation("TwoDLeads")
  twoDExacuterLeads ClientLead[] @relation("TwoDExacuterLeads") 
  accountantLeads ClientLead[] @relation("AccountantLeads")
- projects     Project[]
  commissions Commission[]
+ assignments   Assignment[]
 
  baseSalary    BaseEmployeeSalary? 
  notAllowedCountries Json?
@@ -465,6 +466,24 @@ model UserLog {
   @@index([userId])
 }
 
+model Assignment {
+  id           Int       @id @default(autoincrement())
+  
+  user         User      @relation(fields: [userId], references: [id])
+  userId       Int
+  
+  project      Project?  @relation(fields: [projectId], references: [id])
+  projectId    Int?
+
+  type String?
+  role         UserRole  @default(THREE_D_DESIGNER)
+
+  assignedAt   DateTime? @default(now())
+  createdAt    DateTime  @default(now())
+
+  @@index([userId])
+  @@index([projectId])
+}
 
 model Client {
  id          Int          @id @default(autoincrement())

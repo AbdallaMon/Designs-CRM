@@ -130,13 +130,17 @@ accountant part:
 main :
 
 - Fix error when updating project by admin!
-- Only admin can change lead status from modification to back
-- Projects pages
 - Can add more than one user to a project (and can add my self as admin to project)
+
+- Projects pages
+- Only admin can change lead status from modification to back
+
 - Data in dashboard for projects
 - Data in dashboard for successed leads and the one with statics make it as data
-- Record a video for modification part and sent it on the group
+- Name project as steps or something else
 - Can add projects again different from the main after finish
+- Multiable user roles problems
+- Record a video for modification part and sent it on the group
 
 - dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

@@ -1467,6 +1467,7 @@ export async function deleteALead(leadId) {
       await prisma.priceOffers.deleteMany({ where: { clientLeadId } });
 
       // Delete projects
+
       await prisma.project.deleteMany({ where: { clientLeadId } });
 
       // Now it's safe to delete payments
