@@ -29,24 +29,36 @@ const KeyMetricsCard = ({ staff, staffId }) => {
   const { user } = useAuth();
   const [financialMetrics, setMetrics] = useState({
     totalRevenue: 0,
-    averageProjectValue: 0,
     successRate: 0,
     leadsCounts: 0,
+    successLeadsCount: 0,
+    averageProjectValue: 0,
     totalCommission: 0,
     totalClreadCommission: 0,
+    interactedLeads: 0,
   });
   const metricsData = [
     {
-      title: "Total Revenue",
-      value: `AED ${financialMetrics.totalRevenue.toLocaleString()}`,
-      icon: <FaDollarSign size={24} color="#ffffff" />,
-      color: theme.palette.primary.main,
+      title: "Total leads",
+      value: financialMetrics.leadsCounts,
+      icon: <FaTasks size={24} color="#ffffff" />,
+      color: theme.palette.info.main,
     },
+    ...(staffId
+      ? [
+          {
+            title: "Today interacted leads", // Change title if needed
+            value: financialMetrics.interactedLeads, // Replace with relevant data
+            icon: <FaTasks size={24} color="#ffffff" />,
+            color: theme.palette.info.main,
+          },
+        ]
+      : []),
     {
-      title: "Avg. lead Value",
-      value: `AED ${financialMetrics.averageProjectValue.toLocaleString()}`,
-      icon: <FaProjectDiagram size={24} color="#ffffff" />,
-      color: theme.palette.secondary.main,
+      title: "Total Success Leads",
+      value: financialMetrics.successLeadsCount,
+      icon: <FaTasks size={24} color="#ffffff" />,
+      color: theme.palette.success.main,
     },
     {
       title: "Success Rate",
@@ -56,10 +68,16 @@ const KeyMetricsCard = ({ staff, staffId }) => {
       isProgress: true,
     },
     {
-      title: staffId ? "Today interacted leads" : "Total leads",
-      value: financialMetrics.leadsCounts,
-      icon: <FaTasks size={24} color="#ffffff" />,
-      color: theme.palette.info.main,
+      title: "Avg. lead Value",
+      value: `AED ${financialMetrics.averageProjectValue.toLocaleString()}`,
+      icon: <FaProjectDiagram size={24} color="#ffffff" />,
+      color: theme.palette.secondary.main,
+    },
+    {
+      title: "Total Revenue",
+      value: `AED ${financialMetrics.totalRevenue.toLocaleString()}`,
+      icon: <FaDollarSign size={24} color="#ffffff" />,
+      color: theme.palette.primary.main,
     },
     {
       title: "Total Commission",

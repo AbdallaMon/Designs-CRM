@@ -632,31 +632,30 @@ export const getKeyMetrics = async (searchParams) => {
     });
 
     let leadsCounts;
-    if (userProfile) {
-      const startOfToday = dayjs().startOf("day").toDate(); // Start of the day
-      const endOfToday = dayjs().endOf("day").toDate(); // End of the day
-      leadsCounts = await prisma.clientLead.count({
-        where: {
-          status: {
-            notIn: ["NEW"],
-          },
-          ...staffFilter,
-          updatedAt: {
-            gte: startOfToday,
-            lte: endOfToday,
-          },
+    let interactedLeads = 0;
+    const startOfToday = dayjs().startOf("day").toDate(); // Start of the day
+    const endOfToday = dayjs().endOf("day").toDate(); // End of the day
+    interactedLeads = await prisma.clientLead.count({
+      where: {
+        status: {
+          notIn: ["NEW"],
         },
-      });
-    } else {
-      leadsCounts = await prisma.clientLead.count({
-        where: {
-          status: {
-            notIn: ["NEW"],
-          },
-          ...staffFilter,
+        ...staffFilter,
+        updatedAt: {
+          gte: startOfToday,
+          lte: endOfToday,
         },
-      });
-    }
+      },
+    });
+    leadsCounts = await prisma.clientLead.count({
+      where: {
+        status: {
+          notIn: ["NEW"],
+        },
+        ...staffFilter,
+      },
+    });
+
     const totalProcessedLeadsCount = successLeadsCount + nonSuccessLeadsCount;
 
     // 5. Calculate the success rate
@@ -680,8 +679,10 @@ export const getKeyMetrics = async (searchParams) => {
       averageProjectValue,
       successRate,
       leadsCounts,
+      interactedLeads,
       totalCommission,
       totalClreadCommission,
+      successLeadsCount,
     };
   } catch (error) {
     console.error("Error fetching key metrics:", error);
@@ -1125,6 +1126,26 @@ export const getDesignerMetrics = async (searchParams) => {
       },
     });
 
+    const holdProjects = await prisma.project.count({
+      where: {
+        ...userFilter,
+        status: "Hold",
+      },
+    });
+    const inProgressProject = await prisma.project.count({
+      where: {
+        ...userFilter,
+        status: {
+          notIn: ["Completed", "Hold", "Rejected", "To Do"],
+        },
+      },
+    });
+    const notStartedProject = await prisma.project.count({
+      where: {
+        ...userFilter,
+        status: "To Do",
+      },
+    });
     // Get total projects count
     const totalProjects = await prisma.project.count({
       where: {
@@ -1178,7 +1199,7 @@ export const getDesignerMetrics = async (searchParams) => {
       },
       where: {
         ...userFilter,
-        createdAt: {
+        startedAt: {
           gte: currentMonthStart,
           lte: currentMonthEnd,
         },
@@ -1191,7 +1212,7 @@ export const getDesignerMetrics = async (searchParams) => {
     // Calculate current month time spent
     let currentMonthTimeSpent = 0;
     projectsWithTime.forEach((project) => {
-      const projectDate = new Date(project.createdAt);
+      const projectDate = new Date(project.startedAt);
       if (projectDate >= currentMonthStart && projectDate <= currentMonthEnd) {
         const startTime = new Date(project.startedAt);
         const endTime = new Date(project.endedAt);
@@ -1201,7 +1222,6 @@ export const getDesignerMetrics = async (searchParams) => {
     });
     currentMonthTimeSpent = parseFloat(currentMonthTimeSpent.toFixed(2));
 
-    // Calculate previous month area and time spent
     const previousMonthStart = dayjs()
       .subtract(1, "month")
       .startOf("month")
@@ -1217,7 +1237,7 @@ export const getDesignerMetrics = async (searchParams) => {
       },
       where: {
         ...userFilter,
-        createdAt: {
+        startedAt: {
           gte: previousMonthStart,
           lte: previousMonthEnd,
         },
@@ -1230,7 +1250,7 @@ export const getDesignerMetrics = async (searchParams) => {
     // Calculate previous month time spent
     let previousMonthTimeSpent = 0;
     projectsWithTime.forEach((project) => {
-      const projectDate = new Date(project.createdAt);
+      const projectDate = new Date(project.startedAt);
       if (
         projectDate >= previousMonthStart &&
         projectDate <= previousMonthEnd
@@ -1242,9 +1262,12 @@ export const getDesignerMetrics = async (searchParams) => {
       }
     });
     previousMonthTimeSpent = parseFloat(previousMonthTimeSpent.toFixed(2));
-
+    console.log(inProgressProject, "inProgressProject");
     return {
       completedProjects,
+      holdProjects,
+      inProgressProject,
+      notStartedProject,
       totalArea,
       totalProjects,
       totalTimeSpent,
@@ -2549,19 +2572,35 @@ export async function updateProject({ data, isAdmin }) {
   const { id, status, deliveryTime, ...rest } = data;
   if (data.oldStatus) {
     if (
-      data.oldStatus === "Completed" ||
-      data.oldStatus === "Canceled" ||
-      data.oldStatus === "Rejected"
+      !data.isAdmin &&
+      (data.oldStatus === "Completed" ||
+        data.oldStatus === "Canceled" ||
+        data.oldStatus === "Rejected")
     ) {
       throw new Error(
-        "You can't change the status after completion or cancellation or rejection"
+        "You can't change the status after Completion or Cancellation or Rejection"
       );
     }
-    if (data.isAdmin && data.oldStatus !== "Completed") {
+    if (
+      !data.isAdmin &&
+      data.oldStatus === "Modification" &&
+      status !== "Completed"
+    ) {
       throw new Error(
-        "You can only change the status from COMPLETED or CANCELED or REJECTED"
+        "You can't change the status from Modification to any other status except Completed (You can ask the admin to do that)"
       );
     }
+    // if (
+    //   data.isAdmin &&
+    //   data.oldStatus !== "Completed" &&
+    //   data.oldStatus !== "Canceled" &&
+    //   data.oldStatus !== "Rejected" &&
+    //   data.oldStatus !== "Modification"
+    // ) {
+    //   throw new Error(
+    //     "You can only change the status from COMPLETED or CANCELED or REJECTED Or Modification to previous status"
+    //   );
+    // }
     delete rest.oldStatus;
     delete rest.isAdmin;
   }

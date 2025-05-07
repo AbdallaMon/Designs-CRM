@@ -252,9 +252,12 @@ const LeadContent = ({
                 })}
               </>
             }
-            <Button onClick={() => generatePDF(lead, user)}>
-              Generate pdf
-            </Button>
+            {user.role !== "THREE_D_DESIGNER" &&
+              user.role !== "TWO_D_DESIGNER" && (
+                <Button onClick={() => generatePDF(lead, user)}>
+                  Generate pdf
+                </Button>
+              )}
           </Stack>
         </Stack>
       </DialogTitle>

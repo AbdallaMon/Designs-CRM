@@ -271,8 +271,12 @@ export async function searchData(body) {
     ) {
       where.projects = {
         some: {
-          userId: parsedFilters.staffId,
           role: parsedFilters.userRole,
+          assignments: {
+            some: {
+              userId: Number(parsedFilters.staffId),
+            },
+          },
         },
       };
     }

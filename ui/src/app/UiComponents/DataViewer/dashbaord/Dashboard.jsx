@@ -16,6 +16,7 @@ import UserProfile from "@/app/UiComponents/DataViewer/UserProfile.jsx";
 import DesignerDashboard from "./designers/DesignerDashboard";
 import FullScreenLoader from "../../feedback/loaders/FullscreenLoader";
 import { getData } from "@/app/helpers/functions/getData";
+import DesignerMetricsCard from "./designers/DesignerMatricsCard";
 
 const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {
   const [role, setRole] = useState(userRole);
@@ -38,6 +39,7 @@ const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {
     }
   }, [staffId]);
   if (loading) return <FullScreenLoader />;
+  console.log(staffId, "staffId");
   return (
     <Box
       sx={{
@@ -67,6 +69,11 @@ const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {
           <Grid size={12}>
             <KeyMetricsCard staff={staff} staffId={staffId} />
           </Grid>
+          {!staffId && !staff && (
+            <Grid size={12}>
+              <DesignerMetricsCard />
+            </Grid>
+          )}
 
           <Grid size={{ xs: 12, md: 6 }}>
             <LeadStatusChart staff={staff} staffId={staffId} />

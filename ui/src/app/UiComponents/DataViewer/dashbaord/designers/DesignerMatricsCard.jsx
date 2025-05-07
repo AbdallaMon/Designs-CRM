@@ -18,6 +18,8 @@ import {
   FaProjectDiagram,
   FaClock,
   FaChartLine,
+  FaSpinner,
+  FaPauseCircle,
 } from "react-icons/fa";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
 import { getData } from "@/app/helpers/functions/getData.js";
@@ -49,22 +51,34 @@ const DesignerMetricsCard = ({ staff, staffId }) => {
 
   const metricsData = [
     {
+      title: "Total Projects",
+      value: designerMetrics.totalProjects,
+      icon: <FaProjectDiagram size={24} color="#ffffff" />,
+      color: theme.palette.secondary.main,
+    },
+    {
       title: "Completed Projects",
       value: designerMetrics.completedProjects,
       icon: <FaCheckCircle size={24} color="#ffffff" />,
       color: theme.palette.success.main,
     },
     {
+      title: "In Progress Projects",
+      value: designerMetrics.inProgressProject,
+      icon: <FaSpinner size={24} color="#ffffff" />,
+      color: theme.palette.warning.main,
+    },
+    {
+      title: "On Hold Projects",
+      value: designerMetrics.holdProjects,
+      icon: <FaPauseCircle size={24} color="#ffffff" />,
+      color: theme.palette.error.main,
+    },
+    {
       title: "Total Area",
       value: `${designerMetrics.totalArea} m²`,
       icon: <FaRulerCombined size={24} color="#ffffff" />,
       color: theme.palette.primary.main,
-    },
-    {
-      title: "Total Projects",
-      value: designerMetrics.totalProjects,
-      icon: <FaProjectDiagram size={24} color="#ffffff" />,
-      color: theme.palette.secondary.main,
     },
     {
       title: "Time Spent",
