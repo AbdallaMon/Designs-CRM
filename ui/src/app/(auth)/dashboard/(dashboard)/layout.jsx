@@ -58,6 +58,44 @@ export const adminLinks = [
       },
     ],
   },
+  {
+    name: "Work stages",
+    href: "/dashboard/work-stages",
+    active: "work",
+    icon: <FiDollarSign size={20} />,
+    subLinks: [
+      {
+        name: "All projects",
+        href: "/dashboard/projects",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
+        name: "3D Work stage",
+        href: "/dashboard/work-stages",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
+        name: "3D Modifcation",
+        href: "/dashboard/work-stages/modification",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
+        name: "Plan study department",
+        href: "/dashboard/work-stages/study",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
+        name: "Quantity calcualtion department",
+        href: "/dashboard/work-stages/quantity",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
+        name: "Final plan department",
+        href: "/dashboard/work-stages/final-plan",
+        icon: <FiBriefcase size={20} />,
+      },
+    ],
+  },
   // {
   //   name: "Work stages",
   //   href: "/dashboard/work-stages",
@@ -132,6 +170,44 @@ export const superAdminLinks = [
         href: "/dashboard/all-deals",
         icon: <FiList size={18} />,
         active: "all-deals",
+      },
+    ],
+  },
+  {
+    name: "Work stages",
+    href: "/dashboard/work-stages",
+    active: "work",
+    icon: <FiDollarSign size={20} />,
+    subLinks: [
+      {
+        name: "All projects",
+        href: "/dashboard/projects",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
+        name: "3D Work stage",
+        href: "/dashboard/work-stages",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
+        name: "3D Modifcation",
+        href: "/dashboard/work-stages/modification",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
+        name: "Plan study department",
+        href: "/dashboard/work-stages/study",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
+        name: "Quantity calcualtion department",
+        href: "/dashboard/work-stages/quantity",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
+        name: "Final plan department",
+        href: "/dashboard/work-stages/final-plan",
+        icon: <FiBriefcase size={20} />,
       },
     ],
   },
@@ -226,7 +302,7 @@ export const twoDLinks = [
         icon: <FiBriefcase size={20} />,
       },
       {
-        name: "Fian plan department",
+        name: "Final plan department",
         href: "/dashboard/final-plan",
         icon: <FiBriefcase size={20} />,
       },

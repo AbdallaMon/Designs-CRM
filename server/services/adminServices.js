@@ -6,6 +6,7 @@ import pkg from "lodash";
 import dayjs from "dayjs";
 const { groupBy } = pkg;
 import XLSX from "xlsx";
+import { groupProjects } from "./sharedServices.js";
 export async function getUser(searchParams, limit, skip) {
   try {
     const filters = searchParams.filters && JSON.parse(searchParams.filters);
@@ -1622,4 +1623,45 @@ export async function createCommissionByAdmin({
       commissionReason: commissionReason,
     },
   });
+}
+
+export async function getAdminProjects(searchParams, limit, skip) {
+  const where = {
+    projects: {
+      some: {}, // Means at least one related project exists
+    },
+  };
+  if (searchParams.id) {
+    where.id = Number(searchParams.id);
+  }
+  const clientLeads = await prisma.clientLead.findMany({
+    where,
+    skip,
+    take: limit,
+    include: {
+      projects: {
+        include: {
+          assignments: {
+            select: {
+              id: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+  clientLeads.forEach((lead) => {
+    const groupedProjects = groupProjects(lead.projects);
+    lead.groupedProjects = groupedProjects;
+  });
+
+  const total = await prisma.clientLead.count({ where });
+  return { data: clientLeads, total };
 }

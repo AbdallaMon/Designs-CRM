@@ -8,9 +8,11 @@ import {
   Dialog,
   DialogActions,
   DialogTitle,
+  Divider,
   IconButton,
   Menu,
   MenuItem,
+  Paper,
   Stack,
   Tab,
   Tabs,
@@ -189,7 +191,7 @@ const LeadContent = ({
                     )}
                   </>
                 )}
-                {lead.projects?.map((project) => {
+                {/* {lead.projects?.map((project) => {
                   return (
                     <Button
                       key={project.id}
@@ -209,7 +211,7 @@ const LeadContent = ({
                       {project.type} -{project.status}
                     </Button>
                   );
-                })}
+                })} */}
                 {/* <Button
                   fullWidth={isMobile}
                   variant="contained"
@@ -380,21 +382,6 @@ const LeadContent = ({
             />
           </TabPanel>
         )}
-        {/* {type === "three-d" && (
-          <TabPanel value={activeTab} index={4}>
-            <WorkStageComponent
-              clientLeadId={lead.id}
-              stage={lead.threeDWorkStage}
-              userId={lead.threeDDesignerId}
-            />
-          </TabPanel>
-        )}
-
-        {type === "exacuter" && (
-          <TabPanel value={activeTab} index={4}>
-            <OurCostAndContractorCost lead={lead} setLead={setLead} />
-          </TabPanel>
-        )} */}
       </Box>
     </>
   );
@@ -402,29 +389,71 @@ const LeadContent = ({
 
 function LeadData({ lead }) {
   const theme = useTheme();
+  const { user } = useAuth();
   return (
     <Stack spacing={3}>
-      <LeadInfo lead={lead} />
-      <LeadContactInfo lead={lead} />
-      <InfoCard title="Projects info" icon={BsPersonCheckFill} theme={theme}>
-        {lead.projects?.map((project) => {
-          return (
+      {user.role !== "STAFF" && (
+        <>
+          {" "}
+          <LeadInfo lead={lead} />
+          <InfoCard
+            title="Related Projects"
+            icon={BsPersonCheckFill}
+            theme={theme}
+          >
             <>
-              <Button
-                variant="outlined"
-                color="primary"
-                type="a"
-                href={`/dashboard/projects/${project.id}`}
-                sx={{ mb: 2, textTransform: "none" }}
-              >
-                See the project <strong>#</strong> {project.id}
-              </Button>
-              <strong>Type:</strong> {project.type} <br />
-              <ProjectDetails project={lead.projects[0]} isStaff={true} />
+              {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  component="a"
+                  href={`/dashboard/projects/grouped/${lead.id}`}
+                >
+                  See all the projects of this lead
+                </Button>
+              )}
+              {lead.projects?.map((project) => {
+                return (
+                  <>
+                    <Paper sx={{ background: "white", p: 2 }}>
+                      <Box display="flex" gap={2} alignItems="center" mb={2}>
+                        <Button
+                          variant="outlined"
+                          color="primary"
+                          type="a"
+                          href={`/dashboard/projects/${project.id}`}
+                          sx={{ mb: 0, textTransform: "none" }}
+                        >
+                          See the project <strong># </strong> {project.id}
+                        </Button>
+                        <Typography>
+                          <strong>Type:</strong> {project.type} <br />
+                        </Typography>
+                      </Box>
+                      <ProjectDetails
+                        project={project}
+                        isStaff={
+                          user.role !== "ADMIN" && user.role !== "SUPER_ADMIN"
+                        }
+                        withReleventLinks={true}
+                      />
+                      <Divider />{" "}
+                    </Paper>
+                  </>
+                );
+              })}
             </>
-          );
-        })}
-      </InfoCard>
+          </InfoCard>
+        </>
+      )}
+      {user.role === "STAFF" ||
+        user.role === "ACCOUNTANT" ||
+        user.role === "SUPER_ADMIN" ||
+        (user.role === "ADMIN" && (
+          <>
+            <LeadContactInfo lead={lead} />
+          </>
+        ))}
     </Stack>
   );
 }

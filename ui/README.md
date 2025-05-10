@@ -134,11 +134,11 @@ main :
 - Data in dashboard for successed leads and the one with statics make it as data
 - Only admin can change lead status from modification to back
 - Data in dashboard for projects
+- Can add projects again different from the main after finish
+- Page for all project related to specific lead group
 
 - Projects pages
-
 - Name project as steps or something else
-- Can add projects again different from the main after finish
 
 - Multiable user roles problems
 - Record a video for modification part and sent it on the group

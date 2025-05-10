@@ -173,83 +173,78 @@ const LeadCard = ({ lead, movelead, setleads, type, statusArray }) => {
             </Box>
           )}
 
-          {/* Project Info Section */}
-          {user.role !== "STAFF" &&
-            user.role !== "ADMIN" &&
-            user.role !== "SUPER_ADMIN" &&
-            lead.projects &&
-            lead.projects[0] && (
-              <Box
-                sx={{
-                  mt: 1,
-                  mb: 2,
-                  p: 1.5,
-                  borderRadius: 1,
-                  bgcolor: "background.paper",
-                  border: "1px solid",
-                  borderColor: "divider",
-                }}
-              >
-                <Grid2 container spacing={1}>
-                  <Grid2 size={6}>
-                    <Typography variant="caption" color="text.secondary">
-                      Status
-                    </Typography>
-                    <Typography variant="body2">
-                      {lead.projects[0].status || "To Do"}
-                    </Typography>
-                  </Grid2>
-                  <Grid2 size={6}>
-                    <Typography variant="caption" color="text.secondary">
-                      Priority
-                    </Typography>
-                    <Typography variant="body2">
-                      {lead.projects[0].priority || "MEDIUM"}
-                    </Typography>
-                  </Grid2>
-                  <Grid2 size={6}>
-                    <Typography variant="caption" color="text.secondary">
-                      Delivery Time
-                    </Typography>
-                    <Typography variant="body2">
-                      {lead.projects[0].deliveryTime
-                        ? dayjs(lead.projects[0].deliveryTime).format(
-                            "MMM D, YYYY"
-                          )
-                        : "Not set"}
-                    </Typography>
-                  </Grid2>
-                  <Grid2 size={6}>
-                    <Typography variant="caption" color="text.secondary">
-                      Area
-                    </Typography>
-                    <Typography variant="body2">
-                      {lead.projects[0].area
-                        ? `${lead.projects[0].area} m²`
-                        : "Not set"}
-                    </Typography>
-                  </Grid2>
-                  <Grid2>
-                    <Typography variant="caption" color="text.secondary">
-                      Timeline
-                    </Typography>
-                    <Typography variant="body2">
-                      {dateRange
-                        ? dateRange
-                        : lead.projects[0].startedAt
-                        ? `Started: ${dayjs(lead.projects[0].startedAt).format(
-                            "MMM D, YYYY"
-                          )}`
-                        : lead.projects[0].endedAt
-                        ? `End: ${dayjs(lead.projects[0].endedAt).format(
-                            "MMM D, YYYY"
-                          )}`
-                        : "Not started / In progress"}
-                    </Typography>
-                  </Grid2>
+          {user.role !== "STAFF" && lead.projects && lead.projects[0] && (
+            <Box
+              sx={{
+                mt: 1,
+                mb: 2,
+                p: 1.5,
+                borderRadius: 1,
+                bgcolor: "background.paper",
+                border: "1px solid",
+                borderColor: "divider",
+              }}
+            >
+              <Grid2 container spacing={1}>
+                <Grid2 size={6}>
+                  <Typography variant="caption" color="text.secondary">
+                    Status
+                  </Typography>
+                  <Typography variant="body2">
+                    {lead.projects[0].status || "To Do"}
+                  </Typography>
                 </Grid2>
-              </Box>
-            )}
+                <Grid2 size={6}>
+                  <Typography variant="caption" color="text.secondary">
+                    Priority
+                  </Typography>
+                  <Typography variant="body2">
+                    {lead.projects[0].priority || "MEDIUM"}
+                  </Typography>
+                </Grid2>
+                <Grid2 size={6}>
+                  <Typography variant="caption" color="text.secondary">
+                    Delivery Time
+                  </Typography>
+                  <Typography variant="body2">
+                    {lead.projects[0].deliveryTime
+                      ? dayjs(lead.projects[0].deliveryTime).format(
+                          "MMM D, YYYY"
+                        )
+                      : "Not set"}
+                  </Typography>
+                </Grid2>
+                <Grid2 size={6}>
+                  <Typography variant="caption" color="text.secondary">
+                    Area
+                  </Typography>
+                  <Typography variant="body2">
+                    {lead.projects[0].area
+                      ? `${lead.projects[0].area} m²`
+                      : "Not set"}
+                  </Typography>
+                </Grid2>
+                <Grid2>
+                  <Typography variant="caption" color="text.secondary">
+                    Timeline
+                  </Typography>
+                  <Typography variant="body2">
+                    {dateRange
+                      ? dateRange
+                      : lead.projects[0].startedAt
+                      ? `Started: ${dayjs(lead.projects[0].startedAt).format(
+                          "MMM D, YYYY"
+                        )}`
+                      : lead.projects[0].endedAt
+                      ? `End: ${dayjs(lead.projects[0].endedAt).format(
+                          "MMM D, YYYY"
+                        )}`
+                      : "Not started / In progress"}
+                  </Typography>
+                </Grid2>
+              </Grid2>
+            </Box>
+          )}
 
           <Stack spacing={2}>
             {latestCalls?.map((call, index) => {

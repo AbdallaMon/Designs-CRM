@@ -509,6 +509,9 @@ router.get("/client-leads/projects/designers", async (req, res) => {
     ) {
       searchParams.userId = token.id;
     }
+    if (token.role === "ADMIN" || token.role === "SUPER_ADMIN") {
+      searchParams.isAdmin = true;
+    }
     const clientLeads = await getLeadByPorjects({ searchParams });
     res.status(200).json({ data: clientLeads });
   } catch (error) {
@@ -529,6 +532,9 @@ router.get("/client-leads/projects/designers/:id", async (req, res) => {
       token.role !== "ACCOUNTANT"
     ) {
       searchParams.userId = token.id;
+    }
+    if (token.role === "ADMIN" || token.role === "SUPER_ADMIN") {
+      searchParams.isAdmin = true;
     }
     const clientLeadDetails = await getLeadDetailsByProject(
       Number(id),
@@ -564,6 +570,7 @@ router.get("/projects", async (req, res) => {
       .json({ message: "An error occurred while fetching work stages leads" });
   }
 });
+
 router.get("/projects/user-profile/:userId", async (req, res) => {
   try {
     const searchParams = req.query;

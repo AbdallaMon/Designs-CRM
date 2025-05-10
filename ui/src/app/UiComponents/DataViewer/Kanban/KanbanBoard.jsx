@@ -68,15 +68,7 @@ const KanbanBoard = ({
               localFilters={{ staffId: user.id, userRole: user.role }}
               withParamsChange={true}
             />
-            {/* <SearchComponent
-              apiEndpoint="search?model=client"
-              setFilters={setFilters}
-              inputLabel="Search client by name or phone"
-              renderKeys={["name", "phone", ""]}
-              mainKey="name"
-              searchKey={"clientId"}
-              withParamsChange={true}
-            /> */}
+
             {admin && (
               <SearchComponent
                 apiEndpoint={`search?model=${type ? type : "STAFF"}`}

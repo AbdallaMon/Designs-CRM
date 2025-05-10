@@ -21,6 +21,7 @@ import {
   generateStaffExcelReport,
   generateStaffPDFReport,
   generateStaffReport,
+  getAdminProjects,
   getAllUsers,
   getCommissionByUserId,
   getNotAllowedCountries,
@@ -37,6 +38,7 @@ import {
 import multer from "multer";
 import prisma from "../prisma/prisma.js";
 import { newLeadNotification } from "../services/notification.js";
+import { createGroupProjects } from "../services/sharedServices.js";
 
 const router = Router();
 
@@ -422,5 +424,30 @@ router.put("/commissions/:id", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+router.get("/projects", async (req, res) => {
+  try {
+    const { limit, skip } = getPagination(req);
+    const searchParams = req.query;
 
+    const data = await getAdminProjects(searchParams, limit, skip);
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error fetching commission:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+router.post("/projects/create-group", async (req, res) => {
+  try {
+    const projects = await createGroupProjects({
+      clientleadId: req.body.clientLeadId,
+      title: req.body.title,
+    });
+    res
+      .status(200)
+      .json({ data: projects, message: "Projects created successfully" });
+  } catch (error) {
+    console.error("Error fetching commission:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
 export default router;

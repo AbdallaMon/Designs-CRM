@@ -30,6 +30,8 @@ import {
   Toolbar,
   Container,
   Menu,
+  Avatar,
+  Badge,
 } from "@mui/material";
 
 import {
@@ -48,6 +50,12 @@ import {
   MdCheck,
   MdClose,
   MdList,
+  MdCalendarMonth,
+  MdPriorityHigh,
+  MdSwapHoriz,
+  MdAssignment,
+  MdDelete,
+  MdAssignmentInd,
 } from "react-icons/md";
 import { PROJECT_STATUSES, statusColors } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
@@ -60,6 +68,98 @@ import { RelatedLinks } from "../../utility/RelatedLinks";
 import { AiOutlineSwap } from "react-icons/ai";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
+
+// Styled components
+const StyledCard = styled(Card)(({ theme }) => ({
+  borderRadius: 12,
+  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
+  height: "100%",
+  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+  overflow: "visible",
+}));
+
+const StyledButton = styled(Button)(({ theme }) => ({
+  borderRadius: 8,
+  textTransform: "none",
+  fontWeight: 600,
+  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+  transition: "all 0.2s ease",
+  "&:hover": {
+    transform: "translateY(-2px)",
+    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.15)",
+  },
+}));
+
+const InfoCard = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  backgroundColor: theme.palette.background.paper,
+  padding: theme.spacing(2),
+  borderRadius: 12,
+  boxShadow: "0 2px 12px rgba(0, 0, 0, 0.06)",
+  transition: "transform 0.2s ease",
+  "&:hover": {
+    transform: "translateY(-2px)",
+    boxShadow: "0 4px 15px rgba(0, 0, 0, 0.08)",
+  },
+  minWidth: 160,
+}));
+
+const StatusChip = styled(Chip)(({ theme, status }) => ({
+  borderRadius: 16,
+  height: 32,
+  fontWeight: 600,
+  padding: theme.spacing(0, 1),
+  boxShadow: "0 2px 5px rgba(0, 0, 0, 0.08)",
+  marginLeft: theme.spacing(1),
+}));
+
+const PriorityChip = styled(Chip)(({ theme, priority }) => ({
+  borderRadius: 16,
+  height: 32,
+  fontWeight: 500,
+  boxShadow: "0 2px 5px rgba(0, 0, 0, 0.08)",
+  marginLeft: theme.spacing(1),
+}));
+
+const StyledProgressBar = styled(LinearProgress)(({ theme }) => ({
+  height: 10,
+  borderRadius: 5,
+  backgroundColor: theme.palette.grey[200],
+  "& .MuiLinearProgress-bar": {
+    borderRadius: 5,
+  },
+}));
+
+const ProgressDot = styled(Box)(({ theme, active }) => ({
+  width: 14,
+  height: 14,
+  borderRadius: "50%",
+  backgroundColor: active
+    ? theme.palette.primary.main
+    : theme.palette.grey[300],
+  transition: "all 0.3s ease",
+  transform: active ? "scale(1.1)" : "scale(1)",
+  boxShadow: active ? "0 0 0 2px rgba(25, 118, 210, 0.2)" : "none",
+}));
+
+const StyledDesignerCard = styled(Box)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: theme.spacing(1),
+  marginBottom: theme.spacing(1),
+  padding: theme.spacing(2),
+  backgroundColor: theme.palette.background.paper,
+  borderRadius: 10,
+  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06)",
+  width: "100%",
+  transition: "all 0.2s ease",
+  "&:hover": {
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+    backgroundColor: theme.palette.grey[50],
+  },
+}));
 
 // Project Progress Tracker Component
 const ProjectProgressTracker = ({ project }) => {
@@ -129,74 +229,111 @@ const ProjectProgressTracker = ({ project }) => {
   const duration = calculateProjectDuration(project.startedAt, project.endedAt);
 
   return (
-    <Box sx={{ width: "100%", mb: 2 }}>
-      {/* Status Message for Hold or Rejected */}
-      {isOnHold || isRejected ? (
-        <Box
-          sx={{
-            p: 2,
-            bgcolor: isOnHold ? "warning.light" : "error.light",
-            borderRadius: 1,
-            mb: 1,
-          }}
-        >
-          <Typography variant="body2">
-            {isOnHold
-              ? "This project is currently on hold. Progress will resume when the hold is lifted."
-              : "This project has been rejected and requires attention before proceeding."}
-          </Typography>
-        </Box>
-      ) : (
-        <Box sx={{ mb: 1 }}>
-          {/* Combined Progress and Duration */}
-          <Box
-            sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}
+    <StyledCard elevation={2} sx={{ mb: 3, overflow: "visible" }}>
+      <CardContent sx={{ p: 3 }}>
+        {/* Status Message for Hold or Rejected */}
+        {isOnHold || isRejected ? (
+          <Paper
+            elevation={0}
+            sx={{
+              p: 2.5,
+              bgcolor: isOnHold ? "warning.light" : "error.light",
+              borderRadius: 2,
+              mb: 2,
+              display: "flex",
+              alignItems: "center",
+            }}
           >
-            <Typography variant="body2" fontWeight="medium">
-              {percentageComplete}% Complete
+            {isOnHold ? <MdPause size={22} /> : <MdError size={22} />}
+            <Typography variant="body1" sx={{ ml: 1.5, fontWeight: 500 }}>
+              {isOnHold
+                ? "This project is currently on hold. Progress will resume when the hold is lifted."
+                : "This project has been rejected and requires attention before proceeding."}
             </Typography>
-            <Typography variant="body2" color={duration.color}>
-              {duration.text}
-            </Typography>
-          </Box>
-
-          {/* Progress bar */}
-          <LinearProgress
-            variant="determinate"
-            value={percentageComplete}
-            sx={{ height: 8, borderRadius: 4, mb: 1 }}
-          />
-
-          {/* Ultra simplified stepper - just as a row of dots */}
-          <Box
-            sx={{ display: "flex", justifyContent: "space-between", px: 0.5 }}
-          >
-            {completionStatuses.map((label, index) => (
-              <Box key={label} sx={{ textAlign: "center", flex: 1 }}>
-                <Box
-                  sx={{
-                    width: 12,
-                    height: 12,
-                    borderRadius: "50%",
-                    bgcolor:
-                      index <= currentStatusIndex ? "primary.main" : "grey.300",
-                    mx: "auto",
-                    mb: 0.5,
-                  }}
-                />
+          </Paper>
+        ) : (
+          <Box>
+            {/* Combined Progress and Duration */}
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                mb: 1,
+                alignItems: "center",
+              }}
+            >
+              <Typography variant="h6" fontWeight="medium">
+                Project Progress
+              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Tooltip title="Progress percentage">
+                  <Chip
+                    label={`${percentageComplete}%`}
+                    color="primary"
+                    size="small"
+                    sx={{ fontWeight: "bold", mr: 1 }}
+                  />
+                </Tooltip>
                 <Typography
-                  variant="caption"
-                  display="block"
-                  sx={{ fontSize: "0.65rem" }}
+                  variant="body2"
+                  color={duration.color}
+                  sx={{ fontWeight: 500 }}
                 >
-                  {label}
+                  {duration.text}
                 </Typography>
               </Box>
-            ))}
+            </Box>
+
+            {/* Progress bar */}
+            <StyledProgressBar
+              variant="determinate"
+              value={percentageComplete}
+              sx={{ mb: 2.5 }}
+            />
+
+            {/* Enhanced stepper with dots */}
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                px: 0.5,
+                mt: 1.5,
+              }}
+            >
+              {completionStatuses.map((label, index) => (
+                <Box key={label} sx={{ textAlign: "center", flex: 1 }}>
+                  <Tooltip title={label}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                      }}
+                    >
+                      <ProgressDot active={index <= currentStatusIndex} />
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          fontSize: "0.7rem",
+                          mt: 0.7,
+                          fontWeight: index <= currentStatusIndex ? 600 : 400,
+                          color:
+                            index <= currentStatusIndex
+                              ? "primary.main"
+                              : "text.secondary",
+                        }}
+                      >
+                        {label}
+                      </Typography>
+                    </Box>
+                  </Tooltip>
+                </Box>
+              ))}
+            </Box>
           </Box>
-        </Box>
-      )}
-    </Box>
+        )}
+      </CardContent>
+    </StyledCard>
   );
 };
 
@@ -219,9 +356,11 @@ export const ProjectDetails = ({
 
   const [anchorEl, setAnchorEl] = useState(null);
   const menuOpen = Boolean(anchorEl);
+
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
+
   const handleMenuClose = async (value) => {
     if (user.role === "SUPER_ADMIN") {
       return;
@@ -245,6 +384,7 @@ export const ProjectDetails = ({
       setAnchorEl(null);
     }
   };
+
   const handleInputChange = (field, value) => {
     setEditedProject({
       ...editedProject,
@@ -270,286 +410,358 @@ export const ProjectDetails = ({
     }
   };
 
+  // Get priority color
+  const getPriorityColor = (priority) => {
+    switch (priority) {
+      case "VERY_HIGH":
+      case "HIGH":
+        return "error";
+      case "MEDIUM":
+        return "warning";
+      case "LOW":
+      case "VERY_LOW":
+        return "success";
+      default:
+        return "primary";
+    }
+  };
+
+  // Format priority label
+  const formatPriority = (priority) => {
+    return priority
+      .replace("_", " ")
+      .toLowerCase()
+      .replace(/\b\w/g, (l) => l.toUpperCase());
+  };
+
   const renderEditForm = () => (
-    <Paper sx={{ p: 2, mt: 2 }}>
-      <form onSubmit={handleSubmit}>
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <FormControl fullWidth>
-              <InputLabel id="status-label">Status</InputLabel>
-              <Select
-                labelId="status-label"
-                value={editedProject.status}
-                label="Status"
-                onChange={(e) => handleInputChange("status", e.target.value)}
-              >
-                {PROJECT_STATUSES[project.type].map((status) => (
-                  <MenuItem key={status} value={status}>
-                    {status}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+    <StyledCard sx={{ p: 2, mt: 3 }}>
+      <CardHeader
+        title="Edit Project Details"
+        titleTypographyProps={{
+          variant: "h6",
+          fontWeight: 600,
+          color: "primary.main",
+        }}
+      />
+      <CardContent>
+        <form onSubmit={handleSubmit}>
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <FormControl fullWidth variant="outlined">
+                <InputLabel id="status-label">Project Status</InputLabel>
+                <Select
+                  labelId="status-label"
+                  value={editedProject.status}
+                  label="Project Status"
+                  onChange={(e) => handleInputChange("status", e.target.value)}
+                >
+                  {PROJECT_STATUSES[project.type].map((status) => (
+                    <MenuItem key={status} value={status}>
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        {status === "Hold" && (
+                          <MdPause size={18} style={{ marginRight: 8 }} />
+                        )}
+                        {status === "Rejected" && (
+                          <MdClose size={18} style={{ marginRight: 8 }} />
+                        )}
+                        {status === "Completed" && (
+                          <MdCheck size={18} style={{ marginRight: 8 }} />
+                        )}
+                        {status}
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
-            <FormControl fullWidth>
-              <InputLabel id="priority-label">Priority</InputLabel>
-              <Select
-                labelId="priority-label"
-                value={editedProject.priority}
-                label="Priority"
-                onChange={(e) => handleInputChange("priority", e.target.value)}
-              >
-                <MenuItem value="VERY_LOW">Very Low</MenuItem>
-                <MenuItem value="LOW">Low</MenuItem>
-                <MenuItem value="MEDIUM">Medium</MenuItem>
-                <MenuItem value="HIGH">High</MenuItem>
-                <MenuItem value="VERY_HIGH">Very High</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
+            <Grid size={{ xs: 12, md: 6 }}>
+              <FormControl fullWidth variant="outlined">
+                <InputLabel id="priority-label">Priority Level</InputLabel>
+                <Select
+                  labelId="priority-label"
+                  value={editedProject.priority}
+                  label="Priority Level"
+                  onChange={(e) =>
+                    handleInputChange("priority", e.target.value)
+                  }
+                >
+                  <MenuItem value="VERY_LOW">Very Low</MenuItem>
+                  <MenuItem value="LOW">Low</MenuItem>
+                  <MenuItem value="MEDIUM">Medium</MenuItem>
+                  <MenuItem value="HIGH">High</MenuItem>
+                  <MenuItem value="VERY_HIGH">Very High</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
 
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              fullWidth
-              label="Delivery Time"
-              type="datetime-local"
-              value={
-                editedProject.deliveryTime
-                  ? new Date(editedProject.deliveryTime)
-                      .toISOString()
-                      .slice(0, 16)
-                  : ""
-              }
-              onChange={(e) =>
-                handleInputChange("deliveryTime", e.target.value)
-              }
-              InputLabelProps={{ shrink: true }}
-            />
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 6 }}>
-            <TextField
-              fullWidth
-              label="Area (m²)"
-              type="number"
-              inputProps={{ step: 0.01 }}
-              value={editedProject.area || ""}
-              onChange={(e) =>
-                handleInputChange(
-                  "area",
-                  e.target.value ? parseFloat(e.target.value) : null
-                )
-              }
-            />
-          </Grid>
-
-          <Grid size={12}>
-            <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
-              <Button
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField
+                fullWidth
+                label="Delivery Time"
+                type="datetime-local"
                 variant="outlined"
-                color="secondary"
-                startIcon={<MdCancel />}
-                onClick={() => setIsEditing(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                startIcon={<MdSave />}
-              >
-                Save Changes
-              </Button>
-            </Box>
+                value={
+                  editedProject.deliveryTime
+                    ? new Date(editedProject.deliveryTime)
+                        .toISOString()
+                        .slice(0, 16)
+                    : ""
+                }
+                onChange={(e) =>
+                  handleInputChange("deliveryTime", e.target.value)
+                }
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField
+                fullWidth
+                label="Area (m²)"
+                type="number"
+                variant="outlined"
+                inputProps={{ step: 0.01 }}
+                value={editedProject.area || ""}
+                onChange={(e) =>
+                  handleInputChange(
+                    "area",
+                    e.target.value ? parseFloat(e.target.value) : null
+                  )
+                }
+              />
+            </Grid>
+
+            <Grid size={12}>
+              <Box display="flex" justifyContent="flex-end" gap={2} mt={3}>
+                <StyledButton
+                  variant="outlined"
+                  color="secondary"
+                  startIcon={<MdCancel />}
+                  onClick={() => setIsEditing(false)}
+                  size="large"
+                >
+                  Cancel
+                </StyledButton>
+                <StyledButton
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  startIcon={<MdSave />}
+                  size="large"
+                >
+                  Save Changes
+                </StyledButton>
+              </Box>
+            </Grid>
           </Grid>
-        </Grid>
-      </form>
-    </Paper>
+        </form>
+      </CardContent>
+    </StyledCard>
   );
 
   const renderProjectInfo = () => (
-    <Box sx={{ mt: 2 }}>
-      <Grid container spacing={2}>
+    <Box sx={{ mt: 3 }}>
+      <Grid container spacing={3}>
         <Grid size={12}>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                bgcolor: "background.paper",
-                p: 1,
-                borderRadius: 1,
-                boxShadow: 1,
-                minWidth: 150,
-              }}
-            >
-              <MdOutlineCalendarToday color={colors.primary} size={20} />
-              <Box sx={{ ml: 1 }}>
-                <Typography variant="caption" color="text.secondary">
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2.5 }}>
+            <InfoCard>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "primary.light",
+                  color: "primary.main",
+                  p: 1.5,
+                  borderRadius: 2,
+                  mr: 2,
+                }}
+              >
+                <MdCalendarMonth size={24} />
+              </Box>
+              <Box>
+                <Typography variant="body2" color="text.secondary">
                   Delivery Time
                 </Typography>
-                <Typography variant="body2" fontWeight="medium">
+                <Typography variant="subtitle1" fontWeight="600">
                   {project.deliveryTime
-                    ? dayjs(project.deliveryTime).format("DD/MM/YYYY")
-                    : "Not set"}
+                    ? dayjs(project.deliveryTime).format("DD MMM, YYYY")
+                    : "Not scheduled"}
                 </Typography>
               </Box>
-            </Box>
+            </InfoCard>
 
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                bgcolor: "background.paper",
-                p: 1,
-                borderRadius: 1,
-                boxShadow: 1,
-                minWidth: 120,
-              }}
-            >
-              <MdOutlineSquareFoot color={colors.primary} size={20} />
-              <Box sx={{ ml: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  Area
+            <InfoCard>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "primary.light",
+                  color: "primary.main",
+                  p: 1.5,
+                  borderRadius: 2,
+                  mr: 2,
+                }}
+              >
+                <MdOutlineSquareFoot size={24} />
+              </Box>
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Project Area
                 </Typography>
-                <Typography variant="body2" fontWeight="medium">
-                  {project.area ? `${project.area} m²` : "Not set"}
+                <Typography variant="subtitle1" fontWeight="600">
+                  {project.area ? `${project.area} m²` : "Not specified"}
                 </Typography>
               </Box>
-            </Box>
+            </InfoCard>
 
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                bgcolor: "background.paper",
-                p: 1,
-                borderRadius: 1,
-                boxShadow: 1,
-              }}
-            >
-              <MdOutlineAccessTime color={colors.primary} size={20} />
-              <Box sx={{ ml: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  Timeline
+            <InfoCard>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "primary.light",
+                  color: "primary.main",
+                  p: 1.5,
+                  borderRadius: 2,
+                  mr: 2,
+                }}
+              >
+                <MdOutlineAccessTime size={24} />
+              </Box>
+              <Box>
+                <Typography variant="body2" color="text.secondary">
+                  Project Timeline
                 </Typography>
-                <Typography variant="body2" fontWeight="medium">
+                <Typography variant="subtitle1" fontWeight="600">
                   {project.startedAt
-                    ? dayjs(project.startedAt).format("DD/MM/YY")
+                    ? dayjs(project.startedAt).format("DD MMM, YY")
                     : "Not started"}
                   {project.endedAt
-                    ? ` - ${dayjs(project.endedAt).format("DD/MM/YY")}`
-                    : " - Ongoing"}
+                    ? ` - ${dayjs(project.endedAt).format("DD MMM, YY")}`
+                    : project.startedAt
+                    ? " - Ongoing"
+                    : ""}
                 </Typography>
               </Box>
-            </Box>
+            </InfoCard>
           </Box>
         </Grid>
-        {!isStaff && (
-          <>
-            <Grid size={12} sx={{ mt: 2, mb: 1 }}>
-              <Paper sx={{ p: 2, bgcolor: "#f5f5f5" }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                  }}
-                >
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                    }}
-                  >
-                    <MdPerson color={colors.primary} size={20} />
-                    <Typography variant="subtitle2" sx={{ ml: 1 }}>
-                      Designers
-                    </Typography>
-                    <Box sx={{ ml: "auto" }}>
-                      <Button
-                        onClick={() => {
-                          setOpen(true);
-                          setAssignmentId(null);
-                          setDeleteDesigner(false);
-                        }}
-                        variant="outlined"
-                        color="primary"
-                        size="small"
-                      >
-                        Assign new designer
-                      </Button>
-                    </Box>
-                  </Box>
-                  <Divider sx={{ my: 1 }} />
 
-                  {project.assignments?.map((assingment) => {
-                    return (
-                      <>
-                        <Box
+        {!isStaff && (
+          <Grid size={12} sx={{ mt: 3 }}>
+            <StyledCard sx={{ p: 0, overflow: "visible" }}>
+              <CardHeader
+                title={
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <MdAssignmentInd size={22} color={colors.primary} />
+                    <Typography variant="h6" sx={{ ml: 1.5, fontWeight: 600 }}>
+                      Project Designers
+                    </Typography>
+                  </Box>
+                }
+                action={
+                  <StyledButton
+                    onClick={() => {
+                      setOpen(true);
+                      setAssignmentId(null);
+                      setDeleteDesigner(false);
+                    }}
+                    variant="contained"
+                    color="primary"
+                    size="small"
+                    startIcon={<MdAdd />}
+                  >
+                    Assign New Designer
+                  </StyledButton>
+                }
+                sx={{ px: 3, pt: 2.5, pb: 1 }}
+              />
+
+              <Divider sx={{ mx: 3 }} />
+
+              <CardContent sx={{ p: 3 }}>
+                {project.assignments?.length ? (
+                  project.assignments?.map((assignment) => (
+                    <StyledDesignerCard key={assignment.id}>
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <Avatar
                           sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            gap: 1,
-                            mb: 1,
-                            p: 1.5,
-                            backgroundColor: "background.paper",
-                            borderRadius: 1,
-                            boxShadow: 1,
-                            width: "100%",
+                            bgcolor: "primary.main",
+                            width: 40,
+                            height: 40,
                           }}
                         >
-                          <Typography variant="body2" sx={{ mt: 1 }}>
-                            {assingment.user.name} - {assingment.user.email}
+                          {assignment.user.name.charAt(0)}
+                        </Avatar>
+                        <Box sx={{ ml: 2 }}>
+                          <Typography variant="subtitle1" fontWeight="medium">
+                            {assignment.user.name}
                           </Typography>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              gap: 1,
-                              alignItems: "center",
-                            }}
-                          >
-                            <Button
-                              onClick={() => {
-                                setOpen(true);
-                                setAssignmentId(assingment.id);
-                                setDeleteDesigner(true);
-                              }}
-                              variant="outlined"
-                              color="error"
-                              size="small"
-                            >
-                              Remove
-                            </Button>
-                            <Button
-                              onClick={() => {
-                                setOpen(true);
-                                setAssignmentId(assingment.id);
-                                setDeleteDesigner(false);
-                              }}
-                              variant="outlined"
-                              color="primary"
-                              size="small"
-                            >
-                              Change
-                            </Button>
-                          </Box>
+                          <Typography variant="body2" color="text.secondary">
+                            {assignment.user.email}
+                          </Typography>
                         </Box>
-                      </>
-                    );
-                  })}
-                </Box>
-              </Paper>
-            </Grid>
-          </>
+                      </Box>
+
+                      <Box sx={{ display: "flex", gap: 1 }}>
+                        <Tooltip title="Change assigned designer">
+                          <StyledButton
+                            onClick={() => {
+                              setOpen(true);
+                              setAssignmentId(assignment.id);
+                              setDeleteDesigner(false);
+                            }}
+                            variant="outlined"
+                            color="primary"
+                            size="small"
+                            startIcon={<MdSwapHoriz />}
+                          >
+                            Change
+                          </StyledButton>
+                        </Tooltip>
+
+                        <Tooltip title="Remove from project">
+                          <StyledButton
+                            onClick={() => {
+                              setOpen(true);
+                              setAssignmentId(assignment.id);
+                              setDeleteDesigner(true);
+                            }}
+                            variant="outlined"
+                            color="error"
+                            size="small"
+                            startIcon={<MdDelete />}
+                          >
+                            Remove
+                          </StyledButton>
+                        </Tooltip>
+                      </Box>
+                    </StyledDesignerCard>
+                  ))
+                ) : (
+                  <Box sx={{ p: 3, textAlign: "center" }}>
+                    <Typography variant="body1" color="text.secondary">
+                      No designers assigned to this project yet
+                    </Typography>
+                  </Box>
+                )}
+              </CardContent>
+            </StyledCard>
+          </Grid>
         )}
       </Grid>
+
       {withReleventLinks && (
-        <RelatedLinks clientLeadId={project.clientLeadId} />
+        <Box sx={{ mt: 3 }}>
+          <RelatedLinks clientLeadId={project.clientLeadId} />
+        </Box>
       )}
+
       {open && (
         <AssignDesignerModal
           open={open}
@@ -569,23 +781,28 @@ export const ProjectDetails = ({
       open={tasksDialogOpen}
       onClose={() => setTasksDialogOpen(false)}
     >
-      <AppBar sx={{ position: "relative" }}>
+      <AppBar position="sticky" elevation={2}>
         <Toolbar>
           <IconButton
             edge="start"
             color="inherit"
             onClick={() => setTasksDialogOpen(false)}
             aria-label="close"
+            sx={{ mr: 2 }}
           >
             <MdClose />
           </IconButton>
-          <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
-            Project Tasks
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{ flex: 1, fontWeight: 600 }}
+          >
+            Project Tasks & Activities
           </Typography>
         </Toolbar>
       </AppBar>
-      <DialogContent sx={{ p: 3 }}>
-        <Container maxWidth="lg">
+      <DialogContent sx={{ p: 3, bgcolor: "#f9fafb" }}>
+        <Container maxWidth="lg" sx={{ py: 2 }}>
           <TasksList projectId={project.id} type="PROJECT" />
         </Container>
       </DialogContent>
@@ -594,111 +811,148 @@ export const ProjectDetails = ({
 
   return (
     <>
-      <Box sx={{ mb: 3 }}>
-        <ProjectProgressTracker project={project} />
+      <ProjectProgressTracker project={project} />
 
-        {isEditing ? (
-          renderEditForm()
-        ) : (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              mb: 2,
-            }}
-          >
-            <Box sx={{ display: "flex", gap: 1 }}>
-              <Button
-                variant="contained"
-                startIcon={!isAdmin && <AiOutlineSwap />}
-                aria-controls={menuOpen ? "basic-menu" : undefined}
-                aria-haspopup="true"
-                aria-expanded={menuOpen ? "true" : undefined}
-                onClick={handleClick}
-                color={
-                  project.status === "Completed"
-                    ? "success"
-                    : project.status === "Hold"
-                    ? "warning"
-                    : project.status === "Rejected"
-                    ? "error"
-                    : "primary"
-                }
-                sx={{
-                  background: statusColors[project.status],
-                  fontWeight: 500,
-                  borderRadius: "50px",
-                }}
-              >
-                {project.status}
-              </Button>
-              <Menu
-                id="basic-menu"
-                anchorEl={anchorEl}
-                key={project.id}
-                open={menuOpen}
-                onClose={() => setAnchorEl(null)}
-                MenuListProps={{
-                  "aria-labelledby": "basic-button",
-                }}
-              >
-                {PROJECT_STATUSES[project.type].map((status) => (
-                  <MenuItem
-                    key={status}
-                    value={status}
-                    onClick={() => handleMenuClose(status)}
+      {isEditing ? (
+        renderEditForm()
+      ) : (
+        <StyledCard sx={{ mb: 3, overflow: "visible" }}>
+          <CardContent sx={{ p: 3 }}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                flexWrap: "wrap",
+                gap: 2,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <StyledButton
+                  variant="contained"
+                  startIcon={!isAdmin && <AiOutlineSwap />}
+                  aria-controls={menuOpen ? "status-menu" : undefined}
+                  aria-haspopup="true"
+                  aria-expanded={menuOpen ? "true" : undefined}
+                  onClick={handleClick}
+                  color={
+                    project.status === "Completed"
+                      ? "success"
+                      : project.status === "Hold"
+                      ? "warning"
+                      : project.status === "Rejected"
+                      ? "error"
+                      : "primary"
+                  }
+                  sx={{
+                    background: statusColors[project.status],
+                    fontWeight: 600,
+                    borderRadius: 3,
+                    px: 2,
+                  }}
+                >
+                  {project.status}
+                </StyledButton>
+
+                <Menu
+                  id="status-menu"
+                  anchorEl={anchorEl}
+                  key={project.id}
+                  open={menuOpen}
+                  onClose={() => setAnchorEl(null)}
+                  PaperProps={{
+                    sx: {
+                      borderRadius: 2,
+                      boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+                      mt: 1,
+                    },
+                  }}
+                >
+                  {PROJECT_STATUSES[project.type].map((status) => (
+                    <MenuItem
+                      key={status}
+                      value={status}
+                      onClick={() => handleMenuClose(status)}
+                      sx={{
+                        px: 2,
+                        py: 1.2,
+                        "&:hover": {
+                          backgroundColor: "action.hover",
+                        },
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        {status === "Hold" && (
+                          <MdPause size={18} style={{ marginRight: 8 }} />
+                        )}
+                        {status === "Rejected" && (
+                          <MdClose size={18} style={{ marginRight: 8 }} />
+                        )}
+                        {status === "Completed" && (
+                          <MdCheck size={18} style={{ marginRight: 8 }} />
+                        )}
+                        {status}
+                      </Box>
+                    </MenuItem>
+                  ))}
+                </Menu>
+
+                <PriorityChip
+                  icon={<MdPriorityHigh />}
+                  label={formatPriority(project.priority)}
+                  color={getPriorityColor(project.priority)}
+                  priority={project.priority}
+                  sx={{ ml: 2 }}
+                />
+              </Box>
+
+              {!isStaff && (
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  <StyledButton
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<MdEdit />}
+                    onClick={() => {
+                      setIsEditing(true);
+                      setEditedProject({ ...project });
+                    }}
                   >
-                    {status}
-                  </MenuItem>
-                ))}
-              </Menu>
-              <Chip
-                label={project.priority}
-                variant="outlined"
-                color={
-                  project.priority.includes("HIGH") ||
-                  project.priority.includes("VERY_HIGH")
-                    ? "error"
-                    : project.priority.includes("MEDIUM")
-                    ? "warning"
-                    : "success"
-                }
-              />
+                    Edit Details
+                  </StyledButton>
+
+                  <StyledButton
+                    variant="contained"
+                    color="primary"
+                    component="a"
+                    href={`/dashboard/projects/grouped/${project.clientLeadId}`}
+                  >
+                    View All Lead Projects
+                  </StyledButton>
+                </Box>
+              )}
             </Box>
 
-            {!isStaff && (
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<MdEdit />}
-                size="small"
-                onClick={() => {
-                  setIsEditing(true);
-                  setEditedProject({ ...project });
-                }}
-              >
-                Edit
-              </Button>
-            )}
-          </Box>
-        )}
-
-        {!isEditing && renderProjectInfo()}
-      </Box>
+            {renderProjectInfo()}
+          </CardContent>
+        </StyledCard>
+      )}
 
       {renderTasks && (
-        <Paper sx={{ mt: 2, p: 2 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<MdList />}
-            fullWidth
-            onClick={() => setTasksDialogOpen(true)}
-          >
-            View Project Tasks
-          </Button>
-        </Paper>
+        <StyledCard sx={{ mt: 3, overflow: "hidden" }}>
+          <CardContent sx={{ p: 3 }}>
+            <StyledButton
+              variant="contained"
+              color="primary"
+              startIcon={<MdList />}
+              fullWidth
+              onClick={() => setTasksDialogOpen(true)}
+              size="large"
+              sx={{ py: 1.5 }}
+            >
+              View Project Tasks & Activities
+            </StyledButton>
+          </CardContent>
+        </StyledCard>
       )}
 
       {/* Tasks Dialog */}
@@ -706,7 +960,6 @@ export const ProjectDetails = ({
     </>
   );
 };
-
 function AssignDesignerModal({
   open,
   setOpen,

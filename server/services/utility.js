@@ -280,11 +280,13 @@ export async function searchData(body) {
         },
       };
     }
-    console.log(parsedFilters, "parsedFilters");
   }
-  console.log(filters, "filters");
 
-  console.log(where, "where");
+  if (where.role.startsWith("3D")) {
+    where.role = "THREE_D_DESIGNER";
+  } else if (where.role.startsWith("2D")) {
+    where.role = "TWO_D_DESIGNER";
+  }
   const selectFields = {
     user: {
       id: true,

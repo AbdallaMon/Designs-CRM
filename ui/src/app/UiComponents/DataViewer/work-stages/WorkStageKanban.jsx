@@ -46,18 +46,7 @@ function WorkStagesKanban({ staffId, type }) {
     );
 
     if (request.status === 200) {
-      setleads((prev) =>
-        prev.map((l) =>
-          l.id === lead.id
-            ? {
-                ...l,
-                projects: l.projects.map((project, index) =>
-                  index === 0 ? { ...project, status: newStatus } : project
-                ),
-              }
-            : l
-        )
-      );
+      setFilters((old) => ({ ...old, render: !old.render }));
     }
   };
   return (

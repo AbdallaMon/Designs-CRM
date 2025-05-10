@@ -37,7 +37,7 @@ const ColumnHeader = styled(Box)(({ theme, statusColor }) => ({
   },
 }));
 
-const StatusChip = styled(Chip)(({ theme, statuscolor }) => ({
+export const StatusChip = styled(Chip)(({ theme, statuscolor }) => ({
   backgroundColor: `${statuscolor}20`,
   color: statuscolor,
   fontWeight: 600,
