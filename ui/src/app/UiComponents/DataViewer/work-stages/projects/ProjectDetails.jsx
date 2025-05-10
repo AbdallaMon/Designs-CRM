@@ -229,7 +229,19 @@ const ProjectProgressTracker = ({ project }) => {
   const duration = calculateProjectDuration(project.startedAt, project.endedAt);
 
   return (
-    <StyledCard elevation={2} sx={{ mb: 3, overflow: "visible" }}>
+    <StyledCard
+      elevation={2}
+      sx={{
+        mb: 3,
+        overflow: "visible",
+        "&.MuiPaper-root": {
+          height: "fit-content",
+        },
+        "&. MuiPaper-root": {
+          height: "fit-content",
+        },
+      }}
+    >
       <CardContent sx={{ p: 3 }}>
         {/* Status Message for Hold or Rejected */}
         {isOnHold || isRejected ? (

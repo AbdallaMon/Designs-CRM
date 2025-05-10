@@ -197,7 +197,6 @@ export const ProjectsList = ({ userId }) => {
 };
 
 function ProjectFilters({ filters, setFilters }) {
-  console.log(filters, "filters");
   return (
     <Box display="flex" gap={2} alignItems="center">
       <SearchComponent
