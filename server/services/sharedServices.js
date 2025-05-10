@@ -1262,7 +1262,6 @@ export const getDesignerMetrics = async (searchParams) => {
       }
     });
     previousMonthTimeSpent = parseFloat(previousMonthTimeSpent.toFixed(2));
-    console.log(inProgressProject, "inProgressProject");
     return {
       completedProjects,
       holdProjects,
@@ -2222,9 +2221,7 @@ export async function getLeadByPorjects({ searchParams }) {
         },
       },
     };
-  }
-  console.log(where, "whe");
-  console.log(projectWhere, "whe");
+
 
   const rawLeads = await prisma.clientLead.findMany({
     where,
@@ -2271,14 +2268,12 @@ export async function getLeadByPorjects({ searchParams }) {
       },
     },
   });
-  console.log(rawLeads[0].projects, "raw");
   // 👇 Transform leads so each lead appears once per project
   const expandedLeads = rawLeads.flatMap((lead) => {
     if (!lead.projects || lead.projects.length === 0) return [];
 
     return lead.projects.map((primaryProject, i) => {
       // Put this project first, then the rest
-      console.log(primaryProject, i, "indes");
       const reorderedProjects = [
         primaryProject,
         ...lead.projects.filter((_, j) => j !== i),
