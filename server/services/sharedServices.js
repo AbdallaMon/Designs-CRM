@@ -2221,7 +2221,7 @@ export async function getLeadByPorjects({ searchParams }) {
         },
       },
     };
-
+  }
 
   const rawLeads = await prisma.clientLead.findMany({
     where,
