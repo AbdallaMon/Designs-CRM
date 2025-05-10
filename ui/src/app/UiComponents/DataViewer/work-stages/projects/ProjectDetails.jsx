@@ -73,7 +73,7 @@ import { checkIfAdmin } from "@/app/helpers/functions/utility";
 const StyledCard = styled(Card)(({ theme }) => ({
   borderRadius: 12,
   boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-  height: "100%",
+  // height: "100%",
   transition: "transform 0.3s ease, box-shadow 0.3s ease",
   overflow: "visible",
 }));

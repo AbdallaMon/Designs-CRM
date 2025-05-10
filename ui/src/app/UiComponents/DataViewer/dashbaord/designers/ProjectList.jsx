@@ -14,6 +14,7 @@ import {
   Paper,
   Stack,
   Avatar,
+  Button,
 } from "@mui/material";
 import { MdAssignment, MdPriorityHigh, MdBusinessCenter } from "react-icons/md";
 
@@ -23,6 +24,7 @@ import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent";
 import { statusColors } from "@/app/helpers/constants";
 import PaginationWithLimit from "../../PaginationWithLimit";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
+import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 
 export const ProjectsList = ({ userId }) => {
   const {
@@ -39,7 +41,6 @@ export const ProjectsList = ({ userId }) => {
     filters,
     setFilters,
   } = useDataFetcher(`shared/projects/user-profile/${userId}?&`, false);
-  console.log(projects, "projects");
   const handleProjectUpdate = (updatedProject) => {
     setData(
       projects.map((project) =>
@@ -50,25 +51,6 @@ export const ProjectsList = ({ userId }) => {
     );
   };
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" py={10}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (projects.length === 0) {
-    return (
-      <Box textAlign="center" py={8}>
-        <Typography variant="h5">No projects found</Typography>
-        <Typography variant="body1" color="textSecondary" sx={{ mt: 2 }}>
-          You don&apos;t have any assigned projects at the moment.
-        </Typography>
-      </Box>
-    );
-  }
-
   return (
     <Box>
       <Paper sx={{ p: 2, mb: 3 }}>
@@ -77,7 +59,15 @@ export const ProjectsList = ({ userId }) => {
         </Typography>
         <ProjectFilters filters={filters} setFilters={setFilters} />
       </Paper>
-
+      {loading && <FullScreenLoader />}
+      {(!projects || projects?.lenght === 0) && (
+        <Box textAlign="center" py={8}>
+          <Typography variant="h5">No projects found</Typography>
+          <Typography variant="body1" color="textSecondary" sx={{ mt: 2 }}>
+            You don&apos;t have any assigned projects at the moment.
+          </Typography>
+        </Box>
+      )}
       <Grid container spacing={3}>
         {projects?.map((project) => (
           <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={project.id}>
@@ -207,8 +197,9 @@ export const ProjectsList = ({ userId }) => {
 };
 
 function ProjectFilters({ filters, setFilters }) {
+  console.log(filters, "filters");
   return (
-    <Box>
+    <Box display="flex" gap={2} alignItems="center">
       <SearchComponent
         apiEndpoint="search?model=clientLead"
         setFilters={setFilters}
@@ -216,7 +207,7 @@ function ProjectFilters({ filters, setFilters }) {
         renderKeys={["id", "client.name", "client.phone", "client.email"]}
         mainKey="id"
         searchKey={"leadId"}
-        withParamsChange={true}
+        withParamsChange={false}
       />
     </Box>
   );

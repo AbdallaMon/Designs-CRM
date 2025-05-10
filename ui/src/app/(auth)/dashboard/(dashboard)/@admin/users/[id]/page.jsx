@@ -6,7 +6,7 @@ export default async function page(props) {
   const searchParams = await props.searchParams;
   const { id } = params;
   return (
-    <Container maxWidth="xl">
+    <Container maxWidth="xxl">
       <Dashboard staffId={id} staff={false} userRole={searchParams.role} />
     </Container>
   );

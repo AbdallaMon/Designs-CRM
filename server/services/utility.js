@@ -281,10 +281,9 @@ export async function searchData(body) {
       };
     }
   }
-
-  if (where.role.startsWith("3D")) {
+  if (where && where.role?.startsWith("3D")) {
     where.role = "THREE_D_DESIGNER";
-  } else if (where.role.startsWith("2D")) {
+  } else if (where && where.role?.startsWith("2D")) {
     where.role = "TWO_D_DESIGNER";
   }
   const selectFields = {

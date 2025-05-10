@@ -2829,6 +2829,7 @@ export async function updateProject({ data, isAdmin }) {
 
 export async function getUserProjects(searchParams, limit, skip) {
   const where = {};
+  const filters = JSON.parse(searchParams.filters);
   if (searchParams.userId) {
     where.assignments = {
       some: {
@@ -2836,8 +2837,8 @@ export async function getUserProjects(searchParams, limit, skip) {
       },
     };
   }
-  if (searchParams.leadId) {
-    searchParams.clientLeadId = Number(searchParams.leadId);
+  if (filters && filters !== "undefined" && filters.leadId) {
+    where.clientLeadId = Number(filters.leadId);
   }
   const projects = await prisma.project.findMany({
     where,
