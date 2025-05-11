@@ -19,11 +19,9 @@ export default function SignInWithDifferentUserRole() {
   const { user, setUser } = useAuth();
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     async function getUserRoles() {
       const rolesReq = await getData({ url: "shared/roles", setLoading });
-
       if (rolesReq && rolesReq.status === 200) setRoles(rolesReq.data);
     }
     getUserRoles();
@@ -52,6 +50,7 @@ export default function SignInWithDifferentUserRole() {
                     setUser({ ...user, role });
                     localStorage.setItem("role", role);
                     setOpen(false);
+                    window.location.reload();
                   }}
                 >
                   <ListItemText primary={role} />

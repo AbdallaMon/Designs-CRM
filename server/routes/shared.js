@@ -85,15 +85,16 @@ router.get("/client-leads/deals", async (req, res) => {
   try {
     const searchParams = req.query;
     const token = getTokenData(req, res);
-    if (token.role === "STAFF") {
-      searchParams.userId = token.id;
-    }
+    // if (token.role === "STAFF") {
+    //   searchParams.userId = token.id;
+    // }
     if (
       token.role !== "ADMIN" &&
       token.role !== "SUPER_ADMIN" &&
       token.role !== "ACCOUNTANT"
     ) {
       searchParams.selfId = token.id;
+      searchParams.userId = token.id;
     }
     const clientLeads = await getClientLeadsByDateRange({ searchParams });
     res.status(200).json({ data: clientLeads });
@@ -502,15 +503,11 @@ router.get("/client-leads/projects/designers", async (req, res) => {
   try {
     const searchParams = req.query;
     const token = getTokenData(req, res);
-    if (
-      token.role === "THREE_D_DESIGNER" ||
-      token.role === "TWO_D_DESIGNER" ||
-      token.role === "TWO_D_EXECUTOR"
-    ) {
-      searchParams.userId = token.id;
-    }
+
     if (token.role === "ADMIN" || token.role === "SUPER_ADMIN") {
       searchParams.isAdmin = true;
+    } else {
+      searchParams.userId = token.id;
     }
     const clientLeads = await getLeadByPorjects({ searchParams });
     res.status(200).json({ data: clientLeads });
@@ -554,11 +551,7 @@ router.get("/projects", async (req, res) => {
   try {
     const searchParams = req.query;
     const token = getTokenData(req, res);
-    if (
-      token.role === "THREE_D_DESIGNER" ||
-      token.role === "TWO_D_DESIGNER" ||
-      token.role === "TWO_D_EXECUTOR"
-    ) {
+    if (token.role !== "ADMIN" && token.role !== "SUPER_ADMIN") {
       searchParams.userId = token.id;
     }
     const projects = await getProjectsByClientLeadId({ searchParams });

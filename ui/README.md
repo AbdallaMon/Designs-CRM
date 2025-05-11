@@ -137,11 +137,20 @@ main :
 - Can add projects again different from the main after finish
 - Page for all project related to specific lead group
 - Projects pages
-
-- Name project as steps or something else
 - Multiable user roles problems
 - Record a video for modification part and sent it on the group
+
+- Name project as steps or something else
+
+- Check for roles to be added in the notifications
+
 - And can add my self as admin to project
+- Can add 3d Desginer to 2d study
+- Archieve leads
+- Can edit client name
+- Arrange projects by prioirty
+- Color lead by prioirty and color the text of prioirty it self
+- Delete call reminder by admin (only that is pending)
 
 - Finalize price and extra price
 - Search for better way for commission

@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { ProjectDetails } from "./ProjectDetails";
 import { Box, CircularProgress, Alert, Button, Container } from "@mui/material";
 import { getData } from "@/app/helpers/functions/getData";
-import { useAuth } from "@/app/providers/AuthProvider";
 
 export default function ProjectPage({ id, isStaff }) {
   const [project, setProject] = useState(null);

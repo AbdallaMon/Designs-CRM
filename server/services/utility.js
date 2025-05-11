@@ -212,6 +212,11 @@ export async function searchData(body) {
         { name: { contains: query } },
       ];
       where.role = "STAFF";
+      where.subRoles = {
+        some: {
+          subRole: "STAFF",
+        },
+      };
     } else if (model === "client") {
       where.OR = [
         { email: { contains: query } },
@@ -286,6 +291,23 @@ export async function searchData(body) {
   } else if (where && where.role?.startsWith("2D")) {
     where.role = "TWO_D_DESIGNER";
   }
+  if (where.role) {
+    const role = where.role;
+    delete where.role;
+
+    const roleOrSubRole = [
+      { role: role },
+      { subRoles: { some: { subRole: role } } },
+    ];
+    if (where.OR) {
+      where.AND = [{ OR: where.OR }, { OR: roleOrSubRole }];
+      delete where.OR;
+    } else {
+      where.OR = roleOrSubRole;
+    }
+  }
+
+  console.log(where, "where");
   const selectFields = {
     user: {
       id: true,

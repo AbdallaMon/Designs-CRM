@@ -17,7 +17,7 @@ export default function AuthProvider({ children }) {
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_URL}/auth/status`,
           {
-            credentials: "include", // Ensure cookies are included
+            credentials: "include", 
           }
         );
         const result = await response.json();
@@ -25,9 +25,15 @@ export default function AuthProvider({ children }) {
           throw new Error(`Error: ${response.status}`);
         }
 
-        window.localStorage.setItem("role", result.user.role);
-
-        setUser(result.user);
+        // window.localStorage.setItem("role", result.user.role);
+        if (window.localStorage.getItem("role")) {
+          setUser({
+            ...result.user,
+            role: window.localStorage.getItem("role"),
+          });
+        } else {
+          setUser(result.user);
+        }
         setIsLoggedIn(true);
       } catch (err) {
         setIsLoggedIn(false);

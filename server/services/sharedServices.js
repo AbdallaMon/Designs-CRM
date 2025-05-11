@@ -106,7 +106,6 @@ export async function getClientLeads({
       ],
     };
   }
-
   const [clientLeads, total] = await Promise.all([
     prisma.clientLead.findMany({
       where,
@@ -187,7 +186,6 @@ export async function getClientLeadsByDateRange({ searchParams }) {
   if (searchParams.selfId) {
     callRemindersWhere.userId = searchParams.selfId;
   }
-  // Fetch data
   const clientLeads = await prisma.clientLead.findMany({
     where,
     orderBy: { createdAt: "desc" },
@@ -559,21 +557,21 @@ async function updateKeyFilterForUserFilter(
   searchParams,
   key = "staffId"
 ) {
-  const user = await prisma.user.findUnique({
-    where: {
-      id: Number(searchParams[key]),
-    },
-  });
-  if (user?.role === "THREE_D_DESIGNER") {
-    userFilter = { threeDDesignerId: Number(searchParams[key]) };
-  } else if (user?.role === "TWO_D_DESIGNER") {
-    userFilter = { twoDDesignerId: Number(searchParams[key]) };
-  } else if (user?.role === "TWO_D_EXECUTOR") {
-    userFilter = { twoDExacuterId: Number(searchParams[key]) };
-  } else {
-    const filterKey = key === "staffId" ? "userId" : key;
-    userFilter = { [filterKey]: Number(searchParams[key]) };
-  }
+  // const user = await prisma.user.findUnique({
+  //   where: {
+  //     id: Number(searchParams[key]),
+  //   },
+  // });
+  // if (user?.role === "THREE_D_DESIGNER") {
+  //   userFilter = { threeDDesignerId: Number(searchParams[key]) };
+  // } else if (user?.role === "TWO_D_DESIGNER") {
+  //   userFilter = { twoDDesignerId: Number(searchParams[key]) };
+  // } else if (user?.role === "TWO_D_EXECUTOR") {
+  //   userFilter = { twoDExacuterId: Number(searchParams[key]) };
+  // } else {
+  const filterKey = key === "staffId" ? "userId" : key;
+  userFilter = { [filterKey]: Number(searchParams[key]) };
+  // }
   return userFilter;
 }
 export const getKeyMetrics = async (searchParams) => {
@@ -1914,6 +1912,7 @@ export async function addCostFiles({ clientLeadId, body }) {
 }
 export async function assignWorkStageLeadToAUser(clientLeadId, userId, type) {
   const activeLeadsWhere = {};
+  console.log("assignWorkStageLeadToAUser");
   if (type === "three-d") {
     activeLeadsWhere.threeDDesignerId = userId;
     activeLeadsWhere.threeDWorkStage = {

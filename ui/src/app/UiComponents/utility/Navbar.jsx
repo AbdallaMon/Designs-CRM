@@ -31,9 +31,9 @@ const Navbar = ({ links }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const pathname = usePathname();
-
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     if (loading) setLoading(false);
   }, []);
