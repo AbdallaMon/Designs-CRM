@@ -10,8 +10,7 @@ import { Typography } from "@mui/material";
 
 export default function ResetPage(props) {
   const searchParams = useSearchParams();
-
-  const { token } = searchParams;
+  const token = searchParams.get("token");
 
   const { setLoading } = useToastContext();
   const router = useRouter();
