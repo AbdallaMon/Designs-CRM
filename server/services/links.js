@@ -1,4 +1,4 @@
-const origin = process.env.ORIGIN;
+const origin = process.env.OLDORIGIN;
 export const dashboardLink = origin + "/dashboard/";
 
 export const dealsLink = origin + "/dashboard/deals/";

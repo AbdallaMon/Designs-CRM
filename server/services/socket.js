@@ -6,7 +6,7 @@ const userSessions = new Map(); // Store last heartbeat timestamps
 export function initSocket(httpServer) {
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.ORIGIN,
+      origin: process.env.OLDORIGIN,
       credentials: true,
     },
   });

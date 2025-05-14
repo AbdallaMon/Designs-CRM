@@ -62,7 +62,7 @@ export async function generateConfirmationToken(id, email) {
   const token = jwt.sign({ id }, SECRET_KEY, { expiresIn: "24h" });
 
   // Send confirmation email
-  const confirmationLink = `${process.env.ORIGIN}/confirm?token=${token}`;
+  const confirmationLink = `${process.env.OLDORIGIN}/confirm?token=${token}`;
   const emailHtml = `
     <p>Please confirm your email by clicking the following link:</p>
     <a href="${confirmationLink}">Confirm Email</a>
@@ -77,7 +77,7 @@ export const requestPasswordReset = async (email) => {
   }
 
   const token = jwt.sign({ id: user.id }, SECRET_KEY, { expiresIn: "1h" });
-  const resetLink = `${process.env.ORIGIN}/reset?token=${token}`;
+  const resetLink = `${process.env.OLDORIGIN}/reset?token=${token}`;
 
   const emailSubject = "Password Reset Request";
   const emailHtml = `
