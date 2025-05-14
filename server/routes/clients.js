@@ -7,6 +7,8 @@ import {
   newClientLeadNotification,
   newLeadCompletedNotification,
   newLeadNotification,
+  sendPaymentReminderEmail,
+  sendPaymentSuccessEmail,
 } from "../services/notification.js";
 import dayjs from "dayjs";
 import Stripe from "stripe";
@@ -535,6 +537,26 @@ router.post("/pay", async (req, res) => {
       success_url: `${process.env.ORIGIN}/success?session_id={CHECKOUT_SESSION_ID}&clientId=${req.body.clientId}&clientLeadId=${req.body.clientLeadId}&lng=${req.body.lng}`,
       cancel_url: `${process.env.ORIGIN}/cancel?session_id={CHECKOUT_SESSION_ID}&clientId=${req.body.clientId}&clientLeadId=${req.body.clientLeadId}&lng=${req.body.lng}`,
     });
+    const clientLead = await prisma.clientLead.findUnique({
+      where: { id: Number(req.body.clientLeadId) },
+      select: {
+        id: true,
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+    await sendPaymentReminderEmail(
+      clientLead.client.email,
+      clientLead.client.name,
+      session.url,
+      req.body.lng
+    );
+
     return res.json({ url: session.url });
   } catch (error) {
     console.error(
@@ -544,8 +566,9 @@ router.post("/pay", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+
 router.get("/payment-status", async (req, res) => {
-  const { sessionId, clientLeadId } = req.query;
+  const { sessionId, clientLeadId, lng } = req.query;
   if (!sessionId || !clientLeadId) {
     return res.status(400).json({ error: "Missing required parameters" });
   }
@@ -559,6 +582,12 @@ router.get("/payment-status", async (req, res) => {
         },
         select: {
           paymentStatus: true,
+          client: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
         },
       });
       if (oldLead.paymentStatus !== "FULLY_PAID") {
@@ -573,6 +602,12 @@ router.get("/payment-status", async (req, res) => {
         });
         await leadPaymentSuccessed(clientLeadId);
       }
+      await sendPaymentSuccessEmail(
+        oldLead.client.email,
+        oldLead.client.name,
+        clientLeadId,
+        lng
+      );
       return res.status(200).json({
         paymentStatus: "PAID",
         success: true,
