@@ -18,10 +18,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { MdClose } from "react-icons/md";
-import {
-  DesignLeadForm,
-  FinalSelectionForm,
-} from "@/app/UiComponents/client-page/FinalSelectionForm";
+import { FinalSelectionForm } from "@/app/UiComponents/client-page/FinalSelectionForm";
 import { designLead } from "@/app/UiComponents/client-page/clientPageData";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
