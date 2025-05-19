@@ -68,7 +68,7 @@ const NotificationPage = ({ searchParams }) => {
             {isAdmin && (
               <Box sx={{ width: { xs: "100%", md: "fit-content" } }}>
                 <SearchComponent
-                  apiEndpoint="search?model=user"
+                  apiEndpoint="search?model=all-users"
                   setFilters={setFilters}
                   inputLabel="Search staff by name or email"
                   renderKeys={["name", "email"]}

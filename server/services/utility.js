@@ -212,6 +212,7 @@ export async function searchData(body) {
         { name: { contains: query } },
       ];
       where.role = "STAFF";
+    } else if (model === "all-users") {
     } else if (model === "client") {
       where.OR = [
         { email: { contains: query } },
