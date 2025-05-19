@@ -212,11 +212,6 @@ export async function searchData(body) {
         { name: { contains: query } },
       ];
       where.role = "STAFF";
-      where.subRoles = {
-        some: {
-          subRole: "STAFF",
-        },
-      };
     } else if (model === "client") {
       where.OR = [
         { email: { contains: query } },

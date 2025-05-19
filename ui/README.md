@@ -141,11 +141,17 @@ main :
 - Record a video for modification part and sent it on the group
 
 - Name project as steps or something else
-
 - Check for roles to be added in the notifications
 
-- And can add my self as admin to project
+- Urgent check why desginer is not showin in change designer for project
+- Can add projects even if lead is not finalized
+- Can add my self as admin to project
+
+- Name project as steps or something else
+- Work stages cards remove the data that is not needed
+- Show tasks and modifications in the work stage card with telegram link
 - Can add 3d Desginer to 2d study
+- dont show sales calls for designers
 - Archieve leads
 - Can edit client name
 - Arrange projects by prioirty
