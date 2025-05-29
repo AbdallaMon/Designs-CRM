@@ -154,6 +154,8 @@ main :
 - Show tasks and modifications in the work stage card with telegram link (Modifcation)
 - Arrange projects by prioirty
 
+- Dont allow client to add prefered time
+- Allow admin to convert user
 - Can add 3d Desginer to 2d study (Modifcation)
 - Name project as steps or something else
 
