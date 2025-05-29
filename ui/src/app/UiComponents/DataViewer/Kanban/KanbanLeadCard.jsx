@@ -248,6 +248,14 @@ const LeadCard = ({ lead, movelead, setleads, type, statusArray }) => {
 
           <Stack spacing={2}>
             {latestCalls?.map((call, index) => {
+              if (
+                user.role !== "ADMIN" &&
+                user.role !== "SUPER_ADMIN" &&
+                user.role !== "STAFF" &&
+                call.userId !== user.id
+              ) {
+                return;
+              }
               return (
                 <CallInfoBox
                   key={index}
@@ -277,7 +285,7 @@ const LeadCard = ({ lead, movelead, setleads, type, statusArray }) => {
                         Result: {hideMoreData(call.callResult) || "N/A"}
                       </Typography>
                     )}
-                    {!admin && call.status === "IN_PROGRESS" && (
+                    {call.status === "IN_PROGRESS" && (
                       <CallResultDialog
                         setleads={setleads}
                         lead={lead}

@@ -56,6 +56,7 @@ import {
   MdAssignment,
   MdDelete,
   MdAssignmentInd,
+  MdGroup,
 } from "react-icons/md";
 import { PROJECT_STATUSES, statusColors } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
@@ -68,9 +69,11 @@ import { RelatedLinks } from "../../utility/RelatedLinks";
 import { AiOutlineSwap } from "react-icons/ai";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import { AssignDesignerModal } from "./AssignDesignerModal";
+import { ProjectTasksDialog, TasksDialog } from "../utility/ProjectTasksDialog";
 
 // Styled components
-const StyledCard = styled(Card)(({ theme }) => ({
+export const StyledCard = styled(Card)(({ theme }) => ({
   borderRadius: 12,
   boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
   // height: "100%",
@@ -105,15 +108,6 @@ const InfoCard = styled(Box)(({ theme }) => ({
   minWidth: 160,
 }));
 
-const StatusChip = styled(Chip)(({ theme, status }) => ({
-  borderRadius: 16,
-  height: 32,
-  fontWeight: 600,
-  padding: theme.spacing(0, 1),
-  boxShadow: "0 2px 5px rgba(0, 0, 0, 0.08)",
-  marginLeft: theme.spacing(1),
-}));
-
 const PriorityChip = styled(Chip)(({ theme, priority }) => ({
   borderRadius: 16,
   height: 32,
@@ -143,7 +137,7 @@ const ProgressDot = styled(Box)(({ theme, active }) => ({
   boxShadow: active ? "0 0 0 2px rgba(25, 118, 210, 0.2)" : "none",
 }));
 
-const StyledDesignerCard = styled(Box)(({ theme }) => ({
+export const StyledDesignerCard = styled(Box)(({ theme }) => ({
   display: "flex",
   justifyContent: "space-between",
   alignItems: "center",
@@ -361,8 +355,8 @@ export const ProjectDetails = ({
   const [editedProject, setEditedProject] = useState({ ...project });
   const [open, setOpen] = useState(false);
   const [assignmentId, setAssignmentId] = useState(null);
-  const { setLoading } = useToastContext();
   const [deleteDesigner, setDeleteDesigner] = useState(false);
+  const { setLoading } = useToastContext();
   const { user } = useAuth();
   const isAdmin = checkIfAdmin(user);
 
@@ -721,22 +715,6 @@ export const ProjectDetails = ({
                       </Box>
 
                       <Box sx={{ display: "flex", gap: 1 }}>
-                        <Tooltip title="Change assigned designer">
-                          <StyledButton
-                            onClick={() => {
-                              setOpen(true);
-                              setAssignmentId(assignment.id);
-                              setDeleteDesigner(false);
-                            }}
-                            variant="outlined"
-                            color="primary"
-                            size="small"
-                            startIcon={<MdSwapHoriz />}
-                          >
-                            Change
-                          </StyledButton>
-                        </Tooltip>
-
                         <Tooltip title="Remove from project">
                           <StyledButton
                             onClick={() => {
@@ -787,40 +765,6 @@ export const ProjectDetails = ({
     </Box>
   );
 
-  const TasksDialog = () => (
-    <Dialog
-      fullScreen
-      open={tasksDialogOpen}
-      onClose={() => setTasksDialogOpen(false)}
-    >
-      <AppBar position="sticky" elevation={2}>
-        <Toolbar>
-          <IconButton
-            edge="start"
-            color="inherit"
-            onClick={() => setTasksDialogOpen(false)}
-            aria-label="close"
-            sx={{ mr: 2 }}
-          >
-            <MdClose />
-          </IconButton>
-          <Typography
-            variant="h6"
-            component="div"
-            sx={{ flex: 1, fontWeight: 600 }}
-          >
-            Project Tasks & Activities
-          </Typography>
-        </Toolbar>
-      </AppBar>
-      <DialogContent sx={{ p: 3, bgcolor: "#f9fafb" }}>
-        <Container maxWidth="lg" sx={{ py: 2 }}>
-          <TasksList projectId={project.id} type="PROJECT" />
-        </Container>
-      </DialogContent>
-    </Dialog>
-  );
-
   return (
     <>
       <ProjectProgressTracker project={project} />
@@ -839,7 +783,12 @@ export const ProjectDetails = ({
                 gap: 2,
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <PriorityChip
+                  icon={<MdGroup />}
+                  label={`(Group: ${project.groupTitle})`}
+                  color="0d9488"
+                />
                 <StyledButton
                   variant="contained"
                   startIcon={!isAdmin && <AiOutlineSwap />}
@@ -865,7 +814,6 @@ export const ProjectDetails = ({
                 >
                   {project.status}
                 </StyledButton>
-
                 <Menu
                   id="status-menu"
                   anchorEl={anchorEl}
@@ -908,13 +856,11 @@ export const ProjectDetails = ({
                     </MenuItem>
                   ))}
                 </Menu>
-
                 <PriorityChip
                   icon={<MdPriorityHigh />}
                   label={formatPriority(project.priority)}
                   color={getPriorityColor(project.priority)}
                   priority={project.priority}
-                  sx={{ ml: 2 }}
                 />
               </Box>
 
@@ -949,133 +895,7 @@ export const ProjectDetails = ({
         </StyledCard>
       )}
 
-      {renderTasks && (
-        <StyledCard sx={{ mt: 3, overflow: "hidden" }}>
-          <CardContent sx={{ p: 3 }}>
-            <StyledButton
-              variant="contained"
-              color="primary"
-              startIcon={<MdList />}
-              fullWidth
-              onClick={() => setTasksDialogOpen(true)}
-              size="large"
-              sx={{ py: 1.5 }}
-            >
-              View Project Tasks & Activities
-            </StyledButton>
-          </CardContent>
-        </StyledCard>
-      )}
-
-      {/* Tasks Dialog */}
-      <TasksDialog />
+      {renderTasks && <ProjectTasksDialog project={project} />}
     </>
   );
 };
-function AssignDesignerModal({
-  open,
-  setOpen,
-  project,
-  onUpdate,
-  assignmentId,
-  deleteDesigner,
-}) {
-  const [designerId, setDesignerId] = useState("");
-  const [users, setUsers] = useState([]);
-  const { setLoading: setToastLoading } = useToastContext();
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function getUsers() {
-      const usersRequest = await getData({
-        url: `admin/all-users?role=${project.role}&`,
-        setLoading,
-      });
-      if (usersRequest.status === 200) {
-        setUsers(usersRequest.data);
-      }
-    }
-    if (open) {
-      getUsers();
-    }
-  }, [open, project.role]);
-
-  const handleDesignerChange = (event) => {
-    setDesignerId(event.target.value);
-  };
-
-  const handleSubmit = async () => {
-    const updatedProject = await handleRequestSubmit(
-      { designerId, assignmentId, deleteDesigner },
-      setToastLoading,
-      `shared/projects/${project.id}/assign-designer`,
-      false,
-      "Assigning Designer",
-      false,
-      "PUT"
-    );
-    if (updatedProject.status === 200) {
-      onUpdate(updatedProject.data);
-      setOpen(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <Dialog open={open} onClose={() => setOpen(false)}>
-        <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
-          <CircularProgress />
-        </Box>
-      </Dialog>
-    );
-  }
-
-  return (
-    <Dialog
-      open={open}
-      onClose={() => setOpen(false)}
-      PaperProps={{ sx: { width: "400px", maxWidth: "100%" } }}
-    >
-      <DialogTitle>Assign Designer</DialogTitle>
-      <DialogContent>
-        <>
-          {deleteDesigner ? (
-            <>
-              <Typography variant="body2" color="text.secondary">
-                Are you sure you want to remove the designer from this project?
-              </Typography>
-            </>
-          ) : (
-            <>
-              <FormControl fullWidth sx={{ mt: 1 }}>
-                <InputLabel id="designer-label">Select Designer</InputLabel>
-                <Select
-                  labelId="designer-label"
-                  value={designerId}
-                  label="Select Designer"
-                  onChange={handleDesignerChange}
-                >
-                  {users.map((user) => (
-                    <MenuItem key={user.id} value={user.id}>
-                      {user.name} - {user.email}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </>
-          )}
-        </>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => setOpen(false)}>Cancel</Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          color={deleteDesigner ? "error" : "primary"}
-        >
-          {deleteDesigner ? "Remove" : "Assign"}
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-}

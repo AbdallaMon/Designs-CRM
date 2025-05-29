@@ -70,6 +70,11 @@ export const adminLinks = [
         icon: <FiBriefcase size={20} />,
       },
       {
+        name: "Archived projects",
+        href: "/dashboard/projects/archived",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
         name: "3D Work stage",
         href: "/dashboard/work-stages",
         icon: <FiBriefcase size={20} />,
@@ -185,6 +190,11 @@ export const superAdminLinks = [
         icon: <FiBriefcase size={20} />,
       },
       {
+        name: "Archived projects",
+        href: "/dashboard/projects/archived",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
         name: "3D Work stage",
         href: "/dashboard/work-stages",
         icon: <FiBriefcase size={20} />,
@@ -280,6 +290,11 @@ export const threeDLinks = [
         href: "/dashboard/modification",
         icon: <FiBriefcase size={20} />,
       },
+      {
+        name: "Archived projects",
+        href: "/dashboard/archived",
+        icon: <FiBriefcase size={20} />,
+      },
     ],
   },
 ];
@@ -304,6 +319,11 @@ export const twoDLinks = [
       {
         name: "Final plan department",
         href: "/dashboard/final-plan",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
+        name: "Archived projects",
+        href: "/dashboard/archived",
         icon: <FiBriefcase size={20} />,
       },
     ],

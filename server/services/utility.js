@@ -303,7 +303,6 @@ export async function searchData(body) {
     }
   }
 
-  console.log(where, "where");
   const selectFields = {
     user: {
       id: true,

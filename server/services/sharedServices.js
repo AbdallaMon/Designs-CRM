@@ -1292,18 +1292,23 @@ export async function updateClientLeadStatus({
   priceNote,
 }) {
   if (!isAdmin) {
-    if (oldStatus === "FINALIZED" || oldStatus === "REJECTED") {
+    if (
+      oldStatus === "FINALIZED" ||
+      oldStatus === "REJECTED" ||
+      oldStatus === "ARCHIVED"
+    ) {
       throw new Error(
-        "You cant change the status from rejected or finalized only admin can ,Contact your administrator to take an action"
-      );
-    }
-  } else {
-    if (oldStatus !== "FINALIZED" && oldStatus !== "REJECTED") {
-      throw new Error(
-        "You are only allowed to change the status from finalized or rejected"
+        "You cant change the status from rejected or finalized or archived only admin can ,Contact your administrator to take an action"
       );
     }
   }
+  // else {
+  //   if (oldStatus !== "FINALIZED" && oldStatus !== "REJECTED") {
+  //     throw new Error(
+  //       "You are only allowed to change the status from finalized or rejected"
+  //     );
+  //   }
+  // }
 
   const data = {
     status,
@@ -1912,7 +1917,6 @@ export async function addCostFiles({ clientLeadId, body }) {
 }
 export async function assignWorkStageLeadToAUser(clientLeadId, userId, type) {
   const activeLeadsWhere = {};
-  console.log("assignWorkStageLeadToAUser");
   if (type === "three-d") {
     activeLeadsWhere.threeDDesignerId = userId;
     activeLeadsWhere.threeDWorkStage = {
@@ -2162,6 +2166,7 @@ export async function getLeadByPorjects({ searchParams }) {
   const filters = JSON.parse(searchParams.filters);
   const where = {};
   const projectWhere = {};
+
   if (searchParams.type) {
     where.projects = {
       some: {
@@ -2221,6 +2226,33 @@ export async function getLeadByPorjects({ searchParams }) {
       },
     };
   }
+  if (searchParams.isArchieved) {
+    where.status = "ARCHIVED";
+  } else {
+    where.status = {
+      notIn: ["ARCHIVED", "NEW"],
+    };
+  }
+
+  // Helper function to determine task visibility based on user role
+  const getTaskVisibilityFilter = (userRole) => {
+    const allowedRoles = ["ADMIN", "SUPER_ADMIN", "THREE_D_DESIGNER"];
+
+    if (allowedRoles.includes(userRole)) {
+      return {
+        type: {
+          in: ["PROJECT", "MODIFICATION"],
+        },
+      };
+    } else {
+      return {
+        type: "PROJECT",
+      };
+    }
+  };
+
+  const userRole = searchParams.userRole;
+  const taskFilter = getTaskVisibilityFilter(userRole);
 
   const rawLeads = await prisma.clientLead.findMany({
     where,
@@ -2234,12 +2266,15 @@ export async function getLeadByPorjects({ searchParams }) {
           id: true,
           type: true,
           status: true,
+          role: true,
           area: true,
           deliveryTime: true,
           priority: true,
           startedAt: true,
           endedAt: true,
           clientLeadId: true,
+          isModification: true,
+          groupTitle: true,
           assignments: {
             select: {
               user: {
@@ -2251,8 +2286,46 @@ export async function getLeadByPorjects({ searchParams }) {
               },
             },
           },
+          tasks: {
+            where: {
+              ...taskFilter,
+              status: {
+                in: ["TODO", "IN_PROGRESS"],
+              },
+            },
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              status: true,
+              priority: true,
+              type: true,
+              createdAt: true,
+              updatedAt: true,
+              dueDate: true,
+              finishedAt: true,
+              userId: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+            orderBy: [
+              {
+                priority: "desc",
+              },
+              {
+                updatedAt: "desc",
+              },
+            ],
+          },
         },
       },
+      status: true,
+      telegramLink: true,
       price: true,
       averagePrice: true,
       priceWithOutDiscount: true,
@@ -2261,31 +2334,36 @@ export async function getLeadByPorjects({ searchParams }) {
       type: true,
       emirate: true,
       discount: true,
-      callReminders: {
-        orderBy: { time: "desc" },
-        take: 2,
-      },
     },
   });
-  // 👇 Transform leads so each lead appears once per project
   const expandedLeads = rawLeads.flatMap((lead) => {
     if (!lead.projects || lead.projects.length === 0) return [];
 
     return lead.projects.map((primaryProject, i) => {
-      // Put this project first, then the rest
       const reorderedProjects = [
         primaryProject,
         ...lead.projects.filter((_, j) => j !== i),
       ];
 
+      const processedProjects = reorderedProjects.map((project) => ({
+        ...project,
+        tasks: project.tasks?.filter((task) => task.type === "PROJECT"),
+        modifications: project.tasks?.filter(
+          (task) => task.type === "MODIFICATION"
+        ),
+      }));
+
       return {
         ...lead,
-        projects: reorderedProjects,
+        projects: processedProjects,
       };
     });
   });
+
   return expandedLeads;
 }
+
+// Helper function to convert priority enum to numeric order
 
 export async function getLeadDetailsByProject(clientLeadId, searchParams) {
   const where = { id: clientLeadId };
@@ -2375,6 +2453,9 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
           startedAt: true,
           endedAt: true,
           clientLeadId: true,
+          role: true,
+          groupTitle: true,
+          isModification: true,
           assignments: {
             select: {
               id: true,
@@ -2661,22 +2742,83 @@ export async function assignProjectToUser({
   userId,
   assignmentId,
   deleteDesigner,
+  addToModification,
+  removeFromModification,
+  groupId,
 }) {
+  const checkIfUserIsAlreadyAssigned = async () => {
+    const assignment = await prisma.assignment.findFirst({
+      where: {
+        userId: Number(userId),
+        projectId: Number(projectId),
+      },
+    });
+    if (assignment) {
+      throw new Error(
+        "This designer is already assigned to this project, refresh page if u didnt find him."
+      );
+    }
+  };
+  await checkIfUserIsAlreadyAssigned();
+  let modificationProject;
+  if (removeFromModification || addToModification) {
+    const clientLead = await prisma.clientLead.findFirst({
+      where: {
+        projects: {
+          some: {
+            id: Number(projectId),
+          },
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (clientLead) {
+      modificationProject = await prisma.project.findFirst({
+        where: {
+          clientLeadId: Number(clientLead.id),
+          type: "3D_Modification",
+          groupId: Number(groupId),
+        },
+        select: {
+          id: true,
+          assignments: {
+            select: {
+              id: true,
+            },
+          },
+        },
+      });
+    }
+  }
   if (deleteDesigner) {
+    // if (deleteDesigner) {
+    const oldAssignment = await prisma.assignment.findUnique({
+      where: {
+        id: Number(assignmentId),
+      },
+    });
     await prisma.assignment.delete({
       where: {
         id: Number(assignmentId),
       },
     });
-  } else if (assignmentId) {
-    await prisma.assignment.update({
-      where: {
-        id: Number(assignmentId),
-      },
-      data: {
-        userId: Number(userId),
-      },
-    });
+    if (removeFromModification && modificationProject) {
+      const assignmentToDelete = await prisma.assignment.findFirst({
+        where: {
+          projectId: modificationProject.id,
+          userId: oldAssignment.userId,
+        },
+      });
+      if (assignmentToDelete) {
+        await prisma.assignment.delete({
+          where: {
+            id: assignmentToDelete.id,
+          },
+        });
+      }
+    }
   } else {
     await prisma.assignment.create({
       data: {
@@ -2684,6 +2826,14 @@ export async function assignProjectToUser({
         projectId: Number(projectId),
       },
     });
+    if (addToModification && modificationProject) {
+      await prisma.assignment.create({
+        data: {
+          userId: Number(userId),
+          projectId: Number(modificationProject.id),
+        },
+      });
+    }
   }
   const project = await prisma.project.findUnique({
     where: { id: Number(projectId) },
@@ -2778,6 +2928,18 @@ export async function updateProject({ data, isAdmin }) {
       },
     },
   });
+  if (project.status === "Modification" && project.type === "3D_Designer") {
+    const modificationProject = await prisma.project.updateMany({
+      where: {
+        groupId: project.groupId,
+        clientLeadId: project.clientLeadId,
+        type: "3D_Modification",
+      },
+      data: {
+        isModification: true,
+      },
+    });
+  }
   if (project.status !== "To Do" && !project.startedAt) {
     await prisma.project.update({
       where: {
@@ -2915,6 +3077,9 @@ export async function getProjectDetailsById({ id, searchParams }) {
       tasks: true,
     },
   });
+  if (project.type === "3D_Modification" && !project.isModification) {
+    throw new Error("This project is not in modification state yet");
+  }
   return project;
 }
 export async function getUserRole(userId) {
@@ -3008,14 +3173,80 @@ export async function getTaskDetails({ searchParams, id }) {
       where: {
         id: task.projectId,
       },
+      select: {
+        assignments: {
+          select: { userId: true },
+        },
+      },
     });
-
-    if (projectUser.userId === Number(userId)) {
+    let passed = false;
+    projectUser.assignments?.forEach((assignment) => {
+      if (assignment.userId === Number(userId)) {
+        passed = true;
+        return;
+      }
+    });
+    if (passed) {
       return task;
     }
   }
 
   throw new Error("You are not allowed to see this task");
+}
+
+export async function getArchivedProjects(searchParams, limit, skip) {
+  const where = {
+    projects: {
+      some: {},
+    },
+  };
+  const filters = JSON.parse(searchParams.filters);
+  if (filters && filters !== "undefined" && filters.id) {
+    where.id = Number(filters.id);
+  }
+  if (searchParams.id) {
+    where.id = Number(searchParams.id);
+  }
+
+  if (searchParams.userId) {
+    where.projects.some.assignments = {
+      some: {
+        userId: Number(searchParams.userId),
+      },
+    };
+  }
+  where.status = "ARCHIVED";
+
+  const clientLeads = await prisma.clientLead.findMany({
+    where,
+    skip,
+    take: limit,
+    include: {
+      projects: {
+        include: {
+          assignments: {
+            select: {
+              id: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+  clientLeads.forEach((lead) => {
+    const groupedProjects = groupProjects(lead.projects);
+    lead.groupedProjects = groupedProjects;
+  });
+
+  const total = await prisma.clientLead.count({ where });
+  return { data: clientLeads, total };
 }
 
 export async function createNewTask({ data, isAdmin = false, staffId }) {
@@ -3101,6 +3332,7 @@ export async function updateTask({ data, taskId, isAdmin = false, userId }) {
   if (data.status && data.status === "DONE") {
     data.finishedAt = new Date();
   }
+  data.updatedAt = new Date();
   const updatedTask = await prisma.task.update({
     where: { id: Number(taskId) },
     data,

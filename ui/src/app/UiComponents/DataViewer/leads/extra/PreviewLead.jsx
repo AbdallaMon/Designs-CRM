@@ -42,7 +42,6 @@ export const PreviewLead = ({
           // url: `shared/client-leads/projects/designers/${id}?type=${type}&`,
           setLoading,
         });
-        console.log(leadDetails, "leadDetails");
         if (leadDetails && leadDetails.status === 200) {
           setLead(leadDetails.data);
         }

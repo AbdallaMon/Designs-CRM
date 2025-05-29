@@ -23,11 +23,12 @@ import {
   MdInfo,
   MdPerson,
   MdPriorityHigh,
+  MdTask,
 } from "react-icons/md";
 import dayjs from "dayjs";
 import { TaskActions } from "./TaskActions";
 import { NotesComponent } from "./Notes";
-export default function TaskDetails({ id }) {
+export default function TaskDetails({ id, showBackButton = true }) {
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -39,7 +40,6 @@ export default function TaskDetails({ id }) {
         url: `shared/tasks/${id}`,
         setLoading,
       });
-      console.log(res, "res");
       if (res && res.status === 200) {
         setTask(res.data);
       }
@@ -82,9 +82,11 @@ export default function TaskDetails({ id }) {
           it.
         </Alert>
         <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-          <Button variant="outlined" onClick={() => window.history.back()}>
-            Go Back
-          </Button>
+          {showBackButton && (
+            <Button variant="outlined" onClick={() => window.history.back()}>
+              Go Back
+            </Button>
+          )}
         </Box>
       </Box>
     );
@@ -101,10 +103,15 @@ export default function TaskDetails({ id }) {
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-          <Typography variant="h4" component="h1">
-            Task Details
-          </Typography>
-          <TaskActions name={"Task"} setTask={setTask} task={task} />
+          <Box display="flex" alignItems="center" gap={1}>
+            <MdTask />
+            {task.type === "MODIFICATION" ? "Modification" : "Task"} Details
+          </Box>
+          <TaskActions
+            name={task.type === "MODIFICATION" ? "Modification" : "Task"}
+            setTask={setTask}
+            task={task}
+          />
           <NotesComponent
             idKey={"taskId"}
             id={task.id}
@@ -112,10 +119,11 @@ export default function TaskDetails({ id }) {
             showAddNotes={true}
           />
         </Box>
-
-        <Button variant="outlined" onClick={() => window.history.back()}>
-          Back
-        </Button>
+        {showBackButton && (
+          <Button variant="outlined" onClick={() => window.history.back()}>
+            Back
+          </Button>
+        )}
       </Box>
       <Card sx={{ mb: 4 }}>
         <CardContent>

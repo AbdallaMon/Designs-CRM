@@ -83,13 +83,14 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
       )}
       <Stack spacing={2}>
         {callReminders?.map((call) => {
-          //   if (
-          //     user.role !== "ADMIN" &&
-          //     user.role !== "SUPERVISOR" &&
-          //     call.userId !== user.id
-          //   ) {
-          //     return;
-          //   }
+          if (
+            user.role !== "ADMIN" &&
+            user.role !== "SUPER_ADMIN" &&
+            user.role !== "STAFF" &&
+            call.userId !== user.id
+          ) {
+            return;
+          }
           return (
             <Paper
               key={call.id}
@@ -140,7 +141,7 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
                         </Typography>
                       )}
                     </Box>
-                    {!admin && user.role !== "ACCOUNTANT" && (
+                    {user.role !== "ACCOUNTANT" && (
                       <>
                         {call.status === "IN_PROGRESS" && (
                           <CallResultDialog

@@ -89,6 +89,7 @@ enum ClientLeadStatus {
  FINALIZED
  CONVERTED
  ON_HOLD
+ ARCHIVED
 }
 
 enum CallReminderStatus {
@@ -276,6 +277,8 @@ model Project {
   clientLeadId Int
   clientLead  ClientLead @relation(fields: [clientLeadId], references: [id])
   
+  isModification Boolean   @default(false) 
+  
   deliveryTime DateTime? // time to deliver the project (optional)
   priority     Priority  @default(MEDIUM) // enum with default value
   area         Decimal?  @db.Decimal(10, 2) // optional decimal field
@@ -285,7 +288,7 @@ model Project {
   type        String 
   role    UserRole @default(THREE_D_DESIGNER)
   tasks     Task[]
-
+  
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   
@@ -303,6 +306,8 @@ model Task {
   type        String    @default("NORMAL")  // New field with default value
 
   createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
   dueDate     DateTime?
   finishedAt  DateTime?
   
@@ -317,6 +322,7 @@ model Task {
 
   createdBy         User?           @relation("CreatedTasks", fields: [createdById], references: [id]) 
   createdById       Int?
+  
   notes       Note[]
   
   @@index([projectId])

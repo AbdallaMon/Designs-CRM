@@ -189,6 +189,7 @@ export const ClientLeadStatus = {
   FINALIZED: "Finalized",
   CONVERTED: "Converted",
   ON_HOLD: "On Hold",
+  ARCHIVED: "Archived",
 };
 
 // Work Stages for 3D Designer
@@ -221,6 +222,7 @@ export const KanbanLeadsStatus = {
   NEGOTIATING: "Negotiating",
   FINALIZED: "Finalized",
   REJECTED: "Rejected",
+  ARCHIVED: "Archived",
 };
 
 // Projects
@@ -268,6 +270,29 @@ export const PROJECT_STATUSES = {
 
 export const PRIORITY = ["VERY_LOW", "LOW", "MEDIUM", "HIGH", "VERY_HIGH"];
 export const TASKSTATUS = ["TODO", "IN_PROGRESS", "DONE"];
+export const priorityColors = {
+  VERY_LOW: { bg: "#f5f5f5", color: "#666666", border: "#e0e0e0" },
+  LOW: { bg: "#e8f5e8", color: "#2e7d32", border: "#4caf50" },
+  MEDIUM: { bg: "#fff3e0", color: "#f57c00", border: "#ff9800" },
+  HIGH: { bg: "#ffebee", color: "#d32f2f", border: "#f44336" },
+  VERY_HIGH: { bg: "#f3e5f5", color: "#7b1fa2", border: "#9c27b0" },
+};
+
+export const taskStatusColors = {
+  TODO: { bg: "#e3f2fd", color: "#1976d2", border: "#2196f3" },
+  IN_PROGRESS: { bg: "#fff3e0", color: "#f57c00", border: "#ff9800" },
+  DONE: { bg: "#e8f5e8", color: "#2e7d32", border: "#4caf50" },
+};
+export function getPriorityOrder(priority) {
+  const priorityMap = {
+    VERY_HIGH: 5,
+    HIGH: 4,
+    MEDIUM: 3,
+    LOW: 2,
+    VERY_LOW: 1,
+  };
+  return priorityMap[priority] || 3; // Default to MEDIUM
+}
 export const statusColors = {
   IN_PROGRESS: "#0d9488",
   INTERESTED: "#10b981",
@@ -275,6 +300,7 @@ export const statusColors = {
   NEGOTIATING: "#3b82f6",
   REJECTED: "#ef4444",
   FINALIZED: "#0f766e",
+  ARCHIVED: "0f757d",
   CLIENT_COMMUNICATION: "#3b82f6",
   DESIGN_STAGE: "#10b981",
   THREE_D_STAGE: "#f59e0b",
@@ -326,6 +352,7 @@ export const KanbanStatusArray = [
   "NEGOTIATING",
   "FINALIZED",
   "REJECTED",
+  "ARCHIVED",
 ];
 export const AccountantKanbanStatusArray = [
   "IN_PROGRESS",

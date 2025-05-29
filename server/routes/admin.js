@@ -29,6 +29,7 @@ import {
   getUser,
   getUserById,
   getUserLogs,
+  updateClientField,
   updateCommission,
   updateLeadField,
   updateNotAllowedCountries,
@@ -354,6 +355,23 @@ router.post("/leads/update/:id", async (req, res) => {
       });
       await newLeadNotification(Number(id), lead.client);
     }
+    res.status(200).json({
+      data: updatedLead,
+      message: "Lead updated successfully",
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({ message: e.message });
+  }
+});
+router.put("/client/update/:clientId", async (req, res) => {
+  try {
+    const { clientId } = req.params;
+    const updatedLead = await updateClientField({
+      data: req.body,
+      clientId: clientId,
+    });
+
     res.status(200).json({
       data: updatedLead,
       message: "Lead updated successfully",

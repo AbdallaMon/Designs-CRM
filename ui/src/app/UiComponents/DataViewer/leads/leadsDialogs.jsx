@@ -67,7 +67,7 @@ export const CallResultDialog = ({
         status,
       },
       setLoading,
-      `staff/client-leads/call-reminders/${call.id}`,
+      `shared/client-leads/call-reminders/${call.id}`,
       false,
       "Updating",
       false,

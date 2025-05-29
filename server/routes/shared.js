@@ -17,6 +17,7 @@ import {
   createNewTask,
   editPriceOfferStatus,
   getAllFixedData,
+  getArchivedProjects,
   getClientLeadDetails,
   getClientLeads,
   getClientLeadsByDateRange,
@@ -53,6 +54,7 @@ import {
   updateWorkStageStatus,
 } from "../services/sharedServices.js";
 import { getAdminClientLeadDetails } from "../services/adminServices.js";
+import { updateCallReminderStatus } from "../services/staffServices.js";
 
 const router = Router();
 
@@ -143,7 +145,27 @@ router.get("/client-leads/calls", async (req, res) => {
       .json({ message: "An error occurred while fetching client leads" });
   }
 });
+router.put("/client-leads/call-reminders/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await getCurrentUser(req);
 
+    const callReminder = await updateCallReminderStatus({
+      reminderId: Number(id),
+      currentUser: user,
+      ...req.body,
+    });
+    res.status(200).json({
+      data: callReminder,
+      message: "Call reminder updated successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message:
+        error.message || "An error occurred while updating call reminder.",
+    });
+  }
+});
 router.get("/client-leads/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -509,6 +531,7 @@ router.get("/client-leads/projects/designers", async (req, res) => {
     } else {
       searchParams.userId = token.id;
     }
+    searchParams.userRole = token.role;
     const clientLeads = await getLeadByPorjects({ searchParams });
     res.status(200).json({ data: clientLeads });
   } catch (error) {
@@ -561,6 +584,21 @@ router.get("/projects", async (req, res) => {
     res
       .status(500)
       .json({ message: "An error occurred while fetching work stages leads" });
+  }
+});
+router.get("/archived-projects", async (req, res) => {
+  try {
+    const { limit, skip } = getPagination(req);
+    const searchParams = req.query;
+    const token = getTokenData(req, res);
+    if (token.role !== "ADMIN" && token.role !== "SUPER_ADMIN") {
+      searchParams.userId = token.id;
+    }
+    const data = await getArchivedProjects(searchParams, limit, skip);
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error fetching commission:", error);
+    res.status(500).json({ message: error.message });
   }
 });
 
@@ -626,6 +664,9 @@ router.put("/projects/:id/assign-designer", async (req, res) => {
       projectId: id,
       assignmentId: project.assignmentId,
       deleteDesigner: project.deleteDesigner,
+      addToModification: project.addToModification,
+      removeFromModification: project.removeFromModification,
+      groupId: project.groupId,
     });
     res
       .status(200)

@@ -128,7 +128,6 @@ export const LeadProjects = ({
       url: `shared/projects?clientLeadId=${clientLeadId}&`,
       setLoading,
     });
-
     if (projectsReq.status === 200) {
       setGroupedProjects(projectsReq.data);
       if (
@@ -162,7 +161,6 @@ export const LeadProjects = ({
 
   function onGroupCreated(newGroup) {
     handleRefresh();
-    setActiveGroupTab(groupedProjects.length);
   }
 
   const handleProjectClick = (project) => {

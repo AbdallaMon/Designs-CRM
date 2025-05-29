@@ -139,24 +139,30 @@ main :
 - Projects pages
 - Multiable user roles problems
 - Record a video for modification part and sent it on the group
-
-- Name project as steps or something else
-- Check for roles to be added in the notifications
-
 - Urgent check why desginer is not showin in change designer for project
-- Can add projects even if lead is not finalized
-- Can add my self as admin to project
 
-- Name project as steps or something else
+- Can add projects even if lead is not finalized (Modifcation) 10
+- Can edit client name (Modifcation)
+- Archieve leads (Modifcation)
+- Search by leadId in projects page
+- Change call reminder status by admin (only that is pending)
+- Don't show sales calls for designers (Modifcation)
+- Automatic assign modifcation leads to the same designer (3d) (Modifcation)
+- Add archieved projects page
 - Work stages cards remove the data that is not needed
-- Show tasks and modifications in the work stage card with telegram link
-- Can add 3d Desginer to 2d study
-- dont show sales calls for designers
-- Archieve leads
-- Can edit client name
-- Arrange projects by prioirty
 - Color lead by prioirty and color the text of prioirty it self
-- Delete call reminder by admin (only that is pending)
+- Show tasks and modifications in the work stage card with telegram link (Modifcation)
+- Arrange projects by prioirty
+
+- Can add 3d Desginer to 2d study (Modifcation)
+- Name project as steps or something else
+
+- Allow admin to convert lead to another user
+- Added important events to the dashboard (like new project update ,task ,modifcation) and so on (Modifcation)
+- Project updated
+
+- Check for roles to be added in the notifications
+- Can add my self as admin to project
 
 - Finalize price and extra price
 - Search for better way for commission

@@ -12,6 +12,7 @@ import { BiDollarCircle } from "react-icons/bi";
 import { BsKanban } from "react-icons/bs";
 import LeadCard from "./KanbanLeadCard";
 import { useDrop } from "react-dnd";
+import WorkStageKanbanCard from "./WorkStageKanbanCard";
 
 const ItemTypes = {
   CARD: "card",
@@ -62,7 +63,6 @@ const KanbanColumn = ({
       movelead(item, status);
     },
   });
-
   const totalValue = leads.reduce(
     (acc, lead) =>
       acc + parseFloat(lead?.price ? lead.price.replace(/,/g, "") : 0),
@@ -77,7 +77,7 @@ const KanbanColumn = ({
       sx={{
         bgcolor: "grey.50",
         p: 0,
-        minWidth: 250,
+        minWidth: type === "STAFF" ? 260 : 275,
         height: "100vh",
         borderRadius: 0,
         display: "flex",
@@ -150,17 +150,33 @@ const KanbanColumn = ({
         }}
       >
         <Stack spacing={1}>
-          {leads.map((lead) => (
-            <LeadCard
-              key={lead.id}
-              lead={lead}
-              movelead={movelead}
-              admin={admin}
-              setleads={setleads}
-              type={type}
-              statusArray={statusArray}
-            />
-          ))}
+          {leads.map((lead) => {
+            if (type === "STAFF") {
+              return (
+                <LeadCard
+                  key={lead.id}
+                  lead={lead}
+                  movelead={movelead}
+                  admin={admin}
+                  setleads={setleads}
+                  type={type}
+                  statusArray={statusArray}
+                />
+              );
+            } else {
+              return (
+                <WorkStageKanbanCard
+                  key={lead.id}
+                  lead={lead}
+                  movelead={movelead}
+                  admin={admin}
+                  setleads={setleads}
+                  type={type}
+                  statusArray={statusArray}
+                />
+              );
+            }
+          })}
         </Stack>
       </Box>
     </Grid>

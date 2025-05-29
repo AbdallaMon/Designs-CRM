@@ -162,6 +162,25 @@ export async function updateCallReminderStatus({
   status,
   callResult = null,
 }) {
+  if (currentUser.role !== "ADMIN" && currentUser.role !== "SUPER_ADMIN") {
+    const callReminder = await prisma.callReminder.findUnique({
+      where: {
+        id: reminderId,
+      },
+      select: {
+        user: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+    if (callReminder.user.id !== currentUser.id) {
+      throw new Error(
+        "You are not allowed to update this call result ask admin to do that"
+      );
+    }
+  }
   const updatedReminder = await prisma.callReminder.update({
     where: { id: reminderId },
     data: {

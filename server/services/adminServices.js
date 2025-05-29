@@ -1413,6 +1413,19 @@ export async function updateLeadField({ data, leadId }) {
   }
 }
 
+export async function updateClientField({ data, clientId }) {
+  try {
+    const updatedClient = await prisma.client.update({
+      where: {
+        id: Number(clientId),
+      },
+      data,
+    });
+    return updatedClient;
+  } catch (e) {
+    throw new Error(e);
+  }
+}
 export async function deleteALead(leadId) {
   const clientLeadId = Number(leadId);
   return await prisma.$transaction(async (prisma) => {
@@ -1636,9 +1649,16 @@ export async function getAdminProjects(searchParams, limit, skip) {
       some: {}, // Means at least one related project exists
     },
   };
+  const filters = JSON.parse(searchParams.filters);
+  if (filters && filters !== "undefined" && filters.id) {
+    where.id = Number(filters.id);
+  }
   if (searchParams.id) {
     where.id = Number(searchParams.id);
   }
+  where.status = {
+    notIn: ["ARCHIVED", "NEW"],
+  };
   const clientLeads = await prisma.clientLead.findMany({
     where,
     skip,

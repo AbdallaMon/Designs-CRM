@@ -10,6 +10,7 @@ import DateRangeFilter from "@/app/UiComponents/formComponents/DateRangeFilter.j
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
 import KanbanColumn from "../Kanban/KanbanColumn";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { getPriorityOrder } from "@/app/helpers/constants";
 
 dayjs.extend(relativeTime);
 
@@ -144,12 +145,29 @@ const KanbanBoard = ({
             leads={
               loading
                 ? []
-                : leads.filter((lead) => {
-                    if (type === "STAFF") {
-                      return lead.status === status;
-                    }
-                    return lead.projects[0].status === status;
+                : type === "STAFF"
+                ? leads.filter((lead) => {
+                    return lead.status === status;
                   })
+                : leads
+                    .filter((lead) => {
+                      if (
+                        lead.projects[0].type === "3D_Modification" &&
+                        !lead.projects[0].isModification
+                      ) {
+                        return false;
+                      }
+                      return lead.projects[0]?.status === status;
+                    })
+                    .sort((a, b) => {
+                      const priorityA = getPriorityOrder(
+                        a.projects[0]?.priority
+                      );
+                      const priorityB = getPriorityOrder(
+                        b.projects[0]?.priority
+                      );
+                      return priorityB - priorityA; // HIGH priority first
+                    })
             }
             movelead={movelead}
             admin={admin}
@@ -161,4 +179,5 @@ const KanbanBoard = ({
     </DndProvider>
   );
 };
+
 export default KanbanBoard;

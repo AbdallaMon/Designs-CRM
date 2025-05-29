@@ -18,7 +18,9 @@ import {
   DialogActions,
   MenuItem,
   TextField,
-  Menu,
+  Grid2 as Grid,
+  Paper,
+  IconButton,
 } from "@mui/material";
 
 import {
@@ -27,6 +29,11 @@ import {
   MdExpandLess,
   MdExpandMore,
   MdTask,
+  MdCalendarToday,
+  MdDescription,
+  MdInfo,
+  MdPerson,
+  MdPriorityHigh,
 } from "react-icons/md";
 import { getData } from "@/app/helpers/functions/getData";
 import dayjs from "dayjs";
@@ -35,9 +42,9 @@ import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { useAuth } from "@/app/providers/AuthProvider";
 import { TaskActions } from "./TaskActions";
 import { NotesComponent } from "./Notes";
+import { getPriorityOrder } from "@/app/helpers/constants";
 
 export const TasksList = ({
   projectId = null,
@@ -56,12 +63,31 @@ export const TasksList = ({
         url: `shared/tasks?projectId=${projectId}&type=${type}&userId=${userId}&clientLeadId=${clientLeadId}&`,
         setLoading,
       });
+
       if (tasksData && tasksData.status === 200) {
-        setTasks(tasksData.data);
+        const tasks = tasksData.data;
+
+        const sortedTasks = tasks.sort((a, b) => {
+          const isADone = a.status === "DONE";
+          const isBDone = b.status === "DONE";
+
+          if (isADone && !isBDone) return 1;
+          if (!isADone && isBDone) return -1;
+
+          if (isADone && isBDone) {
+            return new Date(b.updatedAt) - new Date(a.updatedAt);
+          }
+
+          // 3. Both TODO or IN_PROGRESS → sort by updatedAt descending
+          return new Date(b.updatedAt) - new Date(a.updatedAt);
+        });
+
+        setTasks(sortedTasks);
       }
     };
+
     loadTasks();
-  }, [clientLeadId, projectId, userId]);
+  }, [clientLeadId, projectId, userId, type]);
 
   if (loading) {
     return <LinearProgress />;
@@ -95,7 +121,6 @@ export const TasksList = ({
       </Box>
     );
   }
-
   return (
     <Box>
       <CreatTaskModel
@@ -110,100 +135,174 @@ export const TasksList = ({
       <Button
         variant="contained"
         startIcon={<MdTask />}
-        sx={{ mb: 2 }}
+        sx={{ mb: 3 }}
         onClick={() => {
           setTaskOpen(true);
         }}
       >
         Create {name}
       </Button>
-      {tasks.map((task) => (
-        <TaskItem name={name} key={task.id} task={task} setTasks={setTasks} />
-      ))}
+
+      <Grid container spacing={2}>
+        {tasks.map((task) => (
+          <Grid key={task.id} size={{ xs: 12, md: 6, lg: 4 }}>
+            <TaskItem name={name} task={task} setTasks={setTasks} />
+          </Grid>
+        ))}
+      </Grid>
     </Box>
   );
 };
 
 const TaskItem = ({ task, setTasks, name }) => {
   const [expanded, setExpanded] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [open, setOpen] = useState({ status: false, priority: false });
-  const { setLoading } = useToastContext();
-  const { setAlertError } = useAlertContext();
-  const { user } = useAuth();
 
   return (
-    <Card sx={{ mb: 2 }}>
+    <Card
+      sx={{
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        transition: "all 0.2s ease-in-out",
+        "&:hover": {
+          transform: "translateY(-2px)",
+          boxShadow: 3,
+        },
+      }}
+    >
       <CardHeader
         title={
           <Box
             display="flex"
             alignItems="center"
             justifyContent="space-between"
+            position="relative"
           >
-            <Typography variant="subtitle1">{task.title}</Typography>
-            <TaskActions name={name} task={task} setTasks={setTasks} />
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 600, fontSize: "1.1rem" }}
+            >
+              {task.title}
+            </Typography>
           </Box>
         }
         subheader={
-          <>
-            <Typography variant="caption" color="textSecondary">
-              Due:{" "}
-              {task.dueDate
-                ? dayjs(task.dueDate).format("DD/MM/YYYY")
-                : "Not set"}
+          <Box sx={{ mt: 1 }}>
+            <Typography variant="caption" color="textSecondary" display="block">
+              Type: {task.type}
             </Typography>
-            <Typography variant="caption" color="textSecondary">
-              {" "}
-              Created By:{" "}
-              {task.createdBy
-                ? task.createdBy.role === "ADMIN" ||
-                  task.createdBy.role === "SUPER_ADMIN"
-                  ? "Admin - " + task.createdBy.name
-                  : task.createdBy.name
-                : "Not set"}
-            </Typography>
-            {task.finishedAt && (
-              <Typography variant="caption" color="textSecondary">
-                {" "}
-                Finished At: {dayjs(task.finishedAt).format("DD/MM/YYYY")}
-              </Typography>
-            )}
-          </>
+          </Box>
         }
-        action={
-          <Button
-            onClick={() => setExpanded(!expanded)}
-            startIcon={expanded ? <MdExpandLess /> : <MdExpandMore />}
-            size="small"
-          >
-            {expanded ? "Hide" : "Details"}
-          </Button>
-        }
-        sx={{ py: 1 }}
+        action={<TaskActions name={name} task={task} setTasks={setTasks} />}
+        sx={{ pb: 1 }}
       />
 
-      <Collapse in={expanded}>
-        <Divider />
-        <CardContent sx={{ pt: 2 }}>
-          {task.description && (
-            <Box mb={2}>
-              <Typography variant="subtitle2">Description</Typography>
-              <Typography variant="body2">{task.description}</Typography>
+      <CardContent sx={{ flexGrow: 1, pt: 0 }}>
+        <Grid container spacing={2}>
+          <Grid size={12}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <MdCalendarToday
+                sx={{ mr: 1, fontSize: "1rem", color: "text.secondary" }}
+              />
+              <Typography variant="body2" color="textSecondary">
+                <strong>Due:</strong>{" "}
+                {task.dueDate
+                  ? dayjs(task.dueDate).format("DD/MM/YYYY")
+                  : "Not set"}
+              </Typography>
             </Box>
+          </Grid>
+
+          <Grid size={12}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <MdPerson
+                sx={{ mr: 1, fontSize: "1rem", color: "text.secondary" }}
+              />
+              <Typography variant="body2" color="textSecondary">
+                <strong>Created by:</strong>{" "}
+                {task.createdBy
+                  ? task.createdBy.role === "ADMIN" ||
+                    task.createdBy.role === "SUPER_ADMIN"
+                    ? "Admin - " + task.createdBy.name
+                    : task.createdBy.name
+                  : "Not set"}
+              </Typography>
+            </Box>
+          </Grid>
+
+          <Grid size={12}>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+              <MdAccessTime
+                sx={{ mr: 1, fontSize: "1rem", color: "text.secondary" }}
+              />
+              <Typography variant="body2" color="textSecondary">
+                <strong>Updated:</strong>{" "}
+                {task.updatedAt
+                  ? dayjs(task.updatedAt).format("DD/MM/YYYY")
+                  : "Not available"}
+              </Typography>
+            </Box>
+          </Grid>
+
+          {task.finishedAt && (
+            <Grid size={12}>
+              <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                <MdAccessTime
+                  sx={{ mr: 1, fontSize: "1rem", color: "success.main" }}
+                />
+                <Typography variant="body2" color="success.main">
+                  <strong>Finished:</strong>{" "}
+                  {dayjs(task.finishedAt).format("DD/MM/YYYY")}
+                </Typography>
+              </Box>
+            </Grid>
           )}
 
-          <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
-            Notes
-          </Typography>
+          {task.user && (
+            <Grid size={12}>
+              <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
+                <MdPerson
+                  sx={{ mr: 1, fontSize: "1rem", color: "text.secondary" }}
+                />
+                <Typography variant="body2" color="textSecondary">
+                  <strong>Assigned to:</strong> {task.user.name}
+                </Typography>
+              </Box>
+            </Grid>
+          )}
+
+          {task.description && (
+            <Grid size={12}>
+              <Divider sx={{ my: 1 }} />
+              <Box sx={{ display: "flex", alignItems: "flex-start", mb: 1 }}>
+                <MdDescription
+                  sx={{
+                    mr: 1,
+                    fontSize: "1rem",
+                    color: "text.secondary",
+                    mt: 0.2,
+                  }}
+                />
+                <Typography variant="body2" color="textSecondary">
+                  <strong>Description:</strong>{" "}
+                  {task.description.length > 100
+                    ? `${task.description.substring(0, 100)}...`
+                    : task.description}
+                </Typography>
+              </Box>
+            </Grid>
+          )}
+        </Grid>
+
+        <Box sx={{ mt: 2 }}>
           <NotesComponent
             showAddNotes={true}
             idKey={"taskId"}
             id={task.id}
             slug="shared"
           />
-        </CardContent>
-      </Collapse>
+        </Box>
+      </CardContent>
     </Card>
   );
 };
@@ -251,6 +350,7 @@ function CreatTaskModel({
   const handleDueDateChange = useCallback((newValue) => {
     setDueDate(newValue);
   }, []);
+
   const handleClose = useCallback(() => {
     setOpen(false);
   }, [setOpen]);
@@ -289,7 +389,13 @@ function CreatTaskModel({
       "POST"
     );
     if (request.status === 200) {
-      setTasks((prev) => [...prev, request.data]);
+      // Insert new task in the correct position based on priority
+      setTasks((prev) => {
+        const newTasks = [...prev, request.data];
+        return newTasks.sort(
+          (a, b) => getPriorityOrder(b.priority) - getPriorityOrder(a.priority)
+        );
+      });
       setOpen(false);
     }
   }, [

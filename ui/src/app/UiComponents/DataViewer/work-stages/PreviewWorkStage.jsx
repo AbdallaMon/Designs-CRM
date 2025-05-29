@@ -28,9 +28,7 @@ import {
   BsTelephone,
 } from "react-icons/bs";
 import { PROJECT_STATUSES, statusColors } from "@/app/helpers/constants.js";
-import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader.jsx";
-import { getData } from "@/app/helpers/functions/getData.js";
-import { AiOutlineSwap } from "react-icons/ai";
+
 import { checkIfAdmin } from "@/app/helpers/functions/utility.js";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
@@ -43,7 +41,7 @@ import { MdModeEdit, MdTask, MdWork, MdWorkHistory } from "react-icons/md";
 import LeadProjects from "./projects/LeadProjects";
 import { TasksList } from "../utility/TasksList";
 import { ProjectDetails } from "./projects/ProjectDetails";
-import TelegramLink from "./TelegramLink";
+import TelegramLink from "./utility/TelegramLink";
 import { InfoCard } from "../leads/extra/InfoCard";
 import { LeadContactInfo } from "../leads/extra/LeadContactInfo";
 import { LeadInfo } from "../leads/extra/LeadInfo";
@@ -70,13 +68,10 @@ const LeadContent = ({
 }) => {
   const { user } = useAuth();
   const isAdmin = checkIfAdmin(user);
-
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
   const { setLoading } = useToastContext();
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
+
   const handleMenuClose = async (value) => {
     if (user.role === "SUPER_ADMIN") {
       return;
@@ -129,7 +124,6 @@ const LeadContent = ({
   const modificationProject = lead.projects?.filter(
     (project) => project.status === "Modification"
   );
-
   return (
     <>
       <DialogTitle
@@ -191,43 +185,7 @@ const LeadContent = ({
                     )}
                   </>
                 )}
-                {/* {lead.projects?.map((project) => {
-                  return (
-                    <Button
-                      key={project.id}
-                      fullWidth={isMobile}
-                      variant="contained"
-                      startIcon={!isAdmin && <AiOutlineSwap />}
-                      aria-controls={open ? "basic-menu" : undefined}
-                      aria-haspopup="true"
-                      aria-expanded={open ? "true" : undefined}
-                      onClick={handleClick}
-                      sx={{
-                        background: statusColors[project.status],
-                        fontWeight: 500,
-                        borderRadius: "50px",
-                      }}
-                    >
-                      {project.type} -{project.status}
-                    </Button>
-                  );
-                })} */}
-                {/* <Button
-                  fullWidth={isMobile}
-                  variant="contained"
-                  startIcon={!isAdmin && <AiOutlineSwap />}
-                  aria-controls={open ? "basic-menu" : undefined}
-                  aria-haspopup="true"
-                  aria-expanded={open ? "true" : undefined}
-                  onClick={handleClick}
-                  sx={{
-                    background: statusColors[lead.projects[0].status],
-                    fontWeight: 500,
-                    borderRadius: "50px",
-                  }}
-                >
-                  {lead.projects[0].status}
-                </Button> */}
+
                 {lead.projects?.map((project) => {
                   return (
                     <Menu
@@ -305,28 +263,14 @@ const LeadContent = ({
             sx={{ textTransform: "none" }}
           />
         )}
-        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") &&
-          lead.status === "FINALIZED" && (
-            <Tab
-              icon={<MdWork size={20} />}
-              label="Projects"
-              sx={{ textTransform: "none" }}
-            />
-          )}
-        {/* {type === "three-d" && (
+        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
           <Tab
-            icon={<MdWorkHistory size={20} />}
-            label="Work status"
+            icon={<MdWork size={20} />}
+            label="Projects"
             sx={{ textTransform: "none" }}
           />
         )}
-        {type === "exacuter" && (
-          <Tab
-            icon={<GoPaperclip size={20} />}
-            label="Our cost and constructor cost"
-            sx={{ textTransform: "none" }}
-          />
-        )} */}
+
         {(type === "3D_Modification" ||
           (type === "3D_Designer" &&
             lead.projects[0].status === "Modification")) && (
@@ -362,7 +306,7 @@ const LeadContent = ({
         <TabPanel value={activeTab} index={3}>
           <FileList admin={isAdmin} lead={lead} notUser={isPage && notUser} />
         </TabPanel>
-        {user.role === "ADMIN" && user.role === "SUPER_ADMIN" && (
+        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
           <TabPanel value={activeTab} index={4}>
             <LeadProjects clientLeadId={lead.id} />
           </TabPanel>
@@ -457,8 +401,6 @@ function LeadData({ lead }) {
     </Stack>
   );
 }
-
-// InfoCard Component (No major changes, just accept theme as prop)
 
 const PreviewWorkStage = ({
   open,

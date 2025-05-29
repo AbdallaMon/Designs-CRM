@@ -38,7 +38,6 @@ export default function NewWrokstagesLeadsPage({
   } = useDataFetcher(`shared/work-stages/new?type=${type}&`, false, {
     clientId: searchParams.clientId ? searchParams.clientId : null,
   });
-  console.log(data, "data");
   return (
     <Container maxWidth="xxl">
       <LeadsSlider

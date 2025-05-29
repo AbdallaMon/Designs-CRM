@@ -17,20 +17,27 @@ export default function AuthProvider({ children }) {
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_URL}/auth/status`,
           {
-            credentials: "include", 
+            credentials: "include",
           }
         );
         const result = await response.json();
         if (!response.ok) {
           throw new Error(`Error: ${response.status}`);
         }
-
-        // window.localStorage.setItem("role", result.user.role);
-        if (window.localStorage.getItem("role")) {
-          setUser({
-            ...result.user,
-            role: window.localStorage.getItem("role"),
-          });
+        if (
+          window.localStorage.getItem("role") &&
+          window.localStorage.getItem("userId")
+        ) {
+          if (
+            result.user.id === parseInt(window.localStorage.getItem("userId"))
+          ) {
+            setUser({
+              ...result.user,
+              role: window.localStorage.getItem("role"),
+            });
+          } else {
+            setUser(result.user);
+          }
         } else {
           setUser(result.user);
         }

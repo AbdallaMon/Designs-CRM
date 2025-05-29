@@ -15,7 +15,7 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAuth } from "@/app/providers/AuthProvider";
 
-const TelegramLink = ({ lead, setLead }) => {
+const TelegramLink = ({ lead, setLead, setleads }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempLink, setTempLink] = useState(lead?.telegramLink || "");
   const { user } = useAuth();
@@ -52,7 +52,21 @@ const TelegramLink = ({ lead, setLead }) => {
       });
 
       if (response.status === 200) {
-        setLead({ ...lead, telegramLink: tempLink });
+        if (setleads) {
+          setleads((prev) =>
+            prev.map((l) =>
+              l.id === lead.id
+                ? {
+                    ...l,
+                    telegramLink: tempLink,
+                  }
+                : l
+            )
+          );
+        }
+        if (setLead) {
+          setLead({ ...lead, telegramLink: tempLink });
+        }
         setIsEditing(false);
       } else {
         console.error("Failed to update Telegram link");

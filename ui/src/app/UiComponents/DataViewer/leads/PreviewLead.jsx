@@ -67,12 +67,13 @@ import {
 import { MdBlock, MdModeEdit, MdWork } from "react-icons/md";
 import LeadProjects from "../work-stages/projects/LeadProjects";
 import { TasksList } from "../utility/TasksList";
-import TelegramLink from "../work-stages/TelegramLink";
+import TelegramLink from "../work-stages/utility/TelegramLink";
 import { LeadContactInfo } from "./extra/LeadContactInfo";
 import { LeadInfo } from "./extra/LeadInfo";
 import { PreviewLead } from "./extra/PreviewLead";
 import UpdateInitialConsultButton from "../../buttons/UpdateInitialConsultLead";
 import DeleteModal from "../../models/DeleteModal";
+import { EditFieldButton } from "./utility/EditFieldButton";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -285,6 +286,33 @@ const LeadContent = ({
           <Stack direction="row" spacing={2} alignItems="center">
             <TelegramLink lead={lead} setLead={setLead} />
             <UpdateInitialConsultButton clientLead={lead} />
+            {admin && (
+              <EditFieldButton
+                text={"Client name"}
+                path={`admin/client/update/${lead.client.id}`}
+                reqType="PUT"
+                field="name"
+                onUpdate={(data) => {
+                  if (setLead) {
+                    setLead((oldLead) => ({
+                      ...oldLead,
+                      client: { ...oldLead.client, name: data.name },
+                    }));
+                  }
+                  if (setleads) {
+                    setleads((oldLeads) =>
+                      oldLeads.map((lead) => ({
+                        ...lead,
+                        client: {
+                          ...lead.client,
+                          name: data.name,
+                        },
+                      }))
+                    );
+                  }
+                }}
+              />
+            )}
           </Stack>
           <Stack
             direction={isMobile ? "column" : "row"}
@@ -500,22 +528,20 @@ const LeadContent = ({
             sx={{ textTransform: "none" }}
           />
         )}
-        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") &&
-          lead.status === "FINALIZED" && (
-            <Tab
-              icon={<MdWork size={20} />}
-              label="Projects"
-              sx={{ textTransform: "none" }}
-            />
-          )}
-        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") &&
-          lead.status === "FINALIZED" && (
-            <Tab
-              icon={<MdModeEdit size={20} />}
-              label="Modificaions"
-              sx={{ textTransform: "none" }}
-            />
-          )}
+        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+          <Tab
+            icon={<MdWork size={20} />}
+            label="Projects"
+            sx={{ textTransform: "none" }}
+          />
+        )}
+        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+          <Tab
+            icon={<MdModeEdit size={20} />}
+            label="Modificaions"
+            sx={{ textTransform: "none" }}
+          />
+        )}
       </Tabs>
 
       <Box
