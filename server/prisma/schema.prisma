@@ -231,12 +231,7 @@ model ClientLead {
       createdAt          DateTime         @default(now())
       updatedAt          DateTime         @updatedAt
 
-      threeDDesigner     User?            @relation("ThreeDLeads", fields: [threeDDesignerId], references: [id]) // Assigned 3D Designer
-      threeDDesignerId   Int?
-      twoDDesigner       User?            @relation("TwoDLeads", fields: [twoDDesignerId], references: [id]) // Assigned 2D Designer
-      twoDDesignerId     Int?
-      twoDExacuter         User?           @relation("TwoDExacuterLeads", fields: [twoDExacuterId], references: [id]) // New relation for 2D Executer
-      twoDExacuterId       Int?
+      
       accountant         User?            @relation("AccountantLeads", fields: [accountantId], references: [id]) // Assigned Accountant
       accountantId       Int?
       
@@ -445,9 +440,6 @@ model User {
  files File[]
  lastSeenAt    DateTime?    
  maxLeadsCounts Int?             @default(50)
- threeDLeads ClientLead[] @relation("ThreeDLeads")
- twoDLeads ClientLead[] @relation("TwoDLeads")
- twoDExacuterLeads ClientLead[] @relation("TwoDExacuterLeads") 
  accountantLeads ClientLead[] @relation("AccountantLeads")
  commissions Commission[]
  assignments   Assignment[]
