@@ -1332,7 +1332,13 @@ export async function updateClientLeadStatus({
         "You cant change the status from rejected or finalized or archived only admin can ,Contact your administrator to take an action"
       );
     }
+    if (oldStatus === "ON_HOLD") {
+      throw new Error(
+        "You cant change the status from hold only admin can ,Contact your administrator to take an action"
+      );
+    }
   }
+
   // else {
   //   if (oldStatus !== "FINALIZED" && oldStatus !== "REJECTED") {
   //     throw new Error(
