@@ -598,18 +598,6 @@ async function updateKeyFilterForUserFilter(
   searchParams,
   key = "staffId"
 ) {
-  // const user = await prisma.user.findUnique({
-  //   where: {
-  //     id: Number(searchParams[key]),
-  //   },
-  // });
-  // if (user?.role === "THREE_D_DESIGNER") {
-  //   userFilter = { threeDDesignerId: Number(searchParams[key]) };
-  // } else if (user?.role === "TWO_D_DESIGNER") {
-  //   userFilter = { twoDDesignerId: Number(searchParams[key]) };
-  // } else if (user?.role === "TWO_D_EXECUTOR") {
-  //   userFilter = { twoDExacuterId: Number(searchParams[key]) };
-  // } else {
   const filterKey = key === "staffId" ? "userId" : key;
   userFilter = { [filterKey]: Number(searchParams[key]) };
   // }
@@ -1415,792 +1403,6 @@ export async function updateClientLeadStatus({
   }
 }
 
-export const getNextCalls = async ({ limit, skip, searchParams }) => {
-  const staffFilter =
-    searchParams.staffId && searchParams.staffId !== "undefined"
-      ? { userId: Number(searchParams.staffId) }
-      : {};
-
-  const nearestCallReminders = await prisma.callReminder.findMany({
-    where: {
-      status: "IN_PROGRESS",
-      ...staffFilter,
-
-      clientLead: {
-        status: {
-          notIn: ["CONVERTED", "ON_HOLD", "REJECTED"],
-        },
-        ...staffFilter,
-      },
-    },
-    include: {
-      clientLead: {
-        select: {
-          id: true,
-          client: {
-            select: {
-              name: true,
-            },
-          },
-          status: true,
-        },
-      },
-    },
-    orderBy: {
-      time: "asc",
-    },
-    take: limit,
-    skip: skip,
-  });
-
-  const total = await prisma.callReminder.count({
-    where: {
-      status: "IN_PROGRESS",
-      clientLead: {
-        status: {
-          notIn: ["CONVERTED", "ON_HOLD", "FINALIZED", "REJECTED"],
-        },
-        ...staffFilter,
-      },
-    },
-  });
-
-  const totalPages = Math.ceil(total / limit);
-
-  return {
-    data: nearestCallReminders,
-    limit,
-    total,
-    totalPages,
-  };
-};
-
-export async function getAllFixedData() {
-  return prisma.fixedData.findMany({
-    orderBy: { createdAt: "desc" },
-  });
-}
-
-////// work stages functions //////
-
-export async function getNewWorkStagesLeads({
-  limit = 1,
-  skip = 10,
-  searchParams,
-}) {
-  let where = {};
-  const filters = JSON.parse(searchParams.filters);
-  where = {
-    status: "FINALIZED",
-  };
-  if (searchParams.type === "two-d") {
-    where.threeDWorkStage = {
-      in: ["THREE_D_APPROVAL"],
-    };
-    where.twoDDesignerId = null;
-  } else if (searchParams.type === "exacuter") {
-    where.twoDWorkStage = {
-      in: ["FINAL_DELIVERY"],
-    };
-    where.twoDExacuterId = null;
-  }
-
-  if (
-    filters?.clientId &&
-    filters.clientId !== "all" &&
-    filters.clientId !== null
-  ) {
-    where.clientId = Number(filters.clientId);
-  }
-  if (filters?.type && filters.type !== "all") {
-    where.selectedCategory = filters.type;
-  }
-  if (filters?.range) {
-    const { startDate, endDate } = filters.range;
-    const now = dayjs();
-    let start = startDate ? dayjs(startDate) : now.subtract(30, "days");
-    let end = endDate ? dayjs(endDate).endOf("day") : now;
-    if (searchParams.type === "three-d") {
-      where.threeDAssignedAt = {
-        gte: start.toDate(),
-        lte: end.toDate(),
-      };
-    } else if (searchParams.type === "two-d") {
-      where.twoDAssignedAt = {
-        gte: start.toDate(),
-        lte: end.toDate(),
-      };
-    } else if (searchParams.type === "exacuter") {
-      where.twoDExacuterAssignedAt = {
-        gte: start.toDate(),
-        lte: end.toDate(),
-      };
-    }
-  }
-  const [clientLeads, total] = await Promise.all([
-    prisma.clientLead.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        status: true,
-        createdAt: true,
-        price: true,
-        type: true,
-        emirate: true,
-        selectedCategory: true,
-        description: true,
-        client: {
-          select: {
-            name: true,
-            email: true,
-            phone: true,
-          },
-        },
-        threeDDesigner: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        twoDDesigner: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        twoDExacuter: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-    }),
-    prisma.clientLead.count({ where }),
-  ]);
-  const totalPages = Math.ceil(total / limit);
-
-  return { data: clientLeads, total, totalPages };
-}
-
-export async function getWorkStagesLeadsByDateRange({ searchParams }) {
-  const filters = JSON.parse(searchParams.filters);
-  const where = {};
-  if (searchParams.type === "three-d") {
-    where.threeDDesigner = { isNot: null };
-  }
-  if (searchParams.type === "two-d") {
-    where.twoDDesigner = { isNot: null };
-  }
-  if (searchParams.type === "exacuter") {
-    where.twoDExacuter = { isNot: null };
-  }
-  if (filters?.range) {
-    const { startDate, endDate } = filters.range;
-    const now = dayjs();
-    let start = startDate ? dayjs(startDate) : now.subtract(30, "days");
-    let end = endDate ? dayjs(endDate).endOf("day") : now;
-    if (searchParams.type === "three-d") {
-      where.threeDAssignedAt = {
-        gte: start.toDate(),
-        lte: end.toDate(),
-      };
-    }
-    if (searchParams.type === "two-d") {
-      where.twoDAssignedAt = {
-        gte: start.toDate(),
-        lte: end.toDate(),
-      };
-    }
-    if (searchParams.type === "exacuter") {
-      where.twoDExacuterAssignedAt = {
-        gte: start.toDate(),
-        lte: end.toDate(),
-      };
-    }
-  } else {
-    if (searchParams.type === "three-d") {
-      where.threeDAssignedAt = {
-        gte: dayjs().subtract(3, "month").toDate(),
-        lte: dayjs().toDate(),
-      };
-    }
-    if (searchParams.type === "two-d") {
-      where.twoDAssignedAt = {
-        gte: dayjs().subtract(3, "month").toDate(),
-        lte: dayjs().toDate(),
-      };
-    }
-    if (searchParams.type === "exacuter") {
-      where.twoDExacuterAssignedAt = {
-        gte: dayjs().subtract(3, "month").toDate(),
-        lte: dayjs().toDate(),
-      };
-    }
-  }
-  if (filters?.clientId && filters.clientId !== "all") {
-    where.clientId = Number(filters.clientId);
-  }
-  if (filters.id && filters.id !== "all") {
-    where.id = Number(filters.id);
-  }
-  if (
-    filters?.staffId &&
-    filters?.staffId !== "all" &&
-    filters?.staffId !== "undefined"
-  ) {
-    if (searchParams.type === "three-d") {
-      where.threeDDesignerId = Number(filters.staffId);
-    } else if (searchParams.type === "two-d") {
-      where.twoDDesignerId = Number(filters.staffId);
-    } else if (searchParams.type === "exacuter") {
-      where.twoDExacuterId = Number(filters.staffId);
-    }
-  }
-  if (searchParams.userId) {
-    if (searchParams.type === "three-d") {
-      where.threeDDesignerId = Number(searchParams.userId);
-    } else if (searchParams.type === "two-d") {
-      where.twoDDesignerId = Number(searchParams.userId);
-    } else if (searchParams.type === "exacuter") {
-      where.twoDExacuterId = Number(searchParams.userId);
-    }
-  }
-
-  // Fetch data
-  const clientLeads = await prisma.clientLead.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      client: { select: { name: true } },
-      threeDWorkStage: true,
-      twoDWorkStage: true,
-      twoDExacuterStage: true,
-
-      price: true,
-      averagePrice: true,
-      priceWithOutDiscount: true,
-      selectedCategory: true,
-      description: true,
-      type: true,
-      emirate: true,
-      discount: true,
-      callReminders: {
-        orderBy: { time: "desc" },
-        take: 2,
-      },
-    },
-  });
-  return clientLeads;
-}
-
-export async function getWorkStageLeadDetails(clientLeadId, searchParams) {
-  const where = {};
-  let filesAndNotesWhere = {};
-  if (searchParams.userId) {
-    where.userId = Number(searchParams.userId);
-    if (searchParams.type !== "three-d") {
-      filesAndNotesWhere.userId = Number(searchParams.userId);
-    }
-  }
-
-  const clientLead = await prisma.clientLead.findUnique({
-    where: { id: clientLeadId },
-    select: {
-      id: true,
-      threeDDesignerId: true,
-      twoDDesignerId: true,
-      twoDExacuterId: true,
-      clientDescription: true,
-      country: true,
-      timeToContact: true,
-      priceNote: true,
-      ourCost: true,
-      contractorCost: true,
-      client: {
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-          email: true,
-        },
-      },
-      threeDDesigner: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-      twoDDesigner: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-      twoDExacuter: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-      selectedCategory: true,
-      description: true,
-      type: true,
-      emirate: true,
-      threeDWorkStage: true,
-      twoDWorkStage: true,
-      twoDExacuterStage: true,
-      price: true,
-      averagePrice: true,
-      priceWithOutDiscount: true,
-      discount: true,
-      files: {
-        where: filesAndNotesWhere,
-        select: {
-          id: true,
-          name: true,
-          url: true,
-          createdAt: true,
-          description: true,
-          isUserFile: true,
-          user: {
-            select: { name: true },
-          },
-        },
-      },
-      priceOffers: {
-        where,
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          minPrice: true,
-          maxPrice: true,
-          note: true,
-          userId: true,
-          url: true,
-          user: {
-            select: { name: true },
-          },
-          createdAt: true,
-        },
-      },
-      notes: {
-        where: filesAndNotesWhere,
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          content: true,
-          userId: true,
-          user: {
-            select: { name: true },
-          },
-          createdAt: true,
-        },
-      },
-      callReminders: {
-        where,
-        select: {
-          id: true,
-          time: true,
-          status: true,
-          reminderReason: true,
-          callResult: true,
-          userId: true,
-          user: {
-            select: { name: true },
-          },
-        },
-        orderBy: { time: "desc" },
-      },
-      createdAt: true,
-      updatedAt: true,
-      threeDAssignedAt: true,
-      twoDAssignedAt: true,
-    },
-  });
-
-  if (!clientLead) {
-    throw new Error(`ClientLead with ID ${clientLeadId} not found`);
-  }
-  clientLead.callReminders = [
-    ...clientLead.callReminders.filter((call) => call.status === "IN_PROGRESS"),
-    ...clientLead.callReminders.filter((call) => call.status !== "IN_PROGRESS"),
-  ];
-  return clientLead;
-}
-
-export async function updateLeadWorkStage({
-  clientLeadId,
-  status,
-  oldStatus,
-  isAdmin,
-  type,
-}) {
-  if (!isAdmin) {
-    if (
-      oldStatus === "THREE_D_APPROVAL" ||
-      oldStatus === "FINAL_DELIVERY" ||
-      oldStatus === "REJECTED" ||
-      oldStatus === "ACCEPTED"
-    ) {
-      throw new Error(
-        "You cant change the status after approval only admin can ,Contact your administrator to take an action"
-      );
-    }
-    if (
-      oldStatus === "FIRST_MODIFICATION" &&
-      status !== "SECOND_MODIFICATION" &&
-      status !== "THIRD_MODIFICATION" &&
-      status !== "THREE_D_APPROVAL"
-    ) {
-      throw new Error("You can only change the status to SECOND_MODIFICATION");
-    }
-    if (
-      oldStatus === "SECOND_MODIFICATION" &&
-      status !== "THIRD_MODIFICATION" &&
-      status !== "THREE_D_APPROVAL"
-    ) {
-      throw new Error("You can only change the status to THIRD_MODIFICATION");
-    }
-    if (oldStatus === "THIRD_MODIFICATION" && status !== "THREE_D_APPROVAL") {
-      throw new Error("You can only change the status to THREE_D_APPROVAL");
-    }
-  } else {
-    if (
-      oldStatus !== "THREE_D_APPROVAL" &&
-      oldStatus !== "FINAL_DELIVERY" &&
-      oldStatus !== "THIRD_MODIFICATION" &&
-      oldStatus !== "SECOND_MODIFICATION" &&
-      oldStatus !== "FIRST_MODIFICATION" &&
-      oldStatus !== "REJECTED" &&
-      oldStatus !== "ACCEPTED"
-    ) {
-      throw new Error(
-        "You are only allowed to change the status from APPROVAL, FINAL DELIVERY or the modification stages"
-      );
-    }
-  }
-  if (oldStatus === "PRICING") {
-    const lead = await prisma.clientLead.findUnique({
-      where: { id: Number(clientLeadId) },
-      select: {
-        ourCost: true,
-        contractorCost: true,
-      },
-    });
-    if (
-      !lead.ourCost ||
-      lead.ourCost.trim() === "" ||
-      !lead.contractorCost ||
-      lead.contractorCost.trim() === ""
-    ) {
-      throw new Error(
-        "Both 'Our Cost' and 'Contractor Cost' must be provided and cannot be empty."
-      );
-    }
-  }
-  const data = {
-    updatedAt: new Date(),
-  };
-  if (type === "three-d") {
-    data.threeDWorkStage = status;
-  } else if (type === "two-d") {
-    data.twoDWorkStage = status;
-  } else if (type === "exacuter") {
-    data.twoDExacuterStage = status;
-  }
-  let heading = isAdmin
-    ? "Lead status changed by admin"
-    : "Lead status changed";
-  let content = `Lead changed from ${LeadWorkStages[oldStatus]} to ${LeadWorkStages[status]}`;
-
-  const lead = await prisma.clientLead.update({
-    where: { id: clientLeadId },
-    data,
-  });
-
-  await updateWorkStageStatusNotification(
-    lead.id,
-    heading,
-    content,
-    "LEAD_UPDATED",
-    type === "three-d" ? lead.threeDDesignerId : lead.twoDDesignerId,
-    isAdmin,
-    !isAdmin
-      ? type === "three-d"
-        ? lead.threeDDesignerId
-        : lead.twoDDesignerId
-      : null,
-    type === "three-d" ? "THREE_D" : "TWO_D"
-  );
-  if (status === "THREE_D_APPROVAL") {
-    await finalizedLeadCreated(lead.id, lead.userId, "TWO_D");
-  }
-  if (status === "FINAL_DELIVERY") {
-    await finalizedLeadCreated(lead.id, lead.userId, "TWO_D_EXACUTER");
-  }
-}
-
-export async function addCostFiles({ clientLeadId, body }) {
-  const update = await prisma.clientLead.update({
-    where: {
-      id: Number(clientLeadId),
-    },
-    data: body,
-  });
-}
-export async function assignWorkStageLeadToAUser(clientLeadId, userId, type) {
-  const activeLeadsWhere = {};
-  if (type === "three-d") {
-    activeLeadsWhere.threeDDesignerId = userId;
-    activeLeadsWhere.threeDWorkStage = {
-      notIn: ["THREE_D_APPROVAL"],
-    };
-  }
-  if (type === "two-d") {
-    activeLeadsWhere.twoDDesignerId = userId;
-    activeLeadsWhere.twoDWorkStage = {
-      notIn: ["FINAL_DELIVERY"],
-    };
-  }
-  const activeLeadsCount = await prisma.clientLead.count({
-    where: activeLeadsWhere,
-  });
-  const maxUserLeadsCount = await prisma.user.findUnique({
-    where: { id: Number(userId) },
-    select: {
-      maxLeadsCounts: true,
-    },
-  });
-  if (activeLeadsCount >= (maxUserLeadsCount.maxLeadsCounts || 50)) {
-    throw new Error(
-      `You cannot take more than ${
-        maxUserLeadsCount.maxLeadsCounts || 50
-      } active leads.`
-    );
-  }
-
-  const updateLeadData = {};
-  const leadSelect = { id: true };
-  if (type === "three-d") {
-    updateLeadData.threeDDesignerId = userId;
-    updateLeadData.threeDAssignedAt = new Date();
-    updateLeadData.threeDWorkStage = "CLIENT_COMMUNICATION";
-    leadSelect.threeDDesigner = {
-      select: { id: true, name: true },
-    };
-  }
-  if (type === "two-d") {
-    updateLeadData.twoDDesignerId = userId;
-    updateLeadData.twoDAssignedAt = new Date();
-    updateLeadData.twoDWorkStage = "DRAWING_PLAN";
-    leadSelect.twoDDesigner = {
-      select: { id: true, name: true },
-    };
-  }
-  if (type === "exacuter") {
-    updateLeadData.twoDExacuterId = userId;
-    updateLeadData.twoDExacuterAssignedAt = new Date();
-    updateLeadData.twoDExacuterStage = "PROGRESS";
-    leadSelect.twoDExacuter = {
-      select: { id: true, name: true },
-    };
-  }
-
-  const updatedClientLead = await prisma.clientLead.update({
-    where: { id: clientLeadId },
-    data: updateLeadData,
-    select: leadSelect,
-  });
-  await assignWorkStageNotification(
-    clientLeadId,
-    userId,
-    updatedClientLead,
-    type
-  );
-
-  return updatedClientLead;
-}
-
-export const getNextCallsForDesigners = async ({
-  limit,
-  skip,
-  searchParams,
-}) => {
-  const staffFilter =
-    searchParams.userId && searchParams.userId !== "undefined"
-      ? { threeDDesignerId: Number(searchParams.userId) }
-      : {};
-  const nearestCallReminders = await prisma.callReminder.findMany({
-    where: {
-      status: "IN_PROGRESS",
-      clientLead: {
-        ...staffFilter,
-      },
-    },
-    include: {
-      clientLead: {
-        select: {
-          id: true,
-          client: {
-            select: {
-              name: true,
-            },
-          },
-          threeDWorkStage: true,
-        },
-      },
-    },
-    orderBy: {
-      time: "asc",
-    },
-    take: limit,
-    skip: skip,
-  });
-
-  const total = await prisma.callReminder.count({
-    where: {
-      status: "IN_PROGRESS",
-      clientLead: {
-        ...staffFilter,
-      },
-    },
-  });
-
-  const totalPages = Math.ceil(total / limit);
-
-  return {
-    data: nearestCallReminders,
-    limit,
-    total,
-    totalPages,
-  };
-};
-
-export async function getOtherRoles(userId) {
-  const mainRole = await prisma.user.findUnique({
-    where: {
-      id: Number(userId),
-    },
-    select: {
-      role: true,
-    },
-  });
-  let subRoles = await prisma.UserSubRole.findMany({
-    where: {
-      userId: Number(userId),
-    },
-  });
-  if (subRoles.length > 0) {
-    subRoles = subRoles.map((subRole) => subRole.subRole);
-  }
-  return [...subRoles, mainRole.role];
-}
-
-export async function checkIfUserAllowedToTakeALead(userId, country) {
-  const user = await prisma.user.findUnique({
-    where: { id: Number(userId) },
-    select: { notAllowedCountries: true },
-  });
-  const notAllowed = user?.notAllowedCountries ?? [];
-
-  const allowed = !notAllowed.includes(country);
-  return allowed;
-}
-
-export const checkUserLog = async (userId, startTime, endTime) => {
-  const log = await prisma.userLog.findFirst({
-    where: {
-      userId: Number(userId),
-      date: {
-        gte: new Date(startTime),
-        lte: new Date(endTime),
-      },
-    },
-  });
-  return !!log;
-};
-export const submitUserLog = async (
-  userId,
-  date,
-  description,
-  totalMinutes
-) => {
-  if (!description || !description.trim()) {
-    throw new Error("Please enter a description");
-  }
-  const newLog = await prisma.userLog.create({
-    data: {
-      userId: Number(userId),
-      date: new Date(date),
-      description,
-      totalMinutes,
-    },
-  });
-
-  return { data: newLog, message: "response saved" };
-};
-
-export async function getWorkStageStatus(clientLeadId) {
-  const workStages = await prisma.workStageStatus.findMany({
-    where: { clientLeadId: Number(clientLeadId) },
-  });
-  return workStages;
-}
-
-export async function updateWorkStageStatus(clientLeadId, body) {
-  const { communicationStatus, designStageStatus, renderStatus, stage } = body;
-
-  // First, fetch the current stage
-  let currentStage = await prisma.workStageStatus.findFirst({
-    where: { clientLeadId: Number(clientLeadId), stage },
-  });
-
-  if (!currentStage) {
-    currentStage = await prisma.workStageStatus.create({
-      data: { stage, clientLeadId: Number(clientLeadId) },
-    });
-  }
-
-  // Prepare update data
-  const updateData = {};
-  if (updateData.designStageStatus && !currentStage.communicationStatus) {
-    throw new Error("You must update communcation status first");
-  }
-  if (updateData.renderStatus && !currentStage.designStageStatus) {
-    throw new Error("You must update design stage status first");
-  }
-  if (communicationStatus !== undefined) {
-    updateData.communicationStatus = communicationStatus;
-    updateData.communicationUpdatedAt = new Date();
-  }
-  if (designStageStatus !== undefined) {
-    updateData.designStageStatus = designStageStatus;
-    updateData.designStageUpdatedAt = new Date();
-  }
-  if (renderStatus !== undefined) {
-    updateData.renderStatus = renderStatus;
-    updateData.renderUpdatedAt = new Date();
-  }
-
-  // Update the work stage
-  await prisma.workStageStatus.update({
-    where: { id: Number(currentStage.id) },
-    data: updateData,
-  });
-  const newUpdated = await prisma.workStageStatus.findUnique({
-    where: { id: Number(currentStage.id) },
-  });
-  return newUpdated;
-}
-
 // Projects
 
 export async function getLeadByPorjects({ searchParams }) {
@@ -2275,7 +1477,6 @@ export async function getLeadByPorjects({ searchParams }) {
     };
   }
 
-  // Helper function to determine task visibility based on user role
   const getTaskVisibilityFilter = (userRole) => {
     const allowedRoles = ["ADMIN", "SUPER_ADMIN", "THREE_D_DESIGNER"];
 
@@ -2405,8 +1606,6 @@ export async function getLeadByPorjects({ searchParams }) {
   return expandedLeads;
 }
 
-// Helper function to convert priority enum to numeric order
-
 export async function getLeadDetailsByProject(clientLeadId, searchParams) {
   const where = { id: clientLeadId };
   const userIdWhere = {};
@@ -2525,9 +1724,7 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
       description: true,
       type: true,
       emirate: true,
-      threeDWorkStage: true,
-      twoDWorkStage: true,
-      twoDExacuterStage: true,
+
       price: true,
       averagePrice: true,
       priceWithOutDiscount: true,
@@ -2634,34 +1831,6 @@ async function getProjects(clientLeadId) {
     },
   });
 }
-// export async function getProjectsByClientLeadId({ searchParams }) {
-//   const { clientLeadId } = searchParams;
-//   let projects = await getProjects(clientLeadId);
-//   if (!projects || projects.length === 0) {
-//     const newProjects = [];
-//     PROJECT_TYPES.forEach((type) => {
-//       newProjects.push({
-//         type,
-//         status: "To Do",
-//         priority: "MEDIUM",
-//         startedAt: null,
-//         endedAt: null,
-//         role:
-//           type === "3D_Designer" || type === "3D_Modification"
-//             ? "THREE_D_DESIGNER"
-//             : "TWO_D_DESIGNER",
-//       });
-//     });
-//     await prisma.project.createMany({
-//       data: newProjects.map((project) => ({
-//         ...project,
-//         clientLeadId: Number(clientLeadId),
-//       })),
-//     });
-//     projects = await getProjects(clientLeadId);
-//   }
-//   return projects;
-// }
 
 export async function getProjectsByClientLeadId({ searchParams }) {
   const { clientLeadId } = searchParams;
@@ -3129,6 +2298,138 @@ export async function getProjectDetailsById({ id, searchParams }) {
   }
   return project;
 }
+
+/////// utility ///////
+export const getNextCalls = async ({ limit, skip, searchParams }) => {
+  const staffFilter =
+    searchParams.staffId && searchParams.staffId !== "undefined"
+      ? { userId: Number(searchParams.staffId) }
+      : {};
+
+  const nearestCallReminders = await prisma.callReminder.findMany({
+    where: {
+      status: "IN_PROGRESS",
+      ...staffFilter,
+
+      clientLead: {
+        status: {
+          notIn: ["CONVERTED", "ON_HOLD", "REJECTED"],
+        },
+        ...staffFilter,
+      },
+    },
+    include: {
+      clientLead: {
+        select: {
+          id: true,
+          client: {
+            select: {
+              name: true,
+            },
+          },
+          status: true,
+        },
+      },
+    },
+    orderBy: {
+      time: "asc",
+    },
+    take: limit,
+    skip: skip,
+  });
+
+  const total = await prisma.callReminder.count({
+    where: {
+      status: "IN_PROGRESS",
+      clientLead: {
+        status: {
+          notIn: ["CONVERTED", "ON_HOLD", "FINALIZED", "REJECTED"],
+        },
+        ...staffFilter,
+      },
+    },
+  });
+
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    data: nearestCallReminders,
+    limit,
+    total,
+    totalPages,
+  };
+};
+
+export async function getAllFixedData() {
+  return prisma.fixedData.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function getOtherRoles(userId) {
+  const mainRole = await prisma.user.findUnique({
+    where: {
+      id: Number(userId),
+    },
+    select: {
+      role: true,
+    },
+  });
+  let subRoles = await prisma.UserSubRole.findMany({
+    where: {
+      userId: Number(userId),
+    },
+  });
+  if (subRoles.length > 0) {
+    subRoles = subRoles.map((subRole) => subRole.subRole);
+  }
+  return [...subRoles, mainRole.role];
+}
+
+export async function checkIfUserAllowedToTakeALead(userId, country) {
+  const user = await prisma.user.findUnique({
+    where: { id: Number(userId) },
+    select: { notAllowedCountries: true },
+  });
+  const notAllowed = user?.notAllowedCountries ?? [];
+
+  const allowed = !notAllowed.includes(country);
+  return allowed;
+}
+
+export const checkUserLog = async (userId, startTime, endTime) => {
+  const log = await prisma.userLog.findFirst({
+    where: {
+      userId: Number(userId),
+      date: {
+        gte: new Date(startTime),
+        lte: new Date(endTime),
+      },
+    },
+  });
+  return !!log;
+};
+export const submitUserLog = async (
+  userId,
+  date,
+  description,
+  totalMinutes
+) => {
+  if (!description || !description.trim()) {
+    throw new Error("Please enter a description");
+  }
+  const newLog = await prisma.userLog.create({
+    data: {
+      userId: Number(userId),
+      date: new Date(date),
+      description,
+      totalMinutes,
+    },
+  });
+
+  return { data: newLog, message: "response saved" };
+};
+
 export async function getUserRole(userId) {
   const user = await prisma.user.findUnique({
     where: {
@@ -3522,3 +2823,5 @@ export async function deleteNote({ id, isAdmin }) {
   });
   return { data: note, message: "Note deleted successfully" };
 }
+
+/////// end of utility ///////

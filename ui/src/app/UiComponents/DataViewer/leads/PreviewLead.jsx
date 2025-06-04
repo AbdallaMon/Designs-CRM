@@ -73,7 +73,7 @@ import { LeadInfo } from "./extra/LeadInfo";
 import { PreviewLead } from "./extra/PreviewLead";
 import UpdateInitialConsultButton from "../../buttons/UpdateInitialConsultLead";
 import DeleteModal from "../../models/DeleteModal";
-import { EditFieldButton } from "./utility/EditFieldButton";
+import { EditFieldButton } from "./extra/EditFieldButton";
 import { AssignNewStaffModal } from "../utility/AssignNewStaffModal";
 
 const TabPanel = ({ children, value, index }) => (

@@ -1362,9 +1362,7 @@ export async function getAdminClientLeadDetails(clientLeadId, searchParams) {
     include: {
       client: true,
       assignedTo: true,
-      threeDDesigner: true,
-      twoDDesigner: true,
-      twoDExacuter: true,
+
       priceOffers: {
         orderBy: { createdAt: "desc" },
         include: {
