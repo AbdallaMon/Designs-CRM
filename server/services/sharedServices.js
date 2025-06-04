@@ -148,7 +148,7 @@ export async function getClientLeadsByDateRange({ searchParams }) {
   const filters = JSON.parse(searchParams.filters);
   const where = {
     assignedTo: { isNot: null },
-    status: { notIn: ["NEW", "CONVERTED", "ON_HOLD"] },
+    status: { notIn: ["NEW", "CONVERTED"] },
     leadType: "NORMAL",
   };
   if (filters?.range) {
@@ -539,6 +539,7 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
     },
     select: {
       id: true,
+      status: true,
       assignedTo: {
         select: { id: true, name: true, email: true },
       },
@@ -1385,7 +1386,7 @@ export async function updateClientLeadStatus({
 </div>
         `;
   }
-  if (isAdmin) {
+  if (isAdmin && oldStatus === "FINALIZED") {
     await prisma.payment.deleteMany({
       where: {
         clientLeadId,

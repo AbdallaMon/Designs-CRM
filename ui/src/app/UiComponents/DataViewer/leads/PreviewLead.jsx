@@ -418,6 +418,7 @@ const LeadContent = ({
                               setLead((oldLead) => ({
                                 ...oldLead,
                                 assignedTo: { ...newLead.assignedTo },
+                                status: newLead.status,
                               }));
                             }
                             if (setleads) {
@@ -427,6 +428,7 @@ const LeadContent = ({
                                     return {
                                       ...lead,
                                       assignedTo: { ...newLead.assignedTo },
+                                      status: newLead.status,
                                     };
                                   } else {
                                     return l;

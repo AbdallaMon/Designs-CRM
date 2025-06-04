@@ -223,6 +223,7 @@ export const KanbanLeadsStatus = {
   FINALIZED: "Finalized",
   REJECTED: "Rejected",
   ARCHIVED: "Archived",
+  ON_HOLD: "On Hold",
 };
 
 // Projects
