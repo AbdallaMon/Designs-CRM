@@ -46,7 +46,7 @@ import SimpleFileInput from "../../formComponents/SimpleFileInput";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import DeleteNoteButton from "./extra/DeleteNoteButton";
+import DeleteModelButton from "./extra/DeleteModelButton";
 export function CallReminders({ lead, setleads, admin, notUser }) {
   const [callReminders, setCallReminders] = useState(lead?.callReminders);
   const theme = useTheme();
@@ -75,7 +75,7 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
 
   return (
     <Stack spacing={3}>
-      {!admin && !notUser && (
+      {!notUser && (
         <NewCallDialog
           lead={lead}
           setCallReminders={setCallReminders}
@@ -154,6 +154,16 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
                         )}
                       </>
                     )}
+                    <DeleteModelButton
+                      item={call}
+                      model={"CallReminder"}
+                      contentKey="reminderReason"
+                      onDelete={() => {
+                        setCallReminders((oldCalls) =>
+                          oldCalls.filter((c) => c.id !== call.id)
+                        );
+                      }}
+                    />
                   </Stack>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <RiUserLine
@@ -336,6 +346,16 @@ export function FileList({ lead, admin, notUser }) {
                   </Box>
                 </Box>
                 <Box display="flex" gap={1}>
+                  <DeleteModelButton
+                    item={file}
+                    model={"File"}
+                    contentKey="name"
+                    onDelete={() => {
+                      setFiles((oldFiles) =>
+                        oldFiles.filter((f) => f.id !== file.id)
+                      );
+                    }}
+                  />
                   <Tooltip title="Preview">
                     <IconButton
                       size="small"
@@ -384,7 +404,7 @@ export function FileList({ lead, admin, notUser }) {
 
         {currentTab === 0 && (
           <Box>
-            {!admin && !notUser && <AddFiles lead={lead} setFiles={setFiles} />}
+            {!notUser && <AddFiles lead={lead} setFiles={setFiles} />}
             {userFiles.length === 0 ? (
               <Typography
                 variant="body1"
@@ -465,8 +485,10 @@ export function LeadNotes({ lead, admin, notUser }) {
                   {note.user.name} •{" "}
                   {dayjs(note.createdAt).format("MM/DD/YYYY")}
                 </Typography>
-                <DeleteNoteButton
-                  note={note}
+                <DeleteModelButton
+                  item={note}
+                  model={"Note"}
+                  contentKey="content"
                   onDelete={() => {
                     setNotes((oldNotes) =>
                       oldNotes.filter((n) => n.id !== note.id)
@@ -510,9 +532,7 @@ export function PriceOffersList({ admin, lead, notUser }) {
   };
   return (
     <Card sx={cardStyles}>
-      {!admin && !notUser && (
-        <AddPriceOffers lead={lead} setPriceOffers={setOffers} />
-      )}
+      {!notUser && <AddPriceOffers lead={lead} setPriceOffers={setOffers} />}
 
       <CardContent>
         <Box display="flex" alignItems="center" mb={3}>
@@ -533,6 +553,16 @@ export function PriceOffersList({ admin, lead, notUser }) {
             <ListItem key={offer.id} sx={listItemStyles} disablePadding>
               <Box sx={{ width: "100%", p: 2 }}>
                 <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                  <DeleteModelButton
+                    item={offer}
+                    model={"PriceOffers"}
+                    contentKey={offer.note ? "note" : "url"}
+                    onDelete={() => {
+                      setOffers((oldOffers) =>
+                        oldOffers.filter((o) => o.id !== offer.id)
+                      );
+                    }}
+                  />
                   <PriceOfferSwitch
                     priceOffer={offer}
                     setPriceOffers={setOffers}
@@ -669,7 +699,11 @@ function PriceOfferSwitch({ priceOffer, setPriceOffers }) {
           checked={checked}
           onChange={handleChange}
           inputProps={{ "aria-label": "Accept Price Offer" }}
-          disabled={user.role !== "STAFF"}
+          disabled={
+            user.role !== "STAFF" &&
+            user.role !== "ADMIN" &&
+            user.role !== "SUPER_ADMIN"
+          }
         />
       </Tooltip>
     </Box>
@@ -704,7 +738,7 @@ export function ExtraServicesList({ admin, lead, notUser, setPayments }) {
   };
   return (
     <Card sx={cardStyles}>
-      {!admin && !notUser && (
+      {!notUser && (
         <AddExtraService
           lead={lead}
           setExtraServices={setExtraServices}
@@ -731,6 +765,16 @@ export function ExtraServicesList({ admin, lead, notUser, setPayments }) {
             <ListItem key={service.id} sx={listItemStyles} disablePadding>
               <Box sx={{ width: "100%", p: 2 }}>
                 <Grid container spacing={3}>
+                  <DeleteModelButton
+                    item={service}
+                    model={"ExtraService"}
+                    contentKey={service.note ? "note" : "price"}
+                    onDelete={() => {
+                      setExtraServices((oldServices) =>
+                        oldServices.filter((s) => s.id !== service.id)
+                      );
+                    }}
+                  />
                   {service.note && (
                     <Grid size={{ xs: 12, md: 12 }}>
                       <Box display="flex" alignItems="center">

@@ -332,7 +332,9 @@ const LeadContent = ({
                       <PaymentDialog payments={payments} />
                     ) : (
                       <>
-                        {user.role === "STAFF" && (
+                        {(user.role === "STAFF" ||
+                          user.role === "SUPER_ADMIN" ||
+                          user.role === "ADMIN") && (
                           <AddPayments
                             lead={lead}
                             open={paymentModal}

@@ -192,7 +192,7 @@ export const NewCallDialog = ({
         userId: user.id,
       },
       setLoading,
-      `staff/client-leads/${lead.id}/call-reminders`,
+      `shared/client-leads/${lead.id}/call-reminders`,
       false,
       "Creating"
     );
@@ -457,7 +457,7 @@ export const AddPriceOffers = ({
         userId: user.id,
       },
       setLoading,
-      `staff/client-leads/${lead.id}/price-offers`,
+      `shared/client-leads/${lead.id}/price-offers`,
       false,
       "Adding"
     );
@@ -593,7 +593,7 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
         const request = await handleRequestSubmit(
           data,
           setLoading,
-          `staff/client-leads/${lead.id}/files`,
+          `shared/client-leads/${lead.id}/files`,
           false,
           "Adding Data",
           false,
@@ -746,8 +746,8 @@ export const AddExtraService = ({
     setExtraService({ note: null, price: 0 });
     setOpen(false);
     if (close) {
-      setExtraServices((old) => [...old, extraService]);
-      // window.location.reload();
+      // setExtraServices((old) => [...old, extraService]);
+      window.location.reload();
     }
   }
   const handleAddNewExtraService = async () => {

@@ -1340,14 +1340,6 @@ export async function updateClientLeadStatus({
     }
   }
 
-  // else {
-  //   if (oldStatus !== "FINALIZED" && oldStatus !== "REJECTED") {
-  //     throw new Error(
-  //       "You are only allowed to change the status from finalized or rejected"
-  //     );
-  //   }
-  // }
-
   const data = {
     status,
     updatedAt: new Date(),
@@ -2832,4 +2824,33 @@ export async function deleteNote({ id, isAdmin }) {
   return { data: note, message: "Note deleted successfully" };
 }
 
+export async function deleteAModel({ id, isAdmin, data }) {
+  const model = data.model;
+  const item = await prisma[model].findUnique({
+    where: {
+      id: Number(id),
+    },
+    select: {
+      createdAt: true,
+    },
+  });
+  if (!item) {
+    throw new Error(`${data.model} not found`);
+  }
+  if (!isAdmin) {
+    const now = dayjs();
+    const createdAt = dayjs(item.createdAt);
+    const diffInMinutes = now.diff(createdAt, "minute");
+
+    if (diffInMinutes > 5) {
+      throw new Error(`Cannot delete ${data.model} older than 5 minutes`);
+    }
+  }
+  await prisma[model].delete({
+    where: {
+      id: Number(id),
+    },
+  });
+  return { data: item, message: `${data.model} deleted successfully` };
+}
 /////// end of utility ///////

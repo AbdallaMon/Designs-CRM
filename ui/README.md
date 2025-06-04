@@ -162,6 +162,7 @@ main :
 - Check why we are not able to assign designers
 - Allow admin to convert lead to another user
 
+- Allow user to delete within 5 minutes same as note but for all thing else like price offers ect(we need to create a component with customize)
 - Add new tab (Meetings) same way as call reminders
 - Arrange finalized leads by updated at
 - Shared updates from staff to all type

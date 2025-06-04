@@ -20,16 +20,24 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 
-export default function DeleteNoteButton({ note, onDelete }) {
+export default function DeleteModelButton({
+  item,
+  model,
+  endpoint = "shared/delete",
+  contentKey = "content",
+  onDelete,
+  timeLimit = 5,
+}) {
   const { user } = useAuth();
   const { setLoading } = useToastContext();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  const isOlderThan5Minutes = dayjs().diff(dayjs(note.createdAt), "minute") > 5;
-  const canDelete = checkIfAdmin(user) || !isOlderThan5Minutes;
+  const isOlderThanTimeLimit =
+    dayjs().diff(dayjs(item.createdAt), "minute") > timeLimit;
   const isAdmin = checkIfAdmin(user);
+  const canDelete = isAdmin || !isOlderThanTimeLimit;
 
   if (!canDelete) return null;
 
@@ -39,28 +47,21 @@ export default function DeleteNoteButton({ note, onDelete }) {
 
   const handleConfirmDelete = async () => {
     setIsDeleting(true);
-    setConfirmOpen(false);
-
-    try {
-      const deleteNote = await handleRequestSubmit(
-        {},
-        setLoading,
-        `shared/notes/${note.id}`,
-        false,
-        "Deleting note...",
-        false,
-        "DELETE"
-      );
-
-      if (deleteNote && deleteNote.status === 200) {
-        if (onDelete) {
-          onDelete(note);
-        }
+    const deleteResponse = await handleRequestSubmit(
+      { model },
+      setLoading,
+      `${endpoint}/${item.id}`,
+      false,
+      `Deleting ${model.toLowerCase()}...`,
+      false,
+      "DELETE"
+    );
+    setIsDeleting(false);
+    if (deleteResponse && deleteResponse.status === 200) {
+      if (onDelete) {
+        onDelete(item);
       }
-    } catch (error) {
-      console.error("Error deleting note:", error);
-    } finally {
-      setIsDeleting(false);
+      setConfirmOpen(false);
     }
   };
 
@@ -68,12 +69,11 @@ export default function DeleteNoteButton({ note, onDelete }) {
     setConfirmOpen(false);
   };
 
-  // Dynamic tooltip based on user permissions
   const getTooltipTitle = () => {
-    if (isAdmin) return "Delete note (Admin)";
-    if (isOlderThan5Minutes) return "Delete note";
-    return `Delete note (${
-      5 - dayjs().diff(dayjs(note.createdAt), "minute")
+    if (isAdmin) return `Delete ${model.toLowerCase()} (Admin)`;
+    if (isOlderThanTimeLimit) return `Delete ${model.toLowerCase()}`;
+    return `Delete ${model.toLowerCase()} (${
+      timeLimit - dayjs().diff(dayjs(item.createdAt), "minute")
     } min left)`;
   };
 
@@ -124,7 +124,6 @@ export default function DeleteNoteButton({ note, onDelete }) {
         </Box>
       </Tooltip>
 
-      {/* Confirmation Dialog */}
       <Dialog
         open={confirmOpen}
         onClose={handleCancelDelete}
@@ -148,16 +147,16 @@ export default function DeleteNoteButton({ note, onDelete }) {
           }}
         >
           <MdDeleteForever size={24} />
-          Delete Note
+          Delete {model}
         </DialogTitle>
 
         <DialogContent>
           <DialogContentText id="delete-dialog-description" sx={{ mb: 1 }}>
-            Are you sure you want to delete this note? This action cannot be
-            undone.
+            Are you sure you want to delete this {model.toLowerCase()}? This
+            action cannot be undone.
           </DialogContentText>
 
-          {note.content && (
+          {contentKey && item[contentKey] && (
             <Box
               sx={{
                 mt: 2,
@@ -172,8 +171,8 @@ export default function DeleteNoteButton({ note, onDelete }) {
                 color: "text.secondary",
               }}
             >
-              {note.content.substring(0, 150)}
-              {note.content.length > 150 && "..."}
+              {item[contentKey].substring(0, 150)}
+              {item[contentKey].length > 150 && "..."}
             </Box>
           )}
         </DialogContent>

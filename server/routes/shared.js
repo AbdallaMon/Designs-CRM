@@ -13,6 +13,7 @@ import {
   checkIfUserAllowedToTakeALead,
   checkUserLog,
   createNewTask,
+  deleteAModel,
   deleteNote,
   editPriceOfferStatus,
   getAllFixedData,
@@ -49,7 +50,10 @@ import {
 } from "../services/sharedServices.js";
 import { getAdminClientLeadDetails } from "../services/adminServices.js";
 import {
+  createCallReminder,
+  createFile,
   createNote,
+  createPriceOffer,
   updateCallReminderStatus,
 } from "../services/staffServices.js";
 
@@ -198,6 +202,57 @@ router.get("/client-leads/:id", async (req, res) => {
   }
 });
 
+router.post("/client-leads/:id/call-reminders", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const callReminder = await createCallReminder({
+      clientLeadId: Number(id),
+      ...req.body,
+    });
+    res.status(200).json({
+      data: callReminder,
+      message: "Call reminder created successfully",
+    });
+  } catch (error) {
+    console.error("Error createCallReminder:", error);
+    res.status(500).json({
+      message:
+        error.message || "An error occurred while creating call reminder.",
+    });
+  }
+});
+router.post("/client-leads/:id/price-offers", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const priceOffers = await createPriceOffer({
+      clientLeadId: Number(id),
+      ...req.body,
+    });
+    res
+      .status(200)
+      .json({ data: priceOffers, message: "Price offer added successfully" });
+  } catch (error) {
+    console.error("Error Creating new price offer:", error);
+    res.status(500).json({
+      message:
+        error.message || "An error occurred while creating call reminder.",
+    });
+  }
+});
+
+router.post("/client-leads/:id/files", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const file = await createFile({
+      clientLeadId: Number(id),
+      ...req.body,
+    });
+    res.status(200).json({ data: file, message: "File Saved successfully" });
+  } catch (error) {
+    console.error("Error updating client lead status:", error);
+    res.status(500).json({ message: "Failed to save the file." });
+  }
+});
 router.post("/client-leads/:id/payments", async (req, res) => {
   const { id } = req.params;
   let payments;
@@ -787,14 +842,15 @@ router.post("/notes", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-router.delete("/notes/:id", async (req, res) => {
+router.delete("/delete/:id", async (req, res) => {
   try {
     const token = getTokenData(req, res);
     const isAdmin = token.role === "ADMIN" || token.role === "SUPER_ADMIN";
 
-    const newNote = await deleteNote({
+    const newNote = await deleteAModel({
       id: req.params.id,
       isAdmin,
+      data: req.body,
     });
     res.status(200).json(newNote);
   } catch (error) {
