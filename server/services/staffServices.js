@@ -10,6 +10,7 @@ import {
   newNoteNotification,
   newPriceOffer,
   updateCallNotification,
+  updateMettingNotification,
 } from "./notification.js";
 import { updateLead } from "./utility.js";
 
@@ -85,6 +86,56 @@ export async function createCallReminder({
   return { latestTwo, newReminder };
 }
 
+export async function createMeetingReminder({
+  clientLeadId,
+  userId,
+  time,
+  reminderReason,
+  currentUser,
+}) {
+  if (
+    currentUser.role === "THREE_D_DESIGNER" ||
+    currentUser.role === "TWO_D_DESIGNER"
+  ) {
+    throw new Error("You are not allow to create meeting");
+  }
+  const userTimezone = dayjs.tz.guess(); // Detect user's timezone
+
+  let formattedTime = dayjs(time).tz(userTimezone).utc(); // Convert to UTC
+  if (formattedTime.isBefore(dayjs().utc())) {
+    throw new Error("The reminder time must be in the future.");
+  }
+  formattedTime = formattedTime.toDate().toISOString();
+  const newReminder = await prisma.meetingReminder.create({
+    data: {
+      clientLeadId,
+      userId,
+      time: formattedTime,
+      reminderReason,
+    },
+    select: {
+      id: true,
+      time: true,
+      status: true,
+      reminderReason: true,
+      meetingResult: true,
+      userId: true,
+      user: {
+        select: { name: true },
+      },
+    },
+  });
+  await newCallNotification(clientLeadId, newReminder);
+  let latestTwo = await prisma.meetingReminder.findMany({
+    where: {
+      clientLeadId,
+    },
+    orderBy: { time: "desc" },
+    take: 2,
+  });
+  await updateLead(clientLeadId);
+  return { latestTwo, newReminder };
+}
 export async function createPriceOffer({ clientLeadId, userId, priceOffer }) {
   if (priceOffer.minPrice > priceOffer.maxPrice) {
     throw new Error("End price must be bigger or equal to start price");
@@ -211,6 +262,67 @@ export async function updateCallReminderStatus({
   return updatedReminder;
 }
 
+export async function updateMeetingReminderStatus({
+  reminderId,
+  currentUser,
+  status,
+  meetingResult = null,
+}) {
+  if (
+    currentUser.role === "THREE_D_DESIGNER" ||
+    currentUser.role === "TWO_D_DESIGNER"
+  ) {
+    throw new Error("You are not allow to update this meeting");
+  }
+
+  if (currentUser.role !== "ADMIN" && currentUser.role !== "SUPER_ADMIN") {
+    const meetingReminder = await prisma.meetingReminder.findUnique({
+      where: {
+        id: reminderId,
+      },
+      select: {
+        user: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+    if (meetingReminder.user.id !== currentUser.id) {
+      throw new Error(
+        "You are not allowed to update this call result ask admin to do that"
+      );
+    }
+  }
+  const updatedReminder = await prisma.meetingReminder.update({
+    where: { id: reminderId },
+    data: {
+      status,
+      meetingResult: status === "DONE" ? meetingResult : "Missed Meeting",
+      updatedAt: new Date(),
+    },
+    select: {
+      id: true,
+      time: true,
+      status: true,
+      reminderReason: true,
+      meetingResult: true,
+      userId: true,
+      clientLeadId: true,
+      updatedAt: true,
+      user: {
+        select: { name: true },
+      },
+    },
+  });
+  await updateLead(updatedReminder.clientLeadId);
+  await updateMettingNotification(
+    updatedReminder.clientLeadId,
+    updatedReminder,
+    currentUser.id
+  );
+  return updatedReminder;
+}
 export const getCallReminders = async (searchParams) => {
   const staffFilter = searchParams.staffId
     ? { userId: Number(searchParams.staffId) }

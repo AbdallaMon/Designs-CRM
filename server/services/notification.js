@@ -167,6 +167,31 @@ export async function newCallNotification(leadId, callReminder) {
     callReminder.userId
   );
 }
+export async function newMeetingNotification(leadId, meetingReminder) {
+  const notificationHtml = `<div>
+       <strong>Meeting reminder</strong> was added to Lead <a href="${
+         dealsLink + leadId
+       }" >#${leadId}</a> 
+       <div class="sub-text">
+    Meeting time: ${dayjs(meetingReminder.time).format("YYYY-MM-DD HH:mm")}
+</div>
+     <div class="sub-text">
+    Reason of the meeting : ${meetingReminder.reminderReason}
+</div>
+    </div>`;
+  await createNotification(
+    null,
+    true,
+    notificationHtml,
+    null,
+    "CALL_REMINDER_CREATED",
+    "New meeting reminder",
+    true,
+    "HTML",
+    null,
+    meetingReminder.userId
+  );
+}
 export async function newPriceOffer(leadId, priceOffer) {
   const notificationHtml = `<div>
        <strong>New Price offer</strong> was added to Lead <a href="${
@@ -238,6 +263,38 @@ export async function updateCallNotification(leadId, callReminder, userId) {
     null,
     "CALL_REMINDER_STATUS",
     "Call reminder status changed",
+    true,
+    "HTML",
+    null,
+    Number(userId)
+  );
+}
+export async function updateMettingNotification(
+  leadId,
+  meetingReminder,
+  userId
+) {
+  const notificationHtml = `<div>
+       <strong>Meeting reminder</strong> updated in Lead <a href="${
+         dealsLink + leadId
+       }" >#${leadId}</a> 
+       <div class="sub-text">
+    Call time: ${dayjs(meetingReminder.time).format("YYYY-MM-DD HH:mm")}
+</div>
+     <div class="sub-text">
+    Reason of the meeting : ${meetingReminder.reminderReason}
+</div>
+     <div class="sub-text">
+    Result of the meeting : ${meetingReminder.meetingResult}
+</div>
+    </div>`;
+  await createNotification(
+    null,
+    true,
+    notificationHtml,
+    null,
+    "CALL_REMINDER_STATUS",
+    "Meeting reminder status changed",
     true,
     "HTML",
     null,

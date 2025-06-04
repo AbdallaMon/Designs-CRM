@@ -347,6 +347,22 @@ export async function getClientLeadDetails(
         },
         orderBy: { time: "desc" },
       },
+      meetingReminders: {
+        where,
+        select: {
+          id: true,
+          time: true,
+          status: true,
+          reminderReason: true,
+          meetingResult: true,
+          userId: true,
+          updatedAt: true,
+          user: {
+            select: { name: true },
+          },
+        },
+        orderBy: { time: "desc" },
+      },
       createdAt: true,
       updatedAt: true,
       assignedAt: true,
@@ -2359,7 +2375,65 @@ export const getNextCalls = async ({ limit, skip, searchParams }) => {
     totalPages,
   };
 };
+export const getNextMeetings = async ({ limit, skip, searchParams }) => {
+  const staffFilter =
+    searchParams.staffId && searchParams.staffId !== "undefined"
+      ? { userId: Number(searchParams.staffId) }
+      : {};
 
+  const nearestMeetingReminders = await prisma.meetingReminder.findMany({
+    where: {
+      status: "IN_PROGRESS",
+      ...staffFilter,
+
+      clientLead: {
+        status: {
+          notIn: ["CONVERTED", "ON_HOLD", "REJECTED"],
+        },
+        ...staffFilter,
+      },
+    },
+    include: {
+      clientLead: {
+        select: {
+          id: true,
+          client: {
+            select: {
+              name: true,
+            },
+          },
+          status: true,
+        },
+      },
+    },
+    orderBy: {
+      time: "asc",
+    },
+    take: limit,
+    skip: skip,
+  });
+
+  const total = await prisma.meetingReminder.count({
+    where: {
+      status: "IN_PROGRESS",
+      clientLead: {
+        status: {
+          notIn: ["CONVERTED", "ON_HOLD", "FINALIZED", "REJECTED"],
+        },
+        ...staffFilter,
+      },
+    },
+  });
+
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    data: nearestMeetingReminders,
+    limit,
+    total,
+    totalPages,
+  };
+};
 export async function getAllFixedData() {
   return prisma.fixedData.findMany({
     orderBy: { createdAt: "desc" },

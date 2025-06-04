@@ -30,6 +30,7 @@ import {
   getLeadDetailsByProject,
   getMonthlyPerformanceData,
   getNextCalls,
+  getNextMeetings,
   getNotes,
   getOtherRoles,
   getPerformanceMetrics,
@@ -52,9 +53,11 @@ import { getAdminClientLeadDetails } from "../services/adminServices.js";
 import {
   createCallReminder,
   createFile,
+  createMeetingReminder,
   createNote,
   createPriceOffer,
   updateCallReminderStatus,
+  updateMeetingReminderStatus,
 } from "../services/staffServices.js";
 
 const router = Router();
@@ -167,6 +170,46 @@ router.put("/client-leads/call-reminders/:id", async (req, res) => {
     });
   }
 });
+
+router.get("/client-leads/meetings", async (req, res) => {
+  try {
+    const searchParams = req.query;
+    const { limit, skip } = getPagination(req);
+    const result = await getNextMeetings({
+      limit: Number(limit),
+      skip: Number(skip),
+      searchParams,
+    });
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching client leads:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching client leads" });
+  }
+});
+router.put("/client-leads/meeting-reminders/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await getCurrentUser(req);
+
+    const callReminder = await updateMeetingReminderStatus({
+      reminderId: Number(id),
+      currentUser: user,
+      ...req.body,
+    });
+    res.status(200).json({
+      data: callReminder,
+      message: "Meeting reminder updated successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message:
+        error.message || "An error occurred while updating call reminder.",
+    });
+  }
+});
+
 router.get("/client-leads/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -209,6 +252,7 @@ router.post("/client-leads/:id/call-reminders", async (req, res) => {
       clientLeadId: Number(id),
       ...req.body,
     });
+
     res.status(200).json({
       data: callReminder,
       message: "Call reminder created successfully",
@@ -218,6 +262,27 @@ router.post("/client-leads/:id/call-reminders", async (req, res) => {
     res.status(500).json({
       message:
         error.message || "An error occurred while creating call reminder.",
+    });
+  }
+});
+router.post("/client-leads/:id/meeting-reminders", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const currentUser = await getCurrentUser(req);
+    const callReminder = await createMeetingReminder({
+      clientLeadId: Number(id),
+      currentUser,
+      ...req.body,
+    });
+    res.status(200).json({
+      data: callReminder,
+      message: "Meeting reminder created successfully",
+    });
+  } catch (error) {
+    console.error("Error createCallReminder:", error);
+    res.status(500).json({
+      message:
+        error.message || "An error occurred while creating Meeting reminder.",
     });
   }
 });
@@ -239,7 +304,6 @@ router.post("/client-leads/:id/price-offers", async (req, res) => {
     });
   }
 });
-
 router.post("/client-leads/:id/files", async (req, res) => {
   try {
     const { id } = req.params;
@@ -275,6 +339,7 @@ router.post("/client-leads/:id/payments", async (req, res) => {
     res.status(500).json({ message: "Error Creating payments" });
   }
 });
+
 router.post("/client-lead/price-offers/change-status", async (req, res) => {
   let priceOffer = await editPriceOfferStatus(
     req.body.priceOfferId,

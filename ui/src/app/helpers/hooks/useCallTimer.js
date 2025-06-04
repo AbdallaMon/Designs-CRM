@@ -6,7 +6,7 @@ import timezone from "dayjs/plugin/timezone";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-export function useCallTimer(call, userTimezone = dayjs.tz.guess()) {
+export function useCallTimer(call, userTimezone = dayjs.tz.guess(), type) {
   const [timeLeft, setTimeLeft] = useState("");
   const [hoursLeft, setHoursLeft] = useState(null);
 
@@ -22,7 +22,7 @@ export function useCallTimer(call, userTimezone = dayjs.tz.guess()) {
 
       if (diff >= -fiveMinutes && diff <= fiveMinutes) {
         // Call is happening within the ±5-minute window
-        setTimeLeft("Call is now");
+        setTimeLeft(`${type === "MEETING" ? "Meeting" : "Call"} is now`);
         setHoursLeft(0);
         return;
       }
@@ -35,9 +35,9 @@ export function useCallTimer(call, userTimezone = dayjs.tz.guess()) {
         );
 
         setTimeLeft(
-          `Call was ${passedHours > 0 ? `${passedHours}h ` : ""}${
-            passedMinutes > 0 ? `${passedMinutes}m ` : ""
-          }ago`
+          `${type === "MEETING" ? "Meeting" : "Call"} was ${
+            passedHours > 0 ? `${passedHours}h ` : ""
+          }${passedMinutes > 0 ? `${passedMinutes}m ` : ""}ago`
         );
 
         setHoursLeft(null); // Call is in the past
@@ -54,9 +54,11 @@ export function useCallTimer(call, userTimezone = dayjs.tz.guess()) {
 
       // Update state
       setTimeLeft(
-        `Call in ${days > 0 ? `${days}d ` : ""}${
-          hours > 0 ? `${hours}h ` : ""
-        }${minutes > 0 ? `${minutes}m ` : ""}${seconds}s`
+        `${type === "MEETING" ? "Meeting" : "Call"} in ${
+          days > 0 ? `${days}d ` : ""
+        }${hours > 0 ? `${hours}h ` : ""}${
+          minutes > 0 ? `${minutes}m ` : ""
+        }${seconds}s`
       );
 
       setHoursLeft(days * 24 + hours); // Total remaining hours

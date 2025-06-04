@@ -1387,6 +1387,12 @@ export async function getAdminClientLeadDetails(clientLeadId, searchParams) {
           user: { select: { name: true } },
         },
       },
+      meetingReminders: {
+        include: {
+          user: { select: { name: true } },
+        },
+        orderBy: { time: "desc" },
+      },
       files: {
         include: {
           user: { select: { name: true } },

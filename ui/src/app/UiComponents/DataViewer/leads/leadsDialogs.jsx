@@ -37,6 +37,7 @@ export const CallResultDialog = ({
   type = "button",
   children,
   setCallReminders,
+  reminderType = "CALL",
 }) => {
   const [result, setResult] = useState("");
   const [status, setStatus] = useState("DONE");
@@ -59,15 +60,22 @@ export const CallResultDialog = ({
       setAlertError("Write the result of the call");
       return;
     }
+    const requestedData = {
+      userId: user.id,
+      status,
+    };
+    if (reminderType === "MEETING") {
+      requestedData.meetingResult = result;
+    } else {
+      requestedData.callResult = result;
+    }
 
     const request = await handleRequestSubmit(
-      {
-        callResult: result,
-        userId: user.id,
-        status,
-      },
+      requestedData,
       setLoading,
-      `shared/client-leads/call-reminders/${call.id}`,
+      `shared/client-leads/${
+        reminderType === "MEETING" ? "meeting-reminders" : "call-reminders"
+      }/${call.id}`,
       false,
       "Updating",
       false,
@@ -86,12 +94,21 @@ export const CallResultDialog = ({
         setleads((oldLeads) =>
           oldLeads.map((l) => {
             if (l.id === lead.id) {
-              l.callReminders = [
-                request.data,
-                ...l.callReminders?.filter(
-                  (call) => call.id !== request.data.id
-                ),
-              ];
+              if (reminderType === "MEETING") {
+                l.meetingReminders = [
+                  request.data,
+                  ...l.meetingReminders?.filter(
+                    (meeting) => meeting.id !== request.data.id
+                  ),
+                ];
+              } else {
+                l.callReminders = [
+                  request.data,
+                  ...l.callReminders?.filter(
+                    (call) => call.id !== request.data.id
+                  ),
+                ];
+              }
             }
             return l;
           })
@@ -118,7 +135,7 @@ export const CallResultDialog = ({
       {open && (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
           <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>
-            Update Call Result
+            {text}
           </DialogTitle>
           <DialogContent sx={{ mt: 2 }}>
             <Select
@@ -164,13 +181,13 @@ export const CallResultDialog = ({
   );
 };
 
-// NewCallDialog Component (No changes needed)
 export const NewCallDialog = ({
   lead,
   setleads,
   type = "button",
   children,
   setCallReminders,
+  reminderType,
 }) => {
   const [callData, setCallData] = useState({ time: "", reminderReason: "" });
   const [open, setOpen] = useState(false);
@@ -179,7 +196,7 @@ export const NewCallDialog = ({
   function handleOpen() {
     setOpen(true);
   }
-
+  const reminderName = reminderType === "MEETING" ? "Meeting" : "Call";
   function onClose() {
     setCallData({ time: "", reminderReason: "" });
     setOpen(false);
@@ -192,7 +209,9 @@ export const NewCallDialog = ({
         userId: user.id,
       },
       setLoading,
-      `shared/client-leads/${lead.id}/call-reminders`,
+      `shared/client-leads/${lead.id}/${
+        reminderType === "MEETING" ? "meeting-reminders" : "call-reminders"
+      }`,
       false,
       "Creating"
     );
@@ -204,7 +223,11 @@ export const NewCallDialog = ({
         setleads((oldLeads) =>
           oldLeads.map((l) => {
             if (l.id === lead.id) {
-              l.callReminders = request.data.latestTwo;
+              if (reminderType === "MEETING") {
+                l.meetingReminders = request.data.latestTwo;
+              } else {
+                l.callReminders = request.data.latestTwo;
+              }
             }
             return l;
           })
@@ -224,7 +247,7 @@ export const NewCallDialog = ({
           startIcon={<BsPlus size={20} />}
           sx={{ alignSelf: "flex-start" }}
         >
-          Schedule New Call
+          Schedule New {reminderName}
         </Button>
       ) : (
         <OpenButton handleOpen={handleOpen}>{children}</OpenButton>
@@ -232,13 +255,13 @@ export const NewCallDialog = ({
       {open && (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
           <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>
-            Schedule New Call
+            Schedule New {reminderName}
           </DialogTitle>
           <DialogContent>
             <Stack spacing={3} sx={{ mt: 2 }}>
               <TextField
                 type="datetime-local"
-                label="Call Time"
+                label={`${reminderName} Time`}
                 value={callData.time}
                 onChange={(e) =>
                   setCallData({ ...callData, time: e.target.value })

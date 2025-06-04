@@ -167,6 +167,7 @@ model ClientLead {
       notes              Note[]
       notifications      Notification[]
       callReminders      CallReminder[]   @relation("clientLeadCallReminders")
+      meetingReminders MeetingReminder[] @relation("clientLeadMeetingReminders")
       extraServices     ExtraService[]
       commissions Commission[]
 
@@ -194,6 +195,23 @@ model ClientLead {
       
       @@index([clientId])
       @@index([userId])
+}
+
+model MeetingReminder {
+  id              Int                 @id @default(autoincrement())
+  clientLead      ClientLead          @relation(fields: [clientLeadId], references: [id], name: "clientLeadMeetingReminders")
+  clientLeadId    Int
+  time            DateTime
+  status          CallReminderStatus @default(IN_PROGRESS)
+  meetingResult   String?             @db.Text
+  reminderReason  String?             @db.Text
+  user            User                @relation(fields: [userId], references: [id])
+  userId          Int
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([clientLeadId])
+  @@index([userId])
 }
 
 model Commission {
@@ -383,6 +401,8 @@ model User {
  createdAt     DateTime       @default(now())
  updatedAt     DateTime       @updatedAt
  callReminders CallReminder[]
+ meetingReminders MeetingReminder[]
+ 
  files File[]
  lastSeenAt    DateTime?    
  maxLeadsCounts Int?             @default(50)

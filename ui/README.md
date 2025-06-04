@@ -161,13 +161,16 @@ main :
 - Not all data needed in tasks to be created
 - Check why we are not able to assign designers
 - Allow admin to convert lead to another user
-
 - Allow user to delete within 5 minutes same as note but for all thing else like price offers ect(we need to create a component with customize)
+
 - Add new tab (Meetings) same way as call reminders
+
 - Arrange finalized leads by updated at
 - Shared updates from staff to all type
 - When designer add updates allow him to share it with finalized staff and verse
 - When adding note ask user if he want to add it to updates(new shared updates between all user and admin must uprove) like tasks and user update is it done or not and if user read it we can make it done to hide it and allow admin to hide it anyway
+
+- Telegram?
 
 - Can add 3d Desginer to 2d study (Modifcation)
 - Name project as steps or something else

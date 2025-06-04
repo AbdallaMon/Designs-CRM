@@ -9,9 +9,9 @@ import "dayjs/locale/en"; // Ensure English locale
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-export function InProgressCall({ call, simple }) {
+export function InProgressCall({ call, simple, type }) {
   const userTimezone = dayjs.tz.guess(); // Detect user's timezone
-  const { timeLeft, hoursLeft } = useCallTimer(call, userTimezone);
+  const { timeLeft, hoursLeft } = useCallTimer(call, userTimezone, type);
   const theme = useTheme();
 
   const isUrgent = hoursLeft !== null && hoursLeft <= 12; // Mark as urgent if within 12 hours

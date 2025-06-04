@@ -63,8 +63,9 @@ import {
   CallReminders,
   FileList,
   ExtraServicesList,
+  MeetingReminders,
 } from "./LeadTabs";
-import { MdBlock, MdModeEdit, MdWork } from "react-icons/md";
+import { MdBlock, MdMeetingRoom, MdModeEdit, MdWork } from "react-icons/md";
 import LeadProjects from "../work-stages/projects/LeadProjects";
 import { TasksList } from "../utility/TasksList";
 import TelegramLink from "../work-stages/utility/TelegramLink";
@@ -514,6 +515,11 @@ const LeadContent = ({
           sx={{ textTransform: "none" }}
         />
         <Tab
+          icon={<MdMeetingRoom size={20} />}
+          label="Meetings"
+          sx={{ textTransform: "none" }}
+        />
+        <Tab
           icon={<BsFileText size={20} />}
           label="Notes"
           sx={{ textTransform: "none" }}
@@ -571,20 +577,28 @@ const LeadContent = ({
           />
         </TabPanel>
         <TabPanel value={activeTab} index={2}>
+          <MeetingReminders
+            admin={admin}
+            lead={lead}
+            setleads={setleads}
+            notUser={isPage && user.id !== lead.userId}
+          />
+        </TabPanel>
+        <TabPanel value={activeTab} index={3}>
           <LeadNotes
             admin={admin}
             lead={lead}
             notUser={isPage && user.id !== lead.userId}
           />
         </TabPanel>
-        <TabPanel value={activeTab} index={3}>
+        <TabPanel value={activeTab} index={4}>
           <PriceOffersList
             admin={admin}
             lead={lead}
             notUser={isPage && user.id !== lead.userId}
           />
         </TabPanel>
-        <TabPanel value={activeTab} index={4}>
+        <TabPanel value={activeTab} index={5}>
           <FileList
             admin={admin}
             lead={lead}
@@ -593,7 +607,7 @@ const LeadContent = ({
         </TabPanel>
 
         {payments?.length > 0 && (
-          <TabPanel value={activeTab} index={5}>
+          <TabPanel value={activeTab} index={6}>
             <ExtraServicesList
               admin={admin}
               lead={lead}
@@ -602,10 +616,10 @@ const LeadContent = ({
             />
           </TabPanel>
         )}
-        <TabPanel value={activeTab} index={payments?.length > 0 ? 6 : 5}>
+        <TabPanel value={activeTab} index={payments?.length > 0 ? 7 : 6}>
           <LeadProjects clientLeadId={lead.id} />
         </TabPanel>
-        <TabPanel value={activeTab} index={payments?.length > 0 ? 7 : 6}>
+        <TabPanel value={activeTab} index={payments?.length > 0 ? 8 : 7}>
           <TasksList
             name="Modifcation"
             type="MODIFICATION"

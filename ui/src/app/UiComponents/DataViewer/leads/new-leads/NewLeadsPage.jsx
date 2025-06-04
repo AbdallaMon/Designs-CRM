@@ -27,6 +27,7 @@ import { NonConsultedLeads } from "./Non-consulted-leads";
 import UpdateInitialConsultButton from "@/app/UiComponents/buttons/UpdateInitialConsultLead";
 import { MdCheck, MdHourglassEmpty, MdTimelapse } from "react-icons/md";
 import CreateNewLead from "../extra/AddNewLead";
+import NextMeetings from "../NextMeetings";
 
 export default function NewLeadsPage({ searchParams, staff }) {
   const {
@@ -65,6 +66,7 @@ export default function NewLeadsPage({ searchParams, staff }) {
         ))}
       </LeadsSlider>
       <NextCalls staff={staff} />
+      <NextMeetings staff={staff} />
       <OnHoldLeads />
     </Container>
   );
