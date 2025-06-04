@@ -41,6 +41,7 @@ import { FaEye } from "react-icons/fa";
 import { InProgressCall } from "@/app/UiComponents/DataViewer/leads/InProgressCall.jsx";
 import { useAuth } from "@/app/providers/AuthProvider";
 import PreviewWorkStage from "../work-stages/PreviewWorkStage";
+import FloatingIdBadge from "../leads/extra/IdBadge";
 
 const ItemTypes = {
   CARD: "card",
@@ -52,9 +53,13 @@ const StyledCard = styled(Card)(({ theme, status }) => ({
   paddingLeft: theme.spacing(0.15),
   borderLeft: `5px solid ${statusColors[status]}`,
   transition: "all 0.3s",
+  position: "relative",
   cursor: "grab",
+  overflow: "unset",
+
   "& .MuiCardContent-root": {
     paddingLeft: "10px",
+    overflow: "hidden",
   },
   "&:hover": {
     transform: "translateY(-2px)",
@@ -131,6 +136,12 @@ const LeadCard = ({ lead, movelead, setleads, type, statusArray }) => {
       <StyledCard
         status={type === "STAFF" ? lead.status : lead.projects[0].status}
       >
+        <FloatingIdBadge
+          leadId={lead.id}
+          backgroundColor={`${statusColors[lead.status]}50`}
+          color={statusColors[lead.status]}
+        />
+
         <CardContent>
           <Box>
             <Typography variant="h6" component="div">

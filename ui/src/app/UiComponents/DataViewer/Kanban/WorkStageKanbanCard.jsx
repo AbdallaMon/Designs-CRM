@@ -36,6 +36,7 @@ import {
 import { styled } from "@mui/material/styles";
 import dayjs from "dayjs";
 import {
+  groupColors,
   priorityColors,
   statusColors,
   taskStatusColors,
@@ -61,40 +62,51 @@ import { ProjectTasksDialog } from "../work-stages/utility/ProjectTasksDialog";
 import TaskDetails from "../utility/TaskDetails";
 import colors from "@/app/helpers/colors";
 import TelegramLink from "../work-stages/utility/TelegramLink";
+import FloatingIdBadge from "../leads/extra/IdBadge";
 
 const ItemTypes = {
   CARD: "card",
 };
 
-const StyledCard = styled(Card)(({ theme, status }) => ({
-  margin: theme.spacing(1),
-  padding: 1,
-  paddingLeft: theme.spacing(0.15),
-  borderLeft: `5px solid ${statusColors[status]}`,
-  transition: "all 0.3s",
-  cursor: "grab",
-  position: "relative",
-  "& .MuiCardContent-root": {
-    paddingLeft: "10px",
-    paddingRight: "4px",
-  },
-  "&:hover": {
-    transform: "translateY(-2px)",
-    boxShadow: theme.shadows[4],
-  },
-  "&:active": {
-    cursor: "grabbing",
-  },
-}));
+const StyledCard = styled(Card)(({ theme, status, groupId }) => {
+  const groupColor = groupColors[groupId] || groupColors[0];
+
+  return {
+    margin: theme.spacing(1),
+    padding: 1,
+    paddingLeft: theme.spacing(0.15),
+    borderLeft: `5px solid ${statusColors[status]}`,
+    borderTop: `3px solid ${groupColor.border}`,
+    backgroundColor: groupColor.bg,
+    transition: "all 0.3s",
+    cursor: "grab",
+    position: "relative",
+    overflow: "unset",
+    paddingTop: "15px",
+    "& .MuiCardContent-root": {
+      paddingLeft: "10px",
+      paddingRight: "4px",
+      overflow: "hidden",
+    },
+    "&:hover": {
+      transform: "translateY(-2px)",
+      boxShadow: theme.shadows[4],
+    },
+    "&:active": {
+      cursor: "grabbing",
+    },
+  };
+});
 
 export const PriorityBadge = styled(Chip)(
-  ({ theme, priority, task = false }) => ({
+  ({ theme, priority, task = false, extra }) => ({
     position: "absolute",
     top: 8,
     right: task ? 32 : 8,
     zIndex: 2,
     fontSize: "0.7rem",
     height: "22px",
+    ...(extra && extra),
     backgroundColor: priorityColors[priority]?.bg || priorityColors.MEDIUM.bg,
     color: priorityColors[priority]?.color || priorityColors.MEDIUM.color,
     border: `1px solid ${
@@ -106,6 +118,26 @@ export const PriorityBadge = styled(Chip)(
     },
   })
 );
+
+const GroupTitleChip = styled(Chip)(({ theme, groupId, extra }) => {
+  const groupColor = groupColors[groupId] || groupColors[0];
+
+  return {
+    position: "absolute",
+    top: 8,
+    left: 8,
+    zIndex: 2,
+    fontSize: "0.65rem",
+    height: "20px",
+    backgroundColor: groupColor.border,
+    color: "white",
+    fontWeight: 600,
+    ...(extra && extra),
+    "& .MuiChip-label": {
+      padding: "0 4px",
+    },
+  };
+});
 
 const TaskCard = styled(Card)(({ theme }) => ({
   marginBottom: theme.spacing(1),
@@ -394,6 +426,10 @@ const WorkStageKanbanCard = ({
   const latestModifications = modifications.slice(0, 4);
   const projectPriority = lead.projects?.[0]?.priority || "MEDIUM";
 
+  // Get group information
+  const groupId = lead.projects?.[0]?.groupId;
+  const groupTitle = lead.projects?.[0]?.groupTitle;
+
   // Check if project should show modifications
   const shouldShowModifications =
     lead.projects?.[0]?.type === "3D_Modification" ||
@@ -426,11 +462,28 @@ const WorkStageKanbanCard = ({
     <div ref={drag}>
       <StyledCard
         status={type === "STAFF" ? lead.status : lead.projects[0].status}
+        groupId={groupId}
       >
+        <FloatingIdBadge
+          leadId={lead.id}
+          backgroundColor={"white"}
+          color={statusColors[lead.projects[0].status]}
+          forceWhite={true}
+        />
+        {/* Group Title Badge */}
+        {groupTitle && (
+          <GroupTitleChip
+            groupId={groupId}
+            label={groupTitle}
+            extra={{ top: 20 }}
+          />
+        )}
+
         {/* Priority Badge */}
         <PriorityBadge
           priority={projectPriority}
           label={projectPriority.replace("_", " ")}
+          extra={{ top: 20 }}
         />
 
         <CardContent sx={{ pt: 3 }}>
@@ -482,103 +535,6 @@ const WorkStageKanbanCard = ({
                 <>
                   <DesignersPreviewModal lead={lead} />
                 </>
-                // <Grid2 size={12} sx={{ mt: 3 }}>
-                //   <StyledCard sx={{ p: 0, overflow: "visible" }}>
-                //     <CardHeader
-                //       title={
-                //         <Box sx={{ display: "flex", alignItems: "center" }}>
-                //           <Typography
-                //             variant="subtitle2"
-                //             sx={{ ml: 0, fontWeight: 500 }}
-                //           >
-                //             Project Designers
-                //           </Typography>
-                //         </Box>
-                //       }
-                //       action={
-                //         <Button
-                //           onClick={() => {
-                //             setOpen(true);
-                //             setAssignmentId(null);
-                //             setDeleteDesigner(false);
-                //           }}
-                //           variant="contained"
-                //           color="primary"
-                //           size="small"
-                //           startIcon={<MdAdd />}
-                //         >
-                //           Assign New Designer
-                //         </Button>
-                //       }
-                //       sx={{ px: 3, pt: 2.5, pb: 1 }}
-                //     />
-
-                //     <Divider sx={{ mx: 3 }} />
-
-                //     <CardContent sx={{ p: 3 }}>
-                //       {lead.projects[0].assignments?.length ? (
-                //         lead.projects[0].assignments?.map((assignment) => (
-                //           <StyledDesignerCard key={assignment.id}>
-                //             <Box
-                //               sx={{
-                //                 display: "flex",
-                //                 alignItems: "center",
-                //                 flexDirection: "column",
-                //                 gap: 0.5,
-                //               }}
-                //             >
-                //               <Box
-                //                 sx={{
-                //                   display: "flex",
-                //                   alignItems: "center",
-                //                   flexDirection: "column",
-                //                 }}
-                //               >
-                //                 <Box sx={{ ml: 0 }}>
-                //                   <Typography
-                //                     variant="subtitle2"
-                //                     fontWeight="medium"
-                //                   >
-                //                     {assignment.user.name}
-                //                   </Typography>
-                //                   <Typography
-                //                     variant="caption"
-                //                     color="text.secondary"
-                //                   >
-                //                     {assignment.user.email}
-                //                   </Typography>
-                //                 </Box>
-                //               </Box>
-                //               <Box>
-                //                 <Tooltip title="Remove from project">
-                //                   <Button
-                //                     onClick={() => {
-                //                       setOpen(true);
-                //                       setAssignmentId(assignment.id);
-                //                       setDeleteDesigner(true);
-                //                     }}
-                //                     variant="outlined"
-                //                     color="error"
-                //                     size="small"
-                //                     startIcon={<MdDelete />}
-                //                   >
-                //                     Remove
-                //                   </Button>
-                //                 </Tooltip>
-                //               </Box>
-                //             </Box>
-                //           </StyledDesignerCard>
-                //         ))
-                //       ) : (
-                //         <Box sx={{ p: 3, textAlign: "center" }}>
-                //           <Typography variant="body1" color="text.secondary">
-                //             No designers assigned to this project yet
-                //           </Typography>
-                //         </Box>
-                //       )}
-                //     </CardContent>
-                //   </StyledCard>
-                // </Grid2>
               )}
 
               <Grid2 container spacing={1} sx={{ mb: 2 }}>

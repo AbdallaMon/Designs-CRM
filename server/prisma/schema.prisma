@@ -98,7 +98,6 @@ enum CallReminderStatus {
   MISSED
 }
 
-// Updated ThreeDWorkStage enum
 enum ThreeDWorkStage {
   CLIENT_COMMUNICATION
   DESIGN_STAGE
@@ -109,7 +108,6 @@ enum ThreeDWorkStage {
   THIRD_MODIFICATION
 }
 
-// Updated TwoDWorkStage enum
 enum TwoDWorkStage {
   DRAWING_PLAN
   FINAL_DELIVERY
@@ -155,6 +153,11 @@ enum TaskStatus {
   CANCELLED
 }
 
+enum LeadConversionType {
+  NORMAL
+  CONVERTED
+}
+
 model WorkStageStatus {
   id             Int             @id @default(autoincrement())
   
@@ -191,6 +194,9 @@ model ClientLead {
       description String?
       clientDescription  String? @db.Text   
       emirate            Emirate?
+      leadType LeadConversionType @default(NORMAL)
+      previousLeadId  Int?
+
 
       discount  Decimal   @db.Decimal(10, 2) @default(0)
       price              String?

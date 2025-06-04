@@ -3,17 +3,26 @@ import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 import {
+  Alert,
+  AlertTitle,
   Box,
   Button,
+  Chip,
   Container,
   Dialog,
   DialogActions,
+  Link,
   Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { FaExclamationTriangle } from "react-icons/fa";
+import {
+  MdInfoOutline,
+  MdOutlineLaunch,
+  MdPersonOutline,
+} from "react-icons/md";
 
 export const PreviewLead = ({
   open,
@@ -24,6 +33,7 @@ export const PreviewLead = ({
   type,
   url,
   leadContent,
+  dontCheckIfNotUser,
 }) => {
   const [activeTab, setActiveTab] = useState(0);
   const theme = useTheme();
@@ -59,6 +69,72 @@ export const PreviewLead = ({
   };
   // if(!lead)return
   if (loading) return <></>;
+  if (lead?.status === "CONVERTED" && lead.previousLeadId) {
+    <Container maxWidth="md" sx={{ mb: 3 }}>
+      <Alert
+        severity="info"
+        icon={<MdInfoOutline />}
+        sx={{
+          backgroundColor: "#e3f2fd",
+          border: "1px solid #90caf9",
+          borderRadius: "8px",
+          "& .MuiAlert-icon": {
+            color: "#1976d2",
+          },
+        }}
+      >
+        <AlertTitle sx={{ color: "#1565c0", fontWeight: 600 }}>
+          Record Only - Converted Lead
+        </AlertTitle>
+
+        <Box sx={{ mt: 2, mb: 1 }}>
+          <Typography variant="body2" sx={{ color: "#1976d2", mb: 2 }}>
+            This lead is just a shadow lead for record only
+          </Typography>
+
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <MdPersonOutline sx={{ fontSize: 18, color: "#1976d2" }} />
+              <Typography variant="body2" sx={{ color: "#1565c0" }}>
+                Converted From:
+                <Chip
+                  label={lead.assignedTo?.user?.name || "Unknown User"}
+                  size="small"
+                  sx={{
+                    ml: 1,
+                    backgroundColor: "#bbdefb",
+                    color: "#1565c0",
+                    fontSize: "0.75rem",
+                  }}
+                />
+              </Typography>
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <MdOutlineLaunch sx={{ fontSize: 18, color: "#1976d2" }} />
+              <Typography variant="body2" sx={{ color: "#1565c0" }}>
+                Main lead:
+                <Link
+                  href={`/dashboard/deals/${lead.previousLeadId}`}
+                  sx={{
+                    ml: 1,
+                    color: "#1976d2",
+                    textDecoration: "none",
+                    fontWeight: 500,
+                    "&:hover": {
+                      textDecoration: "underline",
+                      color: "#1565c0",
+                    },
+                  }}
+                >
+                  #{lead.previousLeadId}
+                </Link>
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Alert>
+    </Container>;
+  }
   if (
     (!loading && !lead) ||
     (!loading &&
@@ -107,6 +183,7 @@ export const PreviewLead = ({
               admin={isAdmin}
               isPage={page}
               type={type}
+              dontCheckIfNotUser={dontCheckIfNotUser}
             />
           )}
         </Container>
@@ -137,6 +214,7 @@ export const PreviewLead = ({
                 setleads={setleads}
                 admin={isAdmin}
                 type={type}
+                dontCheckIfNotUser={dontCheckIfNotUser}
               />
               <DialogActions
                 sx={{

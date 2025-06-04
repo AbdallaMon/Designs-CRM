@@ -74,6 +74,7 @@ import { PreviewLead } from "./extra/PreviewLead";
 import UpdateInitialConsultButton from "../../buttons/UpdateInitialConsultLead";
 import DeleteModal from "../../models/DeleteModal";
 import { EditFieldButton } from "./utility/EditFieldButton";
+import { AssignNewStaffModal } from "../utility/AssignNewStaffModal";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -124,49 +125,18 @@ const LeadContent = ({
   }
 
   useEffect(() => {
-    const checkAccess = async () => {
-      try {
-        setIsAllowedLoading(true);
-        const res = await handleRequestSubmit(
-          { country: lead.country },
-          setLoading,
-          `shared/${user.id}/client-leads/countries`,
-          false,
-          "Checking if u allowed to take this lead"
-        );
-        if (res.status === 200) {
-          setIsAllowed(res.allowed);
-        }
-      } catch (err) {
-        console.error("Failed to check access", err);
-        setIsAllowed(false);
-      } finally {
-        setIsAllowedLoading(false);
-      }
-    };
     if (lead) {
       if (user.id !== lead.userId && user.role === "STAFF") {
-        // checkAccess();
       } else {
         setIsAllowedLoading(false);
       }
     }
   }, [user.id, lead, lead?.country]);
   const handleClick = (event) => {
-    if (!admin) {
-      setAnchorEl(event.currentTarget);
-    } else if (
-      (admin && lead.status === "FINALIZED") ||
-      lead.status === "REJECTED"
-    ) {
-      setAnchorEl(event.currentTarget);
-    }
+    setAnchorEl(event.currentTarget);
   };
 
   const handleMenuClose = async (value) => {
-    if (user.role === "SUPER_ADMIN") {
-      return;
-    }
     if (value === "FINALIZED") {
       setCurrentId(lead.id);
       setFinalizeModel(true);
@@ -301,13 +271,19 @@ const LeadContent = ({
                   }
                   if (setleads) {
                     setleads((oldLeads) =>
-                      oldLeads.map((lead) => ({
-                        ...lead,
-                        client: {
-                          ...lead.client,
-                          name: data.name,
-                        },
-                      }))
+                      oldLeads.map((l) => {
+                        if (l.id === lead.id) {
+                          return {
+                            ...lead,
+                            client: {
+                              ...lead.client,
+                              name: data.name,
+                            },
+                          };
+                        } else {
+                          return l;
+                        }
+                      })
                     );
                   }
                 }}
@@ -426,6 +402,42 @@ const LeadContent = ({
                   )}
                 {user.role !== "ACCOUNTANT" && (
                   <>
+                    {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+                      <>
+                        <DeleteModal
+                          item={lead}
+                          href={"admin/client-leads"}
+                          handleClose={() => {
+                            window.location.reload();
+                          }}
+                        />
+                        <AssignNewStaffModal
+                          lead={lead}
+                          onUpdate={(newLead) => {
+                            if (setLead) {
+                              setLead((oldLead) => ({
+                                ...oldLead,
+                                assignedTo: { ...newLead.assignedTo },
+                              }));
+                            }
+                            if (setleads) {
+                              setleads((oldLeads) =>
+                                oldLeads.map((l) => {
+                                  if (l.id === lead.id) {
+                                    return {
+                                      ...lead,
+                                      assignedTo: { ...newLead.assignedTo },
+                                    };
+                                  } else {
+                                    return l;
+                                  }
+                                })
+                              );
+                            }
+                          }}
+                        />
+                      </>
+                    )}
                     <Button
                       fullWidth={isMobile}
                       variant="contained"
@@ -465,15 +477,7 @@ const LeadContent = ({
                 )}
               </>
             )}
-            {user.role === "ADMIN" && (
-              <DeleteModal
-                item={lead}
-                href={"admin/client-leads"}
-                handleClose={() => {
-                  window.location.reload();
-                }}
-              />
-            )}
+
             <Button onClick={() => generatePDF(lead, user)}>
               Generate pdf
             </Button>

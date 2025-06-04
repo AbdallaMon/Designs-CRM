@@ -356,12 +356,8 @@ function CreatTaskModel({
   }, [setOpen]);
 
   const handleSubmit = useCallback(async () => {
-    if (!dueDate) {
-      setAlertError("Due date is required");
-      return;
-    }
-    if (!title || !description) {
-      setAlertError("Title and description are required");
+    if (!title) {
+      setAlertError("Title is required");
       return;
     }
     const data = {
@@ -433,7 +429,6 @@ function CreatTaskModel({
               fullWidth
               label="Description"
               name="description"
-              required
               id="description"
               value={description}
               onChange={handleDescriptionChange}

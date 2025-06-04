@@ -133,6 +133,7 @@ const KanbanColumn = ({
         sx={{
           overflowY: "auto",
           flexGrow: 1,
+          paddingTop: "8px",
           "::-webkit-scrollbar": {
             width: "6px",
           },

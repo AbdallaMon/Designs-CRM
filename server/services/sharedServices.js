@@ -7,7 +7,6 @@ import {
   finalizedLeadCreated,
   newProjectAssingmentNotification,
   newTaskCreatedNotification,
-  overdueALeadNotification,
   updateLeadStatusNotification,
   updateProjectNotification,
   updateTaskNotification,
@@ -22,7 +21,7 @@ export async function getClientLeads({
   searchParams,
   userId,
 }) {
-  let where = {};
+  let where = { leadType: "NORMAL" };
   const {
     isNew = false,
     status = null,
@@ -150,6 +149,7 @@ export async function getClientLeadsByDateRange({ searchParams }) {
   const where = {
     assignedTo: { isNot: null },
     status: { notIn: ["NEW", "CONVERTED", "ON_HOLD"] },
+    leadType: "NORMAL",
   };
   if (filters?.range) {
     const { startDate, endDate } = filters.range;
@@ -261,6 +261,8 @@ export async function getClientLeadDetails(
       paymentStatus: true,
       telegramLink: true,
       initialConsult: true,
+      leadType: true,
+      previousLeadId: true,
       client: {
         select: {
           id: true,
@@ -396,6 +398,11 @@ export async function markClientLeadAsConverted(
       files: true,
       notes: true,
       callReminders: true,
+      projects: true,
+      priceOffers: true,
+      payments: true,
+      tasks: true,
+      extraServices: true,
     };
   }
 
@@ -406,18 +413,17 @@ export async function markClientLeadAsConverted(
   return lead;
 }
 
-export async function assignLeadToAUser(clientLeadId, userId, isOverdue) {
+export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
   const clientLead = await prisma.clientLead.findUnique({
     where: {
       id: Number(clientLeadId),
     },
-    select: {
-      userId: true,
-      status: true,
-      country: true,
-    },
   });
-  if (clientLead.status !== "NEW" && clientLead.status !== "ON_HOLD") {
+  if (
+    clientLead.status !== "NEW" &&
+    clientLead.status !== "ON_HOLD" &&
+    !isAdmin
+  ) {
     throw new Error("This lead has already been assigned to a user");
   }
   const isAlloedToTakeThisLead = await checkIfUserAllowedToTakeALead(
@@ -450,41 +456,77 @@ export async function assignLeadToAUser(clientLeadId, userId, isOverdue) {
       } active leads.`
     );
   }
-  if (isOverdue) {
-    const convertedLead = await markClientLeadAsConverted(
-      clientLeadId,
-      null,
-      "CONVERTED",
-      true
-    );
-    const newClientLead = await prisma.clientLead.create({
+  // if (isOverdue) {
+  //   const convertedLead = await markClientLeadAsConverted(
+  //     clientLeadId,
+  //     null,
+  //     "CONVERTED",
+  //     true
+  //   );
+  //   const newClientLead = await prisma.clientLead.create({
+  //     data: {
+  //       leadId: convertedLead.leadId,
+  //       clientId: convertedLead.clientId,
+  //       userId: userId,
+  //       selectedCategory: convertedLead.selectedCategory,
+  //       description: convertedLead.description,
+  //       type: convertedLead.type,
+  //       emirate: convertedLead.emirate,
+  //       price: convertedLead.price,
+  //       status: "IN_PROGRESS",
+  //       assignedAt: new Date(),
+  //       projects: {
+  //         connect: convertedLead.projects.map((project) => ({
+  //           id: project.id,
+  //         })),
+  //       },
+  //       extraServices: {
+  //         connect: convertedLead.extraServices.map((extraService) => ({
+  //           id: extraService.id,
+  //         })),
+  //       },
+  //       tasks: {
+  //         connect: convertedLead.tasks.map((task) => ({
+  //           id: task.id,
+  //         })),
+  //       },
+  //       payments: {
+  //         connect: convertedLead.payments.map((payment) => ({
+  //           id: propaymentject.id,
+  //         })),
+  //       },
+  //       files: {
+  //         connect: convertedLead.files.map((file) => ({ id: file.id })),
+  //       },
+  //       notes: {
+  //         connect: convertedLead.notes.map((note) => ({ id: note.id })),
+  //       },
+  //       callReminders: {
+  //         connect: convertedLead.callReminders.map((reminder) => ({
+  //           id: reminder.id,
+  //         })),
+  //       },
+  //     },
+  //   });
+
+  //   await overdueALeadNotification(convertedLead, newClientLead);
+  //   return newClientLead;
+  // }
+  if (clientLead.status === "ON_HOLD" || isAdmin) {
+    const shadowLead = await prisma.clientLead.create({
       data: {
-        leadId: convertedLead.leadId,
-        clientId: convertedLead.clientId,
-        userId: userId,
-        selectedCategory: convertedLead.selectedCategory,
-        description: convertedLead.description,
-        type: convertedLead.type,
-        emirate: convertedLead.emirate,
-        price: convertedLead.price,
-        status: "IN_PROGRESS",
-        assignedAt: new Date(),
-        files: {
-          connect: convertedLead.files.map((file) => ({ id: file.id })),
-        },
-        notes: {
-          connect: convertedLead.notes.map((note) => ({ id: note.id })),
-        },
-        callReminders: {
-          connect: convertedLead.callReminders.map((reminder) => ({
-            id: reminder.id,
-          })),
-        },
+        clientId: clientLead.clientId,
+        userId: clientLead.userId,
+        selectedCategory: clientLead.selectedCategory,
+        description: clientLead.description,
+        type: clientLead.type,
+        emirate: clientLead.emirate,
+        price: clientLead.price,
+        status: "CONVERTED",
+        leadType: "CONVERTED",
+        previousLeadId: clientLead.id,
       },
     });
-
-    await overdueALeadNotification(convertedLead, newClientLead);
-    return newClientLead;
   }
 
   const updatedClientLead = await prisma.clientLead.update({
@@ -492,12 +534,11 @@ export async function assignLeadToAUser(clientLeadId, userId, isOverdue) {
     data: {
       userId: userId,
       assignedAt: new Date(),
-      status: "IN_PROGRESS",
     },
     select: {
       id: true,
       assignedTo: {
-        select: { id: true, name: true },
+        select: { id: true, name: true, email: true },
       },
     },
   });
@@ -2164,7 +2205,7 @@ export async function updateWorkStageStatus(clientLeadId, body) {
 
 export async function getLeadByPorjects({ searchParams }) {
   const filters = JSON.parse(searchParams.filters);
-  const where = {};
+  const where = { leadType: "NORMAL" };
   const projectWhere = {};
 
   if (searchParams.type) {
@@ -2275,6 +2316,7 @@ export async function getLeadByPorjects({ searchParams }) {
           clientLeadId: true,
           isModification: true,
           groupTitle: true,
+          groupId: true,
           assignments: {
             select: {
               user: {
@@ -2455,6 +2497,7 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
           clientLeadId: true,
           role: true,
           groupTitle: true,
+          groupId: true,
           isModification: true,
           assignments: {
             select: {
@@ -3077,7 +3120,11 @@ export async function getProjectDetailsById({ id, searchParams }) {
       tasks: true,
     },
   });
-  if (project.type === "3D_Modification" && !project.isModification) {
+  if (
+    project &&
+    project.type === "3D_Modification" &&
+    !project.isModification
+  ) {
     throw new Error("This project is not in modification state yet");
   }
   return project;
@@ -3251,6 +3298,7 @@ export async function getArchivedProjects(searchParams, limit, skip) {
 
 export async function createNewTask({ data, isAdmin = false, staffId }) {
   const { userId, projectId, ...rest } = data;
+
   const createdTask = await prisma.task.create({
     data: {
       ...rest,
@@ -3444,4 +3492,33 @@ export async function addNote({
   }
 
   return { data: note, message: "Note created successfully" };
+}
+
+export async function deleteNote({ id, isAdmin }) {
+  const note = await prisma.note.findUnique({
+    where: {
+      id: Number(id),
+    },
+    select: {
+      createdAt: true,
+    },
+  });
+  if (!note) {
+    throw new Error("Note not found");
+  }
+  if (!isAdmin) {
+    const now = dayjs();
+    const createdAt = dayjs(note.createdAt);
+    const diffInMinutes = now.diff(createdAt, "minute");
+
+    if (diffInMinutes > 5) {
+      throw new Error("Cannot delete note older than 5 minutes");
+    }
+  }
+  await prisma.note.delete({
+    where: {
+      id: Number(id),
+    },
+  });
+  return { data: note, message: "Note deleted successfully" };
 }

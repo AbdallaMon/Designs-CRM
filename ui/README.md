@@ -141,7 +141,7 @@ main :
 - Record a video for modification part and sent it on the group
 - Urgent check why desginer is not showin in change designer for project
 
-- Can add projects even if lead is not finalized (Modifcation) 10
+- Can add projects even if lead is not finalized (Modifcation)
 - Can edit client name (Modifcation)
 - Archieve leads (Modifcation)
 - Search by leadId in projects page
@@ -155,13 +155,21 @@ main :
 - Arrange projects by prioirty
 
 - Dont allow client to add prefered time
-- Allow admin to convert user
+- Show group name in project
+- Show lead id
+- Allow user to delete note within 5 minutes and for admin any time
+- Not all data needed in tasks to be created
+- Check why we are not able to assign designers
+- Allow admin to convert lead to another user
+
+- Add new tab (Meetings) same way as call reminders
+- Arrange finalized leads by updated at
+- Shared updates from staff to all type
+- When designer add updates allow him to share it with finalized staff and verse
+- When adding note ask user if he want to add it to updates(new shared updates between all user and admin must uprove) like tasks and user update is it done or not and if user read it we can make it done to hide it and allow admin to hide it anyway
+
 - Can add 3d Desginer to 2d study (Modifcation)
 - Name project as steps or something else
-
-- Allow admin to convert lead to another user
-- Added important events to the dashboard (like new project update ,task ,modifcation) and so on (Modifcation)
-- Project updated
 
 - Check for roles to be added in the notifications
 - Can add my self as admin to project

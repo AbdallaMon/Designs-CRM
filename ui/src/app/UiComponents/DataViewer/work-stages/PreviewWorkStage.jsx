@@ -65,6 +65,7 @@ const LeadContent = ({
   setLead,
   isPage,
   type,
+  dontCheckIfNotUser,
 }) => {
   const { user } = useAuth();
   const isAdmin = checkIfAdmin(user);
@@ -301,7 +302,11 @@ const LeadContent = ({
           />
         </TabPanel>
         <TabPanel value={activeTab} index={2}>
-          <LeadNotes admin={isAdmin} lead={lead} notUser={isPage && notUser} />
+          <LeadNotes
+            admin={isAdmin}
+            lead={lead}
+            notUser={!dontCheckIfNotUser}
+          />
         </TabPanel>
         <TabPanel value={activeTab} index={3}>
           <FileList admin={isAdmin} lead={lead} notUser={isPage && notUser} />
@@ -420,6 +425,7 @@ const PreviewWorkStage = ({
       page={page}
       url={`shared/client-leads/projects/designers/${id}?type=${type}&`}
       type={type}
+      dontCheckIfNotUser={true}
     />
   );
 };

@@ -75,7 +75,6 @@ export function LeadSliderCard({ lead, setData }) {
   const { user } = useAuth();
   const { setLoading } = useToastContext();
 
-  // Check if the lead is fully paid
   const isFullyPaid = lead.paymentStatus === "FULLY_PAID";
 
   async function createADeal(lead) {
@@ -110,7 +109,6 @@ export function LeadSliderCard({ lead, setData }) {
         backgroundColor: isFullyPaid ? "rgba(76, 175, 80, 0.05)" : "inherit",
       }}
     >
-      {/* Payment Status Badge */}
       <Box
         sx={{
           position: "absolute",
@@ -183,9 +181,9 @@ export function LeadSliderCard({ lead, setData }) {
             title="Are you sure you want to get this lead and assign it to you as a new deal?"
             handleConfirm={() => createADeal(lead)}
             label="Start a Deal"
-            fullWidth={false} // Adjust to fit nicely within the card
+            fullWidth={false}
             size="small"
-            variant="outlined" // Outlined style for better contrast
+            variant="outlined"
           />
         )}
         <Box display="flex" flexDirection="column" gap={2}>

@@ -46,6 +46,7 @@ import SimpleFileInput from "../../formComponents/SimpleFileInput";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
+import DeleteNoteButton from "./extra/DeleteNoteButton";
 export function CallReminders({ lead, setleads, admin, notUser }) {
   const [callReminders, setCallReminders] = useState(lead?.callReminders);
   const theme = useTheme();
@@ -425,7 +426,7 @@ export function LeadNotes({ lead, admin, notUser }) {
   }, [lead]);
   return (
     <Stack spacing={2}>
-      {!admin && !notUser && <NewNoteDialog lead={lead} setNotes={setNotes} />}
+      {!notUser && <NewNoteDialog lead={lead} setNotes={setNotes} />}
       <Stack spacing={2}>
         {notes?.map((note) => (
           <Paper
@@ -464,6 +465,14 @@ export function LeadNotes({ lead, admin, notUser }) {
                   {note.user.name} •{" "}
                   {dayjs(note.createdAt).format("MM/DD/YYYY")}
                 </Typography>
+                <DeleteNoteButton
+                  note={note}
+                  onDelete={() => {
+                    setNotes((oldNotes) =>
+                      oldNotes.filter((n) => n.id !== note.id)
+                    );
+                  }}
+                />
               </Stack>
             </Stack>
           </Paper>

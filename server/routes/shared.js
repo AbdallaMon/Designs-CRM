@@ -15,6 +15,7 @@ import {
   checkIfUserAllowedToTakeALead,
   checkUserLog,
   createNewTask,
+  deleteNote,
   editPriceOfferStatus,
   getAllFixedData,
   getArchivedProjects,
@@ -244,15 +245,20 @@ router.put("/client-leads", async (req, res) => {
   try {
     const clientLead = req.body;
     const currentUser = await getCurrentUser(req);
+    const isAdmin =
+      currentUser.role === "ADMIN" || currentUser.role === "SUPER_ADMIN";
     const result = await assignLeadToAUser(
       Number(clientLead.id),
-      Number(currentUser.id),
-      clientLead.overdue
+      isAdmin ? req.body.userId : Number(currentUser.id),
+      isAdmin
     );
 
-    res
-      .status(200)
-      .json({ data: result, message: "Deal assigned to you successfully" });
+    res.status(200).json({
+      data: result,
+      message: isAdmin
+        ? "Deal converted successfully"
+        : "Deal assigned to you successfully",
+    });
   } catch (error) {
     console.error("Error assigning client leads:", error);
     res.status(500).json({ message: error.message });
@@ -794,6 +800,20 @@ router.post("/notes", async (req, res) => {
     const newNote = await addNote({
       ...req.body,
       userId: token.id,
+      isAdmin,
+    });
+    res.status(200).json(newNote);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+router.delete("/notes/:id", async (req, res) => {
+  try {
+    const token = getTokenData(req, res);
+    const isAdmin = token.role === "ADMIN" || token.role === "SUPER_ADMIN";
+
+    const newNote = await deleteNote({
+      id: req.params.id,
       isAdmin,
     });
     res.status(200).json(newNote);

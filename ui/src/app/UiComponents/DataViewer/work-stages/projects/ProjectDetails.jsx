@@ -61,8 +61,6 @@ import {
 import { PROJECT_STATUSES, statusColors } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { TasksList } from "../../utility/TasksList";
-import { getData } from "@/app/helpers/functions/getData";
 import dayjs from "dayjs";
 import colors from "@/app/helpers/colors";
 import { RelatedLinks } from "../../utility/RelatedLinks";
@@ -351,7 +349,6 @@ export const ProjectDetails = ({
   renderTasks = true,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [tasksDialogOpen, setTasksDialogOpen] = useState(false);
   const [editedProject, setEditedProject] = useState({ ...project });
   const [open, setOpen] = useState(false);
   const [assignmentId, setAssignmentId] = useState(null);
@@ -745,13 +742,11 @@ export const ProjectDetails = ({
           </Grid>
         )}
       </Grid>
-
       {withReleventLinks && (
         <Box sx={{ mt: 3 }}>
           <RelatedLinks clientLeadId={project.clientLeadId} />
         </Box>
       )}
-
       {open && (
         <AssignDesignerModal
           open={open}

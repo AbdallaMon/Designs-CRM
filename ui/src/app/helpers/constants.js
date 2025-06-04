@@ -293,6 +293,18 @@ export function getPriorityOrder(priority) {
   };
   return priorityMap[priority] || 3; // Default to MEDIUM
 }
+export const groupColors = {
+  0: { bg: "#f8fbff", border: "#2196f3", text: "#1565c0" },
+  1: { bg: "#faf8ff", border: "#9c27b0", text: "#7b1fa2" },
+  2: { bg: "#f9fcf9", border: "#4caf50", text: "#2e7d32" },
+  3: { bg: "#fffcf7", border: "#ff9800", text: "#f57c00" },
+  4: { bg: "#fef7f9", border: "#e91e63", text: "#c2185b" },
+  5: { bg: "#f7fcfc", border: "#26a69a", text: "#00695c" },
+  6: { bg: "#fffef5", border: "#ffeb3b", text: "#f9a825" },
+  7: { bg: "#f9fdf9", border: "#8bc34a", text: "#689f38" },
+  8: { bg: "#fcfcfc", border: "#607d8b", text: "#455a64" },
+  9: { bg: "#f9faff", border: "#5c6bc0", text: "#3f51b5" },
+};
 export const statusColors = {
   IN_PROGRESS: "#0d9488",
   INTERESTED: "#10b981",
