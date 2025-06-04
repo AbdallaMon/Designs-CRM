@@ -71,7 +71,6 @@ export async function getPayments({
       clientLead: {
         select: {
           id: true,
-          threeDWorkStage: true,
           description: true,
           selectedCategory: true,
           type: true,
