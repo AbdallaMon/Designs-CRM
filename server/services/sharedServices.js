@@ -534,6 +534,8 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
     data: {
       userId: userId,
       assignedAt: new Date(),
+      status:
+        clientLead.status === "ON_HOLD" ? "IN_PROGRESS" : clientLead.status,
     },
     select: {
       id: true,
@@ -1724,7 +1726,6 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
       description: true,
       type: true,
       emirate: true,
-
       price: true,
       averagePrice: true,
       priceWithOutDiscount: true,
