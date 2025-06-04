@@ -48,7 +48,10 @@ import {
   updateTask,
 } from "../services/sharedServices.js";
 import { getAdminClientLeadDetails } from "../services/adminServices.js";
-import { updateCallReminderStatus } from "../services/staffServices.js";
+import {
+  createNote,
+  updateCallReminderStatus,
+} from "../services/staffServices.js";
 
 const router = Router();
 
@@ -796,6 +799,16 @@ router.delete("/notes/:id", async (req, res) => {
     res.status(200).json(newNote);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+router.post("/client-leads/:id/notes", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const note = await createNote({ clientLeadId: Number(id), ...req.body });
+    res.status(200).json({ data: note, message: "Note added successfully" });
+  } catch (error) {
+    console.error("Error creating note:", error);
+    res.status(500).json({ message: "Failed to create note." });
   }
 });
 router.get("/roles", async (req, res) => {
