@@ -98,29 +98,6 @@ enum CallReminderStatus {
   MISSED
 }
 
-enum ThreeDWorkStage {
-  CLIENT_COMMUNICATION
-  DESIGN_STAGE
-  THREE_D_STAGE
-  THREE_D_APPROVAL
-  FIRST_MODIFICATION
-  SECOND_MODIFICATION
-  THIRD_MODIFICATION
-}
-
-enum TwoDWorkStage {
-  DRAWING_PLAN
-  FINAL_DELIVERY
-  QUANTITY
-}
-
-enum TwoDExacuterStage {
-  PROGRESS            // progress
-  PRICING             // قيد التسعير
-  ACCEPTED            // مقبول
-  REJECTED            // مرفوض
-}
-
 
 enum PaymentStatus {
   PENDING        // Payment is pending
@@ -158,30 +135,7 @@ enum LeadConversionType {
   CONVERTED
 }
 
-model WorkStageStatus {
-  id             Int             @id @default(autoincrement())
-  
-  // Relation to ClientLead
-  clientLead     ClientLead      @relation(fields: [clientLeadId], references: [id])
-  clientLeadId   Int
-  
-  // Work Stage
-  stage          ThreeDWorkStage
-  
-  communicationStatus Boolean            @default(false)
-  communicationUpdatedAt DateTime?       // Timestamp for last update
-  designStageStatus   Boolean            @default(false)
-  designStageUpdatedAt DateTime?        // Timestamp for last update
-  renderStatus        Boolean            @default(false)
-  renderUpdatedAt     DateTime?         // Timestamp for last update
-  
-  // Unique constraint to prevent duplicate stages for the same client lead
-  @@unique([clientLeadId, stage])
-  
-  // Indexes for performance
-  @@index([clientLeadId])
-  @@index([stage])
-}
+
 model ClientLead {
       id                 Int              @id @default(autoincrement())
       client             Client           @relation(fields: [clientId], references: [id])
@@ -235,15 +189,7 @@ model ClientLead {
       accountant         User?            @relation("AccountantLeads", fields: [accountantId], references: [id]) // Assigned Accountant
       accountantId       Int?
       
-      // Work Stages
-      threeDWorkStage   ThreeDWorkStage?
-      twoDWorkStage     TwoDWorkStage?
-      twoDExacuterStage    TwoDExacuterStage? // New work stage
-      workStageStatuses WorkStageStatus[]
-
-      threeDAssignedAt   DateTime?
-      twoDAssignedAt     DateTime?
-      twoDExacuterAssignedAt DateTime?     
+    
       accountantAssignedAt DateTime?
       
       @@index([clientId])
