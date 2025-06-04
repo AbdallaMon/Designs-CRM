@@ -65,7 +65,13 @@ import {
   ExtraServicesList,
   MeetingReminders,
 } from "./LeadTabs";
-import { MdBlock, MdMeetingRoom, MdModeEdit, MdWork } from "react-icons/md";
+import {
+  MdBlock,
+  MdMeetingRoom,
+  MdModeEdit,
+  MdSchedule,
+  MdWork,
+} from "react-icons/md";
 import LeadProjects from "../work-stages/projects/LeadProjects";
 import { TasksList } from "../utility/TasksList";
 import TelegramLink from "../work-stages/utility/TelegramLink";
@@ -515,7 +521,7 @@ const LeadContent = ({
           sx={{ textTransform: "none" }}
         />
         <Tab
-          icon={<MdMeetingRoom size={20} />}
+          icon={<MdSchedule size={20} />}
           label="Meetings"
           sx={{ textTransform: "none" }}
         />
