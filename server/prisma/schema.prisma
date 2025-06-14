@@ -1,0 +1,747 @@
+// Keep the generator, datasource and enums as is
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum NotificationType {
+  NEW_LEAD
+  LEAD_ASSIGNED
+  LEAD_STATUS_CHANGE
+  LEAD_TRANSFERRED
+  LEAD_UPDATED
+  LEAD_CONTACT
+  NOTE_ADDED
+  NEW_NOTE
+  NEW_FILE
+  CALL_REMINDER_CREATED
+  CALL_REMINDER_STATUS
+  PRICE_OFFER_SUBMITTED
+  PRICE_OFFER_UPDATED
+  FINAL_PRICE_ADDED
+  FINAL_PRICE_CHANGED
+  PAYMENT_ADDED // New payment recorded
+  PAYMENT_STATUS_UPDATED // Payment status updated
+  EXTRA_FINAL_PRICE_ADDED // Extra final price added
+  EXTRA_FINAL_PRICE_EDITED // Extra final price edited
+  WORK_STAGE_UPDATED // Work stage updated for 3D or 2D
+  OTHER
+}
+
+enum ContentType {
+  TEXT
+  HTML
+}
+
+enum LeadCategory {
+  CONSULTATION
+  DESIGN
+  OLDLEAD
+}
+
+enum LeadType {
+  // design
+  ROOM
+  BLUEPRINT
+  CITY_VISIT
+
+  APARTMENT
+  CONSTRUCTION_VILLA
+  UNDER_CONSTRUCTION_VILLA
+  PART_OF_HOME
+  COMMERCIAL
+  NONE
+}
+
+enum Emirate {
+  DUBAI
+  ABU_DHABI
+  SHARJAH
+  AJMAN
+  UMM_AL_QUWAIN
+  RAS_AL_KHAIMAH
+  FUJAIRAH
+  KHOR_FAKKAN
+  OUTSIDE
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+  THREE_D_DESIGNER
+  TWO_D_DESIGNER
+  TWO_D_EXECUTOR
+  ACCOUNTANT
+  SUPER_ADMIN
+}
+
+enum ClientLeadStatus {
+  NEW
+  IN_PROGRESS
+  INTERESTED
+  NEEDS_IDENTIFIED
+  NEGOTIATING
+  REJECTED
+  FINALIZED
+  CONVERTED
+  ON_HOLD
+  ARCHIVED
+}
+
+enum CallReminderStatus {
+  IN_PROGRESS
+  DONE
+  MISSED
+}
+
+enum PaymentStatus {
+  PENDING // Payment is pending
+  PARTIALLY_PAID // Payment partially made
+  FULLY_PAID // Payment fully made
+  OVERDUE
+}
+
+enum PaymentLevel {
+  LEVEL_1
+  LEVEL_2
+  LEVEL_3
+  LEVEL_4
+  LEVEL_5
+  LEVEL_6
+  LEVEL_7_OR_MORE
+}
+
+enum Priority {
+  VERY_LOW
+  LOW
+  MEDIUM
+  HIGH
+  VERY_HIGH
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum LeadConversionType {
+  NORMAL
+  CONVERTED
+}
+
+enum UpdateStatus {
+  IN_PROGRESS
+  DONE
+  CANCELLED
+}
+
+enum SessionStatus {
+  IN_PROGRESS
+  APPROVED
+}
+
+model ClientLeadUpdate {
+  id          Int          @id @default(autoincrement())
+  title       String
+  description String?      @db.Text
+  status      UpdateStatus @default(IN_PROGRESS)
+  department  String       @default("STAFF")
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  isArchived  Boolean      @default(false)
+  isDone      Boolean      @default(false)
+
+  createdBy   User @relation(fields: [createdById], references: [id])
+  createdById Int
+
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
+
+  notes Note[]
+
+  sharedSettings SharedUpdate[]
+
+  @@index([clientLeadId])
+  @@index([createdById])
+}
+
+model SharedUpdate {
+  id       Int              @id @default(autoincrement())
+  update   ClientLeadUpdate @relation(fields: [updateId], references: [id])
+  updateId Int
+
+  type  String
+  notes Note[]
+
+  isArchived        Boolean @default(false)
+  excludeFromSearch Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([updateId])
+}
+
+model ClientLead {
+  id         Int    @id @default(autoincrement())
+  client     Client @relation(fields: [clientId], references: [id])
+  clientId   Int
+  assignedTo User?  @relation(fields: [userId], references: [id])
+  userId     Int?
+
+  selectedCategory  LeadCategory
+  type              LeadType           @default(CONSTRUCTION_VILLA)
+  description       String?
+  clientDescription String?            @db.Text
+  emirate           Emirate?
+  leadType          LeadConversionType @default(NORMAL)
+  previousLeadId    Int?
+
+  discount             Decimal  @default(0) @db.Decimal(10, 2)
+  price                String?
+  averagePrice         Decimal? @db.Decimal(10, 2)
+  priceNote            String?  @db.Text
+  priceWithOutDiscount Decimal  @default(0) @db.Decimal(10, 2)
+
+  projects         Project[]
+  priceOffers      PriceOffers[]
+  payments         Payment[]
+  tasks            Task[]
+  status           ClientLeadStatus     @default(NEW)
+  files            File[]
+  notes            Note[]
+  notifications    Notification[]
+  callReminders    CallReminder[]       @relation("clientLeadCallReminders")
+  meetingReminders MeetingReminder[]    @relation("clientLeadMeetingReminders")
+  extraServices    ExtraService[]
+  commissions      Commission[]
+  updates          ClientLeadUpdate[]
+  imageSessions    ClientImageSession[]
+
+  reasonToConvert   String?
+  paymentStatus     PaymentStatus @default(PENDING)
+  paymentSessionId  String?
+  telegramLink      String?
+  ourCost           String?
+  contractorCost    String?
+  country           String?
+  commissionCleared Boolean       @default(false)
+  initialConsult    Boolean       @default(true)
+
+  assignedAt    DateTime?
+  timeToContact DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accountant   User? @relation("AccountantLeads", fields: [accountantId], references: [id]) // Assigned Accountant
+  accountantId Int?
+
+  accountantAssignedAt DateTime?
+
+  @@index([clientId])
+  @@index([userId])
+}
+
+model MeetingReminder {
+  id             Int                @id @default(autoincrement())
+  clientLead     ClientLead         @relation(fields: [clientLeadId], references: [id], name: "clientLeadMeetingReminders")
+  clientLeadId   Int
+  time           DateTime
+  status         CallReminderStatus @default(IN_PROGRESS)
+  meetingResult  String?            @db.Text
+  reminderReason String?            @db.Text
+  user           User               @relation(fields: [userId], references: [id])
+  userId         Int
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([clientLeadId])
+  @@index([userId])
+}
+
+model Commission {
+  id               Int        @id @default(autoincrement())
+  user             User       @relation(fields: [userId], references: [id])
+  userId           Int
+  lead             ClientLead @relation(fields: [leadId], references: [id])
+  leadId           Int
+  amount           Decimal    @db.Decimal(10, 2)
+  amountPaid       Decimal    @default(0) @db.Decimal(10, 2)
+  createdAt        DateTime   @default(now())
+  isCleared        Boolean    @default(false)
+  commissionReason String     @default("Finalized Lead Commission") @db.VarChar(255)
+
+  notes Note[]
+
+  @@index([userId])
+  @@index([leadId])
+}
+
+model Project {
+  id         Int    @id @default(autoincrement())
+  groupTitle String @default("Initial Project") @db.VarChar(255)
+  groupId    Int    @default(1)
+
+  assignments Assignment[]
+
+  clientLeadId Int
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+
+  isModification Boolean @default(false)
+
+  deliveryTime DateTime? // time to deliver the project (optional)
+  priority     Priority  @default(MEDIUM) // enum with default value
+  area         Decimal?  @db.Decimal(10, 2) // optional decimal field
+  startedAt    DateTime? // optional
+  endedAt      DateTime? // optional
+  status       String
+  type         String
+  role         UserRole  @default(THREE_D_DESIGNER)
+  tasks        Task[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([clientLeadId])
+  @@index([groupId])
+}
+
+model Task {
+  id          Int        @id @default(autoincrement())
+  title       String     @db.VarChar(255)
+  description String?    @db.Text
+  status      TaskStatus @default(TODO)
+  priority    Priority   @default(MEDIUM)
+  type        String     @default("NORMAL")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dueDate    DateTime?
+  finishedAt DateTime?
+
+  project   Project? @relation(fields: [projectId], references: [id])
+  projectId Int?
+
+  user   User? @relation(fields: [userId], references: [id])
+  userId Int?
+
+  clientLead   ClientLead? @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int?
+
+  createdBy   User? @relation("CreatedTasks", fields: [createdById], references: [id])
+  createdById Int?
+
+  notes Note[]
+
+  @@index([projectId])
+  @@index([userId])
+}
+
+model Payment {
+  id            Int           @id @default(autoincrement())
+  clientLead    ClientLead    @relation(fields: [clientLeadId], references: [id], onDelete: Cascade)
+  clientLeadId  Int
+  status        PaymentStatus @default(PENDING)
+  amount        Decimal       @db.Decimal(10, 2)
+  amountPaid    Decimal       @default(0) @db.Decimal(10, 2)
+  amountLeft    Decimal       @db.Decimal(10, 2)
+  paymentLevel  PaymentLevel?
+  paymentReason String?       @db.Text
+  invoices      Invoice[]
+  notes         Note[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+// Invoice Model
+model Invoice {
+  id            Int      @id @default(autoincrement())
+  payment       Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  paymentId     Int
+  issuedDate    DateTime @default(now())
+  amount        Decimal  @db.Decimal(10, 2)
+  notes         Note[]
+  createdAt     DateTime @default(now())
+  invoiceNumber String   @unique
+}
+
+model ExtraService {
+  id           Int        @id @default(autoincrement())
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
+  price        Decimal    @db.Decimal(10, 2)
+  note         String?    @db.Text
+  createdAt    DateTime   @default(now())
+}
+
+model PriceOffers {
+  id           Int        @id @default(autoincrement())
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
+  user         User       @relation(fields: [userId], references: [id])
+  userId       Int
+  url          String?    @db.VarChar(255)
+  minPrice     Decimal?   @db.Decimal(10, 2) // Made optional
+  maxPrice     Decimal?   @db.Decimal(10, 2) // Made optional
+  note         String?    @db.Text // Added this field
+  isAccepted   Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([clientLeadId])
+}
+
+model CallReminder {
+  id             Int                @id @default(autoincrement())
+  clientLead     ClientLead         @relation(fields: [clientLeadId], references: [id], name: "clientLeadCallReminders")
+  clientLeadId   Int
+  time           DateTime
+  status         CallReminderStatus @default(IN_PROGRESS)
+  callResult     String?            @db.Text
+  reminderReason String?            @db.Text
+  user           User               @relation(fields: [userId], references: [id])
+  userId         Int
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([clientLeadId])
+  @@index([userId])
+}
+
+model File {
+  id           Int        @id @default(autoincrement())
+  name         String     @db.VarChar(255)
+  url          String     @db.VarChar(255)
+  description  String?    @db.Text
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
+  isUserFile   Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  user         User?      @relation(fields: [userId], references: [id])
+  userId       Int?
+
+  @@index([clientLeadId, isUserFile])
+}
+
+model User {
+  id                   Int                  @id @default(autoincrement())
+  email                String               @unique @db.VarChar(255)
+  name                 String               @db.VarChar(255)
+  password             String               @db.VarChar(255)
+  isActive             Boolean              @default(true)
+  role                 UserRole             @default(STAFF)
+  subRoles             UserSubRole[]
+  logs                 UserLog[]
+  clientLeads          ClientLead[]
+  notifications        Notification[]       @relation("UserNotifications")
+  staffNotifications   Notification[]       @relation("StaffNotifications")
+  notes                Note[]
+  tasks                Task[]
+  createdTasks         Task[]               @relation("CreatedTasks")
+  priceOffers          PriceOffers[]
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  callReminders        CallReminder[]
+  meetingReminders     MeetingReminder[]
+  updates              ClientLeadUpdate[]
+  createdImageSessions ClientImageSession[]
+
+  files           File[]
+  lastSeenAt      DateTime?
+  maxLeadsCounts  Int?         @default(50)
+  accountantLeads ClientLead[] @relation("AccountantLeads")
+  commissions     Commission[]
+  assignments     Assignment[]
+
+  baseSalary          BaseEmployeeSalary?
+  notAllowedCountries Json?
+
+  @@index([email])
+}
+
+model UserSubRole {
+  id      Int      @id @default(autoincrement())
+  userId  Int
+  subRole UserRole
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, subRole]) // Ensure a user cannot have the same sub-role twice
+}
+
+model UserLog {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         DateTime @default(now()) // Not unique anymore
+  totalMinutes Int      @default(0) // Track minutes spent
+  description  String? // New field to store descripti
+
+  @@unique([userId]) // Ensure only one entry per day per user
+  @@index([userId])
+}
+
+model Assignment {
+  id Int @id @default(autoincrement())
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  project   Project? @relation(fields: [projectId], references: [id])
+  projectId Int?
+
+  type String?
+  role UserRole @default(THREE_D_DESIGNER)
+
+  assignedAt DateTime? @default(now())
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@index([projectId])
+}
+
+model Client {
+  id          Int          @id @default(autoincrement())
+  name        String       @db.VarChar(255)
+  phone       String       @db.VarChar(20)
+  email       String       @unique @db.VarChar(255)
+  clientLeads ClientLead[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([email])
+}
+
+model Note {
+  id           Int         @id @default(autoincrement())
+  content      String?     @db.Text
+  attachment   String?     @db.Text
+  clientLead   ClientLead? @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int?
+  user         User        @relation(fields: [userId], references: [id])
+  userId       Int
+  createdAt    DateTime    @default(now())
+
+  // New relations
+  baseEmployeeSalary    BaseEmployeeSalary?  @relation(fields: [baseEmployeeSalaryId], references: [id])
+  baseEmployeeSalaryId  Int?
+  rent                  Rent?                @relation(fields: [rentId], references: [id])
+  rentId                Int?
+  rentPeriod            RentPeriod?          @relation(fields: [rentPeriodId], references: [id])
+  rentPeriodId          Int?
+  operationalExpenses   OperationalExpenses? @relation(fields: [operationalExpensesId], references: [id])
+  operationalExpensesId Int?
+  payment               Payment?             @relation(fields: [paymentId], references: [id])
+  paymentId             Int?
+  invoice               Invoice?             @relation(fields: [invoiceId], references: [id])
+  invoiceId             Int?
+  task                  Task?                @relation(fields: [taskId], references: [id])
+  taskId                Int?
+  commission            Commission?          @relation(fields: [commissionId], references: [id])
+  commissionId          Int?
+
+  update   ClientLeadUpdate? @relation(fields: [updateId], references: [id])
+  updateId Int?
+
+  sharedUpdate   SharedUpdate? @relation(fields: [sharedUpdateId], references: [id])
+  sharedUpdateId Int?
+
+  clientImageSession ClientImageSession? @relation(fields: [imageSessionId], references: [id])
+  imageSessionId     Int?
+
+  clientSelectedImage ClientSelectedImage? @relation(fields: [selectedImageId], references: [id])
+  selectedImageId     Int?
+
+  @@index([taskId])
+  @@index([clientLeadId])
+  @@index([userId])
+  @@index([baseEmployeeSalaryId])
+  @@index([rentId])
+  @@index([rentPeriodId])
+  @@index([operationalExpensesId])
+  @@index([paymentId])
+  @@index([invoiceId])
+  @@index([commissionId])
+  @@index([sharedUpdateId])
+  @@index([updateId])
+  @@index([imageSessionId])
+  @@index([selectedImageId])
+}
+
+model Notification {
+  id           Int              @id @default(autoincrement())
+  type         NotificationType
+  content      String           @db.Text
+  contentType  ContentType      @default(TEXT)
+  link         String?          @db.VarChar(255)
+  isRead       Boolean          @default(false)
+  user         User?            @relation("UserNotifications", fields: [userId], references: [id])
+  userId       Int?
+  staff        User?            @relation("StaffNotifications", fields: [staffId], references: [id])
+  staffId      Int?
+  clientLead   ClientLead?      @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int?
+  createdAt    DateTime         @default(now())
+
+  @@index([userId])
+  @@index([clientLeadId])
+}
+
+model FixedData {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model BaseEmployeeSalary {
+  id              Int             @id @default(autoincrement())
+  employee        User            @relation(fields: [userId], references: [id])
+  userId          Int             @unique // Add @unique here to enforce the one-to-one relationship
+  baseSalary      Decimal         @db.Decimal(10, 2)
+  taxAmount       Decimal         @default(0) @db.Decimal(10, 2) // Add taxAmount field for transparency
+  baseWorkHours   Int
+  notes           Note[]
+  monthlySalaries MonthlySalary[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model MonthlySalary {
+  id               Int                @id @default(autoincrement())
+  baseSalary       BaseEmployeeSalary @relation(fields: [baseSalaryId], references: [id])
+  baseSalaryId     Int
+  totalHoursWorked Int
+  overtimeHours    Int                @default(0)
+  bonuses          Decimal            @default(0) @db.Decimal(10, 2)
+  deductions       Decimal            @default(0) @db.Decimal(10, 2)
+  netSalary        Decimal            @db.Decimal(10, 2)
+  isFulfilled      Boolean            @default(false)
+  paymentDate      DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  outcome          Outcome?           @relation(fields: [outcomeId], references: [id]) // Optional relationship to Outcome
+  outcomeId        Int? // Foreign key to Outcome, nullable to make it optional
+}
+
+model Rent {
+  id          Int          @id @default(autoincrement())
+  name        String       @db.VarChar(255)
+  description String?      @db.Text
+  notes       Note[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  rentPeriods RentPeriod[]
+}
+
+model RentPeriod {
+  id        Int      @id @default(autoincrement())
+  rent      Rent     @relation(fields: [rentId], references: [id]) // Relationship to Rent model
+  rentId    Int
+  startDate DateTime
+  endDate   DateTime
+  amount    Decimal  @db.Decimal(10, 2)
+  isPaid    Boolean  @default(false)
+  notes     Note[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  outcome   Outcome? @relation(fields: [outcomeId], references: [id]) // Optional relationship to Outcome
+  outcomeId Int?
+}
+
+model OperationalExpenses {
+  id            Int           @id @default(autoincrement())
+  category      String        @db.VarChar(255) // e.g., "Utilities", "Office Supplies"
+  description   String?       @db.Text
+  amount        Decimal       @db.Decimal(10, 2)
+  paymentDate   DateTime
+  paymentStatus PaymentStatus @default(PENDING)
+  notes         Note[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  outcome       Outcome?      @relation(fields: [outcomeId], references: [id]) // Optional relationship to Outcome
+  outcomeId     Int? // Foreign key to Outcome, nullable to make it optional
+}
+
+model Outcome {
+  id                  Int                   @id @default(autoincrement())
+  type                String?               @db.VarChar(50) // e.g., "Salary", "Rent", "Operational Expense"
+  amount              Decimal               @db.Decimal(10, 2)
+  description         String?               @db.Text // Optional description
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  rentPeriods         RentPeriod[] // Optional relation back to RentPeriod, making it optional
+  operationalExpenses OperationalExpenses[] // Optional relation back to OperationalExpenses, making it optional
+  monthlySalaries     MonthlySalary[] // Optional relation back to OperationalExpenses, making it optional
+}
+
+// New client session
+model Image {
+  id                 Int                   @id @default(autoincrement())
+  url                String
+  spaces Space[]
+  patterns           ColorPattern[]
+  selectedInSessions ClientSelectedImage[]
+  isArchived         Boolean               @default(false)
+  createdAt          DateTime              @default(now())
+}
+
+model Space {
+  id                  Int                       @id @default(autoincrement())
+  name                String
+  avatarUrl           String? 
+  images              Image[]
+  clientSessionSpaces ClientImageSessionSpace[]
+  createdAt           DateTime                  @default(now())
+}
+
+model ColorPattern {
+  id        Int              @id @default(autoincrement())
+  name      String
+  avatarUrl  String? 
+  images    Image[]
+  imageSessions ClientImageSession[]
+  createdAt DateTime         @default(now())
+}
+
+
+model ClientImageSession {
+  id             Int                       @id @default(autoincrement())
+  clientLead     ClientLead                @relation(fields: [clientLeadId], references: [id])
+  clientLeadId   Int
+  createdBy      User?                     @relation(fields: [userId], references: [id])
+  userId         Int?
+  token          String                    @unique
+  selectedSpaces ClientImageSessionSpace[]
+  selectedImages ClientSelectedImage[]
+  preferredPatterns ColorPattern[]
+  sessionStatus     SessionStatus             @default(IN_PROGRESS)
+  signature      String?
+  pdfUrl         String?
+  notes          Note[]
+  createdAt      DateTime                  @default(now())
+}
+
+model ClientImageSessionSpace {
+  id        Int                @id @default(autoincrement())
+  session   ClientImageSession @relation(fields: [sessionId], references: [id])
+  sessionId Int
+  space     Space              @relation(fields: [spaceId], references: [id])
+  spaceId   Int
+}
+
+model ClientSelectedImage {
+  id        Int                @id @default(autoincrement())
+  session   ClientImageSession @relation(fields: [sessionId], references: [id])
+  sessionId Int
+  image     Image              @relation(fields: [imageId], references: [id])
+  imageId   Int
+  notes     Note[]
+}
