@@ -84,6 +84,7 @@ import DeleteModal from "../../models/DeleteModal";
 import { EditFieldButton } from "./extra/EditFieldButton";
 import { AssignNewStaffModal } from "../utility/AssignNewStaffModal";
 import UpdatesList from "./leadUpdates/UpdatesList";
+import ClientImageSessionManager from "../image-session/ClientSessionImageManager";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -264,6 +265,7 @@ const LeadContent = ({
           <Stack direction="row" spacing={2} alignItems="center">
             <TelegramLink lead={lead} setLead={setLead} />
             <UpdateInitialConsultButton clientLead={lead} />
+            <ClientImageSessionManager clientLeadId={lead.id} />
             {admin && (
               <EditFieldButton
                 text={"Client name"}

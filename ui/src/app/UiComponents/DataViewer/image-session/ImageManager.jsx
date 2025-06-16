@@ -149,13 +149,13 @@ const ImageManager = () => {
       method
     );
     if (request.status === 200) {
-      fetchData();
+      await fetchData();
       handleCloseDialog();
     }
   };
 
   const handleDelete = async (imageId) => {
-    fetchData();
+    await fetchData();
   };
 
   const clearFilters = () => {

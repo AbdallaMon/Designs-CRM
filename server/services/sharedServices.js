@@ -12,6 +12,7 @@ import {
 } from "./notification.js";
 import { ClientLeadStatus, LeadWorkStages } from "./enums.js";
 import { dealsLink } from "./links.js";
+import { v4 as uuidv4 } from "uuid";
 
 export async function getClientLeads({
   limit = 1,
@@ -3038,13 +3039,27 @@ export async function addNote({
   idKey,
   id,
   isAdmin,
+  client,
 }) {
   const data = {
     content,
-    userId: Number(userId),
     attachment,
   };
 
+  if (userId) {
+    data.userId = Number(userId);
+  }
+  if (client) {
+    const admin = await prisma.user.findFirst({
+      where: {
+        role: "ADMIN",
+      },
+      select: {
+        id: true,
+      },
+    });
+    data.userId = admin.id;
+  }
   if (idKey && id) {
     data[idKey] = Number(id);
   }
@@ -3173,9 +3188,7 @@ export async function updateALead(leadId) {
 /////// image session ///////
 
 export async function getImageSesssionModel({ model, searchParams }) {
-  console.log(model, "model");
   const data = await prisma[model].findMany();
-  console.log(data, "data");
   return data;
 }
 export async function getImages({ patternIds, spaceIds }) {
@@ -3192,6 +3205,7 @@ export async function getImages({ patternIds, spaceIds }) {
         .map((id) => Number(id))
         .filter(Boolean)
     : [];
+
   const where = {
     isArchived: false,
     ...(patternIdList.length > 0 && {
@@ -3222,4 +3236,91 @@ export async function getImages({ patternIds, spaceIds }) {
   });
 
   return images;
+}
+export async function getClientImageSessions(clientLeadId) {
+  const sessions = await prisma.clientImageSession.findMany({
+    where: { clientLeadId: Number(clientLeadId) },
+    include: {
+      createdBy: true,
+      selectedSpaces: {
+        include: { space: true },
+      },
+      selectedImages: {
+        include: {
+          image: true,
+        },
+      },
+      preferredPatterns: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return sessions;
+}
+
+export async function createClientImageSession({
+  clientLeadId,
+  userId,
+  selectedSpaceIds,
+}) {
+  if (!selectedSpaceIds || selectedSpaceIds.length === 0) {
+    throw new Error("At least one space must be selected");
+  }
+
+  const token = uuidv4();
+
+  const session = await prisma.clientImageSession.create({
+    data: {
+      clientLeadId: Number(clientLeadId),
+      userId: Number(userId),
+      token,
+      selectedSpaces: {
+        create: selectedSpaceIds.map((spaceId) => ({
+          space: { connect: { id: spaceId } },
+        })),
+      },
+    },
+  });
+
+  return session;
+}
+export async function regenerateSessionToken(sessionId) {
+  const session = await prisma.clientImageSession.findUnique({
+    where: { id: sessionId },
+  });
+
+  if (!session) throw new Error("Session not found");
+  if (session.sessionStatus !== "IN_PROGRESS")
+    throw new Error("Cannot regenerate token for completed session");
+
+  const newToken = uuidv4();
+
+  const updated = await prisma.clientImageSession.update({
+    where: { id: sessionId },
+    data: {
+      token: newToken,
+    },
+  });
+
+  return {
+    token: updated.token,
+    url: `${process.env.ORIGIN}/image-session?token=${updated.token}`,
+  };
+}
+
+export async function deleteInProgressSession(sessionId) {
+  const session = await prisma.clientImageSession.findUnique({
+    where: { id: sessionId },
+  });
+
+  if (!session) throw new Error("Session not found");
+  if (session.sessionStatus !== "IN_PROGRESS") {
+    throw new Error("Only sessions that are in progress can be deleted");
+  }
+
+  await prisma.clientImageSession.delete({
+    where: { id: sessionId },
+  });
+
+  return { message: "Deleted succssfully" };
 }

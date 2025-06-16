@@ -143,6 +143,7 @@ enum UpdateStatus {
 
 enum SessionStatus {
   IN_PROGRESS
+  APPROVING 
   APPROVED
 }
 

@@ -377,6 +377,45 @@ async function uploadToFTP(localFilePath, remotePath) {
   }
 }
 
+export async function uploadToFTPAsBuffer(
+  source,
+  remotePath,
+  isBuffer = false
+) {
+  const client = new Client();
+  try {
+    await client.access(ftpConfig);
+
+    let dataToUpload = source;
+
+    if (isBuffer) {
+      if (Buffer.isBuffer(source)) {
+        dataToUpload = source;
+      } else if (source instanceof Uint8Array) {
+        dataToUpload = Buffer.from(source.buffer);
+      } else {
+        throw new Error("Invalid buffer source type.");
+      }
+    }
+
+    // Use uploadFromDir for buffer data, not uploadFrom
+    // Create a readable stream from the buffer
+    const bufferStream = new Readable();
+    bufferStream.push(dataToUpload);
+    bufferStream.push(null); // Signal end of stream
+
+    // Use client.uploadFrom with a stream or use ensureDir + uploadFrom with temp file
+    // Better approach: use client.uploadFrom with readable stream
+    await client.uploadFrom(bufferStream, remotePath);
+
+    console.log(`✅ Uploaded to FTP: ${remotePath}`);
+  } catch (err) {
+    console.error(`❌ Failed to upload ${remotePath}:`, err.message);
+    throw err;
+  } finally {
+    client.close();
+  }
+}
 function deleteFile(filePath) {
   try {
     if (fs.existsSync(filePath)) {

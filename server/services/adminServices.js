@@ -1486,7 +1486,6 @@ export async function deleteALead(leadId) {
       await prisma.notification.deleteMany({ where: { clientLeadId } });
       await prisma.callReminder.deleteMany({ where: { clientLeadId } });
       await prisma.extraService.deleteMany({ where: { clientLeadId } });
-      await prisma.workStageStatus.deleteMany({ where: { clientLeadId } });
       await prisma.priceOffers.deleteMany({ where: { clientLeadId } });
 
       // Delete projects
@@ -1702,7 +1701,6 @@ export async function createNewImage(data) {
   if (!url || !patterns?.length || !spaces?.length) {
     throw new Error("Missing fields");
   }
-  console.log(data, "data");
   const image = await prisma.image.create({
     data: {
       url,

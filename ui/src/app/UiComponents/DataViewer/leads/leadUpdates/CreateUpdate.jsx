@@ -235,27 +235,30 @@ export const CreateUpdateModal = ({
                       label="Main Department"
                       sx={{ borderRadius: 2 }}
                     >
-                      {DEPARTMENTS.map((dept) => (
-                        <MenuItem key={dept.value} value={dept.value}>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
+                      {DEPARTMENTS.map((dept) => {
+                        if (dept.value === "ADMIN" && isAdmin) return;
+                        return (
+                          <MenuItem key={dept.value} value={dept.value}>
                             <Box
                               sx={{
-                                width: 12,
-                                height: 12,
-                                borderRadius: "50%",
-                                backgroundColor: dept.color,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
                               }}
-                            />
-                            {dept.label}
-                          </Box>
-                        </MenuItem>
-                      ))}
+                            >
+                              <Box
+                                sx={{
+                                  width: 12,
+                                  height: 12,
+                                  borderRadius: "50%",
+                                  backgroundColor: dept.color,
+                                }}
+                              />
+                              {dept.label}
+                            </Box>
+                          </MenuItem>
+                        );
+                      })}
                     </Select>
                   </FormControl>
                 </Box>
@@ -287,7 +290,7 @@ export const CreateUpdateModal = ({
                     dept.value === department || // Main department is always disabled for toggling
                     (dept.value === "ADMIN" && isAdmin); // Admin department is disabled for admin users
                   const isMainDepartment = dept.value === department;
-
+                  if (dept.value === "ADMIN" && isAdmin) return;
                   return (
                     <Box
                       key={dept.value}

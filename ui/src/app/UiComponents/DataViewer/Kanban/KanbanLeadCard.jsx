@@ -44,6 +44,7 @@ import PreviewWorkStage from "../work-stages/PreviewWorkStage";
 import FloatingIdBadge from "../leads/extra/IdBadge";
 
 import { KanbanUpdateSection } from "../leads/leadUpdates/KanbanUpdateSection";
+import ClientImageSessionManager from "../image-session/ClientSessionImageManager";
 
 const ItemTypes = {
   CARD: "card",
@@ -149,9 +150,7 @@ const LeadCard = ({ lead, movelead, setleads, type, statusArray }) => {
             <Typography variant="h6" component="div">
               {lead.client.name}
             </Typography>
-            <Typography variant="subtitle2" component="div">
-              {lead.description}
-            </Typography>
+            <ClientImageSessionManager clientLeadId={lead.id} />
           </Box>
           <Box my={1} display="flex" alignItems="center" gap={1}>
             <Chip icon={<MoneyIcon />} label={lead.price} variant="outlined" />

@@ -1,4 +1,4 @@
-import { uploadFiles } from "../services/utility.js";
+import { uploadFiles, uploadToFTPAsBuffer } from "../services/utility.js";
 import express from "express";
 const router = express.Router();
 import prisma from "../prisma/prisma.js";
@@ -12,6 +12,21 @@ import {
 } from "../services/notification.js";
 import dayjs from "dayjs";
 import Stripe from "stripe";
+import {
+  changeSessionStatus,
+  generateImageSessionPdf,
+  getSessionByToken,
+  submitSelectedImages,
+  submitSelectedPatterns,
+} from "../services/clientServices.js";
+import {
+  addNote,
+  getImages,
+  getImageSesssionModel,
+  getNotes,
+} from "../services/sharedServices.js";
+import { pdfQueue } from "../services/queues/pdfQueue.js";
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const priceRangeValues = {
   "300,000 AED or less": 200000,
@@ -317,183 +332,6 @@ router.post("/new-lead/complete-register/:leadId", async (req, res) => {
   }
 });
 
-// router.get("/products", async (req, res) => {
-//   try {
-//     // const response = await axios.post(
-//     //   `https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2023-01/graphql.json`,
-//     //   {
-//     //     query: `
-//     //     {
-//     //       product(id: "gid://shopify/Product/8739939942638") {
-//     //         id
-//     //         title
-//     //         description
-//     //         variants(first: 100) {
-//     //           edges {
-//     //             node {
-//     //               id
-//     //               title
-//     //               price {
-//     //                 amount
-//     //                 currencyCode
-//     //               }
-//     //             }
-//     //           }
-//     //         }
-//     //       }
-//     //     }
-//     //     `,
-//     //   },
-//     //   {
-//     //     headers: {
-//     //       "X-Shopify-Storefront-Access-Token":
-//     //         process.env.SHOPIFY_STOREFRONT_TOKEN,
-//     //       "Content-Type": "application/json",
-//     //     },
-//     //   }
-//     // );
-//     const response = await axios.post(
-//       `https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2023-01/graphql.json`,
-//       {
-//         query: `
-//         {
-//           products(first: 10, sortKey: UPDATED_AT) {
-//             edges {
-//               node {
-//                 id
-//                 title
-//                 description
-//                 variants(first: 100) {
-//                   edges {
-//                     node {
-//                       id
-//                       title
-//                       price {
-//                         amount
-//                         currencyCode
-//                       }
-//                     }
-//                   }
-//                 }
-//               }
-//             }
-//           }
-//         }
-//         `,
-//       },
-//       {
-//         headers: {
-//           "X-Shopify-Storefront-Access-Token":
-//             process.env.SHOPIFY_STOREFRONT_TOKEN,
-//           "Content-Type": "application/json",
-//         },
-//       }
-//     );
-//     res.json(response.data.data.products.edges);
-//     const product = response.data.data?.product;
-//     const formattedProduct = {
-//       id: product.id,
-//       title: product.title,
-//       description: product.description,
-//       variants: product.variants.edges.map((variant) => ({
-//         id: variant.node.id,
-//         title: variant.node.title,
-//         price: variant.node.price.amount,
-//         currency: variant.node.price.currencyCode,
-//       })),
-//     };
-
-//     res.json(formattedProduct);
-//   } catch (error) {
-//     console.error(
-//       "Error fetching product:",
-//       error.response?.data || error.message
-//     );
-//     res.status(500).send("Internal Server Error");
-//   }
-// });
-// router.post("/checkout", async (req, res) => {
-//   try {
-//     const { variantId } = req.body;
-//     const globalVariantId = `gid://shopify/ProductVariant/${variantId}`;
-//     const cartCreateMutation = `
-//       mutation {
-//         cartCreate(input: {
-//           lines: [{ merchandiseId: "${globalVariantId}", quantity: ${1} }]
-//         }) {
-//           userErrors {
-//             message
-//             code
-//             field
-//           }
-//           cart {
-//             id
-//             checkoutUrl
-//           }
-//         }
-//       }
-//     `;
-
-//     const response = await axios.post(
-//       `https://${process.env.SHOPIFY_STORE_DOMAIN}/api/2025-01/graphql.json`, // Update API version
-//       {
-//         query: cartCreateMutation,
-//       },
-//       {
-//         headers: {
-//           "X-Shopify-Storefront-Access-Token":
-//             process.env.SHOPIFY_STOREFRONT_TOKEN,
-//           "Content-Type": "application/json",
-//         },
-//       }
-//     );
-//     if (response.data.data.cartCreate.userErrors.length > 0) {
-//       console.log(response.data.data.cartCreate.userErrors);
-//       throw new Error("Something wrong happen try again later");
-//     }
-//     return res.json({ data: response.data.data.cartCreate.cart });
-//   } catch (error) {
-//     console.error(
-//       "Error creating checkout:",
-//       error.response?.data || error.message
-//     );
-//     res.status(500).send("Internal Server Error");
-//   }
-// });
-
-// router.get("/confirm", async (req, res) => {
-//   try {
-//     const { orderId } = req.query; // Extract checkout_id from query string
-
-//     if (!orderId) {
-//       return res.status(400).json({ error: "Missing checkout_id" });
-//     }
-
-//     const response = await axios.get(
-//       `https://${process.env.SHOPIFY_STORE_DOMAIN}/admin/api/2023-01/orders/${orderId}.json`,
-//       {
-//         headers: {
-//           "X-Shopify-Access-Token": process.env.SHOPIFY_ADMIN_API_TOKEN,
-//         },
-//       }
-//     );
-//     console.log(response, "response");
-//     const checkoutData = response.data.data?.node;
-
-//     if (!checkoutData) {
-//       return res.status(404).send("Checkout not found");
-//     }
-
-//     res.json(checkoutData);
-//   } catch (error) {
-//     console.error(
-//       "Error fetching checkout details:",
-//       error.response?.data || error.message
-//     );
-//     res.status(500).send("Internal Server Error");
-//   }
-// });
-
 router.post("/pay", async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
@@ -508,16 +346,6 @@ router.post("/pay", async (req, res) => {
         {
           price_data: {
             currency: "usd",
-            // product_data: {
-            //   name:
-            //     req.body.lng === "en"
-            //       ? "First-Stage Design Analysis with Eng. Ahmed"
-            //       : "حجز المرحلة الاولي من استشارة التصميم مع المهندس احمد",
-            //   description:
-            //     req.body.lng === "en"
-            //       ? "[Book now and start your design] $180 - Fully deducted upon contract"
-            //       : "[احجز الآن وابدأ تصميمك] 💵 180 دولار – تُخصم بالكامل عند التعاقد",
-            // },١٨٠
             product_data: {
               name:
                 req.body.lng === "en"
@@ -644,4 +472,153 @@ router.post("/upload", async (req, res) => {
   await uploadFiles(req, res);
 });
 
+// client image session
+router.get(`/image-session`, async (req, res) => {
+  try {
+    const imageSesssion = await getSessionByToken(req.query.token);
+    res.status(200).json({ data: imageSesssion });
+  } catch (e) {
+    console.log(e, "e");
+    return res.status(500).json({ error: "Some thing wrong happened" });
+  }
+});
+router.get(`/image-session/data`, async (req, res) => {
+  try {
+    const colors = await getImageSesssionModel({ model: req.query.model });
+    res.status(200).json({ data: colors });
+  } catch (e) {
+    console.log(e, "e");
+    return res.status(500).json({ error: "Some thing wrong happened" });
+  }
+});
+router.get(`/image-session/images`, async (req, res) => {
+  try {
+    const images = await getImages({
+      patternIds: req.query.patterns,
+      spaceIds: req.query.spaces,
+    });
+    res.status(200).json({ data: images });
+  } catch (e) {
+    console.log(e, "e");
+    return res.status(500).json({ error: "Some thing wrong happened" });
+  }
+});
+router.post(`/image-session/save-patterns`, async (req, res) => {
+  try {
+    const session = await submitSelectedPatterns({
+      token: req.body.token,
+      patternIds: req.body.patterns,
+    });
+    res.status(200).json({ data: session, message: "Colors pattern selected" });
+  } catch (e) {
+    console.log(e, "e");
+    return res.status(500).json({ error: "Some thing wrong happened" });
+  }
+});
+
+router.post(`/image-session/save-images`, async (req, res) => {
+  try {
+    const session = await submitSelectedImages({
+      token: req.body.token,
+      imageIds: req.body.imageIds,
+    });
+    res
+      .status(200)
+      .json({ data: session, message: "Image selections saved succsfully" });
+  } catch (e) {
+    console.log(e, "e");
+    return res.status(500).json({ error: "Some thing wrong happened" });
+  }
+});
+
+router.post(`/image-session/save-images`, async (req, res) => {
+  try {
+    const session = await changeSessionStatus({
+      token: req.body.token,
+      status: "APPROVING",
+    });
+    res.status(200).json({
+      data: session,
+      message: "Success now just signature and approve your data",
+    });
+  } catch (e) {
+    console.log(e, "e");
+    return res.status(500).json({ error: "Some thing wrong happened" });
+  }
+});
+
+// router.post("/image-session/generate-pdf", async (req, res) => {
+//   const { sessionData, signatureUrl } = req.body;
+
+//   try {
+//     const pdfBytes = await generateImageSessionPdf({
+//       sessionData,
+//       signatureUrl,
+//     });
+
+//     const fileName = `session-${sessionData.id}-${uuidv4()}.pdf`;
+//     const remotePath = `public_html/uploads/${fileName}`;
+
+//     await uploadToFTPAsBuffer(pdfBytes, remotePath, true);
+
+//     const publicUrl = `https://panel.dreamstudiio.com/uploads/${fileName}`;
+
+//     await approveSession({
+//       token: sessionData.token,
+//       clientLeadId: sessionData.clientLeadId,
+//       id: Number(sessionData.id),
+//       pdfUrl: publicUrl,
+//     });
+//     return res
+//       .status(200)
+//       .json({ message: "Response saved succussfully", url: publicUrl });
+//   } catch (err) {
+//     console.error("PDF generation error:", err);
+//     return res
+//       .status(500)
+//       .json({ success: false, error: "Failed to generate PDF" });
+//   }
+// });
+
+router.post("/image-session/generate-pdf", async (req, res) => {
+  const { sessionData, signatureUrl } = req.body;
+
+  try {
+    const data = await changeSessionStatus({
+      token: sessionData.token,
+      status: "APPROVED",
+    });
+    await pdfQueue.add("generate-approve-pdf", { sessionData, signatureUrl });
+
+    return res
+      .status(200)
+      .json({ data, message: "Response saved succussfully", url: null });
+  } catch (err) {
+    console.error("PDF generation error:", err);
+    return res
+      .status(500)
+      .json({ success: false, error: "Failed to generate PDF" });
+  }
+});
+router.get("/notes", async (req, res) => {
+  try {
+    const searchParams = req.query;
+    const notes = await getNotes(searchParams);
+    res.status(200).json({ data: notes });
+  } catch (error) {
+    console.log(error, "error");
+    res.status(500).json({ message: error.message });
+  }
+});
+router.post("/notes", async (req, res) => {
+  try {
+    const newNote = await addNote({
+      ...req.body,
+      client: true,
+    });
+    res.status(200).json(newNote);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 export default router;

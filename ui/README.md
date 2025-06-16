@@ -171,6 +171,19 @@ main :
 - Mark as done by the users them self (i mean by the shared ) if all shared except the main department is done then this is archieved
 - Add admin to shared groups
 - Check backend in the kanban we need to filter by user group not main archieve and for admin we need to filter that we return latest that has at least one
+- Admin add Colors patterns
+- Admin add spaces (حمام او غرغة معيشه وهكذا)
+- Admin add specific images and link it to space(maybe more than one) and link it to color pattern
+- Admin can add or remove
+- Staff generate link for the client with pre selected spaces
+
+For styles:
+
+- Client choose the prefered patterns
+- Show images to the client filtered by pattern and the selected spaces
+- Client select more than one image
+- Client approve selected image then signature
+- Save the images in the pdf with the signature in the system and optianal download link for client
 
 - Add to meeting questions and ask staff to answer this questions
 - Optional extra questions
@@ -187,8 +200,8 @@ main :
   6
   2- حجز المواعيد
   6
-  3- تحديد ال style
-  8
+  3- تحديد ال style  
+  8 - 2.5 + 4.5
   4- Calendar
   8
   5- Courses
@@ -197,19 +210,6 @@ main :
   8
   7- main website
   12
-
-For styles:
-
-- Admin add Colors patterns
-- Admin add spaces (حمام او غرغة معيشه وهكذا)
-- Admin add specific images and link it to space(maybe more than one) and link it to color pattern
-- Admin can add or remove
-- Staff generate link for the client with pre selected spaces
-- Client shows the prefered pattern
-- Show images to the client filtered by pattern and the selected spaces
-- Client select more than one image can add note to an image or attachments and can add a general note and can add attachments
-- Client approve selected image then signature
-- Save the images in the pdf with the signature in the system and optianal download link for client
 
 edits
 

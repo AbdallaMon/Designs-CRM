@@ -18,10 +18,10 @@ export default function ConfirmWithActionModel({
 
   async function handleAfterConfirm() {
     const confirm = await handleConfirm();
+
     if (!confirm || confirm.status !== 200) return;
     if (removeAfterConfirm) setOpen(false);
   }
-
   return (
     <>
       <Button
@@ -34,6 +34,7 @@ export default function ConfirmWithActionModel({
       >
         {label}
       </Button>
+
       {open && (
         <Modal open={open} onClose={() => setOpen(false)} closeAfterTransition>
           <Fade in={open}>

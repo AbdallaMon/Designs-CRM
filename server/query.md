@@ -89,3 +89,7 @@ ADD INDEX idx_imageSessionId (imageSessionId),
 ADD INDEX idx_selectedImageId (selectedImageId),
 ADD FOREIGN KEY (imageSessionId) REFERENCES ClientImageSession(id) ON DELETE SET NULL,
 ADD FOREIGN KEY (selectedImageId) REFERENCES ClientSelectedImage(id) ON DELETE SET NULL;
+
+ALTER TABLE ClientImageSession
+MODIFY COLUMN sessionStatus ENUM('IN_PROGRESS', 'APPROVING', 'APPROVED')
+NOT NULL DEFAULT 'IN_PROGRESS';

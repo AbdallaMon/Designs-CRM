@@ -14,12 +14,15 @@ import {
   checkIfUserAllowedToTakeALead,
   checkUserLog,
   createAnUpdate,
+  createClientImageSession,
   createNewTask,
   deleteAModel,
+  deleteInProgressSession,
   deleteNote,
   editPriceOfferStatus,
   getAllFixedData,
   getArchivedProjects,
+  getClientImageSessions,
   getClientLeadDetails,
   getClientLeads,
   getClientLeadsByDateRange,
@@ -51,6 +54,7 @@ import {
   makePayments,
   markAnUpdateAsDone,
   markClientLeadAsConverted,
+  regenerateSessionToken,
   submitUserLog,
   toggleArchieveAnUpdate,
   toggleArchieveASharedUpdate,
@@ -81,6 +85,7 @@ import {
   getReviews,
   handleOAuthCallback,
 } from "../services/reviews.js";
+import { message } from "telegram/client/index.js";
 
 const router = Router();
 
@@ -1140,7 +1145,6 @@ router.get("/test", async (req, res) => {
 router.get("/test/file", async (req, res) => {
   try {
     const test = await getFilePath(req.query.id);
-    console.log(test, "test");
 
     res.status(200).json({ data: test });
   } catch (error) {
@@ -1235,5 +1239,66 @@ router.get("/image-session", async (req, res) => {
       .json({ message: "An error occurred while fetching images" });
   }
 });
+
+router.get("/image-session/:clientLeadId/sessions", async (req, res) => {
+  try {
+    const imageSesssions = await getClientImageSessions(
+      Number(req.params.clientLeadId)
+    );
+
+    res.status(200).json({ data: imageSesssions });
+  } catch (error) {
+    console.error("Error fetching images:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching images" });
+  }
+});
+
+router.post("/image-session/:clientLeadId/sessions", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req);
+    const newSession = await createClientImageSession({
+      clientLeadId: Number(req.params.clientLeadId),
+      userId: Number(user.id),
+      selectedSpaceIds: req.body.spaces,
+    });
+    res
+      .status(200)
+      .json({ data: newSession, message: "New session created succussfully" });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({ message: "An error occurred" });
+  }
+});
+router.put(
+  "/image-session/:clientLeadId/sessions/:sessionId/re-generate",
+  async (req, res) => {
+    try {
+      const newSession = await regenerateSessionToken(
+        Number(req.params.sessionId)
+      );
+      res.status(200).json({
+        data: newSession,
+        message: "Session link regenerated please copy it",
+      });
+    } catch (e) {
+      res.status(500).json({ message: "An error occurred" });
+    }
+  }
+);
+router.delete(
+  "/image-session/:clientLeadId/sessions/:sessionId",
+  async (req, res) => {
+    try {
+      await deleteInProgressSession(Number(req.params.sessionId));
+      res.status(200).json({
+        message: "Session deleted succussfully",
+      });
+    } catch (e) {
+      res.status(500).json({ message: "An error occurred" });
+    }
+  }
+);
 //////// end of image sesssion ////////
 export default router;

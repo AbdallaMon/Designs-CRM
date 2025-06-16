@@ -26,6 +26,7 @@ import {
   MdClose,
   MdAdd,
 } from "react-icons/md";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 export function NotesComponent({
   idKey,
@@ -36,6 +37,7 @@ export function NotesComponent({
   simpleButton,
   isOpen = false,
   onClose,
+  text = "Notes & Attachments",
 }) {
   const [openModal, setOpenModal] = useState(isOpen);
   const [notes, setNotes] = useState([]);
@@ -45,7 +47,7 @@ export function NotesComponent({
   const [file, setFile] = useState();
   const { setLoading: setGlobalLoading } = useToastContext();
   const { setAlertError } = useAlertContext();
-
+  const { user } = useAuth();
   useEffect(() => {
     if (isOpen) {
       setOpenModal(isOpen);
@@ -132,7 +134,7 @@ export function NotesComponent({
         size={simpleButton ? "small" : "medium"}
         startIcon={simpleButton ? null : <MdStickyNote2 size={20} />}
       >
-        Notes & Attachments
+        {text}
       </Button>
     );
   }
@@ -150,6 +152,7 @@ export function NotesComponent({
             maxHeight: "90vh",
             display: "flex",
             flexDirection: "column",
+            p: { xs: 1.5, md: 2 },
           }}
         >
           <Box
@@ -279,9 +282,11 @@ export function NotesComponent({
                           mt: 1,
                         }}
                       >
-                        <Typography variant="caption" color="text.secondary">
-                          By: {note.user.name}
-                        </Typography>
+                        {user && (
+                          <Typography variant="caption" color="text.secondary">
+                            By: {note.user.name}
+                          </Typography>
+                        )}
 
                         {note.attachment && (
                           <Button
