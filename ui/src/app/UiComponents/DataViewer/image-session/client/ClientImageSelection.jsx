@@ -40,6 +40,8 @@ import SignatureComponent from "./SignatureComponet";
 import { ClientImageAppBar, SelectedPatterns } from "./Utility";
 import { ClientSelectedImages } from "./ClientSelectedImages";
 import { useAlertContext } from "@/app/providers/MuiAlert";
+import colors from "@/app/helpers/colors";
+import { ImageSelection } from "./ImageSelection";
 
 const ClientImageSelection = ({ token }) => {
   // Main state
@@ -426,13 +428,13 @@ const ClientImageSelection = ({ token }) => {
             </Typography>
             <Grid container spacing={2} sx={{ p: 2 }}>
               {availablePatterns.map((pattern) => (
-                <Grid size={{ sm: 6 }} key={pattern.id}>
+                <Grid size={{ xs: 6 }} key={pattern.id}>
                   <Card
                     sx={{
                       cursor: "pointer",
                       transition: "transform 0.2s",
                       border: selectedPattern.includes(pattern.id)
-                        ? "2px solid #1976d2"
+                        ? `2px solid ${colors.primary}`
                         : "1px solid transparent",
                       transform: selectedPattern.includes(pattern.id)
                         ? "scale(1.02)"
@@ -443,6 +445,7 @@ const ClientImageSelection = ({ token }) => {
                     <CardMedia
                       component="img"
                       height="150"
+                      maxHeight="150"
                       image={pattern.avatarUrl}
                       alt={pattern.name}
                     />
@@ -478,142 +481,13 @@ const ClientImageSelection = ({ token }) => {
 
             <Divider />
 
-            <Box sx={{ p: 2 }}>
-              <Typography variant="h6" gutterBottom>
-                Select Images ({selectedImages.length} selected)
-              </Typography>
-
-              {loadingImages ? (
-                <Box display="flex" justifyContent="center" p={4}>
-                  <CircularProgress />
-                </Box>
-              ) : (
-                <Box>
-                  {imagesBySpace.map((spaceGroup, index) => {
-                    const selectedCount = spaceGroup.images.filter((img) =>
-                      selectedImages.find((selected) => selected.id === img.id)
-                    ).length;
-                    const hasSelection = selectedCount > 0;
-
-                    return (
-                      <Accordion
-                        key={spaceGroup.space.id}
-                        defaultExpanded={index === 0}
-                        ref={(el) =>
-                          (spaceRefs.current[spaceGroup.space.id] = el)
-                        }
-                        sx={{
-                          border: !hasSelection ? "2px solid #f44336" : "none",
-                          "&.Mui-expanded": {
-                            border: !hasSelection
-                              ? "2px solid #f44336"
-                              : "none",
-                          },
-                        }}
-                      >
-                        <AccordionSummary expandIcon={<ExpandMore />}>
-                          <Box
-                            display="flex"
-                            alignItems="center"
-                            gap={1}
-                            width="100%"
-                          >
-                            {/* Space Avatar */}
-                            {spaceGroup.space.avatarUrl ? (
-                              <Avatar
-                                src={spaceGroup.space.avatarUrl}
-                                alt={spaceGroup.space.name}
-                                sx={{ width: 32, height: 32 }}
-                              />
-                            ) : (
-                              <Avatar
-                                sx={{
-                                  width: 32,
-                                  height: 32,
-                                  bgcolor: "primary.main",
-                                }}
-                              >
-                                <Room />
-                              </Avatar>
-                            )}
-
-                            <Typography variant="h6" sx={{ flexGrow: 1 }}>
-                              {spaceGroup.space.name}
-                            </Typography>
-
-                            <Box display="flex" gap={1}>
-                              <Chip
-                                label={`${selectedCount}/${spaceGroup.images.length} selected`}
-                                size="small"
-                                color={hasSelection ? "primary" : "error"}
-                                variant="outlined"
-                              />
-
-                              {!hasSelection && (
-                                <Chip
-                                  label="Required"
-                                  size="small"
-                                  color="error"
-                                  icon={<Warning sx={{ fontSize: 16 }} />}
-                                />
-                              )}
-                            </Box>
-                          </Box>
-                        </AccordionSummary>
-                        <AccordionDetails>
-                          <Grid container spacing={2}>
-                            {spaceGroup.images.map((image) => {
-                              const isSelected = selectedImages.find(
-                                (img) => img.id === image.id
-                              );
-                              return (
-                                <Grid
-                                  size={{ xs: 6, sm: 4, md: 3 }}
-                                  key={image.id}
-                                >
-                                  <Card
-                                    sx={{
-                                      cursor: "pointer",
-                                      border: isSelected ? 2 : 0,
-                                      borderColor: "primary.main",
-                                      position: "relative",
-                                    }}
-                                    onClick={() => handleImageSelect(image)}
-                                  >
-                                    <CardMedia
-                                      component="img"
-                                      height="120"
-                                      image={image.url}
-                                      alt={`Image ${image.id}`}
-                                    />
-                                    {isSelected && (
-                                      <Box
-                                        sx={{
-                                          position: "absolute",
-                                          top: 8,
-                                          right: 8,
-                                          bgcolor: "primary.main",
-                                          borderRadius: "50%",
-                                          p: 0.5,
-                                        }}
-                                      >
-                                        <Check
-                                          sx={{ color: "white", fontSize: 16 }}
-                                        />
-                                      </Box>
-                                    )}
-                                  </Card>
-                                </Grid>
-                              );
-                            })}
-                          </Grid>
-                        </AccordionDetails>
-                      </Accordion>
-                    );
-                  })}
-                </Box>
-              )}
-            </Box>
+            <ImageSelection
+              handleImageSelect={handleImageSelect}
+              imagesBySpace={imagesBySpace}
+              loadingImages={loadingImages}
+              selectedImages={selectedImages}
+              spaceRefs={spaceRefs}
+            />
           </Box>
         )}
 

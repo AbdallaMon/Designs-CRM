@@ -61,13 +61,17 @@ export async function submitSelectedImages({ token, imageIds }) {
 
   return await getSessionByToken(token);
 }
-export async function changeSessionStatus({ token, status }) {
+export async function changeSessionStatus({ token, status, extra }) {
   // Clear previous selected images and add new ones
+  let data = {
+    sessionStatus: status,
+  };
+  if (extra) {
+    data = { ...data, ...extra };
+  }
   await prisma.clientImageSession.update({
     where: { token },
-    data: {
-      sessionStatus: status,
-    },
+    data,
   });
 
   return await getSessionByToken(token);

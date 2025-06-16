@@ -587,6 +587,7 @@ router.post("/image-session/generate-pdf", async (req, res) => {
     const data = await changeSessionStatus({
       token: sessionData.token,
       status: "APPROVED",
+      extra: { signature: signatureUrl },
     });
     await pdfQueue.add("generate-approve-pdf", { sessionData, signatureUrl });
 
