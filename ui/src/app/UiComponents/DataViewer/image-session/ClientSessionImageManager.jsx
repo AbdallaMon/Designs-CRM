@@ -61,7 +61,6 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
   const { setAlertError } = useAlertContext();
   const { setLoading: setToastLoading } = useToastContext();
   const [copiedToken, setCopiedToken] = useState(null);
-  const [openConrimGenerateLink, setconfirmGenerateLink] = useState(false);
   async function fetchData() {
     const [imageSessionRequst, spacesRequest] = await Promise.all([
       getData({
@@ -342,9 +341,64 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                                 </Button>
                               </Box>
                             ) : (
-                              <Alert severity="error">
-                                Client didnt approve the session yet
-                              </Alert>
+                              <>
+                                {session.sessionStatus === "IN_PROGRESS" ? (
+                                  <Alert severity="error">
+                                    Client Didnt approve the session yet
+                                  </Alert>
+                                ) : (
+                                  <>
+                                    {!session.error ? (
+                                      <Alert severity="warning">
+                                        Please wait, we are generating the PDF
+                                        and will send emails once it&apos;s
+                                        finished.
+                                      </Alert>
+                                    ) : (
+                                      <>
+                                        <Alert severity="warning">
+                                          Something went wrong with the PDF, try
+                                          regenerating it
+                                        </Alert>
+                                        <ConfirmWithActionModel
+                                          label="Try regenerating the PDF"
+                                          title="Regenerating the pdf"
+                                          description="Try regnerating the pdf"
+                                          removeAfterConfirm={true}
+                                          handleConfirm={async () => {
+                                            const request =
+                                              await handleRequestSubmit(
+                                                {
+                                                  sessionData: session,
+                                                  signatureUrl:
+                                                    session.signature,
+                                                },
+                                                setToastLoading,
+                                                `client/image-session/generate-pdf`,
+                                                false,
+                                                "Approving"
+                                              );
+                                            if (request.status === 200) {
+                                              setSessions(
+                                                oldSessions.map((s) => {
+                                                  if (s.id === session.id) {
+                                                    return {
+                                                      ...s,
+                                                      error: false,
+                                                    };
+                                                  }
+                                                  return s;
+                                                })
+                                              );
+                                              return request;
+                                            }
+                                          }}
+                                        />
+                                      </>
+                                    )}
+                                  </>
+                                )}
+                              </>
                             )}
                           </Grid>
 
@@ -506,7 +560,6 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
               </ListItem>
             ))}
           </List>
-
           {selectedSpaces.length > 0 && (
             <Box mt={2}>
               <Typography variant="subtitle2" gutterBottom>

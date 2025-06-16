@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { error, PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import prisma from "../prisma/prisma.js";
 import fetch from "node-fetch";
 import { sendEmail } from "./sendMail.js";
@@ -712,6 +712,10 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
     const pdfBytes = await pdfDoc.save();
     return pdfBytes;
   } catch (e) {
+    await prisma.clientImageSession.update({
+      where: { id: Number(sessionData.id) },
+      data: { error: true },
+    });
     console.log(e, "error in pdf generator");
   }
 }
@@ -723,6 +727,7 @@ export async function approveSession({ token, clientLeadId, id, pdfUrl }) {
     data: {
       sessionStatus: "APPROVED",
       pdfUrl: pdfUrl,
+      error: false,
     },
   });
   await sendSuccessEmailAfterSessionDone({ token, clientLeadId, pdfUrl });

@@ -3247,7 +3247,11 @@ export async function getClientImageSessions(clientLeadId) {
       },
       selectedImages: {
         include: {
-          image: true,
+          image: {
+            include: {
+              spaces: true,
+            },
+          },
         },
       },
       preferredPatterns: true,

@@ -265,7 +265,9 @@ const LeadContent = ({
           <Stack direction="row" spacing={2} alignItems="center">
             <TelegramLink lead={lead} setLead={setLead} />
             <UpdateInitialConsultButton clientLead={lead} />
-            <ClientImageSessionManager clientLeadId={lead.id} />
+            {(lead.status === "FINALIZED" || lead.status === "ARCHIVED") && (
+              <ClientImageSessionManager clientLeadId={lead.id} />
+            )}
             {admin && (
               <EditFieldButton
                 text={"Client name"}
