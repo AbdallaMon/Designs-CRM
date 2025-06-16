@@ -36,26 +36,10 @@ import {
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import SignatureComponent from "../SignatureComponet";
-import { NotesComponent } from "../../utility/Notes";
+import SignatureComponent from "./SignatureComponet";
 import { ClientImageAppBar, SelectedPatterns } from "./Utility";
 import { ClientSelectedImages } from "./ClientSelectedImages";
-
-// Mock API functions (replace with actual API calls)
-const api = {
-  saveSelections: async (sessionId, data) => {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    return { success: true };
-  },
-
-  generatePDF: async (sessionId, signature) => {
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-    return {
-      success: true,
-      pdfUrl: "https://example.com/generated-session.pdf",
-    };
-  },
-};
+import { useAlertContext } from "@/app/providers/MuiAlert";
 
 const ClientImageSelection = ({ token }) => {
   // Main state
@@ -70,7 +54,7 @@ const ClientImageSelection = ({ token }) => {
   const [availableImages, setAvailableImages] = useState([]);
   const [selectedImages, setSelectedImages] = useState([]);
   const { setLoading: setToastLoading } = useToastContext();
-
+  const { setAlertError } = useAlertContext();
   // UI states
   const [loadingImages, setLoadingImages] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -182,16 +166,19 @@ const ClientImageSelection = ({ token }) => {
   // Helper function to group images by space
   const groupImagesBySpace = (images) => {
     const grouped = {};
+
+    session.selectedSpaces.forEach(({ space }) => {
+      grouped[space.id] = {
+        space: space,
+        images: [],
+      };
+    });
     images.forEach((image) => {
       if (image.spaces && image.spaces.length > 0) {
         image.spaces.forEach((space) => {
-          if (!grouped[space.id]) {
-            grouped[space.id] = {
-              space: space,
-              images: [],
-            };
+          if (grouped[space.id]) {
+            grouped[space.id].images.push(image);
           }
-          grouped[space.id].images.push(image);
         });
       }
     });
@@ -263,7 +250,7 @@ const ClientImageSelection = ({ token }) => {
     setValidationError("");
 
     if (currentStep === 0 && selectedPattern.length === 0) {
-      setError("Please select at least one color pattern");
+      setAlertError("Please select at least one color pattern");
       return;
     }
 

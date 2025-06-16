@@ -1,45 +1,21 @@
-import React, { useRef, useState } from "react";
-import {
-  Box,
-  Button,
-  Dialog,
-  AppBar,
-  Toolbar,
-  IconButton,
-  Typography,
-  Slide,
-} from "@mui/material";
-import { IoMdClose } from "react-icons/io";
+import React, { useRef } from "react";
+import { Box, Button, Typography, Slide } from "@mui/material";
 import SignatureCanvas from "react-signature-canvas";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import { useAlertContext } from "@/app/providers/MuiAlert";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
 const SignatureComponent = ({ session, token, onClose, onSignatureSaved }) => {
-  const [previewMode, setPreviewMode] = useState(false);
-  const [signatureUrl, setSignatureUrl] = useState(null);
   const sigCanvas = useRef({});
   const { setLoading: setToastLoading } = useToastContext();
-
+  const { setAlertError } = useAlertContext();
   const handleClearCanvas = () => {
     if (sigCanvas.current) {
       sigCanvas.current.clear();
-    }
-  };
-
-  const handleDownloadSignature = () => {
-    if (sigCanvas.current) {
-      const canvas = sigCanvas.current.getCanvas();
-      const dataUrl = canvas.toDataURL("image/png");
-
-      // Create download link
-      const link = document.createElement("a");
-      link.download = `signature-${session || "custom"}.png`;
-      link.href = dataUrl;
-      link.click();
     }
   };
 
@@ -58,11 +34,14 @@ const SignatureComponent = ({ session, token, onClose, onSignatureSaved }) => {
   };
 
   const handleExternalUpload = async () => {
+    // Check if the signature canvas is empty
+    if (sigCanvas.current && sigCanvas.current.isEmpty()) {
+      setAlertError("Please sign before approving."); // You can replace this with a more styled alert or toast notification
+      return; // Stop the function if the signature is empty
+    }
+
     const file = await getSignatureAsFile();
     if (file) {
-      // Now you can use this file with any upload service
-      console.log("File ready for upload:", file);
-
       // Example: Upload to a different service
       const formData = new FormData();
       formData.append("file", file);
@@ -84,14 +63,13 @@ const SignatureComponent = ({ session, token, onClose, onSignatureSaved }) => {
       if (request.status === 200) {
         onSignatureSaved();
       }
-      console.log(request, "submit");
     }
   };
 
   return (
     <Box>
       <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
-        {previewMode ? "Preview Your Signature" : "Draw Your Signature"}
+        Draw Your Signature
       </Typography>
 
       <Box
