@@ -40,8 +40,8 @@ import SignatureComponent from "./SignatureComponet";
 import { ClientImageAppBar, SelectedPatterns } from "./Utility";
 import { ClientSelectedImages } from "./ClientSelectedImages";
 import { useAlertContext } from "@/app/providers/MuiAlert";
-import colors from "@/app/helpers/colors";
-import { ImageSelection } from "./ImageSelection";
+import { ImageGroup } from "./ImageGroup";
+import { ChoosePattern } from "./ChoosePattern";
 
 const ClientImageSelection = ({ token }) => {
   // Main state
@@ -188,45 +188,6 @@ const ClientImageSelection = ({ token }) => {
     return Object.values(grouped);
   };
 
-  // Validation function to check if each space has at least one selected image
-  const validateSpaceSelections = () => {
-    if (!session?.selectedSpaces) return { isValid: true, missingSpaces: [] };
-
-    const imagesBySpace = groupImagesBySpace(availableImages);
-    const missingSpaces = [];
-
-    imagesBySpace.forEach((spaceGroup) => {
-      const spaceHasSelectedImage = spaceGroup.images.some((image) =>
-        selectedImages.find((selected) => selected.id === image.id)
-      );
-
-      if (!spaceHasSelectedImage) {
-        missingSpaces.push(spaceGroup.space);
-      }
-    });
-
-    return {
-      isValid: missingSpaces.length === 0,
-      missingSpaces,
-    };
-  };
-
-  // Function to scroll to a specific space
-  const scrollToSpace = (spaceId) => {
-    const spaceRef = spaceRefs.current[spaceId];
-    if (spaceRef) {
-      spaceRef.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-      // Add a visual highlight effect
-      spaceRef.style.backgroundColor = "#ffebee";
-      setTimeout(() => {
-        spaceRef.style.backgroundColor = "";
-      }, 2000);
-    }
-  };
-
   const handlePatternSelect = (pattern) => {
     setSelectedPattern((prev) => {
       if (prev.includes(pattern.id)) {
@@ -244,7 +205,6 @@ const ClientImageSelection = ({ token }) => {
     } else {
       setSelectedImages([...selectedImages, image]);
     }
-    // Clear validation error when user makes a selection
     setValidationError("");
   };
 
@@ -276,20 +236,8 @@ const ClientImageSelection = ({ token }) => {
 
     if (currentStep === 1) {
       // Validate space selections
-      const validation = validateSpaceSelections();
-
-      if (!validation.isValid) {
-        const spaceNames = validation.missingSpaces
-          .map((space) => space.name)
-          .join(", ");
-        setValidationError(
-          `Please select at least one image for: ${spaceNames}`
-        );
-
-        // Scroll to the first missing space
-        if (validation.missingSpaces.length > 0) {
-          scrollToSpace(validation.missingSpaces[0].id);
-        }
+      if (!selectedImages || selectedImages.length === 0) {
+        setValidationError(`Please select at least one image `);
         return;
       }
 
@@ -422,43 +370,11 @@ const ClientImageSelection = ({ token }) => {
         )}
 
         {currentStep === 0 && (
-          <Box>
-            <Typography variant="h5" gutterBottom sx={{ px: 2 }}>
-              Choose Your Color Pattern
-            </Typography>
-            <Grid container spacing={2} sx={{ p: 2 }}>
-              {availablePatterns.map((pattern) => (
-                <Grid size={{ xs: 6 }} key={pattern.id}>
-                  <Card
-                    sx={{
-                      cursor: "pointer",
-                      transition: "transform 0.2s",
-                      border: selectedPattern.includes(pattern.id)
-                        ? `2px solid ${colors.primary}`
-                        : "1px solid transparent",
-                      transform: selectedPattern.includes(pattern.id)
-                        ? "scale(1.02)"
-                        : "scale(1)",
-                    }}
-                    onClick={() => handlePatternSelect(pattern)}
-                  >
-                    <CardMedia
-                      component="img"
-                      height="150"
-                      maxHeight="150"
-                      image={pattern.avatarUrl}
-                      alt={pattern.name}
-                    />
-                    <CardContent>
-                      <Typography variant="h6" textAlign="center">
-                        {pattern.name}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
+          <ChoosePattern
+            availablePatterns={availablePatterns}
+            handlePatternSelect={handlePatternSelect}
+            selectedPattern={selectedPattern}
+          />
         )}
 
         {currentStep === 1 && (
@@ -481,12 +397,12 @@ const ClientImageSelection = ({ token }) => {
 
             <Divider />
 
-            <ImageSelection
+            <ImageGroup
               handleImageSelect={handleImageSelect}
-              imagesBySpace={imagesBySpace}
               loadingImages={loadingImages}
               selectedImages={selectedImages}
-              spaceRefs={spaceRefs}
+              images={availableImages}
+              type="SELECT"
             />
           </Box>
         )}

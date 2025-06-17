@@ -183,12 +183,13 @@ main :
 - Save the images in the pdf with the signature in the system and optianal download link for client
 - Allow staff to regenrate the pdf if any problems happened
 
+- Remove group by sapce
+- Make the image without frame better
+- Fix the way we render the image(can we make the image as one component)
+- Fix pdf make it in arabic and arabic direction
+- Make two image grid and make image bigger
 - امكانية رفع اكتر من صور ووضعها ضمن مساحه معينه
 - امكانية الفلتر بالمساحه او اللاوان
-
-- remove group by sapce
-- make the image without frame better
-- fix the way we render the image
 
   2- حجز المواعيد (we need to make admin pre add the available days and times in the days)
   make it simple like i can set make a schedule from 12 : 12 and leave a gap between each schedule as 15
