@@ -7,6 +7,17 @@ import { v4 as uuidv4 } from "uuid";
 import dayjs from "dayjs";
 import arabicFont from "./fonts/arabicFont.js";
 import * as fontkit from "fontkit";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+
+const __dirname = path.dirname(__filename);
+
+const fontPath = path.join(__dirname, "./fonts/NotoSansArabic-Regular.ttf");
+const fontBuffer = fs.readFileSync(fontPath);
+const fontBase64 = fontBuffer.toString("base64");
 export async function getSessionByToken(token) {
   const session = await prisma.clientImageSession.findUnique({
     where: { token },
@@ -87,7 +98,6 @@ export async function uploadPdfAndApproveSession({
       sessionData,
       signatureUrl,
     });
-
     const fileName = `session-${sessionData.id}-${uuidv4()}.pdf`;
     const remotePath = `public_html/uploads/${fileName}`;
 
@@ -183,7 +193,7 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
     const pdfDoc = await PDFDocument.create();
     pdfDoc.registerFontkit(fontkit);
     let page = pdfDoc.addPage([600, 800]);
-    const font = await pdfDoc.embedFont(arabicFont);
+    const font = await pdfDoc.embedFont(fontBase64);
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const { width, height } = page.getSize();
 

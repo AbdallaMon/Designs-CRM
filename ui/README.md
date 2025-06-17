@@ -183,10 +183,18 @@ main :
 - Save the images in the pdf with the signature in the system and optianal download link for client
 - Allow staff to regenrate the pdf if any problems happened
 
+- امكانية رفع اكتر من صور ووضعها ضمن مساحه معينه
+- امكانية الفلتر بالمساحه او اللاوان
+
+- remove group by sapce
+- make the image without frame better
+- fix the way we render the image
+
   2- حجز المواعيد (we need to make admin pre add the available days and times in the days)
   make it simple like i can set make a schedule from 12 : 12 and leave a gap between each schedule as 15
   then the staff can generate a link for admins or for the user this links (we have to check if there is availble days in the month before generating)
   ok these links are then go to client to select from them also user can have links like them
+  SPAIN(is the question user must answer and is related to meetings) and new tab before meetings
 
   4- Calendar
 
