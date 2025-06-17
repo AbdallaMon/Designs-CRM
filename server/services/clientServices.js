@@ -5,7 +5,6 @@ import { sendEmail } from "./sendMail.js";
 import { uploadToFTPAsBuffer } from "./utility.js";
 import { v4 as uuidv4 } from "uuid";
 import dayjs from "dayjs";
-import arabicFont from "./fonts/arabicFont.js";
 import * as fontkit from "fontkit";
 import * as fs from "node:fs";
 import * as path from "node:path";
