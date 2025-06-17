@@ -354,7 +354,7 @@ const ClientImageSelection = ({ token }) => {
     return (
       <Container maxWidth="lg" sx={{ mt: 0, mb: 4 }}>
         <ClientImageAppBar />
-        <Container maxWidth="lg" sx={{ px: 0, mt: 2, mb: 2 }}>
+        <Container maxWidth="lg" sx={{ px: "0px !important", mt: 2, mb: 2 }}>
           <Paper
             elevation={3}
             sx={{ p: 3, px: { xs: 1, md: 3 }, textAlign: "center" }}

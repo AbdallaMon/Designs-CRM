@@ -181,8 +181,18 @@ main :
 - Client select more than one image
 - Client approve selected image then signature
 - Save the images in the pdf with the signature in the system and optianal download link for client
-
 - Allow staff to regenrate the pdf if any problems happened
+
+  2- حجز المواعيد (we need to make admin pre add the available days and times in the days)
+  make it simple like i can set make a schedule from 12 : 12 and leave a gap between each schedule as 15
+  then the staff can generate a link for admins or for the user this links (we have to check if there is availble days in the month before generating)
+  ok these links are then go to client to select from them also user can have links like them
+
+  4- Calendar
+
+- Calender for calls and meetings ساعات وايام add break to calendar and admin can refuse it and ask user to change
+  add restricted days and times and select admins or for my self
+- Customer choose a time and other customers can't choose new page selected by user
 
 - Add to meeting questions and ask staff to answer this questions
 - Optional extra questions
@@ -190,6 +200,7 @@ main :
 - User answer all questions in one direction and add note for him
 - تحليل لشخصية العميل
 - Make it simple as possible
+- Enhance loading the kanban (make it filter data in the backend)
 
   3- تحديد ال style  
   8 - 2.5 + 5.5
@@ -199,10 +210,9 @@ main :
   10
   0-التعديلات
   1- الميتينج
-  6
+  8
   2- حجز المواعيد
   6
-
   4- Calendar
   8
   5- Courses
@@ -216,10 +226,6 @@ edits
 
 - Sales choose type of contract
 - Total price is final price
-
-- Calender for calls and meetings ساعات وايام add break to calendar and admin can refuse it and ask user to change
-  add restricted days and times and select admins or for my self
-- Customer choose a time and other customers can't choose new page selected by user
 
 - For meetings
 - Staff can generate link for client to select meeting from it for them self
@@ -247,11 +253,8 @@ edits
   google doesnt allow user to review directly
   https://search.google.com/local/writereview?placeid=ChIJq1Mf9xdBWBQRvBGqXO34afE
 
-- Designs types each related to images (tags) and with pdf with all images and allow user signature 2 images per row
-
-- Questions :
 - Can we make the deals less data?
-- Move rejected and archieve ?
+- Move rejected and archieve?
 - Check why lead page is so slow
 
 - dJkmjERCZGCEgaxl

@@ -728,7 +728,7 @@ model ClientImageSession {
   pdfUrl         String?
   notes          Note[]
   createdAt      DateTime                  @default(now())
-    error            Boolean                 @default(false) 
+  error            Boolean                 @default(false) 
 }
 
 model ClientImageSessionSpace {

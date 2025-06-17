@@ -582,7 +582,6 @@ router.post(`/image-session/save-images`, async (req, res) => {
 
 router.post("/image-session/generate-pdf", async (req, res) => {
   const { sessionData, signatureUrl } = req.body;
-  console.log(sessionData, "sessionData");
   try {
     const data = await changeSessionStatus({
       token: sessionData.token,

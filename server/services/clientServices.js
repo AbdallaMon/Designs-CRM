@@ -5,7 +5,8 @@ import { sendEmail } from "./sendMail.js";
 import { uploadToFTPAsBuffer } from "./utility.js";
 import { v4 as uuidv4 } from "uuid";
 import dayjs from "dayjs";
-
+import arabicFont from "./fonts/arabicFont.js";
+import * as fontkit from "fontkit";
 export async function getSessionByToken(token) {
   const session = await prisma.clientImageSession.findUnique({
     where: { token },
@@ -81,24 +82,28 @@ export async function uploadPdfAndApproveSession({
   sessionData,
   signatureUrl,
 }) {
-  const pdfBytes = await generateImageSessionPdf({
-    sessionData,
-    signatureUrl,
-  });
+  try {
+    const pdfBytes = await generateImageSessionPdf({
+      sessionData,
+      signatureUrl,
+    });
 
-  const fileName = `session-${sessionData.id}-${uuidv4()}.pdf`;
-  const remotePath = `public_html/uploads/${fileName}`;
+    const fileName = `session-${sessionData.id}-${uuidv4()}.pdf`;
+    const remotePath = `public_html/uploads/${fileName}`;
 
-  await uploadToFTPAsBuffer(pdfBytes, remotePath, true);
+    await uploadToFTPAsBuffer(pdfBytes, remotePath, true);
 
-  const publicUrl = `https://panel.dreamstudiio.com/uploads/${fileName}`;
+    const publicUrl = `https://panel.dreamstudiio.com/uploads/${fileName}`;
 
-  await approveSession({
-    token: sessionData.token,
-    clientLeadId: sessionData.clientLeadId,
-    id: Number(sessionData.id),
-    pdfUrl: publicUrl,
-  });
+    await approveSession({
+      token: sessionData.token,
+      clientLeadId: sessionData.clientLeadId,
+      id: Number(sessionData.id),
+      pdfUrl: publicUrl,
+    });
+  } catch (e) {
+    console.log("e in uploadig pdf", e);
+  }
 }
 
 /**
@@ -176,11 +181,10 @@ async function fetchImageBuffer(url, options = {}) {
 export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
   try {
     const pdfDoc = await PDFDocument.create();
+    pdfDoc.registerFontkit(fontkit);
     let page = pdfDoc.addPage([600, 800]);
-
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const font = await pdfDoc.embedFont(arabicFont);
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
     const { width, height } = page.getSize();
 
     const colors = {
@@ -330,7 +334,6 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
       y -= 15; // Space after the section content
     };
 
-    // Draw 'Selected Color Patterns' section
     await drawSection(
       "Selected Color Patterns",
       sessionData.preferredPatterns,
@@ -406,7 +409,6 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
       }
     );
 
-    // Draw 'Selected Spaces' section
     await drawSection(
       "Selected Spaces",
       sessionData.selectedSpaces,
@@ -712,11 +714,12 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
     const pdfBytes = await pdfDoc.save();
     return pdfBytes;
   } catch (e) {
+    console.log(e, "error in pdf generator");
+
     await prisma.clientImageSession.update({
       where: { id: Number(sessionData.id) },
       data: { error: true },
     });
-    console.log(e, "error in pdf generator");
   }
 }
 
