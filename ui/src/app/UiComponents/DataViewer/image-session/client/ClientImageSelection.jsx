@@ -4,25 +4,15 @@ import {
   Box,
   Typography,
   Button,
-  Card,
-  CardMedia,
-  CardContent,
-  Grid2 as Grid,
   Chip,
   CircularProgress,
   Alert,
-  AppBar,
-  Toolbar,
   Container,
   Paper,
   Divider,
   Stepper,
   Step,
   StepLabel,
-  Avatar,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
 } from "@mui/material";
 import {
   MdArrowBack as ArrowBack,
@@ -163,29 +153,6 @@ const ClientImageSelection = ({ token }) => {
     } else {
       setError("Failed to load images");
     }
-  };
-
-  // Helper function to group images by space
-  const groupImagesBySpace = (images) => {
-    const grouped = {};
-
-    session.selectedSpaces.forEach(({ space }) => {
-      grouped[space.id] = {
-        space: space,
-        images: [],
-      };
-    });
-    images.forEach((image) => {
-      if (image.spaces && image.spaces.length > 0) {
-        image.spaces.forEach((space) => {
-          if (grouped[space.id]) {
-            grouped[space.id].images.push(image);
-          }
-        });
-      }
-    });
-
-    return Object.values(grouped);
   };
 
   const handlePatternSelect = (pattern) => {
@@ -343,7 +310,6 @@ const ClientImageSelection = ({ token }) => {
   }
 
   // Group images by space for rendering
-  const imagesBySpace = groupImagesBySpace(availableImages);
 
   return (
     <Container maxWidth="lg" sx={{ pb: 12 }}>

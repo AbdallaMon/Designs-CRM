@@ -11,7 +11,7 @@ export function SelectedPatterns({ availablePatterns, selectedPattern }) {
           );
           return (
             <Box key={pattern} display="flex" alignItems="center">
-              <Avatar src={currentPattern.avatarUrl} sx={{ mr: 1 }}>
+              <Avatar sx={{ mr: 1 }}>
                 <MdPalette />
               </Avatar>
               <Box>

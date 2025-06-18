@@ -1,4 +1,4 @@
-import { error, PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb } from "pdf-lib";
 import prisma from "../prisma/prisma.js";
 import fetch from "node-fetch";
 import { sendEmail } from "./sendMail.js";
@@ -9,14 +9,17 @@ import * as fontkit from "fontkit";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "url";
-
+import reshaper from "arabic-persian-reshaper";
+import bidi from "bidi-js";
 const __filename = fileURLToPath(import.meta.url);
 
 const __dirname = path.dirname(__filename);
-
 const fontPath = path.join(__dirname, "./fonts/NotoSansArabic-Regular.ttf");
 const fontBuffer = fs.readFileSync(fontPath);
 const fontBase64 = fontBuffer.toString("base64");
+const fontBoldPath = path.join(__dirname, "./fonts/NotoSansArabic-Bold.ttf");
+const fontBoldBuffer = fs.readFileSync(fontBoldPath);
+const fontBoldBase64 = fontBoldBuffer.toString("base64");
 export async function getSessionByToken(token) {
   const session = await prisma.clientImageSession.findUnique({
     where: { token },
@@ -191,61 +194,126 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
   try {
     const pdfDoc = await PDFDocument.create();
     pdfDoc.registerFontkit(fontkit);
-    let page = pdfDoc.addPage([600, 800]);
+
+    // Embed fonts
     const font = await pdfDoc.embedFont(fontBase64);
-    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const boldFont = await pdfDoc.embedFont(fontBoldBase64);
+
+    let page = pdfDoc.addPage([600, 800]);
     const { width, height } = page.getSize();
 
+    // Enhanced Color Palette - slightly adjusted for better contrast and aesthetics
     const colors = {
-      primary: rgb(0.827, 0.675, 0.443),
-      primaryDark: rgb(0.745, 0.592, 0.361),
-      heading: rgb(0.22, 0.188, 0.157),
-      textColor: rgb(0.345, 0.302, 0.247),
-      bgPrimary: rgb(0.918, 0.906, 0.886),
-      success: rgb(0.518, 0.569, 0.471),
+      primary: rgb(0.827, 0.675, 0.443), // Original primary: Warm gold/bronze
+      primaryDark: rgb(0.745, 0.592, 0.361), // Slightly darker primary for accents/links
+      primaryLight: rgb(0.95, 0.92, 0.88), // Lighter primary for subtle backgrounds
+      heading: rgb(0.22, 0.188, 0.157), // Original heading: Dark brown/charcoal
+      textColor: rgb(0.345, 0.302, 0.247), // Original text color: Medium brown/gray
+      bgPrimary: rgb(0.918, 0.906, 0.886), // Original background primary: Light beige
+      accentBg: rgb(0.98, 0.97, 0.95), // Even lighter background for subtle section separation
+      success: rgb(0.518, 0.569, 0.471), // Original success: Greenish-brown (kept as is)
+      borderColor: rgb(0.7, 0.7, 0.7), // Neutral border for card elements
     };
 
     let y = height - 60; // Initial Y position for content
     const margin = 40;
     const contentWidth = width - margin * 2;
 
+    // Arabic text reshaping function
+    const reText = (text) => {
+      const reshape = reshaper.ArabicShaper.convertArabic;
+      let reshaped = reshape(text);
+      return reshaped;
+    };
+
+    // Helper function to calculate RTL text position
+    const getRTLTextX = (
+      text,
+      fontSize,
+      font,
+      containerStartX = margin,
+      containerWidth = contentWidth
+    ) => {
+      const textWidth = font.widthOfTextAtSize(text, fontSize);
+      return containerStartX + containerWidth - textWidth;
+    };
+
+    // Helper function to draw RTL text
+    const drawRTLText = (
+      text,
+      yPos,
+      size,
+      fontToUse,
+      colorToUse,
+      containerStartX = margin,
+      containerWidth = contentWidth,
+      customX = null // Added for absolute positioning if needed
+    ) => {
+      const processedText = reText(text);
+      const rtlX =
+        customX !== null
+          ? customX
+          : getRTLTextX(
+              processedText,
+              size,
+              fontToUse,
+              containerStartX,
+              containerWidth
+            );
+
+      page.drawText(processedText, {
+        x: rtlX,
+        y: yPos,
+        size,
+        font: fontToUse,
+        color: colorToUse,
+      });
+
+      return {
+        processedText,
+        actualX: rtlX,
+        textWidth: fontToUse.widthOfTextAtSize(processedText, size),
+      };
+    };
+
     /**
      * Checks if a new page is needed based on the remaining vertical space.
-     * If not enough space, a new page is added and y is reset.
-     * @param {number} requiredSpace - The minimum space needed below the current y position.
-     * @returns {boolean} True if a new page was added, false otherwise.
      */
     const checkNewPage = (requiredSpace = 50) => {
-      if (y < requiredSpace) {
+      // Add a buffer to requiredSpace to prevent content from touching the bottom
+      const footerHeight = signatureUrl ? 150 : 60; // Approximate height for footer including signature
+      if (y < margin + requiredSpace + footerHeight) {
         page = pdfDoc.addPage([600, 800]);
-        y = height - 60; // Reset y for new page
+        y = height - 60; // Reset y for new page, considering top margin
         return true;
       }
       return false;
     };
 
-    // Draw header background rectangle
+    // --- Header Section ---
+    const headerHeight = 150; // Increased header height
     page.drawRectangle({
       x: 0,
-      y: height - 120,
+      y: height - headerHeight,
       width: width,
-      height: 120,
+      height: headerHeight,
       color: colors.bgPrimary,
     });
 
-    // Try to embed and draw the logo with enhanced loading
+    // Logo positioning (keep on left for branding)
+    const logoYOffset = 30; // Offset from top of header background
     try {
       const logoBytes = await fetchImageBuffer(
-        "https://dreamstudiio.com/main-logo.jpg"
+        "https://dreamstudiio.com/dream-logo.jpg"
       );
       let logoImage;
       let logoEmbedded = false;
       try {
-        logoImage = await pdfDoc.embedPng(logoBytes); // Try as PNG first
+        logoImage = await pdfDoc.embedPng(logoBytes);
         logoEmbedded = true;
       } catch (pngErr) {
         try {
-          logoImage = await pdfDoc.embedJpg(logoBytes); // Then try as JPG
+          logoImage = await pdfDoc.embedJpg(logoBytes);
           logoEmbedded = true;
         } catch (jpgErr) {
           console.warn("Logo embedding failed:", { pngErr, jpgErr });
@@ -253,226 +321,323 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
       }
 
       if (logoEmbedded) {
-        const logoScale = 0.08;
+        const logoScale = 0.1; // Slightly increased logo size
         const logoScaled = logoImage.scale(logoScale);
-
         page.drawImage(logoImage, {
-          x: width - logoScaled.width - margin,
-          y: height - logoScaled.height - 30,
+          x: margin,
+          y: height - logoScaled.height - logoYOffset, // Position within the new header height
           width: logoScaled.width,
           height: logoScaled.height,
         });
-      } else {
-        console.warn("Could not embed logo image after all attempts.");
       }
     } catch (err) {
       console.warn("Logo load error:", err.message);
     }
 
-    // Draw main title
-    page.drawText("Image Session Summary", {
-      x: margin,
-      y,
-      size: 24,
-      font: boldFont,
-      color: colors.heading,
-    });
-    y -= 50; // Move y down after the title
+    // Main title (RTL aligned and centered vertically within the header)
+    const mainTitleText = "جلسة اختيار الصور";
+    const mainTitleFontSize = 32; // Increased font size
+
+    const mainTitleY = height - headerHeight / 2 - mainTitleFontSize / 2; // Center vertically in header
+
+    drawRTLText(
+      mainTitleText,
+      mainTitleY,
+      mainTitleFontSize,
+      boldFont,
+      colors.heading
+    );
+
+    // Adjust starting Y for content below the header
+    y = height - headerHeight - 30; // Leave some space below the header
 
     /**
-     * Draws a section with a title and a list of items.
-     * @param {string} title - The title of the section.
-     * @param {Array} items - The array of items to render.
-     * @param {Function} itemRenderer - Async function to render each item.
-     * For image section, it will receive the entire items array.
-     * @param {boolean} [isImageSection=false] - Flag to indicate if this is the image section,
-     * which requires special page break handling.
+     * Draws a section with RTL layout
      */
     const drawSection = async (
       title,
       items,
       itemRenderer,
-      isImageSection = false
+      isGridSection = false // Renamed from isImageSection for clarity
     ) => {
-      checkNewPage(80); // Check for page break before drawing section title
+      checkNewPage(80); // Check for new page before drawing section title
 
-      // Draw accent rectangle for section title
+      // Draw accent rectangle for section title (on the right side for RTL)
       page.drawRectangle({
-        x: margin - 5,
+        x: width - margin - 6, // Slightly wider accent
         y: y - 2,
-        width: 4,
-        height: 20,
+        width: 6,
+        height: 24, // Taller accent
         color: colors.primary,
       });
 
-      // Draw section title
-      page.drawText(title, {
-        x: margin + 10,
-        y,
-        size: 16,
-        font: boldFont,
-        color: colors.heading,
-      });
-
-      y -= 35; // Space after section title
+      // Draw section title (RTL aligned)
+      drawRTLText(title, y, 18, boldFont, colors.heading); // Slightly larger section titles
+      y -= 40; // More space after section title
 
       if (items && items.length > 0) {
-        if (isImageSection) {
-          // For image section, pass the entire items array to the renderer
-          // so it can manage its own grid layout and page breaks.
+        if (isGridSection) {
+          // For grid sections, pass all items to the renderer at once
           await itemRenderer(items);
         } else {
-          // For other sections, render items one by one, checking for page breaks for each.
           for (let i = 0; i < items.length; i++) {
-            checkNewPage(30); // Ensure enough space for the next item
+            checkNewPage(40); // Check more frequently for smaller items
             await itemRenderer(items[i], i, items.length);
           }
         }
       } else {
-        // If no items, draw "None selected" text.
-        page.drawText("None selected", {
-          x: margin + 20,
+        // "None selected" in Arabic, RTL aligned with padding
+        drawRTLText(
+          "لا يوجد عناصر محددة",
           y,
-          size: 11,
+          12,
           font,
-          color: colors.textColor,
-        });
-        y -= 25; // Move y down
+          colors.textColor,
+          margin + 20,
+          contentWidth - 20
+        );
+        y -= 25;
       }
 
-      y -= 15; // Space after the section content
+      y -= 20; // More space between sections
     };
 
+    // --- Patterns section (Colors) - Now as a two-column image grid ---
     await drawSection(
-      "Selected Color Patterns",
+      reText("الألوان المختارة"),
       sessionData.preferredPatterns,
-      async (pattern) => {
-        const imageSize = 20;
-        let imageOffsetX = margin + 20;
+      async (patterns) => {
+        // Now accepts the array of patterns
+        const imagesPerRow = 2;
+        const padding = 20; // Padding between images
+        const imageWidth = (contentWidth - padding) / imagesPerRow; // Calculate width for 2 images
+        const imageHeight = imageWidth - 100; // Keep aspect ratio 1:1 for palette items
+        const rowHeight = imageHeight + padding;
+        let currentY = y;
 
-        if (pattern.avatarUrl) {
-          let patternImageEmbedded = false;
-          try {
-            const imgBytes = await fetchImageBuffer(pattern.avatarUrl);
-            let imageEmbed;
-            try {
-              imageEmbed = await pdfDoc.embedPng(imgBytes); // Try as PNG
-              patternImageEmbedded = true;
-            } catch (pngErr) {
-              try {
-                imageEmbed = await pdfDoc.embedJpg(imgBytes); // Then try as JPG
-                patternImageEmbedded = true;
-              } catch (jpgErr) {
-                console.warn(
-                  `Pattern avatar embedding failed for ${pattern.avatarUrl}:`,
-                  { pngErr, jpgErr }
-                );
-              }
+        for (let i = 0; i < patterns.length; i++) {
+          const pattern = patterns[i];
+          const colIndex = i % imagesPerRow;
+
+          if (colIndex === 0) {
+            // New row
+            if (i > 0) {
+              currentY -= rowHeight;
             }
+            // Check for new page before drawing a new row
+            if (
+              currentY - imageHeight <
+              margin + (signatureUrl ? 150 : 60) + 20
+            ) {
+              // Add a buffer for safety
+              page = pdfDoc.addPage([600, 800]);
+              currentY = height - 60; // Reset y for new page
+            }
+          }
 
-            if (patternImageEmbedded) {
-              page.drawImage(imageEmbed, {
-                x: imageOffsetX,
-                y: y - imageSize + 5,
-                width: imageSize,
-                height: imageSize,
-              });
-              imageOffsetX += imageSize + 10;
-            } else {
+          // Calculate X position for RTL layout (right to left)
+          const imageX =
+            width - margin - (colIndex + 1) * imageWidth - colIndex * padding;
+          const imageDrawY = currentY - imageHeight;
+
+          let patternImageEmbedded = false;
+          if (pattern.avatarUrl) {
+            try {
+              const imgBytes = await fetchImageBuffer(pattern.avatarUrl);
+              let imageEmbed;
+              try {
+                imageEmbed = await pdfDoc.embedPng(imgBytes);
+                patternImageEmbedded = true;
+              } catch (pngErr) {
+                try {
+                  imageEmbed = await pdfDoc.embedJpg(imgBytes);
+                  patternImageEmbedded = true;
+                } catch (jpgErr) {
+                  console.warn(
+                    `Pattern avatar embedding failed for ${pattern.avatarUrl}:`,
+                    { pngErr, jpgErr }
+                  );
+                }
+              }
+
+              if (patternImageEmbedded) {
+                // Draw border for the image
+                page.drawRectangle({
+                  x: imageX - 4, // Slightly thicker border
+                  y: imageDrawY - 4,
+                  width: imageWidth + 8,
+                  height: imageHeight + 8,
+                  color: colors.primaryDark, // Darker primary for image borders
+                  xRounded: 8, // Rounded corners
+                  yRounded: 8,
+                });
+                // Draw image
+                page.drawImage(imageEmbed, {
+                  x: imageX,
+                  y: imageDrawY,
+                  width: imageWidth,
+                  height: imageHeight,
+                });
+              }
+            } catch (fetchErr) {
               console.warn(
-                `Could not embed pattern avatar image ${pattern.avatarUrl}`
+                `Failed to fetch pattern avatar ${pattern.avatarUrl}: ${fetchErr.message}`
               );
             }
-          } catch (fetchErr) {
-            console.warn(
-              `Failed to fetch pattern avatar ${pattern.avatarUrl}: ${fetchErr.message}`
-            );
           }
 
           if (!patternImageEmbedded) {
-            page.drawText("Image", {
-              x: imageOffsetX,
-              y,
-              size: 10,
-              font,
-              color: colors.textColor,
+            // Fallback box for missing image
+            page.drawRectangle({
+              x: imageX,
+              y: imageDrawY,
+              width: imageWidth,
+              height: imageHeight,
+              color: colors.accentBg, // Light background for fallback box
+              borderColor: colors.borderColor,
+              borderWidth: 1,
+              xRounded: 8,
+              yRounded: 8,
             });
-            page.drawText(`(${pattern.avatarUrl})`, {
-              x: imageOffsetX + 25,
-              y,
-              size: 8,
+
+            // Fallback text in Arabic, centered in image area
+            const fallbackText = reText("لا توجد صورة");
+            const fallbackFontSize = 10;
+            const fallbackTextWidth = font.widthOfTextAtSize(
+              reText(fallbackText),
+              fallbackFontSize
+            );
+            const fallbackX = imageX + (imageWidth - fallbackTextWidth) / 2;
+            const fallbackY =
+              imageDrawY + imageHeight / 2 - fallbackFontSize / 2;
+
+            page.drawText(fallbackText, {
+              x: fallbackX,
+              y: fallbackY,
+              size: fallbackFontSize,
               font,
               color: colors.textColor,
             });
           }
         }
 
-        page.drawText(`• ${pattern.name}`, {
-          x: imageOffsetX,
-          y,
-          size: 12,
-          font,
-          color: colors.textColor,
-        });
-        y -= 25; // Move y down after each pattern item
-      }
+        // Adjust Y after the patterns grid
+        if (patterns.length > 0) {
+          const lastRowIndex = Math.floor((patterns.length - 1) / imagesPerRow);
+          const effectiveLastRowTopY = currentY - lastRowIndex * rowHeight;
+          const finalImageDrawY = effectiveLastRowTopY - imageHeight;
+          y = finalImageDrawY - padding;
+        }
+      },
+      true // Mark as a grid section
     );
 
+    // --- Spaces section ---
     await drawSection(
-      "Selected Spaces",
+      reText("المساحات المختارة"),
       sessionData.selectedSpaces,
-      async (space) => {
-        page.drawText(`• ${space.space.name}`, {
-          x: margin + 20,
-          y,
-          size: 12,
-          font,
-          color: colors.textColor,
+      async (spaceItem) => {
+        const spaceName = spaceItem.space.name;
+        const spaceDescription = spaceItem.space.description || ""; // Assuming description might exist
+        const spaceHeight = 40 + (spaceDescription ? 20 : 0); // Dynamic height for space card
+
+        // Check for new page if next item won't fit
+        if (y < spaceHeight + 30) {
+          checkNewPage(spaceHeight + 30);
+        }
+
+        const cardWidth = contentWidth;
+        const cardX = margin;
+        const cardY = y - spaceHeight;
+
+        // Draw background for the space item (card-like UI)
+        page.drawRectangle({
+          x: cardX,
+          y: cardY,
+          width: cardWidth,
+          height: spaceHeight,
+          color: colors.primaryLight, // Lighter primary for space cards
+          borderColor: colors.primary, // Primary color border
+          borderWidth: 1,
+          xRounded: 8,
+          yRounded: 8,
         });
-        y -= 22; // Move y down after each space item
+
+        // Draw space name (RTL aligned, within the card)
+        const nameFontSize = 16;
+        const nameProcessed = reText(spaceName);
+        const nameX = getRTLTextX(
+          nameProcessed,
+          nameFontSize,
+          boldFont,
+          cardX + 15,
+          cardWidth - 30
+        );
+        page.drawText(nameProcessed, {
+          x: nameX,
+          y: cardY + spaceHeight - 30, // Position towards top of card
+          size: nameFontSize,
+          font: boldFont,
+          color: colors.heading,
+        });
+
+        // Draw space description if available (RTL aligned, smaller text)
+        if (spaceDescription) {
+          const descFontSize = 10;
+          const descProcessed = reText(spaceDescription);
+          const descX = getRTLTextX(
+            descProcessed,
+            descFontSize,
+            font,
+            cardX + 15,
+            cardWidth - 30
+          );
+          page.drawText(descProcessed, {
+            x: descX,
+            y: cardY + spaceHeight - 50, // Below name
+            size: descFontSize,
+            font: font,
+            color: colors.textColor,
+          });
+        }
+
+        y -= spaceHeight + 15; // Move Y down by card height + padding
       }
     );
 
-    // Draw 'Selected Images' section - now with 4 images per row
+    // --- Images section (RTL layout for images grid) ---
     await drawSection(
-      "Selected Images",
+      reText("الصور المختارة"),
       sessionData.selectedImages,
       async (images) => {
-        // This renderer receives the full array of images
-        const imagesPerRow = 4; // Display 4 images per row
-        const padding = 10; // Padding between images and rows
-        const imgSize = 115; // Calculated to fit 4 images within the content width (520) with padding
-
+        const imagesPerRow = 2;
+        const padding = 20; // Increased padding between images
+        const imgSize = (contentWidth - padding) / imagesPerRow; // Calculate image size to fit
         const rowHeight = imgSize + padding;
-
-        // `currentY` tracks the top Y position of the row being drawn *on the current page*.
         let currentY = y;
 
         for (let i = 0; i < images.length; i++) {
           const image = images[i];
-          const colIndex = i % imagesPerRow; // Column index for the current image (0 to 3)
+          const colIndex = i % imagesPerRow;
 
-          // Check for a new page only when starting a new row (or it's the very first image)
           if (colIndex === 0) {
-            // If this is not the very first image in the entire section, decrement currentY for the new row
             if (i > 0) {
               currentY -= rowHeight;
             }
 
-            // Determine the required space at the bottom of the page.
-            const requiredSpaceAtBottom = signatureUrl ? 150 : 60;
-
-            // Check if drawing this row would push content below the required bottom space.
-            // `currentY - imgSize` is the calculated bottom of the image.
+            // Check for new page before drawing a new row
+            const requiredSpaceAtBottom = signatureUrl ? 180 : 80; // More space for footer
             if (currentY - imgSize < requiredSpaceAtBottom) {
               page = pdfDoc.addPage([600, 800]);
-              currentY = height - 60; // Reset currentY to the top of the new page
+              currentY = height - 60; // Reset y for new page
             }
           }
 
-          // Calculate the X position for the current image
-          const imageX = margin + colIndex * (imgSize + padding);
-          // Calculate the Y position for the current image (bottom-left corner)
+          // Calculate X position for RTL layout (right to left)
+          // First image starts from the rightmost position
+          // Second image is to its left
+          const imageX =
+            width - margin - (colIndex + 1) * imgSize - colIndex * padding;
           const imageDrawY = currentY - imgSize;
 
           let imageEmbedded = false;
@@ -480,11 +645,11 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
             const imgBytes = await fetchImageBuffer(image.image.url);
             let imageEmbed;
             try {
-              imageEmbed = await pdfDoc.embedPng(imgBytes); // Try as PNG
+              imageEmbed = await pdfDoc.embedPng(imgBytes);
               imageEmbedded = true;
             } catch (pngErr) {
               try {
-                imageEmbed = await pdfDoc.embedJpg(imgBytes); // Then try as JPG
+                imageEmbed = await pdfDoc.embedJpg(imgBytes);
                 imageEmbedded = true;
               } catch (jpgErr) {
                 console.warn(`Image embedding failed for ${image.image.url}:`, {
@@ -495,65 +660,91 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
             }
 
             if (imageEmbedded) {
-              // Draw a primary colored rectangle border around the image
+              // Draw border with primary color
               page.drawRectangle({
-                x: imageX - 2,
-                y: imageDrawY - 2,
-                width: imgSize + 4,
-                height: imgSize + 4,
-                color: colors.primary,
+                x: imageX - 4, // Slightly thicker border
+                y: imageDrawY - 4,
+                width: imgSize + 8,
+                height: imgSize + 8,
+                color: colors.primaryDark, // Darker primary for image borders
+                xRounded: 5, // Rounded corners for image frames
+                yRounded: 5,
               });
 
-              // Draw the image
+              // Draw image
               page.drawImage(imageEmbed, {
                 x: imageX,
                 y: imageDrawY,
                 width: imgSize,
                 height: imgSize,
               });
-            } else {
-              // Fallback if image could not be embedded (after successful fetch)
-              console.warn(
-                `Could not embed image ${image.image.url} after all embed attempts.`
-              );
             }
           } catch (fetchErr) {
-            // Fallback if image could not be fetched at all
             console.warn(
               `Failed to fetch image ${image.image.url}: ${fetchErr.message}`
             );
           }
 
           if (!imageEmbedded) {
-            // Draw fallback message
-            page.drawText("Could not load image", {
+            // Fallback box for missing image
+            page.drawRectangle({
               x: imageX,
-              y: imageDrawY + imgSize / 2,
-              size: 9,
+              y: imageDrawY,
+              width: imgSize,
+              height: imgSize,
+              color: colors.accentBg, // Light background for fallback box
+              borderColor: colors.borderColor,
+              borderWidth: 1,
+              xRounded: 5,
+              yRounded: 5,
+            });
+
+            // Fallback message in Arabic, centered in image area
+            const fallbackText = reText("لا يمكن تحميل الصورة");
+            const fallbackFontSize = 10;
+            const fallbackTextWidth = font.widthOfTextAtSize(
+              fallbackText,
+              fallbackFontSize
+            );
+            const fallbackX = imageX + (imgSize - fallbackTextWidth) / 2;
+            const fallbackY = imageDrawY + imgSize / 2 + 5;
+
+            page.drawText(fallbackText, {
+              x: fallbackX,
+              y: fallbackY,
+              size: fallbackFontSize,
               font,
               color: colors.textColor,
             });
 
-            // Draw the clickable text
-            const fallbackText = "Click to open image link";
-            const fontSize = 9;
-            const textWidth = font.widthOfTextAtSize(fallbackText, fontSize);
-            const textHeight = fontSize;
-            const linkY = imageDrawY + imgSize / 2 - 10;
+            // Clickable link text in Arabic below fallback message
+            const linkText = reText("اضغط لفتح الرابط");
+            const linkFontSize = 10;
+            const linkTextWidth = font.widthOfTextAtSize(
+              linkText,
+              linkFontSize
+            );
+            const linkX = imageX + (imgSize - linkTextWidth) / 2;
+            const linkY = imageDrawY + imgSize / 2 - 15; // Adjusted Y for link
 
-            page.drawText(fallbackText, {
-              x: imageX,
+            page.drawText(linkText, {
+              x: linkX,
               y: linkY,
-              size: fontSize,
+              size: linkFontSize,
               font,
-              color: colors.primaryDark,
+              color: colors.primaryDark, // Use primaryDark for link
             });
 
-            // Create and register the link annotation
+            // Create link annotation
             const linkAnnotation = pdfDoc.context.obj({
               Type: "Annot",
               Subtype: "Link",
-              Rect: [imageX, linkY, imageX + textWidth, linkY + textHeight],
+              Rect: [
+                linkX,
+                linkY,
+                linkX + font.widthOfTextAtSize(linkText, linkFontSize),
+                linkY + linkFontSize,
+              ],
               Border: [0, 0, 0],
               A: {
                 Type: "Action",
@@ -563,8 +754,6 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
             });
 
             const linkRef = pdfDoc.context.register(linkAnnotation);
-
-            // Attach annotation to page
             const existingAnnots = page.node.Annots();
             if (existingAnnots) {
               existingAnnots.push(linkRef);
@@ -575,50 +764,42 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
         }
 
         if (images.length > 0) {
-          // Calculate the Y coordinate for the bottom of the last complete or partial row
           const lastRowIndex = Math.floor((images.length - 1) / imagesPerRow);
-          const effectiveLastRowTopY = currentY - lastRowIndex * rowHeight; // Use currentY here for consistent calculation
+          const effectiveLastRowTopY = currentY - lastRowIndex * rowHeight;
           const finalImageDrawY = effectiveLastRowTopY - imgSize;
           y = finalImageDrawY - padding;
         }
       },
-      true // Mark this as an image section for specific handling in drawSection
+      true
     );
 
-    // Draw 'Client Signature' section if signatureUrl is provided
+    // --- Signature section ---
     if (signatureUrl) {
-      checkNewPage(150); // Ensure enough space for the signature block
+      checkNewPage(180); // Ensure enough space for signature and footer
 
-      // Draw accent rectangle for signature title
+      // Accent rectangle on the right for RTL
       page.drawRectangle({
-        x: margin - 5,
+        x: width - margin - 6,
         y: y - 2,
-        width: 4,
-        height: 20,
+        width: 6,
+        height: 24,
         color: colors.primary,
       });
 
-      // Draw signature section title
-      page.drawText("Client Signature", {
-        x: margin + 10,
-        y,
-        size: 16,
-        font: boldFont,
-        color: colors.heading,
-      });
-
-      y -= 40; // Space after signature title
+      // Signature title (RTL aligned)
+      drawRTLText("توقيع العميل", y, 16, boldFont, colors.heading);
+      y -= 40;
 
       let signatureEmbedded = false;
       try {
         const sigBytes = await fetchImageBuffer(signatureUrl);
         let sigImage;
         try {
-          sigImage = await pdfDoc.embedPng(sigBytes); // Try as PNG
+          sigImage = await pdfDoc.embedPng(sigBytes);
           signatureEmbedded = true;
         } catch (pngErr) {
           try {
-            sigImage = await pdfDoc.embedJpg(sigBytes); // Then try as JPG
+            sigImage = await pdfDoc.embedJpg(sigBytes);
             signatureEmbedded = true;
           } catch (jpgErr) {
             console.warn("Signature embedding failed:", { pngErr, jpgErr });
@@ -626,7 +807,6 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
         }
 
         if (signatureEmbedded) {
-          // Scale signature image to fit within defined max dimensions
           const maxW = 200;
           const maxH = 80;
           const { width: sw, height: sh } = sigImage.size();
@@ -644,25 +824,30 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
             sigW *= ratio;
           }
 
+          // Position signature on the right side for RTL, with a subtle border
+          const sigX = width - margin - sigW - 15; // Padding from right margin
+          const sigY = y - sigH - 10; // Padding below title
+
           page.drawRectangle({
-            x: margin + 15,
-            y: y - sigH - 5,
-            width: sigW + 10,
-            height: sigH + 10,
-            color: colors.bgPrimary,
+            x: sigX - 8, // Wider border
+            y: sigY - 8,
+            width: sigW + 16,
+            height: sigH + 16,
+            color: colors.primaryLight, // Use primaryLight for signature box background
+            borderColor: colors.borderColor,
+            borderWidth: 1,
+            xRounded: 5,
+            yRounded: 5,
           });
 
-          // Draw the signature image
           page.drawImage(sigImage, {
-            x: margin + 20,
-            y: y - sigH,
+            x: sigX,
+            y: sigY,
             width: sigW,
             height: sigH,
           });
 
-          y -= sigH + 30; // Move y down after signature
-        } else {
-          console.warn(`Could not embed signature image ${signatureUrl}`);
+          y -= sigH + 40; // More space after signature
         }
       } catch (fetchErr) {
         console.warn(
@@ -671,64 +856,66 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
       }
 
       if (!signatureEmbedded) {
-        // Fallback text if signature fails to load or embed
-        page.drawText(" Signature failed to load", {
-          x: margin + 20,
+        // Fallback text in Arabic, RTL aligned
+        drawRTLText(
+          "فشل في تحميل التوقيع",
           y,
-          size: 12,
+          12,
           font,
-          color: colors.textColor,
-        });
-        page.drawText(`(${signatureUrl})`, {
-          x: margin + 20,
-          y: y - 15,
-          size: 8,
-          font,
-          color: colors.textColor,
-        });
-        y -= 30; // Move y down
+          colors.textColor,
+          margin + 20,
+          contentWidth - 20
+        );
+        y -= 30;
       }
     }
 
-    checkNewPage(60);
+    // --- Footer ---
+    // Ensure footer elements are within a safe bottom margin
+    const footerStartY = 40; // Start drawing footer content from this Y position
 
+    // Left-aligned English text
     page.drawText("GENERATED BY DREAM STUDIO", {
       x: margin,
-      y: 25,
-      size: 10,
+      y: footerStartY,
+      size: 11,
       font: boldFont,
       color: colors.heading,
     });
 
     page.drawText("Professional Interior Design Solutions", {
       x: margin,
-      y: 10,
-      size: 9,
+      y: footerStartY - 15,
+      size: 10,
       font: font,
-      color: colors.textLight,
+      color: colors.textColor,
     });
 
-    // Date stamp
-    const currentDate = dayjs().format("MMMM D, YYYY");
-
-    page.drawText(`Report Generated: ${currentDate}`, {
-      x: width - margin - 150,
-      y: 15,
-      size: 8,
+    // Date stamp (RTL-friendly positioning on the right)
+    const currentDate = dayjs().format("MMMM D,YYYY");
+    const dateText = `Report Generated: ${currentDate}`;
+    const dateFontSize = 9;
+    const dateTextWidth = font.widthOfTextAtSize(dateText, dateFontSize);
+    const dateX = width - margin - dateTextWidth; // Align to right margin
+    page.drawText(dateText, {
+      x: dateX,
+      y: footerStartY - 5, // Slightly higher than second line of English text
+      size: dateFontSize,
       font,
-      color: colors.textLight,
+      color: colors.textColor,
     });
 
-    // Save the PDF document and return bytes
     const pdfBytes = await pdfDoc.save();
     return pdfBytes;
   } catch (e) {
     console.log(e, "error in pdf generator");
 
-    await prisma.clientImageSession.update({
-      where: { id: Number(sessionData.id) },
-      data: { error: true },
-    });
+    // Assuming prisma and sessionData.id are available in this scope for error logging
+    // await prisma.clientImageSession.update({
+    //   where: { id: Number(sessionData.id) },
+    //   data: { error: true },
+    // });
+    throw e; // Re-throw to propagate the error if necessary
   }
 }
 
@@ -826,13 +1013,13 @@ async function sendEmailToClient({ clientName, clientEmail, pdfUrl, token }) {
     <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px;">
       <div style="max-width: 600px; margin: auto; background: #fcfbf9; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.03); overflow: hidden;">
         <div style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%); padding: 20px; text-align: center;">
-          <img src="https://dreamstudiio.com/main-logo.jpg" alt="Dream Studio" style="max-height: 60px;" />
+          <img src="https://dreamstudiio.com/dream-logo.jpg" alt="Dream Studio" style="max-height: 60px;" />
         </div>
-        <div style="padding: 30px;">
+        <div style="padding: 12px;">
           <h2 style="color: #383028;">Thank you, ${clientName}!</h2>
           <p>Your image session has been approved!</p>
           
-          <div style="background: #f8f6f3; border-radius: 8px; padding: 20px; margin: 20px 0;">
+          <div style="background: #f8f6f3; border-radius: 8px; padding: 12px; margin: 20px 0;">
             <h3 style="color: #383028; margin-top: 0;">What would you like to do next?</h3>
             <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 6px; border-left: 4px solid #be975c;">
               <p style="margin: 0 0 8px 0; font-weight: bold; color: #383028;">🖼️ Preview Your Session</p>
@@ -856,7 +1043,6 @@ async function sendEmailToClient({ clientName, clientEmail, pdfUrl, token }) {
       </div>
     </div>
   `;
-
   await sendEmail(
     clientEmail,
     "✅ Your Image Session is Approved",
@@ -876,7 +1062,7 @@ async function sendEmailForStaff({
     <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px;">
       <div style="max-width: 600px; margin: auto; background: #fcfbf9; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.03); overflow: hidden;">
         <div style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%); padding: 20px; text-align: center;">
-          <img src="https://dreamstudiio.com/main-logo.jpg" alt="Dream Studio" style="max-height: 60px;" />
+          <img src="https://dreamstudiio.com/dream-logo.jpg" alt="Dream Studio" style="max-height: 60px;" />
         </div>
         <div style="padding: 30px;">
           <h2 style="color: #383028;">Client Image Session Approved</h2>

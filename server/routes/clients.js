@@ -18,6 +18,7 @@ import {
   getSessionByToken,
   submitSelectedImages,
   submitSelectedPatterns,
+  uploadPdfAndApproveSession,
 } from "../services/clientServices.js";
 import {
   addNote,
@@ -588,8 +589,8 @@ router.post("/image-session/generate-pdf", async (req, res) => {
       status: "APPROVED",
       extra: { signature: signatureUrl },
     });
-    await pdfQueue.add("generate-approve-pdf", { sessionData, signatureUrl });
-
+    // await pdfQueue.add("generate-approve-pdf", { sessionData, signatureUrl });
+    await uploadPdfAndApproveSession({ sessionData, signatureUrl });
     return res
       .status(200)
       .json({ data, message: "Response saved succussfully", url: null });

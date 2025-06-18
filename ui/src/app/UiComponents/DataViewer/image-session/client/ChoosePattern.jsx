@@ -37,13 +37,11 @@ export function ChoosePattern({
       </Typography>
       <Grid
         container
-        spacing={isMobile ? 2 : 2} // Tighter spacing on mobile
-        sx={{ p: 0, justifyContent: "center" }} // Centered grid items on mobile
+        spacing={isMobile ? 2 : 2}
+        sx={{ p: 0, justifyContent: "center" }}
       >
         {availablePatterns.map((pattern) => (
-          <Grid item xs={6} sm={4} md={3} key={pattern.id}>
-            {" "}
-            {/* Responsive grid sizing */}
+          <Grid size={{ md: 6 }} key={pattern.id}>
             <Card
               sx={{
                 cursor: "pointer",
