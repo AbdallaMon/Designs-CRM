@@ -5,7 +5,7 @@ import {
   getPagination,
   getTokenData,
   verifyTokenAndHandleAuthorization,
-} from "../services/utility.js";
+} from "../services/main/utility.js";
 import {
   addNote,
   assignLeadToAUser,
@@ -62,8 +62,8 @@ import {
   updateClientLeadStatus,
   updateProject,
   updateTask,
-} from "../services/sharedServices.js";
-import { getAdminClientLeadDetails } from "../services/adminServices.js";
+} from "../services/main/sharedServices.js";
+import { getAdminClientLeadDetails } from "../services/main/adminServices.js";
 import {
   createCallReminder,
   createFile,
@@ -72,7 +72,7 @@ import {
   createPriceOffer,
   updateCallReminderStatus,
   updateMeetingReminderStatus,
-} from "../services/staffServices.js";
+} from "../services/main/staffServices.js";
 import {
   generateTelegramMessageLink,
   getFilePath,
@@ -85,13 +85,15 @@ import {
   getReviews,
   handleOAuthCallback,
 } from "../services/reviews.js";
-import { message } from "telegram/client/index.js";
 
 const router = Router();
+import questionsRoutes from "./questions/questions.js";
 
 router.use((req, res, next) => {
   verifyTokenAndHandleAuthorization(req, res, next, "SHARED");
 });
+router.use("/questions", questionsRoutes);
+
 router.get("/client-leads", async (req, res) => {
   try {
     const searchParams = req.query;

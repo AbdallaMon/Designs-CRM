@@ -1,4 +1,4 @@
-import { uploadFiles, uploadToFTPAsBuffer } from "../services/utility.js";
+import { uploadFiles, uploadToFTPAsBuffer } from "../services/main/utility.js";
 import express from "express";
 const router = express.Router();
 import prisma from "../prisma/prisma.js";
@@ -14,18 +14,17 @@ import dayjs from "dayjs";
 import Stripe from "stripe";
 import {
   changeSessionStatus,
-  generateImageSessionPdf,
   getSessionByToken,
   submitSelectedImages,
   submitSelectedPatterns,
   uploadPdfAndApproveSession,
-} from "../services/clientServices.js";
+} from "../services/main/clientServices.js";
 import {
   addNote,
   getImages,
   getImageSesssionModel,
   getNotes,
-} from "../services/sharedServices.js";
+} from "../services/main/sharedServices.js";
 import { pdfQueue } from "../services/queues/pdfQueue.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);

@@ -18,19 +18,13 @@
 - امكانية رفع اكتر من صور ووضعها ضمن مساحه معينه
 - امكانية الفلتر بالمساحه او اللاوان
 
+- We need to add schema for to enter client diagnosis
+
   2- حجز المواعيد (we need to make admin pre add the available days and times in the days)
   make it simple like i can set make a schedule from 12 : 12 and leave a gap between each schedule as 15
   then the staff can generate a link for admins or for the user this links (we have to check if there is availble days in the month before generating)
   ok these links are then go to client to select from them also user can have links like them
   SPAIN(is the question user must answer and is related to meetings) and new tab before meetings
-
-- New page for register make it en and without video
-
-  4- Calendar
-
-- Calender for calls and meetings ساعات وايام add break to calendar and admin can refuse it and ask user to change
-  add restricted days and times and select admins or for my self
-- Customer choose a time and other customers can't choose new page selected by user
 
 - Add to meeting questions and ask staff to answer this questions
 - Optional extra questions
@@ -40,8 +34,23 @@
 - Make it simple as possible
 - Enhance loading the kanban (make it filter data in the backend)
 
-  3- تحديد ال style  
-  8 - 2.5 + 5.5
+- New page for register make it en and without video
+
+  4- Calendar
+
+- Calender for calls and meetings ساعات وايام add break to calendar and admin can refuse it and ask user to change
+  add restricted days and times and select admins or for my self
+- Customer choose a time and other customers can't choose new page selected by user
+
+تمام هضيف زرار انك تقدر ترسل ايميل بلينك جديد يقدر يدفع منه ويكمل تسجيل
+إمكانية تحديد أشخاص علي واتساب يردوا علي عميل معين
+او أعرف مين رد علي عميل لو مشتركين في رقم واحد
+إمكانية تعديل ال lead
+موظف جديد يقدر يتابع ال no consulated lead
+ويقدر يشوف كل ليد تبع انهي موظف
+
+3- تحديد ال style  
+ 8 - 2.5 + 5.5
 
 - الاولويات
   -1 تليجرام  

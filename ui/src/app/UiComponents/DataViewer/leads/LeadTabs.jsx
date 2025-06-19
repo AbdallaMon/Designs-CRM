@@ -47,6 +47,7 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import DeleteModelButton from "./extra/DeleteModelButton";
+import { SPAINQuestionsDialog } from "../meeting/SPAIN/SPAINQuestionDialog";
 export function CallReminders({ lead, setleads, admin, notUser }) {
   const [callReminders, setCallReminders] = useState(lead?.callReminders);
   const theme = useTheme();
@@ -347,8 +348,10 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                             text="Update meeting result"
                           />
                         )}
+                        <SPAINQuestionsDialog meetingReminderId={call.id} />
                       </>
                     )}
+
                     <DeleteModelButton
                       item={call}
                       model={"MeetingReminders"}

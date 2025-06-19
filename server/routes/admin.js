@@ -4,7 +4,7 @@ import {
   getTokenData,
   handlePrismaError,
   verifyTokenAndHandleAuthorization,
-} from "../services/utility.js";
+} from "../services/main/utility.js";
 import {
   changeUserStatus,
   createAFixedData,
@@ -41,11 +41,11 @@ import {
   updateNotAllowedCountries,
   updateUserMaxLeads,
   updateUserRoles,
-} from "../services/adminServices.js";
+} from "../services/main/adminServices.js";
 import multer from "multer";
 import prisma from "../prisma/prisma.js";
 import { newLeadNotification } from "../services/notification.js";
-import { createGroupProjects } from "../services/sharedServices.js";
+import { createGroupProjects } from "../services/main/sharedServices.js";
 
 const router = Router();
 

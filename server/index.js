@@ -33,7 +33,6 @@ app.use(
 const httpServer = createServer(app);
 initSocket(httpServer); // Initialize socket.io with the server
 app.use("/uploads", express.static("uploads")); // Serve static files
-
 app.use(express.json());
 app.use(cookieParser());
 app.use("/auth", authRoutes);

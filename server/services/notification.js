@@ -1,7 +1,7 @@
-import {
-  createNotification,
-  getUserDetailsWithSpecificFields,
-} from "./utility.js";
+// import {
+//   createNotification,
+//   getUserDetailsWithSpecificFields,
+// } from "../services/main/"
 import {
   dashboardLink,
   dealsLink,
@@ -15,6 +15,10 @@ import {
 } from "./links.js";
 import dayjs from "dayjs";
 import { sendEmail } from "./sendMail.js";
+import {
+  createNotification,
+  getUserDetailsWithSpecificFields,
+} from "./main/utility.js";
 
 export async function convertALeadNotification(lead) {
   const user = await getUserDetailsWithSpecificFields(lead.userId);

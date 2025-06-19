@@ -5,8 +5,8 @@ import {
   logoutUser,
   requestPasswordReset,
   resetPassword,
-} from "../services/authServices.js";
-import { handlePrismaError, verifyToken } from "../services/utility.js";
+} from "../services/main/authServices.js";
+import { handlePrismaError, verifyToken } from "../services/main/utility.js";
 
 const router = Router();
 

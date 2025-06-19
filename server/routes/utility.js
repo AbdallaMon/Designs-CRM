@@ -7,7 +7,7 @@ import {
   searchData,
   uploadFiles,
   verifyTokenUsingReq,
-} from "../services/utility.js";
+} from "../services/main/utility.js";
 
 const router = express.Router();
 

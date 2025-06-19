@@ -147,6 +147,11 @@ enum SessionStatus {
   APPROVED
 }
 
+enum MeetingType {
+  SPAIN
+  OBJECTIONS // English name for "اعتراضات"
+}
+
 model ClientLeadUpdate {
   id          Int          @id @default(autoincrement())
   title       String
@@ -259,11 +264,19 @@ model MeetingReminder {
   reminderReason String?            @db.Text
   user           User               @relation(fields: [userId], references: [id])
   userId         Int
+  admin          User?              @relation("AdminMeetingReminders", fields: [adminId], references: [id])
+  adminId        Int?
+  isAdmin        Boolean            @default(false)
+  type           MeetingType? 
+  sessionQuestions SessionQuestion[]
+
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 
   @@index([clientLeadId])
   @@index([userId])
+  @@index([adminId])
+
 }
 
 model Commission {
@@ -451,6 +464,9 @@ model User {
   updatedAt            DateTime             @updatedAt
   callReminders        CallReminder[]
   meetingReminders     MeetingReminder[]
+  adminMeetingReminders MeetingReminder[]   @relation("AdminMeetingReminders")
+  createdQuestions SessionQuestion[] 
+  answers          Answer[]         
   updates              ClientLeadUpdate[]
   createdImageSessions ClientImageSession[]
 
@@ -747,3 +763,61 @@ model ClientSelectedImage {
   imageId   Int
   notes     Note[]
 }
+
+
+// SPAIN
+
+model QuestionType {
+  id           Int            @id @default(autoincrement())
+  name         String         @unique
+  label        String       
+  baseQuestions BaseQuestion[]
+  sessionQuestions SessionQuestion[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model BaseQuestion {
+  id           Int            @id @default(autoincrement())
+  questionType QuestionType   @relation(fields: [questionTypeId], references: [id])
+  questionTypeId Int
+  title        String         @db.Text
+  order        Int            @default(0)
+  isArchived  Boolean      @default(false)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+}
+
+model SessionQuestion {
+  id               Int             @id @default(autoincrement())
+  questionType     QuestionType    @relation(fields: [questionTypeId], references: [id])
+  questionTypeId   Int
+  title            String          @db.Text
+  isCustom         Boolean         @default(false)
+
+  order            Int             @default(0)
+
+  meetingReminder  MeetingReminder @relation(fields: [meetingReminderId], references: [id])
+  meetingReminderId Int
+
+  createdBy        User?           @relation(fields: [userId], references: [id])
+  userId           Int?
+
+  answer           Answer?
+  createdAt        DateTime        @default(now())
+}
+
+model Answer {
+  id               Int             @id @default(autoincrement())
+  response         String          @db.Text
+
+  sessionQuestion  SessionQuestion @relation(fields: [sessionQuestionId], references: [id])
+  sessionQuestionId Int @unique   // 👈 Add @unique here
+
+  answeredBy       User            @relation(fields: [userId], references: [id])
+  userId           Int
+
+  createdAt        DateTime        @default(now())
+}
+
