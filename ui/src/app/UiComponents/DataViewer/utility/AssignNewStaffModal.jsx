@@ -75,7 +75,7 @@ export function AssignNewStaffModal({ lead, onUpdate }) {
 
   return (
     <>
-      <Button variant="contained" onClick={() => setOpen(true)}>
+      <Button variant="contained" fullWidth onClick={() => setOpen(true)}>
         Convert lead
       </Button>
       <Dialog

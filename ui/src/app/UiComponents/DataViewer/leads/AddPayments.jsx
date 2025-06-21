@@ -48,6 +48,7 @@ function AddPayments({
   totalAmount,
   paymentType,
   extraData,
+  fullButtonWidth,
 }) {
   const [error, setError] = useState(null);
   const [payments, setPayments] = useState([]);
@@ -141,7 +142,11 @@ function AddPayments({
   const isSubmitDisabled = !totalAmount || payments.length === 0;
   return (
     <>
-      <Button variant="contained" onClick={() => setOpen(true)}>
+      <Button
+        variant="contained"
+        onClick={() => setOpen(true)}
+        fullWidth={fullButtonWidth}
+      >
         Add payments
       </Button>
       <Dialog

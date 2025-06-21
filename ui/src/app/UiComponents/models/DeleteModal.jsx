@@ -21,6 +21,7 @@ export default function DeleteModal({
   archive = false,
   buttonType = "TEXT",
   extra,
+  fullButtonWidth = false,
 }) {
   const { setLoading } = useToastContext();
   const [open, setOpen] = useState(false);
@@ -68,6 +69,7 @@ export default function DeleteModal({
       </IconButton>
     ) : (
       <Button
+        fullWidth={fullButtonWidth}
         variant="contained"
         color="secondary"
         onClick={() => handleDeleteOpen(item)}

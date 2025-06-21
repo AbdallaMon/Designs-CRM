@@ -338,60 +338,73 @@ const LeadContent = ({
             )}
 
             {/* More Actions Menu */}
-            <MoreActionsMenu
-              lead={lead}
-              admin={admin}
-              user={user}
-              isPage={isPage}
-              setleads={setleads}
-              setLead={setLead}
-              payments={payments}
-              setPayments={setPayments}
-              paymentModal={paymentModal}
-              setPaymentModal={setPaymentModal}
-              openConfirm={openConfirm}
-              setOpenConfirm={setOpenConfirm}
-              createADeal={createADeal}
-              handleConvertLead={handleConvertLead}
-            />
-
+            {lead.status === "NEW" && !admin ? (
+              <Button
+                onClick={() => {
+                  createADeal(lead);
+                }}
+                variant="contained"
+              >
+                <MdWork size={16} style={{ marginRight: 12 }} />
+                Start Deal
+              </Button>
+            ) : (
+              <MoreActionsMenu
+                lead={lead}
+                admin={admin}
+                user={user}
+                isPage={isPage}
+                setleads={setleads}
+                setLead={setLead}
+                payments={payments}
+                setPayments={setPayments}
+                paymentModal={paymentModal}
+                setPaymentModal={setPaymentModal}
+                openConfirm={openConfirm}
+                setOpenConfirm={setOpenConfirm}
+                createADeal={createADeal}
+                handleConvertLead={handleConvertLead}
+              />
+            )}
             {/* Status Menu */}
-            <Menu
-              id="status-menu"
-              anchorEl={anchorEl}
-              open={open}
-              onClose={() => setAnchorEl(null)}
-              PaperProps={{
-                sx: {
-                  mt: 1,
-                  borderRadius: 2,
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-                },
-              }}
-            >
-              {leadStatus.map((status) => (
-                <MenuItem
-                  key={status.id}
-                  onClick={() => handleMenuClose(status.id)}
-                  sx={{
-                    py: 1,
-                    px: 2,
-                  }}
-                >
-                  <Box
+            {lead.status !== "NEW" && (
+              <Menu
+                id="status-menu"
+                anchorEl={anchorEl}
+                open={open}
+                onClose={() => setAnchorEl(null)}
+                PaperProps={{
+                  sx: {
+                    mt: 1,
+                    borderRadius: 2,
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                  },
+                }}
+              >
+                {leadStatus.map((status) => (
+                  <MenuItem
+                    key={status.id}
+                    onClick={() => handleMenuClose(status.id)}
                     sx={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      backgroundColor:
-                        statusColors[status.id] || theme.palette.primary.main,
-                      mr: 1.5,
+                      py: 1,
+                      px: 2,
                     }}
-                  />
-                  {status.name}
-                </MenuItem>
-              ))}
-            </Menu>
+                  >
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: "50%",
+                        backgroundColor:
+                          statusColors[status.id] || theme.palette.primary.main,
+                        mr: 1.5,
+                      }}
+                    />
+                    {status.name}
+                  </MenuItem>
+                ))}
+              </Menu>
+            )}
           </Stack>
         </Stack>
 
@@ -734,17 +747,20 @@ const MoreActionsMenu = ({
         }}
       >
         {/* Convert Lead Option */}
-        {!admin && user.role === "STAFF" && lead.status !== "FINALIZED" && (
-          <MenuItem
-            onClick={() => {
-              setOpenConfirm(true);
-            }}
-            sx={{ py: 1.5 }}
-          >
-            <BsPersonCheck size={16} style={{ marginRight: 12 }} />
-            Convert Lead
-          </MenuItem>
-        )}
+        {!admin &&
+          user.role === "STAFF" &&
+          lead.status !== "FINALIZED" &&
+          lead.status !== "NEW" && (
+            <MenuItem
+              onClick={() => {
+                setOpenConfirm(true);
+              }}
+              sx={{ py: 1.5 }}
+            >
+              <BsPersonCheck size={16} style={{ marginRight: 12 }} />
+              Convert Lead
+            </MenuItem>
+          )}
 
         {/* Assign Deal Option */}
         {isPage &&
@@ -769,6 +785,7 @@ const MoreActionsMenu = ({
               <DeleteModal
                 item={lead}
                 href={"admin/client-leads"}
+                fullButtonWidth={true}
                 handleClose={() => {
                   window.location.reload();
                 }}
@@ -813,6 +830,7 @@ const MoreActionsMenu = ({
               user.role === "ADMIN") && (
               <MenuItem>
                 <AddPayments
+                  fullButtonWidth={true}
                   lead={lead}
                   open={paymentModal}
                   paymentType={"final-price"}

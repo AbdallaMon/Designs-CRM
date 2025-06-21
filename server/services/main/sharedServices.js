@@ -567,14 +567,16 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
       },
     });
   }
-
+  console.log(clientLead, "clientLead");
   const updatedClientLead = await prisma.clientLead.update({
     where: { id: clientLeadId },
     data: {
       userId: userId,
       assignedAt: new Date(),
       status:
-        clientLead.status === "ON_HOLD" || clientLead.status === "NEW"
+        !clientLead ||
+        clientLead.status === "ON_HOLD" ||
+        clientLead.status === "NEW"
           ? "IN_PROGRESS"
           : clientLead.status,
     },
@@ -586,6 +588,7 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
       },
     },
   });
+  console.log(updatedClientLead, "updatedClientLead");
   await assignLeadNotification(clientLeadId, userId, updatedClientLead);
 
   return updatedClientLead;
