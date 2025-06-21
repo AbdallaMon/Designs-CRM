@@ -70,35 +70,40 @@ const VersaStep = ({ step, stepKey, onSave }) => {
       color: theme.palette.info.main,
       lightColor: alpha(theme.palette.info.main, 0.1),
       icon: <MdQuestionAnswer />,
-      description: "Understand and acknowledge the client's concern",
+      description:
+        "Acknowledge the client's concern and show you understand their objection.",
     },
     e: {
       label: "Empathize",
       color: theme.palette.warning.main,
       lightColor: alpha(theme.palette.warning.main, 0.1),
       icon: <MdPsychology />,
-      description: "Connect emotionally with the client's perspective",
+      description:
+        "Connect emotionally by recognizing the client’s feelings and point of view.",
     },
     r: {
-      label: "Respond",
+      label: "Reframe",
       color: theme.palette.primary.main,
       lightColor: alpha(theme.palette.primary.main, 0.1),
       icon: <MdHandshake />,
-      description: "Provide a thoughtful and relevant response",
+      description:
+        "Shift the client’s perspective by presenting the objection in a new light.",
     },
     s: {
-      label: "Support",
+      label: "Show value",
       color: theme.palette.success.main,
       lightColor: alpha(theme.palette.success.main, 0.1),
       icon: <MdSupport />,
-      description: "Offer additional support and resources",
+      description:
+        "Demonstrate the unique benefits and solutions your offer provides.",
     },
     a: {
-      label: "Advance",
+      label: "Ask",
       color: theme.palette.secondary.main,
       lightColor: alpha(theme.palette.secondary.main, 0.1),
       icon: <MdTrendingUp />,
-      description: "Move the conversation forward positively",
+      description:
+        "Prompt the client to take the next step or confirm understanding.",
     },
   };
 
@@ -547,9 +552,9 @@ const VersaModelEditor = ({ category, versaData, onSave, onClose }) => {
           height: "auto",
         }}
       >
-        <Container maxWidth="lg" sx={{ py: 6 }}>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
           <Fade in timeout={500}>
-            <Box mb={6}>
+            <Box mb={6} display="flex" gap={2} alignItems="center">
               <Typography
                 variant="h3"
                 sx={{
@@ -558,7 +563,6 @@ const VersaModelEditor = ({ category, versaData, onSave, onClose }) => {
                   backgroundClip: "text",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
-                  mb: 2,
                 }}
               >
                 {category.title}
@@ -567,35 +571,11 @@ const VersaModelEditor = ({ category, versaData, onSave, onClose }) => {
                 variant="h6"
                 sx={{
                   color: theme.palette.text.secondary,
-                  mb: 4,
                   fontWeight: 400,
                 }}
               >
                 {category.label}
               </Typography>
-
-              <Alert
-                severity="info"
-                icon={<MdInfo />}
-                sx={{
-                  mb: 4,
-                  borderRadius: 2,
-                  border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-                  backgroundColor: alpha(theme.palette.info.main, 0.05),
-                  "& .MuiAlert-icon": {
-                    fontSize: "1.5rem",
-                  },
-                }}
-              >
-                <Typography variant="body1" sx={{ fontWeight: 600, mb: 1 }}>
-                  All fields are optional - fill in what&apos;s relevant for
-                  your sales process
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  The VERSA methodology helps you handle objections
-                  systematically and empathetically
-                </Typography>
-              </Alert>
             </Box>
           </Fade>
 
