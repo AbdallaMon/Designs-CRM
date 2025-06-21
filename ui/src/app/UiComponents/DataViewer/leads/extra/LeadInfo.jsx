@@ -6,8 +6,9 @@ import { BsBuilding } from "react-icons/bs";
 import dayjs from "dayjs";
 import { LeadCategory } from "@/app/helpers/constants";
 
-export function LeadInfo({ lead }) {
+export function LeadInfo({ lead, setleads, setLead }) {
   const theme = useTheme();
+
   return (
     <InfoCard title="Lead Information" icon={BsBuilding} theme={theme}>
       <Grid container spacing={4}>

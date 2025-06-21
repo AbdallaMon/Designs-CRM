@@ -657,3 +657,10 @@ export const countriesByRegion = {
     "Vanuatu",
   ],
 };
+
+export const personalityEnum = {
+  EXPRESSIVE: "ثرثار / اجتماعي",
+  ANALYTICAL: "التحليلي الدقيق",
+  INTROVERTED: "المنطوي / المتحفظ",
+  DRIVER: "القيادي الحاسم",
+};

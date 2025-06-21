@@ -21,16 +21,16 @@ import {
   Container,
 } from "@mui/material";
 import { MdQuestionAnswer, MdClose } from "react-icons/md";
-const SPAINQuestionsComponent = ({ open, onClose, meetingReminderId }) => {
+const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const theme = useTheme();
   useEffect(() => {
-    if (!open || !meetingReminderId) return;
+    if (!open || !clientLeadId) return;
 
     const fetchCategories = async () => {
       const response = await getData({
-        url: `shared/questions/question-types/${meetingReminderId}?`,
+        url: `shared/questions/question-types/${clientLeadId}?`,
         setLoading,
       });
       if (response.status === 200) {
@@ -39,7 +39,7 @@ const SPAINQuestionsComponent = ({ open, onClose, meetingReminderId }) => {
     };
 
     fetchCategories();
-  }, [open, meetingReminderId]);
+  }, [open, clientLeadId]);
 
   return (
     <Dialog
@@ -142,7 +142,7 @@ const SPAINQuestionsComponent = ({ open, onClose, meetingReminderId }) => {
                   <div>
                     <CategorySection
                       category={category}
-                      meetingReminderId={meetingReminderId}
+                      clientLeadId={clientLeadId}
                     />
                   </div>
                 </Slide>
@@ -183,7 +183,7 @@ const SPAINQuestionsComponent = ({ open, onClose, meetingReminderId }) => {
 };
 
 // Main Component with Trigger Button
-export const SPAINQuestionsDialog = ({ meetingReminderId }) => {
+export const SPAINQuestionsDialog = ({ clientLeadId }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { user } = useAuth();
 
@@ -218,13 +218,13 @@ export const SPAINQuestionsDialog = ({ meetingReminderId }) => {
           },
         }}
       >
-        SPAIN Questions & Results
+        Open SPAIN Questions & Results
       </Button>
 
       <SPAINQuestionsComponent
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
-        meetingReminderId={meetingReminderId}
+        clientLeadId={clientLeadId}
       />
     </>
   );

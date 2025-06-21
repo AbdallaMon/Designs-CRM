@@ -271,7 +271,7 @@ export const QuestionItem = ({ sessionQuestion, onSubmitAnswer }) => {
 };
 
 // Modern Category Section with Advanced Animations
-export const CategorySection = ({ category, meetingReminderId }) => {
+export const CategorySection = ({ category, clientLeadId }) => {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(true);
@@ -282,14 +282,14 @@ export const CategorySection = ({ category, meetingReminderId }) => {
   // Fetch questions for this category
   const fetchQuestions = useCallback(async () => {
     const response = await getData({
-      url: `shared/questions/session-questions/${meetingReminderId}?questionTypeId=${category.id}&`,
+      url: `shared/questions/session-questions/${clientLeadId}?questionTypeId=${category.id}&`,
       setLoading,
     });
     if (response.status === 200) {
       setQuestions(response.data);
       return response.data;
     }
-  }, [meetingReminderId, category.id]);
+  }, [clientLeadId, category.id]);
 
   async function onSubmitAnswer() {
     return await fetchQuestions();
@@ -329,7 +329,7 @@ export const CategorySection = ({ category, meetingReminderId }) => {
         isCustom: true,
       },
       setLoading,
-      `shared/questions/meeting/${meetingReminderId}/custom-question`,
+      `shared/questions/lead/${clientLeadId}/custom-question`,
       false,
       "Adding"
     );

@@ -64,11 +64,11 @@ export async function ensureDefaultCategoriesAndQuestions() {
   }
 }
 
-export async function ensureSessionQuestions({ meetingReminderId, userId }) {
-  meetingReminderId = Number(meetingReminderId);
+export async function ensureSessionQuestions({ clientLeadId, userId }) {
+  clientLeadId = Number(clientLeadId);
   userId = Number(userId);
   const count = await prisma.sessionQuestion.count({
-    where: { meetingReminderId },
+    where: { clientLeadId },
   });
   if (count > 0) return;
 
@@ -81,7 +81,7 @@ export async function ensureSessionQuestions({ meetingReminderId, userId }) {
     title: q.title,
     questionTypeId: q.questionTypeId,
     isCustom: false,
-    meetingReminderId,
+    clientLeadId,
     userId,
   }));
 
@@ -93,13 +93,13 @@ export async function getQuestionsTypes() {
   });
   return types;
 }
-export async function getSessionQuestionsByMettingId({
-  meetingReminderId,
+export async function getSessionQuestionsByClientLeadId({
+  clientLeadId,
   questionTypeId,
 }) {
   const sessionQuestions = await prisma.sessionQuestion.findMany({
     where: {
-      meetingReminderId: Number(meetingReminderId),
+      clientLeadId: Number(clientLeadId),
       questionTypeId: Number(questionTypeId),
     },
     include: {
@@ -147,16 +147,16 @@ export async function submitMoreThanAnswer({ answers, userId }) {
 export async function createCustomQuestion({
   title,
   questionTypeId,
-  meetingReminderId,
+  clientLeadId,
   userId,
 }) {
   questionTypeId = Number(questionTypeId);
-  meetingReminderId = Number(meetingReminderId);
+  clientLeadId = Number(clientLeadId);
   userId = Number(userId);
   const lastQuestion = await prisma.sessionQuestion.findFirst({
     where: {
       questionTypeId,
-      meetingReminderId,
+      clientLeadId,
     },
     orderBy: {
       order: "desc",
@@ -173,7 +173,7 @@ export async function createCustomQuestion({
       title,
       isCustom: true,
       questionTypeId,
-      meetingReminderId,
+      clientLeadId,
       userId,
       order: newOrder,
     },

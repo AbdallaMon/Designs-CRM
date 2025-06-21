@@ -4,7 +4,7 @@ import {
   ensureDefaultCategoriesAndQuestions,
   ensureSessionQuestions,
   getQuestionsTypes,
-  getSessionQuestionsByMettingId,
+  getSessionQuestionsByClientLeadId,
   makeAnswerToAQuestion,
   submitMoreThanAnswer,
 } from "../../services/main/shared-questions.js";
@@ -19,13 +19,13 @@ router.use((req, res, next) => {
   verifyTokenAndHandleAuthorization(req, res, next, "SHARED");
 });
 
-router.get("/question-types/:meetingReminderId", async (req, res) => {
+router.get("/question-types/:clientLeadId", async (req, res) => {
   try {
     const currentUser = await getCurrentUser(req);
 
     await ensureDefaultCategoriesAndQuestions();
     await ensureSessionQuestions({
-      meetingReminderId: req.params.meetingReminderId,
+      clientLeadId: req.params.clientLeadId,
       userId: currentUser.id,
     });
     const types = await getQuestionsTypes();
@@ -37,10 +37,10 @@ router.get("/question-types/:meetingReminderId", async (req, res) => {
       .json({ message: "An error occurred while fetching  question types" });
   }
 });
-router.get("/session-questions/:meetingReminderId", async (req, res) => {
+router.get("/session-questions/:clientLeadId", async (req, res) => {
   try {
-    const questions = await getSessionQuestionsByMettingId({
-      meetingReminderId: req.params.meetingReminderId,
+    const questions = await getSessionQuestionsByClientLeadId({
+      clientLeadId: req.params.clientLeadId,
       questionTypeId: req.query.questionTypeId,
     });
     res.status(200).json({ data: questions });
@@ -79,11 +79,11 @@ router.post("/answer/bulk", async (req, res) => {
     res.status(500).json({ message: "An error occurred while making answer" });
   }
 });
-router.post("/meeting/:meetingReminderId/custom-question", async (req, res) => {
+router.post("/lead/:clientLeadId/custom-question", async (req, res) => {
   try {
     const currentUser = await getCurrentUser(req);
     const question = await createCustomQuestion({
-      meetingReminderId: req.params.meetingReminderId,
+      clientLeadId: req.params.clientLeadId,
       questionTypeId: req.body.questionTypeId,
       title: req.body.title,
       userId: currentUser.id,

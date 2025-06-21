@@ -203,15 +203,15 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
 
     // Enhanced Color Palette - slightly adjusted for better contrast and aesthetics
     const colors = {
-      primary: rgb(0.827, 0.675, 0.443), // Original primary: Warm gold/bronze
-      primaryDark: rgb(0.745, 0.592, 0.361), // Slightly darker primary for accents/links
-      primaryLight: rgb(0.95, 0.92, 0.88), // Lighter primary for subtle backgrounds
-      heading: rgb(0.22, 0.188, 0.157), // Original heading: Dark brown/charcoal
-      textColor: rgb(0.345, 0.302, 0.247), // Original text color: Medium brown/gray
-      bgPrimary: rgb(0.918, 0.906, 0.886), // Original background primary: Light beige
-      accentBg: rgb(0.98, 0.97, 0.95), // Even lighter background for subtle section separation
-      success: rgb(0.518, 0.569, 0.471), // Original success: Greenish-brown (kept as is)
-      borderColor: rgb(0.7, 0.7, 0.7), // Neutral border for card elements
+      primary: rgb(0.827, 0.675, 0.443),
+      primaryDark: rgb(0.745, 0.592, 0.361),
+      primaryLight: rgb(0.95, 0.92, 0.88),
+      heading: rgb(0.22, 0.188, 0.157),
+      textColor: rgb(0.345, 0.302, 0.247),
+      bgPrimary: rgb(0.918, 0.906, 0.886),
+      accentBg: rgb(0.98, 0.97, 0.95),
+      success: rgb(0.518, 0.569, 0.471),
+      borderColor: rgb(0.7, 0.7, 0.7),
     };
 
     let y = height - 60; // Initial Y position for content

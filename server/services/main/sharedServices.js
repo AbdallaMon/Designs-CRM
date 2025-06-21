@@ -315,6 +315,7 @@ export async function getClientLeadDetails(
       initialConsult: true,
       leadType: true,
       previousLeadId: true,
+      personality: true,
       client: {
         select: {
           id: true,

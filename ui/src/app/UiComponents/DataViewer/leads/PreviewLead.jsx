@@ -64,11 +64,14 @@ import {
   FileList,
   ExtraServicesList,
   MeetingReminders,
+  SalesToolsTabs,
 } from "./LeadTabs";
 import {
+  MdAnalytics,
   MdBlock,
   MdMeetingRoom,
   MdModeEdit,
+  MdMoreHoriz,
   MdSchedule,
   MdUpdate,
   MdWork,
@@ -234,41 +237,199 @@ const LeadContent = ({
         sx={{
           borderBottom: 1,
           borderColor: "divider",
-          pb: 2,
+          pb: 0,
+          background: "linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)",
         }}
       >
-        <Stack spacing={2}>
-          <Stack direction="row" spacing={2} alignItems="center">
+        {/* Main Header Row */}
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ py: 2, px: 1 }}
+        >
+          {/* Left Section - Lead Info */}
+          <Stack
+            direction="row"
+            spacing={2}
+            alignItems="center"
+            sx={{ flex: 1 }}
+          >
             {handleClose && (
-              <IconButton onClick={() => handleClose(isPage)} sx={{ mr: 1 }}>
-                <BsArrowLeft size={20} />
+              <IconButton
+                onClick={() => handleClose(isPage)}
+                sx={{
+                  backgroundColor: "#f5f5f5",
+                  "&:hover": { backgroundColor: "#e0e0e0" },
+                  mr: 1,
+                }}
+              >
+                <BsArrowLeft size={18} />
               </IconButton>
             )}
-            <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
+
+            <Avatar
+              sx={{
+                bgcolor: theme.palette.primary.main,
+                width: 48,
+                height: 48,
+                fontSize: "1.2rem",
+                fontWeight: 600,
+              }}
+            >
               {lead.client.name[0]}
             </Avatar>
-            {(lead.status === "NEW" || lead.status === "ON_HOLD") && !admin ? (
-              ""
-            ) : (
-              <Typography variant="h6">
-                #{lead.id.toString().padStart(7, "0")} {lead.client.name}
-              </Typography>
-            )}
+
+            <Box>
+              {(lead.status === "NEW" || lead.status === "ON_HOLD") &&
+              !admin ? (
+                <Typography variant="h6" color="text.secondary">
+                  Lead Preview
+                </Typography>
+              ) : (
+                <>
+                  <Typography
+                    variant="h5"
+                    fontWeight={600}
+                    color="text.primary"
+                  >
+                    {lead.client.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    #{lead.id.toString().padStart(7, "0")}
+                  </Typography>
+                </>
+              )}
+            </Box>
+          </Stack>
+
+          {/* Right Section - Status & Actions */}
+          <Stack direction="row" spacing={1} alignItems="center">
             {(user.role === "ADMIN" ||
               user.role === "SUPER_ADMIN" ||
               user.role === "STAFF") && (
-              <Badge color="primary" badgeContent={lead.paymentStatus}>
-                Initial payment
-              </Badge>
+              <Chip
+                label={`Payment: ${lead.paymentStatus}`}
+                color="primary"
+                variant="outlined"
+                size="small"
+                sx={{ fontWeight: 500 }}
+              />
             )}
+
+            {/* Status Button/Menu */}
+            {user.role !== "ACCOUNTANT" && (
+              <Button
+                variant="contained"
+                startIcon={<AiOutlineSwap size={16} />}
+                onClick={handleClick}
+                sx={{
+                  background: statusColors[lead.status],
+                  fontWeight: 500,
+                  borderRadius: "20px",
+                  px: 2,
+                  py: 0.5,
+                  fontSize: "0.875rem",
+                  textTransform: "none",
+                  minWidth: "120px",
+                }}
+              >
+                {ClientLeadStatus[lead.status]}
+              </Button>
+            )}
+
+            {/* More Actions Menu */}
+            <MoreActionsMenu
+              lead={lead}
+              admin={admin}
+              user={user}
+              isPage={isPage}
+              setleads={setleads}
+              setLead={setLead}
+              payments={payments}
+              setPayments={setPayments}
+              paymentModal={paymentModal}
+              setPaymentModal={setPaymentModal}
+              openConfirm={openConfirm}
+              setOpenConfirm={setOpenConfirm}
+              createADeal={createADeal}
+              handleConvertLead={handleConvertLead}
+            />
+
+            {/* Status Menu */}
+            <Menu
+              id="status-menu"
+              anchorEl={anchorEl}
+              open={open}
+              onClose={() => setAnchorEl(null)}
+              PaperProps={{
+                sx: {
+                  mt: 1,
+                  borderRadius: 2,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+                },
+              }}
+            >
+              {leadStatus.map((status) => (
+                <MenuItem
+                  key={status.id}
+                  onClick={() => handleMenuClose(status.id)}
+                  sx={{
+                    py: 1,
+                    px: 2,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      backgroundColor:
+                        statusColors[status.id] || theme.palette.primary.main,
+                      mr: 1.5,
+                    }}
+                  />
+                  {status.name}
+                </MenuItem>
+              ))}
+            </Menu>
           </Stack>
-          <Stack direction="row" spacing={2} alignItems="center">
+        </Stack>
+
+        {/* Secondary Actions Row */}
+        <Box
+          sx={{
+            borderTop: "1px solid",
+            borderColor: "divider",
+            backgroundColor: "#fafafa",
+            px: 3,
+            py: 1.5,
+          }}
+        >
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{
+              overflowX: "auto",
+              "&::-webkit-scrollbar": {
+                height: 4,
+              },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: "#ccc",
+                borderRadius: 2,
+              },
+            }}
+          >
+            {/* Primary Actions */}
             <TelegramLink lead={lead} setLead={setLead} />
             <UpdateInitialConsultButton clientLead={lead} />
+
             {(lead.status === "FINALIZED" || lead.status === "ARCHIVED") && (
               <ClientImageSessionManager clientLeadId={lead.id} />
             )}
-            {admin && (
+
+            {/* {admin && (
               <EditFieldButton
                 text={"Client name"}
                 path={`admin/client/update/${lead.client.id}`}
@@ -300,205 +461,35 @@ const LeadContent = ({
                   }
                 }}
               />
-            )}
-          </Stack>
-          <Stack
-            direction={isMobile ? "column" : "row"}
-            spacing={1}
-            alignItems={{ sm: "center" }}
-            justifyContent="flex-end"
-          >
-            {isPage &&
-            user.id !== lead.userId &&
-            !admin &&
-            user.role !== "ACCOUNTANT" ? (
-              <ConfirmWithActionModel
-                title={
-                  "Are you sure you want to get this lead and assign it to you as a new deal?"
-                }
-                handleConfirm={() => createADeal(lead)}
-                label={"Start a deal"}
-                fullWidth={false}
-                size="small"
+            )} */}
+
+            {/* Finalized Lead Actions */}
+            {lead.status === "FINALIZED" && (
+              <Chip
+                label={`Final Price: ${lead.averagePrice}`}
+                color="success"
+                variant="outlined"
+                sx={{ fontWeight: 500 }}
               />
-            ) : (
-              <>
-                {lead.status === "FINALIZED" && (
-                  <>
-                    <Button
-                      fullWidth={isMobile}
-                      variant="outlined"
-                      startIcon={!admin && <AiOutlineSwap />}
-                      aria-controls={openPriceModel ? "basic-menu" : undefined}
-                      aria-haspopup="true"
-                      aria-expanded={openPriceModel ? "true" : undefined}
-                      // onClick={() => setOpenPriceModel(true)}
-                      sx={{
-                        fontWeight: 500,
-                        borderRadius: "50px",
-                      }}
-                    >
-                      Final price : {lead.averagePrice}
-                    </Button>
-                    {payments?.length > 0 ? (
-                      <PaymentDialog payments={payments} />
-                    ) : (
-                      <>
-                        {(user.role === "STAFF" ||
-                          user.role === "SUPER_ADMIN" ||
-                          user.role === "ADMIN") && (
-                          <AddPayments
-                            lead={lead}
-                            open={paymentModal}
-                            paymentType={"final-price"}
-                            setOpen={setPaymentModal}
-                            totalAmount={lead.averagePrice}
-                            setOldPayments={setPayments}
-                          />
-                        )}
-                      </>
-                    )}
-                  </>
-                )}
-                {!admin &&
-                  user.role == "STAFF" &&
-                  lead.status !== "FINALIZED" && (
-                    <>
-                      <Button
-                        fullWidth={isMobile}
-                        variant="outlined"
-                        startIcon={<BsPersonCheck size={18} />}
-                        onClick={() => setOpenConfirm(true)}
-                        sx={{
-                          borderRadius: "50px",
-                          textTransform: "none",
-                        }}
-                      >
-                        Convert lead
-                      </Button>
-                      <Modal
-                        open={openConfirm}
-                        onClose={() => setOpenConfirm(false)}
-                        closeAfterTransition
-                      >
-                        <Fade in={openConfirm}>
-                          <Box sx={{ ...simpleModalStyle }}>
-                            <Typography variant="h6" component="h2" mb={2}>
-                              Convert lead so some one else take it?
-                            </Typography>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                justifyContent: "flex-end",
-                                marginTop: "16px",
-                              }}
-                            >
-                              <Button
-                                variant="contained"
-                                color={"primary"}
-                                onClick={handleConvertLead}
-                              >
-                                Confirm
-                              </Button>
-                              <Button
-                                variant="contained"
-                                onClick={() => setOpenConfirm(false)}
-                                sx={{ marginLeft: "8px", color: "text.white" }}
-                                color="secondary"
-                              >
-                                Cancel
-                              </Button>
-                            </Box>
-                          </Box>
-                        </Fade>
-                      </Modal>
-                    </>
-                  )}
-                {user.role !== "ACCOUNTANT" && (
-                  <>
-                    {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
-                      <>
-                        <DeleteModal
-                          item={lead}
-                          href={"admin/client-leads"}
-                          handleClose={() => {
-                            window.location.reload();
-                          }}
-                        />
-                        <AssignNewStaffModal
-                          lead={lead}
-                          onUpdate={(newLead) => {
-                            if (setLead) {
-                              setLead((oldLead) => ({
-                                ...oldLead,
-                                assignedTo: { ...newLead.assignedTo },
-                                status: newLead.status,
-                              }));
-                            }
-                            if (setleads) {
-                              setleads((oldLeads) =>
-                                oldLeads.map((l) => {
-                                  if (l.id === lead.id) {
-                                    return {
-                                      ...lead,
-                                      assignedTo: { ...newLead.assignedTo },
-                                      status: newLead.status,
-                                    };
-                                  } else {
-                                    return l;
-                                  }
-                                })
-                              );
-                            }
-                          }}
-                        />
-                      </>
-                    )}
-                    <Button
-                      fullWidth={isMobile}
-                      variant="contained"
-                      startIcon={!admin && <AiOutlineSwap />}
-                      aria-controls={open ? "basic-menu" : undefined}
-                      aria-haspopup="true"
-                      aria-expanded={open ? "true" : undefined}
-                      onClick={handleClick}
-                      sx={{
-                        background: statusColors[lead.status],
-                        fontWeight: 500,
-                        borderRadius: "50px",
-                      }}
-                    >
-                      {ClientLeadStatus[lead.status]}
-                    </Button>
-                    <Menu
-                      id="basic-menu"
-                      anchorEl={anchorEl}
-                      open={open}
-                      onClose={() => setAnchorEl(null)}
-                      MenuListProps={{
-                        "aria-labelledby": "basic-button",
-                      }}
-                    >
-                      {leadStatus.map((lead) => (
-                        <MenuItem
-                          key={lead.id}
-                          value={lead.id}
-                          onClick={() => handleMenuClose(lead.id)}
-                        >
-                          {lead.name}
-                        </MenuItem>
-                      ))}
-                    </Menu>
-                  </>
-                )}
-              </>
             )}
 
-            <Button onClick={() => generatePDF(lead, user)}>
-              Generate pdf
+            {/* PDF Generation */}
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<BsFileText size={14} />}
+              onClick={() => generatePDF(lead, user)}
+              sx={{
+                borderRadius: "16px",
+                textTransform: "none",
+                fontSize: "0.75rem",
+                px: 2,
+              }}
+            >
+              PDF
             </Button>
           </Stack>
-        </Stack>
+        </Box>
       </DialogTitle>
       <Tabs
         value={activeTab}
@@ -523,6 +514,11 @@ const LeadContent = ({
         <Tab
           icon={<BsTelephone size={20} />}
           label="Calls"
+          sx={{ textTransform: "none" }}
+        />
+        <Tab
+          icon={<MdAnalytics size={20} />}
+          label="Client analysis"
           sx={{ textTransform: "none" }}
         />
         <Tab
@@ -584,7 +580,12 @@ const LeadContent = ({
         }}
       >
         <TabPanel value={activeTab} index={0}>
-          <LeadData lead={lead} admin={admin} />
+          <LeadData
+            lead={lead}
+            admin={admin}
+            setLead={setLead}
+            setleads={setleads}
+          />
         </TabPanel>
         <TabPanel value={activeTab} index={1}>
           <CallReminders
@@ -595,6 +596,9 @@ const LeadContent = ({
           />
         </TabPanel>
         <TabPanel value={activeTab} index={2}>
+          <SalesToolsTabs lead={lead} setleads={setleads} setLead={setLead} />
+        </TabPanel>
+        <TabPanel value={activeTab} index={3}>
           <MeetingReminders
             admin={admin}
             lead={lead}
@@ -602,21 +606,21 @@ const LeadContent = ({
             notUser={isPage && user.id !== lead.userId}
           />
         </TabPanel>
-        <TabPanel value={activeTab} index={3}>
+        <TabPanel value={activeTab} index={4}>
           <LeadNotes
             admin={admin}
             lead={lead}
             notUser={isPage && user.id !== lead.userId}
           />
         </TabPanel>
-        <TabPanel value={activeTab} index={4}>
+        <TabPanel value={activeTab} index={5}>
           <PriceOffersList
             admin={admin}
             lead={lead}
             notUser={isPage && user.id !== lead.userId}
           />
         </TabPanel>
-        <TabPanel value={activeTab} index={5}>
+        <TabPanel value={activeTab} index={6}>
           <FileList
             admin={admin}
             lead={lead}
@@ -625,7 +629,7 @@ const LeadContent = ({
         </TabPanel>
 
         {payments?.length > 0 && (
-          <TabPanel value={activeTab} index={6}>
+          <TabPanel value={activeTab} index={7}>
             <ExtraServicesList
               admin={admin}
               lead={lead}
@@ -634,10 +638,10 @@ const LeadContent = ({
             />
           </TabPanel>
         )}
-        <TabPanel value={activeTab} index={payments?.length > 0 ? 7 : 6}>
+        <TabPanel value={activeTab} index={payments?.length > 0 ? 8 : 7}>
           <LeadProjects clientLeadId={lead.id} />
         </TabPanel>
-        <TabPanel value={activeTab} index={payments?.length > 0 ? 8 : 7}>
+        <TabPanel value={activeTab} index={payments?.length > 0 ? 9 : 8}>
           <TasksList
             name="Modifcation"
             type="MODIFICATION"
@@ -645,7 +649,7 @@ const LeadContent = ({
           />
         </TabPanel>
         {lead.status === "FINALIZED" && (
-          <TabPanel value={activeTab} index={payments?.length > 0 ? 9 : 8}>
+          <TabPanel value={activeTab} index={payments?.length > 0 ? 10 : 9}>
             <UpdatesList clientLeadId={lead.id} />
           </TabPanel>
         )}
@@ -654,11 +658,11 @@ const LeadContent = ({
   );
 };
 
-function LeadData({ lead }) {
+function LeadData({ lead, setLead, setleads }) {
   return (
     <Stack spacing={3}>
       <LeadInfo lead={lead} />
-      <LeadContactInfo lead={lead} />
+      <LeadContactInfo lead={lead} setLead={setLead} setleads={setleads} />
     </Stack>
   );
 }
@@ -676,5 +680,220 @@ const PreviewDialog = ({ open, onClose, id, setleads, page = false }) => {
     />
   );
 };
+const MoreActionsMenu = ({
+  lead,
+  admin,
+  user,
+  isPage,
+  setleads,
+  setLead,
+  payments,
+  setPayments,
+  paymentModal,
+  setPaymentModal,
+  openConfirm,
+  setOpenConfirm,
+  createADeal,
+  handleConvertLead,
+}) => {
+  const [moreAnchorEl, setMoreAnchorEl] = useState(null);
+  const moreOpen = Boolean(moreAnchorEl);
 
+  const handleMoreClick = (event) => {
+    setMoreAnchorEl(event.currentTarget);
+  };
+
+  const handleMoreClose = () => {
+    setMoreAnchorEl(null);
+  };
+
+  return (
+    <>
+      <IconButton
+        onClick={handleMoreClick}
+        sx={{
+          backgroundColor: "#f5f5f5",
+          "&:hover": { backgroundColor: "#e0e0e0" },
+          width: 40,
+          height: 40,
+        }}
+      >
+        <MdMoreHoriz size={18} />
+      </IconButton>
+
+      <Menu
+        anchorEl={moreAnchorEl}
+        open={moreOpen}
+        onClose={handleMoreClose}
+        PaperProps={{
+          sx: {
+            mt: 1,
+            borderRadius: 2,
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+            minWidth: 200,
+          },
+        }}
+      >
+        {/* Convert Lead Option */}
+        {!admin && user.role === "STAFF" && lead.status !== "FINALIZED" && (
+          <MenuItem
+            onClick={() => {
+              setOpenConfirm(true);
+            }}
+            sx={{ py: 1.5 }}
+          >
+            <BsPersonCheck size={16} style={{ marginRight: 12 }} />
+            Convert Lead
+          </MenuItem>
+        )}
+
+        {/* Assign Deal Option */}
+        {isPage &&
+          user.id !== lead.userId &&
+          !admin &&
+          user.role !== "ACCOUNTANT" && (
+            <MenuItem
+              onClick={() => {
+                createADeal(lead);
+              }}
+              sx={{ py: 1.5 }}
+            >
+              <MdWork size={16} style={{ marginRight: 12 }} />
+              Start Deal
+            </MenuItem>
+          )}
+
+        {/* Admin Actions */}
+        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+          <>
+            <MenuItem>
+              <DeleteModal
+                item={lead}
+                href={"admin/client-leads"}
+                handleClose={() => {
+                  window.location.reload();
+                }}
+              />
+            </MenuItem>
+            <MenuItem>
+              <AssignNewStaffModal
+                lead={lead}
+                onUpdate={(newLead) => {
+                  if (setLead) {
+                    setLead((oldLead) => ({
+                      ...oldLead,
+                      assignedTo: { ...newLead.assignedTo },
+                      status: newLead.status,
+                    }));
+                  }
+                  if (setleads) {
+                    setleads((oldLeads) =>
+                      oldLeads.map((l) => {
+                        if (l.id === lead.id) {
+                          return {
+                            ...lead,
+                            assignedTo: { ...newLead.assignedTo },
+                            status: newLead.status,
+                          };
+                        } else {
+                          return l;
+                        }
+                      })
+                    );
+                  }
+                }}
+              />
+            </MenuItem>
+          </>
+        )}
+
+        {(user.role === "STAFF" ||
+          user.role === "SUPER_ADMIN" ||
+          user.role === "ADMIN") && (
+          <MenuItem>
+            <AddPayments
+              lead={lead}
+              open={paymentModal}
+              paymentType={"final-price"}
+              setOpen={setPaymentModal}
+              totalAmount={lead.averagePrice}
+              setOldPayments={setPayments}
+            />
+          </MenuItem>
+        )}
+        {/* Payment Actions */}
+        {lead.status === "FINALIZED" && (
+          <>
+            {payments?.length > 0 ? (
+              <MenuItem sx={{ py: 1.5 }}>
+                <PaymentDialog payments={payments} />
+              </MenuItem>
+            ) : (
+              <>
+                {(user.role === "STAFF" ||
+                  user.role === "SUPER_ADMIN" ||
+                  user.role === "ADMIN") && (
+                  <MenuItem
+                    onClick={() => {
+                      setPaymentModal(true);
+                    }}
+                    sx={{ py: 1.5 }}
+                  >
+                    <PiCurrencyDollarSimpleLight
+                      size={16}
+                      style={{ marginRight: 12 }}
+                    />
+                    Add Payment
+                  </MenuItem>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </Menu>
+
+      {/* Convert Lead Modal */}
+      <Modal
+        open={openConfirm}
+        onClose={() => setOpenConfirm(false)}
+        closeAfterTransition
+      >
+        <Fade in={openConfirm}>
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: 400,
+              bgcolor: "white",
+              borderRadius: 3,
+              boxShadow: 24,
+              p: 3,
+            }}
+          >
+            <Typography variant="h6" component="h2" mb={2}>
+              Convert Lead
+            </Typography>
+            <Typography variant="body2" color="text.secondary" mb={3}>
+              Convert this lead so someone else can take it?
+            </Typography>
+            <Stack direction="row" spacing={2} justifyContent="flex-end">
+              <Button variant="outlined" onClick={() => setOpenConfirm(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleConvertLead}
+                color="primary"
+              >
+                Confirm
+              </Button>
+            </Stack>
+          </Box>
+        </Fade>
+      </Modal>
+    </>
+  );
+};
 export default PreviewDialog;

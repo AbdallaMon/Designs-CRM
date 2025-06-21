@@ -148,9 +148,17 @@ enum SessionStatus {
 }
 
 enum MeetingType {
-  SPAIN
-  OBJECTIONS // English name for "اعتراضات"
+  SALES_MEETING
+  DESIGN_MEETING       
 }
+
+enum ClientPersonality {
+  EXPRESSIVE       // ثرثار / اجتماعي
+  ANALYTICAL       // التحليلي الدقيق
+  INTROVERTED      // المنطوي / المتحفظ
+  DRIVER           // القيادي الحاسم
+}
+
 
 model ClientLeadUpdate {
   id          Int          @id @default(autoincrement())
@@ -208,12 +216,14 @@ model ClientLead {
   emirate           Emirate?
   leadType          LeadConversionType @default(NORMAL)
   previousLeadId    Int?
+  personality ClientPersonality?
 
   discount             Decimal  @default(0) @db.Decimal(10, 2)
   price                String?
   averagePrice         Decimal? @db.Decimal(10, 2)
   priceNote            String?  @db.Text
   priceWithOutDiscount Decimal  @default(0) @db.Decimal(10, 2)
+  sessionQuestions SessionQuestion[]
 
   projects         Project[]
   priceOffers      PriceOffers[]
@@ -268,7 +278,6 @@ model MeetingReminder {
   adminId        Int?
   isAdmin        Boolean            @default(false)
   type           MeetingType? 
-  sessionQuestions SessionQuestion[]
 
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
@@ -798,8 +807,8 @@ model SessionQuestion {
 
   order            Int             @default(0)
 
-  meetingReminder  MeetingReminder @relation(fields: [meetingReminderId], references: [id])
-  meetingReminderId Int
+  clientLead  ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
 
   createdBy        User?           @relation(fields: [userId], references: [id])
   userId           Int?

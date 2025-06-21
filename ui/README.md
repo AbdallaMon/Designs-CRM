@@ -12,6 +12,9 @@
 - Remove group by sapce
 - Make the image without frame better
 - Fix the way we render the image(can we make the image as one component)
+- Add to meeting questions and ask staff to answer this questions
+- Optional extra questions
+- User answer all questions in one direction
 
 - Fix pdf make it in arabic and arabic direction
 - Make two image grid and make image bigger
@@ -20,16 +23,20 @@
 
 - We need to add schema for to enter client diagnosis
 
+- For meetings
+- Staff can generate link for client to select meeting from it for them self
+- Staff can generate link for admins and can see the selected time by user
+- Admin select available days and available times for examble (in a day can select from 8:8 and each half hour is gap)
+- Admin can remove days or specific times or can add speciale time ect
+- Make it simple
+
   2- حجز المواعيد (we need to make admin pre add the available days and times in the days)
   make it simple like i can set make a schedule from 12 : 12 and leave a gap between each schedule as 15
   then the staff can generate a link for admins or for the user this links (we have to check if there is availble days in the month before generating)
   ok these links are then go to client to select from them also user can have links like them
   SPAIN(is the question user must answer and is related to meetings) and new tab before meetings
 
-- Add to meeting questions and ask staff to answer this questions
-- Optional extra questions
 - Allow to select type of meeting for now it is staff or admin
-- User answer all questions in one direction and add note for him
 - تحليل لشخصية العميل
 - Make it simple as possible
 - Enhance loading the kanban (make it filter data in the backend)
@@ -73,13 +80,6 @@ edits
 
 - Sales choose type of contract
 - Total price is final price
-
-- For meetings
-- Staff can generate link for client to select meeting from it for them self
-- Staff can generate link for admins and can see the selected time by user
-- Admin select available days and available times for examble (in a day can select from 8:8 and each half hour is gap)
-- Admin can remove days or specific times or can add speciale time ect
-- Make it simple
 
 - Dashboard change projects to leads
 - Telegram?

@@ -8,8 +8,9 @@ import {
   IconButton,
   Tooltip,
   Chip,
+  InputAdornment,
 } from "@mui/material";
-import { BsTelegram } from "react-icons/bs";
+import { BsLink, BsTelegram } from "react-icons/bs";
 import { MdEdit, MdSave, MdCancel } from "react-icons/md";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
@@ -41,16 +42,6 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
         "Updating"
       );
 
-      await fetch("/api/updateLead", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          telegramLink: tempLink,
-        }),
-      });
-
       if (response.status === 200) {
         if (setleads) {
           setleads((prev) =>
@@ -75,12 +66,17 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
       console.error("Error updating Telegram link:", error);
     }
   };
-
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      handleSave();
+    } else if (e.key === "Escape") {
+      handleCancel();
+    }
+  };
   const handleCancel = () => {
     setTempLink(lead?.telegramLink || "");
     setIsEditing(false);
   };
-
   // Format the link for display - extract username if possible
   const formatTelegramLink = (link) => {
     if (!link) return "";
@@ -97,50 +93,74 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
   };
 
   const displayText = formatTelegramLink(lead?.telegramLink);
+  const isValidLink = lead?.telegramLink && lead.telegramLink.trim();
 
   if (isEditing) {
     return (
-      <Box
-        display="flex"
-        alignItems="center"
-        gap={1}
-        sx={{
-          p: 1,
-          borderRadius: 1,
-          bgcolor: "rgba(0, 125, 255, 0.05)",
-          border: "1px solid rgba(0, 125, 255, 0.2)",
-        }}
-      >
-        <TextField
-          size="small"
-          value={tempLink}
-          onChange={(e) => setTempLink(e.target.value)}
-          placeholder="Enter Telegram link (e.g., https://t.me/username)"
-          fullWidth
-          InputProps={{
-            startAdornment: (
-              <Box component="span" sx={{ mr: 1, color: "#0088cc" }}>
-                <BsTelegram size={18} />
-              </Box>
-            ),
+      <Box sx={{ width: "450px" }}>
+        <Box
+          display="flex"
+          alignItems="flex-start"
+          gap={1}
+          sx={{
+            p: 2,
+            borderRadius: 2,
+            bgcolor: "action.hover",
+            border: "2px solid",
+            borderColor: "primary.light",
           }}
-        />
-        <Button
-          variant="contained"
-          size="small"
-          onClick={handleSave}
-          startIcon={<MdSave />}
         >
-          Save
-        </Button>
-        <Button
-          variant="outlined"
-          size="small"
-          onClick={handleCancel}
-          startIcon={<MdCancel />}
-        >
-          Cancel
-        </Button>
+          <TextField
+            size="small"
+            value={tempLink}
+            onChange={(e) => setTempLink(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Enter Telegram link"
+            fullWidth
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <BsTelegram size={18} color="#1976d2" />
+                </InputAdornment>
+              ),
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                "&:hover fieldset": {
+                  borderColor: "primary.main",
+                },
+                "&.Mui-focused fieldset": {
+                  borderColor: "primary.main",
+                },
+              },
+            }}
+          />
+          <Box display="flex" gap={0.5}>
+            <Tooltip title="Save (Enter)">
+              <span>
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={handleSave}
+                  startIcon={<MdSave />}
+                  sx={{ minWidth: "80px" }}
+                >
+                  {"Save"}
+                </Button>
+              </span>
+            </Tooltip>
+            <Tooltip title="Cancel (Esc)">
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={handleCancel}
+                startIcon={<MdCancel />}
+              >
+                Cancel
+              </Button>
+            </Tooltip>
+          </Box>
+        </Box>
       </Box>
     );
   }
@@ -154,63 +174,83 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
           "& .edit-button": {
             visibility: isAdmin ? "visible" : "hidden",
           },
-          bgcolor: isAdmin ? "rgba(0, 125, 255, 0.05)" : "transparent",
+          "& .copy-button": {
+            visibility: isValidLink ? "visible" : "hidden",
+          },
+          bgcolor: "action.hover",
           borderRadius: 1,
-          transition: "background-color 0.2s ease",
+          transition: "all 0.2s ease",
         },
-        p: 0.5,
+        p: 1,
+        borderRadius: 1,
       }}
     >
-      {lead?.telegramLink ? (
+      {isValidLink ? (
         <>
-          <Box display="flex" alignItems="center" width="100%">
-            <Tooltip title="Open in Telegram">
+          <Box display="flex" alignItems="center" flex={1}>
+            <Tooltip title={`Open ${displayText} in Telegram`}>
               <Chip
-                icon={<BsTelegram size={16} style={{ color: "#0088cc" }} />}
-                label={displayText}
-                component="a"
+                icon={<BsTelegram size={16} />}
+                label={
+                  <Box display="flex" alignItems="center" gap={0.5}>
+                    <Typography variant="body2" component="span">
+                      {displayText}
+                    </Typography>
+                    <BsLink size={12} />
+                  </Box>
+                }
+                component={"a"}
                 href={lead.telegramLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 clickable
+                variant="outlined"
                 sx={{
-                  color: "#0088cc",
-                  borderColor: "#0088cc",
+                  color: "primary.main",
+                  borderColor: "primary.main",
+                  textDecoration: "none",
                   "& .MuiChip-icon": {
-                    color: "#0088cc",
+                    color: "primary.main",
                   },
                   "&:hover": {
-                    bgcolor: "rgba(0, 136, 204, 0.1)",
+                    bgcolor: "primary.light",
+                    color: "primary.contrastText",
+                    "& .MuiChip-icon": {
+                      color: "primary.contrastText",
+                    },
                   },
                   transition: "all 0.2s ease",
                   fontWeight: 500,
+                  maxWidth: "200px",
                 }}
-                variant="outlined"
               />
             </Tooltip>
+            {isAdmin && (
+              <Tooltip title="Edit Telegram link">
+                <IconButton
+                  size="small"
+                  className="edit-button"
+                  onClick={handleEdit}
+                  sx={{ visibility: "hidden", ml: 1, color: "#0088cc" }}
+                >
+                  <MdEdit fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
           </Box>
-          {isAdmin && (
-            <Tooltip title="Edit Telegram link">
-              <IconButton
-                size="small"
-                className="edit-button"
-                onClick={handleEdit}
-                sx={{ visibility: "hidden", ml: 1, color: "#0088cc" }}
-              >
-                <MdEdit fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )}
         </>
       ) : (
-        <Box display="flex" alignItems="center">
+        <Box display="flex" alignItems="center" width="100%">
           <Chip
-            icon={<BsTelegram size={16} style={{ color: "#9e9e9e" }} />}
-            label="Telegram link not set"
+            icon={<BsTelegram size={16} />}
+            label="No Telegram link"
             variant="outlined"
             sx={{
               color: "text.secondary",
-              borderColor: "rgba(0, 0, 0, 0.23)",
+              borderColor: "divider",
+              "& .MuiChip-icon": {
+                color: "text.secondary",
+              },
             }}
           />
           {isAdmin && (
@@ -219,7 +259,7 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
                 size="small"
                 className="edit-button"
                 onClick={handleEdit}
-                sx={{ visibility: "hidden", ml: 1, color: "#0088cc" }}
+                sx={{ visibility: "hidden", ml: 1, color: "primary.main" }}
               >
                 <MdEdit fontSize="small" />
               </IconButton>

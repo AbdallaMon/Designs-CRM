@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import {
+  Alert,
   alpha,
   Box,
   Chip,
@@ -23,7 +24,14 @@ import {
 import { InProgressCall } from "@/app/UiComponents/DataViewer/leads/InProgressCall.jsx";
 import dayjs from "dayjs";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { FaFileImage, FaFilePdf, FaEye } from "react-icons/fa";
+import {
+  FaFileImage,
+  FaFilePdf,
+  FaEye,
+  FaHandshake,
+  FaQuestionCircle,
+  FaUser,
+} from "react-icons/fa";
 import { AddFiles } from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
 import {
   Card,
@@ -41,13 +49,19 @@ import { NewNoteDialog } from "@/app/UiComponents/DataViewer/leads/leadsDialogs.
 import { Grid2 as Grid, Button } from "@mui/material";
 import { FaMoneyBillWave, FaUserAlt, FaCalendarAlt } from "react-icons/fa";
 import { AddPriceOffers } from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
-import { MdAttachFile } from "react-icons/md";
+import {
+  MdAttachFile,
+  MdPsychology,
+  MdQuestionAnswer,
+  MdTouchApp,
+} from "react-icons/md";
 import SimpleFileInput from "../../formComponents/SimpleFileInput";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import DeleteModelButton from "./extra/DeleteModelButton";
 import { SPAINQuestionsDialog } from "../meeting/SPAIN/SPAINQuestionDialog";
+import { BiConversation } from "react-icons/bi";
 export function CallReminders({ lead, setleads, admin, notUser }) {
   const [callReminders, setCallReminders] = useState(lead?.callReminders);
   const theme = useTheme();
@@ -348,7 +362,6 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                             text="Update meeting result"
                           />
                         )}
-                        <SPAINQuestionsDialog meetingReminderId={call.id} />
                       </>
                     )}
 
@@ -1119,5 +1132,174 @@ export function OurCostAndContractorCost({ lead, setLead }) {
         </Box>
       </Stack>
     </Paper>
+  );
+}
+
+export function SalesToolsTabs({ lead, setLead, setleads }) {
+  const { user } = useAuth();
+
+  const clientPersonality = {
+    title: "Client Personality - شخصية العميل",
+    content:
+      "Understanding different client personality types and how to adapt your communication and sales approach for each personality style.",
+  };
+
+  const objectionHandling = {
+    title: "VERSA Objection Model - نموذج الاعتراضات",
+    content:
+      "VERSA model for handling objections: Validate, Empathize, Respond, Secure Agreement - a systematic approach to overcoming customer concerns.",
+  };
+  if (
+    user.role !== "ADMIN" &&
+    user.role !== "SUPER_ADMIN" &&
+    user.role !== "STAFF"
+  ) {
+    return (
+      <Alert severity="error">You are not allowed to access this tab </Alert>
+    );
+  }
+  return (
+    <Box sx={{ width: "100%", maxWidth: 1200, margin: "0 auto", p: 3 }}>
+      <Typography
+        variant="h4"
+        component="h1"
+        sx={{
+          textAlign: "center",
+          mb: 4,
+          fontWeight: "bold",
+          backgroundClip: "text",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+        }}
+      >
+        Sales Tools
+      </Typography>
+
+      <Grid container spacing={3}>
+        <Grid size={{ md: 6 }}>
+          <Card
+            sx={{
+              height: "100%",
+              transition: "transform 0.3s ease-in-out",
+              "&:hover": {
+                transform: "translateY(-5px)",
+                boxShadow: 6,
+              },
+            }}
+          >
+            <CardContent sx={{ textAlign: "center", p: 4 }}>
+              <MdQuestionAnswer size={48} style={{ marginBottom: 16 }} />
+              <Typography
+                variant="h5"
+                component="h3"
+                gutterBottom
+                sx={{ fontWeight: "bold" }}
+              >
+                SPIN Questions
+              </Typography>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ mb: 3, fontSize: "0.9rem" }}
+              >
+                سؤال اسبين
+              </Typography>
+              <SPAINQuestionsDialog clientLeadId={lead.id} />
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ md: 6 }}>
+          <Card
+            sx={{
+              height: "100%",
+              transition: "transform 0.3s ease-in-out",
+              "&:hover": {
+                transform: "translateY(-5px)",
+                boxShadow: 6,
+              },
+            }}
+          >
+            <CardContent sx={{ textAlign: "center", p: 4 }}>
+              <MdTouchApp size={48} style={{ marginBottom: 16 }} />
+              <Typography
+                variant="h5"
+                component="h3"
+                gutterBottom
+                sx={{ fontWeight: "bold" }}
+              >
+                VERSA Objections
+              </Typography>
+              <Typography
+                variant="body1"
+                color="text.secondary"
+                sx={{ mb: 3, fontSize: "0.9rem" }}
+              >
+                نموذج الاعتراضات
+              </Typography>
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={<FaHandshake />}
+                sx={{
+                  color: "white",
+                  px: 4,
+                  py: 1.5,
+                  fontSize: "1rem",
+                }}
+              >
+                Open VERSA Model
+              </Button>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid size={{ md: 6 }}>
+          <Card
+            sx={{
+              transition: "transform 0.3s ease-in-out",
+              "&:hover": {
+                transform: "translateY(-5px)",
+                boxShadow: 6,
+              },
+            }}
+          >
+            <CardContent sx={{ textAlign: "center", p: 4 }}>
+              <FaUser size={48} style={{ marginBottom: 16 }} />
+              <Typography
+                variant="h5"
+                component="h3"
+                gutterBottom
+                sx={{ fontWeight: "bold" }}
+              >
+                Client Personality
+              </Typography>
+              <Typography
+                variant="body1"
+                sx={{ mb: 3, fontSize: "0.9rem", opacity: 0.9 }}
+              >
+                شخصية العميل
+              </Typography>
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={<MdPsychology />}
+                sx={{
+                  backgroundColor: "rgba(255, 255, 255, 0.2)",
+                  px: 4,
+                  py: 1.5,
+                  fontSize: "1rem",
+                  "&:hover": {
+                    backgroundColor: "rgba(255, 255, 255, 0.3)",
+                  },
+                }}
+              >
+                Analyze Personality
+              </Button>
+            </CardContent>
+          </Card>{" "}
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
