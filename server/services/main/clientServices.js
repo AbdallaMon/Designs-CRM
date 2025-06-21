@@ -1005,7 +1005,7 @@ export async function sendSuccessEmailAfterSessionDone({
   }
 }
 async function sendEmailToClient({ clientName, clientEmail, pdfUrl, token }) {
-  const sessionPageUrl = `${process.env.ORIGIN}/image-session?token=${token}`;
+  const sessionPageUrl = `${process.env.OLDORIGIN}/image-session?token=${token}`;
   const pdfDownloadUrl = pdfUrl;
 
   const clientHtml = `
@@ -1074,7 +1074,7 @@ async function sendEmailForStaff({
           <p>Useful links:</p>
           <ul style="list-style: none; padding: 0;">
             <li style="margin: 10px 0;"><a href="${pdfDownloadUrl}" style="color: #d3ac71; font-weight: bold;">📄 Download Session PDF</a></li>
-            <li style="margin: 10px 0;"><a href="${process.env.ORIGIN}/dashboard/deals/${clientLeadId}" style="color: #d3ac71; font-weight: bold;">👤 Open lead page for more data</a></li>
+            <li style="margin: 10px 0;"><a href="${process.env.OLDORIGIN}/dashboard/deals/${clientLeadId}" style="color: #d3ac71; font-weight: bold;">👤 Open lead page for more data</a></li>
           </ul>
           <p style="margin-top: 20px;">Please review the session or take follow-up actions as needed.</p>
           <p style="margin-top: 20px;">— Dream Studio System Notification</p>
