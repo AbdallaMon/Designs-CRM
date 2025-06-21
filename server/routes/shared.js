@@ -20,6 +20,7 @@ import {
   deleteInProgressSession,
   deleteNote,
   editPriceOfferStatus,
+  getAdmins,
   getAllFixedData,
   getArchivedProjects,
   getClientImageSessions,
@@ -63,7 +64,10 @@ import {
   updateProject,
   updateTask,
 } from "../services/main/sharedServices.js";
-import { getAdminClientLeadDetails } from "../services/main/adminServices.js";
+import {
+  getAdminClientLeadDetails,
+  updateLeadField,
+} from "../services/main/adminServices.js";
 import {
   createCallReminder,
   createFile,
@@ -141,6 +145,20 @@ router.get("/client-leads/deals", async (req, res) => {
     res
       .status(500)
       .json({ message: "An error occurred while fetching client leads" });
+  }
+});
+router.put("/lead/update/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedLead = await updateLeadField({ data: req.body, leadId: id });
+
+    res.status(200).json({
+      data: updatedLead,
+      message: "Lead updated successfully",
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({ message: e.message });
   }
 });
 router.post("/:userId/client-leads/countries", async (req, res) => {
@@ -1302,5 +1320,18 @@ router.delete(
     }
   }
 );
+
+router.get("/users/admins", async (req, res) => {
+  try {
+    const users = await getAdmins();
+
+    res.status(200).json({ data: users });
+  } catch (error) {
+    console.error("Error fetching client leads:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching client leads" });
+  }
+});
 //////// end of image sesssion ////////
 export default router;

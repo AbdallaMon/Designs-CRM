@@ -664,3 +664,8 @@ export const personalityEnum = {
   INTROVERTED: "المنطوي / المتحفظ",
   DRIVER: "القيادي الحاسم",
 };
+
+export const meetingTypes = [
+  { value: "SALES_MEETING", label: "Sales meeting" },
+  { value: "DESIGN_MEETING", label: "Design consultant meeting" },
+];

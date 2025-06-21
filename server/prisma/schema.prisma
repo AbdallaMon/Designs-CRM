@@ -224,6 +224,7 @@ model ClientLead {
   priceNote            String?  @db.Text
   priceWithOutDiscount Decimal  @default(0) @db.Decimal(10, 2)
   sessionQuestions SessionQuestion[]
+  versaModel  VersaModel[]
 
   projects         Project[]
   priceOffers      PriceOffers[]
@@ -478,6 +479,7 @@ model User {
   answers          Answer[]         
   updates              ClientLeadUpdate[]
   createdImageSessions ClientImageSession[]
+  versaModels                VersaModel[]
 
   files           File[]
   lastSeenAt      DateTime?
@@ -830,3 +832,62 @@ model Answer {
   createdAt        DateTime        @default(now())
 }
 
+
+// OBJECTION
+model ObjectionCategory {
+  id        Int          @id @default(autoincrement())
+  title     String       @db.VarChar(255) // e.g., Budget Objection
+  label     String       @db.VarChar(255) // e.g., اعتراض الميزانية (optional for frontend display)
+  versas    VersaModel[]
+  createdAt DateTime     @default(now())
+}
+
+model VersaModel {
+  id              Int                @id @default(autoincrement())
+  clientLead      ClientLead         @relation(fields: [clientLeadId], references: [id])
+  clientLeadId    Int
+
+  createdBy       User               @relation(fields: [userId], references: [id])
+  userId          Int
+
+  category        ObjectionCategory  @relation(fields: [categoryId], references: [id])
+  categoryId      Int
+
+  v               VersaStep?         @relation("VStep", fields: [vId], references: [id])
+  vId             Int?               @unique
+
+  e               VersaStep?         @relation("EStep", fields: [eId], references: [id])
+  eId             Int?               @unique
+
+  r               VersaStep?         @relation("RStep", fields: [rId], references: [id])
+  rId             Int?               @unique
+
+  s               VersaStep?         @relation("SStep", fields: [sId], references: [id])
+  sId             Int?               @unique
+
+  a               VersaStep?         @relation("AStep", fields: [aId], references: [id])
+  aId             Int?               @unique
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([clientLeadId])
+  @@index([userId])
+  @@index([categoryId])
+}
+
+
+model VersaStep {
+  id             Int         @id @default(autoincrement())
+  label          String?     @db.VarChar(255) // optional (e.g., "V = Validate")
+  question       String?     @db.Text
+  answer         String?     @db.Text
+  clientResponse String?     @db.Text
+
+  // reverse relations for each letter
+  vVersa VersaModel? @relation("VStep")
+  eVersa VersaModel? @relation("EStep")
+  rVersa VersaModel? @relation("RStep")
+  sVersa VersaModel? @relation("SStep")
+  aVersa VersaModel? @relation("AStep")
+}

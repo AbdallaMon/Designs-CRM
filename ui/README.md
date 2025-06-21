@@ -15,6 +15,9 @@
 - Add to meeting questions and ask staff to answer this questions
 - Optional extra questions
 - User answer all questions in one direction
+- Allow to select type of meeting for now it is staff or admin
+- تحليل لشخصية العميل
+- Make it simple as possible
 
 - Fix pdf make it in arabic and arabic direction
 - Make two image grid and make image bigger
@@ -36,9 +39,6 @@
   ok these links are then go to client to select from them also user can have links like them
   SPAIN(is the question user must answer and is related to meetings) and new tab before meetings
 
-- Allow to select type of meeting for now it is staff or admin
-- تحليل لشخصية العميل
-- Make it simple as possible
 - Enhance loading the kanban (make it filter data in the backend)
 
 - New page for register make it en and without video

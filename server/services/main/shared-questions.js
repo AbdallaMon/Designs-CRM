@@ -181,3 +181,123 @@ export async function createCustomQuestion({
 
   return question;
 }
+
+/// VERSA ////
+const defaultCategories = [
+  { title: "Budget Objection", label: "اعتراض الميزانية" },
+  { title: "Price Objection", label: "اعتراض السعر" },
+  {
+    title: "Know all stage costs",
+    label: "بدي اعرف تكلفة مراحل كلها قبل ما ابدا",
+  },
+  { title: "I’m in another country", label: "انا ب دولة ثانية" },
+  {
+    title: "Design capability concern",
+    label: "اعتراض علي قدرة تنفيذ تصميم في دولة تانية",
+  },
+  {
+    title: "Mismatch between design & execution",
+    label: "اغلب شركات بتصمم اشي ولما ينفذة بيطلع اشي تاني",
+  },
+  { title: "Few revisions", label: "كم عدد تعديلات ؟ قليل" },
+  { title: "Why you not others?", label: "شو الفرق بينكم وبين شركات ثانية" },
+  { title: "Let me ask my spouse", label: "خليني اشاور زوجتي" },
+  { title: "Let me think & call back", label: "خليني افكر وارجع لك" },
+  {
+    title: "Others gave free design",
+    label: "بقية شركات اعطوني تصميم ببلاش مقابل انفذ معهم",
+  },
+  {
+    title: "I’m not sure I can complete all steps",
+    label: "اظن مع اغضر اكمل كل مراحل معكم",
+  },
+];
+
+export async function ensureDefaultCategories() {
+  const count = await prisma.objectionCategory.count();
+  if (count === 0) {
+    await prisma.objectionCategory.createMany({ data: defaultCategories });
+  }
+  return true;
+}
+
+export async function getCategoriesWithVersaStatus({ clientLeadId }) {
+  await ensureDefaultCategories();
+
+  const categories = await prisma.objectionCategory.findMany({
+    include: {
+      versas: {
+        where: { clientLeadId: Number(clientLeadId) },
+        select: { id: true },
+      },
+    },
+  });
+
+  const response = categories.map((cat) => ({
+    ...cat,
+    hasVersa: cat.versas.length > 0,
+  }));
+
+  return response;
+}
+export async function getVersaByCategory({ clientLeadId, categoryId }) {
+  const versa = await prisma.versaModel.findFirst({
+    where: {
+      clientLeadId: Number(clientLeadId),
+      categoryId: Number(categoryId),
+    },
+    include: {
+      v: true,
+      e: true,
+      r: true,
+      s: true,
+      a: true,
+    },
+  });
+}
+
+export async function createVersaModel({ clientLeadId, userId, categoryId }) {
+  clientLeadId = Number(clientLeadId);
+  userId = Number(userId);
+  categoryId = Number(categoryId);
+  const stepEntries = await Promise.all(
+    ["v", "e", "r", "s", "a"].map(() =>
+      prisma.versaStep.create({
+        data: {
+          label: null,
+          question: null,
+          answer: null,
+          clientResponse: null,
+        },
+      })
+    )
+  );
+
+  const versa = await prisma.versaModel.create({
+    data: {
+      clientLeadId,
+      userId,
+      categoryId,
+      vId: stepEntries[0].id,
+      eId: stepEntries[1].id,
+      rId: stepEntries[2].id,
+      sId: stepEntries[3].id,
+      aId: stepEntries[4].id,
+    },
+  });
+  return versa;
+}
+
+export async function updateVersa({
+  stepId,
+  label,
+  question,
+  answer,
+  clientResponse,
+}) {
+  const step = await prisma.versaStep.update({
+    where: { id: parseInt(stepId) },
+    data: { label, question, answer, clientResponse },
+  });
+  return step;
+}

@@ -410,6 +410,14 @@ export async function getClientLeadDetails(
           meetingResult: true,
           userId: true,
           updatedAt: true,
+          adminId: true,
+          admin: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+          type: true,
           user: {
             select: { name: true },
           },
@@ -3328,4 +3336,26 @@ export async function deleteInProgressSession(sessionId) {
   });
 
   return { message: "Deleted succssfully" };
+}
+export async function getAdmins() {
+  let where = {};
+  where.OR = [
+    {
+      role: {
+        in: ["ADMIN", "SUPER_ADMIN"],
+      },
+    },
+    { subRoles: { some: { subRole: { in: ["ADMIN", "SUPER_ADMIN"] } } } },
+  ];
+  where.isActive = true;
+  const users = await prisma.user.findMany({
+    where: where,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  });
+
+  return users;
 }

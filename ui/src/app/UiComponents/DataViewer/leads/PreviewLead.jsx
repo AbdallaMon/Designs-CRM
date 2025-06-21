@@ -84,7 +84,6 @@ import { LeadInfo } from "./extra/LeadInfo";
 import { PreviewLead } from "./extra/PreviewLead";
 import UpdateInitialConsultButton from "../../buttons/UpdateInitialConsultLead";
 import DeleteModal from "../../models/DeleteModal";
-import { EditFieldButton } from "./extra/EditFieldButton";
 import { AssignNewStaffModal } from "../utility/AssignNewStaffModal";
 import UpdatesList from "./leadUpdates/UpdatesList";
 import ClientImageSessionManager from "../image-session/ClientSessionImageManager";

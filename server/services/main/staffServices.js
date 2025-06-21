@@ -91,6 +91,9 @@ export async function createMeetingReminder({
   userId,
   time,
   reminderReason,
+  isAdmin,
+  adminId,
+  type,
   currentUser,
 }) {
   if (
@@ -106,13 +109,18 @@ export async function createMeetingReminder({
     throw new Error("The reminder time must be in the future.");
   }
   formattedTime = formattedTime.toDate().toISOString();
+  const data = { clientLeadId, userId, time: formattedTime, reminderReason };
+  if (isAdmin) {
+    data.isAdmin = true;
+  }
+  if (adminId) {
+    data.adminId = Number(adminId);
+  }
+  if (type) {
+    data.type = type;
+  }
   const newReminder = await prisma.meetingReminder.create({
-    data: {
-      clientLeadId,
-      userId,
-      time: formattedTime,
-      reminderReason,
-    },
+    data,
     select: {
       id: true,
       time: true,
@@ -120,6 +128,14 @@ export async function createMeetingReminder({
       reminderReason: true,
       meetingResult: true,
       userId: true,
+      type: true,
+      isAdmin: true,
+      adminId: true,
+      admin: {
+        select: {
+          name: true,
+        },
+      },
       user: {
         select: { name: true },
       },

@@ -4,7 +4,11 @@ import {
   alpha,
   Box,
   Chip,
+  FormControl,
+  InputLabel,
+  MenuItem,
   Paper,
+  Select,
   Stack,
   Switch,
   Typography,
@@ -14,11 +18,13 @@ import {
   AddExtraService,
   CallResultDialog,
   NewCallDialog,
+  NewMeetingDialog,
 } from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
 import {
   RiAlarmLine,
   RiCalendarLine,
   RiCheckboxCircleLine,
+  RiShieldUserLine,
   RiUserLine,
 } from "react-icons/ri";
 import { InProgressCall } from "@/app/UiComponents/DataViewer/leads/InProgressCall.jsx";
@@ -61,7 +67,8 @@ import { useAlertContext } from "@/app/providers/MuiAlert";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import DeleteModelButton from "./extra/DeleteModelButton";
 import { SPAINQuestionsDialog } from "../meeting/SPAIN/SPAINQuestionDialog";
-import { BiConversation } from "react-icons/bi";
+import { personalityEnum } from "@/app/helpers/constants";
+import VersaObjectionSystem from "../meeting/VERSA/VERSADialog";
 export function CallReminders({ lead, setleads, admin, notUser }) {
   const [callReminders, setCallReminders] = useState(lead?.callReminders);
   const theme = useTheme();
@@ -258,6 +265,7 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
   );
   const theme = useTheme();
   const { user } = useAuth();
+
   useEffect(() => {
     if (lead?.meetingReminders) setMeetingReminders(lead.meetingReminders);
   }, [lead]);
@@ -280,14 +288,51 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
       }[status] || theme.palette.grey[300],
   });
 
+  const getMeetingTypeStyles = (type) => ({
+    backgroundColor:
+      {
+        CONSULTATION: alpha(theme.palette.info.main, 0.1),
+        FOLLOW_UP: alpha(theme.palette.secondary.main, 0.1),
+        PRESENTATION: alpha(theme.palette.primary.main, 0.1),
+        NEGOTIATION: alpha("#FF9800", 0.1), // Orange
+        CLOSING: alpha("#4CAF50", 0.1), // Green
+        OTHER: alpha(theme.palette.grey[500], 0.1),
+      }[type] || alpha(theme.palette.grey[500], 0.1),
+    color:
+      {
+        CONSULTATION: theme.palette.info.dark,
+        FOLLOW_UP: theme.palette.secondary.dark,
+        PRESENTATION: theme.palette.primary.dark,
+        NEGOTIATION: "#E65100", // Dark Orange
+        CLOSING: "#2E7D32", // Dark Green
+        OTHER: theme.palette.grey[700],
+      }[type] || theme.palette.grey[700],
+    borderColor:
+      {
+        CONSULTATION: theme.palette.info.main,
+        FOLLOW_UP: theme.palette.secondary.main,
+        PRESENTATION: theme.palette.primary.main,
+        NEGOTIATION: "#FF9800",
+        CLOSING: "#4CAF50",
+        OTHER: theme.palette.grey[300],
+      }[type] || theme.palette.grey[300],
+  });
+
+  const formatMeetingType = (type) => {
+    if (!type) return "General";
+    return type
+      .replace(/_/g, " ")
+      .toLowerCase()
+      .replace(/\b\w/g, (l) => l.toUpperCase());
+  };
+
   return (
     <Stack spacing={3}>
       {!notUser && (
-        <NewCallDialog
+        <NewMeetingDialog
           lead={lead}
-          setCallReminders={setMeetingReminders}
+          setMeetingReminders={setMeetingReminders}
           setleads={setleads}
-          reminderType="MEETING"
         />
       )}
       <Stack spacing={2}>
@@ -313,18 +358,34 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                 "&:hover": {
                   boxShadow: theme.shadows[4],
                   transform: "translateY(-2px)",
-                  borderColor: theme.palette.primary.main,
+                  borderColor: call.isAdmin
+                    ? "#9C27B0"
+                    : theme.palette.primary.main,
                 },
+                // Special styling for admin meetings
+                ...(call.isAdmin && {
+                  background: `linear-gradient(135deg, ${alpha(
+                    "#9C27B0",
+                    0.02
+                  )} 0%, ${alpha("#9C27B0", 0.05)} 100%)`,
+                  borderColor: alpha("#9C27B0", 0.3),
+                }),
               }}
             >
               <Stack spacing={2}>
                 <Stack
                   direction="row"
                   justifyContent="space-between"
-                  alignItems="center"
+                  alignItems="flex-start"
                 >
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Box>
+                  <Stack spacing={2}>
+                    {/* Status and Type Chips Row */}
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      flexWrap="wrap"
+                    >
                       <Chip
                         size="small"
                         icon={
@@ -344,68 +405,141 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                           },
                         }}
                       />
-                      {call.status !== "IN_PROGRESS" && (
-                        <Typography variant="body2" fontWeight="600">
-                          Done at ,{dayjs(call.updatedAt).format("DD/MM/YYYY")}
-                        </Typography>
+
+                      {/* Meeting Type Chip */}
+                      <Chip
+                        size="small"
+                        label={formatMeetingType(call.type)}
+                        sx={{
+                          ...getMeetingTypeStyles(call.type),
+                          fontWeight: 600,
+                          border: "1px solid",
+                        }}
+                      />
+
+                      {/* Admin Tag */}
+                      {call.isAdmin && (
+                        <Chip
+                          size="small"
+                          icon={<RiShieldUserLine size={16} />}
+                          label="ADMIN"
+                          sx={{
+                            backgroundColor: alpha("#9C27B0", 0.1),
+                            color: "#7B1FA2",
+                            borderColor: "#9C27B0",
+                            fontWeight: 700,
+                            border: "1px solid",
+                            "& .MuiChip-icon": {
+                              color: "#7B1FA2",
+                            },
+                          }}
+                        />
                       )}
-                    </Box>
-                    {user.role !== "ACCOUNTANT" && (
-                      <>
-                        {call.status === "IN_PROGRESS" && (
-                          <CallResultDialog
-                            lead={lead}
-                            setCallReminders={setMeetingReminders}
-                            call={call}
-                            setleads={setleads}
-                            reminderType="MEETING"
-                            text="Update meeting result"
-                          />
-                        )}
-                      </>
+                    </Stack>
+
+                    {/* Done Date */}
+                    {call.status !== "IN_PROGRESS" && (
+                      <Typography
+                        variant="body2"
+                        fontWeight="600"
+                        color="text.secondary"
+                      >
+                        Done at {dayjs(call.updatedAt).format("DD/MM/YYYY")}
+                      </Typography>
                     )}
 
-                    <DeleteModelButton
-                      item={call}
-                      model={"MeetingReminders"}
-                      contentKey="reminderReason"
-                      onDelete={() => {
-                        setMeetingReminders((oldCalls) =>
-                          oldCalls.filter((c) => c.id !== call.id)
-                        );
-                      }}
-                    />
+                    {/* Action Buttons */}
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      {user.role !== "ACCOUNTANT" && (
+                        <>
+                          {call.status === "IN_PROGRESS" && (
+                            <CallResultDialog
+                              lead={lead}
+                              setCallReminders={setMeetingReminders}
+                              call={call}
+                              setleads={setleads}
+                              reminderType="MEETING"
+                              text="Update meeting result"
+                            />
+                          )}
+                        </>
+                      )}
+
+                      <DeleteModelButton
+                        item={call}
+                        model={"MeetingReminder"}
+                        contentKey="reminderReason"
+                        onDelete={() => {
+                          setMeetingReminders((oldCalls) =>
+                            oldCalls.filter((c) => c.id !== call.id)
+                          );
+                        }}
+                      />
+                    </Stack>
                   </Stack>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <RiUserLine
-                      size={16}
-                      color={theme.palette.text.secondary}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      {call.user.name}
-                    </Typography>
+
+                  {/* User Info */}
+                  <Stack direction="column" spacing={1} alignItems="flex-end">
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <RiUserLine
+                        size={16}
+                        color={theme.palette.text.secondary}
+                      />
+                      <Typography variant="body2" color="text.secondary">
+                        {call.user.name}
+                      </Typography>
+                    </Stack>
+
+                    {/* Admin Info (if admin meeting) */}
+                    {call.isAdmin && call.admin && (
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <RiShieldUserLine size={16} color="#9C27B0" />
+                        <Typography
+                          variant="body2"
+                          sx={{ color: "#7B1FA2", fontWeight: 600 }}
+                        >
+                          Admin: {call.admin.name}
+                        </Typography>
+                      </Stack>
+                    )}
                   </Stack>
                 </Stack>
+
                 {call.status === "IN_PROGRESS" && (
                   <InProgressCall call={call} type="MEETING" />
                 )}
+
                 <Stack spacing={2}>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <RiCalendarLine
                       size={18}
-                      color={theme.palette.primary.main}
+                      color={
+                        call.isAdmin ? "#9C27B0" : theme.palette.primary.main
+                      }
                     />
-                    <Typography variant="subtitle2">
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        fontWeight: call.isAdmin ? 600 : 400,
+                        color: call.isAdmin ? "#7B1FA2" : "inherit",
+                      }}
+                    >
                       {dayjs(call.time).format("MM/DD/YYYY, h:mm A")}
                     </Typography>
                   </Stack>
 
                   <Box
                     sx={{
-                      bgcolor: alpha(theme.palette.background.default, 0.6),
+                      bgcolor: call.isAdmin
+                        ? alpha("#9C27B0", 0.03)
+                        : alpha(theme.palette.background.default, 0.6),
                       p: 2,
                       borderRadius: 2,
-                      border: `1px solid ${theme.palette.divider}`,
+                      border: `1px solid ${
+                        call.isAdmin
+                          ? alpha("#9C27B0", 0.2)
+                          : theme.palette.divider
+                      }`,
                     }}
                   >
                     <Typography
@@ -418,6 +552,7 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                       {call.reminderReason}
                     </Typography>
                   </Box>
+
                   {call.meetingResult && (
                     <Box
                       sx={{
@@ -1137,18 +1272,39 @@ export function OurCostAndContractorCost({ lead, setLead }) {
 
 export function SalesToolsTabs({ lead, setLead, setleads }) {
   const { user } = useAuth();
+  const [personality, setPersonality] = useState(lead.personality);
+  const { setLoading } = useToastContext();
 
-  const clientPersonality = {
-    title: "Client Personality - شخصية العميل",
-    content:
-      "Understanding different client personality types and how to adapt your communication and sales approach for each personality style.",
+  const handleChange = async (event) => {
+    setPersonality(event.target.value);
+    await handleChangePersonality(event.target.value);
   };
-
-  const objectionHandling = {
-    title: "VERSA Objection Model - نموذج الاعتراضات",
-    content:
-      "VERSA model for handling objections: Validate, Empathize, Respond, Secure Agreement - a systematic approach to overcoming customer concerns.",
-  };
+  async function handleChangePersonality(personality) {
+    const request = await handleRequestSubmit(
+      { personality },
+      setLoading,
+      `shared/lead/update/${lead.id}`,
+      false,
+      "Updating",
+      false,
+      "PUT"
+    );
+    if (request.status === 200) {
+      if (setleads) {
+        setleads((oldleads) =>
+          oldleads.map((l) => {
+            if (l.id === lead.id) {
+              return { ...l, personality };
+            }
+            return l;
+          })
+        );
+      }
+      if (setLead) {
+        setLead({ ...lead, personality });
+      }
+    }
+  }
   if (
     user.role !== "ADMIN" &&
     user.role !== "SUPER_ADMIN" &&
@@ -1159,22 +1315,7 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
     );
   }
   return (
-    <Box sx={{ width: "100%", maxWidth: 1200, margin: "0 auto", p: 3 }}>
-      <Typography
-        variant="h4"
-        component="h1"
-        sx={{
-          textAlign: "center",
-          mb: 4,
-          fontWeight: "bold",
-          backgroundClip: "text",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-        }}
-      >
-        Sales Tools
-      </Typography>
-
+    <Box sx={{ width: "100%", maxWidth: 1200, margin: "0 auto", p: 2 }}>
       <Grid container spacing={3}>
         <Grid size={{ md: 6 }}>
           <Card
@@ -1237,19 +1378,7 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
               >
                 نموذج الاعتراضات
               </Typography>
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={<FaHandshake />}
-                sx={{
-                  color: "white",
-                  px: 4,
-                  py: 1.5,
-                  fontSize: "1rem",
-                }}
-              >
-                Open VERSA Model
-              </Button>
+              <VersaObjectionSystem clientLeadId={lead.id} />
             </CardContent>
           </Card>
         </Grid>
@@ -1280,24 +1409,27 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
               >
                 شخصية العميل
               </Typography>
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={<MdPsychology />}
-                sx={{
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
-                  px: 4,
-                  py: 1.5,
-                  fontSize: "1rem",
-                  "&:hover": {
-                    backgroundColor: "rgba(255, 255, 255, 0.3)",
-                  },
-                }}
-              >
-                Analyze Personality
-              </Button>
+
+              <FormControl sx={{ minWidth: 200 }}>
+                <InputLabel id="personality-select-label">
+                  {personality ? "Change" : "Select"} Personality
+                </InputLabel>
+                <Select
+                  labelId="personality-select-label"
+                  value={personality}
+                  label="Select Personality"
+                  onChange={async (e) => await handleChange(e)}
+                  displayEmpty
+                >
+                  {Object.entries(personalityEnum).map(([key, value]) => (
+                    <MenuItem key={key} value={key}>
+                      {value}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </CardContent>
-          </Card>{" "}
+          </Card>
         </Grid>
       </Grid>
     </Box>

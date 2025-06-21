@@ -63,37 +63,15 @@ function UpdateInitialConsultButton({ clientLead }) {
           startIcon={<MdTrendingUp />}
           endIcon={<FaArrowRight size={14} />}
           sx={{
-            background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
             borderRadius: 3,
             px: 4,
             py: 1.5,
             fontWeight: 700,
             textTransform: "none",
             fontSize: "0.925rem",
-            boxShadow: "0 6px 20px rgba(245, 158, 11, 0.3)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
             position: "relative",
             overflow: "hidden",
-            "&:before": {
-              content: '""',
-              position: "absolute",
-              top: 0,
-              left: "-100%",
-              width: "100%",
-              height: "100%",
-              background:
-                "linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent)",
-              transition: "left 0.6s ease",
-            },
-            "&:hover": {
-              background: "linear-gradient(135deg, #d97706 0%, #b45309 100%)",
-              transform: "translateY(-3px) scale(1.02)",
-              boxShadow: "0 12px 32px rgba(245, 158, 11, 0.4)",
-              "&:before": {
-                left: "100%",
-              },
-            },
+
             "&:active": {
               transform: "translateY(-1px) scale(1.01)",
             },
@@ -160,8 +138,6 @@ function UpdateInitialConsultButton({ clientLead }) {
               <Stack direction="row" alignItems="center" spacing={2}>
                 <Box
                   sx={{
-                    background:
-                      "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
                     borderRadius: "50%",
                     p: 1.5,
                     display: "flex",
@@ -307,14 +283,12 @@ function UpdateInitialConsultButton({ clientLead }) {
                 py: 1.5,
                 fontWeight: 700,
                 textTransform: "none",
-                boxShadow: "0 6px 20px rgba(16, 185, 129, 0.3)",
                 border: "1px solid rgba(255, 255, 255, 0.2)",
                 transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
                 "&:hover": {
                   background:
                     "linear-gradient(135deg, #059669 0%, #047857 100%)",
                   transform: "translateY(-2px)",
-                  boxShadow: "0 12px 32px rgba(16, 185, 129, 0.4)",
                 },
               }}
             >
