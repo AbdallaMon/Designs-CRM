@@ -262,7 +262,24 @@ export async function getClientLeadsByDateRange({ searchParams, isAdmin }) {
       },
     },
   });
+  const statusArray = [
+    "IN_PROGRESS",
+    "INTERESTED",
+    "NEEDS_IDENTIFIED",
+    "NEGOTIATING",
+    "FINALIZED",
+    "REJECTED",
+    "ARCHIVED",
+    "ON_HOLD",
+  ];
+
+  const groupedLeads = {};
   return clientLeads;
+  // statusArray.forEach((status) => {
+  //   groupedLeads[status] = clientLeads.filter((lead) => lead.status === status);
+  // });
+
+  // return groupedLeads;
 }
 
 export async function getClientLeadDetails(

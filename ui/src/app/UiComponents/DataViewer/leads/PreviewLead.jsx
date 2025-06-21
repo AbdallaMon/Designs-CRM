@@ -806,47 +806,30 @@ const MoreActionsMenu = ({
           </>
         )}
 
-        {(user.role === "STAFF" ||
-          user.role === "SUPER_ADMIN" ||
-          user.role === "ADMIN") && (
-          <MenuItem>
-            <AddPayments
-              lead={lead}
-              open={paymentModal}
-              paymentType={"final-price"}
-              setOpen={setPaymentModal}
-              totalAmount={lead.averagePrice}
-              setOldPayments={setPayments}
-            />
-          </MenuItem>
-        )}
-        {/* Payment Actions */}
-        {lead.status === "FINALIZED" && (
+        {(lead.status === "FINALIZED" || lead.status === "ARCHIVED") && (
           <>
-            {payments?.length > 0 ? (
-              <MenuItem sx={{ py: 1.5 }}>
-                <PaymentDialog payments={payments} />
+            {(user.role === "STAFF" ||
+              user.role === "SUPER_ADMIN" ||
+              user.role === "ADMIN") && (
+              <MenuItem>
+                <AddPayments
+                  lead={lead}
+                  open={paymentModal}
+                  paymentType={"final-price"}
+                  setOpen={setPaymentModal}
+                  totalAmount={lead.averagePrice}
+                  setOldPayments={setPayments}
+                />
               </MenuItem>
-            ) : (
-              <>
-                {(user.role === "STAFF" ||
-                  user.role === "SUPER_ADMIN" ||
-                  user.role === "ADMIN") && (
-                  <MenuItem
-                    onClick={() => {
-                      setPaymentModal(true);
-                    }}
-                    sx={{ py: 1.5 }}
-                  >
-                    <PiCurrencyDollarSimpleLight
-                      size={16}
-                      style={{ marginRight: 12 }}
-                    />
-                    Add Payment
-                  </MenuItem>
-                )}
-              </>
             )}
+            {/* Payment Actions */}
+            <>
+              {payments?.length > 0 && (
+                <MenuItem sx={{ py: 1.5 }}>
+                  <PaymentDialog payments={payments} />
+                </MenuItem>
+              )}
+            </>
           </>
         )}
       </Menu>

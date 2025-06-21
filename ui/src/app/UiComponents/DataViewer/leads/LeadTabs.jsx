@@ -1328,7 +1328,7 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
               },
             }}
           >
-            <CardContent sx={{ textAlign: "center", p: 4 }}>
+            <CardContent sx={{ textAlign: "center", p: 2 }}>
               <MdQuestionAnswer size={48} style={{ marginBottom: 16 }} />
               <Typography
                 variant="h5"
@@ -1361,7 +1361,7 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
               },
             }}
           >
-            <CardContent sx={{ textAlign: "center", p: 4 }}>
+            <CardContent sx={{ textAlign: "center", p: 2 }}>
               <MdTouchApp size={48} style={{ marginBottom: 16 }} />
               <Typography
                 variant="h5"
@@ -1393,7 +1393,7 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
               },
             }}
           >
-            <CardContent sx={{ textAlign: "center", p: 4 }}>
+            <CardContent sx={{ textAlign: "center", p: 2 }}>
               <FaUser size={48} style={{ marginBottom: 16 }} />
               <Typography
                 variant="h5"

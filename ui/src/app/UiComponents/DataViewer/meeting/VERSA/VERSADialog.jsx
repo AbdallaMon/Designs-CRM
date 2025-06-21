@@ -21,6 +21,13 @@ import {
   AppBar,
   Toolbar,
   LinearProgress,
+  Divider,
+  Fade,
+  Grow,
+  Avatar,
+  Stack,
+  useTheme,
+  alpha,
 } from "@mui/material";
 
 import {
@@ -30,6 +37,12 @@ import {
   MdSave,
   MdArrowBack,
   MdInfo,
+  MdTrendingUp,
+  MdHandshake,
+  MdSupport,
+  MdQuestionAnswer,
+  MdPsychology,
+  MdTouchApp,
 } from "react-icons/md";
 import { getData } from "@/app/helpers/functions/getData";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
@@ -40,8 +53,9 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-// VersaStep Component - Direct editing
+// VersaStep Component - Enhanced with theme
 const VersaStep = ({ step, stepKey, onSave }) => {
+  const theme = useTheme();
   const [formData, setFormData] = useState({
     question: step?.question || "",
     answer: step?.answer || "",
@@ -49,17 +63,50 @@ const VersaStep = ({ step, stepKey, onSave }) => {
   });
   const [hasChanges, setHasChanges] = useState(false);
   const { loading, setLoading } = useToastContext();
-  const stepLabels = {
-    v: "Validate",
-    e: "Empathize",
-    r: "Respond",
-    s: "Support",
-    a: "Advance",
+
+  const stepConfig = {
+    v: {
+      label: "Validate",
+      color: theme.palette.info.main,
+      lightColor: alpha(theme.palette.info.main, 0.1),
+      icon: <MdQuestionAnswer />,
+      description: "Understand and acknowledge the client's concern",
+    },
+    e: {
+      label: "Empathize",
+      color: theme.palette.warning.main,
+      lightColor: alpha(theme.palette.warning.main, 0.1),
+      icon: <MdPsychology />,
+      description: "Connect emotionally with the client's perspective",
+    },
+    r: {
+      label: "Respond",
+      color: theme.palette.primary.main,
+      lightColor: alpha(theme.palette.primary.main, 0.1),
+      icon: <MdHandshake />,
+      description: "Provide a thoughtful and relevant response",
+    },
+    s: {
+      label: "Support",
+      color: theme.palette.success.main,
+      lightColor: alpha(theme.palette.success.main, 0.1),
+      icon: <MdSupport />,
+      description: "Offer additional support and resources",
+    },
+    a: {
+      label: "Advance",
+      color: theme.palette.secondary.main,
+      lightColor: alpha(theme.palette.secondary.main, 0.1),
+      icon: <MdTrendingUp />,
+      description: "Move the conversation forward positively",
+    },
   };
+
+  const currentStep = stepConfig[stepKey];
 
   const handleSave = async () => {
     const request = await handleRequestSubmit(
-      { formData },
+      formData,
       setLoading,
       `shared/questions/versa/steps/${step.id}`,
       false,
@@ -81,179 +128,356 @@ const VersaStep = ({ step, stepKey, onSave }) => {
   };
 
   return (
-    <Paper
-      elevation={3}
-      sx={{
-        p: 4,
-        mb: 3,
-        borderLeft: 4,
-        borderLeftColor: "primary.main",
-      }}
-    >
-      <Box
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        mb={3}
+    <Grow in timeout={300}>
+      <Paper
+        elevation={hasChanges ? 8 : 2}
+        sx={{
+          p: 4,
+          mb: 4,
+          borderRadius: 3,
+          position: "relative",
+          overflow: "hidden",
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          background: `linear-gradient(135deg, ${
+            currentStep.lightColor
+          } 0%, ${alpha(currentStep.color, 0.05)} 100%)`,
+          border: `2px solid ${
+            hasChanges ? currentStep.color : alpha(currentStep.color, 0.2)
+          }`,
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: theme.shadows[12],
+          },
+        }}
       >
-        <Box display="flex" alignItems="center" gap={2}>
+        {/* Decorative background element */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: -50,
+            right: -50,
+            width: 150,
+            height: 150,
+            borderRadius: "50%",
+            background: `linear-gradient(45deg, ${alpha(
+              currentStep.color,
+              0.1
+            )}, ${alpha(currentStep.color, 0.05)})`,
+            zIndex: 0,
+          }}
+        />
+
+        <Box position="relative" zIndex={1}>
           <Box
-            sx={{
-              width: 40,
-              height: 40,
-              borderRadius: "50%",
-              bgcolor: "primary.main",
-              color: "primary.contrastText",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: "bold",
-              fontSize: "1.2rem",
-            }}
+            display="flex"
+            alignItems="center"
+            justifyContent="space-between"
+            mb={3}
           >
-            {stepKey.toUpperCase()}
+            <Box display="flex" alignItems="center" gap={3}>
+              <Avatar
+                sx={{
+                  width: 56,
+                  height: 56,
+                  bgcolor: currentStep.color,
+                  color: "white",
+                  fontSize: "1.5rem",
+                  fontWeight: "bold",
+                  boxShadow: `0 4px 20px ${alpha(currentStep.color, 0.3)}`,
+                }}
+              >
+                {stepKey.toUpperCase()}
+              </Avatar>
+              <Box>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 700,
+                    color: currentStep.color,
+                    mb: 0.5,
+                  }}
+                >
+                  {currentStep.label}
+                </Typography>
+                <Typography
+                  variant="body1"
+                  color="text.secondary"
+                  sx={{ fontStyle: "italic" }}
+                >
+                  {currentStep.description}
+                </Typography>
+              </Box>
+            </Box>
+
+            <Button
+              variant={hasChanges ? "contained" : "outlined"}
+              size="large"
+              sx={{
+                minWidth: 140,
+                height: 48,
+                borderRadius: 3,
+                fontWeight: 600,
+                textTransform: "none",
+                fontSize: "1rem",
+                boxShadow: hasChanges
+                  ? `0 4px 16px ${alpha(theme.palette.primary.main, 0.3)}`
+                  : "none",
+                ...(hasChanges && {
+                  background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                }),
+              }}
+              startIcon={
+                loading ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <MdSave />
+                )
+              }
+              onClick={handleSave}
+              disabled={loading || !hasChanges}
+            >
+              {loading ? "Saving..." : hasChanges ? "Save Changes" : "Saved"}
+            </Button>
           </Box>
-          <Typography variant="h5" color="primary" fontWeight="bold">
-            {stepLabels[stepKey]}
-          </Typography>
+
+          <Divider sx={{ mb: 3, bgcolor: alpha(currentStep.color, 0.2) }} />
+
+          <Stack spacing={3}>
+            <TextField
+              fullWidth
+              label="Question (Optional)"
+              placeholder="Enter the question you would ask the client..."
+              multiline
+              rows={2}
+              value={formData.question}
+              onChange={(e) => handleChange("question", e.target.value)}
+              variant="outlined"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  backgroundColor: alpha(theme.palette.background.paper, 0.8),
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: currentStep.color,
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: currentStep.color,
+                    borderWidth: 2,
+                  },
+                },
+                "& .MuiInputLabel-root.Mui-focused": {
+                  color: currentStep.color,
+                },
+              }}
+            />
+
+            <TextField
+              fullWidth
+              label="Your Response (Optional)"
+              placeholder="Enter your response or approach..."
+              multiline
+              rows={3}
+              value={formData.answer}
+              onChange={(e) => handleChange("answer", e.target.value)}
+              variant="outlined"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  backgroundColor: alpha(theme.palette.background.paper, 0.8),
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: currentStep.color,
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: currentStep.color,
+                    borderWidth: 2,
+                  },
+                },
+                "& .MuiInputLabel-root.Mui-focused": {
+                  color: currentStep.color,
+                },
+              }}
+            />
+
+            <TextField
+              fullWidth
+              label="Expected Client Response (Optional)"
+              placeholder="What response do you expect from the client..."
+              multiline
+              rows={2}
+              value={formData.clientResponse}
+              onChange={(e) => handleChange("clientResponse", e.target.value)}
+              variant="outlined"
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  backgroundColor: alpha(theme.palette.background.paper, 0.8),
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: currentStep.color,
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: currentStep.color,
+                    borderWidth: 2,
+                  },
+                },
+                "& .MuiInputLabel-root.Mui-focused": {
+                  color: currentStep.color,
+                },
+              }}
+            />
+          </Stack>
         </Box>
-
-        <Button
-          variant={hasChanges ? "contained" : "outlined"}
-          color="primary"
-          startIcon={loading ? <CircularProgress size={20} /> : <MdSave />}
-          onClick={handleSave}
-          disabled={loading || !hasChanges}
-          sx={{ minWidth: 120 }}
-        >
-          {loading ? "Saving..." : hasChanges ? "Save Changes" : "Saved"}
-        </Button>
-      </Box>
-
-      <Grid container spacing={3}>
-        <Grid>
-          <TextField
-            fullWidth
-            label="Question (Optional)"
-            placeholder="Enter the question you would ask the client..."
-            multiline
-            rows={2}
-            value={formData.question}
-            onChange={(e) => handleChange("question", e.target.value)}
-            variant="outlined"
-            sx={{ mb: 2 }}
-          />
-        </Grid>
-        <Grid>
-          <TextField
-            fullWidth
-            label="Your Response (Optional)"
-            placeholder="Enter your response or approach..."
-            multiline
-            rows={3}
-            value={formData.answer}
-            onChange={(e) => handleChange("answer", e.target.value)}
-            variant="outlined"
-            sx={{ mb: 2 }}
-          />
-        </Grid>
-        <Grid>
-          <TextField
-            fullWidth
-            label="Expected Client Response (Optional)"
-            placeholder="What response do you expect from the client..."
-            multiline
-            rows={2}
-            value={formData.clientResponse}
-            onChange={(e) => handleChange("clientResponse", e.target.value)}
-            variant="outlined"
-          />
-        </Grid>
-      </Grid>
-    </Paper>
+      </Paper>
+    </Grow>
   );
 };
 
-// CategoryCard Component
-const CategoryCard = ({ category, onClick }) => {
+// CategoryCard Component - Enhanced
+const CategoryCard = ({ category, onClick, index }) => {
+  const theme = useTheme();
+
   return (
-    <Card
-      sx={{
-        cursor: "pointer",
-        transition: "all 0.3s ease",
-        height: "100%",
-        "&:hover": {
-          transform: "translateY(-8px)",
-          boxShadow: 6,
-        },
-        border: 2,
-        borderColor: category.hasVersa ? "success.main" : "warning.main",
-        bgcolor: category.hasVersa ? "success.light" : "warning.light",
-        "&:hover": {
-          bgcolor: category.hasVersa ? "success.lighter" : "warning.lighter",
-        },
-      }}
-      onClick={() => onClick(category)}
-    >
-      <CardContent
-        sx={{ p: 3, height: "100%", display: "flex", flexDirection: "column" }}
+    <Grow in timeout={300 + index * 100}>
+      <Card
+        sx={{
+          cursor: "pointer",
+          transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
+          height: "100%",
+          borderRadius: 3,
+          position: "relative",
+          overflow: "hidden",
+          background: category.hasVersa
+            ? `linear-gradient(135deg, ${alpha(
+                theme.palette.success.main,
+                0.1
+              )} 0%, ${alpha(theme.palette.success.main, 0.05)} 100%)`
+            : `linear-gradient(135deg, ${alpha(
+                theme.palette.warning.main,
+                0.1
+              )} 0%, ${alpha(theme.palette.warning.main, 0.05)} 100%)`,
+          border: `2px solid ${
+            category.hasVersa
+              ? alpha(theme.palette.success.main, 0.2)
+              : alpha(theme.palette.warning.main, 0.2)
+          }`,
+          "&:hover": {
+            transform: "translateY(-8px) scale(1.02)",
+            boxShadow: `0 16px 40px ${alpha(
+              category.hasVersa
+                ? theme.palette.success.main
+                : theme.palette.warning.main,
+              0.25
+            )}`,
+            border: `2px solid ${
+              category.hasVersa
+                ? theme.palette.success.main
+                : theme.palette.warning.main
+            }`,
+          },
+        }}
+        onClick={() => onClick(category)}
       >
+        {/* Decorative corner element */}
         <Box
-          display="flex"
-          alignItems="flex-start"
-          justifyContent="space-between"
-          mb={2}
+          sx={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: 60,
+            height: 60,
+            background: `linear-gradient(135deg, ${
+              category.hasVersa
+                ? theme.palette.success.main
+                : theme.palette.warning.main
+            }, ${
+              category.hasVersa
+                ? theme.palette.success.dark
+                : theme.palette.warning.dark
+            })`,
+            clipPath: "polygon(100% 0, 0 0, 100% 100%)",
+            opacity: 0.8,
+          }}
+        />
+
+        <CardContent
+          sx={{
+            p: 3,
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            position: "relative",
+            zIndex: 1,
+          }}
         >
-          <Box flex={1}>
-            <Typography variant="h6" gutterBottom fontWeight="bold">
+          <Box mb={3}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 700,
+                color: theme.palette.text.primary,
+                mb: 1.5,
+                lineHeight: 1.3,
+              }}
+            >
               {category.title}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: theme.palette.text.secondary,
+                lineHeight: 1.5,
+                fontSize: "0.9rem",
+              }}
+            >
               {category.label}
             </Typography>
           </Box>
-          <Box>
-            {category.hasVersa ? (
-              <Chip
-                label="VERSA Ready"
-                color="success"
-                icon={<MdCheckCircle />}
-                variant="filled"
-              />
-            ) : (
-              <Chip
-                label="Create New"
-                color="warning"
-                variant="outlined"
-                icon={<MdAdd />}
-              />
-            )}
-          </Box>
-        </Box>
 
-        <Box mt="auto">
-          <Button
-            variant={category.hasVersa ? "contained" : "outlined"}
-            color={category.hasVersa ? "success" : "warning"}
-            fullWidth
-            startIcon={category.hasVersa ? <MdCheckCircle /> : <MdAdd />}
-          >
-            {category.hasVersa ? "View & Edit" : "Create VERSA"}
-          </Button>
-        </Box>
-      </CardContent>
-    </Card>
+          <Box mb={3}>
+            <Chip
+              label={category.hasVersa ? "VERSA Ready" : "Create New"}
+              color={category.hasVersa ? "success" : "warning"}
+              icon={category.hasVersa ? <MdCheckCircle /> : <MdAdd />}
+              variant={category.hasVersa ? "filled" : "outlined"}
+              sx={{
+                fontWeight: 600,
+                fontSize: "0.8rem",
+                height: 32,
+                "& .MuiChip-icon": {
+                  fontSize: "1.1rem",
+                },
+              }}
+            />
+          </Box>
+
+          <Box mt="auto">
+            <Button
+              variant={category.hasVersa ? "contained" : "outlined"}
+              color={category.hasVersa ? "success" : "warning"}
+              fullWidth
+              size="large"
+              startIcon={category.hasVersa ? <MdCheckCircle /> : <MdAdd />}
+              sx={{
+                borderRadius: 2,
+                fontWeight: 600,
+                textTransform: "none",
+                fontSize: "1rem",
+                py: 1.5,
+                boxShadow: category.hasVersa
+                  ? `0 4px 16px ${alpha(theme.palette.success.main, 0.3)}`
+                  : "none",
+              }}
+            >
+              {category.hasVersa ? "View & Edit" : "Create VERSA"}
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+    </Grow>
   );
 };
 
-// VersaModelEditor Component
-const VersaModelEditor = ({
-  category,
-  versaData,
-  onSave,
-  onClose,
-  handleCreateVersa,
-}) => {
+// VersaModelEditor Component - Enhanced
+const VersaModelEditor = ({ category, versaData, onSave, onClose }) => {
+  const theme = useTheme();
   const versaSteps = ["v", "e", "r", "s", "a"];
 
   const handleSaveStep = async (stepKey, stepData) => {
@@ -266,90 +490,174 @@ const VersaModelEditor = ({
 
   return (
     <>
-      <AppBar sx={{ position: "relative" }}>
-        <Toolbar>
+      <AppBar
+        sx={{
+          position: "relative",
+          background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+          boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
+        }}
+      >
+        <Toolbar sx={{ py: 1 }}>
           <IconButton
             edge="start"
             color="inherit"
             onClick={onClose}
             aria-label="close"
+            sx={{
+              mr: 2,
+              "&:hover": {
+                backgroundColor: alpha(theme.palette.common.white, 0.1),
+              },
+            }}
           >
             <MdArrowBack />
           </IconButton>
-          <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
-            VERSA Model - {category.title}
-          </Typography>
+          <Box flex={1}>
+            <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+              VERSA Model - {category.title}
+            </Typography>
+            <Typography variant="caption" sx={{ opacity: 0.8 }}>
+              Validate → Empathize → Respond → Support → Advance
+            </Typography>
+          </Box>
           <Button
-            autoFocus
             color="inherit"
             onClick={onClose}
             startIcon={<MdClose />}
+            sx={{
+              textTransform: "none",
+              fontWeight: 600,
+              borderRadius: 2,
+              "&:hover": {
+                backgroundColor: alpha(theme.palette.common.white, 0.1),
+              },
+            }}
           >
             Close
           </Button>
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box mb={4}>
-          <Typography
-            variant="h3"
-            color="primary"
-            gutterBottom
-            fontWeight="bold"
-          >
-            {category.title}
-          </Typography>
-          <Typography variant="h6" color="text.secondary" mb={3}>
-            {category.label}
-          </Typography>
+      <Box
+        sx={{
+          background: `linear-gradient(135deg, ${alpha(
+            theme.palette.primary.main,
+            0.05
+          )} 0%, ${alpha(theme.palette.background.default, 1)} 30%)`,
+          height: "auto",
+        }}
+      >
+        <Container maxWidth="lg" sx={{ py: 6 }}>
+          <Fade in timeout={500}>
+            <Box mb={6}>
+              <Typography
+                variant="h3"
+                sx={{
+                  fontWeight: 800,
+                  background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                  backgroundClip: "text",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  mb: 2,
+                }}
+              >
+                {category.title}
+              </Typography>
+              <Typography
+                variant="h6"
+                sx={{
+                  color: theme.palette.text.secondary,
+                  mb: 4,
+                  fontWeight: 400,
+                }}
+              >
+                {category.label}
+              </Typography>
 
-          <Alert severity="info" icon={<MdInfo />} sx={{ mb: 3, p: 2 }}>
-            <Typography variant="body1" fontWeight="medium">
-              All fields are optional - fill in what&apos;s relevant for your
-              sales process
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              VERSA: Validate → Empathize → Respond → Support → Advance
-            </Typography>
-          </Alert>
-        </Box>
+              <Alert
+                severity="info"
+                icon={<MdInfo />}
+                sx={{
+                  mb: 4,
+                  borderRadius: 2,
+                  border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                  backgroundColor: alpha(theme.palette.info.main, 0.05),
+                  "& .MuiAlert-icon": {
+                    fontSize: "1.5rem",
+                  },
+                }}
+              >
+                <Typography variant="body1" sx={{ fontWeight: 600, mb: 1 }}>
+                  All fields are optional - fill in what&apos;s relevant for
+                  your sales process
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  The VERSA methodology helps you handle objections
+                  systematically and empathetically
+                </Typography>
+              </Alert>
+            </Box>
+          </Fade>
 
-        {versaData && (
-          <Box>
-            <Typography variant="h4" gutterBottom mb={3} fontWeight="medium">
-              VERSA Steps
-            </Typography>
-            {versaSteps.map((stepKey) => (
-              <VersaStep
-                key={stepKey}
-                step={versaData?.[stepKey]}
-                stepKey={stepKey}
-                onSave={handleSaveStep}
-              />
-            ))}
-          </Box>
-        )}
+          {versaData && (
+            <Box>
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 700,
+                  color: theme.palette.text.primary,
+                  mb: 4,
+                }}
+              >
+                VERSA Steps
+              </Typography>
+              {versaSteps.map((stepKey, index) => (
+                <VersaStep
+                  key={stepKey}
+                  step={versaData?.[stepKey]}
+                  stepKey={stepKey}
+                  onSave={handleSaveStep}
+                />
+              ))}
+            </Box>
+          )}
 
-        <Box display="flex" justifyContent="center" mt={4} gap={2}>
-          <Button
-            variant="outlined"
-            onClick={onClose}
-            size="large"
-            startIcon={<MdArrowBack />}
-          >
-            Back to Categories
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
-            startIcon={<MdSave />}
-          >
-            Save All Changes
-          </Button>
-        </Box>
-      </Container>
+          <Fade in timeout={1000}>
+            <Paper
+              elevation={4}
+              sx={{
+                p: 4,
+                mt: 6,
+                borderRadius: 3,
+                background: `linear-gradient(135deg, ${alpha(
+                  theme.palette.primary.main,
+                  0.05
+                )} 0%, ${alpha(theme.palette.background.paper, 1)} 100%)`,
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+              }}
+            >
+              <Box display="flex" justifyContent="center" gap={3}>
+                <Button
+                  variant="outlined"
+                  onClick={onClose}
+                  size="large"
+                  startIcon={<MdArrowBack />}
+                  sx={{
+                    borderRadius: 3,
+                    px: 4,
+                    py: 1.5,
+                    fontWeight: 600,
+                    textTransform: "none",
+                    fontSize: "1.1rem",
+                  }}
+                >
+                  Back to Categories
+                </Button>
+              </Box>
+            </Paper>
+          </Fade>
+        </Container>
+      </Box>
     </>
   );
 };
@@ -358,9 +666,13 @@ const CategoriesGrid = ({ categories, onCategoryClick }) => {
   return (
     <Container maxWidth="lg" sx={{ py: 2 }}>
       <Grid container spacing={4}>
-        {categories.map((category) => (
-          <Grid size={{ xs: 6, md: 4 }} key={category.id}>
-            <CategoryCard category={category} onClick={onCategoryClick} />
+        {categories.map((category, index) => (
+          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={category.id}>
+            <CategoryCard
+              category={category}
+              onClick={onCategoryClick}
+              index={index}
+            />
           </Grid>
         ))}
       </Grid>
@@ -368,13 +680,14 @@ const CategoriesGrid = ({ categories, onCategoryClick }) => {
   );
 };
 
-// CategoriesDialog Component
+// CategoriesDialog Component - Enhanced
 const CategoriesDialog = ({
   clientLeadId,
   open,
   onClose,
   onCategorySelect,
 }) => {
+  const theme = useTheme();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -401,58 +714,117 @@ const CategoriesDialog = ({
       onClose={onClose}
       TransitionComponent={Transition}
     >
-      <AppBar sx={{ position: "relative" }}>
-        <Toolbar>
+      <AppBar
+        sx={{
+          position: "relative",
+          background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+          boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
+        }}
+      >
+        <Toolbar sx={{ py: 1 }}>
           <IconButton
             edge="start"
             color="inherit"
             onClick={onClose}
             aria-label="close"
+            sx={{
+              mr: 2,
+              "&:hover": {
+                backgroundColor: alpha(theme.palette.common.white, 0.1),
+              },
+            }}
           >
             <MdClose />
           </IconButton>
-          <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
-            VERSA Objection Management System
+          <Box flex={1}>
+            <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
+              VERSA Objection Management System
+            </Typography>
+          </Box>
+          <Typography
+            variant="subtitle1"
+            sx={{
+              fontWeight: 500,
+              opacity: 0.9,
+            }}
+          >
+            نموذج الاعتراضات
           </Typography>
-          <Typography variant="subtitle1">نموذج الاعتراضات</Typography>
         </Toolbar>
       </AppBar>
 
       <DialogContent sx={{ p: 0 }}>
-        <Container maxWidth="lg" sx={{ py: 4 }}>
-          <Box mb={4}>
-            <Typography variant="h6" color="text.secondary" mb={3}>
-              Select a category to view or create its VERSA model
-            </Typography>
-            <Alert severity="info" sx={{ mb: 3 }}>
-              <Typography variant="body1">
-                <strong>Green categories</strong> have existing VERSA models you
-                can view and edit.
-                <br />
-                <strong>Orange categories</strong> need new VERSA models to be
-                created.
-              </Typography>
-            </Alert>
-          </Box>
+        <Box
+          sx={{
+            background: `linear-gradient(135deg, ${alpha(
+              theme.palette.primary.main,
+              0.05
+            )} 0%, ${alpha(theme.palette.background.default, 1)} 30%)`,
+            minHeight: "100vh",
+          }}
+        >
+          <Container maxWidth="lg" sx={{ py: 6 }}>
+            <Fade in timeout={500}>
+              <Box mb={6}>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    color: theme.palette.text.secondary,
+                    mb: 3,
+                    fontSize: "1.2rem",
+                  }}
+                >
+                  Select a category to view or create its VERSA model
+                </Typography>
+                <Alert
+                  severity="info"
+                  sx={{
+                    mb: 4,
+                    borderRadius: 2,
+                    border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                    backgroundColor: alpha(theme.palette.info.main, 0.05),
+                  }}
+                >
+                  <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
+                    <strong>Green categories</strong> have existing VERSA models
+                    you can view and edit.
+                    <br />
+                    <strong>Orange categories</strong> need new VERSA models to
+                    be created.
+                  </Typography>
+                </Alert>
+              </Box>
+            </Fade>
 
-          {loading ? (
-            <Box display="flex" justifyContent="center" p={8}>
-              <CircularProgress size={60} />
-            </Box>
-          ) : (
-            <CategoriesGrid
-              categories={categories}
-              onCategoryClick={onCategorySelect}
-            />
-          )}
-        </Container>
+            {loading ? (
+              <Box
+                display="flex"
+                flexDirection="column"
+                alignItems="center"
+                justifyContent="center"
+                p={8}
+              >
+                <CircularProgress size={60} sx={{ mb: 3 }} />
+                <Typography variant="h6" color="text.secondary">
+                  Loading categories...
+                </Typography>
+              </Box>
+            ) : (
+              <CategoriesGrid
+                categories={categories}
+                onCategoryClick={onCategorySelect}
+              />
+            )}
+          </Container>
+        </Box>
       </DialogContent>
     </Dialog>
   );
 };
 
-// Main VersaObjectionSystem Component
+// Main VersaObjectionSystem Component - Enhanced
 const VersaObjectionSystem = ({ clientLeadId }) => {
+  const theme = useTheme();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [versaData, setVersaData] = useState(null);
@@ -469,8 +841,6 @@ const VersaObjectionSystem = ({ clientLeadId }) => {
   };
 
   const handleCategorySelect = async (category) => {
-    setSelectedCategory(category);
-    setDialogOpen(false);
     const getCatData = async () => {
       const request = await getData({
         url: `shared/questions/versa/${clientLeadId}/category/${category.id}`,
@@ -485,13 +855,15 @@ const VersaObjectionSystem = ({ clientLeadId }) => {
       const newVersa = await handleRequestSubmit(
         { categoryId: category.id, clientLeadId },
         setLoading,
-        `shared/versa/${clientLeadId}/category/${category.id}`
+        `shared/questions/versa/${clientLeadId}/category/${category.id}`
       );
-      if (newVersa.status !== 200) {
+      if (!newVersa || newVersa.status !== 200) {
         return;
       }
     }
     await getCatData();
+    setSelectedCategory(category);
+    setDialogOpen(false);
   };
 
   const handleBackToCategories = () => {
@@ -501,18 +873,27 @@ const VersaObjectionSystem = ({ clientLeadId }) => {
   };
 
   return (
-    <Box p={3}>
+    <Box>
       <Button
         variant="contained"
         size="large"
-        startIcon={<MdAdd />}
+        startIcon={<MdTouchApp />}
         onClick={handleOpenDialog}
         sx={{
-          ml: "auto",
-          height: "fit-content",
-          px: 4,
+          borderRadius: 3,
+          textTransform: "none",
+          fontWeight: 600,
+          px: 3,
           py: 1.5,
-          fontSize: "1.1rem",
+          background: (theme) =>
+            `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+          boxShadow: (theme) =>
+            `0 4px 16px ${alpha(theme.palette.primary.main, 0.3)}`,
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: (theme) =>
+              `0 6px 20px ${alpha(theme.palette.primary.main, 0.4)}`,
+          },
         }}
       >
         Manage Objections
@@ -532,7 +913,29 @@ const VersaObjectionSystem = ({ clientLeadId }) => {
         TransitionComponent={Transition}
       >
         {loadingVersa ? (
-          <LinearProgress />
+          <Box>
+            <LinearProgress
+              sx={{
+                height: 4,
+                backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                "& .MuiLinearProgress-bar": {
+                  background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                },
+              }}
+            />
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              sx={{ height: "50vh" }}
+            >
+              <CircularProgress size={60} sx={{ mb: 3 }} />
+              <Typography variant="h6" color="text.secondary">
+                Loading VERSA model...
+              </Typography>
+            </Box>
+          </Box>
         ) : (
           selectedCategory && (
             <VersaModelEditor

@@ -137,7 +137,6 @@ export async function makeAnswerToAQuestion({
 
 export async function submitMoreThanAnswer({ answers, userId }) {
   userId = Number(userId);
-  console.log(answers, "answers");
   for (const { sessionQuestionId, response } of answers) {
     sessionQuestionId = Number(sessionQuestionId);
     await makeAnswerToAQuestion({ sessionQuestionId, response, userId });
@@ -254,6 +253,7 @@ export async function getVersaByCategory({ clientLeadId, categoryId }) {
       a: true,
     },
   });
+  return versa;
 }
 
 export async function createVersaModel({ clientLeadId, userId, categoryId }) {
@@ -296,7 +296,7 @@ export async function updateVersa({
   clientResponse,
 }) {
   const step = await prisma.versaStep.update({
-    where: { id: parseInt(stepId) },
+    where: { id: Number(stepId) },
     data: { label, question, answer, clientResponse },
   });
   return step;

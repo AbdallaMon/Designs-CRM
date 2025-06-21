@@ -15,6 +15,8 @@ import {
   DialogContent,
   Container,
   DialogActions,
+  DialogTitle,
+  IconButton,
 } from "@mui/material";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import dayjs from "dayjs";
@@ -22,6 +24,8 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
+import { MdClose } from "react-icons/md";
+import colors from "@/app/helpers/colors";
 
 const locales = ["en-gb"];
 
@@ -147,15 +151,32 @@ function AddPayments({
         aria-labelledby="full-screen-dialog-title"
         aria-describedby="full-screen-dialog-description"
       >
+        <DialogTitle
+          sx={{
+            display: "flex",
+            gap: 1,
+            justifyContent: "space-between",
+          }}
+        >
+          <Typography variant="h4" gutterBottom>
+            Add new payments
+          </Typography>
+          <IconButton onClick={() => setOpen(false)}>
+            <MdClose />
+          </IconButton>
+        </DialogTitle>
         <DialogContent>
-          <Container maxWidth="md">
+          <Container
+            maxWidth="lg"
+            sx={{
+              background: colors.bgSecondary,
+              p: 2,
+            }}
+          >
             <LocalizationProvider
               dateAdapter={AdapterDayjs}
               adapterLocale={locales}
             >
-              <Typography variant="h4" gutterBottom>
-                Add new payments
-              </Typography>
               <Box mt={3}>
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, md: 12 }}>
@@ -234,7 +255,6 @@ function AddPayments({
                 Save{" "}
               </Button>
 
-              {/* Snackbar for Errors */}
               <Snackbar
                 open={!!error}
                 autoHideDuration={6000}
@@ -253,7 +273,9 @@ function AddPayments({
           </Container>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)}>Close</Button>
+          <Button variant="contained" onClick={() => setOpen(false)}>
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
     </>

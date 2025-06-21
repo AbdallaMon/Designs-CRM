@@ -65,7 +65,7 @@ router.post("/:sessionQuestionId/answer", async (req, res) => {
     });
     res.status(200).json({ data: answer, message: "Answer saved" });
   } catch (e) {
-    console.error("Error making answer:", error);
+    console.error("Error making answer:", e);
     res.status(500).json({ message: "An error occurred while making answer" });
   }
 });
@@ -79,7 +79,7 @@ router.post("/answer/bulk", async (req, res) => {
     });
     res.status(200).json({ data: answers, message: "Answers saved" });
   } catch (e) {
-    console.error("Error making answer:", error);
+    console.error("Error making answer:", e);
     res.status(500).json({ message: "An error occurred while making answer" });
   }
 });
@@ -95,7 +95,7 @@ router.post("/lead/:clientLeadId/custom-question", async (req, res) => {
     });
     res.status(200).json({ data: question, message: "Question created" });
   } catch (e) {
-    console.error("Error making answer:", error);
+    console.error("Error making answer:", e);
     res.status(500).json({ message: "An error occurred while making answer" });
   }
 });
@@ -116,11 +116,11 @@ router.get("/versa/:clientLeadId", async (req, res) => {
 });
 router.get("/versa/:clientLeadId/category/:categoryId", async (req, res) => {
   try {
-    const versaCats = await getVersaByCategory({
+    const versa = await getVersaByCategory({
       clientLeadId: req.params.clientLeadId,
       categoryId: req.params.categoryId,
     });
-    res.status(200).json({ data: versaCats });
+    res.status(200).json({ data: versa });
   } catch (error) {
     console.error("Error fetching meeting question :", error);
     res.status(500).json({
@@ -137,17 +137,18 @@ router.post("/versa/:clientLeadId/category/:categoryId", async (req, res) => {
     });
     res.status(200).json({ data: versa, message: "VERSA created" });
   } catch (e) {
-    console.error("Error making answer:", error);
-    res.status(500).json({ message: "An error occurred while making answer" });
+    console.error("Error making answer:", e);
+    res.status(500).json({ message: "An error occurred while creating versa" });
   }
 });
 router.put("/versa/steps/:stepId", async (req, res) => {
   try {
+    console.log(req.body, "req.body");
     const versa = await updateVersa({ stepId: req.params.stepId, ...req.body });
     res.status(200).json({ data: versa, message: "VERSA saved" });
   } catch (e) {
-    console.error("Error making answer:", error);
-    res.status(500).json({ message: "An error occurred while making answer" });
+    console.error("Error making answer:", e);
+    res.status(500).json({ message: "An error occurred while updating step" });
   }
 });
 export default router;

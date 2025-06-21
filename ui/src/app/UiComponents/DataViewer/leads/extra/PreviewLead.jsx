@@ -188,12 +188,11 @@ export const PreviewLead = ({
           )}
         </Container>
       ) : (
-        // Render as a Dialog
         <Dialog
           open={open}
           onClose={onClose}
           fullWidth
-          maxWidth="md"
+          maxWidth="lg"
           PaperProps={{
             sx: { borderRadius: 2 },
           }}
