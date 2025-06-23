@@ -19,6 +19,7 @@
     "bullmq": "^5.54.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "dotenv": "^16.4.7",
     "exceljs": "^4.4.0",

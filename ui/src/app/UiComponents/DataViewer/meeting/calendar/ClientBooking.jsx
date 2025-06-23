@@ -1,3 +1,4 @@
+"use client";
 import {
   Box,
   Button,
@@ -5,10 +6,7 @@ import {
   CardContent,
   Container,
   FormControl,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Stack,
   Step,
   StepContent,
@@ -18,18 +16,41 @@ import {
   Typography,
   useMediaQuery,
   useTheme,
+  Autocomplete,
+  Fade,
+  Avatar,
+  Divider,
 } from "@mui/material";
 import {
   MdAccessTime,
   MdArrowBack,
   MdArrowForward,
+  MdCalendarToday,
   MdCheckCircle,
+  MdEmail,
+  MdLocationOn,
+  MdPerson,
+  MdSchedule,
 } from "react-icons/md";
-import { Calendar } from "./CalendarTwo";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 
+import timezone from "dayjs/plugin/timezone";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+import { Calendar } from "./Calendar";
+import { getData } from "@/app/helpers/functions/getData";
+import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(customParseFormat);
+dayjs.extend(isSameOrBefore);
+dayjs.extend(isSameOrAfter);
 // Client Booking Component with Steps
-const ClientBooking = ({ timezone: tz = "UTC" }) => {
+const ClientBooking = ({ timezone: tz = "Asia/Dubai" }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedSlot, setSelectedSlot] = useState(null);
@@ -39,45 +60,25 @@ const ClientBooking = ({ timezone: tz = "UTC" }) => {
   const [selectedTimezone, setSelectedTimezone] = useState(tz);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-  const mockSlots = [
-    {
-      id: 1,
-      startTime: "2025-06-25T09:00:00",
-      endTime: "2025-06-25T10:00:00",
-      isBooked: false,
-    },
-    {
-      id: 2,
-      startTime: "2025-06-25T10:15:00",
-      endTime: "2025-06-25T11:15:00",
-      isBooked: false,
-    },
-    {
-      id: 3,
-      startTime: "2025-06-25T11:30:00",
-      endTime: "2025-06-25T12:30:00",
-      isBooked: true,
-    },
-    {
-      id: 4,
-      startTime: "2025-06-25T14:00:00",
-      endTime: "2025-06-25T15:00:00",
-      isBooked: false,
-    },
-    {
-      id: 5,
-      startTime: "2025-06-25T15:15:00",
-      endTime: "2025-06-25T16:15:00",
-      isBooked: false,
-    },
-  ];
-
-  const mockAvailableDays = [
-    { date: new Date(Date.now() + 172800000).toISOString().split("T")[0] },
-    { date: new Date(Date.now() + 432000000).toISOString().split("T")[0] },
-    { date: new Date(Date.now() + 604800000).toISOString().split("T")[0] },
-  ];
+  const [dayId, setDayId] = useState(null);
+  const [slots, setSlots] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const getSlotsData = async () => {
+    const slotsReq = await getData({
+      url: `client/calendar/slots/${dayId}`,
+      setLoading,
+    });
+    if (slotsReq.status === 200) {
+      setSlots(slotsReq.data);
+    } else {
+      setSlots([]);
+    }
+  };
+  useEffect(() => {
+    if (dayId) {
+      getSlotsData();
+    }
+  }, [dayId]);
 
   const steps = ["Select Date", "Choose Time", "Enter Details", "Confirm"];
 
@@ -89,11 +90,12 @@ const ClientBooking = ({ timezone: tz = "UTC" }) => {
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
-  const handleDateSelect = (date) => {
+  const handleDateSelect = (date, day) => {
     const parsedDate = typeof date === "string" ? new Date(date) : date;
     setSelectedDate(parsedDate);
     setSelectedSlot(null);
-    setAvailableSlots(mockSlots.filter((slot) => !slot.isBooked));
+    setDayId(day ? day.id : null);
+    setAvailableSlots(slots.filter((slot) => !slot.isBooked));
     handleNext();
   };
 
@@ -120,16 +122,26 @@ const ClientBooking = ({ timezone: tz = "UTC" }) => {
     }
   };
 
-  const timezones = [
-    "America/New_York",
-    "America/Chicago",
-    "America/Denver",
-    "America/Los_Angeles",
-    "Europe/London",
-    "Europe/Paris",
-    "Asia/Tokyo",
-    "UTC",
-  ];
+  const groupedTimezoneOptions = Intl.supportedValuesOf("timeZone")
+    .map((tz) => {
+      const [region = "Other", city = ""] = tz.split("/");
+      const label = tz.replace("_", " ");
+      const currentTime = new Date().toLocaleTimeString("en-US", {
+        timeZone: tz,
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+
+      return {
+        group: region,
+        label: `${label} (${currentTime})`,
+        value: tz,
+      };
+    })
+    .sort(
+      (a, b) => a.group.localeCompare(b.group) || a.label.localeCompare(b.label)
+    );
 
   const renderStepContent = (step) => {
     switch (step) {
@@ -137,144 +149,289 @@ const ClientBooking = ({ timezone: tz = "UTC" }) => {
         return (
           <Box>
             <Box mb={2}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                color="primary"
+                sx={{ display: "flex", alignItems: "center", gap: 1 }}
+              >
+                <MdLocationOn />
+                Change Your Timezone
+              </Typography>
               <FormControl fullWidth>
-                <InputLabel>Your Timezone</InputLabel>
-                <Select
-                  value={selectedTimezone}
-                  onChange={(e) => setSelectedTimezone(e.target.value)}
-                  label="Your Timezone"
-                  size={isMobile ? "small" : "medium"}
-                >
-                  {timezones.map((tz) => (
-                    <MenuItem key={tz} value={tz}>
-                      {tz} (
-                      {new Date().toLocaleTimeString("en-US", {
-                        timeZone: tz,
-                        hour: "numeric",
-                        minute: "2-digit",
-                        hour12: true,
-                      })}
-                      )
-                    </MenuItem>
-                  ))}
-                </Select>
+                <Autocomplete
+                  options={groupedTimezoneOptions}
+                  groupBy={(option) => option.group}
+                  getOptionLabel={(option) => option.label}
+                  value={
+                    groupedTimezoneOptions.find(
+                      (opt) => opt.value === selectedTimezone
+                    ) || null
+                  }
+                  onChange={(e, newValue) =>
+                    setSelectedTimezone(newValue?.value || "")
+                  }
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      placeholder="Select your timezone"
+                      size="medium"
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: 2,
+                        },
+                      }}
+                    />
+                  )}
+                  fullWidth
+                  disableClearable
+                />
               </FormControl>
             </Box>
             <Calendar
               selectedDate={selectedDate}
               onDateSelect={handleDateSelect}
-              availableDays={mockAvailableDays}
               timezone={selectedTimezone}
             />
           </Box>
         );
       case 1:
         return (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Available Times for
-            </Typography>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              Timezone: {selectedTimezone}
-            </Typography>
-            <Stack spacing={1} mt={2}>
-              {availableSlots.map((slot) => (
-                <Button
-                  key={slot.id}
-                  variant={
-                    selectedSlot?.id === slot.id ? "contained" : "outlined"
-                  }
-                  fullWidth
-                  onClick={() => handleSlotSelect(slot)}
-                  startIcon={<MdAccessTime />}
-                  size={isMobile ? "medium" : "large"}
-                  sx={{ justifyContent: "flex-start", p: 2 }}
-                >
-                  {new Date(slot.startTime).toLocaleTimeString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                    hour12: true,
-                  })}{" "}
-                  -{" "}
-                  {new Date(slot.endTime).toLocaleTimeString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                    hour12: true,
-                  })}
-                </Button>
-              ))}
-            </Stack>
-          </Box>
-        );
-      case 2:
-        return (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Enter Your Details
-            </Typography>
-            <Stack spacing={2} mt={2}>
-              <TextField
-                fullWidth
-                label="Full Name"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                required
-                size={isMobile ? "small" : "medium"}
-              />
-              <TextField
-                fullWidth
-                label="Email Address"
-                type="email"
-                value={clientEmail}
-                onChange={(e) => setClientEmail(e.target.value)}
-                required
-                size={isMobile ? "small" : "medium"}
-              />
-            </Stack>
-          </Box>
-        );
-      case 3:
-        return (
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Confirm Your Booking
-            </Typography>
-            <Card variant="outlined" sx={{ mt: 2 }}>
-              <CardContent>
-                <Typography variant="body1" gutterBottom>
-                  <strong>Date:</strong>{" "}
-                  {selectedDate?.format("dddd, MMMM D, YYYY")}
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  <strong>Time:</strong>{" "}
-                  {selectedSlot &&
-                    new Date(selectedSlot.startTime).toLocaleTimeString(
-                      "en-US",
-                      {
-                        hour: "numeric",
-                        minute: "2-digit",
-                        hour12: true,
-                      }
-                    )}{" "}
-                  -{" "}
-                  {selectedSlot &&
-                    new Date(selectedSlot.endTime).toLocaleTimeString("en-US", {
+          <Fade in timeout={500}>
+            <Box position="relative">
+              {loading && <LoadingOverlay />}
+              <Typography variant="h6" gutterBottom>
+                Available Times for
+              </Typography>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Timezone: {selectedTimezone}
+              </Typography>
+
+              <Stack spacing={1} mt={2}>
+                {availableSlots.map((slot) => (
+                  <Button
+                    key={slot.id}
+                    variant={
+                      selectedSlot?.id === slot.id ? "contained" : "outlined"
+                    }
+                    fullWidth
+                    onClick={() => handleSlotSelect(slot)}
+                    startIcon={<MdAccessTime />}
+                    size={isMobile ? "medium" : "large"}
+                    sx={{ justifyContent: "flex-start", p: 2 }}
+                  >
+                    {new Date(slot.startTime).toLocaleTimeString("en-US", {
+                      timeZone: selectedTimezone,
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}{" "}
+                    -{" "}
+                    {new Date(slot.endTime).toLocaleTimeString("en-US", {
+                      timeZone: selectedTimezone,
                       hour: "numeric",
                       minute: "2-digit",
                       hour12: true,
                     })}
+                  </Button>
+                ))}
+              </Stack>
+            </Box>
+          </Fade>
+        );
+      case 2:
+        return (
+          <Fade in timeout={500}>
+            <Box>
+              <Typography variant="h6" gutterBottom>
+                Tell us about yourself
+              </Typography>
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                gutterBottom
+                mb={3}
+              >
+                We&#39;ll use this information to send you booking confirmations
+              </Typography>
+
+              <Stack spacing={3}>
+                <TextField
+                  fullWidth
+                  label="Full Name"
+                  value={clientName}
+                  onChange={(e) => setClientName(e.target.value)}
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <MdPerson
+                        style={{
+                          marginRight: 8,
+                          color: theme.palette.text.secondary,
+                        }}
+                      />
+                    ),
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                    },
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Email Address"
+                  type="email"
+                  value={clientEmail}
+                  onChange={(e) => setClientEmail(e.target.value)}
+                  required
+                  InputProps={{
+                    startAdornment: (
+                      <MdEmail
+                        style={{
+                          marginRight: 8,
+                          color: theme.palette.text.secondary,
+                        }}
+                      />
+                    ),
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: 2,
+                    },
+                  }}
+                />
+              </Stack>
+            </Box>
+          </Fade>
+        );
+      case 3:
+        return (
+          <Box>
+            <Fade in timeout={500}>
+              <Box>
+                <Typography variant="h6" gutterBottom>
+                  Confirm Your Booking
                 </Typography>
-                <Typography variant="body1" gutterBottom>
-                  <strong>Timezone:</strong> {selectedTimezone}
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  gutterBottom
+                  mb={3}
+                >
+                  Please review your booking details below
                 </Typography>
-                <Typography variant="body1" gutterBottom>
-                  <strong>Name:</strong> {clientName}
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  <strong>Email:</strong> {clientEmail}
-                </Typography>
-              </CardContent>
-            </Card>
+
+                <Card
+                  variant="outlined"
+                  sx={{
+                    borderRadius: 3,
+                    border: "2px solid",
+                    borderColor: "primary.main",
+                    bgcolor: "primary.50",
+                  }}
+                >
+                  <CardContent sx={{ p: 3 }}>
+                    <Stack spacing={2}>
+                      <Box display="flex" alignItems="center" gap={2}>
+                        <Avatar sx={{ bgcolor: "primary.main" }}>
+                          <MdCalendarToday />
+                        </Avatar>
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                          >
+                            Date
+                          </Typography>
+                          <Typography variant="body1" fontWeight={600}>
+                            <strong>Time:</strong>{" "}
+                            {selectedSlot &&
+                              new Date(
+                                selectedSlot.startTime
+                              ).toLocaleTimeString("en-US", {
+                                hour: "numeric",
+                                minute: "2-digit",
+                                hour12: true,
+                              })}{" "}
+                            -{" "}
+                            {selectedSlot &&
+                              new Date(selectedSlot.endTime).toLocaleTimeString(
+                                "en-US",
+                                {
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                }
+                              )}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      <Divider />
+
+                      <Box display="flex" alignItems="center" gap={2}>
+                        <Avatar sx={{ bgcolor: "primary.main" }}>
+                          <MdSchedule />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body1" gutterBottom>
+                            <strong>Date:</strong>{" "}
+                            {selectedDate?.format("dddd, MMMM D, YYYY")}
+                          </Typography>
+                          <Typography variant="body1" gutterBottom>
+                            <strong>Time:</strong>{" "}
+                            {selectedSlot &&
+                              new Date(
+                                selectedSlot.startTime
+                              ).toLocaleTimeString("en-US", {
+                                hour: "numeric",
+                                minute: "2-digit",
+                                hour12: true,
+                              })}{" "}
+                            -{" "}
+                            {selectedSlot &&
+                              new Date(selectedSlot.endTime).toLocaleTimeString(
+                                "en-US",
+                                {
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                }
+                              )}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {selectedTimezone}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      <Divider />
+
+                      <Box display="flex" alignItems="center" gap={2}>
+                        <Avatar sx={{ bgcolor: "primary.main" }}>
+                          <MdPerson />
+                        </Avatar>
+                        <Box>
+                          <Typography
+                            variant="subtitle2"
+                            color="text.secondary"
+                          >
+                            Contact
+                          </Typography>
+                          <Typography variant="body1" fontWeight={600}>
+                            {clientName}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {clientEmail}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Box>
+            </Fade>
           </Box>
         );
       default:
@@ -283,7 +440,7 @@ const ClientBooking = ({ timezone: tz = "UTC" }) => {
   };
 
   return (
-    <Container maxWidth="md">
+    <Container maxWidth="md" sx={{ px: { xs: 1 } }}>
       <Typography variant="h4" gutterBottom align="center">
         Book an Appointment
       </Typography>
@@ -313,12 +470,13 @@ const ClientBooking = ({ timezone: tz = "UTC" }) => {
               />
             </Box>
           </Box>
-
-          <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
-            {renderStepContent(activeStep)}
-          </Paper>
-
-          <Box display="flex" justifyContent="space-between" gap={2}>
+          {activeStep === 0 && <>{renderStepContent(activeStep)}</>}
+          {activeStep !== 0 && (
+            <Paper elevation={2} sx={{ p: 2, mb: 2 }}>
+              {renderStepContent(activeStep)}
+            </Paper>
+          )}
+          <Box display="flex" justifyContent="space-between" gap={2} mt={1.5}>
             <Button
               onClick={handleBack}
               disabled={activeStep === 0}

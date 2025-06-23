@@ -25,7 +25,7 @@ import {
   getImageSesssionModel,
   getNotes,
 } from "../services/main/sharedServices.js";
-import { pdfQueue } from "../services/queues/pdfQueue.js";
+import calendarRoutes from "./calendar/client-calendar.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const priceRangeValues = {
@@ -46,6 +46,7 @@ const consultationLeadPrices = {
   BLUEPRINT: "1200",
   CITY_VISIT: "1800",
 };
+router.use("/calendar", calendarRoutes);
 
 router.post("/new-lead", async (req, res) => {
   const body = req.body;
@@ -621,4 +622,5 @@ router.post("/notes", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
 export default router;

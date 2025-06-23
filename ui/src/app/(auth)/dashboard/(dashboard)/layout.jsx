@@ -23,6 +23,7 @@ import {
   FiHome,
   FiTrendingDown,
   FiImage,
+  FiCalendar,
 } from "react-icons/fi";
 
 import Navbar from "@/app/UiComponents/utility/Navbar.jsx";
@@ -127,6 +128,11 @@ export const adminLinks = [
     name: "Images session gallery",
     href: "/dashboard/image-sesssions",
     icon: <FiImage size={20} />,
+  },
+  {
+    name: "Calendar",
+    href: "/dashboard/calendar",
+    icon: <FiCalendar size={20} />,
   },
 ];
 
