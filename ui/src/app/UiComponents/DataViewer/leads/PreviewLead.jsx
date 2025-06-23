@@ -604,7 +604,7 @@ const LeadContent = ({
             admin={admin}
             lead={lead}
             setleads={setleads}
-            notUser={isPage && user.id !== lead.userId}
+            notUser={isPage && user.id !== lead.userId && !admin}
           />
         </TabPanel>
         <TabPanel value={activeTab} index={2}>
@@ -615,28 +615,28 @@ const LeadContent = ({
             admin={admin}
             lead={lead}
             setleads={setleads}
-            notUser={isPage && user.id !== lead.userId}
+            notUser={isPage && user.id !== lead.userId && !admin}
           />
         </TabPanel>
         <TabPanel value={activeTab} index={4}>
           <LeadNotes
             admin={admin}
             lead={lead}
-            notUser={isPage && user.id !== lead.userId}
+            notUser={isPage && user.id !== lead.userId && !admin}
           />
         </TabPanel>
         <TabPanel value={activeTab} index={5}>
           <PriceOffersList
             admin={admin}
             lead={lead}
-            notUser={isPage && user.id !== lead.userId}
+            notUser={isPage && user.id !== lead.userId && !admin}
           />
         </TabPanel>
         <TabPanel value={activeTab} index={6}>
           <FileList
             admin={admin}
             lead={lead}
-            notUser={isPage && user.id !== lead.userId}
+            notUser={isPage && user.id !== lead.userId && !admin}
           />
         </TabPanel>
 
@@ -645,7 +645,7 @@ const LeadContent = ({
             <ExtraServicesList
               admin={admin}
               lead={lead}
-              notUser={isPage && user.id !== lead.userId}
+              notUser={isPage && user.id !== lead.userId && !admin}
               setPayments={setPayments}
             />
           </TabPanel>

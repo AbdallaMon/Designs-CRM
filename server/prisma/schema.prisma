@@ -280,13 +280,15 @@ model MeetingReminder {
   isAdmin        Boolean            @default(false)
   type           MeetingType? 
 
+  availableSlot  AvailableSlot?     @relation("SlotToMeeting")
+  availableSlotId Int?              @unique  
+
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 
   @@index([clientLeadId])
   @@index([userId])
   @@index([adminId])
-
 }
 
 model Commission {
@@ -480,6 +482,7 @@ model User {
   updates              ClientLeadUpdate[]
   createdImageSessions ClientImageSession[]
   versaModels                VersaModel[]
+  availableDays   AvailableDay[]
 
   files           File[]
   lastSeenAt      DateTime?
@@ -890,4 +893,31 @@ model VersaStep {
   rVersa VersaModel? @relation("RStep")
   sVersa VersaModel? @relation("SStep")
   aVersa VersaModel? @relation("AStep")
+}
+
+
+// calendy
+
+model AvailableDay {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  slots     AvailableSlot[]
+  
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date]) 
+}
+
+model AvailableSlot {
+  id             Int            @id @default(autoincrement())
+  startTime      DateTime
+  endTime        DateTime
+  availableDay   AvailableDay   @relation(fields: [availableDayId], references: [id])
+  availableDayId Int
+  isBooked       Boolean        @default(false)
+
+  meetingReminder  MeetingReminder?  @relation("SlotToMeeting", fields: [meetingReminderId], references: [id])
+  meetingReminderId Int?             @unique
 }

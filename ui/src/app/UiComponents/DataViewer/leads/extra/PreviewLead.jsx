@@ -167,7 +167,7 @@ export const PreviewLead = ({
   return (
     <>
       {page ? (
-        <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
           {loading ? (
             <FullScreenLoader />
           ) : (
