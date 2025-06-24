@@ -70,11 +70,11 @@ router.get("/slots", async (req, res) => {
 router.get("/dates/month", async (req, res) => {
   try {
     const user = await getCurrentUser(req);
-    console.log(user, "user");
+
     const data = await getCalendarDataForMonth({
       year: req.query.year,
       month: req.query.month,
-      userId: user.role === "STAFF" && user.id,
+      userId: user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && user.id,
       adminId: req.query.isAdmin === "true" ? user.id : null,
     });
     res.status(200).json({
@@ -95,7 +95,7 @@ router.get("/dates/day", async (req, res) => {
     console.log(req.query.isAdmin, " req.query.isAdmin");
     const data = await getRemindersForDay({
       date: req.query.date,
-      userId: user.role === "STAFF" && user.id,
+      userId: user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && user.id,
       adminId: req.query.isAdmin === "true" && user.id,
     });
     res.status(200).json({
