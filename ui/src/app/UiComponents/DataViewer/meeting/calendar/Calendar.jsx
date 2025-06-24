@@ -106,11 +106,13 @@ export const Calendar = ({
         );
         return;
       } else {
-        if (!tokenData.data.selectedTimezone) {
+        if (!tokenData.data.selectedTimezone && tokenData.data.userTimezone) {
           tokenData.data.selectedTimezone = tokenData.data.userTimezone;
         }
-        console.log(tokenData, "tokenData");
-        setSessionData(tokenData.data);
+        setSessionData((old) => ({
+          ...old,
+          ...tokenData.data,
+        }));
         if (tokenData.data.time) {
           setActiveStep(4);
         }
@@ -154,7 +156,6 @@ export const Calendar = ({
 
   // Helper function to convert GMT stored date to user's timezone and get the date string
   const getDateInUserTimezone = (gmtDate) => {
-    // Convert GMT date to user's timezone and get the date part only
     return dayjs.utc(gmtDate).tz(userTimezone).format("YYYY-MM-DD");
   };
 
@@ -165,13 +166,13 @@ export const Calendar = ({
     return dayInUserTz.isBefore(todayInUserTz);
   };
 
-  const getDayStatus = (day) => {
-    // Get the day string in user's timezone for comparison
+  const getDayStatus = (day, index) => {
     const dayStrInUserTz = day.format("YYYY-MM-DD");
 
     // Find available day by converting stored GMT dates to user timezone
     const availableDay = availableDays.find((d) => {
       const availableDateInUserTz = getDateInUserTimezone(d.date);
+
       return availableDateInUserTz === dayStrInUserTz;
     });
 
@@ -180,6 +181,7 @@ export const Calendar = ({
     // Check if fully booked using the same timezone conversion
     const isFullyBooked = bookedDays.some((d) => {
       const bookedDateInUserTz = getDateInUserTimezone(d.date);
+
       return bookedDateInUserTz === dayStrInUserTz && d.fullyBooked;
     });
 
@@ -304,7 +306,7 @@ export const Calendar = ({
         ))}
 
         {days.map((day, index) => {
-          const status = getDayStatus(day);
+          const status = getDayStatus(day, index);
           const currentMonth = status.isCurrentMonth;
           const selected = status.isSelected;
           const available = status.hasAvailableSlots;
@@ -469,7 +471,7 @@ const TimeSlotManager = ({
       return;
     }
     const data = {
-      date: new Date(date),
+      date: date,
       days: selectedDates,
       fromHour: startTime,
       toHour: endTime,

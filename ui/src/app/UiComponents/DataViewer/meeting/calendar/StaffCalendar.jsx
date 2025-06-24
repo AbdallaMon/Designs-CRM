@@ -13,7 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import { MdAdminPanelSettings, MdPerson } from "react-icons/md";
-import { AdminBookingPanel, Calendar } from "./Calendar";
+import { AdminBookingPanel } from "./Calendar";
 import { useEffect, useState } from "react";
 import { getData } from "@/app/helpers/functions/getData";
 import BigCalendar from "./BigCalendar";

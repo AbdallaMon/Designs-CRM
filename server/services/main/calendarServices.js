@@ -111,15 +111,26 @@ export async function createAvailableDay({
   breakMinutes,
 }) {
   userId = Number(userId);
+  const userTimezone = dayjs.tz.guess();
+  const submittedUtcDate = dayjs.utc(date);
+  const offsetInMinutes = dayjs().tz(userTimezone).utcOffset(); // e.g. 180
+  const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
+
+  // Now get only the date part (start of local day)
+  const localMidnight = correctedDate.startOf("day");
+
+  // Save this as UTC midnight of that local date
+  date = localMidnight.toDate();
+
   const existing = await prisma.availableDay.findUnique({
-    where: { userId_date: { userId, date: new Date(date) } },
+    where: { userId_date: { userId, date: date } },
   });
   if (existing) throw new Error("Day already exists");
 
   const day = await prisma.availableDay.create({
     data: {
       userId,
-      date: new Date(date),
+      date: date,
     },
   });
   await createSlotsForDay({
@@ -465,8 +476,6 @@ export async function getCalendarDataForMonth({
   adminId = null,
   userId = null,
 }) {
-  console.log(adminId, "adminId");
-  console.log(userId, "userId");
   try {
     const timezone = "UTC";
     // Create start and end dates using dayjs with timezone
