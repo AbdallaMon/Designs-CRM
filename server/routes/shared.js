@@ -72,6 +72,7 @@ import {
   createCallReminder,
   createFile,
   createMeetingReminder,
+  createMeetingReminderWithToken,
   createNote,
   createPriceOffer,
   updateCallReminderStatus,
@@ -321,6 +322,27 @@ router.post("/client-leads/:id/meeting-reminders", async (req, res) => {
     const { id } = req.params;
     const currentUser = await getCurrentUser(req);
     const callReminder = await createMeetingReminder({
+      clientLeadId: Number(id),
+      currentUser,
+      ...req.body,
+    });
+    res.status(200).json({
+      data: callReminder,
+      message: "Meeting reminder created successfully",
+    });
+  } catch (error) {
+    console.error("Error createCallReminder:", error);
+    res.status(500).json({
+      message:
+        error.message || "An error occurred while creating Meeting reminder.",
+    });
+  }
+});
+router.post("/client-leads/:id/meeting-reminders/token", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const currentUser = await getCurrentUser(req);
+    const callReminder = await createMeetingReminderWithToken({
       clientLeadId: Number(id),
       currentUser,
       ...req.body,

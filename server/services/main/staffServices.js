@@ -13,6 +13,7 @@ import {
   updateMettingNotification,
 } from "../notification.js";
 import { updateLead } from "../main/utility.js";
+import { v4 as uuidv4 } from "uuid";
 
 export async function createNote({ clientLeadId, userId, content }) {
   if (!content.trim()) {
@@ -104,12 +105,37 @@ export async function createMeetingReminder({
   }
   const userTimezone = dayjs.tz.guess(); // Detect user's timezone
 
-  let formattedTime = dayjs(time).tz(userTimezone).utc(); // Convert to UTC
+  let formattedTime = dayjs(time).tz(userTimezone).utc();
   if (formattedTime.isBefore(dayjs().utc())) {
     throw new Error("The reminder time must be in the future.");
   }
   formattedTime = formattedTime.toDate().toISOString();
+  const submittedTime = dayjs(formattedTime); // already UTC ISO
+
+  const minTime = submittedTime.subtract(15, "minute").toISOString();
+  const maxTime = submittedTime.add(15, "minute").toISOString();
   const data = { clientLeadId, userId, time: formattedTime, reminderReason };
+
+  if (adminId) {
+    const matchingSlot = await prisma.availableSlot.findFirst({
+      where: {
+        isBooked: false,
+        startTime: {
+          gte: minTime,
+          lte: maxTime,
+        },
+        availableDay: {
+          userId: Number(adminId),
+        },
+      },
+    });
+    if (!matchingSlot) {
+      throw new Error("No available time for this admin in the current dates");
+    }
+    data.time = matchingSlot.startTime;
+    data.availableSlotId = matchingSlot.id;
+  }
+
   if (isAdmin) {
     data.isAdmin = true;
   }
@@ -131,6 +157,8 @@ export async function createMeetingReminder({
       type: true,
       isAdmin: true,
       adminId: true,
+      token: true,
+      availableSlotId: true,
       admin: {
         select: {
           name: true,
@@ -141,7 +169,102 @@ export async function createMeetingReminder({
       },
     },
   });
+  if (newReminder.availableSlotId) {
+    await prisma.availableSlot.update({
+      where: { id: newReminder.availableSlotId },
+      data: { isBooked: true, meetingReminderId: newReminder.id },
+    });
+  }
   await newCallNotification(clientLeadId, newReminder);
+  let latestTwo = await prisma.meetingReminder.findMany({
+    where: {
+      clientLeadId,
+    },
+    orderBy: { time: "desc" },
+    take: 2,
+  });
+  await updateLead(clientLeadId);
+  return { latestTwo, newReminder };
+}
+
+export async function createMeetingReminderWithToken({
+  clientLeadId,
+  userId,
+  reminderReason,
+  isAdmin,
+  adminId,
+  type,
+  currentUser,
+}) {
+  if (
+    currentUser.role === "THREE_D_DESIGNER" ||
+    currentUser.role === "TWO_D_DESIGNER"
+  ) {
+    throw new Error("You are not allow to create meeting");
+  }
+  const token = uuidv4();
+
+  const data = { clientLeadId, userId, reminderReason, token };
+
+  if (isAdmin) {
+    data.isAdmin = true;
+  }
+  if (adminId) {
+    data.adminId = Number(adminId);
+    const today = dayjs().startOf("day").toDate();
+    const halfNextMonth = dayjs()
+      .add(1, "month")
+      .startOf("month")
+      .add(14, "day")
+      .endOf("day")
+      .toDate();
+
+    const availableSlot = await prisma.availableSlot.findFirst({
+      where: {
+        isBooked: false,
+        startTime: {
+          gte: today,
+          lte: halfNextMonth,
+        },
+        availableDay: {
+          userId: Number(adminId),
+        },
+      },
+    });
+
+    if (!availableSlot) {
+      throw new Error(
+        "No available slots found for this admin in the coming days ,ask admin to add available slots"
+      );
+    }
+  }
+  if (type) {
+    data.type = type;
+  }
+
+  const newReminder = await prisma.meetingReminder.create({
+    data,
+    select: {
+      id: true,
+      time: true,
+      status: true,
+      reminderReason: true,
+      meetingResult: true,
+      userId: true,
+      type: true,
+      isAdmin: true,
+      adminId: true,
+      token: true,
+      admin: {
+        select: {
+          name: true,
+        },
+      },
+      user: {
+        select: { name: true },
+      },
+    },
+  });
   let latestTwo = await prisma.meetingReminder.findMany({
     where: {
       clientLeadId,
@@ -325,6 +448,7 @@ export async function updateMeetingReminderStatus({
       meetingResult: true,
       userId: true,
       clientLeadId: true,
+      token: true,
       updatedAt: true,
       user: {
         select: { name: true },

@@ -425,6 +425,7 @@ export async function getClientLeadDetails(
           status: true,
           reminderReason: true,
           meetingResult: true,
+          token: true,
           userId: true,
           updatedAt: true,
           adminId: true,
@@ -3164,6 +3165,7 @@ export async function deleteAModel({ id, isAdmin, data }) {
   if (!item) {
     throw new Error(`${data.model} not found`);
   }
+
   if (!isAdmin) {
     const now = dayjs();
     const createdAt = dayjs(item.createdAt);
@@ -3181,6 +3183,27 @@ export async function deleteAModel({ id, isAdmin, data }) {
         },
       });
     });
+  }
+
+  if (model === "MeetingReminder") {
+    const meeting = await prisma.meetingReminder.findUnique({
+      where: {
+        id: Number(id),
+      },
+      select: {
+        availableSlotId: true,
+      },
+    });
+    if (meeting && meeting.availableSlotId) {
+      await prisma.availableSlot.update({
+        where: {
+          id: meeting.availableSlotId,
+        },
+        data: {
+          isBooked: false,
+        },
+      });
+    }
   }
   await prisma[model].delete({
     where: {

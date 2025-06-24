@@ -269,7 +269,7 @@ model MeetingReminder {
   id             Int                @id @default(autoincrement())
   clientLead     ClientLead         @relation(fields: [clientLeadId], references: [id], name: "clientLeadMeetingReminders")
   clientLeadId   Int
-  time           DateTime
+  time           DateTime?
   status         CallReminderStatus @default(IN_PROGRESS)
   meetingResult  String?            @db.Text
   reminderReason String?            @db.Text
@@ -279,9 +279,10 @@ model MeetingReminder {
   adminId        Int?
   isAdmin        Boolean            @default(false)
   type           MeetingType? 
-
+  token String? @unique
   availableSlot  AvailableSlot?     @relation("SlotToMeeting")
   availableSlotId Int?              @unique  
+  userTimezone     String? 
 
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
@@ -917,6 +918,7 @@ model AvailableSlot {
   availableDay   AvailableDay   @relation(fields: [availableDayId], references: [id])
   availableDayId Int
   isBooked       Boolean        @default(false)
+  userTimezone     String? 
 
   meetingReminder  MeetingReminder?  @relation("SlotToMeeting", fields: [meetingReminderId], references: [id])
   meetingReminderId Int?             @unique

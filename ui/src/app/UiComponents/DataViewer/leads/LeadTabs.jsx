@@ -18,12 +18,14 @@ import {
   AddExtraService,
   CallResultDialog,
   NewCallDialog,
+  NewClientMeetingDialog,
   NewMeetingDialog,
 } from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
 import {
   RiAlarmLine,
   RiCalendarLine,
   RiCheckboxCircleLine,
+  RiLink,
   RiShieldUserLine,
   RiUserLine,
 } from "react-icons/ri";
@@ -206,8 +208,16 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
                       size={18}
                       color={theme.palette.primary.main}
                     />
-                    <Typography variant="subtitle2">
-                      {dayjs(call.time).format("MM/DD/YYYY, h:mm A")}
+                    <Typography
+                      variant="subtitle2"
+                      sx={{
+                        fontWeight: call.isAdmin ? 600 : 400,
+                        color: call.isAdmin ? "#7B1FA2" : "inherit",
+                      }}
+                    >
+                      {call.time
+                        ? dayjs(call.time).format("MM/DD/YYYY, h:mm A")
+                        : "No time selected"}
                     </Typography>
                   </Stack>
 
@@ -329,11 +339,26 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
   return (
     <Stack spacing={3}>
       {!notUser && (
-        <NewMeetingDialog
-          lead={lead}
-          setMeetingReminders={setMeetingReminders}
-          setleads={setleads}
-        />
+        <Box display="flex" gap={1.5}>
+          <NewMeetingDialog
+            lead={lead}
+            setMeetingReminders={setMeetingReminders}
+            setleads={setleads}
+          />
+          <NewClientMeetingDialog
+            lead={lead}
+            setMeetingReminders={setMeetingReminders}
+            setleads={setleads}
+          />
+          <Button
+            variant="outlined"
+            size="small"
+            component="a"
+            href="/dashboard/calendar"
+          >
+            See admin available days
+          </Button>
+        </Box>
       )}
       <Stack spacing={2}>
         {meetingReminders?.map((call) => {
@@ -435,6 +460,29 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                           }}
                         />
                       )}
+
+                      {call.token && (
+                        <Chip
+                          size="small"
+                          icon={<RiLink size={16} />}
+                          label="Client Link"
+                          sx={{
+                            backgroundColor: alpha(
+                              theme.palette.info.main,
+                              0.1
+                            ),
+                            color: theme.palette.info.main,
+                            fontWeight: 700,
+                            border: `1px solid ${alpha(
+                              theme.palette.info.main,
+                              0.5
+                            )}`,
+                            "& .MuiChip-icon": {
+                              color: theme.palette.info.main,
+                            },
+                          }}
+                        />
+                      )}
                     </Stack>
 
                     {/* Done Date */}
@@ -463,6 +511,35 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                             />
                           )}
                         </>
+                      )}
+                      {call.token && (
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          sx={{ mt: 1, flexWrap: "wrap" }}
+                        >
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            Client Link:
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="primary"
+                            sx={{ wordBreak: "break-all" }}
+                          >
+                            {`${window.location.origin}/booking?token=${call.token}`}
+                          </Typography>
+                          <Button
+                            size="small"
+                            onClick={() =>
+                              navigator.clipboard.writeText(
+                                `${window.location.origin}/booking?token=${call.token}`
+                              )
+                            }
+                          >
+                            Copy
+                          </Button>
+                        </Stack>
                       )}
 
                       <DeleteModelButton

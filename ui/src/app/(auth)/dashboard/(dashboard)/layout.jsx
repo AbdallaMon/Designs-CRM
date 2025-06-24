@@ -258,6 +258,11 @@ export const staffLinks = [
       },
     ],
   },
+  {
+    name: "Calendar",
+    href: "/dashboard/calendar",
+    icon: <FiCalendar size={20} />,
+  },
 ];
 export const threeDLinks = [
   { name: "Dashboard", href: "/dashboard", icon: <FiTarget size={20} /> },

@@ -1,18 +1,22 @@
-import { addMinutes, isBefore } from "date-fns";
+import { addMinutes, endOfDay, isBefore, startOfDay } from "date-fns";
 import prisma from "../../prisma/prisma.js";
 import { verifyToken } from "./utility.js";
 
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
+import { newCallNotification } from "../notification.js";
 
 dayjs.extend(utc);
 dayjs.extend(utc);
 
-export async function getAvailableDays({ month, userId }) {
+export async function getAvailableDays({ month, adminId, role = true }) {
   const start = dayjs(month).utc().startOf("month");
   const end = dayjs(month).utc().endOf("month");
+  if (!role && !adminId) {
+    throw new Error("AdminId is required");
+  }
 
-  if (!userId) {
+  if (!adminId && role) {
     const mockDays = [];
     for (let i = 0; i <= end.date() - 1; i++) {
       const date = start.add(i, "day").toDate();
@@ -29,7 +33,7 @@ export async function getAvailableDays({ month, userId }) {
 
   const availableDays = await prisma.availableDay.findMany({
     where: {
-      userId: Number(userId),
+      userId: Number(adminId),
       date: {
         gte: start.toDate(),
         lte: end.toDate(),
@@ -193,10 +197,21 @@ export async function updateAvailableDay({
   return true;
 }
 
-export async function getAvailableSlotsForDay({ date, userId, dayId }) {
-  if (!userId) {
-    const mockDate = new Date(); // or use the actual date of dayId if you can extract it
-    mockDate.setUTCHours(8, 0, 0, 0);
+export async function getAvailableSlotsForDay({
+  date,
+  adminId,
+  dayId,
+  role = true,
+}) {
+  if (!role && !adminId) {
+    throw new Error("AdminId is required");
+  }
+  if (!adminId && role) {
+    const now = dayjs(); // or specific date if needed
+    const mockDate = dayjs
+      .tz(`${now.format("YYYY-MM-DD")} 08:00`, "Asia/Dubai")
+      .utc()
+      .toDate();
     const slots = [];
     let current = new Date(mockDate);
 
@@ -213,6 +228,7 @@ export async function getAvailableSlotsForDay({ date, userId, dayId }) {
         endTime: end,
         isBooked: false,
         meetingReminderId: null,
+        type: "MOCK",
       });
       current = addMinutes(end, 15);
     }
@@ -233,7 +249,7 @@ export async function getAvailableSlotsForDay({ date, userId, dayId }) {
             gte: new Date(startOfDay),
             lte: new Date(endOfDay),
           },
-          userId: Number(userId),
+          userId: Number(adminId),
         },
       });
   if (!day) {
@@ -244,28 +260,6 @@ export async function getAvailableSlotsForDay({ date, userId, dayId }) {
       availableDayId: day.id,
     },
     orderBy: { startTime: "asc" },
-  });
-}
-
-export async function assignSlotToMeeting({ slotId, meetingReminderId }) {
-  slotId = Number(slotId);
-  meetingReminderId = Number(meetingReminderId);
-
-  const slot = await prisma.availableSlot.findUnique({
-    where: { id: slotId },
-  });
-
-  if (!slot || slot.isBooked)
-    throw new Error("Day already booked book another");
-
-  await prisma.meetingReminder.update({
-    where: { id: meetingReminderId },
-    data: { availableSlotId: slotId },
-  });
-
-  return await prisma.availableSlot.update({
-    where: { id: slotId },
-    data: { isBooked: true, meetingReminderId },
   });
 }
 
@@ -286,18 +280,46 @@ export async function deleteASlot({ slotId }) {
   });
 }
 export async function verifyAndExtractCalendarToken(token) {
-  return true;
   if (!token) throw new Error("No token provided");
 
-  // Assuming a function to verify the token and extract userId
-  const tokenData = await verifyToken(token);
-
-  return {
-    reminderId: tokenData.reminderId,
+  const tokenData = await prisma.meetingReminder.findUnique({
+    where: { token },
+    select: {
+      id: true,
+      userId: true,
+      clientLeadId: true,
+      adminId: true,
+      time: true,
+      userTimezone: true,
+      availableSlot: {
+        select: {
+          startTime: true,
+          endTime: true,
+          userTimezone: true,
+        },
+      },
+    },
+  });
+  const returnData = {
+    reminderId: tokenData.id,
     userId: tokenData.userId,
     clientLeadId: tokenData.clientLeadId,
     adminId: tokenData.adminId,
+    ...tokenData,
   };
+  if (tokenData.availableSlot) {
+    returnData.selectedSlot = tokenData.availableSlot;
+    if (tokenData.availableSlot.userTimezone) {
+      returnData.selectedTimezone = tokenData.availableSlot.userTimezone;
+    }
+  }
+  if (tokenData.time) {
+    returnData.selectedDate = dayjs(tokenData.time).utc().toDate();
+  }
+  if (tokenData.userTimezone) {
+    returnData.selectedTimezone = tokenData.userTimezone;
+  }
+  return returnData;
 }
 
 export async function addCutsomDate({ fromHour, toHour, dayId }) {
@@ -347,4 +369,336 @@ export async function addCutsomDate({ fromHour, toHour, dayId }) {
       endTime: endTimeUtc,
     },
   });
+}
+
+export async function bookAMeeting({
+  reminderId,
+  clientLeadId,
+  clientName,
+  selectedSlot,
+  selectedTimezone = "Asia/Dubai",
+}) {
+  const time = selectedSlot.startTime;
+  const reminder = await updateMeetingReminderTime({
+    reminderId,
+    time,
+    userTimezone: selectedTimezone,
+  });
+  if (selectedSlot.type !== "MOCK") {
+    await assignSlotToMeeting({
+      slotId: selectedSlot.id,
+      meetingReminderId: reminderId,
+      userTimezone: selectedTimezone,
+    });
+  }
+  const lead = await prisma.clientLead.findUnique({
+    where: { id: Number(clientLeadId) },
+    select: {
+      client: {
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+  const updateClientEmail = await prisma.client.update({
+    where: { id: lead.client.id },
+    data: { email: clientName },
+  });
+
+  await newCallNotification(Number(clientLeadId), reminder);
+
+  return true;
+}
+
+export async function updateMeetingReminderTime({
+  reminderId,
+  time,
+  userTimezone,
+}) {
+  reminderId = Number(reminderId);
+  const reminder = await prisma.meetingReminder.findUnique({
+    where: { id: reminderId },
+  });
+
+  const updatedReminder = await prisma.meetingReminder.update({
+    where: { id: reminderId },
+    data: { time, userTimezone },
+  });
+
+  return updatedReminder;
+}
+export async function assignSlotToMeeting({
+  slotId,
+  meetingReminderId,
+  userTimezone,
+}) {
+  slotId = Number(slotId);
+  meetingReminderId = Number(meetingReminderId);
+
+  const slot = await prisma.availableSlot.findUnique({
+    where: { id: slotId },
+  });
+
+  if (!slot || slot.isBooked)
+    throw new Error("Time already booked book another");
+
+  await prisma.meetingReminder.update({
+    where: { id: meetingReminderId },
+    data: { availableSlotId: slotId },
+  });
+
+  return await prisma.availableSlot.update({
+    where: { id: slotId },
+    data: { isBooked: true, meetingReminderId, userTimezone },
+  });
+}
+
+export async function getCalendarDataForMonth({
+  year,
+  month,
+  adminId = null,
+  userId = null,
+}) {
+  console.log(adminId, "adminId");
+  console.log(userId, "userId");
+  try {
+    const timezone = "UTC";
+    // Create start and end dates using dayjs with timezone
+    const startOfMonth = dayjs.tz(
+      `${year}-${month.toString().padStart(2, "0")}-01`,
+      timezone
+    );
+    const endOfMonth = startOfMonth.endOf("month");
+
+    // Convert to UTC for database queries
+    const startDate = startOfMonth.utc().toDate();
+    const endDate = endOfMonth.utc().toDate();
+
+    // Build where clauses
+    const meetingWhere = {
+      time: {
+        gte: startDate,
+        lte: endDate,
+      },
+      ...(userId && {
+        clientLead: {
+          userId: Number(userId),
+        },
+      }),
+    };
+
+    const callWhere = {
+      time: {
+        gte: startDate,
+        lte: endDate,
+      },
+      ...(userId && {
+        clientLead: {
+          userId: Number(userId),
+        },
+      }),
+    };
+
+    if (adminId) {
+      meetingWhere.OR = [
+        { adminId: Number(adminId) },
+        { userId: Number(userId) },
+      ];
+
+      callWhere.userId = Number(adminId);
+    }
+    // Fetch meetings and calls
+    const [meetings, calls] = await Promise.all([
+      prisma.meetingReminder.findMany({
+        where: meetingWhere,
+        select: {
+          id: true,
+          time: true,
+          status: true,
+        },
+        orderBy: {
+          time: "asc",
+        },
+      }),
+      prisma.callReminder.findMany({
+        where: callWhere,
+        select: {
+          id: true,
+          time: true,
+          status: true,
+        },
+        orderBy: {
+          time: "asc",
+        },
+      }),
+    ]);
+
+    // Group activities by day
+    const calendarData = {};
+
+    // Process meetings
+    meetings.forEach((meeting) => {
+      const meetingTime = dayjs(meeting.time).tz(timezone);
+      const dayKey = meetingTime.format("YYYY-MM-DD");
+
+      if (!calendarData[dayKey]) {
+        calendarData[dayKey] = {
+          date: dayKey,
+          meetings: [],
+          calls: [],
+        };
+      }
+
+      calendarData[dayKey].meetings.push({
+        ...meeting,
+        time: meetingTime.toISOString(), // Return in ISO format
+        formattedTime: meetingTime.format("HH:mm"), // Formatted time for display
+      });
+    });
+
+    // Process calls
+    calls.forEach((call) => {
+      const callTime = dayjs(call.time).tz(timezone);
+      const dayKey = callTime.format("YYYY-MM-DD");
+
+      if (!calendarData[dayKey]) {
+        calendarData[dayKey] = {
+          date: dayKey,
+          meetings: [],
+          calls: [],
+        };
+      }
+
+      calendarData[dayKey].calls.push({
+        ...call,
+        time: callTime.toISOString(), // Return in ISO format
+        formattedTime: callTime.format("HH:mm"), // Formatted time for display
+      });
+    });
+
+    // Fill in empty days for the month (optional - frontend can handle this)
+    const daysInMonth = endOfMonth.date();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayKey = startOfMonth.date(day).format("YYYY-MM-DD");
+      if (!calendarData[dayKey]) {
+        calendarData[dayKey] = {
+          date: dayKey,
+          meetings: [],
+          calls: [],
+        };
+      }
+    }
+
+    return calendarData;
+  } catch (error) {
+    console.error("Error fetching calendar data:", error);
+    throw new Error("Failed to fetch calendar data");
+  }
+}
+export async function getRemindersForDay({ date, userId, adminId }) {
+  const dayStart = startOfDay(new Date(date));
+  const dayEnd = endOfDay(new Date(date));
+  const meetingWhere = {
+    time: {
+      gte: dayStart,
+      lte: dayEnd,
+    },
+    ...(userId && {
+      clientLead: {
+        userId: Number(userId),
+      },
+    }),
+  };
+  const callWhere = {
+    time: {
+      gte: dayStart,
+      lte: dayEnd,
+    },
+    ...(userId && {
+      clientLead: {
+        userId: Number(userId),
+      },
+    }),
+  };
+  if (adminId) {
+    meetingWhere.OR = [
+      { adminId: Number(adminId) },
+      { userId: Number(userId) },
+    ];
+
+    callWhere.userId = Number(adminId);
+  }
+  const meetings = await prisma.meetingReminder.findMany({
+    where: meetingWhere,
+    orderBy: { time: "asc" },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      admin: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      clientLead: {
+        select: {
+          id: true,
+          assignedTo: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          client: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const calls = await prisma.callReminder.findMany({
+    where: callWhere,
+    orderBy: { time: "asc" },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      clientLead: {
+        select: {
+          id: true,
+          assignedTo: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          client: {
+            select: {
+              id: true,
+              name: true,
+              phone: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return { meetings, calls };
 }

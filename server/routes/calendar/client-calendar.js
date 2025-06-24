@@ -1,4 +1,5 @@
 import {
+  bookAMeeting,
   getAvailableDays,
   getAvailableSlotsForDay,
   verifyAndExtractCalendarToken,
@@ -10,7 +11,7 @@ const router = express.Router();
 router.get("/meeting-data", async (req, res) => {
   try {
     const { token } = req.query;
-    const tokenData = verifyAndExtractCalendarToken(token);
+    const tokenData = await verifyAndExtractCalendarToken(token);
     res.status(200).json({
       message: "Meeting data fetched successfully",
       data: tokenData,
@@ -26,11 +27,10 @@ router.get("/meeting-data", async (req, res) => {
 router.get("/available-days", async (req, res) => {
   try {
     const { month, token } = req.query;
-    const tokenData = verifyAndExtractCalendarToken(token);
+    const tokenData = await verifyAndExtractCalendarToken(token);
     const data = await getAvailableDays({
       month: month,
-      //   userId: tokenData.adminId,
-      userId: 1,
+      ...tokenData,
     });
     res.status(200).json({
       message: "Available days fetched successfully",
@@ -47,13 +47,11 @@ router.get("/available-days", async (req, res) => {
 router.get("/slots/:dayId", async (req, res) => {
   try {
     const { token } = req.query;
-    const tokenData = verifyAndExtractCalendarToken(token);
-    console.log(req.params, "req.params");
+    const tokenData = await verifyAndExtractCalendarToken(token);
     const data = await getAvailableSlotsForDay({
       date: req.query.date,
-      //   userId: tokenData.adminId,
       dayId: req.params.dayId,
-      userId: 1,
+      ...tokenData,
     });
     res.status(200).json({
       message: "Available days fetched successfully",
@@ -66,5 +64,52 @@ router.get("/slots/:dayId", async (req, res) => {
       error: e.message || "Internal Server Error",
     });
   }
+});
+router.post("/book", async (req, res) => {
+  try {
+    const tokenData = await verifyAndExtractCalendarToken(req.query.token);
+    const data = await bookAMeeting({
+      ...req.body,
+      ...tokenData,
+    });
+
+    res.status(200).json({
+      message: "Slot booked successfully",
+      data: data,
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({
+      message: e.message,
+      error: e.message || "Internal Server Error",
+    });
+  }
+});
+
+router.get("/timezones", async (req, res) => {
+  const groupedTimezoneOptions = Intl.supportedValuesOf("timeZone")
+    .map((tz) => {
+      const [region = "Other", city = ""] = tz.split("/");
+      const label = tz.replace("_", " ");
+      const currentTime = new Date().toLocaleTimeString("en-US", {
+        timeZone: tz,
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+
+      return {
+        group: region,
+        label: `${label} (${currentTime})`,
+        value: tz,
+      };
+    })
+    .sort(
+      (a, b) => a.group.localeCompare(b.group) || a.label.localeCompare(b.label)
+    );
+  res.status(200).json({
+    message: "Time zones fetched successfully",
+    data: groupedTimezoneOptions,
+  });
 });
 export default router;

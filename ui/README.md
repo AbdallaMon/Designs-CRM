@@ -24,27 +24,25 @@
   then the staff can generate a link for admins or for the user this links (we have to check if there is availble days in the month before generating)
   ok these links are then go to client to select from them also user can have links like them
   SPAIN(is the question user must answer and is related to meetings) and new tab before meetings
-
-- Fix pdf make it in arabic and arabic direction
-- Make two image grid and make image bigger
-- امكانية رفع اكتر من صور ووضعها ضمن مساحه معينه
-- امكانية الفلتر بالمساحه او اللاوان
-
+- Calender for calls and meetings ساعات وايام add break to calendar and admin can refuse it and ask user to change
+  add restricted days and times and select admins or for my self
+- Customer choose a time and other customers can't choose new page selected by user
 - For meetings
 - Staff can generate link for client to select meeting from it for them self
 - Staff can generate link for admins and can see the selected time by user
 - Admin select available days and available times for examble (in a day can select from 8:8 and each half hour is gap)
 - Admin can remove days or specific times or can add speciale time ect
 
+- Fix pdf make it in arabic and arabic direction
+- Make two image grid and make image bigger
+- امكانية رفع اكتر من صور ووضعها ضمن مساحه معينه
+- امكانية الفلتر بالمساحه او اللاوان
+
 - Enhance loading the kanban (make it filter data in the backend)
 
 - New page for register make it en and without video
 
   4- Calendar
-
-- Calender for calls and meetings ساعات وايام add break to calendar and admin can refuse it and ask user to change
-  add restricted days and times and select admins or for my self
-- Customer choose a time and other customers can't choose new page selected by user
 
 تمام هضيف زرار انك تقدر ترسل ايميل بلينك جديد يقدر يدفع منه ويكمل تسجيل
 إمكانية تحديد أشخاص علي واتساب يردوا علي عميل معين
@@ -55,19 +53,20 @@
 
 3- تحديد ال style  
  8 - 2.5 + 5.5
-
 1- الميتينج
 8 - 2 + 3
 
 2- حجز المواعيد
-6
+6 4
+
+4- Calendar
+8 2
 
 - الاولويات
   -1 تليجرام  
   10 - 1
   0-التعديلات
-  4- Calendar
-  8
+
   5- Courses
   50
   6- rating page

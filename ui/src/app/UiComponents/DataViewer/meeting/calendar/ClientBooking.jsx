@@ -20,6 +20,7 @@ import {
   Fade,
   Avatar,
   Divider,
+  Alert,
 } from "@mui/material";
 import {
   MdAccessTime,
@@ -28,8 +29,10 @@ import {
   MdCalendarToday,
   MdCheckCircle,
   MdEmail,
+  MdError,
   MdLocationOn,
   MdPerson,
+  MdRefresh,
   MdSchedule,
 } from "react-icons/md";
 import { useEffect, useState } from "react";
@@ -43,6 +46,8 @@ import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { Calendar } from "./Calendar";
 import { getData } from "@/app/helpers/functions/getData";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
+import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -50,99 +55,115 @@ dayjs.extend(customParseFormat);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
 // Client Booking Component with Steps
-const ClientBooking = ({ timezone: tz = "Asia/Dubai" }) => {
+const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
   const [activeStep, setActiveStep] = useState(0);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [clientEmail, setClientEmail] = useState("");
-  const [clientName, setClientName] = useState("");
   const [availableSlots, setAvailableSlots] = useState([]);
-  const [selectedTimezone, setSelectedTimezone] = useState(tz);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const [dayId, setDayId] = useState(null);
-  const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [groupedTimezoneOptions, setGroupedTimezoneOptions] = useState([]);
+  const [loadingTimezone, setLoadingTimezone] = useState(false);
+  const { setLoading: setToastLoading } = useToastContext();
+  const [error, setError] = useState(null);
+  const [sessionData, setSessionData] = useState({
+    selectedDate: null,
+    selectedSlot: null,
+    clientEmail: "",
+    clientName: "",
+    selectedTimezone: tz,
+    dayId: null,
+    token,
+  });
   const getSlotsData = async () => {
     const slotsReq = await getData({
-      url: `client/calendar/slots/${dayId}`,
+      url: `client/calendar/slots/${sessionData.dayId}?token=${token}&`,
       setLoading,
     });
     if (slotsReq.status === 200) {
-      setSlots(slotsReq.data);
+      setAvailableSlots(slotsReq.data.filter((slot) => !slot.isBooked));
     } else {
-      setSlots([]);
+      setAvailableSlots([]);
+    }
+  };
+  const getTimezoneOptions = async () => {
+    const timeZoneReq = await getData({
+      url: `client/calendar/timezones`,
+      setLoading: setLoadingTimezone,
+    });
+    if (timeZoneReq.status === 200) {
+      setGroupedTimezoneOptions(timeZoneReq.data);
     }
   };
   useEffect(() => {
-    if (dayId) {
+    if (sessionData && sessionData.dayId) {
       getSlotsData();
     }
-  }, [dayId]);
+  }, [sessionData && sessionData?.dayId]);
+  useEffect(() => {
+    getTimezoneOptions();
+  }, []);
 
-  const steps = ["Select Date", "Choose Time", "Enter Details", "Confirm"];
+  const steps = [
+    "Select Date",
+    "Choose Time",
+    "Enter Details",
+    "Confirm",
+    "Success",
+  ];
 
   const handleNext = () => {
+    if (activeStep === 0 && sessionData.dayId) {
+      getSlotsData();
+    }
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
   const handleBack = () => {
+    if (activeStep === 2 && sessionData.dayId) {
+      getSlotsData();
+    }
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
   };
 
   const handleDateSelect = (date, day) => {
-    const parsedDate = typeof date === "string" ? new Date(date) : date;
-    setSelectedDate(parsedDate);
-    setSelectedSlot(null);
-    setDayId(day ? day.id : null);
-    setAvailableSlots(slots.filter((slot) => !slot.isBooked));
     handleNext();
+    const parsedDate = typeof date === "string" ? new Date(date) : date;
+    setSessionData((prev) => ({
+      ...prev,
+      selectedDate: parsedDate,
+      dayId: day ? day.id : null,
+      selectedSlot: null,
+      clientEmail: "",
+      clientName: "",
+    }));
   };
 
   const handleSlotSelect = (slot) => {
-    setSelectedSlot(slot);
+    setSessionData((prev) => ({
+      ...prev,
+      selectedSlot: slot,
+    }));
     handleNext();
   };
 
-  const handleBooking = () => {
-    if (selectedSlot && clientEmail && clientName) {
-      alert(
-        `Booking confirmed for ${clientName} at ${new Date(
-          selectedSlot.startTime
-        ).toLocaleDateString()} ${new Date(
-          selectedSlot.startTime
-        ).toLocaleTimeString()} (${selectedTimezone})`
+  const handleBooking = async () => {
+    if (
+      sessionData.selectedSlot &&
+      sessionData.clientEmail &&
+      sessionData.clientName
+    ) {
+      const bookingReq = await handleRequestSubmit(
+        sessionData,
+        setToastLoading,
+        `client/calendar/book?token=${token}&`,
+        false,
+        "Booking..."
       );
-      // Reset form
-      setActiveStep(0);
-      setSelectedDate(null);
-      setSelectedSlot(null);
-      setClientEmail("");
-      setClientName("");
+      if (bookingReq.status === 200) {
+        handleNext();
+      }
     }
   };
-
-  const groupedTimezoneOptions = Intl.supportedValuesOf("timeZone")
-    .map((tz) => {
-      const [region = "Other", city = ""] = tz.split("/");
-      const label = tz.replace("_", " ");
-      const currentTime = new Date().toLocaleTimeString("en-US", {
-        timeZone: tz,
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
-
-      return {
-        group: region,
-        label: `${label} (${currentTime})`,
-        value: tz,
-      };
-    })
-    .sort(
-      (a, b) => a.group.localeCompare(b.group) || a.label.localeCompare(b.label)
-    );
-
   const renderStepContent = (step) => {
     switch (step) {
       case 0:
@@ -163,14 +184,18 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai" }) => {
                   options={groupedTimezoneOptions}
                   groupBy={(option) => option.group}
                   getOptionLabel={(option) => option.label}
+                  loading={loadingTimezone}
                   value={
                     groupedTimezoneOptions.find(
-                      (opt) => opt.value === selectedTimezone
+                      (opt) => opt.value === sessionData.selectedTimezone
                     ) || null
                   }
-                  onChange={(e, newValue) =>
-                    setSelectedTimezone(newValue?.value || "")
-                  }
+                  onChange={(e, newValue) => {
+                    setSessionData((prev) => ({
+                      ...prev,
+                      selectedTimezone: newValue?.value || "",
+                    }));
+                  }}
                   renderInput={(params) => (
                     <TextField
                       {...params}
@@ -189,9 +214,14 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai" }) => {
               </FormControl>
             </Box>
             <Calendar
-              selectedDate={selectedDate}
+              selectedDate={sessionData.selectedDate}
               onDateSelect={handleDateSelect}
-              timezone={selectedTimezone}
+              timezone={sessionData.selectedTimezone || tz}
+              token={token}
+              sessionData={sessionData}
+              setSessionData={setSessionData}
+              setError={setError}
+              setActiveStep={setActiveStep}
             />
           </Box>
         );
@@ -204,7 +234,7 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai" }) => {
                 Available Times for
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                Timezone: {selectedTimezone}
+                Timezone: {sessionData.selectedTimezone}
               </Typography>
 
               <Stack spacing={1} mt={2}>
@@ -212,7 +242,9 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai" }) => {
                   <Button
                     key={slot.id}
                     variant={
-                      selectedSlot?.id === slot.id ? "contained" : "outlined"
+                      sessionData?.selectedSlot?.id === slot.id
+                        ? "contained"
+                        : "outlined"
                     }
                     fullWidth
                     onClick={() => handleSlotSelect(slot)}
@@ -220,19 +252,13 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai" }) => {
                     size={isMobile ? "medium" : "large"}
                     sx={{ justifyContent: "flex-start", p: 2 }}
                   >
-                    {new Date(slot.startTime).toLocaleTimeString("en-US", {
-                      timeZone: selectedTimezone,
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}{" "}
+                    {dayjs(slot.startTime)
+                      .tz(sessionData.selectedTimezone)
+                      .format("h:mm A")}{" "}
                     -{" "}
-                    {new Date(slot.endTime).toLocaleTimeString("en-US", {
-                      timeZone: selectedTimezone,
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
+                    {dayjs(slot.endTime)
+                      .tz(sessionData.selectedTimezone)
+                      .format("h:mm A")}
                   </Button>
                 ))}
               </Stack>
@@ -259,8 +285,13 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai" }) => {
                 <TextField
                   fullWidth
                   label="Full Name"
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
+                  value={sessionData.clientName}
+                  onChange={(e) => {
+                    setSessionData((prev) => ({
+                      ...prev,
+                      clientName: e.target.value,
+                    }));
+                  }}
                   required
                   InputProps={{
                     startAdornment: (
@@ -282,8 +313,13 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai" }) => {
                   fullWidth
                   label="Email Address"
                   type="email"
-                  value={clientEmail}
-                  onChange={(e) => setClientEmail(e.target.value)}
+                  value={sessionData.clientEmail}
+                  onChange={(e) => {
+                    setSessionData((prev) => ({
+                      ...prev,
+                      clientEmail: e.target.value,
+                    }));
+                  }}
                   required
                   InputProps={{
                     startAdornment: (
@@ -338,70 +374,28 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai" }) => {
                           <MdCalendarToday />
                         </Avatar>
                         <Box>
-                          <Typography
-                            variant="subtitle2"
-                            color="text.secondary"
-                          >
-                            Date
-                          </Typography>
-                          <Typography variant="body1" fontWeight={600}>
-                            <strong>Time:</strong>{" "}
-                            {selectedSlot &&
-                              new Date(
-                                selectedSlot.startTime
-                              ).toLocaleTimeString("en-US", {
-                                hour: "numeric",
-                                minute: "2-digit",
-                                hour12: true,
-                              })}{" "}
-                            -{" "}
-                            {selectedSlot &&
-                              new Date(selectedSlot.endTime).toLocaleTimeString(
-                                "en-US",
-                                {
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                }
-                              )}
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      <Divider />
-
-                      <Box display="flex" alignItems="center" gap={2}>
-                        <Avatar sx={{ bgcolor: "primary.main" }}>
-                          <MdSchedule />
-                        </Avatar>
-                        <Box>
                           <Typography variant="body1" gutterBottom>
                             <strong>Date:</strong>{" "}
-                            {selectedDate?.format("dddd, MMMM D, YYYY")}
+                            {sessionData.selectedDate &&
+                              dayjs(sessionData.selectedDate)
+                                ?.tz(sessionData.selectedTimezone)
+                                .format("dddd, MMMM D, YYYY")}
                           </Typography>
+
                           <Typography variant="body1" gutterBottom>
                             <strong>Time:</strong>{" "}
-                            {selectedSlot &&
-                              new Date(
-                                selectedSlot.startTime
-                              ).toLocaleTimeString("en-US", {
-                                hour: "numeric",
-                                minute: "2-digit",
-                                hour12: true,
-                              })}{" "}
-                            -{" "}
-                            {selectedSlot &&
-                              new Date(selectedSlot.endTime).toLocaleTimeString(
-                                "en-US",
-                                {
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                }
-                              )}
+                            {sessionData.selectedSlot &&
+                              `${dayjs(sessionData.selectedSlot.startTime)
+                                .tz(sessionData.selectedTimezone)
+                                .format("h:mm A")} - ${dayjs(
+                                sessionData.selectedSlot.endTime
+                              )
+                                .tz(sessionData.selectedTimezone)
+                                .format("h:mm A")}`}
                           </Typography>
+
                           <Typography variant="caption" color="text.secondary">
-                            {selectedTimezone}
+                            {sessionData.selectedTimezone}
                           </Typography>
                         </Box>
                       </Box>
@@ -420,10 +414,10 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai" }) => {
                             Contact
                           </Typography>
                           <Typography variant="body1" fontWeight={600}>
-                            {clientName}
+                            {sessionData.clientName}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            {clientEmail}
+                            {sessionData.clientEmail}
                           </Typography>
                         </Box>
                       </Box>
@@ -434,11 +428,209 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai" }) => {
             </Fade>
           </Box>
         );
+      case 4: // Success step
+        return (
+          <Fade in timeout={500}>
+            <Box textAlign="center">
+              <Box mb={3}>
+                <Avatar
+                  sx={{
+                    bgcolor: "success.main",
+                    width: 80,
+                    height: 80,
+                    mx: "auto",
+                    mb: 2,
+                  }}
+                >
+                  <MdCheckCircle size={40} />
+                </Avatar>
+
+                <Typography variant="h5" gutterBottom color="success.main">
+                  Booking Confirmed! 🎉
+                </Typography>
+
+                <Typography variant="body1" color="text.secondary" mb={3}>
+                  Thank you for booking with us. Your appointment has been
+                  successfully scheduled.
+                </Typography>
+              </Box>
+
+              <Card
+                variant="outlined"
+                sx={{
+                  borderRadius: 3,
+                  border: "2px solid",
+                  borderColor: "success.main",
+                  bgcolor: "success.50",
+                  mb: 3,
+                }}
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h6" gutterBottom color="success.dark">
+                    Meeting Details
+                  </Typography>
+
+                  <Stack spacing={2} alignItems="center">
+                    <Box display="flex" alignItems="center" gap={2}>
+                      <MdSchedule color="success.main" />
+                      <Box textAlign="left">
+                        <Typography variant="body1">
+                          <strong>Date:</strong>{" "}
+                          {sessionData.selectedDate &&
+                            dayjs(sessionData.selectedDate)
+                              .tz(sessionData.selectedTimezone)
+                              .format("dddd, MMMM D, YYYY")}
+                        </Typography>
+                        <Typography variant="body1">
+                          <strong>Time:</strong>{" "}
+                          {sessionData.selectedSlot
+                            ? `${dayjs(sessionData.selectedSlot.startTime)
+                                .tz(sessionData.selectedTimezone)
+                                .format("h:mm A")} - ${dayjs(
+                                sessionData.selectedSlot.endTime
+                              )
+                                .tz(sessionData.selectedTimezone)
+                                .format("h:mm A")}`
+                            : sessionData.time
+                            ? `${dayjs(sessionData.time)
+                                .tz(sessionData.selectedTimezone)
+                                .format("h:mm A")} `
+                            : ""}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          ({sessionData.selectedTimezone})
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Stack>
+                </CardContent>
+              </Card>
+
+              <Box
+                sx={{
+                  bgcolor: "grey.50",
+                  p: 3,
+                  borderRadius: 2,
+                  border: "1px solid",
+                  borderColor: "grey.200",
+                }}
+              >
+                <Typography variant="body2" color="text.secondary" mb={2}>
+                  📧 A confirmation email has been sent to{" "}
+                  <strong>{sessionData.clientEmail}</strong>
+                </Typography>
+                <Typography variant="body2" color="text.secondary" mb={2}>
+                  📅 Please add this meeting to your calendar
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  ❓ If you need to reschedule or cancel, please contact us
+                </Typography>
+              </Box>
+            </Box>
+          </Fade>
+        );
       default:
         return null;
     }
   };
+  const handleRefresh = () => {
+    window.location.reload();
+  };
 
+  if (error) {
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          py: 4,
+        }}
+      >
+        <Container maxWidth="sm">
+          <Paper
+            elevation={8}
+            sx={{
+              p: 4,
+              textAlign: "center",
+              borderRadius: 3,
+              border: "1px solid",
+              borderColor: "error.light",
+            }}
+          >
+            {/* Error Icon */}
+            <Avatar
+              sx={{
+                bgcolor: "error.light",
+                width: 80,
+                height: 80,
+                mx: "auto",
+                mb: 3,
+              }}
+            >
+              <MdError size={40} color="white" />
+            </Avatar>
+
+            {/* Error Title */}
+            <Typography
+              variant="h4"
+              component="h1"
+              gutterBottom
+              fontWeight="bold"
+            >
+              Oops! Something went wrong
+            </Typography>
+
+            {/* Error Message */}
+            <Alert
+              severity="error"
+              sx={{
+                mb: 4,
+                textAlign: "left",
+                "& .MuiAlert-message": {
+                  width: "100%",
+                },
+              }}
+            >
+              <Typography variant="body1" fontWeight="medium">
+                {error}
+              </Typography>
+            </Alert>
+
+            {/* Action Buttons */}
+            <Stack spacing={2}>
+              <Button
+                variant="contained"
+                color="error"
+                size="large"
+                startIcon={<MdRefresh />}
+                onClick={handleRefresh}
+                sx={{
+                  py: 1.5,
+                  borderRadius: 2,
+                  textTransform: "none",
+                  fontSize: "1.1rem",
+                }}
+              >
+                Refresh Page
+              </Button>
+            </Stack>
+
+            {/* Additional Help Text */}
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mt: 3, fontStyle: "italic" }}
+            >
+              If the problem persists, please contact support or try again
+              later.
+            </Typography>
+          </Paper>
+        </Container>
+      </Box>
+    );
+  }
   return (
     <Container maxWidth="md" sx={{ px: { xs: 1 } }}>
       <Typography variant="h4" gutterBottom align="center">
@@ -476,95 +668,98 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai" }) => {
               {renderStepContent(activeStep)}
             </Paper>
           )}
-          <Box display="flex" justifyContent="space-between" gap={2} mt={1.5}>
-            <Button
-              onClick={handleBack}
-              disabled={activeStep === 0}
-              variant="outlined"
-              startIcon={<MdArrowBack />}
-              fullWidth
-            >
-              Back
-            </Button>
-            {activeStep === steps.length - 1 ? (
+          {activeStep !== steps.length - 1 && (
+            <Box display="flex" justifyContent="space-between" gap={2} mt={1.5}>
               <Button
-                onClick={handleBooking}
-                disabled={!clientEmail || !clientName}
-                variant="contained"
-                startIcon={<MdCheckCircle />}
+                onClick={handleBack}
+                disabled={activeStep === 0}
+                variant="outlined"
+                startIcon={<MdArrowBack />}
                 fullWidth
               >
-                Confirm Booking
+                Back
               </Button>
-            ) : (
-              <Button
-                onClick={handleNext}
-                disabled={
-                  (activeStep === 0 && !selectedDate) ||
-                  (activeStep === 1 && !selectedSlot) ||
-                  (activeStep === 2 && (!clientName || !clientEmail))
-                }
-                variant="contained"
-                endIcon={<MdArrowForward />}
-                fullWidth
-              >
-                Next
-              </Button>
-            )}
-          </Box>
+
+              {activeStep === steps.length - 2 ? (
+                <Button
+                  onClick={handleBooking}
+                  disabled={!sessionData.clientEmail || !sessionData.clientName}
+                  variant="contained"
+                  startIcon={<MdCheckCircle />}
+                  fullWidth
+                >
+                  Confirm Booking
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleNext}
+                  disabled={
+                    (activeStep === 0 && !sessionData.selectedDate) ||
+                    (activeStep === 1 && !sessionData.selectedSlot) ||
+                    (activeStep === 2 &&
+                      (!sessionData.clientName || !sessionData.clientEmail))
+                  }
+                  variant="contained"
+                  endIcon={<MdArrowForward />}
+                  fullWidth
+                >
+                  Next
+                </Button>
+              )}
+            </Box>
+          )}
         </Box>
       ) : (
         <Box>
           <Stepper activeStep={activeStep} orientation="vertical">
             {steps.map((label, index) => (
               <Step key={label}>
-                <StepLabel>{label}</StepLabel>
+                {activeStep !== steps.length - 1 && (
+                  <StepLabel>{label}</StepLabel>
+                )}
                 <StepContent>
                   <Box mb={2}>{renderStepContent(index)}</Box>
-                  <Box display="flex" gap={1}>
-                    <Button
-                      disabled={index === 0}
-                      onClick={handleBack}
-                      variant="outlined"
-                    >
-                      Back
-                    </Button>
-                    {index === steps.length - 1 ? (
+                  {activeStep !== steps.length - 1 && (
+                    <Box display="flex" gap={1}>
                       <Button
-                        variant="contained"
-                        onClick={handleBooking}
-                        disabled={!clientEmail || !clientName}
-                        startIcon={<MdCheckCircle />}
+                        disabled={index === 0}
+                        onClick={handleBack}
+                        variant="outlined"
                       >
-                        Confirm Booking
+                        Back
                       </Button>
-                    ) : (
-                      <Button
-                        variant="contained"
-                        onClick={handleNext}
-                        disabled={
-                          (index === 0 && !selectedDate) ||
-                          (index === 1 && !selectedSlot) ||
-                          (index === 2 && (!clientName || !clientEmail))
-                        }
-                      >
-                        Continue
-                      </Button>
-                    )}
-                  </Box>
+                      {index === steps.length - 2 ? (
+                        <Button
+                          variant="contained"
+                          onClick={handleBooking}
+                          disabled={
+                            !sessionData.clientEmail || !sessionData.clientName
+                          }
+                          startIcon={<MdCheckCircle />}
+                        >
+                          Confirm Booking
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="contained"
+                          onClick={handleNext}
+                          disabled={
+                            (index === 0 && !sessionData.selectedDate) ||
+                            (index === 1 && !sessionData.selectedSlot) ||
+                            (index === 2 &&
+                              (!sessionData.clientName ||
+                                !sessionData.clientEmail))
+                          }
+                        >
+                          Continue
+                        </Button>
+                      )}
+                    </Box>
+                  )}
                 </StepContent>
               </Step>
             ))}
           </Stepper>
-
-          {activeStep === steps.length && (
-            <Paper square elevation={0} sx={{ p: 3 }}>
-              <Typography>All steps completed - booking confirmed!</Typography>
-              <Button onClick={() => setActiveStep(0)} sx={{ mt: 1, mr: 1 }}>
-                Book Another Appointment
-              </Button>
-            </Paper>
-          )}
         </Box>
       )}
     </Container>

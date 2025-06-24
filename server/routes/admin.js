@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  getCurrentUser,
   getPagination,
   getTokenData,
   handlePrismaError,
@@ -46,6 +47,13 @@ import multer from "multer";
 import prisma from "../prisma/prisma.js";
 import { newLeadNotification } from "../services/notification.js";
 import { createGroupProjects } from "../services/main/sharedServices.js";
+import {
+  addCutsomDate,
+  createAvailableDatesForMoreThanOneDay,
+  createAvailableDay,
+  deleteASlot,
+  updateAvailableDay,
+} from "../services/main/calendarServices.js";
 
 const router = Router();
 
@@ -540,6 +548,122 @@ router.delete("/image-session/:id", async (req, res) => {
   } catch (error) {
     console.error("Error creating image:", error);
     res.status(500).json({ message: "Error creating image" });
+  }
+});
+
+router.post("/calendar/available-days", async (req, res) => {
+  try {
+    const { date, fromHour, toHour, duration, breakMinutes } = req.body;
+    const user = await getCurrentUser(req);
+    const data = await createAvailableDay({
+      date,
+      fromHour,
+      toHour,
+      duration,
+      breakMinutes,
+      userId: user.id,
+    });
+    res.status(200).json({
+      message: "Available day created successfully",
+      data: data,
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({
+      message: "Error creating available day",
+      error: e.message || "Internal Server Error",
+    });
+  }
+});
+router.put("/calendar/available-days/:dayId", async (req, res) => {
+  try {
+    const { dayId } = req.params;
+    const { date, fromHour, toHour, duration, breakMinutes } = req.body;
+    const user = await getCurrentUser(req);
+    const data = await updateAvailableDay({
+      dayId,
+      date,
+      fromHour,
+      toHour,
+      duration,
+      breakMinutes,
+      userId: user.id,
+    });
+    res.status(200).json({
+      message: "Available day updated successfully",
+      data: data,
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({
+      message: "Error updating available day",
+      error: e.message || "Internal Server Error",
+    });
+  }
+});
+router.post("/calendar/available-days/multiple", async (req, res) => {
+  try {
+    const { days, fromHour, toHour, duration, breakMinutes } = req.body;
+    const user = await getCurrentUser(req);
+    const data = await createAvailableDatesForMoreThanOneDay({
+      userId: user.id,
+      days,
+      fromHour,
+      toHour,
+      duration,
+      breakMinutes,
+    });
+    res.status(200).json({
+      message: "Available days created successfully",
+      data: data,
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({
+      message: "Error creating available days",
+      error: e.message || "Internal Server Error",
+    });
+  }
+});
+router.post("/calendar/add-custom/:dayId", async (req, res) => {
+  try {
+    const { date, startTime, endTime } = req.body;
+    const user = await getCurrentUser(req);
+    const custom = await addCutsomDate({
+      dayId: req.params.dayId,
+      date,
+      fromHour: startTime,
+      toHour: endTime,
+      userId: user.id,
+    });
+    res.status(200).json({
+      message: "Custom available day created successfully",
+      data: "",
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({
+      message: "Error creating custom available day",
+      error: e.message || "Internal Server Error",
+    });
+  }
+});
+router.delete("/calendar/slots/:slotId", async (req, res) => {
+  try {
+    const { slotId } = req.params;
+    const data = await deleteASlot({
+      slotId,
+    });
+    res.status(200).json({
+      message: "Slot deleted successfully",
+      data: data,
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({
+      message: "Error deleting available slot",
+      error: e.message || "Internal Server Error",
+    });
   }
 });
 export default router;

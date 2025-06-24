@@ -77,11 +77,15 @@ export const Calendar = ({
   onDateSelect,
   multiSelect = false,
   selectedDates = [],
-  timezone: tz = "Asia/Dubai",
+  timezone: userTimezone = "Asia/Dubai", // User's current timezone
   isAdmin,
   token,
   setError,
   rerender,
+  setSessionData,
+  setActiveStep,
+  adminId,
+  type,
 }) => {
   const [displayMonth, setDisplayMonth] = useState(dayjs());
   const [bookedDays, setBookedDays] = useState([]);
@@ -89,35 +93,47 @@ export const Calendar = ({
   const [loading, setLoading] = useState(true);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   async function getAvailableDays() {
     if (token) {
-      const verifyToken = await getData({
-        url: `client/calendar/verify-token?token=${token}&`,
+      const tokenData = await getData({
+        url: `client/calendar/meeting-data?token=${token}&`,
         setLoading,
       });
-      if (!verifyToken || verifyToken.status !== 200) {
-        console.log("Invalid or expired token");
+      if (!tokenData || tokenData.status !== 200) {
         setError(
-          "Invalid or expired token please ask the customer to resend the link"
+          "Invalid or expired token please ask the customer support to resend the link"
         );
         return;
+      } else {
+        if (!tokenData.data.selectedTimezone) {
+          tokenData.data.selectedTimezone = tokenData.data.userTimezone;
+        }
+        console.log(tokenData, "tokenData");
+        setSessionData(tokenData.data);
+        if (tokenData.data.time) {
+          setActiveStep(4);
+        }
       }
     }
     const dataReq = await getData({
-      url: isAdmin
-        ? `shared/calendar/available-days?month=${displayMonth}&`
-        : `client/calendar/available-days?month=${displayMonth}&`,
+      url:
+        type === "STAFF"
+          ? `shared/calendar/available-days?month=${displayMonth}&adminId=${adminId}&`
+          : isAdmin
+          ? `shared/calendar/available-days?month=${displayMonth}&`
+          : `client/calendar/available-days?month=${displayMonth}&token=${token}&`,
       setLoading,
     });
-    console.log(dataReq, "dataReq");
     if (dataReq.status === 200) {
       setAvailableDays(dataReq.data);
       setBookedDays(dataReq.data.filter((day) => day.fullyBooked));
     }
   }
+
   useEffect(() => {
     getAvailableDays();
-  }, [displayMonth, rerender]);
+  }, [displayMonth, rerender, adminId]);
 
   const getDaysInMonth = () => {
     const startOfMonth = displayMonth.startOf("month");
@@ -136,24 +152,43 @@ export const Calendar = ({
     return days;
   };
 
+  // Helper function to convert GMT stored date to user's timezone and get the date string
+  const getDateInUserTimezone = (gmtDate) => {
+    // Convert GMT date to user's timezone and get the date part only
+    return dayjs.utc(gmtDate).tz(userTimezone).format("YYYY-MM-DD");
+  };
+
+  // Helper function to check if a date is past in user's timezone
+  const isPastInUserTimezone = (dayToCheck) => {
+    const todayInUserTz = dayjs().tz(userTimezone).startOf("day");
+    const dayInUserTz = dayjs(dayToCheck).tz(userTimezone).startOf("day");
+    return dayInUserTz.isBefore(todayInUserTz);
+  };
+
   const getDayStatus = (day) => {
-    const dayStr = day.format("YYYY-MM-DD");
-    const hasAvailableSlots = availableDays.some(
-      (d) => dayjs(d.date).tz(tz).format("YYYY-MM-DD") === dayStr
-    );
-    const isFullyBooked = bookedDays.some(
-      (d) => d.date === dayStr && d.fullyBooked
-    );
+    // Get the day string in user's timezone for comparison
+    const dayStrInUserTz = day.format("YYYY-MM-DD");
+
+    // Find available day by converting stored GMT dates to user timezone
+    const availableDay = availableDays.find((d) => {
+      const availableDateInUserTz = getDateInUserTimezone(d.date);
+      return availableDateInUserTz === dayStrInUserTz;
+    });
+
+    const hasAvailableSlots = !!availableDay;
+
+    // Check if fully booked using the same timezone conversion
+    const isFullyBooked = bookedDays.some((d) => {
+      const bookedDateInUserTz = getDateInUserTimezone(d.date);
+      return bookedDateInUserTz === dayStrInUserTz && d.fullyBooked;
+    });
+
     const isSelected = multiSelect
       ? selectedDates.some((d) => dayjs(d).isSame(day, "day"))
-      : !isAdmin && dayjs(selectedDate).isSame(day, "day");
+      : selectedDate && !isAdmin && dayjs(selectedDate).isSame(day, "day");
 
-    const today = dayjs().tz(tz);
-    const isPastDate = day.isBefore(today, "day");
-
-    const availableDay = availableDays.find((d) =>
-      dayjs(d.date).tz(tz).isSame(dayStr, "day")
-    );
+    // Check if date is past using user's timezone
+    const isPastDate = isPastInUserTimezone(day);
 
     return {
       hasAvailableSlots,
@@ -177,11 +212,10 @@ export const Calendar = ({
       );
 
       if (status.hasAvailableSlots && !isAlreadySelected) {
-        return; // Don't allow selecting days that already have available slots
+        return;
       }
 
       if (isAlreadySelected) {
-        // Remove from selection
         const newSelectedDates = selectedDates.filter(
           (d) => !dayjs(d).isSame(day, "day")
         );
@@ -205,6 +239,7 @@ export const Calendar = ({
     : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   const monthYear = displayMonth.format("MMMM YYYY");
+
   return (
     <Paper
       elevation={0}
@@ -408,6 +443,8 @@ const TimeSlotManager = ({
   selectedDates = [],
   dayId,
   setRerender,
+  type,
+  adminId,
 }) => {
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
@@ -427,6 +464,10 @@ const TimeSlotManager = ({
       setAlertError("Please fill all fields before generating slots.");
       return;
     }
+    if (type === "STAFF") {
+      setAlertError("Staff cannot generate slots. Please contact an admin.");
+      return;
+    }
     const data = {
       date: new Date(date),
       days: selectedDates,
@@ -436,12 +477,13 @@ const TimeSlotManager = ({
       breakMinutes: breakDuration,
       dayId: dayId,
     };
+    const url = `admin/calendar/available-days/${
+      dayId ? dayId : isMultiDate ? "multiple" : ""
+    }`;
     const slotReq = await handleRequestSubmit(
       data,
       setToastLoading,
-      `shared/calendar/available-days/${
-        dayId ? dayId : isMultiDate ? "multiple" : ""
-      }`,
+      url,
       false,
       "Updating slots...",
       false,
@@ -454,10 +496,14 @@ const TimeSlotManager = ({
   };
 
   const deleteSlot = async (slotId) => {
+    if (type === "STAFF") {
+      setAlertError("Staff cannot delete slots. Please contact an admin.");
+      return;
+    }
     const deleteReq = await handleRequestSubmit(
       { id: slotId },
       setToastLoading,
-      `shared/calendar/slots/${slotId}`,
+      `admin/calendar/slots/${slotId}`,
       false,
       "Deleting slot...",
       false,
@@ -478,7 +524,7 @@ const TimeSlotManager = ({
       const slotReq = await handleRequestSubmit(
         data,
         setToastLoading,
-        `shared/calendar/add-custom`,
+        `admin/calendar/add-custom/${dayId}`,
         false,
         "Adding custom slot..."
       );
@@ -496,7 +542,7 @@ const TimeSlotManager = ({
       return;
     }
     const slotsReq = await getData({
-      url: `shared/calendar/slots?date=${date}&`,
+      url: `shared/calendar/slots?date=${date}&adminId=${adminId}&`,
       setLoading,
     });
     if (slotsReq.status === 200) {
@@ -561,78 +607,81 @@ const TimeSlotManager = ({
         )}
 
         <DialogContent sx={{ p: isMobile ? 2 : 3 }}>
-          <Box mb={3}>
-            <Typography variant="h6" gutterBottom fontWeight="600">
-              Slot Generation Settings
-            </Typography>
+          {type !== "STAFF" && (
+            <Box mb={3}>
+              <Typography variant="h6" gutterBottom fontWeight="600">
+                Slot Generation Settings
+              </Typography>
 
-            <Grid container spacing={2}>
-              <Grid size={{ xs: 6, sm: 3 }}>
-                <TextField
-                  fullWidth
-                  label="Start Time"
-                  type="time"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  size="small"
-                />
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <TextField
+                    fullWidth
+                    label="Start Time"
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    InputLabelProps={{ shrink: true }}
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <TextField
+                    fullWidth
+                    label="End Time"
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    InputLabelProps={{ shrink: true }}
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <TextField
+                    fullWidth
+                    label="Duration (min)"
+                    type="number"
+                    value={meetingDuration}
+                    onChange={(e) => setMeetingDuration(Number(e.target.value))}
+                    size="small"
+                  />
+                </Grid>
+                <Grid size={{ xs: 6, sm: 3 }}>
+                  <TextField
+                    fullWidth
+                    label="Break (min)"
+                    type="number"
+                    value={breakDuration}
+                    onChange={(e) => setBreakDuration(Number(e.target.value))}
+                    size="small"
+                  />
+                </Grid>
               </Grid>
-              <Grid size={{ xs: 6, sm: 3 }}>
-                <TextField
-                  fullWidth
-                  label="End Time"
-                  type="time"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  size="small"
-                />
-              </Grid>
-              <Grid size={{ xs: 6, sm: 3 }}>
-                <TextField
-                  fullWidth
-                  label="Duration (min)"
-                  type="number"
-                  value={meetingDuration}
-                  onChange={(e) => setMeetingDuration(Number(e.target.value))}
-                  size="small"
-                />
-              </Grid>
-              <Grid size={{ xs: 6, sm: 3 }}>
-                <TextField
-                  fullWidth
-                  label="Break (min)"
-                  type="number"
-                  value={breakDuration}
-                  onChange={(e) => setBreakDuration(Number(e.target.value))}
-                  size="small"
-                />
-              </Grid>
-            </Grid>
 
-            <Stack direction="row" spacing={2} mt={2}>
-              <Button
-                variant="contained"
-                onClick={generateSlots}
-                startIcon={<Schedule />}
-                sx={{ borderRadius: 2 }}
-              >
-                Generate Slots
-              </Button>
-              {!isMultiDate && dayId && (
-                <Button
-                  variant="outlined"
-                  onClick={() => setCustomSlotDialog(true)}
-                  startIcon={<Add />}
-                  sx={{ borderRadius: 2 }}
-                >
-                  Add Custom
-                </Button>
-              )}
-            </Stack>
-          </Box>
-
+              <Stack direction="row" spacing={2} mt={2}>
+                {type !== "STAFF" && (
+                  <Button
+                    variant="contained"
+                    onClick={generateSlots}
+                    startIcon={<Schedule />}
+                    sx={{ borderRadius: 2 }}
+                  >
+                    Generate Slots
+                  </Button>
+                )}
+                {!isMultiDate && dayId && type !== "STAFF" && (
+                  <Button
+                    variant="outlined"
+                    onClick={() => setCustomSlotDialog(true)}
+                    startIcon={<Add />}
+                    sx={{ borderRadius: 2 }}
+                  >
+                    Add Custom
+                  </Button>
+                )}
+              </Stack>
+            </Box>
+          )}
           <Box>
             <Typography variant="h6" gutterBottom fontWeight="600">
               Generated Slots ({slots.length})
@@ -679,17 +728,27 @@ const TimeSlotManager = ({
                                   label={slot.isBooked ? "Booked" : "Available"}
                                   color={slot.isBooked ? "error" : "success"}
                                   variant="outlined"
-                                  sx={{ mt: 1 }}
+                                  sx={{
+                                    mt: 1,
+                                    bgcolor: slot.isBooked
+                                      ? lighten(theme.palette.error.main, 0.2)
+                                      : lighten(
+                                          theme.palette.success.main,
+                                          0.2
+                                        ),
+                                  }}
                                 />
                               </Box>
-                              <IconButton
-                                onClick={() => deleteSlot(slot.id)}
-                                disabled={slot.isBooked}
-                                size="small"
-                                color="error"
-                              >
-                                <Delete />
-                              </IconButton>
+                              {type !== "STAFF" && (
+                                <IconButton
+                                  onClick={() => deleteSlot(slot.id)}
+                                  disabled={slot.isBooked}
+                                  size="small"
+                                  color="error"
+                                >
+                                  <Delete />
+                                </IconButton>
+                              )}
                             </Box>
                           </CardContent>
                         </Card>
@@ -704,17 +763,6 @@ const TimeSlotManager = ({
         <DialogActions sx={{ p: 3, gap: 1 }}>
           <Button onClick={onClose} variant="outlined" sx={{ borderRadius: 2 }}>
             Cancel
-          </Button>
-          <Button
-            variant="contained"
-            onClick={() => {
-              onClose();
-              // Here you would typically save to your backend
-              console.log("Saving slots:", slots);
-            }}
-            sx={{ borderRadius: 2 }}
-          >
-            Save Availability
           </Button>
         </DialogActions>
       </Dialog>
@@ -756,7 +804,12 @@ const TimeSlotManager = ({
   );
 };
 
-const AdminPanel = ({ timezone: tz = "Asia/Dubai" }) => {
+export const AdminBookingPanel = ({
+  timezone: tz = Intl.DateTimeFormat().resolvedOptions().timeZone ||
+    "Asia/Dubai",
+  adminId,
+  type = "ADMIN",
+}) => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedDates, setSelectedDates] = useState([]);
   const [multiSelectMode, setMultiSelectMode] = useState(false);
@@ -771,7 +824,6 @@ const AdminPanel = ({ timezone: tz = "Asia/Dubai" }) => {
     } else {
       setSelectedDate(date);
       setOpenSlotManager(true);
-      console.log(d, "selected date data");
       setDayId(d ? d.id : null);
     }
   };
@@ -827,6 +879,8 @@ const AdminPanel = ({ timezone: tz = "Asia/Dubai" }) => {
             timezone={tz}
             isAdmin={true}
             rerender={rerender}
+            adminId={adminId}
+            type={type}
           />
 
           {multiSelectMode && selectedDates.length > 0 && (
@@ -892,38 +946,9 @@ const AdminPanel = ({ timezone: tz = "Asia/Dubai" }) => {
         timezone={tz}
         dayId={dayId}
         setRerender={setRerender}
+        type={type}
+        adminId={adminId}
       />
     </Box>
   );
 };
-// Main App Component
-const CalendarBookingSystem = () => {
-  const [currentTab, setCurrentTab] = useState(0);
-
-  return (
-    <Container maxWidth="xl" sx={{ py: 2 }}>
-      <Paper elevation={0} sx={{ mb: 3 }}>
-        <Tabs
-          value={currentTab}
-          onChange={(e, newValue) => setCurrentTab(newValue)}
-          variant="fullWidth"
-        >
-          <Tab
-            icon={<AdminPanelSettings />}
-            label="Admin Panel"
-            iconPosition="start"
-          />
-          <Tab
-            icon={<Person />}
-            label="Meeting & Calls calender"
-            iconPosition="start"
-          />
-        </Tabs>
-      </Paper>
-
-      <Box>{currentTab === 0 && <AdminPanel />}</Box>
-    </Container>
-  );
-};
-
-export default CalendarBookingSystem;

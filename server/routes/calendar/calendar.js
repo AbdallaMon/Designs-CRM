@@ -1,12 +1,9 @@
 import { Router } from "express";
 import {
-  createAvailableDatesForMoreThanOneDay,
-  createAvailableDay,
-  deleteASlot,
   getAvailableDays,
   getAvailableSlotsForDay,
-  updateAvailableDay,
-  verifyAndExtractCalendarToken,
+  getCalendarDataForMonth,
+  getRemindersForDay,
 } from "../../services/main/calendarServices.js";
 import {
   getCurrentUser,
@@ -22,10 +19,15 @@ router.use((req, res, next) => {
 router.get("/available-days", async (req, res) => {
   try {
     const user = await getCurrentUser(req);
-
+    let adminId = req.query.adminId;
+    const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+    if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
+      adminId = user.id;
+    }
     const data = await getAvailableDays({
       month: req.query.month,
-      userId: user.id,
+      adminId: adminId,
+      role: isAdmin,
     });
     res.status(200).json({
       message: "Available days fetched successfully",
@@ -42,9 +44,15 @@ router.get("/available-days", async (req, res) => {
 router.get("/slots", async (req, res) => {
   try {
     const user = await getCurrentUser(req);
+    let adminId = req.query.adminId;
+    const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+    if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
+      adminId = user.id;
+    }
     const data = await getAvailableSlotsForDay({
       date: req.query.date,
-      userId: user.id,
+      adminId: adminId,
+      role: isAdmin,
     });
     res.status(200).json({
       message: "Available days fetched successfully",
@@ -58,116 +66,48 @@ router.get("/slots", async (req, res) => {
     });
   }
 });
-router.post("/available-days", async (req, res) => {
+
+router.get("/dates/month", async (req, res) => {
   try {
-    const { date, fromHour, toHour, duration, breakMinutes } = req.body;
-    const user = await getCurrentUser(req);
-    console.log(date, "submit date?");
-    const data = await createAvailableDay({
-      date,
-      fromHour,
-      toHour,
-      duration,
-      breakMinutes,
-      userId: user.id,
-    });
-    res.status(200).json({
-      message: "Available day created successfully",
-      data: data,
-    });
-  } catch (e) {
-    console.log(e, "e");
-    res.status(500).json({
-      message: "Error creating available day",
-      error: e.message || "Internal Server Error",
-    });
-  }
-});
-router.put("/available-days/:dayId", async (req, res) => {
-  try {
-    const { dayId } = req.params;
-    const { date, fromHour, toHour, duration, breakMinutes } = req.body;
-    const user = await getCurrentUser(req);
-    const data = await updateAvailableDay({
-      dayId,
-      date,
-      fromHour,
-      toHour,
-      duration,
-      breakMinutes,
-      userId: user.id,
-    });
-    res.status(200).json({
-      message: "Available day updated successfully",
-      data: data,
-    });
-  } catch (e) {
-    console.log(e, "e");
-    res.status(500).json({
-      message: "Error updating available day",
-      error: e.message || "Internal Server Error",
-    });
-  }
-});
-router.post("/available-days/multiple", async (req, res) => {
-  try {
-    const { days, fromHour, toHour, duration, breakMinutes } = req.body;
-    const user = await getCurrentUser(req);
-    console.log(req.body, "req.body days?");
-    const data = await createAvailableDatesForMoreThanOneDay({
-      userId: user.id,
-      days,
-      fromHour,
-      toHour,
-      duration,
-      breakMinutes,
-    });
-    res.status(200).json({
-      message: "Available days created successfully",
-      data: data,
-    });
-  } catch (e) {
-    console.log(e, "e");
-    res.status(500).json({
-      message: "Error creating available days",
-      error: e.message || "Internal Server Error",
-    });
-  }
-});
-router.post("/add-custom/:dayId", async (req, res) => {
-  try {
-    const { date, startTime, endTime } = req.body;
     const user = await getCurrentUser(req);
 
-    res.status(200).json({
-      message: "Custom available day created successfully",
-      data: "",
-    });
-  } catch (e) {
-    console.log(e, "e");
-    res.status(500).json({
-      message: "Error creating custom available day",
-      error: e.message || "Internal Server Error",
-    });
-  }
-});
-router.delete("/slots/:slotId", async (req, res) => {
-  try {
-    const { slotId } = req.params;
-    const data = await deleteASlot({
-      slotId,
+    const data = await getCalendarDataForMonth({
+      year: req.query.year,
+      month: req.query.month,
+      userId: user.role === "STAFF" && user.id,
+      adminId: req.query.isAdmin === "true" ? user.id : null,
     });
     res.status(200).json({
-      message: "Slot deleted successfully",
+      message: "Available dates fetched successfully",
       data: data,
     });
   } catch (e) {
     console.log(e, "e");
     res.status(500).json({
-      message: "Error deleting available slot",
+      message: e.message || "Error fetching available dates",
       error: e.message || "Internal Server Error",
     });
   }
 });
-
+router.get("/dates/day", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req);
+    console.log(req.query.isAdmin, " req.query.isAdmin");
+    const data = await getRemindersForDay({
+      date: req.query.date,
+      userId: user.role === "STAFF" && user.id,
+      adminId: req.query.isAdmin === "true" && user.id,
+    });
+    res.status(200).json({
+      message: "Available dates fetched successfully",
+      data: data,
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({
+      message: e.message || "Error fetching available dates",
+      error: e.message || "Internal Server Error",
+    });
+  }
+});
 export default router;
