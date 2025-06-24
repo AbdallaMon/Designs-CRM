@@ -491,6 +491,9 @@ const TimeSlotManager = ({
     );
 
     if (slotReq.status === 200) {
+      if (isMultiDate) {
+        window.location.reload();
+      }
       await getSlotsData();
     }
   };
