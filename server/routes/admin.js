@@ -570,7 +570,7 @@ router.post("/calendar/available-days", async (req, res) => {
   } catch (e) {
     console.log(e, "e");
     res.status(500).json({
-      message: "Error creating available day",
+      message: e.message,
       error: e.message || "Internal Server Error",
     });
   }
