@@ -39,6 +39,8 @@ import { CallResultDialog } from "../leadsDialogs";
 import DeleteModelButton from "./DeleteModelButton";
 import { InProgressCall } from "../InProgressCall";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import PreviewDialog from "../PreviewLead";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -126,6 +128,14 @@ export const CallCard = ({ call, onUpdate, extra = false }) => {
                       Done at ,{dayjs(call.updatedAt).format("DD/MM/YYYY")}
                     </Typography>
                   )}
+                  <Button
+                    type="a"
+                    target="_blank"
+                    href={`/dashboard/deals/${call.clientLeadId}`}
+                    variant="outlined"
+                  >
+                    Preview lead
+                  </Button>
                 </Box>
                 {user.role !== "ACCOUNTANT" && (
                   <>
@@ -217,6 +227,7 @@ export const CallCard = ({ call, onUpdate, extra = false }) => {
 export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
   const theme = useTheme();
   const { user } = useAuth();
+
   const getStatusStyles = (status) => ({
     backgroundColor:
       {
@@ -353,7 +364,6 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
                     }}
                   />
 
-                  {/* Meeting Type Chip */}
                   <Chip
                     size="small"
                     label={formatMeetingType(meeting.type)}
@@ -364,7 +374,6 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
                     }}
                   />
 
-                  {/* Admin Tag */}
                   {meeting.isAdmin && (
                     <Chip
                       size="small"
@@ -429,6 +438,15 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
                       )}
                     </>
                   )}
+                  <Button
+                    type="a"
+                    target="_blank"
+                    href={`/dashboard/deals/${meeting.clientLeadId}`}
+                    variant="outlined"
+                    ml={1}
+                  >
+                    Preview lead
+                  </Button>
                   {meeting.token && (
                     <Stack
                       direction="row"

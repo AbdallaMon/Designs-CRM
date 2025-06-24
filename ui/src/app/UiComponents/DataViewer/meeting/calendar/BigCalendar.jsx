@@ -42,6 +42,7 @@ import {
 import { CallCard, MeetingCard } from "../../leads/extra/CallAndMeetingCard";
 import { getData } from "@/app/helpers/functions/getData";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
+import { checkIfAdmin } from "@/app/helpers/functions/utility";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -50,6 +51,7 @@ const DayDetailDialog = ({ open, onClose, selectedDay, isAdmin }) => {
   const [dayData, setDayData] = useState();
   const [loading, setLoading] = useState(false);
   const [tabValue, setTabValue] = useState(0);
+  const { user } = useAuth();
   async function getDataForADay() {
     const req = await getData({
       url: `shared/calendar/dates/day?date=${selectedDay}&isAdmin=${isAdmin}&`,
