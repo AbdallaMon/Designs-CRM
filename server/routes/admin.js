@@ -643,7 +643,7 @@ router.post("/calendar/add-custom/:dayId", async (req, res) => {
   } catch (e) {
     console.log(e, "e");
     res.status(500).json({
-      message: "Error creating custom available day",
+      message: e.message,
       error: e.message || "Internal Server Error",
     });
   }

@@ -335,14 +335,19 @@ export async function addCutsomDate({ fromHour, toHour, dayId }) {
   if (!availableDay) {
     throw new Error("Available day not found");
   }
+  const userTimezone = dayjs.tz.guess();
+
+  // Format the date to YYYY-MM-DD
   const dateStr = dayjs(availableDay.date).format("YYYY-MM-DD");
-  const tz = "Asia/Dubai";
+
+  // Combine date + time in user's local time zone
   const startTimeUtc = dayjs
-    .tz(`${dateStr} ${fromHour}`, "YYYY-MM-DD HH:mm", tz)
+    .tz(`${dateStr} ${fromHour}`, "YYYY-MM-DD HH:mm", userTimezone)
     .utc()
     .toDate();
+
   const endTimeUtc = dayjs
-    .tz(`${dateStr} ${toHour}`, "YYYY-MM-DD HH:mm", tz)
+    .tz(`${dateStr} ${toHour}`, "YYYY-MM-DD HH:mm", userTimezone)
     .utc()
     .toDate();
 
@@ -357,7 +362,7 @@ export async function addCutsomDate({ fromHour, toHour, dayId }) {
       ],
     },
   });
-  console.log(overlappingSlots, "overlappingSlots");
+
   if (overlappingSlots.length > 0) {
     throw new Error("This time slot conflicts with an existing one.");
   }
