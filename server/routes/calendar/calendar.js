@@ -70,7 +70,7 @@ router.get("/slots", async (req, res) => {
 router.get("/dates/month", async (req, res) => {
   try {
     const user = await getCurrentUser(req);
-
+    console.log(user, "user");
     const data = await getCalendarDataForMonth({
       year: req.query.year,
       month: req.query.month,
