@@ -42,7 +42,6 @@ import {
 import { CallCard, MeetingCard } from "../../leads/extra/CallAndMeetingCard";
 import { getData } from "@/app/helpers/functions/getData";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
-import { checkIfAdmin } from "@/app/helpers/functions/utility";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -210,8 +209,22 @@ export default function BigCalendar({
   const getDaysInMonth = () => {
     const startOfMonth = displayMonth.startOf("month");
     const endOfMonth = displayMonth.endOf("month");
-    const startDate = startOfMonth.startOf("week");
-    const endDate = endOfMonth.endOf("week");
+
+    // Get the day of week for the first day of the month (0 = Sunday, 1 = Monday, etc.)
+    const firstDayOfWeek = startOfMonth.day();
+
+    // Calculate how many days to go back to get to the start of the week
+    // This ensures we always start on Sunday regardless of locale
+    const daysToGoBack = firstDayOfWeek;
+    const startDate = startOfMonth.subtract(daysToGoBack, "day");
+
+    // Get the day of week for the last day of the month
+    const lastDayOfWeek = endOfMonth.day();
+
+    // Calculate how many days to go forward to get to the end of the week
+    // This ensures we always end on Saturday
+    const daysToGoForward = 6 - lastDayOfWeek;
+    const endDate = endOfMonth.add(daysToGoForward, "day");
 
     const days = [];
     let current = startDate;
