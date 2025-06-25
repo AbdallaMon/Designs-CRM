@@ -53,12 +53,14 @@ const DayDetailDialog = ({ open, onClose, selectedDay, isAdmin }) => {
   const [tabValue, setTabValue] = useState(0);
   const { user } = useAuth();
   async function getDataForADay() {
+    const userTimezone = dayjs.tz.guess();
+    const submittedUtcDate = dayjs.utc(selectedDay);
+    const offsetInMinutes = dayjs().tz(userTimezone).utcOffset(); // e.g. 180
+    const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
     const req = await getData({
-      url: `shared/calendar/dates/day?date=${selectedDay}&isAdmin=${isAdmin}&`,
+      url: `shared/calendar/dates/day?date=${correctedDate}&isAdmin=${isAdmin}&`,
       setLoading,
     });
-    console.log(selectedDay, "selectedDay");
-    console.log("selectedDay (GMT):", dayjs(selectedDay).utc().format());
 
     if (req.status === 200) {
       console.log(req.data, "day data");

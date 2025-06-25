@@ -615,12 +615,9 @@ export async function getCalendarDataForMonth({
 export async function getRemindersForDay({ date, userId, adminId }) {
   const userTimezone = dayjs.tz.guess();
   const submittedUtcDate = dayjs.utc(date);
-  const offsetInMinutes = dayjs().tz(userTimezone).utcOffset(); // e.g. 180
-  const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
 
-  const localMidnight = correctedDate.startOf("day");
-  const localEndOfDay = correctedDate.endOf("day");
-  console.log(correctedDate, "correctedDate");
+  const localMidnight = submittedUtcDate.startOf("day");
+  const localEndOfDay = submittedUtcDate.endOf("day");
   console.log(localMidnight, "localMidnight");
   console.log(localEndOfDay, "localEndOfDay");
   console.log(submittedUtcDate, "submittedUtcDate");
