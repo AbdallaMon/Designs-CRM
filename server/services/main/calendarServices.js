@@ -621,10 +621,17 @@ export async function getRemindersForDay({ date, userId, adminId }) {
 
   const localMidnight = correctedDate.startOf("day");
   const localEndOfDay = correctedDate.endOf("day");
+  console.log(correctedDate, "correctedDate");
+  console.log(localMidnight, "localMidnight");
+  console.log(localEndOfDay, "localEndOfDay");
+  console.log(submittedUtcDate, "submittedUtcDate");
+  console.log(userTimezone, "userTimezone");
 
   // Convert those to UTC for DB filtering
   const dayStart = localMidnight.utc().toDate();
   const dayEnd = localEndOfDay.utc().toDate();
+  console.log(dayStart, "dayStart");
+  console.log(dayEnd, "dayEnd");
 
   const meetingWhere = {
     time: {
