@@ -516,8 +516,7 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
                 }}
               >
                 <Typography variant="body2" color="text.secondary" mb={2}>
-                  📧 A confirmation email has been sent to{" "}
-                  <strong>{sessionData.clientEmail}</strong>
+                  📧 A confirmation email has been sent.
                 </Typography>
                 <Typography variant="body2" color="text.secondary" mb={2}>
                   📅 Please add this meeting to your calendar

@@ -93,7 +93,6 @@ router.get("/dates/month", async (req, res) => {
 router.get("/dates/day", async (req, res) => {
   try {
     const user = await getCurrentUser(req);
-    console.log(req.query.isAdmin, " req.query.isAdmin");
     const data = await getRemindersForDay({
       date: req.query.date,
       userId: user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && user.id,

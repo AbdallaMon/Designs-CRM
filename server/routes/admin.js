@@ -514,8 +514,6 @@ router.delete("/images/:id", async (req, res) => {
 
 router.post("/image-session", async (req, res) => {
   try {
-    console.log("is creating");
-
     const item = createSesssionItem({ data: req.body, model: req.query.model });
     res.status(200).json({ data: item, message: "Created succussfully" });
   } catch (error) {
@@ -525,7 +523,6 @@ router.post("/image-session", async (req, res) => {
 });
 router.put("/image-session/:id", async (req, res) => {
   try {
-    console.log("is editing");
     const item = editSessionItem({
       data: req.body,
       model: req.query.model,

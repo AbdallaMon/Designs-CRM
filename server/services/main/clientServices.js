@@ -1,7 +1,6 @@
 import { PDFDocument, rgb } from "pdf-lib";
 import prisma from "../../prisma/prisma.js";
 import fetch from "node-fetch";
-import { sendEmail } from "../sendMail.js";
 import { v4 as uuidv4 } from "uuid";
 import dayjs from "dayjs";
 import * as fontkit from "fontkit";
@@ -10,6 +9,7 @@ import * as path from "node:path";
 import { fileURLToPath } from "url";
 import reshaper from "arabic-persian-reshaper";
 import { uploadToFTPAsBuffer } from "./utility.js";
+import { sendEmailForStaff, sendEmailToClient } from "./emailTemplates.js";
 const __filename = fileURLToPath(import.meta.url);
 
 const __dirname = path.dirname(__filename);
@@ -1002,92 +1002,5 @@ export async function sendSuccessEmailAfterSessionDone({
     });
   } catch (e) {
     console.log(e, "error in generating email for staff");
-  }
-}
-async function sendEmailToClient({ clientName, clientEmail, pdfUrl, token }) {
-  const sessionPageUrl = `${process.env.OLDORIGIN}/image-session?token=${token}`;
-  const pdfDownloadUrl = pdfUrl;
-
-  const clientHtml = `
-    <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px;">
-      <div style="max-width: 600px; margin: auto; background: #fcfbf9; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.03); overflow: hidden;">
-        <div style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%); padding: 20px; text-align: center;">
-          <img src="https://dreamstudiio.com/dream-logo.jpg" alt="Dream Studio" style="max-height: 60px;" />
-        </div>
-        <div style="padding: 12px;">
-          <h2 style="color: #383028;">Thank you, ${clientName}!</h2>
-          <p>Your image session has been approved!</p>
-          
-          <div style="background: #f8f6f3; border-radius: 8px; padding: 12px; margin: 20px 0;">
-            <h3 style="color: #383028; margin-top: 0;">What would you like to do next?</h3>
-            <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 6px; border-left: 4px solid #be975c;">
-              <p style="margin: 0 0 8px 0; font-weight: bold; color: #383028;">🖼️ Preview Your Session</p>
-              <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">Review your image selection and make any final changes before downloading</p>
-              <a href="${sessionPageUrl}" style="color: #be975c; font-weight: bold; text-decoration: none; background: #f8f6f3; padding: 8px 16px; border-radius: 4px; display: inline-block;">View Session</a>
-            </div>
-            <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 6px; border-left: 4px solid #d3ac71;">
-              <p style="margin: 0 0 8px 0; font-weight: bold; color: #383028;">📄 Download Your PDF Summary</p>
-              <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">Get instant access to your finalized image collection</p>
-              <a href="${pdfDownloadUrl}" style="color: #d3ac71; font-weight: bold; text-decoration: none; background: #f8f6f3; padding: 8px 16px; border-radius: 4px; display: inline-block;">Download PDF</a>
-            </div>
-          </div>
-          
-          <p style="margin-top: 30px; font-size: 14px; color: #666;">
-            💡 <em>Tip: You can always return to your session page to preview your images or downloading the PDF.</em>
-          </p>
-          
-          <p style="margin-top: 30px;">We appreciate your trust in <strong>Dream Studio</strong> ❤️</p>
-          <p>Best regards,<br/>Dream Studio Team</p>
-        </div>
-      </div>
-    </div>
-  `;
-  await sendEmail(
-    clientEmail,
-    "✅ Your Image Session is Approved",
-    clientHtml,
-    true
-  );
-}
-
-async function sendEmailForStaff({
-  staffs,
-  clientName,
-  clientLeadId,
-  pdfDownloadUrl,
-  token,
-}) {
-  const staffHtml = `
-    <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px;">
-      <div style="max-width: 600px; margin: auto; background: #fcfbf9; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.03); overflow: hidden;">
-        <div style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%); padding: 20px; text-align: center;">
-          <img src="https://dreamstudiio.com/dream-logo.jpg" alt="Dream Studio" style="max-height: 60px;" />
-        </div>
-        <div style="padding: 30px;">
-          <h2 style="color: #383028;">Client Image Session Approved</h2>
-          <p>
-            Client <strong>${clientName}</strong> (ClientLead ID: <strong>${clientLeadId}</strong>) has approved a new image session.
-          </p>
-                  <p>
-         Session token : ${token}
-          </p>
-          <p>Useful links:</p>
-          <ul style="list-style: none; padding: 0;">
-            <li style="margin: 10px 0;"><a href="${pdfDownloadUrl}" style="color: #d3ac71; font-weight: bold;">📄 Download Session PDF</a></li>
-            <li style="margin: 10px 0;"><a href="${process.env.OLDORIGIN}/dashboard/deals/${clientLeadId}" style="color: #d3ac71; font-weight: bold;">👤 Open lead page for more data</a></li>
-          </ul>
-          <p style="margin-top: 20px;">Please review the session or take follow-up actions as needed.</p>
-          <p style="margin-top: 20px;">— Dream Studio System Notification</p>
-        </div>
-      </div>
-    </div>
-  `;
-
-  for (const staff of staffs) {
-    await sendEmail(
-      staff.email,
-      `📢 Approved Image Session for ${clientName}`,
-      staffHtml
-    );
   }
 }

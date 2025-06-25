@@ -283,7 +283,7 @@ model MeetingReminder {
   availableSlot  AvailableSlot?     @relation("SlotToMeeting")
   availableSlotId Int?              @unique  
   userTimezone     String? 
-
+  notified       Boolean            @default(false) 
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 
@@ -437,7 +437,8 @@ model CallReminder {
   userId         Int
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
-
+  notified       Boolean            @default(false) 
+  
   @@index([clientLeadId])
   @@index([userId])
 }

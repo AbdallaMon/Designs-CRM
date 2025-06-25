@@ -62,7 +62,6 @@ const DayDetailDialog = ({ open, onClose, selectedDay, isAdmin }) => {
     });
 
     if (req.status === 200) {
-      console.log(req.data, "day data");
       setDayData(req.data);
     }
   }

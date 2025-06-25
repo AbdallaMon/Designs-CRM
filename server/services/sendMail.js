@@ -1,7 +1,7 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
-
 dotenv.config();
+console.log(process.env.SMTP_HOST, "process.env.SMTP_HOST");
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST, // Your iRedMail server's hostname or IP
   port: 587, // Port for STARTTLS
@@ -33,6 +33,5 @@ export const sendEmail = async (to, subject, html, isClient = false) => {
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error(`Error sending email to ${to}:`, error);
-    throw new Error(`Failed to send email to ${to}`);
   }
 };

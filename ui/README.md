@@ -32,10 +32,10 @@
 - Staff can generate link for admins and can see the selected time by user
 - Admin select available days and available times for examble (in a day can select from 8:8 and each half hour is gap)
 - Admin can remove days or specific times or can add speciale time ect
+- Fix meeting days on fetching single meeting it show the day as the day before when i fetch 12 it get 11
 
 - Send email to client with the meeting time confirmation
 - We need to make something that send email to client 15 minute before meeting and using client timezone or i think gmt is better
-- Fix meeting days on fetching single meeting it show the day as the day before when i fetch 12 it get 11
 
 - Fix pdf make it in arabic and arabic direction
 - Make two image grid and make image bigger

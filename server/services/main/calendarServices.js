@@ -6,6 +6,7 @@ import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 
 import { newCallNotification } from "../notification.js";
+import { sendReminderCreatedToClient } from "./emailTemplates.js";
 dayjs.extend(timezone);
 dayjs.extend(utc);
 
@@ -419,23 +420,34 @@ export async function bookAMeeting({
       userTimezone: selectedTimezone,
     });
   }
-  const lead = await prisma.clientLead.findUnique({
-    where: { id: Number(clientLeadId) },
+  const reminderData = await prisma.meetingReminder.findUnique({
+    where: {
+      id: Number(reminderId),
+    },
     select: {
-      client: {
+      userTimezone: true,
+      id: true,
+      time: true,
+      clientLead: {
         select: {
-          id: true,
+          client: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
         },
       },
     },
   });
-  const updateClientEmail = await prisma.client.update({
-    where: { id: lead.client.id },
-    data: { email: clientName },
-  });
-
   await newCallNotification(Number(clientLeadId), reminder);
-
+  await sendReminderCreatedToClient({
+    clientEmail: reminderData.clientLead.client.email,
+    clientName: reminderData.clientLead.client.name,
+    reminderTime: reminderData.time,
+    reminderTitle: "Booked succssfully",
+    userTimezone: reminderData.userTimezone,
+  });
   return true;
 }
 
