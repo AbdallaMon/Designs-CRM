@@ -122,6 +122,11 @@ export async function createAvailableDay({
   fromHour = from.toDate();
   toHour = to.toDate();
 
+  console.log(from, "from");
+  console.log(to, "to");
+  console.log(fromHour, "fromHour");
+  console.log(toHour, "toHour");
+
   const existing = await prisma.availableDay.findUnique({
     where: { userId_date: { userId, date: date } },
   });
