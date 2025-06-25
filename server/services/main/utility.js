@@ -132,7 +132,7 @@ export const verifyTokenAndHandleAuthorization = (req, res, next, role) => {
   }
   try {
     const decoded = jwt.verify(token, SECRET_KEY);
-
+    console.log(decoded, "decoded");
     const user = prisma.user.findUnique({
       where: {
         id: Number(decoded.id),
@@ -145,12 +145,12 @@ export const verifyTokenAndHandleAuthorization = (req, res, next, role) => {
         },
       },
     });
-    const isAdmin =
-      user.role === "ADMIN" ||
-      user.role === "SUPER_ADMIN" ||
-      user.subRoles.some(
-        (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN"
-      );
+    console.log(user, "user");
+
+    const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+    // user.subRoles.some(
+    //   (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN"
+    // );
 
     if (role === "SHARED") {
       if (
