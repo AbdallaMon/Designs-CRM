@@ -142,6 +142,7 @@ export const verifyTokenAndHandleAuthorization = async (
         id: Number(decoded.id),
       },
       select: {
+        role: true,
         subRoles: {
           select: {
             subRole: true,
