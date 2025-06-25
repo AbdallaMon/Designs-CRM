@@ -157,12 +157,10 @@ export const verifyTokenAndHandleAuthorization = async (
       user.subRoles.some(
         (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN"
       );
-    console.log(user, "user");
-    console.log(role, "role sended");
-    console.log(isAdmin, "isAdmin");
+
     if (role === "ADMIN" && isAdmin) {
       req.user = decoded;
-      next();
+      return next();
     }
     if (role === "SHARED") {
       if (
