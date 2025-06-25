@@ -156,6 +156,13 @@ export const verifyTokenAndHandleAuthorization = async (
       user.subRoles.some(
         (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN"
       );
+    console.log(user, "user");
+    console.log(
+      user.subRoles.some(
+        (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN"
+      ),
+      "sub role osme"
+    );
     console.log(isAdmin, "isAdmin");
 
     if (role === "SHARED") {
