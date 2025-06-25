@@ -626,6 +626,7 @@ export async function getRemindersForDay({ date, userId, adminId }) {
   console.log(localEndOfDay, "localEndOfDay");
   console.log(submittedUtcDate, "submittedUtcDate");
   console.log(userTimezone, "userTimezone");
+  console.log(date, "date");
 
   // Convert those to UTC for DB filtering
   const dayStart = localMidnight.utc().toDate();
