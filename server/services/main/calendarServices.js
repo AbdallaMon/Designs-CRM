@@ -734,7 +734,7 @@ export async function getRemindersForDay({ date, userId, adminId }) {
     },
   });
   if (calls.length > 0) {
-    console.log(calls[0], "calls0");
+    console.log(calls[0].time, "calls0");
   }
   return { meetings, calls };
 }
