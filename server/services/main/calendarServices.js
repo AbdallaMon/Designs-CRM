@@ -484,10 +484,13 @@ export async function getCalendarDataForMonth({
       timezone
     );
     const endOfMonth = startOfMonth.endOf("month");
-
+    console.log(startOfMonth, "startOfMonth month");
+    console.log(endOfMonth, "endOfMonth month");
     // Convert to UTC for database queries
     const startDate = startOfMonth.utc().toDate();
     const endDate = endOfMonth.utc().toDate();
+    console.log(startDate, "startDate month");
+    console.log(endDate, "endDate month");
 
     // Build where clauses
     const meetingWhere = {
@@ -603,7 +606,7 @@ export async function getCalendarDataForMonth({
         };
       }
     }
-
+    console.log(calendarData, "calendarData");
     return calendarData;
   } catch (error) {
     console.error("Error fetching calendar data:", error);
@@ -613,6 +616,9 @@ export async function getCalendarDataForMonth({
 export async function getRemindersForDay({ date, userId, adminId }) {
   const dayStart = startOfDay(new Date(date));
   const dayEnd = endOfDay(new Date(date));
+  console.log(dayStart, "dayStart Day");
+  console.log(dayEnd, "dayEnd day");
+
   const meetingWhere = {
     time: {
       gte: dayStart,
@@ -713,6 +719,6 @@ export async function getRemindersForDay({ date, userId, adminId }) {
       },
     },
   });
-
+  console.log(calls, "calls");
   return { meetings, calls };
 }
