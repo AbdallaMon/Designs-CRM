@@ -118,9 +118,9 @@ export async function createAvailableDay({
 
   // Save this as UTC midnight of that local date
   date = localMidnight.toDate();
-  console.log(date, "date");
-  console.log(fromHour, "fromhour");
-  console.log(toHour, "toHour");
+  fromHour = fromHour.toDate();
+  toHour = toHour.toDate();
+
   const existing = await prisma.availableDay.findUnique({
     where: { userId_date: { userId, date: date } },
   });
