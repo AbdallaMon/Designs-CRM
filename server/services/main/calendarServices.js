@@ -115,11 +115,12 @@ export async function createAvailableDay({
 
   // Now get only the date part (start of local day)
   const localMidnight = submittedUtcDate.startOf("day");
-
+  const from = dayjs.utc(fromHour);
+  const to = dayjs.utc(toHour);
   // Save this as UTC midnight of that local date
   date = localMidnight.toDate();
-  fromHour = fromHour.toDate();
-  toHour = toHour.toDate();
+  fromHour = from.toDate();
+  toHour = to.toDate();
 
   const existing = await prisma.availableDay.findUnique({
     where: { userId_date: { userId, date: date } },
