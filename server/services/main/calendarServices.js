@@ -1,12 +1,12 @@
 import { addMinutes, endOfDay, isBefore, startOfDay } from "date-fns";
 import prisma from "../../prisma/prisma.js";
-import { verifyToken } from "./utility.js";
 
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
-import { newCallNotification } from "../notification.js";
+import timezone from "dayjs/plugin/timezone.js";
 
-dayjs.extend(utc);
+import { newCallNotification } from "../notification.js";
+dayjs.extend(timezone);
 dayjs.extend(utc);
 
 export async function getAvailableDays({ month, adminId, role = true }) {
@@ -606,7 +606,6 @@ export async function getCalendarDataForMonth({
         };
       }
     }
-    console.log(calendarData, "calendarData");
     return calendarData;
   } catch (error) {
     console.error("Error fetching calendar data:", error);
