@@ -76,7 +76,7 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
   });
   const getSlotsData = async () => {
     const slotsReq = await getData({
-      url: `client/calendar/slots/${sessionData.dayId}?token=${token}&`,
+      url: `client/calendar/slots/${sessionData.dayId}?token=${token}&timezone=${tz}&`,
       setLoading,
     });
     if (slotsReq.status === 200) {
@@ -155,7 +155,7 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
       const bookingReq = await handleRequestSubmit(
         sessionData,
         setToastLoading,
-        `client/calendar/book?token=${token}&`,
+        `client/calendar/book?token=${token}&&timezone=${tz}&`,
         false,
         "Booking..."
       );

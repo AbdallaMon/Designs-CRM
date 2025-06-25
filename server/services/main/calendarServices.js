@@ -232,7 +232,7 @@ export async function getAvailableSlotsForDay({
   if (!adminId && role) {
     const now = dayjs(); // or specific date if needed
     const mockDate = dayjs
-      .tz(`${now.format("YYYY-MM-DD")} 08:00`, timezone)
+      .tz(`${now.format("YYYY-MM-DD")} 09:00`, timezone)
       .utc()
       .toDate();
     const slots = [];
@@ -260,8 +260,6 @@ export async function getAvailableSlotsForDay({
   }
   const startOfDay = dayjs(date).utc().startOf("day").toDate();
   const endOfDay = dayjs(date).utc().endOf("day").toDate();
-  console.log(startOfDay, "startOfDay");
-  console.log(endOfDay, "endOfDay");
 
   const day = dayId
     ? await prisma.availableDay.findUnique({
@@ -498,13 +496,10 @@ export async function getCalendarDataForMonth({
       timezone
     );
     const endOfMonth = startOfMonth.endOf("month");
-    console.log(startOfMonth, "startOfMonth month");
-    console.log(endOfMonth, "endOfMonth month");
+
     // Convert to UTC for database queries
     const startDate = startOfMonth.utc().toDate();
     const endDate = endOfMonth.utc().toDate();
-    console.log(startDate, "startDate month");
-    console.log(endDate, "endDate month");
 
     // Build where clauses
     const meetingWhere = {
@@ -736,8 +731,6 @@ export async function getRemindersForDay({ date, userId, adminId }) {
       },
     },
   });
-  if (calls.length > 0) {
-    console.log(calls[0].time, "calls0");
-  }
+
   return { meetings, calls };
 }

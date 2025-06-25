@@ -97,7 +97,7 @@ export const Calendar = ({
   async function getAvailableDays() {
     if (token) {
       const tokenData = await getData({
-        url: `client/calendar/meeting-data?token=${token}&`,
+        url: `client/calendar/meeting-data?token=${token}&timezone=${userTimezone}&`,
         setLoading,
       });
       if (!tokenData || tokenData.status !== 200) {
@@ -447,6 +447,8 @@ const TimeSlotManager = ({
   setRerender,
   type,
   adminId,
+  onUpdate,
+  setDayId,
 }) => {
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
@@ -498,6 +500,10 @@ const TimeSlotManager = ({
         window.location.reload();
       }
       await getSlotsData();
+
+      if (onUpdate) {
+        await onUpdate();
+      }
     }
   };
 
@@ -517,6 +523,9 @@ const TimeSlotManager = ({
     );
     if (deleteReq.status === 200) {
       await getSlotsData();
+      if (onUpdate) {
+        await onUpdate();
+      }
     }
   };
 
@@ -536,6 +545,10 @@ const TimeSlotManager = ({
       );
       if (slotReq.status === 200) {
         await getSlotsData();
+        if (onUpdate) {
+          await onUpdate();
+        }
+
         setCustomSlotDialog(false);
         setCustomStart("");
         setCustomEnd("");
@@ -557,6 +570,9 @@ const TimeSlotManager = ({
     });
     if (slotsReq.status === 200) {
       setSlots(slotsReq.data);
+      if (slotsReq.data.length > 0) {
+        setDayId(slotsReq.data[0].availableDayId);
+      }
       setRerender((prev) => !prev);
     } else {
       setSlots([]);
@@ -958,6 +974,7 @@ export const AdminBookingPanel = ({
         setRerender={setRerender}
         type={type}
         adminId={adminId}
+        setDayId={setDayId}
       />
     </Box>
   );
