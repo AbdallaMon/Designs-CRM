@@ -614,10 +614,17 @@ export async function getCalendarDataForMonth({
   }
 }
 export async function getRemindersForDay({ date, userId, adminId }) {
-  const dayStart = startOfDay(new Date(date));
-  const dayEnd = endOfDay(new Date(date));
-  console.log(dayStart, "dayStart Day");
-  console.log(dayEnd, "dayEnd day");
+  const userTimezone = dayjs.tz.guess();
+  const submittedUtcDate = dayjs.utc(date);
+  const offsetInMinutes = dayjs().tz(userTimezone).utcOffset(); // e.g. 180
+  const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
+
+  const localMidnight = correctedDate.startOf("day");
+  const localEndOfDay = correctedDate.endOf("day");
+
+  // Convert those to UTC for DB filtering
+  const dayStart = localMidnight.utc().toDate();
+  const dayEnd = localEndOfDay.utc().toDate();
 
   const meetingWhere = {
     time: {
@@ -719,6 +726,8 @@ export async function getRemindersForDay({ date, userId, adminId }) {
       },
     },
   });
-  console.log(calls, "calls");
+  if (calls.length > 0) {
+    console.log(calls[0], "calls0");
+  }
   return { meetings, calls };
 }

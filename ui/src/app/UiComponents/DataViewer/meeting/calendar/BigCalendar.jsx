@@ -58,6 +58,7 @@ const DayDetailDialog = ({ open, onClose, selectedDay, isAdmin }) => {
       setLoading,
     });
     console.log(selectedDay, "selectedDay");
+    console.log("selectedDay (GMT):", dayjs(selectedDay).utc().format());
 
     if (req.status === 200) {
       console.log(req.data, "day data");
@@ -173,9 +174,6 @@ export default function BigCalendar({
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const [isAdmin, setIsAdmin] = useState(false);
-  console.log(timezone, "timezone");
-  console.log(displayMonth.month(), "month");
-  console.log(displayMonth.year(), "year");
 
   const fetchCalendarData = async () => {
     try {
