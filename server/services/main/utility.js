@@ -130,9 +130,27 @@ export const verifyTokenAndHandleAuthorization = (req, res, next, role) => {
   if (!token) {
     return res.status(401).json({ message: "You have to login first" });
   }
-
   try {
     const decoded = jwt.verify(token, SECRET_KEY);
+
+    const user = prisma.user.findUnique({
+      where: {
+        id: Number(decoded.id),
+      },
+      select: {
+        subRoles: {
+          select: {
+            subRole: true,
+          },
+        },
+      },
+    });
+    const isAdmin =
+      user.role === "ADMIN" ||
+      user.role === "SUPER_ADMIN" ||
+      user.subRoles.some(
+        (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN"
+      );
 
     if (role === "SHARED") {
       if (
@@ -147,11 +165,7 @@ export const verifyTokenAndHandleAuthorization = (req, res, next, role) => {
         return res.status(403).json({ message: "Not authorized" });
       }
     } else {
-      if (
-        role === "ADMIN" &&
-        decoded.role !== "ADMIN" &&
-        decored.role !== "SUPER_ADMIN"
-      ) {
+      if (role === "ADMIN" && !isAdmin) {
         return res.status(403).json({ message: "Not authorized" });
       } else if (role === "STAFF") {
         if (

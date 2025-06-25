@@ -18,8 +18,6 @@ import prisma from "./prisma/prisma.js";
 cron.schedule("* * * * *", async () => {
   const now = dayjs.utc();
   const targetTime = now.add(15, "minute");
-  console.log(now.toDate(), "now");
-  console.log(targetTime.toDate(), "targetTime");
 
   try {
     const upcomingMeetings = await prisma.meetingReminder.findMany({
