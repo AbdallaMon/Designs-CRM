@@ -137,7 +137,6 @@ export const verifyTokenAndHandleAuthorization = async (
   }
   try {
     const decoded = jwt.verify(token, SECRET_KEY);
-    console.log(decoded, "decoded");
     const user = await prisma.user.findUnique({
       where: {
         id: Number(decoded.id),
@@ -150,7 +149,6 @@ export const verifyTokenAndHandleAuthorization = async (
         },
       },
     });
-    console.log(user, "user");
 
     const isAdmin =
       user.role === "ADMIN" ||
@@ -158,6 +156,7 @@ export const verifyTokenAndHandleAuthorization = async (
       user.subRoles.some(
         (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN"
       );
+    console.log(isAdmin, "isAdmin");
 
     if (role === "SHARED") {
       if (

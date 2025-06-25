@@ -552,6 +552,7 @@ router.post("/calendar/available-days", async (req, res) => {
   try {
     const { date, fromHour, toHour, duration, breakMinutes } = req.body;
     const user = await getCurrentUser(req);
+    console.log(user, "user");
     const data = await createAvailableDay({
       date,
       fromHour,
