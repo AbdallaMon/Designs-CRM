@@ -470,11 +470,18 @@ const TimeSlotManager = ({
       setAlertError("Staff cannot generate slots. Please contact an admin.");
       return;
     }
+    const userTimezone = dayjs.tz.guess();
+    const submittedUtcDate = dayjs.utc(date);
+    const offsetInMinutes = dayjs().tz(userTimezone).utcOffset(); // e.g. 180
+    const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
+    const correctedStartDate = submittedUtcDate.add(offsetInMinutes, "minute");
+    const correctedendTime = submittedUtcDate.add(offsetInMinutes, "minute");
+
     const data = {
-      date: date,
+      date: correctedDate,
       days: selectedDates,
-      fromHour: startTime,
-      toHour: endTime,
+      fromHour: correctedStartDate,
+      toHour: correctedendTime,
       duration: meetingDuration,
       breakMinutes: breakDuration,
       dayId: dayId,
@@ -546,8 +553,13 @@ const TimeSlotManager = ({
     if (!date) {
       return;
     }
+    console.log(date, "date");
+    const userTimezone = dayjs.tz.guess();
+    const submittedUtcDate = dayjs.utc(date);
+    const offsetInMinutes = dayjs().tz(userTimezone).utcOffset(); // e.g. 180
+    const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
     const slotsReq = await getData({
-      url: `shared/calendar/slots?date=${date}&adminId=${adminId}&`,
+      url: `shared/calendar/slots?date=${correctedDate}&adminId=${adminId}&`,
       setLoading,
     });
     if (slotsReq.status === 200) {

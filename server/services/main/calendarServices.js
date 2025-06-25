@@ -111,17 +111,16 @@ export async function createAvailableDay({
   breakMinutes,
 }) {
   userId = Number(userId);
-  const userTimezone = dayjs.tz.guess();
   const submittedUtcDate = dayjs.utc(date);
-  const offsetInMinutes = dayjs().tz(userTimezone).utcOffset(); // e.g. 180
-  const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
 
   // Now get only the date part (start of local day)
-  const localMidnight = correctedDate.startOf("day");
+  const localMidnight = submittedUtcDate.startOf("day");
 
   // Save this as UTC midnight of that local date
   date = localMidnight.toDate();
-
+  console.log(date, "date");
+  console.log(fromHour, "fromhour");
+  console.log(toHour, "toHour");
   const existing = await prisma.availableDay.findUnique({
     where: { userId_date: { userId, date: date } },
   });
@@ -248,6 +247,9 @@ export async function getAvailableSlotsForDay({
   }
   const startOfDay = dayjs(date).utc().startOf("day").toDate();
   const endOfDay = dayjs(date).utc().endOf("day").toDate();
+  console.log(startOfDay, "startOfDay");
+  console.log(endOfDay, "endOfDay");
+
   const day = dayId
     ? await prisma.availableDay.findUnique({
         where: {
@@ -613,22 +615,14 @@ export async function getCalendarDataForMonth({
   }
 }
 export async function getRemindersForDay({ date, userId, adminId }) {
-  const userTimezone = dayjs.tz.guess();
   const submittedUtcDate = dayjs.utc(date);
 
   const localMidnight = submittedUtcDate.startOf("day");
   const localEndOfDay = submittedUtcDate.endOf("day");
-  console.log(localMidnight, "localMidnight");
-  console.log(localEndOfDay, "localEndOfDay");
-  console.log(submittedUtcDate, "submittedUtcDate");
-  console.log(userTimezone, "userTimezone");
-  console.log(date, "date");
 
   // Convert those to UTC for DB filtering
   const dayStart = localMidnight.utc().toDate();
   const dayEnd = localEndOfDay.utc().toDate();
-  console.log(dayStart, "dayStart");
-  console.log(dayEnd, "dayEnd");
 
   const meetingWhere = {
     time: {
