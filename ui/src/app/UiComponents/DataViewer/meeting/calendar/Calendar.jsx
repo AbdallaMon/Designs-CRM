@@ -470,18 +470,12 @@ const TimeSlotManager = ({
       setAlertError("Staff cannot generate slots. Please contact an admin.");
       return;
     }
-    const userTimezone = dayjs.tz.guess();
-    const submittedUtcDate = dayjs.utc(date);
-    const offsetInMinutes = dayjs().tz(userTimezone).utcOffset(); // e.g. 180
-    const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
-    const correctedStartDate = submittedUtcDate.add(offsetInMinutes, "minute");
-    const correctedendTime = submittedUtcDate.add(offsetInMinutes, "minute");
 
     const data = {
-      date: correctedDate,
+      date: date,
       days: selectedDates,
-      fromHour: correctedStartDate,
-      toHour: correctedendTime,
+      fromHour: startTime,
+      toHour: endTime,
       duration: meetingDuration,
       breakMinutes: breakDuration,
       dayId: dayId,
@@ -492,7 +486,7 @@ const TimeSlotManager = ({
     const slotReq = await handleRequestSubmit(
       data,
       setToastLoading,
-      url,
+      url + `?timezone=${tz}`,
       false,
       "Updating slots...",
       false,
@@ -536,7 +530,7 @@ const TimeSlotManager = ({
       const slotReq = await handleRequestSubmit(
         data,
         setToastLoading,
-        `admin/calendar/add-custom/${dayId}`,
+        `admin/calendar/add-custom/${dayId}?timezone=${tz}`,
         false,
         "Adding custom slot..."
       );
@@ -553,13 +547,12 @@ const TimeSlotManager = ({
     if (!date) {
       return;
     }
-    console.log(date, "date");
     const userTimezone = dayjs.tz.guess();
     const submittedUtcDate = dayjs.utc(date);
     const offsetInMinutes = dayjs().tz(userTimezone).utcOffset(); // e.g. 180
     const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
     const slotsReq = await getData({
-      url: `shared/calendar/slots?date=${correctedDate}&adminId=${adminId}&`,
+      url: `shared/calendar/slots?date=${correctedDate}&adminId=${adminId}&timezone=${tz}&`,
       setLoading,
     });
     if (slotsReq.status === 200) {

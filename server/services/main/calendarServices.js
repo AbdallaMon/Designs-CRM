@@ -75,11 +75,18 @@ export async function createAvailableDatesForMoreThanOneDay({
   toHour,
   duration,
   breakMinutes,
+  timeZone,
 }) {
   userId = Number(userId);
+
   days.forEach(async (day) => {
+    const submittedUtcDate = dayjs.utc(day);
+    const offsetInMinutes = dayjs().tz(timeZone).utcOffset();
+    const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
+
+    const localMidnight = correctedDate.startOf("day");
     const existing = await prisma.availableDay.findUnique({
-      where: { userId_date: { userId, date: new Date(day) } },
+      where: { userId_date: { userId, date: localMidnight } },
     });
     if (existing)
       await updateAvailableDay({
@@ -89,6 +96,7 @@ export async function createAvailableDatesForMoreThanOneDay({
         toHour,
         duration,
         breakMinutes,
+        timeZone,
       });
     else
       await createAvailableDay({
@@ -98,6 +106,7 @@ export async function createAvailableDatesForMoreThanOneDay({
         toHour,
         duration,
         breakMinutes,
+        timeZone,
       });
   });
   return true;
@@ -109,23 +118,17 @@ export async function createAvailableDay({
   toHour,
   duration,
   breakMinutes,
+  timeZone,
 }) {
   userId = Number(userId);
   const submittedUtcDate = dayjs.utc(date);
+  const offsetInMinutes = dayjs().tz(timeZone).utcOffset();
+  const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
 
   // Now get only the date part (start of local day)
-  const localMidnight = submittedUtcDate.startOf("day");
-  const from = dayjs.utc(fromHour);
-  const to = dayjs.utc(toHour);
-  // Save this as UTC midnight of that local date
-  date = localMidnight.toDate();
-  fromHour = from.toDate();
-  toHour = to.toDate();
+  const localMidnight = correctedDate.startOf("day");
 
-  console.log(from, "from");
-  console.log(to, "to");
-  console.log(fromHour, "fromHour");
-  console.log(toHour, "toHour");
+  date = localMidnight.toDate();
 
   const existing = await prisma.availableDay.findUnique({
     where: { userId_date: { userId, date: date } },
@@ -145,6 +148,7 @@ export async function createAvailableDay({
     duration,
     breakMinutes,
     day,
+    timeZone,
   });
   return true;
 }
@@ -155,13 +159,13 @@ async function createSlotsForDay({
   duration,
   breakMinutes,
   day,
+  timeZone,
 }) {
-  const baseDateStr = dayjs(date).format("YYYY-MM-DD"); // '2025-06-22'
-  const fromTimeStr = `${baseDateStr} ${fromHour}`; // '2025-06-22 09:00'
-  const toTimeStr = `${baseDateStr} ${toHour}`; // '2025-06-22 20:00'
-
-  const from = dayjs.tz(fromTimeStr, "Asia/Dubai").utc().toDate();
-  const to = dayjs.tz(toTimeStr, "Asia/Dubai").utc().toDate();
+  const baseDateStr = dayjs(date).format("YYYY-MM-DD");
+  const fromTimeStr = `${baseDateStr} ${fromHour}`;
+  const toTimeStr = `${baseDateStr} ${toHour}`;
+  const from = dayjs.tz(fromTimeStr, timeZone).utc().toDate();
+  const to = dayjs.tz(toTimeStr, timeZone).utc().toDate();
 
   let current = new Date(from);
   const slots = [];
@@ -185,6 +189,7 @@ export async function updateAvailableDay({
   toHour,
   duration,
   breakMinutes,
+  timeZone,
 }) {
   dayId = Number(dayId);
   const existingDay = await prisma.availableDay.findUnique({
@@ -208,6 +213,7 @@ export async function updateAvailableDay({
     duration,
     breakMinutes,
     day: existingDay,
+    timeZone,
   });
 
   return true;
@@ -218,6 +224,7 @@ export async function getAvailableSlotsForDay({
   adminId,
   dayId,
   role = true,
+  timezone = "Asia/Dubai",
 }) {
   if (!role && !adminId) {
     throw new Error("AdminId is required");
@@ -225,7 +232,7 @@ export async function getAvailableSlotsForDay({
   if (!adminId && role) {
     const now = dayjs(); // or specific date if needed
     const mockDate = dayjs
-      .tz(`${now.format("YYYY-MM-DD")} 08:00`, "Asia/Dubai")
+      .tz(`${now.format("YYYY-MM-DD")} 08:00`, timezone)
       .utc()
       .toDate();
     const slots = [];
@@ -341,7 +348,7 @@ export async function verifyAndExtractCalendarToken(token) {
   return returnData;
 }
 
-export async function addCutsomDate({ fromHour, toHour, dayId }) {
+export async function addCutsomDate({ fromHour, toHour, dayId, timeZone }) {
   dayId = Number(dayId);
   if (!fromHour || !toHour || !dayId) {
     throw new Error("fromHour, toHour, and dayId are required");
@@ -354,19 +361,18 @@ export async function addCutsomDate({ fromHour, toHour, dayId }) {
   if (!availableDay) {
     throw new Error("Available day not found");
   }
-  const userTimezone = dayjs.tz.guess();
 
   // Format the date to YYYY-MM-DD
   const dateStr = dayjs(availableDay.date).format("YYYY-MM-DD");
 
   // Combine date + time in user's local time zone
   const startTimeUtc = dayjs
-    .tz(`${dateStr} ${fromHour}`, "YYYY-MM-DD HH:mm", userTimezone)
+    .tz(`${dateStr} ${fromHour}`, "YYYY-MM-DD HH:mm", timeZone)
     .utc()
     .toDate();
 
   const endTimeUtc = dayjs
-    .tz(`${dateStr} ${toHour}`, "YYYY-MM-DD HH:mm", userTimezone)
+    .tz(`${dateStr} ${toHour}`, "YYYY-MM-DD HH:mm", timeZone)
     .utc()
     .toDate();
 

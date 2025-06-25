@@ -562,6 +562,7 @@ router.post("/calendar/available-days", async (req, res) => {
       duration,
       breakMinutes,
       userId: user.id,
+      timeZone: req.query.timezone,
     });
     res.status(200).json({
       message: "Available day created successfully",
@@ -588,6 +589,7 @@ router.put("/calendar/available-days/:dayId", async (req, res) => {
       duration,
       breakMinutes,
       userId: user.id,
+      timeZone: req.query.timezone,
     });
     res.status(200).json({
       message: "Available day updated successfully",
@@ -612,6 +614,7 @@ router.post("/calendar/available-days/multiple", async (req, res) => {
       toHour,
       duration,
       breakMinutes,
+      timeZone: req.query.timezone,
     });
     res.status(200).json({
       message: "Available days created successfully",
@@ -635,6 +638,7 @@ router.post("/calendar/add-custom/:dayId", async (req, res) => {
       fromHour: startTime,
       toHour: endTime,
       userId: user.id,
+      timeZone: req.query.timezone,
     });
     res.status(200).json({
       message: "Custom available day created successfully",

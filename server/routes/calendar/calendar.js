@@ -53,6 +53,7 @@ router.get("/slots", async (req, res) => {
       date: req.query.date,
       adminId: adminId,
       role: isAdmin,
+      timezone: req.query.timezone,
     });
     res.status(200).json({
       message: "Available days fetched successfully",
