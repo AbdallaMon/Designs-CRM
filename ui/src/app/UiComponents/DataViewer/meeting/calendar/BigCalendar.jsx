@@ -57,7 +57,10 @@ const DayDetailDialog = ({ open, onClose, selectedDay, isAdmin }) => {
       url: `shared/calendar/dates/day?date=${selectedDay}&isAdmin=${isAdmin}&`,
       setLoading,
     });
+    console.log(selectedDay, "selectedDay");
+
     if (req.status === 200) {
+      console.log(req.data, "day data");
       setDayData(req.data);
     }
   }
@@ -156,7 +159,7 @@ const DayDetailDialog = ({ open, onClose, selectedDay, isAdmin }) => {
 };
 
 export default function BigCalendar({
-  timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Dubai",
+  timezone = Intl.DateTimeFormat().resolvedOptions().timeZone,
 }) {
   const [displayMonth, setDisplayMonth] = useState(dayjs().tz(timezone));
   const [calendarData, setCalendarData] = useState({});
@@ -170,6 +173,9 @@ export default function BigCalendar({
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const [isAdmin, setIsAdmin] = useState(false);
+  console.log(timezone, "timezone");
+  console.log(displayMonth.month(), "month");
+  console.log(displayMonth.year(), "year");
 
   const fetchCalendarData = async () => {
     try {
