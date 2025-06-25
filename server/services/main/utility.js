@@ -158,12 +158,7 @@ export const verifyTokenAndHandleAuthorization = async (
         (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN"
       );
     console.log(user, "user");
-    console.log(
-      user.subRoles.some(
-        (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN"
-      ),
-      "sub role osme"
-    );
+    console.log(role, "role sended");
     console.log(isAdmin, "isAdmin");
 
     if (role === "SHARED") {
@@ -180,6 +175,7 @@ export const verifyTokenAndHandleAuthorization = async (
       }
     } else {
       if (role === "ADMIN" && !isAdmin) {
+        console.log("we are not here right?");
         return res.status(403).json({ message: "Not authorized" });
       } else if (role === "STAFF") {
         if (
