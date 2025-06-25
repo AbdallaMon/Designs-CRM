@@ -160,7 +160,10 @@ export const verifyTokenAndHandleAuthorization = async (
     console.log(user, "user");
     console.log(role, "role sended");
     console.log(isAdmin, "isAdmin");
-
+    if (role === "ADMIN" && isAdmin) {
+      req.user = decoded;
+      next();
+    }
     if (role === "SHARED") {
       if (
         decoded.role !== "ADMIN" &&
