@@ -95,8 +95,8 @@ const router = Router();
 import questionsRoutes from "./questions/questions.js";
 import calendarRoutes from "./calendar/calendar.js";
 
-router.use((req, res, next) => {
-  verifyTokenAndHandleAuthorization(req, res, next, "SHARED");
+router.use(async (req, res, next) => {
+  await verifyTokenAndHandleAuthorization(req, res, next, "SHARED");
 });
 router.use("/questions", questionsRoutes);
 router.use("/calendar", calendarRoutes);

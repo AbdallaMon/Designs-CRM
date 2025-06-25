@@ -125,7 +125,12 @@ export const getPagination = (req) => {
   return { page, limit, skip };
 };
 
-export const verifyTokenAndHandleAuthorization = (req, res, next, role) => {
+export const verifyTokenAndHandleAuthorization = async (
+  req,
+  res,
+  next,
+  role
+) => {
   const token = req.cookies.token;
   if (!token) {
     return res.status(401).json({ message: "You have to login first" });
@@ -133,7 +138,7 @@ export const verifyTokenAndHandleAuthorization = (req, res, next, role) => {
   try {
     const decoded = jwt.verify(token, SECRET_KEY);
     console.log(decoded, "decoded");
-    const user = prisma.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: {
         id: Number(decoded.id),
       },
@@ -147,10 +152,12 @@ export const verifyTokenAndHandleAuthorization = (req, res, next, role) => {
     });
     console.log(user, "user");
 
-    const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
-    // user.subRoles.some(
-    //   (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN"
-    // );
+    const isAdmin =
+      user.role === "ADMIN" ||
+      user.role === "SUPER_ADMIN" ||
+      user.subRoles.some(
+        (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN"
+      );
 
     if (role === "SHARED") {
       if (

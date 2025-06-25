@@ -19,8 +19,8 @@ import {
 
 const router = Router();
 
-router.use((req, res, next) => {
-  verifyTokenAndHandleAuthorization(req, res, next, "SHARED");
+router.use(async (req, res, next) => {
+  await verifyTokenAndHandleAuthorization(req, res, next, "SHARED");
 });
 
 router.get("/question-types/:clientLeadId", async (req, res) => {
