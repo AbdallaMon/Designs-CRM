@@ -24,7 +24,6 @@ export const SessionItemManager = ({ model }) => {
   }, []);
 
   const fetchData = async () => {
-    console.log("fetched");
     const req = await getData({
       url: `shared/image-session?model=${model}&`,
       setLoading,

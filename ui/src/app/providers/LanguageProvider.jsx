@@ -19,8 +19,7 @@ export default function LanguageProvider({
   dontChecklocalStorage = false,
 }) {
   const [lng, setLang] = useState(initialLng);
-  console.log(lng, "lng");
-  console.log(initialLng, "initialLng");
+
   function changeLanguage(value) {
     setLang(value);
     window.localStorage.setItem("lng", value);

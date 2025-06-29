@@ -1783,3 +1783,15 @@ export async function deleteSessionItem({ model, data, id }) {
   });
   return item;
 }
+
+// end of old image session
+export async function toggleArchiveAModel({ model, isArchived, id }) {
+  return await prisma[model].update({
+    where: {
+      id: Number(id),
+    },
+    data: {
+      isArchived,
+    },
+  });
+}

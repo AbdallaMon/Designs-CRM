@@ -1004,3 +1004,14 @@ export async function sendSuccessEmailAfterSessionDone({
     console.log(e, "error in generating email for staff");
   }
 }
+
+export async function getLanguages({ notArchived }) {
+  const where = {};
+  if (notArchived) {
+    where.isArchived = false;
+  }
+
+  return await prisma.language.findMany({
+    where,
+  });
+}

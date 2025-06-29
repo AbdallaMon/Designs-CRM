@@ -239,7 +239,7 @@ model ClientLead {
   extraServices    ExtraService[]
   commissions      Commission[]
   updates          ClientLeadUpdate[]
-  imageSessions    ClientImageSession[]
+  imageSessions ClientImageSession[]
 
   reasonToConvert   String?
   paymentStatus     PaymentStatus @default(PENDING)
@@ -482,9 +482,10 @@ model User {
   createdQuestions SessionQuestion[] 
   answers          Answer[]         
   updates              ClientLeadUpdate[]
-  createdImageSessions ClientImageSession[]
   versaModels                VersaModel[]
   availableDays   AvailableDay[]
+
+  createdImageSessions ClientImageSession[]
 
   files           File[]
   lastSeenAt      DateTime?
@@ -585,11 +586,12 @@ model Note {
   sharedUpdate   SharedUpdate? @relation(fields: [sharedUpdateId], references: [id])
   sharedUpdateId Int?
 
-  clientImageSession ClientImageSession? @relation(fields: [imageSessionId], references: [id])
-  imageSessionId     Int?
+  clientImageSession   ClientImageSession? @relation(fields: [imageSessionId], references: [id])
+  imageSessionId Int?
 
-  clientSelectedImage ClientSelectedImage? @relation(fields: [selectedImageId], references: [id])
-  selectedImageId     Int?
+  clientSelectedImage   ClientSelectedImage? @relation(fields: [selectedImageId], references: [id])
+  selectedImageId Int?
+
 
   @@index([taskId])
   @@index([clientLeadId])
@@ -605,6 +607,7 @@ model Note {
   @@index([updateId])
   @@index([imageSessionId])
   @@index([selectedImageId])
+
 }
 
 model Notification {
@@ -714,72 +717,6 @@ model Outcome {
   operationalExpenses OperationalExpenses[] // Optional relation back to OperationalExpenses, making it optional
   monthlySalaries     MonthlySalary[] // Optional relation back to OperationalExpenses, making it optional
 }
-
-// New client session
-model Image {
-  id                 Int                   @id @default(autoincrement())
-  url                String
-  spaces Space[]
-  patterns           ColorPattern[]
-  selectedInSessions ClientSelectedImage[]
-  isArchived         Boolean               @default(false)
-  createdAt          DateTime              @default(now())
-}
-
-model Space {
-  id                  Int                       @id @default(autoincrement())
-  name                String
-  avatarUrl           String? 
-  images              Image[]
-  clientSessionSpaces ClientImageSessionSpace[]
-  createdAt           DateTime                  @default(now())
-}
-
-model ColorPattern {
-  id        Int              @id @default(autoincrement())
-  name      String
-  avatarUrl  String? 
-  images    Image[]
-  imageSessions ClientImageSession[]
-  createdAt DateTime         @default(now())
-}
-
-
-model ClientImageSession {
-  id             Int                       @id @default(autoincrement())
-  clientLead     ClientLead                @relation(fields: [clientLeadId], references: [id])
-  clientLeadId   Int
-  createdBy      User?                     @relation(fields: [userId], references: [id])
-  userId         Int?
-  token          String                    @unique
-  selectedSpaces ClientImageSessionSpace[]
-  selectedImages ClientSelectedImage[]
-  preferredPatterns ColorPattern[]
-  sessionStatus     SessionStatus             @default(IN_PROGRESS)
-  signature      String?
-  pdfUrl         String?
-  notes          Note[]
-  createdAt      DateTime                  @default(now())
-  error            Boolean                 @default(false) 
-}
-
-model ClientImageSessionSpace {
-  id        Int                @id @default(autoincrement())
-  session   ClientImageSession @relation(fields: [sessionId], references: [id])
-  sessionId Int
-  space     Space              @relation(fields: [spaceId], references: [id])
-  spaceId   Int
-}
-
-model ClientSelectedImage {
-  id        Int                @id @default(autoincrement())
-  session   ClientImageSession @relation(fields: [sessionId], references: [id])
-  sessionId Int
-  image     Image              @relation(fields: [imageId], references: [id])
-  imageId   Int
-  notes     Note[]
-}
-
 
 // SPAIN
 
@@ -923,4 +860,229 @@ model AvailableSlot {
 
   meetingReminder  MeetingReminder?  @relation("SlotToMeeting", fields: [meetingReminderId], references: [id])
   meetingReminderId Int?             @unique
+}
+
+
+/// design session
+model Language {
+  id   Int    @id @default(autoincrement())
+  code String @unique
+  name String
+  isArchived  Boolean     @default(false)
+
+  shortTexts TextShort[]
+  longTexts  TextLong[]
+}
+
+model TextShort {
+  id             Int      @id @default(autoincrement())
+  text           String   @db.VarChar(255)
+  languageId     Int
+  language       Language @relation(fields: [languageId], references: [id])
+
+  materialId     Int?
+  material       Material? @relation("MaterialTitles", fields: [materialId], references: [id])
+
+  styleId        Int?
+  style          Style? @relation("StyleTitles", fields: [styleId], references: [id])
+
+  colorPatternId Int?
+  colorPattern   ColorPattern? @relation("ColorPatternTitles", fields: [colorPatternId], references: [id])
+
+  pageInfoId     Int?
+  pageInfo       PageInfo? @relation("PageInfoTitles", fields: [pageInfoId], references: [id])
+
+  spaceId        Int?
+  space          Space? @relation("SpaceTitles", fields: [spaceId], references: [id])
+}
+
+model TextLong {
+  id             Int      @id @default(autoincrement())
+  content        String   @db.Text
+  languageId     Int
+  language       Language @relation(fields: [languageId], references: [id])
+
+  materialId     Int?
+  material       Material? @relation("MaterialDescriptions", fields: [materialId], references: [id])
+
+  styleId        Int?
+  style          Style? @relation("StyleDescriptions", fields: [styleId], references: [id])
+
+  colorPatternId Int?
+  colorPattern   ColorPattern? @relation("ColorPatternDescriptions", fields: [colorPatternId], references: [id])
+
+  proId          Int?
+  pro            Pro? @relation("ProTexts", fields: [proId], references: [id])
+
+  conId          Int?
+  con            Con? @relation("ConTexts", fields: [conId], references: [id])
+
+  pageInfoId     Int?
+  pageInfo       PageInfo? @relation("PageInfoContents", fields: [pageInfoId], references: [id])
+}
+model Pro {
+  id         Int        @id @default(autoincrement())
+  content    TextLong[] @relation("ProTexts")
+  materialId Int?
+  material   Material?  @relation(fields: [materialId], references: [id])
+  styleId    Int?
+  style      Style?     @relation(fields: [styleId], references: [id])
+}
+
+model Con {
+  id         Int        @id @default(autoincrement())
+  content    TextLong[] @relation("ConTexts")
+  materialId Int?
+  material   Material?  @relation(fields: [materialId], references: [id])
+  styleId    Int?
+  style      Style?     @relation(fields: [styleId], references: [id])
+}
+
+model Material {
+  id            Int         @id @default(autoincrement())
+  title         TextShort[] @relation("MaterialTitles")
+  description   TextLong[]  @relation("MaterialDescriptions")
+  pros          Pro[]
+  cons          Con[]
+  imageUrl      String?
+  isArchived    Boolean     @default(false)
+  clientSessions ClientImageSession[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Style {
+  id            Int         @id @default(autoincrement())
+  title         TextShort[] @relation("StyleTitles")
+  description   TextLong[]  @relation("StyleDescriptions")
+  pros          Pro[]
+  cons          Con[]
+  imageUrl      String?
+  isArchived    Boolean     @default(false)
+  designImages  DesignImage[]
+  clientSessions ClientImageSession[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model ColorPattern {
+  id            Int         @id @default(autoincrement())
+  title         TextShort[] @relation("ColorPatternTitles")
+  description   TextLong[]  @relation("ColorPatternDescriptions")
+  background    String?
+  colors        ColorPatternColor[]
+  order         Int         @default(0)
+  isArchived    Boolean     @default(false)
+  clientSessions ClientImageSession[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model ColorPatternColor {
+  id                 Int    @id @default(autoincrement())
+  colorHex           String
+  isEditableByClient Boolean @default(false)
+  colorPatternId     Int
+  colorPattern       ColorPattern @relation(fields: [colorPatternId], references: [id])
+}
+
+model Space {
+  id         Int    @id @default(autoincrement())
+  title      TextShort[] @relation("SpaceTitles")
+  isArchived Boolean @default(false)
+  selectedIn      ClientImageSession[]
+  spaceImages     DesignImageSpace[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+enum PageInfoType {
+  BEFORE_PATTERN
+  BEFORE_MATERIAL
+  BEFORE_STYLE
+}
+
+model PageInfo {
+  id         Int      @id @default(autoincrement())
+  type       PageInfoType
+  title      TextShort[]   @relation("PageInfoTitles")
+  content    TextLong[]    @relation("PageInfoContents")
+  isArchived Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model DesignImage {
+  id         Int      @id @default(autoincrement())
+  imageUrl   String
+  styleId    Int
+  style      Style     @relation(fields: [styleId], references: [id])
+  spaces     DesignImageSpace[]
+  selectedIn ClientSelectedImage[]
+  isArchived Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model DesignImageSpace {
+  id            Int     @id @default(autoincrement())
+  designImageId Int
+  designImage   DesignImage @relation(fields: [designImageId], references: [id])
+  spaceId       Int
+  space         Space       @relation(fields: [spaceId], references: [id])
+}
+
+enum TemplateType {
+  COLOR_PATTERN
+  MATERIAL
+  STYLE
+}
+
+model TemplateBlock {
+  id         Int        @id @default(autoincrement())
+  type       TemplateType
+  order      Int
+  showTitle  Boolean     @default(true)
+  showImage  Boolean     @default(true)
+  showPros   Boolean     @default(false)
+  showCons   Boolean     @default(false)
+  showColors Boolean     @default(false)
+  showDescription Boolean     @default(false)
+  isArchived Boolean     @default(false)
+  blurValue Int @default(0)
+}
+
+model ClientImageSession {
+  id               Int                    @id @default(autoincrement())
+  token            String                 @unique
+  clientLeadId     Int
+  clientLead       ClientLead             @relation(fields: [clientLeadId], references: [id])
+  createdById      Int
+  createdBy        User                   @relation(fields: [createdById], references: [id])
+  selectedSpaceId  Int?
+  selectedSpace    Space?                 @relation(fields: [selectedSpaceId], references: [id])
+  colorPatternId   Int?
+  colorPattern     ColorPattern?          @relation(fields: [colorPatternId], references: [id])
+  materialId       Int?
+  material         Material?              @relation(fields: [materialId], references: [id])
+  styleId          Int?
+  style            Style?                 @relation(fields: [styleId], references: [id])
+  selectedImages   ClientSelectedImage[]
+  note             Note[]
+  customColors     Json?
+  signatureUrl     String?
+  submittedAt      DateTime?
+  isArchived       Boolean                @default(false)
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+}
+
+model ClientSelectedImage {
+  id              Int                @id @default(autoincrement())
+  imageSessionId  Int
+  imageSession    ClientImageSession @relation(fields: [imageSessionId], references: [id])
+  designImageId   Int
+  designImage     DesignImage        @relation(fields: [designImageId], references: [id])
+  note            Note[]
+  createdAt       DateTime           @default(now())
 }

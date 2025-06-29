@@ -11,16 +11,10 @@ import {
   createAFixedData,
   createCommissionByAdmin,
   createLeadFromExcelData,
-  createNewImage,
-  createSesssionItem,
   createStaffUser,
   deleteAFixedData,
   deleteALead,
-  deleteAnImage,
-  deleteSessionItem,
   editAFixedData,
-  editAnImage,
-  editSessionItem,
   editStaffUser,
   generateExcelReport,
   generateLeadReport,
@@ -36,6 +30,7 @@ import {
   getUser,
   getUserById,
   getUserLogs,
+  toggleArchiveAModel,
   updateClientField,
   updateCommission,
   updateLeadField,
@@ -54,12 +49,14 @@ import {
   deleteASlot,
   updateAvailableDay,
 } from "../services/main/calendarServices.js";
+import imageSessionRouter from "./image-session/admin-image-session.js";
 
 const router = Router();
 
 router.use(async (req, res, next) => {
   await verifyTokenAndHandleAuthorization(req, res, next, "ADMIN");
 });
+router.use("/image-session", imageSessionRouter);
 
 router.get("/users", async (req, res) => {
   const searchParams = req.query;
@@ -483,71 +480,6 @@ router.post("/projects/create-group", async (req, res) => {
   }
 });
 
-// images sesssions ///
-router.post("/images", async (req, res) => {
-  try {
-    const image = createNewImage(req.body);
-    res.status(200).json({ data: image, message: "Created succussfully" });
-  } catch (error) {
-    console.error("Error creating image:", error);
-    res.status(500).json({ message: "Error creating image" });
-  }
-});
-router.put("/images/:id", async (req, res) => {
-  try {
-    const image = editAnImage({ data: req.body, id: req.params.id });
-    res.status(200).json({ data: image, message: "Image edited succussfully" });
-  } catch (error) {
-    console.error("Error creating image:", error);
-    res.status(500).json({ message: "Error creating image" });
-  }
-});
-router.delete("/images/:id", async (req, res) => {
-  try {
-    const image = deleteAnImage(req.params.id);
-    res.status(200).json({ data: image, message: "Deleted succussfully" });
-  } catch (error) {
-    console.error("Error creating image:", error);
-    res.status(500).json({ message: "Error creating image" });
-  }
-});
-
-router.post("/image-session", async (req, res) => {
-  try {
-    const item = createSesssionItem({ data: req.body, model: req.query.model });
-    res.status(200).json({ data: item, message: "Created succussfully" });
-  } catch (error) {
-    console.error("Error creating image:", error);
-    res.status(500).json({ message: "Error creating image" });
-  }
-});
-router.put("/image-session/:id", async (req, res) => {
-  try {
-    const item = editSessionItem({
-      data: req.body,
-      model: req.query.model,
-      id: req.params.id,
-    });
-    res.status(200).json({ data: item, message: "Edited succussfully" });
-  } catch (error) {
-    console.error("Error creating image:", error);
-    res.status(500).json({ message: "Error creating image" });
-  }
-});
-router.delete("/image-session/:id", async (req, res) => {
-  try {
-    const item = deleteSessionItem({
-      data: req.body,
-      model: req.query.model,
-      id: req.params.id,
-    });
-    res.status(200).json({ data: item, message: "Deleted succussfully" });
-  } catch (error) {
-    console.error("Error creating image:", error);
-    res.status(500).json({ message: "Error creating image" });
-  }
-});
-
 router.post("/calendar/available-days", async (req, res) => {
   try {
     const { date, fromHour, toHour, duration, breakMinutes } = req.body;
@@ -664,6 +596,26 @@ router.delete("/calendar/slots/:slotId", async (req, res) => {
     console.log(e, "e");
     res.status(500).json({
       message: "Error deleting available slot",
+      error: e.message || "Internal Server Error",
+    });
+  }
+});
+router.patch("/model/archived/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = await toggleArchiveAModel({
+      id: id,
+      isArchived: req.body.isArchived,
+      model: req.query.model,
+    });
+    res.status(200).json({
+      message: "Updated succssfully",
+      data: data,
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({
+      message: "Error while Updating" + e.message,
       error: e.message || "Internal Server Error",
     });
   }

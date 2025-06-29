@@ -33,27 +33,39 @@
 - Admin select available days and available times for examble (in a day can select from 8:8 and each half hour is gap)
 - Admin can remove days or specific times or can add speciale time ect
 - Fix meeting days on fetching single meeting it show the day as the day before when i fetch 12 it get 11
-
 - Send email to client with the meeting time confirmation
 - We need to make something that send email to client 15 minute before meeting and using client timezone or i think gmt is better
+
+- Full page arabic and english(text arabic and en selected by admins for everything)
+- Make an introduction page for each item (like before select pattern there is intro to tell client what he will select)
+- Client select a pattern and after selection he can customize the pattern like as he wants(change any color in it) the color pattern not all changable
+- After that there is an intro page for next part (Material)
+- Then client select material
+- After that there is an intro page for next part (Design style)
+- Then client select style
+- After select style client will select design that is related to this style he select
+- After that render every thing user select and he in this page can add note and then signature
+- After that send email the design
+- Make template for color pattern (bg,title,description and list of color pattern)
+- More than one file for designs
+- Add template to the material image ,title and description and can check what is advantages and dis of this material
+- Each style is down the other
+- The template is for material,style and colors and it is like something i chose and tell the text will be there and it will have things and then when i assign this to image it will have these things
+
+- \*Important : image will be linked and fitlered by spaces and design style only
+
+- Client cant select a slot that is in its time has gone like for 25 and it is passed
+- And lead try to make each column load alone and has its own state or what u think?
+- Sales choose type of contract
+- Total price is final price
+- Dashboard change projects to leads
 
 - Fix pdf make it in arabic and arabic direction
 - Make two image grid and make image bigger
 - امكانية رفع اكتر من صور ووضعها ضمن مساحه معينه
 - امكانية الفلتر بالمساحه او اللاوان
 
-- Enhance loading the kanban (make it filter data in the backend)
-
-- New page for register make it en and without video
-
   4- Calendar
-
-تمام هضيف زرار انك تقدر ترسل ايميل بلينك جديد يقدر يدفع منه ويكمل تسجيل
-إمكانية تحديد أشخاص علي واتساب يردوا علي عميل معين
-او أعرف مين رد علي عميل لو مشتركين في رقم واحد
-إمكانية تعديل ال lead
-موظف جديد يقدر يتابع ال no consulated lead
-ويقدر يشوف كل ليد تبع انهي موظف
 
 3- تحديد ال style  
  8 - 2.5 + 5.5
@@ -61,7 +73,7 @@
 8 - 2 + 3
 
 2- حجز المواعيد
-6 4
+6 5
 
 4- Calendar
 8 2
@@ -78,12 +90,17 @@
   7- main website
   12
 
+- Enhance loading the kanban (make it filter data in the backend)
+- New page for register make it en and without video
+  تمام هضيف زرار انك تقدر ترسل ايميل بلينك جديد يقدر يدفع منه ويكمل تسجيل
+  إمكانية تحديد أشخاص علي واتساب يردوا علي عميل معين
+  او أعرف مين رد علي عميل لو مشتركين في رقم واحد
+  إمكانية تعديل ال lead
+  موظف جديد يقدر يتابع ال no consulated lead
+  ويقدر يشوف كل ليد تبع انهي موظف
+
 edits
 
-- Sales choose type of contract
-- Total price is final price
-
-- Dashboard change projects to leads
 - Telegram?
 - Check telegram
 
