@@ -126,7 +126,7 @@ router.get("/client-leads/deals", async (req, res) => {
   try {
     const searchParams = req.query;
     const token = getTokenData(req, res);
-
+    console.log(token, "token");
     if (
       token.role !== "ADMIN" &&
       token.role !== "SUPER_ADMIN" &&

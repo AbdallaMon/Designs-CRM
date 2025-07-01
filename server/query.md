@@ -1,52 +1,3 @@
--- From clientimagesessionspace
-ALTER TABLE clientimagesessionspace DROP FOREIGN KEY clientimagesessionspace_ibfk_1;
-ALTER TABLE clientimagesessionspace DROP FOREIGN KEY clientimagesessionspace_ibfk_2;
-
--- From clientselectedimage
-ALTER TABLE clientselectedimage DROP FOREIGN KEY clientselectedimage_ibfk_1;
-ALTER TABLE clientselectedimage DROP FOREIGN KEY clientselectedimage_ibfk_2;
-
--- From note
-ALTER TABLE note DROP FOREIGN KEY note_ibfk_3;
-ALTER TABLE note DROP FOREIGN KEY note_ibfk_4;
-
--- From \_clientimagesessiontocolorpattern (many-to-many pivot table)
-ALTER TABLE \_clientimagesessiontocolorpattern DROP FOREIGN KEY \_clientimagesessiontocolorpattern_ibfk_1;
-ALTER TABLE \_clientimagesessiontocolorpattern DROP FOREIGN KEY \_clientimagesessiontocolorpattern_ibfk_2;
-
--- From \_colorpatterntoimage (many-to-many pivot table)
-ALTER TABLE \_colorpatterntoimage DROP FOREIGN KEY \_colorpatterntoimage_ibfk_1;
-ALTER TABLE \_colorpatterntoimage DROP FOREIGN KEY \_colorpatterntoimage_ibfk_2;
-
--- From \_imagetospace (many-to-many pivot table)
-ALTER TABLE \_imagetospace DROP FOREIGN KEY \_imagetospace_ibfk_1;
-ALTER TABLE \_imagetospace DROP FOREIGN KEY \_imagetospace_ibfk_2;
-
--- Drop columns in Note
-ALTER TABLE Note
-DROP COLUMN imageSessionId,
-DROP COLUMN selectedImageId;
-
--- Drop relation in User
--- If you're storing a relation like JSON or link table, handle accordingly.
--- Otherwise, skip if there's no column.
-
--- Drop relation in ClientLead
--- If imageSessions used a separate table and not a direct column, skip.
-
-DROP TABLE IF EXISTS
-ClientSelectedImage,
-ClientImageSessionSpace,
-ClientImageSession,
-ColorPattern,
-Space,
-Image;
-
-DROP TABLE IF EXISTS `_ClientImageSessionToColorPattern`;
-DROP TABLE IF EXISTS `_ColorPatternToImage`;
-DROP TABLE IF EXISTS `_ImageToSpace`;
-
--- Create the Language table
 CREATE TABLE Language (
 id INT PRIMARY KEY AUTO_INCREMENT,
 code VARCHAR(255) UNIQUE NOT NULL,
@@ -224,8 +175,6 @@ languageId INT NOT NULL,
 materialId INT,
 styleId INT,
 colorPatternId INT,
-proId INT,
-conId INT,
 pageInfoId INT,
 FOREIGN KEY (languageId) REFERENCES Language(id) ON DELETE RESTRICT ON UPDATE CASCADE,
 FOREIGN KEY (materialId) REFERENCES Material(id) ON DELETE SET NULL ON UPDATE CASCADE,
