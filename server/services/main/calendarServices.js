@@ -126,7 +126,6 @@ export async function createAvailableDay({
   const offsetInMinutes = dayjs().tz(timeZone).utcOffset();
   const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
 
-  // Now get only the date part (start of local day)
   const localMidnight = correctedDate.startOf("day");
 
   date = localMidnight.toDate();

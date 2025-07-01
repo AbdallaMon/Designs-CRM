@@ -598,6 +598,7 @@ const TimeSlotManager = ({
 
     if (deleteReq.status === 200) {
       await getSlotsData();
+      setDayId(null);
       if (onUpdate) {
         await onUpdate();
       }
