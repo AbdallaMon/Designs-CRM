@@ -19,13 +19,16 @@ export const TemplateAutocomplete = ({
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   useEffect(() => {
     const fetchTemplates = async () => {
-      await getDataAndSet({
+      const req = await getDataAndSet({
         url: `admin/image-session/templates/ids?type=${type}&`,
         setLoading,
         setData: setTemplates,
       });
       if (initialData) {
-        setSelectedTemplate(initialData.templateId);
+        const currentTemplate = req.data.find(
+          (temp) => temp.id === initialData.templateId
+        );
+        setSelectedTemplate(currentTemplate);
       }
     };
 

@@ -21,7 +21,7 @@ import ProsAndConsDialogButton from "../shared/ProsAndCons";
 import { PreviewItemTemplate } from "../shared/PreviewItemTemplate";
 import { EditSessionItem } from "../shared/session-item/EditSessionItem";
 
-export const MaterialItemCard = ({ model, item, onUpdate }) => {
+export const StyleItemCard = ({ model, item, onUpdate }) => {
   const [isArchiving, setIsArchiving] = useState(false);
   const handleToggleArchive = async () => {
     const req = await handleRequestSubmit(
@@ -82,18 +82,18 @@ export const MaterialItemCard = ({ model, item, onUpdate }) => {
       >
         <ProsAndConsDialogButton
           materialId={item.id}
-          type={"MATERIAL"}
+          type={"STYLE"}
           isEditing={true}
         />
         <EditSessionItem
           initialData={item}
           onUpdate={onUpdate}
-          modelType={"MATERIAL"}
-          name="Materail"
-          slug="material"
+          modelType={"STYLE"}
+          name="Style"
+          slug="style"
         />
         <Tooltip
-          title={item.isArchived ? "Restore from archive" : "Archive material"}
+          title={item.isArchived ? "Restore from archive" : "Archive style"}
         >
           <IconButton
             onClick={handleToggleArchive}
@@ -133,4 +133,4 @@ function TemplateDialog({ item }) {
     </>
   );
 }
-export default MaterialItemCard;
+export default StyleItemCard;

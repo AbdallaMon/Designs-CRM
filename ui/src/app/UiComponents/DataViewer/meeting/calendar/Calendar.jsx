@@ -51,10 +51,12 @@ import {
   MdLocationOn as LocationOn,
   MdVideoCall as VideoCall,
   MdPhone as Phone,
+  MdDelete,
 } from "react-icons/md";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import weekday from "dayjs/plugin/weekday";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
@@ -68,6 +70,8 @@ import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoad
 // Initialize dayjs plugins
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(weekday);
+
 dayjs.extend(customParseFormat);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
@@ -132,7 +136,11 @@ export const Calendar = ({
       setBookedDays(dataReq.data.filter((day) => day.fullyBooked));
     }
   }
-
+  useEffect(() => {
+    if (navigator.language) {
+      dayjs.locale(navigator.language);
+    }
+  }, []);
   useEffect(() => {
     getAvailableDays();
   }, [displayMonth, rerender, adminId]);
@@ -140,6 +148,8 @@ export const Calendar = ({
   const getDaysInMonth = () => {
     const startOfMonth = displayMonth.startOf("month");
     const endOfMonth = displayMonth.endOf("month");
+
+    // This is the key change: start the week based on the current locale
     const startDate = startOfMonth.startOf("week");
     const endDate = endOfMonth.endOf("week");
 
@@ -153,7 +163,6 @@ export const Calendar = ({
 
     return days;
   };
-
   // Helper function to convert GMT stored date to user's timezone and get the date string
   const getDateInUserTimezone = (gmtDate) => {
     return dayjs.utc(gmtDate).tz(userTimezone).format("YYYY-MM-DD");
@@ -237,11 +246,9 @@ export const Calendar = ({
 
   const days = getDaysInMonth();
   const weekDays = isMobile
-    ? ["S", "M", "T", "W", "T", "F", "S"]
+    ? ["S", "M", "T", "W", "T", "F", "S"] // Keep this for display, but logic is handled by dayjs
     : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
   const monthYear = displayMonth.format("MMMM YYYY");
-
   return (
     <Paper
       elevation={0}
@@ -579,6 +586,28 @@ const TimeSlotManager = ({
       setAlertError("Failed to fetch slots. Please try again.");
     }
   };
+
+  const deleteDay = async (dayId) => {
+    if (type === "STAFF") {
+      setAlertError("Staff cannot delete slots. Please contact an admin.");
+      return;
+    }
+    const deleteReq = await handleRequestSubmit(
+      { id: dayId },
+      setToastLoading,
+      `admin/calendar/days/${dayId}`,
+      false,
+      "Deleting slot...",
+      false,
+      "DELETE"
+    );
+    if (deleteReq.status === 200) {
+      await getSlotsData();
+      if (onUpdate) {
+        await onUpdate();
+      }
+    }
+  };
   useEffect(() => {
     if (!isMultiDate) {
       getSlotsData();
@@ -787,6 +816,17 @@ const TimeSlotManager = ({
         </DialogContent>
 
         <DialogActions sx={{ p: 3, gap: 1 }}>
+          {dayId && (
+            <Button
+              startIcon={<MdDelete />}
+              color="error"
+              onClick={deleteDay}
+              variant="outlined"
+              sx={{ borderRadius: 2 }}
+            >
+              Delete
+            </Button>
+          )}
           <Button onClick={onClose} variant="outlined" sx={{ borderRadius: 2 }}>
             Cancel
           </Button>

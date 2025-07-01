@@ -46,6 +46,7 @@ import {
   addCutsomDate,
   createAvailableDatesForMoreThanOneDay,
   createAvailableDay,
+  deleteADay,
   deleteASlot,
   updateAvailableDay,
 } from "../services/main/calendarServices.js";
@@ -587,6 +588,24 @@ router.delete("/calendar/slots/:slotId", async (req, res) => {
     const { slotId } = req.params;
     const data = await deleteASlot({
       slotId,
+    });
+    res.status(200).json({
+      message: "Slot deleted successfully",
+      data: data,
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({
+      message: "Error deleting available slot",
+      error: e.message || "Internal Server Error",
+    });
+  }
+});
+router.delete("/calendar/days/:dayId", async (req, res) => {
+  try {
+    const { dayId } = req.params;
+    const data = await deleteADay({
+      dayId,
     });
     res.status(200).json({
       message: "Slot deleted successfully",

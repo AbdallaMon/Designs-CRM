@@ -24,6 +24,7 @@ export function OpenItemDialog({
   checkValidation,
   buttonType = "ICON",
   awaitCheck,
+  modelType,
 }) {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState(null);
@@ -35,7 +36,6 @@ export function OpenItemDialog({
     setOpen(false);
     setData(null);
   }
-
   async function handleSubmit() {
     const validation = awaitCheck
       ? await checkValidation(data)
@@ -108,6 +108,7 @@ export function OpenItemDialog({
               setData={setData}
               type={type}
               initialData={initialData}
+              modelType={modelType}
               {...componentProps}
             />
           )}

@@ -2,6 +2,7 @@
 import { Box, Button, Card, IconButton, Typography } from "@mui/material";
 import { MdVisibilityOff } from "react-icons/md";
 import ProsAndConsDialogButton from "./ProsAndCons";
+import { ensureHttps } from "@/app/helpers/functions/utility";
 
 export function PreviewItemTemplate({ template, item }) {
   const customStyles = template.customStyle;
@@ -26,7 +27,7 @@ export function PreviewItemTemplate({ template, item }) {
     right: 0,
     bottom: 0,
     backgroundImage: item.imageUrl
-      ? item.imageUrl
+      ? `url(${ensureHttps(item.imageUrl)})`
       : template.backgroundImage
       ? `url(${template.backgroundImage})`
       : "none",

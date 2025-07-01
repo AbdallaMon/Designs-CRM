@@ -4,11 +4,12 @@ import { Alert, Box, Grid2 as Grid } from "@mui/material";
 import { useEffect, useState } from "react";
 
 export function ImageItemViewer({
-  model,
   slug,
   item,
   filterComponent,
   createComponent,
+  modelType,
+  name,
   gridSize = { xs: 12, sm: 6, md: 4 },
   extra = {},
 }) {
@@ -43,7 +44,14 @@ export function ImageItemViewer({
         {FilterComponent && (
           <FilterComponent filter={filter} setFilter={setFilter} />
         )}
-        {CreateComponent && <CreateComponent onUpdate={fetchData} />}
+        {CreateComponent && (
+          <CreateComponent
+            onUpdate={fetchData}
+            modelType={modelType}
+            slug={slug}
+            name={name}
+          />
+        )}
       </Box>
       {!data || data?.length === 0 ? (
         <>
@@ -55,7 +63,14 @@ export function ImageItemViewer({
         <Grid spacing={1} container>
           {data.map((item) => (
             <Grid key={item.id} size={gridSize}>
-              <Item item={item} onUpdate={fetchData} {...extra} />
+              <Item
+                item={item}
+                onUpdate={fetchData}
+                modelType={modelType}
+                slug={slug}
+                name={name}
+                {...extra}
+              />
             </Grid>
           ))}
         </Grid>

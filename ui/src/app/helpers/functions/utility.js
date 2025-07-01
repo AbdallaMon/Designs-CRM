@@ -166,3 +166,8 @@ export const checkIfADesigner = (user) => {
 export const checkIfAdmin = (user) => {
   return user.role === "ADMIN" || user.role === "SUPER_ADMIN";
 };
+
+export function ensureHttps(url) {
+  if (typeof url !== "string") return url;
+  return url.startsWith("http://") ? url.replace("http://", "https://") : url;
+}

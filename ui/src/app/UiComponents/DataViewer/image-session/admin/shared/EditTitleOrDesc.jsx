@@ -19,7 +19,6 @@ export function EditTitleOrDescFields({
   const debouncedLocalData = useDebounce(localData, 200);
 
   // --- EFFECT 1: Smart Initialization ---
-  // This runs once to process `initialData` and set up the local state.
   useEffect(() => {
     if (localData !== null || !languages || languages.length === 0) {
       return;
@@ -64,7 +63,10 @@ export function EditTitleOrDescFields({
   useEffect(() => {
     // Only update parent if debounced data exists and is different from parent data
     if (debouncedLocalData && debouncedLocalData !== data) {
-      setData(debouncedLocalData);
+      setData((old) => ({
+        ...old,
+        [fieldName]: debouncedLocalData,
+      }));
     }
   }, [debouncedLocalData, data, setData]);
 

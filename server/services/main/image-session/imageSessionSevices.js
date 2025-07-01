@@ -237,9 +237,8 @@ export async function createMaterial({ data }) {
   return newMaterial;
 }
 
-export async function editMaterial({ data }) {
-  console.log(data, "data");
-  // const { edits, creates } = data;
+export async function editMaterial({ data, materialId }) {
+  const translations = data.translations;
   const dataToSubmit = {};
   if (data.templateId) {
     dataToSubmit.templateId = data.templateId;
@@ -247,14 +246,157 @@ export async function editMaterial({ data }) {
   if (data.imageUrl) {
     dataToSubmit.imageUrl = data.imageUrl;
   }
-  // await editAListOftext({ edits, type: "TITLE" });
+  if (translations.edits.titles) {
+    await editAListOftext({ edits: translations.edits.titles, type: "TITLE" });
+  }
+  if (translations.edits.descriptions) {
+    await editAListOftext({
+      edits: translations.edits.descriptions,
+      type: "DESCRIPTION",
+    });
+  }
+  if (translations.creates.titles) {
+    await createAListOfText({
+      creates: translations.creates.titles,
+      id: materialId,
+      modelId: "materialId",
+      type: "TITLE",
+    });
+  }
+  if (translations.creates.descriptions) {
+    await createAListOfText({
+      creates: translations.creates.descriptions,
+      id: materialId,
+      modelId: "materialId",
+      type: "DESCRIPTION",
+    });
+  }
+  console.log(dataToSubmit, "dataToSubmit");
+  if (Object.keys(dataToSubmit).length > 0) {
+    await prisma.material.update({
+      where: {
+        id: Number(materialId),
+      },
+      data: dataToSubmit,
+    });
+  }
+  return true;
+}
 
-  // await createAListOfText({
-  //   creates,
-  //   id: spaceId,
-  //   modelId: "materialId",
-  //   type: "TITLE",
-  // });
+export async function getStyles({ notArchived }) {
+  const where = {};
+  if (notArchived) {
+    where.isArchived = false;
+  }
+  return await prisma.style.findMany({
+    where,
+    include: {
+      title: {
+        select: {
+          text: true,
+          id: true,
+          languageId: true,
+          language: {
+            select: {
+              id: true,
+              code: true,
+            },
+          },
+        },
+      },
+      description: {
+        select: {
+          content: true,
+          id: true,
+          languageId: true,
+          language: {
+            select: {
+              id: true,
+              code: true,
+            },
+          },
+        },
+      },
+      template: true,
+    },
+  });
+}
+
+export async function createStyle({ data }) {
+  const titles = Object.values(data.titles);
+  const descriptions = Object.values(data.descriptions);
+  if (!data.templateId) {
+    throw new Error("Please select a template");
+  }
+  if (!data.titles || titles.length === 0) {
+    throw new Error("Please Fill all data.");
+  }
+
+  const titlesToCreate = createTextAndConnect(titles, "text");
+  let descriptionsToCreate = createTextAndConnect(descriptions, "content");
+
+  const dataToSubmit = {
+    templateId: Number(data.templateId),
+    title: {
+      create: titlesToCreate,
+    },
+  };
+  if (descriptionsToCreate && descriptionsToCreate.length > 0) {
+    dataToSubmit.description = {
+      create: descriptionsToCreate,
+    };
+  }
+  if (data.imageUrl) {
+    dataToSubmit.imageUrl = data.imageUrl;
+  }
+  const newStyle = await prisma.style.create({
+    data: dataToSubmit,
+  });
+  return newStyle;
+}
+
+export async function editStyle({ data, styleId }) {
+  const translations = data.translations;
+  const dataToSubmit = {};
+  if (data.templateId) {
+    dataToSubmit.templateId = data.templateId;
+  }
+  if (data.imageUrl) {
+    dataToSubmit.imageUrl = data.imageUrl;
+  }
+  if (translations.edits.titles) {
+    await editAListOftext({ edits: translations.edits.titles, type: "TITLE" });
+  }
+  if (translations.edits.descriptions) {
+    await editAListOftext({
+      edits: translations.edits.descriptions,
+      type: "DESCRIPTION",
+    });
+  }
+  if (translations.creates.titles) {
+    await createAListOfText({
+      creates: translations.creates.titles,
+      id: styleId,
+      modelId: "styleId",
+      type: "TITLE",
+    });
+  }
+  if (translations.creates.descriptions) {
+    await createAListOfText({
+      creates: translations.creates.descriptions,
+      id: styleId,
+      modelId: "styleId",
+      type: "DESCRIPTION",
+    });
+  }
+  if (Object.keys(dataToSubmit).length > 0) {
+    await prisma.style.update({
+      where: {
+        id: Number(styleId),
+      },
+      data: dataToSubmit,
+    });
+  }
   return true;
 }
 function getProAndConKey(type) {

@@ -173,8 +173,6 @@ export const PreviewTemplateCard = ({
   layout = ["title", "description", "consButton", "colors"],
   isEditItem,
 }) => {
-  console.log(template, "template");
-  console.log(customStyles, "customStyles");
   const cardDimensions = { minWidth: "300px", width: "100%" };
   const cardStyle = {
     position: "relative",

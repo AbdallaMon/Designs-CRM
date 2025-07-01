@@ -1,16 +1,23 @@
-import { OpenItemDialog } from "../shared/OpenItemDialog";
-import { useLanguage } from "@/app/helpers/hooks/useLanguage";
-import { TemplateAutocomplete } from "../shared/SelectATemplate";
 import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { Box } from "@mui/material";
-import { EditTitleOrDescFields } from "../shared/EditTitleOrDesc";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import { useAlertContext } from "@/app/providers/MuiAlert";
+import { useLanguage } from "@/app/helpers/hooks/useLanguage";
+import { OpenItemDialog } from "../OpenItemDialog";
+import { CreateTitleOrDesc } from "../CreateTitleOrDesc";
+import { TemplateAutocomplete } from "../SelectATemplate";
 
-export function EditMaterial({ onUpdate, material }) {
+export function CreateSessionItem({
+  onUpdate,
+  name = "Material",
+  slug = "material",
+  modelType = "MATERIAL",
+}) {
   const { languages } = useLanguage();
-  console.log(material, "material");
+  const { setLoading } = useToastContext();
+  const { setAlertError } = useAlertContext();
   async function checkValidation(data) {
-    console.log(data, "data");
     if (!data.templateId) {
       return {
         error: true,
@@ -51,42 +58,39 @@ export function EditMaterial({ onUpdate, material }) {
   }
   return (
     <OpenItemDialog
-      component={EditMaterialForm}
-      name={"Material"}
-      slug={"image-session/material"}
+      component={CreateSessionItemForm}
+      name={name}
+      modelType={modelType}
+      slug={`image-session/${slug}`}
       onUpdate={onUpdate}
       checkValidation={checkValidation}
       awaitCheck={true}
-      type="EDIT"
-      buttonType="ICON"
-      initialData={material}
+      type="CREATE"
+      buttonType="TEXT"
     />
   );
 }
-function EditMaterialForm({ data, setData, setValid, initialData }) {
+function CreateSessionItemForm({ data, setData, setValid, modelType }) {
   return (
     <>
-      <EditTitleOrDescFields
+      <CreateTitleOrDesc
         type="TITLE"
         data={data}
         setData={setData}
         setValid={setValid}
-        initialData={initialData}
       />
-      <EditTitleOrDescFields
+      <CreateTitleOrDesc
         type="DESCRIPTION"
         data={data}
         setData={setData}
         setValid={setValid}
-        initialData={initialData}
       />
       <Box my={1}>
         <TemplateAutocomplete
           onTemplateSelect={(id) => {
             setData((old) => ({ ...old, templateId: id }));
           }}
-          initialData={initialData}
-          type="MATERIAL"
+          type={modelType}
         />
       </Box>
       <SimpleFileInput
@@ -96,12 +100,6 @@ function EditMaterialForm({ data, setData, setValid, initialData }) {
         helperText="You can leave it empty if u want to render same template image"
         setData={setData}
       />
-      {initialData.imageUrl && (
-        <Box>
-          Uploaded image
-          <img src={initialData.imageUrl} width="200" height="200" />
-        </Box>
-      )}
     </>
   );
 }

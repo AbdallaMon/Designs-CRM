@@ -4,11 +4,15 @@ import {
   createMaterial,
   createProOrCon,
   createSpace,
+  createStyle,
   createTemplate,
   deleteProOrCon,
+  editMaterial,
   editProOrCon,
+  editStyle,
   getMaterials,
   getSpaces,
+  getStyles,
   getTemplates,
   getTemplatesIds,
   reorderProsAndCons,
@@ -129,7 +133,7 @@ router.get("/material", async (req, res) => {
     console.log("error in sapce", e.message);
     res
       .status(500)
-      .json({ message: "An error occurred while fetching Spaces", e });
+      .json({ message: "An error occurred while fetching material", e });
   }
 });
 router.post("/material", async (req, res) => {
@@ -145,11 +149,53 @@ router.post("/material", async (req, res) => {
 });
 router.put("/material/:materialId", async (req, res) => {
   try {
-    const data = await updateSpace({
+    const data = await editMaterial({
       data: req.body,
-      spaceId: req.params.spaceId,
+      materialId: req.params.materialId,
     });
-    res.status(200).json({ data, message: "Space updated" });
+    res.status(200).json({ data, message: "material updated" });
+  } catch (e) {
+    console.log(e, "e");
+
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching material", e });
+  }
+});
+
+// style
+
+router.get("/style", async (req, res) => {
+  try {
+    const data = await getStyles({
+      notArchived: req.query.notArchived && req.query.notArchived === "true",
+    });
+    res.status(200).json({ data });
+  } catch (e) {
+    console.log("error in sapce", e.message);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching style", e });
+  }
+});
+router.post("/style", async (req, res) => {
+  try {
+    const data = await createStyle({ data: req.body });
+    res.status(200).json({ data, message: "style created successfully" });
+  } catch (e) {
+    console.log(e, "e");
+    res
+      .status(500)
+      .json({ message: "An error occurred while creating material", e });
+  }
+});
+router.put("/style/:styleId", async (req, res) => {
+  try {
+    const data = await editStyle({
+      data: req.body,
+      styleId: req.params.styleId,
+    });
+    res.status(200).json({ data, message: "style updated" });
   } catch (e) {
     console.log(e, "e");
 
@@ -158,6 +204,7 @@ router.put("/material/:materialId", async (req, res) => {
       .json({ message: "An error occurred while fetching Spaces", e });
   }
 });
+//
 
 router.post("/pros-and-cons", async (req, res) => {
   try {

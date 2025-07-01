@@ -304,6 +304,31 @@ export async function deleteASlot({ slotId }) {
     where: { id: slotId },
   });
 }
+
+export async function deleteADay({ dayId }) {
+  const check = await prisma.availableSlot.findFirst({
+    where: {
+      dayId: Number(dayId),
+      isBooked: true,
+    },
+  });
+  if (check) {
+    throw new Error("Cant delete the day cause there is a booked slot");
+  }
+
+  await prisma.availableSlot.deleteMany({
+    where: {
+      dayId: Number(dayId),
+    },
+  });
+
+  await prisma.availableDay.delete({
+    where: {
+      id: Number(dayId),
+    },
+  });
+  return true;
+}
 export async function verifyAndExtractCalendarToken(token) {
   if (!token) throw new Error("No token provided");
 

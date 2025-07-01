@@ -23,6 +23,7 @@ import {
 import ImageManager from "./ImageManager";
 import SpaceManager from "./space/SpaceManager";
 import MaterialManager from "./material/Materialmanager";
+import StyleManager from "./style/StyleItemManager";
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -71,7 +72,7 @@ const GalleryDashboard = () => {
     {
       label: "Styles",
       icon: <MdStyle />,
-      component: <ImageManager />,
+      component: <StyleManager />,
       key: "styles",
     },
   ];
