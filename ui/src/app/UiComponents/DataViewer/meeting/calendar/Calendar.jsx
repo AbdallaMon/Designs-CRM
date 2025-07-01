@@ -591,10 +591,11 @@ const TimeSlotManager = ({
       setToastLoading,
       `admin/calendar/days/${dayId}`,
       false,
-      "Deleting slot...",
+      "Deleting Day...",
       false,
       "DELETE"
     );
+
     if (deleteReq.status === 200) {
       await getSlotsData();
       if (onUpdate) {

@@ -608,7 +608,7 @@ router.delete("/calendar/days/:dayId", async (req, res) => {
       dayId,
     });
     res.status(200).json({
-      message: "Slot deleted successfully",
+      message: "Day deleted successfully",
       data: data,
     });
   } catch (e) {
