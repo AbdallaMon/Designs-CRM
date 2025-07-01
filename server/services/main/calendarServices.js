@@ -308,7 +308,7 @@ export async function deleteASlot({ slotId }) {
 export async function deleteADay({ dayId }) {
   const check = await prisma.availableSlot.findFirst({
     where: {
-      dayId: Number(dayId),
+      availableDayId: Number(dayId),
       isBooked: true,
     },
   });
@@ -318,7 +318,7 @@ export async function deleteADay({ dayId }) {
 
   await prisma.availableSlot.deleteMany({
     where: {
-      dayId: Number(dayId),
+      availableDayId: Number(dayId),
     },
   });
 

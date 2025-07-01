@@ -614,7 +614,7 @@ router.delete("/calendar/days/:dayId", async (req, res) => {
   } catch (e) {
     console.log(e, "e");
     res.status(500).json({
-      message: "Error deleting available slot",
+      message: "Error deleting day",
       error: e.message || "Internal Server Error",
     });
   }
