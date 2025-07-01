@@ -22,6 +22,7 @@ import {
 } from "react-icons/md";
 import ImageManager from "./ImageManager";
 import SpaceManager from "./space/SpaceManager";
+import MaterialManager from "./material/Materialmanager";
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -64,7 +65,7 @@ const GalleryDashboard = () => {
     {
       label: "Materials",
       icon: <MdConstruction />,
-      component: <ImageManager />,
+      component: <MaterialManager />,
       key: "materials",
     },
     {

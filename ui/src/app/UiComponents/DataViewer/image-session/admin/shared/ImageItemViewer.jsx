@@ -10,6 +10,7 @@ export function ImageItemViewer({
   filterComponent,
   createComponent,
   gridSize = { xs: 12, sm: 6, md: 4 },
+  extra = {},
 }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
@@ -54,7 +55,7 @@ export function ImageItemViewer({
         <Grid spacing={1} container>
           {data.map((item) => (
             <Grid key={item.id} size={gridSize}>
-              <Item item={item} onUpdate={fetchData} />
+              <Item item={item} onUpdate={fetchData} {...extra} />
             </Grid>
           ))}
         </Grid>

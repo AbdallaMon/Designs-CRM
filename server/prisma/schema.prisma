@@ -862,8 +862,6 @@ model AvailableSlot {
   meetingReminderId Int?             @unique
 }
 
-
-/// design session
 model Language {
   id   Int    @id @default(autoincrement())
   code String @unique
@@ -924,6 +922,8 @@ model Pro {
   id         Int        @id @default(autoincrement())
   content    TextLong[] @relation("ProTexts")
   materialId Int?
+  order         Int         @default(0)
+
   material   Material?  @relation(fields: [materialId], references: [id])
   styleId    Int?
   style      Style?     @relation(fields: [styleId], references: [id])
@@ -932,6 +932,7 @@ model Pro {
 model Con {
   id         Int        @id @default(autoincrement())
   content    TextLong[] @relation("ConTexts")
+  order         Int         @default(0)
   materialId Int?
   material   Material?  @relation(fields: [materialId], references: [id])
   styleId    Int?
@@ -946,6 +947,8 @@ model Material {
   cons          Con[]
   imageUrl      String?
   isArchived    Boolean     @default(false)
+  templateId    Int?
+  template      Template?   @relation(fields: [templateId], references: [id])
   clientSessions ClientImageSession[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -960,6 +963,8 @@ model Style {
   imageUrl      String?
   isArchived    Boolean     @default(false)
   designImages  DesignImage[]
+  templateId    Int?
+  template      Template?   @relation(fields: [templateId], references: [id])
   clientSessions ClientImageSession[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -973,6 +978,8 @@ model ColorPattern {
   colors        ColorPatternColor[]
   order         Int         @default(0)
   isArchived    Boolean     @default(false)
+  templateId    Int?
+  template      Template?   @relation(fields: [templateId], references: [id])
   clientSessions ClientImageSession[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -1038,19 +1045,38 @@ enum TemplateType {
   STYLE
 }
 
-model TemplateBlock {
-  id         Int        @id @default(autoincrement())
-  type       TemplateType
-  order      Int
-  showTitle  Boolean     @default(true)
-  showImage  Boolean     @default(true)
-  showPros   Boolean     @default(false)
-  showCons   Boolean     @default(false)
-  showColors Boolean     @default(false)
-  showDescription Boolean     @default(false)
-  isArchived Boolean     @default(false)
-  blurValue Int @default(0)
+model Template {
+  id              Int       @id @default(autoincrement())
+  type            TemplateType
+  order           Int       @default(0)
+  showTitle       Boolean   @default(true)
+  showImage       Boolean   @default(true)
+  showPros        Boolean   @default(false)
+  showCons        Boolean   @default(false)
+  showColors      Boolean   @default(false)
+  showDescription Boolean   @default(false)
+  showOverlay     Boolean   @default(true)
+  isArchived      Boolean   @default(false)
+  blurValue       Int       @default(0)
+
+  backgroundImage String?   @db.Text
+  overlayColor    String?   @db.VarChar(50)
+  overlayOpacity  Float?    @default(0)
+  padding         String?   @db.VarChar(50)
+  paddingX        String?   @db.VarChar(50)
+  paddingY        String?   @db.VarChar(50)
+  borderRadius    String?   @db.VarChar(50)
+  colorSize       Int?
+  equalDimensions Boolean?  @default(false)
+  layout          Json?
+  colorsLayout    String    @default("vertical") @db.VarChar(100)
+  customStyle     Json?
+  
+  materials         Material[]
+  styles            Style[]
+  colorPatterns     ColorPattern[]
 }
+
 
 model ClientImageSession {
   id               Int                    @id @default(autoincrement())

@@ -8,6 +8,7 @@ export default function SimpleFileInput({
   variant = "filled",
   setData,
   handleUpload,
+  helperText = "Max file uploads : 50mb",
 }) {
   const [preview, setPreview] = useState();
   const [fileName, setFileName] = useState(""); // Track file name
@@ -62,7 +63,7 @@ export default function SimpleFileInput({
           type="file"
           InputLabelProps={{ shrink: true }}
           variant={variant}
-          helperText="Max file uploads : 50mb"
+          helperText={helperText}
           fullWidth
           accept={input && input?.accept}
           onChange={(e) => {

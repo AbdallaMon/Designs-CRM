@@ -6,14 +6,13 @@ export function CreateSpace({ onUpdate }) {
   const { languages } = useLanguage();
 
   function checkValidation(data) {
-    const titleArray = Object.values(data.titles);
     const allFilled = languages.every((lng) =>
-      titleArray?.[lng.id]?.text?.trim()
+      data.titles?.[lng.id]?.text?.trim()
     );
     if (!allFilled) {
       return {
         error: true,
-        meassage: "Please fill all titles in all languages",
+        message: "Please fill all titles in all languages",
       };
     }
 

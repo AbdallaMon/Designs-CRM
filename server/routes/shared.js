@@ -105,7 +105,6 @@ router.get("/client-leads", async (req, res) => {
   try {
     const searchParams = req.query;
     const user = getTokenData(req, res);
-
     const { limit, skip } = getPagination(req);
     searchParams.checkConsult = true;
 
@@ -127,9 +126,7 @@ router.get("/client-leads/deals", async (req, res) => {
   try {
     const searchParams = req.query;
     const token = getTokenData(req, res);
-    // if (token.role === "STAFF") {
-    //   searchParams.userId = token.id;
-    // }
+
     if (
       token.role !== "ADMIN" &&
       token.role !== "SUPER_ADMIN" &&
@@ -138,6 +135,7 @@ router.get("/client-leads/deals", async (req, res) => {
       searchParams.selfId = token.id;
       searchParams.userId = token.id;
     }
+
     const clientLeads = await getClientLeadsByDateRange({
       searchParams,
       isAdmin: token.role === "ADMIN" || token.role === "SUPER_ADMIN",

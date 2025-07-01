@@ -64,7 +64,6 @@ const SpaceItemCard = ({ item, onUpdate }) => {
           />
         </Box>
 
-        {/* Titles in different languages */}
         <Box mb={2}>
           <RenderTitle titles={item.title} />
         </Box>

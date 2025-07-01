@@ -27,6 +27,7 @@ import {
   getNotes,
 } from "../services/main/sharedServices.js";
 import calendarRoutes from "./calendar/client-calendar.js";
+import imageSessionRouter from "./image-session/client-image-session.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const priceRangeValues = {
@@ -48,6 +49,8 @@ const consultationLeadPrices = {
   CITY_VISIT: "1800",
 };
 router.use("/calendar", calendarRoutes);
+
+router.use("/image-session", imageSessionRouter);
 
 router.post("/new-lead", async (req, res) => {
   const body = req.body;

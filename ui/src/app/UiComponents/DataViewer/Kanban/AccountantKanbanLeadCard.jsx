@@ -112,7 +112,6 @@ const AccountantKanbanLeadCard = ({
       ...payment,
     },
   });
-  console.log(payment, "payment");
   const { setLoading } = useToastContext();
   const [menuAnchorEl, setMenuAnchorEl] = React.useState(null);
   const handleMenuClick = (event) => {

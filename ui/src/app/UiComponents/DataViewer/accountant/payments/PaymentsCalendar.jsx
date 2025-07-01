@@ -260,7 +260,6 @@ export const PaymentHistoryModal = ({ payment }) => {
         setLoading,
       });
       if (request.status === 200) {
-        console.log(request.data, "req.data");
         setInvoices(request.data);
       }
     }

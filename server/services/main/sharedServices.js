@@ -144,6 +144,7 @@ export async function getClientLeads({
 }
 
 export async function getClientLeadsByDateRange({ searchParams, isAdmin }) {
+  console.log(searchParams, "searchParams");
   const filters = JSON.parse(searchParams.filters);
   const where = {
     assignedTo: { isNot: null },

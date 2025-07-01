@@ -39,11 +39,6 @@ export default function AccountantPage() {
       title: "See Paid Payments",
       icon: <FaCheckCircle />,
     },
-    {
-      href: "/dashboard/payments/3d-status",
-      title: "View 3D Status",
-      icon: <FaCube />,
-    },
   ];
 
   return (

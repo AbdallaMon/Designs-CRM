@@ -54,8 +54,19 @@
 
 - \*Important : image will be linked and fitlered by spaces and design style only
 
+- Show tele for staff
+- Edit questions
+- Urgent check for deals
+- da
+- Remove name and email
+
+- selected date dont render items check please
+- price offer and objection not for primary
 - Client cant select a slot that is in its time has gone like for 25 and it is passed
+- beginer and super sales (can edit all things in sales)
+
 - And lead try to make each column load alone and has its own state or what u think?
+- code change color according to contract and can add more than contract
 - Sales choose type of contract
 - Total price is final price
 - Dashboard change projects to leads
@@ -90,6 +101,7 @@
   7- main website
   12
 
+- See pdf
 - Enhance loading the kanban (make it filter data in the backend)
 - New page for register make it en and without video
   تمام هضيف زرار انك تقدر ترسل ايميل بلينك جديد يقدر يدفع منه ويكمل تسجيل
@@ -98,8 +110,6 @@
   إمكانية تعديل ال lead
   موظف جديد يقدر يتابع ال no consulated lead
   ويقدر يشوف كل ليد تبع انهي موظف
-
-edits
 
 - Telegram?
 - Check telegram

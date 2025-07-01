@@ -127,6 +127,13 @@ styleId INT,
 FOREIGN KEY (materialId) REFERENCES Material(id) ON DELETE SET NULL ON UPDATE CASCADE,
 FOREIGN KEY (styleId) REFERENCES Style(id) ON DELETE SET NULL ON UPDATE CASCADE
 );
+-- Add `order` column to `Pro` table
+ALTER TABLE `Pro`
+ADD COLUMN `order` INT NOT NULL DEFAULT 0;
+
+-- Add `order` column to `Con` table
+ALTER TABLE `Con`
+ADD COLUMN `order` INT NOT NULL DEFAULT 0;
 
 -- Create the DesignImage table
 CREATE TABLE DesignImage (
@@ -146,22 +153,6 @@ designImageId INT NOT NULL,
 spaceId INT NOT NULL,
 FOREIGN KEY (designImageId) REFERENCES DesignImage(id) ON DELETE RESTRICT ON UPDATE CASCADE,
 FOREIGN KEY (spaceId) REFERENCES Space(id) ON DELETE RESTRICT ON UPDATE CASCADE
-);
-
--- Create the TemplateBlock table
-
-CREATE TABLE TemplateBlock (
-id INT PRIMARY KEY AUTO_INCREMENT,
-type ENUM('COLOR_PATTERN', 'MATERIAL', 'STYLE') NOT NULL,
-`order` INT NOT NULL,
-showTitle BOOLEAN DEFAULT TRUE,
-showImage BOOLEAN DEFAULT TRUE,
-showPros BOOLEAN DEFAULT FALSE,
-showCons BOOLEAN DEFAULT FALSE,
-showColors BOOLEAN DEFAULT FALSE,
-showDescription BOOLEAN DEFAULT FALSE,
-isArchived BOOLEAN DEFAULT FALSE,
-blurValue INT DEFAULT 0 -- Added new column with a default value of 0
 );
 
 -- Create the ClientImageSession table
@@ -271,3 +262,58 @@ FOREIGN KEY (`spaceId`) REFERENCES `Space`(`id`) ON DELETE SET NULL ON UPDATE CA
 -- Drop the old name columns from the Space table.
 ALTER TABLE `Space` DROP COLUMN `nameEn`;
 ALTER TABLE `Space` DROP COLUMN `nameAr`;
+
+CREATE TABLE `Template` (
+`id` INT AUTO_INCREMENT PRIMARY KEY,
+`type` ENUM('COLOR_PATTERN', 'MATERIAL', 'STYLE') NOT NULL,
+`order` INT NOT NULL,
+`showTitle` BOOLEAN DEFAULT true,
+`showImage` BOOLEAN DEFAULT true,
+`showPros` BOOLEAN DEFAULT false,
+`showCons` BOOLEAN DEFAULT false,
+`showColors` BOOLEAN DEFAULT false,
+`showDescription` BOOLEAN DEFAULT false,
+`isArchived` BOOLEAN DEFAULT false,
+`blurValue` INT DEFAULT 0,
+`customStyle` LONGTEXT
+);
+
+ALTER TABLE `Material`
+ADD COLUMN `templateId` INT NULL,
+ADD CONSTRAINT `fk_material_template`
+FOREIGN KEY (`templateId`) REFERENCES `Template`(`id`) ON DELETE SET NULL;
+
+ALTER TABLE `Style`
+ADD COLUMN `templateId` INT NULL,
+ADD CONSTRAINT `fk_style_template`
+FOREIGN KEY (`templateId`) REFERENCES `Template`(`id`) ON DELETE SET NULL;
+
+ALTER TABLE `ColorPattern`
+ADD COLUMN `templateId` INT NULL,
+ADD CONSTRAINT `fk_colorpattern_template`
+FOREIGN KEY (`templateId`) REFERENCES `Template`(`id`) ON DELETE SET NULL;
+
+-- Add / modify columns to match the model
+ALTER TABLE `Template`
+MODIFY COLUMN `order` INT NOT NULL DEFAULT 0,
+MODIFY COLUMN `showTitle` BOOLEAN NOT NULL DEFAULT true,
+MODIFY COLUMN `showImage` BOOLEAN NOT NULL DEFAULT true,
+MODIFY COLUMN `showPros` BOOLEAN NOT NULL DEFAULT false,
+MODIFY COLUMN `showCons` BOOLEAN NOT NULL DEFAULT false,
+MODIFY COLUMN `showColors` BOOLEAN NOT NULL DEFAULT false,
+MODIFY COLUMN `showDescription` BOOLEAN NOT NULL DEFAULT false,
+MODIFY COLUMN `isArchived` BOOLEAN NOT NULL DEFAULT false,
+MODIFY COLUMN `blurValue` INT NOT NULL DEFAULT 0,
+ADD COLUMN `overlayOpacity` FLOAT DEFAULT 0,
+ADD COLUMN `equalDimensions` BOOLEAN DEFAULT false,
+ADD COLUMN `showOverlay` BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS `backgroundImage` TEXT,
+ADD COLUMN IF NOT EXISTS `overlayColor` VARCHAR(50),
+ADD COLUMN IF NOT EXISTS `padding` VARCHAR(50),
+ADD COLUMN IF NOT EXISTS `paddingX` VARCHAR(50),
+ADD COLUMN IF NOT EXISTS `paddingY` VARCHAR(50),
+ADD COLUMN IF NOT EXISTS `borderRadius` VARCHAR(50),
+ADD COLUMN IF NOT EXISTS `colorSize` INT,
+ADD COLUMN IF NOT EXISTS `layout` JSON,
+ADD COLUMN IF NOT EXISTS `colorsLayout` VARCHAR(100) NOT NULL DEFAULT 'vertical',
+ADD COLUMN IF NOT EXISTS `customStyle` JSON;

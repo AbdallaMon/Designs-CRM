@@ -23,6 +23,7 @@ export function OpenItemDialog({
   onUpdate,
   checkValidation,
   buttonType = "ICON",
+  awaitCheck,
 }) {
   const [open, setOpen] = useState(false);
   const [data, setData] = useState(null);
@@ -36,9 +37,12 @@ export function OpenItemDialog({
   }
 
   async function handleSubmit() {
-    const valid = checkValidation(data).error;
-    if (!valid) {
-      setAlertError("Please fill all required fields");
+    const validation = awaitCheck
+      ? await checkValidation(data)
+      : checkValidation(data);
+
+    if (validation.error) {
+      setAlertError(validation.message);
       return;
     }
     const url =
