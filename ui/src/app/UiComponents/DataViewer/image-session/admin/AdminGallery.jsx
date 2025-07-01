@@ -22,8 +22,8 @@ import {
 } from "react-icons/md";
 import ImageManager from "./ImageManager";
 import SpaceManager from "./space/SpaceManager";
-import MaterialManager from "./material/Materialmanager";
 import StyleManager from "./style/StyleItemManager";
+import MaterialManager from "./material/MaterialManager.jsx";
 
 function TabPanel({ children, value, index, ...other }) {
   return (
