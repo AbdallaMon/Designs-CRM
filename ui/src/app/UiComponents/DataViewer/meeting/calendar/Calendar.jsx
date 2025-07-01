@@ -581,7 +581,7 @@ const TimeSlotManager = ({
     }
   };
 
-  const deleteDay = async (dayId) => {
+  const deleteDay = async () => {
     if (type === "STAFF") {
       setAlertError("Staff cannot delete slots. Please contact an admin.");
       return;
