@@ -366,7 +366,6 @@ export const CategorySection = ({ category, clientLeadId }) => {
       onMouseLeave={() => setIsHovered(false)}
     >
       <CardContent sx={{ p: 0 }}>
-        {/* Header */}
         <Box
           sx={{
             p: 3,
@@ -418,7 +417,7 @@ export const CategorySection = ({ category, clientLeadId }) => {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                {category.label || category.name}
+                {category.name[0]} - {category.name} {category.label}
               </Typography>
             </Box>
 

@@ -24,7 +24,6 @@ import { MdQuestionAnswer, MdClose } from "react-icons/md";
 const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const theme = useTheme();
   useEffect(() => {
     if (!open || !clientLeadId) return;
 
@@ -89,7 +88,7 @@ const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
             <MdQuestionAnswer size={24} />
           </Box>
           <Typography variant="h4" sx={{ fontWeight: 700 }}>
-            Meeting Questions
+            SPIN
           </Typography>
         </Box>
         <IconButton
@@ -139,12 +138,10 @@ const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
                   in={true}
                   timeout={400 + index * 200}
                 >
-                  <div>
-                    <CategorySection
-                      category={category}
-                      clientLeadId={clientLeadId}
-                    />
-                  </div>
+                  <CategorySection
+                    category={category}
+                    clientLeadId={clientLeadId}
+                  />
                 </Slide>
               ))}
             </Box>
