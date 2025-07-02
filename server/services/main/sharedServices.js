@@ -2612,6 +2612,9 @@ export const getNextMeetings = async ({ limit, skip, searchParams }) => {
   const nearestMeetingReminders = await prisma.meetingReminder.findMany({
     where: {
       status: "IN_PROGRESS",
+      time: {
+        not: null,
+      },
       ...staffFilter,
 
       clientLead: {
