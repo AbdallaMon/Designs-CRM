@@ -1,3 +1,4 @@
+"use client";
 import { getData } from "@/app/helpers/functions/getData";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useEffect, useState } from "react";
@@ -32,6 +33,7 @@ const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
         url: `shared/questions/question-types/${clientLeadId}?`,
         setLoading,
       });
+      console.log(response, "response2");
       if (response.status === 200) {
         setCategories(response.data);
       }
@@ -118,7 +120,7 @@ const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
             >
               <CircularProgress size={64} thickness={4} />
             </Box>
-          ) : categories.length === 0 ? (
+          ) : categories && categories.length === 0 ? (
             <Alert
               severity="info"
               sx={{
@@ -131,19 +133,14 @@ const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
             </Alert>
           ) : (
             <Box>
-              {categories.map((category, index) => (
-                <Slide
-                  key={category.id}
-                  direction="up"
-                  in={true}
-                  timeout={400 + index * 200}
-                >
+              {categories &&
+                categories.map((category, index) => (
                   <CategorySection
+                    key={category.id}
                     category={category}
                     clientLeadId={clientLeadId}
                   />
-                </Slide>
-              ))}
+                ))}
             </Box>
           )}
         </Container>

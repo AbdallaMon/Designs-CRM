@@ -341,7 +341,6 @@ export const CategorySection = ({ category, clientLeadId }) => {
       onAddCustomQuestion(category.id);
     }
   };
-
   return (
     <Card
       sx={{

@@ -139,9 +139,12 @@ export const Calendar = ({
     const endOfMonth = displayMonth.endOf("month");
 
     // This is the key change: start the week based on the current locale
-    const startDate = startOfMonth.startOf("week");
+    const userTimezone = dayjs.tz.guess();
+    let startDate = startOfMonth.startOf("week");
     const endDate = endOfMonth.endOf("week");
-
+    const submittedUtcDate = dayjs.utc(startDate);
+    const offsetInMinutes = dayjs().tz(userTimezone).utcOffset(); // e.g. 180
+    startDate = submittedUtcDate.add(offsetInMinutes, "minute");
     const days = [];
     let current = startDate;
 
@@ -149,7 +152,6 @@ export const Calendar = ({
       days.push(current);
       current = current.add(1, "day");
     }
-
     return days;
   };
   // Helper function to convert GMT stored date to user's timezone and get the date string
@@ -161,10 +163,11 @@ export const Calendar = ({
   const isPastInUserTimezone = (dayToCheck) => {
     const todayInUserTz = dayjs().tz(userTimezone).startOf("day");
     const dayInUserTz = dayjs(dayToCheck).tz(userTimezone).startOf("day");
-    return dayInUserTz.isBefore(todayInUserTz);
+    return dayToCheck.isBefore(todayInUserTz);
   };
 
   const getDayStatus = (day, index) => {
+    const log = index === 2;
     const dayStrInUserTz = day.format("YYYY-MM-DD");
 
     // Find available day by converting stored GMT dates to user timezone
@@ -188,7 +191,8 @@ export const Calendar = ({
       : selectedDate && !isAdmin && dayjs(selectedDate).isSame(day, "day");
 
     const isPastDate = isPastInUserTimezone(day);
-
+    if (log) {
+    }
     return {
       hasAvailableSlots,
       isFullyBooked,
@@ -326,10 +330,10 @@ export const Calendar = ({
                   cursor: canClick ? "pointer" : "not-allowed",
                   borderRadius: 2,
                   m: 0.5,
-                  bgcolor: selected
+                  backgroundColor: selected
                     ? "primary.main"
                     : available
-                    ? "success.50"
+                    ? lighten(theme.palette.success.main, 0.85)
                     : "background.paper",
                   color: selected
                     ? "primary.contrastText"
@@ -337,7 +341,9 @@ export const Calendar = ({
                     ? "text.disabled"
                     : "text.primary",
                   border: "1px solid",
-                  borderColor: selected
+                  borderColor: !canClick
+                    ? "transparent"
+                    : selected
                     ? "primary.main"
                     : available
                     ? "success.main"
@@ -359,6 +365,18 @@ export const Calendar = ({
                 <Typography
                   variant={isMobile ? "caption" : "body2"}
                   fontWeight={selected ? 600 : 400}
+                  sx={{
+                    color:
+                      !currentMonth || past
+                        ? "text.disabled"
+                        : !canClick && type === "CLIENT"
+                        ? "red"
+                        : selected
+                        ? "primary.contrastText"
+                        : !currentMonth || past
+                        ? "text.disabled"
+                        : "text.priamry",
+                  }}
                 >
                   {day.date()}
                 </Typography>
@@ -390,11 +408,11 @@ export const Calendar = ({
               <Box
                 width={12}
                 height={12}
-                bgcolor="warning.light"
+                bgcolor="error.main"
                 borderRadius={1}
               />
               <Typography variant="caption" fontWeight="500">
-                Booked
+                Un available
               </Typography>
             </Box>
           </Grid>
