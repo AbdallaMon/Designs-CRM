@@ -68,7 +68,6 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
   const [sessionData, setSessionData] = useState({
     selectedDate: null,
     selectedSlot: null,
-
     selectedTimezone: tz,
     dayId: null,
     token,
@@ -209,6 +208,7 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
               setSessionData={setSessionData}
               setError={setError}
               setActiveStep={setActiveStep}
+              type="CLIENT"
             />
           </Box>
         );

@@ -91,7 +91,7 @@ export const Calendar = ({
   const [loading, setLoading] = useState(true);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
+  const [loadingNavigator, setLoadingNavigator] = useState(true);
   async function getAvailableDays() {
     if (token) {
       const tokenData = await getData({
@@ -112,7 +112,7 @@ export const Calendar = ({
           ...tokenData.data,
         }));
         if (tokenData.data.time) {
-          setActiveStep(4);
+          setActiveStep(3);
         }
       }
     }
@@ -131,8 +131,15 @@ export const Calendar = ({
     }
   }
   useEffect(() => {
-    if (navigator.language) {
-      dayjs.locale(navigator.language);
+    if (typeof window !== "undefined" && typeof navigator !== "undefined") {
+      console.log(navigator, "navigator");
+
+      if (navigator.language) {
+        dayjs.locale(navigator.language);
+        setLoadingNavigator(false);
+      }
+    } else {
+      setLoadingNavigator(true);
     }
   }, []);
   useEffect(() => {
@@ -192,7 +199,6 @@ export const Calendar = ({
       ? selectedDates.some((d) => dayjs(d).isSame(day, "day"))
       : selectedDate && !isAdmin && dayjs(selectedDate).isSame(day, "day");
 
-    // Check if date is past using user's timezone
     const isPastDate = isPastInUserTimezone(day);
 
     return {
@@ -253,6 +259,7 @@ export const Calendar = ({
         overflow: "hidden",
       }}
     >
+      {loadingNavigator && <FullScreenLoader />}
       <Box
         sx={{
           bgcolor: "primary.main",
@@ -356,7 +363,10 @@ export const Calendar = ({
                       }
                     : {},
                   transition: "all 0.2s ease",
-                  opacity: !currentMonth || past ? 0.4 : 1,
+                  opacity:
+                    (!canClick && type === "CLIENT") || !currentMonth || past
+                      ? 0.4
+                      : 1,
                 }}
               >
                 <Typography

@@ -31,6 +31,7 @@ router.get("/available-days", async (req, res) => {
     const data = await getAvailableDays({
       month: month,
       ...tokenData,
+      type: "CLIENT",
     });
     res.status(200).json({
       message: "Available days fetched successfully",

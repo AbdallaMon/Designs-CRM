@@ -35,12 +35,13 @@
 - Fix meeting days on fetching single meeting it show the day as the day before when i fetch 12 it get 11
 - Send email to client with the meeting time confirmation
 - We need to make something that send email to client 15 minute before meeting and using client timezone or i think gmt is better
-
 - Show tele for staff
 - Edit questions
 - Remove name and email
-
+- Make dates if not selectable make them looks different
 - Selected date dont render items check please
+
+- New type contact init just non consulted lead and new lead and can search inside them
 - Price offer and objection not for primary
 - Client cant select a slot that is in its time has gone like for 25 and it is passed
 - Beginer and super sales (can edit all things in sales)

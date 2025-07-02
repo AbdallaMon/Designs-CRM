@@ -10,7 +10,7 @@ import { sendReminderCreatedToClient } from "./emailTemplates.js";
 dayjs.extend(timezone);
 dayjs.extend(utc);
 
-export async function getAvailableDays({ month, adminId, role = true }) {
+export async function getAvailableDays({ month, adminId, role = true, type }) {
   const start = dayjs(month).utc().startOf("month");
   const end = dayjs(month).utc().endOf("month");
   if (!role && !adminId) {
@@ -31,15 +31,22 @@ export async function getAvailableDays({ month, adminId, role = true }) {
     }
     return mockDays;
   }
-
-  const availableDays = await prisma.availableDay.findMany({
-    where: {
-      userId: Number(adminId),
-      date: {
-        gte: start.toDate(),
-        lte: end.toDate(),
-      },
+  const where = {
+    userId: Number(adminId),
+    date: {
+      gte: start.toDate(),
+      lte: end.toDate(),
     },
+  };
+  if (type === "CLIENT") {
+    where.slots = {
+      some: {
+        isBooked: false,
+      },
+    };
+  }
+  const availableDays = await prisma.availableDay.findMany({
+    where,
     select: {
       id: true,
       date: true,
@@ -225,6 +232,7 @@ export async function getAvailableSlotsForDay({
   dayId,
   role = true,
   timezone = "Asia/Dubai",
+  type,
 }) {
   if (!role && !adminId) {
     throw new Error("AdminId is required");
@@ -260,12 +268,12 @@ export async function getAvailableSlotsForDay({
   }
   const startOfDay = dayjs(date).utc().startOf("day").toDate();
   const endOfDay = dayjs(date).utc().endOf("day").toDate();
-
+  const where = {
+    id: Number(dayId),
+  };
   const day = dayId
     ? await prisma.availableDay.findUnique({
-        where: {
-          id: Number(dayId),
-        },
+        where,
       })
     : await prisma.availableDay.findFirst({
         where: {
