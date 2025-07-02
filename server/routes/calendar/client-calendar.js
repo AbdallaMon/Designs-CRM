@@ -54,6 +54,7 @@ router.get("/slots/:dayId", async (req, res) => {
       dayId: req.params.dayId,
       ...tokenData,
       timezone: req.query.timezone,
+      type: "CLIENT",
     });
     res.status(200).json({
       message: "Available days fetched successfully",

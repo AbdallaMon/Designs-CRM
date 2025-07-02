@@ -39,12 +39,18 @@ export async function getAvailableDays({ month, adminId, role = true, type }) {
     },
   };
   if (type === "CLIENT") {
+    const now = dayjs().toDate();
+
     where.slots = {
       some: {
         isBooked: false,
+        startTime: {
+          gt: now,
+        },
       },
     };
   }
+
   const availableDays = await prisma.availableDay.findMany({
     where,
     select: {
@@ -285,11 +291,19 @@ export async function getAvailableSlotsForDay({
         },
       });
   if (!day) {
-    return []; // No available day found for the given date
+    return [];
+  }
+  const now = dayjs().toDate();
+  const slotWhere = {};
+  if (type === "CLIENT") {
+    slotWhere.startTime = {
+      gt: now,
+    };
   }
   return await prisma.availableSlot.findMany({
     where: {
       availableDayId: day.id,
+      ...slotWhere,
     },
     orderBy: { startTime: "asc" },
   });
