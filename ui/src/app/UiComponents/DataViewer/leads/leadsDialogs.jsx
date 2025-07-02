@@ -682,8 +682,6 @@ export const NewClientMeetingDialog = ({
   setMeetingReminders,
 }) => {
   const [meetingData, setMeetingData] = useState({
-    reminderReason: "",
-    type: "",
     isAdmin: false,
     adminId: null,
   });
@@ -712,8 +710,6 @@ export const NewClientMeetingDialog = ({
 
   function onClose() {
     setMeetingData({
-      reminderReason: "",
-      type: "",
       isAdmin: false,
       adminId: null,
     });
@@ -722,9 +718,7 @@ export const NewClientMeetingDialog = ({
 
   const handleAddNewCall = async () => {
     const requestData = {
-      reminderReason: meetingData.reminderReason,
       userId: user.id,
-      type: meetingData.type,
       isAdmin: meetingData.isAdmin,
       ...(meetingData.isAdmin &&
         meetingData.adminId && { adminId: meetingData.adminId }),
@@ -756,8 +750,6 @@ export const NewClientMeetingDialog = ({
         );
       }
       setMeetingData({
-        reminderReason: "",
-        type: "",
         isAdmin: false,
         adminId: null,
       });
@@ -830,58 +822,6 @@ export const NewClientMeetingDialog = ({
         <DialogContent sx={{ p: 0 }}>
           <Paper elevation={0} sx={{ p: 4 }}>
             <Stack spacing={4}>
-              {/* Meeting Type Section */}
-              <Box>
-                <Typography
-                  variant="h6"
-                  gutterBottom
-                  sx={{ fontWeight: 600, color: "text.primary" }}
-                >
-                  Meeting Details
-                </Typography>
-                <Stack spacing={3}>
-                  <FormControl fullWidth>
-                    <InputLabel id="meeting-type-label">
-                      Meeting Type *
-                    </InputLabel>
-                    <Select
-                      labelId="meeting-type-label"
-                      value={meetingData.type}
-                      label="Meeting Type *"
-                      onChange={(e) =>
-                        handleMeetingDataChange("type", e.target.value)
-                      }
-                      sx={{ borderRadius: 2 }}
-                    >
-                      {meetingTypes.map((type) => (
-                        <MenuItem key={type.value} value={type.value}>
-                          {type.label}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                  <TextField
-                    label="Reminder Reason"
-                    value={meetingData.reminderReason}
-                    onChange={(e) =>
-                      handleMeetingDataChange("reminderReason", e.target.value)
-                    }
-                    fullWidth
-                    multiline
-                    rows={3}
-                    placeholder="Enter the purpose or agenda for this meeting..."
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        borderRadius: 2,
-                      },
-                    }}
-                  />
-                </Stack>
-              </Box>
-
-              <Divider />
-
-              {/* Admin Assignment Section */}
               <Box>
                 <Typography
                   variant="h6"
@@ -987,9 +927,7 @@ export const NewClientMeetingDialog = ({
             onClick={handleAddNewCall}
             variant="contained"
             color="primary"
-            disabled={
-              !meetingData.type || (meetingData.isAdmin && !meetingData.adminId)
-            }
+            disabled={meetingData.isAdmin && !meetingData.adminId}
             sx={{
               borderRadius: 2,
               textTransform: "none",

@@ -68,8 +68,7 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
   const [sessionData, setSessionData] = useState({
     selectedDate: null,
     selectedSlot: null,
-    clientEmail: "",
-    clientName: "",
+
     selectedTimezone: tz,
     dayId: null,
     token,
@@ -103,13 +102,7 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
     getTimezoneOptions();
   }, []);
 
-  const steps = [
-    "Select Date",
-    "Choose Time",
-    "Enter Details",
-    "Confirm",
-    "Success",
-  ];
+  const steps = ["Select Date", "Choose Time", "Confirm", "Success"];
 
   const handleNext = () => {
     if (activeStep === 0 && sessionData.dayId) {
@@ -133,8 +126,6 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
       selectedDate: parsedDate,
       dayId: day ? day.id : null,
       selectedSlot: null,
-      clientEmail: "",
-      clientName: "",
     }));
   };
 
@@ -147,11 +138,7 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
   };
 
   const handleBooking = async () => {
-    if (
-      sessionData.selectedSlot &&
-      sessionData.clientEmail &&
-      sessionData.clientName
-    ) {
+    if (sessionData.selectedSlot) {
       const bookingReq = await handleRequestSubmit(
         sessionData,
         setToastLoading,
@@ -267,82 +254,6 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
         );
       case 2:
         return (
-          <Fade in timeout={500}>
-            <Box>
-              <Typography variant="h6" gutterBottom>
-                Tell us about yourself
-              </Typography>
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                gutterBottom
-                mb={3}
-              >
-                We&#39;ll use this information to send you booking confirmations
-              </Typography>
-
-              <Stack spacing={3}>
-                <TextField
-                  fullWidth
-                  label="Full Name"
-                  value={sessionData.clientName}
-                  onChange={(e) => {
-                    setSessionData((prev) => ({
-                      ...prev,
-                      clientName: e.target.value,
-                    }));
-                  }}
-                  required
-                  InputProps={{
-                    startAdornment: (
-                      <MdPerson
-                        style={{
-                          marginRight: 8,
-                          color: theme.palette.text.secondary,
-                        }}
-                      />
-                    ),
-                  }}
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 2,
-                    },
-                  }}
-                />
-                <TextField
-                  fullWidth
-                  label="Email Address"
-                  type="email"
-                  value={sessionData.clientEmail}
-                  onChange={(e) => {
-                    setSessionData((prev) => ({
-                      ...prev,
-                      clientEmail: e.target.value,
-                    }));
-                  }}
-                  required
-                  InputProps={{
-                    startAdornment: (
-                      <MdEmail
-                        style={{
-                          marginRight: 8,
-                          color: theme.palette.text.secondary,
-                        }}
-                      />
-                    ),
-                  }}
-                  sx={{
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 2,
-                    },
-                  }}
-                />
-              </Stack>
-            </Box>
-          </Fade>
-        );
-      case 3:
-        return (
           <Box>
             <Fade in timeout={500}>
               <Box>
@@ -401,26 +312,6 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
                       </Box>
 
                       <Divider />
-
-                      <Box display="flex" alignItems="center" gap={2}>
-                        <Avatar sx={{ bgcolor: "primary.main" }}>
-                          <MdPerson />
-                        </Avatar>
-                        <Box>
-                          <Typography
-                            variant="subtitle2"
-                            color="text.secondary"
-                          >
-                            Contact
-                          </Typography>
-                          <Typography variant="body1" fontWeight={600}>
-                            {sessionData.clientName}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {sessionData.clientEmail}
-                          </Typography>
-                        </Box>
-                      </Box>
                     </Stack>
                   </CardContent>
                 </Card>
@@ -428,7 +319,7 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
             </Fade>
           </Box>
         );
-      case 4: // Success step
+      case 3: // Success step
         return (
           <Fade in timeout={500}>
             <Box textAlign="center">
@@ -682,7 +573,6 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
               {activeStep === steps.length - 2 ? (
                 <Button
                   onClick={handleBooking}
-                  disabled={!sessionData.clientEmail || !sessionData.clientName}
                   variant="contained"
                   startIcon={<MdCheckCircle />}
                   fullWidth
@@ -694,9 +584,7 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
                   onClick={handleNext}
                   disabled={
                     (activeStep === 0 && !sessionData.selectedDate) ||
-                    (activeStep === 1 && !sessionData.selectedSlot) ||
-                    (activeStep === 2 &&
-                      (!sessionData.clientName || !sessionData.clientEmail))
+                    (activeStep === 1 && !sessionData.selectedSlot)
                   }
                   variant="contained"
                   endIcon={<MdArrowForward />}
@@ -731,9 +619,6 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
                         <Button
                           variant="contained"
                           onClick={handleBooking}
-                          disabled={
-                            !sessionData.clientEmail || !sessionData.clientName
-                          }
                           startIcon={<MdCheckCircle />}
                         >
                           Confirm Booking
@@ -744,10 +629,7 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
                           onClick={handleNext}
                           disabled={
                             (index === 0 && !sessionData.selectedDate) ||
-                            (index === 1 && !sessionData.selectedSlot) ||
-                            (index === 2 &&
-                              (!sessionData.clientName ||
-                                !sessionData.clientEmail))
+                            (index === 1 && !sessionData.selectedSlot)
                           }
                         >
                           Continue

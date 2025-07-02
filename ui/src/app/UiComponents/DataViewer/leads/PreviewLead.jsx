@@ -34,12 +34,9 @@ import {
 import {
   ClientLeadStatus,
   KanbanLeadsStatus,
-  LeadCategory,
-  simpleModalStyle,
   statusColors,
 } from "@/app/helpers/constants.js";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader.jsx";
-import { getData } from "@/app/helpers/functions/getData.js";
 import { AiOutlineSwap } from "react-icons/ai";
 import {
   checkIfAdmin,
@@ -441,41 +438,6 @@ const LeadContent = ({
               <ClientImageSessionManager clientLeadId={lead.id} />
             )}
 
-            {/* {admin && (
-              <EditFieldButton
-                text={"Client name"}
-                path={`admin/client/update/${lead.client.id}`}
-                reqType="PUT"
-                field="name"
-                onUpdate={(data) => {
-                  if (setLead) {
-                    setLead((oldLead) => ({
-                      ...oldLead,
-                      client: { ...oldLead.client, name: data.name },
-                    }));
-                  }
-                  if (setleads) {
-                    setleads((oldLeads) =>
-                      oldLeads.map((l) => {
-                        if (l.id === lead.id) {
-                          return {
-                            ...lead,
-                            client: {
-                              ...lead.client,
-                              name: data.name,
-                            },
-                          };
-                        } else {
-                          return l;
-                        }
-                      })
-                    );
-                  }
-                }}
-              />
-            )} */}
-
-            {/* Finalized Lead Actions */}
             {lead.status === "FINALIZED" && (
               <Chip
                 label={`Final Price: ${lead.averagePrice}`}
@@ -485,7 +447,6 @@ const LeadContent = ({
               />
             )}
 
-            {/* PDF Generation */}
             <Button
               variant="outlined"
               size="small"

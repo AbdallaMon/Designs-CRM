@@ -23,9 +23,6 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
   const isAdmin = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
   const { setLoading } = useToastContext();
 
-  // Early return if user is STAFF
-  if (user.role === "STAFF") return null;
-
   const handleEdit = () => {
     setIsEditing(true);
   };
