@@ -41,9 +41,9 @@
 - Make dates if not selectable make them looks different
 - Selected date dont render items check please
 - Add image to eng ahmed( the one for facebook share ect)
+- Price offer and objection not for primary
 
 - New type contact init just non consulted lead and new lead and can search inside them
-- Price offer and objection not for primary
 - Client cant select a slot that is in its time has gone like for 25 and it is passed
 - Beginer and super sales (can edit all things in sales)
 - And lead try to make each column load alone and has its own state or what u think?

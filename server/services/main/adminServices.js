@@ -65,6 +65,8 @@ export async function getAllUsers(searchParams) {
       email: true,
       role: true,
       subRoles: true,
+      isPrimary: true,
+      isSuperSales: true,
     },
   });
 
