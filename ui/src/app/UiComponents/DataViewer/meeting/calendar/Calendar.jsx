@@ -69,7 +69,7 @@ dayjs.extend(weekday);
 dayjs.extend(customParseFormat);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
-
+dayjs.locale("en");
 export const Calendar = ({
   selectedDate,
   onDateSelect,
@@ -91,7 +91,6 @@ export const Calendar = ({
   const [loading, setLoading] = useState(true);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const [loadingNavigator, setLoadingNavigator] = useState(true);
   async function getAvailableDays() {
     if (token) {
       const tokenData = await getData({
@@ -130,18 +129,7 @@ export const Calendar = ({
       setBookedDays(dataReq.data.filter((day) => day.fullyBooked));
     }
   }
-  useEffect(() => {
-    if (typeof window !== "undefined" && typeof navigator !== "undefined") {
-      console.log(navigator, "navigator");
 
-      if (navigator.language) {
-        dayjs.locale(navigator.language);
-        setLoadingNavigator(false);
-      }
-    } else {
-      setLoadingNavigator(true);
-    }
-  }, []);
   useEffect(() => {
     getAvailableDays();
   }, [displayMonth, rerender, adminId]);
@@ -259,7 +247,6 @@ export const Calendar = ({
         overflow: "hidden",
       }}
     >
-      {loadingNavigator && <FullScreenLoader />}
       <Box
         sx={{
           bgcolor: "primary.main",

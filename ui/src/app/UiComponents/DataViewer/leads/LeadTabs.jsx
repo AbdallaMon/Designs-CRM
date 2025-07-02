@@ -32,14 +32,7 @@ import {
 import { InProgressCall } from "@/app/UiComponents/DataViewer/leads/InProgressCall.jsx";
 import dayjs from "dayjs";
 import { useAuth } from "@/app/providers/AuthProvider";
-import {
-  FaFileImage,
-  FaFilePdf,
-  FaEye,
-  FaHandshake,
-  FaQuestionCircle,
-  FaUser,
-} from "react-icons/fa";
+import { FaFileImage, FaFilePdf, FaEye, FaUser } from "react-icons/fa";
 import { AddFiles } from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
 import {
   Card,
@@ -50,7 +43,7 @@ import {
   ListItem,
   IconButton,
   Tooltip,
-  Link,
+  Link as MuiLink,
 } from "@mui/material";
 import { Avatar } from "@mui/material";
 import { NewNoteDialog } from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
@@ -71,6 +64,7 @@ import DeleteModelButton from "./extra/DeleteModelButton";
 import { SPAINQuestionsDialog } from "../meeting/SPAIN/SPAINQuestionDialog";
 import { personalityEnum } from "@/app/helpers/constants";
 import VersaObjectionSystem from "../meeting/VERSA/VERSADialog";
+import Link from "next/link";
 export function CallReminders({ lead, setleads, admin, notUser }) {
   const [callReminders, setCallReminders] = useState(lead?.callReminders);
   const theme = useTheme();
@@ -340,11 +334,11 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
     <Stack spacing={3}>
       {!notUser && (
         <Box display="flex" gap={1.5}>
-          <NewMeetingDialog
+          {/* <NewMeetingDialog
             lead={lead}
             setMeetingReminders={setMeetingReminders}
             setleads={setleads}
-          />
+          /> */}
           <NewClientMeetingDialog
             lead={lead}
             setMeetingReminders={setMeetingReminders}
@@ -353,7 +347,7 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
           <Button
             variant="outlined"
             size="small"
-            component="a"
+            component={Link}
             href="/dashboard/calendar"
           >
             See admin available days
@@ -708,9 +702,9 @@ const renderFilePreview = (file) => {
   }
   return (
     <Box sx={{ mt: 1 }}>
-      <Link href={file.url} target="_blank" rel="noopener noreferrer">
+      <MuiLink href={file.url} target="_blank" rel="noopener noreferrer">
         Open {fileType.toUpperCase()} File
-      </Link>
+      </MuiLink>
     </Box>
   );
 };
