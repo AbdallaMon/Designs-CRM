@@ -332,7 +332,7 @@ export const Calendar = ({
                   m: 0.5,
                   backgroundColor: selected
                     ? "primary.main"
-                    : available
+                    : available && !past
                     ? lighten(theme.palette.success.main, 0.85)
                     : "background.paper",
                   color: selected

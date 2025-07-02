@@ -10,7 +10,7 @@ import {
   updateProjectNotification,
   updateTaskNotification,
 } from "../notification.js";
-import { ClientLeadStatus, LeadWorkStages } from "../enums.js";
+import { ClientLeadStatus } from "../enums.js";
 import { dealsLink } from "../links.js";
 import { v4 as uuidv4 } from "uuid";
 
@@ -143,7 +143,11 @@ export async function getClientLeads({
   return { data: clientLeads, total, totalPages };
 }
 
-export async function getClientLeadsByDateRange({ searchParams, isAdmin }) {
+export async function getClientLeadsByDateRange({
+  searchParams,
+  isAdmin,
+  user,
+}) {
   const filters = JSON.parse(searchParams.filters);
   const where = {
     assignedTo: { isNot: null },
@@ -180,6 +184,19 @@ export async function getClientLeadsByDateRange({ searchParams, isAdmin }) {
   }
   if (searchParams.userId) {
     where.userId = searchParams.userId;
+
+    if (!user.isPrimary) {
+      where.status = {
+        notIn: [
+          "NEW",
+          "ARCHIVED",
+          "ON_HOLD",
+          "FINALIZED",
+          "REJECTED",
+          "CONVERTED",
+        ],
+      };
+    }
   }
   const callRemindersWhere = {};
   if (searchParams.selfId) {
@@ -286,13 +303,15 @@ export async function getClientLeadDetails(
   clientLeadId,
   searchParams,
   role,
-  userId
+  userId,
+  user
 ) {
   let where = {};
-
+  let leadWhere = {};
   if (searchParams.userId && role !== "ADMIN" && role !== "SUPER_ADMIN") {
     where.userId = Number(searchParams.userId);
   }
+
   if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
     const clientLeadShuffle = await prisma.clientLead.findUnique({
       where: { id: Number(clientLeadId), status: "ON_HOLD" },
@@ -302,6 +321,19 @@ export async function getClientLeadDetails(
     });
     if (clientLeadShuffle && clientLeadShuffle.userId !== Number(userId)) {
       where = {};
+    } else {
+      if (!user.isPrimary) {
+        leadWhere.status = {
+          notIn: [
+            "NEW",
+            "ARCHIVED",
+            "ON_HOLD",
+            "FINALIZED",
+            "REJECTED",
+            "CONVERTED",
+          ],
+        };
+      }
     }
   }
   const checkIfLeadIsNew = await prisma.clientLead.findUnique({
@@ -319,7 +351,7 @@ export async function getClientLeadDetails(
     initialConsultWhere.initialConsult = true;
   }
   const clientLead = await prisma.clientLead.findUnique({
-    where: { id: clientLeadId, ...initialConsultWhere, ...where },
+    where: { id: clientLeadId, ...initialConsultWhere, ...where, ...leadWhere },
     select: {
       id: true,
       userId: true,

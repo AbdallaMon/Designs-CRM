@@ -13,6 +13,8 @@ export async function loginUser(email, password) {
       role: true,
       password: true,
       isActive: true,
+      isPrimary: true,
+      isSuperSales: true,
     },
   });
 
@@ -38,6 +40,8 @@ export async function loginUser(email, password) {
       id: user.id,
       role: user.role,
       accountStatus: user.isActive,
+      isPrimary: user.isPrimary,
+      isSuperSales: user.isSuperSales,
     },
     SECRET_KEY,
     { expiresIn: "4h" }

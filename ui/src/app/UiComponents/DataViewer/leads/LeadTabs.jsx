@@ -1420,39 +1420,40 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
             </CardContent>
           </Card>
         </Grid>
-
-        <Grid size={{ md: 6 }}>
-          <Card
-            sx={{
-              height: "100%",
-              transition: "transform 0.3s ease-in-out",
-              "&:hover": {
-                transform: "translateY(-5px)",
-                boxShadow: 6,
-              },
-            }}
-          >
-            <CardContent sx={{ textAlign: "center", p: 2 }}>
-              <MdTouchApp size={48} style={{ marginBottom: 16 }} />
-              <Typography
-                variant="h5"
-                component="h3"
-                gutterBottom
-                sx={{ fontWeight: "bold" }}
-              >
-                VERSA Objections
-              </Typography>
-              <Typography
-                variant="body1"
-                color="text.secondary"
-                sx={{ mb: 3, fontSize: "0.9rem" }}
-              >
-                نموذج الاعتراضات
-              </Typography>
-              <VersaObjectionSystem clientLeadId={lead.id} />
-            </CardContent>
-          </Card>
-        </Grid>
+        {user.role === "STAFF" && !user.isPrimary ? null : (
+          <Grid size={{ md: 6 }}>
+            <Card
+              sx={{
+                height: "100%",
+                transition: "transform 0.3s ease-in-out",
+                "&:hover": {
+                  transform: "translateY(-5px)",
+                  boxShadow: 6,
+                },
+              }}
+            >
+              <CardContent sx={{ textAlign: "center", p: 2 }}>
+                <MdTouchApp size={48} style={{ marginBottom: 16 }} />
+                <Typography
+                  variant="h5"
+                  component="h3"
+                  gutterBottom
+                  sx={{ fontWeight: "bold" }}
+                >
+                  VERSA Objections
+                </Typography>
+                <Typography
+                  variant="body1"
+                  color="text.secondary"
+                  sx={{ mb: 3, fontSize: "0.9rem" }}
+                >
+                  نموذج الاعتراضات
+                </Typography>
+                <VersaObjectionSystem clientLeadId={lead.id} />
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
 
         <Grid size={{ md: 6 }}>
           <Card

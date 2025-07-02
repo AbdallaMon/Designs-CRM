@@ -464,6 +464,8 @@ model User {
   name                 String               @db.VarChar(255)
   password             String               @db.VarChar(255)
   isActive             Boolean              @default(true)
+  isPrimary            Boolean              @default(false)  
+  isSuperSales         Boolean              @default(false) 
   role                 UserRole             @default(STAFF)
   subRoles             UserSubRole[]
   logs                 UserLog[]

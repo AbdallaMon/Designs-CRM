@@ -9,6 +9,7 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
+  FormControlLabel,
   IconButton,
   InputLabel,
   List,
@@ -17,6 +18,7 @@ import {
   ListItemText,
   MenuItem,
   Select,
+  Switch,
   Typography,
 } from "@mui/material";
 
@@ -27,7 +29,6 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
 import Link from "next/link";
 import CreateModal from "@/app/UiComponents/models/CreateModal.jsx";
-import LastSeen from "@/app/UiComponents/buttons/LastSeen";
 import { userRoles, userRolesEnum } from "@/app/helpers/constants";
 import { MdAddCircleOutline, MdDelete } from "react-icons/md";
 import UserRestrictedCountries from "@/app/UiComponents/DataViewer/UserRestrictedCountries";
@@ -118,6 +119,7 @@ export default function UsersPage() {
     setFilters,
   } = useDataFetcher("admin/users", false);
   const { setLoading } = useToastContext();
+
   async function banAUser(item) {
     const request = await handleRequestSubmit(
       { user: item },
@@ -141,6 +143,35 @@ export default function UsersPage() {
 
     return request;
   }
+
+  async function toggleUserStatus(item, field) {
+    const newValue = !item[field];
+    const request = await handleRequestSubmit(
+      { [field]: newValue },
+      setLoading,
+      `admin/users/${item.id}/staff-extra`,
+      false,
+      `Updating ${
+        field === "isPrimary" ? "Primary Status" : "Super Sales Status"
+      }`,
+      null,
+      "PATCH"
+    );
+
+    if (request.status === 200) {
+      setData((oldData) =>
+        oldData.map((user) => {
+          if (user.id === item.id) {
+            return { ...user, [field]: newValue };
+          }
+          return user;
+        })
+      );
+    }
+
+    return request;
+  }
+
   const editInputs = [...inputs];
   editInputs.map((input) => {
     if (input.data.id === "password") {
@@ -148,6 +179,7 @@ export default function UsersPage() {
     }
     return input;
   });
+
   return (
     <div>
       <AdminTable
@@ -167,7 +199,46 @@ export default function UsersPage() {
         editHref={"admin/users"}
         extraComponent={({ item }) => (
           <>
-            <Box sx={{ display: "flex", gap: 2 }}>
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                flexWrap: "wrap",
+                alignItems: "center",
+              }}
+            >
+              {(item.role === "STAFF" ||
+                item.subRoles?.some((r) => r.subRole === "STAFF")) && (
+                <>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={item.isPrimary || false}
+                        onChange={() => toggleUserStatus(item, "isPrimary")}
+                        size="small"
+                      />
+                    }
+                    label="Primary"
+                    labelPlacement="top"
+                    sx={{ margin: 0 }}
+                  />
+
+                  {/* Super Sales Status Switch */}
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={item.isSuperSales || false}
+                        onChange={() => toggleUserStatus(item, "isSuperSales")}
+                        size="small"
+                      />
+                    }
+                    label="Super Sales"
+                    labelPlacement="top"
+                    sx={{ margin: 0 }}
+                  />
+                </>
+              )}
+
               <ConfirmWithActionModel
                 title={
                   item.isActive

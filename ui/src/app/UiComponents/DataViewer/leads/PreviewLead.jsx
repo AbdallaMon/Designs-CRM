@@ -33,6 +33,7 @@ import {
 } from "react-icons/bs";
 import {
   ClientLeadStatus,
+  KanbanBeginerLeadsStatus,
   KanbanLeadsStatus,
   statusColors,
 } from "@/app/helpers/constants.js";
@@ -116,6 +117,7 @@ const LeadContent = ({
   const [currentId, setCurrentId] = useState(null);
   const [payments, setPayments] = useState(lead ? lead.payments : []);
   const [paymentModal, setPaymentModal] = useState(false);
+  const isNotPrimaryUser = user.role === "STAFF" && !user.isPrimary;
   async function createADeal(lead) {
     const assign = await handleRequestSubmit(
       lead,
@@ -191,7 +193,11 @@ const LeadContent = ({
   };
   if (!lead) return;
 
-  const leadStatus = enumToKeyValueArray(KanbanLeadsStatus);
+  const leadStatus = enumToKeyValueArray(
+    user.role === "STAFF" && !user.isPrimary
+      ? KanbanBeginerLeadsStatus
+      : KanbanLeadsStatus
+  );
   if (isAllowedLoading) return <FullScreenLoader />;
   if (!isAllowed && user.id !== lead.userId && user.role === "STAFF") {
     return (
@@ -504,11 +510,13 @@ const LeadContent = ({
           label="Notes"
           sx={{ textTransform: "none" }}
         />
-        <Tab
-          icon={<PiCurrencyDollarSimpleLight size={20} />}
-          label="Price Offers"
-          sx={{ textTransform: "none" }}
-        />
+        {isNotPrimaryUser ? null : (
+          <Tab
+            icon={<PiCurrencyDollarSimpleLight size={20} />}
+            label="Price Offers"
+            sx={{ textTransform: "none" }}
+          />
+        )}
         <Tab
           icon={<GoPaperclip size={20} />}
           label="Attatchments"
@@ -586,14 +594,16 @@ const LeadContent = ({
             notUser={isPage && user.id !== lead.userId && !admin}
           />
         </TabPanel>
-        <TabPanel value={activeTab} index={5}>
-          <PriceOffersList
-            admin={admin}
-            lead={lead}
-            notUser={isPage && user.id !== lead.userId && !admin}
-          />
-        </TabPanel>
-        <TabPanel value={activeTab} index={6}>
+        {isNotPrimaryUser ? null : (
+          <TabPanel value={activeTab} index={5}>
+            <PriceOffersList
+              admin={admin}
+              lead={lead}
+              notUser={isPage && user.id !== lead.userId && !admin}
+            />
+          </TabPanel>
+        )}
+        <TabPanel value={activeTab} index={isNotPrimaryUser ? 5 : 6}>
           <FileList
             admin={admin}
             lead={lead}
@@ -602,7 +612,7 @@ const LeadContent = ({
         </TabPanel>
 
         {payments?.length > 0 && (
-          <TabPanel value={activeTab} index={7}>
+          <TabPanel value={activeTab} index={isNotPrimaryUser ? 6 : 7}>
             <ExtraServicesList
               admin={admin}
               lead={lead}
@@ -611,20 +621,24 @@ const LeadContent = ({
             />
           </TabPanel>
         )}
-        <TabPanel value={activeTab} index={payments?.length > 0 ? 8 : 7}>
-          <LeadProjects clientLeadId={lead.id} />
-        </TabPanel>
-        <TabPanel value={activeTab} index={payments?.length > 0 ? 9 : 8}>
-          <TasksList
-            name="Modifcation"
-            type="MODIFICATION"
-            clientLeadId={lead.id}
-          />
-        </TabPanel>
-        {lead.status === "FINALIZED" && (
-          <TabPanel value={activeTab} index={payments?.length > 0 ? 10 : 9}>
-            <UpdatesList clientLeadId={lead.id} />
-          </TabPanel>
+        {isNotPrimaryUser ? null : (
+          <>
+            <TabPanel value={activeTab} index={payments?.length > 0 ? 8 : 7}>
+              <LeadProjects clientLeadId={lead.id} />
+            </TabPanel>
+            <TabPanel value={activeTab} index={payments?.length > 0 ? 9 : 8}>
+              <TasksList
+                name="Modifcation"
+                type="MODIFICATION"
+                clientLeadId={lead.id}
+              />
+            </TabPanel>
+            {lead.status === "FINALIZED" && (
+              <TabPanel value={activeTab} index={payments?.length > 0 ? 10 : 9}>
+                <UpdatesList clientLeadId={lead.id} />
+              </TabPanel>
+            )}
+          </>
         )}
       </Box>
     </>

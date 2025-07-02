@@ -6,7 +6,10 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { FaBusinessTime } from "react-icons/fa";
 import { FinalizeModal } from "./FinalizeModal";
 import KanbanBoard from "../Kanban/KanbanBoard";
-import { KanbanLeadsStatus } from "@/app/helpers/constants";
+import {
+  KanbanBeginerLeadsStatus,
+  KanbanLeadsStatus,
+} from "@/app/helpers/constants";
 import { useAuth } from "@/app/providers/AuthProvider";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
@@ -32,6 +35,7 @@ const DealsKanbanBoard = ({ staffId }) => {
     }
   }, [staffId]);
 
+  console.log(user, "user");
   const { setLoading } = useToastContext();
   const movelead = async (l, newStatus) => {
     if (user.role === "SUPER_ADMIN") {
@@ -89,7 +93,11 @@ const DealsKanbanBoard = ({ staffId }) => {
         links={links}
         movelead={movelead}
         setleads={setleads}
-        statusArray={Object.keys(KanbanLeadsStatus)}
+        statusArray={Object.keys(
+          user.role === "STAFF" && !user.isPrimary
+            ? KanbanBeginerLeadsStatus
+            : KanbanLeadsStatus
+        )}
         setFilters={setFilters}
         type="STAFF"
       />

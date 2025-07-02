@@ -31,6 +31,7 @@ import {
   getUserById,
   getUserLogs,
   toggleArchiveAModel,
+  toggleExtraStaffField,
   updateClientField,
   updateCommission,
   updateLeadField,
@@ -225,6 +226,28 @@ router.put("/users/:userId", async (req, res) => {
   }
 });
 
+router.patch("/users/:userId/staff-extra", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    if (!userId) {
+      return res.status(404).json({ message: "No user found with this ID" });
+    }
+    const user = await toggleExtraStaffField({
+      data: req.body,
+      userId: userId,
+    });
+    res.status(200).json({
+      data: user,
+      message: "Operation completed successfully",
+    });
+  } catch (error) {
+    console.error("Error fetching personal info:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while updating user data" });
+  }
+});
 router.patch("/users/:userId", async (req, res) => {
   const { userId } = req.params;
   const { user } = req.body;
@@ -233,9 +256,9 @@ router.patch("/users/:userId", async (req, res) => {
     if (!userId || !user) {
       return res.status(404).json({ message: "No user found with this ID" });
     }
-    const studentPersonalInfo = await changeUserStatus(user, userId);
+    const user = await changeUserStatus(user, userId);
     res.status(200).json({
-      data: studentPersonalInfo,
+      data: user,
       message: "Operation completed successfully",
     });
   } catch (error) {

@@ -225,6 +225,12 @@ export const KanbanLeadsStatus = {
   ARCHIVED: "Archived",
   ON_HOLD: "On Hold",
 };
+export const KanbanBeginerLeadsStatus = {
+  IN_PROGRESS: "In Progress",
+  INTERESTED: "Interested",
+  NEEDS_IDENTIFIED: "Needs Identified",
+  NEGOTIATING: "Negotiating",
+};
 
 // Projects
 

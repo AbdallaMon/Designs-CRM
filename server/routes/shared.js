@@ -138,6 +138,7 @@ router.get("/client-leads/deals", async (req, res) => {
     const clientLeads = await getClientLeadsByDateRange({
       searchParams,
       isAdmin: token.role === "ADMIN" || token.role === "SUPER_ADMIN",
+      user: token,
     });
     res.status(200).json({ data: clientLeads });
   } catch (error) {
@@ -281,7 +282,8 @@ router.get("/client-leads/:id", async (req, res) => {
             Number(id),
             searchParams,
             token.role,
-            token.id
+            token.id,
+            token
           );
     res.status(200).json({ data: clientLeadDetails });
   } catch (error) {

@@ -143,10 +143,10 @@ export async function updateUserRoles(userId, roles) {
   });
 }
 
-export async function changeUserStatus(user, studentId) {
+export async function changeUserStatus(user, userId) {
   return prisma.user.update({
     where: {
-      id: Number(studentId),
+      id: Number(userId),
     },
     data: {
       isActive: !user.isActive,
@@ -157,6 +157,17 @@ export async function changeUserStatus(user, studentId) {
   });
 }
 
+export async function toggleExtraStaffField({ userId, data }) {
+  return prisma.user.update({
+    where: {
+      id: Number(userId),
+    },
+    data,
+    select: {
+      id: true,
+    },
+  });
+}
 const calculateSummary = (leads) => {
   const totalLeads = leads.length;
   const totalValue = leads.reduce(
