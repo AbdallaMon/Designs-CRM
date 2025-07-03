@@ -1728,6 +1728,7 @@ export async function updateClientLeadStatus({
       },
     });
   }
+
   await updateLeadStatusNotification(
     lead.id,
     heading,
