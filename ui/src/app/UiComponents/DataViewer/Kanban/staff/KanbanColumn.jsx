@@ -18,9 +18,9 @@ import { FinalizeModal } from "../../leads/FinalizeModal";
 import { useEffect, useState } from "react";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { getData } from "@/app/helpers/functions/getData";
+import { useInView } from "react-intersection-observer";
 
 const ItemTypes = {
   CARD: "card",
@@ -71,35 +71,57 @@ const KanbanColumn = ({
   const [currentId, setCurrentId] = useState(null);
   const [leads, setleads] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [totalValue, setTotalValue] = useState(0);
+  const [totalLeads, setTotalLeads] = useState(0);
   const { user } = useAuth();
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const take = 20;
   const [, drop] = useDrop({
     accept: ItemTypes.CARD,
     drop: (item) => {
       movelead(item, status);
     },
   });
-  const totalValue = leads?.reduce(
-    (acc, lead) =>
-      acc + parseFloat(lead?.price ? lead.price.replace(/,/g, "") : 0),
-    0
-  );
 
   const statusColor = statusColors[status];
   const { setLoading: setToastLoading } = useToastContext();
   useEffect(() => {
     const fetchLeads = async () => {
-      const request = await getDataAndSet({
+      const request = await getData({
         url: isNotStaff
-          ? `shared/client-leads/projects/designers/columns?type=${type}&status=${status}&staffId=${staffId}&`
-          : `shared/client-leads/columns?status=${status}&staffId=${staffId}&`,
+          ? `shared/client-leads/projects/designers/columns?skip=${
+              page * take
+            }&take=${take}&type=${type}&status=${status}&staffId=${staffId}&`
+          : `shared/client-leads/columns?status=${status}&skip=${
+              page * take
+            }&take=${take}&staffId=${staffId}&`,
         filters,
         setData: setleads,
         setLoading,
       });
+      if (request.status === 200) {
+        if (page === 0) {
+          setleads(request.data.data); // first page → reset
+        } else {
+          setleads((prev) => [...prev, ...request.data.data]); // append
+        }
+        setTotalValue(request.data.totalValue || 0);
+        setTotalLeads(request.data.totalLeads || 0);
+        if (request.data.data?.length < take) setHasMore(false);
+      }
     };
 
     fetchLeads();
-  }, [filters, status, staffId, reRenderColumns[status]]);
+  }, [page, filters, status, staffId, reRenderColumns[status]]);
+  const handleScroll = (e) => {
+    const bottom =
+      e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight;
+
+    if (bottom && hasMore) {
+      setPage((prev) => prev + 1);
+    }
+  };
   const movelead = async (l, newStatus) => {
     if (isNotStaff) {
       const request = await handleRequestSubmit(
@@ -152,6 +174,7 @@ const KanbanColumn = ({
       }
     }
   };
+
   return (
     <>
       {currentId && (
@@ -164,6 +187,7 @@ const KanbanColumn = ({
           setleads={setleads}
         />
       )}
+
       <Grid
         size={2}
         ref={drop}
@@ -229,9 +253,7 @@ const KanbanColumn = ({
               alignItems="center"
             >
               <StatusChip
-                label={`${leads?.length} ${
-                  leads?.length === 1 ? "lead" : "leads"
-                }`}
+                label={`${totalLeads} ${totalLeads === 1 ? "lead" : "leads"}`}
                 statuscolor={statusColor}
                 size="small"
               />
@@ -255,6 +277,7 @@ const KanbanColumn = ({
           </Stack>
         </ColumnHeader>
         <Box
+          onScroll={handleScroll}
           sx={{
             overflowY: "auto",
             flexGrow: 1,
@@ -305,6 +328,28 @@ const KanbanColumn = ({
                 );
               }
             })}
+            {loading && (
+              <Box
+                sx={{
+                  textAlign: "center",
+                  color: "text.secondary",
+                  padding: 2,
+                }}
+              >
+                Loading leads...
+              </Box>
+            )}
+            {!loading && hasMore && (
+              <Box
+                sx={{
+                  textAlign: "center",
+                  color: "text.secondary",
+                  padding: 2,
+                }}
+              >
+                Loading more leads...
+              </Box>
+            )}
           </Stack>
         </Box>
       </Grid>

@@ -177,33 +177,6 @@ const OptimizedKanbanLead = ({
               admin={admin}
               type={type}
               isNotStaff={isNotStaff}
-              // leads={
-              //   loading
-              //     ? []
-              //     : type === "STAFF"
-              //     ? leads.filter((lead) => {
-              //         return lead.status === status;
-              //       })
-              //     : leads
-              //         .filter((lead) => {
-              //           if (
-              //             lead.projects[0].type === "3D_Modification" &&
-              //             !lead.projects[0].isModification
-              //           ) {
-              //             return false;
-              //           }
-              //           return lead.projects[0]?.status === status;
-              //         })
-              //         .sort((a, b) => {
-              //           const priorityA = getPriorityOrder(
-              //             a.projects[0]?.priority
-              //           );
-              //           const priorityB = getPriorityOrder(
-              //             b.projects[0]?.priority
-              //           );
-              //           return priorityB - priorityA;
-              //         })
-              // }
             />
           ))}
         </Grid>
