@@ -421,6 +421,8 @@ export async function getClientLeadsColumnStatus({
   }
   const clientLeads = await prisma.clientLead.findMany({
     where,
+    skip: Number(searchParams.skip) || 0,
+    take: Number(searchParams.take) || 20,
     orderBy: { updatedAt: "desc" },
     select: {
       id: true,
@@ -468,7 +470,20 @@ export async function getClientLeadsColumnStatus({
         lead.contracts[0].contractLevel === filters.contractLevel
     );
   }
-  return result;
+  const consolusion = await prisma.clientLead.aggregate({
+    where,
+    _count: {
+      id: true,
+    },
+    _sum: {
+      averagePrice: true,
+    },
+  });
+
+  const totalLeads = consolusion._count.id;
+  const totalValue = consolusion._sum.averagePrice ?? 0;
+
+  return { data: result, totalValue, totalLeads };
   // statusArray.forEach((status) => {
   //   groupedLeads[status] = clientLeads.filter((lead) => lead.status === status);
   // });
@@ -2266,6 +2281,8 @@ export async function getLeadByPorjectsColumn({ searchParams, isAdmin }) {
 
   const rawLeads = await prisma.clientLead.findMany({
     where,
+    skip: Number(searchParams.skip) || 0,
+    take: Number(searchParams.take) || 20,
     orderBy: { updatedAt: "desc" },
     select: {
       id: true,
@@ -2405,8 +2422,19 @@ export async function getLeadByPorjectsColumn({ searchParams, isAdmin }) {
       const priorityB = getPriorityOrder(b.projects[0]?.priority);
       return priorityB - priorityA; // HIGH priority first
     });
-  console.log(searchParams.status, "status", data, "data");
-  return data;
+  const consolusion = await prisma.clientLead.aggregate({
+    where,
+    _count: {
+      id: true,
+    },
+    _sum: {
+      averagePrice: true,
+    },
+  });
+
+  const totalLeads = consolusion._count.id;
+  const totalValue = consolusion._sum.averagePrice ?? 0;
+  return { data: data, totalValue, totalLeads };
 }
 export async function getLeadDetailsByProject(clientLeadId, searchParams) {
   const where = { id: clientLeadId };

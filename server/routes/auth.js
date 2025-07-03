@@ -78,6 +78,7 @@ router.get("/status", (req, res) => {
         id: decoded.id,
         role: decoded.role,
         accountStatus: decoded.accountStatus,
+        ...decoded,
       },
       auth: true,
     });
