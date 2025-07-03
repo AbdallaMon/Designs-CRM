@@ -103,6 +103,7 @@ const LeadContent = ({
   setleads,
   setLead,
   isPage,
+  setRerenderColumns,
 }) => {
   const { user } = useAuth();
   const admin = checkIfAdmin(user);
@@ -162,10 +163,12 @@ const LeadContent = ({
       "PUT"
     );
     if (request.status === 200) {
-      if (setleads) {
-        setleads((prev) =>
-          prev.map((l) => (l.id === lead.id ? { ...l, status: value } : l))
-        );
+      if (setRerenderColumns) {
+        setRerenderColumns((prev) => ({
+          ...prev,
+          [value]: !prev[value],
+          [lead.status]: !prev[lead.status],
+        }));
       }
       if (setLead) {
         setLead((oldLead) => ({ ...oldLead, status: value }));
@@ -654,7 +657,14 @@ function LeadData({ lead, setLead, setleads }) {
   );
 }
 
-const PreviewDialog = ({ open, onClose, id, setleads, page = false }) => {
+const PreviewDialog = ({
+  open,
+  onClose,
+  id,
+  setleads,
+  page = false,
+  setRerenderColumns,
+}) => {
   return (
     <PreviewLead
       leadContent={LeadContent}
@@ -662,6 +672,7 @@ const PreviewDialog = ({ open, onClose, id, setleads, page = false }) => {
       open={open}
       onClose={onClose}
       setleads={setleads}
+      setRerenderColumns={setRerenderColumns}
       page={page}
       url={`shared/client-leads/${id}`}
     />

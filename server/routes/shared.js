@@ -15,10 +15,13 @@ import {
   checkUserLog,
   createAnUpdate,
   createClientImageSession,
+  createNewContract,
   createNewTask,
   deleteAModel,
+  deleteContract,
   deleteInProgressSession,
   deleteNote,
+  editContract,
   editPriceOfferStatus,
   getAdmins,
   getAllFixedData,
@@ -27,6 +30,8 @@ import {
   getClientLeadDetails,
   getClientLeads,
   getClientLeadsByDateRange,
+  getClientLeadsColumnStatus,
+  getContractForLead,
   getDashboardLeadStatusData,
   getDesignerMetrics,
   getEmiratesAnalytics,
@@ -35,6 +40,7 @@ import {
   getKeyMetrics,
   getLatestNewLeads,
   getLeadByPorjects,
+  getLeadByPorjectsColumn,
   getLeadDetailsByProject,
   getMonthlyPerformanceData,
   getNextCalls,
@@ -148,6 +154,89 @@ router.get("/client-leads/deals", async (req, res) => {
       .json({ message: "An error occurred while fetching client leads" });
   }
 });
+
+router.get("/client-leads/columns", async (req, res) => {
+  try {
+    const searchParams = req.query;
+    const token = getTokenData(req, res);
+    if (
+      token.role !== "ADMIN" &&
+      token.role !== "SUPER_ADMIN" &&
+      token.role !== "ACCOUNTANT"
+    ) {
+      searchParams.selfId = token.id;
+      searchParams.userId = token.id;
+    }
+
+    const clientLeads = await getClientLeadsColumnStatus({
+      searchParams,
+      isAdmin: token.role === "ADMIN" || token.role === "SUPER_ADMIN",
+      user: token,
+    });
+    res.status(200).json({ data: clientLeads });
+  } catch (error) {
+    console.error("Error fetching client leads:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching client leads" });
+  }
+});
+router.get("/client-leads/:id/contracts", async (req, res) => {
+  try {
+    const contracts = await getContractForLead({ clientLeadId: req.params.id });
+    res.status(200).json({ data: contracts });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({ message: e.message });
+  }
+});
+router.post("/client-leads/:id/contracts", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const newContract = await createNewContract({
+      clientLeadId: id,
+      ...req.body,
+    });
+
+    res.status(200).json({
+      data: newContract,
+      message: "Contract updated successfully",
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({ message: e.message });
+  }
+});
+router.put("/client-leads/contract/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedContract = await editContract({ id: id, ...req.body });
+
+    res.status(200).json({
+      data: updatedContract,
+      message: "Contract updated successfully",
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({ message: e.message });
+  }
+});
+
+router.delete("/client-leads/contract/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedContract = await deleteContract({ contractId: Number(id) });
+
+    res.status(200).json({
+      data: deletedContract,
+      message: "Contract deleted successfully",
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({ message: e.message });
+  }
+});
+
 router.put("/lead/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -797,6 +886,30 @@ router.get("/client-leads/projects/designers", async (req, res) => {
     }
     searchParams.userRole = token.role;
     const clientLeads = await getLeadByPorjects({
+      searchParams,
+      isAdmin: token.role === "ADMIN" || token.role === "SUPER_ADMIN",
+    });
+    res.status(200).json({ data: clientLeads });
+  } catch (error) {
+    console.error("Error fetching work stages leads:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching work stages leads" });
+  }
+});
+
+router.get("/client-leads/projects/designers/columns", async (req, res) => {
+  try {
+    const searchParams = req.query;
+    const token = getTokenData(req, res);
+
+    if (token.role === "ADMIN" || token.role === "SUPER_ADMIN") {
+      searchParams.isAdmin = true;
+    } else {
+      searchParams.userId = token.id;
+    }
+    searchParams.userRole = token.role;
+    const clientLeads = await getLeadByPorjectsColumn({
       searchParams,
       isAdmin: token.role === "ADMIN" || token.role === "SUPER_ADMIN",
     });

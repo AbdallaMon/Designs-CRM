@@ -245,6 +245,14 @@ export async function getClientLeadsByDateRange({
       },
     ];
   }
+
+  if (filters.contractLevel && filters.contractLevel !== "all") {
+    where.contracts = {
+      some: {
+        contractLevel: { in: [filters.contractLevel] },
+      },
+    };
+  }
   const clientLeads = await prisma.clientLead.findMany({
     where,
     orderBy: { updatedAt: "desc" },
@@ -266,6 +274,10 @@ export async function getClientLeadsByDateRange({
         where: callRemindersWhere,
         orderBy: { time: "desc" },
         take: 2,
+      },
+      contracts: {
+        orderBy: { id: "desc" },
+        take: 1,
       },
       updates: {
         orderBy: { updatedAt: "desc" },
@@ -291,7 +303,172 @@ export async function getClientLeadsByDateRange({
   ];
 
   const groupedLeads = {};
-  return clientLeads;
+  let result = clientLeads;
+
+  // Optional: filter by the latest contract level
+  if (filters.contractLevel && filters.contractLevel !== "all") {
+    result = result.filter(
+      (lead) =>
+        lead.contracts.length &&
+        lead.contracts[0].contractLevel === filters.contractLevel
+    );
+  }
+  return result;
+  // statusArray.forEach((status) => {
+  //   groupedLeads[status] = clientLeads.filter((lead) => lead.status === status);
+  // });
+
+  // return groupedLeads;
+}
+
+export async function getClientLeadsColumnStatus({
+  searchParams,
+  isAdmin,
+  user,
+}) {
+  const filters = searchParams.filters && JSON.parse(searchParams.filters);
+
+  const where = {
+    assignedTo: { isNot: null },
+    status: searchParams.status,
+    leadType: "NORMAL",
+  };
+  if (filters?.range) {
+    const { startDate, endDate } = filters.range;
+    const now = dayjs();
+    let start = startDate ? dayjs(startDate) : now.subtract(30, "days");
+    let end = endDate ? dayjs(endDate).endOf("day") : now;
+    where.assignedAt = {
+      gte: start.toDate(),
+      lte: end.toDate(),
+    };
+  } else {
+    where.assignedAt = {
+      gte: dayjs().subtract(3, "month").toDate(),
+      lte: dayjs().toDate(),
+    };
+  }
+  if (filters.id && filters.id !== "all") {
+    where.id = Number(filters.id);
+  }
+  if (filters?.clientId && filters.clientId !== "all") {
+    where.clientId = Number(filters.clientId);
+  }
+  if (
+    filters?.staffId &&
+    filters?.staffId !== "all" &&
+    filters?.staffId !== "undefined"
+  ) {
+    where.userId = Number(filters.staffId);
+  }
+  if (searchParams.userId) {
+    where.userId = searchParams.userId;
+  }
+  const callRemindersWhere = {};
+  if (searchParams.selfId) {
+    callRemindersWhere.userId = searchParams.selfId;
+  }
+  const updatesWhere = {};
+  const sharedUpdatesWhere = {};
+  if (!isAdmin) {
+    sharedUpdatesWhere.type = "STAFF";
+    updatesWhere.OR = [
+      {
+        department: "STAFF",
+        sharedSettings: {
+          some: {
+            isArchived: false,
+            excludeFromSearch: false,
+          },
+        },
+      },
+      {
+        sharedSettings: {
+          some: {
+            type: "STAFF",
+            isArchived: false,
+          },
+        },
+      },
+    ];
+  } else {
+    updatesWhere.OR = [
+      {
+        sharedSettings: {
+          some: {
+            isArchived: false,
+            excludeFromSearch: false,
+          },
+        },
+      },
+      {
+        sharedSettings: {
+          some: {
+            type: "ADMIN",
+            isArchived: false,
+          },
+        },
+      },
+    ];
+  }
+
+  if (filters.contractLevel && filters.contractLevel !== "all") {
+    where.contracts = {
+      some: {
+        contractLevel: { in: [filters.contractLevel] },
+      },
+    };
+  }
+  const clientLeads = await prisma.clientLead.findMany({
+    where,
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      client: { select: { name: true } },
+      assignedTo: { select: { name: true } },
+      status: true,
+      price: true,
+      averagePrice: true,
+      priceWithOutDiscount: true,
+      selectedCategory: true,
+      description: true,
+      type: true,
+      emirate: true,
+      discount: true,
+      paymentStatus: true,
+      callReminders: {
+        where: callRemindersWhere,
+        orderBy: { time: "desc" },
+        take: 2,
+      },
+      contracts: {
+        orderBy: { id: "desc" },
+        take: 1,
+      },
+      updates: {
+        orderBy: { updatedAt: "desc" },
+        where: updatesWhere,
+        take: 6,
+        include: {
+          sharedSettings: {
+            where: sharedUpdatesWhere,
+          },
+        },
+      },
+    },
+  });
+
+  let result = clientLeads;
+
+  // Optional: filter by the latest contract level
+  if (filters.contractLevel && filters.contractLevel !== "all") {
+    result = result.filter(
+      (lead) =>
+        lead.contracts.length &&
+        lead.contracts[0].contractLevel === filters.contractLevel
+    );
+  }
+  return result;
   // statusArray.forEach((status) => {
   //   groupedLeads[status] = clientLeads.filter((lead) => lead.status === status);
   // });
@@ -379,6 +556,10 @@ export async function getClientLeadDetails(
           name: true,
           email: true,
         },
+      },
+      contracts: {
+        orderBy: { id: "desc" },
+        take: 1,
       },
       selectedCategory: true,
       description: true,
@@ -507,6 +688,71 @@ export async function getClientLeadDetails(
   return clientLead;
 }
 
+export async function getContractForLead({ clientLeadId }) {
+  const contracts = await prisma.contract.findMany({
+    where: { clientLeadId: Number(clientLeadId) },
+    orderBy: { contractLevel: "asc" },
+  });
+
+  const grouped = contracts.reduce((acc, contract) => {
+    if (!acc[contract.purpose]) acc[contract.purpose] = [];
+    acc[contract.purpose].push(contract);
+    return acc;
+  }, {});
+
+  return grouped;
+}
+export async function createNewContract({
+  purpose,
+  contractLevel,
+  clientLeadId,
+  title,
+  startDate,
+  endDate,
+}) {
+  const data = {
+    clientLeadId: Number(clientLeadId),
+    contractLevel: contractLevel,
+    purpose,
+  };
+  if (title) {
+    data.title = title;
+  }
+  if (startDate) {
+    data.startDate = new Date(startDate); // converts to full ISO format
+  }
+  if (endDate) {
+    data.endDate = new Date(endDate);
+  }
+
+  const newContract = await prisma.contract.create({
+    data,
+  });
+  return newContract;
+}
+export async function editContract({ id, title, startDate, endDate }) {
+  const data = {};
+  if (title) {
+    data.title = title;
+  }
+  if (startDate) {
+    data.startDate = new Date(startDate); // converts to full ISO format
+  }
+  if (endDate) {
+    data.endDate = new Date(endDate);
+  }
+  const updatedContract = await prisma.contract.update({
+    where: { id: Number(id) },
+    data,
+  });
+  return updatedContract;
+}
+export async function deleteContract({ contractId }) {
+  const deletedContract = await prisma.contract.delete({
+    where: { id: Number(contractId) },
+  });
+  return deletedContract;
+}
 export async function markClientLeadAsConverted(
   clientLeadId,
   reasonToConvert,
@@ -1640,7 +1886,7 @@ export async function markAnUpdateAsDone({
 /////////// Projects //////////////
 
 export async function getLeadByPorjects({ searchParams, isAdmin }) {
-  const filters = JSON.parse(searchParams.filters);
+  const filters = searchParams.filters && JSON.parse(searchParams.filters);
   const where = { leadType: "NORMAL" };
   const projectWhere = {};
   const updatesWhere = {};
@@ -1883,6 +2129,285 @@ export async function getLeadByPorjects({ searchParams, isAdmin }) {
   return expandedLeads;
 }
 
+export async function getLeadByPorjectsColumn({ searchParams, isAdmin }) {
+  const filters = searchParams.filters && JSON.parse(searchParams.filters);
+  const where = { leadType: "NORMAL" };
+  const projectWhere = {};
+  const updatesWhere = {};
+  const sharedUpdatesWhere = {};
+  if (searchParams.type) {
+    where.projects = {
+      some: {
+        type: searchParams.type,
+      },
+    };
+    projectWhere.type = searchParams.type;
+    if (searchParams.userId) {
+      where.projects.some.assignments = {
+        some: {
+          userId: Number(searchParams.userId),
+        },
+      };
+      projectWhere.assignments = {
+        some: {
+          userId: Number(searchParams.userId),
+        },
+      };
+    }
+    if (!isAdmin) {
+      sharedUpdatesWhere.type = searchParams.type;
+    }
+    updatesWhere.OR = [
+      {
+        department: searchParams.type,
+        sharedSettings: {
+          some: {
+            isArchived: false,
+            excludeFromSearch: false,
+          },
+        },
+      },
+      {
+        sharedSettings: {
+          some: {
+            type: searchParams.type,
+            isArchived: false,
+          },
+        },
+      },
+    ];
+  }
+  if (isAdmin) {
+    updatesWhere.OR.push({
+      sharedSettings: {
+        some: {
+          type: "ADMIN",
+          isArchived: false,
+        },
+      },
+    });
+  }
+  if (searchParams.status) {
+    if (where.projects) {
+      where.projects.some.status = searchParams.status;
+    } else {
+      where.projects = {
+        some: {
+          status: searchParams.status,
+        },
+      };
+    }
+    projectWhere.status = searchParams.status;
+  }
+  if (filters?.clientId && filters.clientId !== "all") {
+    where.clientId = Number(filters.clientId);
+  }
+  if (filters.id && filters.id !== "all") {
+    where.id = Number(filters.id);
+  }
+  if (
+    filters?.staffId &&
+    filters?.staffId !== "all" &&
+    filters?.staffId !== "undefined"
+  ) {
+    where.projects.some.assignments = {
+      some: {
+        userId: Number(filters.staffId),
+      },
+    };
+    projectWhere.assignments = {
+      some: {
+        userId: Number(filters.staffId),
+      },
+    };
+  }
+  if (searchParams.isAdmin && !searchParams.userId && !filters?.staffId) {
+    where.projects.some.assignments = {
+      some: {
+        userId: {
+          not: undefined,
+        },
+      },
+    };
+    projectWhere.assignments = {
+      some: {
+        userId: {
+          not: undefined,
+        },
+      },
+    };
+  }
+  if (searchParams.isArchieved) {
+    where.status = "ARCHIVED";
+  } else {
+    where.status = {
+      notIn: ["ARCHIVED", "NEW"],
+    };
+  }
+
+  const getTaskVisibilityFilter = (userRole) => {
+    const allowedRoles = ["ADMIN", "SUPER_ADMIN", "THREE_D_DESIGNER"];
+
+    if (allowedRoles.includes(userRole)) {
+      return {
+        type: {
+          in: ["PROJECT", "MODIFICATION"],
+        },
+      };
+    } else {
+      return {
+        type: "PROJECT",
+      };
+    }
+  };
+
+  const userRole = searchParams.userRole;
+  const taskFilter = getTaskVisibilityFilter(userRole);
+
+  const rawLeads = await prisma.clientLead.findMany({
+    where,
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      client: { select: { name: true } },
+      projects: {
+        where: projectWhere,
+        select: {
+          id: true,
+          type: true,
+          status: true,
+          role: true,
+          area: true,
+          deliveryTime: true,
+          priority: true,
+          startedAt: true,
+          endedAt: true,
+          clientLeadId: true,
+          isModification: true,
+          groupTitle: true,
+          groupId: true,
+          assignments: {
+            select: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+          },
+          tasks: {
+            where: {
+              ...taskFilter,
+              status: {
+                in: ["TODO", "IN_PROGRESS"],
+              },
+            },
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              status: true,
+              priority: true,
+              type: true,
+              createdAt: true,
+              updatedAt: true,
+              dueDate: true,
+              finishedAt: true,
+              userId: true,
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+            orderBy: [
+              {
+                priority: "desc",
+              },
+              {
+                updatedAt: "desc",
+              },
+            ],
+          },
+        },
+      },
+      status: true,
+      telegramLink: true,
+      price: true,
+      averagePrice: true,
+      priceWithOutDiscount: true,
+      selectedCategory: true,
+      description: true,
+      type: true,
+      emirate: true,
+      discount: true,
+      updates: {
+        orderBy: { updatedAt: "desc" },
+        where: updatesWhere,
+        take: 6,
+        include: {
+          sharedSettings: {
+            where: sharedUpdatesWhere,
+          },
+        },
+      },
+    },
+  });
+  const expandedLeads = rawLeads.flatMap((lead) => {
+    if (!lead.projects || lead.projects.length === 0) return [];
+
+    return lead.projects.map((primaryProject, i) => {
+      const reorderedProjects = [
+        primaryProject,
+        ...lead.projects.filter((_, j) => j !== i),
+      ];
+
+      const processedProjects = reorderedProjects.map((project) => ({
+        ...project,
+        tasks: project.tasks?.filter((task) => task.type === "PROJECT"),
+        modifications: project.tasks?.filter(
+          (task) => task.type === "MODIFICATION"
+        ),
+      }));
+
+      return {
+        ...lead,
+        projects: processedProjects,
+      };
+    });
+  });
+  function getPriorityOrder(priority) {
+    const priorityMap = {
+      VERY_HIGH: 5,
+      HIGH: 4,
+      MEDIUM: 3,
+      LOW: 2,
+      VERY_LOW: 1,
+    };
+    return priorityMap[priority] || 3; // Default to MEDIUM
+  }
+  const data = expandedLeads
+    .filter((lead) => {
+      if (
+        lead.projects[0].type === "3D_Modification" &&
+        !lead.projects[0].isModification
+      ) {
+        return false;
+      }
+      return lead.projects[0]?.status === searchParams.status;
+    })
+    .sort((a, b) => {
+      const priorityA = getPriorityOrder(a.projects[0]?.priority);
+      const priorityB = getPriorityOrder(b.projects[0]?.priority);
+      return priorityB - priorityA; // HIGH priority first
+    });
+  console.log(searchParams.status, "status", data, "data");
+  return data;
+}
 export async function getLeadDetailsByProject(clientLeadId, searchParams) {
   const where = { id: clientLeadId };
   const userIdWhere = {};

@@ -159,6 +159,34 @@ enum ClientPersonality {
   DRIVER           // القيادي الحاسم
 }
 
+enum ContractLevel {
+  LEVEL_1
+  LEVEL_2
+  LEVEL_3
+  LEVEL_4
+  LEVEL_5
+  LEVEL_6
+  LEVEL_7
+}
+
+model Contract {
+  id            Int           @id @default(autoincrement())
+  clientLead    ClientLead    @relation(fields: [clientLeadId], references: [id])
+  clientLeadId  Int
+
+  contractLevel ContractLevel
+  purpose       String  
+
+  title         String?
+  startDate     DateTime?
+  endDate       DateTime?
+  createdAt DateTime @default(now())
+
+  notes         Note[]
+  @@unique([clientLeadId, contractLevel, purpose]) 
+
+}
+
 
 model ClientLeadUpdate {
   id          Int          @id @default(autoincrement())
@@ -225,6 +253,8 @@ model ClientLead {
   priceWithOutDiscount Decimal  @default(0) @db.Decimal(10, 2)
   sessionQuestions SessionQuestion[]
   versaModel  VersaModel[]
+  contracts Contract[]
+
 
   projects         Project[]
   priceOffers      PriceOffers[]
@@ -581,6 +611,8 @@ model Note {
   taskId                Int?
   commission            Commission?          @relation(fields: [commissionId], references: [id])
   commissionId          Int?
+  contract   Contract? @relation(fields: [contractId], references: [id])
+  contractId Int?
 
   update   ClientLeadUpdate? @relation(fields: [updateId], references: [id])
   updateId Int?
@@ -609,6 +641,7 @@ model Note {
   @@index([updateId])
   @@index([imageSessionId])
   @@index([selectedImageId])
+  @@index([contractId])
 
 }
 

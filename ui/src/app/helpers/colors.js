@@ -89,4 +89,13 @@ export const NotificationColors = {
   OTHER: "#607d8b",
 };
 
+export const contractLevelColors = {
+  LEVEL_1: "#EF4444",
+  LEVEL_2: "#F97316",
+  LEVEL_3: "#EAB308",
+  LEVEL_4: "#22C55E",
+  LEVEL_5: "#3B82F6",
+  LEVEL_6: "#8B5CF6",
+  LEVEL_7: "#64748B",
+};
 export default colors;

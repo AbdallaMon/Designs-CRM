@@ -45,21 +45,22 @@ import FloatingIdBadge from "../leads/extra/IdBadge";
 
 import { KanbanUpdateSection } from "../leads/leadUpdates/KanbanUpdateSection";
 import ClientImageSessionManager from "../image-session/ClientSessionImageManager";
+import { contractLevelColors } from "@/app/helpers/colors";
+import { IoMdContract } from "react-icons/io";
 
 const ItemTypes = {
   CARD: "card",
 };
 
-const StyledCard = styled(Card)(({ theme, status }) => ({
+const StyledCard = styled(Card)(({ theme, borderColor }) => ({
   margin: theme.spacing(1),
   padding: theme.spacing(0.2),
   paddingLeft: theme.spacing(0.15),
-  borderLeft: `5px solid ${statusColors[status]}`,
+  borderLeft: `5px solid ${borderColor}`,
   transition: "all 0.3s",
   position: "relative",
   cursor: "grab",
   overflow: "unset",
-
   "& .MuiCardContent-root": {
     paddingLeft: "10px",
     overflow: "hidden",
@@ -80,7 +81,14 @@ const CallInfoBox = styled(Box)(({ theme, variant }) => ({
   marginTop: theme.spacing(1),
 }));
 
-const LeadCard = ({ lead, movelead, setleads, type, statusArray }) => {
+const LeadCard = ({
+  lead,
+  movelead,
+  setleads,
+  type,
+  statusArray,
+  setRerenderColumns,
+}) => {
   const [, drag] = useDrag({
     type: ItemTypes.CARD,
     item: {
@@ -103,10 +111,9 @@ const LeadCard = ({ lead, movelead, setleads, type, statusArray }) => {
   };
 
   const handleStatusChange = async (newStatus) => {
-    movelead(lead, newStatus);
+    await movelead(lead, newStatus);
   };
 
-  // Process call reminders
   const getCallInfo = React.useCallback((callReminders) => {
     if (!callReminders || callReminders.length === 0) {
       return [];
@@ -118,7 +125,6 @@ const LeadCard = ({ lead, movelead, setleads, type, statusArray }) => {
     return sortedCalls;
   }, []);
 
-  // Format date range if both start and end dates exist
   const getDateRange = () => {
     if (lead.projects && lead.projects[0]) {
       const project = lead.projects[0];
@@ -134,16 +140,48 @@ const LeadCard = ({ lead, movelead, setleads, type, statusArray }) => {
   const latestCalls = getCallInfo(lead.callReminders);
   const dateRange = getDateRange();
 
+  const currentContract =
+    lead.contracts && lead.contracts.length > 0 && lead.contracts[0];
+  const levelColor = currentContract
+    ? contractLevelColors[currentContract.contractLevel]
+    : "#000000";
   return (
     <div ref={drag}>
       <StyledCard
-        status={type === "STAFF" ? lead.status : lead.projects[0].status}
+        borderColor={
+          type === "STAFF" ? levelColor : statusColors[lead.projects[0].status]
+        }
       >
         <FloatingIdBadge
           leadId={lead.id}
-          backgroundColor={`${statusColors[lead.status]}50`}
-          color={statusColors[lead.status]}
+          backgroundColor={`${levelColor}60`}
+          color={levelColor}
         />
+
+        <Box
+          sx={{
+            position: "absolute",
+            top: -20,
+            right: 0,
+            zIndex: 1000,
+          }}
+        >
+          <Chip
+            icon={<IoMdContract sx={{ fontSize: "12px !important" }} />}
+            label={
+              currentContract ? currentContract.contractLevel : "No Contract"
+            }
+            sx={{
+              fontWeight: "bold",
+              fontSize: "0.875rem",
+              color: levelColor,
+              bgcolor: levelColor + "60",
+              borderRadius: "0",
+              cursor: "default",
+              userSelect: "none",
+            }}
+          />
+        </Box>
 
         <CardContent>
           <Box>
@@ -393,6 +431,7 @@ const LeadCard = ({ lead, movelead, setleads, type, statusArray }) => {
           onClose={() => setPreviewDialogOpen(false)}
           setleads={setleads}
           id={lead.id}
+          setRerenderColumns={setRerenderColumns}
           admin={admin}
         />
       ) : (
@@ -403,6 +442,7 @@ const LeadCard = ({ lead, movelead, setleads, type, statusArray }) => {
           setleads={setleads}
           id={lead.id}
           admin={admin}
+          setRerenderColumns={setRerenderColumns}
         />
       )}
     </div>

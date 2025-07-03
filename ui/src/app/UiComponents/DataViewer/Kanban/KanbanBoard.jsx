@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { DndProvider, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Box, Grid2 as Grid, Stack, Typography } from "@mui/material";
+import { Box, Grid2 as Grid, Select, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks.jsx";
@@ -10,7 +10,8 @@ import DateRangeFilter from "@/app/UiComponents/formComponents/DateRangeFilter.j
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
 import KanbanColumn from "../Kanban/KanbanColumn";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { getPriorityOrder } from "@/app/helpers/constants";
+import { CONTRACT_LEVELS, getPriorityOrder } from "@/app/helpers/constants";
+import FilterSelect from "../../formComponents/FilterSelect";
 
 dayjs.extend(relativeTime);
 
@@ -85,6 +86,16 @@ const KanbanBoard = ({
               noMargin={true}
               setFilters={setFilters}
               lastThreeMonth={true}
+            />
+            <FilterSelect
+              options={CONTRACT_LEVELS.map((level) => ({
+                id: level,
+                name: level.charAt(0).toUpperCase() + level.slice(1),
+              }))}
+              label={"Contract Level"}
+              loading={false}
+              param={"contractLevel"}
+              setFilters={setFilters}
             />
           </Box>
           {links && (

@@ -35,12 +35,8 @@ const DealsKanbanBoard = ({ staffId }) => {
     }
   }, [staffId]);
 
-  console.log(user, "user");
   const { setLoading } = useToastContext();
   const movelead = async (l, newStatus) => {
-    if (user.role === "SUPER_ADMIN") {
-      return;
-    }
     if (newStatus === "FINALIZED") {
       setCurrentId(l.id);
       setFinalizeModel(true);

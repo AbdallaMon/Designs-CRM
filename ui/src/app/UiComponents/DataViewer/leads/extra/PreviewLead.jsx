@@ -34,6 +34,7 @@ export const PreviewLead = ({
   url,
   leadContent,
   dontCheckIfNotUser,
+  setRerenderColumns,
 }) => {
   const [activeTab, setActiveTab] = useState(0);
   const theme = useTheme();
@@ -184,6 +185,7 @@ export const PreviewLead = ({
               isPage={page}
               type={type}
               dontCheckIfNotUser={dontCheckIfNotUser}
+              setRerenderColumns={setRerenderColumns}
             />
           )}
         </Container>
@@ -214,6 +216,7 @@ export const PreviewLead = ({
                 admin={isAdmin}
                 type={type}
                 dontCheckIfNotUser={dontCheckIfNotUser}
+                setRerenderColumns={setRerenderColumns}
               />
               <DialogActions
                 sx={{

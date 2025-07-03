@@ -395,6 +395,7 @@ const WorkStageKanbanCard = ({
   setleads,
   type,
   statusArray,
+  setRerenderColumns,
 }) => {
   const [, drag] = useDrag({
     type: ItemTypes.CARD,
@@ -415,10 +416,6 @@ const WorkStageKanbanCard = ({
   const [selectedTask, setSelectedTask] = useState(null);
   const [selectedModification, setSelectedModification] = useState(null);
 
-  // Separate tasks and modifications
-  // const allTasks = lead.projects?.[0]?.tasks || [];
-  // const regularTasks = allTasks.filter((task) => task.type === "PROJECT");
-  // const modifications = allTasks.filter((task) => task.type === "MODIFICATION");
   const regularTasks = lead.projects?.[0]?.tasks || [];
   const modifications = lead.projects?.[0]?.modifications || [];
   const totalTasks = regularTasks.length || 0;
@@ -725,6 +722,7 @@ const WorkStageKanbanCard = ({
         setleads={setleads}
         id={lead.id}
         admin={admin}
+        setRerenderColumns={setRerenderColumns}
       />
 
       <TaskPreviewModal

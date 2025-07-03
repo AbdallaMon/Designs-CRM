@@ -66,6 +66,7 @@ const LeadContent = ({
   isPage,
   type,
   dontCheckIfNotUser,
+  setRerenderColumns,
 }) => {
   const { user } = useAuth();
   const isAdmin = checkIfAdmin(user);
@@ -74,9 +75,6 @@ const LeadContent = ({
   const { setLoading } = useToastContext();
 
   const handleMenuClose = async (value) => {
-    if (user.role === "SUPER_ADMIN") {
-      return;
-    }
     const request = await handleRequestSubmit(
       {
         status: value,
@@ -92,20 +90,27 @@ const LeadContent = ({
       "PUT"
     );
     if (request.status === 200) {
-      if (setleads) {
-        setleads((prev) =>
-          prev.map((l) =>
-            l.id === lead.id
-              ? {
-                  ...l,
-                  projects: l.projects.map((project, index) =>
-                    index === 0 ? { ...project, status: value } : project
-                  ),
-                }
-              : l
-          )
-        );
+      if (setRerenderColumns) {
+        setRerenderColumns((prev) => ({
+          ...prev,
+          [lead.projects[0].status]: !prev[lead.projects[0].status],
+          [value]: !prev[value],
+        }));
       }
+      // if (setleads) {
+      //   setleads((prev) =>
+      //     prev.map((l) =>
+      //       l.id === lead.id
+      //         ? {
+      //             ...l,
+      //             projects: l.projects.map((project, index) =>
+      //               index === 0 ? { ...project, status: value } : project
+      //             ),
+      //           }
+      //         : l
+      //     )
+      //   );
+      // }
       if (setLead) {
         setLead((oldLead) => ({
           ...oldLead,
@@ -414,6 +419,7 @@ const PreviewWorkStage = ({
   setleads,
   page = false,
   type,
+  setRerenderColumns,
 }) => {
   return (
     <PreviewLead
@@ -426,6 +432,7 @@ const PreviewWorkStage = ({
       url={`shared/client-leads/projects/designers/${id}?type=${type}&`}
       type={type}
       dontCheckIfNotUser={true}
+      setRerenderColumns={setRerenderColumns}
     />
   );
 };

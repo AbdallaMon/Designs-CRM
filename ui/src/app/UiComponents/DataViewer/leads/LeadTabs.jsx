@@ -65,6 +65,7 @@ import { SPAINQuestionsDialog } from "../meeting/SPAIN/SPAINQuestionDialog";
 import { personalityEnum } from "@/app/helpers/constants";
 import VersaObjectionSystem from "../meeting/VERSA/VERSADialog";
 import Link from "next/link";
+import ContractManagement from "./extra/ContractManagement";
 export function CallReminders({ lead, setleads, admin, notUser }) {
   const [callReminders, setCallReminders] = useState(lead?.callReminders);
   const theme = useTheme();
@@ -948,22 +949,31 @@ export function PriceOffersList({ admin, lead, notUser }) {
   };
   return (
     <Card sx={cardStyles}>
-      {!notUser && <AddPriceOffers lead={lead} setPriceOffers={setOffers} />}
-
       <CardContent>
-        <Box display="flex" alignItems="center" mb={3}>
-          <FaMoneyBillWave style={{ ...iconStyles, fontSize: "1.5rem" }} />
-          <Typography variant="h5" component="h2" color="primary">
-            Price Offers
-          </Typography>
-          <Chip
-            label={`${offers?.length || 0} offers`}
-            size="small"
-            sx={{ ml: 2 }}
-            color="primary"
-          />
-        </Box>
+        <ContractManagement leadId={lead.id} />
 
+        <Box
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          mb={3}
+        >
+          <Box>
+            <FaMoneyBillWave style={{ ...iconStyles, fontSize: "1.5rem" }} />
+            <Typography variant="h5" component="h2" color="primary">
+              Price Offers
+            </Typography>
+            <Chip
+              label={`${offers?.length || 0} offers`}
+              size="small"
+              sx={{ ml: 2 }}
+              color="primary"
+            />
+          </Box>
+          {!notUser && (
+            <AddPriceOffers lead={lead} setPriceOffers={setOffers} />
+          )}
+        </Box>
         <List>
           {offers?.map((offer) => (
             <ListItem key={offer.id} sx={listItemStyles} disablePadding>
