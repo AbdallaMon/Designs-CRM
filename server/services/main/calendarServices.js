@@ -10,27 +10,30 @@ import { sendReminderCreatedToClient } from "./emailTemplates.js";
 dayjs.extend(timezone);
 dayjs.extend(utc);
 
-export async function getAvailableDays({ month, adminId, role = true, type }) {
+export async function getAvailableDays({ month, adminId, type, userId }) {
   const start = dayjs(month).utc().startOf("month");
   const end = dayjs(month).utc().endOf("month");
-  if (!role && !adminId) {
-    throw new Error("AdminId is required");
+  if (!adminId) {
+    adminId = userId;
+    if (!userId) {
+      throw new Error("AdminId is required");
+    }
   }
 
-  if (!adminId && role) {
-    const mockDays = [];
-    for (let i = 0; i <= end.date() - 1; i++) {
-      const date = start.add(i, "day").toDate();
-      mockDays.push({
-        id: `mock-${i}`,
-        date,
-        createdAt: date,
-        slots: [],
-        fullyBooked: false,
-      });
-    }
-    return mockDays;
-  }
+  // if (!adminId && role) {
+  //   const mockDays = [];
+  //   for (let i = 0; i <= end.date() - 1; i++) {
+  //     const date = start.add(i, "day").toDate();
+  //     mockDays.push({
+  //       id: `mock-${i}`,
+  //       date,
+  //       createdAt: date,
+  //       slots: [],
+  //       fullyBooked: false,
+  //     });
+  //   }
+  //   return mockDays;
+  // }
   const where = {
     userId: Number(adminId),
     date: {
@@ -236,42 +239,46 @@ export async function getAvailableSlotsForDay({
   date,
   adminId,
   dayId,
+  userId,
   role = true,
   timezone = "Asia/Dubai",
   type,
 }) {
-  if (!role && !adminId) {
-    throw new Error("AdminId is required");
-  }
-  if (!adminId && role) {
-    const now = dayjs(); // or specific date if needed
-    const mockDate = dayjs
-      .tz(`${now.format("YYYY-MM-DD")} 09:00`, timezone)
-      .utc()
-      .toDate();
-    const slots = [];
-    let current = new Date(mockDate);
-
-    while (
-      isBefore(
-        addMinutes(current, 60),
-        new Date(mockDate.getTime() + 12 * 60 * 60 * 1000)
-      )
-    ) {
-      const end = addMinutes(current, 60);
-      slots.push({
-        id: `mock-${current.toISOString()}`,
-        startTime: current,
-        endTime: end,
-        isBooked: false,
-        meetingReminderId: null,
-        type: "MOCK",
-      });
-      current = addMinutes(end, 15);
+  if (!adminId) {
+    adminId = userId;
+    if (!userId) {
+      throw new Error("AdminId is required");
     }
-
-    return slots;
   }
+  // if (!adminId && role) {
+  //   const now = dayjs(); // or specific date if needed
+  //   const mockDate = dayjs
+  //     .tz(`${now.format("YYYY-MM-DD")} 09:00`, timezone)
+  //     .utc()
+  //     .toDate();
+  //   const slots = [];
+  //   let current = new Date(mockDate);
+
+  //   while (
+  //     isBefore(
+  //       addMinutes(current, 60),
+  //       new Date(mockDate.getTime() + 12 * 60 * 60 * 1000)
+  //     )
+  //   ) {
+  //     const end = addMinutes(current, 60);
+  //     slots.push({
+  //       id: `mock-${current.toISOString()}`,
+  //       startTime: current,
+  //       endTime: end,
+  //       isBooked: false,
+  //       meetingReminderId: null,
+  //       type: "MOCK",
+  //     });
+  //     current = addMinutes(end, 15);
+  //   }
+
+  //   return slots;
+  // }
   const startOfDay = dayjs(date).utc().startOf("day").toDate();
   const endOfDay = dayjs(date).utc().endOf("day").toDate();
   const where = {

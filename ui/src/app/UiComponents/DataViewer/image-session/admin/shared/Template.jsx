@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, memo, useMemo } from "react";
 import {
   Box,
   Card,
@@ -25,6 +25,7 @@ import {
   Snackbar,
   InputAdornment,
   ButtonGroup,
+  Input,
 } from "@mui/material";
 import {
   MdVisibility as Visibility,
@@ -46,6 +47,7 @@ import colors from "@/app/helpers/colors";
 import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import { useDebounce } from "./CreateTitleOrDesc";
 
 // Enhanced Color Picker with color wheel
 const ColorPicker = ({ label, value, onChange, disabled = false }) => {
@@ -236,7 +238,6 @@ export const PreviewTemplateCard = ({
     };
   };
   const colorCircles = ["#f44336", "#2196f3", "#4caf50", "#ff9800", "#9c27b0"];
-
   const renderElement = (elementType) => {
     switch (elementType) {
       case "title":
@@ -312,7 +313,7 @@ export const PreviewTemplateCard = ({
                   display: "flex",
                   flexDirection:
                     template.colorsLayout === "horizontal" ? "row" : "column",
-                  gap: 0.5,
+                  gap: parseInt(getElementStyle("colors").gap) + "px" || 0.5,
                   alignItems: "center",
                 }}
               >
@@ -320,9 +321,8 @@ export const PreviewTemplateCard = ({
                   <Box
                     key={index}
                     sx={{
-                      width: template.colorSize || 30,
-                      height: template.colorSize || 30,
-
+                      width: parseInt(template.colorSize) || 30,
+                      height: parseInt(template.colorSize) || 30,
                       backgroundColor: color,
                       borderRadius: "50%",
                       border: "2px solid rgba(255,255,255,0.5)",
@@ -357,200 +357,343 @@ export const PreviewTemplateCard = ({
   );
 };
 
-// Style editor component with enhanced controls
+const EnhancedSlider = memo(
+  ({ label, value, onChange, min, max, step = 1, unit = "px" }) => {
+    const numericValue = parseInt(value) || 0;
+
+    const handleInputChange = (event) => {
+      const val = event.target.value === "" ? "" : Number(event.target.value);
+      onChange(val);
+    };
+
+    const handleBlur = () => {
+      if (numericValue < min) onChange(min);
+      else if (numericValue > max) onChange(max);
+    };
+
+    return (
+      <Box sx={{ mb: 2 }}>
+        <Typography gutterBottom>
+          {label}: {numericValue}
+          {unit}
+        </Typography>
+        <Grid container spacing={2} alignItems="center">
+          {/* <Grid item xs>
+            <Slider
+              value={numericValue}
+              onChange={handleSliderChange}
+              min={min}
+              max={max}
+              step={step}
+              valueLabelDisplay="auto"
+              valueLabelFormat={(val) => `${val}${unit}`}
+            />
+          </Grid> */}
+          <Grid item>
+            <Input
+              value={numericValue}
+              size="small"
+              onChange={handleInputChange}
+              onBlur={handleBlur}
+              inputProps={{ step, min, max, type: "number" }}
+              sx={{ width: "100%", minWidth: "150px" }}
+            />
+          </Grid>
+        </Grid>
+      </Box>
+    );
+  }
+);
+
+EnhancedSlider.displayName = "EnhancedSlider";
+
+/**
+ * Memoized component for all styling controls to prevent unnecessary re-renders.
+ */
+const StyleEditorControls = memo(
+  ({
+    element,
+    customStyles,
+    onStyleUpdate,
+    template,
+    onTemplateChange,
+    setTemplate,
+  }) => {
+    const { key, label } = element;
+    const styles = customStyles[key] || {};
+
+    const handleUpdate = (property, value, saveAsPx = false) => {
+      if (saveAsPx) {
+        value = `${parseInt(value, 10) || 0}px`;
+      }
+      onStyleUpdate(key, property, value);
+    };
+
+    // Shadow logic encapsulated
+    const shadowIntensity = parseInt(styles.boxShadow?.split(" ")[1]) || 0;
+    const shadowColor = styles.shadowColor || "rgba(0,0,0,0.3)";
+
+    const handleShadowIntensityChange = (value) => {
+      const newBoxShadow = `0 ${value}px ${value * 2}px ${shadowColor}`;
+      onStyleUpdate(key, "boxShadow", newBoxShadow);
+    };
+
+    const handleShadowColorChange = (color) => {
+      onStyleUpdate(key, "shadowColor", color);
+      const intensity = parseInt(styles.boxShadow?.split(" ")[1]) || 0;
+      if (intensity > 0) {
+        const newBoxShadow = `0 ${intensity}px ${intensity * 2}px ${color}`;
+        onStyleUpdate(key, "boxShadow", newBoxShadow);
+      }
+    };
+
+    const renderChangeLayout = () => {
+      const current = template.colorsLayout;
+      const layouts = ["vertical", "horizontal"];
+      return (
+        <Select
+          value={current}
+          onChange={(e) => {
+            setTemplate((old) => ({ ...old, colorsLayout: e.target.value }));
+          }}
+          fullWidth
+        >
+          {layouts.map((lay) => (
+            <MenuItem key={lay} value={lay}>
+              {lay}
+            </MenuItem>
+          ))}
+        </Select>
+      );
+    };
+
+    return (
+      <Grid container spacing={2}>
+        {/* --- General Section --- */}
+        <Grid item xs={12}>
+          {" "}
+          <Typography variant="overline">General</Typography>{" "}
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <ColorPicker
+            label="Background Color"
+            value={styles.backgroundColor || "transparent"}
+            onChange={(color) => handleUpdate("backgroundColor", color)}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <ColorPicker
+            label="Text Color"
+            value={styles.color || "#333333"}
+            onChange={(color) => handleUpdate("color", color)}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <EnhancedSlider
+            label="Border Radius"
+            value={styles.borderRadius}
+            onChange={(val) => handleUpdate("borderRadius", val, true)}
+            min={0}
+            max={50}
+          />
+        </Grid>
+
+        {/* --- Shadow Section --- */}
+        <Grid item xs={12} sm={6}>
+          <EnhancedSlider
+            label="Shadow Intensity"
+            value={shadowIntensity}
+            onChange={handleShadowIntensityChange}
+            min={0}
+            max={50}
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <ColorPicker
+            label="Shadow Color"
+            value={shadowColor}
+            onChange={handleShadowColorChange}
+          />
+        </Grid>
+
+        {key === "colors" && (
+          <Grid item xs={12}>
+            <Typography variant="overline">Colors Layout</Typography>
+            <Grid container spacing={2} sx={{ pt: 2 }}>
+              <Grid item xs={12} sm={6}>
+                {" "}
+                {renderChangeLayout()}{" "}
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <EnhancedSlider
+                  label="Color Circle Size"
+                  value={template.colorSize}
+                  onChange={(val) => onTemplateChange("colorSize", val)}
+                  min={10}
+                  max={100}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <EnhancedSlider
+                  label="Color Circle gap"
+                  value={styles.gap || 0.5}
+                  onChange={(val) => handleUpdate("gap", val, true)}
+                  min={10}
+                  max={100}
+                />
+              </Grid>
+            </Grid>
+          </Grid>
+        )}
+
+        {key !== "card" && (
+          <Grid item xs={12}>
+            <Typography variant="overline">Typography</Typography>
+            <Grid container spacing={2} sx={{ pt: 2 }}>
+              <Grid item xs={12} sm={6}>
+                <EnhancedSlider
+                  label="Font Size"
+                  value={styles.fontSize}
+                  onChange={(val) => handleUpdate("fontSize", val, true)}
+                  min={10}
+                  max={48}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography gutterBottom>Font Weight</Typography>
+                <Select
+                  value={styles.fontWeight || 400}
+                  onChange={(e) => handleUpdate("fontWeight", e.target.value)}
+                  fullWidth
+                  size="small"
+                >
+                  <MenuItem value={300}>Light</MenuItem>
+                  <MenuItem value={400}>Regular</MenuItem>
+                  <MenuItem value={500}>Medium</MenuItem>
+                  <MenuItem value={700}>Bold</MenuItem>
+                  <MenuItem value={900}>Black</MenuItem>
+                </Select>
+              </Grid>
+            </Grid>
+          </Grid>
+        )}
+
+        {/* --- Spacing Section --- */}
+        <Grid item xs={12}>
+          <Typography variant="overline">Spacing</Typography>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <EnhancedSlider
+            label="Padding X (Horizontal)"
+            value={styles.paddingX}
+            onChange={(val) => handleUpdate("paddingX", val, true)}
+            min={0}
+            max={100}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <EnhancedSlider
+            label="Padding Y (Vertical)"
+            value={styles.paddingY}
+            onChange={(val) => handleUpdate("paddingY", val, true)}
+            min={0}
+            max={100}
+          />
+        </Grid>
+        {key !== "card" && (
+          <>
+            <Grid item xs={6} sm={3}>
+              <EnhancedSlider
+                label="Margin Top"
+                value={styles.marginTop}
+                onChange={(val) => handleUpdate("marginTop", val, true)}
+                min={0}
+                max={100}
+              />
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <EnhancedSlider
+                label="Margin Bottom"
+                value={styles.marginBottom}
+                onChange={(val) => handleUpdate("marginBottom", val, true)}
+                min={0}
+                max={100}
+              />
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <EnhancedSlider
+                label="Margin Left"
+                value={styles.marginLeft}
+                onChange={(val) => handleUpdate("marginLeft", val, true)}
+                min={0}
+                max={100}
+              />
+            </Grid>
+            <Grid item xs={6} sm={3}>
+              <EnhancedSlider
+                label="Margin Right"
+                value={styles.marginRight}
+                onChange={(val) => handleUpdate("marginRight", val, true)}
+                min={0}
+                max={100}
+              />
+            </Grid>
+          </>
+        )}
+      </Grid>
+    );
+  }
+);
+
+StyleEditorControls.displayName = "StyleEditorControls";
+
+/**
+ * Refactored style editor component with improved performance and UX.
+ */
 const StyleEditor = ({
   template,
   customStyles,
   onStyleChange,
   setTemplate,
+  handleTemplateChange,
 }) => {
-  const visibleElements = [
-    { key: "card", label: "Card Container", visible: true },
-    { key: "title", label: "Title", visible: template.showTitle },
-    {
-      key: "description",
-      label: "Description",
-      visible: template.showDescription,
+  const visibleElements = useMemo(
+    () =>
+      [
+        { key: "card", label: "Card Container" },
+        { key: "title", label: "Title", visible: template.showTitle },
+        {
+          key: "description",
+          label: "Description",
+          visible: template.showDescription,
+        },
+        { key: "consButton", label: "Cons Button", visible: template.showCons },
+        { key: "colors", label: "Colors", visible: template.showColors },
+      ].filter((element) => element.visible !== false),
+    [template]
+  );
+
+  const handleStyleUpdate = useCallback(
+    (elementKey, property, value) => {
+      onStyleChange((prevStyles) => ({
+        ...prevStyles,
+        [elementKey]: {
+          ...prevStyles[elementKey],
+          [property]: value,
+        },
+      }));
     },
-    { key: "consButton", label: "Cons Button", visible: template.showCons },
-    { key: "colors", label: "Colors", visible: template.showColors },
-  ].filter((element) => element.visible);
-
-  const handleStyleUpdate = (elementKey, property, value, saveAsPx) => {
-    if (saveAsPx) {
-      value = value + "px";
-    }
-    onStyleChange({
-      ...customStyles,
-      [elementKey]: {
-        ...customStyles[elementKey],
-        [property]: value,
-      },
-    });
-  };
-
-  const renderButtonPaddingControls = (elementKey) => (
-    <>
-      <Grid item xs={12} sm={6}>
-        <Typography variant="body2" gutterBottom>
-          Padding X: {customStyles[elementKey]?.paddingX}
-        </Typography>
-        <TextField
-          value={customStyles[elementKey]?.paddingX || "16px"}
-          onChange={(e) =>
-            handleStyleUpdate(elementKey, "paddingX", e.target.value, true)
-          }
-          fullWidth
-        />
-        <Typography variant="body2" gutterBottom>
-          Padding Y: {customStyles[elementKey]?.paddingY}
-        </Typography>
-        <TextField
-          value={customStyles[elementKey]?.paddingY || "8px"}
-          onChange={(e) =>
-            handleStyleUpdate(elementKey, "paddingY", e.target.value, true)
-          }
-          fullWidth
-        />
-      </Grid>
-    </>
-  );
-
-  const renderChangeLayout = () => {
-    const current = template.colorsLayout;
-    const layouts = ["vertical", "horizontal"];
-
-    return (
-      <Select
-        value={current}
-        onChange={(e) => {
-          setTemplate((old) => ({ ...old, colorsLayout: e.target.value }));
-        }}
-        fullWidth
-      >
-        {layouts.map((lay) => (
-          <MenuItem key={lay} value={lay}>
-            {lay}
-          </MenuItem>
-        ))}
-      </Select>
-    );
-  };
-  const TypographyControls = ({ elementKey }) => (
-    <Grid container spacing={2}>
-      <Grid item xs={12} sm={6}>
-        <Typography variant="body2" gutterBottom>
-          <MdFormatSize sx={{ mr: 1, verticalAlign: "middle" }} />
-          Font Size:{" "}
-          {customStyles[elementKey]?.fontSize ||
-            (elementKey === "title" ? "1.5rem" : "0.875rem")}
-        </Typography>
-        <Slider
-          value={
-            parseFloat(customStyles[elementKey]?.fontSize) ||
-            (elementKey === "title" ? 24 : 14)
-          }
-          onChange={(_, value) =>
-            handleStyleUpdate(elementKey, "fontSize", `${value}px`)
-          }
-          min={10}
-          max={48}
-          step={1}
-          valueLabelDisplay="auto"
-          valueLabelFormat={(value) => `${value}px`}
-        />
-      </Grid>
-      <Grid item xs={12} sm={6}>
-        <Typography variant="body2" gutterBottom>
-          Font Weight: {customStyles[elementKey]?.fontWeight || 400}
-        </Typography>
-        <Select
-          value={customStyles[elementKey]?.fontWeight || 400}
-          onChange={(e) =>
-            handleStyleUpdate(elementKey, "fontWeight", e.target.value)
-          }
-          fullWidth
-          size="small"
-        >
-          <MenuItem value={100}>Thin (100)</MenuItem>
-          <MenuItem value={200}>Extra Light (200)</MenuItem>
-          <MenuItem value={300}>Light (300)</MenuItem>
-          <MenuItem value={400}>Regular (400)</MenuItem>
-          <MenuItem value={500}>Medium (500)</MenuItem>
-          <MenuItem value={600}>Semi Bold (600)</MenuItem>
-          <MenuItem value={700}>Bold (700)</MenuItem>
-          <MenuItem value={800}>Extra Bold (800)</MenuItem>
-          <MenuItem value={900}>Black (900)</MenuItem>
-        </Select>
-      </Grid>
-    </Grid>
-  );
-
-  const renderSpacingControls = (elementKey) => (
-    <Grid container spacing={2}>
-      <Grid item xs={6} sm={3}>
-        <Typography variant="body2" gutterBottom>
-          Margin Top
-        </Typography>
-        <TextField
-          size="small"
-          value={parseInt(customStyles[elementKey]?.marginTop) || 0}
-          onChange={(e) =>
-            handleStyleUpdate(elementKey, "marginTop", e.target.value, true)
-          }
-          type="number"
-          fullWidth
-        />
-      </Grid>
-      <Grid item xs={6} sm={3}>
-        <Typography variant="body2" gutterBottom>
-          Margin Bottom
-        </Typography>
-        <TextField
-          size="small"
-          value={parseInt(customStyles[elementKey]?.marginBottom) || 0}
-          onChange={(e) =>
-            handleStyleUpdate(elementKey, "marginBottom", e.target.value, true)
-          }
-          type="number"
-          fullWidth
-        />
-      </Grid>
-      <Grid item xs={6} sm={3}>
-        <Typography variant="body2" gutterBottom>
-          Margin Left
-        </Typography>
-        <TextField
-          size="small"
-          value={parseInt(customStyles[elementKey]?.marginLeft) || 0}
-          onChange={(e) =>
-            handleStyleUpdate(elementKey, "marginLeft", e.target.value, true)
-          }
-          type="number"
-          fullWidth
-        />
-      </Grid>
-      <Grid item xs={6} sm={3}>
-        <Typography variant="body2" gutterBottom>
-          Margin Right
-        </Typography>
-        <TextField
-          size="small"
-          value={parseInt(customStyles[elementKey]?.marginRight) || 0}
-          onChange={(e) =>
-            handleStyleUpdate(elementKey, "marginRight", e.target.value, true)
-          }
-          type="number"
-          fullWidth
-        />
-      </Grid>
-    </Grid>
+    [onStyleChange]
   );
 
   return (
     <Box>
       {visibleElements.map((element) => (
-        <Accordion key={element.key} sx={{ mb: 1 }}>
+        <Accordion
+          key={element.key}
+          sx={{ mb: 1 }}
+          TransitionProps={{ unmountOnExit: true }}
+        >
           <AccordionSummary expandIcon={<ExpandMore />}>
             <Typography variant="subtitle1">
               <Style sx={{ mr: 1, verticalAlign: "middle" }} />
@@ -558,157 +701,20 @@ const StyleEditor = ({
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <ColorPicker
-                  label="Background Color"
-                  value={
-                    customStyles[element.key]?.backgroundColor || "transparent"
-                  }
-                  onChange={(color) =>
-                    handleStyleUpdate(element.key, "backgroundColor", color)
-                  }
-                />
-              </Grid>
-              {element.key === "colors" && (
-                <Grid item xs={12} sm={6}>
-                  {renderChangeLayout()}
-                </Grid>
-              )}
-              <Grid item xs={12} sm={6}>
-                <ColorPicker
-                  label="Text Color"
-                  value={customStyles[element.key]?.color || "#333333"}
-                  onChange={(color) =>
-                    handleStyleUpdate(element.key, "color", color)
-                  }
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Typography variant="body2" gutterBottom>
-                  Border Radius:{" "}
-                  {parseInt(customStyles[element.key]?.borderRadius) || 0}px
-                </Typography>
-                <TextField
-                  value={parseInt(customStyles[element.key]?.borderRadius) || 0}
-                  onChange={(e) =>
-                    handleStyleUpdate(
-                      element.key,
-                      "borderRadius",
-                      e.target.value,
-                      true
-                    )
-                  }
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Typography variant="body2" gutterBottom>
-                  Padding X:{" "}
-                  {parseInt(customStyles[element.key]?.paddingX) || 0}
-                  px
-                </Typography>
-
-                <TextField
-                  value={parseInt(customStyles[element.key]?.paddingX) || 0}
-                  onChange={(e) =>
-                    handleStyleUpdate(
-                      element.key,
-                      "paddingX",
-                      e.target.value,
-                      true
-                    )
-                  }
-                  fullWidth
-                />
-
-                <Typography variant="body2" gutterBottom>
-                  Padding Y:{" "}
-                  {parseInt(customStyles[element.key]?.paddingY) || 0}
-                  px
-                </Typography>
-                <TextField
-                  value={parseInt(customStyles[element.key]?.paddingY) || 0}
-                  onChange={(e) =>
-                    handleStyleUpdate(
-                      element.key,
-                      "paddingY",
-                      e.target.value,
-                      true
-                    )
-                  }
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <Typography variant="body2" gutterBottom>
-                  Shadow Intensity:{" "}
-                  {parseInt(
-                    customStyles[element.key]?.boxShadow?.split(" ")[1]
-                  ) || 0}
-                  px
-                </Typography>
-                <Slider
-                  value={
-                    parseInt(
-                      customStyles[element.key]?.boxShadow?.split(" ")[1]
-                    ) || 0
-                  }
-                  onChange={(_, value) =>
-                    handleStyleUpdate(
-                      element.key,
-                      "boxShadow",
-                      `0 ${value}px ${value * 2}px ${
-                        customStyles[element.key]?.shadowColor ||
-                        "rgba(0,0,0,0.3)"
-                      }`
-                    )
-                  }
-                  min={0}
-                  max={30}
-                  valueLabelDisplay="auto"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <ColorPicker
-                  label="Shadow Color"
-                  value={
-                    customStyles[element.key]?.shadowColor || "rgba(0,0,0,0.3)"
-                  }
-                  onChange={(color) => {
-                    handleStyleUpdate(element.key, "shadowColor", color);
-                    const intensity =
-                      parseInt(
-                        customStyles[element.key]?.boxShadow?.split("px")[0]
-                      ) || 0;
-                    if (intensity > 0) {
-                      handleStyleUpdate(
-                        element.key,
-                        "boxShadow",
-                        `0 ${intensity}px ${intensity * 2}px ${color}`
-                      );
-                    }
-                  }}
-                />
-              </Grid>
-              <Box sx={{ px: 2 }} x>
-                {element.key === "consButton" &&
-                  renderButtonPaddingControls(element.key)}
-
-                {/* Margin Controls for non-card elements */}
-                {element.key !== "card" && (
-                  <TypographyControls elementKey={element.key} />
-                )}
-                {element.key !== "card" && renderSpacingControls(element.key)}
-              </Box>
-            </Grid>
+            <StyleEditorControls
+              element={element}
+              customStyles={customStyles}
+              onStyleUpdate={handleStyleUpdate}
+              template={template}
+              onTemplateChange={handleTemplateChange}
+              setTemplate={setTemplate}
+            />
           </AccordionDetails>
         </Accordion>
       ))}
     </Box>
   );
 };
-
 // Main template editor component
 const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
   const [file, setFile] = useState();
@@ -779,42 +785,27 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
     ...(type === "COLOR_PATTERN" ? ["colors"] : []),
     "consButton",
   ]);
+  const debouncedTemplate = useDebounce(template, 500);
+  const debouncedCustomStyles = useDebounce(customStyles, 500);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
   const [showSaveMessage, setShowSaveMessage] = useState(false);
   const { setLoading } = useToastContext();
+  const { setAlertError } = useToastContext();
   const handleToggleField = useCallback((field) => {
-    setTemplate((prev) => ({
-      ...prev,
-      [field]: !prev[field],
-    }));
+    setTemplate((prev) => ({ ...prev, [field]: !prev[field] }));
   }, []);
 
   const handleBlurChange = useCallback((_, value) => {
-    setTemplate((prev) => ({
-      ...prev,
-      blurValue: value,
-    }));
+    setTemplate((prev) => ({ ...prev, blurValue: value }));
   }, []);
 
   const handleStyleChange = useCallback((newStyles) => {
     setCustomStyles(newStyles);
   }, []);
-  const handleBgColorChange = useCallback((color) => {
-    setCustomStyles((customStyles) => ({
-      ...customStyles,
-      card: {
-        ...customStyles.card,
-        backgroundColor: color,
-      },
-    }));
-  }, []);
 
   const handleTemplateChange = useCallback((field, value) => {
-    setTemplate((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    setTemplate((prev) => ({ ...prev, [field]: value }));
   }, []);
   useEffect(() => {
     if (file) {
@@ -926,7 +917,7 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
         <DialogTitle>Template Configuration</DialogTitle>
         <DialogContent>
           <Grid container spacing={3} sx={{ mt: 1 }}>
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={5}>
               <Box
                 sx={{
                   position: "sticky",
@@ -942,11 +933,11 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
                     Preview
                   </Typography>
                   <PreviewTemplateCard
-                    template={template}
+                    template={debouncedTemplate} // Use debounced value
+                    customStyles={debouncedCustomStyles} // Use debounced value
+                    layout={layout}
                     onToggleVisibility={handleToggleField}
                     isEditMode={false}
-                    customStyles={customStyles}
-                    layout={layout}
                   />
 
                   {/* Layout Editor */}
@@ -959,7 +950,7 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
             </Grid>
 
             {/* Settings Panel */}
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={7}>
               <Typography variant="h6" gutterBottom>
                 <Tune sx={{ mr: 1, verticalAlign: "middle" }} />
                 Display Settings
@@ -1095,31 +1086,6 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
                 sx={{ mb: 2 }}
               />
 
-              {/* Color Circles Configuration */}
-              {template.showColors && (
-                <>
-                  <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
-                    Color Circles Configuration
-                  </Typography>
-
-                  <Typography variant="body2" gutterBottom>
-                    Circle Size: {template.colorSize}px
-                  </Typography>
-                  <TextField
-                    value={parseInt(template.colorSize) || 0}
-                    onChange={(e) =>
-                      handleStyleUpdate(
-                        element.key,
-                        "colorSize",
-                        e.target.value,
-                        true
-                      )
-                    }
-                    fullWidth
-                  />
-                </>
-              )}
-
               <Typography variant="h6" gutterBottom>
                 <Style sx={{ mr: 1, verticalAlign: "middle" }} />
                 Custom Styling
@@ -1133,6 +1099,7 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
                 customStyles={customStyles}
                 onStyleChange={handleStyleChange}
                 setTemplate={setTemplate}
+                handleTemplateChange={handleTemplateChange}
               />
             </Grid>
           </Grid>

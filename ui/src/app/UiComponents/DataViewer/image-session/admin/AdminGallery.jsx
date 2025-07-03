@@ -24,6 +24,7 @@ import ImageManager from "./ImageManager";
 import SpaceManager from "./space/SpaceManager";
 import StyleManager from "./style/StyleItemManager";
 import MaterialManager from "./material/MaterialManager.jsx";
+import ColorsMangaer from "./color/ColorsManager";
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -54,7 +55,7 @@ const GalleryDashboard = () => {
     {
       label: "Patterns",
       icon: <MdPattern />,
-      component: <ImageManager />,
+      component: <ColorsMangaer />,
       key: "patterns",
     },
     {

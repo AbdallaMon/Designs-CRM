@@ -91,7 +91,7 @@ export async function createAListOfText({ creates, type, modelId, id }) {
     Object.values(creates).map(async (entry) => {
       return await prisma.textLong.create({
         data: {
-          content: entry.text,
+          content: entry.text || entry.content,
           languageId: entry.languageId,
           [modelId]: Number(id),
         },
@@ -116,7 +116,7 @@ export async function editAListOftext({ edits, type }) {
       return await prisma.textLong.update({
         where: { id: entry.id },
         data: {
-          content: entry.text,
+          content: entry.text || entry.content,
         },
       });
     });
@@ -143,6 +143,7 @@ export async function getTemplatesIds({ type }) {
   });
 }
 export async function createTemplate({ template }) {
+  console.log(template, "template in createTemplate");
   await prisma.template.create({
     data: {
       ...template,
@@ -152,6 +153,8 @@ export async function createTemplate({ template }) {
 }
 
 export async function updateTemplate({ template }) {
+  console.log(template, "template in updateTemplate");
+
   const id = template.id;
   delete template.id;
   await prisma.template.update({
@@ -543,5 +546,181 @@ export async function reorderProsAndCons({ itemType, data }) {
       },
     });
   });
+  return true;
+}
+
+export async function getColors({ notArchived }) {
+  const where = {};
+  if (notArchived) {
+    where.isArchived = false;
+  }
+  return await prisma.colorPattern.findMany({
+    where,
+    include: {
+      title: {
+        select: {
+          text: true,
+          id: true,
+          languageId: true,
+          language: {
+            select: {
+              id: true,
+              code: true,
+            },
+          },
+        },
+      },
+      description: {
+        select: {
+          content: true,
+          id: true,
+          languageId: true,
+          language: {
+            select: {
+              id: true,
+              code: true,
+            },
+          },
+        },
+      },
+      template: true,
+      colors: true,
+    },
+  });
+}
+
+export async function createColorPallete({ data }) {
+  const titles = Object.values(data.titles);
+  const descriptions = Object.values(data.descriptions);
+  if (!data.colors || data.colors.length === 0) {
+    throw new Error("Please add colors.");
+  }
+  if (!data.templateId) {
+    throw new Error("Please select a template");
+  }
+  if (!data.titles || titles.length === 0) {
+    throw new Error("Please Fill all data.");
+  }
+
+  const titlesToCreate = createTextAndConnect(titles, "text");
+  let descriptionsToCreate = createTextAndConnect(descriptions, "content");
+
+  const dataToSubmit = {
+    templateId: Number(data.templateId),
+    title: {
+      create: titlesToCreate,
+    },
+    colors: {
+      create: data.colors.map((color, index) => ({
+        colorHex: color.colorHex,
+        order: index,
+        isEditableByClient: color.isEditableByClient || false,
+      })),
+    },
+  };
+
+  if (descriptionsToCreate && descriptionsToCreate.length > 0) {
+    dataToSubmit.description = {
+      create: descriptionsToCreate,
+    };
+  }
+  if (data.imageUrl) {
+    dataToSubmit.imageUrl = data.imageUrl;
+  }
+
+  const newStyle = await prisma.colorPattern.create({
+    data: dataToSubmit,
+  });
+  return newStyle;
+}
+
+export async function editColorPallete({ data, colorId }) {
+  const translations = data.translations;
+
+  const dataToSubmit = {};
+  if (data.templateId) {
+    dataToSubmit.templateId = data.templateId;
+  }
+  if (data.imageUrl) {
+    dataToSubmit.imageUrl = data.imageUrl;
+  }
+  if (translations.edits.titles) {
+    await editAListOftext({ edits: translations.edits.titles, type: "TITLE" });
+  }
+  if (translations.edits.descriptions) {
+    await editAListOftext({
+      edits: translations.edits.descriptions,
+      type: "DESCRIPTION",
+    });
+  }
+  if (translations.creates.titles) {
+    await createAListOfText({
+      creates: translations.creates.titles,
+      id: colorId,
+      modelId: "colorPatternId",
+      type: "TITLE",
+    });
+  }
+  if (translations.creates.descriptions) {
+    await createAListOfText({
+      creates: translations.creates.descriptions,
+      id: colorId,
+      modelId: "colorPatternId",
+      type: "DESCRIPTION",
+    });
+  }
+  if (Object.keys(dataToSubmit).length > 0) {
+    await prisma.colorPattern.update({
+      where: {
+        id: Number(colorId),
+      },
+      data: dataToSubmit,
+    });
+  }
+  if (data.editedColors && data.editedColors.length > 0) {
+    data.editedColors.forEach(async (color) => {
+      await prisma.colorPatternColor.update({
+        where: {
+          id: Number(color.id),
+        },
+        data: {
+          colorHex: color.colorHex,
+          isEditableByClient: color.isEditableByClient || false,
+          order: color.order,
+        },
+      });
+    });
+  }
+  const lastColor = await prisma.colorPatternColor.findFirst({
+    where: {
+      colorPatternId: Number(colorId),
+    },
+    orderBy: {
+      order: "desc",
+    },
+    select: {
+      order: true,
+    },
+  });
+  let nextOrder = lastColor?.order != null ? lastColor.order + 1 : 0;
+  if (data.newColors && data.newColors.length > 0) {
+    await prisma.colorPatternColor.createMany({
+      data: data.newColors.map((color) => ({
+        colorHex: color.colorHex,
+        isEditableByClient: color.isEditableByClient || false,
+        order: nextOrder++,
+        colorPatternId: Number(colorId),
+      })),
+    });
+  }
+  if (data.deletedColors && data.deletedColors.length > 0) {
+    await prisma.colorPatternColor.deleteMany({
+      where: {
+        id: {
+          in: data.deletedColors,
+        },
+      },
+    });
+  }
   return true;
 }

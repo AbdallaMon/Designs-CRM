@@ -22,6 +22,7 @@ const OptimizedClientKanbanLead = ({ staffId }) => {
       ? KanbanBeginerLeadsStatus
       : KanbanLeadsStatus
   );
+
   const [reRenderColumns, setReRenderColumns] = useState(
     Object.fromEntries(statusArray.map((key) => [key, false]))
   );

@@ -1,15 +1,18 @@
 import { Router } from "express";
 import { verifyTokenAndHandleAuthorization } from "../../services/main/utility.js";
 import {
+  createColorPallete,
   createMaterial,
   createProOrCon,
   createSpace,
   createStyle,
   createTemplate,
   deleteProOrCon,
+  editColorPallete,
   editMaterial,
   editProOrCon,
   editStyle,
+  getColors,
   getMaterials,
   getSpaces,
   getStyles,
@@ -204,6 +207,50 @@ router.put("/style/:styleId", async (req, res) => {
       .json({ message: "An error occurred while fetching Spaces", e });
   }
 });
+// color pallet
+
+router.get("/colors", async (req, res) => {
+  try {
+    const data = await getColors({
+      notArchived: req.query.notArchived && req.query.notArchived === "true",
+    });
+    res.status(200).json({ data });
+  } catch (e) {
+    console.log("error in sapce", e.message);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching style", e });
+  }
+});
+router.post("/colors", async (req, res) => {
+  try {
+    const data = await createColorPallete({ data: req.body });
+    res
+      .status(200)
+      .json({ data, message: "Color pallete created successfully" });
+  } catch (e) {
+    console.log(e, "e");
+    res
+      .status(500)
+      .json({ message: "An error occurred while creating pallete", e });
+  }
+});
+router.put("/colors/:colorId", async (req, res) => {
+  try {
+    const data = await editColorPallete({
+      data: req.body,
+      colorId: req.params.colorId,
+    });
+    res.status(200).json({ data, message: "Color pallete updated" });
+  } catch (e) {
+    console.log(e, "e");
+
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching pallete", e });
+  }
+});
+
 //
 
 router.post("/pros-and-cons", async (req, res) => {

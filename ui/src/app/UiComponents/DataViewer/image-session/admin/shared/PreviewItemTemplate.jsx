@@ -147,7 +147,7 @@ export function PreviewItemTemplate({ template, item }) {
                   display: "flex",
                   flexDirection:
                     template.colorsLayout === "horizontal" ? "row" : "column",
-                  gap: 0.5,
+                  gap: getElementStyle("colors").gap || 0.5,
                   alignItems: "center",
                 }}
               >
@@ -155,25 +155,15 @@ export function PreviewItemTemplate({ template, item }) {
                   <Box
                     key={index}
                     sx={{
-                      width: template.colorSize || 30,
-                      height: template.colorSize || 30,
-
-                      backgroundColor: color,
+                      width: template.colorSize || 35,
+                      height: template.colorSize || 35,
+                      backgroundColor: color.colorHex,
                       borderRadius: "50%",
                       border: "2px solid rgba(255,255,255,0.5)",
                     }}
                   />
                 ))}
               </Box>
-              {isEditMode && (
-                <IconButton
-                  size="small"
-                  sx={{ position: "absolute", top: -8, right: -8 }}
-                  onClick={() => onToggleVisibility("showColors")}
-                >
-                  <MdVisibilityOff fontSize="small" />
-                </IconButton>
-              )}
             </Box>
           )
         );
@@ -185,13 +175,10 @@ export function PreviewItemTemplate({ template, item }) {
 
   return (
     <Card sx={{ ...cardStyle }}>
-      {/* Background Image Layer */}
       <Box sx={backgroundImageStyle} />
 
-      {/* Overlay Layer */}
       <Box sx={overlayStyle} />
 
-      {/* Content Layer */}
       <Box sx={contentStyle}>
         {template.layout
           .map((elementType) => renderElement(elementType))

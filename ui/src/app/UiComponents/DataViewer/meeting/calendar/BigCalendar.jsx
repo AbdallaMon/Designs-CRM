@@ -50,7 +50,6 @@ const DayDetailDialog = ({ open, onClose, selectedDay, isAdmin }) => {
   const [dayData, setDayData] = useState();
   const [loading, setLoading] = useState(false);
   const [tabValue, setTabValue] = useState(0);
-  const { user } = useAuth();
   async function getDataForADay() {
     const userTimezone = dayjs.tz.guess();
     const submittedUtcDate = dayjs.utc(selectedDay);

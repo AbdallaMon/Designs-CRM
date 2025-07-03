@@ -20,14 +20,12 @@ router.get("/available-days", async (req, res) => {
   try {
     const user = await getCurrentUser(req);
     let adminId = req.query.adminId;
-    const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
-    if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
+    if (!adminId || adminId === "undefined") {
       adminId = user.id;
     }
     const data = await getAvailableDays({
       month: req.query.month,
       adminId: adminId,
-      role: isAdmin,
     });
     res.status(200).json({
       message: "Available days fetched successfully",
@@ -44,15 +42,17 @@ router.get("/available-days", async (req, res) => {
 router.get("/slots", async (req, res) => {
   try {
     const user = await getCurrentUser(req);
+
     let adminId = req.query.adminId;
-    const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
-    if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") {
+    console.log("adminId", adminId);
+    if (!adminId || adminId === "undefined") {
       adminId = user.id;
     }
+    console.log("adminId after", adminId);
+
     const data = await getAvailableSlotsForDay({
       date: req.query.date,
       adminId: adminId,
-      role: isAdmin,
       timezone: req.query.timezone,
     });
     res.status(200).json({

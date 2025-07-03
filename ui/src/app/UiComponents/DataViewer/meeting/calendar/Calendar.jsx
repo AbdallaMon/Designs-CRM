@@ -498,7 +498,7 @@ const TimeSlotManager = ({
       breakMinutes: breakDuration,
       dayId: dayId,
     };
-    const url = `admin/calendar/available-days/${
+    const url = `shared/calendar/available-days/${
       dayId ? dayId : isMultiDate ? "multiple" : ""
     }`;
     const slotReq = await handleRequestSubmit(
@@ -531,7 +531,7 @@ const TimeSlotManager = ({
     const deleteReq = await handleRequestSubmit(
       { id: slotId },
       setToastLoading,
-      `admin/calendar/slots/${slotId}`,
+      `shared/calendar/slots/${slotId}`,
       false,
       "Deleting slot...",
       false,
@@ -555,7 +555,7 @@ const TimeSlotManager = ({
       const slotReq = await handleRequestSubmit(
         data,
         setToastLoading,
-        `admin/calendar/add-custom/${dayId}?timezone=${tz}`,
+        `shared/calendar/add-custom/${dayId}?timezone=${tz}`,
         false,
         "Adding custom slot..."
       );
@@ -604,7 +604,7 @@ const TimeSlotManager = ({
     const deleteReq = await handleRequestSubmit(
       { id: dayId },
       setToastLoading,
-      `admin/calendar/days/${dayId}`,
+      `shared/calendar/days/${dayId}`,
       false,
       "Deleting Day...",
       false,
@@ -827,7 +827,7 @@ const TimeSlotManager = ({
         </DialogContent>
 
         <DialogActions sx={{ p: 3, gap: 1 }}>
-          {dayId && (
+          {dayId && type !== "STAFF" && (
             <Button
               startIcon={<MdDelete />}
               color="error"

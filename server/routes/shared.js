@@ -100,12 +100,22 @@ import {
 const router = Router();
 import questionsRoutes from "./questions/questions.js";
 import calendarRoutes from "./calendar/calendar.js";
+import imageSessionRouter from "./image-session/admin-image-session.js";
+import {
+  addCutsomDate,
+  createAvailableDatesForMoreThanOneDay,
+  createAvailableDay,
+  deleteADay,
+  deleteASlot,
+  updateAvailableDay,
+} from "../services/main/calendarServices.js";
 
 router.use(async (req, res, next) => {
   await verifyTokenAndHandleAuthorization(req, res, next, "SHARED");
 });
 router.use("/questions", questionsRoutes);
 router.use("/calendar", calendarRoutes);
+router.use("/image-session", imageSessionRouter);
 
 router.get("/client-leads", async (req, res) => {
   try {
@@ -1470,4 +1480,144 @@ router.get("/users/admins", async (req, res) => {
   }
 });
 //////// end of image sesssion ////////
+
+///calendar
+
+router.post("/calendar/available-days", async (req, res) => {
+  try {
+    const { date, fromHour, toHour, duration, breakMinutes } = req.body;
+    const user = await getCurrentUser(req);
+    const data = await createAvailableDay({
+      date,
+      fromHour,
+      toHour,
+      duration,
+      breakMinutes,
+      userId: user.id,
+      timeZone: req.query.timezone,
+    });
+    res.status(200).json({
+      message: "Available day created successfully",
+      data: data,
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({
+      message: e.message,
+      error: e.message || "Internal Server Error",
+    });
+  }
+});
+router.put("/calendar/available-days/:dayId", async (req, res) => {
+  try {
+    const { dayId } = req.params;
+    const { date, fromHour, toHour, duration, breakMinutes } = req.body;
+    const user = await getCurrentUser(req);
+    const data = await updateAvailableDay({
+      dayId,
+      date,
+      fromHour,
+      toHour,
+      duration,
+      breakMinutes,
+      userId: user.id,
+      timeZone: req.query.timezone,
+    });
+    res.status(200).json({
+      message: "Available day updated successfully",
+      data: data,
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({
+      message: "Error updating available day",
+      error: e.message || "Internal Server Error",
+    });
+  }
+});
+router.post("/calendar/available-days/multiple", async (req, res) => {
+  try {
+    const { days, fromHour, toHour, duration, breakMinutes } = req.body;
+    const user = await getCurrentUser(req);
+    const data = await createAvailableDatesForMoreThanOneDay({
+      userId: user.id,
+      days,
+      fromHour,
+      toHour,
+      duration,
+      breakMinutes,
+      timeZone: req.query.timezone,
+    });
+    res.status(200).json({
+      message: "Available days created successfully",
+      data: data,
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({
+      message: "Error creating available days",
+      error: e.message || "Internal Server Error",
+    });
+  }
+});
+router.post("/calendar/add-custom/:dayId", async (req, res) => {
+  try {
+    const { date, startTime, endTime } = req.body;
+    const user = await getCurrentUser(req);
+    const custom = await addCutsomDate({
+      dayId: req.params.dayId,
+      date,
+      fromHour: startTime,
+      toHour: endTime,
+      userId: user.id,
+      timeZone: req.query.timezone,
+    });
+    res.status(200).json({
+      message: "Custom available day created successfully",
+      data: custom,
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({
+      message: e.message,
+      error: e.message || "Internal Server Error",
+    });
+  }
+});
+router.delete("/calendar/slots/:slotId", async (req, res) => {
+  try {
+    const { slotId } = req.params;
+    const data = await deleteASlot({
+      slotId,
+    });
+    res.status(200).json({
+      message: "Slot deleted successfully",
+      data: data,
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({
+      message: "Error deleting available slot",
+      error: e.message || "Internal Server Error",
+    });
+  }
+});
+router.delete("/calendar/days/:dayId", async (req, res) => {
+  try {
+    const { dayId } = req.params;
+    const data = await deleteADay({
+      dayId,
+    });
+    res.status(200).json({
+      message: "Day deleted successfully",
+      data: data,
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({
+      message: e.message,
+      error: e.message || "Internal Server Error",
+    });
+  }
+});
 export default router;

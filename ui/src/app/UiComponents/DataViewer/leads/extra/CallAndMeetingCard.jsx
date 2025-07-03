@@ -331,6 +331,12 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
           }}
         >
           <Stack spacing={2}>
+            <Stack spacing={2}>
+              <Typography variant="h4">
+                {" "}
+                Client lead id # <strong>{meeting.clientLeadId}</strong>
+              </Typography>
+            </Stack>
             <Stack
               direction="row"
               justifyContent="space-between"

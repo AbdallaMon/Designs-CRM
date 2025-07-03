@@ -1009,7 +1009,8 @@ model ColorPattern {
   id            Int         @id @default(autoincrement())
   title         TextShort[] @relation("ColorPatternTitles")
   description   TextLong[]  @relation("ColorPatternDescriptions")
-  background    String?
+  background    String? 
+  imageUrl      String?
   colors        ColorPatternColor[]
   order         Int         @default(0)
   isArchived    Boolean     @default(false)
@@ -1024,6 +1025,7 @@ model ColorPatternColor {
   id                 Int    @id @default(autoincrement())
   colorHex           String
   isEditableByClient Boolean @default(false)
+  order         Int         @default(0)
   colorPatternId     Int
   colorPattern       ColorPattern @relation(fields: [colorPatternId], references: [id])
 }

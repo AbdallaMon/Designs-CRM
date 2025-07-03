@@ -335,11 +335,6 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
     <Stack spacing={3}>
       {!notUser && (
         <Box display="flex" gap={1.5}>
-          {/* <NewMeetingDialog
-            lead={lead}
-            setMeetingReminders={setMeetingReminders}
-            setleads={setleads}
-          /> */}
           <NewClientMeetingDialog
             lead={lead}
             setMeetingReminders={setMeetingReminders}
@@ -348,8 +343,9 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
           <Button
             variant="outlined"
             size="small"
-            component={Link}
-            href="/dashboard/calendar"
+            component={"a"}
+            target="_blank"
+            href="/dashboard/calendar?tab=1"
           >
             See admin available days
           </Button>
