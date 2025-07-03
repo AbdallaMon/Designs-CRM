@@ -24,7 +24,7 @@ import ImageManager from "./ImageManager";
 import SpaceManager from "./space/SpaceManager";
 import StyleManager from "./style/StyleItemManager";
 import MaterialManager from "./material/MaterialManager.jsx";
-import ColorsMangaer from "./color/ColorsManager";
+import ColorsMangaer from "./color/ColorsManager.jsx";
 
 function TabPanel({ children, value, index, ...other }) {
   return (

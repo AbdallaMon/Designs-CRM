@@ -9,7 +9,6 @@ export default function AuthProvider({ children }) {
   });
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [validatingAuth, setValidatingAuth] = useState(true);
-  console.log(user, "user");
   useEffect(() => {
     async function fetchData() {
       setValidatingAuth(true);

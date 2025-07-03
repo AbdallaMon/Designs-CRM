@@ -1,8 +1,8 @@
 import { Box } from "@mui/material";
 import Templates from "../shared/Templates";
-import { CreateColor } from "./CreateColor";
 import { ColorItemCard } from "./ColorItem";
 import { ImageItemViewer } from "../shared/ImageItemViewer";
+import { CreateColor } from "./CreateColor.jsx";
 
 const ColorsMangaer = () => {
   return (
