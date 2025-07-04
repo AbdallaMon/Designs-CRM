@@ -1810,3 +1810,39 @@ export async function toggleArchiveAModel({ model, isArchived, id }) {
     },
   });
 }
+
+export async function getModelIds({ searchParams, model }) {
+  let queryWhere =
+    searchParams?.where && searchParams.where !== "undefined"
+      ? JSON.parse(searchParams.where)
+      : {};
+  const where = {};
+  const select = {};
+  if (searchParams.select) {
+    const selectFields = searchParams.select.split(",");
+    selectFields.forEach((field) => {
+      if (!select.select) {
+        select.select = {};
+      }
+      select.select = {
+        ...select.select,
+        [field]: true,
+      };
+    });
+  }
+  if (searchParams) {
+    Object.keys(queryWhere).forEach((key) => {
+      if (!queryWhere[key] || queryWhere[key] === "undefined") {
+        return;
+      }
+      where[key] = queryWhere[key];
+    });
+  }
+
+  return await prisma[model].findMany({
+    where: {
+      ...where,
+    },
+    ...select,
+  });
+}

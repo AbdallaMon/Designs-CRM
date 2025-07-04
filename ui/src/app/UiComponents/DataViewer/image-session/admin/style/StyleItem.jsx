@@ -27,7 +27,7 @@ export const StyleItemCard = ({ model, item, onUpdate }) => {
     const req = await handleRequestSubmit(
       { isArchived: !item.isArchived },
       setIsArchiving,
-      `admin/model/archived/${item.id}?model=${model}&`,
+      `admin/model/archived/${item.id}?model=style&`,
       false,
       "Updating",
       false,

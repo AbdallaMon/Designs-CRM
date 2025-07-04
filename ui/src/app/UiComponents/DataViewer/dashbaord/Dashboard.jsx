@@ -39,7 +39,6 @@ const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {
     }
   }, [staffId]);
   if (loading) return <FullScreenLoader />;
-  console.log(staffId, "staffId");
   return (
     <Box
       sx={{

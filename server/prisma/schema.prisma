@@ -1040,22 +1040,6 @@ model Space {
   updatedAt  DateTime @updatedAt
 }
 
-enum PageInfoType {
-  BEFORE_PATTERN
-  BEFORE_MATERIAL
-  BEFORE_STYLE
-}
-
-model PageInfo {
-  id         Int      @id @default(autoincrement())
-  type       PageInfoType
-  title      TextShort[]   @relation("PageInfoTitles")
-  content    TextLong[]    @relation("PageInfoContents")
-  isArchived Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
-
 model DesignImage {
   id         Int      @id @default(autoincrement())
   imageUrl   String
@@ -1074,6 +1058,22 @@ model DesignImageSpace {
   designImage   DesignImage @relation(fields: [designImageId], references: [id])
   spaceId       Int
   space         Space       @relation(fields: [spaceId], references: [id])
+}
+
+enum PageInfoType {
+  BEFORE_PATTERN
+  BEFORE_MATERIAL
+  BEFORE_STYLE
+}
+
+model PageInfo {
+  id         Int      @id @default(autoincrement())
+  type       PageInfoType   @unique 
+  title      TextShort[]   @relation("PageInfoTitles")
+  content    TextLong[]    @relation("PageInfoContents")
+  isArchived Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 enum TemplateType {

@@ -25,6 +25,7 @@ import {
   getAdminProjects,
   getAllUsers,
   getCommissionByUserId,
+  getModelIds,
   getNotAllowedCountries,
   getNotificationForTodayByStaffId,
   getUser,
@@ -522,6 +523,22 @@ router.patch("/model/archived/:id", async (req, res) => {
       message: "Error while Updating" + e.message,
       error: e.message || "Internal Server Error",
     });
+  }
+});
+router.get("/ids", async (req, res) => {
+  try {
+    const model = req.query.model;
+    delete req.query.model;
+    const data = await getModelIds({
+      searchParams: req.query,
+      model,
+    });
+    res.status(200).json({ data });
+  } catch (e) {
+    console.log(e, "e");
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching Spaces" });
   }
 });
 export default router;

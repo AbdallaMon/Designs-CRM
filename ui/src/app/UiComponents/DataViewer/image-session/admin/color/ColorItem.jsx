@@ -27,7 +27,7 @@ export const ColorItemCard = ({ item, onUpdate }) => {
     const req = await handleRequestSubmit(
       { isArchived: !item.isArchived },
       setIsArchiving,
-      `admin/model/archived/${item.id}?model=COLOR_PATTERN&`,
+      `admin/model/archived/${item.id}?model=ColorPattern&`,
       false,
       "Updating",
       false,

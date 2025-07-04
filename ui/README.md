@@ -48,8 +48,8 @@
 - And lead try to make each column load alone and has its own state or what u think?
 - Color pallete
 - User calendar
-
 - Image dashboard
+
 - Page data for color pallete, materail ,style (one component)
 
 - Total price is final price

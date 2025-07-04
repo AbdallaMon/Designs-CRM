@@ -925,7 +925,7 @@ export function PriceOffersList({ admin, lead, notUser }) {
     height: "100%",
     boxShadow: theme.shadows[1],
     position: "relative",
-    p: 2,
+    p: 0,
   };
 
   const listItemStyles = {

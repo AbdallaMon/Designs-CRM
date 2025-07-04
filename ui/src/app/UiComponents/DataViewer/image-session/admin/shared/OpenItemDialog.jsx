@@ -10,7 +10,7 @@ import {
   IconButton,
 } from "@mui/material";
 import { useState } from "react";
-import { MdAdd, MdClose, MdEdit, MdPlusOne } from "react-icons/md";
+import { MdAdd, MdClose, MdEdit } from "react-icons/md";
 
 export function OpenItemDialog({
   type,

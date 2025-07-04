@@ -1,2 +1,0 @@
-ALTER TABLE ColorPatternColor
-ADD COLUMN `order` INT NOT NULL DEFAULT 0;

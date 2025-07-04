@@ -27,7 +27,7 @@ export const MaterialItemCard = ({ model, item, onUpdate }) => {
     const req = await handleRequestSubmit(
       { isArchived: !item.isArchived },
       setIsArchiving,
-      `admin/model/archived/${item.id}?model=${model}&`,
+      `admin/model/archived/${item.id}?model=material&`,
       false,
       "Updating",
       false,
@@ -89,7 +89,7 @@ export const MaterialItemCard = ({ model, item, onUpdate }) => {
           initialData={item}
           onUpdate={onUpdate}
           modelType={"MATERIAL"}
-          name="Materail"
+          name="Material"
           slug="material"
         />
         <Tooltip

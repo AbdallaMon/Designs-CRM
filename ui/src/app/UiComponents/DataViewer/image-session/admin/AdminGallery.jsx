@@ -16,15 +16,17 @@ import {
   MdConstruction,
   MdDashboard,
   MdImage,
+  MdInfo,
   MdPattern,
   MdRoom,
   MdStyle,
 } from "react-icons/md";
-import ImageManager from "./ImageManager";
 import SpaceManager from "./space/SpaceManager";
 import StyleManager from "./style/StyleItemManager";
 import MaterialManager from "./material/MaterialManager.jsx";
 import ColorsMangaer from "./color/ColorsManager.jsx";
+import DesignImageManager from "./image/DesignImageManager";
+import PageInfoManager from "./page-info/PageInfoManager";
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -49,8 +51,14 @@ const GalleryDashboard = () => {
     {
       label: "Gallery",
       icon: <MdImage />,
-      component: <ImageManager />,
+      component: <DesignImageManager />,
       key: "gallery",
+    },
+    {
+      label: "Page info",
+      icon: <MdInfo />,
+      component: <PageInfoManager />,
+      key: "styles",
     },
     {
       label: "Patterns",

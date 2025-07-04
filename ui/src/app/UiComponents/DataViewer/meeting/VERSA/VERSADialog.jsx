@@ -522,7 +522,7 @@ const VersaModelEditor = ({ category, versaData, onSave, onClose }) => {
               VERSA Model - {category.title}
             </Typography>
             <Typography variant="caption" sx={{ opacity: 0.8 }}>
-              Validate → Empathize → Respond → Support → Advance
+              Validate → Empathize → Reframe → Show value → Ask
             </Typography>
           </Box>
           <Button

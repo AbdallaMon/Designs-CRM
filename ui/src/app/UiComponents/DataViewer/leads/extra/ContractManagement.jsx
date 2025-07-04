@@ -43,7 +43,6 @@ import { useAlertContext } from "@/app/providers/MuiAlert";
 import { getData } from "@/app/helpers/functions/getData";
 import dayjs from "dayjs";
 import { NotesComponent } from "../../utility/Notes";
-import DeleteModal from "@/app/UiComponents/models/DeleteModal";
 import DeleteModelButton from "./DeleteModelButton";
 
 const ContractManagement = ({ leadId = 1 }) => {
@@ -78,7 +77,6 @@ const ContractManagement = ({ leadId = 1 }) => {
       setPurposes(Object.keys(req.data));
       setContracts(Object.values(req.data).flat());
     }
-    console.log("Contracts fetched:", req);
   };
 
   const getUniquePurposes = () => {
@@ -249,12 +247,12 @@ const ContractManagement = ({ leadId = 1 }) => {
   }
 
   return (
-    <Box sx={{ p: 0 }}>
+    <Box sx={{ p: 0, mb: 1.5 }}>
       <Box
         display="flex"
         justifyContent="space-between"
         alignItems="center"
-        mb={3}
+        mb={1.5}
       >
         <Typography variant="h4" component="h1">
           Contract Management

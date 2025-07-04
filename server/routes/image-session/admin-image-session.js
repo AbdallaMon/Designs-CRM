@@ -2,18 +2,24 @@ import { Router } from "express";
 import { verifyTokenAndHandleAuthorization } from "../../services/main/utility.js";
 import {
   createColorPallete,
+  createDesignImage,
   createMaterial,
+  createPageInfo,
   createProOrCon,
   createSpace,
   createStyle,
   createTemplate,
   deleteProOrCon,
   editColorPallete,
+  editDesignImage,
   editMaterial,
+  editPageInfo,
   editProOrCon,
   editStyle,
   getColors,
+  getDesignImages,
   getMaterials,
+  getPageInfo,
   getSpaces,
   getStyles,
   getTemplates,
@@ -251,6 +257,91 @@ router.put("/colors/:colorId", async (req, res) => {
   }
 });
 
+// Design images
+
+router.get("/images", async (req, res) => {
+  try {
+    const data = await getDesignImages({
+      notArchived: req.query.notArchived && req.query.notArchived === "true",
+    });
+    res.status(200).json({ data });
+  } catch (e) {
+    console.log("error in sapce", e.message);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching images", e });
+  }
+});
+router.post("/images", async (req, res) => {
+  try {
+    const data = await createDesignImage({ data: req.body });
+    res.status(200).json({ data, message: "Image created successfully" });
+  } catch (e) {
+    console.log(e, "e");
+    res
+      .status(500)
+      .json({ message: "An error occurred while creating Image", e });
+  }
+});
+router.put("/images/:imageId", async (req, res) => {
+  try {
+    const data = await editDesignImage({
+      data: req.body,
+      imageId: req.params.imageId,
+    });
+    res.status(200).json({ data, message: "Image updated" });
+  } catch (e) {
+    console.log(e, "e");
+
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching pallete", e });
+  }
+});
+
+// page info
+router.get("/page-info", async (req, res) => {
+  try {
+    const data = await getPageInfo({
+      notArchived: req.query.notArchived && req.query.notArchived === "true",
+    });
+    res.status(200).json({ data });
+  } catch (e) {
+    console.log("error in sapce", e.message);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching style", e });
+  }
+});
+router.post("/page-info", async (req, res) => {
+  try {
+    const data = await createPageInfo({ data: req.body });
+    res.status(200).json({ data, message: "style created successfully" });
+  } catch (e) {
+    console.log(e, "e");
+    if (e.code === "P2002" && e.meta?.target?.includes("unique_type")) {
+      res.status(500).json({
+        message:
+          "This page type already exists. Please choose a different type.",
+      });
+      return;
+    }
+    res.status(500).json({ message: e.message });
+  }
+});
+router.put("/page-info/:pageInfoId", async (req, res) => {
+  try {
+    const data = await editPageInfo({
+      data: req.body,
+      pageInfoId: req.params.pageInfoId,
+    });
+    res.status(200).json({ data, message: "style updated" });
+  } catch (e) {
+    console.log(e, "e");
+
+    res.status(500).json({ message: e.message });
+  }
+});
 //
 
 router.post("/pros-and-cons", async (req, res) => {

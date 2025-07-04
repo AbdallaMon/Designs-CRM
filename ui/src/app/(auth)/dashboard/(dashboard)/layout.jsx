@@ -364,6 +364,8 @@ export default function Layout({
 }) {
   const router = useRouter();
   let { user, isLoggedIn, validatingAuth } = useAuth();
+  console.log(document.referrer, "refresres");
+
   useEffect(() => {
     async function fetchData() {
       if (validatingAuth || toastId === undefined) {

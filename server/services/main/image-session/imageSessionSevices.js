@@ -258,6 +258,15 @@ export async function editMaterial({ data, materialId }) {
       type: "DESCRIPTION",
     });
   }
+
+  if (Object.keys(dataToSubmit).length > 0) {
+    await prisma.material.update({
+      where: {
+        id: Number(materialId),
+      },
+      data: dataToSubmit,
+    });
+  }
   if (translations.creates.titles) {
     await createAListOfText({
       creates: translations.creates.titles,
@@ -272,15 +281,6 @@ export async function editMaterial({ data, materialId }) {
       id: materialId,
       modelId: "materialId",
       type: "DESCRIPTION",
-    });
-  }
-  console.log(dataToSubmit, "dataToSubmit");
-  if (Object.keys(dataToSubmit).length > 0) {
-    await prisma.material.update({
-      where: {
-        id: Number(materialId),
-      },
-      data: dataToSubmit,
     });
   }
   return true;
@@ -376,6 +376,15 @@ export async function editStyle({ data, styleId }) {
       type: "DESCRIPTION",
     });
   }
+
+  if (Object.keys(dataToSubmit).length > 0) {
+    await prisma.style.update({
+      where: {
+        id: Number(styleId),
+      },
+      data: dataToSubmit,
+    });
+  }
   if (translations.creates.titles) {
     await createAListOfText({
       creates: translations.creates.titles,
@@ -390,14 +399,6 @@ export async function editStyle({ data, styleId }) {
       id: styleId,
       modelId: "styleId",
       type: "DESCRIPTION",
-    });
-  }
-  if (Object.keys(dataToSubmit).length > 0) {
-    await prisma.style.update({
-      where: {
-        id: Number(styleId),
-      },
-      data: dataToSubmit,
     });
   }
   return true;
@@ -653,22 +654,7 @@ export async function editColorPallete({ data, colorId }) {
       type: "DESCRIPTION",
     });
   }
-  if (translations.creates.titles) {
-    await createAListOfText({
-      creates: translations.creates.titles,
-      id: colorId,
-      modelId: "colorPatternId",
-      type: "TITLE",
-    });
-  }
-  if (translations.creates.descriptions) {
-    await createAListOfText({
-      creates: translations.creates.descriptions,
-      id: colorId,
-      modelId: "colorPatternId",
-      type: "DESCRIPTION",
-    });
-  }
+
   if (Object.keys(dataToSubmit).length > 0) {
     await prisma.colorPattern.update({
       where: {
@@ -690,6 +676,22 @@ export async function editColorPallete({ data, colorId }) {
         },
       });
     });
+    if (translations.creates.titles) {
+      await createAListOfText({
+        creates: translations.creates.titles,
+        id: colorId,
+        modelId: "colorPatternId",
+        type: "TITLE",
+      });
+    }
+    if (translations.creates.descriptions) {
+      await createAListOfText({
+        creates: translations.creates.descriptions,
+        id: colorId,
+        modelId: "colorPatternId",
+        type: "DESCRIPTION",
+      });
+    }
   }
   const lastColor = await prisma.colorPatternColor.findFirst({
     where: {
@@ -720,6 +722,208 @@ export async function editColorPallete({ data, colorId }) {
           in: data.deletedColors,
         },
       },
+    });
+  }
+  return true;
+}
+
+// images
+export async function getDesignImages({ notArchived }) {
+  const where = {};
+  if (notArchived) {
+    where.isArchived = false;
+  }
+  return await prisma.designImage.findMany({
+    where,
+    include: {
+      spaces: {
+        select: {
+          id: true,
+          space: {
+            select: {
+              id: true,
+              title: true,
+            },
+          },
+        },
+      },
+      style: {
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+}
+
+export async function createDesignImage({ data }) {
+  console.log(data, "data");
+  if (!data.styleId) {
+    throw new Error("Select at least one style");
+  }
+  if (!data.spaceIds || data.spaceIds.length === 0) {
+    throw new Error("Select at least one spce");
+  }
+  if (!data.imageUrl) {
+    throw new Error("Upload an image");
+  }
+  await prisma.designImage.create({
+    data: {
+      imageUrl: data.imageUrl,
+      styleId: data.styleId,
+      spaces: {
+        create: data.spaceIds.map((spaceId) => ({
+          space: {
+            connect: { id: spaceId },
+          },
+        })),
+      },
+    },
+  });
+  return true;
+}
+
+export async function editDesignImage({ data, imageId }) {
+  console.log(data, "data");
+  const sumbitData = {};
+  if (data.imageUrl) {
+    sumbitData.imageUrl = data.imageUrl;
+  }
+  if (data.spaceIds) {
+    sumbitData.spaces = {
+      deleteMany: {},
+      create: data.spaceIds.map((spaceId) => ({
+        space: {
+          connect: { id: spaceId },
+        },
+      })),
+    };
+  }
+  if (data.styleId) {
+    sumbitData.styleId = Number(data.styleId);
+  }
+  await prisma.designImage.update({
+    where: {
+      id: Number(imageId),
+    },
+    data: { ...sumbitData },
+  });
+  return true;
+}
+
+// page info
+export async function getPageInfo({ notArchived }) {
+  const where = {};
+  if (notArchived) {
+    where.isArchived = false;
+  }
+  return await prisma.pageInfo.findMany({
+    where,
+    include: {
+      title: {
+        select: {
+          text: true,
+          id: true,
+          languageId: true,
+          language: {
+            select: {
+              id: true,
+              code: true,
+            },
+          },
+        },
+      },
+      content: {
+        select: {
+          content: true,
+          id: true,
+          languageId: true,
+          language: {
+            select: {
+              id: true,
+              code: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+export async function createPageInfo({ data }) {
+  console.log(data, "Data");
+  const titles = Object.values(data.titles);
+  const descriptions = Object.values(data.descriptions);
+  if (!data.type) {
+    throw new Error("Please select a type");
+  }
+  if (!data.titles || titles.length === 0) {
+    throw new Error("Please Fill all titles.");
+  }
+  if (!data.descriptions || descriptions.length === 0) {
+    throw new Error("Please Fill all descripitons.");
+  }
+
+  const titlesToCreate = createTextAndConnect(titles, "text");
+  let descriptionsToCreate = createTextAndConnect(descriptions, "content");
+
+  const dataToSubmit = {
+    type: data.type,
+    title: {
+      create: titlesToCreate,
+    },
+  };
+  if (descriptionsToCreate && descriptionsToCreate.length > 0) {
+    dataToSubmit.content = {
+      create: descriptionsToCreate,
+    };
+  }
+
+  const newPageInfo = await prisma.pageInfo.create({
+    data: dataToSubmit,
+  });
+  return newPageInfo;
+}
+
+export async function editPageInfo({ data, pageInfoId }) {
+  const translations = data.translations;
+  const dataToSubmit = {};
+  if (data.type) {
+    dataToSubmit.type = data.type;
+  }
+
+  if (translations.edits.titles) {
+    await editAListOftext({ edits: translations.edits.titles, type: "TITLE" });
+  }
+  if (translations.edits.descriptions) {
+    await editAListOftext({
+      edits: translations.edits.descriptions,
+      type: "DESCRIPTION",
+    });
+  }
+
+  if (Object.keys(dataToSubmit).length > 0) {
+    await prisma.pageInfo.update({
+      where: {
+        id: Number(pageInfoId),
+      },
+      data: dataToSubmit,
+    });
+  }
+  if (translations.creates.titles) {
+    await createAListOfText({
+      creates: translations.creates.titles,
+      id: pageInfoId,
+      modelId: "pageInfoId",
+      type: "TITLE",
+    });
+  }
+  if (translations.creates.descriptions) {
+    await createAListOfText({
+      creates: translations.creates.descriptions,
+      id: pageInfoId,
+      modelId: "pageInfoId",
+      type: "DESCRIPTION",
     });
   }
   return true;

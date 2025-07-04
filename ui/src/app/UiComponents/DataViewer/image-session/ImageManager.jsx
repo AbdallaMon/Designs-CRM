@@ -58,7 +58,7 @@ const ImageManager = () => {
   const fetchData = async () => {
     const [imagesData, patternsData, spacesData] = await Promise.all([
       getData({ url: "shared/image-session/images?", setLoading }),
-      getData({ url: "shared/image-session?model=colorPattern&", setLoading }),
+      getData({ url: "shared/image-session?model=style&", setLoading }),
       getData({ url: "shared/image-session?model=space&", setLoading }),
     ]);
 
