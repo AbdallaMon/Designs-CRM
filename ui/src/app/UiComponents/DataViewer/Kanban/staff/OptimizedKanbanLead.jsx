@@ -1,8 +1,8 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { DndProvider, useDrop } from "react-dnd";
+import React from "react";
+import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Box, Grid2 as Grid, Select, Stack, Typography } from "@mui/material";
+import { Box, Grid2 as Grid } from "@mui/material";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent";
@@ -89,11 +89,6 @@ const OptimizedKanbanLead = ({
                   withParamsChange={true}
                 />
               )}{" "}
-              <DateRangeFilter
-                noMargin={true}
-                setFilters={setFilters}
-                lastThreeMonth={true}
-              />
               {!isNotStaff && (
                 <>
                   <DateRangeFilter

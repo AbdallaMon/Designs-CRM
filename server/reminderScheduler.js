@@ -23,6 +23,7 @@ cron.schedule("* * * * *", async () => {
     const upcomingMeetings = await prisma.meetingReminder.findMany({
       where: {
         notified: false,
+        status: "IN_PROGRESS",
         time: {
           lte: targetTime.toDate(), // any time in the next 15 minutes or less
           gte: now.toDate(),
@@ -66,6 +67,7 @@ cron.schedule("* * * * *", async () => {
     const upcomingCalls = await prisma.callReminder.findMany({
       where: {
         notified: false,
+        status: "IN_PROGRESS",
         time: {
           lte: targetTime.toDate(), // any time in the next 15 minutes or less
           gte: now.toDate(),

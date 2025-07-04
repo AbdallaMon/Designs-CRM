@@ -126,7 +126,7 @@ export const adminLinks = [
   },
   {
     name: "Images session gallery",
-    href: "/dashboard/image-sesssions",
+    href: "/dashboard/image-sessions",
     icon: <FiImage size={20} />,
   },
   {

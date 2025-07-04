@@ -13,6 +13,17 @@ import PreviewDialog from "@/app/UiComponents/DataViewer/leads/PreviewLead.jsx";
 import DateRangeFilter from "@/app/UiComponents/formComponents/DateRangeFilter.jsx";
 
 const columns = [
+  {
+    name: "id",
+    label: "Lead ID",
+    type: "href",
+    linkCondition: (item) => {
+      if (!item.id) {
+        return false;
+      }
+      return `/dashboard/deals/${item.id}`;
+    },
+  },
   { name: "client.name", label: "Client Name" },
   { name: "client.email", label: "Email" },
   { name: "client.phone", label: "Phone" },

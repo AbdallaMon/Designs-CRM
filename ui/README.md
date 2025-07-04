@@ -46,11 +46,11 @@
 - Sales choose type of contract
 - Code change color according to contract and can add more than contract
 - And lead try to make each column load alone and has its own state or what u think?
-
 - Color pallete
 - User calendar
+
+- Image dashboard
 - Page data for color pallete, materail ,style (one component)
-- Check a better way for color pallete
 
 - Total price is final price
 
