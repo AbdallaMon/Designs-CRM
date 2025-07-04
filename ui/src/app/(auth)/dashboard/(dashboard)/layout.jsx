@@ -364,7 +364,6 @@ export default function Layout({
 }) {
   const router = useRouter();
   let { user, isLoggedIn, validatingAuth } = useAuth();
-  console.log(document.referrer, "refresres");
 
   useEffect(() => {
     async function fetchData() {
@@ -382,6 +381,9 @@ export default function Layout({
           toastId,
           Success("Your session has been validated, loading data.")
         );
+      }
+      if (typeof window !== "undefined") {
+        console.log(document.referrer, "refresres");
       }
     }
 
