@@ -327,6 +327,9 @@ export async function getAvailableSlotsForDay({
         // gt: now,
         lte: endDate,
       },
+      availableDay: {
+        userId: Number(adminId),
+      },
     };
   }
   return date
