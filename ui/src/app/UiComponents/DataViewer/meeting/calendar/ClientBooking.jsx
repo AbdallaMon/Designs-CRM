@@ -76,7 +76,7 @@ const ClientBooking = ({ token }) => {
   });
   const getSlotsData = async () => {
     const slotsReq = await getData({
-      url: `client/calendar/slots/${sessionData.dayId}?token=${token}&timezone=${tz}&`,
+      url: `client/calendar/slots/${sessionData.dayId}?date=${sessionData.selectedDate}&token=${token}&timezone=${sessionData.selectedTimezone}&`,
       setLoading,
     });
     if (slotsReq.status === 200) {
@@ -95,10 +95,10 @@ const ClientBooking = ({ token }) => {
     }
   };
   useEffect(() => {
-    if (sessionData && sessionData.dayId) {
+    if (sessionData && sessionData.selectedDate) {
       getSlotsData();
     }
-  }, [sessionData && sessionData?.dayId]);
+  }, [sessionData && sessionData?.dayId, sessionData.selectedDate]);
   useEffect(() => {
     getTimezoneOptions();
   }, []);
@@ -106,14 +106,14 @@ const ClientBooking = ({ token }) => {
   const steps = ["Select Date", "Choose Time", "Confirm", "Success"];
 
   const handleNext = () => {
-    if (activeStep === 0 && sessionData.dayId) {
+    if (activeStep === 0 && sessionData.selectedDate) {
       getSlotsData();
     }
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
   };
 
   const handleBack = () => {
-    if (activeStep === 2 && sessionData.dayId) {
+    if (activeStep === 2 && sessionData.selectedDate) {
       getSlotsData();
     }
     setActiveStep((prevActiveStep) => prevActiveStep - 1);
@@ -143,7 +143,7 @@ const ClientBooking = ({ token }) => {
       const bookingReq = await handleRequestSubmit(
         sessionData,
         setToastLoading,
-        `client/calendar/book?token=${token}&&timezone=${tz}&`,
+        `client/calendar/book?token=${token}&&timezone=${sessionData.selectedTimezone}&`,
         false,
         "Booking..."
       );

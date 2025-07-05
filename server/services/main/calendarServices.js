@@ -34,6 +34,7 @@ export async function getAvailableDays({ month, adminId, type, userId }) {
   //   }
   //   return mockDays;
   // }
+
   const where = {
     userId: Number(adminId),
     date: {
@@ -43,7 +44,7 @@ export async function getAvailableDays({ month, adminId, type, userId }) {
   };
   if (type === "CLIENT") {
     const now = dayjs().toDate();
-
+    console.log(now, "now");
     where.slots = {
       some: {
         isBooked: false,
@@ -71,6 +72,8 @@ export async function getAvailableDays({ month, adminId, type, userId }) {
         select: {
           isBooked: true,
           meetingReminderId: true,
+          startTime: true,
+          endTime: true,
         },
       },
     },
@@ -279,41 +282,64 @@ export async function getAvailableSlotsForDay({
 
   //   return slots;
   // }
-  const startOfDay = dayjs(date).utc().startOf("day").toDate();
-  const endOfDay = dayjs(date).utc().endOf("day").toDate();
+  console.log(date, "date");
+  console.log(timezone, "timezone");
+
+  const initialStartDay = dayjs(date).utc().startOf("day").toDate();
+  const initialEndDay = dayjs(date).utc().endOf("day").toDate();
+  const start = dayjs.utc(date);
+  const startDate = start.toDate();
+
+  const endDate = start.add(24, "hour").toDate();
+
+  console.log(startDate, "startDate");
+
+  console.log(endDate, "endDate");
+
   const where = {
     id: Number(dayId),
   };
-  const day = dayId
+  const day = !date
     ? await prisma.availableDay.findUnique({
         where,
       })
     : await prisma.availableDay.findFirst({
         where: {
           date: {
-            gte: new Date(startOfDay),
-            lte: new Date(endOfDay),
+            gte: startDate,
+            lte: endDate,
           },
           userId: Number(adminId),
         },
       });
-  if (!day) {
-    return [];
-  }
+
   const now = dayjs().toDate();
-  const slotWhere = {};
+  let slotWhere = {};
   if (type === "CLIENT") {
     slotWhere.startTime = {
       gt: now,
     };
   }
-  return await prisma.availableSlot.findMany({
-    where: {
-      availableDayId: day.id,
-      ...slotWhere,
-    },
-    orderBy: { startTime: "asc" },
-  });
+  if (date) {
+    slotWhere = {
+      startTime: {
+        gte: startDate,
+        // gt: now,
+        lte: endDate,
+      },
+    };
+  }
+  return date
+    ? await prisma.availableSlot.findMany({
+        where: slotWhere,
+      })
+    : await prisma.availableSlot.findMany({
+        where: {
+          availableDayId: day.id,
+          ...slotWhere,
+        },
+        orderBy: { startTime: "asc" },
+      });
 }
 
 export async function deleteASlot({ slotId }) {

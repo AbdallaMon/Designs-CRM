@@ -60,6 +60,9 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
+import "dayjs/locale/en";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 // Initialize dayjs plugins
 dayjs.extend(utc);
@@ -135,18 +138,14 @@ export const Calendar = ({
   }, [displayMonth, rerender, adminId]);
 
   const getDaysInMonth = () => {
-    const startOfMonth = displayMonth.startOf("month");
-    const endOfMonth = displayMonth.endOf("month");
+    const startOfMonth = displayMonth.tz(userTimezone).startOf("month");
+    const endOfMonth = displayMonth.tz(userTimezone).endOf("month");
 
-    // This is the key change: start the week based on the current locale
-    const userTimezone = dayjs.tz.guess();
-    let startDate = startOfMonth.startOf("week");
+    const startDate = startOfMonth.startOf("week");
     const endDate = endOfMonth.endOf("week");
-    const submittedUtcDate = dayjs.utc(startDate);
-    const offsetInMinutes = dayjs().tz(userTimezone).utcOffset(); // e.g. 180
-    startDate = submittedUtcDate.add(offsetInMinutes, "minute");
+
     const days = [];
-    let current = startDate;
+    let current = startDate.clone().tz(userTimezone);
 
     while (current.isBefore(endDate) || current.isSame(endDate, "day")) {
       days.push(current);
@@ -160,38 +159,48 @@ export const Calendar = ({
   };
 
   // Helper function to check if a date is past in user's timezone
-  const isPastInUserTimezone = (dayToCheck) => {
-    const todayInUserTz = dayjs().tz(userTimezone).startOf("day");
-    const dayInUserTz = dayjs(dayToCheck).tz(userTimezone).startOf("day");
-    return dayToCheck.isBefore(todayInUserTz);
+  const isPastInUserTimezone = (dayToCheck, log) => {
+    const dayInTz = dayjs(dayToCheck).tz(userTimezone).startOf("day");
+    const todayInTz = dayjs().tz(userTimezone).startOf("day");
+    if (log) {
+    }
+    return dayInTz.isBefore(todayInTz);
   };
 
   const getDayStatus = (day, index) => {
-    const log = index === 2;
     const dayStrInUserTz = day.format("YYYY-MM-DD");
 
     // Find available day by converting stored GMT dates to user timezone
     const availableDay = availableDays.find((d) => {
       const availableDateInUserTz = getDateInUserTimezone(d.date);
-
-      return availableDateInUserTz === dayStrInUserTz;
+      if (index === 7) {
+      }
+      return d.slots.some(
+        (slot) =>
+          dayjs.utc(slot.startTime).tz(userTimezone).format("YYYY-MM-DD") ===
+          dayStrInUserTz
+      );
     });
 
     const hasAvailableSlots = !!availableDay;
 
     // Check if fully booked using the same timezone conversion
     const isFullyBooked = bookedDays.some((d) => {
-      const bookedDateInUserTz = getDateInUserTimezone(d.date);
-
-      return bookedDateInUserTz === dayStrInUserTz && d.fullyBooked;
+      // Check if any slot in the booked day matches the calendar day
+      return (
+        d.slots.some(
+          (slot) =>
+            dayjs.utc(slot.startTime).tz(userTimezone).format("YYYY-MM-DD") ===
+            dayStrInUserTz
+        ) && d.fullyBooked
+      );
     });
-
     const isSelected = multiSelect
       ? selectedDates.some((d) => dayjs(d).isSame(day, "day"))
       : selectedDate && !isAdmin && dayjs(selectedDate).isSame(day, "day");
 
     const isPastDate = isPastInUserTimezone(day);
-    if (log) {
+    if (index === 6) {
     }
     return {
       hasAvailableSlots,
@@ -242,212 +251,214 @@ export const Calendar = ({
     : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const monthYear = displayMonth.format("MMMM YYYY");
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        borderRadius: 3,
-        border: "1px solid",
-        borderColor: "divider",
-        overflow: "hidden",
-      }}
-    >
-      <Box
+    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="en-gb">
+      <Paper
+        elevation={0}
         sx={{
-          bgcolor: "primary.main",
-          color: "primary.contrastText",
-          p: 2,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
+          borderRadius: 3,
+          border: "1px solid",
+          borderColor: "divider",
+          overflow: "hidden",
         }}
       >
-        <IconButton
-          onClick={() => navigateMonth(-1)}
-          size={isMobile ? "small" : "medium"}
+        <Box
           sx={{
-            bgcolor: "background.paper",
-            boxShadow: 1,
-            "&:hover": { boxShadow: 2 },
+            bgcolor: "primary.main",
+            color: "primary.contrastText",
+            p: 2,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
           }}
         >
-          <ArrowBack />
-        </IconButton>
-        <Typography variant={isMobile ? "h6" : "h5"} fontWeight="600">
-          {monthYear}
-        </Typography>
-        <IconButton
-          onClick={() => navigateMonth(1)}
-          size={isMobile ? "small" : "medium"}
-          sx={{
-            bgcolor: "background.paper",
-            boxShadow: 1,
-            "&:hover": { boxShadow: 2 },
-          }}
-        >
-          <ArrowForward />
-        </IconButton>
-      </Box>
+          <IconButton
+            onClick={() => navigateMonth(-1)}
+            size={isMobile ? "small" : "medium"}
+            sx={{
+              bgcolor: "background.paper",
+              boxShadow: 1,
+              "&:hover": { boxShadow: 2 },
+            }}
+          >
+            <ArrowBack />
+          </IconButton>
+          <Typography variant={isMobile ? "h6" : "h5"} fontWeight="600">
+            {monthYear}
+          </Typography>
+          <IconButton
+            onClick={() => navigateMonth(1)}
+            size={isMobile ? "small" : "medium"}
+            sx={{
+              bgcolor: "background.paper",
+              boxShadow: 1,
+              "&:hover": { boxShadow: 2 },
+            }}
+          >
+            <ArrowForward />
+          </IconButton>
+        </Box>
 
-      <Grid container spacing={0} sx={{ position: "relative" }}>
-        {loading && <LoadingOverlay />}
-        {weekDays.map((day) => (
-          <Grid key={day} size={{ xs: 12 / 7 }}>
-            <Box textAlign="center" py={1}>
-              <Typography
-                variant="caption"
-                fontWeight="bold"
-                color="text.secondary"
-              >
-                {day}
-              </Typography>
-            </Box>
-          </Grid>
-        ))}
-
-        {days.map((day, index) => {
-          const status = getDayStatus(day, index);
-          const currentMonth = status.isCurrentMonth;
-          const selected = status.isSelected;
-          const available = status.hasAvailableSlots;
-          const past = status.isPastDate;
-          const canClick =
-            !past &&
-            (currentMonth || multiSelect) &&
-            (isAdmin || (!isAdmin && available)) &&
-            ((isAdmin && ((multiSelect && !available) || !multiSelect)) ||
-              !isAdmin);
-          const availableDay = status.availableDay;
-
-          return (
-            <Grid key={index} size={{ xs: 12 / 7 }}>
-              <Box
-                onClick={() => canClick && handleDateClick(day, availableDay)}
-                sx={{
-                  height: isMobile ? 40 : 48,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  cursor: canClick ? "pointer" : "not-allowed",
-                  borderRadius: 2,
-                  m: 0.5,
-                  backgroundColor: selected
-                    ? "primary.main"
-                    : available && !past
-                    ? lighten(theme.palette.success.main, 0.85)
-                    : "background.paper",
-                  color: selected
-                    ? "primary.contrastText"
-                    : !currentMonth || past
-                    ? "text.disabled"
-                    : "text.primary",
-                  border: "1px solid",
-                  borderColor: !canClick
-                    ? "transparent"
-                    : selected
-                    ? "primary.main"
-                    : available
-                    ? "success.main"
-                    : "transparent",
-                  "&:hover": canClick
-                    ? {
-                        bgcolor: selected ? "primary.dark" : "primary.50",
-                        transform: "scale(1.05)",
-                        boxShadow: 2,
-                      }
-                    : {},
-                  transition: "all 0.2s ease",
-                  opacity:
-                    (!canClick && type === "CLIENT") || !currentMonth || past
-                      ? 0.4
-                      : 1,
-                }}
-              >
+        <Grid container spacing={0} sx={{ position: "relative" }}>
+          {loading && <LoadingOverlay />}
+          {weekDays.map((day) => (
+            <Grid key={day} size={{ xs: 12 / 7 }}>
+              <Box textAlign="center" py={1}>
                 <Typography
-                  variant={isMobile ? "caption" : "body2"}
-                  fontWeight={selected ? 600 : 400}
-                  sx={{
-                    color:
-                      !currentMonth || past
-                        ? "text.disabled"
-                        : !canClick && type === "CLIENT"
-                        ? "red"
-                        : selected
-                        ? "primary.contrastText"
-                        : !currentMonth || past
-                        ? "text.disabled"
-                        : "text.priamry",
-                  }}
+                  variant="caption"
+                  fontWeight="bold"
+                  color="text.secondary"
                 >
-                  {day.date()}
+                  {day}
                 </Typography>
               </Box>
             </Grid>
-          );
-        })}
-      </Grid>
+          ))}
 
-      <Box mt={3}>
-        <Grid container spacing={2} sx={{ px: 2 }} alignItems="center">
-          <Grid>
-            <Box display="flex" alignItems="center" gap={1}>
-              <Box
-                width={12}
-                height={12}
-                bgcolor={theme.palette.success.main}
-                borderRadius={1}
-                border="1px solid"
-                borderColor="success.main"
-              />
-              <Typography variant="caption" fontWeight="500">
-                Available
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid>
-            <Box display="flex" alignItems="center" gap={1}>
-              <Box
-                width={12}
-                height={12}
-                bgcolor="error.main"
-                borderRadius={1}
-              />
-              <Typography variant="caption" fontWeight="500">
-                Un available
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid>
-            <Box display="flex" alignItems="center" gap={1}>
-              <Box
-                width={12}
-                height={12}
-                bgcolor="primary.main"
-                borderRadius={1}
-              />
-              <Typography variant="caption" fontWeight="500">
-                Selected
-              </Typography>
-            </Box>
-          </Grid>
-          {multiSelect && (
+          {days.map((day, index) => {
+            const status = getDayStatus(day, index);
+            const currentMonth = status.isCurrentMonth;
+            const selected = status.isSelected;
+            const available = status.hasAvailableSlots;
+            const past = status.isPastDate;
+            const canClick =
+              !past &&
+              (currentMonth || multiSelect) &&
+              (isAdmin || (!isAdmin && available)) &&
+              ((isAdmin && ((multiSelect && !available) || !multiSelect)) ||
+                !isAdmin);
+            const availableDay = status.availableDay;
+
+            return (
+              <Grid key={index} size={{ xs: 12 / 7 }}>
+                <Box
+                  onClick={() => canClick && handleDateClick(day, availableDay)}
+                  sx={{
+                    height: isMobile ? 40 : 48,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: canClick ? "pointer" : "not-allowed",
+                    borderRadius: 2,
+                    m: 0.5,
+                    backgroundColor: selected
+                      ? "primary.main"
+                      : available && !past
+                      ? lighten(theme.palette.success.main, 0.85)
+                      : "background.paper",
+                    color: selected
+                      ? "primary.contrastText"
+                      : !currentMonth || past
+                      ? "text.disabled"
+                      : "text.primary",
+                    border: "1px solid",
+                    borderColor: !canClick
+                      ? "transparent"
+                      : selected
+                      ? "primary.main"
+                      : available
+                      ? "success.main"
+                      : "transparent",
+                    "&:hover": canClick
+                      ? {
+                          bgcolor: selected ? "primary.dark" : "primary.50",
+                          transform: "scale(1.05)",
+                          boxShadow: 2,
+                        }
+                      : {},
+                    transition: "all 0.2s ease",
+                    opacity:
+                      (!canClick && type === "CLIENT") || !currentMonth || past
+                        ? 0.4
+                        : 1,
+                  }}
+                >
+                  <Typography
+                    variant={isMobile ? "caption" : "body2"}
+                    fontWeight={selected ? 600 : 400}
+                    sx={{
+                      color:
+                        !currentMonth || past
+                          ? "text.disabled"
+                          : !canClick && type === "CLIENT"
+                          ? "red"
+                          : selected
+                          ? "primary.contrastText"
+                          : !currentMonth || past
+                          ? "text.disabled"
+                          : "text.priamry",
+                    }}
+                  >
+                    {day.date()}
+                  </Typography>
+                </Box>
+              </Grid>
+            );
+          })}
+        </Grid>
+
+        <Box mt={3}>
+          <Grid container spacing={2} sx={{ px: 2 }} alignItems="center">
             <Grid>
               <Box display="flex" alignItems="center" gap={1}>
                 <Box
-                  width={16}
-                  height={16}
-                  bgcolor="text.disabled"
+                  width={12}
+                  height={12}
+                  bgcolor={theme.palette.success.main}
                   borderRadius={1}
-                  sx={{ opacity: 0.5 }}
+                  border="1px solid"
+                  borderColor="success.main"
                 />
                 <Typography variant="caption" fontWeight="500">
-                  Unavailable
+                  Available
                 </Typography>
               </Box>
             </Grid>
-          )}
-        </Grid>
-      </Box>
-    </Paper>
+            <Grid>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Box
+                  width={12}
+                  height={12}
+                  bgcolor="error.main"
+                  borderRadius={1}
+                />
+                <Typography variant="caption" fontWeight="500">
+                  Un available
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Box
+                  width={12}
+                  height={12}
+                  bgcolor="primary.main"
+                  borderRadius={1}
+                />
+                <Typography variant="caption" fontWeight="500">
+                  Selected
+                </Typography>
+              </Box>
+            </Grid>
+            {multiSelect && (
+              <Grid>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Box
+                    width={16}
+                    height={16}
+                    bgcolor="text.disabled"
+                    borderRadius={1}
+                    sx={{ opacity: 0.5 }}
+                  />
+                  <Typography variant="caption" fontWeight="500">
+                    Unavailable
+                  </Typography>
+                </Box>
+              </Grid>
+            )}
+          </Grid>
+        </Box>
+      </Paper>
+    </LocalizationProvider>
   );
 };
 
@@ -465,6 +476,7 @@ const TimeSlotManager = ({
   adminId,
   onUpdate,
   setDayId,
+  selectedDate,
 }) => {
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
@@ -581,7 +593,7 @@ const TimeSlotManager = ({
     const offsetInMinutes = dayjs().tz(userTimezone).utcOffset(); // e.g. 180
     const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
     const slotsReq = await getData({
-      url: `shared/calendar/slots?date=${correctedDate}&adminId=${adminId}&timezone=${tz}&`,
+      url: `shared/calendar/slots?date=${selectedDate}&adminId=${adminId}&timezone=${tz}`,
       setLoading,
     });
     if (slotsReq.status === 200) {
@@ -899,6 +911,9 @@ export const AdminBookingPanel = ({
     if (multiSelectMode) {
       setSelectedDates(Array.isArray(date) ? date : [date]);
     } else {
+      console.log(date, "see");
+      const parsedDate = typeof date === "string" ? new Date(date) : date;
+
       setSelectedDate(date);
       setOpenSlotManager(true);
       setDayId(d ? d.id : null);
@@ -1026,6 +1041,7 @@ export const AdminBookingPanel = ({
         type={type}
         adminId={adminId}
         setDayId={setDayId}
+        selectedDate={selectedDate}
       />
     </Box>
   );
