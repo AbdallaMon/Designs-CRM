@@ -1,4 +1,5 @@
 import prisma from "../../../prisma/prisma.js";
+import { v4 as uuidv4 } from "uuid";
 
 function createTextAndConnect(texts, key = "text") {
   let result = [];
@@ -143,7 +144,6 @@ export async function getTemplatesIds({ type }) {
   });
 }
 export async function createTemplate({ template }) {
-  console.log(template, "template in createTemplate");
   await prisma.template.create({
     data: {
       ...template,
@@ -153,8 +153,6 @@ export async function createTemplate({ template }) {
 }
 
 export async function updateTemplate({ template }) {
-  console.log(template, "template in updateTemplate");
-
   const id = template.id;
   delete template.id;
   await prisma.template.update({
@@ -757,7 +755,6 @@ export async function getDesignImages({ notArchived }) {
 }
 
 export async function createDesignImage({ data }) {
-  console.log(data, "data");
   if (!data.styleId) {
     throw new Error("Select at least one style");
   }
@@ -784,7 +781,6 @@ export async function createDesignImage({ data }) {
 }
 
 export async function editDesignImage({ data, imageId }) {
-  console.log(data, "data");
   const sumbitData = {};
   if (data.imageUrl) {
     sumbitData.imageUrl = data.imageUrl;
@@ -812,15 +808,25 @@ export async function editDesignImage({ data, imageId }) {
 }
 
 // page info
-export async function getPageInfo({ notArchived }) {
+export async function getPageInfos({ notArchived, lng, type }) {
   const where = {};
   if (notArchived) {
     where.isArchived = false;
+  }
+  const lngWhere = {};
+  if (lng) {
+    lngWhere.language = {
+      code: lng,
+    };
+  }
+  if (type) {
+    where.type = type;
   }
   return await prisma.pageInfo.findMany({
     where,
     include: {
       title: {
+        where: lngWhere,
         select: {
           text: true,
           id: true,
@@ -834,6 +840,8 @@ export async function getPageInfo({ notArchived }) {
         },
       },
       content: {
+        where: lngWhere,
+
         select: {
           content: true,
           id: true,
@@ -850,8 +858,61 @@ export async function getPageInfo({ notArchived }) {
   });
 }
 
+export async function getPageInfo({ notArchived, lng, type }) {
+  const where = {};
+  if (notArchived) {
+    where.isArchived = false;
+  }
+  const lngWhere = {};
+  if (lng) {
+    lngWhere.language = {
+      code: lng,
+    };
+  }
+  where.type = type;
+  console.log(where, "where");
+  console.log(lngWhere, "lngWhere");
+
+  const data = await prisma.pageInfo.findUnique({
+    where,
+    include: {
+      title: {
+        where: lngWhere,
+        select: {
+          text: true,
+          id: true,
+          languageId: true,
+          language: {
+            select: {
+              id: true,
+              code: true,
+            },
+          },
+        },
+      },
+      content: {
+        where: lngWhere,
+
+        select: {
+          content: true,
+          id: true,
+          languageId: true,
+          language: {
+            select: {
+              id: true,
+              code: true,
+            },
+          },
+        },
+      },
+    },
+  });
+  console.log(data, "data");
+
+  return data;
+}
+
 export async function createPageInfo({ data }) {
-  console.log(data, "Data");
   const titles = Object.values(data.titles);
   const descriptions = Object.values(data.descriptions);
   if (!data.type) {
@@ -927,4 +988,205 @@ export async function editPageInfo({ data, pageInfoId }) {
     });
   }
   return true;
+}
+
+// user
+
+export async function getClientImageSessions(clientLeadId) {
+  const sessions = await prisma.clientImageSession.findMany({
+    where: { clientLeadId: Number(clientLeadId) },
+    include: {
+      createdBy: true,
+      selectedSpaces: {
+        select: {
+          space: {
+            select: {
+              id: true,
+              title: {
+                select: {
+                  text: true,
+                  id: true,
+                  languageId: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      selectedImages: {
+        include: {
+          designImage: true,
+        },
+      },
+      material: {
+        select: {
+          id: true,
+          title: {
+            select: {
+              text: true,
+              id: true,
+              languageId: true,
+            },
+          },
+        },
+      },
+      style: {
+        select: {
+          id: true,
+          title: {
+            select: {
+              text: true,
+              id: true,
+              languageId: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return sessions;
+}
+
+export async function createClientImageSession({
+  clientLeadId,
+  userId,
+  selectedSpaceIds,
+}) {
+  if (!selectedSpaceIds || selectedSpaceIds.length === 0) {
+    throw new Error("At least one space must be selected");
+  }
+
+  const token = uuidv4();
+
+  const session = await prisma.clientImageSession.create({
+    data: {
+      clientLeadId: Number(clientLeadId),
+      createdById: Number(userId),
+      token,
+      selectedSpaces: {
+        create: selectedSpaceIds.map((spaceId) => ({
+          space: { connect: { id: spaceId } },
+        })),
+      },
+    },
+  });
+
+  return session;
+}
+
+export async function regenerateSessionToken(sessionId) {
+  const session = await prisma.clientImageSession.findUnique({
+    where: { id: sessionId },
+  });
+
+  if (!session) throw new Error("Session not found");
+  if (session.sessionStatus !== "IN_PROGRESS")
+    throw new Error("Cannot regenerate token for completed session");
+
+  const newToken = uuidv4();
+
+  const updated = await prisma.clientImageSession.update({
+    where: { id: sessionId },
+    data: {
+      token: newToken,
+    },
+  });
+
+  return {
+    token: updated.token,
+    url: `${process.env.OLDORIGIN}/image-session?token=${updated.token}`,
+  };
+}
+
+export async function deleteInProgressSession(sessionId) {
+  const session = await prisma.clientImageSession.findUnique({
+    where: { id: sessionId },
+  });
+
+  if (!session) throw new Error("Session not found");
+  if (session.sessionStatus !== "IN_PROGRESS") {
+    throw new Error("Only sessions that are in progress can be deleted");
+  }
+
+  await prisma.clientImageSession.delete({
+    where: { id: sessionId },
+  });
+
+  return { message: "Deleted succssfully" };
+}
+
+// client
+export async function getSessionByToken({ token }) {
+  const session = await prisma.clientImageSession.findUnique({
+    where: { token },
+    include: {
+      selectedSpaces: {
+        select: {
+          space: {
+            select: {
+              id: true,
+              title: {
+                select: {
+                  text: true,
+                  id: true,
+                  languageId: true,
+                },
+              },
+            },
+          },
+        },
+      },
+      selectedImages: {
+        include: {
+          designImage: true,
+        },
+      },
+      material: {
+        select: {
+          id: true,
+          title: {
+            select: {
+              text: true,
+              id: true,
+              languageId: true,
+            },
+          },
+        },
+      },
+      style: {
+        select: {
+          id: true,
+          title: {
+            select: {
+              text: true,
+              id: true,
+              languageId: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!session) {
+    throw new Error("Session not found or expired");
+  }
+
+  return session;
+}
+
+export async function changeSessionStatus({ token, id, sessionStatus }) {
+  const key = token ? token : id;
+  const keyId = token || Number(id);
+
+  return await prisma.clientImageSession.update({
+    where: {
+      [key]: keyId,
+    },
+    data: {
+      sessionStatus,
+    },
+  });
 }

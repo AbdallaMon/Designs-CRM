@@ -775,3 +775,8 @@ export const getTokenData = (req, res) => {
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 };
+
+export async function getAndThrowError(e, res) {
+  console.log(e, "e");
+  return res.status(500).json({ message: e.message });
+}

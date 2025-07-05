@@ -53,8 +53,6 @@ const ClientImageSelection = ({ token }) => {
   const [validationError, setValidationError] = useState("");
 
   // Refs for scrolling
-  const spaceRefs = useRef({});
-
   // Signature canvas ref
 
   const steps = [

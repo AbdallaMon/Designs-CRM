@@ -15,7 +15,6 @@ import Stripe from "stripe";
 import {
   changeSessionStatus,
   getLanguages,
-  getSessionByToken,
   submitSelectedImages,
   submitSelectedPatterns,
   uploadPdfAndApproveSession,
@@ -478,15 +477,7 @@ router.post("/upload", async (req, res) => {
 });
 
 // client image session
-router.get(`/image-session`, async (req, res) => {
-  try {
-    const imageSesssion = await getSessionByToken(req.query.token);
-    res.status(200).json({ data: imageSesssion });
-  } catch (e) {
-    console.log(e, "e");
-    return res.status(500).json({ error: "Some thing wrong happened" });
-  }
-});
+
 router.get(`/image-session/data`, async (req, res) => {
   try {
     const colors = await getImageSesssionModel({ model: req.query.model });

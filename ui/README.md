@@ -52,6 +52,7 @@
 - Page data for color pallete, materail ,style (one component)
 
 - Image in the url in both dream studio and eng ahmed
+- مراحل البيع
 
 - Total price is final price
 

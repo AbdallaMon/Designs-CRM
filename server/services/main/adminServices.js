@@ -1818,6 +1818,7 @@ export async function getModelIds({ searchParams, model }) {
       : {};
   const where = {};
   const select = {};
+  const include = {};
   if (searchParams.select) {
     const selectFields = searchParams.select.split(",");
     selectFields.forEach((field) => {
@@ -1826,6 +1827,18 @@ export async function getModelIds({ searchParams, model }) {
       }
       select.select = {
         ...select.select,
+        [field]: true,
+      };
+    });
+  }
+  if (searchParams.include) {
+    const includeFields = searchParams.include.split(",");
+    includeFields.forEach((field) => {
+      if (!include.include) {
+        include.include = {};
+      }
+      include.include = {
+        ...select.include,
         [field]: true,
       };
     });
@@ -1843,6 +1856,7 @@ export async function getModelIds({ searchParams, model }) {
     where: {
       ...where,
     },
-    ...select,
+    ...(select && select),
+    ...(include && include),
   });
 }

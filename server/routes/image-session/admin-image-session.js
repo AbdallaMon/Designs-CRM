@@ -19,7 +19,7 @@ import {
   getColors,
   getDesignImages,
   getMaterials,
-  getPageInfo,
+  getPageInfos,
   getSpaces,
   getStyles,
   getTemplates,
@@ -302,7 +302,7 @@ router.put("/images/:imageId", async (req, res) => {
 // page info
 router.get("/page-info", async (req, res) => {
   try {
-    const data = await getPageInfo({
+    const data = await getPageInfos({
       notArchived: req.query.notArchived && req.query.notArchived === "true",
     });
     res.status(200).json({ data });

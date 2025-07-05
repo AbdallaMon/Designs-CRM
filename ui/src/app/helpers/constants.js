@@ -321,6 +321,11 @@ export function getPriorityOrder(priority) {
   };
   return priorityMap[priority] || 3; // Default to MEDIUM
 }
+export const PageInfoType = {
+  BEFORE_PATTERN: "BEFORE_PATTERN",
+  BEFORE_MATERIAL: "BEFORE_MATERIAL",
+  BEFORE_STYLE: "BEFORE_STYLE",
+};
 export const groupColors = {
   0: { bg: "#f8fbff", border: "#2196f3", text: "#1565c0" },
   1: { bg: "#faf8ff", border: "#9c27b0", text: "#7b1fa2" },

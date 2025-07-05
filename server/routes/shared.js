@@ -14,19 +14,15 @@ import {
   checkIfUserAllowedToTakeALead,
   checkUserLog,
   createAnUpdate,
-  createClientImageSession,
   createNewContract,
   createNewTask,
   deleteAModel,
   deleteContract,
-  deleteInProgressSession,
-  deleteNote,
   editContract,
   editPriceOfferStatus,
   getAdmins,
   getAllFixedData,
   getArchivedProjects,
-  getClientImageSessions,
   getClientLeadDetails,
   getClientLeads,
   getClientLeadsByDateRange,
@@ -61,7 +57,6 @@ import {
   makePayments,
   markAnUpdateAsDone,
   markClientLeadAsConverted,
-  regenerateSessionToken,
   submitUserLog,
   toggleArchieveAnUpdate,
   toggleArchieveASharedUpdate,
@@ -72,6 +67,7 @@ import {
 } from "../services/main/sharedServices.js";
 import {
   getAdminClientLeadDetails,
+  getModelIds,
   updateLeadField,
 } from "../services/main/adminServices.js";
 import {
@@ -100,7 +96,7 @@ import {
 const router = Router();
 import questionsRoutes from "./questions/questions.js";
 import calendarRoutes from "./calendar/calendar.js";
-import imageSessionRouter from "./image-session/admin-image-session.js";
+import imageSessionRouter from "./image-session/image-session.js";
 import {
   addCutsomDate,
   createAvailableDatesForMoreThanOneDay,
@@ -1372,6 +1368,22 @@ router.get("/reviews", async (req, res) => {
   }
 });
 
+router.get("/ids", async (req, res) => {
+  try {
+    const model = req.query.model;
+    delete req.query.model;
+    const data = await getModelIds({
+      searchParams: req.query,
+      model,
+    });
+    res.status(200).json({ data });
+  } catch (e) {
+    console.log(e, "e");
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching Spaces" });
+  }
+});
 /////////////// end of utility /////////
 
 ////////// start of image sesssion //////////////
@@ -1405,67 +1417,6 @@ router.get("/image-session", async (req, res) => {
       .json({ message: "An error occurred while fetching images" });
   }
 });
-
-router.get("/image-session/:clientLeadId/sessions", async (req, res) => {
-  try {
-    const imageSesssions = await getClientImageSessions(
-      Number(req.params.clientLeadId)
-    );
-
-    res.status(200).json({ data: imageSesssions });
-  } catch (error) {
-    console.error("Error fetching images:", error);
-    res
-      .status(500)
-      .json({ message: "An error occurred while fetching images" });
-  }
-});
-
-router.post("/image-session/:clientLeadId/sessions", async (req, res) => {
-  try {
-    const user = await getCurrentUser(req);
-    const newSession = await createClientImageSession({
-      clientLeadId: Number(req.params.clientLeadId),
-      userId: Number(user.id),
-      selectedSpaceIds: req.body.spaces,
-    });
-    res
-      .status(200)
-      .json({ data: newSession, message: "New session created succussfully" });
-  } catch (e) {
-    console.log(e, "e");
-    res.status(500).json({ message: "An error occurred" });
-  }
-});
-router.put(
-  "/image-session/:clientLeadId/sessions/:sessionId/re-generate",
-  async (req, res) => {
-    try {
-      const newSession = await regenerateSessionToken(
-        Number(req.params.sessionId)
-      );
-      res.status(200).json({
-        data: newSession,
-        message: "Session link regenerated please copy it",
-      });
-    } catch (e) {
-      res.status(500).json({ message: "An error occurred" });
-    }
-  }
-);
-router.delete(
-  "/image-session/:clientLeadId/sessions/:sessionId",
-  async (req, res) => {
-    try {
-      await deleteInProgressSession(Number(req.params.sessionId));
-      res.status(200).json({
-        message: "Session deleted succussfully",
-      });
-    } catch (e) {
-      res.status(500).json({ message: "An error occurred" });
-    }
-  }
-);
 
 router.get("/users/admins", async (req, res) => {
   try {

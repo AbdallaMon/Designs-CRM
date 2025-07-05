@@ -44,7 +44,7 @@ import PreviewWorkStage from "../work-stages/PreviewWorkStage";
 import FloatingIdBadge from "../leads/extra/IdBadge";
 
 import { KanbanUpdateSection } from "../leads/leadUpdates/KanbanUpdateSection";
-import ClientImageSessionManager from "../image-session/ClientSessionImageManager";
+import ClientImageSessionManager from "../image-session/users/ClientSessionImageManager";
 import { contractLevelColors } from "@/app/helpers/colors";
 import { IoMdContract } from "react-icons/io";
 

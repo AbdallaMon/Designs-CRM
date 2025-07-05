@@ -21,7 +21,6 @@ import {
   ListItemText,
   ListItemButton,
   Checkbox,
-  Divider,
   Stack,
   Alert,
   Tooltip,
@@ -29,7 +28,6 @@ import {
 import {
   FaImage,
   FaPlus,
-  FaNoteSticky,
   FaLink,
   FaCopy,
   FaUser,
@@ -42,13 +40,14 @@ import {
 import { getData } from "@/app/helpers/functions/getData";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import dayjs from "dayjs";
-import { NotesComponent } from "../utility/Notes";
+import { NotesComponent } from "../../utility/Notes";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import FullScreenLoader from "../../feedback/loaders/FullscreenLoader";
+import FullScreenLoader from "../../../feedback/loaders/FullscreenLoader";
 import { useAuth } from "@/app/providers/AuthProvider";
-import DeleteModal from "../../models/DeleteModal";
-import ConfirmWithActionModel from "../../models/ConfirmsWithActionModel";
+import DeleteModal from "../../../models/DeleteModal";
+import ConfirmWithActionModel from "../../../models/ConfirmsWithActionModel";
+import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 
 const ClientImageSessionManager = ({ clientLeadId }) => {
   const { user } = useAuth();
@@ -62,17 +61,18 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
   const { setLoading: setToastLoading } = useToastContext();
   const [copiedToken, setCopiedToken] = useState(null);
   async function fetchData() {
-    const [imageSessionRequst, spacesRequest] = await Promise.all([
-      getData({
-        url: `shared/image-session/${clientLeadId}/sessions?`,
-        setLoading,
-      }),
-      getData({ url: "shared/image-session?model=space&", setLoading }),
-    ]);
-    if (imageSessionRequst.status === 200 && spacesRequest.status === 200) {
-      setSessions(imageSessionRequst.data);
-      setSpaces(spacesRequest.data);
-    }
+    await getDataAndSet({
+      url: `shared/image-session/${clientLeadId}/sessions?`,
+      setLoading,
+      setData: setSessions,
+    });
+    await getDataAndSet({
+      url: `shared/ids?where=${JSON.stringify({
+        isArchived: false,
+      })}&model=space&include=title&`,
+      setLoading,
+      setData: setSpaces,
+    });
   }
   useEffect(() => {
     if (sessionsDialogOpen) {
@@ -85,6 +85,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
     setCopiedToken(token);
     setTimeout(() => setCopiedToken(null), 50);
   };
+  console.log(sessions, "sessions");
 
   const handleRegenerateLink = async (sessionId) => {
     const regenerateRequest = await handleRequestSubmit(
@@ -414,57 +415,77 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                               <Box display="flex" flexWrap="wrap" gap={1}>
                                 {session.selectedSpaces.map((spaceSession) => (
                                   <Chip
-                                    key={spaceSession.id}
-                                    label={spaceSession.space.name}
+                                    key={spaceSession.space.id}
+                                    label={`#${spaceSession.space.id} - ${spaceSession.space.title[0].text}`}
                                     size="medium"
                                     variant="outlined"
-                                    avatar={
-                                      <Avatar
-                                        src={spaceSession.space.avatarUrl}
-                                        sx={{ width: 40, height: 40 }}
-                                      >
-                                        {spaceSession.space.name
-                                          .charAt(0)
-                                          .toUpperCase()}
-                                      </Avatar>
-                                    }
                                   />
                                 ))}
                               </Box>
                             </Box>
 
-                            {session.preferredPatterns.length > 0 && (
-                              <Box mb={2}>
-                                <Typography variant="subtitle2" gutterBottom>
-                                  <Box
-                                    display="flex"
-                                    alignItems="center"
-                                    gap={1}
-                                  >
-                                    <FaPalette size={14} />
-                                    Preferred Patterns
+                            {session.customColors &&
+                              session.customColors.length > 0 && (
+                                <Box mb={2}>
+                                  <Typography variant="subtitle2" gutterBottom>
+                                    <Box
+                                      display="flex"
+                                      alignItems="center"
+                                      gap={1}
+                                    >
+                                      <FaPalette size={14} />
+                                      Colors Pattern
+                                    </Box>
+                                  </Typography>
+                                  <Box display="flex" flexWrap="wrap" gap={1}>
+                                    {session.customColors.map(
+                                      (color, index) => (
+                                        <Chip
+                                          key={color + index}
+                                          label={color}
+                                          size="medium"
+                                          variant="outlined"
+                                          sx={{ mr: 1, mb: 1 }}
+                                          avatar={
+                                            <Box
+                                              sx={{
+                                                width: 16,
+                                                height: 16,
+                                                borderRadius: "50%",
+                                                backgroundColor: color,
+                                                border: "1px solid #ccc",
+                                              }}
+                                            />
+                                          }
+                                        />
+                                      )
+                                    )}
                                   </Box>
-                                </Typography>
-                                <Box display="flex" flexWrap="wrap" gap={1}>
-                                  {session.preferredPatterns.map((pattern) => (
-                                    <Chip
-                                      key={pattern.id}
-                                      label={pattern.name}
-                                      size="medium"
-                                      color="secondary"
-                                      variant="outlined"
-                                      avatar={
-                                        <Avatar
-                                          src={pattern.avatarUrl}
-                                          sx={{ width: 40, height: 40 }}
-                                        >
-                                          {pattern.name.charAt(0).toUpperCase()}
-                                        </Avatar>
-                                      }
-                                    />
-                                  ))}
                                 </Box>
-                              </Box>
+                              )}
+                          </Grid>
+                          <Grid size={{ xs: 12 }}>
+                            {session.material && (
+                              <Chip
+                                label={`Material: ${
+                                  session.material.title?.[0]?.text ||
+                                  `#${session.material.id}`
+                                }`}
+                                variant="outlined"
+                                color="primary"
+                                sx={{ mr: 1 }}
+                              />
+                            )}
+
+                            {session.style && (
+                              <Chip
+                                label={`Style: ${
+                                  session.style.title?.[0]?.text ||
+                                  `#${session.style.id}`
+                                }`}
+                                variant="outlined"
+                                color="secondary"
+                              />
                             )}
                           </Grid>
 
@@ -486,7 +507,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                                     <CardMedia
                                       component="img"
                                       height="120"
-                                      image={selectedImage.image.url}
+                                      image={selectedImage.designImage.imageUrl}
                                       alt="Selected image"
                                     />
                                     <CardContent sx={{ padding: 1 }}>
@@ -571,7 +592,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                   return (
                     <Chip
                       key={spaceId}
-                      label={space?.name}
+                      label={`#${space.id} - ${space?.title[0].text}`}
                       onDelete={() => handleSpaceToggle(spaceId)}
                       deleteIcon={<FaTimes />}
                       color="primary"

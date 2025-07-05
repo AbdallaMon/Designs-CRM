@@ -84,7 +84,7 @@ import UpdateInitialConsultButton from "../../buttons/UpdateInitialConsultLead";
 import DeleteModal from "../../models/DeleteModal";
 import { AssignNewStaffModal } from "../utility/AssignNewStaffModal";
 import UpdatesList from "./leadUpdates/UpdatesList";
-import ClientImageSessionManager from "../image-session/ClientSessionImageManager";
+import ClientImageSessionManager from "../image-session/users/ClientSessionImageManager";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>

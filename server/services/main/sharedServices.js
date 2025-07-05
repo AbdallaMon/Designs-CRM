@@ -326,7 +326,10 @@ export async function getClientLeadsColumnStatus({
   isAdmin,
   user,
 }) {
-  const filters = searchParams.filters && JSON.parse(searchParams.filters);
+  const filters =
+    searchParams.filters &&
+    searchParams.filters !== "undefined" &&
+    JSON.parse(searchParams.filters);
 
   const where = {
     assignedTo: { isNot: null },
@@ -1902,7 +1905,10 @@ export async function markAnUpdateAsDone({
 /////////// Projects //////////////
 
 export async function getLeadByPorjects({ searchParams, isAdmin }) {
-  const filters = searchParams.filters && JSON.parse(searchParams.filters);
+  const filters =
+    searchParams.filters &&
+    searchParams.filters !== "undefined" &&
+    JSON.parse(searchParams.filters);
   const where = { leadType: "NORMAL" };
   const projectWhere = {};
   const updatesWhere = {};
@@ -2146,7 +2152,10 @@ export async function getLeadByPorjects({ searchParams, isAdmin }) {
 }
 
 export async function getLeadByPorjectsColumn({ searchParams, isAdmin }) {
-  const filters = searchParams.filters && JSON.parse(searchParams.filters);
+  const filters =
+    searchParams.filters &&
+    searchParams.filters !== "undefined" &&
+    JSON.parse(searchParams.filters);
   const where = { leadType: "NORMAL" };
   const projectWhere = {};
   const updatesWhere = {};
@@ -3032,7 +3041,10 @@ export async function updateProject({ data, isAdmin }) {
 
 export async function getUserProjects(searchParams, limit, skip) {
   const where = {};
-  const filters = JSON.parse(searchParams.filters);
+  const filters =
+    searchParams.filters &&
+    searchParams.filters !== "undefined" &&
+    JSON.parse(searchParams.filters);
   if (searchParams.userId) {
     where.assignments = {
       some: {
@@ -3878,97 +3890,7 @@ export async function getImages({ patternIds, spaceIds }) {
 
   return images;
 }
-export async function getClientImageSessions(clientLeadId) {
-  const sessions = await prisma.clientImageSession.findMany({
-    where: { clientLeadId: Number(clientLeadId) },
-    include: {
-      createdBy: true,
-      selectedSpaces: {
-        include: { space: true },
-      },
-      selectedImages: {
-        include: {
-          image: {
-            include: {
-              spaces: true,
-            },
-          },
-        },
-      },
-      preferredPatterns: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
 
-  return sessions;
-}
-
-export async function createClientImageSession({
-  clientLeadId,
-  userId,
-  selectedSpaceIds,
-}) {
-  if (!selectedSpaceIds || selectedSpaceIds.length === 0) {
-    throw new Error("At least one space must be selected");
-  }
-
-  const token = uuidv4();
-
-  const session = await prisma.clientImageSession.create({
-    data: {
-      clientLeadId: Number(clientLeadId),
-      userId: Number(userId),
-      token,
-      selectedSpaces: {
-        create: selectedSpaceIds.map((spaceId) => ({
-          space: { connect: { id: spaceId } },
-        })),
-      },
-    },
-  });
-
-  return session;
-}
-export async function regenerateSessionToken(sessionId) {
-  const session = await prisma.clientImageSession.findUnique({
-    where: { id: sessionId },
-  });
-
-  if (!session) throw new Error("Session not found");
-  if (session.sessionStatus !== "IN_PROGRESS")
-    throw new Error("Cannot regenerate token for completed session");
-
-  const newToken = uuidv4();
-
-  const updated = await prisma.clientImageSession.update({
-    where: { id: sessionId },
-    data: {
-      token: newToken,
-    },
-  });
-
-  return {
-    token: updated.token,
-    url: `${process.env.ORIGIN}/image-session?token=${updated.token}`,
-  };
-}
-
-export async function deleteInProgressSession(sessionId) {
-  const session = await prisma.clientImageSession.findUnique({
-    where: { id: sessionId },
-  });
-
-  if (!session) throw new Error("Session not found");
-  if (session.sessionStatus !== "IN_PROGRESS") {
-    throw new Error("Only sessions that are in progress can be deleted");
-  }
-
-  await prisma.clientImageSession.delete({
-    where: { id: sessionId },
-  });
-
-  return { message: "Deleted succssfully" };
-}
 export async function getAdmins() {
   let where = {};
   where.OR = [

@@ -19,6 +19,7 @@ const fontBase64 = fontBuffer.toString("base64");
 const fontBoldPath = path.join(__dirname, "../fonts/NotoSansArabic-Bold.ttf");
 const fontBoldBuffer = fs.readFileSync(fontBoldPath);
 const fontBoldBase64 = fontBoldBuffer.toString("base64");
+
 export async function getSessionByToken(token) {
   const session = await prisma.clientImageSession.findUnique({
     where: { token },

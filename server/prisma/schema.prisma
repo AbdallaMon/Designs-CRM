@@ -141,11 +141,6 @@ enum UpdateStatus {
   CANCELLED
 }
 
-enum SessionStatus {
-  IN_PROGRESS
-  APPROVING 
-  APPROVED
-}
 
 enum MeetingType {
   SALES_MEETING
@@ -1030,15 +1025,6 @@ model ColorPatternColor {
   colorPattern       ColorPattern @relation(fields: [colorPatternId], references: [id])
 }
 
-model Space {
-  id         Int    @id @default(autoincrement())
-  title      TextShort[] @relation("SpaceTitles")
-  isArchived Boolean @default(false)
-  selectedIn      ClientImageSession[]
-  spaceImages     DesignImageSpace[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-}
 
 model DesignImage {
   id         Int      @id @default(autoincrement())
@@ -1114,6 +1100,29 @@ model Template {
   colorPatterns     ColorPattern[]
 }
 
+model Space {
+  id         Int    @id @default(autoincrement())
+  title      TextShort[] @relation("SpaceTitles")
+  isArchived Boolean @default(false)
+  selectedIn  ClientImageSessionToSpace[]
+  spaceImages     DesignImageSpace[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+enum SessionStatus {
+  INITIAL
+  PREVIEW_COLOR_PATTERN
+  SELECTED_COLOR_PATTERN
+  PREVIEW_MATERIAL
+  SELECTED_MATERIAL
+  PREVIEW_STYLE
+  SELECTED_STYLE
+  PREVIEW_IMAGES
+  SELECTED_IMAGES
+  PDF_GENERATED
+  SUBMITTED
+}
 
 model ClientImageSession {
   id               Int                    @id @default(autoincrement())
@@ -1122,8 +1131,7 @@ model ClientImageSession {
   clientLead       ClientLead             @relation(fields: [clientLeadId], references: [id])
   createdById      Int
   createdBy        User                   @relation(fields: [createdById], references: [id])
-  selectedSpaceId  Int?
-  selectedSpace    Space?                 @relation(fields: [selectedSpaceId], references: [id])
+  selectedSpaces ClientImageSessionToSpace[] 
   colorPatternId   Int?
   colorPattern     ColorPattern?          @relation(fields: [colorPatternId], references: [id])
   materialId       Int?
@@ -1136,9 +1144,21 @@ model ClientImageSession {
   signatureUrl     String?
   submittedAt      DateTime?
   isArchived       Boolean                @default(false)
+  sessionStatus    SessionStatus          @default(INITIAL)
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
 }
+
+model ClientImageSessionToSpace {
+  clientImageSessionId Int
+  spaceId              Int
+
+  clientImageSession   ClientImageSession @relation(fields: [clientImageSessionId], references: [id])
+  space                Space              @relation(fields: [spaceId], references: [id])
+
+  @@id([clientImageSessionId, spaceId])
+}
+
 
 model ClientSelectedImage {
   id              Int                @id @default(autoincrement())

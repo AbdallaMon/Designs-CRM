@@ -37,7 +37,7 @@ export function ClientImageAppBar() {
     <AppBar position="sticky" elevation={1} sx={{ my: 2 }}>
       <Toolbar>
         <img
-          src="https://dreamstudiio.com/main-logo.jpg"
+          src="https://dreamstudiio.com/dream-logo.jpg"
           style={{
             width: "40px",
             height: "40px",
