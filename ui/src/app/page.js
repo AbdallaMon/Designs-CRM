@@ -6,13 +6,13 @@ import LanguageSwitcherProvider from "./providers/LanguageSwitcherProvider";
 
 export default function page() {
   return (
-    <LanguageSwitcherProvider>
-      <LanguageProvider>
-        <Suspense>
+    <LanguageProvider>
+      <Suspense>
+        <LanguageSwitcherProvider>
           <ClientPage />
           <FloatingWhatsAppButton />
-        </Suspense>
-      </LanguageProvider>
-    </LanguageSwitcherProvider>
+        </LanguageSwitcherProvider>
+      </Suspense>
+    </LanguageProvider>
   );
 }
