@@ -174,6 +174,7 @@ export const PreviewTemplateCard = ({
   customStyles = {},
   layout = ["title", "description", "consButton", "colors"],
   isEditItem,
+  ty,
 }) => {
   const cardDimensions = { minWidth: "300px", width: "100%" };
   const cardStyle = {
@@ -418,6 +419,7 @@ const StyleEditorControls = memo(
     template,
     onTemplateChange,
     setTemplate,
+    type,
   }) => {
     const { key, label } = element;
     const styles = customStyles[key] || {};
@@ -488,16 +490,17 @@ const StyleEditorControls = memo(
             onChange={(color) => handleUpdate("color", color)}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
-          <EnhancedSlider
-            label="Border Radius"
-            value={styles.borderRadius}
-            onChange={(val) => handleUpdate("borderRadius", val, true)}
-            min={0}
-            max={50}
-          />
-        </Grid>
-
+        {type === "COLOR_PATTERN" && key === "card" ? null : (
+          <Grid item xs={12} sm={6}>
+            <EnhancedSlider
+              label="Border Radius"
+              value={styles.borderRadius}
+              onChange={(val) => handleUpdate("borderRadius", val, true)}
+              min={0}
+              max={50}
+            />
+          </Grid>
+        )}
         {/* --- Shadow Section --- */}
         <Grid item xs={12} sm={6}>
           <EnhancedSlider
@@ -656,6 +659,7 @@ const StyleEditor = ({
   onStyleChange,
   setTemplate,
   handleTemplateChange,
+  type,
 }) => {
   const visibleElements = useMemo(
     () =>
@@ -708,6 +712,7 @@ const StyleEditor = ({
               template={template}
               onTemplateChange={handleTemplateChange}
               setTemplate={setTemplate}
+              type={type}
             />
           </AccordionDetails>
         </Accordion>
@@ -734,7 +739,7 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
       "https://panel.dreamstudiio.com/uploads/26c284e5-d1b0-4047-87fe-74d77f80844e.jpg",
     overlayColor: "#000000",
     overlayOpacity: 0.3,
-    borderRadius: "8px",
+    borderRadius: type === "COLOR_PATTERN" ? "0px" : "8px",
     padding: "16px",
     paddingX: "16px",
     paddingY: "16px",
@@ -744,7 +749,7 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
   const customStyle = {
     card: {
       backgroundColor: "transparent",
-      borderRadius: "8px",
+      borderRadius: type === "COLOR_PATTERN" ? "0px" : "8px",
       padding: "0px",
       paddingX: "0px",
       paddingY: "0px",
@@ -1100,6 +1105,7 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
                 onStyleChange={handleStyleChange}
                 setTemplate={setTemplate}
                 handleTemplateChange={handleTemplateChange}
+                type={type}
               />
             </Grid>
           </Grid>

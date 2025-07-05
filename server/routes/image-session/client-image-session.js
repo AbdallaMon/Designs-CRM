@@ -48,8 +48,7 @@ router.get(`/session`, async (req, res) => {
 router.put("/session/status", async (req, res) => {
   try {
     const data = await changeSessionStatus({
-      token:
-        req.query.token && req.query.token !== "undefined" && req.body.token,
+      token: req.body.token && req.body.token !== "undefined" && req.body.token,
       id: req.body.id,
       sessionStatus: req.body.sessionStatus,
     });

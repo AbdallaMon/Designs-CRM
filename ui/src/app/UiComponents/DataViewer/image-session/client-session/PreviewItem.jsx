@@ -1,9 +1,7 @@
-"use client";
 import { Box, Card, Typography } from "@mui/material";
-import ProsAndConsDialogButton from "./ProsAndCons";
-import { ensureHttps } from "@/app/helpers/functions/utility";
+import ProsAndConsDialogButton from "../admin/shared/ProsAndCons";
 
-export function PreviewItemTemplate({ template, item }) {
+export function PreviewItem({ template, item }) {
   const customStyles = template.customStyle;
   const cardDimensions = { minWidth: "300px", width: "100%" };
   const cardStyle = {

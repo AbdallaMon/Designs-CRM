@@ -11,6 +11,7 @@ const ColorsMangaer = () => {
       <ImageItemViewer
         slug="colors"
         item={ColorItemCard}
+        gridSize={{ md: 6 }}
         createComponent={CreateColor}
       />
     </Box>

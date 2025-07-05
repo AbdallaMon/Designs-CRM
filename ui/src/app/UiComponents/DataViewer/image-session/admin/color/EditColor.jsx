@@ -7,7 +7,10 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { OpenItemDialog } from "../shared/OpenItemDialog";
 import { EditTitleAndDescriptionFields } from "../shared/EditTitleAndDescription";
 import { TemplateAutocomplete } from "../shared/SelectATemplate";
-import { EditColorPattern } from "./PalleteItems";
+import IsFullWidthSwitch, {
+  EditColorPattern,
+  OrderInput,
+} from "./PalleteItems";
 
 export function EditColor({ onUpdate, initialData }) {
   const { languages } = useLanguage();
@@ -70,14 +73,23 @@ function EditColorForm({ data, setData, initialData }) {
         initialTitles={initialData.title}
       />
 
-      <Box my={1}>
+      <Box my={1} mb={2}>
         <TemplateAutocomplete
           onTemplateSelect={(id) => {
             setData((old) => ({ ...old, templateId: id }));
           }}
+          isFullWidth={true}
           initialData={initialData}
           type={"COLOR_PATTERN"}
         />
+      </Box>
+      <Box my={1} mb={2} sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+        <IsFullWidthSwitch
+          initialData={initialData}
+          data={data}
+          setData={setData}
+        />
+        <OrderInput data={data} initialData={initialData} setData={setData} />
       </Box>
       <SimpleFileInput
         label="Image (optional)"

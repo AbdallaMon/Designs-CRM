@@ -37,7 +37,6 @@ export const ColorItemCard = ({ item, onUpdate }) => {
       await onUpdate();
     }
   };
-
   return (
     <Card
       sx={{
@@ -63,6 +62,12 @@ export const ColorItemCard = ({ item, onUpdate }) => {
           <Typography variant="h6" component="h2" color="primary">
             Template Id #{item.template.id}
           </Typography>
+          <Typography variant="h6" component="h2" color="primary">
+            Color Order #{item.order}
+          </Typography>
+          {item.isFullWidth && (
+            <Chip label={"Full width"} color={"success"} size="small" />
+          )}
           <Chip
             label={item.isArchived ? "Archived" : "Active"}
             color={item.isArchived ? "default" : "success"}

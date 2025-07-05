@@ -298,7 +298,6 @@ export function ImagePreviewDialog({
             </Box>
           )}
 
-          {/* Action buttons */}
           <Box
             sx={{
               display: "flex",

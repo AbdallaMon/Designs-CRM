@@ -555,6 +555,9 @@ export async function getColors({ notArchived }) {
   }
   return await prisma.colorPattern.findMany({
     where,
+    orderBy: {
+      order: "asc",
+    },
     include: {
       title: {
         select: {
@@ -600,6 +603,7 @@ export async function createColorPallete({ data }) {
   if (!data.titles || titles.length === 0) {
     throw new Error("Please Fill all data.");
   }
+  console.log(data.fullWidth, "full");
 
   const titlesToCreate = createTextAndConnect(titles, "text");
   let descriptionsToCreate = createTextAndConnect(descriptions, "content");
@@ -617,6 +621,12 @@ export async function createColorPallete({ data }) {
       })),
     },
   };
+  if (data.isFullWidth) {
+    dataToSubmit.isFullWidth = data.isFullWidth;
+  }
+  if (data.order) {
+    dataToSubmit.order = data.order;
+  }
 
   if (descriptionsToCreate && descriptionsToCreate.length > 0) {
     dataToSubmit.description = {
@@ -635,13 +645,18 @@ export async function createColorPallete({ data }) {
 
 export async function editColorPallete({ data, colorId }) {
   const translations = data.translations;
-
+  console.log(data, "data");
   const dataToSubmit = {};
   if (data.templateId) {
     dataToSubmit.templateId = data.templateId;
   }
+  dataToSubmit.isFullWidth = data.isFullWidth;
+
   if (data.imageUrl) {
     dataToSubmit.imageUrl = data.imageUrl;
+  }
+  if (data.order) {
+    dataToSubmit.order = data.order;
   }
   if (translations.edits.titles) {
     await editAListOftext({ edits: translations.edits.titles, type: "TITLE" });
@@ -1178,7 +1193,7 @@ export async function getSessionByToken({ token }) {
 }
 
 export async function changeSessionStatus({ token, id, sessionStatus }) {
-  const key = token ? token : id;
+  const key = token ? "token" : "id";
   const keyId = token || Number(id);
 
   return await prisma.clientImageSession.update({

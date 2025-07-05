@@ -4,7 +4,10 @@ import { Box } from "@mui/material";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useLanguage } from "@/app/helpers/hooks/useLanguage";
-import { CreateColorPattern } from "./PalleteItems";
+import IsFullWidthSwitch, {
+  CreateColorPattern,
+  OrderInput,
+} from "./PalleteItems";
 import { OpenItemDialog } from "../shared/OpenItemDialog";
 import { CreateTitleOrDesc } from "../shared/CreateTitleOrDesc";
 import { TemplateAutocomplete } from "../shared/SelectATemplate";
@@ -81,14 +84,20 @@ function CreateColorForm({ data, setData, setValid }) {
         setData={setData}
         setValid={setValid}
       />
-      <Box my={1}>
+      <Box my={1} mb={2}>
         <TemplateAutocomplete
           onTemplateSelect={(id) => {
             setData((old) => ({ ...old, templateId: id }));
           }}
+          isFullWidth={true}
           type={"COLOR_PATTERN"}
         />
       </Box>
+      <Box my={1} mb={2} sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+        <IsFullWidthSwitch data={data} setData={setData} />
+        <OrderInput data={data} setData={setData} />
+      </Box>
+
       <SimpleFileInput
         label="Image (optional)"
         id="file"

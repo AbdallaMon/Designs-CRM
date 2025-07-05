@@ -4,6 +4,7 @@ export const TemplateAutocomplete = ({
   onTemplateSelect,
   type,
   initialData,
+  isFullWidth,
 }) => {
   return (
     <AutoCompleteSelector
@@ -14,6 +15,7 @@ export const TemplateAutocomplete = ({
       model="Template"
       select={"id"}
       where={{ type }}
+      isFullWidth={isFullWidth}
     />
   );
 };

@@ -15,6 +15,7 @@ export const AutoCompleteSelector = ({
   model = "Template",
   keyId = "templateId",
   select,
+  isFullWidth,
 }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -47,13 +48,14 @@ export const AutoCompleteSelector = ({
   };
 
   return (
-    <Box sx={{ width: "100%", maxWidth: 400 }}>
+    <Box sx={{ width: "100%", maxWidth: isFullWidth ? "100%" : 400 }}>
       <Autocomplete
         options={items}
         getOptionLabel={(option) => `${model} ${option.id}`}
         value={selectedId}
         onChange={handleChange}
         loading={loading}
+        fullWidth={isFullWidth}
         filterOptions={(options, { inputValue }) => {
           // Custom filter to search by displayName, type, and id
           return options.filter((option) =>

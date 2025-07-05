@@ -1009,6 +1009,7 @@ model ColorPattern {
   colors        ColorPatternColor[]
   order         Int         @default(0)
   isArchived    Boolean     @default(false)
+  isFullWidth     Boolean             @default(false) 
   templateId    Int?
   template      Template?   @relation(fields: [templateId], references: [id])
   clientSessions ClientImageSession[]

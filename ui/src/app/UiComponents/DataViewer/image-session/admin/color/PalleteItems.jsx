@@ -7,6 +7,8 @@ import {
   FormControlLabel,
   Typography,
   Popover,
+  Switch,
+  TextField,
 } from "@mui/material";
 import { MdAdd, MdDelete } from "react-icons/md";
 import {
@@ -340,5 +342,66 @@ export function EditColorPattern({ data, setData, initialColors = [] }) {
         Add Color
       </Button>
     </Box>
+  );
+}
+
+export default function IsFullWidthSwitch({ setData, data, initialData }) {
+  const value = data?.isFullWidth || false;
+
+  const handleChange = (event) => {
+    const checked = event.target.checked;
+    setData((prev) => ({
+      ...prev,
+      isFullWidth: checked,
+    }));
+  };
+
+  useEffect(() => {
+    if (initialData?.isFullWidth) {
+      setData((prev) => ({
+        ...prev,
+        isFullWidth: true,
+      }));
+    }
+  }, [initialData?.isFullWidth]);
+
+  return (
+    <FormControlLabel
+      control={<Switch checked={value} onChange={handleChange} />}
+      label="Full Width"
+    />
+  );
+}
+
+export function OrderInput({ setData, data, initialData }) {
+  const value = data?.order ?? 0;
+
+  const handleChange = (event) => {
+    const newValue = parseInt(event.target.value, 10) || 0;
+    setData((prev) => ({
+      ...prev,
+      order: newValue,
+    }));
+  };
+
+  useEffect(() => {
+    if (typeof initialData?.order === "number") {
+      setData((prev) => ({
+        ...prev,
+        order: initialData.order,
+      }));
+    }
+  }, [initialData?.order]);
+
+  return (
+    <TextField
+      type="number"
+      label="Order"
+      value={value}
+      onChange={handleChange}
+      variant="outlined"
+      size="small"
+      fullWidth
+    />
   );
 }
