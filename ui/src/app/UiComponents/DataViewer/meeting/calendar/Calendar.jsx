@@ -172,9 +172,6 @@ export const Calendar = ({
 
     // Find available day by converting stored GMT dates to user timezone
     const availableDay = availableDays.find((d) => {
-      const availableDateInUserTz = getDateInUserTimezone(d.date);
-      if (index === 7) {
-      }
       return d.slots.some(
         (slot) =>
           dayjs.utc(slot.startTime).tz(userTimezone).format("YYYY-MM-DD") ===
@@ -327,7 +324,7 @@ export const Calendar = ({
               ((isAdmin && ((multiSelect && !available) || !multiSelect)) ||
                 !isAdmin);
             const availableDay = status.availableDay;
-
+            const isFullyBooked = status.isFullyBooked;
             return (
               <Grid key={index} size={{ xs: 12 / 7 }}>
                 <Box
@@ -340,7 +337,9 @@ export const Calendar = ({
                     cursor: canClick ? "pointer" : "not-allowed",
                     borderRadius: 2,
                     m: 0.5,
-                    backgroundColor: selected
+                    backgroundColor: isFullyBooked
+                      ? lighten(theme.palette.error.main, 0.85)
+                      : selected
                       ? "primary.main"
                       : available && !past
                       ? lighten(theme.palette.success.main, 0.85)
@@ -351,7 +350,9 @@ export const Calendar = ({
                       ? "text.disabled"
                       : "text.primary",
                     border: "1px solid",
-                    borderColor: !canClick
+                    borderColor: isFullyBooked
+                      ? "error.main"
+                      : !canClick
                       ? "transparent"
                       : selected
                       ? "primary.main"
@@ -379,7 +380,7 @@ export const Calendar = ({
                       color:
                         !currentMonth || past
                           ? "text.disabled"
-                          : !canClick && type === "CLIENT"
+                          : (!canClick && type === "CLIENT") || isFullyBooked
                           ? "red"
                           : selected
                           ? "primary.contrastText"
