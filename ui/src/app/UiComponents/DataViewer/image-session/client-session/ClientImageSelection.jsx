@@ -9,6 +9,7 @@ import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { sessionStatusFlow } from "./helpers";
+import { ColorPalletes } from "./ColorPalletes";
 const steps = [
   "Select Colors",
   "Select Materail",
@@ -86,7 +87,7 @@ export default function ClientImageSelection({ token }) {
           </Box>
         );
       case "PREVIEW_COLOR_PATTERN":
-        return "Please review the color palette options.";
+        return <ColorPalletes />;
       case "SELECTED_COLOR_PATTERN":
         return (
           <Box sx={{ px: 2 }}>

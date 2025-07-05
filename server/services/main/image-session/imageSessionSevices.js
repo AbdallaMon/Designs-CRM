@@ -885,8 +885,6 @@ export async function getPageInfo({ notArchived, lng, type }) {
     };
   }
   where.type = type;
-  console.log(where, "where");
-  console.log(lngWhere, "lngWhere");
 
   const data = await prisma.pageInfo.findUnique({
     where,
@@ -1202,6 +1200,55 @@ export async function changeSessionStatus({ token, id, sessionStatus }) {
     },
     data: {
       sessionStatus,
+    },
+  });
+}
+
+export async function getColorsByLng({ lng }) {
+  const where = {};
+  where.isArchived = false;
+  const lngWhere = {};
+  if (lng) {
+    lngWhere.language = {
+      code: lng,
+    };
+  }
+  return await prisma.colorPattern.findMany({
+    where,
+    orderBy: {
+      order: "asc",
+    },
+    include: {
+      title: {
+        where: lngWhere,
+        select: {
+          text: true,
+          id: true,
+          languageId: true,
+          language: {
+            select: {
+              id: true,
+              code: true,
+            },
+          },
+        },
+      },
+      description: {
+        where: lngWhere,
+        select: {
+          content: true,
+          id: true,
+          languageId: true,
+          language: {
+            select: {
+              id: true,
+              code: true,
+            },
+          },
+        },
+      },
+      template: true,
+      colors: true,
     },
   });
 }

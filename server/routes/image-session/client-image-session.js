@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   changeSessionStatus,
+  getColorsByLng,
   getConsAndPros,
   getPageInfo,
   getSessionByToken,
@@ -53,6 +54,15 @@ router.put("/session/status", async (req, res) => {
       sessionStatus: req.body.sessionStatus,
     });
     res.status(200).json({ data: data, message: "Data fetched" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+
+router.get(`/colors`, async (req, res) => {
+  try {
+    const data = await getColorsByLng({ lng: req.query.lng });
+    res.status(200).json({ data: data });
   } catch (e) {
     getAndThrowError(e, res);
   }

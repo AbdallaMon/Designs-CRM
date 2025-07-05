@@ -1,9 +1,10 @@
 import { Box, Card, Typography } from "@mui/material";
 import ProsAndConsDialogButton from "../admin/shared/ProsAndCons";
+import { ensureHttps } from "@/app/helpers/functions/utility";
 
 export function PreviewItem({ template, item }) {
   const customStyles = template.customStyle;
-  const cardDimensions = { minWidth: "300px", width: "100%" };
+  const cardDimensions = { width: "100%" };
   const cardStyle = {
     position: "relative",
     ...cardDimensions,
@@ -12,7 +13,6 @@ export function PreviewItem({ template, item }) {
     borderRadius: template.borderRadius || "8px",
     overflow: "hidden",
     ...customStyles.card,
-    maxWidth: "300px",
     mx: "auto",
   };
 
@@ -58,16 +58,22 @@ export function PreviewItem({ template, item }) {
     paddingX: template.paddingX || "16px",
     paddingY: template.paddingY || "16px",
   };
-
+  console.log(template, "template");
   const getElementStyle = (elementType) => {
+    console.log(elementType, "elementType");
     const baseStyle = customStyles[elementType] || {};
-    return {
+    const numericSize = parseInt(baseStyle.fontSize) || 16;
+    const returnedData = {
       ...baseStyle,
       marginTop: baseStyle.marginTop || "0px",
       marginBottom: baseStyle.marginBottom || "8px",
       marginLeft: baseStyle.marginLeft || "0px",
       marginRight: baseStyle.marginRight || "0px",
     };
+    if (elementType === "title") {
+      returnedData.fontSize = numericSize + "px";
+    }
+    return returnedData;
   };
   const colorCircles = item.colors; //todo
   const renderElement = (elementType) => {
@@ -152,8 +158,16 @@ export function PreviewItem({ template, item }) {
                   <Box
                     key={index}
                     sx={{
-                      width: template.colorSize || 35,
-                      height: template.colorSize || 35,
+                      width:
+                        {
+                          xs: template.colorSize,
+                          md: template.colorSize + 5,
+                        } || 35,
+                      height:
+                        {
+                          xs: template.colorSize,
+                          md: template.colorSize + 5,
+                        } || 35,
                       backgroundColor: color.colorHex,
                       borderRadius: "50%",
                       border: "2px solid rgba(255,255,255,0.5)",

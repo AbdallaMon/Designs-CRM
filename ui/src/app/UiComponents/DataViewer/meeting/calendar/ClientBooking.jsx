@@ -55,7 +55,7 @@ dayjs.extend(customParseFormat);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
 // Client Booking Component with Steps
-const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
+const ClientBooking = ({ token }) => {
   const [activeStep, setActiveStep] = useState(0);
   const [availableSlots, setAvailableSlots] = useState([]);
   const theme = useTheme();
@@ -64,6 +64,8 @@ const ClientBooking = ({ timezone: tz = "Asia/Dubai", token }) => {
   const [groupedTimezoneOptions, setGroupedTimezoneOptions] = useState([]);
   const [loadingTimezone, setLoadingTimezone] = useState(false);
   const { setLoading: setToastLoading } = useToastContext();
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Dubai";
+
   const [error, setError] = useState(null);
   const [sessionData, setSessionData] = useState({
     selectedDate: null,

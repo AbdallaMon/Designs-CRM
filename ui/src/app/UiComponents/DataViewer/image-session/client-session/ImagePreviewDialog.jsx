@@ -30,17 +30,18 @@ export function ImagePreviewDialog({
   images,
   currentIndex,
   onIndexChange,
-  selectedImages,
   onImageSelect,
   type = "SELECT",
+  checkIfSelected,
+  imageKey = "imageUrl",
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const currentImage = images[currentIndex];
-  const isSelected = selectedImages.find((img) => img.id === currentImage?.id);
-  const photo = type === "SELECT" ? currentImage : currentImage.image;
+  const isSelected = checkIfSelected(currentImage, images);
+  const photo = currentImage;
 
   const handleNext = () => {
     if (currentIndex < images.length - 1) {
@@ -54,7 +55,6 @@ export function ImagePreviewDialog({
     }
   };
 
-  // Touch swipe handling for mobile
   const minSwipeDistance = 50;
 
   const onTouchStart = (e) => {
@@ -167,7 +167,6 @@ export function ImagePreviewDialog({
           </IconButton>
         </Box>
 
-        {/* Main image container */}
         <Box
           sx={{
             flex: 1,
@@ -181,7 +180,7 @@ export function ImagePreviewDialog({
         >
           <Box
             component="img"
-            src={photo.url}
+            src={photo[imageKey]}
             alt={`Image ${currentImage.id}`}
             sx={{
               maxWidth: "100%",
@@ -329,7 +328,7 @@ export function ImagePreviewDialog({
                   },
                 }}
               >
-                {isSelected ? "Selected" : "Select Image"}
+                {isSelected ? "Selected" : "Select"}
               </Button>
             ) : (
               <NotesComponent
@@ -340,8 +339,6 @@ export function ImagePreviewDialog({
               />
             )}
           </Box>
-
-          {/* Mobile navigation hints */}
           {isMobile && images.length > 1 && (
             <Typography
               variant="caption"
