@@ -182,7 +182,7 @@ export const PreviewTemplateCard = ({
     ...cardDimensions,
     margin: "0 auto",
     backgroundColor: template.backgroundColor || "#f5f5f5",
-    borderRadius: template.borderRadius || "8px",
+    borderRadius: template.borderRadius || "0px",
     overflow: "hidden",
     ...customStyles.card,
   };
@@ -739,7 +739,7 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
       "https://panel.dreamstudiio.com/uploads/26c284e5-d1b0-4047-87fe-74d77f80844e.jpg",
     overlayColor: "#000000",
     overlayOpacity: 0.3,
-    borderRadius: type === "COLOR_PATTERN" ? "0px" : "8px",
+    borderRadius: type === "COLOR_PATTERN" ? "0px" : "0px",
     padding: "16px",
     paddingX: "16px",
     paddingY: "16px",
@@ -749,7 +749,7 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
   const customStyle = {
     card: {
       backgroundColor: "transparent",
-      borderRadius: type === "COLOR_PATTERN" ? "0px" : "8px",
+      borderRadius: type === "COLOR_PATTERN" ? "0px" : "0px",
       padding: "0px",
       paddingX: "0px",
       paddingY: "0px",

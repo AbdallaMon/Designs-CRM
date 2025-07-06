@@ -365,9 +365,6 @@ export const ProjectDetails = ({
   };
 
   const handleMenuClose = async (value) => {
-    if (user.role === "SUPER_ADMIN") {
-      return;
-    }
     const request = await handleRequestSubmit(
       {
         status: value,
@@ -502,14 +499,14 @@ export const ProjectDetails = ({
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
-                label="Delivery Time"
-                type="datetime-local"
+                label="Delivery Date"
+                type="date"
                 variant="outlined"
                 value={
                   editedProject.deliveryTime
                     ? new Date(editedProject.deliveryTime)
                         .toISOString()
-                        .slice(0, 16)
+                        .slice(0, 10) // only YYYY-MM-DD
                     : ""
                 }
                 onChange={(e) =>

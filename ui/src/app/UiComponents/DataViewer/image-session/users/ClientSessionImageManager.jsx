@@ -24,6 +24,11 @@ import {
   Stack,
   Alert,
   Tooltip,
+  LinearProgress,
+  Stepper,
+  Step,
+  StepLabel,
+  StepContent,
 } from "@mui/material";
 import {
   FaImage,
@@ -36,6 +41,11 @@ import {
   FaHome,
   FaFileImage,
   FaTimes,
+  FaCheckCircle,
+  FaEye,
+  FaFilePdf,
+  FaPaperPlane,
+  FaPlay,
 } from "react-icons/fa";
 import { getData } from "@/app/helpers/functions/getData";
 import { useAlertContext } from "@/app/providers/MuiAlert";
@@ -60,6 +70,121 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
   const { setAlertError } = useAlertContext();
   const { setLoading: setToastLoading } = useToastContext();
   const [copiedToken, setCopiedToken] = useState(null);
+
+  // Enhanced status configuration
+  const getStatusConfig = (status) => {
+    const configs = {
+      INITIAL: {
+        label: "Initial Setup",
+        color: "default",
+        icon: <FaPlay />,
+        progress: 5,
+        description: "Session created, ready to start",
+        variant: "outlined",
+      },
+      PREVIEW_COLOR_PATTERN: {
+        label: "Previewing Colors",
+        color: "info",
+        icon: <FaEye />,
+        progress: 15,
+        description: "Client is viewing color patterns",
+        variant: "filled",
+      },
+      SELECTED_COLOR_PATTERN: {
+        label: "Colors Selected",
+        color: "success",
+        icon: <FaCheckCircle />,
+        progress: 25,
+        description: "Color pattern has been selected",
+        variant: "filled",
+      },
+      PREVIEW_MATERIAL: {
+        label: "Previewing Materials",
+        color: "info",
+        icon: <FaEye />,
+        progress: 35,
+        description: "Client is viewing materials",
+        variant: "filled",
+      },
+      SELECTED_MATERIAL: {
+        label: "Material Selected",
+        color: "success",
+        icon: <FaCheckCircle />,
+        progress: 45,
+        description: "Material has been selected",
+        variant: "filled",
+      },
+      PREVIEW_STYLE: {
+        label: "Previewing Styles",
+        color: "info",
+        icon: <FaEye />,
+        progress: 55,
+        description: "Client is viewing styles",
+        variant: "filled",
+      },
+      SELECTED_STYLE: {
+        label: "Style Selected",
+        color: "success",
+        icon: <FaCheckCircle />,
+        progress: 65,
+        description: "Style has been selected",
+        variant: "filled",
+      },
+      PREVIEW_IMAGES: {
+        label: "Previewing Images",
+        color: "info",
+        icon: <FaEye />,
+        progress: 75,
+        description: "Client is viewing image options",
+        variant: "filled",
+      },
+      SELECTED_IMAGES: {
+        label: "Images Selected",
+        color: "success",
+        icon: <FaCheckCircle />,
+        progress: 85,
+        description: "Images have been selected",
+        variant: "filled",
+      },
+      PDF_GENERATED: {
+        label: "PDF generation",
+        color: "success",
+        icon: <FaFilePdf />,
+        progress: 95,
+        description: "PDF report in progress",
+        variant: "filled",
+      },
+      SUBMITTED: {
+        label: "Submitted",
+        color: "success",
+        icon: <FaPaperPlane />,
+        progress: 100,
+        description: "Session completed and submitted",
+        variant: "filled",
+      },
+    };
+    return configs[status] || configs.INITIAL;
+  };
+
+  const getStepperSteps = () => [
+    { key: "INITIAL", label: "Setup" },
+    { key: "PREVIEW_COLOR_PATTERN", label: "Color Pattern" },
+    { key: "SELECTED_COLOR_PATTERN", label: "Color Confirmed" },
+    { key: "PREVIEW_MATERIAL", label: "Material" },
+    { key: "SELECTED_MATERIAL", label: "Material Confirmed" },
+    { key: "PREVIEW_STYLE", label: "Style" },
+    { key: "SELECTED_STYLE", label: "Style Confirmed" },
+    { key: "PREVIEW_IMAGES", label: "Images" },
+    { key: "SELECTED_IMAGES", label: "Images Confirmed" },
+    { key: "PDF_GENERATED", label: "PDF Ready" },
+    { key: "SUBMITTED", label: "Complete" },
+  ];
+
+  const getCurrentStepIndex = (status) => {
+    const steps = getStepperSteps();
+    return steps.findIndex((step) => step.key === status);
+  };
+
   async function fetchData() {
     await getDataAndSet({
       url: `shared/image-session/${clientLeadId}/sessions?`,
@@ -74,6 +199,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
       setData: setSpaces,
     });
   }
+
   useEffect(() => {
     if (sessionsDialogOpen) {
       fetchData();
@@ -83,9 +209,8 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
   const handleCopyToken = (token) => {
     navigator.clipboard.writeText(token);
     setCopiedToken(token);
-    setTimeout(() => setCopiedToken(null), 50);
+    setTimeout(() => setCopiedToken(null), 2000);
   };
-  console.log(sessions, "sessions");
 
   const handleRegenerateLink = async (sessionId) => {
     const regenerateRequest = await handleRequestSubmit(
@@ -139,25 +264,136 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
   };
 
   const formatDate = (dateString) => {
-    return dayjs(dateString).format("DD/MM/YYYY");
+    return dayjs(dateString).format("DD/MM/YYYY HH:mm");
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "IN_PROGRESS":
-        return "warning";
-      case "COMPLETED":
-        return "success";
-      default:
-        return "default";
+  const renderPDFSection = (session) => {
+    const statusConfig = getStatusConfig(session.sessionStatus);
+
+    if (session.sessionStatus === "PDF_GENERATED" && session.pdfUrl) {
+      return (
+        <Box mb={2}>
+          <Typography variant="subtitle2" gutterBottom>
+            PDF Report
+          </Typography>
+          <Button
+            size="small"
+            variant="contained"
+            color="success"
+            href={session.pdfUrl}
+            target="_blank"
+            startIcon={<FaFilePdf />}
+          >
+            Download PDF Report
+          </Button>
+        </Box>
+      );
     }
+
+    if (session.sessionStatus === "SUBMITTED" && session.pdfUrl) {
+      return (
+        <Box mb={2}>
+          <Typography variant="subtitle2" gutterBottom>
+            PDF Report
+          </Typography>
+          <Button
+            size="small"
+            variant="contained"
+            color="success"
+            href={session.pdfUrl}
+            target="_blank"
+            startIcon={<FaFilePdf />}
+          >
+            Download PDF Report
+          </Button>
+        </Box>
+      );
+    }
+
+    // Handle cases where PDF should be generated but isn't available
+    if (["SELECTED_IMAGES", "PDF_GENERATED"].includes(session.sessionStatus)) {
+      if (session.error) {
+        return (
+          <Box mb={2}>
+            <Alert severity="error" sx={{ mb: 1 }}>
+              Something went wrong with PDF generation. Please try regenerating
+              it.
+            </Alert>
+            <ConfirmWithActionModel
+              label="Regenerate PDF"
+              title="Regenerate PDF Report"
+              description="This will attempt to regenerate the PDF report for this session."
+              removeAfterConfirm={true}
+              handleConfirm={async () => {
+                const request = await handleRequestSubmit(
+                  {
+                    sessionData: session,
+                    signatureUrl: session.signature,
+                  },
+                  setToastLoading,
+                  `client/image-session/generate-pdf`,
+                  false,
+                  "Generating PDF"
+                );
+                if (request.status === 200) {
+                  setSessions((oldSessions) =>
+                    oldSessions.map((s) => {
+                      if (s.id === session.id) {
+                        return { ...s, error: false };
+                      }
+                      return s;
+                    })
+                  );
+                  return request;
+                }
+              }}
+            />
+          </Box>
+        );
+      }
+
+      return (
+        <Box mb={2}>
+          <Alert severity="info">
+            PDF is being generated. You will receive an email notification once
+            it&lsquo;s ready.
+          </Alert>
+        </Box>
+      );
+    }
+
+    // For earlier stages, show appropriate message
+    if (
+      [
+        "INITIAL",
+        "PREVIEW_COLOR_PATTERN",
+        "SELECTED_COLOR_PATTERN",
+        "PREVIEW_MATERIAL",
+        "SELECTED_MATERIAL",
+        "PREVIEW_STYLE",
+        "SELECTED_STYLE",
+        "PREVIEW_IMAGES",
+      ].includes(session.sessionStatus)
+    ) {
+      return (
+        <Box mb={2}>
+          <Alert severity="info">
+            Session is in progress. PDF will be generated once all selections
+            are completed.
+          </Alert>
+        </Box>
+      );
+    }
+
+    return null;
   };
+
   if (
     user.role !== "ADMIN" &&
     user.role !== "SUPER_ADMIN" &&
     user.role !== "STAFF"
   )
-    return;
+    return null;
 
   return (
     <Box>
@@ -170,10 +406,11 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
           View Sessions
         </Button>
       </Stack>
+
       <Dialog
         open={sessionsDialogOpen}
         onClose={() => setSessionsDialogOpen(false)}
-        maxWidth="lg"
+        maxWidth="xl"
         fullWidth
       >
         <DialogTitle>
@@ -192,6 +429,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
             </Button>
           </Box>
         </DialogTitle>
+
         <DialogContent>
           {loading && <FullScreenLoader />}
           {sessions.length === 0 ? (
@@ -201,19 +439,25 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
               {sessions.map((session) => {
                 const origin = window.location.origin;
                 const url = `${origin}/image-session?token=${session.token}`;
+                const statusConfig = getStatusConfig(session.sessionStatus);
+                const currentStepIndex = getCurrentStepIndex(
+                  session.sessionStatus
+                );
+                const steps = getStepperSteps();
+
                 return (
-                  <Grid key={session.id}>
-                    <Card elevation={2}>
+                  <Grid key={session.id} size={12}>
+                    <Card elevation={3} sx={{ mb: 2 }}>
                       <CardContent>
                         <Box
                           display="flex"
                           justifyContent="space-between"
                           alignItems="flex-start"
-                          mb={2}
+                          mb={3}
                         >
-                          <Box display="flex" gap={1.5}>
+                          <Box display="flex" gap={1.5} alignItems="center">
                             <Typography variant="h6" component="div">
-                              Session
+                              Session #{session.id}
                             </Typography>
                             <NotesComponent
                               idKey={"imageSessionId"}
@@ -221,9 +465,12 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                               slug="shared"
                               showAddNotes={false}
                             />
-                          </Box>{" "}
+                          </Box>
+
                           <Box display="flex" gap={1.5} alignItems="center">
-                            {session.sessionStatus === "IN_PROGRESS" && (
+                            {!["PDF_GENERATED", "SUBMITTED"].includes(
+                              session.sessionStatus
+                            ) && (
                               <DeleteModal
                                 buttonType="ICON"
                                 href={`shared/image-session/${clientLeadId}/sessions`}
@@ -232,14 +479,72 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                               />
                             )}
                             <Chip
-                              label={session.sessionStatus.replace("_", " ")}
-                              color={getStatusColor(session.sessionStatus)}
-                              size="small"
-                            />{" "}
+                              label={statusConfig.label}
+                              color={statusConfig.color}
+                              variant={statusConfig.variant}
+                              icon={statusConfig.icon}
+                              size="medium"
+                            />
                           </Box>
                         </Box>
 
-                        <Grid container spacing={2}>
+                        {/* Progress Bar */}
+                        <Box mb={3}>
+                          <Box
+                            display="flex"
+                            justifyContent="space-between"
+                            alignItems="center"
+                            mb={1}
+                          >
+                            <Typography variant="body2" color="text.secondary">
+                              Progress: {statusConfig.description}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {statusConfig.progress}%
+                            </Typography>
+                          </Box>
+                          <LinearProgress
+                            variant="determinate"
+                            value={statusConfig.progress}
+                            sx={{ height: 6, borderRadius: 3 }}
+                            color={statusConfig.color}
+                          />
+                        </Box>
+
+                        {/* Mini Stepper for completed sessions */}
+                        {session.sessionStatus === "SUBMITTED" && (
+                          <Box mb={3}>
+                            <Typography variant="subtitle2" gutterBottom>
+                              Session Timeline
+                            </Typography>
+                            <Box display="flex" gap={1} flexWrap="wrap">
+                              {steps.map((step, index) => (
+                                <Chip
+                                  key={step.key}
+                                  label={step.label}
+                                  size="small"
+                                  color={
+                                    index <= currentStepIndex
+                                      ? "success"
+                                      : "default"
+                                  }
+                                  variant={
+                                    index <= currentStepIndex
+                                      ? "filled"
+                                      : "outlined"
+                                  }
+                                  icon={
+                                    index <= currentStepIndex ? (
+                                      <FaCheckCircle />
+                                    ) : undefined
+                                  }
+                                />
+                              ))}
+                            </Box>
+                          </Box>
+                        )}
+
+                        <Grid container spacing={3}>
                           {/* Session Info */}
                           <Grid size={{ md: 6 }}>
                             <Box mb={2}>
@@ -277,22 +582,27 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                             {/* Token Section */}
                             <Box mb={2}>
                               <Typography variant="subtitle2" gutterBottom>
-                                Session url
+                                Session URL
                               </Typography>
                               <Box display="flex" alignItems="center" gap={1}>
                                 <Typography
                                   variant="body2"
                                   sx={{
                                     fontFamily: "monospace",
-                                    backgroundColor: "#f5f5f5",
-                                    padding: "4px 8px",
-                                    borderRadius: "4px",
+                                    backgroundColor: "#f8f9fa",
+                                    padding: "8px 12px",
+                                    borderRadius: "6px",
                                     flex: 1,
+                                    border: "1px solid #e9ecef",
                                   }}
                                 >
                                   {url}
                                 </Typography>
-                                <Tooltip title={"Copy Token"}>
+                                <Tooltip
+                                  title={
+                                    copiedToken === url ? "Copied!" : "Copy URL"
+                                  }
+                                >
                                   <IconButton
                                     size="small"
                                     onClick={() => handleCopyToken(url)}
@@ -305,102 +615,23 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                                     <FaCopy />
                                   </IconButton>
                                 </Tooltip>
-                                {session.sessionStatus === "IN_PROGRESS" && (
-                                  <>
-                                    <ConfirmWithActionModel
-                                      title={
-                                        "Are you sure u want to regenerate new link?"
-                                      }
-                                      description="This action will delete the old link while keeping the data and just generate new link"
-                                      handleConfirm={async () => {
-                                        return await handleRegenerateLink(
-                                          session.id
-                                        );
-                                      }}
-                                      label="Regenerate link"
-                                      isDelete={true}
-                                      removeAfterConfirm={true}
-                                    />
-                                  </>
-                                )}
+                                <ConfirmWithActionModel
+                                  title="Regenerate Session Link"
+                                  description="This will generate a new link for this session. The old link will no longer work, but all session data will be preserved."
+                                  handleConfirm={async () => {
+                                    return await handleRegenerateLink(
+                                      session.id
+                                    );
+                                  }}
+                                  label="Regenerate"
+                                  isDelete={false}
+                                  removeAfterConfirm={true}
+                                />
                               </Box>
                             </Box>
 
-                            {session.pdfUrl ? (
-                              <Box mb={2}>
-                                <Typography variant="subtitle2" gutterBottom>
-                                  PDF Report
-                                </Typography>
-                                <Button
-                                  size="small"
-                                  variant="outlined"
-                                  href={session.pdfUrl}
-                                  target="_blank"
-                                  startIcon={<FaLink />}
-                                >
-                                  View PDF
-                                </Button>
-                              </Box>
-                            ) : (
-                              <>
-                                {session.sessionStatus === "IN_PROGRESS" ? (
-                                  <Alert severity="error">
-                                    Client Didnt approve the session yet
-                                  </Alert>
-                                ) : (
-                                  <>
-                                    {!session.error ? (
-                                      <Alert severity="warning">
-                                        Please wait, we are generating the PDF
-                                        and will send emails once it&apos;s
-                                        finished.
-                                      </Alert>
-                                    ) : (
-                                      <>
-                                        <Alert severity="warning">
-                                          Something went wrong with the PDF, try
-                                          regenerating it
-                                        </Alert>
-                                        <ConfirmWithActionModel
-                                          label="Try regenerating the PDF"
-                                          title="Regenerating the pdf"
-                                          description="Try regnerating the pdf"
-                                          removeAfterConfirm={true}
-                                          handleConfirm={async () => {
-                                            const request =
-                                              await handleRequestSubmit(
-                                                {
-                                                  sessionData: session,
-                                                  signatureUrl:
-                                                    session.signature,
-                                                },
-                                                setToastLoading,
-                                                `client/image-session/generate-pdf`,
-                                                false,
-                                                "Approving"
-                                              );
-                                            if (request.status === 200) {
-                                              setSessions(
-                                                oldSessions.map((s) => {
-                                                  if (s.id === session.id) {
-                                                    return {
-                                                      ...s,
-                                                      error: false,
-                                                    };
-                                                  }
-                                                  return s;
-                                                })
-                                              );
-                                              return request;
-                                            }
-                                          }}
-                                        />
-                                      </>
-                                    )}
-                                  </>
-                                )}
-                              </>
-                            )}
+                            {/* PDF Section */}
+                            {renderPDFSection(session)}
                           </Grid>
 
                           <Grid size={{ md: 6 }}>
@@ -409,7 +640,8 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                               <Typography variant="subtitle2" gutterBottom>
                                 <Box display="flex" alignItems="center" gap={1}>
                                   <FaHome size={14} />
-                                  Selected Spaces
+                                  Selected Spaces (
+                                  {session.selectedSpaces.length})
                                 </Box>
                               </Typography>
                               <Box display="flex" flexWrap="wrap" gap={1}>
@@ -419,11 +651,13 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                                     label={`#${spaceSession.space.id} - ${spaceSession.space.title[0].text}`}
                                     size="medium"
                                     variant="outlined"
+                                    color="primary"
                                   />
                                 ))}
                               </Box>
                             </Box>
 
+                            {/* Custom Colors */}
                             {session.customColors &&
                               session.customColors.length > 0 && (
                                 <Box mb={2}>
@@ -434,7 +668,8 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                                       gap={1}
                                     >
                                       <FaPalette size={14} />
-                                      Colors Pattern
+                                      Selected Colors (
+                                      {session.customColors.length})
                                     </Box>
                                   </Typography>
                                   <Box display="flex" flexWrap="wrap" gap={1}>
@@ -449,11 +684,13 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                                           avatar={
                                             <Box
                                               sx={{
-                                                width: 16,
-                                                height: 16,
+                                                width: 18,
+                                                height: 18,
                                                 borderRadius: "50%",
                                                 backgroundColor: color,
-                                                border: "1px solid #ccc",
+                                                border: "2px solid #fff",
+                                                boxShadow:
+                                                  "0 0 0 1px rgba(0,0,0,0.1)",
                                               }}
                                             />
                                           }
@@ -463,32 +700,33 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                                   </Box>
                                 </Box>
                               )}
-                          </Grid>
-                          <Grid size={{ xs: 12 }}>
-                            {session.material && (
-                              <Chip
-                                label={`Material: ${
-                                  session.material.title?.[0]?.text ||
-                                  `#${session.material.id}`
-                                }`}
-                                variant="outlined"
-                                color="primary"
-                                sx={{ mr: 1 }}
-                              />
-                            )}
 
-                            {session.style && (
-                              <Chip
-                                label={`Style: ${
-                                  session.style.title?.[0]?.text ||
-                                  `#${session.style.id}`
-                                }`}
-                                variant="outlined"
-                                color="secondary"
-                              />
-                            )}
+                            {/* Material and Style */}
+                            <Box mb={2}>
+                              {session.material && (
+                                <Chip
+                                  label={`Material: #${session.material.id} ${
+                                    session.material.title?.[0]?.text || ""
+                                  }`}
+                                  variant="outlined"
+                                  color="info"
+                                  sx={{ mr: 1, mb: 1 }}
+                                />
+                              )}
+                              {session.style && (
+                                <Chip
+                                  label={`Style: #${session.style.id} ${
+                                    session.style.title?.[0]?.text || ""
+                                  }`}
+                                  variant="outlined"
+                                  color="secondary"
+                                  sx={{ mb: 1 }}
+                                />
+                              )}
+                            </Box>
                           </Grid>
 
+                          {/* Selected Images */}
                           <Grid size={{ xs: 12 }}>
                             <Typography variant="subtitle2" gutterBottom>
                               <Box display="flex" alignItems="center" gap={1}>
@@ -497,31 +735,43 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                                 )
                               </Box>
                             </Typography>
-                            <Grid container spacing={2}>
-                              {session.selectedImages.map((selectedImage) => (
-                                <Grid
-                                  size={{ xs: 6, sm: 4, md: 3 }}
-                                  key={selectedImage.id}
-                                >
-                                  <Card variant="outlined">
-                                    <CardMedia
-                                      component="img"
-                                      height="120"
-                                      image={selectedImage.designImage.imageUrl}
-                                      alt="Selected image"
-                                    />
-                                    <CardContent sx={{ padding: 1 }}>
-                                      <NotesComponent
-                                        id={selectedImage.id}
-                                        idKey="selectedImageId"
-                                        slug="shared"
-                                        showAddNotes={false}
+                            {session.selectedImages.length > 0 ? (
+                              <Grid container spacing={2}>
+                                {session.selectedImages.map((selectedImage) => (
+                                  <Grid
+                                    size={{ xs: 6, sm: 4, md: 3 }}
+                                    key={selectedImage.id}
+                                  >
+                                    <Card
+                                      variant="outlined"
+                                      sx={{ height: "100%" }}
+                                    >
+                                      <CardMedia
+                                        component="img"
+                                        height="140"
+                                        image={
+                                          selectedImage.designImage.imageUrl
+                                        }
+                                        alt="Selected design image"
+                                        sx={{ objectFit: "cover" }}
                                       />
-                                    </CardContent>
-                                  </Card>
-                                </Grid>
-                              ))}
-                            </Grid>
+                                      <CardContent sx={{ padding: 1 }}>
+                                        <NotesComponent
+                                          id={selectedImage.id}
+                                          idKey="selectedImageId"
+                                          slug="shared"
+                                          showAddNotes={false}
+                                        />
+                                      </CardContent>
+                                    </Card>
+                                  </Grid>
+                                ))}
+                              </Grid>
+                            ) : (
+                              <Alert severity="info">
+                                No images selected yet
+                              </Alert>
+                            )}
                           </Grid>
                         </Grid>
                       </CardContent>
@@ -532,11 +782,13 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
             </Grid>
           )}
         </DialogContent>
+
         <DialogActions>
           <Button onClick={() => setSessionsDialogOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 
+      {/* Create New Session Dialog */}
       <Dialog
         open={newSessionDialogOpen}
         onClose={() => setNewSessionDialogOpen(false)}
@@ -581,6 +833,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
               </ListItem>
             ))}
           </List>
+
           {selectedSpaces.length > 0 && (
             <Box mt={2}>
               <Typography variant="subtitle2" gutterBottom>
@@ -592,7 +845,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                   return (
                     <Chip
                       key={spaceId}
-                      label={`#${space.id} - ${space?.title[0].text}`}
+                      label={`#${space?.id} - ${space?.title?.[0]?.text}`}
                       onDelete={() => handleSpaceToggle(spaceId)}
                       deleteIcon={<FaTimes />}
                       color="primary"
@@ -610,6 +863,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
             </Alert>
           )}
         </DialogContent>
+
         <DialogActions>
           <Button
             onClick={() => {

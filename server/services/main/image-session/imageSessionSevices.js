@@ -1098,8 +1098,6 @@ export async function regenerateSessionToken(sessionId) {
   });
 
   if (!session) throw new Error("Session not found");
-  if (session.sessionStatus !== "IN_PROGRESS")
-    throw new Error("Cannot regenerate token for completed session");
 
   const newToken = uuidv4();
 
@@ -1122,8 +1120,8 @@ export async function deleteInProgressSession(sessionId) {
   });
 
   if (!session) throw new Error("Session not found");
-  if (session.sessionStatus !== "IN_PROGRESS") {
-    throw new Error("Only sessions that are in progress can be deleted");
+  if (session.sessionStatus !== "INITIAL") {
+    throw new Error("Only sessions that are in initial can be deleted");
   }
 
   await prisma.clientImageSession.delete({
