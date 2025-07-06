@@ -19,6 +19,8 @@ import {
   MdRadioButtonUnchecked,
 } from "react-icons/md";
 import { NotesComponent } from "../../utility/Notes";
+import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
+import { ensureHttps } from "@/app/helpers/functions/utility";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -30,18 +32,29 @@ export function ImagePreviewDialog({
   images,
   currentIndex,
   onIndexChange,
+  selectedImages,
   onImageSelect,
   type = "SELECT",
-  checkIfSelected,
-  imageKey = "imageUrl",
 }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const currentImage = images[currentIndex];
-  const isSelected = checkIfSelected(currentImage, images);
-  const photo = currentImage;
+  const isSelected = selectedImages.find((img) => img.id === currentImage?.id);
+  const photo = type === "SELECT" ? currentImage : currentImage.designImage;
+
+  const { lng } = useLanguageSwitcherContext();
+  const UI_TEXT = {
+    SWIPE_NAV_HINT: {
+      en: "Swipe left/right to navigate • Tap indicators to jump",
+      ar: "اسحب لليسار أو اليمين للتنقل • اضغط على النقاط للانتقال السريع",
+    },
+    SELECT_IMAGE_LABEL: {
+      en: (isSelected) => (isSelected ? "Selected" : "Select Image"),
+      ar: (isSelected) => (isSelected ? "تم التحديد" : "اختر الصورة"),
+    },
+  };
 
   const handleNext = () => {
     if (currentIndex < images.length - 1) {
@@ -55,6 +68,7 @@ export function ImagePreviewDialog({
     }
   };
 
+  // Touch swipe handling for mobile
   const minSwipeDistance = 50;
 
   const onTouchStart = (e) => {
@@ -176,11 +190,12 @@ export function ImagePreviewDialog({
             position: "relative",
             overflow: "hidden",
             p: { xs: 1, md: 2 },
+            py: { md: 8 },
           }}
         >
           <Box
             component="img"
-            src={photo[imageKey]}
+            src={ensureHttps(photo.imageUrl)}
             alt={`Image ${currentImage.id}`}
             sx={{
               maxWidth: "100%",
@@ -200,7 +215,9 @@ export function ImagePreviewDialog({
                 disabled={currentIndex === 0}
                 sx={{
                   position: "absolute",
-                  left: 16,
+                  left: lng === "ar" ? "unset" : 16,
+                  right: lng === "ar" ? 16 : "unset",
+
                   bgcolor: "rgba(0,0,0,0.6)",
                   color: "white",
                   width: 56,
@@ -223,7 +240,8 @@ export function ImagePreviewDialog({
                 disabled={currentIndex === images.length - 1}
                 sx={{
                   position: "absolute",
-                  right: 16,
+                  right: lng === "ar" ? "unset" : 16,
+                  left: lng === "ar" ? 16 : "unset",
                   bgcolor: "rgba(0,0,0,0.6)",
                   color: "white",
                   width: 56,
@@ -260,7 +278,6 @@ export function ImagePreviewDialog({
             gap: 2,
           }}
         >
-          {/* Image indicators */}
           {images.length > 1 && (
             <Box
               sx={{
@@ -312,7 +329,7 @@ export function ImagePreviewDialog({
                 startIcon={
                   isSelected ? <MdCheckCircle /> : <MdRadioButtonUnchecked />
                 }
-                onClick={() => onImageSelect(currentImage)}
+                onClick={() => onImageSelect(currentImage, isSelected)}
                 sx={{
                   borderColor: "white",
                   color: isSelected ? "white" : "white",
@@ -328,27 +345,29 @@ export function ImagePreviewDialog({
                   },
                 }}
               >
-                {isSelected ? "Selected" : "Select"}
+                {UI_TEXT.SELECT_IMAGE_LABEL[lng](isSelected)}
               </Button>
             ) : (
               <NotesComponent
                 id={currentImage.id}
                 idKey="selectedImageId"
                 slug="client"
-                text="Add note"
+                text={lng === "ar" ? "اضف ملاحظة للتصميم" : "Add note for this"}
               />
             )}
           </Box>
+
+          {/* Mobile navigation hints */}
           {isMobile && images.length > 1 && (
             <Typography
               variant="caption"
               sx={{
                 textAlign: "center",
-                color: "rgba(255,255,255,0.6)",
+                color: "rgba(255,255,255,0.8)",
                 fontSize: 12,
               }}
             >
-              Swipe left/right to navigate • Tap indicators to jump
+              <Typography>{UI_TEXT.SWIPE_NAV_HINT[lng]}</Typography>
             </Typography>
           )}
         </Box>

@@ -10,14 +10,10 @@ import {
   Card,
   CardContent,
   IconButton,
-  TextField,
   Divider,
   Chip,
-  Stack,
   Paper,
-  Grid,
-  Fade,
-  Tooltip,
+  Grid2 as Grid,
 } from "@mui/material";
 import {
   MdThumbUp as ThumbUp,
@@ -132,10 +128,10 @@ const ProConItem = ({
   onMoveDown,
   canMoveUp,
   canMoveDown,
+  lng,
 }) => {
   const [editContent, setEditContent] = useState();
   const [isEditMode, setIsEditMode] = useState(false);
-  console.log(editContent, "editContent");
   const handleEdit = () => {
     setIsEditMode(true);
     setEditContent(item.content[0]?.text || "");
@@ -194,7 +190,22 @@ const ProConItem = ({
                 type="DESCRIPTIONS"
               />
             ) : (
-              <RenderTitle titles={item.content} type="DESCRIPTIONS" />
+              <>
+                {lng && !isEditing ? (
+                  <Typography
+                    sx={{
+                      wordWrap: "break-word",
+                      overflowWrap: "break-word",
+                      wordBreak: "break-all",
+                    }}
+                    variant="body2"
+                  >
+                    {item.content[0].content}
+                  </Typography>
+                ) : (
+                  <RenderTitle titles={item.content} type="DESCRIPTIONS" />
+                )}
+              </>
             )}
           </Box>
 
@@ -253,6 +264,7 @@ const ProsConsDialog = ({
   materialId,
   styleId,
   isEditing = false,
+  lng,
 }) => {
   const [pros, setPros] = useState([]);
   const [cons, setCons] = useState([]);
@@ -268,7 +280,7 @@ const ProsConsDialog = ({
 
   const loadProsAndCons = async () => {
     const req = await getData({
-      url: `client/image-session/pros-and-cons?type=${type}&id=${id}&`,
+      url: `client/image-session/pros-and-cons?type=${type}&id=${id}&lng=${lng}&isClient=${!isEditing}&`,
       setLoading,
     });
     if (req.status === 200) {
@@ -395,17 +407,21 @@ const ProsConsDialog = ({
       <DialogTitle sx={{ pb: 1 }}>
         <Box display="flex" alignItems="center" gap={2}>
           <Typography variant="h5" component="div">
-            Pros & Cons Analysis
+            {lng === "ar" ? "المميزات & العيوب" : "Pros & Cons"}
           </Typography>
-          <Chip
-            label={isEditing ? "Edit Mode" : "View Mode"}
-            color={isEditing ? "primary" : "default"}
-            icon={isEditing ? <Edit /> : <Visibility />}
-          />
+          {isEditing && (
+            <Chip
+              label={isEditing ? "Edit Mode" : "View Mode"}
+              color={isEditing ? "primary" : "default"}
+              icon={isEditing ? <Edit /> : <Visibility />}
+            />
+          )}
         </Box>
-        <Typography variant="subtitle2" color="text.secondary">
-          {type} ID: {id}
-        </Typography>
+        {isEditing && (
+          <Typography variant="subtitle2" color="text.secondary">
+            {type} ID: {id}
+          </Typography>
+        )}
       </DialogTitle>
 
       <DialogContent>
@@ -428,7 +444,7 @@ const ProsConsDialog = ({
           </Box>
         ) : (
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Paper
                 elevation={0}
                 sx={{
@@ -445,7 +461,7 @@ const ProsConsDialog = ({
                     variant="h6"
                     sx={{ color: "#4caf50", fontWeight: "bold" }}
                   >
-                    Pros ({pros.length})
+                    {lng === "ar" ? "المميزات" : "Pros"} ({pros.length})
                   </Typography>
                 </Box>
 
@@ -463,6 +479,7 @@ const ProsConsDialog = ({
                     canMoveUp={index > 0}
                     canMoveDown={index < pros.length - 1}
                     isOrderDirty={isOrderDirty}
+                    lng={lng}
                   />
                 ))}
 
@@ -484,7 +501,7 @@ const ProsConsDialog = ({
             </Grid>
 
             {/* Cons Section */}
-            <Grid item xs={12} md={6}>
+            <Grid size={{ xs: 12, md: 6 }}>
               <Paper
                 elevation={0}
                 sx={{
@@ -501,7 +518,7 @@ const ProsConsDialog = ({
                     variant="h6"
                     sx={{ color: "#f44336", fontWeight: "bold" }}
                   >
-                    Cons ({cons.length})
+                    {lng === "ar" ? "العيوب" : "Cons"}({cons.length})
                   </Typography>
                 </Box>
 
@@ -518,6 +535,7 @@ const ProsConsDialog = ({
                     onMoveDown={moveDown}
                     canMoveUp={index > 0}
                     canMoveDown={index < cons.length - 1}
+                    lng={lng}
                   />
                 ))}
 
@@ -557,8 +575,16 @@ const ProsAndConsDialogButton = ({
   materialId,
   styleId,
   customStyle,
+  lng = "en",
 }) => {
   const [open, setOpen] = useState(false);
+  const label = isEditing
+    ? lng === "ar"
+      ? "تعديل المميزات والعيوب"
+      : "Edit Pros & Cons"
+    : lng === "ar"
+    ? "عرض المميزات والعيوب"
+    : "View Pros & Cons";
   return (
     <Box>
       {customStyle ? (
@@ -569,7 +595,7 @@ const ProsAndConsDialogButton = ({
             setOpen(true);
           }}
         >
-          {isEditing ? "Edit Pros & Cons" : "View Pros & Cons"}
+          {label}
         </Button>
       ) : (
         <Button
@@ -578,7 +604,7 @@ const ProsAndConsDialogButton = ({
             setOpen(true);
           }}
         >
-          {isEditing ? "Edit Pros & Cons" : "View Pros & Cons"}
+          {label}
         </Button>
       )}
       <ProsConsDialog
@@ -588,6 +614,7 @@ const ProsAndConsDialogButton = ({
         materialId={materialId}
         styleId={styleId}
         isEditing={isEditing}
+        lng={lng}
       />
     </Box>
   );

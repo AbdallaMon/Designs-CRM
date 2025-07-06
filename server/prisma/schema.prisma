@@ -1143,6 +1143,7 @@ model ClientImageSession {
   note             Note[]
   customColors     Json?
   signatureUrl     String?
+  pdfUrl          String?
   submittedAt      DateTime?
   isArchived       Boolean                @default(false)
   sessionStatus    SessionStatus          @default(INITIAL)
@@ -1150,6 +1151,15 @@ model ClientImageSession {
   updatedAt        DateTime               @updatedAt
 }
 
+model ClientSelectedImage {
+  id              Int                @id @default(autoincrement())
+  imageSessionId  Int
+  imageSession    ClientImageSession @relation(fields: [imageSessionId], references: [id])
+  designImageId   Int
+  designImage     DesignImage        @relation(fields: [designImageId], references: [id])
+  note            Note[]
+  createdAt       DateTime           @default(now())
+}
 model ClientImageSessionToSpace {
   clientImageSessionId Int
   spaceId              Int
@@ -1161,12 +1171,3 @@ model ClientImageSessionToSpace {
 }
 
 
-model ClientSelectedImage {
-  id              Int                @id @default(autoincrement())
-  imageSessionId  Int
-  imageSession    ClientImageSession @relation(fields: [imageSessionId], references: [id])
-  designImageId   Int
-  designImage     DesignImage        @relation(fields: [designImageId], references: [id])
-  note            Note[]
-  createdAt       DateTime           @default(now())
-}

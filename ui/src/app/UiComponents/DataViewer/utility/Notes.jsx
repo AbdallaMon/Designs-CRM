@@ -90,7 +90,7 @@ export function NotesComponent({
       const uploadResponse = await handleRequestSubmit(
         formData,
         setGlobalLoading,
-        "utility/upload",
+        slug === "client" ? "client/upload" : "utility/upload",
         true,
         "Uploading file"
       );
@@ -163,7 +163,12 @@ export function NotesComponent({
               mb: 2,
             }}
           >
-            <Typography variant="h5" component="h2" id="notes-modal-title">
+            <Typography
+              variant="h5"
+              color="primary"
+              component="h2"
+              id="notes-modal-title"
+            >
               Notes & Attachments
             </Typography>
             <Button
@@ -282,7 +287,7 @@ export function NotesComponent({
                           mt: 1,
                         }}
                       >
-                        {user && (
+                        {user && slug !== "client" && (
                           <Typography variant="caption" color="text.secondary">
                             By: {note.user.name}
                           </Typography>

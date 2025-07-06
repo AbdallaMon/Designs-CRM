@@ -9,6 +9,8 @@ import {
   Typography,
   Container,
   Button,
+  Fab,
+  Zoom,
 } from "@mui/material";
 import { MdArrowBack, MdArrowForward } from "react-icons/md";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
@@ -22,7 +24,7 @@ export function ClientImageAppBar() {
       position="sticky"
       elevation={0}
       sx={{
-        my: 2,
+        my: 1,
         borderRadius: 3,
         background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
         boxShadow: `0 8px 32px ${theme.palette.primary.main}20`,
@@ -130,36 +132,54 @@ export function ClientImageAppBar() {
   );
 }
 export function ActionButtons({ session, handleNext, handleBack, disabled }) {
+  const { lng } = useLanguageSwitcherContext();
+  const isRTL = lng === "ar";
+  const nextLabel = isRTL ? "التالي" : "Go Next";
+  const backLabel = isRTL ? "السابق" : "Go Back";
+
   return (
     <Box display="flex" gap={2} justifyContent="space-between">
-      <NextButton
-        session={session}
-        handleNext={handleNext}
+      <ActionButton
         disabled={disabled}
+        handleClick={handleNext}
+        type={"NEXT"}
+        label={nextLabel}
       />
+
       {session && session.sessionStatus !== "INITIAL" && (
-        <BackButton handleNext={handleBack} disabled={disabled} />
+        <ActionButton
+          disabled={disabled}
+          handleClick={handleBack}
+          type={"BACK"}
+          label={backLabel}
+        />
       )}
     </Box>
   );
 }
-export function NextButton({ session, disabled, handleNext }) {
+
+export function ActionButton({
+  disabled,
+  handleClick,
+  type,
+  label,
+  variant = "contained",
+}) {
   const theme = useTheme();
-  const { lng } = useLanguageSwitcherContext();
-  const isRTL = lng === "ar";
-  const label = isRTL ? "التالي" : "Go Next";
 
   return (
     <Button
-      variant="contained"
-      size="large"
-      onClick={handleNext}
+      variant={variant}
+      size="medium"
+      onClick={() => {
+        if (handleClick) {
+          handleClick();
+        }
+      }}
       disabled={disabled}
-      endIcon={isRTL ? <MdArrowForward /> : <MdArrowForward />}
+      endIcon={type === "NEXT" ? <MdArrowForward /> : <MdArrowBack />}
       sx={{
         borderRadius: 25,
-        px: 4,
-        py: 1.5,
         fontSize: "1.1rem",
         fontWeight: 600,
         textTransform: "none",
@@ -182,43 +202,53 @@ export function NextButton({ session, disabled, handleNext }) {
     </Button>
   );
 }
-
-export function BackButton({ handleBack }) {
+export function FloatingActionButton({
+  disabled,
+  handleClick,
+  type,
+  sx,
+  isText,
+  label,
+  variant = "outlined",
+}) {
   const theme = useTheme();
-  const { lng } = useLanguageSwitcherContext();
-  const isRTL = lng === "ar";
+  const Icon = type === "NEXT" ? MdArrowForward : MdArrowBack;
+
+  const transitionDuration = {
+    enter: theme.transitions.duration.enteringScreen,
+    exit: theme.transitions.duration.leavingScreen,
+  };
   return (
-    <Button
-      variant="contained"
-      size="large"
-      onClick={handleBack}
-      endIcon={isRTL ? <MdArrowBack /> : <MdArrowBack />}
-      sx={{
-        display: "flex",
-        flexDirection: "row-reverse",
-        borderRadius: 25,
-        px: 4,
-        py: 1.5,
-        gap: 2,
-        fontSize: "1.1rem",
-        fontWeight: 600,
-        textTransform: "none",
-        background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-        boxShadow: `0 8px 20px ${theme.palette.primary.main}40`,
-        border: `2px solid ${theme.palette.primary.main}`,
-        color: theme.palette.primary.contrastText,
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        "&:hover": {
-          background: `linear-gradient(135deg, ${theme.palette.primary.dark}, ${theme.palette.primary.main})`,
-          transform: "translateY(-2px)",
-          boxShadow: `0 12px 24px ${theme.palette.primary.main}50`,
-        },
-        "&:active": {
-          transform: "translateY(0)",
-        },
-      }}
-    >
-      {isRTL ? "السابق" : "Go Back"}
-    </Button>
+    <Zoom in={true} timeout={transitionDuration} unmountOnExit>
+      <Fab
+        onClick={handleClick}
+        disabled={disabled}
+        color="primary"
+        sx={
+          sx
+            ? sx
+            : {
+                ...(isText && {
+                  width: "fit-content",
+                  height: "fit-content",
+                }),
+                position: "fixed",
+                bottom: "15px",
+                left: "15px",
+              }
+        }
+      >
+        {isText ? (
+          <ActionButton
+            disabled={disabled}
+            label={label}
+            type={type}
+            variant={variant}
+          />
+        ) : (
+          <Icon size={18} />
+        )}
+      </Fab>
+    </Zoom>
   );
 }

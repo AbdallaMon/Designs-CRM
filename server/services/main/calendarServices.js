@@ -44,7 +44,6 @@ export async function getAvailableDays({ month, adminId, type, userId }) {
   };
   if (type === "CLIENT") {
     const now = dayjs().toDate();
-    console.log(now, "now");
     where.slots = {
       some: {
         isBooked: false,
@@ -282,19 +281,11 @@ export async function getAvailableSlotsForDay({
 
   //   return slots;
   // }
-  console.log(date, "date");
-  console.log(timezone, "timezone");
 
-  const initialStartDay = dayjs(date).utc().startOf("day").toDate();
-  const initialEndDay = dayjs(date).utc().endOf("day").toDate();
   const start = dayjs.utc(date);
   const startDate = start.toDate();
 
   const endDate = start.add(24, "hour").toDate();
-
-  console.log(startDate, "startDate");
-
-  console.log(endDate, "endDate");
 
   const where = {
     id: Number(dayId),

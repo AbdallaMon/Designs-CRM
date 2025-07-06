@@ -17,7 +17,6 @@ import {
   getLanguages,
   submitSelectedImages,
   submitSelectedPatterns,
-  uploadPdfAndApproveSession,
 } from "../services/main/clientServices.js";
 import {
   addNote,
@@ -576,26 +575,6 @@ router.post(`/image-session/save-images`, async (req, res) => {
 //   }
 // });
 
-router.post("/image-session/generate-pdf", async (req, res) => {
-  const { sessionData, signatureUrl } = req.body;
-  try {
-    const data = await changeSessionStatus({
-      token: sessionData.token,
-      status: "APPROVED",
-      extra: { signature: signatureUrl },
-    });
-    // await pdfQueue.add("generate-approve-pdf", { sessionData, signatureUrl });
-    await uploadPdfAndApproveSession({ sessionData, signatureUrl });
-    return res
-      .status(200)
-      .json({ data, message: "Response saved succussfully", url: null });
-  } catch (err) {
-    console.error("PDF generation error:", err);
-    return res
-      .status(500)
-      .json({ success: false, error: "Failed to generate PDF" });
-  }
-});
 router.get("/notes", async (req, res) => {
   try {
     const searchParams = req.query;

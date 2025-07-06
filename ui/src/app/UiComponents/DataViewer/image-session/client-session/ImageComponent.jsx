@@ -11,6 +11,8 @@ import {
 } from "@mui/material";
 import { MdAdd, MdCheck, MdCheckCircle, MdFullscreen } from "react-icons/md";
 import { NotesComponent } from "../../utility/Notes";
+import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
+import { ensureHttps } from "@/app/helpers/functions/utility";
 
 export function ImageComponent({
   handleImageClick,
@@ -22,7 +24,10 @@ export function ImageComponent({
   const theme = useTheme();
 
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const photo = type === "SELECT" ? image : image.image;
+  const photo = type === "SELECT" ? image : image.designImage;
+
+  const { lng } = useLanguageSwitcherContext();
+
   return (
     <>
       <Card
@@ -30,9 +35,9 @@ export function ImageComponent({
           position: "relative",
           borderRadius: 0,
           overflow: "hidden",
-          boxShadow: isSelected ? 4 : 1,
-          border: isSelected ? 3 : 0,
-          borderColor: "primary.main",
+          boxShadow: isSelected ? 3 : 1,
+          border: 1,
+          borderColor: isSelected ? "success.main" : "white",
           transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
           "&:hover": {
             transform: "translateY(-2px)",
@@ -42,8 +47,8 @@ export function ImageComponent({
       >
         <CardMedia
           component="img"
-          height={isMobile ? 200 : 220}
-          image={photo.url}
+          height={isMobile ? 280 : 300}
+          image={ensureHttps(photo.imageUrl)}
           alt={`Image ${image.id}`}
           sx={{
             cursor: "pointer",
@@ -100,7 +105,7 @@ export function ImageComponent({
             <IconButton
               onClick={(e) => {
                 e.stopPropagation();
-                handleImageSelect(image);
+                handleImageSelect(image, isSelected);
               }}
               sx={{
                 bgcolor: isSelected
@@ -151,7 +156,7 @@ export function ImageComponent({
                 }}
               >
                 <MdCheckCircle size={14} />
-                Selected
+                {lng === "ar" ? "تم التحديد" : "Selected"}
               </Box>
             )}
           </>
@@ -162,8 +167,8 @@ export function ImageComponent({
                 id={image.id}
                 idKey="selectedImageId"
                 slug="client"
-                text="Add note"
-              />{" "}
+                text={lng === "ar" ? "اضف ملاحظة للتصميم" : "Add note for this"}
+              />
             </CardActionArea>
           </CardActions>
         )}

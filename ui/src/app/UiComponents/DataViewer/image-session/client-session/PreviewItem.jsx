@@ -1,8 +1,30 @@
-import { Box, Card, Typography } from "@mui/material";
+import { Box, Button, Card, IconButton, Typography } from "@mui/material";
 import ProsAndConsDialogButton from "../admin/shared/ProsAndCons";
 import { ensureHttps } from "@/app/helpers/functions/utility";
+import { MdCheckCircle, MdEdit, MdRadioButtonUnchecked } from "react-icons/md";
+import { useState, useEffect, useRef } from "react";
+import { useDebounce } from "../admin/shared/CreateTitleOrDesc";
+import { useLanguage } from "@/app/helpers/hooks/useLanguage";
+import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 
-export function PreviewItem({ template, item }) {
+export function PreviewItem({
+  template,
+  item,
+  customColors,
+  setCustomColors,
+  isEditMode,
+  type,
+  canSelect,
+  isSelected,
+  onSelect,
+  extraLng,
+}) {
+  const [colorPickerOpen, setColorPickerOpen] = useState(null); // Store the color ID being edited
+  const [tempColorValue, setTempColorValue] = useState("");
+  const colorInputRef = useRef(null);
+
+  const debouncedColorValue = useDebounce(tempColorValue, 300);
+
   const customStyles = template.customStyle;
   const cardDimensions = { width: "100%" };
   const cardStyle = {
@@ -58,9 +80,8 @@ export function PreviewItem({ template, item }) {
     paddingX: template.paddingX || "16px",
     paddingY: template.paddingY || "16px",
   };
-  console.log(template, "template");
+
   const getElementStyle = (elementType) => {
-    console.log(elementType, "elementType");
     const baseStyle = customStyles[elementType] || {};
     const numericSize = parseInt(baseStyle.fontSize) || 16;
     const returnedData = {
@@ -75,7 +96,45 @@ export function PreviewItem({ template, item }) {
     }
     return returnedData;
   };
-  const colorCircles = item.colors; //todo
+
+  const colorCircles =
+    customColors && customColors.length > 0 ? customColors : item.colors;
+
+  // Handle debounced color changes
+  useEffect(() => {
+    if (debouncedColorValue && colorPickerOpen && setCustomColors) {
+      setCustomColors((prevColors) =>
+        prevColors.map((color) =>
+          color.id === colorPickerOpen
+            ? { ...color, colorHex: debouncedColorValue }
+            : color
+        )
+      );
+    }
+  }, [debouncedColorValue, colorPickerOpen, setCustomColors]);
+
+  const handleColorChange = (newHex) => {
+    setTempColorValue(newHex);
+  };
+
+  const handleColorPickerOpen = (colorId) => {
+    const currentColor = colorCircles.find((color) => color.id === colorId);
+    setTempColorValue(currentColor?.colorHex || "#000000");
+    setColorPickerOpen(colorId);
+
+    // Open the color picker directly
+    setTimeout(() => {
+      if (colorInputRef.current) {
+        colorInputRef.current.click();
+      }
+    }, 0);
+  };
+
+  const handleColorPickerClose = () => {
+    setColorPickerOpen(null);
+    setTempColorValue("");
+  };
+
   const renderElement = (elementType) => {
     switch (elementType) {
       case "title":
@@ -88,11 +147,16 @@ export function PreviewItem({ template, item }) {
               <Typography
                 variant="h5"
                 sx={{
-                  textAlign: "center",
                   ...customStyles.title,
+                  textAlign: "center !important",
                 }}
               >
-                {item.title[0].text}
+                {item.title.length > 0 &&
+                  (extraLng
+                    ? item.title?.find(
+                        (desc) => desc.language?.code === extraLng
+                      ).text
+                    : item.title[0].text)}
               </Typography>
             </Box>
           )
@@ -108,15 +172,19 @@ export function PreviewItem({ template, item }) {
               <Typography
                 variant="body2"
                 sx={{
-                  textAlign: "center",
                   ...customStyles.description,
-
+                  textAlign: "center !important",
                   wordWrap: "break-word",
                   overflowWrap: "break-word",
                   wordBreak: "break-all",
                 }}
               >
-                {item.description.length > 0 && item.description[0].content}
+                {item.description.length > 0 &&
+                  (extraLng
+                    ? item.description?.find(
+                        (desc) => desc.language?.code === extraLng
+                      ).content
+                    : item.description[0].content)}
               </Typography>
             </Box>
           )
@@ -127,6 +195,9 @@ export function PreviewItem({ template, item }) {
           template.showCons && (
             <Box key="consButton">
               <ProsAndConsDialogButton
+                materialId={type === "MATERIAL" && item.id}
+                styleId={type === "STYLE" && item.id}
+                lng={lng}
                 customStyle={{
                   paddingX: customStyles.consButton?.paddingX,
                   paddingY: customStyles.consButton?.paddingY,
@@ -150,14 +221,18 @@ export function PreviewItem({ template, item }) {
                   display: "flex",
                   flexDirection:
                     template.colorsLayout === "horizontal" ? "row" : "column",
-                  gap: getElementStyle("colors").gap || 0.5,
+                  gap: isEditMode
+                    ? parseInt(getElementStyle("colors").gap) || 5 + 5 + "px"
+                    : getElementStyle("colors").gap || 0.5,
                   alignItems: "center",
                 }}
               >
                 {colorCircles?.map((color, index) => (
                   <Box
+                    className="color-circle"
                     key={index}
                     sx={{
+                      position: "relative",
                       width:
                         {
                           xs: template.colorSize,
@@ -172,7 +247,47 @@ export function PreviewItem({ template, item }) {
                       borderRadius: "50%",
                       border: "2px solid rgba(255,255,255,0.5)",
                     }}
-                  />
+                  >
+                    {isEditMode && color.isEditableByClient && (
+                      <>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleColorPickerOpen(color.id)}
+                          sx={{
+                            position: "absolute",
+                            top: -8,
+                            right: -8,
+                            backgroundColor: "rgba(255, 255, 255, 0.9)",
+                            width: 20,
+                            height: 20,
+                            "&:hover": {
+                              backgroundColor: "rgba(255, 255, 255, 1)",
+                            },
+                          }}
+                        >
+                          <MdEdit sx={{ fontSize: 12 }} />
+                        </IconButton>
+
+                        {/* Hidden Color Picker Input - opens directly */}
+                        {colorPickerOpen === color.id && (
+                          <input
+                            ref={colorInputRef}
+                            type="color"
+                            value={tempColorValue}
+                            onChange={(e) => handleColorChange(e.target.value)}
+                            onBlur={handleColorPickerClose}
+                            style={{
+                              position: "absolute",
+                              opacity: 0,
+                              pointerEvents: "none",
+                              width: "1px",
+                              height: "1px",
+                            }}
+                          />
+                        )}
+                      </>
+                    )}
+                  </Box>
                 ))}
               </Box>
             </Box>
@@ -183,13 +298,46 @@ export function PreviewItem({ template, item }) {
         return null;
     }
   };
-
+  const { lng } = useLanguageSwitcherContext();
+  const label = isSelected
+    ? lng === "ar"
+      ? "تم الاختيار"
+      : "Selected"
+    : lng === "ar"
+    ? "اختار"
+    : "Select";
   return (
     <Card sx={{ ...cardStyle }}>
+      {canSelect && (
+        <Button
+          variant={isSelected ? "contained" : "outlined"}
+          color={isSelected ? "success" : "primary"}
+          startIcon={
+            isSelected ? <MdCheckCircle /> : <MdRadioButtonUnchecked />
+          }
+          onClick={() => onSelect(item)}
+          sx={{
+            borderColor: "white",
+            color: isSelected ? "white" : "white",
+            borderRadius: 3,
+            px: 3,
+            py: 1,
+            position: "absolute",
+            top: 15,
+            right: 15,
+            zIndex: 100,
+            "&:hover": {
+              borderColor: "white",
+              bgcolor: isSelected ? "success.dark" : "rgba(255,255,255,0.1)",
+              transform: "translateY(-2px)",
+            },
+          }}
+        >
+          {label}
+        </Button>
+      )}
       <Box sx={backgroundImageStyle} />
-
       <Box sx={overlayStyle} />
-
       <Box sx={contentStyle}>
         {template.layout
           .map((elementType) => renderElement(elementType))

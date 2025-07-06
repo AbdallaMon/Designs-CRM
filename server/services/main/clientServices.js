@@ -924,7 +924,7 @@ export async function approveSession({ token, clientLeadId, id, pdfUrl }) {
   await prisma.clientImageSession.update({
     where: { id: Number(id) },
     data: {
-      sessionStatus: "APPROVED",
+      sessionStatus: "SUBMITTED",
       pdfUrl: pdfUrl,
       error: false,
     },

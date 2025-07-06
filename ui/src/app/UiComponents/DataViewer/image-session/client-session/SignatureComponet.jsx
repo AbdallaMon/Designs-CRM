@@ -4,12 +4,22 @@ import SignatureCanvas from "react-signature-canvas";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
+import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
+import { FloatingActionButton } from "./Utility";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
-const SignatureComponent = ({ session, token, onClose, onSignatureSaved }) => {
+const SignatureComponent = ({
+  session,
+  token,
+  nextStatus,
+  onSignatureSaved,
+  disabled,
+  handleBack,
+}) => {
+  const { lng } = useLanguageSwitcherContext();
   const sigCanvas = useRef({});
   const { setLoading: setToastLoading } = useToastContext();
   const { setAlertError } = useAlertContext();
@@ -54,7 +64,7 @@ const SignatureComponent = ({ session, token, onClose, onSignatureSaved }) => {
       );
       const url = uploadResponse.fileUrls.file[0];
       const request = await handleRequestSubmit(
-        { sessionData: session, signatureUrl: url },
+        { sessionData: session, signatureUrl: url, sessionStatus: nextStatus },
         setToastLoading,
         `client/image-session/generate-pdf`,
         false,
@@ -69,7 +79,7 @@ const SignatureComponent = ({ session, token, onClose, onSignatureSaved }) => {
   return (
     <Box>
       <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
-        Draw Your Signature
+        {lng === "ar" ? "ارسم توقيعك" : "Draw Your Signature"}
       </Typography>
 
       <Box
@@ -97,7 +107,11 @@ const SignatureComponent = ({ session, token, onClose, onSignatureSaved }) => {
           ref={sigCanvas}
           clearOnResize={false}
         />
-
+        <FloatingActionButton
+          disabled={disabled}
+          handleClick={handleBack}
+          type="BACK"
+        />
         <Box
           sx={{
             mt: 2,
@@ -119,10 +133,11 @@ const SignatureComponent = ({ session, token, onClose, onSignatureSaved }) => {
               onClick={handleClearCanvas}
               sx={{ mr: 1 }}
             >
-              Clear
+              {lng === "ar" ? "مسح" : "Clear"}
             </Button>
+
             <Button onClick={handleExternalUpload} variant="contained">
-              Approve
+              {lng === "ar" ? "حفظ" : "Save"}
             </Button>
           </Box>
         </Box>

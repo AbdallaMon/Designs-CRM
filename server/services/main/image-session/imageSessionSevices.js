@@ -407,12 +407,15 @@ function getProAndConKey(type) {
 function getProAndConItemKey(itemType) {
   return itemType === "PRO" ? "pro" : "con";
 }
-export async function getConsAndPros({ id, type, lngId }) {
+export async function getConsAndPros({ id, type, lng, isClient }) {
   const key = getProAndConKey(type);
   const textWhere = {};
-  if (lngId) {
-    textWhere.id = Number(lngId);
+  if (lng && isClient) {
+    textWhere.language = {
+      code: lng,
+    };
   }
+
   const pros = await prisma.pro.findMany({
     where: {
       [key]: Number(id),
@@ -1145,6 +1148,11 @@ export async function getSessionByToken({ token }) {
                   text: true,
                   id: true,
                   languageId: true,
+                  language: {
+                    select: {
+                      code: true,
+                    },
+                  },
                 },
               },
             },
@@ -1157,25 +1165,59 @@ export async function getSessionByToken({ token }) {
         },
       },
       material: {
-        select: {
-          id: true,
+        include: {
+          template: true,
           title: {
             select: {
               text: true,
               id: true,
               languageId: true,
+              language: {
+                select: {
+                  code: true,
+                },
+              },
+            },
+          },
+          description: {
+            select: {
+              content: true,
+              id: true,
+              languageId: true,
+              language: {
+                select: {
+                  code: true,
+                },
+              },
             },
           },
         },
       },
       style: {
-        select: {
-          id: true,
+        include: {
+          template: true,
           title: {
             select: {
               text: true,
               id: true,
               languageId: true,
+              language: {
+                select: {
+                  code: true,
+                },
+              },
+            },
+          },
+          description: {
+            select: {
+              content: true,
+              id: true,
+              languageId: true,
+              language: {
+                select: {
+                  code: true,
+                },
+              },
             },
           },
         },
@@ -1251,4 +1293,216 @@ export async function getColorsByLng({ lng }) {
       colors: true,
     },
   });
+}
+
+export async function saveClientSelectedColor({
+  selectedColor,
+  session,
+  customColors,
+  status,
+}) {
+  console.log(selectedColor, "selectedColor");
+  return await prisma.clientImageSession.update({
+    where: {
+      id: Number(session.id),
+    },
+    data: {
+      colorPatternId: selectedColor.id,
+      customColors: customColors?.map((color) => color.colorHex),
+      sessionStatus: status,
+    },
+  });
+}
+
+export async function getMaterialsByLng({ lng }) {
+  const where = {};
+  where.isArchived = false;
+  const lngWhere = {};
+  if (lng) {
+    lngWhere.language = {
+      code: lng,
+    };
+  }
+
+  return await prisma.material.findMany({
+    where,
+    include: {
+      title: {
+        where: lngWhere,
+        select: {
+          text: true,
+          id: true,
+          languageId: true,
+          language: {
+            select: {
+              id: true,
+              code: true,
+            },
+          },
+        },
+      },
+      description: {
+        where: lngWhere,
+        select: {
+          content: true,
+          id: true,
+          languageId: true,
+          language: {
+            select: {
+              id: true,
+              code: true,
+            },
+          },
+        },
+      },
+      template: true,
+    },
+  });
+}
+
+export async function saveClientSelectedMaterial({
+  selectedMaterial,
+  session,
+  status,
+}) {
+  return await prisma.clientImageSession.update({
+    where: {
+      id: Number(session.id),
+    },
+    data: {
+      materialId: selectedMaterial.id,
+      sessionStatus: status,
+    },
+  });
+}
+
+export async function getStyleByLng({ lng }) {
+  const where = {};
+  where.isArchived = false;
+  const lngWhere = {};
+  if (lng) {
+    lngWhere.language = {
+      code: lng,
+    };
+  }
+
+  return await prisma.style.findMany({
+    where,
+    include: {
+      title: {
+        where: lngWhere,
+        select: {
+          text: true,
+          id: true,
+          languageId: true,
+          language: {
+            select: {
+              id: true,
+              code: true,
+            },
+          },
+        },
+      },
+      description: {
+        where: lngWhere,
+        select: {
+          content: true,
+          id: true,
+          languageId: true,
+          language: {
+            select: {
+              id: true,
+              code: true,
+            },
+          },
+        },
+      },
+      template: true,
+    },
+  });
+}
+
+export async function saveClientSelectedStyle({
+  selectedStyle,
+  session,
+  status,
+}) {
+  return await prisma.clientImageSession.update({
+    where: {
+      id: Number(session.id),
+    },
+    data: {
+      styleId: selectedStyle.id,
+      sessionStatus: status,
+    },
+  });
+}
+
+export async function getImagesByStyleAndSpaces({ styleId, spaceIds }) {
+  const spaceIdsArray =
+    typeof spaceIds === "string"
+      ? spaceIds
+          .split(",")
+          .map((id) => Number(id.trim()))
+          .filter(Boolean)
+      : [];
+  return await prisma.designImage.findMany({
+    where: {
+      styleId: Number(styleId),
+      isArchived: false,
+      spaces: {
+        some: {
+          spaceId: {
+            in: spaceIdsArray,
+          },
+        },
+      },
+    },
+  });
+}
+
+export async function saveClientSelectedImages({
+  selectedImages,
+  session,
+  status,
+}) {
+  const sessionId = Number(session.id);
+  console.log(session, "session");
+  console.log(selectedImages, "selectedImages");
+
+  // Extract image IDs
+  const selectedImageIds = selectedImages.map((image) => image.id);
+
+  return await prisma.$transaction([
+    prisma.note.deleteMany({
+      where: {
+        clientSelectedImage: {
+          imageSessionId: sessionId,
+        },
+      },
+    }),
+    prisma.clientSelectedImage.deleteMany({
+      where: {
+        imageSessionId: sessionId,
+      },
+    }),
+
+    ...selectedImageIds.map((designImageId) =>
+      prisma.clientSelectedImage.create({
+        data: {
+          imageSessionId: sessionId,
+          designImageId,
+        },
+      })
+    ),
+
+    prisma.clientImageSession.update({
+      where: {
+        id: sessionId,
+      },
+      data: {
+        sessionStatus: status,
+      },
+    }),
+  ]);
 }

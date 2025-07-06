@@ -390,7 +390,6 @@ router.delete("/pros-and-cons/:id", async (req, res) => {
     res.status(200).json({ data, message: "Item deleted" });
   } catch (e) {
     console.log(e, "e");
-
     res
       .status(500)
       .json({ message: "An error occurred while fetching Spaces", e });

@@ -13,7 +13,7 @@ import {
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { PageInfoType } from "@/app/helpers/constants";
-import { ActionButtons, ClientImageAppBar, NextButton } from "./Utility";
+import { ActionButtons } from "./Utility";
 
 const PageInfoComponent = ({
   session,

@@ -2,7 +2,6 @@ import { useLanguage } from "@/app/helpers/hooks/useLanguage";
 import { Box, TextField } from "@mui/material";
 import { useEffect, useState, useCallback, memo } from "react";
 
-// A simple debounce hook (you can place this in a separate utility file)
 export function useDebounce(value, delay) {
   const [debouncedValue, setDebouncedValue] = useState(value);
 
@@ -18,8 +17,6 @@ export function useDebounce(value, delay) {
   return debouncedValue;
 }
 
-// --- FURTHER OPTIMIZATION: Memoized TextField ---
-// This component will only re-render if its specific props (value, label, etc.) change.
 export const MemoizedTextField = memo(function MemoizedTextField(props) {
   return <TextField {...props} />;
 });
@@ -32,8 +29,6 @@ export function CreateTitleOrDesc({ data, setData, type = "TITLE" }) {
   const [localData, setLocalData] = useState(null);
   const debouncedLocalData = useDebounce(localData, 200);
 
-  // --- EFFECT 1 (INITIALIZATION) with THE FIX ---
-  // This effect now has a more specific dependency, preventing the feedback loop.
   useEffect(() => {
     if (languages && languages.length > 0) {
       const parentSlice = data?.[fieldName];
@@ -47,11 +42,8 @@ export function CreateTitleOrDesc({ data, setData, type = "TITLE" }) {
         setLocalData(initialFields);
       }
     }
-    // ✅ THE FIX: Depend on the specific data slice, not the whole data object.
   }, [languages, data?.[fieldName], fieldName]);
 
-  // --- EFFECT 2 (PARENT UPDATE) ---
-  // This remains the same. It correctly updates the parent with debounced data.
   useEffect(() => {
     if (debouncedLocalData && debouncedLocalData !== data?.[fieldName]) {
       setData((old) => ({

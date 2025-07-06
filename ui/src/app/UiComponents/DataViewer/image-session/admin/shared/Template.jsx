@@ -532,7 +532,7 @@ const StyleEditorControls = memo(
                   label="Color Circle Size"
                   value={template.colorSize}
                   onChange={(val) => onTemplateChange("colorSize", val)}
-                  min={10}
+                  min={0}
                   max={100}
                 />
               </Grid>
@@ -541,7 +541,7 @@ const StyleEditorControls = memo(
                   label="Color Circle gap"
                   value={styles.gap || 0.5}
                   onChange={(val) => handleUpdate("gap", val, true)}
-                  min={10}
+                  min={0}
                   max={100}
                 />
               </Grid>
