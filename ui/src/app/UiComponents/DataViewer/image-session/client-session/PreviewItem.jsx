@@ -222,7 +222,7 @@ export function PreviewItem({
                   flexDirection:
                     template.colorsLayout === "horizontal" ? "row" : "column",
                   gap: isEditMode
-                    ? parseInt(getElementStyle("colors").gap) || 5 + 5 + "px"
+                    ? parseInt(getElementStyle("colors").gap) + 5 + "px" || 1
                     : getElementStyle("colors").gap || 0.5,
                   alignItems: "center",
                 }}

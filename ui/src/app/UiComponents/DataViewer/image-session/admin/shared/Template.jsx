@@ -8,7 +8,7 @@ import {
   Button,
   Slider,
   TextField,
-  Grid,
+  Grid2 as Grid,
   Paper,
   IconButton,
   Accordion,
@@ -390,7 +390,7 @@ const EnhancedSlider = memo(
               valueLabelFormat={(val) => `${val}${unit}`}
             />
           </Grid> */}
-          <Grid item>
+          <Grid>
             <Input
               value={numericValue}
               size="small"
@@ -476,7 +476,7 @@ const StyleEditorControls = memo(
           {" "}
           <Typography variant="overline">General</Typography>{" "}
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ sm: 6 }}>
           <ColorPicker
             label="Background Color"
             value={styles.backgroundColor || "transparent"}
@@ -490,19 +490,17 @@ const StyleEditorControls = memo(
             onChange={(color) => handleUpdate("color", color)}
           />
         </Grid>
-        {type === "COLOR_PATTERN" && key === "card" ? null : (
-          <Grid item xs={12} sm={6}>
-            <EnhancedSlider
-              label="Border Radius"
-              value={styles.borderRadius}
-              onChange={(val) => handleUpdate("borderRadius", val, true)}
-              min={0}
-              max={50}
-            />
-          </Grid>
-        )}
-        {/* --- Shadow Section --- */}
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ sm: 6 }}>
+          <EnhancedSlider
+            label="Border Radius"
+            value={styles.borderRadius}
+            onChange={(val) => handleUpdate("borderRadius", val, true)}
+            min={0}
+            max={50}
+          />
+        </Grid>
+
+        <Grid size={{ sm: 6 }}>
           <EnhancedSlider
             label="Shadow Intensity"
             value={shadowIntensity}
@@ -527,7 +525,7 @@ const StyleEditorControls = memo(
                 {" "}
                 {renderChangeLayout()}{" "}
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ sm: 6 }}>
                 <EnhancedSlider
                   label="Color Circle Size"
                   value={template.colorSize}
@@ -536,7 +534,7 @@ const StyleEditorControls = memo(
                   max={100}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ sm: 6 }}>
                 <EnhancedSlider
                   label="Color Circle gap"
                   value={styles.gap || 0.5}
@@ -549,43 +547,41 @@ const StyleEditorControls = memo(
           </Grid>
         )}
 
-        {key !== "card" && (
-          <Grid item xs={12}>
-            <Typography variant="overline">Typography</Typography>
-            <Grid container spacing={2} sx={{ pt: 2 }}>
-              <Grid item xs={12} sm={6}>
-                <EnhancedSlider
-                  label="Font Size"
-                  value={styles.fontSize}
-                  onChange={(val) => handleUpdate("fontSize", val, true)}
-                  min={10}
-                  max={48}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography gutterBottom>Font Weight</Typography>
-                <Select
-                  value={styles.fontWeight || 400}
-                  onChange={(e) => handleUpdate("fontWeight", e.target.value)}
-                  fullWidth
-                  size="small"
-                >
-                  <MenuItem value={300}>Light</MenuItem>
-                  <MenuItem value={400}>Regular</MenuItem>
-                  <MenuItem value={500}>Medium</MenuItem>
-                  <MenuItem value={700}>Bold</MenuItem>
-                  <MenuItem value={900}>Black</MenuItem>
-                </Select>
-              </Grid>
+        <Grid item xs={12}>
+          <Typography variant="overline">Typography</Typography>
+          <Grid container spacing={2} sx={{ pt: 2 }}>
+            <Grid size={{ sm: 6 }}>
+              <EnhancedSlider
+                label="Font Size"
+                value={styles.fontSize}
+                onChange={(val) => handleUpdate("fontSize", val, true)}
+                min={10}
+                max={48}
+              />
+            </Grid>
+            <Grid size={{ sm: 6 }}>
+              <Typography gutterBottom>Font Weight</Typography>
+              <Select
+                value={styles.fontWeight || 400}
+                onChange={(e) => handleUpdate("fontWeight", e.target.value)}
+                fullWidth
+                size="small"
+              >
+                <MenuItem value={300}>Light</MenuItem>
+                <MenuItem value={400}>Regular</MenuItem>
+                <MenuItem value={500}>Medium</MenuItem>
+                <MenuItem value={700}>Bold</MenuItem>
+                <MenuItem value={900}>Black</MenuItem>
+              </Select>
             </Grid>
           </Grid>
-        )}
+        </Grid>
 
         {/* --- Spacing Section --- */}
         <Grid item xs={12}>
           <Typography variant="overline">Spacing</Typography>
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ sm: 6 }}>
           <EnhancedSlider
             label="Padding X (Horizontal)"
             value={styles.paddingX}
@@ -594,7 +590,7 @@ const StyleEditorControls = memo(
             max={100}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid size={{ sm: 6 }}>
           <EnhancedSlider
             label="Padding Y (Vertical)"
             value={styles.paddingY}
@@ -603,46 +599,44 @@ const StyleEditorControls = memo(
             max={100}
           />
         </Grid>
-        {key !== "card" && (
-          <>
-            <Grid item xs={6} sm={3}>
-              <EnhancedSlider
-                label="Margin Top"
-                value={styles.marginTop}
-                onChange={(val) => handleUpdate("marginTop", val, true)}
-                min={0}
-                max={100}
-              />
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <EnhancedSlider
-                label="Margin Bottom"
-                value={styles.marginBottom}
-                onChange={(val) => handleUpdate("marginBottom", val, true)}
-                min={0}
-                max={100}
-              />
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <EnhancedSlider
-                label="Margin Left"
-                value={styles.marginLeft}
-                onChange={(val) => handleUpdate("marginLeft", val, true)}
-                min={0}
-                max={100}
-              />
-            </Grid>
-            <Grid item xs={6} sm={3}>
-              <EnhancedSlider
-                label="Margin Right"
-                value={styles.marginRight}
-                onChange={(val) => handleUpdate("marginRight", val, true)}
-                min={0}
-                max={100}
-              />
-            </Grid>
-          </>
-        )}
+        <>
+          <Grid size={{ xs: 6, sm: 3 }}>
+            <EnhancedSlider
+              label="Margin Top"
+              value={styles.marginTop}
+              onChange={(val) => handleUpdate("marginTop", val, true)}
+              min={0}
+              max={100}
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 3 }}>
+            <EnhancedSlider
+              label="Margin Bottom"
+              value={styles.marginBottom}
+              onChange={(val) => handleUpdate("marginBottom", val, true)}
+              min={0}
+              max={100}
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 3 }}>
+            <EnhancedSlider
+              label="Margin Left"
+              value={styles.marginLeft}
+              onChange={(val) => handleUpdate("marginLeft", val, true)}
+              min={0}
+              max={100}
+            />
+          </Grid>
+          <Grid size={{ xs: 6, sm: 3 }}>
+            <EnhancedSlider
+              label="Margin Right"
+              value={styles.marginRight}
+              onChange={(val) => handleUpdate("marginRight", val, true)}
+              min={0}
+              max={100}
+            />
+          </Grid>
+        </>
       </Grid>
     );
   }
@@ -922,7 +916,7 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
         <DialogTitle>Template Configuration</DialogTitle>
         <DialogContent>
           <Grid container spacing={3} sx={{ mt: 1 }}>
-            <Grid item xs={12} md={5}>
+            <Grid size={{ md: 5 }}>
               <Box
                 sx={{
                   position: "sticky",
@@ -955,7 +949,7 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
             </Grid>
 
             {/* Settings Panel */}
-            <Grid item xs={12} md={7}>
+            <Grid size={{ md: 7 }}>
               <Typography variant="h6" gutterBottom>
                 <Tune sx={{ mr: 1, verticalAlign: "middle" }} />
                 Display Settings
@@ -1031,7 +1025,16 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
               <ColorPicker
                 label="Background Color"
                 value={customStyles.card.backgroundColor}
-                onChange={(color) => handleBgColorChange(color)}
+                onChange={(color) =>
+                  handleStyleChange(() => {
+                    const newStyle = { ...customStyles };
+                    newStyle.card = {
+                      ...newStyle.card,
+                      backgroundColor: color,
+                    };
+                    return newStyle;
+                  })
+                }
               />
 
               {/* Overlay Settings */}

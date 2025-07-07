@@ -2,6 +2,27 @@ import { Box } from "@mui/material";
 import { MemoizedTextField, useDebounce } from "./CreateTitleOrDesc";
 import { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/app/helpers/hooks/useLanguage";
+function deepEqual(obj1, obj2) {
+  if (obj1 === obj2) return true;
+  if (
+    typeof obj1 !== "object" ||
+    obj1 === null ||
+    typeof obj2 !== "object" ||
+    obj2 === null
+  )
+    return false;
+
+  const keys1 = Object.keys(obj1);
+  const keys2 = Object.keys(obj2);
+  if (keys1.length !== keys2.length) return false;
+
+  for (let key of keys1) {
+    if (!keys2.includes(key)) return false;
+    if (!deepEqual(obj1[key], obj2[key])) return false;
+  }
+
+  return true;
+}
 
 export function EditTitleOrDescFields({
   data, // This prop is now only used for the debounced update comparison
@@ -18,7 +39,6 @@ export function EditTitleOrDescFields({
   // --- KEY CHANGE 2: Debounce the entire local state ---
   const debouncedLocalData = useDebounce(localData, 200);
 
-  // --- EFFECT 1: Smart Initialization ---
   useEffect(() => {
     if (localData !== null || !languages || languages.length === 0) {
       return;
@@ -58,14 +78,11 @@ export function EditTitleOrDescFields({
     setLocalData(completeData);
   }, [languages, initialData, localData, type, fieldName]);
 
-  // --- EFFECT 2: Debounced Parent Update ---
-  // This effect sends the complete, debounced state back to the parent.
   useEffect(() => {
-    // Only update parent if debounced data exists and is different from parent data
-    if (debouncedLocalData && debouncedLocalData !== data) {
+    if (debouncedLocalData && !deepEqual(debouncedLocalData, data)) {
       setData((old) => ({
         ...old,
-        [fieldName]: debouncedLocalData,
+        ...debouncedLocalData,
       }));
     }
   }, [debouncedLocalData, data, setData]);

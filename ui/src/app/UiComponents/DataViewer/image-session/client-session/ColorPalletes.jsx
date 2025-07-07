@@ -104,6 +104,21 @@ export function ColorPalletes({
       }
     );
     timeline.fromTo(
+      paper.querySelector("h5"),
+      {
+        opacity: 1,
+        y: 0,
+      },
+      {
+        opacity: 0,
+        y: -15,
+        duration: 0.3,
+        ease: "power2.out",
+        stagger: 0.05,
+      },
+      "<"
+    );
+    timeline.fromTo(
       paper,
       { left: 0, top: 0 },
       {
@@ -140,6 +155,21 @@ export function ColorPalletes({
         height: colorSizeRect.height - 5,
       }
     );
+    timeline.fromTo(
+      paper.querySelector("h5"),
+      {
+        opacity: 0,
+        y: -15,
+      },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.3,
+        ease: "power2.out",
+        stagger: 0.05,
+      },
+      "<"
+    );
     setCurrentCard(null);
   }
 
@@ -158,6 +188,18 @@ export function ColorPalletes({
     const cardHeight = cardRect.height;
     const colorsSizes = paper.querySelectorAll(".color-circle");
     const colorSizeRect = colorsSizes[0].getBoundingClientRect();
+
+    timeline.set(cardElement, {
+      clearProps: "transform",
+      height: cardHeight,
+    });
+
+    timeline.set(paper, {
+      width: width,
+      height: height,
+      zIndex: 100,
+      position: "fixed",
+    });
     timeline.fromTo(
       colorsSizes,
       {
@@ -172,18 +214,21 @@ export function ColorPalletes({
         stagger: 0.05,
       }
     );
-
-    timeline.set(cardElement, {
-      clearProps: "transform",
-      height: cardHeight,
-    });
-
-    timeline.set(paper, {
-      width: width,
-      height: height,
-      zIndex: 100,
-      position: "fixed",
-    });
+    timeline.fromTo(
+      paper.querySelector("h5"),
+      {
+        opacity: 1,
+        y: 0,
+      },
+      {
+        opacity: 0,
+        y: -15,
+        duration: 0.3,
+        ease: "power2.out",
+        stagger: 0.05,
+      },
+      "<"
+    );
     // return;
     timeline.to(paper, {
       delay: 0.5,
@@ -213,7 +258,21 @@ export function ColorPalletes({
         height: colorSizeRect.height + 5,
       }
     );
-
+    timeline.fromTo(
+      paper.querySelector("h5"),
+      {
+        opacity: 0,
+        y: -15,
+      },
+      {
+        opacity: 1,
+        y: 0,
+        duration: 0.3,
+        ease: "power2.out",
+        stagger: 0.05,
+      },
+      "<"
+    );
     setCurrentCard(cardElement);
   };
 

@@ -171,9 +171,9 @@ const PageInfoComponent = ({
                 component="div"
                 sx={{
                   color: theme.palette.text.primary,
-                  fontSize: "1.2rem",
+                  fontSize: "1.1rem",
                   textAlign: isRTL ? "right" : "justify",
-                  lineHeight: 1.8,
+                  lineHeight: 1.6,
                   whiteSpace: "break-spaces",
                   letterSpacing: "0.3px",
                   fontWeight: 400,

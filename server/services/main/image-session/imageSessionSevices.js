@@ -60,6 +60,7 @@ export async function createSpace({ data }) {
 
 export async function updateSpace({ data, spaceId }) {
   const { edits = {}, creates = {} } = data;
+  console.log(data,"data")
   const titles = Object.values(data.titles);
   if (!data.titles || titles.length === 0) {
     throw new Error("Please Fill all data.");
