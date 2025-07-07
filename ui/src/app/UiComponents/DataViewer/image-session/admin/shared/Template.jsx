@@ -587,7 +587,7 @@ const StyleEditorControls = memo(
             value={styles.paddingX}
             onChange={(val) => handleUpdate("paddingX", val, true)}
             min={0}
-            max={100}
+            max={300}
           />
         </Grid>
         <Grid size={{ sm: 6 }}>
@@ -596,7 +596,7 @@ const StyleEditorControls = memo(
             value={styles.paddingY}
             onChange={(val) => handleUpdate("paddingY", val, true)}
             min={0}
-            max={100}
+            max={300}
           />
         </Grid>
         <>
@@ -606,7 +606,7 @@ const StyleEditorControls = memo(
               value={styles.marginTop}
               onChange={(val) => handleUpdate("marginTop", val, true)}
               min={0}
-              max={100}
+              max={300}
             />
           </Grid>
           <Grid size={{ xs: 6, sm: 3 }}>
@@ -615,7 +615,7 @@ const StyleEditorControls = memo(
               value={styles.marginBottom}
               onChange={(val) => handleUpdate("marginBottom", val, true)}
               min={0}
-              max={100}
+              max={300}
             />
           </Grid>
           <Grid size={{ xs: 6, sm: 3 }}>
@@ -624,7 +624,7 @@ const StyleEditorControls = memo(
               value={styles.marginLeft}
               onChange={(val) => handleUpdate("marginLeft", val, true)}
               min={0}
-              max={100}
+              max={300}
             />
           </Grid>
           <Grid size={{ xs: 6, sm: 3 }}>
@@ -633,7 +633,7 @@ const StyleEditorControls = memo(
               value={styles.marginRight}
               onChange={(val) => handleUpdate("marginRight", val, true)}
               min={0}
-              max={100}
+              max={300}
             />
           </Grid>
         </>
