@@ -4,8 +4,8 @@ import { ensureHttps } from "@/app/helpers/functions/utility";
 import { MdCheckCircle, MdEdit, MdRadioButtonUnchecked } from "react-icons/md";
 import { useState, useEffect, useRef } from "react";
 import { useDebounce } from "../admin/shared/CreateTitleOrDesc";
-import { useLanguage } from "@/app/helpers/hooks/useLanguage";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
+import gsap from "gsap";
 
 export function PreviewItem({
   template,
@@ -18,11 +18,14 @@ export function PreviewItem({
   isSelected,
   onSelect,
   extraLng,
+  animated,
+  currentCard,
+  loading,
 }) {
   const [colorPickerOpen, setColorPickerOpen] = useState(null); // Store the color ID being edited
   const [tempColorValue, setTempColorValue] = useState("");
   const colorInputRef = useRef(null);
-
+  const colorsRef = useRef();
   const debouncedColorValue = useDebounce(tempColorValue, 300);
 
   const customStyles = template.customStyle;
@@ -98,7 +101,9 @@ export function PreviewItem({
   };
 
   const colorCircles =
-    customColors && customColors.length > 0 ? customColors : item.colors;
+    customColors && customColors.length > 0 && isEditMode
+      ? customColors
+      : item.colors;
 
   // Handle debounced color changes
   useEffect(() => {
@@ -112,7 +117,25 @@ export function PreviewItem({
       );
     }
   }, [debouncedColorValue, colorPickerOpen, setCustomColors]);
-
+  useEffect(() => {
+    if (animated && currentCard && !loading) {
+      const colorsSizes = currentCard.querySelectorAll(".color-circle");
+      gsap.fromTo(
+        colorsSizes,
+        {
+          opacity: 0,
+          y: 15,
+        },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.3,
+          ease: "power2.out",
+          stagger: 0.05,
+        }
+      );
+    }
+  }, [animated, colorsRef?.current, loading]);
   const handleColorChange = (newHex) => {
     setTempColorValue(newHex);
   };
@@ -211,10 +234,11 @@ export function PreviewItem({
 
       case "colors":
         return (
-          template.showColors && (
+          (template.showColors || animated) && (
             <Box
               key="colors"
               sx={{ position: "relative", ...getElementStyle("colors") }}
+              ref={colorsRef}
             >
               <Box
                 sx={{
@@ -222,8 +246,8 @@ export function PreviewItem({
                   flexDirection:
                     template.colorsLayout === "horizontal" ? "row" : "column",
                   gap: isEditMode
-                    ? parseInt(getElementStyle("colors").gap) + 5 + "px" || 1
-                    : getElementStyle("colors").gap || 0.5,
+                    ? (parseInt(getElementStyle("colors").gap) || 5) + 5 + "px"
+                    : getElementStyle("colors").gap || 1,
                   alignItems: "center",
                 }}
               >
@@ -233,16 +257,18 @@ export function PreviewItem({
                     key={index}
                     sx={{
                       position: "relative",
+                      opacity: animated ? 0 : 1,
+
                       width:
                         {
                           xs: template.colorSize,
                           md: template.colorSize + 5,
-                        } || 35,
+                        } || 40,
                       height:
                         {
                           xs: template.colorSize,
                           md: template.colorSize + 5,
-                        } || 35,
+                        } || 40,
                       backgroundColor: color.colorHex,
                       borderRadius: "50%",
                       border: "2px solid rgba(255,255,255,0.5)",

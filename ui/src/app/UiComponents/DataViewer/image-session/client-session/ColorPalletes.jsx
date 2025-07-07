@@ -88,21 +88,26 @@ export function ColorPalletes({
     const width = rect.width;
     const height = rect.height;
     const colorsSizes = paper.querySelectorAll(".color-circle");
-    const colorSizeRect = colorsSizes[0].getBoundingClientRect();
-    timeline.fromTo(
-      colorsSizes,
-      {
-        opacity: 1,
-        y: 0,
-      },
-      {
-        opacity: 0,
-        y: 15,
-        duration: 0.3,
-        ease: "power2.out",
-        stagger: 0.05,
-      }
-    );
+    const colorSizeRect =
+      colorsSizes &&
+      colorsSizes.length > 0 &&
+      colorsSizes[0].getBoundingClientRect();
+    if (colorSizeRect) {
+      timeline.fromTo(
+        colorsSizes,
+        {
+          opacity: 1,
+          y: 0,
+        },
+        {
+          opacity: 0,
+          y: 15,
+          duration: 0.3,
+          ease: "power2.out",
+          stagger: 0.05,
+        }
+      );
+    }
     timeline.fromTo(
       paper.querySelector("h5"),
       {
@@ -137,24 +142,26 @@ export function ColorPalletes({
     timeline.set(currentCard, {
       clearProps: "width,height",
     });
-    timeline.fromTo(
-      colorsSizes,
-      {
-        opacity: 0,
-        y: 15,
-        width: colorSizeRect.width,
-        height: colorSizeRect.height,
-      },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.3,
-        ease: "power2.out",
-        stagger: 0.05,
-        width: colorSizeRect.width - 5,
-        height: colorSizeRect.height - 5,
-      }
-    );
+    if (colorSizeRect) {
+      timeline.fromTo(
+        colorsSizes,
+        {
+          opacity: 0,
+          y: 15,
+          width: colorSizeRect.width,
+          height: colorSizeRect.height,
+        },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.3,
+          ease: "power2.out",
+          stagger: 0.05,
+          width: colorSizeRect.width - 5,
+          height: colorSizeRect.height - 5,
+        }
+      );
+    }
     timeline.fromTo(
       paper.querySelector("h5"),
       {
@@ -187,7 +194,10 @@ export function ColorPalletes({
     const cardRect = cardElement.getBoundingClientRect();
     const cardHeight = cardRect.height;
     const colorsSizes = paper.querySelectorAll(".color-circle");
-    const colorSizeRect = colorsSizes[0].getBoundingClientRect();
+    const colorSizeRect =
+      colorsSizes &&
+      colorsSizes.length > 0 &&
+      colorsSizes[0].getBoundingClientRect();
 
     timeline.set(cardElement, {
       clearProps: "transform",
@@ -200,20 +210,22 @@ export function ColorPalletes({
       zIndex: 100,
       position: "fixed",
     });
-    timeline.fromTo(
-      colorsSizes,
-      {
-        opacity: 1,
-        y: 0,
-      },
-      {
-        y: 15,
-        opacity: 0,
-        duration: 0.3,
-        ease: "power2.out",
-        stagger: 0.05,
-      }
-    );
+    if (colorSizeRect) {
+      timeline.fromTo(
+        colorsSizes,
+        {
+          opacity: 1,
+          y: 0,
+        },
+        {
+          y: 15,
+          opacity: 0,
+          duration: 0.3,
+          ease: "power2.out",
+          stagger: 0.05,
+        }
+      );
+    }
     timeline.fromTo(
       paper.querySelector("h5"),
       {
@@ -239,25 +251,26 @@ export function ColorPalletes({
       width: "100%",
       height: "100%",
     });
-
-    timeline.fromTo(
-      colorsSizes,
-      {
-        opacity: 0,
-        y: 15,
-        width: colorSizeRect.width,
-        height: colorSizeRect.height,
-      },
-      {
-        y: 0,
-        opacity: 1,
-        duration: 0.3,
-        ease: "power2.out",
-        stagger: 0.05,
-        width: colorSizeRect.width + 5,
-        height: colorSizeRect.height + 5,
-      }
-    );
+    if (colorSizeRect) {
+      timeline.fromTo(
+        colorsSizes,
+        {
+          opacity: 0,
+          y: 15,
+          width: colorSizeRect.width,
+          height: colorSizeRect.height,
+        },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.3,
+          ease: "power2.out",
+          stagger: 0.05,
+          width: colorSizeRect.width + 5,
+          height: colorSizeRect.height + 5,
+        }
+      );
+    }
     timeline.fromTo(
       paper.querySelector("h5"),
       {
@@ -322,6 +335,7 @@ export function ColorPalletes({
               onClick={() =>
                 handleCardClick(index, cardsRef.current[index], color)
               }
+              loading={loading}
               sx={{
                 cursor: "pointer",
                 transition: "transform 0.2s ease",
@@ -332,6 +346,14 @@ export function ColorPalletes({
                 setCustomColors={setCustomColors}
                 item={color}
                 template={color.template}
+                currentCard={currentCard}
+                animated={
+                  selectedColor &&
+                  !selectedColor.template.showColors &&
+                  customColors &&
+                  customColors.length > 0 &&
+                  selectedColor.id === color.id
+                }
                 isEditMode={
                   customColors &&
                   customColors.length > 0 &&
