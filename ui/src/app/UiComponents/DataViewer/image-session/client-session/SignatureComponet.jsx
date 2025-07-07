@@ -64,7 +64,12 @@ const SignatureComponent = ({
       );
       const url = uploadResponse.fileUrls.file[0];
       const request = await handleRequestSubmit(
-        { sessionData: session, signatureUrl: url, sessionStatus: nextStatus },
+        {
+          sessionData: session,
+          signatureUrl: url,
+          sessionStatus: nextStatus,
+          lng,
+        },
         setToastLoading,
         `client/image-session/generate-pdf`,
         false,

@@ -94,11 +94,13 @@ export async function changeSessionStatus({ token, status, extra }) {
 export async function uploadPdfAndApproveSession({
   sessionData,
   signatureUrl,
+  lng = "ar",
 }) {
   try {
     const pdfBytes = await generateImageSessionPdf({
       sessionData,
       signatureUrl,
+      lng,
     });
     const fileName = `session-${sessionData.id}-${uuidv4()}.pdf`;
     const remotePath = `public_html/uploads/${fileName}`;
@@ -115,6 +117,7 @@ export async function uploadPdfAndApproveSession({
     });
   } catch (e) {
     console.log("e in uploadig pdf", e);
+    throw new Error(e.message);
   }
 }
 
@@ -190,7 +193,11 @@ async function fetchImageBuffer(url, options = {}) {
   throw new Error(`Could not load image: ${url}. See console for details.`);
 }
 
-export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
+export async function generateImageSessionPdf({
+  sessionData,
+  signatureUrl,
+  lng = "ar",
+}) {
   try {
     const pdfDoc = await PDFDocument.create();
     pdfDoc.registerFontkit(fontkit);
@@ -202,7 +209,7 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
     let page = pdfDoc.addPage([600, 800]);
     const { width, height } = page.getSize();
 
-    // Enhanced Color Palette - slightly adjusted for better contrast and aesthetics
+    // Enhanced Color Palette
     const colors = {
       primary: rgb(0.827, 0.675, 0.443),
       primaryDark: rgb(0.745, 0.592, 0.361),
@@ -213,9 +220,11 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
       accentBg: rgb(0.98, 0.97, 0.95),
       success: rgb(0.518, 0.569, 0.471),
       borderColor: rgb(0.7, 0.7, 0.7),
+      white: rgb(1, 1, 1),
+      lightGray: rgb(0.95, 0.95, 0.95),
     };
 
-    let y = height - 60; // Initial Y position for content
+    let y = height - 60;
     const margin = 40;
     const contentWidth = width - margin * 2;
 
@@ -224,6 +233,15 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
       const reshape = reshaper.ArabicShaper.convertArabic;
       let reshaped = reshape(text);
       return reshaped;
+    };
+
+    // Helper function to get text by language
+    const getTextByLanguage = (textArray, languageCode) => {
+      if (!textArray || !Array.isArray(textArray)) return "";
+      const textItem = textArray.find(
+        (item) => item.language?.code === languageCode
+      );
+      return textItem?.text || "";
     };
 
     // Helper function to calculate RTL text position
@@ -247,19 +265,21 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
       colorToUse,
       containerStartX = margin,
       containerWidth = contentWidth,
-      customX = null // Added for absolute positioning if needed
+      customX = null
     ) => {
-      const processedText = reText(text);
+      const processedText = lng === "ar" ? reText(text) : text;
       const rtlX =
         customX !== null
           ? customX
-          : getRTLTextX(
+          : lng === "ar"
+          ? getRTLTextX(
               processedText,
               size,
               fontToUse,
               containerStartX,
               containerWidth
-            );
+            )
+          : containerStartX;
 
       page.drawText(processedText, {
         x: rtlX,
@@ -276,32 +296,153 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
       };
     };
 
-    /**
-     * Checks if a new page is needed based on the remaining vertical space.
-     */
+    function hexToRgbNormalized(hex) {
+      if (/^#([0-9A-F]{3})$/i.test(hex)) {
+        hex = "#" + hex[1] + hex[1] + hex[2] + hex[2] + hex[3] + hex[3];
+      }
+
+      if (!/^#([0-9A-F]{6})$/i.test(hex)) {
+        throw new Error(`Invalid HEX color: ${hex}`);
+      }
+
+      return {
+        r: parseInt(hex.slice(1, 3), 16) / 255,
+        g: parseInt(hex.slice(3, 5), 16) / 255,
+        b: parseInt(hex.slice(5, 7), 16) / 255,
+      };
+    }
+
+    // Helper function to draw custom colors as circles
+    const drawCustomColors = (
+      customColors,
+      startX,
+      startY,
+      circleSize = 25
+    ) => {
+      if (!customColors || !Array.isArray(customColors)) return startY;
+
+      const spacing = 35;
+      let currentX = startX;
+      let currentY = startY;
+      const maxWidth = contentWidth - 40;
+
+      customColors.forEach((color, index) => {
+        if (currentX + circleSize > startX + maxWidth) {
+          currentX = startX;
+          currentY -= spacing + 15;
+        }
+
+        const { r, g, b } = hexToRgbNormalized(color);
+
+        // Draw white background circle for better contrast
+        page.drawCircle({
+          x: currentX + circleSize / 2,
+          y: currentY - circleSize / 2,
+          size: circleSize / 2 + 2,
+          color: colors.white,
+          borderColor: colors.borderColor,
+          borderWidth: 1,
+        });
+
+        // Draw color circle
+        page.drawCircle({
+          x: currentX + circleSize / 2,
+          y: currentY - circleSize / 2,
+          size: circleSize / 2,
+          color: rgb(r, g, b),
+          borderColor: colors.borderColor,
+          borderWidth: 1,
+        });
+
+        currentX += spacing;
+      });
+
+      return currentY - circleSize - 15;
+    };
+
+    // Helper function to draw a table-like info box
+    const drawInfoTable = (items, startY) => {
+      if (!items || items.length === 0) return startY;
+
+      const tableWidth = contentWidth;
+      const tableX = margin;
+      const rowHeight = 35;
+      const totalHeight = items.length * rowHeight;
+
+      // Draw table background
+      page.drawRectangle({
+        x: tableX,
+        y: startY - totalHeight,
+        width: tableWidth,
+        height: totalHeight,
+        color: colors.white,
+        borderColor: colors.borderColor,
+        borderWidth: 1,
+        xRounded: 8,
+        yRounded: 8,
+      });
+
+      let currentY = startY - 10;
+
+      items.forEach((item, index) => {
+        // Alternate row colors
+        if (index % 2 === 0) {
+          page.drawRectangle({
+            x: tableX + 1,
+            y: currentY - rowHeight + 1,
+            width: tableWidth - 2,
+            height: rowHeight - 2,
+            color: colors.lightGray,
+            xRounded: 6,
+            yRounded: 6,
+          });
+        }
+
+        // Draw item text
+        const itemText =
+          getTextByLanguage(item.title, lng) || item.name || item;
+        const textY = currentY - rowHeight / 2 - 6;
+
+        drawRTLText(
+          itemText,
+          textY,
+          12,
+          font,
+          colors.textColor,
+          tableX + 15,
+          tableWidth - 30
+        );
+
+        currentY -= rowHeight;
+      });
+
+      return startY - totalHeight - 20;
+    };
+
     const checkNewPage = (requiredSpace = 50) => {
-      // Add a buffer to requiredSpace to prevent content from touching the bottom
-      const footerHeight = signatureUrl ? 150 : 60; // Approximate height for footer including signature
+      const footerHeight = signatureUrl ? 150 : 60;
       if (y < margin + requiredSpace + footerHeight) {
         page = pdfDoc.addPage([600, 800]);
-        y = height - 60; // Reset y for new page, considering top margin
+        y = height - 60;
         return true;
       }
       return false;
     };
 
-    // --- Header Section ---
-    const headerHeight = 150; // Increased header height
+    // --- SIMPLIFIED HEADER ---
+    const headerHeight = 100;
+
+    // Clean header background
     page.drawRectangle({
       x: 0,
       y: height - headerHeight,
       width: width,
       height: headerHeight,
-      color: colors.bgPrimary,
+      color: colors.primary,
     });
 
-    // Logo positioning (keep on left for branding)
-    const logoYOffset = 30; // Offset from top of header background
+    // Logo positioning
+    const logoYOffset = 25;
     try {
       const logoBytes = await fetchImageBuffer(
         "https://dreamstudiio.com/dream-logo.jpg"
@@ -321,11 +462,11 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
       }
 
       if (logoEmbedded) {
-        const logoScale = 0.1; // Slightly increased logo size
+        const logoScale = 0.08;
         const logoScaled = logoImage.scale(logoScale);
         page.drawImage(logoImage, {
           x: margin,
-          y: height - logoScaled.height - logoYOffset, // Position within the new header height
+          y: height - logoScaled.height - logoYOffset,
           width: logoScaled.width,
           height: logoScaled.height,
         });
@@ -334,61 +475,62 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
       console.warn("Logo load error:", err.message);
     }
 
-    // Main title (RTL aligned and centered vertically within the header)
-    const mainTitleText = "جلسة اختيار الصور";
-    const mainTitleFontSize = 32; // Increased font size
+    // SIMPLIFIED MAIN TITLE
+    const mainTitleText =
+      lng === "ar" ? "تقرير اختيار التصميم" : "Design Selection Report";
+    const mainTitleFontSize = 24;
+    const mainTitleY = height - headerHeight / 2 - mainTitleFontSize / 2;
 
-    const mainTitleY = height - headerHeight / 2 - mainTitleFontSize / 2; // Center vertically in header
-
+    // Draw title with white color for contrast
     drawRTLText(
       mainTitleText,
       mainTitleY,
       mainTitleFontSize,
       boldFont,
-      colors.heading
+      colors.white
     );
 
-    // Adjust starting Y for content below the header
-    y = height - headerHeight - 30; // Leave some space below the header
+    y = height - headerHeight - 40;
 
-    /**
-     * Draws a section with RTL layout
-     */
+    // --- ENHANCED SECTION DRAWING ---
     const drawSection = async (
       title,
       items,
       itemRenderer,
-      isGridSection = false // Renamed from isImageSection for clarity
+      isGridSection = false
     ) => {
-      checkNewPage(80); // Check for new page before drawing section title
+      checkNewPage(100);
 
-      // Draw accent rectangle for section title (on the right side for RTL)
+      // Modern section header
       page.drawRectangle({
-        x: width - margin - 6, // Slightly wider accent
-        y: y - 2,
-        width: 6,
-        height: 24, // Taller accent
-        color: colors.primary,
+        x: margin,
+        y: y - 35,
+        width: contentWidth,
+        height: 35,
+        color: colors.primaryLight,
+        xRounded: 8,
+        yRounded: 8,
       });
 
-      // Draw section title (RTL aligned)
-      drawRTLText(title, y, 18, boldFont, colors.heading); // Slightly larger section titles
-      y -= 40; // More space after section title
+      // Section title with better positioning
+      const titleY = y - 22;
+      drawRTLText(title, titleY, 16, boldFont, colors.heading);
+      y -= 50;
 
       if (items && items.length > 0) {
         if (isGridSection) {
-          // For grid sections, pass all items to the renderer at once
           await itemRenderer(items);
         } else {
           for (let i = 0; i < items.length; i++) {
-            checkNewPage(40); // Check more frequently for smaller items
+            checkNewPage(40);
             await itemRenderer(items[i], i, items.length);
           }
         }
       } else {
-        // "None selected" in Arabic, RTL aligned with padding
+        const noneSelectedText =
+          lng === "ar" ? "لا يوجد عناصر محددة" : "No items selected";
         drawRTLText(
-          "لا يوجد عناصر محددة",
+          noneSelectedText,
           y,
           12,
           font,
@@ -399,51 +541,80 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
         y -= 25;
       }
 
-      y -= 20; // More space between sections
+      y -= 30;
     };
 
-    // --- Patterns section (Colors) - Now as a two-column image grid ---
-    await drawSection(
-      reText("الألوان المختارة"),
-      sessionData.preferredPatterns,
-      async (patterns) => {
-        // Now accepts the array of patterns
-        const imagesPerRow = 2;
-        const padding = 20; // Padding between images
-        const imageWidth = (contentWidth - padding) / imagesPerRow; // Calculate width for 2 images
-        const imageHeight = imageWidth - 100; // Keep aspect ratio 1:1 for palette items
-        const rowHeight = imageHeight + padding;
-        let currentY = y;
+    // --- Custom Colors section ---
+    if (
+      sessionData.customColors &&
+      Array.isArray(sessionData.customColors) &&
+      sessionData.customColors.length > 0
+    ) {
+      await drawSection(
+        lng === "ar" ? "الألوان المخصصة" : "Custom Colors",
+        sessionData.customColors,
+        async (customColors) => {
+          checkNewPage(100);
+          const startX = lng === "ar" ? width - margin - 300 : margin + 20;
+          const newY = drawCustomColors(customColors, startX, y);
+          y = newY;
+        },
+        true
+      );
+    }
 
-        for (let i = 0; i < patterns.length; i++) {
-          const pattern = patterns[i];
-          const colIndex = i % imagesPerRow;
+    // --- MATERIAL & STYLE IN TABLE FORMAT ---
+    const tableItems = [];
+    if (sessionData.material) {
+      tableItems.push({
+        title: sessionData.material.title,
+        type: "material",
+      });
+    }
+    if (sessionData.style) {
+      tableItems.push({
+        title: sessionData.style.title,
+        type: "style",
+      });
+    }
 
-          if (colIndex === 0) {
-            // New row
-            if (i > 0) {
-              currentY -= rowHeight;
-            }
-            // Check for new page before drawing a new row
-            if (
-              currentY - imageHeight <
-              margin + (signatureUrl ? 150 : 60) + 20
-            ) {
-              // Add a buffer for safety
-              page = pdfDoc.addPage([600, 800]);
-              currentY = height - 60; // Reset y for new page
-            }
+    if (tableItems.length > 0) {
+      await drawSection(
+        lng === "ar" ? "الخامات و الاستايل" : "Material & Style",
+        tableItems,
+        async (items) => {
+          checkNewPage(100);
+          const newY = drawInfoTable(items, y);
+          y = newY;
+        },
+        true
+      );
+    }
+
+    // --- Color Pattern section ---
+    if (sessionData.colorPattern) {
+      await drawSection(
+        lng === "ar" ? "نمط الألوان" : "Color Pattern",
+        [sessionData.colorPattern],
+        async (colorPattern) => {
+          const patternTitle = getTextByLanguage(colorPattern.title, lng);
+          const imageWidth = contentWidth * 0.6;
+          const imageHeight = 200;
+
+          checkNewPage(imageHeight + 80);
+
+          if (patternTitle) {
+            drawRTLText(patternTitle, y, 14, boldFont, colors.heading);
+            y -= 25;
           }
 
-          // Calculate X position for RTL layout (right to left)
-          const imageX =
-            width - margin - (colIndex + 1) * imageWidth - colIndex * padding;
-          const imageDrawY = currentY - imageHeight;
+          if (colorPattern.imageUrl) {
+            const imageX = lng === "ar" ? width - margin - imageWidth : margin;
+            const imageDrawY = y - imageHeight;
 
-          let patternImageEmbedded = false;
-          if (pattern.avatarUrl) {
+            let patternImageEmbedded = false;
             try {
-              const imgBytes = await fetchImageBuffer(pattern.avatarUrl);
+              const imgBytes = await fetchImageBuffer(colorPattern.imageUrl);
               let imageEmbed;
               try {
                 imageEmbed = await pdfDoc.embedPng(imgBytes);
@@ -453,25 +624,27 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
                   imageEmbed = await pdfDoc.embedJpg(imgBytes);
                   patternImageEmbedded = true;
                 } catch (jpgErr) {
-                  console.warn(
-                    `Pattern avatar embedding failed for ${pattern.avatarUrl}:`,
-                    { pngErr, jpgErr }
-                  );
+                  console.warn(`Pattern image embedding failed:`, {
+                    pngErr,
+                    jpgErr,
+                  });
                 }
               }
 
               if (patternImageEmbedded) {
-                // Draw border for the image
+                // Modern image border
                 page.drawRectangle({
-                  x: imageX - 4, // Slightly thicker border
-                  y: imageDrawY - 4,
-                  width: imageWidth + 8,
-                  height: imageHeight + 8,
-                  color: colors.primaryDark, // Darker primary for image borders
-                  xRounded: 8, // Rounded corners
-                  yRounded: 8,
+                  x: imageX - 3,
+                  y: imageDrawY - 3,
+                  width: imageWidth + 6,
+                  height: imageHeight + 6,
+                  color: colors.white,
+                  borderColor: colors.borderColor,
+                  borderWidth: 1,
+                  xRounded: 10,
+                  yRounded: 10,
                 });
-                // Draw image
+
                 page.drawImage(imageEmbed, {
                   x: imageX,
                   y: imageDrawY,
@@ -481,314 +654,201 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
               }
             } catch (fetchErr) {
               console.warn(
-                `Failed to fetch pattern avatar ${pattern.avatarUrl}: ${fetchErr.message}`
+                `Failed to fetch pattern image: ${fetchErr.message}`
               );
             }
-          }
 
-          if (!patternImageEmbedded) {
-            // Fallback box for missing image
-            page.drawRectangle({
-              x: imageX,
-              y: imageDrawY,
-              width: imageWidth,
-              height: imageHeight,
-              color: colors.accentBg, // Light background for fallback box
-              borderColor: colors.borderColor,
-              borderWidth: 1,
-              xRounded: 8,
-              yRounded: 8,
-            });
-
-            // Fallback text in Arabic, centered in image area
-            const fallbackText = reText("لا توجد صورة");
-            const fallbackFontSize = 10;
-            const fallbackTextWidth = font.widthOfTextAtSize(
-              reText(fallbackText),
-              fallbackFontSize
-            );
-            const fallbackX = imageX + (imageWidth - fallbackTextWidth) / 2;
-            const fallbackY =
-              imageDrawY + imageHeight / 2 - fallbackFontSize / 2;
-
-            page.drawText(fallbackText, {
-              x: fallbackX,
-              y: fallbackY,
-              size: fallbackFontSize,
-              font,
-              color: colors.textColor,
-            });
+            y = imageDrawY - 20;
           }
         }
-
-        // Adjust Y after the patterns grid
-        if (patterns.length > 0) {
-          const lastRowIndex = Math.floor((patterns.length - 1) / imagesPerRow);
-          const effectiveLastRowTopY = currentY - lastRowIndex * rowHeight;
-          const finalImageDrawY = effectiveLastRowTopY - imageHeight;
-          y = finalImageDrawY - padding;
-        }
-      },
-      true // Mark as a grid section
-    );
+      );
+    }
 
     // --- Spaces section ---
-    await drawSection(
-      reText("المساحات المختارة"),
-      sessionData.selectedSpaces,
-      async (spaceItem) => {
-        const spaceName = spaceItem.space.name;
-        const spaceDescription = spaceItem.space.description || ""; // Assuming description might exist
-        const spaceHeight = 40 + (spaceDescription ? 20 : 0); // Dynamic height for space card
+    if (sessionData.selectedSpaces && sessionData.selectedSpaces.length > 0) {
+      await drawSection(
+        lng === "ar" ? "المساحات المختارة" : "Selected Spaces",
+        sessionData.selectedSpaces,
+        async (items) => {
+          checkNewPage(100);
+          const spaceItems = items.map((spaceRelation) => spaceRelation.space);
+          const newY = drawInfoTable(spaceItems, y);
+          y = newY;
+        },
+        true
+      );
+    }
 
-        // Check for new page if next item won't fit
-        if (y < spaceHeight + 30) {
-          checkNewPage(spaceHeight + 30);
-        }
+    // --- ENHANCED IMAGES SECTION ---
+    // --- ENHANCED IMAGES SECTION ---
+    if (sessionData.selectedImages && sessionData.selectedImages.length > 0) {
+      await drawSection(
+        lng === "ar" ? "الصور المختارة" : "Selected Images",
+        sessionData.selectedImages,
+        async (images) => {
+          const imagesPerRow = 2;
+          const imageGap = 20;
+          const imageWidth = (contentWidth - imageGap) / imagesPerRow;
+          const maxImageHeight = 200; // Reduced from 250 to allow more rows
+          const rowSpacing = 20; // Reduced from 30 to save space
 
-        const cardWidth = contentWidth;
-        const cardX = margin;
-        const cardY = y - spaceHeight;
+          // Calculate minimum space needed at bottom (more reasonable)
+          const minBottomSpace = signatureUrl ? 80 : 40;
+          const spaceNeededForOneRow = maxImageHeight + rowSpacing;
 
-        // Draw background for the space item (card-like UI)
-        page.drawRectangle({
-          x: cardX,
-          y: cardY,
-          width: cardWidth,
-          height: spaceHeight,
-          color: colors.primaryLight, // Lighter primary for space cards
-          borderColor: colors.primary, // Primary color border
-          borderWidth: 1,
-          xRounded: 8,
-          yRounded: 8,
-        });
+          // Process images row by row
+          for (
+            let rowStart = 0;
+            rowStart < images.length;
+            rowStart += imagesPerRow
+          ) {
+            const rowEnd = Math.min(rowStart + imagesPerRow, images.length);
+            const imagesInThisRow = rowEnd - rowStart;
 
-        // Draw space name (RTL aligned, within the card)
-        const nameFontSize = 16;
-        const nameProcessed = reText(spaceName);
-        const nameX = getRTLTextX(
-          nameProcessed,
-          nameFontSize,
-          boldFont,
-          cardX + 15,
-          cardWidth - 30
-        );
-        page.drawText(nameProcessed, {
-          x: nameX,
-          y: cardY + spaceHeight - 30, // Position towards top of card
-          size: nameFontSize,
-          font: boldFont,
-          color: colors.heading,
-        });
-
-        // Draw space description if available (RTL aligned, smaller text)
-        if (spaceDescription) {
-          const descFontSize = 10;
-          const descProcessed = reText(spaceDescription);
-          const descX = getRTLTextX(
-            descProcessed,
-            descFontSize,
-            font,
-            cardX + 15,
-            cardWidth - 30
-          );
-          page.drawText(descProcessed, {
-            x: descX,
-            y: cardY + spaceHeight - 50, // Below name
-            size: descFontSize,
-            font: font,
-            color: colors.textColor,
-          });
-        }
-
-        y -= spaceHeight + 15; // Move Y down by card height + padding
-      }
-    );
-
-    // --- Images section (RTL layout for images grid) ---
-    await drawSection(
-      reText("الصور المختارة"),
-      sessionData.selectedImages,
-      async (images) => {
-        const imagesPerRow = 2;
-        const padding = 20; // Increased padding between images
-        const imgSize = (contentWidth - padding) / imagesPerRow; // Calculate image size to fit
-        const rowHeight = imgSize + padding;
-        let currentY = y;
-
-        for (let i = 0; i < images.length; i++) {
-          const image = images[i];
-          const colIndex = i % imagesPerRow;
-
-          if (colIndex === 0) {
-            if (i > 0) {
-              currentY -= rowHeight;
-            }
-
-            // Check for new page before drawing a new row
-            const requiredSpaceAtBottom = signatureUrl ? 180 : 80; // More space for footer
-            if (currentY - imgSize < requiredSpaceAtBottom) {
+            // Check if we need a new page for this row (more accurate check)
+            if (y - spaceNeededForOneRow < minBottomSpace) {
               page = pdfDoc.addPage([600, 800]);
-              currentY = height - 60; // Reset y for new page
+              y = height - 60;
             }
-          }
 
-          // Calculate X position for RTL layout (right to left)
-          // First image starts from the rightmost position
-          // Second image is to its left
-          const imageX =
-            width - margin - (colIndex + 1) * imgSize - colIndex * padding;
-          const imageDrawY = currentY - imgSize;
+            // Calculate the Y position for this row
+            const rowY = y - maxImageHeight;
 
-          let imageEmbedded = false;
-          try {
-            const imgBytes = await fetchImageBuffer(image.image.url);
-            let imageEmbed;
-            try {
-              imageEmbed = await pdfDoc.embedPng(imgBytes);
-              imageEmbedded = true;
-            } catch (pngErr) {
+            // Process each image in this row
+            for (let i = rowStart; i < rowEnd; i++) {
+              const image = images[i];
+              const colIndex = i - rowStart; // 0 or 1 for this row
+
+              // Calculate image X position
+              const imageX =
+                lng === "ar"
+                  ? width -
+                    margin -
+                    (colIndex + 1) * imageWidth -
+                    colIndex * imageGap
+                  : margin + colIndex * (imageWidth + imageGap);
+
+              let imageEmbedded = false;
               try {
-                imageEmbed = await pdfDoc.embedJpg(imgBytes);
-                imageEmbedded = true;
-              } catch (jpgErr) {
-                console.warn(`Image embedding failed for ${image.image.url}:`, {
-                  pngErr,
-                  jpgErr,
+                const imgBytes = await fetchImageBuffer(
+                  image.designImage.imageUrl
+                );
+                let imageEmbed;
+
+                try {
+                  imageEmbed = await pdfDoc.embedPng(imgBytes);
+                  imageEmbedded = true;
+                } catch (pngErr) {
+                  try {
+                    imageEmbed = await pdfDoc.embedJpg(imgBytes);
+                    imageEmbedded = true;
+                  } catch (jpgErr) {
+                    console.warn(`Image embedding failed:`, { pngErr, jpgErr });
+                  }
+                }
+
+                if (imageEmbedded) {
+                  // Calculate actual image dimensions maintaining aspect ratio
+                  const { width: origWidth, height: origHeight } =
+                    imageEmbed.size();
+                  const aspectRatio = origWidth / origHeight;
+
+                  let finalWidth = imageWidth;
+                  let finalHeight = imageWidth / aspectRatio;
+
+                  // Limit height to maxImageHeight
+                  if (finalHeight > maxImageHeight) {
+                    finalHeight = maxImageHeight;
+                    finalWidth = maxImageHeight * aspectRatio;
+                  }
+
+                  // Center the image if it's smaller than the allocated space
+                  const adjustedX = imageX + (imageWidth - finalWidth) / 2;
+                  const adjustedY = rowY + (maxImageHeight - finalHeight) / 2;
+
+                  // Modern image container
+                  page.drawRectangle({
+                    x: imageX - 2,
+                    y: rowY - 2,
+                    width: imageWidth + 4,
+                    height: maxImageHeight + 4,
+                    color: colors.white,
+                    borderColor: colors.borderColor,
+                    borderWidth: 1,
+                    xRounded: 8,
+                    yRounded: 8,
+                  });
+
+                  page.drawImage(imageEmbed, {
+                    x: adjustedX,
+                    y: adjustedY,
+                    width: finalWidth,
+                    height: finalHeight,
+                  });
+                }
+              } catch (fetchErr) {
+                console.warn(`Failed to fetch image: ${fetchErr.message}`);
+              }
+
+              if (!imageEmbedded) {
+                // Enhanced fallback box
+                page.drawRectangle({
+                  x: imageX,
+                  y: rowY,
+                  width: imageWidth,
+                  height: maxImageHeight,
+                  color: colors.lightGray,
+                  borderColor: colors.borderColor,
+                  borderWidth: 1,
+                  xRounded: 8,
+                  yRounded: 8,
+                });
+
+                const fallbackText =
+                  lng === "ar" ? "لا يمكن تحميل الصورة" : "Image unavailable";
+                const fallbackFontSize = 12;
+                const fallbackTextWidth = font.widthOfTextAtSize(
+                  fallbackText,
+                  fallbackFontSize
+                );
+                const fallbackX = imageX + (imageWidth - fallbackTextWidth) / 2;
+                const fallbackY = rowY + maxImageHeight / 2;
+
+                page.drawText(fallbackText, {
+                  x: fallbackX,
+                  y: fallbackY,
+                  size: fallbackFontSize,
+                  font,
+                  color: colors.textColor,
                 });
               }
             }
 
-            if (imageEmbedded) {
-              // Draw border with primary color
-              page.drawRectangle({
-                x: imageX - 4, // Slightly thicker border
-                y: imageDrawY - 4,
-                width: imgSize + 8,
-                height: imgSize + 8,
-                color: colors.primaryDark, // Darker primary for image borders
-                xRounded: 5, // Rounded corners for image frames
-                yRounded: 5,
-              });
-
-              // Draw image
-              page.drawImage(imageEmbed, {
-                x: imageX,
-                y: imageDrawY,
-                width: imgSize,
-                height: imgSize,
-              });
-            }
-          } catch (fetchErr) {
-            console.warn(
-              `Failed to fetch image ${image.image.url}: ${fetchErr.message}`
-            );
+            // Move Y position down after completing this row
+            y = rowY - rowSpacing;
           }
-
-          if (!imageEmbedded) {
-            // Fallback box for missing image
-            page.drawRectangle({
-              x: imageX,
-              y: imageDrawY,
-              width: imgSize,
-              height: imgSize,
-              color: colors.accentBg, // Light background for fallback box
-              borderColor: colors.borderColor,
-              borderWidth: 1,
-              xRounded: 5,
-              yRounded: 5,
-            });
-
-            // Fallback message in Arabic, centered in image area
-            const fallbackText = reText("لا يمكن تحميل الصورة");
-            const fallbackFontSize = 10;
-            const fallbackTextWidth = font.widthOfTextAtSize(
-              fallbackText,
-              fallbackFontSize
-            );
-            const fallbackX = imageX + (imgSize - fallbackTextWidth) / 2;
-            const fallbackY = imageDrawY + imgSize / 2 + 5;
-
-            page.drawText(fallbackText, {
-              x: fallbackX,
-              y: fallbackY,
-              size: fallbackFontSize,
-              font,
-              color: colors.textColor,
-            });
-
-            // Clickable link text in Arabic below fallback message
-            const linkText = reText("اضغط لفتح الرابط");
-            const linkFontSize = 10;
-            const linkTextWidth = font.widthOfTextAtSize(
-              linkText,
-              linkFontSize
-            );
-            const linkX = imageX + (imgSize - linkTextWidth) / 2;
-            const linkY = imageDrawY + imgSize / 2 - 15; // Adjusted Y for link
-
-            page.drawText(linkText, {
-              x: linkX,
-              y: linkY,
-              size: linkFontSize,
-              font,
-              color: colors.primaryDark, // Use primaryDark for link
-            });
-
-            // Create link annotation
-            const linkAnnotation = pdfDoc.context.obj({
-              Type: "Annot",
-              Subtype: "Link",
-              Rect: [
-                linkX,
-                linkY,
-                linkX + font.widthOfTextAtSize(linkText, linkFontSize),
-                linkY + linkFontSize,
-              ],
-              Border: [0, 0, 0],
-              A: {
-                Type: "Action",
-                S: "URI",
-                URI: pdfDoc.context.obj(image.image.url),
-              },
-            });
-
-            const linkRef = pdfDoc.context.register(linkAnnotation);
-            const existingAnnots = page.node.Annots();
-            if (existingAnnots) {
-              existingAnnots.push(linkRef);
-            } else {
-              page.node.set("Annots", pdfDoc.context.obj([linkRef]));
-            }
-          }
-        }
-
-        if (images.length > 0) {
-          const lastRowIndex = Math.floor((images.length - 1) / imagesPerRow);
-          const effectiveLastRowTopY = currentY - lastRowIndex * rowHeight;
-          const finalImageDrawY = effectiveLastRowTopY - imgSize;
-          y = finalImageDrawY - padding;
-        }
-      },
-      true
-    );
-
-    // --- Signature section ---
+        },
+        true
+      );
+    }
+    // --- SIGNATURE SECTION ---
     if (signatureUrl) {
-      checkNewPage(180); // Ensure enough space for signature and footer
+      checkNewPage(180);
 
-      // Accent rectangle on the right for RTL
+      // Modern signature section
       page.drawRectangle({
-        x: width - margin - 6,
-        y: y - 2,
-        width: 6,
-        height: 24,
-        color: colors.primary,
+        x: margin,
+        y: y - 35,
+        width: contentWidth,
+        height: 35,
+        color: colors.primaryLight,
+        xRounded: 8,
+        yRounded: 8,
       });
 
-      // Signature title (RTL aligned)
-      drawRTLText("توقيع العميل", y, 16, boldFont, colors.heading);
-      y -= 40;
+      const signatureTitle = lng === "ar" ? "توقيع العميل" : "Client Signature";
+      drawRTLText(signatureTitle, y - 22, 16, boldFont, colors.heading);
+      y -= 50;
 
       let signatureEmbedded = false;
       try {
@@ -807,8 +867,8 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
         }
 
         if (signatureEmbedded) {
-          const maxW = 200;
-          const maxH = 80;
+          const maxW = 250;
+          const maxH = 100;
           const { width: sw, height: sh } = sigImage.size();
           let sigW = sw,
             sigH = sh;
@@ -824,20 +884,20 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
             sigW *= ratio;
           }
 
-          // Position signature on the right side for RTL, with a subtle border
-          const sigX = width - margin - sigW - 15; // Padding from right margin
-          const sigY = y - sigH - 10; // Padding below title
+          const sigX = lng === "ar" ? width - margin - sigW - 20 : margin + 20;
+          const sigY = y - sigH - 15;
 
+          // Modern signature container
           page.drawRectangle({
-            x: sigX - 8, // Wider border
-            y: sigY - 8,
-            width: sigW + 16,
-            height: sigH + 16,
-            color: colors.primaryLight, // Use primaryLight for signature box background
+            x: sigX - 10,
+            y: sigY - 10,
+            width: sigW + 20,
+            height: sigH + 20,
+            color: colors.white,
             borderColor: colors.borderColor,
             borderWidth: 1,
-            xRounded: 5,
-            yRounded: 5,
+            xRounded: 8,
+            yRounded: 8,
           });
 
           page.drawImage(sigImage, {
@@ -847,18 +907,17 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
             height: sigH,
           });
 
-          y -= sigH + 40; // More space after signature
+          y -= sigH + 50;
         }
       } catch (fetchErr) {
-        console.warn(
-          `Failed to fetch signature image ${signatureUrl}: ${fetchErr.message}`
-        );
+        console.warn(`Failed to fetch signature image: ${fetchErr.message}`);
       }
 
       if (!signatureEmbedded) {
-        // Fallback text in Arabic, RTL aligned
+        const signatureErrorText =
+          lng === "ar" ? "فشل في تحميل التوقيع" : "Signature unavailable";
         drawRTLText(
-          "فشل في تحميل التوقيع",
+          signatureErrorText,
           y,
           12,
           font,
@@ -870,20 +929,19 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
       }
     }
 
-    // --- Footer ---
-    // Ensure footer elements are within a safe bottom margin
-    const footerStartY = 40; // Start drawing footer content from this Y position
+    // --- CLEAN FOOTER ---
+    const footerStartY = 40;
 
-    // Left-aligned English text
-    page.drawText("GENERATED BY DREAM STUDIO", {
+    // Company branding
+    page.drawText("DREAM STUDIO", {
       x: margin,
       y: footerStartY,
-      size: 11,
+      size: 14,
       font: boldFont,
       color: colors.heading,
     });
 
-    page.drawText("Professional Interior Design Solutions", {
+    page.drawText("Interior Design Solutions", {
       x: margin,
       y: footerStartY - 15,
       size: 10,
@@ -891,15 +949,16 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
       color: colors.textColor,
     });
 
-    // Date stamp (RTL-friendly positioning on the right)
-    const currentDate = dayjs().format("MMMM D,YYYY");
-    const dateText = `Report Generated: ${currentDate}`;
+    // Date stamp
+    const currentDate = dayjs().format("MMMM D, YYYY");
+    const dateText = `Generated: ${currentDate}`;
     const dateFontSize = 9;
     const dateTextWidth = font.widthOfTextAtSize(dateText, dateFontSize);
-    const dateX = width - margin - dateTextWidth; // Align to right margin
+    const dateX = width - margin - dateTextWidth;
+
     page.drawText(dateText, {
       x: dateX,
-      y: footerStartY - 5, // Slightly higher than second line of English text
+      y: footerStartY - 5,
       size: dateFontSize,
       font,
       color: colors.textColor,
@@ -909,16 +968,9 @@ export async function generateImageSessionPdf({ sessionData, signatureUrl }) {
     return pdfBytes;
   } catch (e) {
     console.log(e, "error in pdf generator");
-
-    // Assuming prisma and sessionData.id are available in this scope for error logging
-    // await prisma.clientImageSession.update({
-    //   where: { id: Number(sessionData.id) },
-    //   data: { error: true },
-    // });
-    throw e; // Re-throw to propagate the error if necessary
+    throw new Error(e.message);
   }
 }
-
 export async function approveSession({ token, clientLeadId, id, pdfUrl }) {
   // Clear previous selected images and add new ones
   await prisma.clientImageSession.update({
@@ -926,11 +978,10 @@ export async function approveSession({ token, clientLeadId, id, pdfUrl }) {
     data: {
       sessionStatus: "SUBMITTED",
       pdfUrl: pdfUrl,
-      error: false,
     },
   });
   await sendSuccessEmailAfterSessionDone({ token, clientLeadId, pdfUrl });
-  return await getSessionByToken(token);
+  return true;
 }
 
 export async function sendSuccessEmailAfterSessionDone({

@@ -144,7 +144,7 @@ router.post("/images", async (req, res) => {
   }
 });
 router.post("/generate-pdf", async (req, res) => {
-  const { sessionData, signatureUrl, sessionStatus } = req.body;
+  const { sessionData, signatureUrl, sessionStatus, lng } = req.body;
   try {
     const data = await changeSessionStatus({
       token: sessionData.token,
@@ -152,7 +152,7 @@ router.post("/generate-pdf", async (req, res) => {
       extra: { signatureUrl },
     });
     // await pdfQueue.add("generate-approve-pdf", { sessionData, signatureUrl });
-    // await uploadPdfAndApproveSession({ sessionData, signatureUrl });
+    await uploadPdfAndApproveSession({ sessionData, signatureUrl, lng });
     return res
       .status(200)
       .json({ data, message: "Response saved succussfully", url: null });

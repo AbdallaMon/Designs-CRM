@@ -25,6 +25,7 @@ import {
   MdRoom as RoomOutlined,
   MdContentCopy as ContentCopyOutlined,
   MdVisibility as VisibilityOutlined,
+  MdStyle,
 } from "react-icons/md";
 
 import { ClientSelectedImages } from "./ClientSelectedImages";
@@ -32,6 +33,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { PreviewItem } from "./PreviewItem";
+import { SiMaterialformkdocs } from "react-icons/si";
 
 // Register ScrollTrigger plugin
 gsap.registerPlugin(ScrollTrigger);
@@ -85,7 +87,7 @@ export function ClientSessionSubmitted({ session, loading }) {
 
   // Enhanced animation with scroll trigger
   useEffect(() => {
-    if (session && !loading && containerRef.current) {
+    if (session && !loading && containerRef.current && !true) {
       const ctx = gsap.context(() => {
         gsap.set([...cardsRef.current, ...selectionCardsRef.current], {
           opacity: 0,
@@ -224,6 +226,7 @@ export function ClientSessionSubmitted({ session, loading }) {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }} ref={containerRef}>
       {/* Enhanced Success Header */}
+      <diV>HHIIGIGIi</diV>
       <Paper
         ref={titleRef}
         elevation={6}
@@ -554,7 +557,7 @@ export function ClientSessionSubmitted({ session, loading }) {
                       justifyContent: "center",
                     }}
                   >
-                    <PaletteOutlined
+                    <SiMaterialformkdocs
                       sx={{ color: theme.palette.info.main, fontSize: 28 }}
                     />
                   </Box>
