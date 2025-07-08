@@ -257,9 +257,9 @@ router.patch("/users/:userId", async (req, res) => {
     if (!userId || !user) {
       return res.status(404).json({ message: "No user found with this ID" });
     }
-    const user = await changeUserStatus(user, userId);
+    const result = await changeUserStatus(user, userId);
     res.status(200).json({
-      data: user,
+      data: result,
       message: "Operation completed successfully",
     });
   } catch (error) {
