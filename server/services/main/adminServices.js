@@ -1528,7 +1528,7 @@ export async function getCommissionByUserId(userId) {
   const eligibleLeads = await prisma.clientLead.findMany({
     where: {
       userId: userIdNumber,
-      status: "FINALIZED",
+      status: { in: ["FINALIZED", "ARCHIVED"] },
       commissionCleared: false,
       averagePrice: {
         not: null,
@@ -1575,7 +1575,6 @@ export async function getCommissionByUserId(userId) {
       leadId: true,
       userId: true,
       commissionReason: true,
-
       lead: {
         select: {
           id: true,
@@ -1590,6 +1589,29 @@ export async function getCommissionByUserId(userId) {
     },
   });
   return commissions;
+}
+export async function reverseCommissions() {
+  await prisma.commission.deleteMany({
+    where: {
+      lead: {
+        status: {
+          notIn: ["FINALIZED", "ARCHIVED"],
+        },
+      },
+    },
+  });
+  await prisma.clientLead.updateMany({
+    where: {
+      status: { in: ["FINALIZED", "ARCHIVED"] },
+      commissionCleared: { not: false },
+      commissions: {
+        none: {},
+      },
+    },
+    data: {
+      commissionCleared: false,
+    },
+  });
 }
 
 export async function updateCommission({ commissionId, amount }) {

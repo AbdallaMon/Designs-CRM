@@ -13,7 +13,7 @@ import {
 import { ClientLeadStatus } from "../enums.js";
 import { dealsLink } from "../links.js";
 import { v4 as uuidv4 } from "uuid";
-import { getCommissionByUserId } from "./adminServices.js";
+import { getCommissionByUserId, reverseCommissions } from "./adminServices.js";
 
 export async function getClientLeads({
   limit = 1,
@@ -1066,7 +1066,6 @@ export const getKeyMetrics = async (searchParams, role) => {
 export const getDashboardLeadStatusData = async (searchParams, role) => {
   let userFilter = {};
   if (role === "ADMIN") {
-    console.log("triggered");
     const users = await prisma.user.findMany({
       where: {
         OR: [{ role: "STAFF" }, { subRoles: { some: { subRole: "STAFF" } } }],
@@ -1078,6 +1077,7 @@ export const getDashboardLeadStatusData = async (searchParams, role) => {
     users.forEach(async (user) => {
       await getCommissionByUserId(user.id);
     });
+    await reverseCommissions();
   }
   if (searchParams.staffId) {
     userFilter = await updateKeyFilterForUserFilter(

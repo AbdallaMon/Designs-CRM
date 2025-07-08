@@ -40,11 +40,11 @@ export default function UserProfile({ id, role }) {
             {!loading && (
               <>
                 <LastSeen initialLastSeen={user.lastSeenAt} userId={user.id} />
+                <Commission userId={user.id} />
                 {user.role === "STAFF" && (
                   <>
                     <UserRestrictedCountries userId={user.id} />
                     <UpdateUserMaxLeadsCounts setUser={setUser} user={user} />
-                    <Commission userId={user.id} />
                     <Button
                       variant="outlined"
                       component="a"

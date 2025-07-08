@@ -262,7 +262,7 @@ export default function UsersPage() {
                 View Details
               </Button>
               <UserRestrictedCountries userId={item.id} />
-              {item.role === "STAFF" && <Commission userId={item.id} />}
+              <Commission userId={item.id} />
             </Box>
           </>
         )}

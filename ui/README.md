@@ -51,10 +51,11 @@
 - Image dashboard
 - Page data for color pallete, materail ,style (one component)
 
+- مراحل البيع
+- Check commission
 - Add more than one image with same style and ect
 - Show style and space title
 - Image in the url in both dream studio and eng ahmed
-- مراحل البيع
 
 - Total price is final price
 

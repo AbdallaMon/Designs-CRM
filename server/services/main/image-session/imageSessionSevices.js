@@ -1300,7 +1300,6 @@ export async function saveClientSelectedColor({
   customColors,
   status,
 }) {
-  console.log(selectedColor, "selectedColor");
   return await prisma.clientImageSession.update({
     where: {
       id: Number(session.id),
