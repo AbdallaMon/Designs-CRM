@@ -748,8 +748,8 @@ router.put("/client-leads/updates/:updateId/mark-done", async (req, res) => {
 router.get("/dashboard/key-metrics", async (req, res) => {
   try {
     const searchParams = req.query;
-
-    const data = await getKeyMetrics(searchParams);
+    const user = await getCurrentUser(req);
+    const data = await getKeyMetrics(searchParams, user.role);
     res.status(200).json({ data });
   } catch (error) {
     console.error("Error fetching client lead details:", error);
@@ -838,7 +838,9 @@ router.get("/dashboard/latest-leads", async (req, res) => {
 router.get("/dashboard/recent-activities", async (req, res) => {
   try {
     const searchParams = req.query;
-    const data = await getRecentActivities(searchParams);
+    const { user } = await getCurrentUser(req);
+    const data = await getRecentActivities(searchParams, user.role);
+
     res.status(200).json({ data });
   } catch (error) {
     console.error("Error fetching client lead details:", error);

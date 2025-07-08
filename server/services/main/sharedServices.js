@@ -13,6 +13,7 @@ import {
 import { ClientLeadStatus } from "../enums.js";
 import { dealsLink } from "../links.js";
 import { v4 as uuidv4 } from "uuid";
+import { getCommissionByUserId } from "./adminServices.js";
 
 export async function getClientLeads({
   limit = 1,
@@ -947,9 +948,22 @@ async function updateKeyFilterForUserFilter(
   // }
   return userFilter;
 }
-export const getKeyMetrics = async (searchParams) => {
+export const getKeyMetrics = async (searchParams, role) => {
   try {
     let userFilter = {};
+    if (role === "ADMIN") {
+      const users = await prisma.user.findMany({
+        where: {
+          OR: [{ role: "STAFF" }, { subRoles: { some: { subRole: "STAFF" } } }],
+        },
+        select: {
+          id: true,
+        },
+      });
+      users.forEach(async (user) => {
+        await getCommissionByUserId(user.id);
+      });
+    }
     if (searchParams.staffId) {
       userFilter = await updateKeyFilterForUserFilter(
         updateKeyFilterForUserFilter,
