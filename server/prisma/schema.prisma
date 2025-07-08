@@ -225,6 +225,36 @@ model SharedUpdate {
   @@index([updateId])
 }
 
+enum SalesStageType {
+  INITIAL_CONTACT
+  SOCIAL_MEDIA_CHECK
+  WHATSAPP_QA
+  MEETING_BOOKED
+  CLIENT_INFO_UPLOADED
+  CONSULTATION_BOOKED
+  FOLLOWUP_AFTER_MEETING
+  HANDLE_OBJECTIONS
+  DEAL_CLOSED
+  AFTER_SALES_FOLLOWUP
+}
+
+model SalesStage {
+  id           Int             @id @default(autoincrement())
+  clientLead   ClientLead      @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
+
+  user         User?           @relation(fields: [userId], references: [id])
+  userId       Int?
+
+  stage        SalesStageType
+  notes Note[]
+  createdAt    DateTime        @default(now())
+
+  @@index([clientLeadId])
+  @@index([userId])
+  @@unique([clientLeadId, stage]) 
+}
+
 model ClientLead {
   id         Int    @id @default(autoincrement())
   client     Client @relation(fields: [clientId], references: [id])
@@ -240,6 +270,7 @@ model ClientLead {
   leadType          LeadConversionType @default(NORMAL)
   previousLeadId    Int?
   personality ClientPersonality?
+  salesStages SalesStage[]
 
   discount             Decimal  @default(0) @db.Decimal(10, 2)
   price                String?
@@ -511,6 +542,8 @@ model User {
   updates              ClientLeadUpdate[]
   versaModels                VersaModel[]
   availableDays   AvailableDay[]
+  salesStages SalesStage[]
+
 
   createdImageSessions ClientImageSession[]
 
@@ -621,6 +654,9 @@ model Note {
   clientSelectedImage   ClientSelectedImage? @relation(fields: [selectedImageId], references: [id])
   selectedImageId Int?
 
+  salesStage   SalesStage? @relation(fields: [salesStageId], references: [id])
+  salesStageId Int?
+
 
   @@index([taskId])
   @@index([clientLeadId])
@@ -637,6 +673,7 @@ model Note {
   @@index([imageSessionId])
   @@index([selectedImageId])
   @@index([contractId])
+  @@index([salesStageId])
 
 }
 

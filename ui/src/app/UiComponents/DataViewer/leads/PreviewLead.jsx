@@ -71,6 +71,7 @@ import {
   MdModeEdit,
   MdMoreHoriz,
   MdSchedule,
+  MdTimeline,
   MdUpdate,
   MdWork,
 } from "react-icons/md";
@@ -85,6 +86,7 @@ import DeleteModal from "../../models/DeleteModal";
 import { AssignNewStaffModal } from "../utility/AssignNewStaffModal";
 import UpdatesList from "./leadUpdates/UpdatesList";
 import ClientImageSessionManager from "../image-session/users/ClientSessionImageManager";
+import SalesStageComponent from "./extra/SalesStage";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -494,6 +496,11 @@ const LeadContent = ({
           sx={{ textTransform: "none" }}
         />
         <Tab
+          icon={<MdTimeline size={20} />}
+          label="Sales stage"
+          sx={{ textTransform: "none" }}
+        />
+        <Tab
           icon={<BsTelephone size={20} />}
           label="Calls"
           sx={{ textTransform: "none" }}
@@ -572,6 +579,9 @@ const LeadContent = ({
           />
         </TabPanel>
         <TabPanel value={activeTab} index={1}>
+          <SalesStageComponent clientLeadId={lead.id} />
+        </TabPanel>
+        <TabPanel value={activeTab} index={2}>
           <CallReminders
             admin={admin}
             lead={lead}
@@ -579,10 +589,10 @@ const LeadContent = ({
             notUser={isPage && user.id !== lead.userId && !admin}
           />
         </TabPanel>
-        <TabPanel value={activeTab} index={2}>
+        <TabPanel value={activeTab} index={3}>
           <SalesToolsTabs lead={lead} setleads={setleads} setLead={setLead} />
         </TabPanel>
-        <TabPanel value={activeTab} index={3}>
+        <TabPanel value={activeTab} index={4}>
           <MeetingReminders
             admin={admin}
             lead={lead}
@@ -590,7 +600,7 @@ const LeadContent = ({
             notUser={isPage && user.id !== lead.userId && !admin}
           />
         </TabPanel>
-        <TabPanel value={activeTab} index={4}>
+        <TabPanel value={activeTab} index={5}>
           <LeadNotes
             admin={admin}
             lead={lead}
@@ -598,7 +608,7 @@ const LeadContent = ({
           />
         </TabPanel>
         {isNotPrimaryUser ? null : (
-          <TabPanel value={activeTab} index={5}>
+          <TabPanel value={activeTab} index={6}>
             <PriceOffersList
               admin={admin}
               lead={lead}
@@ -606,7 +616,7 @@ const LeadContent = ({
             />
           </TabPanel>
         )}
-        <TabPanel value={activeTab} index={isNotPrimaryUser ? 5 : 6}>
+        <TabPanel value={activeTab} index={isNotPrimaryUser ? 6 : 7}>
           <FileList
             admin={admin}
             lead={lead}
@@ -615,7 +625,7 @@ const LeadContent = ({
         </TabPanel>
 
         {payments?.length > 0 && (
-          <TabPanel value={activeTab} index={isNotPrimaryUser ? 6 : 7}>
+          <TabPanel value={activeTab} index={isNotPrimaryUser ? 7 : 8}>
             <ExtraServicesList
               admin={admin}
               lead={lead}
@@ -626,10 +636,10 @@ const LeadContent = ({
         )}
         {isNotPrimaryUser ? null : (
           <>
-            <TabPanel value={activeTab} index={payments?.length > 0 ? 8 : 7}>
+            <TabPanel value={activeTab} index={payments?.length > 0 ? 9 : 8}>
               <LeadProjects clientLeadId={lead.id} />
             </TabPanel>
-            <TabPanel value={activeTab} index={payments?.length > 0 ? 9 : 8}>
+            <TabPanel value={activeTab} index={payments?.length > 0 ? 10 : 9}>
               <TasksList
                 name="Modifcation"
                 type="MODIFICATION"
@@ -637,7 +647,10 @@ const LeadContent = ({
               />
             </TabPanel>
             {lead.status === "FINALIZED" && (
-              <TabPanel value={activeTab} index={payments?.length > 0 ? 10 : 9}>
+              <TabPanel
+                value={activeTab}
+                index={payments?.length > 0 ? 11 : 10}
+              >
                 <UpdatesList clientLeadId={lead.id} />
               </TabPanel>
             )}

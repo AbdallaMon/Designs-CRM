@@ -60,6 +60,7 @@ export function NotesComponent({
       url: `${slug}/notes?idKey=${idKey}&id=${id}&`,
       setLoading,
     });
+    console.log(data, "data");
     setNotes(data.data);
     setLoading(false);
   }

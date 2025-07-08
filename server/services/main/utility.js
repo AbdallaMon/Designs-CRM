@@ -176,7 +176,6 @@ export const verifyTokenAndHandleAuthorization = async (
       }
     } else {
       if (role === "ADMIN" && !isAdmin) {
-        console.log("we are not here right?");
         return res.status(403).json({ message: "Not authorized" });
       } else if (role === "STAFF") {
         if (
@@ -328,7 +327,6 @@ export async function searchData(body) {
       where.OR = roleOrSubRole;
     }
   }
-
   const selectFields = {
     user: {
       id: true,
@@ -338,16 +336,16 @@ export async function searchData(body) {
     client: {
       id: true,
       name: true,
-      email: true,
-      phone: true,
+      email: where.userId ? false : true,
+      phone: where.userId ? false : true,
     },
     clientLead: {
       id: true,
       client: {
         select: {
           name: true,
-          email: true,
-          phone: true,
+          email: where.userId ? false : true,
+          phone: where.userId ? false : true,
         },
       },
     },

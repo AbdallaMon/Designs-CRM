@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  getAndThrowError,
   getCurrentUser,
   getNotifications,
   getPagination,
@@ -20,6 +21,7 @@ import {
   deleteContract,
   editContract,
   editPriceOfferStatus,
+  editSalesSage,
   getAdmins,
   getAllFixedData,
   getArchivedProjects,
@@ -47,6 +49,7 @@ import {
   getProjectDetailsById,
   getProjectsByClientLeadId,
   getRecentActivities,
+  getSalesStages,
   getSharedSettings,
   getTaskDetails,
   getTasksWithNotesIncluded,
@@ -1571,6 +1574,35 @@ router.delete("/calendar/days/:dayId", async (req, res) => {
       message: e.message,
       error: e.message || "Internal Server Error",
     });
+  }
+});
+
+// sales stages
+
+router.get("/client-lead/:clientLeadId/sales-stages", async (req, res) => {
+  try {
+    const imageSesssions = await getSalesStages({
+      clientLeadId: Number(req.params.clientLeadId),
+    });
+
+    res.status(200).json({ data: imageSesssions });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+
+router.post("/client-lead/:clientLeadId/sales-stages", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req);
+    const newSession = await editSalesSage({
+      clientLeadId: Number(req.params.clientLeadId),
+      ...req.body,
+    });
+    res
+      .status(200)
+      .json({ data: newSession, message: "Stage updated succussfully" });
+  } catch (e) {
+    getAndThrowError(e, res);
   }
 });
 export default router;
