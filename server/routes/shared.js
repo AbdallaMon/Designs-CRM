@@ -764,8 +764,8 @@ router.get("/dashboard/key-metrics", async (req, res) => {
 router.get("/dashboard/leads-status", async (req, res) => {
   try {
     const searchParams = req.query;
-
-    const data = await getDashboardLeadStatusData(searchParams);
+    const user = await getCurrentUser(req);
+    const data = await getDashboardLeadStatusData(searchParams, user.role);
     res.status(200).json({ data });
   } catch (error) {
     console.error("Error fetching client lead details:", error);
