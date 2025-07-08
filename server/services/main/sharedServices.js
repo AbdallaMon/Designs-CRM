@@ -952,6 +952,7 @@ export const getKeyMetrics = async (searchParams, role) => {
   try {
     let userFilter = {};
     if (role === "ADMIN") {
+      console.log("triggered");
       const users = await prisma.user.findMany({
         where: {
           OR: [{ role: "STAFF" }, { subRoles: { some: { subRole: "STAFF" } } }],
