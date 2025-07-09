@@ -19,6 +19,7 @@ export function ImageGroup({
   handleImageSelect = () => {},
   type,
   cardsRef,
+  hidetitle,
 }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
@@ -44,8 +45,8 @@ export function ImageGroup({
 
   return (
     <Box>
-      <Box sx={{ p: { xs: 1, md: 2 } }}>
-        {isSelected && (
+      <Box sx={{ p: hidetitle ? 0 : { xs: 1, md: 2 } }}>
+        {isSelected && !hidetitle && (
           <Box
             sx={{
               display: "flex",

@@ -17,26 +17,16 @@ import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { sessionStatusFlow } from "./helpers";
-import { ColorPalletes } from "./ColorPalletes";
-import { Materials } from "./Materials";
-import { Styles } from "./Styles";
+import { ColorPalletes } from "./colors/ColorPalletes";
+import { Styles } from "./styles/Styles";
 import { Images } from "./Images";
 import { SelectedImages } from "./SelectedImages";
 import SignatureComponent from "./SignatureComponet";
 import { ClientSessionSubmitted } from "./ClientSessionSubmitted";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
+import { Materials } from "./material/Materials";
 
-const steps = [
-  "Select Colors",
-  "Select Material",
-  "Select Style",
-  "Choose Images",
-  "Review & Notes",
-  "Sign & Approve",
-];
-
-// Animation wrapper component
 const AnimatedComponent = ({
   children,
   animationType = "fade",
@@ -345,8 +335,16 @@ export default function ClientImageSelection({ token }) {
     }
   }
 
-  const removeAppBar = session?.sessionStatus === "PREVIEW_COLOR_PATTERN";
-  const removePy = session?.sessionStatus === "PREVIEW_COLOR_PATTERN";
+  const removeAppBar =
+    session?.sessionStatus === "PREVIEW_COLOR_PATTERN" ||
+    session?.sessionStatus === "PREVIEW_MATERIAL" ||
+    session?.sessionStatus === "PREVIEW_STYLE" ||
+    session?.sessionStatus === "SELECTED_STYLE";
+  const removePy =
+    session?.sessionStatus === "PREVIEW_COLOR_PATTERN" ||
+    session?.sessionStatus === "PREVIEW_MATERIAL" ||
+    session?.sessionStatus === "PREVIEW_STYLE" ||
+    session?.sessionStatus === "SELECTED_STYLE";
 
   return (
     <>

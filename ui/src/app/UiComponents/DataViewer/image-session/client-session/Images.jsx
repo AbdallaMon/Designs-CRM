@@ -25,7 +25,6 @@ export function Images({
     useToastContext();
   const { lng } = useLanguageSwitcherContext();
   const cardsRef = useRef([]);
-  const titleRef = useRef(null);
   async function getImages() {
     const spaceIds = session.selectedSpaces.map((space) => {
       return space.space.id;
@@ -56,25 +55,6 @@ export function Images({
         filter: "blur(8px) brightness(0.7)",
         transformOrigin: "center bottom",
       });
-
-      // Enhanced title animation with micro-interactions
-      tl.fromTo(
-        titleRef.current,
-        {
-          opacity: 0,
-          y: -30,
-          scale: 0.9,
-          filter: "blur(3px)",
-        },
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          filter: "blur(0px)",
-          duration: 0.5,
-          ease: "back.out(1.7)",
-        }
-      );
 
       tl.to(
         cardsRef.current,
@@ -117,14 +97,6 @@ export function Images({
   return (
     <>
       {loading && <FullScreenLoader />}
-      <Typography
-        ref={titleRef}
-        variant="h4"
-        color="primary"
-        sx={{ my: 2, textAlign: "center !important", px: 1 }}
-      >
-        {title}
-      </Typography>
 
       <ImageGroup
         images={images}
@@ -132,6 +104,7 @@ export function Images({
         type={"SELECT"}
         selectedImages={selectedImages}
         cardsRef={cardsRef}
+        hidetitle={true}
         handleImageSelect={(image, isSelected) => {
           if (isSelected) {
             setSelectedImages((old) =>

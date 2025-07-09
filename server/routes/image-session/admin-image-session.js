@@ -1,5 +1,8 @@
 import { Router } from "express";
-import { verifyTokenAndHandleAuthorization } from "../../services/main/utility.js";
+import {
+  getAndThrowError,
+  verifyTokenAndHandleAuthorization,
+} from "../../services/main/utility.js";
 import {
   createColorPallete,
   createDesignImage,
@@ -235,10 +238,7 @@ router.post("/colors", async (req, res) => {
       .status(200)
       .json({ data, message: "Color pallete created successfully" });
   } catch (e) {
-    console.log(e, "e");
-    res
-      .status(500)
-      .json({ message: "An error occurred while creating pallete", e });
+    getAndThrowError(e, res);
   }
 });
 router.put("/colors/:colorId", async (req, res) => {
@@ -249,11 +249,7 @@ router.put("/colors/:colorId", async (req, res) => {
     });
     res.status(200).json({ data, message: "Color pallete updated" });
   } catch (e) {
-    console.log(e, "e");
-
-    res
-      .status(500)
-      .json({ message: "An error occurred while fetching pallete", e });
+    getAndThrowError(e, res);
   }
 });
 

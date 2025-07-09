@@ -16,6 +16,7 @@ export const MultiAutoCompleteSelector = ({
   where = {},
   select = "id,title",
   label = `Select ${model}s`,
+  isLanguage,
 }) => {
   const [allItems, setAllItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -26,7 +27,7 @@ export const MultiAutoCompleteSelector = ({
       const response = await getDataAndSet({
         url: `shared/ids?where=${JSON.stringify(
           where
-        )}&model=${model}&select=${select}&`,
+        )}&model=${model}&select=${select}&isLanguage=${isLanguage}&`,
         setLoading,
         setData: setAllItems,
       });
@@ -103,7 +104,8 @@ export const MultiAutoCompleteSelector = ({
                   variant="body1"
                   fontWeight={selected ? "bold" : "normal"}
                 >
-                  {(option.title && option.title[0].text) ||
+                  {(option.title &&
+                    option.title.find((t) => t.language.code === "ar").text) ||
                     `${model} ${option.id}`}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">

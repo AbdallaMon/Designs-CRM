@@ -82,14 +82,17 @@ function CreateDesignImage({ data, setData, setValid }) {
           }}
           keyId="styleId"
           model="Style"
-          select={"id"}
           where={{
             isArchived: false,
           }}
+          select={"id,title"}
+          isLanguage={true}
         />
         <MultiAutoCompleteSelector
           setData={setData}
           updateKey="spaceIds"
+          select={"id,title"}
+          isLanguage={true}
           model="Space"
           label="Select Spaces"
           where={{

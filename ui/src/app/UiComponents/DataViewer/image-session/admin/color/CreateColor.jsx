@@ -1,10 +1,11 @@
 import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useLanguage } from "@/app/helpers/hooks/useLanguage";
 import IsFullWidthSwitch, {
+  ColorSelector,
   CreateColorPattern,
   OrderInput,
 } from "./PalleteItems";
@@ -105,6 +106,20 @@ function CreateColorForm({ data, setData, setValid }) {
         helperText="You can leave it empty if u want to render same template image"
         setData={setData}
       />
+      <Box my={2}>
+        <Typography variant="h5">Main background</Typography>
+        <ColorSelector
+          color={data?.background || "#000000"}
+          isEditable={false}
+          onChange={(newColor) =>
+            setData((old) => ({ ...old, background: newColor }))
+          }
+          onEditableToggle={() => toggleEditable(index)}
+          canDelete={false}
+          canBeEditable={false}
+        />{" "}
+      </Box>
+
       <Box my={2}>
         <CreateColorPattern data={data} setData={setData} />
       </Box>

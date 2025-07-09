@@ -20,8 +20,8 @@ export function ClientSelectedImages({
   const { lng } = useLanguageSwitcherContext();
   const uiText = {
     title: {
-      ar: "راجع اختيارات الصور",
-      en: "Review your images selections",
+      ar: "راجع اختيارات الصور واضف ملاحظاتك",
+      en: "Review your images selections and add your notes",
     },
   };
   return (
@@ -32,7 +32,7 @@ export function ClientSelectedImages({
             variant="h5"
             color="primary"
             gutterBottom
-            sx={{ px: 1 }}
+            sx={{ px: 1, maxWidth: "50%" }}
             ref={titleRef}
           >
             {uiText.title[lng]}

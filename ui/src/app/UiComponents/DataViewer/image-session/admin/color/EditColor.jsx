@@ -1,13 +1,14 @@
 import { useLanguage } from "@/app/helpers/hooks/useLanguage";
 import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { ensureHttps } from "@/app/helpers/functions/utility";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { OpenItemDialog } from "../shared/OpenItemDialog";
 import { EditTitleAndDescriptionFields } from "../shared/EditTitleAndDescription";
 import { TemplateAutocomplete } from "../shared/SelectATemplate";
 import IsFullWidthSwitch, {
+  ColorSelector,
   EditColorPattern,
   OrderInput,
 } from "./PalleteItems";
@@ -98,7 +99,19 @@ function EditColorForm({ data, setData, initialData }) {
         helperText="You can leave it empty if u want to render same template image"
         setData={setData}
       />
-
+      <Box my={2}>
+        <Typography variant="h5">Main background</Typography>
+        <ColorSelector
+          color={data?.background || initialData?.background || "#000000"}
+          isEditable={false}
+          onChange={(newColor) =>
+            setData((old) => ({ ...old, background: newColor }))
+          }
+          onEditableToggle={() => toggleEditable(index)}
+          canDelete={false}
+          canBeEditable={false}
+        />
+      </Box>
       <Box my={2}>
         <EditColorPattern
           data={data}

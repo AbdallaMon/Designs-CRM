@@ -1,7 +1,12 @@
 import { Box, Button, Card, IconButton, Typography } from "@mui/material";
 import ProsAndConsDialogButton from "../admin/shared/ProsAndCons";
 import { ensureHttps } from "@/app/helpers/functions/utility";
-import { MdCheckCircle, MdEdit, MdRadioButtonUnchecked } from "react-icons/md";
+import {
+  MdCheckCircle,
+  MdEdit,
+  MdFullscreen,
+  MdRadioButtonUnchecked,
+} from "react-icons/md";
 import { useState, useEffect, useRef } from "react";
 import { useDebounce } from "../admin/shared/CreateTitleOrDesc";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
@@ -21,6 +26,8 @@ export function PreviewItem({
   animated,
   currentCard,
   loading,
+  hidden,
+  height,
 }) {
   const [colorPickerOpen, setColorPickerOpen] = useState(null); // Store the color ID being edited
   const [tempColorValue, setTempColorValue] = useState("");
@@ -39,6 +46,8 @@ export function PreviewItem({
     overflow: "hidden",
     ...customStyles.card,
     mx: "auto",
+    opacity: hidden ? 0 : 1,
+    height: height && height,
   };
 
   // Background image with blur (separate from content)
@@ -190,7 +199,12 @@ export function PreviewItem({
           template.showDescription && (
             <Box
               key="description"
-              sx={{ position: "relative", ...getElementStyle("description") }}
+              className="description"
+              sx={{
+                opacity: animated ? 0 : 1,
+                position: "relative",
+                ...getElementStyle("description"),
+              }}
             >
               <Typography
                 variant="body2"
@@ -200,6 +214,7 @@ export function PreviewItem({
                   wordWrap: "break-word",
                   overflowWrap: "break-word",
                   wordBreak: "break-all",
+                  mx: "auto",
                 }}
               >
                 {item.description.length > 0 &&
@@ -258,7 +273,6 @@ export function PreviewItem({
                     sx={{
                       position: "relative",
                       opacity: animated ? 0 : 1,
-
                       width:
                         {
                           xs: template.colorSize,
@@ -293,8 +307,6 @@ export function PreviewItem({
                         >
                           <MdEdit sx={{ fontSize: 12 }} />
                         </IconButton>
-
-                        {/* Hidden Color Picker Input - opens directly */}
                         {colorPickerOpen === color.id && (
                           <input
                             ref={colorInputRef}
@@ -362,6 +374,7 @@ export function PreviewItem({
           {label}
         </Button>
       )}
+
       <Box sx={backgroundImageStyle} />
       <Box sx={overlayStyle} />
       <Box sx={contentStyle}>

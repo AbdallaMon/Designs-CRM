@@ -88,7 +88,8 @@ function EditDesignImageForm({ data, setData, initialData }) {
           }}
           keyId="styleId"
           model="Style"
-          select={"id"}
+          select={"id,title"}
+          isLanguage={true}
           initialData={initialData}
           where={{
             isArchived: false,
@@ -99,6 +100,8 @@ function EditDesignImageForm({ data, setData, initialData }) {
           updateKey="spaceIds"
           model="Space"
           label="Select Spaces"
+          select={"id,title"}
+          isLanguage={true}
           initialSelectedIds={initialData.spaces.map((space) => space.space.id)}
           where={{
             isArchived: false,

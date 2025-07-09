@@ -50,11 +50,20 @@
 - User calendar
 - Image dashboard
 - Page data for color pallete, materail ,style (one component)
-
 - مراحل البيع
 - Check commission
+
+- Color pallete first image take full width same for material
+- Style all imagae take full width
 - Add more than one image with same style and ect
 - Show style and space title
+- Allow admin to select order of selecting
+- Pdf
+- first page image and client name
+- second page is spaces and data
+- third page is image per each page
+- last thing is singature
+
 - Image in the url in both dream studio and eng ahmed
 
 - Total price is final price

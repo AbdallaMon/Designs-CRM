@@ -210,6 +210,7 @@ export function FloatingActionButton({
   isText,
   label,
   variant = "outlined",
+  isOverItems,
 }) {
   const theme = useTheme();
   const Icon = type === "NEXT" ? MdArrowForward : MdArrowBack;
@@ -235,6 +236,7 @@ export function FloatingActionButton({
                 position: "fixed",
                 bottom: "15px",
                 left: "15px",
+                ...(isOverItems && { zIndex: 1500 }),
               }
         }
       >

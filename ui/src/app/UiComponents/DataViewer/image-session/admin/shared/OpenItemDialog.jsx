@@ -43,6 +43,7 @@ export function OpenItemDialog({
 
     if (validation.error) {
       setAlertError(validation.message);
+      setLoading(false);
       return;
     }
     const url =
@@ -118,7 +119,16 @@ export function OpenItemDialog({
           <Button onClick={handleClose} disabled={loading}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} variant="contained" disabled={loading}>
+          <Button
+            onClick={async () => {
+              setLoading(true);
+              window.setTimeout(async () => {
+                await handleSubmit();
+              }, 50);
+            }}
+            variant="contained"
+            disabled={loading}
+          >
             {loading ? "Submitting..." : actionText}
           </Button>
         </DialogActions>

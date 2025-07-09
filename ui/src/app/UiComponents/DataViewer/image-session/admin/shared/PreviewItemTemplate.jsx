@@ -104,12 +104,13 @@ export function PreviewItemTemplate({ template, item }) {
               <Typography
                 variant="body2"
                 sx={{
-                  textAlign: "center",
                   ...customStyles.description,
-
+                  textAlign: "center !important",
                   wordWrap: "break-word",
                   overflowWrap: "break-word",
                   wordBreak: "break-all",
+                  maxWidth: 300,
+                  mx: "auto",
                 }}
               >
                 {item.description.length > 0 && item.description[0].content}

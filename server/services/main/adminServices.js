@@ -1853,6 +1853,25 @@ export async function getModelIds({ searchParams, model }) {
       };
     });
   }
+  if (searchParams.isLanguage && searchParams.isLanguage === "true") {
+    if (!select.select) {
+      select.select = {};
+    }
+    select.select.title = {
+      select: {
+        id: true,
+        text: true,
+        language: {
+          select: {
+            code: true,
+          },
+        },
+      },
+    };
+    if (!select.select.id) {
+      select.select.id = true;
+    }
+  }
   if (searchParams.include) {
     const includeFields = searchParams.include.split(",");
     includeFields.forEach((field) => {

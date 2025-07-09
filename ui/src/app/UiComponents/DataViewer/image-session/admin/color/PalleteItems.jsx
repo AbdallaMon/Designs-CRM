@@ -6,26 +6,21 @@ import {
   Checkbox,
   FormControlLabel,
   Typography,
-  Popover,
   Switch,
   TextField,
 } from "@mui/material";
 import { MdAdd, MdDelete } from "react-icons/md";
-import {
-  HexAlphaColorPicker,
-  HexColorInput,
-  HexColorPicker,
-} from "react-colorful";
-import debounce from "lodash.debounce"; // Import debounce
+
 import { useDebounce } from "../shared/CreateTitleOrDesc";
 
-function ColorSelector({
+export function ColorSelector({
   color,
   onChange,
   onDelete,
   onEditableToggle,
   isEditable,
   canDelete = true,
+  canBeEditable = true,
 }) {
   // Ref to access the hidden color input element
   const colorInputRef = useRef(null);
@@ -65,47 +60,51 @@ function ColorSelector({
         borderRadius: 1,
       }}
     >
-      {/* The visible color swatch */}
       <Box
         sx={{
           width: 40,
           height: 40,
-          backgroundColor: color, // Shows the final, debounced color
+          backgroundColor: color,
           border: "1px solid #ccc",
           borderRadius: 1,
           cursor: "pointer",
+          position: "relative",
         }}
         onClick={handleSwatchClick}
       />
 
-      {/* The hidden native color input */}
       <input
         ref={colorInputRef}
         type="color"
         value={currentColor}
         onChange={handleColorInputChange}
-        style={{ display: "none" }}
+        style={{
+          display: "none",
+          position: "absolute",
+          pointerEvents: "none",
+          width: "1px",
+          height: "1px",
+        }}
       />
-
       <Typography
         variant="body2"
         sx={{ minWidth: 80, fontFamily: "monospace" }}
       >
         {color}
       </Typography>
-
-      <FormControlLabel
-        control={
-          <Checkbox
-            checked={isEditable}
-            onChange={onEditableToggle}
-            size="small"
-          />
-        }
-        label="Editable"
-        sx={{ ml: 1 }}
-      />
-
+      {canBeEditable && (
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={isEditable}
+              onChange={onEditableToggle}
+              size="small"
+            />
+          }
+          label="Editable"
+          sx={{ ml: 1 }}
+        />
+      )}
       {canDelete && (
         <IconButton
           onClick={onDelete}

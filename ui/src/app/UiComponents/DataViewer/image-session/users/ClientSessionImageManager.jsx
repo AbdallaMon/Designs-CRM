@@ -194,12 +194,12 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
     await getDataAndSet({
       url: `shared/ids?where=${JSON.stringify({
         isArchived: false,
-      })}&model=space&include=title&`,
+      })}&model=space&select=id,title&isLanguage=true&`,
       setLoading,
       setData: setSpaces,
     });
   }
-
+  console.log(spaces, "spaces");
   useEffect(() => {
     if (sessionsDialogOpen) {
       fetchData();
@@ -648,7 +648,11 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                                 {session.selectedSpaces.map((spaceSession) => (
                                   <Chip
                                     key={spaceSession.space.id}
-                                    label={`#${spaceSession.space.id} - ${spaceSession.space.title[0].text}`}
+                                    label={`#${spaceSession.space.id} - ${
+                                      spaceSession.space?.title.find(
+                                        (t) => t.language.code === "ar"
+                                      ).text
+                                    }`}
                                     size="medium"
                                     variant="outlined"
                                     color="primary"
@@ -706,7 +710,9 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                               {session.material && (
                                 <Chip
                                   label={`Material: #${session.material.id} ${
-                                    session.material.title?.[0]?.text || ""
+                                    session.material.title?.find(
+                                      (t) => t.language.code === "ar"
+                                    ).text || ""
                                   }`}
                                   variant="outlined"
                                   color="info"
@@ -716,7 +722,9 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                               {session.style && (
                                 <Chip
                                   label={`Style: #${session.style.id} ${
-                                    session.style.title?.[0]?.text || ""
+                                    session.style.title?.find(
+                                      (t) => t.language.code === "ar"
+                                    ).text || ""
                                   }`}
                                   variant="outlined"
                                   color="secondary"
@@ -826,7 +834,9 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText
-                    primary={space.name}
+                    primary={
+                      space?.title.find((t) => t.language.code === "ar").text
+                    }
                     secondary={`Space ID: ${space.id}`}
                   />
                 </ListItemButton>
@@ -845,7 +855,9 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                   return (
                     <Chip
                       key={spaceId}
-                      label={`#${space?.id} - ${space?.title?.[0]?.text}`}
+                      label={`#${space?.id} - ${
+                        space?.title.find((t) => t.language.code === "ar").text
+                      }`}
                       onDelete={() => handleSpaceToggle(spaceId)}
                       deleteIcon={<FaTimes />}
                       color="primary"

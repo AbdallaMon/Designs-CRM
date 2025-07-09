@@ -2,43 +2,51 @@
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { useEffect, useState, useRef } from "react";
-import { PreviewItem } from "./PreviewItem";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 import { Box, Grid2 as Grid, Typography } from "@mui/material";
-import { FloatingActionButton } from "./Utility";
 import { gsap } from "gsap";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import { FloatingActionButton } from "../Utility";
+import { PreviewItemDialog } from "../shared/PreviewItemDialog";
+import { SharedCardItem } from "../shared/SharedCardItem";
 
-export function Materials({
+export function Styles({
   session,
   handleBack,
   disabled,
   nextStatus,
   onUpdate,
 }) {
-  const [materials, setMaterials] = useState([]);
+  const [styles, setStyles] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedMaterial, setSelectedMaterial] = useState(false);
+  const [selectedStyle, setSelectedStyle] = useState(false);
   const { loading: toastLoading, setLoading: setToastLoading } =
     useToastContext();
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
+
+  const handlePreviewOpen = (startIndex) => {
+    setCurrentPreviewIndex(startIndex);
+    setPreviewOpen(true);
+  };
+
   const { lng } = useLanguageSwitcherContext();
   const cardsRef = useRef([]);
-  const titleRef = useRef(null);
   const containerRef = useRef(null);
-  async function getMaterials() {
+  async function getStyles() {
     await getDataAndSet({
-      url: `client/image-session/materials?lng=${lng}&`,
+      url: `client/image-session/styles?lng=${lng}&`,
       setLoading,
-      setData: setMaterials,
+      setData: setStyles,
     });
   }
 
   useEffect(() => {
-    getMaterials();
+    getStyles();
   }, [lng]);
   useEffect(() => {
-    if (materials.length > 0 && !loading) {
+    if (styles.length > 0 && !loading) {
       // Create a timeline for better control
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
@@ -51,25 +59,6 @@ export function Materials({
         filter: "blur(8px) brightness(0.7)",
         transformOrigin: "center bottom",
       });
-
-      // Enhanced title animation with micro-interactions
-      tl.fromTo(
-        titleRef.current,
-        {
-          opacity: 0,
-          y: -30,
-          scale: 0.9,
-          filter: "blur(3px)",
-        },
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          filter: "blur(0px)",
-          duration: 0.5,
-          ease: "back.out(1.7)",
-        }
-      );
 
       // Modern card entrance with layered effects
       tl.to(
@@ -95,13 +84,13 @@ export function Materials({
         tl.kill();
       };
     }
-  }, [materials, loading]);
+  }, [styles, loading]);
 
-  async function handleMaterialSubmit() {
+  async function handleStyleSubmit() {
     const req = await handleRequestSubmit(
-      { session, selectedMaterial, status: nextStatus },
+      { session, selectedStyle, status: nextStatus },
       setToastLoading,
-      `client/image-session/materials`,
+      `client/image-session/styles`,
       false,
       "Saving your choice please wait..."
     );
@@ -109,26 +98,34 @@ export function Materials({
       await onUpdate();
     }
   }
-  const title = lng === "ar" ? "اختر الخامة" : "Choose a material";
 
   return (
     <>
       {loading && <FullScreenLoader />}
-      <Typography
-        ref={titleRef}
-        variant="h4"
-        color="primary"
-        sx={{ my: 2, textAlign: "center !important", px: 1 }}
-      >
-        {title}
-      </Typography>
+      <PreviewItemDialog
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        items={styles}
+        currentIndex={currentPreviewIndex}
+        onIndexChange={setCurrentPreviewIndex}
+        selectedItems={selectedStyle ? [selectedStyle] : []}
+        type={"SELECT"}
+        itemType="STYLE"
+        onItemSelect={(style) => {
+          if (selectedStyle && selectedStyle.id === style.id) {
+            setSelectedStyle(null);
+          } else {
+            setSelectedStyle(style);
+          }
+        }}
+      />
 
       <Grid container ref={containerRef}>
-        {materials.map((material, index) => {
+        {styles.map((style, index) => {
           return (
             <Grid
-              size={{ xs: 12, md: 6 }}
-              key={material.id}
+              size={12}
+              key={style.id}
               ref={(el) => (cardsRef.current[index] = el)}
               sx={{
                 opacity: 0,
@@ -138,20 +135,28 @@ export function Materials({
                 "& .MuiPaper-root": {
                   height: "100%",
                 },
+                overflow: "hidden",
+                maxHeight: "300px",
+                position: "relative",
               }}
             >
-              <PreviewItem
-                item={material}
-                template={material.template}
+              <SharedCardItem
+                item={style}
+                template={style.template}
                 type={"MATERIAL"}
                 canSelect={true}
-                extraLng={lng}
-                isSelected={selectedMaterial?.id === material.id}
+                isFullWidth={false}
+                canPreview={true}
+                handlePreviewClick={() => {
+                  handlePreviewOpen(index);
+                }}
+                height={"300px"}
+                isSelected={selectedStyle?.id === style.id}
                 onSelect={() => {
-                  if (selectedMaterial && selectedMaterial.id === material.id) {
-                    setSelectedMaterial(null);
+                  if (selectedStyle && selectedStyle.id === style.id) {
+                    setSelectedStyle(null);
                   } else {
-                    setSelectedMaterial(material);
+                    setSelectedStyle(style);
                   }
                 }}
               />
@@ -164,11 +169,11 @@ export function Materials({
           pt: 2,
         }}
       >
-        {selectedMaterial ? (
+        {selectedStyle ? (
           <>
             <FloatingActionButton
               disabled={toastLoading}
-              handleClick={handleMaterialSubmit}
+              handleClick={handleStyleSubmit}
               type="NEXT"
               isText={true}
               label={lng === "ar" ? "التالي" : "Next"}

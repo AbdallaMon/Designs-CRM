@@ -90,6 +90,7 @@ export async function createAListOfText({ creates, type, modelId, id }) {
       });
     });
   } else {
+    console.log("we are here?");
     Object.values(creates).map(async (entry) => {
       return await prisma.textLong.create({
         data: {
@@ -607,7 +608,10 @@ export async function createColorPallete({ data }) {
   if (!data.titles || titles.length === 0) {
     throw new Error("Please Fill all data.");
   }
-  console.log(data.fullWidth, "full");
+  console.log(data, "data");
+  if (!data.background) {
+    throw new Error("Please Fill all data.");
+  }
 
   const titlesToCreate = createTextAndConnect(titles, "text");
   let descriptionsToCreate = createTextAndConnect(descriptions, "content");
@@ -617,6 +621,7 @@ export async function createColorPallete({ data }) {
     title: {
       create: titlesToCreate,
     },
+    background: data.background,
     colors: {
       create: data.colors.map((color, index) => ({
         colorHex: color.colorHex,
@@ -654,6 +659,9 @@ export async function editColorPallete({ data, colorId }) {
   if (data.templateId) {
     dataToSubmit.templateId = data.templateId;
   }
+  if (data.background) {
+    dataToSubmit.background = data.background;
+  }
   dataToSubmit.isFullWidth = data.isFullWidth;
 
   if (data.imageUrl) {
@@ -665,6 +673,7 @@ export async function editColorPallete({ data, colorId }) {
   if (translations.edits.titles) {
     await editAListOftext({ edits: translations.edits.titles, type: "TITLE" });
   }
+
   if (translations.edits.descriptions) {
     await editAListOftext({
       edits: translations.edits.descriptions,
@@ -680,6 +689,7 @@ export async function editColorPallete({ data, colorId }) {
       data: dataToSubmit,
     });
   }
+
   if (data.editedColors && data.editedColors.length > 0) {
     data.editedColors.forEach(async (color) => {
       await prisma.colorPatternColor.update({
@@ -693,23 +703,28 @@ export async function editColorPallete({ data, colorId }) {
         },
       });
     });
-    if (translations.creates.titles) {
-      await createAListOfText({
-        creates: translations.creates.titles,
-        id: colorId,
-        modelId: "colorPatternId",
-        type: "TITLE",
-      });
-    }
-    if (translations.creates.descriptions) {
-      await createAListOfText({
-        creates: translations.creates.descriptions,
-        id: colorId,
-        modelId: "colorPatternId",
-        type: "DESCRIPTION",
-      });
-    }
   }
+  if (translations.creates.titles) {
+    await createAListOfText({
+      creates: translations.creates.titles,
+      id: colorId,
+      modelId: "colorPatternId",
+      type: "TITLE",
+    });
+  }
+  console.log(
+    translations.creates.descriptions,
+    "translations.creates.descriptions"
+  );
+  if (translations.creates.descriptions) {
+    await createAListOfText({
+      creates: translations.creates.descriptions,
+      id: colorId,
+      modelId: "colorPatternId",
+      type: "DESCRIPTION",
+    });
+  }
+
   const lastColor = await prisma.colorPatternColor.findFirst({
     where: {
       colorPatternId: Number(colorId),
@@ -741,6 +756,7 @@ export async function editColorPallete({ data, colorId }) {
       },
     });
   }
+
   return true;
 }
 
@@ -1024,6 +1040,11 @@ export async function getClientImageSessions(clientLeadId) {
                   text: true,
                   id: true,
                   languageId: true,
+                  language: {
+                    select: {
+                      code: true,
+                    },
+                  },
                 },
               },
             },
@@ -1043,6 +1064,11 @@ export async function getClientImageSessions(clientLeadId) {
               text: true,
               id: true,
               languageId: true,
+              language: {
+                select: {
+                  code: true,
+                },
+              },
             },
           },
         },
@@ -1055,6 +1081,11 @@ export async function getClientImageSessions(clientLeadId) {
               text: true,
               id: true,
               languageId: true,
+              language: {
+                select: {
+                  code: true,
+                },
+              },
             },
           },
         },

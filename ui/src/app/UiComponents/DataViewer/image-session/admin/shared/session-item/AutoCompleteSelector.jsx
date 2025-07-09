@@ -16,6 +16,7 @@ export const AutoCompleteSelector = ({
   keyId = "templateId",
   select,
   isFullWidth,
+  isLanguage,
 }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -25,7 +26,7 @@ export const AutoCompleteSelector = ({
       const req = await getDataAndSet({
         url: `shared/ids?where=${JSON.stringify({
           ...where,
-        })}&model=${model}&select=${select}&`,
+        })}&model=${model}&select=${select}&isLanguage=${isLanguage}&`,
         setLoading,
         setData: setItems,
       });
@@ -80,28 +81,27 @@ export const AutoCompleteSelector = ({
             }}
           />
         )}
-        renderOption={(props, option) => (
-          <Box component="li" {...props}>
-            <Box
-              sx={{ display: "flex", flexDirection: "column", width: "100%" }}
-            >
+        renderOption={(props, option, { selected }) => {
+          return (
+            <li {...props} key={option.id}>
               <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
+                sx={{ display: "flex", flexDirection: "column", width: "100%" }}
               >
-                <Typography variant="body1">
-                  {`${model} ${option.id}`}
+                <Typography
+                  variant="body1"
+                  fontWeight={selected ? "bold" : "normal"}
+                >
+                  {(option.title &&
+                    option.title.find((t) => t.language.code === "ar").text) ||
+                    `${model} ${option.id}`}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  ID: {option.id}
                 </Typography>
               </Box>
-              <Typography variant="caption" color="text.secondary">
-                ID: {option.id}
-              </Typography>
-            </Box>
-          </Box>
-        )}
+            </li>
+          );
+        }}
         noOptionsText={loading ? `Loading ${model}s...` : `No ${model}s found`}
         isOptionEqualToValue={(option, value) => option.id === value.id}
       />
