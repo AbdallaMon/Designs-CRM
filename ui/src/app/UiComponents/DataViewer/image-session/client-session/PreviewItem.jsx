@@ -221,7 +221,7 @@ export function PreviewItem({
                   (extraLng
                     ? item.description?.find(
                         (desc) => desc.language?.code === extraLng
-                      ).content
+                      )?.content
                     : item.description[0].content)}
               </Typography>
             </Box>
@@ -236,12 +236,6 @@ export function PreviewItem({
                 materialId={type === "MATERIAL" && item.id}
                 styleId={type === "STYLE" && item.id}
                 lng={lng}
-                customStyle={{
-                  paddingX: customStyles.consButton?.paddingX,
-                  paddingY: customStyles.consButton?.paddingY,
-                  ...customStyles.consButton,
-                  ...getElementStyle("consButton"),
-                }}
               />
             </Box>
           )

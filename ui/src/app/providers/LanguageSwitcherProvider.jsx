@@ -44,6 +44,9 @@ export default function LanguageSwitcherProvider({
           "& .MuiTypography-root": {
             textAlign: lng === "ar" ? "right" : "left",
           },
+          "& .muirtl-1v3caum": {
+            padding: 0,
+          },
         }}
       >
         <CacheProvider value={lng === "ar" ? cacheRtl : defaultCache}>

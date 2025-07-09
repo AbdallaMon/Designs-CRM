@@ -408,6 +408,8 @@ export function ColorPalletes({
                 cursor: "pointer",
                 transition: "transform 0.2s ease",
                 overflow: "hidden",
+                opacity: 0,
+
                 maxHeight: "300px",
                 position: "relative",
               }}

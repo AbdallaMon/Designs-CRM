@@ -87,7 +87,7 @@ export function ClientSessionSubmitted({ session, loading }) {
 
   // Enhanced animation with scroll trigger
   useEffect(() => {
-    if (session && !loading && containerRef.current && !true) {
+    if (session && !loading && containerRef.current) {
       const ctx = gsap.context(() => {
         gsap.set([...cardsRef.current, ...selectionCardsRef.current], {
           opacity: 0,
@@ -184,16 +184,6 @@ export function ClientSessionSubmitted({ session, loading }) {
     window.open(session.pdfUrl, "_blank");
   };
 
-  const getIconColor = (colorName) => {
-    const colors = {
-      success: theme.palette.success.main,
-      primary: theme.palette.primary.main,
-      secondary: theme.palette.secondary.main,
-      info: theme.palette.info.main,
-    };
-    return colors[colorName] || theme.palette.text.secondary;
-  };
-
   if (loading) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -225,8 +215,6 @@ export function ClientSessionSubmitted({ session, loading }) {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }} ref={containerRef}>
-      {/* Enhanced Success Header */}
-      <diV>HHIIGIGIi</diV>
       <Paper
         ref={titleRef}
         elevation={6}
