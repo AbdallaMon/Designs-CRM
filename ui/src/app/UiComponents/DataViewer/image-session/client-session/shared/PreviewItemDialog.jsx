@@ -124,7 +124,10 @@ export function PreviewItemDialog({
   if (!currentItem) return null;
 
   const itemTitle = currentItem.title?.[0]?.text || "";
-  const itemDescription = currentItem.description?.[0]?.content || "";
+  const itemDescription =
+    (currentItem.template.showDescription &&
+      currentItem.description?.[0]?.content) ||
+    "";
 
   return (
     <Dialog

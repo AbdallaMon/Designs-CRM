@@ -156,41 +156,7 @@ export function ColorPalletes({
     timeline.set(currentCard, {
       clearProps: "width,height",
     });
-    // if (colorSizeRect) {
-    //   timeline.fromTo(
-    //     colorsSizes,
-    //     {
-    //       opacity: 0,
-    //       y: 15,
-    //       width: colorSizeRect.width,
-    //       height: colorSizeRect.height,
-    //     },
-    //     {
-    //       y: 0,
-    //       opacity: 1,
-    //       duration: 0.3,
-    //       ease: "power2.out",
-    //       stagger: 0.05,
-    //       width: colorSizeRect.width - 5,
-    //       height: colorSizeRect.height - 5,
-    //     }
-    //   );
-    // }
-    // timeline.fromTo(
-    //   paper.querySelector("h5"),
-    //   {
-    //     opacity: 0,
-    //     y: -15,
-    //   },
-    //   {
-    //     opacity: 1,
-    //     y: 0,
-    //     duration: 0.3,
-    //     ease: "power2.out",
-    //     stagger: 0.05,
-    //   },
-    //   "<"
-    // );
+
     if (isFullWidth) {
       timeline.to(paper, {
         y: "100%",

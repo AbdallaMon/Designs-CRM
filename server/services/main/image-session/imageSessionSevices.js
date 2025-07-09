@@ -60,7 +60,6 @@ export async function createSpace({ data }) {
 
 export async function updateSpace({ data, spaceId }) {
   const { edits = {}, creates = {} } = data;
-  console.log(data, "data");
   const titles = Object.values(data.titles);
   if (!data.titles || titles.length === 0) {
     throw new Error("Please Fill all data.");
@@ -90,7 +89,6 @@ export async function createAListOfText({ creates, type, modelId, id }) {
       });
     });
   } else {
-    console.log("we are here?");
     Object.values(creates).map(async (entry) => {
       return await prisma.textLong.create({
         data: {
@@ -608,7 +606,6 @@ export async function createColorPallete({ data }) {
   if (!data.titles || titles.length === 0) {
     throw new Error("Please Fill all data.");
   }
-  console.log(data, "data");
   if (!data.background) {
     throw new Error("Please Fill all data.");
   }
@@ -654,7 +651,6 @@ export async function createColorPallete({ data }) {
 
 export async function editColorPallete({ data, colorId }) {
   const translations = data.translations;
-  console.log(data, "data");
   const dataToSubmit = {};
   if (data.templateId) {
     dataToSubmit.templateId = data.templateId;
@@ -712,10 +708,7 @@ export async function editColorPallete({ data, colorId }) {
       type: "TITLE",
     });
   }
-  console.log(
-    translations.creates.descriptions,
-    "translations.creates.descriptions"
-  );
+
   if (translations.creates.descriptions) {
     await createAListOfText({
       creates: translations.creates.descriptions,
@@ -940,7 +933,6 @@ export async function getPageInfo({ notArchived, lng, type }) {
       },
     },
   });
-  console.log(data, "data");
 
   return data;
 }
@@ -1069,6 +1061,26 @@ export async function getClientImageSessions(clientLeadId) {
                   code: true,
                 },
               },
+            },
+          },
+        },
+      },
+      colorPattern: {
+        select: {
+          title: {
+            select: {
+              text: true,
+              language: {
+                select: {
+                  code: true,
+                },
+              },
+            },
+          },
+          colors: {
+            select: {
+              id: true,
+              colorHex: true,
             },
           },
         },
@@ -1496,8 +1508,6 @@ export async function saveClientSelectedImages({
   status,
 }) {
   const sessionId = Number(session.id);
-  console.log(session, "session");
-  console.log(selectedImages, "selectedImages");
 
   // Extract image IDs
   const selectedImageIds = selectedImages.map((image) => image.id);

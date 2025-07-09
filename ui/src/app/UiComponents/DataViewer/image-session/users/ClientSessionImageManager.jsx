@@ -70,7 +70,6 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
   const { setAlertError } = useAlertContext();
   const { setLoading: setToastLoading } = useToastContext();
   const [copiedToken, setCopiedToken] = useState(null);
-
   // Enhanced status configuration
   const getStatusConfig = (status) => {
     const configs = {
@@ -662,6 +661,52 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                             </Box>
 
                             {/* Custom Colors */}
+                            {session.colorPattern && (
+                              <Box mb={2}>
+                                <Typography variant="subtitle2" gutterBottom>
+                                  <Box
+                                    display="flex"
+                                    alignItems="center"
+                                    gap={1}
+                                  >
+                                    <FaPalette size={14} />
+                                    Color Pattern{" "}
+                                    {
+                                      session.colorPattern.title.find(
+                                        (t) => t.language.code === "ar"
+                                      ).text
+                                    }
+                                  </Box>
+                                </Typography>
+                                <Box display="flex" flexWrap="wrap" gap={1}>
+                                  {session.colorPattern.colors.map(
+                                    (color, index) => (
+                                      <Chip
+                                        key={color.id}
+                                        label={color.colorHex}
+                                        size="medium"
+                                        variant="outlined"
+                                        sx={{ mr: 1, mb: 1 }}
+                                        avatar={
+                                          <Box
+                                            sx={{
+                                              width: 18,
+                                              height: 18,
+                                              borderRadius: "50%",
+                                              backgroundColor: color.colorHex,
+                                              border: "2px solid #fff",
+                                              boxShadow:
+                                                "0 0 0 1px rgba(0,0,0,0.1)",
+                                            }}
+                                          />
+                                        }
+                                      />
+                                    )
+                                  )}
+                                </Box>
+                              </Box>
+                            )}
+
                             {session.customColors &&
                               session.customColors.length > 0 && (
                                 <Box mb={2}>
@@ -672,7 +717,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                                       gap={1}
                                     >
                                       <FaPalette size={14} />
-                                      Selected Colors (
+                                      Client Colors (
                                       {session.customColors.length})
                                     </Box>
                                   </Typography>
