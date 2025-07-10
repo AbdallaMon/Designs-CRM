@@ -267,6 +267,7 @@ export function PreviewItem({
                     ? (parseInt(getElementStyle("colors").gap) || 5) + 5 + "px"
                     : getElementStyle("colors").gap || 1,
                   alignItems: "center",
+                  position: "relative",
                 }}
               >
                 {colorCircles?.map((color, index) => (
@@ -278,7 +279,7 @@ export function PreviewItem({
                         <Box
                           sx={{
                             position: "absolute",
-                            top: "100%",
+                            top: "0",
                             left: 0,
                             zIndex: 100,
                             background: "#fff",
