@@ -10,7 +10,7 @@ import {
   getStyleByLng,
   saveClientSelectedColor,
   saveClientSelectedImages,
-  saveClientSelectedMaterial,
+  saveClientSelectedMaterials,
   saveClientSelectedStyle,
 } from "../../services/main/image-session/imageSessionSevices.js";
 import { getAndThrowError } from "../../services/main/utility.js";
@@ -100,7 +100,7 @@ router.get(`/materials`, async (req, res) => {
 });
 router.post("/materials", async (req, res) => {
   try {
-    const data = await saveClientSelectedMaterial({ ...req.body });
+    const data = await saveClientSelectedMaterials({ ...req.body });
     res.status(200).json({ data: data, message: "Material saved succssfully" });
   } catch (e) {
     getAndThrowError(e, res);

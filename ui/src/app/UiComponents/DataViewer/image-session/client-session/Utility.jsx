@@ -139,13 +139,6 @@ export function ActionButtons({ session, handleNext, handleBack, disabled }) {
 
   return (
     <Box display="flex" gap={2} justifyContent="space-between">
-      <ActionButton
-        disabled={disabled}
-        handleClick={handleNext}
-        type={"NEXT"}
-        label={nextLabel}
-      />
-
       {session && session.sessionStatus !== "INITIAL" && (
         <ActionButton
           disabled={disabled}
@@ -154,6 +147,12 @@ export function ActionButtons({ session, handleNext, handleBack, disabled }) {
           label={backLabel}
         />
       )}
+      <ActionButton
+        disabled={disabled}
+        handleClick={handleNext}
+        type={"NEXT"}
+        label={nextLabel}
+      />
     </Box>
   );
 }
@@ -235,7 +234,7 @@ export function FloatingActionButton({
                 }),
                 position: "fixed",
                 bottom: "15px",
-                left: "15px",
+                right: "15px",
                 ...(isOverItems && { zIndex: 1500 }),
               }
         }

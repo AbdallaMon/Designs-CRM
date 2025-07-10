@@ -46,6 +46,7 @@ import {
   FaFilePdf,
   FaPaperPlane,
   FaPlay,
+  FaObjectGroup,
 } from "react-icons/fa";
 import { getData } from "@/app/helpers/functions/getData";
 import { useAlertContext } from "@/app/providers/MuiAlert";
@@ -58,9 +59,11 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import DeleteModal from "../../../models/DeleteModal";
 import ConfirmWithActionModel from "../../../models/ConfirmsWithActionModel";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
+import { checkIfAdmin } from "@/app/helpers/functions/utility";
 
 const ClientImageSessionManager = ({ clientLeadId }) => {
   const { user } = useAuth();
+  const isAdmin = checkIfAdmin(user);
   const [sessionsDialogOpen, setSessionsDialogOpen] = useState(false);
   const [newSessionDialogOpen, setNewSessionDialogOpen] = useState(false);
   const [selectedSpaces, setSelectedSpaces] = useState([]);
@@ -198,7 +201,6 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
       setData: setSpaces,
     });
   }
-  console.log(spaces, "spaces");
   useEffect(() => {
     if (sessionsDialogOpen) {
       fetchData();
@@ -467,9 +469,10 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                           </Box>
 
                           <Box display="flex" gap={1.5} alignItems="center">
-                            {!["PDF_GENERATED", "SUBMITTED"].includes(
-                              session.sessionStatus
-                            ) && (
+                            {(isAdmin ||
+                              !["PDF_GENERATED", "SUBMITTED"].includes(
+                                session.sessionStatus
+                              )) && (
                               <DeleteModal
                                 buttonType="ICON"
                                 href={`shared/image-session/${clientLeadId}/sessions`}
@@ -751,31 +754,30 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                               )}
 
                             {/* Material and Style */}
+
                             <Box mb={2}>
-                              {session.material && (
-                                <Chip
-                                  label={`Material: #${session.material.id} ${
-                                    session.material.title?.find(
-                                      (t) => t.language.code === "ar"
-                                    ).text || ""
-                                  }`}
-                                  variant="outlined"
-                                  color="info"
-                                  sx={{ mr: 1, mb: 1 }}
-                                />
-                              )}
-                              {session.style && (
-                                <Chip
-                                  label={`Style: #${session.style.id} ${
-                                    session.style.title?.find(
-                                      (t) => t.language.code === "ar"
-                                    ).text || ""
-                                  }`}
-                                  variant="outlined"
-                                  color="secondary"
-                                  sx={{ mb: 1 }}
-                                />
-                              )}
+                              <Typography variant="subtitle2" gutterBottom>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                  <FaObjectGroup size={14} />
+                                  Selected Materials ({session.materials.length}
+                                  )
+                                </Box>
+                              </Typography>
+                              <Box display="flex" flexWrap="wrap" gap={1}>
+                                {session.materials.map((materialSession) => (
+                                  <Chip
+                                    key={materialSession.material.id}
+                                    label={`#${materialSession.material.id} - ${
+                                      materialSession.material?.title.find(
+                                        (t) => t.language.code === "ar"
+                                      ).text
+                                    }`}
+                                    size="medium"
+                                    variant="outlined"
+                                    color="primary"
+                                  />
+                                ))}
+                              </Box>
                             </Box>
                           </Grid>
 

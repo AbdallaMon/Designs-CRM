@@ -52,26 +52,6 @@
 - Page data for color pallete, materail ,style (one component)
 - مراحل البيع
 - Check commission
-
-- Color pallete first image take full width same for material
-- Style all imagae take full width
-- Add more than one image with same style and ect
-- Show style and space title
-- Allow admin to select order of selecting
-- Pdf
-- first page image and client name
-- second page is spaces and data
-- third page is image per each page
-- last thing is singature
-
-- Image in the url in both dream studio and eng ahmed
-
-- Total price is final price
-
-- New type contact init just non consulted lead and new lead and can search inside them
-- Beginer and super sales (can edit all things in sales)
-- Dashboard change projects to leads
-
 - Full page arabic and english(text arabic and en selected by admins for everything)
 - Make an introduction page for each item (like before select pattern there is intro to tell client what he will select)
 - Client select a pattern and after selection he can customize the pattern like as he wants(change any color in it) the color pattern not all changable
@@ -87,25 +67,67 @@
 - Add template to the material image ,title and description and can check what is advantages and dis of this material
 - Each style is down the other
 - The template is for material,style and colors and it is like something i chose and tell the text will be there and it will have things and then when i assign this to image it will have these things
-
-- \*Important : image will be linked and fitlered by spaces and design style only
-
+- Color pallete first image take full width same for material
+- Style all imagae take full width
+- Add more than one image with same style and ect
+- Show style and space title
+- Allow admin to select order of selecting
+- Pdf
+- first page image and client name
+- second page is spaces and data
+- third page is image per each page
+- last thing is singature
 - Fix pdf make it in arabic and arabic direction
 - Make two image grid and make image bigger
 - امكانية رفع اكتر من صور ووضعها ضمن مساحه معينه
-- امكانية الفلتر بالمساحه او اللاوان
+
+- Can select more than one material
+- Pdf
+- Page
+- مساحات
+- استايل
+- خامات
+- الالوان
+- add note
+- التوقيع
+- Fix layout
+- Add name and code of the client
+- One image per page
+- Add layout
+
+- Courses website for users with same users naming like staff and so on
+- We will add courses each course related to user role can be added to more than one role
+- Each course has lessons
+- Each lesson has videos (iframe),pdf and links, and test for each lesson not required some lesson will have test some not
+- keep progress , track videos ect
+- After finishing courses (full lessons) open an exam for him and if he passed the exam generate certifcate for him (admin must aprove that user passed the exam)
+- Track exam attaptms
+- Allow admin to set limit and allow admin to add more attampts to specific users
+- So we need to make exam and questions for this exam and type of question which is multible choices or text
+- the question will have multible choices and right answer
+- for each staff we will create a sub model from the exam to track his answers and what he did and attempts and score ect
+
+- Image in the url in both dream studio and eng ahmed
+
+- Total price is final price
+
+- New Staff type contact init just non consulted lead and new lead and can search inside them
+- Beginer and super sales (can edit all things in sales)
+- Dashboard change projects to leads
+
+- \*Important : image will be linked and fitlered by spaces and design style only
 
   4- Calendar
 
 3- تحديد ال style  
- 8 - 2.5 + 5.5
+ 8 - 2.5 + 5.5 + 10
 1- الميتينج
 8 - 2 + 3
 
 2- حجز المواعيد
-6 5
+6 6
 
-4- Calendar
+4- C3lendar
 8 2
 
 - الاولويات
@@ -134,13 +156,12 @@
 - Check telegram
 
 - Courses website for staff
-- we will add courses
+- We will add courses
 - Each course has lessons
 - Each lesson has videos,pdf and links, notes and maybe test for each lesson
 - keep progress , track videos ect
 - After finishing courses (full lessons) open an exam for him and if he passed the exam generate certifcate for him (admin must aprove that user passed the exam)
 - Track exam attaptms
-
 - Allow admin to set limit and allow admin to add more attampts to specific users
 
 - Rating page هل الصفحه بتحفظ كل الرسيبونس ولا تبعتهم في ايميل بس؟

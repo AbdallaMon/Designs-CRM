@@ -808,6 +808,24 @@ export async function createDesignImage({ data }) {
   return true;
 }
 
+export async function createBulkDesignImage({ data }) {
+  if (!data.styleId) {
+    throw new Error("Select at least one style");
+  }
+  if (!data.spaceIds || data.spaceIds.length === 0) {
+    throw new Error("Select at least one spce");
+  }
+  const images = data.imagesUrls;
+  if (!images || images.length === 0) {
+    throw new Error("Please add at least one image");
+  }
+  images.forEach(async (image) => {
+    await createDesignImage({
+      data: { imageUrl: image, styleId: data.styleId, spaceIds: data.spaceIds },
+    });
+  });
+  return true;
+}
 export async function editDesignImage({ data, imageId }) {
   const sumbitData = {};
   if (data.imageUrl) {
@@ -1048,17 +1066,21 @@ export async function getClientImageSessions(clientLeadId) {
           designImage: true,
         },
       },
-      material: {
+      materials: {
         select: {
-          id: true,
-          title: {
+          material: {
             select: {
-              text: true,
               id: true,
-              languageId: true,
-              language: {
+              title: {
                 select: {
-                  code: true,
+                  text: true,
+                  id: true,
+                  languageId: true,
+                  language: {
+                    select: {
+                      code: true,
+                    },
+                  },
                 },
               },
             },
@@ -1158,16 +1180,43 @@ export async function regenerateSessionToken(sessionId) {
   };
 }
 
-export async function deleteInProgressSession(sessionId) {
+export async function deleteInProgressSession(sessionId, user) {
   const session = await prisma.clientImageSession.findUnique({
     where: { id: sessionId },
   });
 
   if (!session) throw new Error("Session not found");
-  if (session.sessionStatus !== "INITIAL") {
-    throw new Error("Only sessions that are in initial can be deleted");
+  console.log(user, "user");
+  if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+    if (
+      session.sessionStatus !== "PDF_GENERATED" ||
+      session.sessionStatus !== "SUBMITTED"
+    ) {
+      throw new Error("You cant delete session after client submit it");
+    }
   }
+  // await prisma
+  await prisma.materialOnClientImageSession.deleteMany({
+    where: { clientImageSessionId: sessionId },
+  });
 
+  await prisma.clientImageSessionToSpace.deleteMany({
+    where: { clientImageSessionId: sessionId },
+  });
+  await prisma.note.deleteMany({
+    where: {
+      clientSelectedImage: {
+        imageSessionId: sessionId,
+      },
+    },
+  }),
+    await prisma.clientSelectedImage.deleteMany({
+      where: { imageSessionId: sessionId },
+    });
+
+  await prisma.note.deleteMany({
+    where: { imageSessionId: sessionId }, // if this relation exists
+  });
   await prisma.clientImageSession.delete({
     where: { id: sessionId },
   });
@@ -1206,29 +1255,33 @@ export async function getSessionByToken({ token }) {
           designImage: true,
         },
       },
-      material: {
-        include: {
-          template: true,
-          title: {
-            select: {
-              text: true,
-              id: true,
-              languageId: true,
-              language: {
+      materials: {
+        select: {
+          material: {
+            include: {
+              template: true,
+              title: {
                 select: {
-                  code: true,
+                  text: true,
+                  id: true,
+                  languageId: true,
+                  language: {
+                    select: {
+                      code: true,
+                    },
+                  },
                 },
               },
-            },
-          },
-          description: {
-            select: {
-              content: true,
-              id: true,
-              languageId: true,
-              language: {
+              description: {
                 select: {
-                  code: true,
+                  content: true,
+                  id: true,
+                  languageId: true,
+                  language: {
+                    select: {
+                      code: true,
+                    },
+                  },
                 },
               },
             },
@@ -1401,20 +1454,37 @@ export async function getMaterialsByLng({ lng }) {
   });
 }
 
-export async function saveClientSelectedMaterial({
-  selectedMaterial,
+export async function saveClientSelectedMaterials({
+  selectedMaterials, // now an array
   session,
   status,
 }) {
-  return await prisma.clientImageSession.update({
-    where: {
-      id: Number(session.id),
-    },
+  const sessionId = Number(session.id);
+
+  // 1. Clear existing materials for this session (optional, if replacing)
+  await prisma.materialOnClientImageSession.deleteMany({
+    where: { clientImageSessionId: sessionId },
+  });
+
+  // 2. Create new relations
+  const createData = selectedMaterials.map((material) => ({
+    clientImageSessionId: sessionId,
+    materialId: material.id,
+  }));
+
+  await prisma.materialOnClientImageSession.createMany({
+    data: createData,
+  });
+
+  // 3. Update session status
+  await prisma.clientImageSession.update({
+    where: { id: sessionId },
     data: {
-      materialId: selectedMaterial.id,
       sessionStatus: status,
     },
   });
+
+  return { message: "Materials saved successfully" };
 }
 
 export async function getStyleByLng({ lng }) {

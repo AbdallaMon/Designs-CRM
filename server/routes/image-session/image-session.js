@@ -60,7 +60,8 @@ router.put(
 );
 router.delete("/:clientLeadId/sessions/:sessionId", async (req, res) => {
   try {
-    await deleteInProgressSession(Number(req.params.sessionId));
+    const user = await getCurrentUser(req);
+    await deleteInProgressSession(Number(req.params.sessionId), user);
     res.status(200).json({
       message: "Session deleted succussfully",
     });

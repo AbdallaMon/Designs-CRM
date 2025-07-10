@@ -543,10 +543,7 @@ model User {
   versaModels                VersaModel[]
   availableDays   AvailableDay[]
   salesStages SalesStage[]
-
-
   createdImageSessions ClientImageSession[]
-
   files           File[]
   lastSeenAt      DateTime?
   maxLeadsCounts  Int?         @default(50)
@@ -1016,7 +1013,7 @@ model Material {
   isArchived    Boolean     @default(false)
   templateId    Int?
   template      Template?   @relation(fields: [templateId], references: [id])
-  clientSessions ClientImageSession[]
+clientSessions MaterialOnClientImageSession[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 }
@@ -1172,8 +1169,7 @@ model ClientImageSession {
   selectedSpaces ClientImageSessionToSpace[] 
   colorPatternId   Int?
   colorPattern     ColorPattern?          @relation(fields: [colorPatternId], references: [id])
-  materialId       Int?
-  material         Material?              @relation(fields: [materialId], references: [id])
+  materials MaterialOnClientImageSession[]
   styleId          Int?
   style            Style?                 @relation(fields: [styleId], references: [id])
   selectedImages   ClientSelectedImage[]
@@ -1186,6 +1182,16 @@ model ClientImageSession {
   sessionStatus    SessionStatus          @default(INITIAL)
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
+}
+
+model MaterialOnClientImageSession {
+  clientImageSessionId Int
+  materialId           Int
+
+  clientImageSession   ClientImageSession @relation(fields: [clientImageSessionId], references: [id])
+  material             Material           @relation(fields: [materialId], references: [id])
+
+  @@id([clientImageSessionId, materialId])
 }
 
 model ClientSelectedImage {
@@ -1207,4 +1213,7 @@ model ClientImageSessionToSpace {
   @@id([clientImageSessionId, spaceId])
 }
 
+
+
+// courses
 

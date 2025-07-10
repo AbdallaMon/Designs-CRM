@@ -15,8 +15,6 @@ import { gsap } from "gsap";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { FloatingActionButton } from "../Utility";
-import { MdCheckCircle, MdRadioButtonUnchecked } from "react-icons/md";
-import { ensureHttps } from "@/app/helpers/functions/utility";
 import { SharedCardItem } from "../shared/SharedCardItem";
 import { PreviewItemDialog } from "../shared/PreviewItemDialog";
 
@@ -29,12 +27,11 @@ export function Materials({
 }) {
   const [materials, setMaterials] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedMaterial, setSelectedMaterial] = useState(false);
+  const [selectedMaterials, setSelectedMaterials] = useState([]);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
 
   const handlePreviewOpen = (startIndex) => {
-    console.log(startIndex, "startIndex");
     setCurrentPreviewIndex(startIndex);
     setPreviewOpen(true);
   };
@@ -98,7 +95,7 @@ export function Materials({
 
   async function handleMaterialSubmit() {
     const req = await handleRequestSubmit(
-      { session, selectedMaterial, status: nextStatus },
+      { session, selectedMaterials, status: nextStatus },
       setToastLoading,
       `client/image-session/materials`,
       false,
@@ -118,15 +115,18 @@ export function Materials({
         items={materials}
         currentIndex={currentPreviewIndex}
         onIndexChange={setCurrentPreviewIndex}
-        selectedItems={selectedMaterial ? [selectedMaterial] : []}
+        selectedItems={selectedMaterials}
         type={"SELECT"}
         itemType="MATERIAL"
         onItemSelect={(material) => {
-          if (selectedMaterial && selectedMaterial.id === material.id) {
-            setSelectedMaterial(null);
-          } else {
-            setSelectedMaterial(material);
-          }
+          setSelectedMaterials((prev) => {
+            const exists = prev.find((m) => m.id === material.id);
+            if (exists) {
+              return prev.filter((m) => m.id !== material.id);
+            } else {
+              return [...prev, material];
+            }
+          });
         }}
       />
       <Grid container ref={containerRef}>
@@ -173,13 +173,18 @@ export function Materials({
                   handlePreviewOpen(index);
                 }}
                 height={"300px"}
-                isSelected={selectedMaterial?.id === material.id}
+                isSelected={selectedMaterials?.find(
+                  (m) => m.id === material.id
+                )}
                 onSelect={() => {
-                  if (selectedMaterial && selectedMaterial.id === material.id) {
-                    setSelectedMaterial(null);
-                  } else {
-                    setSelectedMaterial(material);
-                  }
+                  setSelectedMaterials((prev) => {
+                    const exists = prev.find((m) => m.id === material.id);
+                    if (exists) {
+                      return prev.filter((m) => m.id !== material.id);
+                    } else {
+                      return [...prev, material];
+                    }
+                  });
                 }}
               />
             </Grid>
@@ -191,7 +196,7 @@ export function Materials({
           pt: 2,
         }}
       >
-        {selectedMaterial ? (
+        {selectedMaterials && selectedMaterials.length > 0 ? (
           <>
             <FloatingActionButton
               disabled={toastLoading}
@@ -205,7 +210,7 @@ export function Materials({
               disabled={disabled}
               handleClick={handleBack}
               type="BACK"
-              sx={{ position: "fixed", bottom: "15px", right: "15px" }}
+              sx={{ position: "fixed", bottom: "15px", left: "15px" }}
             />
           </>
         ) : (
@@ -217,113 +222,5 @@ export function Materials({
         )}
       </Box>
     </>
-  );
-}
-
-function MaterialItem({ material, isFullWidth, isSelected, onSelect }) {
-  const [word1, word2] = material.title[0].text.split(" ");
-  const { lng } = useLanguageSwitcherContext();
-  const label = isSelected
-    ? lng === "ar"
-      ? "تم الاختيار"
-      : "Selected"
-    : lng === "ar"
-    ? "اختار"
-    : "Select";
-  return (
-    <Card
-      sx={{
-        backgroundImage: material.imageUrl
-          ? `url(${ensureHttps(material.imageUrl)})`
-          : material.template.backgroundImage
-          ? `url(${material.template.backgroundImage})`
-          : "none",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        maxHeight: "400px",
-        minHeight: "300px",
-        height: "100%",
-        position: "relative",
-        display: "flex",
-        justifyContent: isFullWidth ? "center" : "flex-end",
-        alignItems: isFullWidth ? "center" : "flex-end",
-        px: 2,
-        pb: 2,
-        borderRadius: 0,
-      }}
-    >
-      <Button
-        variant={isSelected ? "contained" : "outlined"}
-        color={isSelected ? "success" : "primary"}
-        startIcon={isSelected ? <MdCheckCircle /> : <MdRadioButtonUnchecked />}
-        onClick={() => onSelect(material)}
-        sx={{
-          borderColor: "white",
-          color: isSelected ? "white" : "white",
-          borderRadius: 3,
-          px: 3,
-          py: 1,
-          position: "absolute",
-          top: 15,
-          right: 15,
-          zIndex: 100,
-          "&:hover": {
-            borderColor: "white",
-            bgcolor: isSelected ? "success.dark" : "rgba(255,255,255,0.1)",
-            transform: "translateY(-2px)",
-          },
-        }}
-      >
-        {label}
-      </Button>
-      <CardContent
-        sx={{
-          position: "absolute",
-          bottom: isFullWidth ? "50%" : 16,
-          left: isFullWidth ? "50%" : 16,
-          transform: isFullWidth ? "translate(-50%, 50%)" : "none",
-          textAlign: isFullWidth ? "center" : "right",
-        }}
-      >
-        {isFullWidth ? (
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: "bold",
-              color: "#fff",
-              fontSize: "1.6rem",
-              lineHeight: 1.3,
-            }}
-          >
-            {word1} {word2}
-          </Typography>
-        ) : (
-          <>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: "bold",
-                color: "#fff",
-                fontSize: "1.6rem",
-                lineHeight: 1.3,
-              }}
-            >
-              {word1}
-            </Typography>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: "bold",
-                color: "#fff",
-                fontSize: "1.6rem",
-                lineHeight: 1.3,
-              }}
-            >
-              {word2}
-            </Typography>
-          </>
-        )}
-      </CardContent>
-    </Card>
   );
 }

@@ -56,7 +56,7 @@ export function ClientSessionSubmitted({ session, loading }) {
       downloadPDF: "Download PDF",
       selectedSpaces: "Selected Spaces",
       selectedColors: "Selected Colors",
-      selectedMaterial: "Selected Material",
+      selectedMaterial: "Selected Materials",
       designStyle: "Design Style",
       shareSession: "Share Session",
       copyLink: "Copy Link",
@@ -70,7 +70,7 @@ export function ClientSessionSubmitted({ session, loading }) {
       downloadPDF: "تحميل الملف",
       selectedSpaces: "المساحات المختارة",
       selectedColors: "الألوان المختارة",
-      selectedMaterial: "الخامة المختارة",
+      selectedMaterial: "الخامات المختارة",
       designStyle: "نمط التصميم",
       shareSession: "مشاركة الجلسة",
       copyLink: "نسخ الرابط",
@@ -511,7 +511,7 @@ export function ClientSessionSubmitted({ session, loading }) {
         )}
 
         {/* Selected Material */}
-        {session.material && (
+        {session.materials && session.materials.length > 0 && (
           <Grid size={{ xs: 12, md: 6 }}>
             <Card
               ref={(el) => addToRefs(el, selectionCardsRef)}
@@ -557,12 +557,15 @@ export function ClientSessionSubmitted({ session, loading }) {
                   </Typography>
                 </Stack>
 
-                <PreviewItem
-                  item={session.material}
-                  template={session.material.template}
-                  type="MATERIAL"
-                  extraLng={lng}
-                />
+                {session.materials.map((materialSession) => (
+                  <PreviewItem
+                    key={materialSession.id}
+                    item={materialSession.material}
+                    template={materialSession.material.template}
+                    type="MATERIAL"
+                    extraLng={lng}
+                  />
+                ))}
               </CardContent>
             </Card>
           </Grid>

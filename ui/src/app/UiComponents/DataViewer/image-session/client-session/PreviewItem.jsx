@@ -204,6 +204,7 @@ export function PreviewItem({
                 opacity: animated ? 0 : 1,
                 position: "relative",
                 ...getElementStyle("description"),
+                maxWidth: "600px",
               }}
             >
               <Typography
@@ -292,8 +293,8 @@ export function PreviewItem({
                             top: -8,
                             right: -8,
                             backgroundColor: "rgba(255, 255, 255, 0.9)",
-                            width: 20,
-                            height: 20,
+                            // width: 20,
+                            // height: 20,
                             "&:hover": {
                               backgroundColor: "rgba(255, 255, 255, 1)",
                             },

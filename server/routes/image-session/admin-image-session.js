@@ -4,6 +4,7 @@ import {
   verifyTokenAndHandleAuthorization,
 } from "../../services/main/utility.js";
 import {
+  createBulkDesignImage,
   createColorPallete,
   createDesignImage,
   createMaterial,
@@ -271,6 +272,17 @@ router.get("/images", async (req, res) => {
 router.post("/images", async (req, res) => {
   try {
     const data = await createDesignImage({ data: req.body });
+    res.status(200).json({ data, message: "Image created successfully" });
+  } catch (e) {
+    console.log(e, "e");
+    res
+      .status(500)
+      .json({ message: "An error occurred while creating Image", e });
+  }
+});
+router.post("/images/bulk", async (req, res) => {
+  try {
+    const data = await createBulkDesignImage({ data: req.body });
     res.status(200).json({ data, message: "Image created successfully" });
   } catch (e) {
     console.log(e, "e");

@@ -182,7 +182,7 @@ export function Styles({
               disabled={disabled}
               handleClick={handleBack}
               type="BACK"
-              sx={{ position: "fixed", bottom: "15px", right: "15px" }}
+              sx={{ position: "fixed", bottom: "15px", left: "15px" }}
             />
           </>
         ) : (
