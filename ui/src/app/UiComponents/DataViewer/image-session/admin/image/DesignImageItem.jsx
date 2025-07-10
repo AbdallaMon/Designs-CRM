@@ -147,20 +147,48 @@ export const DesignImageItem = ({ item, onUpdate }) => {
             </Box>
           </Box>
 
-          <ImageLoader
-            src={item.imageUrl}
-            alt={"Design Image dream studio"}
-            isArchived={item.isArchived}
-            skeletonHeight={200}
-            borderRadius={2}
-            overlayText="ARCHIVED"
-          />
+          <Box
+            sx={{
+              borderRadius: 2,
+              overflow: "hidden",
+              position: "relative",
+            }}
+          >
+            <img
+              src={item.imageUrl}
+              style={{
+                width: "100%",
+                height: "300px",
+                display: "block",
+                transition: "transform 0.3s ease",
+              }}
+            />
 
-          {/* Image Details */}
-          <Box mt={2}>
-            <Typography variant="body2" color="text.secondary">
-              Alt Text: {item.alt || "No alt text provided"}
-            </Typography>
+            {/* Overlay for archived/special states */}
+            {item.isArchived && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  bgcolor: "rgba(0, 0, 0, 0.3)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: 2,
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  color="white"
+                  sx={{ fontWeight: "bold" }}
+                >
+                  Archived
+                </Typography>
+              </Box>
+            )}
           </Box>
         </CardContent>
 
