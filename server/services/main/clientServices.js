@@ -125,7 +125,6 @@ export async function uploadPdfAndApproveSession({
     });
     const fileName = `session-${sessionData.id}-${uuidv4()}.pdf`;
     const remotePath = `public_html/uploads/${fileName}`;
-    console.log("PDF size (bytes):", pdfBytes.length);
 
     await uploadToFTPHttpAsBuffer(pdfBytes, remotePath, true);
 

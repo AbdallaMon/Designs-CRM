@@ -388,6 +388,8 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 },
 }).any();
 
+const s = multer.memoryStorage();
+const storageUpload = multer({ storage: s });
 // FTP Upload Function
 async function uploadToFTP(localFilePath, remotePath) {
   const client = new Client();
@@ -414,50 +416,50 @@ function deleteFile(filePath) {
 // Upload API
 export const uploadFiles = async (req, res) => {
   try {
-    const fileUrls = {}; // Object to store URLs of uploaded files
+    const fileUrls = {};
+
     await new Promise((resolve, reject) => {
-      upload(req, res, async (err) => {
-        if (err) {
-          reject(err); // Reject on upload error
-        } else if (!req.files || req.files.length === 0) {
-          reject(new Error("No files uploaded."));
-        } else {
-          try {
-            for (const file of req.files) {
-              const uniqueFilename = `${uuidv4()}${path.extname(
-                file.originalname
-              )}`;
-              const remotePath = `public_html/uploads/${uniqueFilename}`;
+      storageUpload(req, res, async (err) => {
+        if (err) return reject(err);
+        if (!req.files || req.files.length === 0)
+          return reject(new Error("No files uploaded."));
 
-              // Upload file buffer to FTP server
-              await uploadToFTP(file.path, remotePath);
+        const uploadDir = "/home/panel.dreamstudiio.com/public_html/uploads";
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
 
-              const fileUrl = `http://panel.dreamstudiio.com/uploads/${uniqueFilename}`;
-              const fieldName = file.fieldname;
+        try {
+          for (const file of req.files) {
+            const uniqueFilename = `${uuidv4()}${path.extname(
+              file.originalname
+            )}`;
+            const savePath = path.join(uploadDir, uniqueFilename);
+            fs.writeFileSync(savePath, file.buffer);
 
-              // Group file URLs by field name
-              if (!fileUrls[fieldName]) fileUrls[fieldName] = [];
-              fileUrls[fieldName].push(fileUrl);
-              deleteFile(file.path);
-            }
-            resolve(); // Resolve the promise once all files are uploaded
-          } catch (uploadErr) {
-            reject(uploadErr);
+            const fileUrl = `http://panel.dreamstudiio.com/uploads/${uniqueFilename}`;
+            const fieldName = file.fieldname;
+
+            if (!fileUrls[fieldName]) fileUrls[fieldName] = [];
+            fileUrls[fieldName].push(fileUrl);
           }
+
+          resolve();
+        } catch (writeErr) {
+          reject(writeErr);
         }
       });
     });
 
-    // Respond with the URLs of uploaded files
-    res.status(200).json({ message: "Files uploaded successfully.", fileUrls });
+    res
+      .status(200)
+      .json({ message: "✅ Files uploaded successfully.", fileUrls });
   } catch (error) {
     if (error.code === "LIMIT_FILE_SIZE") {
-      return res
-        .status(400)
-        .json({ error: "File size exceeds the 50MB limit." });
+      return res.status(400).json({ error: "File size exceeds the limit." });
     }
-    console.error("Error:", error.message);
-    res.status(400).json({ error: error.message });
+    console.error("❌ Upload error:", error.message);
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -509,7 +511,7 @@ export async function uploadToFTPHttpAsBuffer(
       headers: form.getHeaders(),
       maxContentLength: Infinity,
       maxBodyLength: Infinity,
-      timeout: 10 * 60 * 1000, // 10 minutes
+      timeout: 10 * 60 * 1000,
     });
 
     console.log(`✅ Uploaded via HTTP: ${remoteFilename}`);
