@@ -92,7 +92,7 @@ export const DesignImageItem = ({ item, onUpdate }) => {
               </Avatar>
               <Typography variant="h6" component="h2" color="secondary">
                 Style #{item.styleId} -{" "}
-                {item.title.find((t) => t.language.code === "ar").text}
+                {item.style?.title.find((t) => t.language.code === "ar").text}
               </Typography>
             </Box>
 
