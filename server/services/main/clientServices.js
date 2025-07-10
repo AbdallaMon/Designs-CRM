@@ -97,10 +97,27 @@ export async function uploadPdfAndApproveSession({
   lng = "ar",
 }) {
   try {
+    const client = await prisma.clientImageSession.findUnique({
+      where: {
+        id: Number(sessionData.id),
+      },
+      select: {
+        clientLead: {
+          select: {
+            client: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
     const pdfBytes = await generateImageSessionPdf({
       sessionData,
       signatureUrl,
       lng,
+      name: client.clientLead.client.name,
     });
     const fileName = `session-${sessionData.id}-${uuidv4()}.pdf`;
     const remotePath = `public_html/uploads/${fileName}`;
@@ -197,6 +214,7 @@ export async function generateImageSessionPdf({
   sessionData,
   signatureUrl,
   lng = "ar",
+  name,
 }) {
   try {
     const pdfDoc = await PDFDocument.create();
@@ -430,149 +448,63 @@ export async function generateImageSessionPdf({
 
     // Function to create intro page
     const drawIntroPage = async () => {
-      drawPageBorder();
-      drawFixedHeader();
-      drawFixedFooter();
-
-      // Logo section
-      const logoYOffset = 150;
       try {
-        const logoBytes = await fetchImageBuffer(
-          "https://dreamstudiio.com/dream-logo.jpg"
+        // Load and draw full-page image
+        const imageBuffer = await fetchImageBuffer(
+          "https://dreamstudiio.com/Pdf-intro.png"
         );
-        let logoImage;
-        let logoEmbedded = false;
-        try {
-          logoImage = await pdfDoc.embedPng(logoBytes);
-          logoEmbedded = true;
-        } catch (pngErr) {
-          try {
-            logoImage = await pdfDoc.embedJpg(logoBytes);
-            logoEmbedded = true;
-          } catch (jpgErr) {
-            console.warn("Logo embedding failed:", { pngErr, jpgErr });
-          }
-        }
+        const embeddedImage = await pdfDoc.embedPng(imageBuffer);
 
-        if (logoEmbedded) {
-          const logoScale = 0.15;
-          const logoScaled = logoImage.scale(logoScale);
-          const logoX = (pageWidth - logoScaled.width) / 2;
-          page.drawImage(logoImage, {
-            x: logoX,
-            y: pageHeight - logoYOffset - logoScaled.height,
-            width: logoScaled.width,
-            height: logoScaled.height,
-          });
-        }
+        page.drawImage(embeddedImage, {
+          x: 0,
+          y: 0,
+          width: pageWidth,
+          height: pageHeight,
+        });
       } catch (err) {
-        console.warn("Logo load error:", err.message);
+        console.warn("Intro image load error:", err.message);
       }
 
-      // Welcome text
-      const welcomeText =
-        lng === "ar"
-          ? "مرحباً بك في جلسة التصميم الداخلي"
-          : "Welcome to Your Interior Design Session";
-      const welcomeFontSize = 24;
-      const welcomeY = pageHeight - 300;
+      // Title text logic
+      const titleText = name || "Dream Interior Report";
+      const fontSize = 20;
+      const maxTextWidth = pageWidth * 0.8; // max 80% of page width
+      const lineHeight = fontSize + 6;
 
-      page.drawText(lng === "ar" ? reText(welcomeText) : welcomeText, {
-        x:
-          lng === "ar"
-            ? getRTLTextX(
-                welcomeText,
-                welcomeFontSize,
-                boldFont,
-                margin + 20,
-                contentWidth - 40
-              )
-            : margin + 20,
-        y: welcomeY,
-        size: welcomeFontSize,
-        font: boldFont,
-        color: colors.heading,
-      });
+      // Split text into wrapped lines
+      const words = titleText.split(" ");
+      const lines = [];
+      let currentLine = "";
 
-      // Subtitle
-      const subtitleText =
-        lng === "ar"
-          ? "هذا التقرير يحتوي على جميع اختياراتك وتفضيلاتك للتصميم"
-          : "This report contains all your design choices and preferences";
-      const subtitleFontSize = 16;
-      const subtitleY = welcomeY - 40;
+      for (const word of words) {
+        const testLine = currentLine ? currentLine + " " + word : word;
+        const testWidth = boldFont.widthOfTextAtSize(testLine, fontSize);
+        if (testWidth <= maxTextWidth) {
+          currentLine = testLine;
+        } else {
+          lines.push(currentLine);
+          currentLine = word;
+        }
+      }
+      if (currentLine) lines.push(currentLine);
 
-      page.drawText(lng === "ar" ? reText(subtitleText) : subtitleText, {
-        x:
-          lng === "ar"
-            ? getRTLTextX(
-                subtitleText,
-                subtitleFontSize,
-                font,
-                margin + 20,
-                contentWidth - 40
-              )
-            : margin + 20,
-        y: subtitleY,
-        size: subtitleFontSize,
-        font: font,
-        color: colors.textColor,
-      });
+      // Starting Y based on number of lines
+      const totalTextHeight = lines.length * lineHeight;
+      let textY = pageHeight * 0.75 + totalTextHeight / 2; // a little above middle
 
-      // Decorative elements
-      page.drawRectangle({
-        x: margin + 20,
-        y: subtitleY - 60,
-        width: contentWidth - 40,
-        height: 4,
-        color: colors.primary,
-      });
-
-      // Session info box
-      const infoBoxY = subtitleY - 120;
-      page.drawRectangle({
-        x: margin + 20,
-        y: infoBoxY - 80,
-        width: contentWidth - 40,
-        height: 80,
-        color: colors.accentBg,
-        borderColor: colors.borderColor,
-        borderWidth: 1,
-        xRounded: 10,
-        yRounded: 10,
-      });
-
-      const sessionInfo =
-        lng === "ar"
-          ? "تم إنشاء هذا التقرير خصيصاً لك ويحتوي على:"
-          : "This report was created specifically for you and contains:";
-
-      page.drawText(lng === "ar" ? reText(sessionInfo) : sessionInfo, {
-        x:
-          lng === "ar"
-            ? getRTLTextX(sessionInfo, 14, font, margin + 40, contentWidth - 80)
-            : margin + 40,
-        y: infoBoxY - 30,
-        size: 14,
-        font: font,
-        color: colors.textColor,
-      });
-
-      const infoItems =
-        lng === "ar"
-          ? "• المساحات المختارة • الأنماط المفضلة • الخامات المحددة • الألوان المخصصة"
-          : "• Selected Spaces • Preferred Styles • Chosen Materials • Custom Colors";
-
-      page.drawText(lng === "ar" ? reText(infoItems) : infoItems, {
-        x:
-          lng === "ar"
-            ? getRTLTextX(infoItems, 12, font, margin + 40, contentWidth - 80)
-            : margin + 40,
-        y: infoBoxY - 55,
-        size: 12,
-        font: font,
-        color: colors.textColor,
-      });
+      // Draw each line centered
+      for (const line of lines) {
+        const lineWidth = boldFont.widthOfTextAtSize(line, fontSize);
+        const textX = (pageWidth - lineWidth) / 2;
+        page.drawText(line, {
+          x: textX,
+          y: textY,
+          size: fontSize,
+          font: boldFont,
+          color: rgb(1, 1, 1), // white
+        });
+        textY -= lineHeight;
+      }
     };
 
     function hexToRgbNormalized(hex) {
