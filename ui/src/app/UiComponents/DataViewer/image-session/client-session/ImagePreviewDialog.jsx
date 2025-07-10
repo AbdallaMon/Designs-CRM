@@ -36,6 +36,23 @@ export function ImagePreviewDialog({
   onImageSelect,
   type = "SELECT",
 }) {
+  const getVisiblePages = (current, total, maxVisible = 7) => {
+    if (total <= maxVisible) return Array.from({ length: total }, (_, i) => i);
+
+    const halfVisible = Math.floor(maxVisible / 2);
+    let start = Math.max(0, current - halfVisible);
+    let end = Math.min(total - 1, start + maxVisible - 1);
+
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(0, end - maxVisible + 1);
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+  const DOTS_PER_PAGE = 10;
+  const currentPage = Math.floor(currentIndex / DOTS_PER_PAGE);
+  const totalPages = Math.ceil(images.length / DOTS_PER_PAGE);
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [touchStart, setTouchStart] = useState(null);
@@ -282,35 +299,78 @@ export function ImagePreviewDialog({
             <Box
               sx={{
                 display: "flex",
-                justifyContent: "center",
-                gap: 1,
-                flexWrap: "wrap",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 2,
               }}
             >
-              {images.map((_, index) => (
-                <Box
-                  key={index}
-                  onClick={() => onIndexChange(index)}
-                  sx={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: "50%",
-                    bgcolor:
-                      index === currentIndex
-                        ? "white"
-                        : "rgba(255,255,255,0.3)",
-                    cursor: "pointer",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      bgcolor:
-                        index === currentIndex
-                          ? "white"
-                          : "rgba(255,255,255,0.6)",
-                      transform: "scale(1.2)",
-                    },
-                  }}
-                />
-              ))}
+              {/* Page navigation */}
+              <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+                {/* <IconButton
+                  color="primary"
+                  onClick={() =>
+                    onIndexChange(
+                      Math.max(0, (currentPage - 1) * DOTS_PER_PAGE)
+                    )
+                  }
+                  disabled={currentPage === 0}
+                >
+                  <MdChevronLeft />
+                </IconButton> */}
+                <Typography variant="caption">
+                  Page {currentPage + 1} of {totalPages}
+                </Typography>
+                {/* <IconButton
+                  color="primary"
+                  onClick={() =>
+                    onIndexChange(
+                      Math.min(
+                        images.length - 1,
+                        (currentPage + 1) * DOTS_PER_PAGE
+                      )
+                    )
+                  }
+                  disabled={currentPage === totalPages - 1}
+                >
+                  <MdChevronRight />
+                </IconButton> */}
+              </Box>
+
+              {/* Dots for current page */}
+              <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                {images
+                  .slice(
+                    currentPage * DOTS_PER_PAGE,
+                    (currentPage + 1) * DOTS_PER_PAGE
+                  )
+                  .map((_, index) => {
+                    const actualIndex = currentPage * DOTS_PER_PAGE + index;
+                    return (
+                      <Box
+                        key={actualIndex}
+                        onClick={() => onIndexChange(actualIndex)}
+                        sx={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: "50%",
+                          bgcolor:
+                            actualIndex === currentIndex
+                              ? "white"
+                              : "rgba(255,255,255,0.3)",
+                          cursor: "pointer",
+                          transition: "all 0.3s ease",
+                          "&:hover": {
+                            bgcolor:
+                              actualIndex === currentIndex
+                                ? "white"
+                                : "rgba(255,255,255,0.6)",
+                            transform: "scale(1.2)",
+                          },
+                        }}
+                      />
+                    );
+                  })}
+              </Box>
             </Box>
           )}
 

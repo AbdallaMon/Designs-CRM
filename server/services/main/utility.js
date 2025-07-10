@@ -10,7 +10,8 @@ import { getIo } from "../socket.js";
 import { sendEmail } from "../sendMail.js";
 import dayjs from "dayjs";
 import prisma from "../../prisma/prisma.js";
-
+import axios from "axios";
+import FormData from "form-data";
 const SECRET_KEY = process.env.SECRET_KEY;
 
 const __filename = fileURLToPath(import.meta.url);
@@ -381,6 +382,7 @@ const storage = multer.diskStorage({
     cb(null, uniqueFilename);
   },
 });
+
 const upload = multer({
   storage,
   limits: { fileSize: 50 * 1024 * 1024 },
@@ -459,6 +461,64 @@ export const uploadFiles = async (req, res) => {
   }
 };
 
+export async function uploadAsHttp(req, res) {
+  try {
+    const filename = req.file.originalname;
+    const fileBuffer = req.file.buffer;
+
+    const uploadDir = "/home/panel.dreamstudiio.com/public_html/uploads";
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    const savePath = path.join(uploadDir, filename);
+
+    fs.writeFileSync(savePath, fileBuffer);
+
+    res.status(200).json({ message: "✅ Upload successful." });
+  } catch (err) {
+    console.error("❌ Upload error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+}
+export async function uploadToFTPHttpAsBuffer(
+  source,
+  remoteFilename,
+  isBuffer = false
+) {
+  try {
+    let buffer;
+
+    if (isBuffer) {
+      if (Buffer.isBuffer(source)) {
+        buffer = source;
+      } else if (source instanceof Uint8Array) {
+        buffer = Buffer.from(source.buffer);
+      } else {
+        throw new Error("Invalid buffer source type.");
+      }
+    } else {
+      throw new Error("HTTP upload expects a buffer.");
+    }
+
+    const form = new FormData();
+    form.append("file", buffer, remoteFilename);
+
+    console.log("PDF size in KB:", (buffer.length / 1024).toFixed(2));
+
+    await axios.post(`${process.env.SERVER}/client/api/upload`, form, {
+      headers: form.getHeaders(),
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      timeout: 10 * 60 * 1000, // 10 minutes
+    });
+
+    console.log(`✅ Uploaded via HTTP: ${remoteFilename}`);
+  } catch (err) {
+    console.error(`❌ Failed to upload ${remoteFilename}:`, err.message);
+    throw err;
+  }
+}
+
 export async function uploadToFTPAsBuffer(
   source,
   remotePath,
@@ -466,10 +526,17 @@ export async function uploadToFTPAsBuffer(
 ) {
   const client = new Client();
   try {
-    await client.access(ftpConfig);
+    await client.access({
+      ...ftpConfig,
+      timeout: 120 * 1000, // 2 minutes for initial control connection
+    });
+
+    client.ftp.verbose = true; // Optional: helps with debugging
+    client.trackProgress((info) => {
+      console.log(`Transferred ${info.bytes} bytes`);
+    });
 
     let dataToUpload = source;
-
     if (isBuffer) {
       if (Buffer.isBuffer(source)) {
         dataToUpload = source;
@@ -480,24 +547,24 @@ export async function uploadToFTPAsBuffer(
       }
     }
 
-    // Use uploadFromDir for buffer data, not uploadFrom
-    // Create a readable stream from the buffer
-    const bufferStream = new Readable();
-    bufferStream.push(dataToUpload);
-    bufferStream.push(null); // Signal end of stream
+    console.log("PDF size in KB:", (dataToUpload.length / 1024).toFixed(2));
 
-    // Use client.uploadFrom with a stream or use ensureDir + uploadFrom with temp file
-    // Better approach: use client.uploadFrom with readable stream
+    const bufferStream = Readable.from(dataToUpload); // ✅ Stream-safe
+    client.ftp.socket.setTimeout(10 * 60 * 1000);
     await client.uploadFrom(bufferStream, remotePath);
 
     console.log(`✅ Uploaded to FTP: ${remotePath}`);
   } catch (err) {
+    client.trackProgress((info) => {
+      console.log(`Transferred ${info.bytes} bytes in error`);
+    });
     console.error(`❌ Failed to upload ${remotePath}:`, err.message);
     throw err;
   } finally {
     client.close();
   }
 }
+
 export async function getNotifications(
   searchParams,
   limit,

@@ -222,7 +222,6 @@ export function PreviewItem({
                   textAlign: "center !important",
                   wordWrap: "break-word",
                   overflowWrap: "break-word",
-                  wordBreak: "break-all",
                   mx: "auto",
                 }}
               >

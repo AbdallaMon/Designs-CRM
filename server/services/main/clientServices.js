@@ -7,19 +7,23 @@ import * as fontkit from "fontkit";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "url";
+import bidiFactory from "bidi-js";
 import reshaper from "arabic-persian-reshaper";
-import { uploadToFTPAsBuffer } from "./utility.js";
+import { uploadToFTPAsBuffer, uploadToFTPHttpAsBuffer } from "./utility.js";
 import { sendEmailForStaff, sendEmailToClient } from "./emailTemplates.js";
+import sharp from "sharp";
 const __filename = fileURLToPath(import.meta.url);
 
 const __dirname = path.dirname(__filename);
-const fontPath = path.join(__dirname, "../fonts/NotoSansArabic-Regular.ttf");
-const fontBuffer = fs.readFileSync(fontPath);
-const fontBase64 = fontBuffer.toString("base64");
-const fontBoldPath = path.join(__dirname, "../fonts/NotoSansArabic-Bold.ttf");
-const fontBoldBuffer = fs.readFileSync(fontBoldPath);
-const fontBoldBase64 = fontBoldBuffer.toString("base64");
+const fontPath = path.join(__dirname, "../fonts/Amiri-Regular.ttf");
+const fontBase64 = fs.readFileSync(fontPath);
+const fontBoldPath = path.join(__dirname, "../fonts/Amiri-Bold.ttf");
+const fontBoldBase64 = fs.readFileSync(fontBoldPath);
 
+const enfontPath = path.join(__dirname, "../fonts/NotoSansArabic-Regular.ttf");
+const enfontBase64 = fs.readFileSync(enfontPath);
+const enfontBoldPath = path.join(__dirname, "../fonts/NotoSansArabic-Bold.ttf");
+const enfontBoldBase64 = fs.readFileSync(enfontBoldPath);
 export async function getSessionByToken(token) {
   const session = await prisma.clientImageSession.findUnique({
     where: { token },
@@ -121,35 +125,46 @@ export async function uploadPdfAndApproveSession({
     });
     const fileName = `session-${sessionData.id}-${uuidv4()}.pdf`;
     const remotePath = `public_html/uploads/${fileName}`;
+    console.log("PDF size (bytes):", pdfBytes.length);
 
-    await uploadToFTPAsBuffer(pdfBytes, remotePath, true);
+    await uploadToFTPHttpAsBuffer(pdfBytes, remotePath, true);
 
     const publicUrl = `https://panel.dreamstudiio.com/uploads/${fileName}`;
-
     await approveSession({
       token: sessionData.token,
       clientLeadId: sessionData.clientLeadId,
       id: Number(sessionData.id),
       pdfUrl: publicUrl,
     });
+    // await approveSession({
+    //   token: sessionData.token,
+    //   clientLeadId: sessionData.clientLeadId,
+    //   id: Number(sessionData.id),
+    //   pdfUrl: publicUrl,
+    // });
   } catch (e) {
     console.log("e in uploadig pdf", e);
     throw new Error(e.message);
   }
 }
 
-/**
- * Fetches an image buffer with retries and timeout.
- * This function is designed to be more robust against transient network issues
- * or slow server responses.
- * @param {string} url - The URL of the image.
- * @param {object} [options] - Optional configuration.
- * @param {number} [options.retries=3] - Number of times to retry fetching the image.
- * @param {number} [options.retryDelayMs=1000] - Delay in milliseconds between retries.
- * @param {number} [options.timeoutMs=15000] - Timeout for each fetch attempt in milliseconds.
- * @returns {Promise<ArrayBuffer>} The image data as an ArrayBuffer.
- * @throws {Error} If the image cannot be fetched after all retries and attempts.
- */
+async function compressImageBuffer(buffer) {
+  const sharpImage = sharp(buffer);
+  const metadata = await sharpImage.metadata();
+
+  // Resize logic
+  sharpImage.resize({ width: 1000 });
+
+  // Handle format appropriately
+  if (metadata.format === "jpeg" || metadata.format === "jpg") {
+    return await sharpImage.jpeg({ quality: 90 }).toBuffer();
+  } else if (metadata.format === "png") {
+    return await sharpImage.png({ compressionLevel: 6 }).toBuffer();
+  } else {
+    return await sharpImage.jpeg({ quality: 90 }).toBuffer();
+  }
+}
+
 async function fetchImageBuffer(url, options = {}) {
   const {
     retries = 3,
@@ -174,7 +189,7 @@ async function fetchImageBuffer(url, options = {}) {
         );
       }
 
-      return await res.arrayBuffer();
+      return await compressImageBuffer(await res.arrayBuffer());
     } catch (error) {
       // Store specific error messages for debugging
       let errorMessage = `Attempt ${i + 1} failed: ${error.message}`;
@@ -221,9 +236,23 @@ export async function generateImageSessionPdf({
     pdfDoc.registerFontkit(fontkit);
 
     // Embed fonts
-    const font = await pdfDoc.embedFont(fontBase64);
-    const boldFont = await pdfDoc.embedFont(fontBoldBase64);
+    console.log(lng, "lng");
+    const arFont = await pdfDoc.embedFont(fontBase64);
+    const arBoldFont = await pdfDoc.embedFont(fontBoldBase64);
+    const enFont = await pdfDoc.embedFont(enfontBase64);
+    const enBoldFont = await pdfDoc.embedFont(enfontBoldBase64);
+    function mainFont() {
+      return lng === "ar" ? arFont : enFont;
+    }
+    function mainBoldFont() {
+      return lng === "ar" ? arBoldFont : enBoldFont;
+    }
 
+    const font = mainFont();
+    const boldFont = mainBoldFont();
+    const isArabicText = (text) => {
+      return /[\u0600-\u06FF]/.test(text);
+    };
     // Enhanced Color Palette
     const colors = {
       primary: rgb(0.827, 0.675, 0.443),
@@ -253,10 +282,31 @@ export async function generateImageSessionPdf({
     let y = pageHeight - headerHeight - margin;
 
     // Arabic text reshaping function
+    const bidi = bidiFactory();
+    const getLevels = (text) => {
+      const levels = bidi.getEmbeddingLevels(text);
+      return levels;
+    };
+    const reorder = (text, levels) => {
+      return bidi.getReorderedString(text, levels, 0, text.length);
+    };
+
     const reText = (text) => {
-      const reshape = reshaper.ArabicShaper.convertArabic;
-      let reshaped = reshape(text);
-      return reshaped;
+      // Clean the text but preserve Arabic structure
+
+      // Apply the Arabic dots fix
+      // return clean;
+
+      const reshaped = reshaper.ArabicShaper.convertArabic(text);
+      const clean = reshaped
+        .replace(/\r?\n|\r/g, " ") // Replace line breaks with spaces
+        .replace(/\u200B/g, "") // Remove zero-width spaces
+        .replace(/\u200E/g, "") // Remove left-to-right marks
+        .replace(/\u200F/g, "") // Remove right-to-left marks
+        .replace(/\u00A0/g, " ") // Replace non-breaking spaces
+        .replace(/\s{2,}/g, " ") // Replace multiple spaces with single space
+        .trim();
+      return clean;
     };
 
     // Helper function to get text by language
@@ -278,46 +328,6 @@ export async function generateImageSessionPdf({
     ) => {
       const textWidth = font.widthOfTextAtSize(text, fontSize);
       return containerStartX + containerWidth - textWidth;
-    };
-
-    // Helper function to draw RTL text
-    const drawRTLText = (
-      text,
-      yPos,
-      size,
-      fontToUse,
-      colorToUse,
-      containerStartX = margin,
-      containerWidth = contentWidth,
-      customX = null
-    ) => {
-      const processedText = lng === "ar" ? reText(text) : text;
-      const rtlX =
-        customX !== null
-          ? customX
-          : lng === "ar"
-          ? getRTLTextX(
-              processedText,
-              size,
-              fontToUse,
-              containerStartX,
-              containerWidth
-            )
-          : containerStartX;
-
-      page.drawText(processedText, {
-        x: rtlX,
-        y: yPos,
-        size,
-        font: fontToUse,
-        color: colorToUse,
-      });
-
-      return {
-        processedText,
-        actualX: rtlX,
-        textWidth: fontToUse.widthOfTextAtSize(processedText, size),
-      };
     };
 
     // Draw page border and frame
@@ -348,48 +358,24 @@ export async function generateImageSessionPdf({
     };
 
     // Draw fixed header for each page
-    const drawFixedHeader = () => {
-      // Header background
-      page.drawRectangle({
-        x: margin,
-        y: pageHeight - headerHeight,
-        width: contentWidth,
-        height: headerHeight,
-        color: colors.primaryLight,
-        borderColor: colors.borderColor,
-        borderWidth: 1,
-      });
+    const drawFixedHeader = async () => {
+      try {
+        // Fetch and embed the header image
+        const headerImageBuffer = await fetchImageBuffer(
+          "https://dreamstudiio.com/pdf-banner.jpg"
+        );
+        const headerImage = await pdfDoc.embedJpg(headerImageBuffer);
 
-      // Header title
-      const headerTitle =
-        lng === "ar" ? "جلسة التصميم الداخلي" : "Interior Design Session";
-      const headerFontSize = 18;
-      const headerY = pageHeight - headerHeight / 2 - headerFontSize / 2 + 4;
-
-      page.drawText(lng === "ar" ? reText(headerTitle) : headerTitle, {
-        x:
-          lng === "ar"
-            ? getRTLTextX(
-                headerTitle,
-                headerFontSize,
-                boldFont,
-                margin + 20,
-                contentWidth - 40
-              )
-            : margin + 20,
-        y: headerY,
-        size: headerFontSize,
-        font: boldFont,
-        color: colors.heading,
-      });
-
-      // Header separator line
-      page.drawLine({
-        start: { x: margin, y: pageHeight - headerHeight },
-        end: { x: margin + contentWidth, y: pageHeight - headerHeight },
-        thickness: 2,
-        color: colors.primary,
-      });
+        // Draw the header image at the top of the page
+        page.drawImage(headerImage, {
+          x: margin,
+          y: pageHeight - headerHeight - 10,
+          width: contentWidth,
+          height: headerHeight,
+        });
+      } catch (err) {
+        console.warn("Header image load error:", err.message);
+      }
     };
 
     // Draw fixed footer
@@ -410,7 +396,7 @@ export async function generateImageSessionPdf({
         x: margin + 20,
         y: margin + footerHeight - 25,
         size: 14,
-        font: boldFont,
+        font: enBoldFont,
         color: colors.heading,
       });
 
@@ -418,7 +404,7 @@ export async function generateImageSessionPdf({
         x: margin + 20,
         y: margin + footerHeight - 45,
         size: 10,
-        font: font,
+        font: enFont,
         color: colors.textColor,
       });
 
@@ -426,14 +412,14 @@ export async function generateImageSessionPdf({
       const currentDate = dayjs().format("MMMM D, YYYY");
       const dateText = `Generated: ${currentDate}`;
       const dateFontSize = 9;
-      const dateTextWidth = font.widthOfTextAtSize(dateText, dateFontSize);
+      const dateTextWidth = enFont.widthOfTextAtSize(dateText, dateFontSize);
       const dateX = margin + contentWidth - dateTextWidth - 20;
 
       page.drawText(dateText, {
         x: dateX,
         y: margin + footerHeight - 35,
         size: dateFontSize,
-        font,
+        enFont,
         color: colors.textColor,
       });
 
@@ -467,8 +453,10 @@ export async function generateImageSessionPdf({
 
       // Title text logic
       const titleText = name || "Dream Interior Report";
+      const isArabic = isArabicText(titleText);
+
       const fontSize = 20;
-      const maxTextWidth = pageWidth * 0.8; // max 80% of page width
+      const maxTextWidth = pageWidth * 0.8;
       const lineHeight = fontSize + 6;
 
       // Split text into wrapped lines
@@ -490,19 +478,34 @@ export async function generateImageSessionPdf({
 
       // Starting Y based on number of lines
       const totalTextHeight = lines.length * lineHeight;
-      let textY = pageHeight * 0.75 + totalTextHeight / 2; // a little above middle
+      let textY = pageHeight * 0.6 + totalTextHeight / 2; // a little above middle
 
       // Draw each line centered
       for (const line of lines) {
-        const lineWidth = boldFont.widthOfTextAtSize(line, fontSize);
+        const lineWidth = isArabic
+          ? arBoldFont.widthOfTextAtSize(line, fontSize)
+          : enBoldFont.widthOfTextAtSize(line, fontSize);
+        // const textX = isArabic
+        //   ? getRTLTextX(
+        //       reText(line),
+        //       fontSize,
+        //       boldFont,
+        //       (pageWidth - maxTextWidth) / 2,
+        //       maxTextWidth
+        //     )
+        //   : (pageWidth - lineWidth) / 2;
         const textX = (pageWidth - lineWidth) / 2;
-        page.drawText(line, {
+
+        const renderedLine = isArabic ? reText(line) : line;
+
+        page.drawText(renderedLine, {
           x: textX,
           y: textY,
           size: fontSize,
-          font: boldFont,
+          font: isArabic ? arBoldFont : enBoldFont,
           color: rgb(1, 1, 1), // white
         });
+
         textY -= lineHeight;
       }
     };
@@ -523,15 +526,16 @@ export async function generateImageSessionPdf({
       };
     }
 
+    // Enhanced modern colors with shadows
     const drawCustomColors = (
       customColors,
       startX,
       startY,
-      circleSize = 25
+      circleSize = 32
     ) => {
       if (!customColors || !Array.isArray(customColors)) return startY;
 
-      const spacing = 35;
+      const spacing = 50;
       let currentX = startX;
       let currentY = startY;
       const maxWidth = contentWidth - 40;
@@ -539,16 +543,24 @@ export async function generateImageSessionPdf({
       customColors.forEach((color, index) => {
         if (currentX + circleSize > startX + maxWidth) {
           currentX = startX;
-          currentY -= spacing + 15;
+          currentY -= spacing + 20;
         }
 
         const { r, g, b } = hexToRgbNormalized(color);
+
+        // Draw shadow
+        page.drawCircle({
+          x: currentX + circleSize / 2 + 3,
+          y: currentY - circleSize / 2 - 3,
+          size: circleSize / 2 + 2,
+          color: rgb(0.8, 0.8, 0.8),
+        });
 
         // Draw white background circle for better contrast
         page.drawCircle({
           x: currentX + circleSize / 2,
           y: currentY - circleSize / 2,
-          size: circleSize / 2 + 2,
+          size: circleSize / 2 + 3,
           color: colors.white,
           borderColor: colors.borderColor,
           borderWidth: 1,
@@ -567,193 +579,496 @@ export async function generateImageSessionPdf({
         currentX += spacing;
       });
 
-      return currentY - circleSize - 15;
+      return currentY - circleSize - 20;
     };
 
-    const drawEnhancementTable = (items, startY) => {
-      if (!items || items.length === 0) return startY;
+    // Enhanced space renderer
+    const drawSpaceItem = async (spaceRelation, index, totalSpaces) => {
+      const spaceData = spaceRelation.space;
+      const spaceName =
+        getTextByLanguage(spaceData.title, lng) || spaceData.name || "Space";
 
-      const tableX = margin + 20;
-      const rowHeight = 50;
-      const paddingX = 20;
-      const borderRadius = 12;
-      const tableWidth = contentWidth - 40;
-      const totalHeight = items.length * rowHeight + 20;
+      const cardHeight = 60;
+      const cardWidth = contentWidth - 40;
+      const cardX = margin + 20;
+      const cardY = y - cardHeight;
 
-      // Draw outer container with shadow
+      // Draw shadow
       page.drawRectangle({
-        x: tableX + 2,
-        y: startY - totalHeight + 2,
-        width: tableWidth,
-        height: totalHeight,
+        x: cardX + 3,
+        y: cardY - 3,
+        width: cardWidth,
+        height: cardHeight,
         color: colors.shadowColor,
-        xRounded: borderRadius,
-        yRounded: borderRadius,
+        xRounded: 12,
+        yRounded: 12,
       });
 
-      // Draw main container
+      // Draw card background
       page.drawRectangle({
-        x: tableX,
-        y: startY - totalHeight,
-        width: tableWidth,
-        height: totalHeight,
+        x: cardX,
+        y: cardY,
+        width: cardWidth,
+        height: cardHeight,
         color: colors.white,
-        borderColor: colors.borderColor,
+        borderColor: colors.primary,
         borderWidth: 2,
-        xRounded: borderRadius,
-        yRounded: borderRadius,
+        xRounded: 12,
+        yRounded: 12,
       });
 
-      // Draw header row
+      // Draw accent bar
       page.drawRectangle({
-        x: tableX + 2,
-        y: startY - 22,
-        width: tableWidth - 4,
-        height: 20,
-        color: colors.primaryLight,
-        xRounded: 8,
-        yRounded: 8,
+        x: cardX + 4,
+        y: cardY + 4,
+        width: 6,
+        height: cardHeight - 8,
+        color: colors.primary,
+        xRounded: 3,
+        yRounded: 3,
       });
 
-      const headerText = lng === "ar" ? "العناصر المختارة" : "Selected Items";
-      page.drawText(lng === "ar" ? reText(headerText) : headerText, {
-        x:
-          lng === "ar"
-            ? getRTLTextX(
-                headerText,
-                12,
-                boldFont,
-                tableX + paddingX,
-                tableWidth - paddingX * 2
-              )
-            : tableX + paddingX,
-        y: startY - 18,
-        size: 12,
+      // Draw space title
+      const titleSize = 16;
+      const titleY = cardY + cardHeight / 2 - titleSize / 2 + 4;
+      const textStartX = cardX + 20;
+      const textWidth = cardWidth - 40;
+
+      const titleX =
+        lng === "ar"
+          ? getRTLTextX(spaceName, titleSize, boldFont, textStartX, textWidth)
+          : textStartX;
+
+      page.drawText(lng === "ar" ? reText(spaceName) : spaceName, {
+        x: titleX,
+        y: titleY,
+        size: titleSize,
         font: boldFont,
         color: colors.heading,
       });
 
-      let currentY = startY - 42;
+      // Draw space number
+      const spaceNumberText = `${index + 1}`;
+      const numberSize = 14;
+      const numberX = lng === "ar" ? cardX + 15 : cardX + cardWidth - 35;
+      const numberY = cardY + cardHeight / 2 - numberSize / 2 + 4;
 
-      items.forEach((item, index) => {
-        const isEven = index % 2 === 0;
-        const backgroundColor = isEven ? colors.lightGray : colors.white;
-
-        // Draw row background
-        page.drawRectangle({
-          x: tableX + 2,
-          y: currentY - rowHeight + 2,
-          width: tableWidth - 4,
-          height: rowHeight - 4,
-          color: backgroundColor,
-          borderColor: colors.borderColor,
-          borderWidth: 0.5,
-          xRounded: 8,
-          yRounded: 8,
-        });
-
-        let itemText = "";
-        let itemType = "";
-
-        if (item.type === "space") {
-          itemText =
-            getTextByLanguage(item.data.title, lng) ||
-            item.data.name ||
-            "Space";
-          itemType = lng === "ar" ? "مساحة" : "Space";
-        } else if (item.type === "style") {
-          itemText =
-            getTextByLanguage(item.data.title, lng) ||
-            item.data.name ||
-            "Style";
-          itemType = lng === "ar" ? "نمط" : "Style";
-        } else if (item.type === "material") {
-          itemText =
-            getTextByLanguage(item.data.title, lng) ||
-            item.data.name ||
-            "Material";
-          itemType = lng === "ar" ? "خامة" : "Material";
-        } else if (item.type === "customColors") {
-          itemText = lng === "ar" ? "الألوان المخصصة" : "Custom Colors";
-          itemType = lng === "ar" ? "ألوان" : "Colors";
-        }
-
-        const fontSize = 14;
-        const typeSize = 11;
-        const textY = currentY - rowHeight / 2 + 5;
-        const typeY = currentY - rowHeight / 2 - 10;
-
-        // Draw item text
-        page.drawText(lng === "ar" ? reText(itemText) : itemText, {
-          x:
-            lng === "ar"
-              ? getRTLTextX(
-                  itemText,
-                  fontSize,
-                  font,
-                  tableX + paddingX,
-                  tableWidth - paddingX * 2
-                )
-              : tableX + paddingX,
-          y: textY,
-          size: fontSize,
-          font: font,
-          color: colors.textColor,
-        });
-
-        // Draw item type
-        page.drawText(lng === "ar" ? reText(itemType) : itemType, {
-          x:
-            lng === "ar"
-              ? getRTLTextX(
-                  itemType,
-                  typeSize,
-                  font,
-                  tableX + paddingX,
-                  tableWidth - paddingX * 2
-                )
-              : tableX + paddingX,
-          y: typeY,
-          size: typeSize,
-          font: font,
-          color: colors.primary,
-        });
-
-        currentY -= rowHeight;
+      page.drawCircle({
+        x: numberX + 10,
+        y: numberY + 7,
+        size: 12,
+        color: colors.primaryLight,
+        borderColor: colors.primary,
+        borderWidth: 1,
       });
 
-      return startY - totalHeight - 20;
+      page.drawText(spaceNumberText, {
+        x: numberX + 6,
+        y: numberY + 2,
+        size: numberSize,
+        font: boldFont,
+        color: colors.primary,
+      });
+
+      y -= cardHeight + 15;
     };
 
-    const checkNewPage = (requiredSpace = 50) => {
+    // Enhanced material renderer with image and overlay
+    const drawMaterialItem = async (
+      materialRelation,
+      index,
+      totalMaterials,
+      { x, y, width, height }
+    ) => {
+      const materialData = materialRelation.material;
+      const materialName =
+        getTextByLanguage(materialData.title, lng) ||
+        materialData.name ||
+        "Material";
+
+      const cardX = x;
+      const cardY = y;
+      const cardWidth = width;
+      const cardHeight = height;
+
+      // Draw shadow
+      page.drawRectangle({
+        x: cardX + 4,
+        y: cardY - 4,
+        width: cardWidth,
+        height: cardHeight,
+        color: colors.shadowColor,
+        xRounded: 15,
+        yRounded: 15,
+      });
+
+      // Draw card background
+      page.drawRectangle({
+        x: cardX,
+        y: cardY,
+        width: cardWidth,
+        height: cardHeight,
+        color: colors.white,
+        borderColor: colors.borderColor,
+        borderWidth: 2,
+        xRounded: 15,
+        yRounded: 15,
+      });
+
+      // Try to draw material image
+      const imageWidth = width * 0.9;
+      const imageHeight = height * 0.8;
+      const imageX = x + (width - imageWidth) / 2;
+      const imageY = y + (height - imageHeight) / 2;
+
+      let imageEmbedded = false;
+      let dontdrawTitle = false;
+      const image =
+        materialData.imageUrl || materialData.template.backgroundImage;
+      if (image) {
+        try {
+          const imgBytes = await fetchImageBuffer(image);
+          let img;
+          try {
+            img = await pdfDoc.embedPng(imgBytes);
+            imageEmbedded = true;
+          } catch {
+            img = await pdfDoc.embedJpg(imgBytes);
+            imageEmbedded = true;
+          }
+
+          if (imageEmbedded) {
+            // Draw image background
+
+            page.drawRectangle({
+              x: imageX - 2,
+              y: imageY - 2,
+              width: imageWidth + 4,
+              height: imageHeight + 4,
+              color: colors.lightGray,
+              xRounded: 10,
+              yRounded: 10,
+            });
+
+            page.drawImage(img, {
+              x: imageX,
+              y: imageY,
+              width: imageWidth,
+              height: imageHeight,
+            });
+
+            // Draw overlay gradient effect
+            page.drawRectangle({
+              x: imageX,
+              y: imageY,
+              width: imageWidth,
+              height: 30,
+              color: rgb(0, 0, 0, 0.6),
+              xRounded: 10,
+              yRounded: 10,
+            });
+            const titleSize = 14;
+            const paddingFromBottom = 10; // adjust if needed
+            const titleY = imageY + paddingFromBottom; // ⬅️ from bottom
+            const titleX =
+              lng === "ar"
+                ? getRTLTextX(
+                    materialName,
+                    titleSize,
+                    boldFont,
+                    imageX + 10,
+                    imageWidth - 20
+                  )
+                : imageX + 10;
+
+            page.drawText(lng === "ar" ? reText(materialName) : materialName, {
+              x: titleX,
+              y: titleY,
+              size: titleSize,
+              font: boldFont,
+              color: rgb(1, 1, 1),
+              maxWidth: imageWidth - 20,
+            });
+            dontdrawTitle = true;
+          }
+        } catch (err) {
+          console.warn(`Failed to embed material image: ${err.message}`);
+        }
+      }
+      // Draw material title
+      if (!dontdrawTitle) {
+        const titleSize = 14;
+        const titleY = cardY + cardHeight - 30;
+        const textStartX =
+          lng === "ar"
+            ? imageEmbedded
+              ? cardX + 15
+              : cardX + 20
+            : imageEmbedded
+            ? cardX + imageWidth + 30
+            : cardX + 20;
+        const textWidth = cardWidth - (imageEmbedded ? imageWidth + 60 : 40);
+
+        const titleX =
+          lng === "ar"
+            ? getRTLTextX(
+                materialName,
+                titleSize,
+                boldFont,
+                textStartX,
+                textWidth
+              )
+            : textStartX;
+
+        page.drawText(lng === "ar" ? reText(materialName) : materialName, {
+          x: titleX,
+          y: titleY,
+          size: titleSize,
+          font: boldFont,
+          color: colors.heading,
+        });
+      }
+    };
+
+    // Enhanced style renderer with image and overlay
+    const drawStyleItem = async (styleData) => {
+      const styleName = getTextByLanguage(styleData[0].title, lng) || "Style";
+
+      const cardHeight = 250;
+      const cardWidth = contentWidth - 40;
+      const cardX = margin + 20;
+      const cardY = y - cardHeight;
+
+      // Draw shadow
+      page.drawRectangle({
+        x: cardX + 4,
+        y: cardY - 4,
+        width: cardWidth,
+        height: cardHeight,
+        color: colors.shadowColor,
+        xRounded: 15,
+        yRounded: 15,
+      });
+
+      // Draw card background
+      page.drawRectangle({
+        x: cardX,
+        y: cardY,
+        width: cardWidth,
+        height: cardHeight,
+        color: colors.white,
+        borderColor: colors.primary,
+        borderWidth: 2,
+        xRounded: 15,
+        yRounded: 15,
+      });
+
+      // Try to draw style image
+      const imageWidth = 250;
+      const imageHeight = 200;
+      const imageX =
+        lng === "ar" ? cardX + cardWidth - imageWidth - 15 : cardX + 15;
+      const imageY = cardY + 20;
+      let imageEmbedded = false;
+      let dontdrawTitle = false;
+      const image =
+        styleData[0].imageUrl || styleData[0].template.backgroundImage;
+      if (image) {
+        try {
+          const imgBytes = await fetchImageBuffer(image);
+          let img;
+          try {
+            img = await pdfDoc.embedPng(imgBytes);
+            imageEmbedded = true;
+          } catch {
+            img = await pdfDoc.embedJpg(imgBytes);
+            imageEmbedded = true;
+          }
+
+          if (imageEmbedded) {
+            // Draw image background
+            page.drawRectangle({
+              x: imageX - 2,
+              y: imageY - 2,
+              width: imageWidth + 4,
+              height: imageHeight + 4,
+              color: colors.lightGray,
+              xRounded: 12,
+              yRounded: 12,
+            });
+
+            page.drawImage(img, {
+              x: imageX,
+              y: imageY,
+              width: imageWidth,
+              height: imageHeight,
+            });
+
+            // Draw overlay gradient effect
+            page.drawRectangle({
+              x: imageX,
+              y: imageY,
+              width: imageWidth,
+              height: 35,
+              color: rgb(0, 0, 0, 0.6),
+              xRounded: 12,
+              yRounded: 12,
+            });
+            const titleSize = 14;
+            const paddingFromBottom = 10; // adjust if needed
+            const titleY = imageY + paddingFromBottom; // ⬅️ from bottom
+            const titleX =
+              lng === "ar"
+                ? getRTLTextX(
+                    styleName,
+                    titleSize,
+                    boldFont,
+                    imageX + 10,
+                    imageWidth - 20
+                  )
+                : imageX + 10;
+
+            page.drawText(lng === "ar" ? reText(styleName) : styleName, {
+              x: titleX,
+              y: titleY,
+              size: titleSize,
+              font: boldFont,
+              color: rgb(1, 1, 1), // white text
+              maxWidth: imageWidth - 20,
+            });
+            dontdrawTitle = true;
+          }
+        } catch (err) {
+          console.warn(`Failed to embed style image: ${err.message}`);
+        }
+      }
+
+      // Draw style title
+      if (!dontdrawTitle) {
+        const titleSize = 16;
+        const titleY = cardY + cardHeight - 30;
+        const textStartX =
+          lng === "ar"
+            ? imageEmbedded
+              ? cardX + 15
+              : cardX + 20
+            : imageEmbedded
+            ? cardX + imageWidth + 30
+            : cardX + 20;
+        const textWidth = cardWidth - (imageEmbedded ? imageWidth + 60 : 40);
+
+        const titleX =
+          lng === "ar"
+            ? getRTLTextX(styleName, titleSize, boldFont, textStartX, textWidth)
+            : textStartX;
+
+        page.drawText(lng === "ar" ? reText(styleName) : styleName, {
+          x: titleX,
+          y: titleY,
+          size: titleSize,
+          font: boldFont,
+          color: colors.heading,
+        });
+      }
+      y -= cardHeight + 20;
+    };
+
+    const checkNewPage = async (requiredSpace = 50) => {
       const availableSpace = y - margin - footerHeight;
       if (availableSpace < requiredSpace) {
         page = pdfDoc.addPage([pageWidth, pageHeight]);
         drawPageBorder();
-        drawFixedHeader();
+        await drawFixedHeader();
         drawFixedFooter();
         y = pageHeight - headerHeight - margin - 20;
         return true;
       }
       return false;
     };
+    const drawMaterialGridItems = async (materials, columns = 2) => {
+      const itemSpacing = 10;
+      const itemWidth =
+        (contentWidth - itemSpacing * (columns - 1)) / columns - 20;
+      const itemHeight = 200;
+      const itemsPerRow = columns;
 
-    // Enhanced section drawing with fixed headers
+      const rowHeight = itemHeight + itemSpacing;
+      let itemsDrawn = 0;
+
+      while (itemsDrawn < materials.length) {
+        // Count how many rows can fit on the current page
+        const availableRows = Math.floor(
+          (y - margin - footerHeight - 40) / rowHeight
+        );
+        const rowsThisPage = Math.min(
+          availableRows,
+          Math.ceil((materials.length - itemsDrawn) / itemsPerRow)
+        );
+
+        const itemsThisPage = rowsThisPage * itemsPerRow;
+        const gridHeight = rowsThisPage * rowHeight - itemSpacing;
+
+        const gridX = margin + 20;
+        const gridY = y - gridHeight;
+
+        // Draw outer grid frame
+        page.drawRectangle({
+          x: gridX - 10,
+          y: gridY - 10,
+          width: contentWidth - 20,
+          height: gridHeight + 20,
+          borderColor: colors.borderColor,
+          color: colors.white,
+          xRounded: 12,
+          yRounded: 12,
+        });
+
+        for (
+          let i = 0;
+          i < itemsThisPage && itemsDrawn < materials.length;
+          i++
+        ) {
+          const index = itemsDrawn;
+          const col = i % itemsPerRow;
+          const row = Math.floor(i / itemsPerRow);
+
+          const itemX = gridX + col * (itemWidth + itemSpacing);
+          const itemY = y - row * rowHeight;
+
+          await drawMaterialItem(materials[index], index, materials.length, {
+            x: itemX,
+            y: itemY - itemHeight,
+            width: itemWidth,
+            height: itemHeight,
+          });
+
+          itemsDrawn++;
+        }
+
+        y -= gridHeight + 40;
+
+        if (itemsDrawn < materials.length) {
+          await checkNewPage(200); // force new page for next chunk
+        }
+      }
+    };
+
+    // Enhanced section drawing with modern design
     const drawSection = async (
       title,
       items,
       itemRenderer,
       isGridSection = false
     ) => {
-      checkNewPage(100);
+      await checkNewPage(100);
 
       const sectionHeight = 50;
-      const borderRadius = 12;
+      const borderRadius = 15;
 
-      // Section Header with gradient-like effect
+      // Section Header with modern gradient-like effect
       page.drawRectangle({
-        x: margin + 20 + 2,
-        y: y - sectionHeight + 2,
+        x: margin + 20 + 3,
+        y: y - sectionHeight - 3,
         width: contentWidth - 40,
         height: sectionHeight,
         color: colors.shadowColor,
@@ -767,24 +1082,32 @@ export async function generateImageSessionPdf({
         width: contentWidth - 40,
         height: sectionHeight,
         color: colors.primaryLight,
-        borderColor: colors.borderColor,
+        borderColor: colors.primary,
         borderWidth: 2,
         xRounded: borderRadius,
         yRounded: borderRadius,
       });
 
-      const fontSize = 16;
+      // Draw accent line
+      page.drawRectangle({
+        x: margin + 25,
+        y: y - sectionHeight + 5,
+        width: 4,
+        height: sectionHeight - 10,
+        color: colors.primary,
+        xRounded: 2,
+        yRounded: 2,
+      });
+
+      const fontSize = 18;
       const titleY = y - sectionHeight / 2 - fontSize / 2 + 4;
+      const textStartX = margin + 40;
+      const textWidth = contentWidth - 80;
+
       const textX =
         lng === "ar"
-          ? getRTLTextX(
-              title,
-              fontSize,
-              boldFont,
-              margin + 40,
-              contentWidth - 80
-            )
-          : margin + 40;
+          ? getRTLTextX(title, fontSize, boldFont, textStartX, textWidth)
+          : textStartX;
 
       const processedTitle = lng === "ar" ? reText(title) : title;
 
@@ -796,14 +1119,14 @@ export async function generateImageSessionPdf({
         color: colors.heading,
       });
 
-      y -= sectionHeight + 20;
+      y -= sectionHeight + 25;
 
       if (items && items.length > 0) {
         if (isGridSection) {
           await itemRenderer(items);
         } else {
           for (let i = 0; i < items.length; i++) {
-            checkNewPage(40);
+            await checkNewPage(150);
             await itemRenderer(items[i], i, items.length);
           }
         }
@@ -843,67 +1166,54 @@ export async function generateImageSessionPdf({
     // Create second page for content
     page = pdfDoc.addPage([pageWidth, pageHeight]);
     drawPageBorder();
-    drawFixedHeader();
+    await drawFixedHeader();
     drawFixedFooter();
     y = pageHeight - headerHeight - margin - 20;
 
-    // Prepare enhancement table items
-    const enhancementItems = [];
-
-    // Add selected spaces
+    // Draw selected spaces
     if (sessionData.selectedSpaces && sessionData.selectedSpaces.length > 0) {
-      sessionData.selectedSpaces.forEach((spaceRelation) => {
-        enhancementItems.push({
-          type: "space",
-          data: spaceRelation.space,
-        });
-      });
-    }
-
-    // Add style
-    if (sessionData.style) {
-      enhancementItems.push({
-        type: "style",
-        data: sessionData.style,
-      });
-    }
-
-    // Add materials
-    if (sessionData.materials && sessionData.materials.length > 0) {
-      sessionData.materials.forEach((materialRelation) => {
-        enhancementItems.push({
-          type: "material",
-          data: materialRelation.material,
-        });
-      });
-    }
-
-    // Draw enhancement table if there are items
-    if (enhancementItems.length > 0) {
       await drawSection(
-        lng === "ar" ? "ملخص الاختيارات" : "Selection Summary",
-        enhancementItems,
-        async (items) => {
-          checkNewPage(150);
-          const newY = drawEnhancementTable(items, y);
-          y = newY;
+        lng === "ar" ? reText("المساحات المحددة") : "Selected Spaces",
+        sessionData.selectedSpaces,
+        drawSpaceItem
+      );
+    }
+
+    // Draw style
+    if (sessionData.style) {
+      await drawSection(
+        lng === "ar" ? reText("نمط التصميم") : "Design Style",
+        [sessionData.style],
+        async (style) => {
+          await checkNewPage(160);
+          await drawStyleItem(style);
         },
         true
       );
     }
 
-    // Draw custom colors section separately for visual display
+    // Draw materials
+    if (sessionData.materials && sessionData.materials.length > 0) {
+      await drawSection(
+        lng === "ar" ? reText("الخامات المحددة") : "Selected Materials",
+        sessionData.materials,
+        drawMaterialGridItems,
+        true
+      );
+    }
+
+    // Draw custom colors section with modern design
     if (
       sessionData.customColors &&
       Array.isArray(sessionData.customColors) &&
       sessionData.customColors.length > 0
     ) {
       await drawSection(
-        lng === "ar" ? "الألوان المخصصة" : "Custom Colors",
+        lng === "ar" ? reText("الألوان المخصصة") : "Custom Colors",
         sessionData.customColors,
         async (customColors) => {
-          checkNewPage(100);
-          const startX = lng === "ar" ? pageWidth - margin - 300 : margin + 40;
+          await checkNewPage(100);
+          const startX = lng === "ar" ? margin + 40 : margin + 40;
           const newY = drawCustomColors(customColors, startX, y);
           y = newY;
         },
@@ -943,10 +1253,10 @@ export async function generateImageSessionPdf({
             const y = 0;
 
             page.drawImage(img, {
-              x,
-              y,
-              width: targetWidth,
-              height: targetHeight,
+              x: 0,
+              y: 0,
+              width: pageWidth,
+              height: pageHeight,
             });
           }
         } catch (err) {
@@ -959,11 +1269,11 @@ export async function generateImageSessionPdf({
     if (signatureUrl) {
       page = pdfDoc.addPage([pageWidth, pageHeight]);
       drawPageBorder();
-      drawFixedHeader();
+      await drawFixedHeader();
       drawFixedFooter();
       y = pageHeight - headerHeight - margin - 20;
 
-      checkNewPage(200);
+      await checkNewPage(200);
 
       // Section header
       page.drawRectangle({
@@ -978,7 +1288,8 @@ export async function generateImageSessionPdf({
         yRounded: 10,
       });
 
-      const signatureTitle = lng === "ar" ? "توقيع العميل" : "Client Signature";
+      const signatureTitle =
+        lng === "ar" ? reText("توقيع العميل") : "Client Signature";
       page.drawText(lng === "ar" ? reText(signatureTitle) : signatureTitle, {
         x:
           lng === "ar"
@@ -1070,7 +1381,6 @@ export async function generateImageSessionPdf({
         y -= 30;
       }
     }
-
     const pdfBytes = await pdfDoc.save();
     return pdfBytes;
   } catch (e) {

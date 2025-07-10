@@ -9,10 +9,18 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { MdAdd, MdCheck, MdCheckCircle, MdFullscreen } from "react-icons/md";
+import {
+  MdAdd,
+  MdCheck,
+  MdCheckCircle,
+  MdDelete,
+  MdFullscreen,
+} from "react-icons/md";
 import { NotesComponent } from "../../utility/Notes";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { ensureHttps } from "@/app/helpers/functions/utility";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 
 export function ImageComponent({
   handleImageClick,
@@ -20,14 +28,29 @@ export function ImageComponent({
   type,
   image,
   isSelected,
+  canDelete,
+  setImages,
 }) {
   const theme = useTheme();
-
+  const { setLoading } = useToastContext();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const photo = type === "SELECT" ? image : image.designImage;
 
   const { lng } = useLanguageSwitcherContext();
-
+  async function handleImageDelete(image) {
+    const req = await handleRequestSubmit(
+      {},
+      setLoading,
+      `client/image-session/images/${image.id}`,
+      false,
+      "Deleting",
+      false,
+      "DELETE"
+    );
+    if (req.status === 200) {
+      setImages((old) => old.filter((i) => i.id !== image.id));
+    }
+  }
   return (
     <>
       <Card
@@ -131,7 +154,26 @@ export function ImageComponent({
               {isSelected ? <MdCheck size={18} /> : <MdAdd size={18} />}
             </IconButton>
           ) : (
-            <></>
+            <>
+              {canDelete && (
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleImageDelete(image);
+                  }}
+                  sx={{
+                    bgcolor: theme.palette.error.main,
+                    color: "white",
+                    width: 36,
+                    height: 36,
+                    transition: "all 0.3s ease",
+                  }}
+                  size="small"
+                >
+                  {<MdDelete />}
+                </IconButton>
+              )}
+            </>
           )}
         </Box>
         {type === "SELECT" ? (

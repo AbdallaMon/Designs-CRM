@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   changeSessionStatus,
+  deleteImage,
   getColorsByLng,
   getConsAndPros,
   getImagesByStyleAndSpaces,
@@ -15,7 +16,7 @@ import {
 } from "../../services/main/image-session/imageSessionSevices.js";
 import { getAndThrowError } from "../../services/main/utility.js";
 import { uploadPdfAndApproveSession } from "../../services/main/clientServices.js";
-
+import { pdfQueue } from "../../services/queues/pdfQueue.js";
 const router = Router();
 
 router.get("/page-info", async (req, res) => {
@@ -143,6 +144,14 @@ router.post("/images", async (req, res) => {
     getAndThrowError(e, res);
   }
 });
+router.delete("/images/:imageId", async (req, res) => {
+  try {
+    const data = await deleteImage({ imageId: Number(req.params.imageId) });
+    res.status(200).json({ data: data, message: "Images deleted succssfully" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
 router.post("/generate-pdf", async (req, res) => {
   const { sessionData, signatureUrl, sessionStatus, lng } = req.body;
   try {
@@ -151,7 +160,11 @@ router.post("/generate-pdf", async (req, res) => {
     //   sessionStatus,
     //   extra: { signatureUrl },
     // });
-    // await pdfQueue.add("generate-approve-pdf", { sessionData, signatureUrl });
+    // await pdfQueue.add("generate-approve-pdf", {
+    //   sessionData,
+    //   signatureUrl,
+    //   lng,
+    // });
     await uploadPdfAndApproveSession({ sessionData, signatureUrl, lng });
     const data = await changeSessionStatus({
       token: sessionData.token,
@@ -163,9 +176,11 @@ router.post("/generate-pdf", async (req, res) => {
       .json({ data, message: "Response saved succussfully", url: null });
   } catch (err) {
     console.error("PDF generation error:", err);
-    return res
-      .status(500)
-      .json({ success: false, error: "Failed to generate PDF" });
+    return res.status(500).json({
+      success: false,
+      error: "Failed to generate PDF",
+      message: "Error in generating pdf",
+    });
   }
 });
 export default router;

@@ -1,4 +1,8 @@
-import { uploadFiles, uploadToFTPAsBuffer } from "../services/main/utility.js";
+import {
+  uploadAsHttp,
+  uploadFiles,
+  uploadToFTPAsBuffer,
+} from "../services/main/utility.js";
 import express from "express";
 const router = express.Router();
 import prisma from "../prisma/prisma.js";
@@ -26,7 +30,10 @@ import {
 } from "../services/main/sharedServices.js";
 import calendarRoutes from "./calendar/client-calendar.js";
 import imageSessionRouter from "./image-session/client-image-session.js";
+import multer from "multer";
 
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const priceRangeValues = {
   "300,000 AED or less": 200000,
@@ -474,6 +481,8 @@ async function uploadFile(body, clientLeadId) {
 router.post("/upload", async (req, res) => {
   await uploadFiles(req, res);
 });
+
+router.post("/api/upload", upload.single("file"), uploadAsHttp);
 
 // client image session
 

@@ -16,6 +16,7 @@ export function ClientSelectedImages({
   cardsRef,
   titleRef,
   withActions = true,
+  canDelete,
 }) {
   const { lng } = useLanguageSwitcherContext();
   const uiText = {
@@ -24,6 +25,7 @@ export function ClientSelectedImages({
       en: "Review your images selections and add your notes",
     },
   };
+  const [images, setImages] = useState(session?.selectedImages);
   return (
     <Box sx={{ p: 0 }}>
       <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
@@ -47,10 +49,12 @@ export function ClientSelectedImages({
       </Paper>
 
       <ImageGroup
-        images={session?.selectedImages}
+        images={images}
+        setImages={setImages}
         loadingImages={loading}
         type="not-select"
         cardsRef={cardsRef}
+        canDelete={canDelete}
       />
       {withActions && (
         <Paper

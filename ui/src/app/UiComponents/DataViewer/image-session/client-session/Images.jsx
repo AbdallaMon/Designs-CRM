@@ -41,45 +41,45 @@ export function Images({
   useEffect(() => {
     getImages();
   }, [lng]);
-  useEffect(() => {
-    if (images.length > 0 && !loading) {
-      // Create a timeline for better control
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+  // useEffect(() => {
+  //   if (images.length > 0 && !loading) {
+  //     // Create a timeline for better control
+  //     const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
-      // Set initial states with more dramatic effects
-      gsap.set(cardsRef.current, {
-        opacity: 0,
-        y: 60,
-        scale: 0.8,
-        rotationX: 15,
-        filter: "blur(8px) brightness(0.7)",
-        transformOrigin: "center bottom",
-      });
+  //     // Set initial states with more dramatic effects
+  //     gsap.set(cardsRef.current, {
+  //       opacity: 0,
+  //       y: 60,
+  //       scale: 0.8,
+  //       rotationX: 15,
+  //       filter: "blur(8px) brightness(0.7)",
+  //       transformOrigin: "center bottom",
+  //     });
 
-      tl.to(
-        cardsRef.current,
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          rotationX: 0,
-          filter: "blur(0px) brightness(1)",
-          duration: 0.6,
-          stagger: {
-            amount: 0.2,
-            from: "start",
-            ease: "power2.out",
-          },
-          ease: "back.out(1.2)",
-        },
-        "-=0.2"
-      );
+  //     tl.to(
+  //       cardsRef.current,
+  //       {
+  //         opacity: 1,
+  //         y: 0,
+  //         scale: 1,
+  //         rotationX: 0,
+  //         filter: "blur(0px) brightness(1)",
+  //         duration: 0.6,
+  //         stagger: {
+  //           amount: 0.2,
+  //           from: "start",
+  //           ease: "power2.out",
+  //         },
+  //         ease: "back.out(1.2)",
+  //       },
+  //       "-=0.2"
+  //     );
 
-      return () => {
-        tl.kill();
-      };
-    }
-  }, [images, loading]);
+  //     return () => {
+  //       tl.kill();
+  //     };
+  //   }
+  // }, [images, loading]);
   async function handleSaveImages() {
     const req = await handleRequestSubmit(
       { session, selectedImages, status: nextStatus },
@@ -92,7 +92,6 @@ export function Images({
       await onUpdate();
     }
   }
-  const title = lng === "ar" ? "اختر التصاميم" : "Choose a designs";
 
   return (
     <>

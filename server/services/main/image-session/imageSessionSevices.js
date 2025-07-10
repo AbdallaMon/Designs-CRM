@@ -1195,7 +1195,6 @@ export async function deleteInProgressSession(sessionId, user) {
   });
 
   if (!session) throw new Error("Session not found");
-  console.log(user, "user");
   if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
     if (
       session.sessionStatus !== "PDF_GENERATED" ||
@@ -1336,7 +1335,7 @@ export async function getSessionByToken({ token }) {
   return session;
 }
 
-export async function changeSessionStatus({ token, id, sessionStatus }) {
+export async function changeSessionStatus({ token, id, sessionStatus, extra }) {
   const key = token ? "token" : "id";
   const keyId = token || Number(id);
 
@@ -1346,6 +1345,7 @@ export async function changeSessionStatus({ token, id, sessionStatus }) {
     },
     data: {
       sessionStatus,
+      ...(extra && extra),
     },
   });
 }
@@ -1623,4 +1623,20 @@ export async function saveClientSelectedImages({
       },
     }),
   ]);
+}
+
+export async function deleteImage({ imageId }) {
+  await prisma.note.deleteMany({
+    where: {
+      clientSelectedImage: {
+        id: Number(imageId),
+      },
+    },
+  }),
+    await prisma.clientSelectedImage.delete({
+      where: {
+        id: Number(imageId),
+      },
+    });
+  return true;
 }
