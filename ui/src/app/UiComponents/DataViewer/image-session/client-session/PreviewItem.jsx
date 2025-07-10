@@ -1,4 +1,11 @@
-import { Box, Button, Card, IconButton, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Card,
+  ClickAwayListener,
+  IconButton,
+  Typography,
+} from "@mui/material";
 import ProsAndConsDialogButton from "../admin/shared/ProsAndCons";
 import { ensureHttps } from "@/app/helpers/functions/utility";
 import {
@@ -11,6 +18,7 @@ import { useState, useEffect, useRef } from "react";
 import { useDebounce } from "../admin/shared/CreateTitleOrDesc";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import gsap from "gsap";
+import { HexColorPicker } from "react-colorful";
 
 export function PreviewItem({
   template,
@@ -262,65 +270,75 @@ export function PreviewItem({
                 }}
               >
                 {colorCircles?.map((color, index) => (
-                  <Box
-                    className="color-circle"
-                    key={index}
-                    sx={{
-                      position: "relative",
-                      opacity: animated ? 0 : 1,
-                      width:
-                        {
-                          xs: template.colorSize,
-                          md: template.colorSize + 5,
-                        } || 40,
-                      height:
-                        {
-                          xs: template.colorSize,
-                          md: template.colorSize + 5,
-                        } || 40,
-                      backgroundColor: color.colorHex,
-                      borderRadius: "50%",
-                      border: "2px solid rgba(255,255,255,0.5)",
-                    }}
-                  >
-                    {isEditMode && color.isEditableByClient && (
-                      <>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleColorPickerOpen(color.id)}
+                  <>
+                    {colorPickerOpen === color.id && (
+                      <ClickAwayListener
+                        onClickAway={() => setColorPickerOpen(null)}
+                      >
+                        <Box
                           sx={{
                             position: "absolute",
-                            top: -8,
-                            right: -8,
-                            backgroundColor: "rgba(255, 255, 255, 0.9)",
-                            // width: 20,
-                            // height: 20,
-                            "&:hover": {
-                              backgroundColor: "rgba(255, 255, 255, 1)",
-                            },
+                            top: "100%",
+                            left: 0,
+                            zIndex: 100,
+                            background: "#fff",
+                            padding: 1,
+                            boxShadow: 3,
+                            borderRadius: 2,
                           }}
                         >
-                          <MdEdit sx={{ fontSize: 12 }} />
-                        </IconButton>
-                        {colorPickerOpen === color.id && (
-                          <input
-                            ref={colorInputRef}
-                            type="color"
-                            value={tempColorValue}
-                            onChange={(e) => handleColorChange(e.target.value)}
-                            onBlur={handleColorPickerClose}
-                            style={{
-                              position: "absolute",
-                              opacity: 0,
-                              pointerEvents: "none",
-                              width: "1px",
-                              height: "1px",
-                            }}
+                          <HexColorPicker
+                            color={tempColorValue}
+                            onChange={(newColor) => handleColorChange(newColor)}
                           />
-                        )}
-                      </>
+                        </Box>
+                      </ClickAwayListener>
                     )}
-                  </Box>
+                    <Box
+                      className="color-circle"
+                      key={index}
+                      sx={{
+                        position: "relative",
+                        opacity: animated ? 0 : 1,
+                        zIndex: 0,
+                        width:
+                          {
+                            xs: template.colorSize,
+                            md: template.colorSize + 5,
+                          } || 40,
+                        height:
+                          {
+                            xs: template.colorSize,
+                            md: template.colorSize + 5,
+                          } || 40,
+                        backgroundColor: color.colorHex,
+                        borderRadius: "50%",
+                        border: "2px solid rgba(255,255,255,0.5)",
+                      }}
+                    >
+                      {isEditMode && color.isEditableByClient && (
+                        <>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleColorPickerOpen(color.id)}
+                            sx={{
+                              position: "absolute",
+                              top: -8,
+                              right: -8,
+                              backgroundColor: "rgba(255, 255, 255, 0.9)",
+                              // width: 20,
+                              // height: 20,
+                              "&:hover": {
+                                backgroundColor: "rgba(255, 255, 255, 1)",
+                              },
+                            }}
+                          >
+                            <MdEdit sx={{ fontSize: 12 }} />
+                          </IconButton>
+                        </>
+                      )}
+                    </Box>
+                  </>
                 ))}
               </Box>
             </Box>
