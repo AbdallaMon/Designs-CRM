@@ -94,6 +94,10 @@
 - Add name and code of the client
 - One image per page
 - Add layout
+- Allow delete any item and remove relation so that no problems happen
+- Can filter images by sapce or style focus on style
+- Load images on scroll
+- Can delete images in the add notes section
 
 - Courses website for users with same users naming like staff and so on
 - We will add courses each course related to user role can be added to more than one role
