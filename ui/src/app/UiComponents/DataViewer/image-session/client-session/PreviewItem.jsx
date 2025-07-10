@@ -292,6 +292,18 @@ export function PreviewItem({
                             color={tempColorValue}
                             onChange={(newColor) => handleColorChange(newColor)}
                           />
+                          <Box
+                            sx={{
+                              width: 60,
+                              height: 60,
+                              borderRadius: "50%",
+                              backgroundColor: tempColorValue,
+                              border: "1px solid #ccc",
+                              boxShadow: "inset 0 0 2px rgba(0,0,0,0.2)",
+                              m: 2,
+                              mx: "auto",
+                            }}
+                          />
                         </Box>
                       </ClickAwayListener>
                     )}
