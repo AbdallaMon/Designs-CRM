@@ -21,7 +21,7 @@ const SessionModelItemManager = ({
         createComponent={CreateSessionItem}
         gridSize={{ md: 6 }}
         extra={{
-          model: "MATERIAL",
+          model: modelType,
         }}
       />
     </Box>

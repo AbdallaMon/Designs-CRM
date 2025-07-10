@@ -10,7 +10,7 @@ const DesignImageManager = () => {
         slug="images"
         item={DesignImageItem}
         createComponent={CreateDesginImage}
-        gridSize={{ md: 6 }}
+        gridSize={{ md: 3 }}
       />
     </Box>
   );

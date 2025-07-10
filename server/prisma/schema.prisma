@@ -1162,6 +1162,8 @@ enum SessionStatus {
 model ClientImageSession {
   id               Int                    @id @default(autoincrement())
   token            String                 @unique
+  sessionStatus    SessionStatus          @default(INITIAL)
+  pdfUrl          String?
   clientLeadId     Int
   clientLead       ClientLead             @relation(fields: [clientLeadId], references: [id])
   createdById      Int
@@ -1176,10 +1178,8 @@ model ClientImageSession {
   note             Note[]
   customColors     Json?
   signatureUrl     String?
-  pdfUrl          String?
   submittedAt      DateTime?
   isArchived       Boolean                @default(false)
-  sessionStatus    SessionStatus          @default(INITIAL)
   createdAt        DateTime               @default(now())
   updatedAt        DateTime               @updatedAt
 }

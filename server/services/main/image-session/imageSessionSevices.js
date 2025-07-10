@@ -776,6 +776,15 @@ export async function getDesignImages({ notArchived }) {
       style: {
         select: {
           id: true,
+          title: {
+            select: {
+              language: {
+                select: {
+                  code: true,
+                },
+              },
+            },
+          },
         },
       },
     },

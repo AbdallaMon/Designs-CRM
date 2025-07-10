@@ -1839,6 +1839,7 @@ export async function getModelIds({ searchParams, model }) {
       ? JSON.parse(searchParams.where)
       : {};
   const where = {};
+
   const select = {};
   const include = {};
   if (searchParams.select) {
@@ -1886,13 +1887,9 @@ export async function getModelIds({ searchParams, model }) {
   }
   if (searchParams) {
     Object.keys(queryWhere).forEach((key) => {
-      if (!queryWhere[key] || queryWhere[key] === "undefined") {
-        return;
-      }
       where[key] = queryWhere[key];
     });
   }
-
   return await prisma[model].findMany({
     where: {
       ...where,

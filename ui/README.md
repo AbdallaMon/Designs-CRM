@@ -80,8 +80,8 @@
 - Fix pdf make it in arabic and arabic direction
 - Make two image grid and make image bigger
 - امكانية رفع اكتر من صور ووضعها ضمن مساحه معينه
-
 - Can select more than one material
+
 - Pdf
 - Page
 - مساحات
@@ -108,6 +108,7 @@
 - for each staff we will create a sub model from the exam to track his answers and what he did and attempts and score ect
 
 - Image in the url in both dream studio and eng ahmed
+- Toast data in client image session
 
 - Total price is final price
 

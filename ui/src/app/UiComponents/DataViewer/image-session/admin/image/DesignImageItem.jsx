@@ -91,7 +91,8 @@ export const DesignImageItem = ({ item, onUpdate }) => {
                 <MdStyle size={18} />
               </Avatar>
               <Typography variant="h6" component="h2" color="secondary">
-                Style #{item.styleId}
+                Style #{item.styleId} -{" "}
+                {item.title.find((t) => t.language.code === "ar").text}
               </Typography>
             </Box>
 
