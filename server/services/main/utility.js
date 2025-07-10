@@ -389,7 +389,7 @@ const upload = multer({
 }).any();
 
 const s = multer.memoryStorage();
-const storageUpload = multer({ storage: s });
+const storageUpload = multer({ storage: s }).any();
 // FTP Upload Function
 async function uploadToFTP(localFilePath, remotePath) {
   const client = new Client();
