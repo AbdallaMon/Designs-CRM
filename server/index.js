@@ -15,7 +15,11 @@ import accountantRoutes from "./routes/accountant.js";
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
-const allowedOrigins = [process.env.ORIGIN, process.env.OLDORIGIN];
+const allowedOrigins = [
+  process.env.ORIGIN,
+  process.env.OLDORIGIN,
+  process.env.COURSESORIGIN,
+];
 
 app.use(
   cors({

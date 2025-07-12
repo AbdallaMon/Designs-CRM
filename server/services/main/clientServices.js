@@ -12,7 +12,8 @@ import { uploadToFTPHttpAsBuffer } from "./utility.js";
 import { sendEmailForStaff, sendEmailToClient } from "./emailTemplates.js";
 import sharp from "sharp";
 const __filename = fileURLToPath(import.meta.url);
-
+import "dayjs/locale/ar.js";
+import "dayjs/locale/en.js";
 const __dirname = path.dirname(__filename);
 const fontPath = path.join(__dirname, "../fonts/Ya-ModernPro-Bold.otf");
 const fontBase64 = fs.readFileSync(fontPath);
@@ -271,7 +272,7 @@ export async function generateImageSessionPdf({
     const margin = 40;
     const contentWidth = pageWidth - margin * 2;
     const headerHeight = 60;
-    const footerHeight = 80;
+    const footerHeight = 60;
     const borderWidth = 2;
 
     let page = pdfDoc.addPage([pageWidth, pageHeight]);
@@ -312,7 +313,10 @@ export async function generateImageSessionPdf({
     };
 
     // Draw page border and frame
-    const drawPageBorder = () => {
+    const drawPageBorder = (isWide = false) => {
+      const width = page.getWidth();
+      const height = page.getHeight();
+      const contentWidth = width - margin * 2;
       const borderTopY = margin + headerHeight;
 
       // Outer border frame
@@ -320,38 +324,40 @@ export async function generateImageSessionPdf({
         x: margin - borderWidth,
         y: margin - borderWidth,
         width: contentWidth + borderWidth * 2,
-        height: pageHeight - borderTopY - margin + borderWidth * 2,
+        height: height - borderTopY - margin + borderWidth * 2,
         borderColor: colors.borderColor,
         borderWidth: borderWidth,
         color: undefined,
       });
 
-      // Inner shadow effect
+      // Inner shadow frame
       page.drawRectangle({
         x: margin,
         y: margin,
         width: contentWidth,
-        height: pageHeight - borderTopY - margin,
+        height: height - borderTopY - margin,
         borderColor: colors.shadowColor,
         borderWidth: 1,
         color: undefined,
       });
     };
 
-    // Draw fixed header for each page
-    const drawFixedHeader = async () => {
+    const drawFixedHeader = async (isWide = false) => {
+      const width = page.getWidth(); // Don't use isWide logic here
+
       try {
-        // Fetch and embed the header image
         const headerImageBuffer = await fetchImageBuffer(
           "https://dreamstudiio.com/pdf-banner.jpg"
         );
         const headerImage = await pdfDoc.embedJpg(headerImageBuffer);
+        const contentWidth = width - margin * 2;
+        const headerWidth = contentWidth;
+        const headerX = (width - headerWidth) / 2;
 
-        // Draw the header image at the top of the page
         page.drawImage(headerImage, {
-          x: margin,
-          y: pageHeight - headerHeight - 10,
-          width: contentWidth,
+          x: headerX,
+          y: page.getHeight() - headerHeight - 10,
+          width: headerWidth,
           height: headerHeight,
         });
       } catch (err) {
@@ -359,8 +365,16 @@ export async function generateImageSessionPdf({
       }
     };
 
-    // Draw fixed footer
-    const drawFixedFooter = () => {
+    // Draw fixed footerf
+    const drawFixedFooter = (
+      isWide = false,
+      currentPageIndex = 0,
+      totalPages = 1
+    ) => {
+      const pageW = page.getWidth();
+      const pageH = page.getHeight();
+      const contentWidth = pageW - margin * 2;
+
       // Footer background
       page.drawRectangle({
         x: margin,
@@ -372,38 +386,6 @@ export async function generateImageSessionPdf({
         borderWidth: 1,
       });
 
-      // Company branding
-      page.drawText("DREAM STUDIO", {
-        x: margin + 20,
-        y: margin + footerHeight - 25,
-        size: 14,
-        font: enBoldFont,
-        color: colors.heading,
-      });
-
-      page.drawText("Interior Design Solutions", {
-        x: margin + 20,
-        y: margin + footerHeight - 45,
-        size: 10,
-        font: enFont,
-        color: colors.textColor,
-      });
-
-      // Date stamp
-      const currentDate = dayjs().format("MMMM D, YYYY");
-      const dateText = `Generated: ${currentDate}`;
-      const dateFontSize = 9;
-      const dateTextWidth = enFont.widthOfTextAtSize(dateText, dateFontSize);
-      const dateX = margin + contentWidth - dateTextWidth - 20;
-
-      page.drawText(dateText, {
-        x: dateX,
-        y: margin + footerHeight - 35,
-        size: dateFontSize,
-        enFont,
-        color: colors.textColor,
-      });
-
       // Footer separator line
       page.drawLine({
         start: { x: margin, y: margin + footerHeight },
@@ -411,6 +393,62 @@ export async function generateImageSessionPdf({
         thickness: 2,
         color: colors.primary,
       });
+
+      // Prepare footer texts
+      const generatedLabel = "Generated:";
+      dayjs.locale("en");
+      const currentDate = dayjs().locale("en").format("MMMM D, YYYY");
+      const dateText = `${generatedLabel} ${currentDate}`;
+
+      const pageNumberTextRaw =
+        lng === "ar"
+          ? `الصفحة ${currentPageIndex + 1} من ${totalPages}`
+          : `Page ${currentPageIndex + 1} of ${totalPages}`;
+
+      const pageNumberText =
+        lng === "ar" ? reText(pageNumberTextRaw) : pageNumberTextRaw;
+
+      const fontSize = 10;
+      const dateTextWidth = enFont.widthOfTextAtSize(dateText, fontSize);
+      const pageNumberWidth = font.widthOfTextAtSize(pageNumberText, fontSize);
+
+      const textY = margin + (footerHeight - fontSize) / 2;
+
+      if (lng === "ar") {
+        // Arabic: Date on right, Page number on left
+        page.drawText(dateText, {
+          x: margin + contentWidth - dateTextWidth - 10,
+          y: textY,
+          size: fontSize,
+          font: enFont,
+          color: colors.textColor,
+        });
+
+        page.drawText(pageNumberText, {
+          x: margin + 10,
+          y: textY,
+          size: fontSize,
+          font,
+          color: colors.textColor,
+        });
+      } else {
+        // English: Date on left, Page number on right
+        page.drawText(dateText, {
+          x: margin + 10,
+          y: textY,
+          size: fontSize,
+          font,
+          color: colors.textColor,
+        });
+
+        page.drawText(pageNumberText, {
+          x: margin + contentWidth - pageNumberWidth - 10,
+          y: textY,
+          size: fontSize,
+          font,
+          color: colors.textColor,
+        });
+      }
     };
 
     const drawIntroPage = async () => {
@@ -858,7 +896,7 @@ export async function generateImageSessionPdf({
         page = pdfDoc.addPage([pageWidth, pageHeight]);
         drawPageBorder();
         await drawFixedHeader();
-        drawFixedFooter();
+        // drawFixedFooter();
         y = pageHeight - headerHeight - margin - 20;
         return true;
       }
@@ -1046,7 +1084,7 @@ export async function generateImageSessionPdf({
     page = pdfDoc.addPage([pageWidth, pageHeight]);
     drawPageBorder();
     await drawFixedHeader();
-    drawFixedFooter();
+    // drawFixedFooter();
     y = pageHeight - headerHeight - margin - 20;
 
     // Draw style
@@ -1082,7 +1120,7 @@ export async function generateImageSessionPdf({
     page = pdfDoc.addPage([pageWidth, pageHeight]);
     drawPageBorder();
     await drawFixedHeader();
-    drawFixedFooter();
+    // drawFixedFooter();
     y = pageHeight - headerHeight - margin - 20;
 
     // Draw materials
@@ -1098,16 +1136,28 @@ export async function generateImageSessionPdf({
     // Keep selectedImages section unchanged
     if (sessionData.selectedImages && sessionData.selectedImages.length > 0) {
       for (const image of sessionData.selectedImages) {
-        page = pdfDoc.addPage([pageWidth, pageHeight]);
-        drawPageBorder();
-        await drawFixedHeader();
-        drawFixedFooter();
-
         const imageUrl = image.designImage?.imageUrl;
         if (!imageUrl) continue;
 
         try {
           const imgBytes = await fetchImageBuffer(imageUrl);
+          const sharpInstance = sharp(imgBytes);
+          const metadata = await sharpInstance.metadata();
+
+          const imgWidth = metadata.width || 1;
+          const imgHeight = metadata.height || 1;
+          const aspectRatio = imgWidth / imgHeight;
+
+          const isWide = aspectRatio > 1.3;
+          const pageSize = isWide
+            ? [pageHeight, pageWidth]
+            : [pageWidth, pageHeight];
+
+          page = pdfDoc.addPage(pageSize);
+
+          drawPageBorder(isWide);
+          await drawFixedHeader(isWide);
+          // drawFixedFooter(isWide); // if needed, update drawFixedFooter too
           let img;
           try {
             img = await pdfDoc.embedPng(imgBytes);
@@ -1116,19 +1166,27 @@ export async function generateImageSessionPdf({
           }
 
           if (img) {
-            const borderTopY = margin + headerHeight;
+            const pageW = page.getWidth();
+            const pageH = page.getHeight();
 
-            // Dimensions of the frame inside the border
-            const imageX = margin;
-            const imageY = margin;
-            const imageWidth = contentWidth;
-            const imageHeight = pageHeight - borderTopY - margin;
+            const frameX = margin;
+            const frameY = margin + footerHeight; // bottom Y of header + margin
+            const frameWidth = pageW - margin * 2;
+            const frameHeight =
+              pageH - headerHeight - footerHeight - margin * 2;
+
+            const scaledWidth = frameWidth;
+            const scaledHeight = frameHeight;
+
+            // ✅ Correct Y calculation: center inside frame
+            const x = frameX;
+            const y = frameY + (frameHeight - scaledHeight) / 2;
 
             page.drawImage(img, {
-              x: imageX,
-              y: imageY,
-              width: imageWidth,
-              height: imageHeight,
+              x,
+              y,
+              width: scaledWidth,
+              height: scaledHeight,
             });
           }
         } catch (err) {
@@ -1141,7 +1199,7 @@ export async function generateImageSessionPdf({
       page = pdfDoc.addPage([pageWidth, pageHeight]);
       drawPageBorder();
       await drawFixedHeader();
-      drawFixedFooter();
+      // drawFixedFooter();
 
       const columnGap = 40;
       const columnWidth = (contentWidth - columnGap) / 2;
@@ -1319,31 +1377,18 @@ export async function generateImageSessionPdf({
         console.warn("Failed to load client signature:", err.message);
       }
     }
+
     const totalPages = pdfDoc.getPageCount();
+    const pages = pdfDoc.getPages();
 
     for (let i = 0; i < totalPages; i++) {
-      const currentPage = pdfDoc.getPages()[i];
-      const pageNumberText =
-        lng === "ar"
-          ? `الصفحة ${i + 1} من ${totalPages}`
-          : `Page ${i + 1} of ${totalPages}`;
-      const fontSize = 10;
-      const textWidth = font.widthOfTextAtSize(pageNumberText, fontSize);
-      const x =
-        lng === "ar" ? margin + contentWidth - textWidth - 10 : margin + 10;
-      const y = margin + 10;
-
-      currentPage.drawText(
-        lng === "ar" ? reText(pageNumberText) : pageNumberText,
-        {
-          x,
-          y,
-          size: fontSize,
-          font,
-          color: colors.textColor,
-        }
-      );
+      if (i === 0) continue;
+      page = pages[i]; // update `page` reference
+      const isWide = page.getWidth() > page.getHeight();
+      console.log(isWide, "isWide");
+      drawFixedFooter(isWide, i, totalPages);
     }
+
     const pdfBytes = await pdfDoc.save();
     return pdfBytes;
   } catch (e) {

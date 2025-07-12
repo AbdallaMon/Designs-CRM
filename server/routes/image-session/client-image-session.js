@@ -173,7 +173,7 @@ router.post("/generate-pdf", async (req, res) => {
     });
     return res
       .status(200)
-      .json({ data, message: "Response saved succussfully", url: null });
+      .json({ data: {}, message: "Response saved succussfully", url: null });
   } catch (err) {
     console.error("PDF generation error:", err);
     return res.status(500).json({
