@@ -7,22 +7,24 @@ import * as fontkit from "fontkit";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "url";
-import bidiFactory from "bidi-js";
 import reshaper from "arabic-persian-reshaper";
-import { uploadToFTPAsBuffer, uploadToFTPHttpAsBuffer } from "./utility.js";
+import { uploadToFTPHttpAsBuffer } from "./utility.js";
 import { sendEmailForStaff, sendEmailToClient } from "./emailTemplates.js";
 import sharp from "sharp";
 const __filename = fileURLToPath(import.meta.url);
 
 const __dirname = path.dirname(__filename);
-const fontPath = path.join(__dirname, "../fonts/Amiri-Regular.ttf");
+const fontPath = path.join(__dirname, "../fonts/Ya-ModernPro-Bold.otf");
 const fontBase64 = fs.readFileSync(fontPath);
-const fontBoldPath = path.join(__dirname, "../fonts/Amiri-Bold.ttf");
+const fontBoldPath = path.join(__dirname, "../fonts/Ya-ModernPro-Bold.otf");
 const fontBoldBase64 = fs.readFileSync(fontBoldPath);
 
-const enfontPath = path.join(__dirname, "../fonts/NotoSansArabic-Regular.ttf");
+const enfontPath = path.join(__dirname, "../fonts/Ya-ModernPro-Bold.otf.ttf");
 const enfontBase64 = fs.readFileSync(enfontPath);
-const enfontBoldPath = path.join(__dirname, "../fonts/NotoSansArabic-Bold.ttf");
+const enfontBoldPath = path.join(
+  __dirname,
+  "../fonts/Ya-ModernPro-Bold.otf.ttf"
+);
 const enfontBoldBase64 = fs.readFileSync(enfontBoldPath);
 export async function getSessionByToken(token) {
   const session = await prisma.clientImageSession.findUnique({
@@ -1162,8 +1164,8 @@ export async function generateImageSessionPdf({
       const signatureLabel = isArabic ? reText("التوقيع:") : "Signature:";
       const stampImageUrl = "https://dreamstudiio.com/dream-signature.jpg";
       const clientName = isArabic
-        ? reText(getTextByLanguage(sessionData.clientLead?.name, "ar"))
-        : getTextByLanguage(sessionData.clientLead?.name, "en");
+        ? reText(getTextByLanguage(name, "ar"))
+        : getTextByLanguage(name, "en");
 
       // Helper to draw text with spacing
       const drawTextBlock = (x, y, lines = [], align = "left") => {
