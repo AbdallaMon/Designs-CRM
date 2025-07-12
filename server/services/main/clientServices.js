@@ -14,17 +14,14 @@ import sharp from "sharp";
 const __filename = fileURLToPath(import.meta.url);
 
 const __dirname = path.dirname(__filename);
-const fontPath = path.join(__dirname, "../fonts/Ya-ModernPro-Bold.otf");
+const fontPath = path.join(__dirname, "../fonts/Amiri-Regular.ttf");
 const fontBase64 = fs.readFileSync(fontPath);
-const fontBoldPath = path.join(__dirname, "../fonts/Ya-ModernPro-Bold.otf");
+const fontBoldPath = path.join(__dirname, "../fonts/Amiri-Bold.ttf");
 const fontBoldBase64 = fs.readFileSync(fontBoldPath);
 
-const enfontPath = path.join(__dirname, "../fonts/Ya-ModernPro-Bold.otf.ttf");
+const enfontPath = path.join(__dirname, "../fonts/NotoSansArabic-Regular.ttf");
 const enfontBase64 = fs.readFileSync(enfontPath);
-const enfontBoldPath = path.join(
-  __dirname,
-  "../fonts/Ya-ModernPro-Bold.otf.ttf"
-);
+const enfontBoldPath = path.join(__dirname, "../fonts/NotoSansArabic-Bold.ttf");
 const enfontBoldBase64 = fs.readFileSync(enfontBoldPath);
 export async function getSessionByToken(token) {
   const session = await prisma.clientImageSession.findUnique({
