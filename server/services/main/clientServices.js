@@ -713,7 +713,7 @@ export async function generateImageSessionPdf({
     const drawStyleItem = async (styleData) => {
       const styleName = getTextByLanguage(styleData[0].title, lng) || "Style";
 
-      const cardHeight = 250;
+      const cardHeight = 300;
       const cardWidth = contentWidth - 40;
       const cardX = margin + 20;
       const cardY = y - cardHeight;
@@ -743,11 +743,11 @@ export async function generateImageSessionPdf({
       });
 
       // Try to draw style image
-      const imageWidth = 250;
-      const imageHeight = 200;
+      const imageWidth = contentWidth - 200;
+      const imageHeight = 270;
       const imageX =
         lng === "ar" ? cardX + cardWidth - imageWidth - 15 : cardX + 15;
-      const imageY = cardY + 20;
+      const imageY = cardY + 15;
       let imageEmbedded = false;
       let dontdrawTitle = false;
       const image =
@@ -849,7 +849,7 @@ export async function generateImageSessionPdf({
           color: colors.heading,
         });
       }
-      y -= cardHeight + 20;
+      y -= cardHeight - 15;
     };
 
     const checkNewPage = async (requiredSpace = 50) => {
@@ -1070,9 +1070,9 @@ export async function generateImageSessionPdf({
         lng === "ar" ? reText("الألوان المخصصة") : "Custom Colors",
         sessionData.customColors,
         async (customColors) => {
-          await checkNewPage(100);
+          await checkNewPage(80);
           const startX = lng === "ar" ? margin + 40 : margin + 40;
-          const newY = drawCustomColors(customColors, startX, y);
+          const newY = drawCustomColors(customColors, startX, y + 10);
           y = newY;
         },
         true
