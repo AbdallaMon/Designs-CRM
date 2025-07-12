@@ -125,7 +125,7 @@ const GalleryDashboard = () => {
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: "calc(100vh - 82px)",
+        height: "calc(100vh - 90px)",
         overflowY: "auto",
       }}
     >

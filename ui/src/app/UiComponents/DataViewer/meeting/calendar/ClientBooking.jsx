@@ -54,6 +54,8 @@ dayjs.extend(timezone);
 dayjs.extend(customParseFormat);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
+dayjs.locale("en");
+
 // Client Booking Component with Steps
 const ClientBooking = ({ token }) => {
   const [activeStep, setActiveStep] = useState(0);

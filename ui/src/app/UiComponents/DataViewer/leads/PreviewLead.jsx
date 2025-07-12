@@ -224,9 +224,18 @@ const LeadContent = ({
             setOpen={setFinalizeModel}
             id={currentId}
             setId={setCurrentId}
-            setleads={setleads}
+            // setleads={setleads}
             setLead={setLead}
             setAnchorEl={setAnchorEl}
+            onUpdate={() => {
+              if (setRerenderColumns) {
+                setRerenderColumns((prev) => ({
+                  ...prev,
+                  [lead.status]: !prev[lead.status],
+                  FINALIZED: !prev.FINALIZED,
+                }));
+              }
+            }}
           />
           <FinalizeModal
             lead={lead}

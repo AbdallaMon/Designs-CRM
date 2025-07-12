@@ -754,13 +754,15 @@ export async function editColorPallete({ data, colorId }) {
 }
 
 // images
-export async function getDesignImages({ notArchived }) {
+export async function getDesignImages({ notArchived, skip, limit }) {
   const where = {};
   if (notArchived) {
     where.isArchived = false;
   }
-  return await prisma.designImage.findMany({
+  const data = await prisma.designImage.findMany({
     where,
+    skip,
+    take: limit,
     include: {
       spaces: {
         select: {
@@ -789,6 +791,10 @@ export async function getDesignImages({ notArchived }) {
       },
     },
   });
+  const total = await prisma.designImage.count({ where });
+
+  const totalPages = Math.ceil(total / limit);
+  return { data, total, totalPages };
 }
 
 export async function createDesignImage({ data }) {

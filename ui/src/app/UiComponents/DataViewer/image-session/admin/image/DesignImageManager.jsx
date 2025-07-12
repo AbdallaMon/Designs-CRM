@@ -11,6 +11,7 @@ const DesignImageManager = () => {
         item={DesignImageItem}
         createComponent={CreateDesginImage}
         gridSize={{ md: 3 }}
+        withPagination={true}
       />
     </Box>
   );

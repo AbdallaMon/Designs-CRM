@@ -73,6 +73,7 @@ const KanbanColumn = ({
   const [loading, setLoading] = useState(false);
   const [totalValue, setTotalValue] = useState(0);
   const [totalLeads, setTotalLeads] = useState(0);
+  const [lead, setCurrentLead] = useState(null);
   const { user } = useAuth();
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -149,6 +150,7 @@ const KanbanColumn = ({
       if (newStatus === "FINALIZED") {
         setCurrentId(l.id);
         setFinalizeModel(true);
+        setCurrentLead(l);
         return;
       }
 
@@ -179,12 +181,18 @@ const KanbanColumn = ({
     <>
       {currentId && (
         <FinalizeModal
-          lead={leads?.find((l) => l.id === currentId)}
+          lead={lead}
           open={finalizeModel}
           setOpen={setFinalizeModel}
           id={currentId}
           setId={setCurrentId}
-          setleads={setleads}
+          onUpdate={() => {
+            setRerenderColumns((prev) => ({
+              ...prev,
+              [lead.status]: !prev[lead.status],
+              FINALIZED: !prev.FINALIZED,
+            }));
+          }}
         />
       )}
 

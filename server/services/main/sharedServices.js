@@ -1734,6 +1734,29 @@ export async function updateClientLeadStatus({
         `;
   }
   if (isAdmin && oldStatus === "FINALIZED") {
+    await prisma.note.deleteMany({
+      where: {
+        invoice: {
+          payment: {
+            clientLeadId: clientLeadId,
+          },
+        },
+      },
+    });
+    await prisma.invoice.deleteMany({
+      where: {
+        payment: {
+          clientLeadId: clientLeadId,
+        },
+      },
+    });
+    await prisma.note.deleteMany({
+      where: {
+        payment: {
+          clientLeadId: clientLeadId,
+        },
+      },
+    });
     await prisma.payment.deleteMany({
       where: {
         clientLeadId,

@@ -23,6 +23,7 @@ export function FinalizeModal({
   setAnchorEl,
   updatePrice,
   lead,
+  onUpdate,
 }) {
   const [price, setPrice] = useState(lead.priceWithOutDiscount);
   const [discount, setDiscount] = useState(lead.discount);
@@ -70,14 +71,18 @@ export function FinalizeModal({
           discount,
         }));
       }
-      setleads((prev) =>
-        prev.map((lead) =>
-          lead.id === id
-            ? { ...lead, status: "FINALIZED", averagePrice: price, priceNote }
-            : lead
-        )
-      );
-
+      if (setleads) {
+        setleads((prev) =>
+          prev.map((lead) =>
+            lead.id === id
+              ? { ...lead, status: "FINALIZED", averagePrice: price, priceNote }
+              : lead
+          )
+        );
+      }
+      if (onUpdate) {
+        onUpdate();
+      }
       if (setAnchorEl) {
         setAnchorEl(null);
       }

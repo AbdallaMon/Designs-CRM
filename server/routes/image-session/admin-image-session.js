@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getAndThrowError,
+  getPagination,
   verifyTokenAndHandleAuthorization,
 } from "../../services/main/utility.js";
 import {
@@ -258,10 +259,14 @@ router.put("/colors/:colorId", async (req, res) => {
 
 router.get("/images", async (req, res) => {
   try {
+    const { limit, skip } = getPagination(req);
+
     const data = await getDesignImages({
       notArchived: req.query.notArchived && req.query.notArchived === "true",
+      limit: Number(limit),
+      skip: Number(skip),
     });
-    res.status(200).json({ data });
+    res.status(200).json(data);
   } catch (e) {
     console.log("error in sapce", e.message);
     res
