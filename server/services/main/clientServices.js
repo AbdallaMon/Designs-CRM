@@ -1260,7 +1260,6 @@ export async function generateImageSessionPdf({
       });
       rightY -= labelFontSize + 10;
 
-      // التوقيع + صورة التوقيع
       const sigLabelWidth = font.widthOfTextAtSize(
         signatureLabel,
         labelFontSize
@@ -1276,8 +1275,8 @@ export async function generateImageSessionPdf({
         }
 
         if (sigImage) {
-          const maxW = 100;
-          const maxH = 60;
+          const maxW = 180;
+          const maxH = 120;
           let { width: sw, height: sh } = sigImage.size();
           let sigW = sw,
             sigH = sh;
