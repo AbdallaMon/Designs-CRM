@@ -19,9 +19,9 @@ const fontBase64 = fs.readFileSync(fontPath);
 const fontBoldPath = path.join(__dirname, "../fonts/Ya-ModernPro-Bold.otf");
 const fontBoldBase64 = fs.readFileSync(fontBoldPath);
 
-const enfontPath = path.join(__dirname, "../fonts/Ya-ModernPro-Bold.otf");
+const enfontPath = path.join(__dirname, "../fonts/NotoSansArabic-Regular.ttf");
 const enfontBase64 = fs.readFileSync(enfontPath);
-const enfontBoldPath = path.join(__dirname, "../fonts/Ya-ModernPro-Bold.otf");
+const enfontBoldPath = path.join(__dirname, "../fonts/NotoSansArabic-Bold.ttf");
 const enfontBoldBase64 = fs.readFileSync(enfontBoldPath);
 export async function getSessionByToken(token) {
   const session = await prisma.clientImageSession.findUnique({
@@ -1163,15 +1163,12 @@ export async function generateImageSessionPdf({
       const isArabicName = isArabicText(name);
 
       const clientName = isArabicName ? reText(name) : name;
-
-      console.log(clientName, "clientName ");
       const labelFontSize = 12;
       const imageMarginTop = 4;
 
       // ==== الطرف الأول (Left Column) ====
       let leftY = topY;
 
-      const leftAlign = isArabic ? "right" : "left";
       const getTextX = (text, size, fontUsed, baseX) =>
         isArabic
           ? getRTLTextX(text, size, fontUsed, baseX, columnWidth)
@@ -1192,7 +1189,6 @@ export async function generateImageSessionPdf({
 
       drawLeftText(firstPartyTitle, 14, true);
       drawLeftText(directorLabel);
-      drawLeftText(signatureLabel);
 
       // ختم
       try {
@@ -1205,7 +1201,7 @@ export async function generateImageSessionPdf({
         }
 
         if (stampImage) {
-          const stampScale = 0.3;
+          const stampScale = 0.2;
           const { width: sw0, height: sh0 } = stampImage.size();
           const sw = sw0 * stampScale;
           const sh = sh0 * stampScale;
@@ -1250,14 +1246,18 @@ export async function generateImageSessionPdf({
       rightY -= 14 + 8;
 
       // الاسم + اسم العميل
-      const nameLabelWidth = font.widthOfTextAtSize(nameLabel, labelFontSize);
-      const clientNameWidth = font.widthOfTextAtSize(clientName, labelFontSize);
-      const nameX = isArabic
-        ? rightX + columnWidth - nameLabelWidth - clientNameWidth - 10
-        : rightX;
 
-      drawRightText(nameLabel, nameX, rightY);
-      drawRightText(clientName, nameX + nameLabelWidth + 5, rightY);
+      const nameText = `${nameLabel} ${clientName}`;
+      const nameTextX = isArabic
+        ? getRTLTextX(nameText, labelFontSize, font, rightX, columnWidth)
+        : rightX;
+      page.drawText(nameText, {
+        x: nameTextX,
+        y: rightY,
+        size: labelFontSize,
+        font,
+        color: colors.textColor,
+      });
       rightY -= labelFontSize + 10;
 
       // التوقيع + صورة التوقيع
