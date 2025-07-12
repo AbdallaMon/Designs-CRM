@@ -138,21 +138,29 @@ export const Calendar = ({
   }, [displayMonth, rerender, adminId]);
 
   const getDaysInMonth = () => {
-    const startOfMonth = displayMonth.tz(userTimezone).startOf("month");
-    const endOfMonth = displayMonth.tz(userTimezone).endOf("month");
+    const startOfMonth = displayMonth
+      .tz(userTimezone)
+      .locale("en")
+      .startOf("month");
+    const endOfMonth = displayMonth
+      .tz(userTimezone)
+      .locale("en")
+      .endOf("month");
 
     const startDate = startOfMonth.startOf("week");
     const endDate = endOfMonth.endOf("week");
 
     const days = [];
-    let current = startDate.clone().tz(userTimezone);
+    let current = startDate.clone().locale("en").tz(userTimezone);
 
     while (current.isBefore(endDate) || current.isSame(endDate, "day")) {
       days.push(current);
-      current = current.add(1, "day");
+      current = current.add(1, "day").locale("en");
     }
+
     return days;
   };
+
   // Helper function to convert GMT stored date to user's timezone and get the date string
   const getDateInUserTimezone = (gmtDate) => {
     return dayjs.utc(gmtDate).tz(userTimezone).format("YYYY-MM-DD");
