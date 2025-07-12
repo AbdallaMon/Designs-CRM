@@ -1319,7 +1319,31 @@ export async function generateImageSessionPdf({
         console.warn("Failed to load client signature:", err.message);
       }
     }
+    const totalPages = pdfDoc.getPageCount();
 
+    for (let i = 0; i < totalPages; i++) {
+      const currentPage = pdfDoc.getPages()[i];
+      const pageNumberText =
+        lng === "ar"
+          ? `الصفحة ${i + 1} من ${totalPages}`
+          : `Page ${i + 1} of ${totalPages}`;
+      const fontSize = 10;
+      const textWidth = font.widthOfTextAtSize(pageNumberText, fontSize);
+      const x =
+        lng === "ar" ? margin + contentWidth - textWidth - 10 : margin + 10;
+      const y = margin + 10;
+
+      currentPage.drawText(
+        lng === "ar" ? reText(pageNumberText) : pageNumberText,
+        {
+          x,
+          y,
+          size: fontSize,
+          font,
+          color: colors.textColor,
+        }
+      );
+    }
     const pdfBytes = await pdfDoc.save();
     return pdfBytes;
   } catch (e) {
