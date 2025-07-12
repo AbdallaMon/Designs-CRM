@@ -231,7 +231,15 @@ export function FloatingActionButton({
   isOverItems,
 }) {
   const theme = useTheme();
-  const Icon = type === "NEXT" ? MdArrowForward : MdArrowBack;
+  const { lng } = useLanguageSwitcherContext();
+  const Icon =
+    type === "NEXT"
+      ? lng === "ar"
+        ? MdArrowBack
+        : MdArrowForward
+      : lng === "ar"
+      ? MdArrowForward
+      : MdArrowBack;
 
   const transitionDuration = {
     enter: theme.transitions.duration.enteringScreen,
