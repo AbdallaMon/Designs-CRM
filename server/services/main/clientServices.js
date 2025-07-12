@@ -129,12 +129,12 @@ export async function uploadPdfAndApproveSession({
     await uploadToFTPHttpAsBuffer(pdfBytes, remotePath, true);
 
     const publicUrl = `https://panel.dreamstudiio.com/uploads/${fileName}`;
-    await approveSession({
-      token: sessionData.token,
-      clientLeadId: sessionData.clientLeadId,
-      id: Number(sessionData.id),
-      pdfUrl: publicUrl,
-    });
+    // await approveSession({
+    //   token: sessionData.token,
+    //   clientLeadId: sessionData.clientLeadId,
+    //   id: Number(sessionData.id),
+    //   pdfUrl: publicUrl,
+    // });
     // await approveSession({
     //   token: sessionData.token,
     //   clientLeadId: sessionData.clientLeadId,
@@ -343,22 +343,38 @@ export async function generateImageSessionPdf({
     };
 
     const drawFixedHeader = async (isWide = false) => {
-      const width = page.getWidth(); // Don't use isWide logic here
+      const width = page.getWidth();
 
       try {
         const headerImageBuffer = await fetchImageBuffer(
           "https://dreamstudiio.com/pdf-banner.jpg"
         );
         const headerImage = await pdfDoc.embedJpg(headerImageBuffer);
-        const contentWidth = width - margin * 2;
-        const headerWidth = contentWidth;
-        const headerX = (width - headerWidth) / 2;
+        const metadata = await sharp(headerImageBuffer).metadata();
+
+        const imageAspectRatio = (metadata.width || 1) / (metadata.height || 1);
+
+        const maxHeaderWidth = width - margin * 2;
+        const maxHeaderHeight = headerHeight;
+
+        let scaledWidth, scaledHeight;
+
+        if (imageAspectRatio > maxHeaderWidth / maxHeaderHeight) {
+          scaledWidth = maxHeaderWidth;
+          scaledHeight = scaledWidth / imageAspectRatio;
+        } else {
+          scaledHeight = maxHeaderHeight;
+          scaledWidth = scaledHeight * imageAspectRatio;
+        }
+
+        const x = (width - scaledWidth) / 2;
+        const y = page.getHeight() - scaledHeight - 10;
 
         page.drawImage(headerImage, {
-          x: headerX,
-          y: page.getHeight() - headerHeight - 10,
-          width: headerWidth,
-          height: headerHeight,
+          x,
+          y,
+          width: scaledWidth,
+          height: scaledHeight,
         });
       } catch (err) {
         console.warn("Header image load error:", err.message);
@@ -1170,16 +1186,29 @@ export async function generateImageSessionPdf({
             const pageH = page.getHeight();
 
             const frameX = margin;
-            const frameY = margin + footerHeight; // bottom Y of header + margin
+            const frameY = margin + footerHeight;
             const frameWidth = pageW - margin * 2;
             const frameHeight =
               pageH - headerHeight - footerHeight - margin * 2;
+            // Calculate scale to fit within frame while preserving aspect ratio
+            const imgDims = img.scale(1); // get original size
+            const imageAspectRatio = imgDims.width / imgDims.height;
+            const frameAspectRatio = frameWidth / frameHeight;
 
-            const scaledWidth = frameWidth;
-            const scaledHeight = frameHeight;
+            let scaledWidth, scaledHeight;
 
-            // ✅ Correct Y calculation: center inside frame
-            const x = frameX;
+            if (imageAspectRatio > frameAspectRatio) {
+              // Image is wider than frame — limit by width
+              scaledWidth = frameWidth;
+              scaledHeight = frameWidth / imageAspectRatio;
+            } else {
+              // Image is taller — limit by height
+              scaledHeight = frameHeight;
+              scaledWidth = frameHeight * imageAspectRatio;
+            }
+
+            // Center the image inside the frame
+            const x = frameX + (frameWidth - scaledWidth) / 2;
             const y = frameY + (frameHeight - scaledHeight) / 2;
 
             page.drawImage(img, {
@@ -1385,7 +1414,6 @@ export async function generateImageSessionPdf({
       if (i === 0) continue;
       page = pages[i]; // update `page` reference
       const isWide = page.getWidth() > page.getHeight();
-      console.log(isWide, "isWide");
       drawFixedFooter(isWide, i, totalPages);
     }
 
