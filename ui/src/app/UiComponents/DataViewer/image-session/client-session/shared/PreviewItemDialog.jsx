@@ -215,7 +215,6 @@ export function PreviewItemDialog({
             overflow: "hidden",
           }}
         >
-          {/* Background image */}
           <Box
             component="img"
             src={ensureHttps(
@@ -234,7 +233,6 @@ export function PreviewItemDialog({
             }}
           />
 
-          {/* Content overlay */}
           <Box
             sx={{
               position: "absolute",

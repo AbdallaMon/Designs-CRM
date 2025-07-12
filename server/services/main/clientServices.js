@@ -14,14 +14,14 @@ import sharp from "sharp";
 const __filename = fileURLToPath(import.meta.url);
 
 const __dirname = path.dirname(__filename);
-const fontPath = path.join(__dirname, "../fonts/Amiri-Regular.ttf");
+const fontPath = path.join(__dirname, "../fonts/Ya-ModernPro-Bold.otf");
 const fontBase64 = fs.readFileSync(fontPath);
-const fontBoldPath = path.join(__dirname, "../fonts/Amiri-Bold.ttf");
+const fontBoldPath = path.join(__dirname, "../fonts/Ya-ModernPro-Bold.otf");
 const fontBoldBase64 = fs.readFileSync(fontBoldPath);
 
-const enfontPath = path.join(__dirname, "../fonts/NotoSansArabic-Regular.ttf");
+const enfontPath = path.join(__dirname, "../fonts/Ya-ModernPro-Bold.otf");
 const enfontBase64 = fs.readFileSync(enfontPath);
-const enfontBoldPath = path.join(__dirname, "../fonts/NotoSansArabic-Bold.ttf");
+const enfontBoldPath = path.join(__dirname, "../fonts/Ya-ModernPro-Bold.otf");
 const enfontBoldBase64 = fs.readFileSync(enfontBoldPath);
 export async function getSessionByToken(token) {
   const session = await prisma.clientImageSession.findUnique({
@@ -1137,7 +1137,6 @@ export async function generateImageSessionPdf({
       }
     }
 
-    // Signature section
     if (signatureUrl) {
       page = pdfDoc.addPage([pageWidth, pageHeight]);
       drawPageBorder();
@@ -1159,52 +1158,43 @@ export async function generateImageSessionPdf({
         ? reText("المدير التنفيذي: راشد ابو عوده")
         : "Executive Director: Rashid Abu Ouda";
       const signatureLabel = isArabic ? reText("التوقيع:") : "Signature:";
+      const nameLabel = isArabic ? reText("الاسم:") : "Name:";
       const stampImageUrl = "https://dreamstudiio.com/dream-signature.jpg";
-      const clientName = isArabic
-        ? reText(getTextByLanguage(name, "ar"))
-        : getTextByLanguage(name, "en");
+      const isArabicName = isArabicText(name);
 
-      // Helper to draw text with spacing
-      const drawTextBlock = (x, y, lines = [], align = "left") => {
-        let yy = y;
-        for (const line of lines) {
-          const text = line.text;
-          const fontUsed = line.bold ? boldFont : font;
-          const size = line.size || 12;
+      const clientName = isArabicName ? reText(name) : name;
 
-          const tx =
-            align === "right"
-              ? getRTLTextX(text, size, fontUsed, x, columnWidth)
-              : x;
+      console.log(clientName, "clientName ");
+      const labelFontSize = 12;
+      const imageMarginTop = 4;
 
-          page.drawText(text, {
-            x: tx,
-            y: yy,
-            size,
-            font: fontUsed,
-            color: colors.textColor,
-          });
-          yy -= size + 6;
-        }
-        return yy;
+      // ==== الطرف الأول (Left Column) ====
+      let leftY = topY;
+
+      const leftAlign = isArabic ? "right" : "left";
+      const getTextX = (text, size, fontUsed, baseX) =>
+        isArabic
+          ? getRTLTextX(text, size, fontUsed, baseX, columnWidth)
+          : baseX;
+
+      const drawLeftText = (text, size = labelFontSize, bold = false) => {
+        const fontUsed = bold ? boldFont : font;
+        const tx = getTextX(text, size, fontUsed, leftX);
+        page.drawText(text, {
+          x: tx,
+          y: leftY,
+          size,
+          font: fontUsed,
+          color: colors.textColor,
+        });
+        leftY -= size + 6;
       };
 
-      let leftY = topY;
-      let rightY = topY;
+      drawLeftText(firstPartyTitle, 14, true);
+      drawLeftText(directorLabel);
+      drawLeftText(signatureLabel);
 
-      // LEFT COLUMN: الطرف الأول
-      leftY = drawTextBlock(
-        leftX,
-        leftY,
-        [
-          { text: firstPartyTitle, bold: true, size: 14 },
-          { text: directorLabel },
-          { text: signatureLabel },
-        ],
-        isArabic ? "right" : "left"
-      );
-
-      // Stamp image under signature
+      // ختم
       try {
         const stampBytes = await fetchImageBuffer(stampImageUrl);
         let stampImage;
@@ -1215,32 +1205,67 @@ export async function generateImageSessionPdf({
         }
 
         if (stampImage) {
-          const { width: sw, height: sh } = stampImage.scale(0.2);
+          const stampScale = 0.3;
+          const { width: sw0, height: sh0 } = stampImage.size();
+          const sw = sw0 * stampScale;
+          const sh = sh0 * stampScale;
+          const stampX = isArabic ? leftX + columnWidth - sw : leftX;
+          const stampY = leftY - sh - 10;
           page.drawImage(stampImage, {
-            x: isArabic ? leftX + columnWidth - sw : leftX,
-            y: leftY - sh - 10,
+            x: stampX,
+            y: stampY,
             width: sw,
             height: sh,
           });
-          leftY -= sh + 20;
+          leftY = stampY - 20;
         }
       } catch (err) {
         console.warn("Failed to load stamp image:", err.message);
       }
 
-      // RIGHT COLUMN: الطرف الثاني
-      rightY = drawTextBlock(
-        rightX,
-        rightY,
-        [
-          { text: secondPartyTitle, bold: true, size: 14 },
-          { text: clientName },
-          { text: signatureLabel },
-        ],
-        isArabic ? "right" : "left"
+      // ==== الطرف الثاني (Right Column) ====
+      let rightY = topY;
+
+      const drawRightText = (
+        text,
+        x,
+        y,
+        fontUsed = font,
+        size = labelFontSize
+      ) => {
+        page.drawText(text, {
+          x,
+          y,
+          size,
+          font: fontUsed,
+          color: colors.textColor,
+        });
+      };
+
+      const secondTitleX = isArabic
+        ? getRTLTextX(secondPartyTitle, 14, boldFont, rightX, columnWidth)
+        : rightX;
+
+      drawRightText(secondPartyTitle, secondTitleX, rightY, boldFont, 14);
+      rightY -= 14 + 8;
+
+      // الاسم + اسم العميل
+      const nameLabelWidth = font.widthOfTextAtSize(nameLabel, labelFontSize);
+      const clientNameWidth = font.widthOfTextAtSize(clientName, labelFontSize);
+      const nameX = isArabic
+        ? rightX + columnWidth - nameLabelWidth - clientNameWidth - 10
+        : rightX;
+
+      drawRightText(nameLabel, nameX, rightY);
+      drawRightText(clientName, nameX + nameLabelWidth + 5, rightY);
+      rightY -= labelFontSize + 10;
+
+      // التوقيع + صورة التوقيع
+      const sigLabelWidth = font.widthOfTextAtSize(
+        signatureLabel,
+        labelFontSize
       );
 
-      // Signature image (client)
       try {
         const sigBytes = await fetchImageBuffer(signatureUrl);
         let sigImage;
@@ -1251,7 +1276,7 @@ export async function generateImageSessionPdf({
         }
 
         if (sigImage) {
-          const maxW = 120;
+          const maxW = 100;
           const maxH = 60;
           let { width: sw, height: sh } = sigImage.size();
           let sigW = sw,
@@ -1268,15 +1293,28 @@ export async function generateImageSessionPdf({
             sigW *= ratio;
           }
 
-          const sigX = isArabic ? rightX + columnWidth - sigW : rightX;
-          const sigY = rightY - sigH - 10;
+          const sigX = isArabic
+            ? rightX + columnWidth - sigLabelWidth - sigW - 10
+            : rightX + sigLabelWidth + 10;
 
+          const sigY = rightY - sigH - imageMarginTop;
+
+          // Draw label
+          drawRightText(
+            signatureLabel,
+            isArabic ? sigX + sigW + 5 : rightX,
+            sigY + sigH / 2 - 6
+          );
+
+          // Draw image
           page.drawImage(sigImage, {
             x: sigX,
             y: sigY,
             width: sigW,
             height: sigH,
           });
+
+          rightY = sigY - 10;
         }
       } catch (err) {
         console.warn("Failed to load client signature:", err.message);
