@@ -128,12 +128,12 @@ export async function uploadPdfAndApproveSession({
     await uploadToFTPHttpAsBuffer(pdfBytes, remotePath, true);
 
     const publicUrl = `https://panel.dreamstudiio.com/uploads/${fileName}`;
-    // await approveSession({
-    //   token: sessionData.token,
-    //   clientLeadId: sessionData.clientLeadId,
-    //   id: Number(sessionData.id),
-    //   pdfUrl: publicUrl,
-    // });
+    await approveSession({
+      token: sessionData.token,
+      clientLeadId: sessionData.clientLeadId,
+      id: Number(sessionData.id),
+      pdfUrl: publicUrl,
+    });
     // await approveSession({
     //   token: sessionData.token,
     //   clientLeadId: sessionData.clientLeadId,
@@ -1275,8 +1275,8 @@ export async function generateImageSessionPdf({
         }
 
         if (sigImage) {
-          const maxW = 180;
-          const maxH = 120;
+          const maxW = 200;
+          const maxH = 150;
           let { width: sw, height: sh } = sigImage.size();
           let sigW = sw,
             sigH = sh;
