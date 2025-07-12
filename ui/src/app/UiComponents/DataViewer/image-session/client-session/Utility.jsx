@@ -138,7 +138,14 @@ export function ActionButtons({ session, handleNext, handleBack, disabled }) {
   const backLabel = isRTL ? "السابق" : "Go Back";
 
   return (
-    <Box display="flex" gap={2} justifyContent="space-between">
+    <Box
+      display="flex"
+      gap={2}
+      justifyContent="space-between"
+      flexDirection={
+        session && session.sessionStatus !== "INITIAL" ? "row" : "row-reverse"
+      }
+    >
       {session && session.sessionStatus !== "INITIAL" && (
         <ActionButton
           disabled={disabled}
@@ -165,7 +172,7 @@ export function ActionButton({
   variant = "contained",
 }) {
   const theme = useTheme();
-
+  const { lng } = useLanguageSwitcherContext();
   return (
     <Button
       variant={variant}
@@ -176,7 +183,19 @@ export function ActionButton({
         }
       }}
       disabled={disabled}
-      endIcon={type === "NEXT" ? <MdArrowForward /> : <MdArrowBack />}
+      endIcon={
+        type === "NEXT" ? (
+          lng === "ar" ? (
+            <MdArrowBack />
+          ) : (
+            <MdArrowForward />
+          )
+        ) : lng === "ar" ? (
+          <MdArrowForward />
+        ) : (
+          <MdArrowBack />
+        )
+      }
       sx={{
         borderRadius: 25,
         fontSize: "1.1rem",

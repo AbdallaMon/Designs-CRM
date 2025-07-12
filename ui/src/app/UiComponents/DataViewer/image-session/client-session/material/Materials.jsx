@@ -57,19 +57,16 @@ export function Materials({
       // Create a timeline for better control
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
-      // Set initial states with more dramatic effects
-      gsap.set(cardsRef.current, {
-        opacity: 0,
-        y: 60,
-        scale: 0.8,
-        rotationX: 15,
-        filter: "blur(8px) brightness(0.7)",
-        transformOrigin: "center bottom",
-      });
-
-      // Modern card entrance with layered effects
-      tl.to(
+      tl.fromTo(
         cardsRef.current,
+        {
+          opacity: 0,
+          y: 60,
+          scale: 0.8,
+          rotationX: 15,
+          filter: "blur(8px) brightness(0.7)",
+          transformOrigin: "center bottom",
+        },
         {
           opacity: 1,
           y: 0,
@@ -129,7 +126,7 @@ export function Materials({
           });
         }}
       />
-      <Grid container ref={containerRef}>
+      <Grid container ref={containerRef} sx={{ overflow: "hidden" }}>
         {materials.map((material, index) => {
           let isFullWidth = false;
 

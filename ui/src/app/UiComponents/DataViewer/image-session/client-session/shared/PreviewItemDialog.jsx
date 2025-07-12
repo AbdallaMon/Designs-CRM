@@ -148,6 +148,7 @@ export function PreviewItemDialog({
           boxShadow: "none",
           m: isMobile ? 0 : 2,
           maxHeight: isMobile ? "100vh" : "calc(100vh - 32px)",
+          height: "100%",
           width: isMobile ? "100vw" : "calc(100vw - 32px)",
           borderRadius: isMobile ? 0 : 2,
           overflow: "hidden",
@@ -164,6 +165,9 @@ export function PreviewItemDialog({
           overflow: "hidden",
           bgcolor: "rgba(0, 0, 0, 0.9)",
           color: "white",
+          "& .MuiPaper-root": {
+            height: "100%",
+          },
         }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}

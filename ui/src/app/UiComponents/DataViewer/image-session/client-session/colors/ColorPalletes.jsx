@@ -15,7 +15,9 @@ import { FloatingActionButton } from "../Utility";
 import { gsap } from "gsap";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
+gsap.registerPlugin(ScrollTrigger);
 export function ColorPalletes({
   session,
   handleBack,
@@ -49,27 +51,24 @@ export function ColorPalletes({
   // Animate cards on enter
   useEffect(() => {
     if (colors.length > 0 && !loading) {
-      // Reset cards to initial state
-      gsap.set(cardsRef.current, {
-        opacity: 0,
-        y: 50,
-        scale: 0.8,
-        rotateX: 15,
-      });
-
-      // Animate title first
-
       // Animate cards with stagger
-      gsap.to(cardsRef.current, {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        rotateX: 0,
-        duration: 0.6,
-        stagger: 0.1,
-        ease: "back.out(1.7)",
-        delay: 0.3,
-      });
+      gsap.fromTo(
+        cardsRef.current,
+        {
+          opacity: 0,
+          y: 50,
+          scale: 0.8,
+        },
+        {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          duration: 0.6,
+          stagger: 0.1,
+          ease: "back.out(1.7)",
+          delay: 0.3,
+        }
+      );
     }
   }, [colors, loading]);
 
@@ -325,10 +324,6 @@ export function ColorPalletes({
       await onUpdate();
     }
   }
-  const title =
-    lng === "ar"
-      ? "اختر نمط الألوان المفضل لديك"
-      : "Choose your preferred color pattern";
 
   return (
     <>
@@ -342,7 +337,7 @@ export function ColorPalletes({
           sx={{ position: "fixed", top: "15px", left: "15px" }}
         />
       )}
-      <Grid container ref={containerRef}>
+      <Grid container ref={containerRef} sx={{ overflow: "hidden" }}>
         {colors.map((color, index) => {
           let isFullWidth = false;
 
@@ -375,7 +370,6 @@ export function ColorPalletes({
                 transition: "transform 0.2s ease",
                 overflow: "hidden",
                 opacity: 0,
-
                 maxHeight: "300px",
                 position: "relative",
               }}
