@@ -44,15 +44,9 @@ import multer from "multer";
 import prisma from "../prisma/prisma.js";
 import { newLeadNotification } from "../services/notification.js";
 import { createGroupProjects } from "../services/main/sharedServices.js";
-import {
-  addCutsomDate,
-  createAvailableDatesForMoreThanOneDay,
-  createAvailableDay,
-  deleteADay,
-  deleteASlot,
-  updateAvailableDay,
-} from "../services/main/calendarServices.js";
+
 import imageSessionRouter from "./image-session/admin-image-session.js";
+import coursesRouter from "./courses/adminCourses.js";
 
 const router = Router();
 
@@ -60,6 +54,7 @@ router.use(async (req, res, next) => {
   await verifyTokenAndHandleAuthorization(req, res, next, "ADMIN");
 });
 router.use("/image-session", imageSessionRouter);
+router.use("/courses", coursesRouter);
 
 router.get("/users", async (req, res) => {
   const searchParams = req.query;

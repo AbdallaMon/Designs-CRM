@@ -1274,17 +1274,20 @@ model Lesson {
   @@unique([courseId, order])
 }
 
+
+
+enum LessonVideoType {
+  IFRAME
+  URL
+}
+
 model LessonVideo {
   id        Int    @id @default(autoincrement())
   lesson    Lesson @relation(fields: [lessonId], references: [id])
   lessonId  Int
   url       String @db.LongText
   videoType LessonVideoType @default(IFRAME)
-}
-
-enum LessonVideoType {
-  IFRAME
-  URL
+  order     Int    @default(0)
 }
 
 model LessonPDF {
@@ -1292,6 +1295,7 @@ model LessonPDF {
   lesson   Lesson @relation(fields: [lessonId], references: [id])
   lessonId Int
   url      String @db.LongText
+  order    Int    @default(0)
 }
 
 model LessonLink {
@@ -1300,7 +1304,9 @@ model LessonLink {
   lessonId Int
   url      String @db.LongText
   title    String
+  order    Int    @default(0)
 }
+
 
 model Test {
   id         Int       @id @default(autoincrement())

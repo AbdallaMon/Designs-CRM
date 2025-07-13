@@ -36,7 +36,12 @@ app.use(
 
 const httpServer = createServer(app);
 initSocket(httpServer); // Initialize socket.io with the server
-app.use("/uploads", express.static("uploads")); // Serve static files
+if (process.env.ISLOCAL) {
+  app.use(
+    "/uploads",
+    express.static("E:/home/panel.dreamstudiio.com/public_html/uploads")
+  );
+}
 app.use(express.json());
 app.use(cookieParser());
 app.use("/auth", authRoutes);

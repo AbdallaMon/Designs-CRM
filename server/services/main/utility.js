@@ -437,7 +437,9 @@ export const uploadFiles = async (req, res) => {
             const savePath = path.join(uploadDir, uniqueFilename);
             fs.writeFileSync(savePath, file.buffer);
 
-            const fileUrl = `http://panel.dreamstudiio.com/uploads/${uniqueFilename}`;
+            const fileUrl = process.env.ISLOCAL
+              ? `${process.env.SERVER}/uploads/${uniqueFilename}`
+              : `http://panel.dreamstudiio.com/uploads/${uniqueFilename}`;
             const fieldName = file.fieldname;
 
             if (!fileUrls[fieldName]) fileUrls[fieldName] = [];
