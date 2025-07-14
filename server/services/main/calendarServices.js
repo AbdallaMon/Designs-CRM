@@ -116,6 +116,7 @@ export async function createAvailableDatesForMoreThanOneDay({
         duration,
         breakMinutes,
         timeZone,
+        userId,
       });
     else
       await createAvailableDay({
@@ -212,6 +213,7 @@ async function createSlotsForDay({
     });
     current = addMinutes(end, breakMinutes);
   }
+  console.log(slots, "slots");
   await prisma.availableSlot.createMany({
     data: slots,
   });
@@ -224,6 +226,7 @@ export async function updateAvailableDay({
   duration,
   breakMinutes,
   timeZone,
+  userId,
 }) {
   dayId = Number(dayId);
   const existingDay = await prisma.availableDay.findUnique({
@@ -239,17 +242,20 @@ export async function updateAvailableDay({
       availableDayId: existingDay.id,
     },
   });
-
-  await createSlotsForDay({
+  await prisma.availableDay.delete({
+    where: {
+      id: existingDay.id,
+    },
+  });
+  await createAvailableDay({
     date,
     fromHour,
     toHour,
     duration,
     breakMinutes,
-    day: existingDay,
-    timeZone,
+    userId: userId,
+    timeZone: timeZone,
   });
-
   return true;
 }
 
