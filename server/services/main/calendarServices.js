@@ -150,8 +150,24 @@ export async function createAvailableDay({
 
   const existing = await prisma.availableDay.findUnique({
     where: { userId_date: { userId, date: date } },
+    include: { slots: true },
   });
-  if (existing) throw new Error("Day already exists");
+
+  if (existing) {
+    const hasBookedSlots = existing.slots.some((slot) => slot.isBooked);
+
+    if (hasBookedSlots) {
+      throw new Error("You cannot delete this day. It contains booked slots.");
+    } else {
+      await prisma.availableSlot.deleteMany({
+        where: { availableDayId: existing.id },
+      });
+
+      await prisma.availableDay.delete({
+        where: { id: existing.id },
+      });
+    }
+  }
 
   const day = await prisma.availableDay.create({
     data: {

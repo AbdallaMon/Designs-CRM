@@ -271,8 +271,8 @@ export async function generateImageSessionPdf({
     const pageHeight = 800;
     const margin = 40;
     const contentWidth = pageWidth - margin * 2;
-    const headerHeight = 60;
-    const footerHeight = 60;
+    const headerHeight = 70;
+    const footerHeight = 55;
     const borderWidth = 2;
     let marginY = 20;
 
@@ -345,21 +345,27 @@ export async function generateImageSessionPdf({
     const drawFixedHeader = async (isWide = false) => {
       const pageWidth = page.getWidth();
       const pageHeight = page.getHeight();
+
       const logoBg = "#272727";
-      const logoImageUrl = "https://dreamstudiio.com/pdf-logo.jpg";
-      const logoTextUrl = "https://dreamstudiio.com/pdf-logo-text";
+      const logoImageUrl = "https://dreamstudiio.com/pdf-logo-croped.jpg";
+      const logoTextUrl = "https://dreamstudiio.com/pdf-logo-text-croped.jpg";
 
       const contentWidth = pageWidth - margin * 2;
       const contentX = margin;
-      const headerY = pageHeight - headerHeight;
+      const headerY = pageHeight - headerHeight + 5;
+      const r = 39 / 255;
+      const g = 39 / 255;
+      const b = 39 / 255;
 
-      // Draw background rectangle (instead of previous image)
+      const color = rgb(r, g, b);
+
+      // Background full header block
       page.drawRectangle({
         x: contentX,
         y: headerY - marginY + 2,
         width: contentWidth,
-        height: headerHeight + marginY - 2,
-        color: rgb(39 / 255, 39 / 255, 39 / 255),
+        height: headerHeight + marginY - 10,
+        color,
       });
 
       // Load images
@@ -369,18 +375,39 @@ export async function generateImageSessionPdf({
       const logoTextBuffer = await fetchImageBuffer(logoTextUrl);
       const logoTextImage = await pdfDoc.embedJpg(logoTextBuffer);
 
-      // Define sizes
-      const logoWidth = 60;
-      const logoHeight = headerHeight - 10;
-      const logoX = contentX + 10;
-      const logoY = headerY - marginY + 5;
+      // === LEFT SIDE: Logo Image inside rounded container ===
+      const logoContainerWidth = 100;
+      const logoContainerHeight = headerHeight - 2;
+      const logoContainerX = contentX;
+      const logoContainerY = headerY + 2 - marginY + 5;
+      const borderRadius = 8;
 
-      const logoTextWidth = 150;
-      const logoTextHeight = headerHeight - 10;
-      const logoTextX = contentX + contentWidth - logoTextWidth - 10;
-      const logoTextY = headerY - marginY + 5;
+      // Draw rounded background
+      page.drawRectangle({
+        x: logoContainerX,
+        y: logoContainerY,
+        width: logoContainerWidth,
+        height: logoContainerHeight,
+        borderRadius,
+        color,
+      });
 
-      // Draw images
+      // Draw logo centered
+      const logoDims = logoImage.scale(1);
+      const maxLogoWidth = logoContainerWidth - 20;
+      const maxLogoHeight = logoContainerHeight - 20;
+      const logoAspect = logoDims.width / logoDims.height;
+
+      let logoWidth = maxLogoWidth;
+      let logoHeight = logoWidth / logoAspect;
+      if (logoHeight > maxLogoHeight) {
+        logoHeight = maxLogoHeight;
+        logoWidth = logoHeight * logoAspect;
+      }
+
+      const logoX = logoContainerX + (logoContainerWidth - logoWidth) / 2;
+      const logoY = logoContainerY + (logoContainerHeight - logoHeight) / 2;
+
       page.drawImage(logoImage, {
         x: logoX,
         y: logoY,
@@ -388,13 +415,75 @@ export async function generateImageSessionPdf({
         height: logoHeight,
       });
 
+      // === RIGHT SIDE: Logo Text Image inside rounded container ===
+      const logoTextContainerWidth = 400;
+      const logoTextContainerHeight = headerHeight - 10;
+      const logoTextContainerX =
+        contentX + contentWidth - logoTextContainerWidth - 10;
+      const logoTextContainerY = headerY + 5 - marginY + 5;
+
+      // Draw rounded background
+      page.drawRectangle({
+        x: logoTextContainerX,
+        y: logoTextContainerY,
+        width: logoTextContainerWidth,
+        height: logoTextContainerHeight,
+        borderRadius,
+        color,
+      });
+
+      // Draw logo text centered
+      const textDims = logoTextImage.scale(1);
+      const maxTextWidth = logoTextContainerWidth - 20;
+      const maxTextHeight = logoTextContainerHeight - 20;
+      const textAspect = textDims.width / textDims.height;
+
+      let textWidth = maxTextWidth;
+      let textHeight = textWidth / textAspect;
+      if (textHeight > maxTextHeight) {
+        textHeight = maxTextHeight;
+        textWidth = textHeight * textAspect;
+      }
+
+      const marginFromRight = 10; // Adjust this for desired spacing
+
+      // Calculate X to be right of the logo container + margin
+      const textX = margin + contentWidth - textWidth - marginFromRight;
+      const textY =
+        logoTextContainerY + (logoTextContainerHeight - textHeight) / 2;
+
       page.drawImage(logoTextImage, {
-        x: logoTextX,
-        y: logoTextY,
-        width: logoTextWidth,
-        height: logoTextHeight,
+        x: textX,
+        y: textY,
+        width: textWidth,
+        height: textHeight,
       });
     };
+    // const drawFixedHeader = async (isWide = false) => {
+    //   const pageWidth = page.getWidth();
+    //   const pageHeight = page.getHeight();
+
+    //   const contentWidth = pageWidth - margin * 2;
+    //   const contentX = margin;
+    //   const headerY = pageHeight - headerHeight;
+
+    //   try {
+    //     const headerImageBuffer = await fetchImageBuffer(
+    //       "https://dreamstudiio.com/pdf-banner.jpg"
+    //     );
+    //     const headerImage = await pdfDoc.embedJpg(headerImageBuffer);
+
+    //     // Just stretch the image to fit the border area exactly
+    //     page.drawImage(headerImage, {
+    //       x: contentX,
+    //       y: headerY - marginY + 2,
+    //       width: contentWidth,
+    //       height: headerHeight + marginY - 2,
+    //     });
+    //   } catch (err) {
+    //     console.warn("Header image load error:", err.message);
+    //   }
+    // };
 
     // Draw fixed footerf
     const drawFixedFooter = (

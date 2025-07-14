@@ -93,7 +93,6 @@ export async function createNewLesson({ data, courseId }) {
   });
 }
 export async function editLesson({ data, lessonId }) {
-  console.log(data, "edit lesson");
   if (data.order) {
     data.order = Number(data.order);
   }
@@ -107,6 +106,98 @@ export async function editLesson({ data, lessonId }) {
     data,
   });
 }
+
+export async function deleteLesson(lessonId) {
+  lessonId = Number(lessonId);
+  return prisma.$transaction(async (tx) => {
+    // Delete SelectedAnswer
+    await tx.selectedAnswer.deleteMany({
+      where: {
+        answer: {
+          attempt: {
+            test: {
+              lessonId,
+            },
+          },
+        },
+      },
+    });
+
+    // Delete UserAnswer
+    await tx.userAnswer.deleteMany({
+      where: {
+        attempt: {
+          test: {
+            lessonId,
+          },
+        },
+      },
+    });
+
+    // Delete TestAttempt
+    await tx.testAttempt.deleteMany({
+      where: {
+        test: {
+          lessonId,
+        },
+      },
+    });
+
+    // Delete TestChoice
+    await tx.testChoice.deleteMany({
+      where: {
+        question: {
+          test: {
+            lessonId,
+          },
+        },
+      },
+    });
+
+    // Delete TestQuestion
+    await tx.testQuestion.deleteMany({
+      where: {
+        test: {
+          lessonId,
+        },
+      },
+    });
+
+    // Delete Tests linked to this lesson
+    await tx.test.deleteMany({
+      where: {
+        lessonId,
+      },
+    });
+
+    // Delete PDFs, Videos, Links
+    await tx.lessonPDF.deleteMany({
+      where: {
+        lessonId,
+      },
+    });
+
+    await tx.lessonVideo.deleteMany({
+      where: {
+        lessonId,
+      },
+    });
+
+    await tx.lessonLink.deleteMany({
+      where: {
+        lessonId,
+      },
+    });
+
+    // Finally, delete the lesson
+    await tx.lesson.delete({
+      where: {
+        id: lessonId,
+      },
+    });
+  });
+}
+
 export async function getLessonById({ lessonId }) {
   return await prisma.lesson.findUnique({
     where: {

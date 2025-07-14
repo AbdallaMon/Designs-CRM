@@ -1329,7 +1329,7 @@ model TestQuestion {
   type      CoursesQuestionType
   question  String    @db.Text
   choices   TestChoice[]
-   userAnswers  UserAnswer[]
+  userAnswers  UserAnswer[]
 }
 
 model TestChoice {

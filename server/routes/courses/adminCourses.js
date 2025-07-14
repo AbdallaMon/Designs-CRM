@@ -9,6 +9,7 @@ import {
   createNewLessonLink,
   createNewLessonPdf,
   createNewLessonVideo,
+  deleteLesson,
   deleteLessonPdf,
   deleteLessonVideo,
   delteLessonLink,
@@ -92,6 +93,15 @@ router.put("/:courseId/lessons/:lessonId", async (req, res) => {
       lessonId: req.params.lessonId,
     });
     res.status(200).json({ data, message: "Lesson edited" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+
+router.delete("/:courseId/lessons/:lessonId", async (req, res) => {
+  try {
+    const data = await deleteLesson(req.params.lessonId);
+    res.status(200).json({ data, message: "Lesson deleted" });
   } catch (e) {
     getAndThrowError(e, res);
   }

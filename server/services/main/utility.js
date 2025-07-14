@@ -507,8 +507,6 @@ export async function uploadToFTPHttpAsBuffer(
     const form = new FormData();
     form.append("file", buffer, remoteFilename);
 
-    console.log("PDF size in KB:", (buffer.length / 1024).toFixed(2));
-
     await axios.post(`${process.env.SERVER}/client/api/upload`, form, {
       headers: form.getHeaders(),
       maxContentLength: Infinity,
