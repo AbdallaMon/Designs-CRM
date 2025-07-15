@@ -99,6 +99,8 @@ import {
 const router = Router();
 import questionsRoutes from "./questions/questions.js";
 import calendarRoutes from "./calendar/calendar.js";
+import coursesRouter from "./courses/staffCourses.js";
+
 import imageSessionRouter from "./image-session/image-session.js";
 import {
   addCutsomDate,
@@ -108,6 +110,7 @@ import {
   deleteASlot,
   updateAvailableDay,
 } from "../services/main/calendarServices.js";
+router.use("/courses", coursesRouter);
 
 router.use(async (req, res, next) => {
   await verifyTokenAndHandleAuthorization(req, res, next, "SHARED");

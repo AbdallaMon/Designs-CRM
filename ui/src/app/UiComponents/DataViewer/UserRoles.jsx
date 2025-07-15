@@ -43,7 +43,7 @@ const roleConfig = {
   STAFF: {
     icon: <FaUserTie />,
     color: "#388e3c",
-    label: "Staff Member",
+    label: "Sales",
     description: "Lead management and customer service",
   },
   THREE_D_DESIGNER: {

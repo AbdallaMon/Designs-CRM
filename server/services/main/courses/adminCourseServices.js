@@ -324,3 +324,220 @@ export async function delteLessonLink({ linkId }) {
     },
   });
 }
+
+// test
+export async function getTests({ key, id }) {
+  const item = await prisma[
+    key === "courseId" ? "course" : "lesson"
+  ].findUnique({
+    where: {
+      id: Number(id),
+    },
+    select: {
+      title: true,
+    },
+  });
+  const tests = await prisma.test.findMany({
+    where: {
+      [key]: Number(id),
+    },
+    include: {
+      _count: {
+        select: {
+          attempts: true,
+          questions: true,
+        },
+      },
+    },
+  });
+  return { title: item.title, tests };
+}
+
+export async function getTestData({ testId }) {
+  const test = await prisma.test.findUnique({
+    where: {
+      id: Number(testId),
+    },
+    select: {
+      id: true,
+      attemptLimit: true,
+      questions: {
+        orderBy: {
+          order: "asc",
+        },
+        select: {
+          id: true,
+          order: true,
+        },
+      },
+    },
+  });
+  return test.questions;
+}
+export async function createTest({
+  key,
+  id,
+  attemptLimit,
+  type,
+  timeLimit,
+  title,
+  published,
+}) {
+  return await prisma.test.create({
+    data: {
+      [key]: Number(id),
+      title,
+      attemptLimit: attemptLimit ? Number(attemptLimit) : 0,
+      type,
+      timeLimit: Number(timeLimit) || 0,
+      published,
+    },
+  });
+}
+
+export async function editTest({ data, testId }) {
+  return await prisma.test.update({
+    where: {
+      id: Number(testId),
+    },
+    data,
+  });
+}
+export async function deleteTest({ testId }) {
+  testId = Number(testId);
+  await prisma.testChoice.deleteMany({
+    where: {
+      question: {
+        testId: testId,
+      },
+    },
+  });
+  await prisma.userAnswer.deleteMany({
+    where: {
+      question: {
+        testId: testId,
+      },
+    },
+  });
+  await prisma.testQuestion.deleteMany({
+    where: {
+      testId: testId,
+    },
+  });
+  await prisma.testAttempt.deleteMany({
+    where: {
+      testId: Number(testId),
+    },
+  });
+  await prisma.test.deleteMany({
+    where: {
+      id: Number(testId),
+    },
+  });
+  return true;
+}
+export async function reOrderTestQuestions({ data }) {
+  data.forEach(async (question, index) => {
+    await prisma.testQuestion.update({
+      where: {
+        id: Number(question.id),
+      },
+      data: {
+        order: Number(index + 1),
+      },
+    });
+  });
+  return true;
+}
+export async function getTestQuestionData({ id }) {
+  return await prisma.testQuestion.findUnique({
+    where: {
+      id: Number(id),
+    },
+    include: {
+      choices: true,
+    },
+  });
+}
+
+export async function createTestQuestion({ id, data }) {
+  const lastQuestion = await prisma.testQuestion.findFirst({
+    where: { testId: Number(id) },
+    orderBy: { order: "desc" },
+  });
+
+  const nextOrder = lastQuestion ? lastQuestion.order + 1 : 1;
+  console.log(data.choices, "Choices");
+  const choices = data.choices.map((choice) => ({
+    text: choice.text,
+    value: choice.value,
+    isCorrect: choice.isCorrect,
+  }));
+
+  return await prisma.testQuestion.create({
+    data: {
+      testId: Number(id),
+      type: data.type,
+      question: data.question,
+      order: nextOrder,
+      choices: {
+        create: choices,
+      },
+    },
+  });
+}
+
+export async function editQuestion({ data, questionId }) {
+  data.choices.forEach(async (choice) => {
+    if (choice.type === "DELETE") {
+      await prisma.testChoice.delete({ where: { id: Number(choice.id) } });
+    } else if (choice.type === "CREATE") {
+      delete choice.id;
+      await prisma.testChoice.create({
+        data: {
+          isCorrect: choice.isCorrect,
+          text: choice.text,
+          value: choice.text,
+          questionId: Number(questionId),
+        },
+      });
+    } else {
+      await prisma.testChoice.update({
+        where: {
+          id: Number(choice.id),
+        },
+        data: {
+          text: choice.text,
+          value: choice.text,
+          isCorrect: choice.isCorrect,
+        },
+      });
+    }
+  });
+  await prisma.testQuestion.update({
+    where: { id: Number(questionId) },
+    data: {
+      question: data.question,
+    },
+  });
+  return true;
+}
+
+export async function deleteQuestion({ questionId }) {
+  await prisma.TestChoice.deleteMany({
+    where: {
+      questionId: Number(questionId),
+    },
+  });
+  await prisma.userAnswer.deleteMany({
+    where: {
+      questionId: Number(questionId),
+    },
+  });
+  await prisma.testQuestion.deleteMany({
+    where: {
+      id: Number(questionId),
+    },
+  });
+  return true;
+}

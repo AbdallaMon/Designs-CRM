@@ -1320,6 +1320,8 @@ model Test {
   attempts   TestAttempt[]
   certificateApprovedByAdmin Boolean @default(false)
   attemptLimit  Int         @default(2)
+  timeLimit     Int?  
+  published                  Boolean    @default(false)
 }
 
 model TestQuestion {
@@ -1329,6 +1331,7 @@ model TestQuestion {
   type      CoursesQuestionType
   question  String    @db.Text
   choices   TestChoice[]
+  order Int @default(1) 
   userAnswers  UserAnswer[]
 }
 
@@ -1354,6 +1357,9 @@ model TestAttempt {
   attemptLimit  Int         @default(2)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+  startTime     DateTime?  
+  endTime       DateTime? 
+  timePassed Int? 
 }
 
 model UserAnswer {
@@ -1388,7 +1394,7 @@ model CompletedLesson {
   id              Int             @id @default(autoincrement())
   courseProgress  CourseProgress @relation(fields: [courseProgressId], references: [id])
   courseProgressId Int
-  lessonId        Int
+  lessonId         Int
   completedAt     DateTime @default(now())
 }
 

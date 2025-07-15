@@ -9,21 +9,31 @@ import {
   createNewLessonLink,
   createNewLessonPdf,
   createNewLessonVideo,
+  createTest,
+  createTestQuestion,
   deleteLesson,
   deleteLessonPdf,
   deleteLessonVideo,
+  deleteQuestion,
+  deleteTest,
   delteLessonLink,
   editCourse,
   editLesson,
   editLessonLink,
   editLessonPdf,
   editLessonVideo,
+  editQuestion,
+  editTest,
   getCourses,
   getLessonById,
   getLessonsByCourseId,
   getLinksByLessonId,
   getPdfsByLessonId,
+  getTestData,
+  getTestQuestionData,
+  getTests,
   getVideosByLessonId,
+  reOrderTestQuestions,
 } from "../../services/main/courses/adminCourseServices.js";
 const router = Router();
 
@@ -240,4 +250,112 @@ router.delete(
     }
   }
 );
+//test
+
+router.get("/tests", async (req, res) => {
+  try {
+    const data = await getTests({ key: req.query.key, id: req.query.id });
+    res.status(200).json({ data });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.post("/tests", async (req, res) => {
+  try {
+    const data = await createTest({
+      key: req.query.key,
+      id: req.query.id,
+      attemptLimit: req.body.attemptLimit,
+      type: req.body.testType,
+      ...req.body,
+    });
+    res.status(200).json({ data, message: "test created succssfully" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+
+router.get("/tests/:testId", async (req, res) => {
+  try {
+    const data = await getTestData({ testId: req.params.testId });
+    res.status(200).json({ data });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.put("/tests/:testId", async (req, res) => {
+  try {
+    const data = await editTest({
+      testId: req.params.testId,
+      data: req.body,
+    });
+    res.status(200).json({ data, message: "test created succssfully" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.delete("/tests/:testId/", async (req, res) => {
+  try {
+    const data = await deleteTest({
+      testId: req.params.testId,
+    });
+    res.status(200).json({ data, message: "Test deleted succssfully" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+
+router.post("/tests/:testId/test-questions", async (req, res) => {
+  try {
+    const data = await createTestQuestion({
+      data: req.body,
+      id: req.params.testId,
+    });
+    res.status(200).json({ data, message: "Question created succssfully" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.post("/tests/:testId/test-questions/re-order", async (req, res) => {
+  try {
+    const data = await reOrderTestQuestions({
+      data: req.body,
+    });
+    res.status(200).json({ data, message: "Question Edited succssfully" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.get("/tests/:testId/test-questions/:questionId", async (req, res) => {
+  try {
+    const data = await getTestQuestionData({
+      id: req.params.questionId,
+    });
+    res.status(200).json({ data });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.put("/tests/:testId/test-questions/:questionId", async (req, res) => {
+  try {
+    const data = await editQuestion({
+      data: req.body,
+      questionId: req.params.questionId,
+    });
+    res.status(200).json({ data, message: "Question edited succssfully" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.delete("/tests/:testId/test-questions/:questionId", async (req, res) => {
+  try {
+    const data = await deleteQuestion({
+      questionId: req.params.questionId,
+    });
+    res.status(200).json({ data, message: "Question deleted succssfully" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+
 export default router;
