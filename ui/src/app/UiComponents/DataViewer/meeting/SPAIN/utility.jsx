@@ -16,7 +16,7 @@ import {
   Slide,
   Tooltip,
   Badge,
-  alpha,
+  alpha,Dialog,DialogContent
 } from "@mui/material";
 
 import {
@@ -30,10 +30,13 @@ import {
   MdClose,
   MdAutoAwesome,
   MdTrendingUp,
+  MdInfo,
+  MdInfoOutline,
 } from "react-icons/md";
 
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
+import { FAB_QUESTIONS_WITH_ANSWERS_AR } from "@/app/helpers/constants";
 
 // Modern Answer Input Component with Hover Animation
 export const AnswerInput = ({ sessionQuestion, onSubmitAnswer }) => {
@@ -168,77 +171,70 @@ export const AnswerInput = ({ sessionQuestion, onSubmitAnswer }) => {
 // Modern Question Item with Glassmorphism Effect
 export const QuestionItem = ({ sessionQuestion, onSubmitAnswer }) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [openFABDialog, setOpenFABDialog] = useState(false);
+
+  const handleOpenFABDialog = () => setOpenFABDialog(true);
+  const handleCloseFABDialog = () => setOpenFABDialog(false);
 
   return (
-    <Card
-      sx={{
-        mb: 2,
-        "&.MuiPaper-root": {
-          mt: 2,
-        },
-        borderRadius: 4,
-        overflow: "hidden",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        transform: isHovered ? "translateY(-4px)" : "translateY(0)",
-        background: (theme) =>
-          sessionQuestion.isCustom
-            ? `linear-gradient(135deg, ${alpha(
-                theme.palette.warning.main,
-                0.1
-              )} 0%, ${alpha(theme.palette.warning.light, 0.05)} 100%)`
-            : `linear-gradient(135deg, ${alpha(
-                theme.palette.background.paper,
-                0.8
-              )} 0%, ${alpha(theme.palette.background.default, 0.4)} 100%)`,
-        backdropFilter: "blur(20px)",
-        border: (theme) =>
-          sessionQuestion.isCustom
-            ? `2px solid ${alpha(theme.palette.warning.main, 0.3)}`
-            : `1px solid ${alpha(theme.palette.divider, 0.12)}`,
-        boxShadow: (theme) =>
-          isHovered
-            ? `0 12px 40px ${alpha(theme.palette.common.black, 0.1)}`
-            : `0 4px 20px ${alpha(theme.palette.common.black, 0.05)}`,
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <CardContent sx={{ p: 1.5 }}>
-        <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, mb: 1 }}>
-          <Box
-            sx={{
-              p: 1,
-              borderRadius: 2,
-              background: (theme) =>
-                sessionQuestion.isCustom
-                  ? `linear-gradient(135deg, ${theme.palette.warning.main} 0%, ${theme.palette.warning.dark} 100%)`
-                  : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-              color: "white",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            {sessionQuestion.isCustom ? (
-              <MdAutoAwesome />
-            ) : (
-              <MdQuestionAnswer />
-            )}
-          </Box>
-
-          <Box sx={{ flex: 1 }}>
-            <Typography
-              variant="h6"
+    <>
+      <Card
+        sx={{
+          mb: 2,
+          "&.MuiPaper-root": {
+            mt: 2,
+          },
+          borderRadius: 4,
+          overflow: "hidden",
+          transition: "all 0.3s",
+          transform: isHovered ? "translateY(-4px)" : "translateY(0)",
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <CardContent sx={{ p: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 2, mb: 1 }}>
+            <Box
               sx={{
-                fontSize: "1.1rem",
-                fontWeight: 600,
-                lineHeight: 1.4,
-                mb: 0.5,
-                color: (theme) => theme.palette.text.primary,
+                p: 1,
+                borderRadius: 2,
+                background: (theme) =>
+                  sessionQuestion.isCustom
+                    ? `linear-gradient(135deg, ${theme.palette.warning.main} 0%, ${theme.palette.warning.dark} 100%)`
+                    : `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              {sessionQuestion.title}
-            </Typography>
+              {sessionQuestion.isCustom ? <MdAutoAwesome /> : <MdQuestionAnswer />}
+            </Box>
+
+            <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  fontSize: "1.1rem",
+                  fontWeight: 600,
+                  lineHeight: 1.4,
+                  mb: 0.5,
+                  color: (theme) => theme.palette.text.primary,
+                }}
+              >
+                {sessionQuestion.title}
+              </Typography>
+
+              <Button
+                onClick={handleOpenFABDialog}
+                variant="outlined"
+                sx={{ color: "text.secondary",display:"flex",gap:2,alignItems:"center" }}
+                endIcon={     <MdInfoOutline  />
+}
+              >
+                FAB
+              </Button>
+            </Box>
 
             {sessionQuestion.isCustom && (
               <Chip
@@ -259,14 +255,22 @@ export const QuestionItem = ({ sessionQuestion, onSubmitAnswer }) => {
               />
             )}
           </Box>
-        </Box>
 
-        <AnswerInput
-          sessionQuestion={sessionQuestion}
-          onSubmitAnswer={onSubmitAnswer}
-        />
-      </CardContent>
-    </Card>
+          <AnswerInput
+            sessionQuestion={sessionQuestion}
+            onSubmitAnswer={onSubmitAnswer}
+          />
+        </CardContent>
+      </Card>
+
+      <Dialog open={openFABDialog} onClose={handleCloseFABDialog}>
+        <DialogContent sx={{ p: 3 }}>
+          <Typography variant="body1" sx={{direction:"rtl"}}>
+            {FAB_QUESTIONS_WITH_ANSWERS_AR[sessionQuestion.title]}
+          </Typography>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

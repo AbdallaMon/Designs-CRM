@@ -108,7 +108,7 @@ const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
       </DialogTitle>
 
       <DialogContent sx={{ p: 3, py: 5, overflow: "auto" }}>
-        <Container maxWidth="xxl" sx={{ py: 5 }}>
+        <Container maxWidth="xxl" sx={{ py: 5,direction:"rtl" }}>
           {loading ? (
             <Box
               sx={{

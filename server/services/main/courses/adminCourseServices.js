@@ -1,4 +1,5 @@
 import prisma from "../../../prisma/prisma.js";
+import { endAttempt } from "./staffCoursesServices.js";
 
 export async function getCourses({ limit = 1, skip = 10 }) {
   const courses = await prisma.course.findMany({
@@ -337,10 +338,20 @@ export async function getTests({ key, id }) {
       title: true,
     },
   });
+  let where={
+          [key]: Number(id),
+  }
+  if(key==="courseId"){
+
+    where={
+       OR: [
+          { courseId: Number(id) },
+          { lesson: { courseId:Number(id) } },
+        ],
+    }
+  }
   const tests = await prisma.test.findMany({
-    where: {
-      [key]: Number(id),
-    },
+    where,
     include: {
       _count: {
         select: {
@@ -540,4 +551,93 @@ export async function deleteQuestion({ questionId }) {
     },
   });
   return true;
+}
+
+export async function getTestAttemptsSummary({testId,userId}) {
+  testId=Number(testId)
+    const where={ testId: Number(testId) }
+  if(userId){
+    where.userId=Number(userId)
+  }
+  const attempts = await prisma.testAttempt.findMany({
+    where,
+    select: {
+      userId: true,
+      score: true,
+      passed: true,
+      endTime: true,
+      user: {
+        select: {
+          name: true,
+          email: true,
+          role: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  const grouped = attempts.reduce((acc, attempt) => {
+    const userId = attempt.userId;
+    if (!acc[userId]) {
+      acc[userId] = {
+        name: attempt.user.name,
+        email: attempt.user.email,
+        role: attempt.user.role,
+        attempts: 1,
+        maxScore: attempt.score ?? 0,
+        passed: attempt.passed,
+        lastAttempt: attempt.endTime ?? null,userId
+      };
+    } else {
+      acc[userId].attempts++;
+      acc[userId].maxScore = Math.max(acc[userId].maxScore, attempt.score ?? 0);
+      acc[userId].passed = acc[userId].passed || attempt.passed;
+      if (attempt.endTime && (!acc[userId].lastAttempt || acc[userId].lastAttempt < attempt.endTime)) {
+        acc[userId].lastAttempt = attempt.endTime;
+      }
+    }
+    return acc;
+  }, {});
+
+  return Object.values(grouped);
+}
+
+export async function getAttemptsSummary({ limit = 1, skip = 10,userId }) {
+  const where={}
+  if(userId){
+    where.userId=Number(userId)
+  }
+  const attempts = await prisma.testAttempt.findMany({  where,  skip,
+    take: limit,
+    select: {
+      userId: true,
+      score: true,
+      passed: true,
+      endTime: true,
+      user: {
+        select: {
+          name: true,
+          email: true,
+          role: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+
+  const total = await prisma.testAttempt.count();
+  const totalPages = Math.ceil(total / limit);
+  return { data: attempts, totalPages, total };
+}
+
+export async function approveUserAnswer({attemptId,questionId, isApproved}) {
+  const updatedAnswer = await prisma.userAnswer.updateMany({
+    where: { questionId: Number(questionId),attemptId:Number(attemptId) },
+    data: { isApproved },
+  });
+
+
+  await endAttempt(Number(attemptId));
 }

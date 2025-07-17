@@ -4,6 +4,7 @@ import {
   getPagination,
 } from "../../services/main/utility.js";
 import {
+  approveUserAnswer,
   createNewCourse,
   createNewLesson,
   createNewLessonLink,
@@ -24,17 +25,20 @@ import {
   editLessonVideo,
   editQuestion,
   editTest,
+  getAttemptsSummary,
   getCourses,
   getLessonById,
   getLessonsByCourseId,
   getLinksByLessonId,
   getPdfsByLessonId,
+  getTestAttemptsSummary,
   getTestData,
   getTestQuestionData,
   getTests,
   getVideosByLessonId,
   reOrderTestQuestions,
 } from "../../services/main/courses/adminCourseServices.js";
+import { getUserAttampts } from "../../services/main/courses/staffCoursesServices.js";
 const router = Router();
 
 router.get("", async (req, res) => {
@@ -260,6 +264,17 @@ router.get("/tests", async (req, res) => {
     getAndThrowError(e, res);
   }
 });
+router.get("/tests/attempts", async (req, res) => {
+  try {
+        const { limit, skip } = getPagination(req);
+
+    const data = await getAttemptsSummary({ limit: Number(limit),
+      skip: Number(skip),userId:req.query.userId });
+    res.status(200).json(data );
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
 router.post("/tests", async (req, res) => {
   try {
     const data = await createTest({
@@ -304,7 +319,33 @@ router.delete("/tests/:testId/", async (req, res) => {
     getAndThrowError(e, res);
   }
 });
-
+router.get("/tests/:testId/attempts", async (req, res) => {
+  try {
+    const data = await getTestAttemptsSummary({testId:req.params.testId,userId:req.query.userId   });
+    res.status(200).json({ data });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.get("/tests/:testId/attampts/user", async (req, res) => {
+  try {
+    const data = await getUserAttampts({testId:req.params.testId,userId:Number(req.query.userId)  });
+    res.status(200).json({ data });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.post("/tests/:testId/attempts/:attemptId/questions/:questionId/approve", async (req, res) => {
+  try {
+    const data = await approveUserAnswer({
+      questionId: req.params.questionId,
+      attemptId: req.params.attemptId,isApproved:req.body.isApproved
+    });
+    res.status(200).json({ data, message: "Question Approved succssfully" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
 router.post("/tests/:testId/test-questions", async (req, res) => {
   try {
     const data = await createTestQuestion({

@@ -691,7 +691,6 @@ model Notification {
   clientLead   ClientLead?      @relation(fields: [clientLeadId], references: [id])
   clientLeadId Int?
   createdAt    DateTime         @default(now())
-
   @@index([userId])
   @@index([clientLeadId])
 }
@@ -1370,6 +1369,8 @@ model UserAnswer {
   questionId Int
   selectedAnswers SelectedAnswer[]
   textAnswer String?       @db.Text
+    isApproved      Boolean       @default(false)
+
 }
 
 model SelectedAnswer {

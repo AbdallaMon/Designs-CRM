@@ -1,7 +1,6 @@
 import {
   uploadAsHttp,
   uploadFiles,
-  uploadToFTPAsBuffer,
 } from "../services/main/utility.js";
 import express from "express";
 const router = express.Router();

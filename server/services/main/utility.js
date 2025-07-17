@@ -228,7 +228,7 @@ export async function getCurrentUser(req) {
 }
 
 export async function searchData(body) {
-  const { model, query, filters } = body;
+  let { model, query, filters } = body;
   const prismaModel = modelMap[model] || modelMap["user"];
   let where = {};
   if (query) {
@@ -328,11 +328,17 @@ export async function searchData(body) {
       where.OR = roleOrSubRole;
     }
   }
+  if(model==="all-users-search"){
+    model="user"
+       where.AND=where.AND[0];
+  }
+
+
   const selectFields = {
     user: {
       id: true,
       email: true,
-      name: true,
+      name: true,role:true
     },
     client: {
       id: true,

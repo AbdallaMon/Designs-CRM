@@ -1,10 +1,17 @@
 import { Router } from "express";
 import {
+  createAttampt,
+  endAttempt,
   getCourse,
   getCourses,
   getLesson,
+  getUserAttampt,
+  getUserAttampts,
   getUserCourseProgress,
+  getUserTest,
+  getUserTestQuestion,
   markLessonAsCompleted,
+  submitAnswer,
 } from "../../services/main/courses/staffCoursesServices.js";
 import {
   getAndThrowError,
@@ -78,4 +85,96 @@ router.patch("/:courseId/lessons/:lessonId", async (req, res) => {
     getAndThrowError(e, res);
   }
 });
+// tests
+router.get("/tests/:testId", async (req, res) => {
+  try {
+    const result = await getUserTest({
+      testId: req.params.testId,
+    });
+    res.status(200).json({ data: result, message: "Done" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.get("/tests/:testId/test-questions", async (req, res) => {
+  try {
+    const result = await getUserTestQuestion({
+      testId: req.params.testId,
+    });
+    res.status(200).json({ data: result, message: "Done" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.get("/tests/:testId/attampts", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req);
+
+    const result = await getUserAttampts({
+      testId: req.params.testId,
+      userId: user.id,
+    });
+    res.status(200).json({ data: result, message: "Done" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.get("/tests/:testId/attampts/:attamptId", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req);
+
+    const result = await getUserAttampt({
+      attamptId: req.params.attamptId,
+      userId: user.id,
+    });
+    res.status(200).json({ data: result, message: "Done" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.post("/tests/:testId/attampts", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req);
+
+    const result = await createAttampt({
+      userId: user.id,
+      testId: req.params.testId,
+    });
+    res.status(200).json({ data: result, message: "Done" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.post(
+  "/tests/:testId/attampts/:attemptId/questions/:questionId",
+  async (req, res) => {
+    try {
+      const user = await getCurrentUser(req);
+      const result = await submitAnswer({
+        userId: user.id,
+        testId: req.params.testId,
+        answer: req.body.answer,
+        attemptId: req.params.attemptId,
+        questionId: req.params.questionId,
+      });
+      res.status(200).json({ data: result, message: "Done" });
+    } catch (e) {
+      getAndThrowError(e, res);
+    }
+  }
+);
+router.put(
+  "/tests/:testId/attampts/:attemptId/",
+  async (req, res) => {
+    try {
+      const user = await getCurrentUser(req);
+      const result = await endAttempt(
+    Number(req.params.attemptId)
+      );
+      res.status(200).json({ data: result, message: "Saved" });
+    } catch (e) {
+      getAndThrowError(e, res);
+    }
+  }
+);
 export default router;
