@@ -129,12 +129,12 @@ export async function uploadPdfAndApproveSession({
     await uploadToFTPHttpAsBuffer(pdfBytes, remotePath, true);
 
     const publicUrl = `https://panel.dreamstudiio.com/uploads/${fileName}`;
-    // await approveSession({
-    //   token: sessionData.token,
-    //   clientLeadId: sessionData.clientLeadId,
-    //   id: Number(sessionData.id),
-    //   pdfUrl: publicUrl,
-    // });
+    await approveSession({
+      token: sessionData.token,
+      clientLeadId: sessionData.clientLeadId,
+      id: Number(sessionData.id),
+      pdfUrl: publicUrl,
+    });
   } catch (e) {
     console.log("e in uploadig pdf", e);
     throw new Error(e.message);
@@ -340,9 +340,10 @@ export async function generateImageSessionPdf({
     const drawFixedHeader = async (isWide = false) => {
        const widePageWidth = page.getWidth();
       const pageHeight = page.getHeight();
-
       const contentWidth = pageWidth - margin * 2;
-      const contentX = widePageWidth-pageWidth+margin;
+const headerImageWidth = contentWidth;
+
+const contentX = (page.getWidth() - headerImageWidth) / 2;
       const headerY = pageHeight - headerHeight;
 
       try {
@@ -447,6 +448,24 @@ export async function generateImageSessionPdf({
         });
       }
     };
+function splitTextIntoLines(text, maxWidth, font, fontSize) {
+  const words = text.split(" ");
+  const lines = [];
+  let currentLine = "";
+
+  for (const word of words) {
+    const testLine = currentLine ? currentLine + " " + word : word;
+    const width = font.widthOfTextAtSize(testLine, fontSize);
+    if (width <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+  if (currentLine) lines.push(currentLine);
+  return lines;
+}
 
     const drawIntroPage = async () => {
       try {
@@ -471,25 +490,12 @@ export async function generateImageSessionPdf({
       const isArabic = isArabicText(titleText);
 
       const fontSize = 20;
-      const maxTextWidth = pageWidth * 0.8;
+      const maxTextWidth = pageWidth * 0.4;
       const lineHeight = fontSize + 6;
 
       // Split text into wrapped lines
-      const words = titleText.split(" ");
-      const lines = [];
-      let currentLine = "";
+      const lines = splitTextIntoLines(titleText, maxTextWidth, isArabic ? arBoldFont : enBoldFont, fontSize);
 
-      for (const word of words) {
-        const testLine = currentLine ? currentLine + " " + word : word;
-        const testWidth = boldFont.widthOfTextAtSize(testLine, fontSize);
-        if (testWidth <= maxTextWidth) {
-          currentLine = testLine;
-        } else {
-          lines.push(currentLine);
-          currentLine = word;
-        }
-      }
-      if (currentLine) lines.push(currentLine);
 
       // Starting Y based on number of lines
       const totalTextHeight = lines.length * lineHeight;
@@ -509,7 +515,7 @@ export async function generateImageSessionPdf({
           y: textY,
           size: fontSize,
           font: isArabic ? arBoldFont : enBoldFont,
-          color: rgb(1, 1, 1), // white
+          color: colors.primary,
         });
 
         textY -= lineHeight;
@@ -1208,35 +1214,33 @@ if (signatureUrl) {
   page = pdfDoc.addPage([pageWidth, pageHeight]);
   drawPageBorder();
   await drawFixedHeader();
-  // drawFixedFooter();
 
   const columnGap = 40;
   const columnWidth = (contentWidth - columnGap) / 2;
-const innerMargin = 20;
-const leftX = margin + innerMargin;
-const rightX = pageWidth - margin - columnWidth - innerMargin;
+  const innerMargin = 20;
+  const leftX = margin + innerMargin;
+  const rightX = pageWidth - margin - columnWidth - innerMargin;
   const topY = pageHeight - headerHeight - marginY - 30;
 
   const isArabic = lng === "ar";
   const firstPartyTitle = isArabic ? reText("الطرف الأول") : "First Party";
   const secondPartyTitle = isArabic ? reText("الطرف الثاني") : "Second Party";
-  const directorLabel = isArabic
-    ? reText("المدير التنفيذي: راشد بني عودة")
-    : "Executive Director: Rashid Abu Ouda";
+  const directorLabelOnly = isArabic ? reText("المدير التنفيذي:") : "Executive Director:";
+  const directorNameOnly = isArabic ? reText("راشد بني عودة") : "Rashid Abu Ouda";
   const signatureLabel = isArabic ? reText("التوقيع:") : "Signature:";
   const nameLabel = isArabic ? reText("الاسم:") : "Name:";
   const stampImageUrl = "https://dreamstudiio.com/dream-signature.png";
-  const isArabicName = isArabicText(name);
 
+  const isArabicName = isArabicText(name);
   const clientName = isArabicName ? reText(name) : name;
   const labelFontSize = 12;
   const imageMarginTop = 4;
 
-  // ==== الطرف الأول (Left Column) ====
-  let leftY = topY;
-
   const getTextX = (text, size, fontUsed, baseX) =>
     isArabic ? getRTLTextX(text, size, fontUsed, baseX, columnWidth) : baseX;
+
+  // ==== الطرف الأول (Left Column) ====
+  let leftY = topY;
 
   const drawLeftText = (text, size = labelFontSize, bold = false) => {
     const fontUsed = bold ? boldFont : font;
@@ -1252,7 +1256,8 @@ const rightX = pageWidth - margin - columnWidth - innerMargin;
   };
 
   drawLeftText(firstPartyTitle, 14, true);
-  drawLeftText(directorLabel);
+  drawLeftText(directorLabelOnly);
+  drawLeftText(directorNameOnly);
 
   try {
     const stampBytes = await fetchImageBuffer(stampImageUrl);
@@ -1284,7 +1289,7 @@ const rightX = pageWidth - margin - columnWidth - innerMargin;
 
   // ==== الطرف الثاني (Right Column) ====
   let rightY = topY;
-  const rightXWithMargin = rightX ; // <--- extra margin to right
+  const rightXWithMargin = rightX;
 
   const drawRightText = (
     text,
@@ -1302,25 +1307,29 @@ const rightX = pageWidth - margin - columnWidth - innerMargin;
     });
   };
 
-const secondTitleX = isArabic
+  const secondTitleX = isArabic
     ? getRTLTextX(secondPartyTitle, 14, boldFont, rightX, columnWidth)
     : rightX;
   drawRightText(secondPartyTitle, secondTitleX, rightY, boldFont, 14);
   rightY -= 14 + 8;
 
-const nameLabelX = isArabic
+  const nameLabelX = isArabic
     ? getRTLTextX(nameLabel, labelFontSize, font, rightX, columnWidth)
     : rightX;
   drawRightText(nameLabel, nameLabelX, rightY);
-rightY -= labelFontSize + 6;
-const nameValueX = isArabic
-    ? getRTLTextX(clientName, labelFontSize, font, rightX, columnWidth)
-    : rightX + 50;
+  rightY -= labelFontSize + 6;
 
-  drawRightText(clientName, nameValueX, rightY,isArabicText(clientName)?arFont:enFont);
-  rightY -= labelFontSize + 10;
+  const nameFont = isArabicText(clientName) ? arFont : enFont;
+  const nameLines = splitTextIntoLines(clientName, columnWidth - 20, nameFont, labelFontSize);
 
-  const sigLabelWidth = font.widthOfTextAtSize(signatureLabel, labelFontSize);
+  for (const line of nameLines) {
+    const lineX = isArabic
+      ? getRTLTextX(line, labelFontSize, nameFont, rightX, columnWidth)
+      : rightX;
+    drawRightText(line, lineX, rightY, nameFont);
+    rightY -= labelFontSize + 4;
+  }
+  rightY -= 6;
 
   try {
     const sigBytes = await fetchImageBuffer(signatureUrl);
@@ -1349,10 +1358,10 @@ const nameValueX = isArabic
         sigW *= ratio;
       }
 
+      const sigLabelWidth = font.widthOfTextAtSize(signatureLabel, labelFontSize);
       const sigX = isArabic
         ? rightXWithMargin + columnWidth - sigLabelWidth - sigW - 10
         : rightXWithMargin + sigLabelWidth + 10;
-
       const sigY = rightY - sigH - imageMarginTop;
 
       drawRightText(
@@ -1362,8 +1371,8 @@ const nameValueX = isArabic
       );
 
       page.drawImage(sigImage, {
-        x: sigX,
-        y: sigY,
+        x: sigX + 10,
+        y: sigY - 50,
         width: sigW,
         height: sigH,
       });
