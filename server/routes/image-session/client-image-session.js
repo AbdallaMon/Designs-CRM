@@ -165,11 +165,11 @@ router.post("/generate-pdf", async (req, res) => {
     //   signatureUrl,
     //   lng,
     // });
-    const data = await changeSessionStatus({
-      token: sessionData.token,
-      sessionStatus,
-      extra: { signatureUrl },
-    });
+    // const data = await changeSessionStatus({
+    //   token: sessionData.token,
+    //   sessionStatus,
+    //   extra: { signatureUrl },
+    // });
     await uploadPdfAndApproveSession({ sessionData, signatureUrl, lng });
     return res
       .status(200)

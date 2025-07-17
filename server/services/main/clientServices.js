@@ -129,12 +129,12 @@ export async function uploadPdfAndApproveSession({
     await uploadToFTPHttpAsBuffer(pdfBytes, remotePath, true);
 
     const publicUrl = `https://panel.dreamstudiio.com/uploads/${fileName}`;
-    await approveSession({
-      token: sessionData.token,
-      clientLeadId: sessionData.clientLeadId,
-      id: Number(sessionData.id),
-      pdfUrl: publicUrl,
-    });
+    // await approveSession({
+    //   token: sessionData.token,
+    //   clientLeadId: sessionData.clientLeadId,
+    //   id: Number(sessionData.id),
+    //   pdfUrl: publicUrl,
+    // });
   } catch (e) {
     console.log("e in uploadig pdf", e);
     throw new Error(e.message);
@@ -336,129 +336,13 @@ export async function generateImageSessionPdf({
         color: undefined,
       });
     };
-    // const drawFixedHeader = async (isWide = false) => {
-    //   const pageWidth = page.getWidth();
-    //   const pageHeight = page.getHeight();
-
-    //   const logoBg = "#272727";
-    //   const logoImageUrl = "https://dreamstudiio.com/pdf-logo-croped.jpg";
-    //   const logoTextUrl = "https://dreamstudiio.com/pdf-logo-text-croped.jpg";
-
-    //   const contentWidth = pageWidth - margin * 2;
-    //   const contentX = margin;
-    //   const headerY = pageHeight - headerHeight + 5;
-    //   const r = 39 / 255;
-    //   const g = 39 / 255;
-    //   const b = 39 / 255;
-
-    //   const color = rgb(r, g, b);
-
-    //   // Background full header block
-    //   page.drawRectangle({
-    //     x: contentX,
-    //     y: headerY - marginY + 2,
-    //     width: contentWidth,
-    //     height: headerHeight + marginY - 20,
-    //     color,
-    //   });
-
-    //   // Load images
-    //   const logoBuffer = await fetchImageBuffer(logoImageUrl);
-    //   const logoImage = await pdfDoc.embedJpg(logoBuffer);
-
-    //   const logoTextBuffer = await fetchImageBuffer(logoTextUrl);
-    //   const logoTextImage = await pdfDoc.embedJpg(logoTextBuffer);
-
-    //   // === LEFT SIDE: Logo Image inside rounded container ===
-    //   const logoContainerWidth = 100;
-    //   const logoContainerHeight = headerHeight - 2 - 10;
-    //   const logoContainerX = contentX;
-    //   const logoContainerY = headerY + 2 - marginY + 5;
-    //   const borderRadius = 8;
-
-    //   // Draw rounded background
-    //   page.drawRectangle({
-    //     x: logoContainerX,
-    //     y: logoContainerY,
-    //     width: logoContainerWidth,
-    //     height: logoContainerHeight,
-    //     borderRadius,
-    //     color,
-    //   });
-
-    //   // Draw logo centered
-    //   const logoDims = logoImage.scale(1);
-    //   const maxLogoWidth = logoContainerWidth - 20;
-    //   const maxLogoHeight = logoContainerHeight - 20;
-    //   const logoAspect = logoDims.width / logoDims.height;
-
-    //   let logoWidth = maxLogoWidth;
-    //   let logoHeight = logoWidth / logoAspect;
-    //   if (logoHeight > maxLogoHeight) {
-    //     logoHeight = maxLogoHeight;
-    //     logoWidth = logoHeight * logoAspect;
-    //   }
-
-    //   const logoX = logoContainerX + (logoContainerWidth - logoWidth) / 2;
-    //   const logoY = logoContainerY + (logoContainerHeight - logoHeight) / 2;
-
-    //   page.drawImage(logoImage, {
-    //     x: logoX,
-    //     y: logoY,
-    //     width: logoWidth,
-    //     height: logoHeight,
-    //   });
-
-    //   // === RIGHT SIDE: Logo Text Image inside rounded container ===
-    //   const logoTextContainerWidth = 400;
-    //   const logoTextContainerHeight = headerHeight - 10 - 10;
-    //   const logoTextContainerX =
-    //     contentX + contentWidth - logoTextContainerWidth - 10;
-    //   const logoTextContainerY = headerY + 5 - marginY + 5;
-
-    //   // Draw rounded background
-    //   page.drawRectangle({
-    //     x: logoTextContainerX,
-    //     y: logoTextContainerY,
-    //     width: logoTextContainerWidth,
-    //     height: logoTextContainerHeight,
-    //     borderRadius,
-    //     color,
-    //   });
-
-    //   // Draw logo text centered
-    //   const textDims = logoTextImage.scale(1);
-    //   const maxTextWidth = logoTextContainerWidth - 20;
-    //   const maxTextHeight = logoTextContainerHeight - 20;
-    //   const textAspect = textDims.width / textDims.height;
-
-    //   let textWidth = maxTextWidth;
-    //   let textHeight = textWidth / textAspect;
-    //   if (textHeight > maxTextHeight) {
-    //     textHeight = maxTextHeight;
-    //     textWidth = textHeight * textAspect;
-    //   }
-
-    //   const marginFromRight = 10; // Adjust this for desired spacing
-
-    //   // Calculate X to be right of the logo container + margin
-    //   const textX = margin + contentWidth - textWidth - marginFromRight;
-    //   const textY =
-    //     logoTextContainerY + (logoTextContainerHeight - textHeight) / 2;
-
-    //   page.drawImage(logoTextImage, {
-    //     x: textX,
-    //     y: textY,
-    //     width: textWidth,
-    //     height: textHeight,
-    //   });
-    // };
+   
     const drawFixedHeader = async (isWide = false) => {
-      const pageWidth = page.getWidth();
+       const widePageWidth = page.getWidth();
       const pageHeight = page.getHeight();
 
       const contentWidth = pageWidth - margin * 2;
-      const contentX = margin;
+      const contentX = widePageWidth-pageWidth+margin;
       const headerY = pageHeight - headerHeight;
 
       try {
@@ -486,7 +370,6 @@ export async function generateImageSessionPdf({
       totalPages = 1
     ) => {
       const pageW = page.getWidth();
-      const pageH = page.getHeight();
       const contentWidth = pageW - margin * 2;
 
       // Footer background
@@ -1321,189 +1204,177 @@ export async function generateImageSessionPdf({
         }
       }
     }
+if (signatureUrl) {
+  page = pdfDoc.addPage([pageWidth, pageHeight]);
+  drawPageBorder();
+  await drawFixedHeader();
+  // drawFixedFooter();
 
-    if (signatureUrl) {
-      page = pdfDoc.addPage([pageWidth, pageHeight]);
-      drawPageBorder();
-      await drawFixedHeader();
-      // drawFixedFooter();
+  const columnGap = 40;
+  const columnWidth = (contentWidth - columnGap) / 2;
+const innerMargin = 20;
+const leftX = margin + innerMargin;
+const rightX = pageWidth - margin - columnWidth - innerMargin;
+  const topY = pageHeight - headerHeight - marginY - 30;
 
-      const columnGap = 40;
-      const columnWidth = (contentWidth - columnGap) / 2;
-      const leftX = margin;
-      const rightX = margin + columnWidth + columnGap;
-      const topY = pageHeight - headerHeight - marginY - 30;
+  const isArabic = lng === "ar";
+  const firstPartyTitle = isArabic ? reText("الطرف الأول") : "First Party";
+  const secondPartyTitle = isArabic ? reText("الطرف الثاني") : "Second Party";
+  const directorLabel = isArabic
+    ? reText("المدير التنفيذي: راشد بني عودة")
+    : "Executive Director: Rashid Abu Ouda";
+  const signatureLabel = isArabic ? reText("التوقيع:") : "Signature:";
+  const nameLabel = isArabic ? reText("الاسم:") : "Name:";
+  const stampImageUrl = "https://dreamstudiio.com/dream-signature.png";
+  const isArabicName = isArabicText(name);
 
-      const isArabic = lng === "ar";
-      const firstPartyTitle = isArabic ? reText("الطرف الأول") : "First Party";
-      const secondPartyTitle = isArabic
-        ? reText("الطرف الثاني")
-        : "Second Party";
-      const directorLabel = isArabic
-        ? reText("المدير التنفيذي: راشد ابو عوده")
-        : "Executive Director: Rashid Abu Ouda";
-      const signatureLabel = isArabic ? reText("التوقيع:") : "Signature:";
-      const nameLabel = isArabic ? reText("الاسم:") : "Name:";
-      const stampImageUrl = "https://dreamstudiio.com/dream-signature.jpg";
-      const isArabicName = isArabicText(name);
+  const clientName = isArabicName ? reText(name) : name;
+  const labelFontSize = 12;
+  const imageMarginTop = 4;
 
-      const clientName = isArabicName ? reText(name) : name;
-      const labelFontSize = 12;
-      const imageMarginTop = 4;
+  // ==== الطرف الأول (Left Column) ====
+  let leftY = topY;
 
-      // ==== الطرف الأول (Left Column) ====
-      let leftY = topY;
+  const getTextX = (text, size, fontUsed, baseX) =>
+    isArabic ? getRTLTextX(text, size, fontUsed, baseX, columnWidth) : baseX;
 
-      const getTextX = (text, size, fontUsed, baseX) =>
-        isArabic
-          ? getRTLTextX(text, size, fontUsed, baseX, columnWidth)
-          : baseX;
+  const drawLeftText = (text, size = labelFontSize, bold = false) => {
+    const fontUsed = bold ? boldFont : font;
+    const tx = getTextX(text, size, fontUsed, leftX);
+    page.drawText(text, {
+      x: tx,
+      y: leftY,
+      size,
+      font: fontUsed,
+      color: colors.textColor,
+    });
+    leftY -= size + 6;
+  };
 
-      const drawLeftText = (text, size = labelFontSize, bold = false) => {
-        const fontUsed = bold ? boldFont : font;
-        const tx = getTextX(text, size, fontUsed, leftX);
-        page.drawText(text, {
-          x: tx,
-          y: leftY,
-          size,
-          font: fontUsed,
-          color: colors.textColor,
-        });
-        leftY -= size + 6;
-      };
+  drawLeftText(firstPartyTitle, 14, true);
+  drawLeftText(directorLabel);
 
-      drawLeftText(firstPartyTitle, 14, true);
-      drawLeftText(directorLabel);
+  try {
+    const stampBytes = await fetchImageBuffer(stampImageUrl);
+    let stampImage;
+    try {
+      stampImage = await pdfDoc.embedPng(stampBytes);
+    } catch {
+      stampImage = await pdfDoc.embedJpg(stampBytes);
+    }
 
-      // ختم
-      try {
-        const stampBytes = await fetchImageBuffer(stampImageUrl);
-        let stampImage;
-        try {
-          stampImage = await pdfDoc.embedPng(stampBytes);
-        } catch {
-          stampImage = await pdfDoc.embedJpg(stampBytes);
-        }
+    if (stampImage) {
+      const stampScale = 0.2;
+      const { width: sw0, height: sh0 } = stampImage.size();
+      const sw = sw0 * stampScale;
+      const sh = sh0 * stampScale;
+      const stampX = isArabic ? leftX + columnWidth - sw : leftX;
+      const stampY = leftY - sh - 10;
+      page.drawImage(stampImage, {
+        x: stampX,
+        y: stampY,
+        width: sw,
+        height: sh,
+      });
+      leftY = stampY - 20;
+    }
+  } catch (err) {
+    console.warn("Failed to load stamp image:", err.message);
+  }
 
-        if (stampImage) {
-          const stampScale = 0.2;
-          const { width: sw0, height: sh0 } = stampImage.size();
-          const sw = sw0 * stampScale;
-          const sh = sh0 * stampScale;
-          const stampX = isArabic ? leftX + columnWidth - sw : leftX;
-          const stampY = leftY - sh - 10;
-          page.drawImage(stampImage, {
-            x: stampX,
-            y: stampY,
-            width: sw,
-            height: sh,
-          });
-          leftY = stampY - 20;
-        }
-      } catch (err) {
-        console.warn("Failed to load stamp image:", err.message);
+  // ==== الطرف الثاني (Right Column) ====
+  let rightY = topY;
+  const rightXWithMargin = rightX ; // <--- extra margin to right
+
+  const drawRightText = (
+    text,
+    x,
+    y,
+    fontUsed = font,
+    size = labelFontSize
+  ) => {
+    page.drawText(text, {
+      x,
+      y,
+      size,
+      font: fontUsed,
+      color: colors.textColor,
+    });
+  };
+
+const secondTitleX = isArabic
+    ? getRTLTextX(secondPartyTitle, 14, boldFont, rightX, columnWidth)
+    : rightX;
+  drawRightText(secondPartyTitle, secondTitleX, rightY, boldFont, 14);
+  rightY -= 14 + 8;
+
+const nameLabelX = isArabic
+    ? getRTLTextX(nameLabel, labelFontSize, font, rightX, columnWidth)
+    : rightX;
+  drawRightText(nameLabel, nameLabelX, rightY);
+rightY -= labelFontSize + 6;
+const nameValueX = isArabic
+    ? getRTLTextX(clientName, labelFontSize, font, rightX, columnWidth)
+    : rightX + 50;
+
+  drawRightText(clientName, nameValueX, rightY,isArabicText(clientName)?arFont:enFont);
+  rightY -= labelFontSize + 10;
+
+  const sigLabelWidth = font.widthOfTextAtSize(signatureLabel, labelFontSize);
+
+  try {
+    const sigBytes = await fetchImageBuffer(signatureUrl);
+    let sigImage;
+    try {
+      sigImage = await pdfDoc.embedPng(sigBytes);
+    } catch {
+      sigImage = await pdfDoc.embedJpg(sigBytes);
+    }
+
+    if (sigImage) {
+      const maxW = 200;
+      const maxH = 150;
+      let { width: sw, height: sh } = sigImage.size();
+      let sigW = sw,
+        sigH = sh;
+
+      if (sigW > maxW) {
+        const ratio = maxW / sigW;
+        sigW = maxW;
+        sigH *= ratio;
+      }
+      if (sigH > maxH) {
+        const ratio = maxH / sigH;
+        sigH = maxH;
+        sigW *= ratio;
       }
 
-      // ==== الطرف الثاني (Right Column) ====
-      let rightY = topY;
+      const sigX = isArabic
+        ? rightXWithMargin + columnWidth - sigLabelWidth - sigW - 10
+        : rightXWithMargin + sigLabelWidth + 10;
 
-      const drawRightText = (
-        text,
-        x,
-        y,
-        fontUsed = font,
-        size = labelFontSize
-      ) => {
-        page.drawText(text, {
-          x,
-          y,
-          size,
-          font: fontUsed,
-          color: colors.textColor,
-        });
-      };
+      const sigY = rightY - sigH - imageMarginTop;
 
-      const secondTitleX = isArabic
-        ? getRTLTextX(secondPartyTitle, 14, boldFont, rightX, columnWidth)
-        : rightX;
-
-      drawRightText(secondPartyTitle, secondTitleX, rightY, boldFont, 14);
-      rightY -= 14 + 8;
-
-      // الاسم + اسم العميل
-
-      const nameText = `${nameLabel} ${clientName}`;
-      const nameTextX = isArabic
-        ? getRTLTextX(nameText, labelFontSize, font, rightX, columnWidth)
-        : rightX;
-      page.drawText(nameText, {
-        x: nameTextX,
-        y: rightY,
-        size: labelFontSize,
-        font,
-        color: colors.textColor,
-      });
-      rightY -= labelFontSize + 10;
-
-      const sigLabelWidth = font.widthOfTextAtSize(
+      drawRightText(
         signatureLabel,
-        labelFontSize
+        isArabic ? sigX + sigW + 5 : rightXWithMargin,
+        sigY + sigH / 2 - 6
       );
 
-      try {
-        const sigBytes = await fetchImageBuffer(signatureUrl);
-        let sigImage;
-        try {
-          sigImage = await pdfDoc.embedPng(sigBytes);
-        } catch {
-          sigImage = await pdfDoc.embedJpg(sigBytes);
-        }
+      page.drawImage(sigImage, {
+        x: sigX,
+        y: sigY,
+        width: sigW,
+        height: sigH,
+      });
 
-        if (sigImage) {
-          const maxW = 200;
-          const maxH = 150;
-          let { width: sw, height: sh } = sigImage.size();
-          let sigW = sw,
-            sigH = sh;
-
-          if (sigW > maxW) {
-            const ratio = maxW / sigW;
-            sigW = maxW;
-            sigH *= ratio;
-          }
-          if (sigH > maxH) {
-            const ratio = maxH / sigH;
-            sigH = maxH;
-            sigW *= ratio;
-          }
-
-          const sigX = isArabic
-            ? rightX + columnWidth - sigLabelWidth - sigW - 10
-            : rightX + sigLabelWidth + 10;
-
-          const sigY = rightY - sigH - imageMarginTop;
-
-          // Draw label
-          drawRightText(
-            signatureLabel,
-            isArabic ? sigX + sigW + 5 : rightX,
-            sigY + sigH / 2 - 6
-          );
-
-          // Draw image
-          page.drawImage(sigImage, {
-            x: sigX,
-            y: sigY,
-            width: sigW,
-            height: sigH,
-          });
-
-          rightY = sigY - 10;
-        }
-      } catch (err) {
-        console.warn("Failed to load client signature:", err.message);
-      }
+      rightY = sigY - 10;
     }
+  } catch (err) {
+    console.warn("Failed to load client signature:", err.message);
+  }
+}
+
 
     const totalPages = pdfDoc.getPageCount();
     const pages = pdfDoc.getPages();
