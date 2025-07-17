@@ -91,7 +91,7 @@ router.get("/tests/:testId", async (req, res) => {
   try {
         const user = await getCurrentUser(req);
     const result = await getUserTest({
-      testId: req.params.testId,userId:user.id
+      testId: req.params.testId,userId:user.role!=="ADMIN"&&user.role!=="SUPER_ADMIN"&&user.id
     });
     res.status(200).json({ data: result, message: "Done" });
   } catch (e) {

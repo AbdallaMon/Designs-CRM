@@ -409,12 +409,14 @@ export async function getUserTest({ testId,userId }) {
       lesson: true,
     },
   });
-  console.log(test,"test")
-  if(test.lesson){
-    await canAccessALessonTest({lesson:test.lesson,userId})
-  }
-  if(test.course){
-    await canAccessACourseTest({course:test.course,userId})
+  if(userId){
+
+    if(test.lesson){
+      await canAccessALessonTest({lesson:test.lesson,userId})
+    }
+    if(test.course){
+      await canAccessACourseTest({course:test.course,userId})
+    }
   }
   return test
 }
