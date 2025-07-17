@@ -3,6 +3,7 @@
 //   getUserDetailsWithSpecificFields,
 // } from "../services/main/"
 import {
+  courseDashboard,
   dashboardLink,
   dealsLink,
   newLeadLink,
@@ -1072,4 +1073,26 @@ export async function sendPaymentReminderEmail(
 
   await sendEmail(clientEmail, langContent.subject, emailHtml, true);
   return `Payment reminder email sent successfully in ${lng} language`;
+}
+
+export async function attemptFailedByUser({testId, userId}) {
+  const notificationHtml = `<div>
+       <strong>Test Attempt</strong> A user has failed to finish his last test attempt <a href="${
+         courseDashboard + '/tests/'+testId+'/attempts?userId='+userId+'&testId='+testId
+       }" >#${userId}</a> 
+       <q>Action is require u can give him a new attempt from the link<q/>
+    </div>
+`;
+  await createNotification(
+    null,
+    true,
+    notificationHtml,
+    null,
+    "ATTEMPT_FAILED",
+    "Test Attempt",
+    true,
+    "HTML",
+    null,
+    userId
+  );
 }

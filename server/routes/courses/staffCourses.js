@@ -62,9 +62,10 @@ router.get("/:courseId/progress", async (req, res) => {
 });
 router.get("/:courseId/lessons/:lessonId", async (req, res) => {
   try {
+    const user=await getCurrentUser(req)
     const result = await getLesson({
       lessonId: req.params.lessonId,
-      role: req.query.role,
+      role: req.query.role,userId:user.id
     });
     res.status(200).json({ data: result });
   } catch (e) {
@@ -88,8 +89,9 @@ router.patch("/:courseId/lessons/:lessonId", async (req, res) => {
 // tests
 router.get("/tests/:testId", async (req, res) => {
   try {
+        const user = await getCurrentUser(req);
     const result = await getUserTest({
-      testId: req.params.testId,
+      testId: req.params.testId,userId:user.id
     });
     res.status(200).json({ data: result, message: "Done" });
   } catch (e) {

@@ -12,6 +12,7 @@ import {
   createNewLessonVideo,
   createTest,
   createTestQuestion,
+  decreaseAttemptToUser,
   deleteLesson,
   deleteLessonPdf,
   deleteLessonVideo,
@@ -36,6 +37,7 @@ import {
   getTestQuestionData,
   getTests,
   getVideosByLessonId,
+  increaseAttemptToUser,
   reOrderTestQuestions,
 } from "../../services/main/courses/adminCourseServices.js";
 import { getUserAttampts } from "../../services/main/courses/staffCoursesServices.js";
@@ -331,6 +333,22 @@ router.get("/tests/:testId/attampts/user", async (req, res) => {
   try {
     const data = await getUserAttampts({testId:req.params.testId,userId:Number(req.query.userId)  });
     res.status(200).json({ data });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.post("/tests/:testId/attempts/increase", async (req, res) => {
+  try {
+    const data = await increaseAttemptToUser({testId:req.params.testId,userId:Number(req.query.userId)  });
+    res.status(200).json({ data,message:"Updated succssfully" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.post("/tests/:testId/attempts/decrease", async (req, res) => {
+  try {
+    const data = await decreaseAttemptToUser({testId:req.params.testId,userId:Number(req.query.userId)  });
+    res.status(200).json({ data,message:"Updated succssfully" });
   } catch (e) {
     getAndThrowError(e, res);
   }

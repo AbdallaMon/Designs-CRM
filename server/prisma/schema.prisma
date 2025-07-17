@@ -30,6 +30,12 @@ enum NotificationType {
   EXTRA_FINAL_PRICE_EDITED // Extra final price edited
   WORK_STAGE_UPDATED // Work stage updated for 3D or 2D
   OTHER
+
+  TEST_FINISHED
+  ATTEMPT_PASSED
+  ATTEMPT_FAILED
+  NEW_ATTEMPT_CREATED
+  NEW_ATTEMPT_ADDED
 }
 
 enum ContentType {
@@ -1224,6 +1230,7 @@ enum CoursesQuestionType {
   SINGLE_CHOICE
   TRUE_FALSE
   TEXT
+  ORDERING   
 }
 
 enum TestType {
@@ -1341,6 +1348,7 @@ model TestChoice {
   text       String
   value      String
   isCorrect  Boolean      @default(false)
+  order      Int?    
 }
 
 model TestAttempt {
@@ -1369,8 +1377,7 @@ model UserAnswer {
   questionId Int
   selectedAnswers SelectedAnswer[]
   textAnswer String?       @db.Text
-    isApproved      Boolean       @default(false)
-
+  isApproved      Boolean       @default(false)
 }
 
 model SelectedAnswer {
@@ -1378,6 +1385,7 @@ model SelectedAnswer {
   answer     UserAnswer   @relation(fields: [userAnswerId], references: [id])
   userAnswerId Int
   value      String
+  order        Int?  
 }
 
 model CourseProgress {

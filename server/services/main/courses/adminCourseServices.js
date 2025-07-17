@@ -461,12 +461,15 @@ export async function reOrderTestQuestions({ data }) {
   return true;
 }
 export async function getTestQuestionData({ id }) {
-  return await prisma.testQuestion.findUnique({
+  return await prisma.testQuestion.findUnique({   
+
     where: {
       id: Number(id),
     },
     include: {
-      choices: true,
+      choices: {
+         orderBy: { order: "asc" }
+      },
     },
   });
 }
@@ -478,11 +481,11 @@ export async function createTestQuestion({ id, data }) {
   });
 
   const nextOrder = lastQuestion ? lastQuestion.order + 1 : 1;
-  console.log(data.choices, "Choices");
   const choices = data.choices.map((choice) => ({
     text: choice.text,
     value: choice.value,
     isCorrect: choice.isCorrect,
+    order:choice.order
   }));
 
   return await prisma.testQuestion.create({
@@ -509,7 +512,9 @@ export async function editQuestion({ data, questionId }) {
           isCorrect: choice.isCorrect,
           text: choice.text,
           value: choice.text,
-          questionId: Number(questionId),
+          questionId: Number(questionId), 
+           order:choice.order
+
         },
       });
     } else {
@@ -521,6 +526,7 @@ export async function editQuestion({ data, questionId }) {
           text: choice.text,
           value: choice.text,
           isCorrect: choice.isCorrect,
+              order:choice.order
         },
       });
     }
@@ -528,7 +534,7 @@ export async function editQuestion({ data, questionId }) {
   await prisma.testQuestion.update({
     where: { id: Number(questionId) },
     data: {
-      question: data.question,
+      question: data.question,   
     },
   });
   return true;
@@ -640,4 +646,44 @@ export async function approveUserAnswer({attemptId,questionId, isApproved}) {
 
 
   await endAttempt(Number(attemptId));
+}
+export async function increaseAttemptToUser({testId,userId}){
+  const userLastAttampt = await prisma.TestAttempt.findFirst({
+    where: {
+      testId: Number(testId),
+      userId: Number(userId),
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+await prisma.TestAttempt.update({
+  where:{id:Number(userLastAttampt.id)
+  }
+,data:{
+  attemptLimit:userLastAttampt.attemptLimit+1
+}
+})
+}
+export async function decreaseAttemptToUser({testId,userId}){
+  const userLastAttampt = await prisma.TestAttempt.findFirst({
+    where: {
+      testId: Number(testId),
+      userId: Number(userId),
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+  console.log(userLastAttampt,"userLastAttampt")
+  if(userLastAttampt.attemptLimit===userLastAttampt.attemptCount){
+    throw new Error("Can't decrease as the user already has take his all attempts")
+  }
+await prisma.TestAttempt.update({
+  where:{id:Number(userLastAttampt.id)
+  }
+,data:{
+  attemptLimit:userLastAttampt.attemptLimit-1
+}
+})
 }
