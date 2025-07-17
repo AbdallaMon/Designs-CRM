@@ -343,7 +343,7 @@ export async function generateImageSessionPdf({
       const contentWidth = pageWidth - margin * 2;
 const headerImageWidth = contentWidth;
 
-const contentX = (page.getWidth() - headerImageWidth) / 2;
+      const contentX = (page.getWidth() - headerImageWidth) / 2;
       const headerY = pageHeight - headerHeight;
 
       try {
