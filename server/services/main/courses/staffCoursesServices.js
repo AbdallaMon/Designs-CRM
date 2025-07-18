@@ -45,6 +45,11 @@ export async function getCourse({ courseId, role, userId }) {
           isPreviewable: true,
         },
         include: {
+          allowedUsers:{
+            where:{
+              userId:Number(userId)
+            }
+          },
           tests: {
             where: { published: true },
             select: {
@@ -187,6 +192,17 @@ await canAccessAlesson({lesson,userId})
 }
 
 export async function canAccessAlesson({lesson,userId}){
+
+  const currentLessonAccess=await prisma.LessonAccess.findUnique({where:{
+    userId_lessonId:{
+      lessonId:Number(lesson.id),
+      userId:Number(userId)
+
+    }
+  }})
+  if(!currentLessonAccess){
+      throw new Error("You are not allowed to access this lesson yet.");
+  }
   const previousLessons = await prisma.lesson.findMany({
   where: {
     courseId: lesson.courseId,
@@ -371,6 +387,37 @@ if (!allPreviousCompleted || !allPreviousTestsPassed) {
 }
 
 }
+
+export async function getHomeWorks({userId,lessonId}){
+  return await prisma.LessonHomework.findMany({where:{
+    lessonId:Number(lessonId),
+    userId:Number(userId)
+  }})
+}
+export async function createAHomeWork({data,lessonId,userId,courseId}){
+  console.log(data,"data")
+  const homeWork=await prisma.LessonHomework.create({data:{
+    lessonId:Number(lessonId),
+    userId:Number(userId),
+    url:data.url,type:data.type,title:data.title||data.type
+  }})
+   const homeWorks = await prisma.LessonHomework.findMany({
+    where: {
+      userId: Number(userId),
+      lessonId: Number(lessonId),
+    },
+    select: {
+      type: true,
+    },
+  });
+
+  const hasVideo = homeWorks.some((hw) => hw.type === 'VIDEO');
+  const hasSummary = homeWorks.some((hw) => hw.type === 'SUMMARY');
+  if(hasVideo&&hasSummary){
+    await markLessonAsCompleted({lessonId,userId,courseId})
+  }
+  return
+}
 export async function markLessonAsCompleted({ lessonId, courseId, userId }) {
   lessonId = Number(lessonId);
   userId = Number(userId);
@@ -425,7 +472,8 @@ export async function getUserTestQuestion({ testId, userId }) {
   return await prisma.testQuestion.findMany({
     where: {
       testId: Number(testId),
-    },
+    },   
+    orderBy: { order: 'asc' },
     include: {
       choices: true,
     },

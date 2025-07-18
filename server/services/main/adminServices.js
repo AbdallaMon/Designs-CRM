@@ -54,10 +54,13 @@ export async function getAllUsers(searchParams) {
     searchParams.role = "STAFF";
   }
   let where = {};
-  where.OR = [
-    { role: searchParams.role },
-    { subRoles: { some: { subRole: searchParams.role } } },
-  ];
+  if(searchParams.role!=="all"){
+
+    where.OR = [
+      { role: searchParams.role },
+      { subRoles: { some: { subRole: searchParams.role } } },
+    ];
+  }
   where.isActive = true;
   const users = await prisma.user.findMany({
     where: where,

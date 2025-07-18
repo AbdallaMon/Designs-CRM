@@ -675,7 +675,6 @@ export async function decreaseAttemptToUser({testId,userId}){
       createdAt: "desc",
     },
   });
-  console.log(userLastAttampt,"userLastAttampt")
   if(userLastAttampt.attemptLimit===userLastAttampt.attemptCount){
     throw new Error("Can't decrease as the user already has take his all attempts")
   }
@@ -686,4 +685,38 @@ await prisma.TestAttempt.update({
   attemptLimit:userLastAttampt.attemptLimit-1
 }
 })
+}
+
+
+// permissions
+
+export async function getAllowedRoles({courseId}){
+  const allowedRoles= await prisma.CourseRole.findMany({where:{courseId:Number(courseId)}
+  })
+  return allowedRoles?.map((r)=>r.role)
+}
+export async function getAllowedLessonUsers({lessonId}){
+  return await prisma.LessonAccess.findMany({where:{lessonId:Number(lessonId)},select:{
+    id:true,
+    user:{
+     select:{
+       id:true,
+      name:true,
+      email:true,role:true
+     }
+    }
+  }})
+}
+export async function createNewLessonAccess({lessonId,userId}){
+
+  await prisma.LessonAccess.create({data:{
+    lessonId:Number(lessonId),
+    userId:Number(userId)
+  }})
+}
+export async function deleteAlessonAccess({id}){
+
+  await prisma.LessonAccess.delete({where:{
+id:Number(id)
+  }})
 }

@@ -7,12 +7,14 @@ import {
   approveUserAnswer,
   createNewCourse,
   createNewLesson,
+  createNewLessonAccess,
   createNewLessonLink,
   createNewLessonPdf,
   createNewLessonVideo,
   createTest,
   createTestQuestion,
   decreaseAttemptToUser,
+  deleteAlessonAccess,
   deleteLesson,
   deleteLessonPdf,
   deleteLessonVideo,
@@ -26,6 +28,8 @@ import {
   editLessonVideo,
   editQuestion,
   editTest,
+  getAllowedLessonUsers,
+  getAllowedRoles,
   getAttemptsSummary,
   getCourses,
   getLessonById,
@@ -256,6 +260,46 @@ router.delete(
     }
   }
 );
+router.get("/:courseId/allowed-roles",async(req,res)=>{
+      try {
+      const data = await getAllowedRoles({
+        courseId: req.params.courseId,
+      });
+      res.status(200).json({ data,});
+    } catch (e) {
+      getAndThrowError(e, res);
+    }
+})
+router.get("/:courseId/lessons/:lessonId/allowed-users",async(req,res)=>{
+      try {
+      const data = await getAllowedLessonUsers({
+        lessonId: req.params.lessonId,
+      });
+      res.status(200).json({ data,});
+    } catch (e) {
+      getAndThrowError(e, res);
+    }
+})
+router.post("/:courseId/lessons/:lessonId/allowed-users",async(req,res)=>{
+      try {
+      const data = await createNewLessonAccess({
+        lessonId: req.params.lessonId,userId:req.body.userId
+      });
+      res.status(200).json({ data,message:"User access granted"});
+    } catch (e) {
+      getAndThrowError(e, res);
+    }
+})
+router.delete("/:courseId/lessons/:lessonId/allowed-users/:accessId",async(req,res)=>{
+      try {
+      const data = await deleteAlessonAccess({
+        id:req.params.accessId
+      });
+      res.status(200).json({ data,message:"User access deleted"});
+    } catch (e) {
+      getAndThrowError(e, res);
+    }
+})
 //test
 
 router.get("/tests", async (req, res) => {

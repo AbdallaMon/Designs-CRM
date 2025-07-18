@@ -559,6 +559,8 @@ model User {
   courseProgress CourseProgress[]
   examAttempts   TestAttempt []
   certificates   Certificate[]
+  allowedLessons LessonAccess[]
+  homeWorks LessonHomework[]
 
   baseSalary          BaseEmployeeSalary?
   notAllowedCountries Json?
@@ -1275,18 +1277,47 @@ model Lesson {
   pdfs           LessonPDF[]
   links          LessonLink[]
   tests          Test[]
+  allowedUsers   LessonAccess[]
+  homeWorks LessonHomework[]
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
   @@unique([courseId, order])
 }
 
+model LessonAccess {
+  id        Int     @id @default(autoincrement())
+  user      User    @relation(fields: [userId], references: [id])
+  userId    Int
+  lesson    Lesson  @relation(fields: [lessonId], references: [id])
+  lessonId  Int
+  grantedAt DateTime @default(now())
 
-
+  @@unique([userId, lessonId])
+}
 enum LessonVideoType {
   IFRAME
   URL
 }
 
+model LessonHomework {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+  lessonId  Int
+  title     String
+  url       String
+  type      HomeworkType
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([lessonId])
+}
+
+enum HomeworkType {
+  VIDEO
+  SUMMARY
+}
 model LessonVideo {
   id        Int    @id @default(autoincrement())
   lesson    Lesson @relation(fields: [lessonId], references: [id])

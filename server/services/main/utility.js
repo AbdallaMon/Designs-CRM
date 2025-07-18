@@ -239,7 +239,9 @@ export async function searchData(body) {
       ];
       where.role = "STAFF";
     } else if (model === "all-users") {
+      model="user"
     } else if (model === "client") {
+      
       where.OR = [
         { email: { contains: query } },
         { name: { contains: query } },

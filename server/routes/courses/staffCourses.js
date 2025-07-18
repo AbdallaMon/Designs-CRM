@@ -1,9 +1,11 @@
 import { Router } from "express";
 import {
+  createAHomeWork,
   createAttampt,
   endAttempt,
   getCourse,
   getCourses,
+  getHomeWorks,
   getLesson,
   getUserAttampt,
   getUserAttampts,
@@ -82,6 +84,37 @@ router.patch("/:courseId/lessons/:lessonId", async (req, res) => {
       userId: user.id,
     });
     res.status(200).json({ data: result, message: "Done" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+// home work
+
+router.get("/:courseId/lessons/:lessonId/home-work", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req);
+
+    const result = await getHomeWorks({
+      lessonId: req.params.lessonId,
+      courseId: req.params.courseId,
+      userId: user.id,
+    });
+    res.status(200).json({ data: result, message: "Done" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+
+router.post("/:courseId/lessons/:lessonId/home-work", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req);
+
+    const result = await createAHomeWork({
+      lessonId: req.params.lessonId,
+      courseId: req.params.courseId,
+      userId: user.id,data:req.body
+    });
+    res.status(200).json({ data: result, message: "Home work saved" });
   } catch (e) {
     getAndThrowError(e, res);
   }

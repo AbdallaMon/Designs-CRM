@@ -82,6 +82,13 @@
 - امكانية رفع اكتر من صور ووضعها ضمن مساحه معينه
 - Can select more than one material
 
+
+Contract :
+- Force choose contract in finalized lead one purpose
+- Allow admin to edit is completed or not for each contract
+- Can add another contracts purposes
+
+
 - Pdf
 - Page
 - مساحات
