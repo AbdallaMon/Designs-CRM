@@ -33,7 +33,6 @@ const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
         url: `shared/questions/question-types/${clientLeadId}?`,
         setLoading,
       });
-      console.log(response, "response2");
       if (response.status === 200) {
         setCategories(response.data);
       }
