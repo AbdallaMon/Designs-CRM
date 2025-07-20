@@ -85,9 +85,24 @@
 
 Contract :
 - Force choose contract in finalized lead one purpose
-- Allow admin to edit is completed or not for each contract
+- Allow to edit is completed or not for each contract
 - Can add another contracts purposes
+- Remove title
+- onClick on level open contract managment
 
+- Delivery time from startDate or start status
+
+Telegram :
+- After create channel when assign any user add him to telegram channel
+- Add notes
+- All attettchments 
+- Updates(check we add or not)
+- And then all these when new added will added to telegram but with a checkbox send to tele or not
+- https://my.telegram.org/apps
+
+Client image session
+- Show number of notes
+- Show the session to 3d
 
 - Pdf
 - Page

@@ -231,15 +231,15 @@ export const KanbanBeginerLeadsStatus = {
   NEEDS_IDENTIFIED: "Needs Identified",
   NEGOTIATING: "Negotiating",
 };
-export const CONTRACT_LEVELS = [
-  "LEVEL_1",
-  "LEVEL_2",
-  "LEVEL_3",
-  "LEVEL_4",
-  "LEVEL_5",
-  "LEVEL_6",
-  "LEVEL_7",
-];
+export const CONTRACT_LEVELS = {
+  LEVEL_1: "تحليل وتقييم",
+  LEVEL_2: "تخطيط المساحات", 
+  LEVEL_3: "تصميم 3D",
+  LEVEL_4: "مخططات تنفيذية",
+  LEVEL_5: "حساب كميات واسعار",
+  LEVEL_6: "تنفيذ",
+  LEVEL_7: "تسويق"
+};
 // Projects
 
 export const PROJECT_TYPES = [

@@ -12,6 +12,7 @@ import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks";
 import KanbanColumn from "./KanbanColumn";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { CONTRACT_LEVELS } from "@/app/helpers/constants";
+import KeyMetricsCard from "../../dashbaord/KeyMetricsCard";
 
 dayjs.extend(relativeTime);
 
@@ -97,10 +98,12 @@ const OptimizedKanbanLead = ({
                     lastThreeMonth={true}
                   />
                   <FilterSelect
-                    options={CONTRACT_LEVELS.map((level) => ({
-                      id: level,
-                      name: level.charAt(0).toUpperCase() + level.slice(1),
-                    }))}
+                    options={Object.entries(CONTRACT_LEVELS).map(([key,value]) => {
+                      return {
+                      id: key,
+                      name: value,
+                    }
+                    })}
                     label={"Contract Level"}
                     loading={false}
                     param={"contractLevel"}

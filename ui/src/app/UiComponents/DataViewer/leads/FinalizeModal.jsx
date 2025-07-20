@@ -6,11 +6,17 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
+  FormControl,
+  Grid2 as Grid,
+  InputLabel,
+  MenuItem,
   Modal,
+  Select,
   TextField,
   Typography,
 } from "@mui/material";
-import { simpleModalStyle } from "@/app/helpers/constants.js";
+import { CONTRACT_LEVELS, simpleModalStyle } from "@/app/helpers/constants.js";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 
 export function FinalizeModal({
@@ -32,6 +38,36 @@ export function FinalizeModal({
   const { setAlertError } = useAlertContext();
   const { setLoading } = useToastContext();
   const { user } = useAuth();
+    const [formData, setFormData] = useState({
+      purpose: "",
+      contractLevel: [],
+      startDate: "",
+      endDate: "",
+    });
+    const handleSaveContract = async () => {
+      if (!formData.purpose || !formData.contractLevel || formData.contractLevel.length < 1) {
+        setAlertError("Please fill in all required fields.");
+        return;
+      }
+      
+      const url =    `shared/client-leads/${lead.id}/contracts`;
+      const method = "POST";
+      
+      const req = await handleRequestSubmit(
+        formData,
+        setLoading,
+        url,
+        false,
+        "Saving Contract",
+        false,
+        method
+      );
+      
+      if (req.status === 200 || req.status === 201) {
+     return true
+      }
+    };
+  
   useEffect(() => {
     if (discount >= 0 && price > 0) {
       const discountValue = (price * discount) / 100;
@@ -42,6 +78,12 @@ export function FinalizeModal({
     if (!price || price <= 0) {
       setAlertError("Please enter a valid price agreed upon by the client.");
       return;
+    }
+    if(!lead.contracts||lead.contracts.length===0){
+      const pass=await handleSaveContract()
+      if(!pass){
+        return
+      }
     }
     const request = await handleRequestSubmit(
       {
@@ -159,9 +201,99 @@ export function FinalizeModal({
         <Alert severity="info" sx={{ mb: 2 }}>
           The current price is : {averagePrice}
         </Alert>
+             {(!lead.contracts||lead.contracts.length===0)&&
+        
+        <Box sx={{mb:2}}>
+        <Typography variant="h4" sx={{mb:1.5}}>
+          Contract Details
+        </Typography>
+             <Grid container spacing={2}>
+                      <Grid size={12}>
+                        <TextField
+                          fullWidth
+                          label="Purpose"
+                          value={formData.purpose}
+                          onChange={(e) =>
+                            setFormData({ ...formData, purpose: e.target.value })
+                          }
+                        />
+                      </Grid>
+                      <Grid size={12}>
+                        <FormControl fullWidth>
+                          <InputLabel>Contract Level</InputLabel>
+                          <Select
+                            multiple
+                            value={formData.contractLevel}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                contractLevel: e.target.value,
+                              })
+                            }
+                            label="Contract Level"
+                            renderValue={(selected) => {
+                              return (
+                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                                  {selected.map((value) => (
+                                    <Chip 
+                                      key={value} 
+                                      label={`${value.replace("_", " ")} - ${CONTRACT_LEVELS[value]}`} 
+                                      size="small"
+                                    />
+                                  ))}
+                                </Box>
+                              );
+                            }}
+                          >
+                            {Object.keys(CONTRACT_LEVELS)
+                            .map((level) => (
+                              <MenuItem key={level} value={level}>
+                                <Box>
+                                  <Typography variant="body1">
+                                    {level.replace("_", " ")}
+                                  </Typography>
+                                  <Typography variant="body2" color="text.secondary">
+                                    {CONTRACT_LEVELS[level]}
+                                  </Typography>
+                                </Box>
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid size={{ xs: 6 }}>
+                        <TextField
+                          fullWidth
+                          label="Start Date"
+                          type="date"
+                          value={formData.startDate}
+                          helperText="Optional start date for the level"
+                          onChange={(e) =>
+                            setFormData({ ...formData, startDate: e.target.value })
+                          }
+                          InputLabelProps={{ shrink: true }}
+                        />
+                      </Grid>
+                      <Grid size={{ xs: 6 }}>
+                        <TextField
+                          fullWidth
+                          label="End Date"
+                          type="date"
+                          helperText="Optional end date for the level"
+                          value={formData.endDate}
+                          onChange={(e) =>
+                            setFormData({ ...formData, endDate: e.target.value })
+                          }
+                          InputLabelProps={{ shrink: true }}
+                        />
+                      </Grid>
+                    </Grid>
+        </Box>
+        }
         <Button onClick={submit} variant="contained" fullWidth>
           {updatePrice ? "Update" : "Submit"} Final Price
         </Button>
+   
       </Box>
     </Modal>
   );

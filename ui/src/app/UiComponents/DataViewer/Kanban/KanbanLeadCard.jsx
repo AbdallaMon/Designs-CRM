@@ -29,7 +29,7 @@ import {
 
 import { styled } from "@mui/material/styles";
 import dayjs from "dayjs";
-import { statusColors } from "@/app/helpers/constants.js";
+import { CONTRACT_LEVELS, statusColors } from "@/app/helpers/constants.js";
 import PreviewDialog from "@/app/UiComponents/DataViewer/leads/PreviewLead.jsx";
 import {
   CallResultDialog,
@@ -139,7 +139,6 @@ const LeadCard = ({
 
   const latestCalls = getCallInfo(lead.callReminders);
   const dateRange = getDateRange();
-
   const currentContract =
     lead.contracts && lead.contracts.length > 0 && lead.contracts[0];
   const levelColor = currentContract
@@ -169,8 +168,8 @@ const LeadCard = ({
           <Chip
             icon={<IoMdContract sx={{ fontSize: "12px !important" }} />}
             label={
-              currentContract ? currentContract.contractLevel : "No Contract"
-            }
+                   currentContract ? CONTRACT_LEVELS[currentContract.contractLevel] : "No Contract"
+                   }
             sx={{
               fontWeight: "bold",
               fontSize: "0.875rem",

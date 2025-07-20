@@ -59,6 +59,8 @@ import {
   makeExtraServicePayments,
   makePayments,
   markAnUpdateAsDone,
+  markAsCompleted,
+  markAsCurrent,
   markClientLeadAsConverted,
   submitUserLog,
   toggleArchieveAnUpdate,
@@ -234,6 +236,34 @@ router.put("/client-leads/contract/:id", async (req, res) => {
   }
 });
 
+router.put("/client-leads/contract/:id/current", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedContract = await markAsCurrent({ contractId: Number(id), ...req.body });
+
+    res.status(200).json({
+      data: updatedContract,
+      message: "Contract updated successfully",
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({ message: e.message });
+  }
+});
+router.put("/client-leads/contract/:id/completed", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updatedContract = await markAsCompleted({ contractId: Number(id), ...req.body });
+
+    res.status(200).json({
+      data: updatedContract,
+      message: "Contract updated successfully",
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({ message: e.message });
+  }
+});
 router.delete("/client-leads/contract/:id", async (req, res) => {
   try {
     const { id } = req.params;

@@ -1391,6 +1391,12 @@ export async function getAdminClientLeadDetails(clientLeadId, searchParams) {
         include: {
           invoices: true,
         },
+      },           contracts: {
+        where:{
+          isInProgress:true
+        },
+        orderBy: { id: "desc" },
+        take: 1,
       },
       extraServices: true,
       notes: {

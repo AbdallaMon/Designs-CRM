@@ -23,6 +23,8 @@ import {
   Divider,
   Collapse,
   lighten,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 import {
   MdAdd as AddIcon,
@@ -34,9 +36,10 @@ import {
   MdArticle as ArticleIcon,
   MdExpandMore,
   MdExpandLess,
+  MdPlayArrow as CurrentIcon,
+  MdCheckCircle as CompletedIcon,
 } from "react-icons/md";
 import { contractLevelColors } from "@/app/helpers/colors";
-import { CONTRACT_LEVELS } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
@@ -44,6 +47,16 @@ import { getData } from "@/app/helpers/functions/getData";
 import dayjs from "dayjs";
 import { NotesComponent } from "../../utility/Notes";
 import DeleteModelButton from "./DeleteModelButton";
+
+const CONTRACT_LEVELS = {
+  LEVEL_1: "تحليل وتقييم",
+  LEVEL_2: "تخطيط المساحات", 
+  LEVEL_3: "تصميم 3D",
+  LEVEL_4: "مخططات تنفيذية",
+  LEVEL_5: "حساب كميات واسعار",
+  LEVEL_6: "تنفيذ",
+  LEVEL_7: "تسويق"
+};
 
 const ContractManagement = ({ leadId = 1 }) => {
   const [contracts, setContracts] = useState([]);
@@ -58,8 +71,7 @@ const ContractManagement = ({ leadId = 1 }) => {
   const { setAlertError } = useAlertContext();
   const [formData, setFormData] = useState({
     purpose: "",
-    contractLevel: "",
-    title: "",
+    contractLevel: [],
     startDate: "",
     endDate: "",
   });
@@ -83,19 +95,7 @@ const ContractManagement = ({ leadId = 1 }) => {
     return purposes;
   };
 
-  const getContractsByPurpose = (purpose) => {
-    return contracts.filter((contract) => contract.purpose === purpose);
-  };
 
-  const getHighestLevelForPurpose = (purpose) => {
-    const purposeContracts = getContractsByPurpose(purpose);
-    if (purposeContracts.length === 0) return null;
-
-    const levels = purposeContracts.map((contract) =>
-      parseInt(contract.contractLevel.split("_")[1])
-    );
-    return Math.max(...levels);
-  };
 
   const hasContractForLevel = (purpose, level) => {
     return contracts.some(
@@ -111,18 +111,17 @@ const ContractManagement = ({ leadId = 1 }) => {
     );
   };
 
-  const isCurrentLevel = (purpose, level) => {
-    const highestLevel = getHighestLevelForPurpose(purpose);
-    return highestLevel === parseInt(level.split("_")[1]);
+  const isCurrentLevel = (purpose, level, contract) => {
+    return contract?.isInProgress;
+  };
+
+  const isCompletedLevel = (purpose, level, contract) => {
+    return contract?.isCompleted;
   };
 
   const getAvailableLevelsForEdit = (purpose) => {
-    const highestLevel = getHighestLevelForPurpose(purpose);
-    if (!highestLevel) return CONTRACT_LEVELS;
-
-    return CONTRACT_LEVELS.filter((level) => {
-      const levelNum = parseInt(level.split("_")[1]);
-      return levelNum > highestLevel;
+    return Object.keys(CONTRACT_LEVELS).filter((level) => {
+      return !hasContractForLevel(purpose, level);
     });
   };
 
@@ -133,6 +132,39 @@ const ContractManagement = ({ leadId = 1 }) => {
     }));
   };
 
+  const handleToggleStatus = async (purpose, level, statusType) => {
+    const contract = getContractForLevel(purpose, level);
+    if (!contract) return;
+
+    const updateData = {
+      isInProgress: statusType === 'current' ? !contract.isInProgress : contract.isInProgress,
+      isCompleted: statusType === 'completed' ? !contract.isCompleted : contract.isCompleted,
+      
+    };
+
+    if (statusType === 'current' && updateData.isInProgress) {
+      updateData.isCompleted = false;
+    }
+    
+    if (statusType === 'completed' && updateData.isCompleted) {
+      updateData.isInProgress = false;
+    }
+
+    const req = await handleRequestSubmit(
+      updateData,
+      setToatsLoading,
+      `shared/client-leads/contract/${contract.id}/${statusType}`,
+      false,
+      "Updating Contract Status",
+      false,
+      "PUT"
+    );
+
+    if (req.status === 200) {
+      await fetchContracts();
+    }
+  };
+
   const handleOpenDialog = (type, contract = null, purpose = "") => {
     setDialogType(type);
     setSelectedContract(contract);
@@ -141,20 +173,18 @@ const ContractManagement = ({ leadId = 1 }) => {
     if (contract) {
       const formatDate = (date) => {
         if (!date) return "";
-        return new Date(date).toISOString().split("T")[0]; // returns 'yyyy-MM-dd'
+        return new Date(date).toISOString().split("T")[0];
       };
       setFormData({
         purpose: contract.purpose,
         contractLevel: contract.contractLevel,
-        title: contract.title || "",
         startDate: formatDate(contract.startDate) || "",
         endDate: formatDate(contract.endDate) || "",
       });
     } else {
       setFormData({
         purpose: purpose || "",
-        contractLevel: "",
-        title: "",
+        contractLevel: [],
         startDate: "",
         endDate: "",
       });
@@ -169,37 +199,23 @@ const ContractManagement = ({ leadId = 1 }) => {
     setSelectedPurpose("");
     setFormData({
       purpose: "",
-      contractLevel: "",
-      title: "",
+      contractLevel: [],
       startDate: "",
       endDate: "",
     });
   };
 
-  const handleDeleteContract = async (contractId) => {
-    const req = await handleRequestSubmit(
-      {},
-      setToatsLoading,
-      `shared/client-leads/contract/${contractId}`,
-      false,
-      "Deleteing",
-      false,
-      "DELETE"
-    );
-    if (req.status === 200) {
-      await fetchContracts();
-    }
-  };
-
   const handleSaveContract = async () => {
-    if (!formData.purpose || !formData.contractLevel) {
+    if (!formData.purpose || !formData.contractLevel || formData.contractLevel.length < 1) {
       setAlertError("Please fill in all required fields.");
-      return; // Stop saving if validation fails
+      return;
     }
+    
     const url = selectedContract
       ? `shared/client-leads/contract/${selectedContract.id}`
       : `shared/client-leads/${leadId}/contracts`;
     const method = selectedContract ? "PUT" : "POST";
+    
     const req = await handleRequestSubmit(
       formData,
       setToatsLoading,
@@ -209,17 +225,21 @@ const ContractManagement = ({ leadId = 1 }) => {
       false,
       method
     );
+    
     if (req.status === 200 || req.status === 201) {
       await fetchContracts();
-
       handleCloseDialog();
     }
   };
 
-  const getLevelColor = (purpose, level) => {
-    return isCurrentLevel(purpose, level)
-      ? "#4caf50"
-      : contractLevelColors[level];
+  const getLevelColor = (purpose, level, contract) => {
+    if (isCurrentLevel(purpose, level, contract)) {
+      return "#4caf50"; // Green for current
+    }
+    if (isCompletedLevel(purpose, level, contract)) {
+      return "#2196f3"; // Blue for completed
+    }
+    return contractLevelColors[level] || "#9e9e9e";
   };
 
   const getPurposeIcon = (purpose) => {
@@ -231,6 +251,16 @@ const ContractManagement = ({ leadId = 1 }) => {
       default:
         return <BusinessIcon />;
     }
+  };
+
+  const getStatusChip = (contract) => {
+    if (contract?.isInProgress) {
+      return <Chip label="Current" size="small" color="success" sx={{ mt: 1 }} />;
+    }
+    if (contract?.isCompleted) {
+      return <Chip label="Completed" size="small" color="primary" sx={{ mt: 1 }} />;
+    }
+    return <Chip label="Not Started" size="small" color="default" sx={{ mt: 1 }} />;
   };
 
   if (loading) {
@@ -303,7 +333,7 @@ const ContractManagement = ({ leadId = 1 }) => {
                   handleOpenDialog("new-level", null, purpose);
                 }}
               >
-                Edit Contract
+                Add new Contract level
               </Button>
             </Box>
 
@@ -313,22 +343,25 @@ const ContractManagement = ({ leadId = 1 }) => {
               unmountOnExit
             >
               <Grid container spacing={2}>
-                {CONTRACT_LEVELS.map((level) => {
+                {Object.entries(CONTRACT_LEVELS).map(([level, description]) => {
                   const hasContract = hasContractForLevel(purpose, level);
                   const contract = getContractForLevel(purpose, level);
-                  const isCurrent = isCurrentLevel(purpose, level);
+                  const isCurrent = isCurrentLevel(purpose, level, contract);
+                  const isCompleted = isCompletedLevel(purpose, level, contract);
 
                   return (
                     <Grid size={{ sm: 6, md: 4, lg: 3 }} key={level}>
                       <Card
                         sx={{
                           backgroundColor: lighten(
-                            getLevelColor(purpose, level),
+                            getLevelColor(purpose, level, contract),
                             0.85
                           ),
-                          color: getLevelColor(purpose, level),
+                          color: getLevelColor(purpose, level, contract),
                           border: isCurrent
                             ? "2px solid #4caf50"
+                            : isCompleted
+                            ? "2px solid #2196f3"
                             : "1px solid #ddd",
                           cursor: hasContract ? "pointer" : "default",
                           transition: "transform 0.2s",
@@ -338,16 +371,28 @@ const ContractManagement = ({ leadId = 1 }) => {
                         }}
                       >
                         <CardContent>
-                          <Box display="flex" alignItems="center" gap={1}>
-                            <Typography
-                              color={getLevelColor(purpose, level)}
-                              variant="h6"
-                              component="div"
-                            >
-                              {level.replace("_", " ")}
-                            </Typography>
+                          <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                            <Box flex={1}>
+                              <Typography
+                                color={getLevelColor(purpose, level, contract)}
+                                variant="h6"
+                                component="div"
+                                sx={{ mb: 0.5 }}
+                              >
+                                {level.replace("_", " ")}
+                              </Typography>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{ mb: 1, fontSize: '0.85rem' }}
+                              >
+                                {description}
+                              </Typography>
+                              {getStatusChip(contract)}
+                            </Box>
+                            
                             {hasContract && (
-                              <CardActions>
+                              <Box display="flex" flexDirection="column" gap={0.5}>
                                 <IconButton
                                   size="small"
                                   onClick={(e) => {
@@ -365,29 +410,61 @@ const ContractManagement = ({ leadId = 1 }) => {
                                     fetchContracts();
                                   }}
                                 />
-                              </CardActions>
+                              </Box>
                             )}
                           </Box>
 
                           {hasContract && (
-                            <>
-                              <Typography
-                                variant="body2"
-                                color="text.secondary"
-                              >
-                                {contract.title}
-                              </Typography>
-                              <Chip
-                                label={isCurrent ? "Current" : "Completed"}
+                            <Box mt={2}>
+                              <ToggleButtonGroup
                                 size="small"
-                                color={
-                                  isCurrent
-                                    ? "success"
-                                    : getLevelColor(purpose, level)
-                                }
-                                sx={{ mt: 1 }}
-                              />
-                            </>
+                                exclusive={false}
+                                sx={{ display: 'flex', gap: 1 }}
+                              >
+                                <ToggleButton
+                                  value="current"
+                                  selected={isCurrent}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleStatus(purpose, level, 'current');
+                                  }}
+                                  sx={{
+                                    px: 1,
+                                    py: 0.5,
+                                    fontSize: '0.75rem',
+                                    minWidth: 'auto',
+                                    '&.Mui-selected': {
+                                      backgroundColor: '#4caf50',
+                                      color: 'white',
+                                    }
+                                  }}
+                                >
+                                  <CurrentIcon sx={{ mr: 0.5, fontSize: '1rem' }} />
+                                  Current
+                                </ToggleButton>
+                                <ToggleButton
+                                  value="completed"
+                                  selected={isCompleted}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleToggleStatus(purpose, level, 'completed');
+                                  }}
+                                  sx={{
+                                    px: 1,
+                                    py: 0.5,
+                                    fontSize: '0.75rem',
+                                    minWidth: 'auto',
+                                    '&.Mui-selected': {
+                                      backgroundColor: '#2196f3',
+                                      color: 'white',
+                                    }
+                                  }}
+                                >
+                                  <CompletedIcon sx={{ mr: 0.5, fontSize: '1rem' }} />
+                                  Done
+                                </ToggleButton>
+                              </ToggleButtonGroup>
+                            </Box>
                           )}
                         </CardContent>
                       </Card>
@@ -428,7 +505,7 @@ const ContractManagement = ({ leadId = 1 }) => {
           {dialogType === "view-details" && selectedContract ? (
             <Box>
               <Typography variant="h6" gutterBottom>
-                {selectedContract.title}
+                {CONTRACT_LEVELS[selectedContract.contractLevel]}
               </Typography>
               <Divider sx={{ mb: 2 }} />
               <Grid container spacing={2}>
@@ -440,7 +517,7 @@ const ContractManagement = ({ leadId = 1 }) => {
                 <Grid size={{ xs: 6 }}>
                   <Typography variant="body1">
                     <strong>Level:</strong>{" "}
-                    {selectedContract.contractLevel.replace("_", " ")}
+                    {selectedContract.contractLevel.replace("_", " ")} - {CONTRACT_LEVELS[selectedContract.contractLevel]}
                   </Typography>
                 </Grid>
                 <Grid size={{ xs: 6 }}>
@@ -457,6 +534,16 @@ const ContractManagement = ({ leadId = 1 }) => {
                     {selectedContract.endDate
                       ? dayjs(selectedContract.endDate).format("DD/MM/YYYY")
                       : "Not set"}
+                  </Typography>
+                </Grid>
+                <Grid size={{ xs: 6 }}>
+                  <Typography variant="body1">
+                    <strong>Status:</strong>{" "}
+                    {selectedContract.isInProgress 
+                      ? "In Progress" 
+                      : selectedContract.isCompleted 
+                      ? "Completed" 
+                      : "Not Started"}
                   </Typography>
                 </Grid>
               </Grid>
@@ -478,6 +565,7 @@ const ContractManagement = ({ leadId = 1 }) => {
                 <FormControl fullWidth>
                   <InputLabel>Contract Level</InputLabel>
                   <Select
+                    multiple
                     value={formData.contractLevel}
                     onChange={(e) =>
                       setFormData({
@@ -486,28 +574,37 @@ const ContractManagement = ({ leadId = 1 }) => {
                       })
                     }
                     label="Contract Level"
+                    renderValue={(selected) => {
+                      return (
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                          {selected.map((value) => (
+                            <Chip 
+                              key={value} 
+                              label={`${value.replace("_", " ")} - ${CONTRACT_LEVELS[value]}`} 
+                              size="small"
+                            />
+                          ))}
+                        </Box>
+                      );
+                    }}
                   >
                     {(dialogType === "new-level"
                       ? getAvailableLevelsForEdit(selectedPurpose)
-                      : CONTRACT_LEVELS
+                      : Object.keys(CONTRACT_LEVELS)
                     ).map((level) => (
                       <MenuItem key={level} value={level}>
-                        {level.replace("_", " ")}
+                        <Box>
+                          <Typography variant="body1">
+                            {level.replace("_", " ")}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {CONTRACT_LEVELS[level]}
+                          </Typography>
+                        </Box>
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
-              </Grid>
-              <Grid size={12}>
-                <TextField
-                  fullWidth
-                  label="Title"
-                  value={formData.title}
-                  helperText="Optional title for the level"
-                  onChange={(e) =>
-                    setFormData({ ...formData, title: e.target.value })
-                  }
-                />
               </Grid>
               <Grid size={{ xs: 6 }}>
                 <TextField
@@ -541,12 +638,7 @@ const ContractManagement = ({ leadId = 1 }) => {
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
           {dialogType === "view-details" ? (
-            <Button
-              onClick={() => setDialogType("edit-contract")}
-              variant="contained"
-            >
-              Edit
-            </Button>
+            <></>
           ) : (
             <Button onClick={handleSaveContract} variant="contained">
               Save

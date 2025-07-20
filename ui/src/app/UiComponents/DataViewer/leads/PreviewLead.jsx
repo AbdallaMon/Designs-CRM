@@ -33,6 +33,7 @@ import {
 } from "react-icons/bs";
 import {
   ClientLeadStatus,
+  CONTRACT_LEVELS,
   KanbanBeginerLeadsStatus,
   KanbanLeadsStatus,
   statusColors,
@@ -87,6 +88,8 @@ import { AssignNewStaffModal } from "../utility/AssignNewStaffModal";
 import UpdatesList from "./leadUpdates/UpdatesList";
 import ClientImageSessionManager from "../image-session/users/ClientSessionImageManager";
 import SalesStageComponent from "./extra/SalesStage";
+import { IoMdContract } from "react-icons/io";
+import { contractLevelColors } from "@/app/helpers/colors";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -211,10 +214,14 @@ const LeadContent = ({
       </Alert>
     );
   }
-
+  const currentContract =
+    lead.contracts && lead.contracts.length > 0 && lead.contracts[0];
+  const levelColor = currentContract
+    ? contractLevelColors[currentContract.contractLevel]
+    : "#000000";
   return (
     <>
-      {isPage && user.id !== lead.userId ? (
+      {isPage && user.id !== lead.userId&&!admin ? (
         ""
       ) : (
         <>
@@ -314,6 +321,9 @@ const LeadContent = ({
                   <Typography variant="body2" color="text.secondary">
                     #{lead.id.toString().padStart(7, "0")}
                   </Typography>
+               
+            
+                  
                 </>
               )}
             </Box>
@@ -324,14 +334,32 @@ const LeadContent = ({
             {(user.role === "ADMIN" ||
               user.role === "SUPER_ADMIN" ||
               user.role === "STAFF") && (
+                <>
+                                <Chip
+                              icon={<IoMdContract sx={{ fontSize: "12px !important" }} />}
+                              label={
+                                currentContract ? CONTRACT_LEVELS[currentContract.contractLevel] : "No Contract"
+                              }
+                              sx={{
+                                fontWeight: "bold",
+                                fontSize: "0.875rem",
+                                color: levelColor,
+                                bgcolor: levelColor + "60",
+                                borderRadius: "0",
+                                cursor: "default",
+                                userSelect: "none",
+                              }}
+                            />
               <Chip
                 label={`Payment: ${lead.paymentStatus}`}
                 color="primary"
                 variant="outlined"
                 size="small"
                 sx={{ fontWeight: 500 }}
-              />
+                />
+                </>
             )}
+
 
             {/* Status Button/Menu */}
             {user.role !== "ACCOUNTANT" && (

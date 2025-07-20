@@ -177,10 +177,11 @@ model Contract {
 
   contractLevel ContractLevel
   purpose       String  
-
   title         String?
   startDate     DateTime?
   endDate       DateTime?
+  isCompleted   Boolean       @default(false)
+  isInProgress Boolean @default(false)
   createdAt DateTime @default(now())
 
   notes         Note[]

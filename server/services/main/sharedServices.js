@@ -277,6 +277,9 @@ export async function getClientLeadsByDateRange({
         take: 2,
       },
       contracts: {
+        where:{
+          isInProgress:true
+        },
         orderBy: { id: "desc" },
         take: 1,
       },
@@ -310,8 +313,12 @@ export async function getClientLeadsByDateRange({
   if (filters.contractLevel && filters.contractLevel !== "all") {
     result = result.filter(
       (lead) =>
-        lead.contracts.length &&
-        lead.contracts[0].contractLevel === filters.contractLevel
+      {
+if( lead.contracts.length ){
+console.log(lead.contracts,"lead.contracts")
+  return   lead.contracts[0].contractLevel === filters.contractLevel
+}
+}
     );
   }
   return result;
@@ -448,6 +455,9 @@ export async function getClientLeadsColumnStatus({
         take: 2,
       },
       contracts: {
+        where:{
+          isInProgress:true
+        },
         orderBy: { id: "desc" },
         take: 1,
       },
@@ -561,6 +571,13 @@ export async function getClientLeadDetails(
       leadType: true,
       previousLeadId: true,
       personality: true,
+           contracts: {
+        where:{
+          isInProgress:true
+        },
+        orderBy: { id: "desc" },
+        take: 1,
+      },
       client: {
         select: {
           id: true,
@@ -576,10 +593,7 @@ export async function getClientLeadDetails(
           email: true,
         },
       },
-      contracts: {
-        orderBy: { id: "desc" },
-        take: 1,
-      },
+
       selectedCategory: true,
       description: true,
       type: true,
@@ -731,7 +745,6 @@ export async function createNewContract({
 }) {
   const data = {
     clientLeadId: Number(clientLeadId),
-    contractLevel: contractLevel,
     purpose,
   };
   if (title) {
@@ -743,11 +756,23 @@ export async function createNewContract({
   if (endDate) {
     data.endDate = new Date(endDate);
   }
+  console.log(contractLevel,"contractLevel")
+contractLevel.forEach(async(level,index)=>{
+  const isPresent=await prisma.contract.findFirst({where:{
+    contractLevel:level,
+purpose:purpose,    clientLeadId: Number(clientLeadId),
 
-  const newContract = await prisma.contract.create({
-    data,
+  }})
+  if(isPresent){
+    console.log(isPresent,"isPresent")
+    return
+  }
+await prisma.contract.create({
+    data:{...data,contractLevel:level},
   });
-  return newContract;
+})
+
+  return true;
 }
 export async function editContract({ id, title, startDate, endDate }) {
   const data = {};
@@ -755,7 +780,7 @@ export async function editContract({ id, title, startDate, endDate }) {
     data.title = title;
   }
   if (startDate) {
-    data.startDate = new Date(startDate); // converts to full ISO format
+    data.startDate = new Date(startDate); 
   }
   if (endDate) {
     data.endDate = new Date(endDate);
@@ -804,6 +829,103 @@ export async function markClientLeadAsConverted(
   }
   return lead;
 }
+const LEVEL_ORDER = {
+  LEVEL_1: 1,
+  LEVEL_2: 2,
+  LEVEL_3: 3,
+  LEVEL_4: 4,
+  LEVEL_5: 5,
+  LEVEL_6: 6,
+  LEVEL_7: 7,
+};
+
+export async function markAsCurrent({ contractId, isInProgress }) {
+  const current = await prisma.contract.findUnique({
+    where: { id: contractId },
+  });
+  if (!current) return;
+
+  const allContracts = await prisma.contract.findMany({
+    where: {
+      clientLeadId: current.clientLeadId,
+      purpose: current.purpose,
+    },
+  });
+
+  const currentLevelNum = LEVEL_ORDER[current.contractLevel];
+
+  const updates = allContracts.map((contract) => {
+    const levelNum = LEVEL_ORDER[contract.contractLevel];
+    if (levelNum < currentLevelNum) {
+      return prisma.contract.update({
+        where: { id: contract.id },
+        data: {
+          isCompleted: true,
+          isInProgress: false,
+        },
+      });
+    }
+    if (levelNum === currentLevelNum) {
+      return prisma.contract.update({
+        where: { id: contract.id },
+        data: {
+          isInProgress: isInProgress,
+          isCompleted: false,
+        },
+      });
+    }
+    if (levelNum > currentLevelNum) {
+      return prisma.contract.update({
+        where: { id: contract.id },
+        data: {
+          isCompleted: false,
+          isInProgress: false,
+        },
+      });
+    }
+  });
+
+  await prisma.$transaction(updates);
+}
+export async function markAsCompleted({ contractId, isCompleted }) {
+  const current = await prisma.contract.findUnique({
+    where: { id: contractId },
+  });
+  if (!current) return;
+
+  const allContracts = await prisma.contract.findMany({
+    where: {
+      clientLeadId: current.clientLeadId,
+      purpose: current.purpose,
+    },
+  });
+
+  const currentLevelNum = LEVEL_ORDER[current.contractLevel];
+
+  const updates = allContracts.map((contract) => {
+    const levelNum = LEVEL_ORDER[contract.contractLevel];
+    if (levelNum <= currentLevelNum) {
+      return prisma.contract.update({
+        where: { id: contract.id },
+        data: {
+          isCompleted: true,
+          isInProgress: false,
+        },
+      });
+    } else {
+      return prisma.contract.update({
+        where: { id: contract.id },
+        data: {
+          isCompleted: false,
+          isInProgress: false,
+        },
+      });
+    }
+  });
+
+  await prisma.$transaction(updates);
+}
+
 
 export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
   const clientLead = await prisma.clientLead.findUnique({
