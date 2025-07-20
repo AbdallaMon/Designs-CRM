@@ -60,6 +60,7 @@ import DeleteModal from "../../../models/DeleteModal";
 import ConfirmWithActionModel from "../../../models/ConfirmsWithActionModel";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import NoteCard from "../../utility/NoteCard";
 
 const ClientImageSessionManager = ({ clientLeadId }) => {
   const { user } = useAuth();
@@ -73,7 +74,6 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
   const { setAlertError } = useAlertContext();
   const { setLoading: setToastLoading } = useToastContext();
   const [copiedToken, setCopiedToken] = useState(null);
-  // Enhanced status configuration
   const getStatusConfig = (status) => {
     const configs = {
       INITIAL: {
@@ -269,7 +269,6 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
   };
 
   const renderPDFSection = (session) => {
-    const statusConfig = getStatusConfig(session.sessionStatus);
 
     if (session.sessionStatus === "PDF_GENERATED" && session.pdfUrl) {
       return (
@@ -392,7 +391,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
   if (
     user.role !== "ADMIN" &&
     user.role !== "SUPER_ADMIN" &&
-    user.role !== "STAFF"
+    user.role !== "STAFF"&&user.role!=="THREE_D_DESIGNER"
   )
     return null;
 
@@ -460,13 +459,8 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                             <Typography variant="h6" component="div">
                               Session #{session.id}
                             </Typography>
-                            <NotesComponent
-                              idKey={"imageSessionId"}
-                              id={session.id}
-                              slug="shared"
-                              showAddNotes={false}
-                            />
-                          </Box>
+            </Box>
+        
 
                           <Box display="flex" gap={1.5} alignItems="center">
                             {(isAdmin ||
@@ -489,7 +483,24 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                             />
                           </Box>
                         </Box>
-
+                <Box mt={2}>
+              <Typography 
+                variant="subtitle2" 
+                sx={{ 
+                  mb: 1, 
+                  fontWeight: 600,
+                  color: 'text.primary',
+                  fontSize: '0.875rem'
+                }}
+              >
+                General notes ({session.note.length})
+              </Typography>
+              <Box sx={{ maxHeight: '200px', overflowY: 'auto' }}>
+                {session.note.map((note) => (
+                  <NoteCard key={note.id} note={note} />
+                ))}
+              </Box>
+                          </Box>
                         {/* Progress Bar */}
                         <Box mb={3}>
                           <Box
@@ -513,7 +524,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                           />
                         </Box>
 
-                        {/* Mini Stepper for completed sessions */}
+                        {/* Mini Stepper for completed sessions
                         {session.sessionStatus === "SUBMITTED" && (
                           <Box mb={3}>
                             <Typography variant="subtitle2" gutterBottom>
@@ -544,7 +555,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                               ))}
                             </Box>
                           </Box>
-                        )}
+                        )} */}
 
                         <Grid container spacing={3}>
                           {/* Session Info */}
@@ -797,28 +808,49 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                                     size={{ xs: 6, sm: 4, md: 3 }}
                                     key={selectedImage.id}
                                   >
-                                    <Card
-                                      variant="outlined"
-                                      sx={{ height: "100%" }}
-                                    >
-                                      <CardMedia
-                                        component="img"
-                                        height="140"
-                                        image={
-                                          selectedImage.designImage.imageUrl
-                                        }
-                                        alt="Selected design image"
-                                        sx={{ objectFit: "cover" }}
-                                      />
-                                      <CardContent sx={{ padding: 1 }}>
-                                        <NotesComponent
-                                          id={selectedImage.id}
-                                          idKey="selectedImageId"
-                                          slug="shared"
-                                          showAddNotes={false}
-                                        />
-                                      </CardContent>
-                                    </Card>
+                               <Card
+        variant="outlined"
+        sx={{ height: "100%" }}
+      >
+        <CardMedia
+          component="img"
+          height="140"
+          image={selectedImage.designImage.imageUrl}
+          alt="Selected design image"
+          sx={{ objectFit: "cover" }}
+        />
+        <CardContent sx={{ padding: 1 }}>
+          {/* Existing NotesComponent */}
+          {/* <NotesComponent
+            id={selectedImage.id}
+            idKey="selectedImageId"
+            slug="shared"
+            showAddNotes={false}
+          />
+           */}
+          {/* Render notes if they exist */}
+          {selectedImage.note && selectedImage.note.length > 0 && (
+            <Box mt={2}>
+              <Typography 
+                variant="subtitle2" 
+                sx={{ 
+                  mb: 1, 
+                  fontWeight: 600,
+                  color: 'text.primary',
+                  fontSize: '0.875rem'
+                }}
+              >
+                Notes ({selectedImage.note.length})
+              </Typography>
+              <Box sx={{ maxHeight: '200px', overflowY: 'auto' }}>
+                {selectedImage.note.map((note) => (
+                  <NoteCard key={note.id} note={note} />
+                ))}
+              </Box>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
                                   </Grid>
                                 ))}
                               </Grid>

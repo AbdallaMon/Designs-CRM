@@ -64,6 +64,7 @@ import colors from "@/app/helpers/colors";
 import TelegramLink from "../work-stages/utility/TelegramLink";
 import FloatingIdBadge from "../leads/extra/IdBadge";
 import { KanbanUpdateSection } from "../leads/leadUpdates/KanbanUpdateSection";
+import ClientImageSessionManager from "../image-session/users/ClientSessionImageManager";
 
 const ItemTypes = {
   CARD: "card",
@@ -494,6 +495,8 @@ const WorkStageKanbanCard = ({
             <Typography variant="h6" component="div" sx={{ mb: 1 }}>
               {lead.client.name}
             </Typography>
+            
+                          <ClientImageSessionManager clientLeadId={lead.id} />
             <Box my={1} display="flex" alignItems="center" gap={1}>
               {!admin ? (
                 <Tooltip title="Actions">

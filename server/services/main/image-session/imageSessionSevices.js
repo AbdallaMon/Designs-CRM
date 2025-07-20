@@ -1054,6 +1054,8 @@ export async function getClientImageSessions(clientLeadId) {
   const sessions = await prisma.clientImageSession.findMany({
     where: { clientLeadId: Number(clientLeadId) },
     include: {
+                note:true,
+
       createdBy: true,
       selectedSpaces: {
         select: {
@@ -1079,6 +1081,7 @@ export async function getClientImageSessions(clientLeadId) {
       selectedImages: {
         include: {
           designImage: true,
+          note:true,
         },
       },
       materials: {
