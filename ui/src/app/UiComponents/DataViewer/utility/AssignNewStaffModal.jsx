@@ -26,7 +26,7 @@ export function AssignNewStaffModal({ lead, onUpdate }) {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const { setLoading: setToastLoading } = useToastContext();
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const isAdmin = checkIfAdmin(user);
   useEffect(() => {
     async function getUsers() {

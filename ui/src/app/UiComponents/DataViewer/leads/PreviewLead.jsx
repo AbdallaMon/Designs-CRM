@@ -453,7 +453,6 @@ const LeadContent = ({
           </Stack>
         </Stack>
 
-        {/* Secondary Actions Row */}
         <Box
           sx={{
             borderTop: "1px solid",
@@ -478,7 +477,6 @@ const LeadContent = ({
               },
             }}
           >
-            {/* Primary Actions */}
             <TelegramLink lead={lead} setLead={setLead} />
             <UpdateInitialConsultButton clientLead={lead} />
 
@@ -784,7 +782,6 @@ const MoreActionsMenu = ({
           },
         }}
       >
-        {/* Convert Lead Option */}
         {!admin &&
           user.role === "STAFF" &&
           lead.status !== "FINALIZED" &&
@@ -800,7 +797,6 @@ const MoreActionsMenu = ({
             </MenuItem>
           )}
 
-        {/* Assign Deal Option */}
         {isPage &&
           user.id !== lead.userId &&
           !admin &&
@@ -817,7 +813,7 @@ const MoreActionsMenu = ({
           )}
 
         {/* Admin Actions */}
-        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+        {admin && (
           <>
             <MenuItem>
               <DeleteModal
