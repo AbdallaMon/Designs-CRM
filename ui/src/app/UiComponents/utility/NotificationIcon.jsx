@@ -158,13 +158,13 @@ const NotificationsIcon = () => {
             overflowY: "auto",
           }}
         >
-          {notifications.length === 0 ? (
+          {notifications?.length === 0 ? (
             <Typography textAlign="center" sx={{ padding: "16px" }}>
               No new Notification
             </Typography>
           ) : (
             <>
-              {notifications.map((notification) => {
+              {notifications?.map((notification) => {
                 const notificationTime = dayjs(notification.createdAt);
                 const displayTime = notificationTime.isBefore(
                   dayjs().subtract(1, "day")

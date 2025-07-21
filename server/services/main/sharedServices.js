@@ -92,9 +92,9 @@ export async function getClientLeads({
     where: { id: userId },
     select: { notAllowedCountries: true, role: true },
   });
-  if (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN") {
+  if (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN"&&user.role!=="SUPER_SALES"&&user.role!=="CONTACT_INITIATOR") {
     where = {
-      ...where, // Preserve existing filters
+      ...where, 
       AND: [
         {
           OR: [

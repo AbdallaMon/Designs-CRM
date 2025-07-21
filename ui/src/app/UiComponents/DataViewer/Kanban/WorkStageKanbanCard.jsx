@@ -65,6 +65,7 @@ import TelegramLink from "../work-stages/utility/TelegramLink";
 import FloatingIdBadge from "../leads/extra/IdBadge";
 import { KanbanUpdateSection } from "../leads/leadUpdates/KanbanUpdateSection";
 import ClientImageSessionManager from "../image-session/users/ClientSessionImageManager";
+import CountdownTimer from "../leads/extra/CountdownTimer";
 
 const ItemTypes = {
   CARD: "card",
@@ -469,7 +470,6 @@ const WorkStageKanbanCard = ({
           color={statusColors[lead.projects[0].status]}
           forceWhite={true}
         />
-        {/* Group Title Badge */}
         {groupTitle && (
           <GroupTitleChip
             groupId={groupId}
@@ -478,7 +478,6 @@ const WorkStageKanbanCard = ({
           />
         )}
 
-        {/* Priority Badge */}
         <PriorityBadge
           priority={projectPriority}
           label={projectPriority.replace("_", " ")}
@@ -544,11 +543,12 @@ const WorkStageKanbanCard = ({
                     Delivery Time
                   </Typography>
                   <Typography variant="body2">
-                    {lead.projects[0].deliveryTime
-                      ? dayjs(lead.projects[0].deliveryTime).format(
-                          "MMM D, YYYY"
-                        )
-                      : "Not set"}
+                   {lead.projects[0].deliveryTime ? (
+                    <CountdownTimer time={lead.projects[0].deliveryTime} />
+                  ) : (
+                    <Typography variant="body2">Not set</Typography>
+                  )}
+
                   </Typography>
                 </Grid2>
                 <Grid2 size={shouldShowModifications ? 4 : 6}>

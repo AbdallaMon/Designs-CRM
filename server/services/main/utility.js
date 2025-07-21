@@ -154,9 +154,9 @@ export const verifyTokenAndHandleAuthorization = async (
 
     const isAdmin =
       user.role === "ADMIN" ||
-      user.role === "SUPER_ADMIN" ||
+      user.role === "SUPER_ADMIN" ||user.role==="SUPER_SALES"||
       user.subRoles.some(
-        (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN"
+        (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN"||user.role==="SUPER_SALES"
       );
 
     if (role === "ADMIN" && isAdmin) {
@@ -171,7 +171,9 @@ export const verifyTokenAndHandleAuthorization = async (
         decoded.role !== "TWO_D_DESIGNER" &&
         decoded.role !== "ACCOUNTANT" &&
         decoded.role !== "SUPER_ADMIN" &&
-        decoded.role !== "TWO_D_EXECUTOR"
+        decoded.role !== "TWO_D_EXECUTOR"&&
+        decoded.role!=="SUPER_SALES"&&
+        decoded.role!=="CONTACT_INITIATOR"
       ) {
         return res.status(403).json({ message: "Not authorized" });
       }
@@ -309,6 +311,12 @@ export async function searchData(body) {
         },
       };
     }
+    if(parsedFilters.status){
+      where.status=parsedFilters.status
+    }
+       if(parsedFilters.initialConsult||parsedFilters.initialConsult===false){
+      where.initialConsult=parsedFilters.initialConsult
+    }
   }
   if (where && where.role?.startsWith("3D")) {
     where.role = "THREE_D_DESIGNER";
@@ -335,7 +343,7 @@ export async function searchData(body) {
        where.AND=where.AND[0];
   }
 
-
+console.log(where,"where")
   const selectFields = {
     user: {
       id: true,

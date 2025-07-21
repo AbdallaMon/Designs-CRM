@@ -50,7 +50,6 @@ app.use("/utility", utilityRoutes);
 app.use("/staff", staffRoutes);
 app.use("/admin", adminRoutes);
 app.use("/accountant", accountantRoutes);
-
 app.use("/client", clientsRoutes);
 
 httpServer.listen(PORT, () => {

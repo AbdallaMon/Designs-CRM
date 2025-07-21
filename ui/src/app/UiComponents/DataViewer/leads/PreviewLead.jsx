@@ -762,7 +762,7 @@ const MoreActionsMenu = ({
       <IconButton
         onClick={handleMoreClick}
         sx={{
-          backgroundColor: "#f5f5f5",
+          backgroundColor: "#c7a9a9ff",
           "&:hover": { backgroundColor: "#e0e0e0" },
           width: 40,
           height: 40,
@@ -840,7 +840,7 @@ const MoreActionsMenu = ({
                       status: newLead.status,
                     }));
                   }
-                  if (setleads) {
+                  else if (setleads) {
                     setleads((oldLeads) =>
                       oldLeads.map((l) => {
                         if (l.id === lead.id) {
@@ -854,7 +854,10 @@ const MoreActionsMenu = ({
                         }
                       })
                     );
+                  }else{
+                    window.location.reload()
                   }
+
                 }}
               />
             </MenuItem>

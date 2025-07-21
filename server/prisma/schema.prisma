@@ -83,6 +83,8 @@ enum UserRole {
   TWO_D_EXECUTOR
   ACCOUNTANT
   SUPER_ADMIN
+  SUPER_SALES
+  CONTACT_INITIATOR
 }
 
 enum ClientLeadStatus {
@@ -1427,6 +1429,8 @@ model CourseProgress {
   course          Course            @relation(fields: [courseId], references: [id])
   courseId        Int
   completedLessons CompletedLesson[]
+  completedTests CompletedTest[]
+
   updatedAt       DateTime          @updatedAt
   createdAt       DateTime          @default(now())
 }
@@ -1438,6 +1442,14 @@ model CompletedLesson {
   lessonId         Int
   completedAt     DateTime @default(now())
 }
+model CompletedTest {
+  id              Int            @id @default(autoincrement())
+  courseProgress  CourseProgress @relation(fields: [courseProgressId], references: [id])
+  courseProgressId Int
+  testId          Int            // Reference to your existing Test model
+  completedAt     DateTime       @default(now())
+}
+
 
 model Certificate {
   id         Int       @id @default(autoincrement())

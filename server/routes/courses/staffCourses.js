@@ -112,7 +112,8 @@ router.post("/:courseId/lessons/:lessonId/home-work", async (req, res) => {
     const result = await createAHomeWork({
       lessonId: req.params.lessonId,
       courseId: req.params.courseId,
-      userId: user.id,data:req.body
+      userId: user.id,data:req.body,
+      
     });
     res.status(200).json({ data: result, message: "Home work saved" });
   } catch (e) {

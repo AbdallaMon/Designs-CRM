@@ -149,7 +149,7 @@ router.get("/client-leads/deals", async (req, res) => {
     if (
       token.role !== "ADMIN" &&
       token.role !== "SUPER_ADMIN" &&
-      token.role !== "ACCOUNTANT"
+      token.role !== "ACCOUNTANT"&&token.role!=="SUPER_SALES"
     ) {
       searchParams.selfId = token.id;
       searchParams.userId = token.id;
@@ -157,7 +157,7 @@ router.get("/client-leads/deals", async (req, res) => {
 
     const clientLeads = await getClientLeadsByDateRange({
       searchParams,
-      isAdmin: token.role === "ADMIN" || token.role === "SUPER_ADMIN",
+      isAdmin: token.role === "ADMIN" || token.role === "SUPER_ADMIN"||token.role!=="SUPER_SALES",
       user: token,
     });
     res.status(200).json({ data: clientLeads });
@@ -176,7 +176,7 @@ router.get("/client-leads/columns", async (req, res) => {
     if (
       token.role !== "ADMIN" &&
       token.role !== "SUPER_ADMIN" &&
-      token.role !== "ACCOUNTANT"
+      token.role !== "ACCOUNTANT"&&token.role!=="SUPER_SALES"
     ) {
       searchParams.selfId = token.id;
       searchParams.userId = token.id;
@@ -184,7 +184,7 @@ router.get("/client-leads/columns", async (req, res) => {
 
     const clientLeads = await getClientLeadsColumnStatus({
       searchParams,
-      isAdmin: token.role === "ADMIN" || token.role === "SUPER_ADMIN",
+      isAdmin: token.role === "ADMIN" || token.role === "SUPER_ADMIN"||token.role!=="SUPER_SALES",
       user: token,
     });
     res.status(200).json({ data: clientLeads });
@@ -403,11 +403,11 @@ router.get("/client-leads/:id", async (req, res) => {
     ) {
       searchParams.userId = token.id;
     }
-    if (token.role !== "ADMIN") {
+    if (token.role !== "ADMIN"&&token.role!=="CONTACT_INITIATOR") {
       searchParams.checkConsult = true;
     }
     const clientLeadDetails =
-      token.role === "ADMIN" || token.role === "SUPER_ADMIN"
+      token.role === "ADMIN" || token.role === "SUPER_ADMIN"||token.role==="SUPER_SALES"||token.role==="CONTACT_INITIATOR"
         ? await getAdminClientLeadDetails(Number(id), searchParams)
         : await getClientLeadDetails(
             Number(id),
@@ -416,6 +416,7 @@ router.get("/client-leads/:id", async (req, res) => {
             token.id,
             token
           );
+          console.log(clientLeadDetails,"clientLeadDetails")
     res.status(200).json({ data: clientLeadDetails });
   } catch (error) {
     console.error("Error fetching client lead details:", error);

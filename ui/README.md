@@ -81,46 +81,13 @@
 - Make two image grid and make image bigger
 - امكانية رفع اكتر من صور ووضعها ضمن مساحه معينه
 - Can select more than one material
-
-
-Contract :
 - Force choose contract in finalized lead one purpose
 - Allow to edit is completed or not for each contract
 - Can add another contracts purposes
 - Remove title
 - onClick on level open contract managment
-
-- Delivery time from startDate or start status
-
-Telegram :
-- After create channel when assign any user add him to telegram channel
-- Add notes
-- All attettchments 
-- Updates(check we add or not)
-- And then all these when new added will added to telegram but with a checkbox send to tele or not
-- https://my.telegram.org/apps
-
-Client image session
 - Show number of notes
 - Show the session to 3d
-
-- Pdf
-- Page
-- مساحات
-- استايل
-- خامات
-- الالوان
-- add note
-- التوقيع
-- Fix layout
-- Add name and code of the client
-- One image per page
-- Add layout
-- Allow delete any item and remove relation so that no problems happen
-- Can filter images by sapce or style focus on style
-- Load images on scroll
-- Can delete images in the add notes section
-
 - Courses website for users with same users naming like staff and so on
 - We will add courses each course related to user role can be added to more than one role
 - Each course has lessons
@@ -132,45 +99,58 @@ Client image session
 - So we need to make exam and questions for this exam and type of question which is multible choices or text
 - the question will have multible choices and right answer
 - for each staff we will create a sub model from the exam to track his answers and what he did and attempts and score ect
+- Staff primary and not primary
+- Enhance loading the kanban (make it filter data in the backend)
+- Can we make the deals less data?
+- Move rejected and archieve?
+- Check why lead page is so slow
+- Delivery time from startDate or start status
+
+- Super sales (can edit all things in sales)
+- New Staff type contact init just non consulted lead and new lead and can search inside them
+- Total price is final price + extra services
+- Enhance notesComponent make it by default get number of notes now
+Telegram :
+- After create channel when assign any user add him to telegram channel
+- Add notes
+- All attettchments 
+- Updates(check we add or not)
+- And then all these when new added will added to telegram but with a checkbox send to tele or not
+- https://my.telegram.org/apps
 
 - Image in the url in both dream studio and eng ahmed
 - Toast data in client image session
 
-- Total price is final price
 
-- New Staff type contact init just non consulted lead and new lead and can search inside them
-- Beginer and super sales (can edit all things in sales)
 - Dashboard change projects to leads
-
-- \*Important : image will be linked and fitlered by spaces and design style only
 
   4- Calendar
 
 3- تحديد ال style  
- 8 - 2.5 + 5.5 + 10
+ 8 - 2.5 + 5.5 + 10 + 5
 1- الميتينج
 8 - 2 + 3
 
 2- حجز المواعيد
-6 6
+6 6 
 
 4- C3lendar
-8 2
+8 2 + 2
+
+5- Courses
+50 30 
 
 - الاولويات
   -1 تليجرام  
   10 - 1
   0-التعديلات
 
-  5- Courses
-  50
   6- rating page
   8
   7- main website
   12
 
 - See pdf
-- Enhance loading the kanban (make it filter data in the backend)
 - New page for register make it en and without video
   تمام هضيف زرار انك تقدر ترسل ايميل بلينك جديد يقدر يدفع منه ويكمل تسجيل
   إمكانية تحديد أشخاص علي واتساب يردوا علي عميل معين
@@ -179,26 +159,12 @@ Client image session
   موظف جديد يقدر يتابع ال no consulated lead
   ويقدر يشوف كل ليد تبع انهي موظف
 
-- Telegram?
-- Check telegram
-
-- Courses website for staff
-- We will add courses
-- Each course has lessons
-- Each lesson has videos,pdf and links, notes and maybe test for each lesson
-- keep progress , track videos ect
-- After finishing courses (full lessons) open an exam for him and if he passed the exam generate certifcate for him (admin must aprove that user passed the exam)
-- Track exam attaptms
-- Allow admin to set limit and allow admin to add more attampts to specific users
-
 - Rating page هل الصفحه بتحفظ كل الرسيبونس ولا تبعتهم في ايميل بس؟
   يعني يكون في قاعدة بيانات واعرضهم ليك؟
   google doesnt allow user to review directly
   https://search.google.com/local/writereview?placeid=ChIJq1Mf9xdBWBQRvBGqXO34afE
 
-- Can we make the deals less data?
-- Move rejected and archieve?
-- Check why lead page is so slow
+
 
 - dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

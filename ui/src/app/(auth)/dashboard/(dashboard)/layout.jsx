@@ -264,6 +264,39 @@ export const staffLinks = [
     icon: <FiCalendar size={20} />,
   },
 ];
+export const contactInitiatorLinks = [
+  { name: "Leads", href: "/dashboard", icon: <FiTarget size={20} /> },
+
+];
+export const superSalesLinks = [
+    { name: "Dashboard", href: "/dashboard", icon: <FiGrid size={20} /> },
+
+{
+    name: "Deals",
+    href: "/dashboard/deals",
+    icon: <FiDollarSign size={20} />,
+    subLinks: [
+      {
+        name: "Current Deals",
+        href: "/dashboard/deals",
+        icon: <FiDollarSign size={20} />,
+        active: "deals",
+      },
+      {
+        name: "On hold Deals",
+        href: "/dashboard/on-hold-deals",
+        icon: <FiClock size={18} />,
+        active: "on-hold",
+      },
+      {
+        name: "All Deals",
+        href: "/dashboard/all-deals",
+        icon: <FiList size={18} />,
+        active: "all-deals",
+      },
+    ],
+  },
+];
 export const threeDLinks = [
   { name: "Dashboard", href: "/dashboard", icon: <FiTarget size={20} /> },
   {
@@ -329,6 +362,7 @@ export const exacuterLinks = [
     icon: <FiBriefcase size={20} />,
   },
 ];
+
 export const accountantLinks = [
   { name: "Payments", href: "/dashboard", icon: <FiDollarSign size={20} /> }, // Dollar sign for payments
 
@@ -361,6 +395,7 @@ export default function Layout({
   accountant,
   super_admin,
   exacuter,
+  super_sales,contact_initiator
 }) {
   const router = useRouter();
   let { user, isLoggedIn, validatingAuth } = useAuth();
@@ -415,7 +450,8 @@ export default function Layout({
             : role === "ACCOUNTANT"
             ? accountantLinks
             : role === "TWO_D_EXECUTOR"
-            ? exacuterLinks
+            ? exacuterLinks:
+            role==="CONTACT_INITIATOR"?contactInitiatorLinks:role==="SUPER_SALES"?superSalesLinks
             : adminLinks
         }
       />
@@ -431,7 +467,7 @@ export default function Layout({
         : role === "ACCOUNTANT"
         ? accountant
         : role === "TWO_D_EXECUTOR"
-        ? exacuter
+        ? exacuter  :role==="CONTACT_INITIATOR"?contact_initiator:role==="SUPER_SALES"?super_sales
         : admin}
     </Box>
   );

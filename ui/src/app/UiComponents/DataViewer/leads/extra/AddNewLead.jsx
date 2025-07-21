@@ -33,6 +33,7 @@ export default function CreateNewLead() {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { user } = useAuth();
   const isAdmin = checkIfAdmin(user);
+  if(user.role==="CONTACT_INITIATOR")return
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
     setOpen(false);

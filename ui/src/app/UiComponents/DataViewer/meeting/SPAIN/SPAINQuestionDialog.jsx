@@ -22,6 +22,7 @@ import {
   Container,
 } from "@mui/material";
 import { MdQuestionAnswer, MdClose } from "react-icons/md";
+import { checkIfAdmin } from "@/app/helpers/functions/utility";
 const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -179,13 +180,14 @@ const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
 export const SPAINQuestionsDialog = ({ clientLeadId }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { user } = useAuth();
-
+const isAdmin=checkIfAdmin(user)
   if (
-    user.role !== "ADMIN" &&
-    user.role !== "SUPER_ADMIN" &&
+!isAdmin&&
     user.role !== "STAFF"
-  )
+  ){
+
     return null;
+  }
 
   return (
     <>

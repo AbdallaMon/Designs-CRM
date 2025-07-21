@@ -1351,6 +1351,7 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
   const { user } = useAuth();
   const [personality, setPersonality] = useState(lead.personality);
   const { setLoading } = useToastContext();
+const isAdmin=checkIfAdmin(user)
 
   const handleChange = async (event) => {
     setPersonality(event.target.value);
@@ -1383,8 +1384,7 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
     }
   }
   if (
-    user.role !== "ADMIN" &&
-    user.role !== "SUPER_ADMIN" &&
+!isAdmin&&
     user.role !== "STAFF"
   ) {
     return (

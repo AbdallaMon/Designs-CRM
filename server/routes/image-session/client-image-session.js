@@ -16,9 +16,7 @@ import {
 } from "../../services/main/image-session/imageSessionSevices.js";
 import { getAndThrowError } from "../../services/main/utility.js";
 import { uploadPdfAndApproveSession } from "../../services/main/clientServices.js";
-import { pdfQueue } from "../../services/queues/pdfQueue.js";
 const router = Router();
-
 router.get("/page-info", async (req, res) => {
   try {
     const data = await getPageInfo({

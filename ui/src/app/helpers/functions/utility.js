@@ -164,7 +164,7 @@ export const checkIfADesigner = (user) => {
   return user.role === "TWO_D_DESIGNER" || user.role === "THREE_D_DESIGNER";
 };
 export const checkIfAdmin = (user) => {
-  return user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+  return user.role === "ADMIN" || user.role === "SUPER_ADMIN"||user.role==="SUPER_SALES"||user.role==="CONTACT_INITIATOR";
 };
 
 export function ensureHttps(url) {

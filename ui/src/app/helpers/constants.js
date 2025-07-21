@@ -451,13 +451,18 @@ export const notificationIcons = {
 };
 
 export const userRoles = [
-  { value: "STAFF", label: "Staff" },
+  { value: "STAFF", label: "Sales" },
+  { value: "SUPER_SALES", label: "Super sales" },
+    { value: "CONTACT_INITIATOR", label: "Contact initiator" },
   { value: "THREE_D_DESIGNER", label: "3D Designer" },
   { value: "TWO_D_DESIGNER", label: "2D Designer" },
   { value: "ACCOUNTANT", label: "Accountant" },
   { value: "TWO_D_EXECUTOR", label: "Two d executor" },
   { value: "SUPER_ADMIN", label: "Admin" },
+
 ];
+
+
 export const userRolesEnum = {
   STAFF: "Staff",
   THREE_D_DESIGNER: "3D Designer",
@@ -465,6 +470,8 @@ export const userRolesEnum = {
   ACCOUNTANT: "Accountant",
   TWO_D_EXECUTOR: "Two d executor",
   SUPER_ADMIN: "Admin",
+  SUPER_SALES: "Super sales",
+  CONTACT_INITIATOR: "Contact initiator",
 };
 
 export const countriesByRegion = {

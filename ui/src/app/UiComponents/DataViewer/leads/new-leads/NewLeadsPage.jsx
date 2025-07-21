@@ -10,10 +10,12 @@ import {
   CardHeader,
   Chip,
   Container,
+  IconButton,
+  Tooltip,
   Typography,
 } from "@mui/material";
 
-import React from "react";
+import React, { useEffect } from "react";
 import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import LeadsSlider from "@/app/UiComponents/DataViewer/slider/LeadsSlider.jsx";
@@ -25,17 +27,22 @@ import { FixedData } from "@/app/UiComponents/DataViewer/leads/FixedData.jsx";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { NonConsultedLeads } from "./Non-consulted-leads";
 import UpdateInitialConsultButton from "@/app/UiComponents/buttons/UpdateInitialConsultLead";
-import { MdCheck, MdHourglassEmpty, MdTimelapse } from "react-icons/md";
+import { MdCheck, MdHourglassEmpty, MdPreview, MdTimelapse } from "react-icons/md";
 import CreateNewLead from "../extra/AddNewLead";
 import NextMeetings from "../NextMeetings";
+import { FaEye } from "react-icons/fa";
+import PreviewDialog from "../PreviewLead";
+import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import FloatingIdBadge from "../extra/IdBadge";
+import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent";
 
-export default function NewLeadsPage({ searchParams, staff }) {
+export default function NewLeadsPage({ searchParams, staff,withSearch }) {
   const {
     data,
     loading,
     setData,
     page,
-    setPage,
+    setPage,filters,
     limit,
     setLimit,
     total,
@@ -44,12 +51,36 @@ export default function NewLeadsPage({ searchParams, staff }) {
   } = useDataFetcher("shared/client-leads" + `?isNew=true&`, false, {
     clientId: searchParams.clientId ? searchParams.clientId : null,
   });
+useEffect(()=>{
+  if(filters){
+    setPage(1)
+  }
+},[filters])
+const {user}=useAuth()
 
   return (
     <Container maxWidth="xxl">
       <FixedData />
       <CreateNewLead />
       <NonConsultedLeads />
+                      <Box mb={2}>
+           <SearchComponent
+                        apiEndpoint="search?model=clientLead"
+                        setFilters={setFilters}
+                        inputLabel="Search lead by id ,name or phone"
+                        renderKeys={[
+                          "id",
+                          "client.name",
+                          "client.phone",
+                          "client.email",
+                        ]}
+                        mainKey="id"
+                        searchKey={"id"}
+                        localFilters={{ status:{
+                          in:["NEW"]
+                        } ,initialConsult:true}}
+                      />
+                              </Box>
       <LeadsSlider
         title="New leads"
         loading={loading}
@@ -61,13 +92,20 @@ export default function NewLeadsPage({ searchParams, staff }) {
         setPage={setPage}
         totalPages={totalPages}
       >
+
         {data?.map((lead) => (
           <LeadSliderCard lead={lead} key={lead.id} setData={setData} />
         ))}
       </LeadsSlider>
+      {user.role!=="CONTACT_INITIATOR"&&
+      <>
       <NextCalls staff={staff} />
       <NextMeetings staff={staff} />
+      </>
+}
+{user.role!=="CONTACT_INITIATOR"&&
       <OnHoldLeads />
+}
     </Container>
   );
 }
@@ -76,7 +114,8 @@ export function LeadSliderCard({ lead, setData }) {
   const formattedDate = dayjs(lead.createdAt).format("YYYY-MM-DD");
   const { user } = useAuth();
   const { setLoading } = useToastContext();
-
+  const [previewDialogOpen, setPreviewDialogOpen] = React.useState(false);
+const admin=checkIfAdmin(user)
   const isFullyPaid = lead.paymentStatus === "FULLY_PAID";
 
   async function createADeal(lead) {
@@ -111,6 +150,23 @@ export function LeadSliderCard({ lead, setData }) {
         backgroundColor: isFullyPaid ? "rgba(76, 175, 80, 0.05)" : "inherit",
       }}
     >
+    <Box
+        sx={{
+          position: "absolute",
+          top: 10,
+          left: 10,
+          // color: "white",
+          borderRadius: 10,
+          padding: "4px 10px",
+          fontSize: "0.75rem",
+          fontWeight: "bold",
+          display: "flex",
+          alignItems: "center",
+          gap: 0.5,
+        }}
+      >
+       #{lead?.id.toString().padStart(7, "0")}
+      </Box>
       <Box
         sx={{
           position: "absolute",
@@ -147,7 +203,7 @@ export function LeadSliderCard({ lead, setData }) {
           overflowY: "hidden",
         }}
       >
-        {user.role === "ADMIN" && (
+        {(user.role === "ADMIN"||user.role==="SUPER_ADMIN"||user.role==="CONTACT_INITIATOR") && (
           <>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
               {lead.client.name}
@@ -190,17 +246,32 @@ export function LeadSliderCard({ lead, setData }) {
         )}
         <Box display="flex" flexDirection="column" gap={2}>
           <UpdateInitialConsultButton clientLead={lead} />
-          <Button
-            component={Link}
-            href={`/dashboard/deals/${lead.id}`}
-            variant="contained"
-            size="small"
-            color="primary"
-          >
-            Preview
-          </Button>
+{user.role!=="CONTACT_INITIATOR"&&
+    <Button
+                sx={{
+                  display: "flex",
+                  gap: 1,
+                  justifyContent: "flex-start",
+                  width: "100%",
+                }}
+                      onClick={() => {
+              setPreviewDialogOpen(true);
+            }}
+                variant={"text"}
+              >
+                <MdPreview fontSize="small" sx={{ mr: 1 }} />
+                Preview Details
+              </Button>
+}
         </Box>
       </CardActions>
+              <PreviewDialog
+                open={previewDialogOpen}
+                onClose={() => setPreviewDialogOpen(false)}
+                setleads={setData}
+                id={lead.id}
+                admin={admin}
+              />
     </Card>
   );
 }

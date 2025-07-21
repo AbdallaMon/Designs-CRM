@@ -124,20 +124,35 @@ export async function getUserCourseProgress({ courseId, userId }) {
   });
 
   const completedLessonIds = completedLessons.map((l) => l.lessonId);
-  const passedTests = await prisma.testAttempt.findMany({
+
+
+    const completedTests = await prisma.completedTest.findMany({
     where: {
-      userId,
-      test: {
+      courseProgress: {
+        userId,
         courseId,
       },
-      passed: true,
     },
     select: {
       testId: true,
     },
   });
 
-  const passedTestIds = passedTests.map((t) => t.testId);
+  const completedTestsIds = completedTests.map((l) => l.testId);
+  // const passedTests = await prisma.testAttempt.findMany({
+  //   where: {
+  //     userId,
+  //     test: {
+  //       courseId,
+  //     },
+  //     passed: true,
+  //   },
+  //   select: {
+  //     testId: true,
+  //   },
+  // });
+
+  // const passedTestIds = passedTests.map((t) => t.testId);
   const testAttempts = await prisma.testAttempt.findMany({
     where: {
       userId,
@@ -153,8 +168,8 @@ export async function getUserCourseProgress({ courseId, userId }) {
   });
   const userProgress = {
     completedLessons: completedLessonIds,
-    passedTests: passedTestIds,
-    testAttempts,
+    // passedTests: passedTestIds,
+    testAttempts,completedTests:completedTestsIds
   };
   return userProgress;
 }
@@ -233,7 +248,7 @@ const lessonsWithTests = await prisma.lesson.findMany({
     },
   },
   select: {
-    id: true,
+    id: true,courseId:true,
     tests: {
       where: { published: true },
       select: { id: true },
@@ -252,7 +267,15 @@ for (const lessonWithTest of lessonsWithTests) {
         passed: true,
       },
     });
-    if (!attempt) {
+    const completedTest=await prisma.completedTest.findFirst({where:{
+      testId:test.id,
+          courseProgress: {
+      userId,
+      courseId: lessonWithTest.courseId,
+    },
+    }})
+    console.log(completedTest,"completedTest")
+    if (!attempt||!completedTest) {
       allPreviousTestsPassed = false;
       break;
     }
@@ -296,6 +319,7 @@ const lessonsWithTests = await prisma.lesson.findMany({
   },
   select: {
     id: true,
+    courseId:true,
     tests: {
       where: { published: true },
       select: { id: true },
@@ -314,7 +338,14 @@ for (const lessonWithTest of lessonsWithTests) {
         passed: true,
       },
     });
-    if (!attempt) {
+    const completedTest=await prisma.completedTest.findFirst({where:{
+      testId:test.id,
+          courseProgress: {
+      userId,
+      courseId: lessonWithTest.courseId,
+    },
+    }})
+    if (!attempt||!completedTest) {
       allPreviousTestsPassed = false;
       break;
     }
@@ -356,7 +387,7 @@ const lessonsWithTests = await prisma.lesson.findMany({
     },
   },
   select: {
-    id: true,
+    id: true,courseId:true,
     tests: {
       where: { published: true },
       select: { id: true },
@@ -375,7 +406,14 @@ for (const lessonWithTest of lessonsWithTests) {
         passed: true,
       },
     });
-    if (!attempt) {
+        const completedTest=await prisma.completedTest.findFirst({where:{
+      testId:test.id,
+          courseProgress: {
+      userId,
+      courseId: lessonWithTest.courseId,
+    },
+    }})
+    if (!attempt||!completedTest) {
       allPreviousTestsPassed = false;
       break;
     }
@@ -394,9 +432,8 @@ export async function getHomeWorks({userId,lessonId}){
     userId:Number(userId)
   }})
 }
-export async function createAHomeWork({data,lessonId,userId,courseId}){
-  console.log(data,"data")
-  const homeWork=await prisma.LessonHomework.create({data:{
+export async function createAHomeWork({data,lessonId,userId,courseId,testId}){
+ await prisma.LessonHomework.create({data:{
     lessonId:Number(lessonId),
     userId:Number(userId),
     url:data.url,type:data.type,title:data.title||data.type
@@ -413,8 +450,11 @@ export async function createAHomeWork({data,lessonId,userId,courseId}){
 
   const hasVideo = homeWorks.some((hw) => hw.type === 'VIDEO');
   const hasSummary = homeWorks.some((hw) => hw.type === 'SUMMARY');
-  if(hasVideo&&hasSummary){
+  if(hasSummary){
     await markLessonAsCompleted({lessonId,userId,courseId})
+  }
+    if(hasVideo){
+    await markTestAsCompleted({testId:data.testId,userId,courseId})
   }
   return
 }
@@ -437,6 +477,30 @@ export async function markLessonAsCompleted({ lessonId, courseId, userId }) {
   return await prisma.CompletedLesson.create({
     data: {
       lessonId,
+      courseProgressId: courseProgress.id,
+    },
+  });
+}
+
+export async function markTestAsCompleted({ testId, courseId, userId }) {
+  testId = Number(testId);
+  userId = Number(userId);
+  courseId = Number(courseId);
+  let courseProgress = await prisma.CourseProgress.findFirst({
+    where: {
+      courseId,
+      userId,
+    },
+  });
+  if (!courseProgress) {
+    courseProgress = await prisma.courseProgress.create({
+      data: { courseId, userId },
+    });
+  }
+
+  return await prisma.completedTest.create({
+    data: {
+      testId,
       courseProgressId: courseProgress.id,
     },
   });
