@@ -107,7 +107,7 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
           if (
             user.role !== "ADMIN" &&
             user.role !== "SUPER_ADMIN" &&
-            user.role !== "STAFF" &&
+            user.role !== "STAFF" &&user.role!=="SUPER_SALES"&&
             call.userId !== user.id
           ) {
             return;
@@ -357,7 +357,7 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
           if (
             user.role !== "ADMIN" &&
             user.role !== "SUPER_ADMIN" &&
-            user.role !== "STAFF" &&
+            user.role !== "STAFF" &&user.role!=="SUPER_SALES"&&
             call.userId !== user.id
           ) {
             return;
@@ -1125,7 +1125,7 @@ function PriceOfferSwitch({ priceOffer, setPriceOffers }) {
           disabled={
             user.role !== "STAFF" &&
             user.role !== "ADMIN" &&
-            user.role !== "SUPER_ADMIN"
+            user.role !== "SUPER_ADMIN"&&user.role!=="SUPER_SALES"
           }
         />
       </Tooltip>

@@ -333,7 +333,7 @@ const LeadContent = ({
           <Stack direction="row" spacing={1} alignItems="center">
             {(user.role === "ADMIN" ||
               user.role === "SUPER_ADMIN" ||
-              user.role === "STAFF") && (
+              user.role === "STAFF"||user.role==="SUPER_SALES") && (
                 <>
                                 <Chip
                               icon={<IoMdContract sx={{ fontSize: "12px !important" }} />}
