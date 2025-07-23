@@ -248,6 +248,13 @@ export async function getLeadsWithOutChannel() {
         channelId: teleChat.id,
         inviteLink: lead.telegramLink,
       });
+      const lastMessage = await teleClient.getMessages(teleChat, { limit: 1 });
+      await prisma.FetchedTelegramMessage.create({
+        data: {
+          messageId: lastMessage[0].id,
+          clientLeadId: Number(lead.id),
+        },
+      });
     } else {
       await createChannelAndAddUsers({
         clientLeadId: lead.id,
@@ -280,7 +287,13 @@ export async function uploadItemsToTele({ clientLeadId }) {
     await uploadAnAttachment(file, channel);
   }
 
-  console.log("✅ All notes and files uploaded to Telegram channel.");
+  const lastMessage = await teleClient.getMessages(channel, { limit: 1 });
+  await prisma.FetchedTelegramMessage.create({
+    data: {
+      messageId: lastMessage[0].id,
+      clientLeadId: Number(clientLeadId),
+    },
+  });
 }
 export async function getChannelEntitiyByTeleRecordAndLeadId({ clientLeadId }) {
   let teleRecord = await prisma.telegramChannel.findFirst({

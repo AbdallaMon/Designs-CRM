@@ -47,6 +47,7 @@ import {
   getVideosByLessonId,
   increaseAttemptToUser,
   reOrderTestQuestions,
+  toggleMustUploadHomeWork,
 } from "../../services/main/courses/adminCourseServices.js";
 import { getUserAttampts } from "../../services/main/courses/staffCoursesServices.js";
 const router = Router();
@@ -121,6 +122,21 @@ router.put("/:courseId/lessons/:lessonId", async (req, res) => {
     getAndThrowError(e, res);
   }
 });
+
+router.post(
+  "/:courseId/lessons/:lessonId/home-works/toggle",
+  async (req, res) => {
+    try {
+      const data = await toggleMustUploadHomeWork({
+        lessonId: req.params.lessonId,
+        mustUploadHomework: req.body.mustUploadHomework,
+      });
+      res.status(200).json({ data, message: "Lesson edited" });
+    } catch (e) {
+      getAndThrowError(e, res);
+    }
+  }
+);
 
 router.delete("/:courseId/lessons/:lessonId", async (req, res) => {
   try {

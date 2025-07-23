@@ -245,6 +245,7 @@ export async function canAccessAlesson({ lesson, userId }) {
     where: {
       courseId: lesson.courseId,
       order: { lt: lesson.order },
+      mustUploadHomework: true,
     },
     select: { id: true },
   });
@@ -308,6 +309,7 @@ export async function canAccessALessonTest({ lesson, userId }) {
     where: {
       courseId: lesson.courseId,
       order: { lt: lesson.order },
+      mustUploadHomework: true,
     },
     select: { id: true },
   });
@@ -370,6 +372,7 @@ export async function canAccessACourseTest({ course, userId }) {
   const previousLessons = await prisma.lesson.findMany({
     where: {
       courseId: course.id,
+      mustUploadHomework: true,
     },
     select: { id: true },
   });

@@ -787,3 +787,17 @@ export async function deleteALessonVideoPdf({ lessonVideoPdfId }) {
     },
   });
 }
+
+export async function toggleMustUploadHomeWork({
+  mustUploadHomework,
+  lessonId,
+}) {
+  return await prisma.lesson.update({
+    where: {
+      id: Number(lessonId),
+    },
+    data: {
+      mustUploadHomework,
+    },
+  });
+}

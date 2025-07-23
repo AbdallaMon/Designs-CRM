@@ -1297,6 +1297,7 @@ model Lesson {
   description    String?    @db.Text
   duration       Int?
   order          Int        @default(0)
+  mustUploadHomework Boolean         @default(true) 
   isPreviewable  Boolean    @default(false)
   videos         LessonVideo[]
   pdfs           LessonPDF[]
