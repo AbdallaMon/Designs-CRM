@@ -1,44 +1,15 @@
 import { Api } from "telegram";
 import dotenv from "dotenv";
-import { teleClient } from "./connectToTelegram.js";
+import {
+  connectToTelegram,
+  teleClient,
+  io as serverIo,
+} from "./connectToTelegram.js";
 import prisma from "../../prisma/prisma.js";
 import { dealsLink } from "../links.js";
-import { io as clientIO } from "socket.io-client";
-import { Server } from "socket.io";
-import { createServer } from "http";
 import { sendEmail } from "../sendMail.js";
 
 dotenv.config();
-
-const httpServer = createServer();
-
-const io = new Server(httpServer, {
-  cors: {
-    origin: [
-      process.env.ORIGIN,
-      process.env.OLDORIGIN,
-      process.env.COURSESORIGIN,
-    ],
-    credentials: true,
-  },
-});
-
-io.on("connection", (socket) => {
-  const userId = socket.handshake.query.userId;
-  if (userId) {
-    console.log(`User connected to socket: ${userId}`);
-    socket.join(userId.toString());
-  }
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected");
-  });
-});
-
-const PORT = 4020;
-httpServer.listen(PORT, () => {
-  console.log(`🔌 Socket.IO server running on port ${PORT}`);
-});
 
 export async function createChannelAndAddUsers({ clientLeadId }) {
   const isUserAuthorized = await teleClient.checkAuthorization();
@@ -249,12 +220,32 @@ export async function getLeadsWithOutChannel() {
         inviteLink: lead.telegramLink,
       });
       const lastMessage = await teleClient.getMessages(teleChat, { limit: 1 });
-      await prisma.FetchedTelegramMessage.create({
-        data: {
-          messageId: lastMessage[0].id,
+      const findLastMessage = await prisma.fetchedTelegramMessage.findFirst({
+        where: {
           clientLeadId: Number(lead.id),
         },
+        orderBy: {
+          id: "desc",
+        },
       });
+      if (findLastMessage) {
+        await prisma.FetchedTelegramMessage.update({
+          where: {
+            id: findLastMessage.id,
+          },
+          data: {
+            messageId: lastMessage[0].id,
+            clientLeadId: Number(lead.id),
+          },
+        });
+      } else {
+        await prisma.FetchedTelegramMessage.create({
+          data: {
+            messageId: lastMessage[0].id,
+            clientLeadId: Number(lead.id),
+          },
+        });
+      }
     } else {
       await createChannelAndAddUsers({
         clientLeadId: lead.id,
@@ -288,12 +279,33 @@ export async function uploadItemsToTele({ clientLeadId }) {
   }
 
   const lastMessage = await teleClient.getMessages(channel, { limit: 1 });
-  await prisma.FetchedTelegramMessage.create({
-    data: {
-      messageId: lastMessage[0].id,
+
+  const findLastMessage = await prisma.fetchedTelegramMessage.findFirst({
+    where: {
       clientLeadId: Number(clientLeadId),
     },
+    orderBy: {
+      id: "desc",
+    },
   });
+  if (findLastMessage) {
+    await prisma.FetchedTelegramMessage.update({
+      where: {
+        id: findLastMessage.id,
+      },
+      data: {
+        messageId: lastMessage[0].id,
+        clientLeadId: Number(clientLeadId),
+      },
+    });
+  } else {
+    await prisma.FetchedTelegramMessage.create({
+      data: {
+        messageId: lastMessage[0].id,
+        clientLeadId: Number(clientLeadId),
+      },
+    });
+  }
 }
 export async function getChannelEntitiyByTeleRecordAndLeadId({ clientLeadId }) {
   let teleRecord = await prisma.telegramChannel.findFirst({
@@ -399,7 +411,7 @@ export async function getMeagsses({ clientLeadId }) {
 export async function getLastFetchedTeleMessage({ clientLeadId }) {
   return await prisma.fetchedTelegramMessage.findFirst({
     where: { clientLeadId },
-    orderBy: { fetchedAt: "desc" },
+    orderBy: { id: "desc" },
   });
 }
 
@@ -420,7 +432,6 @@ async function filterTaggedMessages({ clientLeadId, messages, channel }) {
     });
     const content = msg.message?.trim() || "";
     const messageId = msg.id;
-    console.log(content);
     if (content.startsWith("*note*")) {
       await createNote({
         clientLeadId,
@@ -445,19 +456,30 @@ async function filterTaggedMessages({ clientLeadId, messages, channel }) {
   if (lastMessage) {
     const findLastMessage = await prisma.fetchedTelegramMessage.findFirst({
       where: {
-        messageId: lastMessage.id,
-        clientLeadId,
+        clientLeadId: Number(clientLeadId),
+      },
+      orderBy: {
+        id: "desc",
       },
     });
     if (findLastMessage) {
-      return;
+      await prisma.FetchedTelegramMessage.update({
+        where: {
+          id: findLastMessage.id,
+        },
+        data: {
+          messageId: lastMessage.id,
+          clientLeadId: Number(clientLeadId),
+        },
+      });
+    } else {
+      await prisma.FetchedTelegramMessage.create({
+        data: {
+          messageId: lastMessage.id,
+          clientLeadId: Number(clientLeadId),
+        },
+      });
     }
-    await prisma.fetchedTelegramMessage.create({
-      data: {
-        messageId: lastMessage.id,
-        clientLeadId,
-      },
-    });
   }
 }
 
@@ -722,6 +744,7 @@ async function sendNotification(
   clientLeadId,
   staffId
 ) {
+  let io = serverIo;
   const link = href
     ? `<a href="${process.env.OLDORIGIN}${href}" style="color: #1a73e8; text-decoration: none;">See details from here</a>`
     : "";
@@ -743,7 +766,9 @@ async function sendNotification(
       staffId: staffId && Number(staffId),
     },
   });
-
+  if (!io) {
+    io = await connectToTelegram(true);
+  }
   io.to(userId.toString()).emit("notification", notification);
   if (withEmail) {
     const user = await prisma.user.findUnique({

@@ -7,7 +7,7 @@ import { connectToTelegram } from "./services/telegram/connectToTelegram.js";
 dotenv.config();
 
 // cron.schedule("*/5 * * * *", async () => {
-await connectToTelegram();
+await connectToTelegram(true);
 
 cron.schedule("*/15 * * * * *", async () => {
   try {
