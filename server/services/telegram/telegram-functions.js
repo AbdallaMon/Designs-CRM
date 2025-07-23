@@ -41,6 +41,14 @@ httpServer.listen(PORT, () => {
 });
 
 export async function createChannelAndAddUsers({ clientLeadId }) {
+  const isUserAuthorized = await teleClient.checkAuthorization();
+
+  if (!isUserAuthorized) {
+    console.warn(
+      "❌ Telegram client not authenticated. Aborting channel creation."
+    );
+    return; // Do nothing if not authenticated
+  }
   const clientLead = await prisma.clientLead.findUnique({
     where: {
       id: Number(clientLeadId),
@@ -286,9 +294,7 @@ export async function getChannelEntitiyByTeleRecordAndLeadId({ clientLeadId }) {
     });
   }
 
-  if (!teleRecord)
-    throw new Error("❌ Channel not found for this clientLeadId");
-
+  if (!teleRecord) return;
   const channel = await getChannelEntitiy({
     channelId: teleRecord.channelId,
     accessHash: teleRecord.accessHash,
