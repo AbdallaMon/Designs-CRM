@@ -37,6 +37,8 @@ import Commission from "@/app/UiComponents/DataViewer/utility/Commission";
 const columns = [
   { name: "name", label: "User Name" },
   { name: "email", label: "Email" },
+  { name: "telegramUsername", label: "Telegram user name" },
+
   { name: "role", label: "Main role", type: "enum", enum: userRolesEnum },
   {
     name: "isActive",
@@ -45,6 +47,7 @@ const columns = [
     enum: { TRUE: "Active", FALSE: "Banned" },
   },
 ];
+
 const inputs = [
   {
     data: { id: "name", type: "text", label: "User name", key: "name" },
@@ -66,6 +69,14 @@ const inputs = [
         value: /\w+@[a-z]+\.[a-z]{2,}/gi,
         message: "Please enter a valid email address",
       },
+    },
+  },
+  {
+    data: {
+      id: "telegramUsername",
+      type: "text",
+      label: "Telegram username",
+      key: "telegramUsername",
     },
   },
   {

@@ -44,23 +44,34 @@ export async function getCourse({ courseId, role, userId }) {
         where: {
           isPreviewable: true,
         },
+        orderBy: {
+          order: "asc", // or "desc"
+        },
         include: {
-          allowedUsers:{
-            where:{
-              userId:Number(userId)
-            }
+          allowedUsers: {
+            where: {
+              userId: Number(userId),
+            },
           },
           tests: {
             where: { published: true },
             select: {
               id: true,
               title: true,
-              timeLimit:true,
+              timeLimit: true,
               attempts: {
                 where: {
                   userId: Number(userId),
                 },
-                select: { startTime:true,endTime:true,score:true,passed: true, id: true, testId: true, userId: true },
+                select: {
+                  startTime: true,
+                  endTime: true,
+                  score: true,
+                  passed: true,
+                  id: true,
+                  testId: true,
+                  userId: true,
+                },
               },
             },
           },
@@ -68,17 +79,25 @@ export async function getCourse({ courseId, role, userId }) {
       },
       tests: {
         where: { published: true },
-         select: {
-              id: true,
-              title: true,
-              timeLimit:true,
-              attempts: {
-                where: {
-                  userId: Number(userId),
-                },
-                select: { startTime:true,endTime:true,score:true,passed: true, id: true, testId: true, userId: true },
-              },
+        select: {
+          id: true,
+          title: true,
+          timeLimit: true,
+          attempts: {
+            where: {
+              userId: Number(userId),
             },
+            select: {
+              startTime: true,
+              endTime: true,
+              score: true,
+              passed: true,
+              id: true,
+              testId: true,
+              userId: true,
+            },
+          },
+        },
       },
     },
   });
@@ -125,8 +144,7 @@ export async function getUserCourseProgress({ courseId, userId }) {
 
   const completedLessonIds = completedLessons.map((l) => l.lessonId);
 
-
-    const completedTests = await prisma.completedTest.findMany({
+  const completedTests = await prisma.completedTest.findMany({
     where: {
       courseProgress: {
         userId,
@@ -169,11 +187,12 @@ export async function getUserCourseProgress({ courseId, userId }) {
   const userProgress = {
     completedLessons: completedLessonIds,
     // passedTests: passedTestIds,
-    testAttempts,completedTests:completedTestsIds
+    testAttempts,
+    completedTests: completedTestsIds,
   };
   return userProgress;
 }
-export async function getLesson({ role, lessonId ,userId}) {
+export async function getLesson({ role, lessonId, userId }) {
   lessonId = Number(lessonId);
   const lesson = await prisma.lesson.findUnique({
     where: {
@@ -188,7 +207,11 @@ export async function getLesson({ role, lessonId ,userId}) {
       },
     },
     include: {
-      videos: true,
+      videos: {
+        include: {
+          pdfs: true,
+        },
+      },
       pdfs: true,
       links: true,
       course: {
@@ -202,243 +225,235 @@ export async function getLesson({ role, lessonId ,userId}) {
   if (!lesson) {
     throw new Error("Lesson not found or access denied.");
   }
-await canAccessAlesson({lesson,userId})
+  await canAccessAlesson({ lesson, userId });
   return lesson;
 }
 
-export async function canAccessAlesson({lesson,userId}){
-
-  const currentLessonAccess=await prisma.LessonAccess.findUnique({where:{
-    userId_lessonId:{
-      lessonId:Number(lesson.id),
-      userId:Number(userId)
-
-    }
-  }})
-  if(!currentLessonAccess){
-      throw new Error("You are not allowed to access this lesson yet.");
-  }
-  const previousLessons = await prisma.lesson.findMany({
-  where: {
-    courseId: lesson.courseId,
-    order: { lt: lesson.order },
-  },
-  select: { id: true },
-});
-const previousLessonIds = previousLessons.map((l) => l.id);
-const completedLessons = await prisma.completedLesson.findMany({
-  where: {
-    courseProgress: {
-      userId,
-      courseId: lesson.courseId,
-    },
-    lessonId: { in: previousLessonIds },
-  },
-  select: { lessonId: true },
-});
-const completedLessonIds = completedLessons.map((l) => l.lessonId);
-const allPreviousCompleted = previousLessonIds.every((id) =>
-  completedLessonIds.includes(id)
-);
-const lessonsWithTests = await prisma.lesson.findMany({
-  where: {
-    id: { in: previousLessonIds },
-    tests: {
-      some: { published: true },
-    },
-  },
-  select: {
-    id: true,courseId:true,
-    tests: {
-      where: { published: true },
-      select: { id: true },
-    },
-  },
-});
-
-let allPreviousTestsPassed = true;
-
-for (const lessonWithTest of lessonsWithTests) {
-  for (const test of lessonWithTest.tests) {
-    const attempt = await prisma.testAttempt.findFirst({
-      where: {
-        userId,
-        testId: test.id,
-        passed: true,
+export async function canAccessAlesson({ lesson, userId }) {
+  const currentLessonAccess = await prisma.LessonAccess.findUnique({
+    where: {
+      userId_lessonId: {
+        lessonId: Number(lesson.id),
+        userId: Number(userId),
       },
-    });
-    const completedTest=await prisma.completedTest.findFirst({where:{
-      testId:test.id,
-          courseProgress: {
-      userId,
-      courseId: lessonWithTest.courseId,
     },
-    }})
-    console.log(completedTest,"completedTest")
-    if (!attempt||!completedTest) {
-      allPreviousTestsPassed = false;
-      break;
-    }
+  });
+  if (!currentLessonAccess) {
+    throw new Error("You are not allowed to access this lesson yet.");
   }
-  if (!allPreviousTestsPassed) break;
-}
-if (!allPreviousCompleted || !allPreviousTestsPassed) {
-  throw new Error("You must complete and pass all previous lessons.");
-}
-
-}
-export async function canAccessALessonTest({lesson,userId}){
   const previousLessons = await prisma.lesson.findMany({
-  where: {
-    courseId: lesson.courseId,
-    order: { lt: lesson.order },
-  },
-  select: { id: true },
-});
-const previousLessonIds = previousLessons.map((l) => l.id);
-const completedLessons = await prisma.completedLesson.findMany({
-  where: {
-    courseProgress: {
-      userId,
+    where: {
       courseId: lesson.courseId,
+      order: { lt: lesson.order },
     },
-    lessonId: { in: [...previousLessonIds,lesson.id] },
-  },
-  select: { lessonId: true },
-});
-const completedLessonIds = completedLessons.map((l) => l.lessonId);
-const allPreviousCompleted = [...previousLessonIds,lesson.id].every((id) =>
-  completedLessonIds.includes(id)
-);
-const lessonsWithTests = await prisma.lesson.findMany({
-  where: {
-    id: { in: previousLessonIds },
-    tests: {
-      some: { published: true },
-    },
-  },
-  select: {
-    id: true,
-    courseId:true,
-    tests: {
-      where: { published: true },
-      select: { id: true },
-    },
-  },
-});
-
-let allPreviousTestsPassed = true;
-
-for (const lessonWithTest of lessonsWithTests) {
-  for (const test of lessonWithTest.tests) {
-    const attempt = await prisma.testAttempt.findFirst({
-      where: {
+    select: { id: true },
+  });
+  const previousLessonIds = previousLessons.map((l) => l.id);
+  const completedLessons = await prisma.completedLesson.findMany({
+    where: {
+      courseProgress: {
         userId,
-        testId: test.id,
-        passed: true,
+        courseId: lesson.courseId,
       },
-    });
-    const completedTest=await prisma.completedTest.findFirst({where:{
-      testId:test.id,
-          courseProgress: {
-      userId,
-      courseId: lessonWithTest.courseId,
+      lessonId: { in: previousLessonIds },
     },
-    }})
-    if (!attempt||!completedTest) {
-      allPreviousTestsPassed = false;
-      break;
-    }
-  }
-  if (!allPreviousTestsPassed) break;
-}
-if (!allPreviousCompleted || !allPreviousTestsPassed) {
-  throw new Error("You must complete and pass all previous lessons.");
-}
+    select: { lessonId: true },
+  });
+  const completedLessonIds = completedLessons.map((l) => l.lessonId);
+  const allPreviousCompleted = previousLessonIds.every((id) =>
+    completedLessonIds.includes(id)
+  );
+  const lessonsWithTests = await prisma.lesson.findMany({
+    where: {
+      id: { in: previousLessonIds },
+      tests: {
+        some: { published: true },
+      },
+    },
+    select: {
+      id: true,
+      courseId: true,
+      tests: {
+        where: { published: true },
+        select: { id: true },
+      },
+    },
+  });
 
+  let allPreviousTestsPassed = true;
+
+  for (const lessonWithTest of lessonsWithTests) {
+    for (const test of lessonWithTest.tests) {
+      const attempt = await prisma.testAttempt.findFirst({
+        where: {
+          userId,
+          testId: test.id,
+          passed: true,
+        },
+      });
+
+      if (!attempt) {
+        allPreviousTestsPassed = false;
+        break;
+      }
+    }
+    if (!allPreviousTestsPassed) break;
+  }
+  if (!allPreviousCompleted || !allPreviousTestsPassed) {
+    throw new Error("You must complete and pass all previous lessons.");
+  }
 }
-export async function canAccessACourseTest({course,userId}){
+export async function canAccessALessonTest({ lesson, userId }) {
   const previousLessons = await prisma.lesson.findMany({
-  where: {
-    courseId: course.id,
-  },
-  select: { id: true },
-});
-const previousLessonIds = previousLessons.map((l) => l.id);
-const completedLessons = await prisma.completedLesson.findMany({
-  where: {
-    courseProgress: {
-      userId,
+    where: {
+      courseId: lesson.courseId,
+      order: { lt: lesson.order },
+    },
+    select: { id: true },
+  });
+  const previousLessonIds = previousLessons.map((l) => l.id);
+  const completedLessons = await prisma.completedLesson.findMany({
+    where: {
+      courseProgress: {
+        userId,
+        courseId: lesson.courseId,
+      },
+      lessonId: { in: [...previousLessonIds] },
+    },
+    select: { lessonId: true },
+  });
+  const completedLessonIds = completedLessons.map((l) => l.lessonId);
+  const allPreviousCompleted = [...previousLessonIds].every((id) =>
+    completedLessonIds.includes(id)
+  );
+  const lessonsWithTests = await prisma.lesson.findMany({
+    where: {
+      id: { in: previousLessonIds },
+      tests: {
+        some: { published: true },
+      },
+    },
+    select: {
+      id: true,
+      courseId: true,
+      tests: {
+        where: { published: true },
+        select: { id: true },
+      },
+    },
+  });
+
+  let allPreviousTestsPassed = true;
+
+  for (const lessonWithTest of lessonsWithTests) {
+    for (const test of lessonWithTest.tests) {
+      const attempt = await prisma.testAttempt.findFirst({
+        where: {
+          userId,
+          testId: test.id,
+          passed: true,
+        },
+      });
+
+      if (!attempt) {
+        allPreviousTestsPassed = false;
+        break;
+      }
+    }
+    if (!allPreviousTestsPassed) break;
+  }
+  if (!allPreviousCompleted || !allPreviousTestsPassed) {
+    throw new Error("You must complete and pass all previous lessons.");
+  }
+}
+export async function canAccessACourseTest({ course, userId }) {
+  const previousLessons = await prisma.lesson.findMany({
+    where: {
       courseId: course.id,
     },
-    lessonId: { in: previousLessonIds },
-  },
-  select: { lessonId: true },
-});
-const completedLessonIds = completedLessons.map((l) => l.lessonId);
-const allPreviousCompleted = previousLessonIds.every((id) =>
-  completedLessonIds.includes(id)
-);
-const lessonsWithTests = await prisma.lesson.findMany({
-  where: {
-    id: { in: previousLessonIds },
-    tests: {
-      some: { published: true },
-    },
-  },
-  select: {
-    id: true,courseId:true,
-    tests: {
-      where: { published: true },
-      select: { id: true },
-    },
-  },
-});
-
-let allPreviousTestsPassed = true;
-
-for (const lessonWithTest of lessonsWithTests) {
-  for (const test of lessonWithTest.tests) {
-    const attempt = await prisma.testAttempt.findFirst({
-      where: {
+    select: { id: true },
+  });
+  const previousLessonIds = previousLessons.map((l) => l.id);
+  const completedLessons = await prisma.completedLesson.findMany({
+    where: {
+      courseProgress: {
         userId,
-        testId: test.id,
-        passed: true,
+        courseId: course.id,
       },
-    });
-        const completedTest=await prisma.completedTest.findFirst({where:{
-      testId:test.id,
-          courseProgress: {
-      userId,
-      courseId: lessonWithTest.courseId,
+      lessonId: { in: previousLessonIds },
     },
-    }})
-    if (!attempt||!completedTest) {
-      allPreviousTestsPassed = false;
-      break;
+    select: { lessonId: true },
+  });
+  const completedLessonIds = completedLessons.map((l) => l.lessonId);
+  const allPreviousCompleted = previousLessonIds.every((id) =>
+    completedLessonIds.includes(id)
+  );
+  const lessonsWithTests = await prisma.lesson.findMany({
+    where: {
+      id: { in: previousLessonIds },
+      tests: {
+        some: { published: true },
+      },
+    },
+    select: {
+      id: true,
+      courseId: true,
+      tests: {
+        where: { published: true },
+        select: { id: true },
+      },
+    },
+  });
+
+  let allPreviousTestsPassed = true;
+
+  for (const lessonWithTest of lessonsWithTests) {
+    for (const test of lessonWithTest.tests) {
+      const attempt = await prisma.testAttempt.findFirst({
+        where: {
+          userId,
+          testId: test.id,
+          passed: true,
+        },
+      });
+
+      if (!attempt) {
+        allPreviousTestsPassed = false;
+        break;
+      }
     }
+    if (!allPreviousTestsPassed) break;
   }
-  if (!allPreviousTestsPassed) break;
-}
-if (!allPreviousCompleted || !allPreviousTestsPassed) {
-  throw new Error("You must complete and pass all previous lessons.");
-}
-
+  if (!allPreviousCompleted || !allPreviousTestsPassed) {
+    throw new Error("You must complete and pass all previous lessons.");
+  }
 }
 
-export async function getHomeWorks({userId,lessonId}){
-  return await prisma.LessonHomework.findMany({where:{
-    lessonId:Number(lessonId),
-    userId:Number(userId)
-  }})
+export async function getHomeWorks({ userId, lessonId }) {
+  return await prisma.LessonHomework.findMany({
+    where: {
+      lessonId: Number(lessonId),
+      userId: Number(userId),
+    },
+  });
 }
-export async function createAHomeWork({data,lessonId,userId,courseId,testId}){
- await prisma.LessonHomework.create({data:{
-    lessonId:Number(lessonId),
-    userId:Number(userId),
-    url:data.url,type:data.type,title:data.title||data.type
-  }})
-   const homeWorks = await prisma.LessonHomework.findMany({
+export async function createAHomeWork({
+  data,
+  lessonId,
+  userId,
+  courseId,
+  testId,
+}) {
+  await prisma.LessonHomework.create({
+    data: {
+      lessonId: Number(lessonId),
+      userId: Number(userId),
+      url: data.url,
+      type: data.type,
+      title: data.title || data.type,
+    },
+  });
+  const homeWorks = await prisma.LessonHomework.findMany({
     where: {
       userId: Number(userId),
       lessonId: Number(lessonId),
@@ -448,15 +463,15 @@ export async function createAHomeWork({data,lessonId,userId,courseId,testId}){
     },
   });
 
-  const hasVideo = homeWorks.some((hw) => hw.type === 'VIDEO');
-  const hasSummary = homeWorks.some((hw) => hw.type === 'SUMMARY');
-  if(hasSummary){
-    await markLessonAsCompleted({lessonId,userId,courseId})
+  const hasVideo = homeWorks.some((hw) => hw.type === "VIDEO");
+  const hasSummary = homeWorks.some((hw) => hw.type === "SUMMARY");
+  if (hasSummary && hasVideo) {
+    await markLessonAsCompleted({ lessonId, userId, courseId });
   }
-    if(hasVideo){
-    await markTestAsCompleted({testId:data.testId,userId,courseId})
-  }
-  return
+  // if (hasVideo) {
+  //   await markTestAsCompleted({ testId: data.testId, userId, courseId });
+  // }
+  return;
 }
 export async function markLessonAsCompleted({ lessonId, courseId, userId }) {
   lessonId = Number(lessonId);
@@ -508,9 +523,8 @@ export async function markTestAsCompleted({ testId, courseId, userId }) {
 
 // staff test
 
-export async function getUserTest({ testId,userId }) {
-  
-  const test= await prisma.test.findUnique({
+export async function getUserTest({ testId, userId }) {
+  const test = await prisma.test.findUnique({
     where: {
       id: Number(testId),
       published: true,
@@ -520,24 +534,23 @@ export async function getUserTest({ testId,userId }) {
       lesson: true,
     },
   });
-  if(userId){
-
-    if(test.lesson){
-      await canAccessALessonTest({lesson:test.lesson,userId})
+  if (userId) {
+    if (test.lesson) {
+      await canAccessALessonTest({ lesson: test.lesson, userId });
     }
-    if(test.course){
-      await canAccessACourseTest({course:test.course,userId})
+    if (test.course) {
+      await canAccessACourseTest({ course: test.course, userId });
     }
   }
-  return test
+  return test;
 }
 
 export async function getUserTestQuestion({ testId, userId }) {
   return await prisma.testQuestion.findMany({
     where: {
       testId: Number(testId),
-    },   
-    orderBy: { order: 'asc' },
+    },
+    orderBy: { order: "asc" },
     include: {
       choices: true,
     },
@@ -551,7 +564,7 @@ export async function getUserAttampts({ testId, userId }) {
       userId: Number(userId),
     },
     include: {
-      user:true,
+      user: true,
       answers: {
         include: {
           selectedAnswers: true,
@@ -577,8 +590,7 @@ export async function getUserAttampt({ attamptId, userId }) {
 }
 
 export async function createAttampt({ testId, userId }) {
-
-  const test=await prisma.test.findUnique({where:{id:Number(testId)}})
+  const test = await prisma.test.findUnique({ where: { id: Number(testId) } });
   const userLastAttampt = await prisma.TestAttempt.findFirst({
     where: {
       testId: Number(testId),
@@ -588,7 +600,10 @@ export async function createAttampt({ testId, userId }) {
       createdAt: "desc",
     },
   });
-const attemptLimit = Math.max(userLastAttampt?.attemptLimit ?? 0, test.attemptLimit);
+  const attemptLimit = Math.max(
+    userLastAttampt?.attemptLimit ?? 0,
+    test.attemptLimit
+  );
   if (userLastAttampt) {
     if (userLastAttampt.attemptCount >= userLastAttampt.attemptLimit) {
       throw new Error("You can't submit a new attempt");
@@ -649,7 +664,10 @@ export async function submitAnswer({
         textAnswer: answer.textAnswer || null,
         selectedAnswers: answer.selectedAnswers
           ? {
-              create: answer.selectedAnswers.map((value,index) => ({ value,order:index+1 })),
+              create: answer.selectedAnswers.map((value, index) => ({
+                value,
+                order: index + 1,
+              })),
             }
           : undefined,
       },
@@ -665,7 +683,10 @@ export async function submitAnswer({
         textAnswer: answer.textAnswer || null,
         selectedAnswers: answer.selectedAnswers
           ? {
-              create: answer.selectedAnswers.map((value,index) => ({ value ,order:index+1})),
+              create: answer.selectedAnswers.map((value, index) => ({
+                value,
+                order: index + 1,
+              })),
             }
           : undefined,
       },
@@ -673,8 +694,6 @@ export async function submitAnswer({
     return newAnswer;
   }
 }
-
-
 
 export async function endAttempt(attemptId) {
   const attempt = await prisma.testAttempt.findUnique({
@@ -707,59 +726,59 @@ export async function endAttempt(attemptId) {
   const totalQuestions = attempt.test.questions.length;
   let earnedPoints = 0;
 
-for (const answer of attempt.answers) {
-  if (answer.question.type === 'TEXT') {
-    if (answer.isApproved) {
-      earnedPoints += 1;
-    }
-    continue;
-  }
-
-  const correctChoices = answer.question.choices
-    .filter((c) => c.isCorrect)
-    .map((c) => c.text);
-
-  const selectedChoices = answer.selectedAnswers.map((c) => c.value);
-
-  if (answer.question.type === 'ORDERING') {
-    const correctOrder = answer.question.choices
-      .sort((a, b) => a.order - b.order)
-      .map((c) => c.text);
-    const isCorrect =
-      JSON.stringify(correctOrder) === JSON.stringify(selectedChoices);
-
-    if (isCorrect) {
-      earnedPoints += 1;
-    } else {
-      // Optional: partial score by how many are in correct position
-      let correctPositions = 0;
-      for (let i = 0; i < correctOrder.length; i++) {
-        if (selectedChoices[i] === correctOrder[i]) {
-          correctPositions += 1;
-        }
+  for (const answer of attempt.answers) {
+    if (answer.question.type === "TEXT") {
+      if (answer.isApproved) {
+        earnedPoints += 1;
       }
-      earnedPoints += correctPositions / correctOrder.length;
+      continue;
     }
-    continue;
-  }
 
-  if (answer.question.type === 'MULTIPLE_CHOICE') {
-    const totalCorrect = correctChoices.length;
-    const selectedCorrect = selectedChoices.filter((v) =>
-      correctChoices.includes(v)
-    ).length;
-    earnedPoints += selectedCorrect / totalCorrect;
-  } else {
-    // SINGLE_CHOICE / TRUE_FALSE
-    const isCorrect =
-      JSON.stringify(correctChoices.sort()) ===
-      JSON.stringify(selectedChoices.sort());
+    const correctChoices = answer.question.choices
+      .filter((c) => c.isCorrect)
+      .map((c) => c.text);
 
-    if (isCorrect) {
-      earnedPoints += 1;
+    const selectedChoices = answer.selectedAnswers.map((c) => c.value);
+
+    if (answer.question.type === "ORDERING") {
+      const correctOrder = answer.question.choices
+        .sort((a, b) => a.order - b.order)
+        .map((c) => c.text);
+      const isCorrect =
+        JSON.stringify(correctOrder) === JSON.stringify(selectedChoices);
+
+      if (isCorrect) {
+        earnedPoints += 1;
+      } else {
+        // Optional: partial score by how many are in correct position
+        let correctPositions = 0;
+        for (let i = 0; i < correctOrder.length; i++) {
+          if (selectedChoices[i] === correctOrder[i]) {
+            correctPositions += 1;
+          }
+        }
+        earnedPoints += correctPositions / correctOrder.length;
+      }
+      continue;
+    }
+
+    if (answer.question.type === "MULTIPLE_CHOICE") {
+      const totalCorrect = correctChoices.length;
+      const selectedCorrect = selectedChoices.filter((v) =>
+        correctChoices.includes(v)
+      ).length;
+      earnedPoints += selectedCorrect / totalCorrect;
+    } else {
+      // SINGLE_CHOICE / TRUE_FALSE
+      const isCorrect =
+        JSON.stringify(correctChoices.sort()) ===
+        JSON.stringify(selectedChoices.sort());
+
+      if (isCorrect) {
+        earnedPoints += 1;
+      }
     }
   }
-}
 
   const score = (earnedPoints / totalQuestions) * 100;
   const passed = score >= 80;
@@ -771,8 +790,11 @@ for (const answer of attempt.answers) {
       endTime: new Date(),
     },
   });
-if(!passed&&attempt.attemptCount>=attempt.attemptLimit){
-await attemptFailedByUser({testId:attempt.testId,userId:attempt.userId})
-}
+  if (!passed && attempt.attemptCount >= attempt.attemptLimit) {
+    await attemptFailedByUser({
+      testId: attempt.testId,
+      userId: attempt.userId,
+    });
+  }
   return { score, passed };
 }

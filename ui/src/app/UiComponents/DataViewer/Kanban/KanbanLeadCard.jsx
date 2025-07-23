@@ -354,6 +354,7 @@ const LeadCard = ({
             lead={lead}
             setleads={setleads}
             currentUserDepartment="STAFF"
+            setRerenderColumns={setRerenderColumns}
           />
         </CardContent>
       </StyledCard>

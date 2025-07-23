@@ -1,4 +1,4 @@
-import { createChannelAndAddUsers } from "./telegram-functions.js";
+import { createChannelAndAddUsers } from "./telegram/telegram-functions.js";
 import dotenv from "dotenv";
 dotenv.config();
 import { TelegramClient } from "telegram";
@@ -51,7 +51,7 @@ export function generateTelegramMessageLink(chatId, messageId) {
   return `https://t.me/c/${chatId}/${messageId}`;
 }
 
-export async function getMessages() {
+export async function getMeagsses() {
   await client.connect();
   const channel = await client.getEntity(channelId);
   // const dialogs = await client.getDialogs();

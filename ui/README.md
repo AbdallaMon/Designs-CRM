@@ -105,15 +105,16 @@
 - Move rejected and archieve?
 - Check why lead page is so slow
 - Delivery time from startDate or start status
-
 - Super sales (can edit all things in sales)
 - New Staff type contact init just non consulted lead and new lead and can search inside them
+- Archive updates we need to pass the setRerender i guess!
+
 - Total price is final price + extra services
 - Enhance notesComponent make it by default get number of notes now
-Telegram :
+  Telegram :
 - After create channel when assign any user add him to telegram channel
 - Add notes
-- All attettchments 
+- All attettchments
 - Updates(check we add or not)
 - And then all these when new added will added to telegram but with a checkbox send to tele or not
 - https://my.telegram.org/apps
@@ -121,6 +122,11 @@ Telegram :
 - Image in the url in both dream studio and eng ahmed
 - Toast data in client image session
 
+- Payment link
+  to ask !!!!
+  مين من الموظفين الي بيتضاف هل السيلز بيتضاف
+
+-يبحث في الديلز
 
 - Dashboard change projects to leads
 
@@ -132,13 +138,13 @@ Telegram :
 8 - 2 + 3
 
 2- حجز المواعيد
-6 6 
+6 6
 
 4- C3lendar
 8 2 + 2
 
 5- Courses
-50 30 
+50 30
 
 - الاولويات
   -1 تليجرام  
@@ -163,8 +169,6 @@ Telegram :
   يعني يكون في قاعدة بيانات واعرضهم ليك؟
   google doesnt allow user to review directly
   https://search.google.com/local/writereview?placeid=ChIJq1Mf9xdBWBQRvBGqXO34afE
-
-
 
 - dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

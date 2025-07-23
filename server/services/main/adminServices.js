@@ -54,8 +54,7 @@ export async function getAllUsers(searchParams) {
     searchParams.role = "STAFF";
   }
   let where = {};
-  if(searchParams.role!=="all"){
-
+  if (searchParams.role !== "all") {
     where.OR = [
       { role: searchParams.role },
       { subRoles: { some: { subRole: searchParams.role } } },
@@ -72,6 +71,7 @@ export async function getAllUsers(searchParams) {
       subRoles: true,
       isPrimary: true,
       isSuperSales: true,
+      telegramUsername: true,
     },
   });
 
@@ -1391,9 +1391,10 @@ export async function getAdminClientLeadDetails(clientLeadId, searchParams) {
         include: {
           invoices: true,
         },
-      },           contracts: {
-        where:{
-          isInProgress:true
+      },
+      contracts: {
+        where: {
+          isInProgress: true,
         },
         orderBy: { id: "desc" },
         take: 1,

@@ -14,6 +14,14 @@ import { ClientLeadStatus } from "../enums.js";
 import { dealsLink } from "../links.js";
 import { v4 as uuidv4 } from "uuid";
 import { getCommissionByUserId, reverseCommissions } from "./adminServices.js";
+import {
+  addUsersToATeleChannel,
+  createChannelAndAddUsers,
+  getChannelEntitiy,
+  getChannelEntitiyByTeleRecordAndLeadId,
+  inviteUserToAChannel,
+  uploadANote,
+} from "../telegram/telegram-functions.js";
 
 export async function getClientLeads({
   limit = 1,
@@ -92,9 +100,14 @@ export async function getClientLeads({
     where: { id: userId },
     select: { notAllowedCountries: true, role: true },
   });
-  if (user.role !== "SUPER_ADMIN" && user.role !== "ADMIN"&&user.role!=="SUPER_SALES"&&user.role!=="CONTACT_INITIATOR") {
+  if (
+    user.role !== "SUPER_ADMIN" &&
+    user.role !== "ADMIN" &&
+    user.role !== "SUPER_SALES" &&
+    user.role !== "CONTACT_INITIATOR"
+  ) {
     where = {
-      ...where, 
+      ...where,
       AND: [
         {
           OR: [
@@ -277,8 +290,8 @@ export async function getClientLeadsByDateRange({
         take: 2,
       },
       contracts: {
-        where:{
-          isInProgress:true
+        where: {
+          isInProgress: true,
         },
         orderBy: { id: "desc" },
         take: 1,
@@ -311,15 +324,12 @@ export async function getClientLeadsByDateRange({
 
   // Optional: filter by the latest contract level
   if (filters.contractLevel && filters.contractLevel !== "all") {
-    result = result.filter(
-      (lead) =>
-      {
-if( lead.contracts.length ){
-console.log(lead.contracts,"lead.contracts")
-  return   lead.contracts[0].contractLevel === filters.contractLevel
-}
-}
-    );
+    result = result.filter((lead) => {
+      if (lead.contracts.length) {
+        console.log(lead.contracts, "lead.contracts");
+        return lead.contracts[0].contractLevel === filters.contractLevel;
+      }
+    });
   }
   return result;
   // statusArray.forEach((status) => {
@@ -455,8 +465,8 @@ export async function getClientLeadsColumnStatus({
         take: 2,
       },
       contracts: {
-        where:{
-          isInProgress:true
+        where: {
+          isInProgress: true,
         },
         orderBy: { id: "desc" },
         take: 1,
@@ -571,9 +581,9 @@ export async function getClientLeadDetails(
       leadType: true,
       previousLeadId: true,
       personality: true,
-           contracts: {
-        where:{
-          isInProgress:true
+      contracts: {
+        where: {
+          isInProgress: true,
         },
         orderBy: { id: "desc" },
         take: 1,
@@ -756,21 +766,23 @@ export async function createNewContract({
   if (endDate) {
     data.endDate = new Date(endDate);
   }
-  console.log(contractLevel,"contractLevel")
-contractLevel.forEach(async(level,index)=>{
-  const isPresent=await prisma.contract.findFirst({where:{
-    contractLevel:level,
-purpose:purpose,    clientLeadId: Number(clientLeadId),
-
-  }})
-  if(isPresent){
-    console.log(isPresent,"isPresent")
-    return
-  }
-await prisma.contract.create({
-    data:{...data,contractLevel:level},
+  console.log(contractLevel, "contractLevel");
+  contractLevel.forEach(async (level, index) => {
+    const isPresent = await prisma.contract.findFirst({
+      where: {
+        contractLevel: level,
+        purpose: purpose,
+        clientLeadId: Number(clientLeadId),
+      },
+    });
+    if (isPresent) {
+      console.log(isPresent, "isPresent");
+      return;
+    }
+    await prisma.contract.create({
+      data: { ...data, contractLevel: level },
+    });
   });
-})
 
   return true;
 }
@@ -780,7 +792,7 @@ export async function editContract({ id, title, startDate, endDate }) {
     data.title = title;
   }
   if (startDate) {
-    data.startDate = new Date(startDate); 
+    data.startDate = new Date(startDate);
   }
   if (endDate) {
     data.endDate = new Date(endDate);
@@ -925,7 +937,6 @@ export async function markAsCompleted({ contractId, isCompleted }) {
 
   await prisma.$transaction(updates);
 }
-
 
 export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
   const clientLead = await prisma.clientLead.findUnique({
@@ -1901,6 +1912,7 @@ export async function updateClientLeadStatus({
     !isAdmin ? lead.userId : null
   );
   if (status === "FINALIZED") {
+    await createChannelAndAddUsers({ clientLeadId: lead.id });
     await finalizedLeadCreated(lead.id, lead.userId);
   }
 }
@@ -3068,6 +3080,17 @@ export async function assignProjectToUser({
       }" >#${project.clientLeadId}</a> `
     : "";
   if (!deleteDesigner) {
+    const teleChannel = await getChannelEntitiyByTeleRecordAndLeadId({
+      clientLeadId: Number(project.clientLeadId),
+    });
+    if (teleChannel) {
+      const user = await prisma.user.findUnique({
+        where: {
+          id: Number(userId),
+        },
+      });
+      await inviteUserToAChannel({ channel: teleChannel, user });
+    }
     await newProjectAssingmentNotification(project.id, Number(userId), content);
   }
   return project;
@@ -3860,9 +3883,18 @@ export async function addNote({
     where: {
       id: Number(note.id),
     },
+    include: {
+      user: true,
+    },
   });
   if (actualNote.clientLeadId) {
     await updateALead(actualNote.clientLeadId);
+    const teleChannel = await getChannelEntitiyByTeleRecordAndLeadId({
+      clientLeadId: Number(actualNote.clientLeadId),
+    });
+    if (teleChannel) {
+      await uploadANote(note, teleChannel);
+    }
   }
   if (actualNote.updateId) {
     await updateAClientLeadUpdate(actualNote.updateId);

@@ -5,6 +5,7 @@ import {
 } from "../../services/main/utility.js";
 import {
   approveUserAnswer,
+  createALessonVideoPdf,
   createNewCourse,
   createNewLesson,
   createNewLessonAccess,
@@ -15,6 +16,7 @@ import {
   createTestQuestion,
   decreaseAttemptToUser,
   deleteAlessonAccess,
+  deleteALessonVideoPdf,
   deleteLesson,
   deleteLessonPdf,
   deleteLessonVideo,
@@ -34,7 +36,9 @@ import {
   getCourses,
   getLessonById,
   getLessonsByCourseId,
+  getLessonVideoPdfs,
   getLinksByLessonId,
+  getListOfHomeWorks,
   getPdfsByLessonId,
   getTestAttemptsSummary,
   getTestData,
@@ -260,46 +264,105 @@ router.delete(
     }
   }
 );
-router.get("/:courseId/allowed-roles",async(req,res)=>{
-      try {
-      const data = await getAllowedRoles({
-        courseId: req.params.courseId,
+router.get("/:courseId/allowed-roles", async (req, res) => {
+  try {
+    const data = await getAllowedRoles({
+      courseId: req.params.courseId,
+    });
+    res.status(200).json({ data });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.get("/:courseId/lessons/:lessonId/allowed-users", async (req, res) => {
+  try {
+    const data = await getAllowedLessonUsers({
+      lessonId: req.params.lessonId,
+    });
+    res.status(200).json({ data });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.post("/:courseId/lessons/:lessonId/allowed-users", async (req, res) => {
+  try {
+    const data = await createNewLessonAccess({
+      lessonId: req.params.lessonId,
+      userId: req.body.userId,
+    });
+    res.status(200).json({ data, message: "User access granted" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.get("/:courseId/lessons/:lessonId/home-works", async (req, res) => {
+  try {
+    const data = await getListOfHomeWorks({
+      lessonId: Number(req.params.lessonId),
+    });
+    console.log(data, "data");
+    res.status(200).json({ data });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.get(
+  "/:courseId/lessons/:lessonId/videos/:videoId/pdfs",
+  async (req, res) => {
+    try {
+      const data = await getLessonVideoPdfs({
+        lessonVideoId: req.params.videoId,
       });
-      res.status(200).json({ data,});
+      console.log(data, "data");
+      res.status(200).json({ data });
     } catch (e) {
       getAndThrowError(e, res);
     }
-})
-router.get("/:courseId/lessons/:lessonId/allowed-users",async(req,res)=>{
-      try {
-      const data = await getAllowedLessonUsers({
-        lessonId: req.params.lessonId,
+  }
+);
+router.post(
+  "/:courseId/lessons/:lessonId/videos/:videoId/pdfs",
+  async (req, res) => {
+    try {
+      const data = await createALessonVideoPdf({
+        lessonVideoId: req.params.videoId,
+        title: req.body.title,
+        url: req.body.url,
       });
-      res.status(200).json({ data,});
+      console.log(data, "data");
+      res.status(200).json({ data, message: "Added succussfully" });
     } catch (e) {
       getAndThrowError(e, res);
     }
-})
-router.post("/:courseId/lessons/:lessonId/allowed-users",async(req,res)=>{
-      try {
-      const data = await createNewLessonAccess({
-        lessonId: req.params.lessonId,userId:req.body.userId
+  }
+);
+router.delete(
+  "/:courseId/lessons/:lessonId/videos/:videoId/pdfs/:pdfId",
+  async (req, res) => {
+    try {
+      const data = await deleteALessonVideoPdf({
+        lessonVideoPdfId: Number(req.params.pdfId),
       });
-      res.status(200).json({ data,message:"User access granted"});
+      console.log(data, "data");
+      res.status(200).json({ data, message: "Deleted succussfully" });
     } catch (e) {
       getAndThrowError(e, res);
     }
-})
-router.delete("/:courseId/lessons/:lessonId/allowed-users/:accessId",async(req,res)=>{
-      try {
+  }
+);
+router.delete(
+  "/:courseId/lessons/:lessonId/allowed-users/:accessId",
+  async (req, res) => {
+    try {
       const data = await deleteAlessonAccess({
-        id:req.params.accessId
+        id: req.params.accessId,
       });
-      res.status(200).json({ data,message:"User access deleted"});
+      res.status(200).json({ data, message: "User access deleted" });
     } catch (e) {
       getAndThrowError(e, res);
     }
-})
+  }
+);
 //test
 
 router.get("/tests", async (req, res) => {
@@ -312,11 +375,14 @@ router.get("/tests", async (req, res) => {
 });
 router.get("/tests/attempts", async (req, res) => {
   try {
-        const { limit, skip } = getPagination(req);
+    const { limit, skip } = getPagination(req);
 
-    const data = await getAttemptsSummary({ limit: Number(limit),
-      skip: Number(skip),userId:req.query.userId });
-    res.status(200).json(data );
+    const data = await getAttemptsSummary({
+      limit: Number(limit),
+      skip: Number(skip),
+      userId: req.query.userId,
+    });
+    res.status(200).json(data);
   } catch (e) {
     getAndThrowError(e, res);
   }
@@ -367,7 +433,10 @@ router.delete("/tests/:testId/", async (req, res) => {
 });
 router.get("/tests/:testId/attempts", async (req, res) => {
   try {
-    const data = await getTestAttemptsSummary({testId:req.params.testId,userId:req.query.userId   });
+    const data = await getTestAttemptsSummary({
+      testId: req.params.testId,
+      userId: req.query.userId,
+    });
     res.status(200).json({ data });
   } catch (e) {
     getAndThrowError(e, res);
@@ -375,7 +444,10 @@ router.get("/tests/:testId/attempts", async (req, res) => {
 });
 router.get("/tests/:testId/attampts/user", async (req, res) => {
   try {
-    const data = await getUserAttampts({testId:req.params.testId,userId:Number(req.query.userId)  });
+    const data = await getUserAttampts({
+      testId: req.params.testId,
+      userId: Number(req.query.userId),
+    });
     res.status(200).json({ data });
   } catch (e) {
     getAndThrowError(e, res);
@@ -383,31 +455,41 @@ router.get("/tests/:testId/attampts/user", async (req, res) => {
 });
 router.post("/tests/:testId/attempts/increase", async (req, res) => {
   try {
-    const data = await increaseAttemptToUser({testId:req.params.testId,userId:Number(req.query.userId)  });
-    res.status(200).json({ data,message:"Updated succssfully" });
+    const data = await increaseAttemptToUser({
+      testId: req.params.testId,
+      userId: Number(req.query.userId),
+    });
+    res.status(200).json({ data, message: "Updated succssfully" });
   } catch (e) {
     getAndThrowError(e, res);
   }
 });
 router.post("/tests/:testId/attempts/decrease", async (req, res) => {
   try {
-    const data = await decreaseAttemptToUser({testId:req.params.testId,userId:Number(req.query.userId)  });
-    res.status(200).json({ data,message:"Updated succssfully" });
-  } catch (e) {
-    getAndThrowError(e, res);
-  }
-});
-router.post("/tests/:testId/attempts/:attemptId/questions/:questionId/approve", async (req, res) => {
-  try {
-    const data = await approveUserAnswer({
-      questionId: req.params.questionId,
-      attemptId: req.params.attemptId,isApproved:req.body.isApproved
+    const data = await decreaseAttemptToUser({
+      testId: req.params.testId,
+      userId: Number(req.query.userId),
     });
-    res.status(200).json({ data, message: "Question Approved succssfully" });
+    res.status(200).json({ data, message: "Updated succssfully" });
   } catch (e) {
     getAndThrowError(e, res);
   }
 });
+router.post(
+  "/tests/:testId/attempts/:attemptId/questions/:questionId/approve",
+  async (req, res) => {
+    try {
+      const data = await approveUserAnswer({
+        questionId: req.params.questionId,
+        attemptId: req.params.attemptId,
+        isApproved: req.body.isApproved,
+      });
+      res.status(200).json({ data, message: "Question Approved succssfully" });
+    } catch (e) {
+      getAndThrowError(e, res);
+    }
+  }
+);
 router.post("/tests/:testId/test-questions", async (req, res) => {
   try {
     const data = await createTestQuestion({

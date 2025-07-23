@@ -61,6 +61,9 @@ export async function getLessonsByCourseId({ courseId }) {
     where: {
       courseId: Number(courseId),
     },
+    orderBy: {
+      order: "asc", // or "desc"
+    },
     include: {
       videos: true,
       pdfs: true,
@@ -239,6 +242,11 @@ export async function editLessonVideo({ data, videoId }) {
   });
 }
 export async function deleteLessonVideo({ videoId }) {
+  await prisma.LessonVideoPdf.deleteMany({
+    where: {
+      videoId: Number(videoId),
+    },
+  });
   return await prisma.lessonVideo.delete({
     where: {
       id: Number(videoId),
@@ -338,17 +346,13 @@ export async function getTests({ key, id }) {
       title: true,
     },
   });
-  let where={
-          [key]: Number(id),
-  }
-  if(key==="courseId"){
-
-    where={
-       OR: [
-          { courseId: Number(id) },
-          { lesson: { courseId:Number(id) } },
-        ],
-    }
+  let where = {
+    [key]: Number(id),
+  };
+  if (key === "courseId") {
+    where = {
+      OR: [{ courseId: Number(id) }, { lesson: { courseId: Number(id) } }],
+    };
   }
   const tests = await prisma.test.findMany({
     where,
@@ -461,14 +465,13 @@ export async function reOrderTestQuestions({ data }) {
   return true;
 }
 export async function getTestQuestionData({ id }) {
-  return await prisma.testQuestion.findUnique({   
-
+  return await prisma.testQuestion.findUnique({
     where: {
       id: Number(id),
     },
     include: {
       choices: {
-         orderBy: { order: "asc" }
+        orderBy: { order: "asc" },
       },
     },
   });
@@ -485,7 +488,7 @@ export async function createTestQuestion({ id, data }) {
     text: choice.text,
     value: choice.value,
     isCorrect: choice.isCorrect,
-    order:choice.order
+    order: choice.order,
   }));
 
   return await prisma.testQuestion.create({
@@ -512,9 +515,8 @@ export async function editQuestion({ data, questionId }) {
           isCorrect: choice.isCorrect,
           text: choice.text,
           value: choice.text,
-          questionId: Number(questionId), 
-           order:choice.order
-
+          questionId: Number(questionId),
+          order: choice.order,
         },
       });
     } else {
@@ -526,7 +528,7 @@ export async function editQuestion({ data, questionId }) {
           text: choice.text,
           value: choice.text,
           isCorrect: choice.isCorrect,
-              order:choice.order
+          order: choice.order,
         },
       });
     }
@@ -534,7 +536,7 @@ export async function editQuestion({ data, questionId }) {
   await prisma.testQuestion.update({
     where: { id: Number(questionId) },
     data: {
-      question: data.question,   
+      question: data.question,
     },
   });
   return true;
@@ -559,11 +561,11 @@ export async function deleteQuestion({ questionId }) {
   return true;
 }
 
-export async function getTestAttemptsSummary({testId,userId}) {
-  testId=Number(testId)
-    const where={ testId: Number(testId) }
-  if(userId){
-    where.userId=Number(userId)
+export async function getTestAttemptsSummary({ testId, userId }) {
+  testId = Number(testId);
+  const where = { testId: Number(testId) };
+  if (userId) {
+    where.userId = Number(userId);
   }
   const attempts = await prisma.testAttempt.findMany({
     where,
@@ -580,7 +582,7 @@ export async function getTestAttemptsSummary({testId,userId}) {
         },
       },
     },
-    orderBy: { createdAt: 'asc' },
+    orderBy: { createdAt: "asc" },
   });
 
   const grouped = attempts.reduce((acc, attempt) => {
@@ -593,13 +595,17 @@ export async function getTestAttemptsSummary({testId,userId}) {
         attempts: 1,
         maxScore: attempt.score ?? 0,
         passed: attempt.passed,
-        lastAttempt: attempt.endTime ?? null,userId
+        lastAttempt: attempt.endTime ?? null,
+        userId,
       };
     } else {
       acc[userId].attempts++;
       acc[userId].maxScore = Math.max(acc[userId].maxScore, attempt.score ?? 0);
       acc[userId].passed = acc[userId].passed || attempt.passed;
-      if (attempt.endTime && (!acc[userId].lastAttempt || acc[userId].lastAttempt < attempt.endTime)) {
+      if (
+        attempt.endTime &&
+        (!acc[userId].lastAttempt || acc[userId].lastAttempt < attempt.endTime)
+      ) {
         acc[userId].lastAttempt = attempt.endTime;
       }
     }
@@ -609,12 +615,14 @@ export async function getTestAttemptsSummary({testId,userId}) {
   return Object.values(grouped);
 }
 
-export async function getAttemptsSummary({ limit = 1, skip = 10,userId }) {
-  const where={}
-  if(userId){
-    where.userId=Number(userId)
+export async function getAttemptsSummary({ limit = 1, skip = 10, userId }) {
+  const where = {};
+  if (userId) {
+    where.userId = Number(userId);
   }
-  const attempts = await prisma.testAttempt.findMany({  where,  skip,
+  const attempts = await prisma.testAttempt.findMany({
+    where,
+    skip,
     take: limit,
     select: {
       userId: true,
@@ -629,25 +637,23 @@ export async function getAttemptsSummary({ limit = 1, skip = 10,userId }) {
         },
       },
     },
-    orderBy: { createdAt: 'asc' },
+    orderBy: { createdAt: "asc" },
   });
-
 
   const total = await prisma.testAttempt.count();
   const totalPages = Math.ceil(total / limit);
   return { data: attempts, totalPages, total };
 }
 
-export async function approveUserAnswer({attemptId,questionId, isApproved}) {
+export async function approveUserAnswer({ attemptId, questionId, isApproved }) {
   const updatedAnswer = await prisma.userAnswer.updateMany({
-    where: { questionId: Number(questionId),attemptId:Number(attemptId) },
+    where: { questionId: Number(questionId), attemptId: Number(attemptId) },
     data: { isApproved },
   });
 
-
   await endAttempt(Number(attemptId));
 }
-export async function increaseAttemptToUser({testId,userId}){
+export async function increaseAttemptToUser({ testId, userId }) {
   const userLastAttampt = await prisma.TestAttempt.findFirst({
     where: {
       testId: Number(testId),
@@ -657,15 +663,14 @@ export async function increaseAttemptToUser({testId,userId}){
       createdAt: "desc",
     },
   });
-await prisma.TestAttempt.update({
-  where:{id:Number(userLastAttampt.id)
-  }
-,data:{
-  attemptLimit:userLastAttampt.attemptLimit+1
+  await prisma.TestAttempt.update({
+    where: { id: Number(userLastAttampt.id) },
+    data: {
+      attemptLimit: userLastAttampt.attemptLimit + 1,
+    },
+  });
 }
-})
-}
-export async function decreaseAttemptToUser({testId,userId}){
+export async function decreaseAttemptToUser({ testId, userId }) {
   const userLastAttampt = await prisma.TestAttempt.findFirst({
     where: {
       testId: Number(testId),
@@ -675,48 +680,110 @@ export async function decreaseAttemptToUser({testId,userId}){
       createdAt: "desc",
     },
   });
-  if(userLastAttampt.attemptLimit===userLastAttampt.attemptCount){
-    throw new Error("Can't decrease as the user already has take his all attempts")
+  if (userLastAttampt.attemptLimit === userLastAttampt.attemptCount) {
+    throw new Error(
+      "Can't decrease as the user already has take his all attempts"
+    );
   }
-await prisma.TestAttempt.update({
-  where:{id:Number(userLastAttampt.id)
-  }
-,data:{
-  attemptLimit:userLastAttampt.attemptLimit-1
+  await prisma.TestAttempt.update({
+    where: { id: Number(userLastAttampt.id) },
+    data: {
+      attemptLimit: userLastAttampt.attemptLimit - 1,
+    },
+  });
 }
-})
-}
-
 
 // permissions
 
-export async function getAllowedRoles({courseId}){
-  const allowedRoles= await prisma.CourseRole.findMany({where:{courseId:Number(courseId)}
-  })
-  return allowedRoles?.map((r)=>r.role)
+export async function getAllowedRoles({ courseId }) {
+  const allowedRoles = await prisma.CourseRole.findMany({
+    where: { courseId: Number(courseId) },
+  });
+  return allowedRoles?.map((r) => r.role);
 }
-export async function getAllowedLessonUsers({lessonId}){
-  return await prisma.LessonAccess.findMany({where:{lessonId:Number(lessonId)},select:{
-    id:true,
-    user:{
-     select:{
-       id:true,
-      name:true,
-      email:true,role:true
-     }
-    }
-  }})
+export async function getAllowedLessonUsers({ lessonId }) {
+  return await prisma.LessonAccess.findMany({
+    where: { lessonId: Number(lessonId) },
+    select: {
+      id: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+        },
+      },
+    },
+  });
 }
-export async function createNewLessonAccess({lessonId,userId}){
+export async function createNewLessonAccess({ lessonId, userId }) {
+  await prisma.LessonAccess.create({
+    data: {
+      lessonId: Number(lessonId),
+      userId: Number(userId),
+    },
+  });
+}
+export async function deleteAlessonAccess({ id }) {
+  await prisma.LessonAccess.delete({
+    where: {
+      id: Number(id),
+    },
+  });
+}
 
-  await prisma.LessonAccess.create({data:{
-    lessonId:Number(lessonId),
-    userId:Number(userId)
-  }})
-}
-export async function deleteAlessonAccess({id}){
+export async function getListOfHomeWorks({ lessonId }) {
+  const groupedHomeworksByUser = await prisma.lessonHomework.findMany({
+    where: { lessonId },
+    include: {
+      user: {
+        select: { name: true, email: true, id: true },
+      },
+    },
+  });
 
-  await prisma.LessonAccess.delete({where:{
-id:Number(id)
-  }})
+  const groupedByUser = Object.values(
+    groupedHomeworksByUser.reduce((acc, hw) => {
+      const uid = hw.user.id;
+      if (!acc[uid]) {
+        acc[uid] = {
+          name: hw.user.name,
+          email: hw.user.email,
+          listOfHomeworks: [],
+        };
+      }
+
+      const { id, title, url, type, createdAt } = hw;
+      acc[uid].listOfHomeworks.push({ id, title, url, type, createdAt });
+
+      return acc;
+    }, {})
+  );
+  return groupedByUser;
+}
+
+export async function getLessonVideoPdfs({ lessonVideoId }) {
+  return await prisma.LessonVideoPdf.findMany({
+    where: {
+      videoId: Number(lessonVideoId),
+    },
+  });
+}
+
+export async function createALessonVideoPdf({ title, url, lessonVideoId }) {
+  return await prisma.LessonVideoPdf.create({
+    data: {
+      title,
+      url,
+      videoId: Number(lessonVideoId),
+    },
+  });
+}
+export async function deleteALessonVideoPdf({ lessonVideoPdfId }) {
+  await prisma.LessonVideoPdf.delete({
+    where: {
+      id: Number(lessonVideoPdfId),
+    },
+  });
 }

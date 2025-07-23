@@ -263,6 +263,16 @@ model SalesStage {
   @@index([userId])
   @@unique([clientLeadId, stage]) 
 }
+model TelegramChannel {
+  id             Int         @id @default(autoincrement())
+  clientLead     ClientLead  @relation(fields: [clientLeadId], references: [id])
+  clientLeadId   Int          @unique
+  channelLink    String       // t.me link
+  channelId      BigInt       @unique
+  accessHash     BigInt
+  description    String?      // optional: why this channel exists, etc.
+  createdAt      DateTime     @default(now())
+}
 
 model ClientLead {
   id         Int    @id @default(autoincrement())
@@ -270,7 +280,10 @@ model ClientLead {
   clientId   Int
   assignedTo User?  @relation(fields: [userId], references: [id])
   userId     Int?
-
+  status           ClientLeadStatus     @default(NEW)
+  telegramChannel TelegramChannel?
+  telegramLink      String?
+  lastTelegramMessages FetchedTelegramMessage[]
   selectedCategory  LeadCategory
   type              LeadType           @default(CONSTRUCTION_VILLA)
   description       String?
@@ -290,12 +303,10 @@ model ClientLead {
   versaModel  VersaModel[]
   contracts Contract[]
 
-
   projects         Project[]
   priceOffers      PriceOffers[]
   payments         Payment[]
   tasks            Task[]
-  status           ClientLeadStatus     @default(NEW)
   files            File[]
   notes            Note[]
   notifications    Notification[]
@@ -309,7 +320,6 @@ model ClientLead {
   reasonToConvert   String?
   paymentStatus     PaymentStatus @default(PENDING)
   paymentSessionId  String?
-  telegramLink      String?
   ourCost           String?
   contractorCost    String?
   country           String?
@@ -329,6 +339,17 @@ model ClientLead {
   @@index([clientId])
   @@index([userId])
 }
+
+model FetchedTelegramMessage {
+  id           Int        @id @default(autoincrement())
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
+
+  messageId    Int    
+    fetchedAt    DateTime   @default(now())
+  @@index([clientLeadId])
+}
+
 
 model MeetingReminder {
   id             Int                @id @default(autoincrement())
@@ -532,6 +553,7 @@ model User {
   isPrimary            Boolean              @default(false)  
   isSuperSales         Boolean              @default(false) 
   role                 UserRole             @default(STAFF)
+  telegramUsername  String? 
   subRoles             UserSubRole[]
   logs                 UserLog[]
   clientLeads          ClientLead[]
@@ -1328,6 +1350,16 @@ model LessonVideo {
   url       String @db.LongText
   videoType LessonVideoType @default(IFRAME)
   order     Int    @default(0)
+  pdfs      LessonVideoPdf[] 
+}
+
+model LessonVideoPdf {
+  id        Int         @id @default(autoincrement())
+  video     LessonVideo @relation(fields: [videoId], references: [id])
+  videoId   Int
+  title     String
+  url       String
+  uploadedAt DateTime   @default(now())
 }
 
 model LessonPDF {

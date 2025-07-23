@@ -1,30 +1,21 @@
-
-
-ALTER TABLE Contract
-ADD COLUMN isCompleted BOOLEAN NOT NULL DEFAULT FALSE;
-
-ALTER TABLE Contract
-ADD COLUMN isInProgress BOOLEAN NOT NULL DEFAULT FALSE;
-
-ALTER TABLE User MODIFY role ENUM(
-    'ADMIN',
-    'STAFF',
-    'THREE_D_DESIGNER',
-    'TWO_D_DESIGNER',
-    'TWO_D_EXECUTOR',
-    'ACCOUNTANT',
-    'SUPER_ADMIN',
-    'SUPER_SALES',
-    'CONTACT_INITIATOR'
-) DEFAULT 'STAFF';
-
-CREATE TABLE CompletedTest (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    courseProgressId INT NOT NULL,
-    testId INT NOT NULL,
-    completedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (courseProgressId) REFERENCES CourseProgress(id)
+CREATE TABLE FetchedTelegramMessage (
+id INT AUTO_INCREMENT PRIMARY KEY,
+clientLeadId INT NOT NULL,
+messageId VARCHAR(255) NOT NULL,
+fetchedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+INDEX idx_clientLeadId (clientLeadId),
+CONSTRAINT fk_clientLeadId FOREIGN KEY (clientLeadId) REFERENCES ClientLead(id)
 );
 
-CREATE INDEX idx_courseProgressId ON CompletedTest(courseProgressId);
-CREATE INDEX idx_testId ON CompletedTest(testId);
+ALTER TABLE FetchedTelegramMessage
+MODIFY COLUMN messageId INT;
+
+CREATE TABLE LessonVideoPdf (
+id INT AUTO_INCREMENT PRIMARY KEY,
+videoId INT NOT NULL,
+title VARCHAR(255) NOT NULL,
+url TEXT NOT NULL,
+uploadedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+CONSTRAINT fk_video FOREIGN KEY (videoId) REFERENCES LessonVideo(id)
+ON DELETE CASCADE
+);

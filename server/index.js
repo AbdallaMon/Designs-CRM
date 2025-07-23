@@ -11,11 +11,12 @@ import utilityRoutes from "./routes/utility.js";
 import staffRoutes from "./routes/staff.js";
 import adminRoutes from "./routes/admin.js";
 import accountantRoutes from "./routes/accountant.js";
+import { connectToTelegram } from "./services/telegram/connectToTelegram.js";
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
-const allowedOrigins = [
+export const allowedOrigins = [
   process.env.ORIGIN,
   process.env.OLDORIGIN,
   process.env.COURSESORIGIN,
@@ -34,8 +35,8 @@ app.use(
   })
 );
 
-const httpServer = createServer(app);
-initSocket(httpServer); // Initialize socket.io with the server
+export const httpServer = createServer(app);
+initSocket(httpServer);
 if (process.env.ISLOCAL) {
   app.use(
     "/uploads",
@@ -52,6 +53,9 @@ app.use("/admin", adminRoutes);
 app.use("/accountant", accountantRoutes);
 app.use("/client", clientsRoutes);
 
-httpServer.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+(async () => {
+  await connectToTelegram();
+  httpServer.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+})();

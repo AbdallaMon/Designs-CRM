@@ -25,7 +25,19 @@ export function verifyToken(token) {
     throw new Error("Invalid token");
   }
 }
-
+export const verifyTokenUsingReq = (req, res, next) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(403).json({ message: "تم رفض صلاحيتك" });
+  }
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+};
 export function handlePrismaError(res, error) {
   if (error.name === "PrismaClientValidationError") {
     return res.status(400).json({
@@ -154,9 +166,13 @@ export const verifyTokenAndHandleAuthorization = async (
 
     const isAdmin =
       user.role === "ADMIN" ||
-      user.role === "SUPER_ADMIN" ||user.role==="SUPER_SALES"||
+      user.role === "SUPER_ADMIN" ||
+      user.role === "SUPER_SALES" ||
       user.subRoles.some(
-        (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN"||user.role==="SUPER_SALES"
+        (r) =>
+          r.subRole === "ADMIN" ||
+          r.subRole === "SUPER_ADMIN" ||
+          user.role === "SUPER_SALES"
       );
 
     if (role === "ADMIN" && isAdmin) {
@@ -171,9 +187,9 @@ export const verifyTokenAndHandleAuthorization = async (
         decoded.role !== "TWO_D_DESIGNER" &&
         decoded.role !== "ACCOUNTANT" &&
         decoded.role !== "SUPER_ADMIN" &&
-        decoded.role !== "TWO_D_EXECUTOR"&&
-        decoded.role!=="SUPER_SALES"&&
-        decoded.role!=="CONTACT_INITIATOR"
+        decoded.role !== "TWO_D_EXECUTOR" &&
+        decoded.role !== "SUPER_SALES" &&
+        decoded.role !== "CONTACT_INITIATOR"
       ) {
         return res.status(403).json({ message: "Not authorized" });
       }
@@ -203,19 +219,6 @@ export const verifyTokenAndHandleAuthorization = async (
   }
 };
 
-export const verifyTokenUsingReq = (req, res, next) => {
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(403).json({ message: "تم رفض صلاحيتك" });
-  }
-  try {
-    const decoded = jwt.verify(token, SECRET_KEY);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    return res.status(401).json({ message: "Invalid token" });
-  }
-};
 const modelMap = {
   user: prisma.user,
   client: prisma.client,
@@ -241,9 +244,8 @@ export async function searchData(body) {
       ];
       where.role = "STAFF";
     } else if (model === "all-users") {
-      model="user"
+      model = "user";
     } else if (model === "client") {
-      
       where.OR = [
         { email: { contains: query } },
         { name: { contains: query } },
@@ -311,11 +313,14 @@ export async function searchData(body) {
         },
       };
     }
-    if(parsedFilters.status){
-      where.status=parsedFilters.status
+    if (parsedFilters.status) {
+      where.status = parsedFilters.status;
     }
-       if(parsedFilters.initialConsult||parsedFilters.initialConsult===false){
-      where.initialConsult=parsedFilters.initialConsult
+    if (
+      parsedFilters.initialConsult ||
+      parsedFilters.initialConsult === false
+    ) {
+      where.initialConsult = parsedFilters.initialConsult;
     }
   }
   if (where && where.role?.startsWith("3D")) {
@@ -338,17 +343,18 @@ export async function searchData(body) {
       where.OR = roleOrSubRole;
     }
   }
-  if(model==="all-users-search"){
-    model="user"
-       where.AND=where.AND[0];
+  if (model === "all-users-search") {
+    model = "user";
+    where.AND = where.AND[0];
   }
 
-console.log(where,"where")
+  console.log(where, "where");
   const selectFields = {
     user: {
       id: true,
       email: true,
-      name: true,role:true
+      name: true,
+      role: true,
     },
     client: {
       id: true,
@@ -800,6 +806,7 @@ async function sendNotification(
   });
 
   const io = getIo();
+  console.log(io, "io");
   io.to(userId.toString()).emit("notification", notification);
   if (withEmail) {
     const user = await prisma.user.findUnique({

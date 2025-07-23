@@ -51,7 +51,6 @@ import {
 import { NotesComponent } from "../../utility/Notes";
 import { getData } from "@/app/helpers/functions/getData";
 import DeleteModelButton from "../extra/DeleteModelButton";
-import { useAlertContext } from "@/app/providers/MuiAlert";
 
 const getDepartmentConfig = (dept) =>
   DEPARTMENTS.find((d) => d.value === dept) || { label: dept, color: "#666" };
@@ -333,6 +332,7 @@ export const UpdateCard = ({
                     <DepartmentManagementModal
                       onUpdate={onUpdate}
                       update={update}
+
                     />
                   )}
                 </Box>
@@ -575,7 +575,7 @@ function DepartmentManagementModal({ update, onUpdate }) {
         new Set(request.data.sharedSettings?.map((shared) => shared.type) || [])
       );
       if (onUpdate) {
-        onUpdate(request.data);
+    await   onUpdate(request.data);
       }
     }
   };

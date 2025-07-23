@@ -1,7 +1,4 @@
-import {
-  uploadAsHttp,
-  uploadFiles,
-} from "../services/main/utility.js";
+import { uploadAsHttp, uploadFiles } from "../services/main/utility.js";
 import express from "express";
 const router = express.Router();
 import prisma from "../prisma/prisma.js";
@@ -30,6 +27,7 @@ import {
 import calendarRoutes from "./calendar/client-calendar.js";
 import imageSessionRouter from "./image-session/client-image-session.js";
 import multer from "multer";
+import { getLeadsWithOutChannel } from "../services/telegram/telegram-functions.js";
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -610,6 +608,14 @@ router.get("/languages", async (req, res) => {
       notArchived: req.query.notArchived && req.query.notArchived === "true",
     });
     res.status(200).json({ data: languages });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+router.get("/telegram", async (req, res) => {
+  try {
+    const data = await getLeadsWithOutChannel();
+    res.status(200).json({ data });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

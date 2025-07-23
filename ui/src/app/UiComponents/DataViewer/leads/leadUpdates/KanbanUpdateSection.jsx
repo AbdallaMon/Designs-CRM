@@ -6,13 +6,21 @@ import { UpdateCard } from "./UpdateCard";
 export function KanbanUpdateSection({
   lead,
   currentUserDepartment = "STAFF",
-  setleads,
+  setleads,setRerenderColumns
 }) {
   const onToggleArchive = (update) => {
     window.location.reload();
   };
   function onUpdate(newUpdate) {
-    setleads((oldleads) =>
+if(setRerenderColumns){
+          setRerenderColumns((prev) => ({
+          ...prev,
+          [lead.status]: !prev[lead.status],
+        }));
+        return
+}
+    if(setleads){
+setleads((oldleads) =>
       oldleads.map((l) => {
         if (l.id === lead.id) {
           return {
@@ -28,6 +36,7 @@ export function KanbanUpdateSection({
         return l;
       })
     );
+  }
   }
   if (lead.status !== "FINALIZED") return null;
 

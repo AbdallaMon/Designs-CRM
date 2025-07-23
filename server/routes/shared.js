@@ -85,12 +85,7 @@ import {
   updateCallReminderStatus,
   updateMeetingReminderStatus,
 } from "../services/main/staffServices.js";
-import {
-  generateTelegramMessageLink,
-  getFilePath,
-  getMessages,
-  sendTelegramMessage,
-} from "../services/test-telegram.js";
+
 import {
   createAuthUrl,
   getLocations,
@@ -149,7 +144,8 @@ router.get("/client-leads/deals", async (req, res) => {
     if (
       token.role !== "ADMIN" &&
       token.role !== "SUPER_ADMIN" &&
-      token.role !== "ACCOUNTANT"&&token.role!=="SUPER_SALES"
+      token.role !== "ACCOUNTANT" &&
+      token.role !== "SUPER_SALES"
     ) {
       searchParams.selfId = token.id;
       searchParams.userId = token.id;
@@ -157,7 +153,10 @@ router.get("/client-leads/deals", async (req, res) => {
 
     const clientLeads = await getClientLeadsByDateRange({
       searchParams,
-      isAdmin: token.role === "ADMIN" || token.role === "SUPER_ADMIN"||token.role!=="SUPER_SALES",
+      isAdmin:
+        token.role === "ADMIN" ||
+        token.role === "SUPER_ADMIN" ||
+        token.role !== "SUPER_SALES",
       user: token,
     });
     res.status(200).json({ data: clientLeads });
@@ -176,7 +175,8 @@ router.get("/client-leads/columns", async (req, res) => {
     if (
       token.role !== "ADMIN" &&
       token.role !== "SUPER_ADMIN" &&
-      token.role !== "ACCOUNTANT"&&token.role!=="SUPER_SALES"
+      token.role !== "ACCOUNTANT" &&
+      token.role !== "SUPER_SALES"
     ) {
       searchParams.selfId = token.id;
       searchParams.userId = token.id;
@@ -184,7 +184,10 @@ router.get("/client-leads/columns", async (req, res) => {
 
     const clientLeads = await getClientLeadsColumnStatus({
       searchParams,
-      isAdmin: token.role === "ADMIN" || token.role === "SUPER_ADMIN"||token.role!=="SUPER_SALES",
+      isAdmin:
+        token.role === "ADMIN" ||
+        token.role === "SUPER_ADMIN" ||
+        token.role !== "SUPER_SALES",
       user: token,
     });
     res.status(200).json({ data: clientLeads });
@@ -239,7 +242,10 @@ router.put("/client-leads/contract/:id", async (req, res) => {
 router.put("/client-leads/contract/:id/current", async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedContract = await markAsCurrent({ contractId: Number(id), ...req.body });
+    const updatedContract = await markAsCurrent({
+      contractId: Number(id),
+      ...req.body,
+    });
 
     res.status(200).json({
       data: updatedContract,
@@ -253,7 +259,10 @@ router.put("/client-leads/contract/:id/current", async (req, res) => {
 router.put("/client-leads/contract/:id/completed", async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedContract = await markAsCompleted({ contractId: Number(id), ...req.body });
+    const updatedContract = await markAsCompleted({
+      contractId: Number(id),
+      ...req.body,
+    });
 
     res.status(200).json({
       data: updatedContract,
@@ -403,11 +412,14 @@ router.get("/client-leads/:id", async (req, res) => {
     ) {
       searchParams.userId = token.id;
     }
-    if (token.role !== "ADMIN"&&token.role!=="CONTACT_INITIATOR") {
+    if (token.role !== "ADMIN" && token.role !== "CONTACT_INITIATOR") {
       searchParams.checkConsult = true;
     }
     const clientLeadDetails =
-      token.role === "ADMIN" || token.role === "SUPER_ADMIN"||token.role==="SUPER_SALES"||token.role==="CONTACT_INITIATOR"
+      token.role === "ADMIN" ||
+      token.role === "SUPER_ADMIN" ||
+      token.role === "SUPER_SALES" ||
+      token.role === "CONTACT_INITIATOR"
         ? await getAdminClientLeadDetails(Number(id), searchParams)
         : await getClientLeadDetails(
             Number(id),
@@ -416,7 +428,7 @@ router.get("/client-leads/:id", async (req, res) => {
             token.id,
             token
           );
-          console.log(clientLeadDetails,"clientLeadDetails")
+    console.log(clientLeadDetails, "clientLeadDetails");
     res.status(200).json({ data: clientLeadDetails });
   } catch (error) {
     console.error("Error fetching client lead details:", error);
@@ -1334,51 +1346,7 @@ router.get("/roles", async (req, res) => {
     res.status(500).json({ message: "An error occurred while fetching roles" });
   }
 });
-router.get("/test", async (req, res) => {
-  try {
-    const test = await sendTelegramMessage();
-    res.status(200).json({ data: test });
-  } catch (error) {
-    console.error("Error fetching roles:", error);
-    res.status(500).json({ message: "An error occurred while fetching roles" });
-  }
-});
-router.get("/test/file", async (req, res) => {
-  try {
-    const test = await getFilePath(req.query.id);
 
-    res.status(200).json({ data: test });
-  } catch (error) {
-    res.status(500).json({ message: "An error occurred while fetching " });
-  }
-});
-router.get("/test/channel", async (req, res) => {
-  try {
-    const messages = await generateTelegramMessageLink();
-
-    res.status(200).json({ data: messages });
-  } catch (error) {
-    res.status(500).json({ message: "An error occurred while fetching " });
-  }
-});
-router.get("/test/chat", async (req, res) => {
-  try {
-    const messages = await getMessages();
-
-    res.status(200).json({ data: messages });
-  } catch (error) {
-    res.status(500).json({ message: "An error occurred while fetching " });
-  }
-});
-router.get("/url", async (req, res) => {
-  try {
-    const url = await createAuthUrl();
-
-    res.status(200).json({ data: url });
-  } catch (error) {
-    res.status(500).json({ message: "An error occurred while fetching " });
-  }
-});
 router.get("/oauth2callback", async (req, res) => {
   try {
     const token = await handleOAuthCallback(req.query.code);

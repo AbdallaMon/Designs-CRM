@@ -14,6 +14,11 @@ import {
 } from "../notification.js";
 import { updateLead } from "../main/utility.js";
 import { v4 as uuidv4 } from "uuid";
+import {
+  getChannelEntitiyByTeleRecordAndLeadId,
+  uploadAnAttachment,
+  uploadANote,
+} from "../telegram/telegram-functions.js";
 
 export async function createNote({ clientLeadId, userId, content }) {
   if (!content.trim()) {
@@ -37,6 +42,22 @@ export async function createNote({ clientLeadId, userId, content }) {
       },
     },
   });
+  if (clientLeadId) {
+    const teleChannel = await getChannelEntitiyByTeleRecordAndLeadId({
+      clientLeadId: Number(clientLeadId),
+    });
+    const note = await prisma.note.findUnique({
+      where: {
+        id: newNote.id,
+      },
+      include: {
+        user: true,
+      },
+    });
+    if (teleChannel) {
+      await uploadANote(note, teleChannel);
+    }
+  }
   await updateLead(clientLeadId);
   newNote.content = content;
   await newNoteNotification(clientLeadId, content, newNote.user.id);
@@ -332,13 +353,29 @@ export async function createFile({
     select: {
       id: true,
       createdAt: true,
+      clientLeadId: true,
+      description: true,
+      url: true,
+      name: true,
+      isUserFile: true,
       user: {
         select: {
           name: true,
+          id: true,
+          email: true,
+          telegramUsername: true,
         },
       },
     },
   });
+  if (file.clientLeadId) {
+    const teleChannel = await getChannelEntitiyByTeleRecordAndLeadId({
+      clientLeadId: Number(file.clientLeadId),
+    });
+    if (teleChannel) {
+      await uploadAnAttachment(file, teleChannel);
+    }
+  }
   if (userId !== null) {
     await newFileUploaded(clientLeadId, data, userId);
   }
