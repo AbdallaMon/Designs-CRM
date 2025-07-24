@@ -62,6 +62,8 @@ import {
   markAsCompleted,
   markAsCurrent,
   markClientLeadAsConverted,
+  remindUserToCompleteRegister,
+  remindUserToPay,
   submitUserLog,
   toggleArchieveAnUpdate,
   toggleArchieveASharedUpdate,
@@ -1607,4 +1609,31 @@ router.post("/client-lead/:clientLeadId/sales-stages", async (req, res) => {
     getAndThrowError(e, res);
   }
 });
+
+router.post(
+  "/client-leads/:clientLeadId/payment-reminder",
+  async (req, res) => {
+    try {
+      const newSession = await remindUserToPay({
+        clientLeadId: Number(req.params.clientLeadId),
+      });
+      res.status(200).json({ data: newSession, message: "Reminder sent" });
+    } catch (e) {
+      getAndThrowError(e, res);
+    }
+  }
+);
+router.post(
+  "/client-leads/:clientLeadId/complete-register",
+  async (req, res) => {
+    try {
+      const newSession = await remindUserToCompleteRegister({
+        clientLeadId: Number(req.params.clientLeadId),
+      });
+      res.status(200).json({ data: newSession, message: "Reminder sent" });
+    } catch (e) {
+      getAndThrowError(e, res);
+    }
+  }
+);
 export default router;

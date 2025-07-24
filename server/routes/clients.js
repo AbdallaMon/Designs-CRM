@@ -364,7 +364,7 @@ router.post("/pay", async (req, res) => {
                   : "٢٩ دولار 💵 – تُخصم بالكامل عند التعاقد",
             },
 
-            unit_amount: 2900, // 18000 // 2900
+            unit_amount: 2900, // 2900 // 2900
           },
           quantity: 1,
         },
@@ -437,6 +437,7 @@ router.get("/payment-status", async (req, res) => {
         });
         await leadPaymentSuccessed(clientLeadId);
       }
+
       await sendPaymentSuccessEmail(
         oldLead.client.email,
         oldLead.client.name,
