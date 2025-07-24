@@ -801,3 +801,245 @@ export async function endAttempt(attemptId) {
   }
   return { score, passed };
 }
+
+export async function getUserDashboardStats(userId) {
+  // Student's enrolled courses
+  const enrolledCourses = await prisma.courseProgress.findMany({
+    where: { userId },
+    include: {
+      course: {
+        select: {
+          id: true,
+          title: true,
+          description: true,
+          imageUrl: true,
+          isPublished: true,
+        },
+      },
+      completedLessons: true,
+      completedTests: true,
+    },
+  });
+
+  const totalEnrolledCourses = enrolledCourses.length;
+  const publishedEnrolledCourses = enrolledCourses.filter(
+    (progress) => progress.course.isPublished
+  ).length;
+
+  // Calculate completed courses (courses where all lessons are completed)
+  let completedCourses = 0;
+  const courseCompletionDetails = [];
+
+  for (const progress of enrolledCourses) {
+    // Get total lessons for this course
+    const totalLessons = await prisma.lesson.count({
+      where: { courseId: progress.courseId },
+    });
+
+    const completedLessonsCount = progress.completedLessons.length;
+    const completionPercentage =
+      totalLessons > 0
+        ? Math.round((completedLessonsCount / totalLessons) * 100)
+        : 0;
+
+    if (completionPercentage === 100) {
+      completedCourses++;
+    }
+
+    courseCompletionDetails.push({
+      ...progress.course,
+      completionPercentage,
+      completedLessons: completedLessonsCount,
+      totalLessons,
+      lastActivity: progress.updatedAt,
+    });
+  }
+
+  // Student's lesson access and progress
+  const lessonAccess = await prisma.lessonAccess.findMany({
+    where: { userId },
+    include: {
+      lesson: {
+        select: {
+          id: true,
+          title: true,
+          duration: true,
+          courseId: true,
+          course: {
+            select: {
+              title: true,
+            },
+          },
+          videos: { select: { id: true } },
+          pdfs: { select: { id: true } },
+          links: { select: { id: true } },
+        },
+      },
+    },
+  });
+
+  const totalAccessibleLessons = lessonAccess.length;
+  const totalVideosAccessible = lessonAccess.reduce(
+    (sum, access) => sum + access.lesson.videos.length,
+    0
+  );
+  const totalPDFsAccessible = lessonAccess.reduce(
+    (sum, access) => sum + access.lesson.pdfs.length,
+    0
+  );
+  const totalLinksAccessible = lessonAccess.reduce(
+    (sum, access) => sum + access.lesson.links.length,
+    0
+  );
+
+  // Calculate total study time (accessible lessons duration)
+
+  // Student's test attempts and performance
+  const testAttempts = await prisma.testAttempt.findMany({
+    where: { userId },
+    include: {
+      test: {
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          courseId: true,
+          lessonId: true,
+          course: {
+            select: {
+              title: true,
+            },
+          },
+          lesson: {
+            select: {
+              title: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  const totalAttempts = testAttempts.length;
+  const passedAttempts = testAttempts.filter(
+    (attempt) => attempt.passed
+  ).length;
+  const failedAttempts = totalAttempts - passedAttempts;
+  const averageScore = totalAttempts
+    ? Math.round(
+        testAttempts.reduce((sum, attempt) => sum + (attempt.score || 0), 0) /
+          totalAttempts
+      )
+    : 0;
+
+  // Recent test attempts (last 5)
+  const recentTestAttempts = testAttempts.slice(0, 5).map((attempt) => ({
+    id: attempt.id,
+    testTitle: attempt.test.title || "Untitled Test",
+    courseTitle:
+      attempt.test.course?.title || attempt.test.lesson?.title || "Unknown",
+    score: attempt.score,
+    passed: attempt.passed,
+    createdAt: attempt.createdAt,
+    testType: attempt.test.type,
+  }));
+
+  // Student's certificates
+  const certificates = await prisma.testAttempt.count({
+    where: {
+      userId,
+      passed: true,
+      test: {
+        certificateApprovedByAdmin: true,
+      },
+    },
+  });
+
+  // Submitted homeworks
+  const submittedHomeworks = await prisma.lessonHomework.count({
+    where: { userId },
+  });
+
+  // Current learning streak (simplified - days with any activity)
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const [attempts, recentHomeworks, recentLessons] = await Promise.all([
+    prisma.testAttempt.findMany({
+      where: { userId, createdAt: { gte: thirtyDaysAgo } },
+      select: { createdAt: true },
+    }),
+    prisma.lessonHomework.findMany({
+      where: { userId, createdAt: { gte: thirtyDaysAgo } },
+      select: { createdAt: true },
+    }),
+    prisma.completedLesson.findMany({
+      where: {
+        courseProgress: {
+          userId,
+        },
+        completedAt: { gte: thirtyDaysAgo },
+      },
+      select: { completedAt: true },
+    }),
+  ]);
+
+  // Combine and sort activities by date descending
+  const recentActivity = [
+    ...attempts.map((a) => a.createdAt),
+    ...recentHomeworks.map((a) => a.createdAt),
+    ...recentLessons.map((a) => a.completedAt),
+  ].sort((a, b) => b.getTime() - a.getTime());
+
+  let learningStreak = 0;
+  if (recentActivity.length > 0) {
+    const today = new Date();
+    const activityDates = recentActivity.map((date) => date.toDateString());
+    const uniqueDates = [...new Set(activityDates)].sort(
+      (a, b) => new Date(b) - new Date(a)
+    );
+
+    let currentDate = new Date(today);
+    for (const dateStr of uniqueDates) {
+      const activityDate = new Date(dateStr);
+      const diffTime = currentDate - activityDate;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays <= 1) {
+        learningStreak++;
+        currentDate = activityDate;
+      } else {
+        break;
+      }
+    }
+  }
+
+  return {
+    overview: {
+      totalEnrolledCourses,
+      publishedEnrolledCourses,
+      completedCourses,
+      totalCertificates: certificates,
+      learningStreak,
+    },
+    learningStats: {
+      totalAccessibleLessons,
+      totalVideosAccessible,
+      totalPDFsAccessible,
+      totalLinksAccessible,
+      submittedHomeworks,
+    },
+    testStats: {
+      totalAttempts,
+      passedAttempts,
+      failedAttempts,
+      averageScore,
+      recentTestAttempts,
+    },
+    courseProgress: courseCompletionDetails.sort(
+      (a, b) => b.completionPercentage - a.completionPercentage
+    ),
+  };
+}

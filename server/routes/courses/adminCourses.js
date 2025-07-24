@@ -34,6 +34,7 @@ import {
   getAllowedRoles,
   getAttemptsSummary,
   getCourses,
+  getDashBoardDataForAdmin,
   getLessonById,
   getLessonsByCourseId,
   getLessonVideoPdfs,
@@ -69,6 +70,14 @@ router.post("", async (req, res) => {
   try {
     const data = await createNewCourse({ data: req.body });
     res.status(200).json({ data, message: "New course created" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.get("/dashboard", async (req, res) => {
+  try {
+    const result = await getDashBoardDataForAdmin({});
+    res.status(200).json({ data: result });
   } catch (e) {
     getAndThrowError(e, res);
   }

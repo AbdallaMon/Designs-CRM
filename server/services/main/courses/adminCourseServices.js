@@ -801,3 +801,138 @@ export async function toggleMustUploadHomeWork({
     },
   });
 }
+
+export async function getDashBoardDataForAdmin() {
+  const testStats = await prisma.testAttempt.aggregate({
+    _count: true,
+    _avg: { score: true },
+  });
+
+  const totalAttempts = testStats._count;
+  const averageScore = testStats._avg.score ?? 0;
+
+  const passedAttempts = await prisma.testAttempt.count({
+    where: { passed: true },
+  });
+  const failedAttempts = totalAttempts - passedAttempts;
+
+  const totalCourses = await prisma.course.count();
+  const publishedCourses = await prisma.course.count({
+    where: { isPublished: true },
+  });
+
+  const totalLessons = await prisma.lesson.count();
+  const totalVideos = await prisma.lessonVideo.count();
+  const totalPDFs = await prisma.lessonPDF.count();
+  const totalTestAttempts = await prisma.testAttempt.count();
+  const passedTests = await prisma.testAttempt.count({
+    where: { passed: true },
+  });
+
+  const courseCompletions = await prisma.courseProgress.count({
+    where: {
+      AND: [
+        {
+          completedLessons: {
+            some: {}, // means has completed lessons
+          },
+        },
+        {},
+      ],
+    },
+  });
+
+  const progressData = await prisma.courseProgress.findMany({
+    include: {
+      course: {
+        include: {
+          lessons: true,
+          tests: true,
+        },
+      },
+      completedLessons: true,
+    },
+  });
+
+  const progressList = progressData.map((cp) => {
+    const totalItems = cp.course.lessons.length;
+    const completedItems = cp.completedLessons.length;
+    return totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+  });
+  console.log(progressData, "progressData");
+  const avgCourseProgress =
+    progressList.reduce((sum, p) => sum + p, 0) / (progressList.length || 1);
+
+  const totalHomeworkSubmissions = await prisma.lessonHomework.count();
+  const topCoursesRaw = await prisma.course.findMany({
+    take: 4,
+    orderBy: {
+      progress: {
+        _count: "desc",
+      },
+    },
+    include: {
+      progress: {
+        include: {
+          completedLessons: true,
+        },
+      },
+      tests: {
+        include: {
+          attempts: true,
+        },
+      },
+      // 🔧 Add this line:
+      lessons: true,
+    },
+  });
+
+  const topCourses = topCoursesRaw.map((course) => {
+    const enrollments = course.progress.length;
+
+    const totalItems = course.lessons?.length || 0;
+
+    const totalCompletionRates = course.progress.map((cp) => {
+      const completed = cp.completedLessons.length;
+      return (completed / totalItems) * 100;
+    });
+
+    const completionRate =
+      totalCompletionRates.reduce((a, b) => a + b, 0) /
+      (totalCompletionRates.length || 1);
+
+    const allScores = course.tests.flatMap((test) =>
+      test.attempts.map((a) => a.score ?? 0)
+    );
+    const averageScore =
+      allScores.reduce((a, b) => a + b, 0) / (allScores.length || 1);
+
+    return {
+      id: course.id,
+      title: course.title,
+      enrollments,
+      completionRate: Math.round(completionRate),
+      averageScore: Math.round(averageScore),
+    };
+  });
+  const result = {
+    testStats: {
+      totalAttempts,
+      passedAttempts,
+      failedAttempts,
+      averageScore,
+    },
+    totalCourses,
+    publishedCourses,
+    totalLessons,
+    totalVideos,
+    totalPDFs,
+    totalTestAttempts,
+    passedTests,
+    courseCompletions,
+    avgCourseProgress,
+    totalHomeworkSubmissions,
+    topCourses,
+  };
+  return result;
+}

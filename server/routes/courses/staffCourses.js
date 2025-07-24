@@ -10,6 +10,7 @@ import {
   getUserAttampt,
   getUserAttampts,
   getUserCourseProgress,
+  getUserDashboardStats,
   getUserTest,
   getUserTestQuestion,
   markLessonAsCompleted,
@@ -31,6 +32,15 @@ router.get("", async (req, res) => {
       skip: Number(skip),
       role: req.query.role,
     });
+    res.status(200).json({ data: result });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.get("/dashboard", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req);
+    const result = await getUserDashboardStats(user.id);
     res.status(200).json({ data: result });
   } catch (e) {
     getAndThrowError(e, res);
@@ -64,10 +74,11 @@ router.get("/:courseId/progress", async (req, res) => {
 });
 router.get("/:courseId/lessons/:lessonId", async (req, res) => {
   try {
-    const user=await getCurrentUser(req)
+    const user = await getCurrentUser(req);
     const result = await getLesson({
       lessonId: req.params.lessonId,
-      role: req.query.role,userId:user.id
+      role: req.query.role,
+      userId: user.id,
     });
     res.status(200).json({ data: result });
   } catch (e) {
@@ -112,8 +123,8 @@ router.post("/:courseId/lessons/:lessonId/home-work", async (req, res) => {
     const result = await createAHomeWork({
       lessonId: req.params.lessonId,
       courseId: req.params.courseId,
-      userId: user.id,data:req.body,
-      
+      userId: user.id,
+      data: req.body,
     });
     res.status(200).json({ data: result, message: "Home work saved" });
   } catch (e) {
@@ -123,9 +134,10 @@ router.post("/:courseId/lessons/:lessonId/home-work", async (req, res) => {
 // tests
 router.get("/tests/:testId", async (req, res) => {
   try {
-        const user = await getCurrentUser(req);
+    const user = await getCurrentUser(req);
     const result = await getUserTest({
-      testId: req.params.testId,userId:user.role!=="ADMIN"&&user.role!=="SUPER_ADMIN"&&user.id
+      testId: req.params.testId,
+      userId: user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && user.id,
     });
     res.status(200).json({ data: result, message: "Done" });
   } catch (e) {
@@ -199,18 +211,13 @@ router.post(
     }
   }
 );
-router.put(
-  "/tests/:testId/attampts/:attemptId/",
-  async (req, res) => {
-    try {
-      const user = await getCurrentUser(req);
-      const result = await endAttempt(
-    Number(req.params.attemptId)
-      );
-      res.status(200).json({ data: result, message: "Saved" });
-    } catch (e) {
-      getAndThrowError(e, res);
-    }
+router.put("/tests/:testId/attampts/:attemptId/", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req);
+    const result = await endAttempt(Number(req.params.attemptId));
+    res.status(200).json({ data: result, message: "Saved" });
+  } catch (e) {
+    getAndThrowError(e, res);
   }
-);
+});
 export default router;
