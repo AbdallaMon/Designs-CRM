@@ -222,7 +222,7 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
                 }}
               />
             </Tooltip>
-            {isAdmin && (
+            {/* {isAdmin && (
               <Tooltip title="Edit Telegram link">
                 <IconButton
                   size="small"
@@ -233,7 +233,7 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
                   <MdEdit fontSize="small" />
                 </IconButton>
               </Tooltip>
-            )}
+            )} */}
           </Box>
         </>
       ) : (
