@@ -323,7 +323,7 @@ export function SearchForALead() {
         pb: 3,
         background: theme.palette.background.default,
         position: "relative",
-        mb: 2,
+        mb: 10,
         borderRadius: 3, // Rounded corners
         boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)", // Subtle shadow
       }}
@@ -347,6 +347,7 @@ export function SearchForALead() {
 }
 
 function LeadCard({ lead }) {
+  const { user } = useAuth();
   return (
     <Box
       sx={{
