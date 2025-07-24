@@ -115,7 +115,7 @@ export default function NewLeadsPage({ searchParams, staff, withSearch }) {
         </>
       )}
       {user.role !== "CONTACT_INITIATOR" && <OnHoldLeads />}
-      {user.role === "CONTACT_INITIATOR" && <SearchForALead />}
+      <SearchForALead />
     </Container>
   );
 }
@@ -298,8 +298,9 @@ export function SearchForALead() {
   const [lead, setLead] = useState();
   const [loading, setLoading] = useState();
   const [filters, setFilters] = useState();
+  const { user } = useAuth();
+  const isAdmin = checkIfAdmin(user);
   const theme = useTheme();
-  console.log(filters, "filters");
   async function getALead() {
     await getDataAndSet({
       url: `shared/client-leads/${filters.id}`,
@@ -312,7 +313,7 @@ export function SearchForALead() {
       getALead();
     }
   }, [filters, filters?.id]);
-
+  if (!isAdmin) return;
   return (
     <Box
       sx={{
@@ -361,7 +362,6 @@ function LeadCard({ lead }) {
         },
       }}
     >
-      {/* Header Section */}
       <Box
         sx={{ mb: 3, borderBottom: "1px solid", borderColor: "divider", pb: 2 }}
       >
@@ -376,19 +376,37 @@ function LeadCard({ lead }) {
           <Typography variant="h5" fontWeight={600} color="text.primary">
             {lead.client.name}
           </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{
-              fontFamily: "monospace",
-              backgroundColor: "grey.100",
-              px: 1,
-              py: 0.5,
-              borderRadius: 1,
-            }}
-          >
-            #{lead.id.toString().padStart(7, "0")}
-          </Typography>
+          {user.role === "ADMIN" || user.role === "SUPER_ADMIN" ? (
+            <Button
+              variant="text"
+              color="text.secondary"
+              component="a"
+              href={`/dashboard/deals/${lead.id}`}
+              sx={{
+                fontFamily: "monospace",
+                backgroundColor: "grey.100",
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+              }}
+            >
+              #{lead.id.toString().padStart(7, "0")}
+            </Button>
+          ) : (
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                fontFamily: "monospace",
+                backgroundColor: "grey.100",
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+              }}
+            >
+              #{lead.id.toString().padStart(7, "0")}
+            </Typography>
+          )}
         </Box>
         <Chip
           label={`Payment: ${lead.paymentStatus}`}
