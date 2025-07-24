@@ -8,8 +8,6 @@ import {
   DialogTitle,
   Box,
   CircularProgress,
-  Alert,
-  Snackbar,
 } from "@mui/material";
 import {
   MdPayment as Payment,
@@ -22,176 +20,96 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 
 const ReminderButtons = ({ lead, clientLeadId }) => {
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [registerDialogOpen, setRegisterDialogOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(null);
   const { user } = useAuth();
-  const isAdmin = checkIfAdmin(user);
   const { loading, setLoading } = useToastContext();
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success",
-  });
-  if (!isAdmin) return;
 
-  const handlePaymentReminder = async () => {
+  if (!checkIfAdmin(user)) return null;
+
+  const handleReminder = async (type) => {
+    const endpoint =
+      type === "payment"
+        ? `shared/client-leads/${clientLeadId}/payment-reminder`
+        : `shared/client-leads/${clientLeadId}/complete-register`;
+
     const req = await handleRequestSubmit(
       { clientLeadId },
       setLoading,
-      `shared/client-leads/${clientLeadId}/payment-reminder`,
+      endpoint,
       false,
       "Sending"
     );
+
     if (req.status === 200) {
-      setPaymentDialogOpen(false);
+      setDialogOpen(null);
     }
   };
 
-  const handleRegisterReminder = async () => {
-    const req = await handleRequestSubmit(
-      { clientLeadId },
-      setLoading,
-      `shared/client-leads/${clientLeadId}/complete-register`,
-      false,
-      "Sending"
-    );
-    if (req.status === 200) {
-      setRegisterDialogOpen(false);
-    }
-  };
-
-  const handleCloseSnackbar = () => {
-    setSnackbar({ ...snackbar, open: false });
-  };
+  const showPaymentBtn = lead.paymentStatus !== "FULLY_PAID";
+  const showRegisterBtn =
+    lead.paymentStatus === "FULLY_PAID" &&
+    lead.description === "Didn't complete register yet";
 
   return (
-    <Box sx={{ display: "flex", gap: 2, p: 0 }}>
-      {lead.paymentStatus !== "FULLY_PAID" && (
+    <Box sx={{ display: "flex", gap: 1 }}>
+      {showPaymentBtn && (
         <Button
           variant="contained"
-          color="primary"
+          size="small"
           startIcon={<Payment />}
-          onClick={() => setPaymentDialogOpen(true)}
+          onClick={() => setDialogOpen("payment")}
           disabled={loading}
-          sx={{
-            minWidth: 180,
-            height: 48,
-            borderRadius: 2,
-            textTransform: "none",
-            fontSize: "14px",
-            fontWeight: 600,
-          }}
+          sx={{ textTransform: "none" }}
         >
-          Send Payment Reminder
+          Payment Reminder
         </Button>
       )}
-      {lead.paymentStatus === "FULLY_PAID" &&
-        lead.description === "Didn't complete register yet" && (
-          <Button
-            variant="contained"
-            color="secondary"
-            startIcon={<PersonAdd />}
-            onClick={() => setRegisterDialogOpen(true)}
-            disabled={loading}
-            sx={{
-              minWidth: 180,
-              height: 48,
-              borderRadius: 2,
-              textTransform: "none",
-              fontSize: "14px",
-              fontWeight: 600,
-            }}
-          >
-            Send Registration Reminder
-          </Button>
-        )}
-      <Dialog
-        open={paymentDialogOpen}
-        onClose={() => setPaymentDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Payment color="primary" />
-          Confirm Payment Reminder
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to send a payment reminder to this client?
-            This will notify them about their pending payment.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ p: 2, gap: 1 }}>
-          <Button
-            onClick={() => setPaymentDialogOpen(false)}
-            variant="outlined"
-            disabled={loading}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handlePaymentReminder}
-            variant="contained"
-            color="primary"
-            disabled={loading}
-            startIcon={loading ? <CircularProgress size={16} /> : <Send />}
-          >
-            {loading ? "Sending..." : "Send Reminder"}
-          </Button>
-        </DialogActions>
-      </Dialog>
 
-      <Dialog
-        open={registerDialogOpen}
-        onClose={() => setRegisterDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <PersonAdd color="secondary" />
-          Confirm Registration Reminder
-        </DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to send a registration completion reminder to
-            this client? This will notify them to complete their registration
-            process.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ p: 2, gap: 1 }}>
-          <Button
-            onClick={() => setRegisterDialogOpen(false)}
-            variant="outlined"
-            disabled={loading}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleRegisterReminder}
-            variant="contained"
-            color="secondary"
-            disabled={loading}
-            startIcon={loading ? <CircularProgress size={16} /> : <Send />}
-          >
-            {loading ? "Sending..." : "Send Reminder"}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={4000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <Alert
-          onClose={handleCloseSnackbar}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
+      {showRegisterBtn && (
+        <Button
+          variant="contained"
+          color="secondary"
+          size="small"
+          startIcon={<PersonAdd />}
+          onClick={() => setDialogOpen("register")}
+          disabled={loading}
+          sx={{ textTransform: "none" }}
         >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
+          Registration Reminder
+        </Button>
+      )}
+
+      <Dialog
+        open={!!dialogOpen}
+        onClose={() => setDialogOpen(null)}
+        maxWidth="xs"
+      >
+        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {dialogOpen === "payment" ? <Payment /> : <PersonAdd />}
+          Confirm {dialogOpen === "payment" ? "Payment" : "Registration"}{" "}
+          Reminder
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Send a{" "}
+            {dialogOpen === "payment" ? "payment" : "registration completion"}{" "}
+            reminder to this client?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(null)} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => handleReminder(dialogOpen)}
+            variant="contained"
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={16} /> : <Send />}
+          >
+            {loading ? "Sending..." : "Send"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

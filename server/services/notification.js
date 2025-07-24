@@ -866,7 +866,7 @@ export async function sendPaymentReminderEmail(
   // Content based on language
   const content = {
     en: {
-      subject: "One Step Away from Consulting with Eng. Ahmed",
+      subject: "One Step Away from Meeting the Design Consultant",
       heading: "Almost There!",
       greeting: `Hello ${clientName || "there"}`,
       message: `Thank you for submitting your information. <span class="highlight">You're just one step away</span> from consulting with Eng. Ahmed about your design project.`,
@@ -889,7 +889,7 @@ export async function sendPaymentReminderEmail(
       contactUs: "Contact us on WhatsApp",
     },
     ar: {
-      subject: "خطوة واحدة تفصلك عن استشارة المهندس أحمد",
+      subject: "خطوة واحدة تفصلك عن الاجتماع مع استشاري التصميم",
       heading: "أنت على وشك الوصول!",
       greeting: `مرحباً ${clientName || "بك"}`,
       message: `شكراً لتقديم معلوماتك. <span class="highlight">أنت على بعد خطوة واحدة فقط</span> من استشارة المهندس أحمد بشأن مشروع التصميم الخاص بك.`,
@@ -1075,10 +1075,16 @@ export async function sendPaymentReminderEmail(
   return `Payment reminder email sent successfully in ${lng} language`;
 }
 
-export async function attemptFailedByUser({testId, userId}) {
+export async function attemptFailedByUser({ testId, userId }) {
   const notificationHtml = `<div>
        <strong>Test Attempt</strong> A user has failed to finish his last test attempt <a href="${
-         courseDashboard + '/tests/'+testId+'/attempts?userId='+userId+'&testId='+testId
+         courseDashboard +
+         "/tests/" +
+         testId +
+         "/attempts?userId=" +
+         userId +
+         "&testId=" +
+         testId
        }" >#${userId}</a> 
        <q>Action is require u can give him a new attempt from the link<q/>
     </div>
