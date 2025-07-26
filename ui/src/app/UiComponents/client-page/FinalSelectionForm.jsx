@@ -33,6 +33,8 @@ import { MobileDateTimePicker } from "@mui/x-date-pickers";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import "dayjs/locale/en-gb";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
+import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 export function FinalSelectionForm({
   category,
   item,
@@ -73,6 +75,7 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
   const [clientLead, setClientLead] = useState(null);
   const { setAlertError } = useAlertContext();
   const { setLoading } = useToastContext();
+  const { setProgress, setOverlay } = useUploadContext();
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -147,19 +150,17 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
       return;
     }
     if (formData.file) {
-      const form = new FormData();
-      form.append("file", formData.file);
-      const fileUpload = await handleRequestSubmit(
-        form,
-        setLoading,
-        "client/upload",
-        true,
-        translate("Uploading file")
+      const fileUpload = await uploadInChunks(
+        formData.file,
+        setProgress,
+        setOverlay,
+        true
       );
+
       if (fileUpload.status === 200) {
         const data = {
           ...formData,
-          url: fileUpload.fileUrls.file[0],
+          url: fileUpload.url,
           category,
           item,
           lng,
@@ -488,25 +489,6 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
                     value={formData.country}
                     fullWidth={true}
                   />
-                  {/* <TextField
-                    fullWidth
-                    label={translate("Country")}
-                    name="country"
-                    type="text"
-                    variant="outlined"
-                    value={formData.country}
-                    onChange={handleChange}
-                    InputProps={{
-                      sx: {
-                        borderRadius: 2,
-                        "&:hover": {
-                          "& fieldset": {
-                            borderColor: "primary.main",
-                          },
-                        },
-                      },
-                    }}
-                  /> */}
                 </>
               )}
               <SimpleFileInput

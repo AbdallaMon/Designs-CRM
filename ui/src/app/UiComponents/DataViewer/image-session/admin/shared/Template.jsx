@@ -48,6 +48,8 @@ import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useDebounce } from "./CreateTitleOrDesc";
+import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
+import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 
 // Enhanced Color Picker with color wheel
 const ColorPicker = ({ label, value, onChange, disabled = false }) => {
@@ -717,6 +719,8 @@ const StyleEditor = ({
 // Main template editor component
 const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
   const [file, setFile] = useState();
+  const { setProgress, setOverlay } = useUploadContext();
+
   const customTemplate = {
     type,
     order: 1,
@@ -812,22 +816,11 @@ const TemplateEditor = ({ onSave, initialTemplate, type, isEdit }) => {
     }
   }, [file]);
   const handleImageUpload = async () => {
-    const formData = new FormData();
-    formData.append("file", file.file);
-
-    const uploadResponse = await handleRequestSubmit(
-      formData,
-      setLoading,
-      "utility/upload",
-      true,
-      "Uploading file"
-    );
-    if (uploadResponse.status !== 200) {
-      setAlertError("Error uploading file");
-      return;
+    const fileUpload = await uploadInChunks(file.file, setProgress, setOverlay);
+    if (fileUpload.status === 200) {
+      setFile(null);
+      handleTemplateChange("backgroundImage", fileUpload.url);
     }
-    setFile(null);
-    handleTemplateChange("backgroundImage", uploadResponse.fileUrls.file[0]);
   };
 
   const handleSave = async () => {

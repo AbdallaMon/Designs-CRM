@@ -15,6 +15,8 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { simpleModalStyle } from "@/app/helpers/constants";
 import SimpleFileInput from "../../formComponents/SimpleFileInput";
 import { useAlertContext } from "@/app/providers/MuiAlert";
+import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
+import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 
 export function Notes({ idKey, id, slug = "accountant" }) {
   const [openModal, setOpenModal] = useState(false);
@@ -103,6 +105,8 @@ export function AddNotes({
   const [content, setContent] = useState("");
   const [file, setFile] = useState();
   const { setAlertError } = useAlertContext();
+  const { setProgress, setOverlay } = useUploadContext();
+
   async function addNote() {
     if (!content) {
       setAlertError("You must enter note or title");
@@ -114,21 +118,14 @@ export function AddNotes({
     }
     const data = { idKey, id, content };
     if (file) {
-      const formData = new FormData();
-      formData.append("file", file.file);
-
-      const uploadResponse = await handleRequestSubmit(
-        formData,
-        setLoading,
-        "utility/upload",
-        true,
-        "Uploading file"
+      const uploadResponse = await uploadInChunks(
+        file,
+        setProgress,
+        setOverlay
       );
-      if (uploadResponse.status !== 200) {
-        setAlertError("Error uploading file");
-        return;
+      if (uploadResponse.status === 200) {
+        data.attachment = fileUpload.url;
       }
-      data.attachment = uploadResponse.fileUrls.file[0];
     }
     const request = await handleRequestSubmit(
       data,

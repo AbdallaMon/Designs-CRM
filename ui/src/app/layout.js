@@ -6,6 +6,9 @@ import DotsLoader from "@/app/UiComponents/feedback/loaders/DotsLoading";
 import MuiAlertProvider from "@/app/providers/MuiAlert.jsx";
 import colors from "@/app/helpers/colors.js";
 import { Noto_Kufi_Arabic } from "next/font/google";
+import UploadingProvider, {
+  UploadingContext,
+} from "./providers/UploadingProgressProvider";
 
 const noto = Noto_Kufi_Arabic({
   weight: ["400", "500", "700"],
@@ -86,12 +89,14 @@ export default function RootLayout({ children }) {
       >
         <MuiAlertProvider>
           <MUIContextProvider>
-            <ToastProvider>
-              <AuthProvider>
-                <DotsLoader />
-                {children}
-              </AuthProvider>
-            </ToastProvider>
+            <UploadingProvider>
+              <ToastProvider>
+                <AuthProvider>
+                  <DotsLoader />
+                  {children}
+                </AuthProvider>
+              </ToastProvider>
+            </UploadingProvider>
           </MUIContextProvider>
         </MuiAlertProvider>
       </body>

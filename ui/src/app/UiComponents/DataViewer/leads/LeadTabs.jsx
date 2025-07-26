@@ -67,6 +67,8 @@ import VersaObjectionSystem from "../meeting/VERSA/VERSADialog";
 import Link from "next/link";
 import ContractManagement from "./extra/ContractManagement";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
+import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 export function CallReminders({ lead, setleads, admin, notUser }) {
   const [callReminders, setCallReminders] = useState(lead?.callReminders);
   const theme = useTheme();
@@ -107,7 +109,8 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
           if (
             user.role !== "ADMIN" &&
             user.role !== "SUPER_ADMIN" &&
-            user.role !== "STAFF" &&user.role!=="SUPER_SALES"&&
+            user.role !== "STAFF" &&
+            user.role !== "SUPER_SALES" &&
             call.userId !== user.id
           ) {
             return;
@@ -357,7 +360,8 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
           if (
             user.role !== "ADMIN" &&
             user.role !== "SUPER_ADMIN" &&
-            user.role !== "STAFF" &&user.role!=="SUPER_SALES"&&
+            user.role !== "STAFF" &&
+            user.role !== "SUPER_SALES" &&
             call.userId !== user.id
           ) {
             return;
@@ -1125,7 +1129,8 @@ function PriceOfferSwitch({ priceOffer, setPriceOffers }) {
           disabled={
             user.role !== "STAFF" &&
             user.role !== "ADMIN" &&
-            user.role !== "SUPER_ADMIN"&&user.role!=="SUPER_SALES"
+            user.role !== "SUPER_ADMIN" &&
+            user.role !== "SUPER_SALES"
           }
         />
       </Tooltip>
@@ -1239,6 +1244,7 @@ export function ExtraServicesList({ admin, lead, notUser, setPayments }) {
 export function OurCostAndContractorCost({ lead, setLead }) {
   const { setLoading } = useToastContext();
   const { setAlertError } = useAlertContext();
+  const { setProgress, setOverlay } = useUploadContext();
 
   const handleUpload = async (file, type) => {
     if (!file) {
@@ -1246,20 +1252,11 @@ export function OurCostAndContractorCost({ lead, setLead }) {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
-
     setLoading(true);
-    const uploadResponse = await handleRequestSubmit(
-      formData,
-      setLoading,
-      "utility/upload",
-      true,
-      "Uploading file"
-    );
+    const fileUpload = await uploadInChunks(file, setProgress, setOverlay);
 
-    if (uploadResponse.status === 200) {
-      const fileUrl = uploadResponse.fileUrls.file[0];
+    if (fileUpload.status === 200) {
+      const fileUrl = fileUpload.url;
 
       const updateData = {
         [type]: fileUrl,
@@ -1352,7 +1349,7 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
   const { user } = useAuth();
   const [personality, setPersonality] = useState(lead.personality);
   const { setLoading } = useToastContext();
-const isAdmin=checkIfAdmin(user)
+  const isAdmin = checkIfAdmin(user);
 
   const handleChange = async (event) => {
     setPersonality(event.target.value);
@@ -1384,10 +1381,7 @@ const isAdmin=checkIfAdmin(user)
       }
     }
   }
-  if (
-!isAdmin&&
-    user.role !== "STAFF"
-  ) {
+  if (!isAdmin && user.role !== "STAFF") {
     return (
       <Alert severity="error">You are not allowed to access this tab </Alert>
     );

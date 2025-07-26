@@ -8,9 +8,13 @@ import { OpenItemDialog } from "../shared/OpenItemDialog";
 import { AutoCompleteSelector } from "../shared/session-item/AutoCompleteSelector";
 import { MultiAutoCompleteSelector } from "../shared/session-item/MultiAutoCompleteSelector";
 import ImageLoader from "../shared/ImageLoader ";
+import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
+import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 
 export function EditDesignImage({ onUpdate, initialData }) {
   const { setLoading } = useToastContext();
+  const { setProgress, setOverlay } = useUploadContext();
+
   async function checkValidation(data) {
     if (!data) {
       return {
@@ -25,21 +29,15 @@ export function EditDesignImage({ onUpdate, initialData }) {
       };
     }
     if (data.file) {
-      const formData = new FormData();
-      formData.append("file", data.file);
-
-      const uploadResponse = await handleRequestSubmit(
-        formData,
-        setLoading,
-        "utility/upload",
-        true,
-        "Uploading file"
+      const fileUpload = await uploadInChunks(
+        data.file,
+        setProgress,
+        setOverlay
       );
-      if (uploadResponse.status !== 200) {
-        setAlertError("Error uploading file");
-        return;
+      if (fileUpload.status === 200) {
+        data.imageUrl = fileUpload.url;
       }
-      data.imageUrl = uploadResponse.fileUrls.file[0];
+
       delete data.file;
     }
 

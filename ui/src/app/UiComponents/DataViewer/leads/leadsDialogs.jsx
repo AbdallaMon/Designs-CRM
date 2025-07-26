@@ -40,6 +40,7 @@ import utc from "dayjs/plugin/utc";
 import { meetingTypes } from "@/app/helpers/constants";
 import { getData } from "@/app/helpers/functions/getData";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
+import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 
 dayjs.extend(utc);
 export const CallResultDialog = ({
@@ -1096,6 +1097,8 @@ export const AddPriceOffers = ({
   const { user } = useAuth();
   const { setLoading } = useToastContext();
   const { setAlertError } = useAlertContext();
+  const { setProgress, setOverlay } = useUploadContext();
+
   function handleOpen() {
     setOpen(true);
   }
@@ -1109,17 +1112,22 @@ export const AddPriceOffers = ({
       return;
     }
     if (priceOffer.file) {
-      const formData = new FormData();
-      formData.append("file", priceOffer.file);
-      const fileUpload = await handleRequestSubmit(
-        formData,
-        setLoading,
-        "utility/upload",
-        true,
-        "Uploading file"
+      // const formData = new FormData();
+      // formData.append("file", priceOffer.file);
+      // const fileUpload = await handleRequestSubmit(
+      //   formData,
+      //   setLoading,
+      //   "utility/upload",
+      //   true,
+      //   "Uploading file"
+      // );
+      const fileUpload = await uploadInChunks(
+        priceOffer.file,
+        setProgress,
+        setOverlay
       );
       if (fileUpload.status === 200) {
-        priceOffer.url = fileUpload.fileUrls.file[0];
+        priceOffer.url = fileUpload.url;
       } else {
         return;
       }
@@ -1210,6 +1218,7 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
   const { user } = useAuth();
   const { setLoading } = useToastContext();
   const { setAlertError } = useAlertContext();
+  const { setProgress, setOverlay } = useUploadContext();
   function handleOpen() {
     setOpen(true);
   }
@@ -1255,8 +1264,11 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
       //   true,
       //   "Uploading file"
       // );
-      const fileUpload = await uploadInChunks(fileItem.file);
-      console.log(fileUpload, "fileUpload");
+      const fileUpload = await uploadInChunks(
+        fileItem.file,
+        setProgress,
+        setOverlay
+      );
       if (fileUpload.status === 200) {
         const data = {
           ...fileItem,

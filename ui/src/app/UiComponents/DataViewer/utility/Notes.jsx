@@ -27,6 +27,8 @@ import {
   MdAdd,
 } from "react-icons/md";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
+import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 
 export function NotesComponent({
   idKey,
@@ -48,6 +50,8 @@ export function NotesComponent({
   const { setLoading: setGlobalLoading } = useToastContext();
   const { setAlertError } = useAlertContext();
   const { user } = useAuth();
+  const { setProgress, setOverlay } = useUploadContext();
+
   useEffect(() => {
     if (isOpen) {
       setOpenModal(isOpen);
@@ -60,7 +64,6 @@ export function NotesComponent({
       url: `${slug}/notes?idKey=${idKey}&id=${id}&`,
       setLoading,
     });
-    console.log(data, "data");
     setNotes(data.data);
     setLoading(false);
   }
@@ -85,23 +88,16 @@ export function NotesComponent({
     const data = { idKey, id, content };
 
     if (file) {
-      const formData = new FormData();
-      formData.append("file", file.file);
-
-      const uploadResponse = await handleRequestSubmit(
-        formData,
-        setGlobalLoading,
-        slug === "client" ? "client/upload" : "utility/upload",
-        true,
-        "Uploading file"
+      const fileUpload = await uploadInChunks(
+        file.file,
+        setProgress,
+        setOverlay,
+        slug === "client"
       );
 
-      if (uploadResponse.status !== 200) {
-        setAlertError("Error uploading file");
-        return;
+      if (fileUpload.status === 200) {
+        data.attachment = fileUpload.url;
       }
-
-      data.attachment = uploadResponse.fileUrls.file[0];
     }
 
     const request = await handleRequestSubmit(

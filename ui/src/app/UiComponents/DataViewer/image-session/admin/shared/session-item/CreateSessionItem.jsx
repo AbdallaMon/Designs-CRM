@@ -7,6 +7,8 @@ import { useLanguage } from "@/app/helpers/hooks/useLanguage";
 import { OpenItemDialog } from "../OpenItemDialog";
 import { CreateTitleOrDesc } from "../CreateTitleOrDesc";
 import { TemplateAutocomplete } from "../SelectATemplate";
+import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
+import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 
 export function CreateSessionItem({
   onUpdate,
@@ -16,7 +18,7 @@ export function CreateSessionItem({
 }) {
   const { languages } = useLanguage();
   const { setLoading } = useToastContext();
-  const { setAlertError } = useAlertContext();
+  const { setProgress, setOverlay } = useUploadContext();
   async function checkValidation(data) {
     if (!data.templateId) {
       return {
@@ -36,21 +38,14 @@ export function CreateSessionItem({
     }
 
     if (data.file) {
-      const formData = new FormData();
-      formData.append("file", data.file);
-
-      const uploadResponse = await handleRequestSubmit(
-        formData,
-        setLoading,
-        "utility/upload",
-        true,
-        "Uploading file"
+      const fileUpload = await uploadInChunks(
+        data.file,
+        setProgress,
+        setOverlay
       );
-      if (uploadResponse.status !== 200) {
-        setAlertError("Error uploading file");
-        return;
+      if (fileUpload.status === 200) {
+        data.imageUrl = fileUpload.url;
       }
-      data.imageUrl = uploadResponse.fileUrls.file[0];
       delete data.file;
     }
 

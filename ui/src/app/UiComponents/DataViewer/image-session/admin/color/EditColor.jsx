@@ -12,10 +12,14 @@ import IsFullWidthSwitch, {
   EditColorPattern,
   OrderInput,
 } from "./PalleteItems";
+import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
+import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 
 export function EditColor({ onUpdate, initialData }) {
   const { languages } = useLanguage();
   const { setLoading } = useToastContext();
+  const { setProgress, setOverlay } = useUploadContext();
+
   async function checkValidation(data) {
     const allFilled = languages.every((lng) =>
       data.translations.titles?.[lng.id]?.text?.trim()
@@ -29,21 +33,15 @@ export function EditColor({ onUpdate, initialData }) {
     }
 
     if (data.file) {
-      const formData = new FormData();
-      formData.append("file", data.file);
-
-      const uploadResponse = await handleRequestSubmit(
-        formData,
-        setLoading,
-        "utility/upload",
-        true,
-        "Uploading file"
+      const uploadResponse = await uploadInChunks(
+        data.file,
+        setProgress,
+        setOverlay
       );
-      if (uploadResponse.status !== 200) {
-        setAlertError("Error uploading file");
-        return;
+      if (uploadResponse.status === 200) {
+        data.imageUrl = fileUpload.url;
       }
-      data.imageUrl = uploadResponse.fileUrls.file[0];
+
       delete data.file;
     }
 
