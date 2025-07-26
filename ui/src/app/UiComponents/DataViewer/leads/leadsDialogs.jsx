@@ -39,6 +39,7 @@ import {
 import utc from "dayjs/plugin/utc";
 import { meetingTypes } from "@/app/helpers/constants";
 import { getData } from "@/app/helpers/functions/getData";
+import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 
 dayjs.extend(utc);
 export const CallResultDialog = ({
@@ -1244,21 +1245,22 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
     }
 
     for (const fileItem of fileList) {
-      const formData = new FormData();
-      formData.append("file", fileItem.file);
+      // const formData = new FormData();
+      // formData.append("file", fileItem.file);
 
-      const fileUpload = await handleRequestSubmit(
-        formData,
-        setLoading,
-        "utility/upload",
-        true,
-        "Uploading file"
-      );
+      // const fileUpload = await handleRequestSubmit(
+      //   formData,
+      //   setLoading,
+      //   "utility/upload",
+      //   true,
+      //   "Uploading file"
+      // );
+      const fileUpload = await uploadInChunks(fileItem);
 
       if (fileUpload.status === 200) {
         const data = {
           ...fileItem,
-          url: fileUpload.fileUrls.file[0],
+          url: fileUpload.url,
           userId: user.id,
         };
 

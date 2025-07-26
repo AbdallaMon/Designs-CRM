@@ -15,6 +15,7 @@ const finalDir = "/home/panel.dreamstudiio.com/public_html/uploads";
 import fs from "fs";
 import path from "path";
 import multer from "multer";
+import { v4 as uuidv4 } from "uuid";
 
 if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
 if (!fs.existsSync(finalDir)) fs.mkdirSync(finalDir, { recursive: true });
@@ -24,27 +25,32 @@ router.get("/upload-chunk", upload.single("chunk"), async (req, res) => {
   const { filename, chunkIndex, totalChunks } = req.body;
   const originalName = path.basename(filename);
   const chunkNumber = parseInt(chunkIndex);
-
-  const chunkFilePath = path.join(tmpDir, `${originalName}.part${chunkNumber}`);
+  const uniqueFilename = `${uuidv4()}${path.extname(file.originalname)}`;
+  const chunkFilePath = path.join(
+    tmpDir,
+    `${uniqueFilename}.part${chunkNumber}`
+  );
   fs.renameSync(req.file.path, chunkFilePath);
 
   // If last chunk, merge all
   if (chunkNumber + 1 === parseInt(totalChunks)) {
-    const finalPath = path.join(finalDir, originalName);
+    const finalPath = path.join(finalDir, uniqueFilename);
     const writeStream = fs.createWriteStream(finalPath);
 
     for (let i = 0; i < totalChunks; i++) {
-      const partPath = path.join(tmpDir, `${originalName}.part${i}`);
+      const partPath = path.join(tmpDir, `${uniqueFilename}.part${i}`);
       const data = fs.readFileSync(partPath);
       writeStream.write(data);
       fs.unlinkSync(partPath); // clean up chunk
     }
-
+    const fileUrl = process.env.ISLOCAL
+      ? `${process.env.SERVER}/uploads/${uniqueFilename}`
+      : `http://panel.dreamstudiio.com/uploads/${uniqueFilename}`;
     writeStream.end();
     writeStream.on("finish", () => {
       return res.json({
         message: "✅ Upload complete",
-        url: `/uploads/${originalName}`,
+        url: fileUrl,
       });
     });
   } else {
