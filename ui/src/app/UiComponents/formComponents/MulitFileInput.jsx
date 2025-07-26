@@ -18,7 +18,7 @@ export default function MultiFileInput({
   const [error, setError] = useState(null); // Error message
 
   const handleFileChange = (files) => {
-    const MAX_FILE_SIZE = 800 * 1024 * 1024;
+    const MAX_FILE_SIZE = 80 * 1024 * 1024;
     const validFiles = [];
     const fileBlobs = [];
     const names = [];
