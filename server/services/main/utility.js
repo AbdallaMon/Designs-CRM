@@ -537,6 +537,7 @@ export const uploadFiles = async (req, res) => {
 
           resolve();
         } catch (writeErr) {
+          console.log(writeErr, "writeErr");
           reject(writeErr);
         }
       });
