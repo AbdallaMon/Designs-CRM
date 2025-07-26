@@ -71,7 +71,7 @@ router.get("/status", (req, res) => {
       .json({ auth: false, message: "You are not logged in" });
   }
   try {
-    const decoded = verifyToken(token);
+    const decoded = verifyToken(token, res);
     res.status(200).json({
       message: "User is authenticated",
       user: {
@@ -83,6 +83,7 @@ router.get("/status", (req, res) => {
       auth: true,
     });
   } catch (error) {
+    console.log(error, "error");
     res.status(400).json({
       message: "Your session has expired",
       error: error.message,

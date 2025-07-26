@@ -17,12 +17,27 @@ const SECRET_KEY = process.env.SECRET_KEY;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export function verifyToken(token) {
+export function getRemainingTime(exp) {
+  const now = Math.floor(Date.now() / 1000);
+  return exp - now;
+}
+const MAX_EXPIRY_SECONDS = 4 * 60 * 60; // 4 hours in seconds
+const REFRESH_THRESHOLD_SECONDS = 2 * 60 * 60; // 2 hours in seconds
+export function generateToken(payload) {
   try {
-    const decoded = jwt.verify(token, SECRET_KEY);
+    return jwt.sign(payload, SECRET_KEY, { expiresIn: "4h" });
+  } catch (e) {
+    console.log(e, "in generate token");
+  }
+}
+
+export function verifyToken(token, res) {
+  try {
+    let decoded = handleTokenSession(token, res);
+
     return decoded;
   } catch (error) {
-    throw new Error("Invalid token");
+    throw new Error(error.message);
   }
 }
 export const verifyTokenUsingReq = (req, res, next) => {
@@ -31,13 +46,54 @@ export const verifyTokenUsingReq = (req, res, next) => {
     return res.status(403).json({ message: "تم رفض صلاحيتك" });
   }
   try {
-    const decoded = jwt.verify(token, SECRET_KEY);
+    let decoded = handleTokenSession(token, res);
+
     req.user = decoded;
     next();
   } catch (error) {
     return res.status(401).json({ message: "Invalid token" });
   }
 };
+export function handleTokenSession(token, res, options = {}) {
+  const { refresh = true, secure = true } = options;
+
+  const decoded = jwt.decode(token);
+  if (!decoded || !decoded.exp || !decoded.id) {
+    res.status(401).json({ message: "Invalid token" });
+    return null;
+  }
+
+  const remainingTime = getRemainingTime(decoded.exp);
+
+  // Expired beyond recovery
+  if (remainingTime < -MAX_EXPIRY_SECONDS) {
+    res.status(401).json({ message: "Session expired, please login again" });
+    return null;
+  }
+
+  // Still valid or grace period
+  if (
+    refresh &&
+    (remainingTime <= 0 || remainingTime <= REFRESH_THRESHOLD_SECONDS)
+  ) {
+    const refreshedToken = generateToken({
+      id: decoded.id,
+      role: decoded.role,
+      accountStatus: decoded.accountStatus,
+      isPrimary: decoded.isPrimary,
+      isSuperSales: decoded.isSuperSales,
+    });
+
+    res.cookie("token", refreshedToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "None",
+      path: "/",
+    });
+  }
+
+  return decoded;
+}
 export function handlePrismaError(res, error) {
   if (error.name === "PrismaClientValidationError") {
     return res.status(400).json({
@@ -148,12 +204,13 @@ export const verifyTokenAndHandleAuthorization = async (
   if (!token) {
     return res.status(401).json({ message: "You have to login first" });
   }
+
   try {
-    const decoded = jwt.verify(token, SECRET_KEY);
+    let decoded = handleTokenSession(token, res);
+
+    // Continue with user role checks
     const user = await prisma.user.findUnique({
-      where: {
-        id: Number(decoded.id),
-      },
+      where: { id: Number(decoded.id) },
       select: {
         role: true,
         subRoles: {
@@ -163,6 +220,10 @@ export const verifyTokenAndHandleAuthorization = async (
         },
       },
     });
+
+    if (!user) {
+      return res.status(403).json({ message: "User not found" });
+    }
 
     const isAdmin =
       user.role === "ADMIN" ||
@@ -179,43 +240,46 @@ export const verifyTokenAndHandleAuthorization = async (
       req.user = decoded;
       return next();
     }
+
     if (role === "SHARED") {
       if (
-        decoded.role !== "ADMIN" &&
-        decoded.role !== "STAFF" &&
-        decoded.role !== "THREE_D_DESIGNER" &&
-        decoded.role !== "TWO_D_DESIGNER" &&
-        decoded.role !== "ACCOUNTANT" &&
-        decoded.role !== "SUPER_ADMIN" &&
-        decoded.role !== "TWO_D_EXECUTOR" &&
-        decoded.role !== "SUPER_SALES" &&
-        decoded.role !== "CONTACT_INITIATOR"
+        ![
+          "ADMIN",
+          "STAFF",
+          "THREE_D_DESIGNER",
+          "TWO_D_DESIGNER",
+          "ACCOUNTANT",
+          "SUPER_ADMIN",
+          "TWO_D_EXECUTOR",
+          "SUPER_SALES",
+          "CONTACT_INITIATOR",
+        ].includes(decoded.role)
       ) {
         return res.status(403).json({ message: "Not authorized" });
       }
-    } else {
-      if (role === "ADMIN" && !isAdmin) {
-        return res.status(403).json({ message: "Not authorized" });
-      } else if (role === "STAFF") {
-        if (
-          decoded.role !== "STAFF" &&
-          decoded.role !== "THREE_D_DESIGNER" &&
-          decoded.role !== "TWO_D_DESIGNER" &&
-          decoded.role !== "ACCOUNTANT" &&
-          decoded.role !== "TWO_D_EXECUTOR"
-        ) {
-          return res.status(403).json({ message: "Not authorized" });
-        }
-      } else if (decoded.role !== role) {
+    } else if (role === "STAFF") {
+      if (
+        ![
+          "STAFF",
+          "THREE_D_DESIGNER",
+          "TWO_D_DESIGNER",
+          "ACCOUNTANT",
+          "TWO_D_EXECUTOR",
+        ].includes(decoded.role)
+      ) {
         return res.status(403).json({ message: "Not authorized" });
       }
+    } else if (decoded.role !== role) {
+      return res.status(403).json({ message: "Not authorized" });
     }
+
     req.user = decoded;
     next();
   } catch (error) {
+    console.log("Token handling error:", error);
     return res
       .status(401)
-      .json({ message: "Your are not allowed or session ended" });
+      .json({ message: "You are not allowed or session ended" });
   }
 };
 
@@ -348,7 +412,6 @@ export async function searchData(body) {
     where.AND = where.AND[0];
   }
 
-  console.log(where, "where");
   const selectFields = {
     user: {
       id: true,
@@ -407,11 +470,15 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 50 * 1024 * 1024 },
+  limits: { fileSize: 100 * 1024 * 1024 },
 }).any();
 
 const s = multer.memoryStorage();
-const storageUpload = multer({ storage: s }).any();
+const storageUpload = multer({
+  storage: s,
+  limits: { fileSize: 200 * 1024 * 1024 }, // 200MB
+}).any();
+
 // FTP Upload Function
 async function uploadToFTP(localFilePath, remotePath) {
   const client = new Client();
@@ -806,7 +873,6 @@ async function sendNotification(
   });
 
   const io = getIo();
-  console.log(io, "io");
   io.to(userId.toString()).emit("notification", notification);
   if (withEmail) {
     const user = await prisma.user.findUnique({

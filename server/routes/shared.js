@@ -109,11 +109,12 @@ import {
   deleteASlot,
   updateAvailableDay,
 } from "../services/main/calendarServices.js";
-router.use("/courses", coursesRouter);
 
 router.use(async (req, res, next) => {
   await verifyTokenAndHandleAuthorization(req, res, next, "SHARED");
 });
+router.use("/courses", coursesRouter);
+
 router.use("/questions", questionsRoutes);
 router.use("/calendar", calendarRoutes);
 router.use("/image-session", imageSessionRouter);
