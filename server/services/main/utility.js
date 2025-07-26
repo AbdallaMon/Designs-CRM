@@ -523,7 +523,7 @@ async function sendChunksToInternalChunkRoute(filePath, finalFilename) {
     form.append("chunkIndex", i.toString());
     form.append("totalChunks", totalChunks.toString());
 
-    await axios.post(`${process.env.SERVER}/upload-chunk`, form, {
+    await axios.post(`${process.env.SERVER}/utility/upload-chunk`, form, {
       headers: form.getHeaders(),
       maxContentLength: Infinity,
       maxBodyLength: Infinity,
