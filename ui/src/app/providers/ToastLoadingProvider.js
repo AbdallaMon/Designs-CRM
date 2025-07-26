@@ -13,7 +13,7 @@ export default function ToastProvider({ children }) {
             position: "fixed",
             top: 0,
             right: 0,
-            zIndex: 999999,
+            zIndex: 9999999,
             width: "100%",
             height: "100%",
             backgroundColor: "rgba(0, 0, 0, 0.5)",

@@ -15,7 +15,7 @@ import { MdCloud } from "react-icons/md";
 
 // Custom styled components
 const StyledBackdrop = styled(Backdrop)(({ theme }) => ({
-  zIndex: theme.zIndex.drawer + 1,
+  zIndex: 9999998,
   backgroundColor: "rgba(0, 0, 0, 0.7)",
   backdropFilter: "blur(4px)",
 }));
