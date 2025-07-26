@@ -13,7 +13,7 @@ export default function ToastProvider({ children }) {
             position: "fixed",
             top: 0,
             right: 0,
-            zIndex: 9999999,
+            zIndex: 9999997,
             width: "100%",
             height: "100%",
             backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -22,7 +22,7 @@ export default function ToastProvider({ children }) {
       )}
       <ToastContainer
         position="top-center"
-        style={{ width: "80%", maxWidth: "600px", zIndex: 999999 }}
+        style={{ width: "80%", maxWidth: "600px", zIndex: 9999999 }}
         closeOnClick={true}
         pauseOnHover={false}
         autoClose={3000}

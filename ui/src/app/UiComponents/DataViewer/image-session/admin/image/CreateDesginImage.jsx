@@ -71,17 +71,17 @@ export function CreateDesginImage({ onUpdate }) {
     if (data.file) {
       data.imagesUrls = [];
       const formData = new FormData();
-      data.file.forEach(async (file) => {
+      for (const file of data.file) {
         formData.append("file", file);
         const fileUpload = await uploadInChunks(file, setProgress, setOverlay);
         if (fileUpload.status === 200) {
           data.imagesUrls.push(fileUpload.url);
         }
-      });
+      }
 
       delete data.file;
     }
-
+    console.log(data, "data");
     return { error: false };
   }
   return (
