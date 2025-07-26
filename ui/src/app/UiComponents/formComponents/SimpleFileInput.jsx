@@ -8,16 +8,16 @@ export default function SimpleFileInput({
   variant = "filled",
   setData,
   handleUpload,
-  helperText = "Max file uploads : 50mb",
+  helperText = "Max file uploads : 80mb",
 }) {
   const [preview, setPreview] = useState();
   const [fileName, setFileName] = useState(""); // Track file name
   const [error, setError] = useState(null); // Track file error
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    const MAX_FILE_SIZE = 50 * 1024 * 1024;
+    const MAX_FILE_SIZE = 80 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
-      setError(`File size exceeds the 50MB limit.`);
+      setError(`File size exceeds the 80MB limit.`);
       setPreview(null);
       setFileName("");
       return;
