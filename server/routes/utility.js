@@ -10,6 +10,47 @@ import {
 } from "../services/main/utility.js";
 
 const router = express.Router();
+const tmpDir = "/tmp/chunks";
+const finalDir = "/home/panel.dreamstudiio.com/public_html/uploads";
+import fs from "fs";
+import path from "path";
+import multer from "multer";
+
+if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+if (!fs.existsSync(finalDir)) fs.mkdirSync(finalDir, { recursive: true });
+const upload = multer({ dest: tmpDir });
+
+router.get("/upload-chunk", upload.single("chunk"), async (req, res) => {
+  const { filename, chunkIndex, totalChunks } = req.body;
+  const originalName = path.basename(filename);
+  const chunkNumber = parseInt(chunkIndex);
+
+  const chunkFilePath = path.join(tmpDir, `${originalName}.part${chunkNumber}`);
+  fs.renameSync(req.file.path, chunkFilePath);
+
+  // If last chunk, merge all
+  if (chunkNumber + 1 === parseInt(totalChunks)) {
+    const finalPath = path.join(finalDir, originalName);
+    const writeStream = fs.createWriteStream(finalPath);
+
+    for (let i = 0; i < totalChunks; i++) {
+      const partPath = path.join(tmpDir, `${originalName}.part${i}`);
+      const data = fs.readFileSync(partPath);
+      writeStream.write(data);
+      fs.unlinkSync(partPath); // clean up chunk
+    }
+
+    writeStream.end();
+    writeStream.on("finish", () => {
+      return res.json({
+        message: "✅ Upload complete",
+        url: `/uploads/${originalName}`,
+      });
+    });
+  } else {
+    res.json({ message: `✅ Chunk ${chunkNumber + 1} received` });
+  }
+});
 
 // Search Route
 router.get("/search", verifyTokenUsingReq, async (req, res) => {
@@ -22,6 +63,7 @@ router.get("/search", verifyTokenUsingReq, async (req, res) => {
     res.status(500).json({ message: `error fetching data: ${error.message}` });
   }
 });
+
 router.post("/upload", verifyTokenUsingReq, async (req, res) => {
   await uploadFiles(req, res);
 });

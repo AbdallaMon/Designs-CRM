@@ -21,6 +21,7 @@ export function getRemainingTime(exp) {
   const now = Math.floor(Date.now() / 1000);
   return exp - now;
 }
+
 const MAX_EXPIRY_SECONDS = 4 * 60 * 60; // 4 hours in seconds
 const REFRESH_THRESHOLD_SECONDS = 2 * 60 * 60; // 2 hours in seconds
 export function generateToken(payload) {
@@ -458,7 +459,7 @@ if (!fs.existsSync(tmpFolder)) {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, tmpFolder); // Save files to the tmp directory
+    cb(null, tmpFolder);
   },
   filename: (req, file, cb) => {
     const uniqueFilename = `${uuidv4()}-${Date.now()}${path.extname(
@@ -503,6 +504,36 @@ function deleteFile(filePath) {
 }
 
 // Upload API
+async function sendChunksToInternalChunkRoute(filePath, finalFilename) {
+  const chunkSize = 1024 * 1024; // 1MB
+  const stat = fs.statSync(filePath);
+  const totalSize = stat.size;
+  const totalChunks = Math.ceil(totalSize / chunkSize);
+
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * chunkSize;
+    const end = Math.min(start + chunkSize, totalSize);
+    const chunkStream = fs.createReadStream(filePath, { start, end: end - 1 });
+
+    const form = new FormData();
+    form.append("chunk", chunkStream, {
+      filename: `${finalFilename}.part${i}`,
+    });
+    form.append("filename", finalFilename);
+    form.append("chunkIndex", i.toString());
+    form.append("totalChunks", totalChunks.toString());
+
+    await axios.post(`${process.env.SERVER}/upload-chunk`, form, {
+      headers: form.getHeaders(),
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+    });
+  }
+
+  console.log(`✅ Finished sending all chunks for ${finalFilename}`);
+}
+
+// Main handler
 export const uploadFiles = async (req, res) => {
   try {
     const fileUrls = {};
@@ -525,6 +556,7 @@ export const uploadFiles = async (req, res) => {
             )}`;
             const savePath = path.join(uploadDir, uniqueFilename);
             fs.writeFileSync(savePath, file.buffer);
+            await sendChunksToInternalChunkRoute(savePath, uniqueFilename);
 
             const fileUrl = process.env.ISLOCAL
               ? `${process.env.SERVER}/uploads/${uniqueFilename}`
@@ -554,6 +586,58 @@ export const uploadFiles = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// export const uploadFiles = async (req, res) => {
+//   try {
+//     const fileUrls = {};
+
+//     await new Promise((resolve, reject) => {
+//       storageUpload(req, res, async (err) => {
+//         if (err) return reject(err);
+//         if (!req.files || req.files.length === 0)
+//           return reject(new Error("No files uploaded."));
+
+//         const uploadDir = "/home/panel.dreamstudiio.com/public_html/uploads";
+//         if (!fs.existsSync(uploadDir)) {
+//           fs.mkdirSync(uploadDir, { recursive: true });
+//         }
+
+//         try {
+//           for (const file of req.files) {
+//             const uniqueFilename = `${uuidv4()}${path.extname(
+//               file.originalname
+//             )}`;
+//             const savePath = path.join(uploadDir, uniqueFilename);
+//             fs.writeFileSync(savePath, file.buffer);
+
+//             const fileUrl = process.env.ISLOCAL
+//               ? `${process.env.SERVER}/uploads/${uniqueFilename}`
+//               : `http://panel.dreamstudiio.com/uploads/${uniqueFilename}`;
+//             const fieldName = file.fieldname;
+
+//             if (!fileUrls[fieldName]) fileUrls[fieldName] = [];
+//             fileUrls[fieldName].push(fileUrl);
+//           }
+
+//           resolve();
+//         } catch (writeErr) {
+//           console.log(writeErr, "writeErr");
+//           reject(writeErr);
+//         }
+//       });
+//     });
+
+//     res
+//       .status(200)
+//       .json({ message: "✅ Files uploaded successfully.", fileUrls });
+//   } catch (error) {
+//     if (error.code === "LIMIT_FILE_SIZE") {
+//       return res.status(400).json({ error: "File size exceeds the limit." });
+//     }
+//     console.error("❌ Upload error:", error.message);
+//     res.status(500).json({ error: error.message });
+//   }
+// };
 
 export async function uploadAsHttp(req, res) {
   try {
