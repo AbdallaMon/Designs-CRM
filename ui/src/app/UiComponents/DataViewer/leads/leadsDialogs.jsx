@@ -1255,8 +1255,8 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
       //   true,
       //   "Uploading file"
       // );
-      const fileUpload = await uploadInChunks(fileItem);
-
+      const fileUpload = await uploadInChunks(fileItem.file);
+      console.log(fileUpload, "fileUpload");
       if (fileUpload.status === 200) {
         const data = {
           ...fileItem,
