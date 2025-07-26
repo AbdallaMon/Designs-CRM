@@ -69,23 +69,16 @@ export function CreateDesginImage({ onUpdate }) {
       };
     }
     if (data.file) {
+      data.imagesUrls = [];
       const formData = new FormData();
-      data.file.forEach((file) => {
+      data.file.forEach(async (file) => {
         formData.append("file", file);
+        const fileUpload = await uploadInChunks(file, setProgress, setOverlay);
+        if (fileUpload.status === 200) {
+          data.imagesUrls.push(fileUpload.url);
+        }
       });
 
-      const uploadResponse = await handleRequestSubmit(
-        formData,
-        setLoading,
-        "utility/upload",
-        true,
-        "Uploading file"
-      );
-      if (uploadResponse.status !== 200) {
-        setAlertError("Error uploading file");
-        return;
-      }
-      data.imagesUrls = uploadResponse.fileUrls.file;
       delete data.file;
     }
 

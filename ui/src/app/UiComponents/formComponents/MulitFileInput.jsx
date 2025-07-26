@@ -11,21 +11,21 @@ export default function MultiFileInput({
   data,
   setData,
   handleUpload,
-  helperText = "Max file size per file: 50MB",
+  helperText = "Max file size per file: 80MB",
 }) {
   const [previews, setPreviews] = useState([]); // Array of file preview URLs
   const [fileNames, setFileNames] = useState([]); // Array of file names
   const [error, setError] = useState(null); // Error message
 
   const handleFileChange = (files) => {
-    const MAX_FILE_SIZE = 50 * 1024 * 1024;
+    const MAX_FILE_SIZE = 80 * 1024 * 1024;
     const validFiles = [];
     const fileBlobs = [];
     const names = [];
 
     for (let file of files) {
       if (file.size > MAX_FILE_SIZE) {
-        setError(`File "${file.name}" exceeds the 50MB limit.`);
+        setError(`File "${file.name}" exceeds the 80MB limit.`);
         return;
       }
       validFiles.push(file);
