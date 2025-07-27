@@ -36,7 +36,18 @@ const KeyMetricsCard = ({ staff, staffId }) => {
     totalCommission: 0,
     totalClreadCommission: 0,
     interactedLeads: 0,
+    newLeadCounts: 0,
+    inProgressLeadCounts: 0,
+    interestedLeadCounts: 0,
+    needsIdentifiedLeadCounts: 0,
+    negotiatingLeadCounts: 0,
+    rejectedLeadCounts: 0,
+    finalizedLeadCounts: 0,
+    convertedLeadCounts: 0,
+    onHoldLeadCounts: 0,
+    archivedLeadCounts: 0,
   });
+
   const metricsData = [
     {
       title: "Total leads",
@@ -47,8 +58,8 @@ const KeyMetricsCard = ({ staff, staffId }) => {
     ...(staffId
       ? [
           {
-            title: "Today interacted leads", // Change title if needed
-            value: financialMetrics.interactedLeads, // Replace with relevant data
+            title: "Today interacted leads",
+            value: financialMetrics.interactedLeads,
             icon: <FaTasks size={24} color="#ffffff" />,
             color: theme.palette.info.main,
           },
@@ -91,7 +102,69 @@ const KeyMetricsCard = ({ staff, staffId }) => {
       icon: <FaMoneyBillWave size={24} color="#ffffff" />,
       color: theme.palette.warning.main,
     },
+    // New lead status metrics
+    {
+      title: "New Leads",
+      value: financialMetrics.newLeadCounts,
+      icon: <FaTasks size={24} color="#ffffff" />,
+      color: theme.palette.info.main,
+    },
+    {
+      title: "In Progress Leads",
+      value: financialMetrics.inProgressLeadCounts,
+      icon: <FaTasks size={24} color="#ffffff" />,
+      color: theme.palette.warning.main,
+    },
+    {
+      title: "Interested Leads",
+      value: financialMetrics.interestedLeadCounts,
+      icon: <FaTasks size={24} color="#ffffff" />,
+      color: theme.palette.success.main,
+    },
+    {
+      title: "Needs Identified",
+      value: financialMetrics.needsIdentifiedLeadCounts,
+      icon: <FaTasks size={24} color="#ffffff" />,
+      color: theme.palette.secondary.main,
+    },
+    {
+      title: "Negotiating Leads",
+      value: financialMetrics.negotiatingLeadCounts,
+      icon: <FaTasks size={24} color="#ffffff" />,
+      color: theme.palette.primary.main,
+    },
+    {
+      title: "Rejected Leads",
+      value: financialMetrics.rejectedLeadCounts,
+      icon: <FaTasks size={24} color="#ffffff" />,
+      color: theme.palette.error.main,
+    },
+    {
+      title: "Finalized Leads",
+      value: financialMetrics.finalizedLeadCounts,
+      icon: <FaTasks size={24} color="#ffffff" />,
+      color: theme.palette.success.main,
+    },
+    {
+      title: "Converted Leads",
+      value: financialMetrics.convertedLeadCounts,
+      icon: <FaTasks size={24} color="#ffffff" />,
+      color: theme.palette.success.main,
+    },
+    {
+      title: "On Hold Leads",
+      value: financialMetrics.onHoldLeadCounts,
+      icon: <FaTasks size={24} color="#ffffff" />,
+      color: theme.palette.warning.main,
+    },
+    {
+      title: "Archived Leads",
+      value: financialMetrics.archivedLeadCounts,
+      icon: <FaTasks size={24} color="#ffffff" />,
+      color: theme.palette.grey[600],
+    },
   ];
+
   useEffect(() => {
     async function fetchData() {
       const extra = staffId
@@ -108,6 +181,7 @@ const KeyMetricsCard = ({ staff, staffId }) => {
     }
     fetchData();
   }, []);
+
   return (
     <Card
       sx={{

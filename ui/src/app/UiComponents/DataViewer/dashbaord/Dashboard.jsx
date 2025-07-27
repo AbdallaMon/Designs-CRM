@@ -68,11 +68,6 @@ const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {
           <Grid size={12}>
             <KeyMetricsCard staff={staff} staffId={staffId} />
           </Grid>
-          {!staffId && !staff && (
-            <Grid size={12}>
-              <DesignerMetricsCard />
-            </Grid>
-          )}
 
           <Grid size={{ xs: 12, md: 6 }}>
             <LeadStatusChart staff={staff} staffId={staffId} />

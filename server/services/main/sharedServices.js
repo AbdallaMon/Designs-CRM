@@ -1124,10 +1124,80 @@ export const getKeyMetrics = async (searchParams, role) => {
 
     const successLeadsCount = await prisma.clientLead.count({
       where: {
+        status: { in: ["FINALIZED", "ARCHIVED"] },
+        ...staffFilter,
+      },
+    });
+    const newLeadCounts = await prisma.clientLead.count({
+      where: {
+        status: "NEW",
+        ...staffFilter,
+      },
+    });
+
+    const inProgressLeadCounts = await prisma.clientLead.count({
+      where: {
+        status: "IN_PROGRESS",
+        ...staffFilter,
+      },
+    });
+
+    const interestedLeadCounts = await prisma.clientLead.count({
+      where: {
+        status: "INTERESTED",
+        ...staffFilter,
+      },
+    });
+
+    const needsIdentifiedLeadCounts = await prisma.clientLead.count({
+      where: {
+        status: "NEEDS_IDENTIFIED",
+        ...staffFilter,
+      },
+    });
+
+    const negotiatingLeadCounts = await prisma.clientLead.count({
+      where: {
+        status: "NEGOTIATING",
+        ...staffFilter,
+      },
+    });
+
+    const rejectedLeadCounts = await prisma.clientLead.count({
+      where: {
+        status: "REJECTED",
+        ...staffFilter,
+      },
+    });
+
+    const finalizedLeadCounts = await prisma.clientLead.count({
+      where: {
         status: "FINALIZED",
         ...staffFilter,
       },
     });
+
+    const convertedLeadCounts = await prisma.clientLead.count({
+      where: {
+        status: "CONVERTED",
+        ...staffFilter,
+      },
+    });
+
+    const onHoldLeadCounts = await prisma.clientLead.count({
+      where: {
+        status: "ON_HOLD",
+        ...staffFilter,
+      },
+    });
+
+    const archivedLeadCounts = await prisma.clientLead.count({
+      where: {
+        status: "ARCHIVED",
+        ...staffFilter,
+      },
+    });
+
     const nonSuccessLeadsCount = await prisma.clientLead.count({
       where: {
         ...staffFilter,
@@ -1143,9 +1213,6 @@ export const getKeyMetrics = async (searchParams, role) => {
     const endOfToday = dayjs().endOf("day").toDate(); // End of the day
     interactedLeads = await prisma.clientLead.count({
       where: {
-        status: {
-          notIn: ["NEW"],
-        },
         ...staffFilter,
         updatedAt: {
           gte: startOfToday,
@@ -1155,9 +1222,6 @@ export const getKeyMetrics = async (searchParams, role) => {
     });
     leadsCounts = await prisma.clientLead.count({
       where: {
-        status: {
-          notIn: ["NEW"],
-        },
         ...staffFilter,
       },
     });
@@ -1189,6 +1253,16 @@ export const getKeyMetrics = async (searchParams, role) => {
       totalCommission,
       totalClreadCommission,
       successLeadsCount,
+      newLeadCounts,
+      inProgressLeadCounts,
+      interestedLeadCounts,
+      needsIdentifiedLeadCounts,
+      negotiatingLeadCounts,
+      rejectedLeadCounts,
+      finalizedLeadCounts,
+      convertedLeadCounts,
+      onHoldLeadCounts,
+      archivedLeadCounts,
     };
   } catch (error) {
     console.error("Error fetching key metrics:", error);
