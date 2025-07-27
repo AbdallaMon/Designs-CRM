@@ -218,6 +218,7 @@ async function sendMeetingReminders(meetings, timeLabel) {
         time: meeting.time,
         type: "MEETING",
         timeLabel,
+        clientLeadId: meeting.clientLead.id,
       });
     } else {
       await sendReminderToUser({
