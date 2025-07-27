@@ -331,7 +331,6 @@ export async function getClientLeadsByDateRange({
   if (filters.contractLevel && filters.contractLevel !== "all") {
     result = result.filter((lead) => {
       if (lead.contracts.length) {
-        console.log(lead.contracts, "lead.contracts");
         return lead.contracts[0].contractLevel === filters.contractLevel;
       }
     });
@@ -771,7 +770,6 @@ export async function createNewContract({
   if (endDate) {
     data.endDate = new Date(endDate);
   }
-  console.log(contractLevel, "contractLevel");
   contractLevel.forEach(async (level, index) => {
     const isPresent = await prisma.contract.findFirst({
       where: {
@@ -781,7 +779,6 @@ export async function createNewContract({
       },
     });
     if (isPresent) {
-      console.log(isPresent, "isPresent");
       return;
     }
     await prisma.contract.create({
@@ -3998,6 +3995,7 @@ export async function deleteAModel({ id, isAdmin, data }) {
         },
         data: {
           isBooked: false,
+          meetingReminderId: null,
         },
       });
     }
