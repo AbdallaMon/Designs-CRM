@@ -157,65 +157,46 @@ export async function sendReminderToUser({
   time,
   type = "MEETING",
   clientLeadId,
+  timeLabel = "15min",
 }) {
   const label = type === "MEETING" ? "Meeting" : "Call";
   const callDetails = "Scheduled " + label;
+  const minutesLabel =
+    {
+      "15min": "15 Minutes",
+      "4h": "4 Hours",
+      "12h": "12 Hours",
+    }[timeLabel] || "Soon";
+
   const userTimezone = "Asia/Dubai";
-  const dubaiTime = dayjs(time)
-    .tz(userTimezone) // e.g., "Africa/Cairo"
+  const formattedTime = dayjs(time)
+    .tz(userTimezone)
     .format("dddd, MMMM D, YYYY, h:mm A");
 
-  const userHtml = `
+  const html = `
     <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px;">
       <div style="max-width: 600px; margin: auto; background: #fcfbf9; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.03); overflow: hidden;">
         <div style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%); padding: 20px; text-align: center;">
           <img src="https://dreamstudiio.com/dream-logo.jpg" alt="Dream Studio" style="max-height: 60px;" />
         </div>
         <div style="padding: 30px;">
-          <h2 style="color: #383028;">📞 ${label} Reminder - 15 Minutes</h2>
+          <h2 style="color: #383028;">📞 ${label} Reminder - ${minutesLabel}</h2>
           <p>Hello <strong>${userName}</strong>,</p>
-          <p>This is a friendly reminder that you have a ${label} scheduled in <strong>15 minutes</strong>.</p>
-          
-          <div style="background: #f8f6f3; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <div style="text-align: center; margin: 20px 0;">
-              <div style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%); color: white; border-radius: 50%; width: 100px; height: 100px; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold;">
-                📞
-              </div>
-              <h3 style="color: #383028; margin: 15px 0 5px 0;">Upcoming ${label}</h3>
-              <p style="margin: 0; font-size: 18px; color: #be975c; font-weight: bold;">${dubaiTime} (Dubai Time)</p>
-            </div>
-            
-            <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 6px; border-left: 4px solid #be975c;">
-              <p style="margin: 0 0 8px 0; font-weight: bold; color: #383028;">📋 ${label} Details</p>
-              <p style="margin: 0; font-size: 14px;">${callDetails}</p>
-                     <p>Useful links:</p>
-                     </div>
-                     
-                     <ul style="list-style: none; padding: 0;">
-                       <li style="margin: 10px 0;"><a href="${process.env.OLDORIGIN}/dashboard/deals/${clientLeadId}" style="color: #d3ac71; font-weight: bold;">👤 Open lead page for more data</a></li>
-                     </ul>
+          <p>This is a reminder that you have a ${label} scheduled in <strong>${minutesLabel}</strong>.</p>
 
+          <div style="background: #f8f6f3; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #383028;">🕒 Time: <span style="color: #be975c">${formattedTime} (Dubai Time)</span></h3>
+            <p style="margin-top: 10px;"><strong>Details:</strong> ${callDetails}</p>
           </div>
-          
-          <!-- Countdown Timer Visual -->
-          <div style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%); color: white; text-align: center; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="margin: 0 0 10px 0; color: white;">⏱️ Time Remaining</h3>
-            <div style="font-size: 32px; font-weight: bold; margin: 10px 0;">
-              <span style="background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 6px; margin: 0 4px;">1</span>
-              <span style="background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 6px; margin: 0 4px;">5</span>
-              <span style="font-size: 24px; margin: 0 8px;">:</span>
-              <span style="background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 6px; margin: 0 4px;">0</span>
-              <span style="background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 6px; margin: 0 4px;">0</span>
-            </div>
-            <p style="margin: 10px 0 0 0; font-size: 14px; color: rgba(255,255,255,0.9);">Minutes</p>
+
+          <ul style="list-style: none; padding: 0; margin: 0 0 20px 0;">
+            <li><a href="${process.env.OLDORIGIN}/dashboard/deals/${clientLeadId}" style="color: #d3ac71; font-weight: bold;">👤 Open Lead Page</a></li>
+          </ul>
+
+          <div style="background: #fff; border: 1px solid #e0ddd8; border-radius: 6px; padding: 15px;">
+            <p style="font-size: 14px; color: #666;">💡 <em>Please prepare for your ${label} and be available at the scheduled time.</em></p>
           </div>
-          
-          <div style="background: #fff; border: 1px solid #e0ddd8; border-radius: 6px; padding: 15px; margin: 20px 0;">
-            <p style="margin: 0; font-size: 14px; color: #666;">
-              💡 <em>Please prepare for your ${label} and ensure you're available at the scheduled time.</em>
-            </p>
-          </div>
-          
+
           <p style="margin-top: 30px;">— Dream Studio System</p>
         </div>
       </div>
@@ -224,8 +205,8 @@ export async function sendReminderToUser({
 
   await sendEmail(
     userEmail,
-    `📞 ${label} Reminder - 15 Minutes | ${callDetails}`,
-    userHtml,
+    `📞 ${label} Reminder - ${minutesLabel} | ${callDetails}`,
+    html,
     true
   );
 }
@@ -237,66 +218,46 @@ export async function sendReminderToClient({
   userTimezone = "Asia/Dubai",
   type,
   time,
+  timeLabel = "15min",
 }) {
-  // Calculate the exact time 15 minutes from now
-
   const label = type === "MEETING" ? "Meeting" : "Call";
+  const minutesLabel =
+    {
+      "15min": "15 Minutes",
+      "4h": "4 Hours",
+      "12h": "12 Hours",
+    }[timeLabel] || "Soon";
   const callDetails = "Scheduled " + label;
 
-  const userTime = dayjs(time)
-    .tz(userTimezone) // e.g., "Africa/Cairo"
+  const formattedTime = dayjs(time)
+    .tz(userTimezone)
     .format("dddd, MMMM D, YYYY, h:mm A");
 
-  const clientHtml = `
+  const html = `
     <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px;">
       <div style="max-width: 600px; margin: auto; background: #fcfbf9; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.03); overflow: hidden;">
         <div style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%); padding: 20px; text-align: center;">
           <img src="https://dreamstudiio.com/dream-logo.jpg" alt="Dream Studio" style="max-height: 60px;" />
         </div>
         <div style="padding: 30px;">
-          <h2 style="color: #383028;">📞 Your ${label} is Starting Soon!</h2>
+          <h2 style="color: #383028;">📞 Your ${label} is Coming Up - ${minutesLabel}</h2>
           <p>Hello <strong>${clientName}</strong>,</p>
-          <p>This is a friendly reminder that your ${label} with Dream Studio is scheduled to begin in <strong>15 minutes</strong>.</p>
-          
-          <div style="background: #f8f6f3; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <div style="text-align: center; margin: 20px 0;">
-            
-              <h3 style="color: #383028; margin: 15px 0 5px 0;">Your ${label} Time</h3>
-              <p style="margin: 0; font-size: 18px; color: #be975c; font-weight: bold;">${userTime}</p>
-              <p style="margin: 0; font-size: 18px; color: #be975c; font-weight: bold;">${userTimezone}</p>
+          <p>This is a reminder that your ${label} with Dream Studio is scheduled to begin in <strong>${minutesLabel}</strong>.</p>
 
-            </div>
-            
-            <div style="margin: 15px 0; padding: 15px; background: white; border-radius: 6px; border-left: 4px solid #be975c;">
-              <p style="margin: 0 0 8px 0; font-weight: bold; color: #383028;">📋 ${label} Purpose</p>
-              <p style="margin: 0; font-size: 14px;">${callDetails}</p>
-            </div>
+          <div style="background: #f8f6f3; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #383028;">🕒 Time: <span style="color: #be975c">${formattedTime} (${userTimezone})</span></h3>
+            <p><strong>Purpose:</strong> ${callDetails}</p>
           </div>
-          
-          <!-- Countdown Timer Visual -->
-          <div style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%); color: white; text-align: center; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="margin: 0 0 10px 0; color: white;">⏱️ Starting In</h3>
-            <div style="font-size: 32px; font-weight: bold; margin: 10px 0;">
-              <span style="background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 6px; margin: 0 4px;">1</span>
-              <span style="background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 6px; margin: 0 4px;">5</span>
-              <span style="font-size: 24px; margin: 0 8px;">:</span>
-              <span style="background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 6px; margin: 0 4px;">0</span>
-              <span style="background: rgba(255,255,255,0.2); padding: 8px 12px; border-radius: 6px; margin: 0 4px;">0</span>
-            </div>
-            <p style="margin: 10px 0 0 0; font-size: 14px; color: rgba(255,255,255,0.9);">Minutes</p>
-          </div>
-          
-          <div style="background: #fff; border: 1px solid #e0ddd8; border-radius: 6px; padding: 15px; margin: 20px 0;">
-            <p style="margin: 0 0 8px 0; font-size: 14px; color: #666;">
-              <strong>📱 Preparation Tips:</strong>
-            </p>
-            <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #666;">
-              <li>Ensure you're in a quiet environment</li>
-              <li>Have any relevant documents ready</li>
-              <li>Test your connection if it's a video ${label}</li>
+
+          <div style="background: #fff; border: 1px solid #e0ddd8; border-radius: 6px; padding: 15px;">
+            <p style="font-size: 14px; color: #666;">📱 <strong>Preparation Tips:</strong></p>
+            <ul style="padding-left: 20px; font-size: 14px; color: #666;">
+              <li>Be in a quiet environment</li>
+              <li>Have any documents ready</li>
+              <li>Test your connection if it’s a video call</li>
             </ul>
           </div>
-          
+
           <p style="margin-top: 30px;">We appreciate your trust in <strong>Dream Studio</strong> ❤️</p>
           <p>Best regards,<br/>Dream Studio Team</p>
         </div>
@@ -306,8 +267,8 @@ export async function sendReminderToClient({
 
   await sendEmail(
     clientEmail,
-    `📞 ${label} Starting in 15 Minutes | ${callDetails}`,
-    clientHtml,
+    `📞 ${label} Reminder - ${minutesLabel} | ${callDetails}`,
+    html,
     true
   );
 }

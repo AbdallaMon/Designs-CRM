@@ -370,6 +370,8 @@ model MeetingReminder {
   availableSlotId Int?              @unique  
   userTimezone     String? 
   notified       Boolean            @default(false) 
+  notified4h     Boolean @default(false)
+  notified12h    Boolean @default(false)
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 
