@@ -809,7 +809,7 @@ export async function getDashBoardDataForAdmin() {
   });
 
   const totalAttempts = testStats._count;
-  const averageScore = testStats._avg.score ?? 0;
+  const averageScore = Number((testStats._avg.score ?? 0).toFixed(2));
 
   const passedAttempts = await prisma.testAttempt.count({
     where: { passed: true },
@@ -859,9 +859,11 @@ export async function getDashBoardDataForAdmin() {
     const completedItems = cp.completedLessons.length;
     return totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
   });
-  console.log(progressData, "progressData");
-  const avgCourseProgress =
-    progressList.reduce((sum, p) => sum + p, 0) / (progressList.length || 1);
+  const avgCourseProgress = Number(
+    (
+      progressList.reduce((sum, p) => sum + p, 0) / (progressList.length || 1)
+    ).toFixed(2)
+  );
 
   const totalHomeworkSubmissions = await prisma.lessonHomework.count();
   const topCoursesRaw = await prisma.course.findMany({

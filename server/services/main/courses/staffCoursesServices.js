@@ -839,7 +839,7 @@ export async function getUserDashboardStats(userId) {
     const completedLessonsCount = progress.completedLessons.length;
     const completionPercentage =
       totalLessons > 0
-        ? Math.round((completedLessonsCount / totalLessons) * 100)
+        ? Number(((completedLessonsCount / totalLessons) * 100).toFixed(2))
         : 0;
 
     if (completionPercentage === 100) {

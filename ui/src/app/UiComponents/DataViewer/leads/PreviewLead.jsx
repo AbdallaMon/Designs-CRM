@@ -221,7 +221,7 @@ const LeadContent = ({
     : "#000000";
   return (
     <>
-      {isPage && user.id !== lead.userId&&!admin ? (
+      {isPage && user.id !== lead.userId && !admin ? (
         ""
       ) : (
         <>
@@ -321,9 +321,6 @@ const LeadContent = ({
                   <Typography variant="body2" color="text.secondary">
                     #{lead.id.toString().padStart(7, "0")}
                   </Typography>
-               
-            
-                  
                 </>
               )}
             </Box>
@@ -333,33 +330,35 @@ const LeadContent = ({
           <Stack direction="row" spacing={1} alignItems="center">
             {(user.role === "ADMIN" ||
               user.role === "SUPER_ADMIN" ||
-              user.role === "STAFF"||user.role==="SUPER_SALES") && (
-                <>
-                                <Chip
-                              icon={<IoMdContract sx={{ fontSize: "12px !important" }} />}
-                              label={
-                                currentContract ? CONTRACT_LEVELS[currentContract.contractLevel] : "No Contract"
-                              }
-                              sx={{
-                                fontWeight: "bold",
-                                fontSize: "0.875rem",
-                                color: levelColor,
-                                bgcolor: levelColor + "60",
-                                borderRadius: "0",
-                                cursor: "default",
-                                userSelect: "none",
-                              }}
-                            />
-              <Chip
-                label={`Payment: ${lead.paymentStatus}`}
-                color="primary"
-                variant="outlined"
-                size="small"
-                sx={{ fontWeight: 500 }}
+              user.role === "STAFF" ||
+              user.role === "SUPER_SALES") && (
+              <>
+                <Chip
+                  icon={<IoMdContract sx={{ fontSize: "12px !important" }} />}
+                  label={
+                    currentContract
+                      ? CONTRACT_LEVELS[currentContract.contractLevel]
+                      : "No Contract"
+                  }
+                  sx={{
+                    fontWeight: "bold",
+                    fontSize: "0.875rem",
+                    color: levelColor,
+                    bgcolor: levelColor + "60",
+                    borderRadius: "0",
+                    cursor: "default",
+                    userSelect: "none",
+                  }}
                 />
-                </>
+                <Chip
+                  label={`Payment: ${lead.paymentStatus}`}
+                  color="primary"
+                  variant="outlined"
+                  size="small"
+                  sx={{ fontWeight: 500 }}
+                />
+              </>
             )}
-
 
             {/* Status Button/Menu */}
             {user.role !== "ACCOUNTANT" && (
@@ -835,8 +834,7 @@ const MoreActionsMenu = ({
                       assignedTo: { ...newLead.assignedTo },
                       status: newLead.status,
                     }));
-                  }
-                  else if (setleads) {
+                  } else if (setleads) {
                     setleads((oldLeads) =>
                       oldLeads.map((l) => {
                         if (l.id === lead.id) {
@@ -850,10 +848,9 @@ const MoreActionsMenu = ({
                         }
                       })
                     );
-                  }else{
-                    window.location.reload()
+                  } else {
+                    window.location.reload();
                   }
-
                 }}
               />
             </MenuItem>
@@ -864,19 +861,20 @@ const MoreActionsMenu = ({
           <>
             {(user.role === "STAFF" ||
               user.role === "SUPER_ADMIN" ||
-              user.role === "ADMIN") && (
-              <MenuItem>
-                <AddPayments
-                  fullButtonWidth={true}
-                  lead={lead}
-                  open={paymentModal}
-                  paymentType={"final-price"}
-                  setOpen={setPaymentModal}
-                  totalAmount={lead.averagePrice}
-                  setOldPayments={setPayments}
-                />
-              </MenuItem>
-            )}
+              user.role === "ADMIN") &&
+              (!payments || payments?.length < 1) && (
+                <MenuItem>
+                  <AddPayments
+                    fullButtonWidth={true}
+                    lead={lead}
+                    open={paymentModal}
+                    paymentType={"final-price"}
+                    setOpen={setPaymentModal}
+                    totalAmount={lead.averagePrice}
+                    setOldPayments={setPayments}
+                  />
+                </MenuItem>
+              )}
             {/* Payment Actions */}
             <>
               {payments?.length > 0 && (

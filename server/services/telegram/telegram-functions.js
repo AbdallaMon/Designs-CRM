@@ -120,10 +120,7 @@ export async function createTeleChannelRecord({
 }) {
   const checkIfPresent = await prisma.telegramChannel.findFirst({
     where: {
-      accessHash,
-      channelId,
       clientLeadId: clientLead.id,
-      channelLink: inviteLink,
     },
   });
   if (checkIfPresent) return;

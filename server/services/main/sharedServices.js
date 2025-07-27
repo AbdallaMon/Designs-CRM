@@ -475,6 +475,11 @@ export async function getClientLeadsColumnStatus({
         orderBy: { id: "desc" },
         take: 1,
       },
+      extraServices: {
+        select: {
+          price: true,
+        },
+      },
       updates: {
         orderBy: { updatedAt: "desc" },
         where: updatesWhere,
@@ -498,18 +503,31 @@ export async function getClientLeadsColumnStatus({
         lead.contracts[0].contractLevel === filters.contractLevel
     );
   }
+  // Step 1: Aggregate averagePrice from clientLead
   const consolusion = await prisma.clientLead.aggregate({
     where,
-    _count: {
-      id: true,
+    _count: { id: true },
+    _sum: { averagePrice: true },
+  });
+
+  // Step 2: Aggregate ExtraService prices linked to those leads
+  const extraServicesTotal = await prisma.extraService.aggregate({
+    where: {
+      clientLead: {
+        ...where, // same filter applied to clientLead
+      },
     },
     _sum: {
-      averagePrice: true,
+      price: true,
     },
   });
 
+  const averagePrice = Number(consolusion._sum.averagePrice ?? 0);
+  const extraServicesPrice = Number(extraServicesTotal._sum.price ?? 0);
+
+  const totalValue = (averagePrice + extraServicesPrice).toFixed(2);
+
   const totalLeads = consolusion._count.id;
-  const totalValue = consolusion._sum.averagePrice ?? 0;
 
   return { data: result, totalValue, totalLeads };
   // statusArray.forEach((status) => {
@@ -2679,18 +2697,32 @@ export async function getLeadByPorjectsColumn({ searchParams, isAdmin }) {
       const priorityB = getPriorityOrder(b.projects[0]?.priority);
       return priorityB - priorityA; // HIGH priority first
     });
+  // Step 1: Aggregate averagePrice from clientLead
   const consolusion = await prisma.clientLead.aggregate({
     where,
-    _count: {
-      id: true,
+    _count: { id: true },
+    _sum: { averagePrice: true },
+  });
+
+  // Step 2: Aggregate ExtraService prices linked to those leads
+  const extraServicesTotal = await prisma.extraService.aggregate({
+    where: {
+      clientLead: {
+        ...where, // same filter applied to clientLead
+      },
     },
     _sum: {
-      averagePrice: true,
+      price: true,
     },
   });
 
+  // Step 3: Add them together
+  const averagePrice = Number(consolusion._sum.averagePrice ?? 0);
+  const extraServicesPrice = Number(extraServicesTotal._sum.price ?? 0);
+
+  const totalValue = (averagePrice + extraServicesPrice).toFixed(2);
+
   const totalLeads = consolusion._count.id;
-  const totalValue = consolusion._sum.averagePrice ?? 0;
   return { data: data, totalValue, totalLeads };
 }
 export async function getLeadDetailsByProject(clientLeadId, searchParams) {
