@@ -13,7 +13,6 @@ dotenv.config();
 
 export async function createChannelAndAddUsers({ clientLeadId }) {
   const isUserAuthorized = await teleClient.checkAuthorization();
-  console.log(isUserAuthorized, "isUserAuthorized");
 
   if (!isUserAuthorized) {
     console.warn(
@@ -231,6 +230,9 @@ export async function getLeadsWithOutChannel() {
   });
 
   for (const lead of clientLeads) {
+    console.log(lead.telegramChannel, "lead telegramLink");
+    console.log(lead.telegramLink, "lead telegramLink");
+
     if (lead.telegramLink) {
       const teleChat = await getChannelEntityFromInviteLink({
         inviteLink: lead.telegramLink,
