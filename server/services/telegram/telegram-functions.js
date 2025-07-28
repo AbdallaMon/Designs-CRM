@@ -406,7 +406,6 @@ export async function uploadANote(note, channel) {
       note,
     },
   });
-  await delay(30000);
 }
 
 export async function uploadAnAttachment(file, channel) {
@@ -417,7 +416,6 @@ export async function uploadAnAttachment(file, channel) {
       file,
     },
   });
-  await delay(3000);
 }
 export async function uploadAQueueNote(note, channel) {
   const mention = note.user?.telegramUsername
@@ -486,7 +484,7 @@ export async function getMeagsses({ clientLeadId }) {
   }
   const fetchedMessages = await teleClient.getMessages(channel, options);
   let messages = fetchedMessages.sort((a, b) => a.id - b.id);
-
+  console.log(channel, "channel");
   return await filterTaggedMessages({ clientLeadId, messages, channel });
 }
 
@@ -498,6 +496,7 @@ export async function getLastFetchedTeleMessage({ clientLeadId }) {
 }
 
 async function filterTaggedMessages({ clientLeadId, messages, channel }) {
+  if (!channel) return;
   let lastMessage = null;
   clientLeadId = Number(clientLeadId);
   messages.forEach(async (msg) => {

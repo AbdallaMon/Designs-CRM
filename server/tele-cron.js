@@ -24,7 +24,6 @@ cron.schedule("*/1 * * * *", async () => {
     for (const lead of finalizedLeads) {
       try {
         await getMeagsses({ clientLeadId: lead.id });
-        await delay(3000); // Optional: wait 3s between each to be gentle on Telegram
       } catch (e) {
         console.warn(
           `⚠️ Failed to get messages for lead ${lead.id}:`,
