@@ -169,24 +169,47 @@ export async function addUsersToATeleChannel({ channel, usersList }) {
 
 export async function getChannelEntityFromInviteLink({ inviteLink }) {
   try {
+    console.log("🔗 Processing invite link:", inviteLink);
+
     const lastPart = inviteLink.trim().split("/").pop();
+    if (!lastPart) throw new Error("❌ Invalid invite link format");
 
-    if (!lastPart) throw new Error("Invalid invite link");
-
+    // Case 1: Regular public username (no +)
     if (!lastPart.startsWith("+")) {
+      console.log("🔍 Resolving entity via username:", lastPart);
       return await teleClient.getEntity(lastPart);
     }
 
+    // Case 2: Invite link hash (starts with +)
     const hash = lastPart.replace("+", "");
 
-    const result = await teleClient.invoke(
-      new Api.messages.CheckChatInvite({ hash })
-    );
+    try {
+      console.log("🕵️ Checking chat invite hash:", hash);
+      const result = await teleClient.invoke(
+        new Api.messages.CheckChatInvite({ hash })
+      );
 
-    if (result instanceof Api.ChatInviteAlready) {
-      return result.chat;
-    } else {
-      throw new Error("Not a member or invalid invite");
+      if (result instanceof Api.ChatInviteAlready) {
+        console.log("✅ Already joined. Returning chat info.");
+        return result.chat;
+      } else {
+        throw new Error("🚫 Not a member of the invite link.");
+      }
+    } catch (error) {
+      if (error.errorMessage?.startsWith("FLOOD_WAIT_")) {
+        const waitSeconds = parseInt(error.errorMessage.split("_")[2], 10);
+        console.warn(`⏳ FLOOD_WAIT: Waiting ${waitSeconds} seconds...`);
+        await new Promise((res) => setTimeout(res, waitSeconds * 1000));
+        // Retry after wait
+        console.log("🔁 Retrying after wait...");
+        return await getChannelEntityFromInviteLink({ inviteLink });
+      }
+
+      if (error.errorMessage === "INVITE_HASH_EXPIRED") {
+        console.error("🚫 Invite hash expired");
+      }
+
+      throw error;
     }
   } catch (error) {
     console.error(
@@ -196,6 +219,7 @@ export async function getChannelEntityFromInviteLink({ inviteLink }) {
     return null;
   }
 }
+
 export async function getLeadsWithOutChannel() {
   const clientLeads = await prisma.clientLead.findMany({
     where: {
@@ -209,6 +233,7 @@ export async function getLeadsWithOutChannel() {
       const teleChat = await getChannelEntityFromInviteLink({
         inviteLink: lead.telegramLink,
       });
+
       if (!teleChat) return;
       await createTeleChannelRecord({
         clientLead: lead,
