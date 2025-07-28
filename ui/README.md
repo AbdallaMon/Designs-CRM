@@ -117,12 +117,12 @@
   to ask !!!!
   مين من الموظفين الي بيتضاف هل السيلز بيتضاف
   -يبحث في الديلز
-
 - Total price is final price + extra services
-- Enhance notesComponent make it by default get number of notes now
 - Image in the url in both dream studio and eng ahmed
 - Toast data in client image session
 - Dashboard change projects to leads
+
+- Enhance notesComponent make it by default get number of notes now
 
 - https://my.telegram.org/apps
 

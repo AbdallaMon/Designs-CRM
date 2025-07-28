@@ -13,7 +13,7 @@ dotenv.config();
 
 export async function createChannelAndAddUsers({ clientLeadId }) {
   const isUserAuthorized = await teleClient.checkAuthorization();
-
+  console.log(isUserAuthorized, "isUserAuthorized");
   if (!isUserAuthorized) {
     console.warn(
       "❌ Telegram client not authenticated. Aborting channel creation."
