@@ -167,6 +167,8 @@ export async function addUsersToATeleChannel({ channel, usersList }) {
 export async function getChannelEntityFromInviteLink({ inviteLink }) {
   try {
     console.log("🔗 Processing invite link:", inviteLink);
+    const isUserAuthorized = await teleClient.checkAuthorization();
+    console.log(isUserAuthorized, "isUserAuthorized");
 
     const lastPart = inviteLink.trim().split("/").pop();
     if (!lastPart) throw new Error("❌ Invalid invite link format");
@@ -193,6 +195,7 @@ export async function getChannelEntityFromInviteLink({ inviteLink }) {
         throw new Error("🚫 Not a member of the invite link.");
       }
     } catch (error) {
+      console.log(error.message, "error in first");
       if (error.errorMessage?.startsWith("FLOOD_WAIT_")) {
         const waitSeconds = parseInt(error.errorMessage.split("_")[2], 10);
         console.warn(`⏳ FLOOD_WAIT: Waiting ${waitSeconds} seconds...`);
@@ -209,6 +212,8 @@ export async function getChannelEntityFromInviteLink({ inviteLink }) {
       throw error;
     }
   } catch (error) {
+    console.log(error.message, "error in second");
+
     console.error(
       "❌ Failed to get channel entity from invite link:",
       error.message
