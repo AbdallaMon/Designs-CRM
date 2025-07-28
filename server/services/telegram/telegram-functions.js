@@ -14,23 +14,19 @@ dotenv.config();
 export async function createChannelAndAddUsers({ clientLeadId }) {
   const isUserAuthorized = await teleClient.checkAuthorization();
   console.log(isUserAuthorized, "isUserAuthorized");
+
   if (!isUserAuthorized) {
     console.warn(
       "❌ Telegram client not authenticated. Aborting channel creation."
     );
-    return; // Do nothing if not authenticated
+    return;
   }
+
   const clientLead = await prisma.clientLead.findUnique({
-    where: {
-      id: Number(clientLeadId),
-    },
+    where: { id: Number(clientLeadId) },
     select: {
       id: true,
-      client: {
-        select: {
-          name: true,
-        },
-      },
+      client: { select: { name: true } },
     },
   });
 
@@ -45,31 +41,31 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
   );
   const channel = chats[0];
 
-  let adminUsersToBeAdded = [];
-
   const adminUsers = await prisma.user.findMany({
     where: {
-      role: {
-        in: ["ADMIN", "SUPER_ADMIN"],
-      },
+      role: { in: ["ADMIN", "SUPER_ADMIN"] },
       isActive: true,
     },
-    select: {
-      telegramUsername: true,
-    },
+    select: { telegramUsername: true },
   });
 
   const self = await teleClient.getMe();
 
-  adminUsers.forEach(async (user) => {
-    const entity = await getUserEntitiy(user);
-    if (!entity || entity.id === self.id) return;
-    adminUsersToBeAdded.push(entity);
-  });
+  const adminUsersToBeAdded = [];
 
-  if (adminUsersToBeAdded && adminUsersToBeAdded.length > 0) {
+  // ✅ Step-by-step fetch user entities
+  for (const user of adminUsers) {
+    const entity = await getUserEntitiy(user);
+    if (!entity || entity.id === self.id) continue;
+    adminUsersToBeAdded.push(entity);
+  }
+
+  if (adminUsersToBeAdded.length > 0) {
+    // ✅ Wait for all users to be added first
     await addUsersToATeleChannel({ channel, usersList: adminUsersToBeAdded });
-    adminUsersToBeAdded.forEach(async (user) => {
+
+    // ✅ One-by-one admin promotion
+    for (const user of adminUsersToBeAdded) {
       await teleClient.invoke(
         new Api.channels.EditAdmin({
           channel,
@@ -88,15 +84,14 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
           rank: "Admin",
         })
       );
-    });
+    }
   }
 
   const channelId = channel.id;
   const accessHash = channel.accessHash;
+
   const exportedInvite = await teleClient.invoke(
-    new Api.messages.ExportChatInvite({
-      peer: channel,
-    })
+    new Api.messages.ExportChatInvite({ peer: channel })
   );
 
   const inviteLink = exportedInvite.link;
@@ -107,7 +102,9 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
     channelId,
     inviteLink,
   });
+
   await uploadItemsToTele({ clientLeadId: Number(clientLeadId) });
+
   console.log("✅ Admin privileges assigned.");
   return channel;
 }
@@ -228,20 +225,23 @@ export async function getLeadsWithOutChannel() {
     },
   });
 
-  clientLeads.forEach(async (lead) => {
+  for (const lead of clientLeads) {
     if (lead.telegramLink) {
       const teleChat = await getChannelEntityFromInviteLink({
         inviteLink: lead.telegramLink,
       });
 
-      if (!teleChat) return;
+      if (!teleChat) continue;
+
       await createTeleChannelRecord({
         clientLead: lead,
         accessHash: teleChat.accessHash,
         channelId: teleChat.id,
         inviteLink: lead.telegramLink,
       });
+
       const lastMessage = await teleClient.getMessages(teleChat, { limit: 1 });
+
       const findLastMessage = await prisma.fetchedTelegramMessage.findFirst({
         where: {
           clientLeadId: Number(lead.id),
@@ -250,8 +250,9 @@ export async function getLeadsWithOutChannel() {
           id: "desc",
         },
       });
+
       if (findLastMessage) {
-        await prisma.FetchedTelegramMessage.update({
+        await prisma.fetchedTelegramMessage.update({
           where: {
             id: findLastMessage.id,
           },
@@ -261,7 +262,7 @@ export async function getLeadsWithOutChannel() {
           },
         });
       } else {
-        await prisma.FetchedTelegramMessage.create({
+        await prisma.fetchedTelegramMessage.create({
           data: {
             messageId: lastMessage[0].id,
             clientLeadId: Number(lead.id),
@@ -273,7 +274,7 @@ export async function getLeadsWithOutChannel() {
         clientLeadId: lead.id,
       });
     }
-  });
+  }
 }
 
 export async function uploadItemsToTele({ clientLeadId }) {
