@@ -228,7 +228,7 @@ export async function getLeadsWithOutChannel() {
       OR: [{ telegramChannel: null }, { telegramLink: null }],
     },
   });
-
+  console.log(clientLeads.length, "clientLeads.length");
   for (const lead of clientLeads) {
     console.log(lead.telegramChannel, "lead telegramLink");
     console.log(lead.telegramLink, "lead telegramLink");
