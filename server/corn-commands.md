@@ -4,3 +4,7 @@ pm2 start imageWorker.js --name image-worker --interpreter node
 
 ssh -L 6379:127.0.0.1:6379 root@147.93.127.34
 ssh -L 3308:localhost:3306 root@147.93.127.34
+
+pm2 start workers/telegramUploadWorker.js --name telegram-upload-worker
+pm2 start workers/telegramMessageWorker.js --name telegram-message-worker
+pm2 start workers/telegramChannelWorker.js --name telegram-channel-worker

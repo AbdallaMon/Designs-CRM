@@ -26,6 +26,7 @@ import {
   uploadANote,
 } from "../telegram/telegram-functions.js";
 import Stripe from "stripe";
+import { telegramChannelQueue } from "../queues/telegramChannelQueue.js";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function getClientLeads({
@@ -2006,7 +2007,15 @@ export async function updateClientLeadStatus({
     !isAdmin ? lead.userId : null
   );
   if (status === "FINALIZED") {
-    await createChannelAndAddUsers({ clientLeadId: lead.id });
+    await telegramChannelQueue.add(
+      "create-channel",
+      { clientLeadId: lead.id },
+      {
+        jobId: `create-${lead.id}`, // optional: deduplicate
+        removeOnComplete: true,
+        removeOnFail: false,
+      }
+    );
     await finalizedLeadCreated(lead.id, lead.userId);
   }
 }

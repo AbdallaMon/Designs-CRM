@@ -1,10 +1,14 @@
 import { Api, TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions/index.js";
-import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
-dotenv.config();
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 const apiId = process.env.TELE_API_ID;
 const apiHash = process.env.TELE_API_HASH;

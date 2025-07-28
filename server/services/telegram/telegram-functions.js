@@ -8,6 +8,9 @@ import {
 import prisma from "../../prisma/prisma.js";
 import { dealsLink } from "../links.js";
 import { sendEmail } from "../sendMail.js";
+import { telegramUploadQueue } from "../queues/telegramUploadQueue.js";
+import { telegramMessageQueue } from "../queues/telegram-message-queue.js";
+import { telegramChannelQueue } from "../queues/telegramChannelQueue.js";
 
 dotenv.config();
 
@@ -31,81 +34,103 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
 
   const formattedId = `${clientLead.id.toString().padStart(7, "0")}`;
 
-  const { chats } = await teleClient.invoke(
-    new Api.channels.CreateChannel({
-      title: formattedId,
-      about: clientLead.client.name,
-      megagroup: false,
-    })
-  );
-  const channel = chats[0];
+  let channel = null;
 
-  const adminUsers = await prisma.user.findMany({
-    where: {
-      role: { in: ["ADMIN", "SUPER_ADMIN"] },
-      isActive: true,
-    },
-    select: { telegramUsername: true },
-  });
+  try {
+    const { chats } = await teleClient.invoke(
+      new Api.channels.CreateChannel({
+        title: formattedId,
+        about: clientLead.client.name,
+        megagroup: false,
+      })
+    );
+    channel = chats[0];
 
-  const self = await teleClient.getMe();
+    const adminUsers = await prisma.user.findMany({
+      where: {
+        role: { in: ["ADMIN", "SUPER_ADMIN"] },
+        isActive: true,
+      },
+      select: { telegramUsername: true },
+    });
 
-  const adminUsersToBeAdded = [];
+    const self = await teleClient.getMe();
+    const adminUsersToBeAdded = [];
 
-  // ✅ Step-by-step fetch user entities
-  for (const user of adminUsers) {
-    const entity = await getUserEntitiy(user);
-    if (!entity || entity.id === self.id) continue;
-    adminUsersToBeAdded.push(entity);
-  }
-
-  if (adminUsersToBeAdded.length > 0) {
-    // ✅ Wait for all users to be added first
-    await addUsersToATeleChannel({ channel, usersList: adminUsersToBeAdded });
-
-    // ✅ One-by-one admin promotion
-    for (const user of adminUsersToBeAdded) {
-      await teleClient.invoke(
-        new Api.channels.EditAdmin({
-          channel,
-          userId: user,
-          adminRights: new Api.ChatAdminRights({
-            changeInfo: true,
-            postMessages: true,
-            editMessages: true,
-            deleteMessages: true,
-            banUsers: true,
-            inviteUsers: true,
-            pinMessages: true,
-            addAdmins: true,
-            manageCall: true,
-          }),
-          rank: "Admin",
-        })
-      );
+    for (const user of adminUsers) {
+      const entity = await getUserEntitiy(user);
+      if (!entity || entity?.id?.value === self?.id?.value) continue;
+      adminUsersToBeAdded.push(entity);
     }
+
+    if (adminUsersToBeAdded.length > 0) {
+      await addUsersToATeleChannel({ channel, usersList: adminUsersToBeAdded });
+
+      for (const user of adminUsersToBeAdded) {
+        await teleClient.invoke(
+          new Api.channels.EditAdmin({
+            channel,
+            userId: user,
+            adminRights: new Api.ChatAdminRights({
+              changeInfo: true,
+              postMessages: true,
+              editMessages: true,
+              deleteMessages: true,
+              banUsers: true,
+              inviteUsers: true,
+              pinMessages: true,
+              addAdmins: true,
+              manageCall: true,
+            }),
+            rank: "Admin",
+          })
+        );
+      }
+    }
+
+    const channelId = channel.id;
+    const accessHash = channel.accessHash;
+
+    const exportedInvite = await teleClient.invoke(
+      new Api.messages.ExportChatInvite({ peer: channel })
+    );
+
+    const inviteLink = exportedInvite.link;
+
+    await createTeleChannelRecord({
+      clientLead,
+      accessHash,
+      channelId,
+      inviteLink,
+    });
+
+    await telegramUploadQueue.add("upload", {
+      clientLeadId: Number(clientLeadId),
+    });
+
+    console.log("✅ Admin privileges assigned.");
+    return channel;
+  } catch (err) {
+    console.error(
+      `❌ Error occurred during channel setup for ${clientLeadId}:`,
+      err.message
+    );
+
+    if (channel) {
+      try {
+        console.warn("🧹 Attempting to delete incomplete channel...");
+        await teleClient.invoke(new Api.channels.DeleteChannel({ channel }));
+        console.log("🗑️ Incomplete channel deleted.");
+      } catch (cleanupErr) {
+        console.error(
+          "⚠️ Failed to delete incomplete channel:",
+          cleanupErr.message
+        );
+      }
+    }
+
+    throw err; // Re-throw to let BullMQ handle retry/failure logic
   }
-
-  const channelId = channel.id;
-  const accessHash = channel.accessHash;
-
-  const exportedInvite = await teleClient.invoke(
-    new Api.messages.ExportChatInvite({ peer: channel })
-  );
-
-  const inviteLink = exportedInvite.link;
-
-  await createTeleChannelRecord({
-    clientLead,
-    accessHash,
-    channelId,
-    inviteLink,
-  });
-
-  await uploadItemsToTele({ clientLeadId: Number(clientLeadId) });
-
-  console.log("✅ Admin privileges assigned.");
-  return channel;
 }
 
 export async function createTeleChannelRecord({
@@ -119,6 +144,7 @@ export async function createTeleChannelRecord({
       clientLeadId: clientLead.id,
     },
   });
+
   if (checkIfPresent) return;
   await prisma.telegramChannel.create({
     data: {
@@ -228,11 +254,7 @@ export async function getLeadsWithOutChannel() {
       OR: [{ telegramChannel: null }, { telegramLink: null }],
     },
   });
-  console.log(clientLeads.length, "clientLeads.length");
   for (const lead of clientLeads) {
-    console.log(lead.telegramChannel, "lead telegramLink");
-    console.log(lead.telegramLink, "lead telegramLink");
-
     if (lead.telegramLink) {
       const teleChat = await getChannelEntityFromInviteLink({
         inviteLink: lead.telegramLink,
@@ -277,9 +299,15 @@ export async function getLeadsWithOutChannel() {
         });
       }
     } else {
-      await createChannelAndAddUsers({
-        clientLeadId: lead.id,
-      });
+      await telegramChannelQueue.add(
+        "create-channel",
+        { clientLeadId: lead.id },
+        {
+          jobId: `create-${lead.id}`, // optional: deduplicate
+          removeOnComplete: true,
+          removeOnFail: false,
+        }
+      );
     }
   }
 }
@@ -366,8 +394,32 @@ export async function getChannelEntitiy({ channelId, accessHash }) {
   );
   return channel;
 }
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export async function uploadANote(note, channel) {
+  await telegramMessageQueue.add("send-note", {
+    type: "note",
+    payload: {
+      clientLeadId: note.clientLeadId,
+      note,
+    },
+  });
+  await delay(30000);
+}
+
+export async function uploadAnAttachment(file, channel) {
+  await telegramMessageQueue.add("send-file", {
+    type: "file",
+    payload: {
+      clientLeadId: file.clientLeadId,
+      file,
+    },
+  });
+  await delay(3000);
+}
+export async function uploadAQueueNote(note, channel) {
   const mention = note.user?.telegramUsername
     ? `${note.user.telegramUsername}`
     : note.user?.name || "Unknown";
@@ -388,7 +440,7 @@ export async function uploadANote(note, channel) {
   });
 }
 
-export async function uploadAnAttachment(file, channel) {
+export async function uploadAQueueAttachment(file, channel) {
   let mention;
 
   if (file.isUserFile) {
