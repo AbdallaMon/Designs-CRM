@@ -126,6 +126,8 @@
 
 - https://my.telegram.org/apps
 
+- Delviery time update on telegram
+
 3- تحديد ال style  
  8- 2.5 + 5.5 + 10 + 5 = -15
 1- الميتينج

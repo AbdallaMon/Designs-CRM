@@ -7,7 +7,12 @@ import dayjs from "dayjs";
 const { groupBy } = pkg;
 import XLSX from "xlsx";
 import { groupProjects } from "./sharedServices.js";
-import { createChannelAndAddUsers } from "../telegram/telegram-functions.js";
+import {
+  addUsersToATeleChannel,
+  createChannelAndAddUsers,
+  getChannelEntitiyByTeleRecordAndLeadId,
+  getUserEntitiy,
+} from "../telegram/telegram-functions.js";
 export async function getUser(searchParams, limit, skip) {
   try {
     const filters = searchParams.filters && JSON.parse(searchParams.filters);
@@ -1919,6 +1924,66 @@ export async function createNewTelegramLink({ leadId }) {
   const newChannel = await createChannelAndAddUsers({
     clientLeadId: Number(leadId),
   });
-  console.log(newChannel, "newChannel");
   return newChannel.inviteLink;
+}
+
+export async function addAllProjectUsersToChannel({ clientLeadId }) {
+  clientLeadId = Number(clientLeadId);
+  const clientLead = await prisma.clientLead.findUnique({
+    where: { id: clientLeadId },
+    include: {
+      assignedTo: true,
+      projects: {
+        include: {
+          assignments: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      },
+      telegramChannel: true,
+    },
+  });
+
+  if (!clientLead) {
+    console.warn("❌ ClientLead not found");
+    return;
+  }
+
+  const usersSet = new Map();
+
+  if (clientLead.assignedTo?.telegramUsername) {
+    usersSet.set(clientLead.assignedTo.telegramUsername, clientLead.assignedTo);
+  }
+
+  for (const project of clientLead.projects) {
+    for (const assignment of project.assignments) {
+      const user = assignment.user;
+      if (user?.telegramUsername) {
+        usersSet.set(user.telegramUsername, user);
+      }
+    }
+  }
+
+  const usersList = [];
+
+  for (const user of usersSet.values()) {
+    try {
+      const inputUser = await getUserEntitiy(user);
+      if (inputUser) usersList.push(inputUser);
+    } catch (err) {
+      console.warn(
+        `⚠️ Failed to resolve @${user.telegramUsername}:`,
+        err.message
+      );
+    }
+  }
+  if (!clientLead.telegramChannel) {
+    throw new Error("⚠️ No Telegram channel linked to this lead");
+  }
+  const channel = await getChannelEntitiyByTeleRecordAndLeadId({
+    clientLeadId: Number(clientLeadId),
+  });
+  return await addUsersToATeleChannel({ channel, usersList });
 }

@@ -8,6 +8,7 @@ import {
   verifyTokenAndHandleAuthorization,
 } from "../services/main/utility.js";
 import {
+  addAllProjectUsersToChannel,
   changeUserStatus,
   createAFixedData,
   createCommissionByAdmin,
@@ -534,4 +535,19 @@ router.post("/client-leads/:leadId/telegram/new", async (req, res) => {
     getAndThrowError(e);
   }
 });
+
+router.post("/client-leads/:leadId/telegram/assign-users", async (req, res) => {
+  try {
+    const data = await addAllProjectUsersToChannel({
+      clientLeadId: req.params.leadId,
+    });
+    res.status(200).json({
+      message: "users added",
+      data: data,
+    });
+  } catch (e) {
+    getAndThrowError(e);
+  }
+});
+
 export default router;

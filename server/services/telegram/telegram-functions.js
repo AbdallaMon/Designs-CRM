@@ -218,35 +218,21 @@ export async function getUserEntitiy(user) {
 }
 
 export async function addUsersToATeleChannel({ channel, usersList }) {
-  await teleClient.invoke(
-    new Api.channels.InviteToChannel({
-      channel,
-      users: [...usersList],
-    })
-  );
-
-  // for (const user of usersList) {
-  //   await teleClient.invoke(
-  //     new Api.channels.EditBanned({
-  //       channel,
-  //       participant: user,
-  //       bannedRights: new Api.ChatBannedRights({
-  //         sendMessages: false,
-  //         sendMedia: false,
-  //         sendStickers: false,
-  //         sendGifs: false,
-  //         sendGames: false,
-  //         sendInline: false,
-  //         embedLinks: false,
-  //         sendPolls: false,
-  //         changeInfo: true,
-  //         inviteUsers: true,
-  //         pinMessages: true,
-  //         untilDate: 0,
-  //       }),
-  //     })
-  //   );
-  // }
+  for (const user of usersList) {
+    try {
+      await teleClient.invoke(
+        new Api.channels.InviteToChannel({
+          channel,
+          users: [user], // 👈 Invite one at a time
+        })
+      );
+      console.log(`✅ Invited @${user.username || user.id.value}`);
+    } catch (e) {
+      console.warn(
+        `❌ Failed to invite @${user.username || user.id.value}: ${e.message}`
+      );
+    }
+  }
 }
 
 export async function getChannelEntityFromInviteLink({ inviteLink }) {

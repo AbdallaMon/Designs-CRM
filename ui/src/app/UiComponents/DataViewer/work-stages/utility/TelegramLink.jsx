@@ -225,6 +225,7 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
               setLead={setLead}
               setleads={setleads}
             />
+            <AddUserToAChannel isAdmin={isAdmin} lead={lead} />
           </Box>
         </>
       ) : (
@@ -289,6 +290,35 @@ function CreateNewTeleGramGroup({ isAdmin, lead, setLead, setleads }) {
             removeAfterConfirm={true}
             handleConfirm={createNewGroup}
             label={"New Channel"}
+          />
+        </Tooltip>
+      )}
+    </>
+  );
+}
+export function AddUserToAChannel({ isAdmin, lead }) {
+  const { setLoading } = useToastContext();
+  async function createNewGroup() {
+    const req = await handleRequestSubmit(
+      {},
+      setLoading,
+      `admin/client-leads/${lead.id}/telegram/assign-users`,
+      false,
+      "Adding"
+    );
+
+    return req;
+  }
+  return (
+    <>
+      {isAdmin && (
+        <Tooltip title="Add users to the channel">
+          <ConfirmWithActionModel
+            title="Add users to the channel"
+            description="By confirming we will all users related to the project with a valid username to the channel"
+            removeAfterConfirm={true}
+            handleConfirm={createNewGroup}
+            label={"Add staff"}
           />
         </Tooltip>
       )}
