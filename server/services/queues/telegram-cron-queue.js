@@ -1,10 +1,10 @@
 import { Queue } from "bullmq";
 import connection from "../redis/bullmqConnection.js";
 
-export const telegramChannelQueue = new Queue("telegram-channel-queue", {
+export const telegramCronQueue = new Queue("telegram-cron-queue", {
   ...connection,
   limiter: {
     max: 1,
-    duration: 10_000,
+    duration: 5000,
   },
 });

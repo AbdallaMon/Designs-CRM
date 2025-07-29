@@ -29,6 +29,11 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
     select: {
       id: true,
       client: { select: { name: true } },
+      assignedTo: {
+        select: {
+          telegramUsername: true,
+        },
+      },
     },
   });
 
@@ -103,7 +108,10 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
       channelId,
       inviteLink,
     });
-
+    const telegramUser = clientLead.assignedTo;
+    if (telegramUser && telegramUser.telegramUsername) {
+      await inviteUserToAChannel({ channel, user: telegramUser });
+    }
     await telegramUploadQueue.add("upload", {
       clientLeadId: Number(clientLeadId),
     });
@@ -479,12 +487,11 @@ export async function getMeagsses({ clientLeadId }) {
   };
 
   if (lastFetchedMessage) {
-    // Get messages *before* this message ID, then filter manually for newer ones
     options.minId = Number(lastFetchedMessage.messageId);
   }
+  await delay(100);
   const fetchedMessages = await teleClient.getMessages(channel, options);
   let messages = fetchedMessages.sort((a, b) => a.id - b.id);
-  console.log(channel, "channel");
   return await filterTaggedMessages({ clientLeadId, messages, channel });
 }
 
@@ -499,7 +506,7 @@ async function filterTaggedMessages({ clientLeadId, messages, channel }) {
   if (!channel) return;
   let lastMessage = null;
   clientLeadId = Number(clientLeadId);
-  messages.forEach(async (msg) => {
+  for (const msg of messages) {
     const sender = msg.from;
     lastMessage = msg;
     const senderName = sender?.username;
@@ -533,7 +540,7 @@ async function filterTaggedMessages({ clientLeadId, messages, channel }) {
       });
     }
     return null;
-  });
+  }
   if (lastMessage) {
     const findLastMessage = await prisma.fetchedTelegramMessage.findFirst({
       where: {
