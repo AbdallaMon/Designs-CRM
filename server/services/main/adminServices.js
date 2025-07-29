@@ -94,6 +94,7 @@ export async function createStaffUser(user) {
       password: hashedPassword,
       role: user.role,
       name: user.name,
+      telegramUsername: user.telegramUsername,
     },
     select: {
       id: true,
@@ -103,6 +104,7 @@ export async function createStaffUser(user) {
       lastSeenAt: true,
       role: true,
       subRoles: true,
+      telegramUsername: true,
     },
   });
 
@@ -114,6 +116,7 @@ export async function editStaffUser(user, userId) {
   if (user.password) {
     hashedPassword = bcrypt.hashSync(user.password, 8);
   }
+  console.log(user, "user");
   return await prisma.user.update({
     where: { id: Number(userId) },
     data: {
@@ -121,6 +124,7 @@ export async function editStaffUser(user, userId) {
       password: hashedPassword && hashedPassword,
       name: user.name,
       role: user.role && user.role,
+      telegramUsername: user.telegramUsername,
     },
     select: {
       id: true,
@@ -130,6 +134,7 @@ export async function editStaffUser(user, userId) {
       lastSeenAt: true,
       role: true,
       subRoles: true,
+      telegramUsername: true,
     },
   });
 }

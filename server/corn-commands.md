@@ -10,3 +10,5 @@ pm2 start workers/telegramMessageWorker.js --name telegram-message-worker
 pm2 start workers/telegramChannelWorker.js --name telegram-channel-worker
 pm2 start tele-cron.js --name telegram-cron
 pm2 start workers/telegramCronWorker.js --name telegram-cron-worker
+
+15|telegra | ✅ Done in cron worker Lead ID: 933
