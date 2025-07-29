@@ -288,6 +288,7 @@ function CreateNewTeleGramGroup({ isAdmin, lead, setLead, setleads }) {
             description="By confirming we will create new telegram group and remove the current from the system"
             removeAfterConfirm={true}
             handleConfirm={createNewGroup}
+            label={"New Channel"}
           />
         </Tooltip>
       )}

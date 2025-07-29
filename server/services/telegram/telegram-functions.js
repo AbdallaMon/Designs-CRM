@@ -107,6 +107,7 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
       accessHash,
       channelId,
       inviteLink,
+      forceNew: true,
     });
     const telegramUser = clientLead.assignedTo;
     if (telegramUser && telegramUser.telegramUsername) {
@@ -146,6 +147,7 @@ export async function createTeleChannelRecord({
   accessHash,
   channelId,
   inviteLink,
+  forceNew,
 }) {
   const checkIfPresent = await prisma.telegramChannel.findFirst({
     where: {
@@ -153,15 +155,26 @@ export async function createTeleChannelRecord({
     },
   });
 
-  if (checkIfPresent) return;
-  await prisma.telegramChannel.create({
-    data: {
-      clientLeadId: clientLead.id,
-      accessHash,
-      channelId,
-      channelLink: inviteLink,
-    },
-  });
+  if (checkIfPresent && !forceNew) return;
+  if (checkIfPresent && forceNew) {
+    await prisma.telegramChannel.update({
+      where: { id: Number(checkIfPresent.id) },
+      data: {
+        accessHash,
+        channelId,
+        channelLink: inviteLink,
+      },
+    });
+  } else {
+    await prisma.telegramChannel.create({
+      data: {
+        clientLeadId: clientLead.id,
+        accessHash,
+        channelId,
+        channelLink: inviteLink,
+      },
+    });
+  }
   return await prisma.clientLead.update({
     where: {
       id: Number(clientLead.id),
@@ -412,6 +425,7 @@ function delay(ms) {
 }
 
 export async function uploadANote(note, channel) {
+  await delay(1000);
   await telegramMessageQueue.add("send-note", {
     type: "note",
     payload: {
@@ -422,6 +436,8 @@ export async function uploadANote(note, channel) {
 }
 
 export async function uploadAnAttachment(file, channel) {
+  await delay(1000);
+
   await telegramMessageQueue.add("send-file", {
     type: "file",
     payload: {
