@@ -325,7 +325,6 @@ router.get("/:courseId/lessons/:lessonId/home-works", async (req, res) => {
     const data = await getListOfHomeWorks({
       lessonId: Number(req.params.lessonId),
     });
-    console.log(data, "data");
     res.status(200).json({ data });
   } catch (e) {
     getAndThrowError(e, res);
@@ -338,7 +337,6 @@ router.get(
       const data = await getLessonVideoPdfs({
         lessonVideoId: req.params.videoId,
       });
-      console.log(data, "data");
       res.status(200).json({ data });
     } catch (e) {
       getAndThrowError(e, res);
@@ -354,7 +352,6 @@ router.post(
         title: req.body.title,
         url: req.body.url,
       });
-      console.log(data, "data");
       res.status(200).json({ data, message: "Added succussfully" });
     } catch (e) {
       getAndThrowError(e, res);
@@ -368,7 +365,6 @@ router.delete(
       const data = await deleteALessonVideoPdf({
         lessonVideoPdfId: Number(req.params.pdfId),
       });
-      console.log(data, "data");
       res.status(200).json({ data, message: "Deleted succussfully" });
     } catch (e) {
       getAndThrowError(e, res);

@@ -184,9 +184,6 @@ export default function UsersPage() {
   }
 
   const editInputs = [...inputs];
-  console.log(editInputs, "editInputs");
-  console.log(data, "data");
-
   editInputs.map((input) => {
     if (input.data.id === "password") {
       input.pattern = {};

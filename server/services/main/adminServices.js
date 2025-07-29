@@ -7,6 +7,7 @@ import dayjs from "dayjs";
 const { groupBy } = pkg;
 import XLSX from "xlsx";
 import { groupProjects } from "./sharedServices.js";
+import { createChannelAndAddUsers } from "../telegram/telegram-functions.js";
 export async function getUser(searchParams, limit, skip) {
   try {
     const filters = searchParams.filters && JSON.parse(searchParams.filters);
@@ -116,7 +117,6 @@ export async function editStaffUser(user, userId) {
   if (user.password) {
     hashedPassword = bcrypt.hashSync(user.password, 8);
   }
-  console.log(user, "user");
   return await prisma.user.update({
     where: { id: Number(userId) },
     data: {
@@ -1913,4 +1913,11 @@ export async function getModelIds({ searchParams, model }) {
     ...(select && select),
     ...(include && include),
   });
+}
+
+export async function createNewTelegramLink({ leadId }) {
+  const newChannel = await createChannelAndAddUsers({
+    clientLeadId: Number(leadId),
+  });
+  return newChannel.inviteLink;
 }

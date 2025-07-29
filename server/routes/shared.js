@@ -431,7 +431,6 @@ router.get("/client-leads/:id", async (req, res) => {
             token.id,
             token
           );
-    console.log(clientLeadDetails, "clientLeadDetails");
     res.status(200).json({ data: clientLeadDetails });
   } catch (error) {
     console.error("Error fetching client lead details:", error);

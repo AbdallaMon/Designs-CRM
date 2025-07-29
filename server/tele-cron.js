@@ -8,6 +8,8 @@ dotenv.config();
 
 // cron.schedule("*/5 * * * *", async () => {
 await connectToTelegram(true);
+// cron.schedule("*/5 * * * *", async () => {
+//cron.schedule("*/1 * * * * *", async () => {
 
 cron.schedule("*/5 * * * *", async () => {
   try {
@@ -24,17 +26,26 @@ cron.schedule("*/5 * * * *", async () => {
 
     for (const lead of shuffledLeads) {
       try {
-        await telegramCronQueue.add(
-          "cron",
-          {
-            clientLeadId: Number(lead.id),
-          },
-          {
-            jobId: `cron-${lead.id}`,
-            removeOnComplete: true,
-            removeOnFail: true,
-          }
-        );
+        const existingJob = await telegramCronQueue.getJob(`cron-${lead.id}`);
+        if (!existingJob) {
+          console.log(existingJob, "existingJob");
+          await telegramCronQueue.add(
+            "cron",
+            {
+              clientLeadId: Number(lead.id),
+            },
+            {
+              attempts: 2,
+              backoff: {
+                type: "fixed",
+                delay: 10000,
+              },
+              jobId: `cron-${lead.id}`,
+              removeOnComplete: true,
+              removeOnFail: true,
+            }
+          );
+        }
       } catch (e) {
         console.warn(
           `⚠️ Failed to get messages for lead ${lead.id}:`,

@@ -640,7 +640,6 @@ export async function submitAnswer({
   questionId = Number(questionId);
   attemptId = Number(attemptId);
   testId = Number(testId);
-  console.log(answer, "answer");
   const existingAnswer = await prisma.userAnswer.findFirst({
     where: {
       attemptId,

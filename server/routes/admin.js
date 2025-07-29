@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  getAndThrowError,
   getCurrentUser,
   getPagination,
   getTokenData,
@@ -11,6 +12,7 @@ import {
   createAFixedData,
   createCommissionByAdmin,
   createLeadFromExcelData,
+  createNewTelegramLink,
   createStaffUser,
   deleteAFixedData,
   deleteALead,
@@ -521,4 +523,15 @@ router.patch("/model/archived/:id", async (req, res) => {
   }
 });
 
+router.post("/client-leads/:leadId/telegram/new", async (req, res) => {
+  try {
+    const data = await createNewTelegramLink({ leadId: req.params.leadId });
+    res.status(200).json({
+      message: "Telegram channel created succssfully",
+      data: data,
+    });
+  } catch (e) {
+    getAndThrowError(e);
+  }
+});
 export default router;

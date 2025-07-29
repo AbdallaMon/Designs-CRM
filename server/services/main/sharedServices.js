@@ -18,9 +18,6 @@ import { dealsLink } from "../links.js";
 import { v4 as uuidv4 } from "uuid";
 import { getCommissionByUserId, reverseCommissions } from "./adminServices.js";
 import {
-  addUsersToATeleChannel,
-  createChannelAndAddUsers,
-  getChannelEntitiy,
   getChannelEntitiyByTeleRecordAndLeadId,
   inviteUserToAChannel,
   uploadANote,

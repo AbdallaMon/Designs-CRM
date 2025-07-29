@@ -15,6 +15,7 @@ import { MdEdit, MdSave, MdCancel } from "react-icons/md";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAuth } from "@/app/providers/AuthProvider";
+import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel";
 
 const TelegramLink = ({ lead, setLead, setleads }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -22,10 +23,6 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
   const { setLoading } = useToastContext();
-
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
 
   const handleSave = async () => {
     try {
@@ -222,18 +219,12 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
                 }}
               />
             </Tooltip>
-            {/* {isAdmin && (
-              <Tooltip title="Edit Telegram link">
-                <IconButton
-                  size="small"
-                  className="edit-button"
-                  onClick={handleEdit}
-                  sx={{ visibility: "hidden", ml: 1, color: "#0088cc" }}
-                >
-                  <MdEdit fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            )} */}
+            <CreateNewTeleGramGroup
+              isAdmin={isAdmin}
+              lead={lead}
+              setLead={setLead}
+              setleads={setleads}
+            />
           </Box>
         </>
       ) : (
@@ -250,22 +241,57 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
               },
             }}
           />
-          {/* {isAdmin && (
-            <Tooltip title="Add Telegram link">
-              <IconButton
-                size="small"
-                className="edit-button"
-                onClick={handleEdit}
-                sx={{ visibility: "hidden", ml: 1, color: "primary.main" }}
-              >
-                <MdEdit fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          )} */}
+          <CreateNewTeleGramGroup
+            isAdmin={isAdmin}
+            lead={lead}
+            setLead={setLead}
+            setleads={setleads}
+          />
         </Box>
       )}
     </Box>
   );
 };
-
+function CreateNewTeleGramGroup({ isAdmin, lead, setLead, setleads }) {
+  const { setLoading } = useToastContext();
+  async function createNewGroup() {
+    const req = await handleRequestSubmit(
+      {},
+      setLoading,
+      `admin/client-leads/${lead.id}/telegram/new`,
+      false,
+      "Creating"
+    );
+    if (req.status === 200) {
+      if (setLead) {
+        setLead((old) => ({ ...old, telegramLink: req.data }));
+      }
+      if (setleads) {
+        setleads((oldLeads) => {
+          return oldLeads.map((l) => {
+            if (l.id === lead.id) {
+              return { ...l, telegramLink: req.data };
+            }
+            return l;
+          });
+        });
+      }
+    }
+    return req;
+  }
+  return (
+    <>
+      {isAdmin && (
+        <Tooltip title="Create new telegram group">
+          <ConfirmWithActionModel
+            title="Create new telegram group"
+            description="By confirming we will create new telegram group and remove the current from the system"
+            removeAfterConfirm={true}
+            handleConfirm={createNewGroup}
+          />
+        </Tooltip>
+      )}
+    </>
+  );
+}
 export default TelegramLink;

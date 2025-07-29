@@ -3,7 +3,7 @@ import connection from "../redis/bullmqConnection.js";
 import { getMeagsses } from "../telegram/telegram-functions.js";
 import { connectToTelegram } from "../telegram/connectToTelegram.js";
 await connectToTelegram();
-export const telegramWorker = new Worker(
+export const telegramCronWorker = new Worker(
   "telegram-cron-queue",
   async (job) => {
     try {

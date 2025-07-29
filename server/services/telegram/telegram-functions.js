@@ -117,7 +117,7 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
     });
 
     console.log("✅ Admin privileges assigned.");
-    return channel;
+    return { channel, inviteLink };
   } catch (err) {
     console.error(
       `❌ Error occurred during channel setup for ${clientLeadId}:`,
@@ -311,6 +311,11 @@ export async function getLeadsWithOutChannel() {
         "create-channel",
         { clientLeadId: lead.id },
         {
+          attempts: 20,
+          backoff: {
+            type: "fixed",
+            delay: 30000,
+          },
           jobId: `create-${lead.id}`, // optional: deduplicate
           removeOnComplete: true,
           removeOnFail: false,
@@ -478,6 +483,7 @@ export async function inviteUserToAChannel({ channel, user }) {
 }
 
 export async function getMeagsses({ clientLeadId }) {
+  // await delay(100);
   const lastFetchedMessage = await getLastFetchedTeleMessage({ clientLeadId });
   const channel = await getChannelEntitiyByTeleRecordAndLeadId({
     clientLeadId,
@@ -485,14 +491,19 @@ export async function getMeagsses({ clientLeadId }) {
   const options = {
     limit: 20,
   };
-
   if (lastFetchedMessage) {
     options.minId = Number(lastFetchedMessage.messageId);
   }
-  await delay(100);
+  console.log(lastFetchedMessage, "lastFetchedMessage");
   const fetchedMessages = await teleClient.getMessages(channel, options);
   let messages = fetchedMessages.sort((a, b) => a.id - b.id);
-  return await filterTaggedMessages({ clientLeadId, messages, channel });
+  console.log(messages, "fetchedMessages");
+  const filterd = await filterTaggedMessages({
+    clientLeadId,
+    messages,
+    channel,
+  });
+  return filterd;
 }
 
 export async function getLastFetchedTeleMessage({ clientLeadId }) {
@@ -539,7 +550,6 @@ async function filterTaggedMessages({ clientLeadId, messages, channel }) {
         url,
       });
     }
-    return null;
   }
   if (lastMessage) {
     const findLastMessage = await prisma.fetchedTelegramMessage.findFirst({
