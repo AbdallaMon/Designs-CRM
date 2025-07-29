@@ -11,7 +11,7 @@ await connectToTelegram(true);
 // cron.schedule("*/5 * * * *", async () => {
 //cron.schedule("*/1 * * * * *", async () => {
 
-cron.schedule("*/5 * * * *", async () => {
+cron.schedule("*/10 * * * *", async () => {
   try {
     const finalizedLeads = await prisma.clientLead.findMany({
       where: {
