@@ -6,7 +6,7 @@ import {
   uploadAQueueNote,
 } from "../telegram/telegram-functions.js";
 import { connectToTelegram } from "../telegram/connectToTelegram.js";
-// await connectToTelegram();
+await connectToTelegram();
 export const telegramMessageWorker = new Worker(
   "telegram-message-queue",
   async (job) => {
