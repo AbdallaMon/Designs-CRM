@@ -113,9 +113,26 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
     if (telegramUser && telegramUser.telegramUsername) {
       await inviteUserToAChannel({ channel, user: telegramUser });
     }
-    await telegramUploadQueue.add("upload", {
-      clientLeadId: Number(clientLeadId),
-    });
+    const existingJob = await telegramUploadQueue.getJob(
+      `upload-${clientLeadId}`
+    );
+    if (existingJob) return;
+    await telegramUploadQueue.add(
+      "upload",
+      {
+        clientLeadId: Number(clientLeadId),
+      },
+      {
+        attempts: 10,
+        backoff: {
+          type: "fixed",
+          delay: 30000,
+        },
+        jobId: `upload-${clientLeadId}`,
+        removeOnComplete: true,
+        removeOnFail: 10,
+      }
+    );
 
     console.log("✅ Admin privileges assigned.");
     return { channel, inviteLink };
@@ -320,18 +337,22 @@ export async function getLeadsWithOutChannel() {
         });
       }
     } else {
+      const existingJob = await telegramChannelQueue.getJob(
+        `create-${lead.id}`
+      );
+      if (existingJob) return;
       await telegramChannelQueue.add(
         "create-channel",
         { clientLeadId: lead.id },
         {
-          attempts: 20,
+          attempts: 10,
           backoff: {
             type: "fixed",
             delay: 30000,
           },
           jobId: `create-${lead.id}`, // optional: deduplicate
           removeOnComplete: true,
-          removeOnFail: false,
+          removeOnFail: 10,
         }
       );
     }
@@ -426,25 +447,55 @@ function delay(ms) {
 
 export async function uploadANote(note, channel) {
   await delay(2000);
-  await telegramMessageQueue.add("send-note", {
-    type: "note",
-    payload: {
-      clientLeadId: note.clientLeadId,
-      note,
+  const existingJob = await telegramMessageQueue.getJob(`note-${note.id}`);
+  if (existingJob) return;
+
+  await telegramMessageQueue.add(
+    "send-note",
+    {
+      type: "note",
+      payload: {
+        clientLeadId: note.clientLeadId,
+        note,
+      },
     },
-  });
+    {
+      attempts: 2,
+      backoff: {
+        type: "fixed",
+        delay: 10000,
+      },
+      jobId: `note-${note.id}`,
+      removeOnComplete: true,
+      removeOnFail: 10,
+    }
+  );
 }
 
 export async function uploadAnAttachment(file, channel) {
   await delay(2000);
-
-  await telegramMessageQueue.add("send-file", {
-    type: "file",
-    payload: {
-      clientLeadId: file.clientLeadId,
-      file,
+  const existingJob = await telegramMessageQueue.getJob(`file-${file.id}`);
+  if (existingJob) return;
+  await telegramMessageQueue.add(
+    "send-file",
+    {
+      type: "file",
+      payload: {
+        clientLeadId: file.clientLeadId,
+        file,
+      },
     },
-  });
+    {
+      attempts: 2,
+      backoff: {
+        type: "fixed",
+        delay: 10000,
+      },
+      jobId: `file-${file.id}`,
+      removeOnComplete: true,
+      removeOnFail: 10,
+    }
+  );
 }
 export async function uploadAQueueNote(note, channel) {
   const mention = note.user?.telegramUsername

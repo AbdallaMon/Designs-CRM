@@ -13,7 +13,6 @@ await connectToTelegram(true);
 
 cron.schedule("*/5 * * * *", async () => {
   try {
-    console.log("started");
     const finalizedLeads = await prisma.clientLead.findMany({
       where: {
         status: { in: ["FINALIZED", "ARCHIVED"] },
