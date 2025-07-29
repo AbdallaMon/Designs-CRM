@@ -10,9 +10,10 @@ dotenv.config();
 await connectToTelegram(true);
 // cron.schedule("*/5 * * * *", async () => {
 //cron.schedule("*/1 * * * * *", async () => {
-
 cron.schedule("*/10 * * * *", async () => {
+  //cron.schedule("*/1 * * * * *", async () => {
   try {
+    console.log("stareted");
     const finalizedLeads = await prisma.clientLead.findMany({
       where: {
         status: { in: ["FINALIZED", "ARCHIVED"] },

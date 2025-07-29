@@ -46,7 +46,7 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
       new Api.channels.CreateChannel({
         title: formattedId,
         about: clientLead.client.name,
-        megagroup: false,
+        megagroup: true,
       })
     );
     channel = chats[0];
@@ -67,10 +67,8 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
       if (!entity || entity?.id?.value === self?.id?.value) continue;
       adminUsersToBeAdded.push(entity);
     }
-
-    if (adminUsersToBeAdded.length > 0) {
+    if (adminUsersToBeAdded && adminUsersToBeAdded.length > 0) {
       await addUsersToATeleChannel({ channel, usersList: adminUsersToBeAdded });
-
       for (const user of adminUsersToBeAdded) {
         await teleClient.invoke(
           new Api.channels.EditAdmin({
@@ -101,7 +99,6 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
     );
 
     const inviteLink = exportedInvite.link;
-
     await createTeleChannelRecord({
       clientLead,
       accessHash,
@@ -113,27 +110,29 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
     if (telegramUser && telegramUser.telegramUsername) {
       await inviteUserToAChannel({ channel, user: telegramUser });
     }
+    console.log(telegramUser, "telegramUser");
+
     const existingJob = await telegramUploadQueue.getJob(
       `upload-${clientLeadId}`
     );
-    if (existingJob) return;
-    await telegramUploadQueue.add(
-      "upload",
-      {
-        clientLeadId: Number(clientLeadId),
-      },
-      {
-        attempts: 10,
-        backoff: {
-          type: "fixed",
-          delay: 30000,
+    if (!existingJob) {
+      await telegramUploadQueue.add(
+        "upload",
+        {
+          clientLeadId: Number(clientLeadId),
         },
-        jobId: `upload-${clientLeadId}`,
-        removeOnComplete: true,
-        removeOnFail: 10,
-      }
-    );
-
+        {
+          attempts: 10,
+          backoff: {
+            type: "fixed",
+            delay: 30000,
+          },
+          jobId: `upload-${clientLeadId}`,
+          removeOnComplete: true,
+          removeOnFail: 10,
+        }
+      );
+    }
     console.log("✅ Admin privileges assigned.");
     return { channel, inviteLink };
   } catch (err) {
@@ -225,6 +224,29 @@ export async function addUsersToATeleChannel({ channel, usersList }) {
       users: [...usersList],
     })
   );
+
+  // for (const user of usersList) {
+  //   await teleClient.invoke(
+  //     new Api.channels.EditBanned({
+  //       channel,
+  //       participant: user,
+  //       bannedRights: new Api.ChatBannedRights({
+  //         sendMessages: false,
+  //         sendMedia: false,
+  //         sendStickers: false,
+  //         sendGifs: false,
+  //         sendGames: false,
+  //         sendInline: false,
+  //         embedLinks: false,
+  //         sendPolls: false,
+  //         changeInfo: true,
+  //         inviteUsers: true,
+  //         pinMessages: true,
+  //         untilDate: 0,
+  //       }),
+  //     })
+  //   );
+  // }
 }
 
 export async function getChannelEntityFromInviteLink({ inviteLink }) {

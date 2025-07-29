@@ -1919,5 +1919,6 @@ export async function createNewTelegramLink({ leadId }) {
   const newChannel = await createChannelAndAddUsers({
     clientLeadId: Number(leadId),
   });
+  console.log(newChannel, "newChannel");
   return newChannel.inviteLink;
 }
