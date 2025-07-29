@@ -425,7 +425,7 @@ function delay(ms) {
 }
 
 export async function uploadANote(note, channel) {
-  await delay(1000);
+  await delay(2000);
   await telegramMessageQueue.add("send-note", {
     type: "note",
     payload: {
@@ -436,7 +436,7 @@ export async function uploadANote(note, channel) {
 }
 
 export async function uploadAnAttachment(file, channel) {
-  await delay(1000);
+  await delay(2000);
 
   await telegramMessageQueue.add("send-file", {
     type: "file",
@@ -499,7 +499,7 @@ export async function inviteUserToAChannel({ channel, user }) {
 }
 
 export async function getMeagsses({ clientLeadId }) {
-  // await delay(100);
+  await delay(10000);
   const lastFetchedMessage = await getLastFetchedTeleMessage({ clientLeadId });
   const channel = await getChannelEntitiyByTeleRecordAndLeadId({
     clientLeadId,
@@ -510,10 +510,8 @@ export async function getMeagsses({ clientLeadId }) {
   if (lastFetchedMessage) {
     options.minId = Number(lastFetchedMessage.messageId);
   }
-  console.log(lastFetchedMessage, "lastFetchedMessage");
   const fetchedMessages = await teleClient.getMessages(channel, options);
   let messages = fetchedMessages.sort((a, b) => a.id - b.id);
-  console.log(messages, "fetchedMessages");
   const filterd = await filterTaggedMessages({
     clientLeadId,
     messages,
