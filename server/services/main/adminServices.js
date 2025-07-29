@@ -39,6 +39,7 @@ export async function getUser(searchParams, limit, skip) {
         subRoles: true,
         isPrimary: true,
         isSuperSales: true,
+        telegramUsername: true,
       },
     });
     const total = await prisma.user.count({ where });
