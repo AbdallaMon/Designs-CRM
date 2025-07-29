@@ -127,11 +127,15 @@
 - https://my.telegram.org/apps
 
 - Delviery time update on telegram
-
-3- تحديد ال style  
- 8- 2.5 + 5.5 + 10 + 5 = -15
-1- الميتينج
-8 - 2 + 3 = +3
+- Delivery time as number
+- Days only for last day all
+- Green and blue
+- Orange if 3days
+- today red
+  3- تحديد ال style  
+   8- 2.5 + 5.5 + 10 + 5 = -15
+  1- الميتينج
+  8 - 2 + 3 = +3
 
 2- حجز المواعيد
 6 6 = 0

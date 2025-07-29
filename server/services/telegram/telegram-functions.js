@@ -110,7 +110,6 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
     if (telegramUser && telegramUser.telegramUsername) {
       await inviteUserToAChannel({ channel, user: telegramUser });
     }
-    console.log(telegramUser, "telegramUser");
 
     const existingJob = await telegramUploadQueue.getJob(
       `upload-${clientLeadId}`
@@ -221,11 +220,29 @@ export async function addUsersToATeleChannel({ channel, usersList }) {
   for (const user of usersList) {
     try {
       await teleClient.invoke(
-        new Api.channels.InviteToChannel({
+        new Api.channels.EditAdmin({
           channel,
-          users: [user], // 👈 Invite one at a time
+          userId: user.id,
+          adminRights: new Api.ChatAdminRights({
+            changeInfo: false,
+            postMessages: true,
+            editMessages: true,
+            deleteMessages: true,
+            banUsers: false,
+            inviteUsers: false,
+            pinMessages: false,
+            addAdmins: false,
+            manageCall: false,
+          }),
+          rank: "Admin",
         })
       );
+      // await teleClient.invoke(
+      //   new Api.channels.InviteToChannel({
+      //     channel,
+      //     users: [user], // 👈 Invite one at a time
+      //   })
+      // );
       console.log(`✅ Invited @${user.username || user.id.value}`);
     } catch (e) {
       console.warn(
