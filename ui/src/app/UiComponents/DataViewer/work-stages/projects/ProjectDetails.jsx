@@ -496,24 +496,45 @@ export const ProjectDetails = ({
               </FormControl>
             </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="Delivery Date"
-                type="date"
-                variant="outlined"
-                value={
-                  editedProject.deliveryTime
-                    ? new Date(editedProject.deliveryTime)
-                        .toISOString()
-                        .slice(0, 10) // only YYYY-MM-DD
-                    : ""
-                }
-                onChange={(e) =>
-                  handleInputChange("deliveryTime", e.target.value)
-                }
-                InputLabelProps={{ shrink: true }}
-              />
+            <Grid size={{ xs: 12, md: 6 }} container spacing={2}>
+              <Grid size={6}>
+                <TextField
+                  fullWidth
+                  label="Delivery Date"
+                  type="date"
+                  variant="outlined"
+                  value={
+                    editedProject.deliveryTime
+                      ? new Date(editedProject.deliveryTime)
+                          .toISOString()
+                          .slice(0, 10) // only YYYY-MM-DD
+                      : ""
+                  }
+                  onChange={(e) =>
+                    handleInputChange("deliveryTime", e.target.value)
+                  }
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+              <Grid size={6}>
+                <TextField
+                  fullWidth
+                  label="Add Days to Delivery"
+                  type="number"
+                  variant="outlined"
+                  inputProps={{ min: 0 }}
+                  onChange={(e) => {
+                    const daysToAdd = parseInt(e.target.value, 10);
+                    if (!isNaN(daysToAdd)) {
+                      const newDeliveryDate = dayjs()
+                        .add(daysToAdd, "day")
+                        .format("YYYY-MM-DD");
+                      handleInputChange("deliveryTime", newDeliveryDate);
+                    }
+                  }}
+                  placeholder="Enter number of days"
+                />
+              </Grid>
             </Grid>
 
             <Grid size={{ xs: 12, md: 6 }}>

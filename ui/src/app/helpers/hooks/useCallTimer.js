@@ -9,66 +9,71 @@ dayjs.extend(timezone);
 export function useCallTimer(call, userTimezone = dayjs.tz.guess(), type) {
   const [timeLeft, setTimeLeft] = useState("");
   const [hoursLeft, setHoursLeft] = useState(null);
+  const [statusColor, setStatusColor] = useState("gray");
 
   useEffect(() => {
     if (!call?.time) return;
 
     const updateTime = () => {
       const now = dayjs().tz(userTimezone);
-      const callTime = dayjs(call.time).tz(userTimezone); // Convert call time to user timezone
-      const diff = callTime.diff(now, "milliseconds");
+      const callTime = dayjs(call.time).tz(userTimezone);
+      const diffMs = callTime.diff(now);
+      const diffDays = callTime.diff(now, "day");
+      const diffHours = callTime.diff(now, "hour");
 
-      const fiveMinutes = 5 * 60 * 1000; // 5 minutes in milliseconds
-
-      if (diff >= -fiveMinutes && diff <= fiveMinutes) {
-        // Call is happening within the ±5-minute window
-        setTimeLeft(`${type === "MEETING" ? "Meeting" : "Call"} is now`);
-        setHoursLeft(0);
-        return;
-      }
-
-      if (diff < -fiveMinutes) {
-        // Call has passed the 5-minute window
-        const passedHours = Math.floor(-diff / (1000 * 60 * 60));
-        const passedMinutes = Math.floor(
-          (-diff % (1000 * 60 * 60)) / (1000 * 60)
+      if (diffMs >= -5 * 60 * 1000 && diffHours < 24) {
+        // Call is today or within next 24h
+        const hours = Math.floor(
+          (diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
         );
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
 
         setTimeLeft(
-          `${type === "MEETING" ? "Meeting" : "Call"} was ${
-            passedHours > 0 ? `${passedHours}h ` : ""
-          }${passedMinutes > 0 ? `${passedMinutes}m ` : ""}ago`
+          `${
+            type === "MEETING" ? "Meeting" : "Call"
+          } in ${hours}h ${minutes}m ${seconds}s`
         );
-
-        setHoursLeft(null); // Call is in the past
+        setStatusColor("red"); // ✅ Always red if within 24h
+        setHoursLeft(diffHours);
         return;
       }
 
-      // Calculate time components for upcoming calls
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor(
-        (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-      );
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      if (diffMs < -5 * 60 * 1000) {
+        const passedDays = Math.abs(diffDays);
+        setTimeLeft(
+          `${type === "MEETING" ? "Meeting" : "Call"} was ${passedDays} day${
+            passedDays !== 1 ? "s" : ""
+          } ago`
+        );
+        setStatusColor("gray");
+        setHoursLeft(null);
+        return;
+      }
 
-      // Update state
+      // Upcoming but more than a day
       setTimeLeft(
-        `${type === "MEETING" ? "Meeting" : "Call"} in ${
-          days > 0 ? `${days}d ` : ""
-        }${hours > 0 ? `${hours}h ` : ""}${
-          minutes > 0 ? `${minutes}m ` : ""
-        }${seconds}s`
+        `${type === "MEETING" ? "Meeting" : "Call"} in ${diffDays} day${
+          diffDays !== 1 ? "s" : ""
+        }`
       );
 
-      setHoursLeft(days * 24 + hours); // Total remaining hours
+      if (diffDays > 3) {
+        setStatusColor("blue");
+      } else if (diffDays >= 1) {
+        setStatusColor("orange");
+      } else {
+        setStatusColor("red"); // Shouldn't happen here, but safe fallback
+      }
+
+      setHoursLeft(diffHours);
     };
 
-    updateTime(); // Initial calculation
+    updateTime();
     const timer = setInterval(updateTime, 1000);
 
     return () => clearInterval(timer);
   }, [call, userTimezone]);
 
-  return { timeLeft, hoursLeft };
+  return { timeLeft, hoursLeft, statusColor };
 }
