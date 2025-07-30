@@ -12,4 +12,6 @@ pm2 start workers/telegramCronWorker.js --name telegram-cron-worker
 pm2 start tele-cron.js --name telegram-cron
 pm2 start workers/telegramAddUserWorker.js --name telegram-add-users-worker
 
+pm2 start projectDeliveryTimeReminder.js --name delivery-time-cron
+
 15|telegra | ✅ Done in cron worker Lead ID: 933

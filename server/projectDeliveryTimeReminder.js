@@ -61,9 +61,16 @@ cron.schedule("0 */2 * * *", async () => {
 
   // Loop and send formatted reminders
   for (const project of projects7D) {
+    const deliveryDate = dayjs(project.deliveryTime);
+    const daysLeft = deliveryDate.diff(now, "day");
+
+    let timeLeftLabel;
+    if (daysLeft === 1) timeLeftLabel = "Tomorrow";
+    else if (daysLeft === 0) timeLeftLabel = "Today";
+    else timeLeftLabel = `${daysLeft} days left`;
     await handleProjectReminder({
       notifiedKey: "notified7Days",
-      timeLeft: "7 days left",
+      timeLeft: timeLeftLabel,
       projectId: project.id,
       clientLeadId: project.clientLeadId,
     });

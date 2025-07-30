@@ -569,6 +569,7 @@ function delay(ms) {
 export async function uploadANote(note, channel) {
   await delay(2000);
   const existingJob = await telegramMessageQueue.getJob(`note-${note.id}`);
+  console.log(existingJob, "existingJob");
   if (existingJob) return;
 
   await telegramMessageQueue.add(
