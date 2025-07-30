@@ -542,7 +542,8 @@ router.post("/client-leads/:leadId/telegram/assign-users", async (req, res) => {
       clientLeadId: req.params.leadId,
     });
     res.status(200).json({
-      message: "users added",
+      message:
+        "Users have been added to the queue. They will be assigned to the Telegram channel shortly.",
       data: data,
     });
   } catch (e) {

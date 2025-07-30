@@ -133,7 +133,6 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
         }
       );
     }
-    console.log("✅ Admin privileges assigned.");
     return { channel, inviteLink };
   } catch (err) {
     console.error(
