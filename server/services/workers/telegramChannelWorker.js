@@ -2,7 +2,7 @@ import { Worker } from "bullmq";
 import connection from "../redis/bullmqConnection.js";
 import { createChannelAndAddUsers } from "../telegram/telegram-functions.js";
 import { connectToTelegram } from "../telegram/connectToTelegram.js";
-// await connectToTelegram();
+await connectToTelegram();
 export const telegramChannelWorker = new Worker(
   "telegram-channel-queue",
   async (job) => {
