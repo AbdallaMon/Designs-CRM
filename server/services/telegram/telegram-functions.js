@@ -6,11 +6,12 @@ import {
   io as serverIo,
 } from "./connectToTelegram.js";
 import prisma from "../../prisma/prisma.js";
-import { dealsLink } from "../links.js";
+import { dealsLink, userLink } from "../links.js";
 import { sendEmail } from "../sendMail.js";
 import { telegramUploadQueue } from "../queues/telegramUploadQueue.js";
 import { telegramMessageQueue } from "../queues/telegram-message-queue.js";
 import { telegramChannelQueue } from "../queues/telegramChannelQueue.js";
+import { telegramAddUserQueue } from "../queues/telegramAddUserQueue.js";
 
 dotenv.config();
 
@@ -219,6 +220,7 @@ export async function getUserEntitiy(user) {
 export async function addUsersToATeleChannel({ channel, usersList }) {
   for (const user of usersList) {
     try {
+      await delay(200);
       await teleClient.invoke(
         new Api.channels.EditAdmin({
           channel,
@@ -237,16 +239,77 @@ export async function addUsersToATeleChannel({ channel, usersList }) {
           rank: "Admin",
         })
       );
-      // await teleClient.invoke(
-      //   new Api.channels.InviteToChannel({
-      //     channel,
-      //     users: [user], // 👈 Invite one at a time
-      //   })
-      // );
+
       console.log(`✅ Invited @${user.username || user.id.value}`);
     } catch (e) {
       console.warn(
         `❌ Failed to invite @${user.username || user.id.value}: ${e.message}`
+      );
+    }
+  }
+}
+
+export async function addUsersToATeleChannelUsingQueue({
+  clientLeadId,
+  usersList,
+}) {
+  const existingJob = await telegramAddUserQueue.getJob(
+    `lead-${clientLeadId}-${userLink.length}`
+  );
+  if (existingJob)
+    throw new Error("We are added them to a queue and they will be added soon");
+  await telegramAddUserQueue.add(
+    "add-user-channel",
+    { clientLeadId, usersList },
+    {
+      attempts: 10,
+      backoff: {
+        type: "fixed",
+        delay: 30000,
+      },
+      jobId: `lead-${clientLeadId}-${userLink.length}`,
+      removeOnComplete: true,
+      removeOnFail: 10,
+    }
+  );
+}
+
+export async function addUserListToAChnnelUsingQueue({
+  clientLeadId,
+  usersList,
+}) {
+  const channel = await getChannelEntitiyByTeleRecordAndLeadId({
+    clientLeadId: Number(clientLeadId),
+  });
+  if (!channel) return;
+  for (const user of usersList) {
+    try {
+      await delay(1000);
+      const userInpt = await getUserEntitiy(user);
+      await teleClient.invoke(
+        new Api.channels.EditAdmin({
+          channel,
+          userId: userInpt.id,
+          adminRights: new Api.ChatAdminRights({
+            changeInfo: false,
+            postMessages: true,
+            editMessages: true,
+            deleteMessages: true,
+            banUsers: false,
+            inviteUsers: false,
+            pinMessages: false,
+            addAdmins: false,
+            manageCall: false,
+          }),
+          rank: "Admin",
+        })
+      );
+      console.log(`✅ Invited @${userInpt.username || userInpt.id.value}`);
+    } catch (e) {
+      console.warn(
+        `❌ Failed to invite @${userInpt.username || userInpt.id.value}: ${
+          e.message
+        }`
       );
     }
   }

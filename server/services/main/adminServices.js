@@ -9,6 +9,7 @@ import XLSX from "xlsx";
 import { groupProjects } from "./sharedServices.js";
 import {
   addUsersToATeleChannel,
+  addUsersToATeleChannelUsingQueue,
   createChannelAndAddUsers,
   getChannelEntitiyByTeleRecordAndLeadId,
   getUserEntitiy,
@@ -1968,22 +1969,12 @@ export async function addAllProjectUsersToChannel({ clientLeadId }) {
 
   const usersList = [];
 
-  for (const user of usersSet.values()) {
-    try {
-      const inputUser = await getUserEntitiy(user);
-      if (inputUser) usersList.push(inputUser);
-    } catch (err) {
-      console.warn(
-        `⚠️ Failed to resolve @${user.telegramUsername}:`,
-        err.message
-      );
-    }
-  }
   if (!clientLead.telegramChannel) {
     throw new Error("⚠️ No Telegram channel linked to this lead");
   }
-  const channel = await getChannelEntitiyByTeleRecordAndLeadId({
-    clientLeadId: Number(clientLeadId),
+
+  return await addUsersToATeleChannelUsingQueue({
+    clientLeadId,
+    usersList: Array.from(usersSet.values()),
   });
-  return await addUsersToATeleChannel({ channel, usersList });
 }

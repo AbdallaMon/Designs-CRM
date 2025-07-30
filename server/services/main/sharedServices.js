@@ -18,6 +18,7 @@ import { dealsLink } from "../links.js";
 import { v4 as uuidv4 } from "uuid";
 import { getCommissionByUserId, reverseCommissions } from "./adminServices.js";
 import {
+  addUsersToATeleChannelUsingQueue,
   getChannelEntitiyByTeleRecordAndLeadId,
   inviteUserToAChannel,
   uploadANote,
@@ -3194,17 +3195,23 @@ export async function assignProjectToUser({
       }" >#${project.clientLeadId}</a> `
     : "";
   if (!deleteDesigner) {
-    const teleChannel = await getChannelEntitiyByTeleRecordAndLeadId({
-      clientLeadId: Number(project.clientLeadId),
+    // const teleChannel = await getChannelEntitiyByTeleRecordAndLeadId({
+    //   clientLeadId: Number(project.clientLeadId),
+    // });
+    // if (teleChannel) {
+    // await inviteUserToAChannel({ channel: teleChannel, user });
+    const user = await prisma.user.findUnique({
+      where: {
+        id: Number(userId),
+      },
     });
-    if (teleChannel) {
-      const user = await prisma.user.findUnique({
-        where: {
-          id: Number(userId),
-        },
+    if (user.telegramUsername) {
+      await addUsersToATeleChannelUsingQueue({
+        clientLeadId: project.clientLeadId,
+        usersList: [user],
       });
-      await inviteUserToAChannel({ channel: teleChannel, user });
     }
+    // }
     await newProjectAssingmentNotification(project.id, Number(userId), content);
   }
   return project;
