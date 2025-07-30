@@ -73,6 +73,7 @@ cron.schedule("0 */2 * * *", async () => {
       timeLeft: timeLeftLabel,
       projectId: project.id,
       clientLeadId: project.clientLeadId,
+      type: project.type,
     });
   }
 
@@ -82,6 +83,7 @@ cron.schedule("0 */2 * * *", async () => {
       timeLeft: "3 days left",
       projectId: project.id,
       clientLeadId: project.clientLeadId,
+      type: project.type,
     });
   }
 
@@ -91,6 +93,7 @@ cron.schedule("0 */2 * * *", async () => {
       timeLeft: "Tomorrow",
       projectId: project.id,
       clientLeadId: project.clientLeadId,
+      type: project.type,
     });
   }
 
@@ -100,6 +103,7 @@ cron.schedule("0 */2 * * *", async () => {
       timeLeft: "Today",
       projectId: project.id,
       clientLeadId: project.clientLeadId,
+      type: project.type,
     });
   }
 });

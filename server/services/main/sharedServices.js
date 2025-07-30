@@ -3282,6 +3282,24 @@ export async function updateProject({ data, isAdmin }) {
       },
     },
   });
+  if (updatedData.deliveryTime) {
+    const now = dayjs.utc().startOf("day");
+
+    const deliveryDate = dayjs(updatedData.deliveryTime);
+    const daysLeft = deliveryDate.diff(now, "day");
+
+    let timeLeftLabel;
+    if (daysLeft === 1) timeLeftLabel = "Tomorrow";
+    else if (daysLeft === 0) timeLeftLabel = "Today";
+    else timeLeftLabel = `${daysLeft} days left`;
+    const note = {
+      id: `${project.id}-${project.clientLeadId}`,
+      clientLeadId: Number(project.clientLeadId),
+      content: `⏳ Project ${project.type} delivery time : ` + timeLeftLabel,
+      binMessage: true,
+    };
+    await uploadANote(note);
+  }
   if (project.status === "Modification" && project.type === "3D_Designer") {
     const modificationProject = await prisma.project.updateMany({
       where: {

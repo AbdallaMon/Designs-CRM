@@ -319,6 +319,7 @@ export async function handleProjectReminder({
   timeLeft,
   projectId,
   clientLeadId,
+  type,
 }) {
   try {
     // ✅ Do your action here (e.g., send notification)
@@ -328,7 +329,7 @@ export async function handleProjectReminder({
     const note = {
       id: `${projectId}-${clientLeadId}-${notifiedKey}`,
       clientLeadId: Number(clientLeadId),
-      content: "⏳ Project delivery time : " + timeLeft,
+      content: `⏳ Project ${type} delivery time : ` + timeLeft,
       binMessage: true,
       update: {
         where: {
@@ -638,17 +639,15 @@ export async function uploadAQueueNote(note, channel) {
     message,
     parseMode: "markdown",
   });
-  if (note.binMessage) {
-    await teleClient.invoke(
-      new Api.messages.UpdatePinnedMessage({
-        peer: channel,
-        id: sent.id,
-        silent: false,
-      })
-    );
-  }
-
-  console.log(note.update, "sent");
+  // if (note.binMessage) {
+  //   await teleClient.invoke(
+  //     new Api.messages.UpdatePinnedMessage({
+  //       peer: channel,
+  //       id: sent.id,
+  //       silent: false,
+  //     })
+  //   );
+  // }
 
   if (note.update) {
     await prisma[note.update.key].update({
