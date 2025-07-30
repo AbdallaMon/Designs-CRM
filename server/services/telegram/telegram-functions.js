@@ -330,16 +330,17 @@ export async function handleProjectReminder({
       clientLeadId: Number(clientLeadId),
       content: "⏳ Project delivery time : " + timeLeft,
       binMessage: true,
+      update: {
+        where: {
+          id: Number(projectId),
+        },
+        key: "project",
+        data: {
+          [notifiedKey]: true,
+        },
+      },
     };
     await uploadANote(note);
-    await prisma.project.update({
-      where: { id: Number(projectId) },
-      data: {
-        [notifiedKey]: true,
-      },
-    });
-
-    console.log(`Project ${projectId} marked as ${notifiedKey}`);
   } catch (error) {
     console.error(
       `❌ Failed to handle reminder for project ${projectId}:`,
@@ -636,7 +637,6 @@ export async function uploadAQueueNote(note, channel) {
     message,
     parseMode: "markdown",
   });
-  console.log(sent, "sent");
   if (note.binMessage) {
     await teleClient.invoke(
       new Api.messages.UpdatePinnedMessage({
@@ -644,6 +644,18 @@ export async function uploadAQueueNote(note, channel) {
         id: sent.id,
         silent: false,
       })
+    );
+  }
+
+  console.log(note.update, "sent");
+
+  if (note.update) {
+    await prisma[note.update.key].update({
+      where: note.update.where,
+      data: note.update.data,
+    });
+    console.log(
+      `Updated succssfully for key:${note.update.key} , where:${note.update.where}`
     );
   }
 }

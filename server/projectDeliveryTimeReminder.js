@@ -10,8 +10,8 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 dotenv.config();
 await connectToTelegram(true);
-// cron.schedule("0 */4 * * *", async () => {
-cron.schedule("*/10 * * * * *", async () => {
+cron.schedule("0 */2 * * *", async () => {
+  // cron.schedule("*/5 * * * * *", async () => {
   const now = dayjs.utc().startOf("day");
 
   const in1Day = now.add(1, "day");
