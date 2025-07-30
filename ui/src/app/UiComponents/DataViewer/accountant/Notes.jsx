@@ -124,7 +124,7 @@ export function AddNotes({
         setOverlay
       );
       if (uploadResponse.status === 200) {
-        data.attachment = fileUpload.url;
+        data.attachment = uploadResponse.url;
       }
     }
     const request = await handleRequestSubmit(

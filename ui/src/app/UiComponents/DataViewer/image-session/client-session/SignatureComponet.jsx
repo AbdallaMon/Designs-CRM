@@ -6,6 +6,8 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { FloatingActionButton } from "./Utility";
+import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
+import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -21,6 +23,7 @@ const SignatureComponent = ({
 }) => {
   const { lng } = useLanguageSwitcherContext();
   const sigCanvas = useRef({});
+  const { setProgress, setOverlay } = useUploadContext();
   const { setLoading: setToastLoading } = useToastContext();
   const { setAlertError } = useAlertContext();
   const handleClearCanvas = () => {
@@ -53,16 +56,15 @@ const SignatureComponent = ({
     const file = await getSignatureAsFile();
     if (file) {
       // Example: Upload to a different service
-      const formData = new FormData();
-      formData.append("file", file);
-      const uploadResponse = await handleRequestSubmit(
-        formData,
-        setToastLoading,
-        "client/upload",
-        true,
-        "Uploading file"
+      const uploadResponse = await uploadInChunks(
+        file,
+        setProgress,
+        setOverlay
       );
-      const url = uploadResponse.fileUrls.file[0];
+
+      console.log(uploadResponse, "upd");
+      const url = uploadResponse.url;
+
       const request = await handleRequestSubmit(
         {
           sessionData: session,
