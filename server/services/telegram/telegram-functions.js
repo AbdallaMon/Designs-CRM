@@ -305,11 +305,7 @@ export async function addUserListToAChnnelUsingQueue({
       );
       console.log(`✅ Invited @${userInpt.username || userInpt.id.value}`);
     } catch (e) {
-      console.warn(
-        `❌ Failed to invite @${userInpt.username || userInpt.id.value}: ${
-          e.message
-        }`
-      );
+      console.warn(`❌ Failed to invite : ${e.message}`);
     }
   }
 }
@@ -583,14 +579,14 @@ export async function uploadANote(note, channel) {
       },
     },
     {
-      attempts: 10,
+      attempts: 2,
       backoff: {
         type: "fixed",
         delay: 10000,
       },
       jobId: `note-${note.id}`,
       removeOnComplete: true,
-      removeOnFail: 10,
+      removeOnFail: 2,
     }
   );
 }
@@ -616,7 +612,7 @@ export async function uploadAnAttachment(file, channel) {
       },
       jobId: `file-${file.id}`,
       removeOnComplete: true,
-      removeOnFail: 10,
+      removeOnFail: 2,
     }
   );
 }
