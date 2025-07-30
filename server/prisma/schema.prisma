@@ -420,6 +420,11 @@ model Project {
   role         UserRole  @default(THREE_D_DESIGNER)
   tasks        Task[]
 
+  notified7Days  Boolean @default(false)
+  notified3Days  Boolean @default(false)
+  notified2Days  Boolean @default(false)
+  notified1Day   Boolean @default(false)
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

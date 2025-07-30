@@ -4,9 +4,8 @@ import prisma from "./prisma/prisma.js";
 import { connectToTelegram } from "./services/telegram/connectToTelegram.js";
 import { telegramCronQueue } from "./services/queues/telegram-cron-queue.js";
 
-dotenv.config();
-
 // cron.schedule("*/5 * * * *", async () => {
+dotenv.config();
 await connectToTelegram(true);
 // cron.schedule("*/5 * * * *", async () => {
 //cron.schedule("*/1 * * * * *", async () => {

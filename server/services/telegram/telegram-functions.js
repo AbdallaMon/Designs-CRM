@@ -314,6 +314,39 @@ export async function addUserListToAChnnelUsingQueue({
   }
 }
 
+export async function handleProjectReminder({
+  notifiedKey,
+  timeLeft,
+  projectId,
+  clientLeadId,
+}) {
+  try {
+    // ✅ Do your action here (e.g., send notification)
+    console.log(
+      `Sending ${timeLeft}-day reminder to clientLeadId: ${clientLeadId}`
+    );
+    const note = {
+      id: `${projectId}-${clientLeadId}-${notifiedKey}`,
+      clientLeadId: Number(clientLeadId),
+      content: "⏳ Project delivery time : " + timeLeft,
+      binMessage: true,
+    };
+    await uploadANote(note);
+    await prisma.project.update({
+      where: { id: Number(projectId) },
+      data: {
+        [notifiedKey]: true,
+      },
+    });
+
+    console.log(`Project ${projectId} marked as ${notifiedKey}`);
+  } catch (error) {
+    console.error(
+      `❌ Failed to handle reminder for project ${projectId}:`,
+      error
+    );
+  }
+}
 export async function getChannelEntityFromInviteLink({ inviteLink }) {
   try {
     console.log("🔗 Processing invite link:", inviteLink);
@@ -547,7 +580,7 @@ export async function uploadANote(note, channel) {
       },
     },
     {
-      attempts: 2,
+      attempts: 10,
       backoff: {
         type: "fixed",
         delay: 10000,
@@ -587,7 +620,7 @@ export async function uploadAnAttachment(file, channel) {
 export async function uploadAQueueNote(note, channel) {
   const mention = note.user?.telegramUsername
     ? `${note.user.telegramUsername}`
-    : note.user?.name || "Unknown";
+    : note.user?.name || "Website";
 
   let message = `📝 *Note from ${mention}*`;
 
@@ -599,10 +632,20 @@ export async function uploadAQueueNote(note, channel) {
     message += `\n\n📎 [Attachment Link](${note.attachment})`;
   }
 
-  await teleClient.sendMessage(channel, {
+  const sent = await teleClient.sendMessage(channel, {
     message,
     parseMode: "markdown",
   });
+  console.log(sent, "sent");
+  if (note.binMessage) {
+    await teleClient.invoke(
+      new Api.messages.UpdatePinnedMessage({
+        peer: channel,
+        id: sent.id,
+        silent: false,
+      })
+    );
+  }
 }
 
 export async function uploadAQueueAttachment(file, channel) {
