@@ -21,6 +21,8 @@ import {
   addUsersToATeleChannelUsingQueue,
   getChannelEntitiyByTeleRecordAndLeadId,
   inviteUserToAChannel,
+  notifyUsersAddedToProject,
+  notifyUsersWithTheNewProjectStatus,
   uploadANote,
 } from "../telegram/telegram-functions.js";
 import Stripe from "stripe";
@@ -3195,11 +3197,6 @@ export async function assignProjectToUser({
       }" >#${project.clientLeadId}</a> `
     : "";
   if (!deleteDesigner) {
-    // const teleChannel = await getChannelEntitiyByTeleRecordAndLeadId({
-    //   clientLeadId: Number(project.clientLeadId),
-    // });
-    // if (teleChannel) {
-    // await inviteUserToAChannel({ channel: teleChannel, user });
     const user = await prisma.user.findUnique({
       where: {
         id: Number(userId),
@@ -3209,6 +3206,12 @@ export async function assignProjectToUser({
       await addUsersToATeleChannelUsingQueue({
         clientLeadId: project.clientLeadId,
         usersList: [user],
+      });
+      await notifyUsersAddedToProject({
+        projectId: project.id,
+        clientLeadId: project.clientLeadId,
+        type: project.type,
+        username: user.telegramUsername,
       });
     }
     // }
@@ -3261,6 +3264,10 @@ export async function updateProject({ data, isAdmin }) {
   delete updatedData.clientLead;
   delete updatedData.assignments;
   delete updatedData.tasks;
+  const oldProject = await prisma.project.findUnique({
+    where: { id: Number(id) },
+    select: { deliveryTime: true, status: true },
+  });
   const updatedProject = await prisma.project.update({
     where: { id: Number(id) },
     data: updatedData,
@@ -3282,7 +3289,14 @@ export async function updateProject({ data, isAdmin }) {
       },
     },
   });
-  if (updatedData.deliveryTime) {
+
+  if (
+    updatedData.deliveryTime &&
+    !dayjs(updatedData.deliveryTime).isSame(
+      dayjs(oldProject.deliveryTime),
+      "day"
+    )
+  ) {
     const now = dayjs.utc().startOf("day");
 
     const deliveryDate = dayjs(updatedData.deliveryTime);
@@ -3323,16 +3337,25 @@ export async function updateProject({ data, isAdmin }) {
     });
     project.startedAt = new Date();
   }
-  if (project.status === "Completed" && !project.endedAt) {
-    await prisma.project.update({
-      where: {
-        id: Number(project.id),
-      },
-      data: {
-        endedAt: new Date(),
-      },
-    });
-    project.endedAt = new Date();
+  if (project.status === "Completed") {
+    if (!project.endedAt) {
+      await prisma.project.update({
+        where: {
+          id: Number(project.id),
+        },
+        data: {
+          endedAt: new Date(),
+        },
+      });
+      project.endedAt = new Date();
+    }
+    if (oldProject.status !== "Completed") {
+      await notifyUsersWithTheNewProjectStatus({
+        projectId: project.id,
+        clientLeadId: project.clientLeadId,
+        type: project.type,
+      });
+    }
   }
   const content = updatedData.status
     ? `Project status has been changed to ${project.status}`
@@ -3997,7 +4020,13 @@ export async function addNote({
     content,
     attachment,
   };
+  const MAX_LENGTH = 360;
 
+  if (client && content && content.length > MAX_LENGTH) {
+    throw new Error(
+      `Note content is too long. Max length is ${MAX_LENGTH} characters current length is ${content.length}.`
+    );
+  }
   if (userId) {
     data.userId = Number(userId);
   }

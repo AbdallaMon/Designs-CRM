@@ -84,7 +84,7 @@ const Navbar = ({ links }) => {
         <>
           <ListItem
             onClick={() => (hasSubLinks ? toggleSubMenu(link.name) : null)}
-            component={hasSubLinks ? "div" : Link}
+            component={hasSubLinks ? "div" : "a"}
             href={hasSubLinks ? undefined : link.href}
             sx={{
               borderRadius: 1,
@@ -140,7 +140,7 @@ const Navbar = ({ links }) => {
                 {link.subLinks.map((subLink) => (
                   <ListItem
                     key={subLink.href}
-                    component={Link}
+                    component={"a"}
                     href={subLink.href}
                     sx={{
                       py: 1,
@@ -176,7 +176,7 @@ const Navbar = ({ links }) => {
       >
         <Button
           href={hasSubLinks ? undefined : link.href}
-          component={hasSubLinks ? "button" : Link}
+          component={hasSubLinks ? "button" : "a"}
           startIcon={link.icon}
           endIcon={hasSubLinks ? <FiChevronDown /> : null}
           sx={{
@@ -222,7 +222,7 @@ const Navbar = ({ links }) => {
             {link.subLinks.map((subLink) => (
               <MenuItem
                 key={subLink.href}
-                component={Link}
+                component={"a"}
                 href={subLink.href}
                 onClick={() => setMenuAnchor(null)}
                 sx={{

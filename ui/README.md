@@ -121,6 +121,13 @@
 - Image in the url in both dream studio and eng ahmed
 - Toast data in client image session
 - Dashboard change projects to leads
+- جزء الاجتماعات والمكالمات رجعه زي مهو
+- شوف جزء التليجرام لكل مشروع لما نضيف شخص يرسل رساله ويعمل منشن ولو المشروع انتهي نرسل رساله ونوع المشروع
+- جزء الازرار في الداشبورد لما تنتقل بيجيب ايرور
+- شوف جزء البي دي اف وان العميل هيضيف ملاحظه واحده فقط مش اكتر وتكون عدد معين ميتعداش
+
+- حافظ علي ابعاد صورة ال style
+- شوف جزء دريم استوديو الخريطه
 
 - Enhance notesComponent make it by default get number of notes now
 

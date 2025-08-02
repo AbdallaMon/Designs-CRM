@@ -76,6 +76,10 @@ export function NotesComponent({
 
   // Add note function
   async function addNote() {
+    if (slug === "client" && notes && notes.length >= 1) {
+      setAlertError("You can't upload more than one note");
+      return;
+    }
     if (!content) {
       setAlertError("You must enter note or title");
       return;
@@ -181,15 +185,21 @@ export function NotesComponent({
           {showAddNotes && (
             <>
               {!isAddingNote ? (
-                <Button
-                  onClick={() => setIsAddingNote(true)}
-                  variant="outlined"
-                  color="primary"
-                  startIcon={<MdAdd size={20} />}
-                  sx={{ mb: 2, alignSelf: "flex-start" }}
-                >
-                  {mustAddFile ? "Add Attachment" : "Add Note or Attachment"}
-                </Button>
+                <>
+                  {slug === "client" && notes && notes.length >= 1 ? null : (
+                    <Button
+                      onClick={() => setIsAddingNote(true)}
+                      variant="outlined"
+                      color="primary"
+                      startIcon={<MdAdd size={20} />}
+                      sx={{ mb: 2, alignSelf: "flex-start" }}
+                    >
+                      {mustAddFile
+                        ? "Add Attachment"
+                        : "Add Note or Attachment"}
+                    </Button>
+                  )}
+                </>
               ) : (
                 <Box
                   sx={{

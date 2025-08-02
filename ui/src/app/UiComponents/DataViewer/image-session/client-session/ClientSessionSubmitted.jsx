@@ -45,8 +45,8 @@ export function ClientSessionSubmitted({ session, loading }) {
   const [isVisible, setIsVisible] = useState(false);
 
   const PDF_GENERATION_ALERT = {
-    en: "We're currently generating your PDF. You'll receive an email with the download link as soon as it's ready.",
-    ar: "نقوم حاليًا بإنشاء ملف الـ PDF الخاص بك. ستتلقى رسالة بريد إلكتروني تحتوي على رابط التنزيل بمجرد أن يصبح جاهزًا.",
+    en: "An error occurred while generating the PDF, or you may have closed the page during the process. Please contact customer support.",
+    ar: "حدثت مشكلة أثناء توليد ملف الـ PDF، أو ربما قمت بإغلاق الصفحة أثناء التحميل. تواصل مع خدمة العملاء.",
   };
 
   const TEXTS = {
@@ -302,8 +302,6 @@ export function ClientSessionSubmitted({ session, loading }) {
         >
           {TEXTS[lng].selectionsSuccessful}
         </Typography>
-
-        {/* Action Buttons */}
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={2}
@@ -311,7 +309,6 @@ export function ClientSessionSubmitted({ session, loading }) {
           alignItems="center"
           sx={{ mt: 3 }}
         >
-          {/* PDF Download */}
           {session.pdfUrl ? (
             <Button
               variant="contained"
@@ -336,7 +333,7 @@ export function ClientSessionSubmitted({ session, loading }) {
             </Button>
           ) : (
             <Alert
-              severity="info"
+              severity="error"
               sx={{
                 maxWidth: 600,
                 mx: "auto",
@@ -351,10 +348,7 @@ export function ClientSessionSubmitted({ session, loading }) {
           )}
         </Stack>
       </Paper>
-
-      {/* Enhanced Selection Cards Grid */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Selected Spaces */}
         {session.selectedSpaces && session.selectedSpaces.length > 0 && (
           <Grid size={{ xs: 12, md: 6 }}>
             <Card

@@ -125,6 +125,7 @@ export async function uploadPdfAndApproveSession({
     });
     const fileName = `session-${sessionData.id}-${uuidv4()}.pdf`;
     const remotePath = `public_html/uploads/${fileName}`;
+
     await uploadToFTPHttpAsBuffer(pdfBytes, remotePath, true);
 
     const publicUrl = `https://panel.dreamstudiio.com/uploads/${fileName}`;
@@ -280,11 +281,31 @@ export async function generateImageSessionPdf({
         .replace(/\u200E/g, "") // Remove left-to-right marks
         .replace(/\u200F/g, "") // Remove right-to-left marks
         .replace(/\u00A0/g, " ") // Replace non-breaking spaces
-        .replace(/\s{2,}/g, " ") // Replace multiple spaces with single space
+        .replace(/\s{2,}/g, " ")
+        .replace(/[\u0610-\u061A\u064B-\u065F\u06D6-\u06ED]/g, "")
         .trim();
       return clean;
     };
+    function getLines(textToLine, maxCharsPerLine, maxChars, maxLines) {
+      const text = maxChars
+        ? textToLine.trim().slice(0, maxChars)
+        : textToLine.trim();
+      const words = text.split(/\s+/);
+      const lines = [];
+      let line = "";
 
+      for (const word of words) {
+        if ((line + " " + word).trim().length > maxCharsPerLine) {
+          lines.push(line.trim());
+          line = word;
+        } else {
+          line += " " + word;
+        }
+      }
+
+      if (line) lines.push(line.trim());
+      return maxLines ? lines.slice(0, maxLines) : lines;
+    }
     // Helper function to get text by language
     const getTextByLanguage = (textArray, languageCode) => {
       if (!textArray || !Array.isArray(textArray)) return "";
@@ -786,60 +807,76 @@ export async function generateImageSessionPdf({
         yRounded: 15,
       });
 
-      // Try to draw style image
-      const imageWidth = contentWidth - 200;
-      const imageHeight = 270;
-      const imageX =
-        lng === "ar" ? cardX + cardWidth - imageWidth - 15 : cardX + 15;
+      const imageMaxWidth = contentWidth - 200;
+      const imageMaxHeight = 270;
       const imageY = cardY + 15;
       let imageEmbedded = false;
       let dontdrawTitle = false;
-      const image =
+
+      const imageUrl =
         styleData[0].imageUrl || styleData[0].template.backgroundImage;
-      if (image) {
+
+      if (imageUrl) {
         try {
-          const imgBytes = await fetchImageBuffer(image);
+          const imgBytes = await fetchImageBuffer(imageUrl);
           let img;
           try {
             img = await pdfDoc.embedPng(imgBytes);
-            imageEmbedded = true;
           } catch {
             img = await pdfDoc.embedJpg(imgBytes);
-            imageEmbedded = true;
           }
 
-          if (imageEmbedded) {
+          if (img) {
+            const imgDims = img.scale(1);
+            const aspectRatio = imgDims.width / imgDims.height;
+
+            // Always use fixed height
+            const desiredHeight = imageMaxHeight;
+            let desiredWidth = desiredHeight * aspectRatio;
+
+            // Clamp width if needed
+            if (desiredWidth > imageMaxWidth) {
+              desiredWidth = imageMaxWidth;
+            }
+
+            const finalHeight = desiredWidth / aspectRatio;
+
+            const imageX =
+              lng === "ar" ? cardX + cardWidth - desiredWidth - 15 : cardX + 15;
+
             // Draw image background
             page.drawRectangle({
               x: imageX - 2,
               y: imageY - 2,
-              width: imageWidth + 4,
-              height: imageHeight + 4,
+              width: desiredWidth + 4,
+              height: finalHeight + 4,
               color: colors.lightGray,
               xRounded: 12,
               yRounded: 12,
             });
 
+            // Draw image
             page.drawImage(img, {
               x: imageX,
               y: imageY,
-              width: imageWidth,
-              height: imageHeight,
+              width: desiredWidth,
+              height: finalHeight,
             });
 
-            // Draw overlay gradient effect
+            // Draw gradient overlay
             page.drawRectangle({
               x: imageX,
               y: imageY,
-              width: imageWidth,
+              width: desiredWidth,
               height: 35,
               color: rgb(0, 0, 0, 0.6),
               xRounded: 12,
               yRounded: 12,
             });
+
+            // Draw title on image
             const titleSize = 14;
-            const paddingFromBottom = 10; // adjust if needed
-            const titleY = imageY + paddingFromBottom; // ⬅️ from bottom
+            const titleY = imageY + 10;
             const titleX =
               lng === "ar"
                 ? getRTLTextX(
@@ -847,7 +884,7 @@ export async function generateImageSessionPdf({
                     titleSize,
                     boldFont,
                     imageX + 10,
-                    imageWidth - 20
+                    desiredWidth - 20
                   )
                 : imageX + 10;
 
@@ -856,9 +893,11 @@ export async function generateImageSessionPdf({
               y: titleY,
               size: titleSize,
               font: boldFont,
-              color: rgb(1, 1, 1), // white text
-              maxWidth: imageWidth - 20,
+              color: rgb(1, 1, 1),
+              maxWidth: desiredWidth - 20,
             });
+
+            imageEmbedded = true;
             dontdrawTitle = true;
           }
         } catch (err) {
@@ -866,7 +905,7 @@ export async function generateImageSessionPdf({
         }
       }
 
-      // Draw style title
+      // Draw fallback title outside image if needed
       if (!dontdrawTitle) {
         const titleSize = 16;
         const titleY = cardY + cardHeight - 30;
@@ -876,9 +915,10 @@ export async function generateImageSessionPdf({
               ? cardX + 15
               : cardX + 20
             : imageEmbedded
-            ? cardX + imageWidth + 30
+            ? cardX + imageMaxWidth + 30
             : cardX + 20;
-        const textWidth = cardWidth - (imageEmbedded ? imageWidth + 60 : 40);
+
+        const textWidth = cardWidth - (imageEmbedded ? imageMaxWidth + 60 : 40);
 
         const titleX =
           lng === "ar"
@@ -893,6 +933,7 @@ export async function generateImageSessionPdf({
           color: colors.heading,
         });
       }
+
       y -= cardHeight - 15;
     };
 
@@ -1163,7 +1204,7 @@ export async function generateImageSessionPdf({
 
           drawPageBorder(isWide);
           await drawFixedHeader(isWide);
-          // drawFixedFooter(isWide); // if needed, update drawFixedFooter too
+
           let img;
           try {
             img = await pdfDoc.embedPng(imgBytes);
@@ -1178,28 +1219,42 @@ export async function generateImageSessionPdf({
             const frameX = margin;
             const frameY = marginY + footerHeight;
             const frameWidth = pageW - margin * 2;
-            const frameHeight =
-              pageH - headerHeight - footerHeight - marginY * 2;
-            // Calculate scale to fit within frame while preserving aspect ratio
-            const imgDims = img.scale(1); // get original size
+
+            // 🔻 Handle note and reserve space
+            let noteText = "";
+            let noteLines = [];
+            const noteFontSize = 12;
+            const lineSpacing = 18;
+            const maxCharsPerLine = 90;
+            const maxChars = 360;
+            if (image.note?.length > 0 && image.note[0].content) {
+              noteText = image.note[0].content.trim().slice(0, maxChars);
+              noteLines = getLines(noteText, maxCharsPerLine, maxChars, 4);
+            }
+
+            const noteHeight = noteLines.length * lineSpacing + 10;
+            const availableImageHeight =
+              pageH - headerHeight - footerHeight - marginY * 2 - noteHeight;
+
+            // 🔻 Calculate image scaling
+            const imgDims = img.scale(1);
             const imageAspectRatio = imgDims.width / imgDims.height;
-            const frameAspectRatio = frameWidth / frameHeight;
+            const frameAspectRatio = frameWidth / availableImageHeight;
 
             let scaledWidth, scaledHeight;
 
             if (imageAspectRatio > frameAspectRatio) {
-              // Image is wider than frame — limit by width
               scaledWidth = frameWidth;
               scaledHeight = frameWidth / imageAspectRatio;
             } else {
-              // Image is taller — limit by height
-              scaledHeight = frameHeight;
-              scaledWidth = frameHeight * imageAspectRatio;
+              scaledHeight = availableImageHeight;
+              scaledWidth = availableImageHeight * imageAspectRatio;
             }
 
-            // Center the image inside the frame
+            // 🔻 Draw image
             const x = frameX + (frameWidth - scaledWidth) / 2;
-            const y = frameY + (frameHeight - scaledHeight) / 2;
+            const y =
+              frameY + noteHeight + (availableImageHeight - scaledHeight) / 2;
 
             page.drawImage(img, {
               x,
@@ -1207,12 +1262,186 @@ export async function generateImageSessionPdf({
               width: scaledWidth,
               height: scaledHeight,
             });
+
+            if (noteLines.length > 0) {
+              const isArabic = isArabicText(noteText);
+              const fontUsed = isArabic ? arFont : enFont;
+              let textY = frameY + lineSpacing * (noteLines.length - 1) + 5;
+              for (let line of noteLines) {
+                line = isArabic ? reText(line) : line;
+                const textX = isArabic
+                  ? getRTLTextX(
+                      line,
+                      noteFontSize,
+                      fontUsed,
+                      margin,
+                      frameWidth
+                    )
+                  : margin;
+
+                page.drawText(line, {
+                  x: textX - (isArabic ? 5 : -5),
+                  y: textY,
+                  size: noteFontSize,
+                  font: fontUsed,
+                  color: colors.textColor,
+                });
+
+                textY -= lineSpacing;
+              }
+            }
           }
         } catch (err) {
           console.warn(`Failed to embed selected image: ${err.message}`);
         }
       }
     }
+    async function generateNotePage() {
+      if (!sessionData.note || sessionData.note.length === 0) return;
+
+      const noteObj = sessionData.note[0];
+      const noteText = noteObj.content?.trim() || "";
+
+      const maxCharsPerLine = 90;
+      const maxChars = 360;
+      const noteFontSize = 12;
+      const lineSpacing = 18;
+
+      const noteLines = getLines(
+        noteText.slice(0, maxChars),
+        maxCharsPerLine,
+        maxChars,
+        20
+      );
+      const noteHeight = noteLines.length * lineSpacing;
+
+      // 🟦 Header text and height (above everything)
+      const headerText =
+        lng === "ar" ? "ملاحظة عامة من العميل" : "General Note from the client";
+      const headerHeight = lineSpacing;
+
+      // 🔹 Check if there's an attachment
+      let img;
+      let imgDims = null;
+      let metadata = null;
+
+      if (noteObj.attachment) {
+        try {
+          const imgBytes = await fetchImageBuffer(noteObj.attachment);
+          const sharpInstance = sharp(imgBytes);
+          metadata = await sharpInstance.metadata();
+
+          try {
+            img = await pdfDoc.embedPng(imgBytes);
+          } catch {
+            img = await pdfDoc.embedJpg(imgBytes);
+          }
+          if (img) {
+            imgDims = img.scale(1);
+          }
+        } catch (err) {
+          console.warn(
+            `Failed to fetch or embed attachment image: ${err.message}`
+          );
+        }
+      }
+
+      // 🔹 Set up a new full page
+      page = pdfDoc.addPage([pageWidth, pageHeight]);
+      drawPageBorder();
+      await drawFixedHeader();
+      y = pageHeight - headerHeight - marginY - 20;
+
+      const frameX = margin;
+      const frameY = marginY + footerHeight;
+      const frameWidth = page.getWidth() - margin * 2;
+
+      // total text block height
+      const totalTextHeight = headerHeight + noteHeight + 10;
+      // 🔹 Draw header and note text FIRST (on top)
+      const isArabic = isArabicText(headerText);
+      const fontUsed = isArabic ? arFont : enFont;
+
+      let textY = y - 50 - noteFontSize / 2 + 4;
+
+      // 🔹 Header
+      const headerFontUsed = isArabic ? arFont : enFont;
+      const headerX = isArabic
+        ? getRTLTextX(
+            headerText,
+            noteFontSize,
+            headerFontUsed,
+            margin,
+            frameWidth
+          )
+        : margin;
+
+      page.drawText(headerText, {
+        x: headerX + 5,
+        y: textY,
+        size: noteFontSize,
+        font: headerFontUsed,
+        color: colors.textColor,
+      });
+
+      textY -= lineSpacing;
+
+      // 🔹 Note lines
+      const isArabicNote = isArabicText(noteText);
+      const notefontUsed = isArabicNote ? arFont : enFont;
+      for (let line of noteLines) {
+        line = isArabicNote ? reText(line) : line;
+        const textX = isArabicNote
+          ? getRTLTextX(line, noteFontSize, notefontUsed, margin, frameWidth)
+          : margin;
+
+        page.drawText(line, {
+          x: textX - (isArabicNote ? 5 : -5),
+          y: textY,
+          size: noteFontSize,
+          font: notefontUsed,
+          color: colors.textColor,
+        });
+
+        textY -= lineSpacing;
+      }
+
+      // 🔹 Draw image below text
+      if (img && imgDims) {
+        const imageAspectRatio = imgDims.width / imgDims.height;
+        const availableImageHeight =
+          pageHeight -
+          headerHeight -
+          footerHeight -
+          marginY * 2 -
+          totalTextHeight;
+
+        const frameAspectRatio = frameWidth / availableImageHeight;
+
+        let scaledWidth, scaledHeight;
+        if (imageAspectRatio > frameAspectRatio) {
+          scaledWidth = frameWidth;
+          scaledHeight = frameWidth / imageAspectRatio;
+        } else {
+          scaledHeight = availableImageHeight;
+          scaledWidth = availableImageHeight * imageAspectRatio;
+        }
+
+        const imageY = frameY + (availableImageHeight - scaledHeight) / 2;
+
+        const imageX = frameX + (frameWidth - scaledWidth) / 2;
+
+        page.drawImage(img, {
+          x: imageX,
+          y: imageY,
+          width: scaledWidth,
+          height: scaledHeight,
+        });
+      }
+    }
+    await generateNotePage();
+
+    // await generateNotePage();
     if (signatureUrl) {
       page = pdfDoc.addPage([pageWidth, pageHeight]);
       drawPageBorder();

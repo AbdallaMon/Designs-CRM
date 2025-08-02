@@ -309,6 +309,34 @@ export async function addUserListToAChnnelUsingQueue({
     }
   }
 }
+export async function notifyUsersAddedToProject({
+  projectId,
+  clientLeadId,
+  type,
+  username,
+}) {
+  const link = `${process.env.OLDORIGIN}/dashboard/projects/${projectId}`;
+  const note = {
+    id: `${projectId}-${clientLeadId}`,
+    clientLeadId: Number(clientLeadId),
+    content: `👤 User @${username} has been assigned to Project ${type} for lead ${clientLeadId}. You can preview the project here: ${link}`,
+  };
+  await uploadANote(note);
+}
+
+export async function notifyUsersWithTheNewProjectStatus({
+  projectId,
+  clientLeadId,
+  type,
+}) {
+  const link = `${process.env.OLDORIGIN}/dashboard/projects/${projectId}`;
+  const note = {
+    id: `${projectId}-${clientLeadId}`,
+    clientLeadId: Number(clientLeadId),
+    content: `✅ Project ${type} for lead ${clientLeadId} is Completed. You can preview the project here: ${link}`,
+  };
+  await uploadANote(note);
+}
 
 export async function handleProjectReminder({
   notifiedKey,
@@ -566,7 +594,6 @@ function delay(ms) {
 export async function uploadANote(note, channel) {
   await delay(2000);
   const existingJob = await telegramMessageQueue.getJob(`note-${note.id}`);
-  console.log(existingJob, "existingJob");
   if (existingJob) return;
 
   await telegramMessageQueue.add(
@@ -633,8 +660,9 @@ export async function uploadAQueueNote(note, channel) {
 
   const sent = await teleClient.sendMessage(channel, {
     message,
-    parseMode: "markdown",
+    parseMode: "",
   });
+  console.log("Message sent");
   // if (note.binMessage) {
   //   await teleClient.invoke(
   //     new Api.messages.UpdatePinnedMessage({

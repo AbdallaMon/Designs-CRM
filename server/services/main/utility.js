@@ -579,8 +579,6 @@ export async function uploadToFTPHttpAsBuffer(
   remoteFilename,
   isBuffer = false
 ) {
-  console.log("did we reached even this?");
-
   try {
     let buffer;
 
