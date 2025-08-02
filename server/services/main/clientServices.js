@@ -14,6 +14,7 @@ import sharp from "sharp";
 const __filename = fileURLToPath(import.meta.url);
 import "dayjs/locale/ar.js";
 import "dayjs/locale/en.js";
+import { notifyUsersThatAClientHasSubmittedAPdf } from "../telegram/telegram-functions.js";
 const __dirname = path.dirname(__filename);
 const fontPath = path.join(__dirname, "../fonts/Ya-ModernPro-Bold.otf");
 const fontBase64 = fs.readFileSync(fontPath);
@@ -1658,6 +1659,7 @@ export async function approveSession({ token, clientLeadId, id, pdfUrl }) {
       pdfUrl: pdfUrl,
     },
   });
+  await notifyUsersThatAClientHasSubmittedAPdf({ clientLeadId: clientLeadId });
   await sendSuccessEmailAfterSessionDone({ token, clientLeadId, pdfUrl });
   return true;
 }
