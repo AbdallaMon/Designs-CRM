@@ -374,11 +374,11 @@ router.post("/pay", async (req, res) => {
                   : "[احجز الآن وابدأ تصميمك]",
               description:
                 req.body.lng === "en"
-                  ? "$29 - Fully deducted upon contract"
-                  : "٢٩ دولار 💵 – تُخصم بالكامل عند التعاقد",
+                  ? "$39 - Fully deducted upon contract"
+                  : "٣٩ دولار 💵 – تُخصم بالكامل عند التعاقد",
             },
 
-            unit_amount: 2900, // 2900 // 2900
+            unit_amount: 3900, // 3900 // 3900
           },
           quantity: 1,
         },

@@ -312,7 +312,7 @@ export async function addUserListToAChnnelUsingQueue({
 export async function notifyUsersThatAClientHasSubmittedAPdf({ clientLeadId }) {
   const link = `${process.env.OLDORIGIN}/dashboard/deals/${clientLeadId}`;
   const note = {
-    id: String(clientLeadId),
+    id: `style-${clientLeadId}`,
     clientLeadId: Number(clientLeadId),
     content: `A client has completed their style selection for lead #${clientLeadId}. You can preview the lead here: ${link}`,
   };
