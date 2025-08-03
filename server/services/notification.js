@@ -872,7 +872,7 @@ export async function sendPaymentReminderEmail(
       message: `Thank you for submitting your information. <span class="highlight">You're just one step away</span> from consulting with Eng. Ahmed about your design project.`,
       actionNeeded: "To proceed with your consultation:",
       paymentInfo:
-        "Secure your consultation with a $29 payment - fully deductible from your future contract.",
+        "Secure your consultation with a $39 payment - fully deductible from your future contract.",
       buttonText: "Make Payment",
       benefits: "Benefits of your consultation:",
       benefit1: "Professional design analysis of your project",
@@ -895,7 +895,7 @@ export async function sendPaymentReminderEmail(
       message: `شكراً لتقديم معلوماتك. <span class="highlight">أنت على بعد خطوة واحدة فقط</span> من استشارة المهندس أحمد بشأن مشروع التصميم الخاص بك.`,
       actionNeeded: "للمتابعة مع استشارتك:",
       paymentInfo:
-        "احجز استشارتك بدفع ٢٩ دولار - تُخصم بالكامل من عقدك المستقبلي.",
+        "احجز استشارتك بدفع ٣٩ دولار - تُخصم بالكامل من عقدك المستقبلي.",
       buttonText: "إتمام الدفع",
       benefits: "فوائد استشارتك:",
       benefit1: "تحليل تصميم احترافي لمشروعك",
