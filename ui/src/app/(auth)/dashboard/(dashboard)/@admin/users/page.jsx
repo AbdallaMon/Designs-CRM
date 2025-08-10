@@ -23,6 +23,8 @@ import {
   Switch,
   Tooltip,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 
 import React, { useEffect, useState } from "react";
@@ -410,7 +412,12 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
     item.role === "STAFF" || item.subRoles?.some((r) => r.subRole === "STAFF");
 
   const InlinePrimary = (
-    <>
+    <Box
+      display={"flex"}
+      flexDirection="row-reverse"
+      gap={1}
+      alignItems={"center"}
+    >
       {isStaff && (
         <>
           <FormControlLabel
@@ -450,7 +457,7 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
       >
         View
       </Button>
-    </>
+    </Box>
   );
 
   return (
@@ -465,11 +472,6 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
       }}
     >
       {/* Inline essentials on md+, or hide on small screens */}
-      {!smDown && (
-        <Box sx={{ display: "inline-flex", gap: 1, flexWrap: "wrap" }}>
-          {InlinePrimary}
-        </Box>
-      )}
 
       {/* More menu (contains heavier controls and everything on small screens) */}
       <Tooltip title="More actions">
@@ -526,6 +528,11 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
           <Commission userId={item.id} />
         </Box>
       </Menu>
+      {!smDown && (
+        <Box sx={{ display: "inline-flex", gap: 1, flexWrap: "wrap" }}>
+          {InlinePrimary}
+        </Box>
+      )}
     </Stack>
   );
 }
