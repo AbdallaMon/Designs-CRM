@@ -1197,7 +1197,14 @@ export async function regenerateSessionToken(sessionId) {
     url: `${process.env.OLDORIGIN}/image-session?token=${updated.token}`,
   };
 }
-
+export async function editSessionFileds({ sessionId, data }) {
+  await prisma.clientImageSession.update({
+    where: {
+      id: Number(sessionId),
+    },
+    data,
+  });
+}
 export async function deleteInProgressSession(sessionId, user) {
   const session = await prisma.clientImageSession.findUnique({
     where: { id: sessionId },

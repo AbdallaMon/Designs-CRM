@@ -1204,6 +1204,7 @@ enum SessionStatus {
 model ClientImageSession {
   id               Int                    @id @default(autoincrement())
   token            String                 @unique
+  name             String?                // optional field
   sessionStatus    SessionStatus          @default(INITIAL)
   pdfUrl          String?
   clientLeadId     Int

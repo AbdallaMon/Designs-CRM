@@ -7,6 +7,7 @@ import {
   newProjectAssingmentNotification,
   newTaskCreatedNotification,
   sendPaymentReminderEmail,
+  sendPaymentReminderEmailByStaff,
   sendPaymentSuccessEmail,
   updateLeadStatusNotification,
   updateProjectNotification,
@@ -1134,6 +1135,9 @@ export const getKeyMetrics = async (searchParams, role) => {
         averagePrice: true,
       },
       where: {
+        status: {
+          in: ["FINALIZED", "ARCHIVED"],
+        },
         ...staffFilter,
       },
     });
@@ -4407,7 +4411,7 @@ export async function remindUserToPay({ clientLeadId }) {
   }
 
   // Send email with session URL
-  await sendPaymentReminderEmail(
+  await sendPaymentReminderEmailByStaff(
     clientLead.client.email,
     clientLead.client.name,
     session.url,

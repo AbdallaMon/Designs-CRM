@@ -17,59 +17,59 @@ const noto = Noto_Kufi_Arabic({
   display: "swap",
 });
 
+// app/layout.js
 export const metadata = {
-  // A more direct and keyword-rich title.
-  title: "Luxurious Interior & Urban Design & Dream Design  | Dream Studio",
-
-  // A more active and benefit-driven description.
+  title: "Dream Studio | تصميم داخلي فاخر وتصميم عمراني وأثاث مُصمّم خصيصًا",
   description:
-    "Dream Studio specializes in urban design, luxurious home interiors, furniture, and decor, combining elegance, comfort, and well-being to create your dream spaces.",
-
+    "Dream Studio يقدم حلول تصميم داخلي فاخر، وتصميم عمراني مبتكر، وأثاثًا مُصمّمًا حسب الطلب. نخدم العملاء المميزين في الإمارات بتصاميم تمزج بين الأناقة والراحة والطابع العملي للمنازل والفلل والمساحات التجارية.",
   keywords: [
     "Dream Studio",
-    "interior design Egypt",
-    "urban design Cairo",
-    "luxurious home design",
-    "custom furniture",
-    "home decor",
-    "architectural design",
-    "elegant interiors",
-    "تصميم داخلي", // "Interior Design" in Arabic
-    "تصميم عمراني", // "Urban Design" in Arabic
+    "تصميم داخلي فاخر",
+    "تصميم عمراني",
+    "أثاث مُصمّم حسب الطلب",
+    "ديكور حديث",
+    "تصميم مجالس",
+    "تصميم فلل",
+    "ديكورات فاخرة",
+    "تصميم داخلي دبي",
+    "تصميم داخلي أبوظبي",
+    "تصميم فلل فاخرة الإمارات",
+    "أثاث فاخر الإمارات",
+    // دعم بحث عالمي
+    "Dream Studio interior design",
+    "Dream Studio urban design",
+    "Dream Studio furniture design",
+    "luxury villa design UAE",
+    "custom furniture UAE",
+    "luxury interiors Dubai",
+    "modern decor Abu Dhabi",
   ],
-
   creator: "Dream Studio",
-
-  metadataBase: new URL("https://dreamstudiio.com"), // Replace with your actual domain
-
+  metadataBase: new URL("https://dreamstudiio.com"),
   openGraph: {
-    title: "Luxurious Interior & Urban Design | Dream Studio",
+    title: "Dream Studio | تصميم داخلي فاخر وتصميم عمراني",
     description:
-      "Transforming visions into luxurious and elegant living spaces.",
-    url: "https://dreamstudiio.com", // Replace with your actual domain
+      "نحوّل الرؤى إلى مساحات فاخرة وأنيقة وعملية للمنازل والفلل والمشاريع التجارية  الإمارات مع خبراء Dream Studio.",
+    url: "https://dreamstudiio.com",
     siteName: "Dream Studio",
     images: [
       {
         url: "https://dreamstudiio.com/dream-logo.jpg",
         width: 1200,
         height: 630,
-        alt: "Luxurious Interior & Urban Design | Dream Studio.",
+        alt: "Dream Studio - تصميم داخلي فاخر وتصميم عمراني",
       },
     ],
-    locale: "en_US",
+    locale: "ar_AE",
     type: "website",
   },
-
-  // Twitter-specific metadata for better card appearance on Twitter.
   twitter: {
     card: "summary_large_image",
-    title: "Luxurious Interior & Urban Design | Dream Studio",
+    title: "Dream Studio | تصميم داخلي فاخر وتصميم عمراني",
     description:
-      "Transforming visions into luxurious and elegant living spaces.",
-    images: ["https://dreamstudiio.com/dream-logo.jpg"], // Path to your Twitter image
+      "تصميم داخلي فاخر، تصميم عمراني مبتكر، وأثاث مُصمّم خصيصًا للمنازل والفلل والمساحات التجارية في الإمارات.",
+    images: ["https://dreamstudiio.com/dream-logo.jpg"],
   },
-
-  // Standard icon definition.
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",

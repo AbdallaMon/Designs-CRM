@@ -168,8 +168,10 @@ const LeadCard = ({
           <Chip
             icon={<IoMdContract sx={{ fontSize: "12px !important" }} />}
             label={
-                   currentContract ? CONTRACT_LEVELS[currentContract.contractLevel] : "No Contract"
-                   }
+              currentContract
+                ? CONTRACT_LEVELS[currentContract.contractLevel]
+                : "No Contract"
+            }
             sx={{
               fontWeight: "bold",
               fontSize: "0.875rem",
@@ -187,9 +189,7 @@ const LeadCard = ({
             <Typography variant="h6" component="div">
               {lead.client.name}
             </Typography>
-            {(lead.status === "FINALIZED" || lead.status === "ARCHIVED") && (
-              <ClientImageSessionManager clientLeadId={lead.id} />
-            )}
+            <ClientImageSessionManager clientLeadId={lead.id} />
           </Box>
           <Box my={1} display="flex" alignItems="center" gap={1}>
             <Chip icon={<MoneyIcon />} label={lead.price} variant="outlined" />

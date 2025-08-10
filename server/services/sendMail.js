@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import { engName } from "./constants";
 dotenv.config();
 console.log(process.env.SMTP_HOST, "process.env.SMTP_HOST");
 const transporter = nodemailer.createTransport({
@@ -19,7 +20,7 @@ export const sendEmail = async (to, subject, html, isClient = false) => {
   const fromUser = isClient
     ? process.env.AHMED_EMAIL
     : process.env.EMAIL_USERNAME;
-  const fromName = isClient ? "Eng.Ahmed elmobayd" : fromUser;
+  const fromName = isClient ? engName : fromUser;
 
   const mailOptions = {
     from: `${fromName} <${fromUser}>`,

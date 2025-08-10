@@ -479,11 +479,7 @@ const LeadContent = ({
             <TelegramLink lead={lead} setLead={setLead} />
             <UpdateInitialConsultButton clientLead={lead} />
 
-            {(lead.status === "FINALIZED" ||
-              lead.status === "ARCHIVED" ||
-              lead.status === "REJECTED") && (
-              <ClientImageSessionManager clientLeadId={lead.id} />
-            )}
+            <ClientImageSessionManager clientLeadId={lead.id} />
 
             {lead.status === "FINALIZED" && (
               <Chip

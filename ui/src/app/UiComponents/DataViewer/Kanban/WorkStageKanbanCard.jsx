@@ -494,8 +494,8 @@ const WorkStageKanbanCard = ({
             <Typography variant="h6" component="div" sx={{ mb: 1 }}>
               {lead.client.name}
             </Typography>
-            
-                          <ClientImageSessionManager clientLeadId={lead.id} />
+
+            <ClientImageSessionManager clientLeadId={lead.id} />
             <Box my={1} display="flex" alignItems="center" gap={1}>
               {!admin ? (
                 <Tooltip title="Actions">
@@ -543,12 +543,11 @@ const WorkStageKanbanCard = ({
                     Delivery Time
                   </Typography>
                   <Typography variant="body2">
-                   {lead.projects[0].deliveryTime ? (
-                    <CountdownTimer time={lead.projects[0].deliveryTime} />
-                  ) : (
-                    <Typography variant="body2">Not set</Typography>
-                  )}
-
+                    {lead.projects[0].deliveryTime ? (
+                      <CountdownTimer time={lead.projects[0].deliveryTime} />
+                    ) : (
+                      <Typography variant="body2">Not set</Typography>
+                    )}
                   </Typography>
                 </Grid2>
                 <Grid2 size={shouldShowModifications ? 4 : 6}>

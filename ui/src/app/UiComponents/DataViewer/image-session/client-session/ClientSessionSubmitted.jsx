@@ -302,7 +302,7 @@ export function ClientSessionSubmitted({ session, loading }) {
         >
           {TEXTS[lng].selectionsSuccessful}
         </Typography>
-        <Stack
+        {/* <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={2}
           justifyContent="center"
@@ -346,7 +346,7 @@ export function ClientSessionSubmitted({ session, loading }) {
               {PDF_GENERATION_ALERT[lng]}
             </Alert>
           )}
-        </Stack>
+        </Stack> */}
       </Paper>
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {session.selectedSpaces && session.selectedSpaces.length > 0 && (

@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   createClientImageSession,
   deleteInProgressSession,
+  editSessionFileds,
   getClientImageSessions,
   regenerateSessionToken,
 } from "../../services/main/image-session/imageSessionSevices.js";
@@ -38,6 +39,20 @@ router.post("/:clientLeadId/sessions", async (req, res) => {
     res
       .status(200)
       .json({ data: newSession, message: "New session created succussfully" });
+  } catch (e) {
+    getAndThrowError(e, res);
+  }
+});
+router.put("/:clientLeadId/sessions/:sessionId", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req);
+    await editSessionFileds({
+      data: req.body,
+      sessionId: Number(req.params.sessionId),
+    });
+    res.status(200).json({
+      message: "Session updated succussfully",
+    });
   } catch (e) {
     getAndThrowError(e, res);
   }
