@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
-import { engName } from "./constants";
+import { engName } from "./constants.js";
 dotenv.config();
 console.log(process.env.SMTP_HOST, "process.env.SMTP_HOST");
 const transporter = nodemailer.createTransport({

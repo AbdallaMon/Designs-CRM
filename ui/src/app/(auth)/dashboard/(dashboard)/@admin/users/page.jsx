@@ -16,9 +16,12 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  Menu,
   MenuItem,
   Select,
+  Stack,
   Switch,
+  Tooltip,
   Typography,
 } from "@mui/material";
 
@@ -30,7 +33,12 @@ import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithAction
 import Link from "next/link";
 import CreateModal from "@/app/UiComponents/models/CreateModal.jsx";
 import { userRoles, userRolesEnum } from "@/app/helpers/constants";
-import { MdAddCircleOutline, MdDelete } from "react-icons/md";
+import {
+  MdAddCircleOutline,
+  MdDelete,
+  MdMoreHoriz,
+  MdVisibility,
+} from "react-icons/md";
 import UserRestrictedCountries from "@/app/UiComponents/DataViewer/UserRestrictedCountries";
 import Commission from "@/app/UiComponents/DataViewer/utility/Commission";
 
@@ -209,73 +217,12 @@ export default function UsersPage() {
         withEdit={true}
         editHref={"admin/users"}
         extraComponent={({ item }) => (
-          <>
-            <Box
-              sx={{
-                display: "flex",
-                gap: 2,
-                flexWrap: "wrap",
-                alignItems: "center",
-              }}
-            >
-              {(item.role === "STAFF" ||
-                item.subRoles?.some((r) => r.subRole === "STAFF")) && (
-                <>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={item.isPrimary || false}
-                        onChange={() => toggleUserStatus(item, "isPrimary")}
-                        size="small"
-                      />
-                    }
-                    label="Primary"
-                    labelPlacement="top"
-                    sx={{ margin: 0 }}
-                  />
-
-                  {/* Super Sales Status Switch */}
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={item.isSuperSales || false}
-                        onChange={() => toggleUserStatus(item, "isSuperSales")}
-                        size="small"
-                      />
-                    }
-                    label="Super Sales"
-                    labelPlacement="top"
-                    sx={{ margin: 0 }}
-                  />
-                </>
-              )}
-
-              <ConfirmWithActionModel
-                title={
-                  item.isActive
-                    ? "Are you sure you want to ban this user?"
-                    : "Are you sure you want to unban this user?"
-                }
-                handleConfirm={() => banAUser(item)}
-                isDelete={item.isActive}
-                label={item.isActive ? "Ban User" : "Unban User"}
-              />
-              <RoleManagerDialog
-                role={item.role}
-                setData={setData}
-                subRoles={item.subRoles?.map((r) => r.subRole)}
-                userId={item.id}
-              />
-              <Button
-                component={Link}
-                href={`/dashboard/users/${item.id}?role=${item.role}&`}
-              >
-                View Details
-              </Button>
-              <UserRestrictedCountries userId={item.id} />
-              <Commission userId={item.id} />
-            </Box>
-          </>
+          <UserRowActions
+            item={item}
+            setData={setData}
+            toggleUserStatus={toggleUserStatus}
+            banAUser={banAUser}
+          />
         )}
       >
         <Box
@@ -453,3 +400,132 @@ export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
     </Dialog>
   );
 };
+
+function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
+  const theme = useTheme();
+  const smDown = useMediaQuery(theme.breakpoints.down("sm"));
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const open = Boolean(anchorEl);
+  const isStaff =
+    item.role === "STAFF" || item.subRoles?.some((r) => r.subRole === "STAFF");
+
+  const InlinePrimary = (
+    <>
+      {isStaff && (
+        <>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={item.isPrimary || false}
+                onChange={() => toggleUserStatus(item, "isPrimary")}
+                size="small"
+              />
+            }
+            label="Primary"
+            labelPlacement="top"
+            sx={{ m: 0 }}
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={item.isSuperSales || false}
+                onChange={() => toggleUserStatus(item, "isSuperSales")}
+                size="small"
+              />
+            }
+            label="Super Sales"
+            labelPlacement="top"
+            sx={{ m: 0 }}
+          />
+        </>
+      )}
+
+      <Button
+        component={Link}
+        href={`/dashboard/users/${item.id}?role=${item.role}&`}
+        size="small"
+        variant="outlined"
+        startIcon={<MdVisibility />}
+        sx={{ whiteSpace: "nowrap" }}
+      >
+        View
+      </Button>
+    </>
+  );
+
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      spacing={1}
+      flexWrap="wrap"
+      sx={{
+        minWidth: 220,
+        maxWidth: 520,
+      }}
+    >
+      {/* Inline essentials on md+, or hide on small screens */}
+      {!smDown && (
+        <Box sx={{ display: "inline-flex", gap: 1, flexWrap: "wrap" }}>
+          {InlinePrimary}
+        </Box>
+      )}
+
+      {/* More menu (contains heavier controls and everything on small screens) */}
+      <Tooltip title="More actions">
+        <IconButton size="small" onClick={(e) => setAnchorEl(e.currentTarget)}>
+          <MdMoreHoriz />
+        </IconButton>
+      </Tooltip>
+      <Menu
+        anchorEl={anchorEl}
+        open={open}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        PaperProps={{ sx: { minWidth: 260, p: 1 } }}
+      >
+        {/* On small screens, also show the primary inline controls inside the menu */}
+        {smDown && (
+          <Box sx={{ px: 1, pb: 1, display: "grid", gap: 1 }}>
+            {InlinePrimary}
+          </Box>
+        )}
+
+        {/* Your existing components render their own buttons; put them inside the menu nicely */}
+        <Box sx={{ px: 1, py: 0.5 }}>
+          <ConfirmWithActionModel
+            title={
+              item.isActive
+                ? "Are you sure you want to ban this user?"
+                : "Are you sure you want to unban this user?"
+            }
+            handleConfirm={async () => {
+              await banAUser(item);
+              setAnchorEl(null);
+            }}
+            isDelete={item.isActive}
+            label={item.isActive ? "Ban User" : "Unban User"}
+          />
+        </Box>
+
+        <Box sx={{ px: 1, py: 0.5 }}>
+          <RoleManagerDialog
+            role={item.role}
+            setData={setData}
+            subRoles={item.subRoles?.map((r) => r.subRole)}
+            userId={item.id}
+          />
+        </Box>
+
+        <Box sx={{ px: 1, py: 0.5 }}>
+          <UserRestrictedCountries userId={item.id} />
+        </Box>
+
+        <Box sx={{ px: 1, py: 0.5 }}>
+          <Commission userId={item.id} />
+        </Box>
+      </Menu>
+    </Stack>
+  );
+}
