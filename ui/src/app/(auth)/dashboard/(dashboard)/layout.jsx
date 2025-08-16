@@ -266,12 +266,11 @@ export const staffLinks = [
 ];
 export const contactInitiatorLinks = [
   { name: "Leads", href: "/dashboard", icon: <FiTarget size={20} /> },
-
 ];
 export const superSalesLinks = [
-    { name: "Dashboard", href: "/dashboard", icon: <FiGrid size={20} /> },
+  { name: "Dashboard", href: "/dashboard", icon: <FiGrid size={20} /> },
 
-{
+  {
     name: "Deals",
     href: "/dashboard/deals",
     icon: <FiDollarSign size={20} />,
@@ -395,7 +394,8 @@ export default function Layout({
   accountant,
   super_admin,
   exacuter,
-  super_sales,contact_initiator
+  super_sales,
+  contact_initiator,
 }) {
   const router = useRouter();
   let { user, isLoggedIn, validatingAuth } = useAuth();
@@ -434,9 +434,9 @@ export default function Layout({
         backgroundColor: colors.bgSecondary,
       }}
     >
-      {user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && (
+      {/* {user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && (
         <ActivityLogDialog userId={user.id} />
-      )}
+      )} */}
       <Navbar
         links={
           role === "ADMIN"
@@ -450,8 +450,11 @@ export default function Layout({
             : role === "ACCOUNTANT"
             ? accountantLinks
             : role === "TWO_D_EXECUTOR"
-            ? exacuterLinks:
-            role==="CONTACT_INITIATOR"?contactInitiatorLinks:role==="SUPER_SALES"?superSalesLinks
+            ? exacuterLinks
+            : role === "CONTACT_INITIATOR"
+            ? contactInitiatorLinks
+            : role === "SUPER_SALES"
+            ? superSalesLinks
             : adminLinks
         }
       />
@@ -467,7 +470,11 @@ export default function Layout({
         : role === "ACCOUNTANT"
         ? accountant
         : role === "TWO_D_EXECUTOR"
-        ? exacuter  :role==="CONTACT_INITIATOR"?contact_initiator:role==="SUPER_SALES"?super_sales
+        ? exacuter
+        : role === "CONTACT_INITIATOR"
+        ? contact_initiator
+        : role === "SUPER_SALES"
+        ? super_sales
         : admin}
     </Box>
   );

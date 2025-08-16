@@ -443,10 +443,6 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                 const origin = window.location.origin;
                 const url = `${origin}/image-session?token=${session.token}`;
                 const statusConfig = getStatusConfig(session.sessionStatus);
-                // const currentStepIndex = getCurrentStepIndex(
-                //   session.sessionStatus
-                // );
-                // const steps = getStepperSteps();
 
                 return (
                   <Grid key={session.id} size={12}>

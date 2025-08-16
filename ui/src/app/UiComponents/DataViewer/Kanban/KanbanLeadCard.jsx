@@ -93,7 +93,10 @@ const LeadCard = ({
     type: ItemTypes.CARD,
     item: {
       id: lead.id,
-      status: type === "STAFF" ? lead.status : lead.projects[0].status,
+      status:
+        type === "STAFF" || type === "CONTRACTLEVELS"
+          ? lead.status
+          : lead.projects[0].status,
       ...lead,
     },
   });
@@ -111,6 +114,7 @@ const LeadCard = ({
   };
 
   const handleStatusChange = async (newStatus) => {
+    if (type === "CONTRACTLEVELS") return;
     await movelead(lead, newStatus);
   };
 
@@ -148,7 +152,9 @@ const LeadCard = ({
     <div ref={drag}>
       <StyledCard
         borderColor={
-          type === "STAFF" ? levelColor : statusColors[lead.projects[0].status]
+          type === "STAFF" || type === "CONTRACTLEVELS"
+            ? levelColor
+            : statusColors[lead.projects[0].status]
         }
       >
         <FloatingIdBadge
@@ -425,7 +431,7 @@ const LeadCard = ({
         </Menu>
       )}
 
-      {type === "STAFF" ? (
+      {type === "STAFF" || type === "CONTRACTLEVELS" ? (
         <PreviewDialog
           open={previewDialogOpen}
           onClose={() => setPreviewDialogOpen(false)}

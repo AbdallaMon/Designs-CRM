@@ -40,6 +40,7 @@ import {
   getLeadByPorjects,
   getLeadByPorjectsColumn,
   getLeadDetailsByProject,
+  getLeadsMonthlyOverview,
   getMonthlyPerformanceData,
   getNextCalls,
   getNextMeetings,
@@ -858,6 +859,16 @@ router.get("/dashboard/emirates-analytics", async (req, res) => {
     });
   }
 });
+router.get("/dashboard/leads-monthly-overview", async (req, res) => {
+  try {
+    const data = await getLeadsMonthlyOverview(req.query);
+    res.status(200).json({ data });
+  } catch (error) {
+    console.error("leads-monthly-overview error:", error);
+    res.status(500).json({ message: error.message || "Server error" });
+  }
+});
+
 router.get("/dashboard/week-performance", async (req, res) => {
   try {
     const searchParams = req.query;

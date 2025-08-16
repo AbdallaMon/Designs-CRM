@@ -17,6 +17,7 @@ import DesignerDashboard from "./designers/DesignerDashboard";
 import FullScreenLoader from "../../feedback/loaders/FullscreenLoader";
 import { getData } from "@/app/helpers/functions/getData";
 import DesignerMetricsCard from "./designers/DesignerMatricsCard";
+import LeadsMonthlyOverviewSingle from "./LeadsMonthlyOverviewSingle";
 
 const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {
   const [role, setRole] = useState(userRole);
@@ -68,7 +69,11 @@ const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {
           <Grid size={12}>
             <KeyMetricsCard staff={staff} staffId={staffId} />
           </Grid>
-
+          {!staff && (
+            <Grid size={{ xs: 12, md: 12 }}>
+              <LeadsMonthlyOverviewSingle staff={staff} staffId={staffId} />
+            </Grid>
+          )}
           <Grid size={{ xs: 12, md: 6 }}>
             <LeadStatusChart staff={staff} staffId={staffId} />
           </Grid>

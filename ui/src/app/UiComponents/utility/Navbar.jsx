@@ -21,7 +21,6 @@ import {
 import { FiMenu, FiChevronDown, FiChevronRight } from "react-icons/fi";
 import Logout from "@/app/UiComponents/buttons/Logout.jsx";
 import NotificationsIcon from "@/app/UiComponents/utility/NotificationIcon.jsx";
-import Link from "next/link";
 import SignInWithDifferentUserRole from "../DataViewer/UserRoles";
 import { useAuth } from "@/app/providers/AuthProvider";
 

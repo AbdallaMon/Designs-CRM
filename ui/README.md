@@ -129,15 +129,26 @@
 - شوف جزء دريم استوديو الخريطه
 - Avg value خليها لل finalized
 - اخفي زرار تنزيل الاستايل من الزبون وخليه ظاهر للموظف
-
 - Add name to the client image session
-
 - اعمل جزء الايميلات شيل الجمله الي في صفحة التسجيل
-
 - صفلي هي خانات فوق بعض عبدالله
 - وجزء الايميل الاسم فيه مختلف في الميتا
-- After client finish last form ask him where he knew us?
 
+- If lead was in archived or lead has a tele cahnnel record dont create new
+- Check whatsapp redirect
+- After client finish last form ask him where he knew us?
+- إضافة note للموظفين
+- إزالة التذكير بمواعيد العمل
+- النوت باللون الاحمر
+- Finalized date and filter by finalize date
+- Update from any section make the deals that have this update sorted first
+- اعمل قسم جديد بدل قسم all projects القسم ده بيرتب حسب العقود
+
+- كام عميل دخل الشهر ده
+  العملاء الي دخلوا الشهر ده منين
+  العملاء الي finalized بيانات عنهم وأنه اكتر منطقه فيها finalized
+  من وين تعرف علينا
+  قيمة العقود وتاكد من أن الفلوس تمام متوافقه
 - Enhance notesComponent make it by default get number of notes now
 
 - https://my.telegram.org/apps

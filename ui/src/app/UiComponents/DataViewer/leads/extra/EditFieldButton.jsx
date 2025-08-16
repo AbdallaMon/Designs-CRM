@@ -33,7 +33,7 @@ export function EditFieldButton({
 
   async function handleUpdate() {
     const request = await handleRequestSubmit(
-      { [field]: data },
+      { [field]: data, inputType, field },
       setLoading,
       path,
       false,

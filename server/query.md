@@ -1,2 +1,16 @@
-ALTER TABLE ClientImageSession
-ADD COLUMN name VARCHAR(191) NULL;
+ALTER TABLE `ClientLead`
+ADD COLUMN `discoverySource` ENUM(
+'TIKTOK','TV','FACEBOOK','YOUTUBE','GOOGLE','INTERIOR_MAGAZINE_SITE','REFERRAL','OTHER'
+) NULL;
+
+ALTER TABLE `Note` ADD COLUMN `notedUserId` INT NULL;
+
+ALTER TABLE `Note`
+ADD CONSTRAINT `Note_notedUserId_fkey`
+FOREIGN KEY (`notedUserId`) REFERENCES `User`(`id`)
+ON DELETE SET NULL ON UPDATE CASCADE;
+
+CREATE INDEX `Note_notedUserId_idx` ON `Note`(`notedUserId`);
+
+ALTER TABLE `ClientLead`
+ADD COLUMN `finalizedDate` DATETIME NULL;

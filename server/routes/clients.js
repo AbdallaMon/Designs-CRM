@@ -322,6 +322,9 @@ router.post("/new-lead/complete-register/:leadId", async (req, res) => {
       data.averagePrice = priceRangeValues[body.priceOption];
       data.priceWithOutDiscount = priceRangeValues[body.priceOption];
     }
+    if (body.discoverySource) {
+      data.discoverySource = body.discoverySource;
+    }
     const clientLead = await prisma.clientLead.update({
       where: {
         id: Number(leadId),

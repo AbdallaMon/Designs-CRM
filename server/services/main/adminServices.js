@@ -1392,7 +1392,6 @@ export async function getAdminClientLeadDetails(clientLeadId, searchParams) {
     include: {
       client: true,
       assignedTo: true,
-
       priceOffers: {
         orderBy: { createdAt: "desc" },
         include: {
@@ -1442,6 +1441,14 @@ export async function getAdminClientLeadDetails(clientLeadId, searchParams) {
 }
 
 export async function updateLeadField({ data, leadId }) {
+  const type = data.inputType;
+  delete data.inputType;
+  const field = data.field;
+  delete data.field;
+  if (type === "date") {
+    data[field] = new Date(data[field]);
+  }
+  console.log(data);
   try {
     const updatedLead = await prisma.clientLead.update({
       where: {
@@ -1451,6 +1458,8 @@ export async function updateLeadField({ data, leadId }) {
     });
     return updatedLead;
   } catch (e) {
+    console.log(e, "e");
+
     throw new Error(e);
   }
 }

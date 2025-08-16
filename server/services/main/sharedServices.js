@@ -360,7 +360,11 @@ export async function getClientLeadsColumnStatus({
     status: searchParams.status,
     leadType: "NORMAL",
   };
-  if (filters?.range) {
+  if (
+    filters?.range &&
+    searchParams.status !== "ARCHIVED" &&
+    searchParams.status !== "FINALIZED"
+  ) {
     const { startDate, endDate } = filters.range;
     const now = dayjs();
     let start = startDate ? dayjs(startDate) : now.subtract(30, "days");
@@ -373,6 +377,17 @@ export async function getClientLeadsColumnStatus({
     where.assignedAt = {
       gte: dayjs().subtract(3, "month").toDate(),
       lte: dayjs().toDate(),
+    };
+  }
+  if (searchParams.status === "FINALIZED" && filters?.finalizedRange) {
+    const { startDate, endDate } = filters.finalizedRange;
+    const now = dayjs();
+
+    let start = startDate ? dayjs(startDate) : now.subtract(30, "days");
+    let end = endDate ? dayjs(endDate).endOf("day") : now;
+    where.finalizedDate = {
+      gte: start.toDate(),
+      lte: end.toDate(),
     };
   }
   if (filters.id && filters.id !== "all") {
@@ -397,6 +412,15 @@ export async function getClientLeadsColumnStatus({
   }
   const updatesWhere = {};
   const sharedUpdatesWhere = {};
+  if (searchParams.type === "CONTRACTLEVELS") {
+    where.status = "FINALIZED";
+    where.contracts = {
+      some: {
+        isInProgress: true,
+        contractLevel: searchParams.status,
+      },
+    };
+  }
   if (!isAdmin) {
     sharedUpdatesWhere.type = "STAFF";
     updatesWhere.OR = [
@@ -532,11 +556,6 @@ export async function getClientLeadsColumnStatus({
   const totalLeads = consolusion._count.id;
 
   return { data: result, totalValue, totalLeads };
-  // statusArray.forEach((status) => {
-  //   groupedLeads[status] = clientLeads.filter((lead) => lead.status === status);
-  // });
-
-  // return groupedLeads;
 }
 
 export async function getClientLeadDetails(
@@ -586,6 +605,7 @@ export async function getClientLeadDetails(
   if (checkIfLeadIsNew) {
     delete where.userId;
   }
+
   const initialConsultWhere = {};
   if (searchParams.checkConsult) {
     initialConsultWhere.initialConsult = true;
@@ -605,6 +625,7 @@ export async function getClientLeadDetails(
       leadType: true,
       previousLeadId: true,
       personality: true,
+      discoverySource: true,
       contracts: {
         where: {
           isInProgress: true,
@@ -1578,6 +1599,232 @@ export const getEmiratesAnalytics = async (searchParams) => {
     throw new Error("Unable to fetch Emirates analytics");
   }
 };
+function buildDateRange(q) {
+  const start = q?.startDate
+    ? dayjs(q.startDate).startOf("day")
+    : dayjs().startOf("month");
+  const end = q?.endDate ? dayjs(q.endDate).endOf("day") : dayjs().endOf("day");
+  return {
+    start: start.toDate(),
+    end: end.toDate(),
+    label: `${start.format("MMM D, YYYY")} → ${end.format("MMM D, YYYY")}`,
+  };
+}
+
+function buildStaffFilter(q) {
+  const staffId = Number(q?.staffId);
+  if (Number.isFinite(staffId)) return { userId: staffId };
+  return {};
+}
+
+export async function getLeadsMonthlyOverview(searchParams) {
+  const { start, end, label } = buildDateRange(searchParams);
+  console.log(searchParams, "searchParams");
+  const staffFilter = buildStaffFilter(searchParams);
+
+  const INSIDE_LIST = [
+    "DUBAI",
+    "ABU_DHABI",
+    "SHARJAH",
+    "AJMAN",
+    "UMM_AL_QUWAIN",
+    "RAS_AL_KHAIMAH",
+    "FUJAIRAH",
+    "KHOR_FAKKAN",
+  ];
+
+  // Totals (created in period)
+  const [
+    totalThisPeriod,
+    insideCount,
+    outsideCount,
+    incompleteCount,
+    finalizedTotal,
+  ] = await Promise.all([
+    prisma.clientLead.count({
+      where: { ...staffFilter, createdAt: { gte: start, lte: end } },
+    }),
+    prisma.clientLead.count({
+      where: {
+        ...staffFilter,
+        createdAt: { gte: start, lte: end },
+        emirate: { in: INSIDE_LIST },
+      },
+    }),
+    prisma.clientLead.count({
+      where: {
+        ...staffFilter,
+        createdAt: { gte: start, lte: end },
+        emirate: "OUTSIDE",
+      },
+    }),
+    prisma.clientLead.count({
+      where: {
+        ...staffFilter,
+        createdAt: { gte: start, lte: end },
+        emirate: null,
+      },
+    }),
+    // finalized count by finalizedDate (not createdAt)
+    prisma.clientLead.count({
+      where: {
+        ...staffFilter,
+        status: "FINALIZED",
+        finalizedDate: { gte: start, lte: end },
+      },
+    }),
+  ]);
+
+  const successRate = totalThisPeriod
+    ? Math.round((finalizedTotal * 100) / totalThisPeriod)
+    : 0;
+
+  // Inside breakdown (created)
+  const insideTotals = await prisma.clientLead.groupBy({
+    by: ["emirate"],
+    where: {
+      ...staffFilter,
+      createdAt: { gte: start, lte: end },
+      emirate: { in: INSIDE_LIST },
+    },
+    _count: { _all: true },
+  });
+
+  const insideFinalizedFromCreated = await prisma.clientLead.groupBy({
+    by: ["emirate"],
+    where: {
+      ...staffFilter,
+      createdAt: { gte: start, lte: end },
+      emirate: { in: INSIDE_LIST },
+      status: "FINALIZED",
+    },
+    _count: { _all: true },
+  });
+
+  const insideFinalizedMap = Object.fromEntries(
+    insideFinalizedFromCreated.map((r) => [r.emirate, r._count._all])
+  );
+
+  const insideRows = insideTotals
+    .map((r) => {
+      const finalized = insideFinalizedMap[r.emirate] || 0;
+      const total = r._count._all;
+      return {
+        emirate: r.emirate,
+        leads: total,
+        finalized,
+        successRate: total ? Math.round((finalized * 100) / total) : 0,
+      };
+    })
+    .sort((a, b) => b.leads - a.leads);
+
+  // Outside breakdown (created)
+  const outsideTotals = await prisma.clientLead.groupBy({
+    by: ["country"],
+    where: {
+      ...staffFilter,
+      createdAt: { gte: start, lte: end },
+      emirate: "OUTSIDE",
+    },
+    _count: { _all: true },
+  });
+
+  const outsideFinalizedFromCreated = await prisma.clientLead.groupBy({
+    by: ["country"],
+    where: {
+      ...staffFilter,
+      createdAt: { gte: start, lte: end },
+      emirate: "OUTSIDE",
+      status: "FINALIZED",
+    },
+    _count: { _all: true },
+  });
+
+  const outsideFinalizedMap = Object.fromEntries(
+    outsideFinalizedFromCreated.map((r) => [
+      r.country ?? "Unknown",
+      r._count._all,
+    ])
+  );
+
+  const outsideRows = outsideTotals
+    .map((r) => {
+      const key = r.country ?? "Unknown";
+      const finalized = outsideFinalizedMap[key] || 0;
+      const total = r._count._all;
+      return {
+        country: key,
+        leads: total,
+        finalized,
+        successRate: total ? Math.round((finalized * 100) / total) : 0,
+      };
+    })
+    .sort((a, b) => b.leads - a.leads);
+
+  // ===== Finalized-only breakdown (based on finalizedDate) =====
+
+  const finalizedInside = await prisma.clientLead.groupBy({
+    by: ["emirate"],
+    where: {
+      ...staffFilter,
+      status: "FINALIZED",
+      finalizedDate: { gte: start, lte: end },
+      emirate: { in: INSIDE_LIST },
+    },
+    _count: { _all: true },
+  });
+
+  const finalizedInsideRows = finalizedInside
+    .map((r) => ({ emirate: r.emirate, finalized: r._count._all }))
+    .sort((a, b) => b.finalized - a.finalized);
+
+  const finalizedOutside = await prisma.clientLead.groupBy({
+    by: ["country"],
+    where: {
+      ...staffFilter,
+      status: "FINALIZED",
+      finalizedDate: { gte: start, lte: end },
+      emirate: "OUTSIDE",
+    },
+    _count: { _all: true },
+  });
+
+  const finalizedOutsideRows = finalizedOutside
+    .map((r) => ({ country: r.country ?? "Unknown", finalized: r._count._all }))
+    .sort((a, b) => b.finalized - a.finalized);
+
+  // Discovery sources (created)
+  const dsTotals = await prisma.clientLead.groupBy({
+    by: ["discoverySource"],
+    where: { ...staffFilter, createdAt: { gte: start, lte: end } },
+    _count: { _all: true },
+  });
+
+  const discoverySources = dsTotals
+    .map((r) => ({
+      source: r.discoverySource ?? "OTHER",
+      count: r._count._all,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  return {
+    period: { start, end, label },
+    totals: {
+      totalThisPeriod,
+      insideCount,
+      outsideCount,
+      incompleteCount,
+      finalizedTotal,
+      successRate,
+    },
+    inside: { rows: insideRows },
+    outside: { rows: outsideRows },
+    // finalized-only (separated)
+    finalizedInsideRows,
+    finalizedOutsideRows,
+    discoverySources,
+  };
+}
 
 export const getPerformanceMetrics = async (searchParams) => {
   let userFilter = {};
@@ -1931,6 +2178,9 @@ export async function updateClientLeadStatus({
     status,
     updatedAt: new Date(),
   };
+  if (oldStatus !== "ARCHIVED" && status === "FINALIZED") {
+    data.finalizedDate = new Date();
+  }
   let heading = isAdmin
     ? "Lead status changed by admin"
     : "Lead status changed";
@@ -2011,15 +2261,23 @@ export async function updateClientLeadStatus({
     !isAdmin ? lead.userId : null
   );
   if (status === "FINALIZED") {
-    await telegramChannelQueue.add(
-      "create-channel",
-      { clientLeadId: lead.id },
-      {
-        jobId: `create-${lead.id}`, // optional: deduplicate
-        removeOnComplete: true,
-        removeOnFail: false,
-      }
-    );
+    const hasChannel = await prisma.telegramChannel.findFirst({
+      where: {
+        clientLeadId: lead.id,
+      },
+    });
+
+    if (!hasChannel) {
+      await telegramChannelQueue.add(
+        "create-channel",
+        { clientLeadId: lead.id },
+        {
+          jobId: `create-${lead.id}`, // optional: deduplicate
+          removeOnComplete: true,
+          removeOnFail: false,
+        }
+      );
+    }
     await finalizedLeadCreated(lead.id, lead.userId);
   }
 }

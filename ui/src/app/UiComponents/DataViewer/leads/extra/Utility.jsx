@@ -19,21 +19,17 @@ export function WhatsAppRedirect({ lead }) {
         : `+${formattedPhone}`;
     }
 
-    // If lead is inside UAE, check if the number already has country code
     if (!formattedPhone.startsWith(UAE_COUNTRY_CODE)) {
       // If number starts with 0, remove it and add the country code
       if (formattedPhone.startsWith("0")) {
         formattedPhone = formattedPhone.slice(1);
       }
-      formattedPhone = UAE_COUNTRY_CODE + formattedPhone;
+      if (!formattedPhone.startsWith("+")) {
+        formattedPhone = UAE_COUNTRY_CODE + formattedPhone;
+      }
     }
 
     return formattedPhone;
-  };
-
-  // Function to detect device type
-  const isMobileDevice = () => {
-    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   };
 
   // Handle click to open WhatsApp
@@ -45,17 +41,8 @@ export function WhatsAppRedirect({ lead }) {
       alert("Invalid phone number");
       return;
     }
-
-    // Open WhatsApp URL based on device type
-    // const whatsappUrl = isMobileDevice()
-    //   ? `whatsapp://send?phone=${formattedPhone}`
-    //   : `https://web.whatsapp.com/send?phone=${formattedPhone}`;
-
-    // Copy phone number to clipboard
     navigator.clipboard.writeText(formattedPhone).then(() => {
       setOpenSnackbar(true); // Show notification
-
-      // Redirect after 1.5 seconds
       setTimeout(() => {
         window.open(`whatsapp://send?phone=${formattedPhone}`, "_blank");
       }, 100);

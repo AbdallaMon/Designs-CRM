@@ -259,6 +259,7 @@ export async function generateImageSessionPdf({
       white: rgb(1, 1, 1),
       lightGray: rgb(0.95, 0.95, 0.95),
       shadowColor: rgb(0.85, 0.85, 0.85),
+      red: rgb(1, 0, 0),
     };
 
     // Page dimensions and margins
@@ -1285,7 +1286,7 @@ export async function generateImageSessionPdf({
                   y: textY,
                   size: noteFontSize,
                   font: fontUsed,
-                  color: colors.textColor,
+                  color: colors.red,
                 });
 
                 textY -= lineSpacing;
@@ -1401,13 +1402,12 @@ export async function generateImageSessionPdf({
           y: textY,
           size: noteFontSize,
           font: notefontUsed,
-          color: colors.textColor,
+          color: colors.red,
         });
 
         textY -= lineSpacing;
       }
 
-      // 🔹 Draw image below text
       if (img && imgDims) {
         const imageAspectRatio = imgDims.width / imgDims.height;
         const availableImageHeight =

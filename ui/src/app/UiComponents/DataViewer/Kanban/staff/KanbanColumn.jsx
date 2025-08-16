@@ -96,7 +96,7 @@ const KanbanColumn = ({
             }&take=${take}&type=${type}&status=${status}&staffId=${staffId}&`
           : `shared/client-leads/columns?status=${status}&skip=${
               page * take
-            }&take=${take}&staffId=${staffId}&`,
+            }&take=${take}&staffId=${staffId}&type=${type}&`,
         filters,
         setData: setleads,
         setLoading,
@@ -308,7 +308,7 @@ const KanbanColumn = ({
         >
           <Stack spacing={1}>
             {leads?.map((lead) => {
-              if (type === "STAFF") {
+              if (type === "STAFF" || type === "CONTRACTLEVELS") {
                 return (
                   <LeadCard
                     key={lead.id}

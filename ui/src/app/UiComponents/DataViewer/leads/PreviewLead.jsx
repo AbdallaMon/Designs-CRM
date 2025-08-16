@@ -696,7 +696,7 @@ const LeadContent = ({
 function LeadData({ lead, setLead, setleads }) {
   return (
     <Stack spacing={3}>
-      <LeadInfo lead={lead} />
+      <LeadInfo lead={lead} setLead={setLead} setleads={setleads} />
       <LeadContactInfo lead={lead} setLead={setLead} setleads={setleads} />
     </Stack>
   );

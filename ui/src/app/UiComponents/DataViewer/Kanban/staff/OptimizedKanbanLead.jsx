@@ -12,7 +12,6 @@ import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks";
 import KanbanColumn from "./KanbanColumn";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { CONTRACT_LEVELS } from "@/app/helpers/constants";
-import KeyMetricsCard from "../../dashbaord/KeyMetricsCard";
 
 dayjs.extend(relativeTime);
 
@@ -81,7 +80,9 @@ const OptimizedKanbanLead = ({
               />
               {admin && (
                 <SearchComponent
-                  apiEndpoint={`search?model=${type ? type : "STAFF"}`}
+                  apiEndpoint={`search?model=${
+                    type && type !== "CONTRACTLEVELS" ? type : "STAFF"
+                  }`}
                   setFilters={setFilters}
                   inputLabel="Search staff by name or email"
                   renderKeys={["name", "email"]}
@@ -92,22 +93,37 @@ const OptimizedKanbanLead = ({
               )}{" "}
               {!isNotStaff && (
                 <>
+                  {type !== "CONTRACTLEVELS" && (
+                    <>
+                      <DateRangeFilter
+                        noMargin={true}
+                        setFilters={setFilters}
+                        lastThreeMonth={true}
+                      />
+                      <FilterSelect
+                        options={Object.entries(CONTRACT_LEVELS).map(
+                          ([key, value]) => {
+                            return {
+                              id: key,
+                              name: value,
+                            };
+                          }
+                        )}
+                        label={"Contract Level"}
+                        loading={false}
+                        param={"contractLevel"}
+                        setFilters={setFilters}
+                      />
+                    </>
+                  )}
                   <DateRangeFilter
                     noMargin={true}
                     setFilters={setFilters}
-                    lastThreeMonth={true}
-                  />
-                  <FilterSelect
-                    options={Object.entries(CONTRACT_LEVELS).map(([key,value]) => {
-                      return {
-                      id: key,
-                      name: value,
-                    }
-                    })}
-                    label={"Contract Level"}
-                    loading={false}
-                    param={"contractLevel"}
-                    setFilters={setFilters}
+                    dateKey="finalizedRange"
+                    startLabel="Finalized Start Range Date"
+                    endLabel="Finalized End Range Date"
+                    withDeleteRange={true}
+                    noDefaultValues={true}
                   />
                 </>
               )}

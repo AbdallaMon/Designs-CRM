@@ -43,6 +43,7 @@ import {
 } from "react-icons/md";
 import UserRestrictedCountries from "@/app/UiComponents/DataViewer/UserRestrictedCountries";
 import Commission from "@/app/UiComponents/DataViewer/utility/Commission";
+import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes";
 
 const columns = [
   { name: "name", label: "User Name" },
@@ -526,6 +527,10 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
 
         <Box sx={{ px: 1, py: 0.5 }}>
           <Commission userId={item.id} />
+        </Box>
+
+        <Box sx={{ px: 1, py: 0.5 }}>
+          <NotesComponent id={item.id} idKey="notedUserId" slug="shared" />
         </Box>
       </Menu>
       {!smDown && (

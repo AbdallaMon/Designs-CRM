@@ -7,7 +7,16 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
-
+enum LeadSource {
+  TIKTOK
+  TV
+  FACEBOOK
+  YOUTUBE
+  GOOGLE
+  INTERIOR_MAGAZINE_SITE
+  REFERRAL
+  OTHER
+}
 enum NotificationType {
   NEW_LEAD
   LEAD_ASSIGNED
@@ -293,6 +302,7 @@ model ClientLead {
   previousLeadId    Int?
   personality ClientPersonality?
   salesStages SalesStage[]
+  discoverySource     LeadSource? 
 
   discount             Decimal  @default(0) @db.Decimal(10, 2)
   price                String?
@@ -330,7 +340,8 @@ model ClientLead {
   timeToContact DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-
+  finalizedDate DateTime? 
+  
   accountant   User? @relation("AccountantLeads", fields: [accountantId], references: [id]) // Assigned Accountant
   accountantId Int?
 
@@ -567,6 +578,7 @@ model User {
   notifications        Notification[]       @relation("UserNotifications")
   staffNotifications   Notification[]       @relation("StaffNotifications")
   notes                Note[]
+  userNotes              Note[]               @relation("UserSubjectNotes")
   tasks                Task[]
   createdTasks         Task[]               @relation("CreatedTasks")
   priceOffers          PriceOffers[]
@@ -662,6 +674,9 @@ model Note {
   userId       Int
   createdAt    DateTime    @default(now())
 
+  notedUser    User?       @relation("UserSubjectNotes", fields: [notedUserId], references: [id])
+  notedUserId  Int?
+
   // New relations
   baseEmployeeSalary    BaseEmployeeSalary?  @relation(fields: [baseEmployeeSalaryId], references: [id])
   baseEmployeeSalaryId  Int?
@@ -714,6 +729,7 @@ model Note {
   @@index([selectedImageId])
   @@index([contractId])
   @@index([salesStageId])
+  @@index([notedUserId]) // NEW
 
 }
 
