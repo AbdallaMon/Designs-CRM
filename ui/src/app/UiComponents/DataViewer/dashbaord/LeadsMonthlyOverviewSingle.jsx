@@ -84,8 +84,6 @@ const LeadsMonthlyOverviewSingle = ({ staffId }) => {
     finalizedInsideRows,
     finalizedOutsideRows,
   } = payload;
-  console.log(finalizedOutsideRows, "finalizedOutsideRows");
-  console.log(finalizedInsideRows, "finalizedInsideRows");
 
   const startDate = useMemo(
     () => selectedMonth.startOf("month").format("YYYY-MM-DD"),
@@ -158,11 +156,6 @@ const LeadsMonthlyOverviewSingle = ({ staffId }) => {
       title: "Finalized",
       value: totals?.finalizedTotal ?? 0,
       icon: <FaCheckCircle />,
-    },
-    {
-      title: "Success Rate",
-      value: `${totals?.successRate ?? 0}%`,
-      icon: <FaPercent />,
     },
   ];
 
