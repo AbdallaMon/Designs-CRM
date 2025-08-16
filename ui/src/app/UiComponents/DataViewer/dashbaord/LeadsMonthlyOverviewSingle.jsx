@@ -263,7 +263,6 @@ const LeadsMonthlyOverviewSingle = ({ staffId }) => {
                     <TableCell>Emirate</TableCell>
                     <TableCell align="right">Leads</TableCell>
                     <TableCell align="right">Finalized</TableCell>
-                    <TableCell align="right">Success %</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -272,7 +271,6 @@ const LeadsMonthlyOverviewSingle = ({ staffId }) => {
                       <TableCell>{r.emirate}</TableCell>
                       <TableCell align="right">{r.leads}</TableCell>
                       <TableCell align="right">{r.finalized}</TableCell>
-                      <TableCell align="right">{r.successRate}%</TableCell>
                     </TableRow>
                   ))}
                   {(!inside?.rows || inside.rows.length === 0) && (
@@ -299,7 +297,6 @@ const LeadsMonthlyOverviewSingle = ({ staffId }) => {
                     <TableCell>Country</TableCell>
                     <TableCell align="right">Leads</TableCell>
                     <TableCell align="right">Finalized</TableCell>
-                    <TableCell align="right">Success %</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -308,7 +305,6 @@ const LeadsMonthlyOverviewSingle = ({ staffId }) => {
                       <TableCell>{r.country}</TableCell>
                       <TableCell align="right">{r.leads}</TableCell>
                       <TableCell align="right">{r.finalized}</TableCell>
-                      <TableCell align="right">{r.successRate}%</TableCell>
                     </TableRow>
                   ))}
                   {(!outside?.rows || outside.rows.length === 0) && (
