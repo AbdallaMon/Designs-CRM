@@ -360,10 +360,12 @@ export async function getClientLeadsColumnStatus({
     status: searchParams.status,
     leadType: "NORMAL",
   };
+  console.log(searchParams.status, "searchParams.status ");
   if (
     filters?.range &&
     searchParams.status !== "ARCHIVED" &&
-    searchParams.status !== "FINALIZED"
+    searchParams.status !== "FINALIZED" &&
+    searchParams.type !== "CONTRACTLEVELS"
   ) {
     const { startDate, endDate } = filters.range;
     const now = dayjs();
@@ -376,7 +378,8 @@ export async function getClientLeadsColumnStatus({
   } else {
     if (
       searchParams.status !== "ARCHIVED" &&
-      searchParams.status !== "FINALIZED"
+      searchParams.status !== "FINALIZED" &&
+      searchParams.type !== "CONTRACTLEVELS"
     ) {
       where.assignedAt = {
         gte: dayjs().subtract(3, "month").toDate(),
@@ -384,7 +387,11 @@ export async function getClientLeadsColumnStatus({
       };
     }
   }
-  if (searchParams.status === "FINALIZED" && filters?.finalizedRange) {
+  if (
+    (searchParams.status === "FINALIZED" ||
+      searchParams.type === "CONTRACTLEVELS") &&
+    filters?.finalizedRange
+  ) {
     const { startDate, endDate } = filters.finalizedRange;
     const now = dayjs();
 
@@ -481,6 +488,7 @@ export async function getClientLeadsColumnStatus({
     }
   }
   console.log(where, "where");
+
   const clientLeads = await prisma.clientLead.findMany({
     where,
     skip: Number(searchParams.skip) || 0,
