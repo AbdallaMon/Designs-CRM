@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useState } from "react";
 import {
   Avatar,
@@ -1112,15 +1113,6 @@ export const AddPriceOffers = ({
       return;
     }
     if (priceOffer.file) {
-      // const formData = new FormData();
-      // formData.append("file", priceOffer.file);
-      // const fileUpload = await handleRequestSubmit(
-      //   formData,
-      //   setLoading,
-      //   "utility/upload",
-      //   true,
-      //   "Uploading file"
-      // );
       const fileUpload = await uploadInChunks(
         priceOffer.file,
         setProgress,
