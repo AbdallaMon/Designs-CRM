@@ -1468,6 +1468,9 @@ export async function updateClientField({ data, clientId }) {
   if (data.inputType) {
     delete data.inputType;
   }
+  if (data.field) {
+    delete data.field;
+  }
   try {
     const updatedClient = await prisma.client.update({
       where: {
