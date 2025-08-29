@@ -766,6 +766,7 @@ export const FAB_QUESTIONS_WITH_ANSWERS_AR = {
 };
 
 export const LEAD_SOURCE_LABELS = {
+  INSTAGRAM: { en: "Instagram", ar: "انستغرام" },
   TIKTOK: { en: "TikTok", ar: "تيك توك" },
   TV: { en: "TV", ar: "تلفاز" },
   FACEBOOK: { en: "Facebook", ar: "فيسبوك" },
