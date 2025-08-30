@@ -1,7 +1,9 @@
 - https://my.telegram.org/apps
+- Add instagram
+
 - Add a schedule instead of one delivery time for each project more than one delivery time and can link one appointment to a meeting
 - For meeting allow to share meeting with users
-- Add instagram
+- Allow uploading more than one file
 
 - dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

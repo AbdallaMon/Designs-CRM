@@ -572,7 +572,9 @@ const LeadContent = ({
             sx={{ textTransform: "none" }}
           />
         )}
-        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+        {(user.role === "ADMIN" ||
+          user.role === "SUPER_ADMIN" ||
+          user.role === "STAFF") && (
           <Tab
             icon={<MdWork size={20} />}
             label="Projects"

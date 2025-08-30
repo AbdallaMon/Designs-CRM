@@ -386,11 +386,36 @@ model MeetingReminder {
   notified12h    Boolean @default(false)
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
+  deliverySchedules DeliverySchedule[]
 
   @@index([clientLeadId])
   @@index([userId])
   @@index([adminId])
 }
+
+model DeliverySchedule {
+  id         Int       @id @default(autoincrement())
+  project    Project   @relation(fields: [projectId], references: [id])
+  projectId  Int
+
+  deliveryAt DateTime  
+  notes Note[]
+
+  meeting    MeetingReminder?  @relation(fields: [meetingReminderId], references: [id])
+  meetingReminderId  Int?
+  createdBy          User?             @relation("DeliverySchedulesCreatedBy", fields: [createdById], references: [id])
+  createdById        Int?
+
+  createdAt        DateTime   @default(now())
+
+  @@index([projectId])
+  @@index([meetingReminderId])
+  @@index([deliveryAt])
+  @@index([createdById])
+
+
+}
+
 
 model Commission {
   id               Int        @id @default(autoincrement())
@@ -423,6 +448,7 @@ model Project {
   isModification Boolean @default(false)
 
   deliveryTime DateTime? // time to deliver the project (optional)
+  deliverySchedules DeliverySchedule[]
   priority     Priority  @default(MEDIUM) // enum with default value
   area         Decimal?  @db.Decimal(10, 2) // optional decimal field
   startedAt    DateTime? // optional
@@ -606,6 +632,8 @@ model User {
   certificates   Certificate[]
   allowedLessons LessonAccess[]
   homeWorks LessonHomework[]
+  deliverySchedulesCreated DeliverySchedule[]  @relation("DeliverySchedulesCreatedBy")
+
 
   baseSalary          BaseEmployeeSalary?
   notAllowedCountries Json?
@@ -713,6 +741,9 @@ model Note {
   salesStage   SalesStage? @relation(fields: [salesStageId], references: [id])
   salesStageId Int?
 
+  deliverySchedule   DeliverySchedule? @relation(fields: [deliveryScheduleId], references: [id])
+  deliveryScheduleId Int?
+
 
   @@index([taskId])
   @@index([clientLeadId])
@@ -730,7 +761,8 @@ model Note {
   @@index([selectedImageId])
   @@index([contractId])
   @@index([salesStageId])
-  @@index([notedUserId]) // NEW
+  @@index([notedUserId]) 
+  @@index([deliveryScheduleId]) 
 
 }
 

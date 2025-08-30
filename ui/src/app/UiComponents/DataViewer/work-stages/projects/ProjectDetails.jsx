@@ -69,6 +69,8 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { AssignDesignerModal } from "./AssignDesignerModal";
 import { ProjectTasksDialog, TasksDialog } from "../utility/ProjectTasksDialog";
+import DeliverySchedulesPanel from "../utility/ProjectDeilverySchedule";
+import { useAlertContext } from "@/app/providers/MuiAlert";
 
 // Styled components
 export const StyledCard = styled(Card)(({ theme }) => ({
@@ -355,6 +357,8 @@ export const ProjectDetails = ({
   const [deleteDesigner, setDeleteDesigner] = useState(false);
   const { setLoading } = useToastContext();
   const { user } = useAuth();
+  const cantDoActions = user.role === "STAFF";
+  const { setAlertError } = useAlertContext();
   const isAdmin = checkIfAdmin(user);
 
   const [anchorEl, setAnchorEl] = useState(null);
@@ -365,6 +369,10 @@ export const ProjectDetails = ({
   };
 
   const handleMenuClose = async (value) => {
+    if (cantDoActions) {
+      setAlertError("You do not have permission to perform this action.");
+      return;
+    }
     const request = await handleRequestSubmit(
       {
         status: value,
@@ -393,6 +401,10 @@ export const ProjectDetails = ({
   };
 
   const handleSubmit = async (e) => {
+    if (cantDoActions) {
+      setAlertError("You do not have permission to perform this action.");
+      return;
+    }
     e.preventDefault();
 
     const updatedProject = await handleRequestSubmit(
@@ -496,47 +508,6 @@ export const ProjectDetails = ({
               </FormControl>
             </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }} container spacing={2}>
-              <Grid size={6}>
-                <TextField
-                  fullWidth
-                  label="Delivery Date"
-                  type="date"
-                  variant="outlined"
-                  value={
-                    editedProject.deliveryTime
-                      ? new Date(editedProject.deliveryTime)
-                          .toISOString()
-                          .slice(0, 10) // only YYYY-MM-DD
-                      : ""
-                  }
-                  onChange={(e) =>
-                    handleInputChange("deliveryTime", e.target.value)
-                  }
-                  InputLabelProps={{ shrink: true }}
-                />
-              </Grid>
-              <Grid size={6}>
-                <TextField
-                  fullWidth
-                  label="Add Days to Delivery"
-                  type="number"
-                  variant="outlined"
-                  inputProps={{ min: 0 }}
-                  onChange={(e) => {
-                    const daysToAdd = parseInt(e.target.value, 10);
-                    if (!isNaN(daysToAdd)) {
-                      const newDeliveryDate = dayjs()
-                        .add(daysToAdd, "day")
-                        .format("YYYY-MM-DD");
-                      handleInputChange("deliveryTime", newDeliveryDate);
-                    }
-                  }}
-                  placeholder="Enter number of days"
-                />
-              </Grid>
-            </Grid>
-
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
@@ -586,94 +557,88 @@ export const ProjectDetails = ({
     <Box sx={{ mt: 3 }}>
       <Grid container spacing={3}>
         <Grid size={12}>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2.5 }}>
-            <InfoCard>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: "primary.light",
-                  color: "primary.main",
-                  p: 1.5,
-                  borderRadius: 2,
-                  mr: 2,
-                }}
-              >
-                <MdCalendarMonth size={24} />
-              </Box>
-              <Box>
-                <Typography variant="body2" color="text.secondary">
-                  Delivery Time
-                </Typography>
-                <Typography variant="subtitle1" fontWeight="600">
-                  {project.deliveryTime
-                    ? dayjs(project.deliveryTime).format("DD MMM, YYYY")
-                    : "Not scheduled"}
-                </Typography>
-              </Box>
-            </InfoCard>
+          <InfoCard>
+            <Grid
+              container
+              spacing={3}
+              sx={{
+                width: "100%",
+              }}
+            >
+              <Grid size={4}>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2.5 }}>
+                  <InfoCard>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: "primary.light",
+                        color: "primary.main",
+                        p: 1.5,
+                        borderRadius: 2,
+                        mr: 2,
+                      }}
+                    >
+                      <MdOutlineSquareFoot size={24} />
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Project Area
+                      </Typography>
+                      <Typography variant="subtitle1" fontWeight="600">
+                        {project.area ? `${project.area} m²` : "Not specified"}
+                      </Typography>
+                    </Box>
+                  </InfoCard>
 
-            <InfoCard>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: "primary.light",
-                  color: "primary.main",
-                  p: 1.5,
-                  borderRadius: 2,
-                  mr: 2,
-                }}
-              >
-                <MdOutlineSquareFoot size={24} />
-              </Box>
-              <Box>
-                <Typography variant="body2" color="text.secondary">
-                  Project Area
-                </Typography>
-                <Typography variant="subtitle1" fontWeight="600">
-                  {project.area ? `${project.area} m²` : "Not specified"}
-                </Typography>
-              </Box>
-            </InfoCard>
-
-            <InfoCard>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: "primary.light",
-                  color: "primary.main",
-                  p: 1.5,
-                  borderRadius: 2,
-                  mr: 2,
-                }}
-              >
-                <MdOutlineAccessTime size={24} />
-              </Box>
-              <Box>
-                <Typography variant="body2" color="text.secondary">
-                  Project Timeline
-                </Typography>
-                <Typography variant="subtitle1" fontWeight="600">
-                  {project.startedAt
-                    ? dayjs(project.startedAt).format("DD MMM, YY")
-                    : "Not started"}
-                  {project.endedAt
-                    ? ` - ${dayjs(project.endedAt).format("DD MMM, YY")}`
-                    : project.startedAt
-                    ? " - Ongoing"
-                    : ""}
-                </Typography>
-              </Box>
-            </InfoCard>
-          </Box>
+                  <InfoCard>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        backgroundColor: "primary.light",
+                        color: "primary.main",
+                        p: 1.5,
+                        borderRadius: 2,
+                        mr: 2,
+                      }}
+                    >
+                      <MdOutlineAccessTime size={24} />
+                    </Box>
+                    <Box>
+                      <Typography variant="body2" color="text.secondary">
+                        Project Timeline
+                      </Typography>
+                      <Typography variant="subtitle1" fontWeight="600">
+                        {project.startedAt
+                          ? dayjs(project.startedAt).format("DD MMM, YY")
+                          : "Not started"}
+                        {project.endedAt
+                          ? ` - ${dayjs(project.endedAt).format("DD MMM, YY")}`
+                          : project.startedAt
+                          ? " - Ongoing"
+                          : ""}
+                      </Typography>
+                    </Box>
+                  </InfoCard>
+                </Box>
+              </Grid>
+              <Grid size={8}>
+                <Box>
+                  <DeliverySchedulesPanel
+                    projectId={project.id}
+                    clientLeadId={project.clientLeadId}
+                  />
+                </Box>
+              </Grid>
+            </Grid>
+          </InfoCard>
+          <Divider mb={1} />
         </Grid>
 
-        {!isStaff && (
+        {!isStaff && !cantDoActions && (
           <Grid size={12} sx={{ mt: 3 }}>
             <StyledCard sx={{ p: 0, overflow: "visible" }}>
               <CardHeader
@@ -877,7 +842,7 @@ export const ProjectDetails = ({
                 />
               </Box>
 
-              {!isStaff && (
+              {!isStaff && !cantDoActions && (
                 <Box sx={{ display: "flex", gap: 2 }}>
                   <StyledButton
                     variant="outlined"
@@ -908,7 +873,9 @@ export const ProjectDetails = ({
         </StyledCard>
       )}
 
-      {renderTasks && <ProjectTasksDialog project={project} />}
+      {renderTasks && !cantDoActions && (
+        <ProjectTasksDialog project={project} />
+      )}
     </>
   );
 };

@@ -416,6 +416,24 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                             <RiAlarmLine size={16} />
                           )
                         }
+                        label={`# ${call.id}`}
+                        sx={{
+                          fontWeight: 600,
+                          border: "1px solid",
+                          "& .MuiChip-icon": {
+                            color: "inherit",
+                          },
+                        }}
+                      />
+                      <Chip
+                        size="small"
+                        icon={
+                          call.status === "DONE" ? (
+                            <RiCheckboxCircleLine size={16} />
+                          ) : (
+                            <RiAlarmLine size={16} />
+                          )
+                        }
                         label={call.status.replace(/_/g, " ")}
                         sx={{
                           ...getStatusStyles(call.status),
@@ -427,7 +445,6 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                         }}
                       />
 
-                      {/* Meeting Type Chip */}
                       <Chip
                         size="small"
                         label={formatMeetingType(call.type)}
