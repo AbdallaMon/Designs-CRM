@@ -56,6 +56,7 @@ function RowActions({
   onLinkMeeting,
   hasMeeting,
   meetingId,
+  canDoActions,
 }) {
   return (
     <Stack direction="row" spacing={1}>
@@ -71,22 +72,28 @@ function RowActions({
           </Button>
         </Tooltip>
       ) : (
-        <Tooltip title="Link to meeting">
-          <IconButton onClick={onLinkMeeting} color="primary">
-            <FiLink />
-          </IconButton>
+        <>
+          {canDoActions && (
+            <Tooltip title="Link to meeting">
+              <IconButton onClick={onLinkMeeting} color="primary">
+                <FiLink />
+              </IconButton>
+            </Tooltip>
+          )}
+        </>
+      )}
+      {canDoActions && (
+        <Tooltip title="Delete delivery">
+          <DeleteModelButton
+            item={row}
+            model={"DeliverySchedule"}
+            contentKey=""
+            onDelete={() => {
+              reload();
+            }}
+          />
         </Tooltip>
       )}
-      <Tooltip title="Delete delivery">
-        <DeleteModelButton
-          item={row}
-          model={"DeliverySchedule"}
-          contentKey=""
-          onDelete={() => {
-            reload();
-          }}
-        />
-      </Tooltip>
     </Stack>
   );
 }
@@ -162,7 +169,7 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
 function MeetingDetailsDialog({ open, onClose, meetingId }) {
   const [loading, setLoading] = useState(false);
   const [meeting, setMeeting] = useState(null);
-
+  console.log(meeting, "Meeting");
   useEffect(() => {
     let active = true;
     if (!open || !meetingId) return;
@@ -391,14 +398,15 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
           <FiClock />
           <Typography variant="h6">Delivery Schedule</Typography>
         </Stack>
-
-        <Button
-          variant="contained"
-          startIcon={<FiPlus />}
-          onClick={() => setOpenCreate(true)}
-        >
-          New delivery
-        </Button>
+        {canDoActions && (
+          <Button
+            variant="contained"
+            startIcon={<FiPlus />}
+            onClick={() => setOpenCreate(true)}
+          >
+            New delivery
+          </Button>
+        )}
       </Stack>
 
       <Divider sx={{ mb: 2 }} />
@@ -423,23 +431,22 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
               <React.Fragment key={row.id}>
                 <ListItem
                   secondaryAction={
-                    canDoActions && (
-                      <RowActions
-                        reload={reload}
-                        row={row}
-                        hasMeeting={!!row.meetingReminderId}
-                        meetingId={row.meetingReminderId}
-                        onOpenMeeting={() =>
-                          setMeetingDialog({
-                            open: true,
-                            meetingId: row.meetingReminderId,
-                          })
-                        }
-                        onLinkMeeting={() =>
-                          setLinkDialog({ open: true, deliveryId: row.id })
-                        }
-                      />
-                    )
+                    <RowActions
+                      reload={reload}
+                      row={row}
+                      hasMeeting={!!row.meetingReminderId}
+                      meetingId={row.meetingReminderId}
+                      onOpenMeeting={() =>
+                        setMeetingDialog({
+                          open: true,
+                          meetingId: row.meetingReminderId,
+                        })
+                      }
+                      canDoActions={canDoActions}
+                      onLinkMeeting={() =>
+                        setLinkDialog({ open: true, deliveryId: row.id })
+                      }
+                    />
                   }
                 >
                   <ListItemText
