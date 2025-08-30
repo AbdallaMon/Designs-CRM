@@ -4757,10 +4757,12 @@ export async function createNewDeliverySchedule({
   if (daysLeft === 1) timeLeftLabel = "Tomorrow";
   else if (daysLeft === 0) timeLeftLabel = "Today";
   else timeLeftLabel = `${daysLeft} days left`;
+  const link = `${process.env.OLDORIGIN}/dashboard/projects/${projectId}`;
+
   const note = {
-    id: `${projectId}-${userId}`,
+    id: `note-${projectId}-${userId}`,
     clientLeadId: project.clientLeadId,
-    content: `New delivery schedule created for project ${project.type} in lead #${project.clientLeadId} - ${timeLeftLabel}`,
+    content: `New delivery schedule created for project ${project.type} in lead #${project.clientLeadId} - ${timeLeftLabel}. View it here: ${link}`,
     binMessage: true,
   };
   await uploadANote(note);
