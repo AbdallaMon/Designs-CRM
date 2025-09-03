@@ -4840,9 +4840,19 @@ export async function linkADeliveryToMeeting({
   deliveryId,
   meetingReminderId,
 }) {
+  const meeting = await prisma.meetingReminder.findUnique({
+    where: { id: Number(meetingReminderId) },
+  });
+  const updatedData = {
+    meetingReminderId: Number(meetingReminderId),
+  };
+  if (meeting && meeting.time) {
+    updatedData.deliveryAt = meeting.time;
+  }
+
   const delivery = await prisma.deliverySchedule.update({
     where: { id: Number(deliveryId) },
-    data: { meetingReminderId: Number(meetingReminderId) },
+    data: updatedData,
     select: {
       projectId: true,
     },
