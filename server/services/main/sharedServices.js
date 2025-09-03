@@ -28,6 +28,13 @@ import {
 } from "../telegram/telegram-functions.js";
 import Stripe from "stripe";
 import { telegramChannelQueue } from "../queues/telegramChannelQueue.js";
+import utc from "dayjs/plugin/utc.js";
+import timezone from "dayjs/plugin/timezone.js";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const DUBAI_TZ = "Asia/Dubai";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function getClientLeads({
@@ -2705,12 +2712,40 @@ export async function getLeadByPorjects({ searchParams, isAdmin }) {
 
   return expandedLeads;
 }
+export function todayRange() {
+  const currentTime = dayjs();
+  const offsetMinutes = currentTime.utcOffset();
+  const offsetHours = offsetMinutes / 60;
 
+  console.log(offsetHours, "offsetHours");
+  let s = dayjs().startOf("day");
+  if (offsetHours < 0) {
+    s = s.subtract(offsetHours, "hour");
+  }
+  if (offsetHours > 0) {
+    s = s.add(offsetHours, "hour");
+  }
+  const start = s.add(8, "hour").toDate();
+  const end = dayjs().endOf("day").toDate();
+  console.log(start, "start");
+  const now = dayjs(start).add(1, "minute").toDate();
+  console.log(now, "now");
+
+  return { now, start, end };
+}
 export async function getLeadByPorjectsColumn({ searchParams, isAdmin }) {
   const filters =
     searchParams.filters &&
     searchParams.filters !== "undefined" &&
     JSON.parse(searchParams.filters);
+  const { now, start, end } = todayRange();
+  const meetingOrNot = {
+    OR: [
+      { meeting: { is: { status: { in: ["IN_PROGRESS"] } } } },
+      { meeting: null },
+      { meetingReminderId: null },
+    ],
+  };
   const where = { leadType: "NORMAL" };
   const projectWhere = {};
   const updatesWhere = {};
@@ -2868,6 +2903,15 @@ export async function getLeadByPorjectsColumn({ searchParams, isAdmin }) {
           isModification: true,
           groupTitle: true,
           groupId: true,
+          deliverySchedules: {
+            where: {
+              ...meetingOrNot,
+              deliveryAt: { gte: now },
+            },
+            orderBy: { deliveryAt: "asc" },
+
+            take: 1,
+          },
           assignments: {
             select: {
               user: {
@@ -3219,11 +3263,28 @@ const PROJECT_TYPES = [
 ];
 
 async function getProjects(clientLeadId) {
+  const { now, start, end } = todayRange();
+  console.log(now, "now");
+  const meetingOrNot = {
+    OR: [
+      { meeting: { is: { status: { in: ["IN_PROGRESS"] } } } },
+      { meeting: null },
+      { meetingReminderId: null },
+    ],
+  };
   return await prisma.project.findMany({
     where: {
       clientLeadId: Number(clientLeadId),
     },
     include: {
+      deliverySchedules: {
+        where: {
+          ...meetingOrNot,
+          deliveryAt: { gte: now },
+        },
+        orderBy: { deliveryAt: "asc" },
+        take: 1,
+      },
       assignments: {
         select: {
           id: true,
@@ -4739,6 +4800,7 @@ export async function createNewDeliverySchedule({
   deliveryAt,
   userId,
 }) {
+  console.log(deliveryAt, "deliveryAt");
   const schedule = await prisma.deliverySchedule.create({
     data: {
       projectId: Number(projectId),

@@ -565,7 +565,7 @@ export const ProjectDetails = ({
                 width: "100%",
               }}
             >
-              <Grid size={4}>
+              <Grid size={3}>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2.5 }}>
                   <InfoCard>
                     <Box
@@ -625,7 +625,7 @@ export const ProjectDetails = ({
                   </InfoCard>
                 </Box>
               </Grid>
-              <Grid size={8}>
+              <Grid size={9}>
                 <Box>
                   <DeliverySchedulesPanel
                     projectId={project.id}

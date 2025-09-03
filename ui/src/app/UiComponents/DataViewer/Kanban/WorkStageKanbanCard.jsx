@@ -543,8 +543,10 @@ const WorkStageKanbanCard = ({
                     Delivery Time
                   </Typography>
                   <Typography variant="body2">
-                    {lead.projects[0].deliveryTime ? (
-                      <CountdownTimer time={lead.projects[0].deliveryTime} />
+                    {lead.projects[0].deliverySchedules?.length > 0 ? (
+                      <CountdownTimer
+                        time={lead.projects[0].deliverySchedules[0].deliveryAt}
+                      />
                     ) : (
                       <Typography variant="body2">Not set</Typography>
                     )}

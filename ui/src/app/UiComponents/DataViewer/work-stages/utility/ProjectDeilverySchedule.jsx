@@ -2,8 +2,17 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+import duration from "dayjs/plugin/duration";
 import relativeTime from "dayjs/plugin/relativeTime";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.extend(duration);
 dayjs.extend(relativeTime);
+
+export const DUBAI_TZ = "Asia/Dubai";
 
 import {
   Box,
@@ -48,6 +57,7 @@ import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import DeleteModelButton from "../../leads/extra/DeleteModelButton";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { NotesComponent } from "../../utility/Notes";
 
 function RowActions({
   reload,
@@ -82,12 +92,23 @@ function RowActions({
           )}
         </>
       )}
+      <Tooltip title="Preview notes">
+        <NotesComponent
+          item={row}
+          id={row.id}
+          idKey="deliveryScheduleId"
+          slug="shared"
+        />
+      </Tooltip>
       {canDoActions && (
         <Tooltip title="Delete delivery">
           <DeleteModelButton
             item={row}
             model={"DeliverySchedule"}
             contentKey=""
+            deleteModelesBeforeMain={[
+              { name: "Note", key: "deliveryScheduleId" },
+            ]}
             onDelete={() => {
               reload();
             }}
@@ -102,6 +123,16 @@ function RowActions({
    Dialog: Create Delivery
    ========================================= */
 
+export function toMiddayUTC(value, tz = DUBAI_TZ) {
+  const localNoon = dayjs
+    .tz(value, tz)
+    .hour(12)
+    .minute(0)
+    .second(0)
+    .millisecond(0);
+  return localNoon.utc().toDate(); // JS Date in UTC (what Prisma expects)
+}
+
 function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
   const [value, setValue] = useState(dayjs().add(1, "day"));
   const { loading: submitting, setLoading: setSubmitting } = useToastContext();
@@ -111,15 +142,15 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
       setAlertError("Please select a delivery date.");
       return;
     }
+    const deliveryAtUtc = toMiddayUTC(value, DUBAI_TZ); // 12:00 in Dubai -> UTC Date
 
     const req = await handleRequestSubmit(
-      { projectId, deliveryAt: value },
+      { projectId, deliveryAt: deliveryAtUtc }, // pass the Date (Prisma will store UTC)
       setSubmitting,
       `shared/delivery-schedule`,
       false,
       "Adding"
     );
-    console.log(req, "req");
     if (req.status === 200) {
       onClose();
       await onCreate();
@@ -169,7 +200,6 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
 function MeetingDetailsDialog({ open, onClose, meetingId }) {
   const [loading, setLoading] = useState(false);
   const [meeting, setMeeting] = useState(null);
-  console.log(meeting, "Meeting");
   useEffect(() => {
     let active = true;
     if (!open || !meetingId) return;
