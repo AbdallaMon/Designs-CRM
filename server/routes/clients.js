@@ -577,6 +577,7 @@ router.get("/stripe/backfill", async (req, res) => {
   try {
     if (req.query.pass !== process.env.SECRET_KEY)
       throw new Error("Not allowed");
+    return null;
     const sinceEpoch = Number(req.body.sinceEpoch || 0);
     const result = await backfillStripeSessions({ sinceEpoch });
     res.json({ ok: true, ...result });
@@ -606,7 +607,6 @@ async function backfillStripeSessions({
       // Only handle paid one-time payments
       if (session.mode !== "payment" || session.payment_status !== "paid")
         continue;
-      console.log(session.metadata, "meta");
       // Get leadId from metadata (primary) or success_url (fallback)
       const leadId =
         first(session.metadata?.clientLeadId) ||
@@ -615,10 +615,7 @@ async function backfillStripeSessions({
 
       // Normalize payer data from the expanded objects
       const { normalized, piId } = await normalizeFromSession(session);
-      console.log(normalized, "normalized");
       const kv = asKV(normalized);
-
-      console.log(kv, "kv");
 
       // Update your DB only if the lead exists
       const lead = await prisma.clientLead.findUnique({

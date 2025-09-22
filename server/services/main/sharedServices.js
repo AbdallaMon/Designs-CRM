@@ -369,7 +369,6 @@ export async function getClientLeadsColumnStatus({
     status: searchParams.status,
     leadType: "NORMAL",
   };
-  console.log(searchParams.status, "searchParams.status ");
   if (
     filters?.range &&
     searchParams.status !== "ARCHIVED" &&
