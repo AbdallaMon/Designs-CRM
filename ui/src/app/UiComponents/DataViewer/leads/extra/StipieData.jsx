@@ -78,7 +78,7 @@ export default function LeadStripeInfo({ lead }) {
 
         <Grid container spacing={1.5}>
           {items.map(({ key, value }, idx) => (
-            <Grid key={`${key}-${idx}`} item xs={12} md={6}>
+            <Grid key={`${key}-${idx}`} size={{ md: 6 }}>
               <Box
                 sx={{
                   p: 1,
