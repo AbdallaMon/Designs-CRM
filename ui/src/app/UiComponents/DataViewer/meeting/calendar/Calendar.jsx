@@ -12,7 +12,7 @@ import {
   DialogActions,
   TextField,
   Chip,
-  Grid2 as Grid,
+  Grid,
   Card,
   CardContent,
   Tabs,

@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Grid2 as Grid, Typography, Box } from "@mui/material";
+import { Grid, Typography, Box } from "@mui/material";
 
 import LeadStatusChart from "@/app/UiComponents/DataViewer/dashbaord/LeadStatusChart.jsx";
 import KeyMetricsCard from "@/app/UiComponents/DataViewer/dashbaord/KeyMetricsCard.jsx";

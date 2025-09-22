@@ -68,6 +68,7 @@ const DateRangeFilter = ({
             value={range.start}
             onChange={(newValue) => setRange({ ...range, start: newValue })}
             renderInput={(params) => <TextField {...params} fullWidth />}
+            format="DD/MM/YYYY"
           />
 
           <DatePicker
@@ -75,6 +76,7 @@ const DateRangeFilter = ({
             value={range.end}
             onChange={(newValue) => setRange({ ...range, end: newValue })}
             renderInput={(params) => <TextField {...params} fullWidth />}
+            format="DD/MM/YYYY"
           />
 
           {withDeleteRange && (

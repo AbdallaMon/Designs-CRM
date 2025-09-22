@@ -4,7 +4,7 @@ import {
   Chip,
   CircularProgress,
   Typography,
-  Grid2 as Grid,
+  Grid,
   Alert,
 } from "@mui/material";
 

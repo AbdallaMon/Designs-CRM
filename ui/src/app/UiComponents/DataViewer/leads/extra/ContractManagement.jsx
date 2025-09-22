@@ -15,7 +15,7 @@ import {
   FormControl,
   InputLabel,
   Chip,
-  Grid2 as Grid,
+  Grid,
   Card,
   CardContent,
   CardActions,

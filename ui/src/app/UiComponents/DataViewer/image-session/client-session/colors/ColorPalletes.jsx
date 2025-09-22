@@ -8,7 +8,7 @@ import {
   Box,
   Card,
   CardContent,
-  Grid2 as Grid,
+  Grid,
   Typography,
 } from "@mui/material";
 import { FloatingActionButton } from "../Utility";

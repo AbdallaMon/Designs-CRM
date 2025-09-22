@@ -1,6 +1,14 @@
-import { Alert, Box, Button, Link, Snackbar, TextField } from "@mui/material";
-import { MuiFileInput } from "mui-file-input";
-import { useState } from "react";
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+  Alert,
+  Box,
+  Link,
+  Snackbar,
+  TextField,
+  InputAdornment,
+} from "@mui/material";
 import { MdAttachFile } from "react-icons/md";
 
 export default function MultiFileInput({
@@ -13,14 +21,18 @@ export default function MultiFileInput({
   handleUpload,
   helperText = "Max file size per file: 80MB",
 }) {
-  const [previews, setPreviews] = useState([]); // Array of file preview URLs
-  const [fileNames, setFileNames] = useState([]); // Array of file names
+  const [previews, setPreviews] = useState([]); // URLs
+  const [fileNames, setFileNames] = useState([]); // Names
   const [error, setError] = useState(null); // Error message
 
-  const handleFileChange = (files) => {
+  const handleFileChange = (filesLike) => {
+    const files = Array.isArray(filesLike)
+      ? filesLike
+      : Array.from(filesLike || []);
+
     const MAX_FILE_SIZE = 80 * 1024 * 1024;
     const validFiles = [];
-    const fileBlobs = [];
+    const urls = [];
     const names = [];
 
     for (let file of files) {
@@ -30,12 +42,16 @@ export default function MultiFileInput({
       }
       validFiles.push(file);
       names.push(file.name);
-      fileBlobs.push(URL.createObjectURL(file));
+      urls.push(URL.createObjectURL(file));
     }
 
-    setError(null);
+    // Revoke old object URLs before replacing
+    setPreviews((old) => {
+      old.forEach((u) => URL.revokeObjectURL(u));
+      return urls;
+    });
     setFileNames(names);
-    setPreviews(fileBlobs);
+    setError(null);
 
     if (setData) {
       setData((old) => ({ ...old, [id]: validFiles }));
@@ -46,8 +62,8 @@ export default function MultiFileInput({
     }
   };
 
-  const renderPreviews = () => {
-    return previews.map((url, index) => (
+  const renderPreviews = () =>
+    previews.map((url, index) => (
       <Link
         key={index}
         sx={{ display: "block", mt: 1 }}
@@ -58,48 +74,47 @@ export default function MultiFileInput({
         {fileNames[index] || `File ${index + 1}`}
       </Link>
     ));
-  };
+
+  // Cleanup URLs on unmount
+  useEffect(() => {
+    return () => {
+      previews.forEach((u) => URL.revokeObjectURL(u));
+    };
+  }, [previews]);
 
   return (
     <>
       <Box display="flex" flexDirection="column" gap={1}>
-        <MuiFileInput
+        <TextField
           id={id}
-          fullWidth
-          accept={input?.accept}
-          helperText={helperText}
-          value={data?.[id]}
-          onChange={handleFileChange}
           label={label}
-          InputProps={{
-            // inputProps: {
-            //   accept: input?.accept,
-            // },
-            startAdornment: <MdAttachFile />,
-          }}
-          multiple
-        />
-
-        {/* <TextField
-          label={label}
-          id={id}
           type="file"
-          //   multiple
-          InputLabelProps={{ shrink: true }}
           variant={variant}
           fullWidth
-          accept={input?.accept}
           helperText={helperText}
-          onChange={handleFileChange}
+          InputLabelProps={{ shrink: true }}
+          inputProps={{
+            accept: input?.accept,
+            multiple: true,
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <MdAttachFile />
+              </InputAdornment>
+            ),
+          }}
+          onChange={(e) => handleFileChange(e.target.files)}
           sx={(theme) => ({
             backgroundColor:
               variant === "outlined"
                 ? theme.palette.background.default
                 : "inherit",
           })}
-        /> */}
+        />
         {renderPreviews()}
       </Box>
+
       {error && (
         <Snackbar
           open={!!error}

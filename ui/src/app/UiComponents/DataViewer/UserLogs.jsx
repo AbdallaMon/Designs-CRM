@@ -7,7 +7,7 @@ import {
   List,
   ListItem,
   Avatar,
-  Grid2 as Grid,
+  Grid,
   Container,
   Divider,
   CardHeader,

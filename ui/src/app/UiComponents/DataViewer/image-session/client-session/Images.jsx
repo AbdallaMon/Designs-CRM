@@ -4,7 +4,7 @@ import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProv
 import { useEffect, useState, useRef, useCallback } from "react";
 import { PreviewItem } from "./PreviewItem";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
-import { Box, Grid2 as Grid, Typography } from "@mui/material";
+import { Box, Grid, Typography } from "@mui/material";
 import { FloatingActionButton } from "./Utility";
 import { gsap } from "gsap";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";

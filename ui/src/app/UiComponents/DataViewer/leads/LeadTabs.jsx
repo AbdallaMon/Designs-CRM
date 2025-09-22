@@ -47,7 +47,7 @@ import {
 } from "@mui/material";
 import { Avatar } from "@mui/material";
 import { NewNoteDialog } from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
-import { Grid2 as Grid, Button } from "@mui/material";
+import { Grid, Button } from "@mui/material";
 import { FaMoneyBillWave, FaUserAlt, FaCalendarAlt } from "react-icons/fa";
 import { AddPriceOffers } from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
 import {

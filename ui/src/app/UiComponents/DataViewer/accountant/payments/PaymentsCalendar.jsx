@@ -8,7 +8,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Grid2,
+  Grid,
   Modal,
   Typography,
   IconButton,
@@ -164,8 +164,8 @@ const PaymentCalendar = ({ status = "PENDING" }) => {
         <Button variant="outlined" onClick={handleResetFilter}>
           Reset filter
         </Button>
-        <Grid2 spacing={2} container sx={{ flex: 1, maxWidth: "1200px" }}>
-          <Grid2 size={4}>
+        <Grid spacing={2} container sx={{ flex: 1, maxWidth: "1200px" }}>
+          <Grid size={4}>
             <SearchComponent
               apiEndpoint="search?model=client"
               setFilters={setFilters}
@@ -175,8 +175,8 @@ const PaymentCalendar = ({ status = "PENDING" }) => {
               searchKey={"clientId"}
               withParamsChange={true}
             />
-          </Grid2>
-          {/* <Grid2 size={4}>
+          </Grid>
+          {/* <Grid size={4}>
             <FormControl fullWidth={true}>
               <InputLabel id="status">Status</InputLabel>
               <Select
@@ -193,8 +193,8 @@ const PaymentCalendar = ({ status = "PENDING" }) => {
                 <MenuItem value="OVERDUE">Over rude</MenuItem>
               </Select>
             </FormControl>
-          </Grid2>
-          <Grid2 size={4}>
+          </Grid>
+          <Grid size={4}>
             <FormControl fullWidth={true}>
               <InputLabel id="paymentLevel">Payment level</InputLabel>
               <Select
@@ -213,8 +213,8 @@ const PaymentCalendar = ({ status = "PENDING" }) => {
                 ))}
               </Select>
             </FormControl>
-          </Grid2> */}
-        </Grid2>
+          </Grid> */}
+        </Grid>
       </Box>
       <AdminTable
         data={data}

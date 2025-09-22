@@ -1,6 +1,6 @@
 import { getData } from "@/app/helpers/functions/getData";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
-import { Alert, Box, Grid2 as Grid } from "@mui/material";
+import { Alert, Box, Grid } from "@mui/material";
 import { useEffect, useState } from "react";
 import PaginationWithLimit from "../../../PaginationWithLimit";
 

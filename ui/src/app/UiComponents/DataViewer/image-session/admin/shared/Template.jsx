@@ -8,7 +8,7 @@ import {
   Button,
   Slider,
   TextField,
-  Grid2 as Grid,
+  Grid,
   Paper,
   IconButton,
   Accordion,

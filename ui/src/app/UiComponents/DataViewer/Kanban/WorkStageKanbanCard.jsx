@@ -10,7 +10,7 @@ import {
   CardHeader,
   Chip,
   Divider,
-  Grid2,
+  Grid,
   IconButton,
   Menu,
   MenuItem,
@@ -219,7 +219,7 @@ const DesignersPreviewModal = ({ lead }) => {
         fullWidth
       >
         <DialogContent>
-          <Grid2 size={12} sx={{ mt: 3 }}>
+          <Grid size={12} sx={{ mt: 3 }}>
             <StyledCard sx={{ p: 0, overflow: "visible" }}>
               <CardHeader
                 title={
@@ -302,7 +302,7 @@ const DesignersPreviewModal = ({ lead }) => {
                 )}
               </CardContent>
             </StyledCard>
-          </Grid2>
+          </Grid>
         </DialogContent>
       </Dialog>
       {open && (
@@ -537,8 +537,8 @@ const WorkStageKanbanCard = ({
                 </>
               )}
 
-              <Grid2 container spacing={1} sx={{ mb: 2 }}>
-                <Grid2 size={shouldShowModifications ? 4 : 6}>
+              <Grid container spacing={1} sx={{ mb: 2 }}>
+                <Grid size={shouldShowModifications ? 4 : 6}>
                   <Typography variant="caption" color="text.secondary">
                     Delivery Time
                   </Typography>
@@ -551,17 +551,17 @@ const WorkStageKanbanCard = ({
                       <Typography variant="body2">Not set</Typography>
                     )}
                   </Typography>
-                </Grid2>
-                <Grid2 size={shouldShowModifications ? 4 : 6}>
+                </Grid>
+                <Grid size={shouldShowModifications ? 4 : 6}>
                   <Typography variant="caption" color="text.secondary">
                     Tasks
                   </Typography>
                   <Typography variant="body2">
                     {totalTasks} task{totalTasks !== 1 ? "s" : ""}
                   </Typography>
-                </Grid2>
+                </Grid>
                 {shouldShowModifications && (
-                  <Grid2 size={4}>
+                  <Grid size={4}>
                     <Typography variant="caption" color="text.secondary">
                       Modifications
                     </Typography>
@@ -569,9 +569,9 @@ const WorkStageKanbanCard = ({
                       {totalModifications} mod
                       {totalModifications !== 1 ? "s" : ""}
                     </Typography>
-                  </Grid2>
+                  </Grid>
                 )}
-              </Grid2>
+              </Grid>
 
               {/* Latest Tasks Section */}
               <Box sx={{ mt: 2 }}>

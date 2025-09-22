@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import {
   Paper,
   Box,
-  Grid2 as Grid,
+  Grid,
   Typography,
   IconButton,
   Chip,

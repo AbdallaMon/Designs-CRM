@@ -4,7 +4,7 @@ import {
   Box,
   Typography,
   CircularProgress,
-  Grid2 as Grid,
+  Grid,
   Card,
   CardContent,
   CardHeader,

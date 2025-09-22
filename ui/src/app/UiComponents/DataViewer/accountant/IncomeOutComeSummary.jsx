@@ -1,6 +1,6 @@
 "use client";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
-import { Box, Paper, Typography, Grid2 as Grid } from "@mui/material";
+import { Box, Paper, Typography, Grid } from "@mui/material";
 import {
   MdCalendarMonth,
   MdAttachMoney,

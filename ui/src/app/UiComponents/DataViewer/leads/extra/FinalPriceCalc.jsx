@@ -1,4 +1,4 @@
-import { Grid2, Typography } from "@mui/material";
+import { Grid, Typography } from "@mui/material";
 
 export function FinalPriceCalc({ lead }) {
   const calculateExtraServicesPrice = (extraServices) => {
@@ -22,13 +22,13 @@ export function FinalPriceCalc({ lead }) {
     <>
       {lead.status === "FINALIZED" && (
         <>
-          <Grid2 size={{ xs: 12, md: 3 }}>
+          <Grid size={{ xs: 12, md: 3 }}>
             <Typography color="text.secondary" variant="caption">
               Base price
             </Typography>
             <Typography variant="body1">AED {lead.averagePrice}</Typography>
-          </Grid2>
-          <Grid2 size={{ xs: 12, md: 3 }}>
+          </Grid>
+          <Grid size={{ xs: 12, md: 3 }}>
             {extraServicesPrice > 0 && (
               <>
                 <Typography
@@ -50,7 +50,7 @@ export function FinalPriceCalc({ lead }) {
             <Typography variant="body1" fontWeight="bold">
               AED {totalPrice}
             </Typography>
-          </Grid2>
+          </Grid>
         </>
       )}
     </>

@@ -1,5 +1,5 @@
 import {useForm} from "react-hook-form";
-import {Button, Typography, Box, Paper, Grid2 as Grid} from "@mui/material";
+import {Button, Typography, Box, Paper, Grid} from "@mui/material";
 import MuiInputField from "@/app/UiComponents/formComponents/MUIInputs/MuiInputField";
 
 export default function AuthForm({

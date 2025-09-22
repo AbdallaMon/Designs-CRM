@@ -298,6 +298,7 @@ model ClientLead {
   type              LeadType           @default(CONSTRUCTION_VILLA)
   description       String?
   clientDescription String?            @db.Text
+  stripieMetadata          Json?
   emirate           Emirate?
   leadType          LeadConversionType @default(NORMAL)
   previousLeadId    Int?
@@ -397,6 +398,7 @@ model DeliverySchedule {
   id         Int       @id @default(autoincrement())
   project    Project   @relation(fields: [projectId], references: [id])
   projectId  Int
+  name       String?   @db.VarChar(255)
 
   deliveryAt DateTime  
   notes Note[]
@@ -412,8 +414,6 @@ model DeliverySchedule {
   @@index([meetingReminderId])
   @@index([deliveryAt])
   @@index([createdById])
-
-
 }
 
 

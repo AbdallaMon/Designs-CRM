@@ -18,7 +18,7 @@ import {
   DialogActions,
   MenuItem,
   TextField,
-  Grid2 as Grid,
+  Grid,
   Paper,
   IconButton,
 } from "@mui/material";

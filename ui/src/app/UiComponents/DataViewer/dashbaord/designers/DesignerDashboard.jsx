@@ -1,5 +1,5 @@
 "use client";
-import { Grid2 as Grid } from "@mui/material";
+import { Grid } from "@mui/material";
 import DesignerMetricsCard from "./DesignerMatricsCard";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";

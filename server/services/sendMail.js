@@ -2,7 +2,6 @@ import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import { engName } from "./constants.js";
 dotenv.config();
-console.log(process.env.SMTP_HOST, "process.env.SMTP_HOST");
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST, // Your iRedMail server's hostname or IP
   port: 587, // Port for STARTTLS

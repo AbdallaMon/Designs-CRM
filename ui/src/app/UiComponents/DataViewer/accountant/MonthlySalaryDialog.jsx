@@ -8,7 +8,7 @@ import {
   TextField,
   Box,
   Typography,
-  Grid2 as Grid,
+  Grid,
   CircularProgress,
   Alert,
   Divider,

@@ -2,7 +2,7 @@
 import React from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Box, Grid2 as Grid } from "@mui/material";
+import { Box, Grid } from "@mui/material";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent";

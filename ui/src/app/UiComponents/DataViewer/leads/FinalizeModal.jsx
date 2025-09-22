@@ -8,7 +8,7 @@ import {
   Button,
   Chip,
   FormControl,
-  Grid2 as Grid,
+  Grid,
   InputLabel,
   MenuItem,
   Modal,

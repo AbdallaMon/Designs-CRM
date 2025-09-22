@@ -8,7 +8,7 @@ import {
   CardContent,
   Chip,
   Divider,
-  Grid2,
+  Grid,
   IconButton,
   Menu,
   MenuItem,
@@ -242,24 +242,24 @@ const LeadCard = ({
                 borderColor: "divider",
               }}
             >
-              <Grid2 container spacing={1}>
-                <Grid2 size={6}>
+              <Grid container spacing={1}>
+                <Grid size={6}>
                   <Typography variant="caption" color="text.secondary">
                     Status
                   </Typography>
                   <Typography variant="body2">
                     {lead.projects[0].status || "To Do"}
                   </Typography>
-                </Grid2>
-                <Grid2 size={6}>
+                </Grid>
+                <Grid size={6}>
                   <Typography variant="caption" color="text.secondary">
                     Priority
                   </Typography>
                   <Typography variant="body2">
                     {lead.projects[0].priority || "MEDIUM"}
                   </Typography>
-                </Grid2>
-                <Grid2 size={6}>
+                </Grid>
+                <Grid size={6}>
                   <Typography variant="caption" color="text.secondary">
                     Delivery Time
                   </Typography>
@@ -270,8 +270,8 @@ const LeadCard = ({
                         )
                       : "Not set"}
                   </Typography>
-                </Grid2>
-                <Grid2 size={6}>
+                </Grid>
+                <Grid size={6}>
                   <Typography variant="caption" color="text.secondary">
                     Area
                   </Typography>
@@ -280,8 +280,8 @@ const LeadCard = ({
                       ? `${lead.projects[0].area} m²`
                       : "Not set"}
                   </Typography>
-                </Grid2>
-                <Grid2>
+                </Grid>
+                <Grid>
                   <Typography variant="caption" color="text.secondary">
                     Timeline
                   </Typography>
@@ -298,8 +298,8 @@ const LeadCard = ({
                         )}`
                       : "Not started / In progress"}
                   </Typography>
-                </Grid2>
-              </Grid2>
+                </Grid>
+              </Grid>
             </Box>
           )}
 

@@ -1,4 +1,4 @@
-import { Box, Paper, Typography, Grid2 as Grid } from "@mui/material";
+import { Box, Paper, Typography, Grid } from "@mui/material";
 import { ImagePreviewDialog } from "./ImagePreviewDialog";
 import { useState } from "react";
 import { ImageGroup } from "./ImageGroup";

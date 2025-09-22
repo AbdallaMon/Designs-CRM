@@ -13,7 +13,7 @@ import {
   DialogActions,
   DialogTitle,
   Fade,
-  Grid2 as Grid,
+  Grid,
   IconButton,
   Menu,
   MenuItem,
@@ -90,6 +90,7 @@ import ClientImageSessionManager from "../image-session/users/ClientSessionImage
 import SalesStageComponent from "./extra/SalesStage";
 import { IoMdContract } from "react-icons/io";
 import { contractLevelColors } from "@/app/helpers/colors";
+import LeadStripeInfo from "./extra/StipieData";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
@@ -700,6 +701,7 @@ function LeadData({ lead, setLead, setleads }) {
     <Stack spacing={3}>
       <LeadInfo lead={lead} setLead={setLead} setleads={setleads} />
       <LeadContactInfo lead={lead} setLead={setLead} setleads={setleads} />
+      <LeadStripeInfo lead={lead} />
     </Stack>
   );
 }

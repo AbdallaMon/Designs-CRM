@@ -8,7 +8,7 @@ import {
   Button,
   Card,
   CardContent,
-  Grid2 as Grid,
+  Grid,
   Typography,
 } from "@mui/material";
 import { gsap } from "gsap";

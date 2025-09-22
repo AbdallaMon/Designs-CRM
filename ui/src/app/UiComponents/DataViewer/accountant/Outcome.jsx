@@ -8,7 +8,7 @@ import {
   Container,
   Paper,
   Typography,
-  Grid2 as Grid,
+  Grid,
 } from "@mui/material";
 import { FaCalendarMonth, FaMoneyBillWave } from "react-icons/fa6";
 import dayjs from "dayjs";

@@ -10,7 +10,7 @@ import {
   Select,
   InputLabel,
   FormControl,
-  Grid2 as Grid,
+  Grid,
   Dialog,
   DialogContent,
   Container,

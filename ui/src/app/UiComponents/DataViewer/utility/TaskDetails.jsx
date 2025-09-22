@@ -5,7 +5,7 @@ import {
   Typography,
   Card,
   CardContent,
-  Grid2 as Grid,
+  Grid,
   Button,
   Divider,
   CircularProgress,

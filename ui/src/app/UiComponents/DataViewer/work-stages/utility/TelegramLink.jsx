@@ -163,7 +163,9 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
     <Box
       display="flex"
       alignItems="center"
+      mx={1}
       sx={{
+        gap: 1,
         "&:hover": {
           "& .edit-button": {
             visibility: isAdmin ? "visible" : "hidden",
@@ -181,7 +183,7 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
     >
       {isValidLink ? (
         <>
-          <Box display="flex" alignItems="center" flex={1}>
+          <Box display="flex" alignItems="center" flex={1} gap={1}>
             <Tooltip title={`Open ${displayText} in Telegram`}>
               <Chip
                 icon={<BsTelegram size={16} />}

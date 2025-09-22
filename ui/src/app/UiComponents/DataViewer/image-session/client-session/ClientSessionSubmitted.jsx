@@ -6,7 +6,7 @@ import {
   Paper,
   Typography,
   Box,
-  Grid2 as Grid,
+  Grid,
   Card,
   CardContent,
   Chip,

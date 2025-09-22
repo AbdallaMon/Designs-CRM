@@ -3,7 +3,7 @@ import { statusColors } from "@/app/helpers/constants";
 import {
   Box,
   Chip,
-  Grid2 as Grid,
+  Grid,
   LinearProgress,
   Stack,
   styled,

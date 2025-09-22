@@ -381,7 +381,8 @@ router.post("/pay", async (req, res) => {
                   : "٣٩ دولار 💵 – تُخصم بالكامل عند التعاقد",
             },
 
-            unit_amount: 3900, // 3900 // 3900
+            unit_amount: 3900,
+            // 3900
           },
           quantity: 1,
         },
@@ -418,6 +419,10 @@ router.post("/pay", async (req, res) => {
     res.status(500).send("Internal Server Error");
   }
 });
+const first = (...vals) =>
+  vals.find((v) => v !== undefined && v !== null && `${v}`.trim() !== "") ?? "";
+const asKV = (obj) =>
+  Object.entries(obj).map(([key, value]) => ({ key, value: value ?? "" }));
 
 router.get("/payment-status", async (req, res) => {
   const { sessionId, clientLeadId, lng } = req.query;
@@ -426,7 +431,16 @@ router.get("/payment-status", async (req, res) => {
   }
 
   try {
-    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: [
+        "customer",
+        "payment_intent.payment_method",
+        "payment_intent.latest_charge",
+        "payment_intent.latest_charge.balance_transaction",
+        "payment_intent.latest_charge.payment_method_details",
+      ],
+    });
+    console.log(session.id, "session");
     if (session.payment_status === "paid") {
       const oldLead = await prisma.clientLead.findUnique({
         where: {
@@ -454,7 +468,85 @@ router.get("/payment-status", async (req, res) => {
         });
         await leadPaymentSuccessed(clientLeadId);
       }
+      // ---------- Collect details from best sources ----------
+      const pi = session.payment_intent || null;
+      const charge = pi?.latest_charge || null;
+      const pm = pi?.payment_method || null;
 
+      const billing = {
+        name: first(
+          charge?.billing_details?.name,
+          pm?.billing_details?.name,
+          session.customer_details?.name
+        ),
+        email: first(
+          charge?.billing_details?.email,
+          pm?.billing_details?.email,
+          session.customer_details?.email
+        ),
+        phone: first(
+          charge?.billing_details?.phone,
+          pm?.billing_details?.phone,
+          session.customer_details?.phone
+        ),
+        address:
+          charge?.billing_details?.address ||
+          pm?.billing_details?.address ||
+          session.customer_details?.address ||
+          null,
+      };
+
+      const addr = billing.address || {};
+      const billingAddress = {
+        line1: first(addr.line1),
+        line2: first(addr.line2),
+        city: first(addr.city),
+        state: first(addr.state),
+        postal_code: first(addr.postal_code),
+        country: first(addr.country),
+      };
+
+      let paymentMethod = "";
+      const pmd = charge?.payment_method_details;
+      if (pmd?.type === "card") {
+        const walletType = pmd.card?.wallet?.type; // 'apple_pay' | 'google_pay' | ...
+        if (walletType) {
+          paymentMethod = walletType
+            .split("_")
+            .map((s) => s[0].toUpperCase() + s.slice(1))
+            .join(" ");
+        } else {
+          // plain card brand, e.g. 'visa', 'mastercard'
+          const brand = pm?.card?.brand || pmd.card?.brand || "Card";
+          paymentMethod = brand[0].toUpperCase() + brand.slice(1);
+        }
+      } else if (pmd?.type) {
+        // e.g. 'link', 'paypal' (if enabled), etc.
+        paymentMethod = pmd.type[0].toUpperCase() + pmd.type.slice(1);
+      }
+
+      // Final normalized fields (empty strings if missing)
+      const normalized = {
+        name: first(billing.name),
+        email: first(billing.email),
+        phone: first(billing.phone),
+        billingAddressLine1: billingAddress.line1,
+        billingAddressLine2: billingAddress.line2,
+        billingCity: billingAddress.city,
+        billingState: billingAddress.state,
+        billingPostalCode: billingAddress.postal_code,
+        billingCountry: billingAddress.country,
+        paymentMethod: first(paymentMethod),
+      };
+
+      // Build KV array exactly as you asked
+      const kv = asKV(normalized);
+      await prisma.clientLead.update({
+        where: { id: Number(clientLeadId) },
+        data: {
+          stripieMetadata: kv,
+        },
+      });
       await sendPaymentSuccessEmail(
         oldLead.client.email,
         oldLead.client.name,
@@ -465,6 +557,8 @@ router.get("/payment-status", async (req, res) => {
         paymentStatus: "PAID",
         success: true,
         message: "Payment verified",
+        session,
+        kv,
       });
     } else {
       return res.status(402).json({

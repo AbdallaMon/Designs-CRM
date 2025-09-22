@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { DndProvider, useDrop } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Box, Grid2 as Grid, Stack, Typography } from "@mui/material";
+import { Box, Grid, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks.jsx";

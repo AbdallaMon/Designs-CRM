@@ -134,9 +134,18 @@ export function toMiddayUTC(value, tz = DUBAI_TZ) {
 }
 
 function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
+  const [name, setName] = useState("");
+  const [days, setDays] = useState(1);
   const [value, setValue] = useState(dayjs().add(1, "day"));
+
   const { loading: submitting, setLoading: setSubmitting } = useToastContext();
   const { setAlertError } = useAlertContext();
+
+  useEffect(() => {
+    const n = Number(days);
+    setValue(dayjs().add(isNaN(n) ? 0 : n, "day"));
+  }, [days]);
+
   const handleSubmit = async () => {
     if (!value) {
       setAlertError("Please select a delivery date.");
@@ -145,7 +154,7 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
     const deliveryAtUtc = toMiddayUTC(value, DUBAI_TZ); // 12:00 in Dubai -> UTC Date
 
     const req = await handleRequestSubmit(
-      { projectId, deliveryAt: deliveryAtUtc }, // pass the Date (Prisma will store UTC)
+      { projectId, deliveryAt: deliveryAtUtc, name }, // ← send name too
       setSubmitting,
       `shared/delivery-schedule`,
       false,
@@ -165,18 +174,43 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
           <span>New Delivery Time</span>
         </Stack>
       </DialogTitle>
+
       <DialogContent dividers>
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <MobileDatePicker
-            label="Delivery at"
-            value={value}
-            onChange={(newVal) => setValue(newVal)}
-            slotProps={{
-              textField: { fullWidth: true, size: "small" },
-            }}
+        <Stack spacing={2}>
+          {/* 1) Name */}
+          <TextField
+            label="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            fullWidth
+            size="small"
           />
-        </LocalizationProvider>
+
+          {/* 2) Days from today -> live preview */}
+          <TextField
+            label="Days from today"
+            type="number"
+            value={days}
+            onChange={(e) => setDays(e.target.value)}
+            fullWidth
+            size="small"
+            inputProps={{ min: 0, step: 1 }}
+          />
+
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <MobileDatePicker
+              label="Delivery at (preview)"
+              value={value}
+              readOnly
+              disabled
+              slotProps={{
+                textField: { fullWidth: true, size: "small" },
+              }}
+            />
+          </LocalizationProvider>
+        </Stack>
       </DialogContent>
+
       <DialogActions>
         <Button onClick={onClose} disabled={submitting}>
           Cancel
@@ -487,6 +521,9 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
                         spacing={1}
                         flexWrap="wrap"
                       >
+                        <Typography variant="body2" color="text.secondary">
+                          {row.name || ""}
+                        </Typography>
                         <Chip
                           size="small"
                           icon={<FiCalendar />}

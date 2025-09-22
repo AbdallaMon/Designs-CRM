@@ -9,7 +9,7 @@ import {
   Paper,
   Typography,
   Box,
-  Grid2 as Grid,
+  Grid,
   Avatar,
   Divider,
   Table,

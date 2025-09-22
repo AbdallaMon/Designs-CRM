@@ -3,7 +3,7 @@ import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { useEffect, useState, useRef } from "react";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
-import { Box, Grid2 as Grid, Typography } from "@mui/material";
+import { Box, Grid, Typography } from "@mui/material";
 import { gsap } from "gsap";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";

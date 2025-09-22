@@ -1,5 +1,5 @@
 "use client";
-import { Box, Grid2 as Grid, Typography, useTheme } from "@mui/material";
+import { Box, Grid, Typography, useTheme } from "@mui/material";
 import { InfoCard } from "./InfoCard";
 import { EmailRedirect, WhatsAppRedirect } from "./Utility";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";

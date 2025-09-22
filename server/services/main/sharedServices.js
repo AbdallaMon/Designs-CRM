@@ -298,6 +298,8 @@ export async function getClientLeadsByDateRange({
       emirate: true,
       discount: true,
       paymentStatus: true,
+      stripieMetadata: true,
+
       callReminders: {
         where: callRemindersWhere,
         orderBy: { time: "desc" },
@@ -515,6 +517,7 @@ export async function getClientLeadsColumnStatus({
       emirate: true,
       discount: true,
       paymentStatus: true,
+      stripieMetadata: true,
       callReminders: {
         where: callRemindersWhere,
         orderBy: { time: "desc" },
@@ -652,6 +655,7 @@ export async function getClientLeadDetails(
       previousLeadId: true,
       personality: true,
       discoverySource: true,
+      stripieMetadata: true,
       contracts: {
         where: {
           isInProgress: true,
@@ -3135,6 +3139,8 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
       ourCost: true,
       contractorCost: true,
       telegramLink: true,
+      stripieMetadata: true,
+
       projects: {
         where: projectsWhere,
         select: {
@@ -4799,13 +4805,14 @@ export async function createNewDeliverySchedule({
   projectId,
   deliveryAt,
   userId,
+  name,
 }) {
-  console.log(deliveryAt, "deliveryAt");
   const schedule = await prisma.deliverySchedule.create({
     data: {
       projectId: Number(projectId),
       deliveryAt: new Date(deliveryAt),
       createdById: Number(userId),
+      name,
     },
   });
   const now = dayjs.utc().startOf("day");
@@ -4824,7 +4831,7 @@ export async function createNewDeliverySchedule({
   const note = {
     id: `note-${projectId}-${userId}`,
     clientLeadId: project.clientLeadId,
-    content: `New delivery schedule created for project ${project.type} in lead #${project.clientLeadId} - ${timeLeftLabel}. View it here: ${link}`,
+    content: `New delivery schedule with name :${name} created for project ${project.type} in lead #${project.clientLeadId} - ${timeLeftLabel}. View it here: ${link}`,
     binMessage: true,
   };
   await uploadANote(note);

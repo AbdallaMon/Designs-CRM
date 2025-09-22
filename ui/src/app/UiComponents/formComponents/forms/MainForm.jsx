@@ -2,7 +2,7 @@
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { useForm } from "react-hook-form";
-import { Box, Button, Typography, Grid2 as Grid } from "@mui/material";
+import { Box, Button, Typography, Grid } from "@mui/material";
 import MuiTextAreaField from "@/app/UiComponents/formComponents/MUIInputs/MuiTextAreaField";
 import { MuiAutoCompleteSelect } from "@/app/UiComponents/formComponents/MUIInputs/MuiAutoCompleteSelect";
 import { MDatePicker } from "@/app/UiComponents/formComponents/MUIInputs/MDatePicker";

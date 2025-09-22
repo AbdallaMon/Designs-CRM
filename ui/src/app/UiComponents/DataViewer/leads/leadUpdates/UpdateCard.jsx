@@ -20,7 +20,7 @@ import {
   Typography,
   Switch,
   FormControlLabel,
-  Grid2 as Grid,
+  Grid,
   Tooltip,
   Avatar,
   AvatarGroup,

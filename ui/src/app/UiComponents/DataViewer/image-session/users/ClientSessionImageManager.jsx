@@ -11,7 +11,7 @@ import {
   Card,
   CardContent,
   CardMedia,
-  Grid2 as Grid,
+  Grid,
   Chip,
   Avatar,
   IconButton,
