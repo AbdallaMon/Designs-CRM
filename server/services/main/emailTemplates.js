@@ -20,9 +20,18 @@ export async function sendEmailToClient({
   const clientHtml = `
     <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px;">
       <div style="max-width: 600px; margin: auto; background: #fcfbf9; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.03); overflow: hidden;">
-        <div style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%); padding: 20px; text-align: center;">
-          <img src="https://dreamstudiio.com/dream-logo.jpg" alt="Dream Studio" style="max-height: 60px;" />
-        </div>
+     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%);">
+      <tr>
+        <td align="center" style="padding:20px;">
+          <img
+            src="https://dreamstudiio.com/main-logo.jpg"
+            alt="Dream Studio"
+            width="90"
+            style="display:block; max-width:90px; height:auto; border:0; margin:0 auto;"
+          />
+        </td>
+      </tr>
+    </table>
         <div style="padding: 12px;">
           <h2 style="color: #383028;">Thank you, ${clientName}!</h2>
           <p>Your image session has been approved!</p>
@@ -68,9 +77,18 @@ export async function sendEmailForStaff({
   const staffHtml = `
     <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px;">
       <div style="max-width: 600px; margin: auto; background: #fcfbf9; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.03); overflow: hidden;">
-        <div style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%); padding: 20px; text-align: center;">
-          <img src="https://dreamstudiio.com/dream-logo.jpg" alt="Dream Studio" style="max-height: 60px;" />
-        </div>
+     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%);">
+      <tr>
+        <td align="center" style="padding:20px;">
+          <img
+            src="https://dreamstudiio.com/main-logo.jpg"
+            alt="Dream Studio"
+            width="90"
+            style="display:block; max-width:90px; height:auto; border:0; margin:0 auto;"
+          />
+        </td>
+      </tr>
+    </table>
         <div style="padding: 30px;">
           <h2 style="color: #383028;">Client Image Session Approved</h2>
           <p>
@@ -114,9 +132,18 @@ export async function sendReminderCreatedToClient({
   const clientHtml = `
     <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px;">
       <div style="max-width: 600px; margin: auto; background: #fcfbf9; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.03); overflow: hidden;">
-        <div style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%); padding: 20px; text-align: center;">
-          <img src="https://dreamstudiio.com/dream-logo.jpg" alt="Dream Studio" style="max-height: 60px;" />
-        </div>
+     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%);">
+      <tr>
+        <td align="center" style="padding:20px;">
+          <img
+            src="https://dreamstudiio.com/main-logo.jpg"
+            alt="Dream Studio"
+            width="90"
+            style="display:block; max-width:90px; height:auto; border:0; margin:0 auto;"
+          />
+        </td>
+      </tr>
+    </table>
         <div style="padding: 30px;">
           <h2 style="color: #383028;">📅 Meeting Booked Successfully</h2>
           <p>Hello <strong>${clientName}</strong>,</p>
@@ -236,9 +263,18 @@ export async function sendReminderToClient({
   const html = `
     <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px;">
       <div style="max-width: 600px; margin: auto; background: #fcfbf9; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.03); overflow: hidden;">
-        <div style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%); padding: 20px; text-align: center;">
-          <img src="https://dreamstudiio.com/dream-logo.jpg" alt="Dream Studio" style="max-height: 60px;" />
-        </div>
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%);">
+      <tr>
+        <td align="center" style="padding:20px;">
+          <img
+            src="https://dreamstudiio.com/main-logo.jpg"
+            alt="Dream Studio"
+            width="90"
+            style="display:block; max-width:90px; height:auto; border:0; margin:0 auto;"
+          />
+        </td>
+      </tr>
+    </table>
         <div style="padding: 30px;">
           <h2 style="color: #383028;">📞 Your ${label} is Coming Up - ${minutesLabel}</h2>
           <p>Hello <strong>${clientName}</strong>,</p>

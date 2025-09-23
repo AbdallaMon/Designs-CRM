@@ -297,10 +297,6 @@ export async function createMeetingReminderWithToken({
   return { latestTwo, newReminder };
 }
 export async function createPriceOffer({ clientLeadId, userId, priceOffer }) {
-  console.log(clientLeadId, "clientLeadId");
-  console.log(userId, "userId");
-  console.log(priceOffer, "priceOffer");
-
   if (priceOffer.minPrice > priceOffer.maxPrice) {
     throw new Error("End price must be bigger or equal to start price");
   }

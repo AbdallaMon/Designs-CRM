@@ -5,7 +5,10 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 
-import { newCallNotification } from "../notification.js";
+import {
+  newCallNotification,
+  newMeetingNotification,
+} from "../notification.js";
 import { sendReminderCreatedToClient } from "./emailTemplates.js";
 dayjs.extend(timezone);
 dayjs.extend(utc);
@@ -535,7 +538,7 @@ export async function bookAMeeting({
       },
     },
   });
-  await newCallNotification(Number(clientLeadId), reminder);
+  await newMeetingNotification(Number(clientLeadId), reminder);
   await sendReminderCreatedToClient({
     clientEmail: reminderData.clientLead.client.email,
     clientName: reminderData.clientLead.client.name,

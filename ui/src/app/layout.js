@@ -54,7 +54,7 @@ export const metadata = {
     siteName: "Dream Studio",
     images: [
       {
-        url: "https://dreamstudiio.com/dream-logo.jpg",
+        url: "https://dreamstudiio.com/main-logo.jpg",
         width: 1200,
         height: 630,
         alt: "Dream Studio - تصميم داخلي فاخر وتصميم عمراني",
@@ -68,7 +68,7 @@ export const metadata = {
     title: "Dream Studio | تصميم داخلي فاخر وتصميم عمراني",
     description:
       "تصميم داخلي فاخر، تصميم عمراني مبتكر، وأثاث مُصمّم خصيصًا للمنازل والفلل والمساحات التجارية في الإمارات.",
-    images: ["https://dreamstudiio.com/dream-logo.jpg"],
+    images: ["https://dreamstudiio.com/main-logo.jpg"],
   },
   icons: {
     icon: "/favicon.ico",

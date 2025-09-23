@@ -8,6 +8,7 @@ import {
   Stack,
   styled,
   Typography,
+  Button,
 } from "@mui/material";
 import { BiDollarCircle } from "react-icons/bi";
 import { BsKanban } from "react-icons/bs";
@@ -20,7 +21,6 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { getData } from "@/app/helpers/functions/getData";
-import { useInView } from "react-intersection-observer";
 
 const ItemTypes = {
   CARD: "card",
@@ -87,32 +87,34 @@ const KanbanColumn = ({
 
   const statusColor = statusColors[status];
   const { setLoading: setToastLoading } = useToastContext();
-  useEffect(() => {
-    const fetchLeads = async () => {
-      const request = await getData({
-        url: isNotStaff
-          ? `shared/client-leads/projects/designers/columns?skip=${
-              page * take
-            }&take=${take}&type=${type}&status=${status}&staffId=${staffId}&`
-          : `shared/client-leads/columns?status=${status}&skip=${
-              page * take
-            }&take=${take}&staffId=${staffId}&type=${type}&`,
-        filters,
-        setData: setleads,
-        setLoading,
-      });
-      if (request.status === 200) {
-        if (page === 0) {
-          setleads(request.data.data); // first page → reset
-        } else {
-          setleads((prev) => [...prev, ...request.data.data]); // append
-        }
-        setTotalValue(request.data.totalValue || 0);
-        setTotalLeads(request.data.totalLeads || 0);
-        if (request.data.data?.length < take) setHasMore(false);
+  function loadMore() {
+    setPage((prev) => prev + 1);
+  }
+  const fetchLeads = async () => {
+    const request = await getData({
+      url: isNotStaff
+        ? `shared/client-leads/projects/designers/columns?skip=${
+            page * take
+          }&take=${take}&type=${type}&status=${status}&staffId=${staffId}&`
+        : `shared/client-leads/columns?status=${status}&skip=${
+            page * take
+          }&take=${take}&staffId=${staffId}&type=${type}&`,
+      filters,
+      setData: setleads,
+      setLoading,
+    });
+    if (request.status === 200) {
+      if (page === 0) {
+        setleads(request.data.data);
+      } else {
+        setleads((prev) => [...prev, ...request.data.data]); // append
       }
-    };
-
+      setTotalValue(request.data.totalValue || 0);
+      setTotalLeads(request.data.totalLeads || 0);
+      if (request.data.data?.length < take) setHasMore(false);
+    }
+  };
+  useEffect(() => {
     fetchLeads();
   }, [page, filters, status, staffId, reRenderColumns[status]]);
   const handleScroll = (e) => {
@@ -120,7 +122,7 @@ const KanbanColumn = ({
       e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight;
 
     if (bottom && hasMore) {
-      setPage((prev) => prev + 1);
+      loadMore();
     }
   };
   const movelead = async (l, newStatus) => {
@@ -336,6 +338,14 @@ const KanbanColumn = ({
                 );
               }
             })}
+            {((totalLeads > leads?.length ||
+              !leads ||
+              (leads?.length === 0 && totalLeads)) &&
+              !hasMore) > 0 && (
+              <Button onClick={loadMore} variant="outlined" sx={{ mb: 4 }}>
+                Load more
+              </Button>
+            )}
             {loading && (
               <Box
                 sx={{
@@ -347,6 +357,7 @@ const KanbanColumn = ({
                 Loading leads...
               </Box>
             )}
+
             {!loading && hasMore && (
               <Box
                 sx={{

@@ -495,7 +495,6 @@ export async function getClientLeadsColumnStatus({
       delete where.assignedAt;
     }
   }
-  console.log(where, "where");
 
   const clientLeads = await prisma.clientLead.findMany({
     where,
@@ -1648,7 +1647,6 @@ function buildStaffFilter(q) {
 
 export async function getLeadsMonthlyOverview(searchParams) {
   const { start, end, label } = buildDateRange(searchParams);
-  console.log(searchParams, "searchParams");
   const staffFilter = buildStaffFilter(searchParams);
 
   const INSIDE_LIST = [
@@ -2720,7 +2718,6 @@ export function todayRange() {
   const offsetMinutes = currentTime.utcOffset();
   const offsetHours = offsetMinutes / 60;
 
-  console.log(offsetHours, "offsetHours");
   let s = dayjs().startOf("day");
   if (offsetHours < 0) {
     s = s.subtract(offsetHours, "hour");
@@ -2730,9 +2727,7 @@ export function todayRange() {
   }
   const start = s.add(8, "hour").toDate();
   const end = dayjs().endOf("day").toDate();
-  console.log(start, "start");
   const now = dayjs(start).add(1, "minute").toDate();
-  console.log(now, "now");
 
   return { now, start, end };
 }
@@ -3269,7 +3264,6 @@ const PROJECT_TYPES = [
 
 async function getProjects(clientLeadId) {
   const { now, start, end } = todayRange();
-  console.log(now, "now");
   const meetingOrNot = {
     OR: [
       { meeting: { is: { status: { in: ["IN_PROGRESS"] } } } },
