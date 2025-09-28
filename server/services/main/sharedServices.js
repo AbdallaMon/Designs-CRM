@@ -359,230 +359,234 @@ export async function getClientLeadsColumnStatus({
   isAdmin,
   user,
 }) {
-  const filters =
-    searchParams.filters &&
-    searchParams.filters !== "undefined" &&
-    JSON.parse(searchParams.filters);
+  try {
+    const filters =
+      searchParams.filters &&
+      searchParams.filters !== "undefined" &&
+      JSON.parse(searchParams.filters);
 
-  let where = {
-    assignedTo: { isNot: null },
-    status: searchParams.status,
-    leadType: "NORMAL",
-  };
-  if (
-    filters?.range &&
-    searchParams.status !== "ARCHIVED" &&
-    searchParams.status !== "FINALIZED" &&
-    searchParams.type !== "CONTRACTLEVELS"
-  ) {
-    const { startDate, endDate } = filters.range;
-    const now = dayjs();
-    let start = startDate ? dayjs(startDate) : now.subtract(30, "days");
-    let end = endDate ? dayjs(endDate).endOf("day") : now;
-    where.assignedAt = {
-      gte: start.toDate(),
-      lte: end.toDate(),
+    let where = {
+      assignedTo: { isNot: null },
+      status: searchParams.status,
+      leadType: "NORMAL",
     };
-  } else {
     if (
+      filters?.range &&
       searchParams.status !== "ARCHIVED" &&
       searchParams.status !== "FINALIZED" &&
       searchParams.type !== "CONTRACTLEVELS"
     ) {
+      const { startDate, endDate } = filters.range;
+      const now = dayjs();
+      let start = startDate ? dayjs(startDate) : now.subtract(30, "days");
+      let end = endDate ? dayjs(endDate).endOf("day") : now;
       where.assignedAt = {
-        gte: dayjs().subtract(3, "month").toDate(),
-        lte: dayjs().toDate(),
+        gte: start.toDate(),
+        lte: end.toDate(),
+      };
+    } else {
+      if (
+        searchParams.status !== "ARCHIVED" &&
+        searchParams.status !== "FINALIZED" &&
+        searchParams.type !== "CONTRACTLEVELS"
+      ) {
+        where.assignedAt = {
+          gte: dayjs().subtract(3, "month").toDate(),
+          lte: dayjs().toDate(),
+        };
+      }
+    }
+    if (
+      (searchParams.status === "FINALIZED" ||
+        searchParams.type === "CONTRACTLEVELS") &&
+      filters?.finalizedRange
+    ) {
+      const { startDate, endDate } = filters.finalizedRange;
+      const now = dayjs();
+
+      let start = startDate ? dayjs(startDate) : now.subtract(30, "days");
+      let end = endDate ? dayjs(endDate).endOf("day") : now;
+      where.finalizedDate = {
+        gte: start.toDate(),
+        lte: end.toDate(),
       };
     }
-  }
-  if (
-    (searchParams.status === "FINALIZED" ||
-      searchParams.type === "CONTRACTLEVELS") &&
-    filters?.finalizedRange
-  ) {
-    const { startDate, endDate } = filters.finalizedRange;
-    const now = dayjs();
-
-    let start = startDate ? dayjs(startDate) : now.subtract(30, "days");
-    let end = endDate ? dayjs(endDate).endOf("day") : now;
-    where.finalizedDate = {
-      gte: start.toDate(),
-      lte: end.toDate(),
-    };
-  }
-  if (filters.id && filters.id !== "all") {
-    where.id = Number(filters.id);
-  }
-  if (filters?.clientId && filters.clientId !== "all") {
-    where.clientId = Number(filters.clientId);
-  }
-  if (
-    filters?.staffId &&
-    filters?.staffId !== "all" &&
-    filters?.staffId !== "undefined"
-  ) {
-    where.userId = Number(filters.staffId);
-  }
-  if (searchParams.userId) {
-    where.userId = searchParams.userId;
-  }
-  const callRemindersWhere = {};
-  if (searchParams.selfId) {
-    callRemindersWhere.userId = searchParams.selfId;
-  }
-  const updatesWhere = {};
-  const sharedUpdatesWhere = {};
-  if (searchParams.type === "CONTRACTLEVELS") {
-    where.status = "FINALIZED";
-    where.contracts = {
-      some: {
-        isInProgress: true,
-        contractLevel: searchParams.status,
-      },
-    };
-  }
-  if (!isAdmin) {
-    sharedUpdatesWhere.type = "STAFF";
-    updatesWhere.OR = [
-      {
-        department: "STAFF",
-        sharedSettings: {
-          some: {
-            isArchived: false,
-            excludeFromSearch: false,
-          },
-        },
-      },
-      {
-        sharedSettings: {
-          some: {
-            type: "STAFF",
-            isArchived: false,
-          },
-        },
-      },
-    ];
-  } else {
-    updatesWhere.OR = [
-      {
-        sharedSettings: {
-          some: {
-            isArchived: false,
-            excludeFromSearch: false,
-          },
-        },
-      },
-      {
-        sharedSettings: {
-          some: {
-            type: "ADMIN",
-            isArchived: false,
-          },
-        },
-      },
-    ];
-  }
-
-  if (filters.contractLevel && filters.contractLevel !== "all") {
-    where.contracts = {
-      some: {
-        contractLevel: { in: [filters.contractLevel] },
-      },
-    };
-  }
-  if (where?.id) {
-    if (where.assignedAt) {
-      delete where.assignedAt;
+    if (filters.id && filters.id !== "all") {
+      where.id = Number(filters.id);
     }
-  }
-
-  const clientLeads = await prisma.clientLead.findMany({
-    where,
-    skip: Number(searchParams.skip) || 0,
-    take: Number(searchParams.take) || 20,
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      client: { select: { name: true } },
-      assignedTo: { select: { name: true } },
-      status: true,
-      price: true,
-      averagePrice: true,
-      priceWithOutDiscount: true,
-      selectedCategory: true,
-      description: true,
-      type: true,
-      emirate: true,
-      discount: true,
-      paymentStatus: true,
-      stripieMetadata: true,
-      callReminders: {
-        where: callRemindersWhere,
-        orderBy: { time: "desc" },
-        take: 2,
-      },
-      contracts: {
-        where: {
+    if (filters?.clientId && filters.clientId !== "all") {
+      where.clientId = Number(filters.clientId);
+    }
+    if (
+      filters?.staffId &&
+      filters?.staffId !== "all" &&
+      filters?.staffId !== "undefined"
+    ) {
+      where.userId = Number(filters.staffId);
+    }
+    if (searchParams.userId) {
+      where.userId = searchParams.userId;
+    }
+    const callRemindersWhere = {};
+    if (searchParams.selfId) {
+      callRemindersWhere.userId = searchParams.selfId;
+    }
+    const updatesWhere = {};
+    const sharedUpdatesWhere = {};
+    if (searchParams.type === "CONTRACTLEVELS") {
+      where.status = "FINALIZED";
+      where.contracts = {
+        some: {
           isInProgress: true,
+          contractLevel: searchParams.status,
         },
-        orderBy: { id: "desc" },
-        take: 1,
-      },
-      extraServices: {
-        select: {
-          price: true,
-        },
-      },
-      updates: {
-        orderBy: { updatedAt: "desc" },
-        where: updatesWhere,
-        take: 6,
-        include: {
+      };
+    }
+    if (!isAdmin) {
+      sharedUpdatesWhere.type = "STAFF";
+      updatesWhere.OR = [
+        {
+          department: "STAFF",
           sharedSettings: {
-            where: sharedUpdatesWhere,
+            some: {
+              isArchived: false,
+              excludeFromSearch: false,
+            },
+          },
+        },
+        {
+          sharedSettings: {
+            some: {
+              type: "STAFF",
+              isArchived: false,
+            },
+          },
+        },
+      ];
+    } else {
+      updatesWhere.OR = [
+        {
+          sharedSettings: {
+            some: {
+              isArchived: false,
+              excludeFromSearch: false,
+            },
+          },
+        },
+        {
+          sharedSettings: {
+            some: {
+              type: "ADMIN",
+              isArchived: false,
+            },
+          },
+        },
+      ];
+    }
+
+    if (filters.contractLevel && filters.contractLevel !== "all") {
+      where.contracts = {
+        some: {
+          contractLevel: { in: [filters.contractLevel] },
+        },
+      };
+    }
+    if (where?.id) {
+      if (where.assignedAt) {
+        delete where.assignedAt;
+      }
+    }
+
+    const clientLeads = await prisma.clientLead.findMany({
+      where,
+      skip: Number(searchParams.skip) || 0,
+      take: Number(searchParams.take) || 20,
+      orderBy: { updatedAt: "desc" },
+      select: {
+        id: true,
+        client: { select: { name: true } },
+        assignedTo: { select: { name: true } },
+        status: true,
+        price: true,
+        averagePrice: true,
+        priceWithOutDiscount: true,
+        selectedCategory: true,
+        description: true,
+        type: true,
+        emirate: true,
+        discount: true,
+        paymentStatus: true,
+        stripieMetadata: true,
+        callReminders: {
+          where: callRemindersWhere,
+          orderBy: { time: "desc" },
+          take: 2,
+        },
+        contracts: {
+          where: {
+            isInProgress: true,
+          },
+          orderBy: { id: "desc" },
+          take: 1,
+        },
+        extraServices: {
+          select: {
+            price: true,
+          },
+        },
+        updates: {
+          orderBy: { updatedAt: "desc" },
+          where: updatesWhere,
+          take: 6,
+          include: {
+            sharedSettings: {
+              where: sharedUpdatesWhere,
+            },
           },
         },
       },
-    },
-  });
+    });
 
-  let result = clientLeads;
+    let result = clientLeads;
 
-  // Optional: filter by the latest contract level
-  if (filters.contractLevel && filters.contractLevel !== "all") {
-    result = result.filter(
-      (lead) =>
-        lead.contracts.length &&
-        lead.contracts[0].contractLevel === filters.contractLevel
-    );
-  }
-  // Step 1: Aggregate averagePrice from clientLead
-  const consolusion = await prisma.clientLead.aggregate({
-    where,
-    _count: { id: true },
-    _sum: { averagePrice: true },
-  });
+    // Optional: filter by the latest contract level
+    if (filters.contractLevel && filters.contractLevel !== "all") {
+      result = result.filter(
+        (lead) =>
+          lead.contracts.length &&
+          lead.contracts[0].contractLevel === filters.contractLevel
+      );
+    }
+    // Step 1: Aggregate averagePrice from clientLead
+    const consolusion = await prisma.clientLead.aggregate({
+      where,
+      _count: { id: true },
+      _sum: { averagePrice: true },
+    });
 
-  // Step 2: Aggregate ExtraService prices linked to those leads
-  const extraServicesTotal = await prisma.extraService.aggregate({
-    where: {
-      clientLead: {
-        ...where, // same filter applied to clientLead
+    // Step 2: Aggregate ExtraService prices linked to those leads
+    const extraServicesTotal = await prisma.extraService.aggregate({
+      where: {
+        clientLead: {
+          ...where, // same filter applied to clientLead
+        },
       },
-    },
-    _sum: {
-      price: true,
-    },
-  });
+      _sum: {
+        price: true,
+      },
+    });
 
-  const averagePrice = Number(consolusion._sum.averagePrice ?? 0);
-  const extraServicesPrice = Number(extraServicesTotal._sum.price ?? 0);
+    const averagePrice = Number(consolusion._sum.averagePrice ?? 0);
+    const extraServicesPrice = Number(extraServicesTotal._sum.price ?? 0);
 
-  const totalValue = (averagePrice + extraServicesPrice).toFixed(2);
+    const totalValue = (averagePrice + extraServicesPrice).toFixed(2);
 
-  const totalLeads = consolusion._count.id;
+    const totalLeads = consolusion._count.id;
 
-  return { data: result, totalValue, totalLeads };
+    return { data: result, totalValue, totalLeads };
+  } catch (e) {
+    console.log(e.message, "error in column statsus");
+  }
 }
 
 export async function getClientLeadDetails(
