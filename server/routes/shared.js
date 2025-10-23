@@ -59,6 +59,7 @@ import {
   getSharedSettings,
   getTaskDetails,
   getTasksWithNotesIncluded,
+  getUniqueProjectGroups,
   getUpdates,
   getUserProjects,
   getUserRole,
@@ -106,6 +107,7 @@ const router = Router();
 import questionsRoutes from "./questions/questions.js";
 import calendarRoutes from "./calendar/calendar.js";
 import coursesRouter from "./courses/staffCourses.js";
+import contractRouter from "./contract/contracts.js";
 
 import imageSessionRouter from "./image-session/image-session.js";
 import {
@@ -121,6 +123,7 @@ router.use(async (req, res, next) => {
   await verifyTokenAndHandleAuthorization(req, res, next, "SHARED");
 });
 router.use("/courses", coursesRouter);
+router.use("/contracts", contractRouter);
 
 router.use("/questions", questionsRoutes);
 router.use("/calendar", calendarRoutes);
@@ -208,32 +211,32 @@ router.get("/client-leads/columns", async (req, res) => {
       .json({ message: "An error occurred while fetching client leads" });
   }
 });
-router.get("/client-leads/:id/contracts", async (req, res) => {
-  try {
-    const contracts = await getContractForLead({ clientLeadId: req.params.id });
-    res.status(200).json({ data: contracts });
-  } catch (e) {
-    console.log(e, "e");
-    res.status(500).json({ message: e.message });
-  }
-});
-router.post("/client-leads/:id/contracts", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const newContract = await createNewContract({
-      clientLeadId: id,
-      ...req.body,
-    });
+// router.get("/client-leads/:id/contracts", async (req, res) => {
+//   try {
+//     const contracts = await getContractForLead({ clientLeadId: req.params.id });
+//     res.status(200).json({ data: contracts });
+//   } catch (e) {
+//     console.log(e, "e");
+//     res.status(500).json({ message: e.message });
+//   }
+// });
+// router.post("/client-leads/:id/contracts", async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const newContract = await createNewContract({
+//       clientLeadId: id,
+//       ...req.body,
+//     });
 
-    res.status(200).json({
-      data: newContract,
-      message: "Contract updated successfully",
-    });
-  } catch (e) {
-    console.log(e, "e");
-    res.status(500).json({ message: e.message });
-  }
-});
+//     res.status(200).json({
+//       data: newContract,
+//       message: "Contract updated successfully",
+//     });
+//   } catch (e) {
+//     console.log(e, "e");
+//     res.status(500).json({ message: e.message });
+//   }
+// });
 router.put("/client-leads/contract/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -1172,6 +1175,21 @@ router.put("/client-leads/designers/:leadId/status", async (req, res) => {
   }
 });
 
+router.get("/client-leads/:leadId/projects/groups", async (req, res) => {
+  try {
+    const { leadId } = req.params;
+
+    const groups = await getUniqueProjectGroups({
+      clientLeadId: leadId,
+    });
+    res.status(200).json({ data: groups });
+  } catch (error) {
+    console.error("Error fetching work stages leads:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching work stages leads" });
+  }
+});
 ///////////// end of projects ///////////////
 // utility
 router.get("/notifications", async (req, res) => {

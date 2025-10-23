@@ -25,11 +25,7 @@ export default function LeadStripeInfo({ lead }) {
   const items = Array.isArray(lead?.stripieMetadata)
     ? lead.stripieMetadata
     : [];
-  const { user } = useAuth();
 
-  const admin = checkIfAdmin(user);
-
-  // helper to get readable labels
   const labelFor = (key) => {
     const map = {
       name: "Name",
@@ -58,7 +54,6 @@ export default function LeadStripeInfo({ lead }) {
   );
 
   if (!items.length) return null;
-  if (!admin) return;
   return (
     <InfoCard title="Stripe Payment Data" icon={MdPayment} theme={theme}>
       <Stack spacing={1.5}>

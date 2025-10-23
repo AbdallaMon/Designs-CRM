@@ -7,6 +7,7 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
 enum LeadSource {
   INSTAGRAM
   TIKTOK
@@ -18,6 +19,7 @@ enum LeadSource {
   REFERRAL
   OTHER
 }
+
 enum NotificationType {
   NEW_LEAD
   LEAD_ASSIGNED
@@ -159,17 +161,16 @@ enum UpdateStatus {
   CANCELLED
 }
 
-
 enum MeetingType {
   SALES_MEETING
-  DESIGN_MEETING       
+  DESIGN_MEETING
 }
 
 enum ClientPersonality {
-  EXPRESSIVE       // ثرثار / اجتماعي
-  ANALYTICAL       // التحليلي الدقيق
-  INTROVERTED      // المنطوي / المتحفظ
-  DRIVER           // القيادي الحاسم
+  EXPRESSIVE // ثرثار / اجتماعي
+  ANALYTICAL // التحليلي الدقيق
+  INTROVERTED // المنطوي / المتحفظ
+  DRIVER // القيادي الحاسم
 }
 
 enum ContractLevel {
@@ -182,25 +183,158 @@ enum ContractLevel {
   LEVEL_7
 }
 
+/// إعدادات عامة للموقع (Singleton: سجل واحد فقط)
+model SiteUtility {
+  /// نثبت سجل واحد فقط برقم 1
+  id Int @id @default(1)
+
+  /// روابط اختيارية
+  pdfFrame  String? // لينك إطار الـ PDF
+  pdfHeader String? // لينك هيدر الـ PDF
+
+  /// تتحدث تلقائيًا عند أي تعديل
+  updatedAt DateTime @updatedAt
+}
+
+enum ContractStatus {
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
 model Contract {
-  id            Int           @id @default(autoincrement())
-  clientLead    ClientLead    @relation(fields: [clientLeadId], references: [id])
-  clientLeadId  Int
+  id           Int        @id @default(autoincrement())
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
 
   contractLevel ContractLevel
-  purpose       String  
+  purpose       String
   title         String?
   startDate     DateTime?
   endDate       DateTime?
   isCompleted   Boolean       @default(false)
-  isInProgress Boolean @default(false)
-  createdAt DateTime @default(now())
+  isInProgress  Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  projectGroupId     Int?
+  arToken String? @unique @db.VarChar(64)
+  enToken String? @unique @db.VarChar(64)
+  status ContractStatus @default(IN_PROGRESS)
 
-  notes         Note[]
-  @@unique([clientLeadId, contractLevel, purpose]) 
+  taxRate     Decimal   @default(0) @db.Decimal(5, 2)
+  totalAmount Decimal   @db.Decimal(12, 2)
+  amount      Decimal   @db.Decimal(12, 2)
+  // إضافاتك الجديدة فقط:
+  pdfLinkAr   String? // رابط PDF عربي (لينك)
+  pdfLinkEn   String? // رابط PDF إنجليزي (لينك، الاسم بنتعامل معه على مستوى العرض)
+  projectType String? // نوع المشروع (نصي)
+  writtenAt   DateTime? // تاريخ كتابة العقد
 
+  // علاقات جديدة:
+  stages       ContractStage[]
+  paymentsNew  ContractPayment[]
+  drawings     ContractDrawing[]
+  specialItems ContractSpecialItem[]
+  projects     Project[]
+
+  notes Note[]
+
+  @@index([clientLeadId, contractLevel])
 }
 
+/// المرحلة الجديدة بدل enum، مع عدد أيام المرحلة + عدد أيام القسم
+model ContractStage {
+  id         Int      @id @default(autoincrement())
+  contract   Contract @relation(fields: [contractId], references: [id])
+  contractId Int
+
+  title            String
+  order            Int
+  deliveryDays     Int
+  deptDeliveryDays Int?
+
+  startDate   DateTime?
+  endDate     DateTime?
+  stageStatus StageStatus @default(NOT_STARTED)
+
+  // ربط اختياري بمشروع واحد فقط
+  project   Project? @relation(fields: [projectId], references: [id])
+  projectId Int?
+
+  // علاقات مساعدة
+  payments ContractPayment[]
+
+  @@unique([contractId, order]) // يمنع ترتيب مكرر لنفس العقد
+  @@index([projectId])
+  @@index([contractId])
+}
+
+enum StageStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum PaymentStatusNew {
+  RECEIVED // تم الاستلام
+  TRANSFERRED // تم التحويل
+  DUE // مستحقة
+  NOT_DUE // غير مستحقة
+}
+
+model ContractPayment {
+  id         Int      @id @default(autoincrement())
+  contract   Contract @relation(fields: [contractId], references: [id])
+  contractId Int
+
+  stage   ContractStage? @relation(fields: [stageId], references: [id])
+  stageId Int?
+
+  amount   Decimal          @db.Decimal(12, 2)
+  currency String           @default("AED")
+  dueDate  DateTime?
+  status   PaymentStatusNew @default(NOT_DUE)
+
+  reference String?
+  note      String?
+
+  project          Project? @relation(fields: [projectId], references: [id])
+  projectId        Int?
+  paymentCondition String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([contractId])
+  @@index([stageId])
+  @@index([status, dueDate])
+  @@index([projectId])
+}
+
+model ContractDrawing {
+  id         Int      @id @default(autoincrement())
+  contract   Contract @relation(fields: [contractId], references: [id])
+  contractId Int
+
+  url          String
+  fileName     String?
+  mimeType     String?
+  sizeBytes    Int?
+  uploadedAt   DateTime @default(now())
+  uploadedById Int?
+
+  @@index([contractId])
+}
+
+/// البنود الخاصة ثنائية اللغة (العربي إلزامي/الإنجليزي اختياري)
+model ContractSpecialItem {
+  id         Int      @id @default(autoincrement())
+  contract   Contract @relation(fields: [contractId], references: [id])
+  contractId Int
+  labelAr    String   @db.Text
+  labelEn    String?  @db.Text
+
+  @@index([contractId])
+}
 
 model ClientLeadUpdate {
   id          Int          @id @default(autoincrement())
@@ -258,62 +392,64 @@ enum SalesStageType {
 }
 
 model SalesStage {
-  id           Int             @id @default(autoincrement())
-  clientLead   ClientLead      @relation(fields: [clientLeadId], references: [id])
+  id           Int        @id @default(autoincrement())
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
   clientLeadId Int
 
-  user         User?           @relation(fields: [userId], references: [id])
-  userId       Int?
+  user   User? @relation(fields: [userId], references: [id])
+  userId Int?
 
-  stage        SalesStageType
-  notes Note[]
-  createdAt    DateTime        @default(now())
+  stage     SalesStageType
+  notes     Note[]
+  createdAt DateTime       @default(now())
 
+  @@unique([clientLeadId, stage])
   @@index([clientLeadId])
   @@index([userId])
-  @@unique([clientLeadId, stage]) 
 }
+
 model TelegramChannel {
-  id             Int         @id @default(autoincrement())
-  clientLead     ClientLead  @relation(fields: [clientLeadId], references: [id])
-  clientLeadId   Int          @unique
-  channelLink    String       // t.me link
-  channelId      BigInt       @unique
-  accessHash     BigInt
-  description    String?      // optional: why this channel exists, etc.
-  createdAt      DateTime     @default(now())
+  id           Int        @id @default(autoincrement())
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int        @unique
+  channelLink  String // t.me link
+  channelId    BigInt     @unique
+  accessHash   BigInt
+  description  String? // optional: why this channel exists, etc.
+  createdAt    DateTime   @default(now())
 }
 
 model ClientLead {
-  id         Int    @id @default(autoincrement())
-  client     Client @relation(fields: [clientId], references: [id])
-  clientId   Int
-  assignedTo User?  @relation(fields: [userId], references: [id])
-  userId     Int?
-  status           ClientLeadStatus     @default(NEW)
-  telegramChannel TelegramChannel?
-  telegramLink      String?
+  id                   Int                      @id @default(autoincrement())
+  client               Client                   @relation(fields: [clientId], references: [id])
+  clientId             Int
+  code                 String?                  @unique
+  assignedTo           User?                    @relation(fields: [userId], references: [id])
+  userId               Int?
+  status               ClientLeadStatus         @default(NEW)
+  telegramChannel      TelegramChannel?
+  telegramLink         String?
   lastTelegramMessages FetchedTelegramMessage[]
-  selectedCategory  LeadCategory
-  type              LeadType           @default(CONSTRUCTION_VILLA)
-  description       String?
-  clientDescription String?            @db.Text
-  stripieMetadata          Json?
-  emirate           Emirate?
-  leadType          LeadConversionType @default(NORMAL)
-  previousLeadId    Int?
-  personality ClientPersonality?
-  salesStages SalesStage[]
-  discoverySource     LeadSource? 
+  selectedCategory     LeadCategory
+  type                 LeadType                 @default(CONSTRUCTION_VILLA)
+  description          String?
+  clientDescription    String?                  @db.Text
+  stripieMetadata      Json?
+  emirate              Emirate?
+  leadType             LeadConversionType       @default(NORMAL)
+  previousLeadId       Int?
+  personality          ClientPersonality?
+  salesStages          SalesStage[]
+  discoverySource      LeadSource?
 
-  discount             Decimal  @default(0) @db.Decimal(10, 2)
+  discount             Decimal           @default(0) @db.Decimal(10, 2)
   price                String?
-  averagePrice         Decimal? @db.Decimal(10, 2)
-  priceNote            String?  @db.Text
-  priceWithOutDiscount Decimal  @default(0) @db.Decimal(10, 2)
-  sessionQuestions SessionQuestion[]
-  versaModel  VersaModel[]
-  contracts Contract[]
+  averagePrice         Decimal?          @db.Decimal(10, 2)
+  priceNote            String?           @db.Text
+  priceWithOutDiscount Decimal           @default(0) @db.Decimal(10, 2)
+  sessionQuestions     SessionQuestion[]
+  versaModel           VersaModel[]
+  contracts            Contract[]
 
   projects         Project[]
   priceOffers      PriceOffers[]
@@ -327,7 +463,7 @@ model ClientLead {
   extraServices    ExtraService[]
   commissions      Commission[]
   updates          ClientLeadUpdate[]
-  imageSessions ClientImageSession[]
+  imageSessions    ClientImageSession[]
 
   reasonToConvert   String?
   paymentStatus     PaymentStatus @default(PENDING)
@@ -342,8 +478,8 @@ model ClientLead {
   timeToContact DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  finalizedDate DateTime? 
-  
+  finalizedDate DateTime?
+
   accountant   User? @relation("AccountantLeads", fields: [accountantId], references: [id]) // Assigned Accountant
   accountantId Int?
 
@@ -358,35 +494,35 @@ model FetchedTelegramMessage {
   clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
   clientLeadId Int
 
-  messageId    Int    
-    fetchedAt    DateTime   @default(now())
+  messageId Int
+  fetchedAt DateTime @default(now())
+
   @@index([clientLeadId])
 }
 
-
 model MeetingReminder {
-  id             Int                @id @default(autoincrement())
-  clientLead     ClientLead         @relation(fields: [clientLeadId], references: [id], name: "clientLeadMeetingReminders")
-  clientLeadId   Int
-  time           DateTime?
-  status         CallReminderStatus @default(IN_PROGRESS)
-  meetingResult  String?            @db.Text
-  reminderReason String?            @db.Text
-  user           User               @relation(fields: [userId], references: [id])
-  userId         Int
-  admin          User?              @relation("AdminMeetingReminders", fields: [adminId], references: [id])
-  adminId        Int?
-  isAdmin        Boolean            @default(false)
-  type           MeetingType? 
-  token String? @unique
-  availableSlot  AvailableSlot?     @relation("SlotToMeeting")
-  availableSlotId Int?              @unique  
-  userTimezone     String? 
-  notified       Boolean            @default(false) 
-  notified4h     Boolean @default(false)
-  notified12h    Boolean @default(false)
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  id                Int                @id @default(autoincrement())
+  clientLead        ClientLead         @relation(fields: [clientLeadId], references: [id], name: "clientLeadMeetingReminders")
+  clientLeadId      Int
+  time              DateTime?
+  status            CallReminderStatus @default(IN_PROGRESS)
+  meetingResult     String?            @db.Text
+  reminderReason    String?            @db.Text
+  user              User               @relation(fields: [userId], references: [id])
+  userId            Int
+  admin             User?              @relation("AdminMeetingReminders", fields: [adminId], references: [id])
+  adminId           Int?
+  isAdmin           Boolean            @default(false)
+  type              MeetingType?
+  token             String?            @unique
+  availableSlot     AvailableSlot?     @relation("SlotToMeeting")
+  availableSlotId   Int?               @unique
+  userTimezone      String?
+  notified          Boolean            @default(false)
+  notified4h        Boolean            @default(false)
+  notified12h       Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
   deliverySchedules DeliverySchedule[]
 
   @@index([clientLeadId])
@@ -395,27 +531,26 @@ model MeetingReminder {
 }
 
 model DeliverySchedule {
-  id         Int       @id @default(autoincrement())
-  project    Project   @relation(fields: [projectId], references: [id])
-  projectId  Int
-  name       String?   @db.VarChar(255)
+  id        Int     @id @default(autoincrement())
+  project   Project @relation(fields: [projectId], references: [id])
+  projectId Int
+  name      String? @db.VarChar(255)
 
-  deliveryAt DateTime  
-  notes Note[]
+  deliveryAt DateTime
+  notes      Note[]
 
-  meeting    MeetingReminder?  @relation(fields: [meetingReminderId], references: [id])
-  meetingReminderId  Int?
-  createdBy          User?             @relation("DeliverySchedulesCreatedBy", fields: [createdById], references: [id])
-  createdById        Int?
+  meeting           MeetingReminder? @relation(fields: [meetingReminderId], references: [id])
+  meetingReminderId Int?
+  createdBy         User?            @relation("DeliverySchedulesCreatedBy", fields: [createdById], references: [id])
+  createdById       Int?
 
-  createdAt        DateTime   @default(now())
+  createdAt DateTime @default(now())
 
   @@index([projectId])
   @@index([meetingReminderId])
   @@index([deliveryAt])
   @@index([createdById])
 }
-
 
 model Commission {
   id               Int        @id @default(autoincrement())
@@ -445,24 +580,29 @@ model Project {
   clientLeadId Int
   clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
 
-  isModification Boolean @default(false)
+  isModification Boolean   @default(false)
+  contract       Contract? @relation(fields: [contractId], references: [id])
+  contractId     Int?
 
-  deliveryTime DateTime? // time to deliver the project (optional)
+  contractStages ContractStage[]
+  payments       ContractPayment[]
+
+  deliveryTime      DateTime? // time to deliver the project (optional)
   deliverySchedules DeliverySchedule[]
-  priority     Priority  @default(MEDIUM) // enum with default value
-  area         Decimal?  @db.Decimal(10, 2) // optional decimal field
-  startedAt    DateTime? // optional
-  endedAt      DateTime? // optional
-  status       String
-  type         String
-  role         UserRole  @default(THREE_D_DESIGNER)
-  tasks        Task[]
+  priority          Priority           @default(MEDIUM) // enum with default value
+  area              Decimal?           @db.Decimal(10, 2) // optional decimal field
+  startedAt         DateTime? // optional
+  endedAt           DateTime? // optional
+  status            String
+  type              String
+  role              UserRole           @default(THREE_D_DESIGNER)
+  tasks             Task[]
 
-  notified7Days  Boolean @default(false)
-  notified3Days  Boolean @default(false)
-  notified2Days  Boolean @default(false)
-  notified1Day   Boolean @default(false)
-  
+  notified7Days Boolean @default(false)
+  notified3Days Boolean @default(false)
+  notified2Days Boolean @default(false)
+  notified1Day  Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -568,8 +708,8 @@ model CallReminder {
   userId         Int
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
-  notified       Boolean            @default(false) 
-  
+  notified       Boolean            @default(false)
+
   @@index([clientLeadId])
   @@index([userId])
 }
@@ -590,50 +730,49 @@ model File {
 }
 
 model User {
-  id                   Int                  @id @default(autoincrement())
-  email                String               @unique @db.VarChar(255)
-  name                 String               @db.VarChar(255)
-  password             String               @db.VarChar(255)
-  isActive             Boolean              @default(true)
-  isPrimary            Boolean              @default(false)  
-  isSuperSales         Boolean              @default(false) 
-  role                 UserRole             @default(STAFF)
-  telegramUsername  String? 
-  subRoles             UserSubRole[]
-  logs                 UserLog[]
-  clientLeads          ClientLead[]
-  notifications        Notification[]       @relation("UserNotifications")
-  staffNotifications   Notification[]       @relation("StaffNotifications")
-  notes                Note[]
-  userNotes              Note[]               @relation("UserSubjectNotes")
-  tasks                Task[]
-  createdTasks         Task[]               @relation("CreatedTasks")
-  priceOffers          PriceOffers[]
-  createdAt            DateTime             @default(now())
-  updatedAt            DateTime             @updatedAt
-  callReminders        CallReminder[]
-  meetingReminders     MeetingReminder[]
-  adminMeetingReminders MeetingReminder[]   @relation("AdminMeetingReminders")
-  createdQuestions SessionQuestion[] 
-  answers          Answer[]         
-  updates              ClientLeadUpdate[]
-  versaModels                VersaModel[]
-  availableDays   AvailableDay[]
-  salesStages SalesStage[]
-  createdImageSessions ClientImageSession[]
-  files           File[]
-  lastSeenAt      DateTime?
-  maxLeadsCounts  Int?         @default(50)
-  accountantLeads ClientLead[] @relation("AccountantLeads")
-  commissions     Commission[]
-  assignments     Assignment[]
-  courseProgress CourseProgress[]
-  examAttempts   TestAttempt []
-  certificates   Certificate[]
-  allowedLessons LessonAccess[]
-  homeWorks LessonHomework[]
-  deliverySchedulesCreated DeliverySchedule[]  @relation("DeliverySchedulesCreatedBy")
-
+  id                       Int                  @id @default(autoincrement())
+  email                    String               @unique @db.VarChar(255)
+  name                     String               @db.VarChar(255)
+  password                 String               @db.VarChar(255)
+  isActive                 Boolean              @default(true)
+  isPrimary                Boolean              @default(false)
+  isSuperSales             Boolean              @default(false)
+  role                     UserRole             @default(STAFF)
+  telegramUsername         String?
+  subRoles                 UserSubRole[]
+  logs                     UserLog[]
+  clientLeads              ClientLead[]
+  notifications            Notification[]       @relation("UserNotifications")
+  staffNotifications       Notification[]       @relation("StaffNotifications")
+  notes                    Note[]
+  userNotes                Note[]               @relation("UserSubjectNotes")
+  tasks                    Task[]
+  createdTasks             Task[]               @relation("CreatedTasks")
+  priceOffers              PriceOffers[]
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
+  callReminders            CallReminder[]
+  meetingReminders         MeetingReminder[]
+  adminMeetingReminders    MeetingReminder[]    @relation("AdminMeetingReminders")
+  createdQuestions         SessionQuestion[]
+  answers                  Answer[]
+  updates                  ClientLeadUpdate[]
+  versaModels              VersaModel[]
+  availableDays            AvailableDay[]
+  salesStages              SalesStage[]
+  createdImageSessions     ClientImageSession[]
+  files                    File[]
+  lastSeenAt               DateTime?
+  maxLeadsCounts           Int?                 @default(50)
+  accountantLeads          ClientLead[]         @relation("AccountantLeads")
+  commissions              Commission[]
+  assignments              Assignment[]
+  courseProgress           CourseProgress[]
+  examAttempts             TestAttempt[]
+  certificates             Certificate[]
+  allowedLessons           LessonAccess[]
+  homeWorks                LessonHomework[]
+  deliverySchedulesCreated DeliverySchedule[]   @relation("DeliverySchedulesCreatedBy")
 
   baseSalary          BaseEmployeeSalary?
   notAllowedCountries Json?
@@ -703,8 +842,8 @@ model Note {
   userId       Int
   createdAt    DateTime    @default(now())
 
-  notedUser    User?       @relation("UserSubjectNotes", fields: [notedUserId], references: [id])
-  notedUserId  Int?
+  notedUser   User? @relation("UserSubjectNotes", fields: [notedUserId], references: [id])
+  notedUserId Int?
 
   // New relations
   baseEmployeeSalary    BaseEmployeeSalary?  @relation(fields: [baseEmployeeSalaryId], references: [id])
@@ -723,8 +862,8 @@ model Note {
   taskId                Int?
   commission            Commission?          @relation(fields: [commissionId], references: [id])
   commissionId          Int?
-  contract   Contract? @relation(fields: [contractId], references: [id])
-  contractId Int?
+  contract              Contract?            @relation(fields: [contractId], references: [id])
+  contractId            Int?
 
   update   ClientLeadUpdate? @relation(fields: [updateId], references: [id])
   updateId Int?
@@ -732,18 +871,17 @@ model Note {
   sharedUpdate   SharedUpdate? @relation(fields: [sharedUpdateId], references: [id])
   sharedUpdateId Int?
 
-  clientImageSession   ClientImageSession? @relation(fields: [imageSessionId], references: [id])
-  imageSessionId Int?
+  clientImageSession ClientImageSession? @relation(fields: [imageSessionId], references: [id])
+  imageSessionId     Int?
 
-  clientSelectedImage   ClientSelectedImage? @relation(fields: [selectedImageId], references: [id])
-  selectedImageId Int?
+  clientSelectedImage ClientSelectedImage? @relation(fields: [selectedImageId], references: [id])
+  selectedImageId     Int?
 
   salesStage   SalesStage? @relation(fields: [salesStageId], references: [id])
   salesStageId Int?
 
   deliverySchedule   DeliverySchedule? @relation(fields: [deliveryScheduleId], references: [id])
   deliveryScheduleId Int?
-
 
   @@index([taskId])
   @@index([clientLeadId])
@@ -761,9 +899,8 @@ model Note {
   @@index([selectedImageId])
   @@index([contractId])
   @@index([salesStageId])
-  @@index([notedUserId]) 
-  @@index([deliveryScheduleId]) 
-
+  @@index([notedUserId])
+  @@index([deliveryScheduleId])
 }
 
 model Notification {
@@ -780,6 +917,7 @@ model Notification {
   clientLead   ClientLead?      @relation(fields: [clientLeadId], references: [id])
   clientLeadId Int?
   createdAt    DateTime         @default(now())
+
   @@index([userId])
   @@index([clientLeadId])
 }
@@ -876,59 +1014,57 @@ model Outcome {
 // SPAIN
 
 model QuestionType {
-  id           Int            @id @default(autoincrement())
-  name         String         @unique
-  label        String       
-  baseQuestions BaseQuestion[]
+  id               Int               @id @default(autoincrement())
+  name             String            @unique
+  label            String
+  baseQuestions    BaseQuestion[]
   sessionQuestions SessionQuestion[]
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 }
 
 model BaseQuestion {
-  id           Int            @id @default(autoincrement())
-  questionType QuestionType   @relation(fields: [questionTypeId], references: [id])
+  id             Int          @id @default(autoincrement())
+  questionType   QuestionType @relation(fields: [questionTypeId], references: [id])
   questionTypeId Int
-  title        String         @db.Text
-  order        Int            @default(0)
-  isArchived  Boolean      @default(false)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-
+  title          String       @db.Text
+  order          Int          @default(0)
+  isArchived     Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 model SessionQuestion {
-  id               Int             @id @default(autoincrement())
-  questionType     QuestionType    @relation(fields: [questionTypeId], references: [id])
-  questionTypeId   Int
-  title            String          @db.Text
-  isCustom         Boolean         @default(false)
+  id             Int          @id @default(autoincrement())
+  questionType   QuestionType @relation(fields: [questionTypeId], references: [id])
+  questionTypeId Int
+  title          String       @db.Text
+  isCustom       Boolean      @default(false)
 
-  order            Int             @default(0)
+  order Int @default(0)
 
-  clientLead  ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
   clientLeadId Int
 
-  createdBy        User?           @relation(fields: [userId], references: [id])
-  userId           Int?
+  createdBy User? @relation(fields: [userId], references: [id])
+  userId    Int?
 
-  answer           Answer?
-  createdAt        DateTime        @default(now())
+  answer    Answer?
+  createdAt DateTime @default(now())
 }
 
 model Answer {
-  id               Int             @id @default(autoincrement())
-  response         String          @db.Text
+  id       Int    @id @default(autoincrement())
+  response String @db.Text
 
-  sessionQuestion  SessionQuestion @relation(fields: [sessionQuestionId], references: [id])
-  sessionQuestionId Int @unique   // 👈 Add @unique here
+  sessionQuestion   SessionQuestion @relation(fields: [sessionQuestionId], references: [id])
+  sessionQuestionId Int             @unique // 👈 Add @unique here
 
-  answeredBy       User            @relation(fields: [userId], references: [id])
-  userId           Int
+  answeredBy User @relation(fields: [userId], references: [id])
+  userId     Int
 
-  createdAt        DateTime        @default(now())
+  createdAt DateTime @default(now())
 }
-
 
 // OBJECTION
 model ObjectionCategory {
@@ -940,46 +1076,45 @@ model ObjectionCategory {
 }
 
 model VersaModel {
-  id              Int                @id @default(autoincrement())
-  clientLead      ClientLead         @relation(fields: [clientLeadId], references: [id])
-  clientLeadId    Int
+  id           Int        @id @default(autoincrement())
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
 
-  createdBy       User               @relation(fields: [userId], references: [id])
-  userId          Int
+  createdBy User @relation(fields: [userId], references: [id])
+  userId    Int
 
-  category        ObjectionCategory  @relation(fields: [categoryId], references: [id])
-  categoryId      Int
+  category   ObjectionCategory @relation(fields: [categoryId], references: [id])
+  categoryId Int
 
-  v               VersaStep?         @relation("VStep", fields: [vId], references: [id])
-  vId             Int?               @unique
+  v   VersaStep? @relation("VStep", fields: [vId], references: [id])
+  vId Int?       @unique
 
-  e               VersaStep?         @relation("EStep", fields: [eId], references: [id])
-  eId             Int?               @unique
+  e   VersaStep? @relation("EStep", fields: [eId], references: [id])
+  eId Int?       @unique
 
-  r               VersaStep?         @relation("RStep", fields: [rId], references: [id])
-  rId             Int?               @unique
+  r   VersaStep? @relation("RStep", fields: [rId], references: [id])
+  rId Int?       @unique
 
-  s               VersaStep?         @relation("SStep", fields: [sId], references: [id])
-  sId             Int?               @unique
+  s   VersaStep? @relation("SStep", fields: [sId], references: [id])
+  sId Int?       @unique
 
-  a               VersaStep?         @relation("AStep", fields: [aId], references: [id])
-  aId             Int?               @unique
+  a   VersaStep? @relation("AStep", fields: [aId], references: [id])
+  aId Int?       @unique
 
-  createdAt       DateTime           @default(now())
-  updatedAt       DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([clientLeadId])
   @@index([userId])
   @@index([categoryId])
 }
 
-
 model VersaStep {
-  id             Int         @id @default(autoincrement())
-  label          String?     @db.VarChar(255) // optional (e.g., "V = Validate")
-  question       String?     @db.Text
-  answer         String?     @db.Text
-  clientResponse String?     @db.Text
+  id             Int     @id @default(autoincrement())
+  label          String? @db.VarChar(255) // optional (e.g., "V = Validate")
+  question       String? @db.Text
+  answer         String? @db.Text
+  clientResponse String? @db.Text
 
   // reverse relations for each letter
   vVersa VersaModel? @relation("VStep")
@@ -989,105 +1124,105 @@ model VersaStep {
   aVersa VersaModel? @relation("AStep")
 }
 
-
 // calendy
 
 model AvailableDay {
-  id        Int      @id @default(autoincrement())
-  date      DateTime
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
-  slots     AvailableSlot[]
-  
+  id     Int             @id @default(autoincrement())
+  date   DateTime
+  user   User            @relation(fields: [userId], references: [id])
+  userId Int
+  slots  AvailableSlot[]
+
   createdAt DateTime @default(now())
 
-  @@unique([userId, date]) 
+  @@unique([userId, date])
 }
 
 model AvailableSlot {
-  id             Int            @id @default(autoincrement())
+  id             Int          @id @default(autoincrement())
   startTime      DateTime
   endTime        DateTime
-  availableDay   AvailableDay   @relation(fields: [availableDayId], references: [id])
+  availableDay   AvailableDay @relation(fields: [availableDayId], references: [id])
   availableDayId Int
-  isBooked       Boolean        @default(false)
-  userTimezone     String? 
+  isBooked       Boolean      @default(false)
+  userTimezone   String?
 
-  meetingReminder  MeetingReminder?  @relation("SlotToMeeting", fields: [meetingReminderId], references: [id])
+  meetingReminder   MeetingReminder? @relation("SlotToMeeting", fields: [meetingReminderId], references: [id])
   meetingReminderId Int?             @unique
 }
 
 model Language {
-  id   Int    @id @default(autoincrement())
-  code String @unique
-  name String
-  isArchived  Boolean     @default(false)
+  id         Int     @id @default(autoincrement())
+  code       String  @unique
+  name       String
+  isArchived Boolean @default(false)
 
   shortTexts TextShort[]
   longTexts  TextLong[]
 }
 
 model TextShort {
-  id             Int      @id @default(autoincrement())
-  text           String   @db.VarChar(255)
-  languageId     Int
-  language       Language @relation(fields: [languageId], references: [id])
+  id         Int      @id @default(autoincrement())
+  text       String   @db.VarChar(255)
+  languageId Int
+  language   Language @relation(fields: [languageId], references: [id])
 
-  materialId     Int?
-  material       Material? @relation("MaterialTitles", fields: [materialId], references: [id])
+  materialId Int?
+  material   Material? @relation("MaterialTitles", fields: [materialId], references: [id])
 
-  styleId        Int?
-  style          Style? @relation("StyleTitles", fields: [styleId], references: [id])
+  styleId Int?
+  style   Style? @relation("StyleTitles", fields: [styleId], references: [id])
 
   colorPatternId Int?
   colorPattern   ColorPattern? @relation("ColorPatternTitles", fields: [colorPatternId], references: [id])
 
-  pageInfoId     Int?
-  pageInfo       PageInfo? @relation("PageInfoTitles", fields: [pageInfoId], references: [id])
+  pageInfoId Int?
+  pageInfo   PageInfo? @relation("PageInfoTitles", fields: [pageInfoId], references: [id])
 
-  spaceId        Int?
-  space          Space? @relation("SpaceTitles", fields: [spaceId], references: [id])
+  spaceId Int?
+  space   Space? @relation("SpaceTitles", fields: [spaceId], references: [id])
 }
 
 model TextLong {
-  id             Int      @id @default(autoincrement())
-  content        String   @db.Text
-  languageId     Int
-  language       Language @relation(fields: [languageId], references: [id])
+  id         Int      @id @default(autoincrement())
+  content    String   @db.Text
+  languageId Int
+  language   Language @relation(fields: [languageId], references: [id])
 
-  materialId     Int?
-  material       Material? @relation("MaterialDescriptions", fields: [materialId], references: [id])
+  materialId Int?
+  material   Material? @relation("MaterialDescriptions", fields: [materialId], references: [id])
 
-  styleId        Int?
-  style          Style? @relation("StyleDescriptions", fields: [styleId], references: [id])
+  styleId Int?
+  style   Style? @relation("StyleDescriptions", fields: [styleId], references: [id])
 
   colorPatternId Int?
   colorPattern   ColorPattern? @relation("ColorPatternDescriptions", fields: [colorPatternId], references: [id])
 
-  proId          Int?
-  pro            Pro? @relation("ProTexts", fields: [proId], references: [id])
+  proId Int?
+  pro   Pro? @relation("ProTexts", fields: [proId], references: [id])
 
-  conId          Int?
-  con            Con? @relation("ConTexts", fields: [conId], references: [id])
+  conId Int?
+  con   Con? @relation("ConTexts", fields: [conId], references: [id])
 
-  pageInfoId     Int?
-  pageInfo       PageInfo? @relation("PageInfoContents", fields: [pageInfoId], references: [id])
+  pageInfoId Int?
+  pageInfo   PageInfo? @relation("PageInfoContents", fields: [pageInfoId], references: [id])
 }
+
 model Pro {
   id         Int        @id @default(autoincrement())
   content    TextLong[] @relation("ProTexts")
   materialId Int?
-  order         Int         @default(0)
+  order      Int        @default(0)
 
-  material   Material?  @relation(fields: [materialId], references: [id])
-  styleId    Int?
-  style      Style?     @relation(fields: [styleId], references: [id])
+  material Material? @relation(fields: [materialId], references: [id])
+  styleId  Int?
+  style    Style?    @relation(fields: [styleId], references: [id])
 }
 
 model Con {
   id         Int        @id @default(autoincrement())
   content    TextLong[] @relation("ConTexts")
-  order         Int         @default(0)
+  order      Int        @default(0)
   materialId Int?
   material   Material?  @relation(fields: [materialId], references: [id])
   styleId    Int?
@@ -1095,77 +1230,76 @@ model Con {
 }
 
 model Material {
-  id            Int         @id @default(autoincrement())
-  title         TextShort[] @relation("MaterialTitles")
-  description   TextLong[]  @relation("MaterialDescriptions")
-  pros          Pro[]
-  cons          Con[]
-  imageUrl      String?
-  isArchived    Boolean     @default(false)
-  templateId    Int?
-  template      Template?   @relation(fields: [templateId], references: [id])
-clientSessions MaterialOnClientImageSession[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id             Int                            @id @default(autoincrement())
+  title          TextShort[]                    @relation("MaterialTitles")
+  description    TextLong[]                     @relation("MaterialDescriptions")
+  pros           Pro[]
+  cons           Con[]
+  imageUrl       String?
+  isArchived     Boolean                        @default(false)
+  templateId     Int?
+  template       Template?                      @relation(fields: [templateId], references: [id])
+  clientSessions MaterialOnClientImageSession[]
+  createdAt      DateTime                       @default(now())
+  updatedAt      DateTime                       @updatedAt
 }
 
 model Style {
-  id            Int         @id @default(autoincrement())
-  title         TextShort[] @relation("StyleTitles")
-  description   TextLong[]  @relation("StyleDescriptions")
-  pros          Pro[]
-  cons          Con[]
-  imageUrl      String?
-  isArchived    Boolean     @default(false)
-  designImages  DesignImage[]
-  templateId    Int?
-  template      Template?   @relation(fields: [templateId], references: [id])
+  id             Int                  @id @default(autoincrement())
+  title          TextShort[]          @relation("StyleTitles")
+  description    TextLong[]           @relation("StyleDescriptions")
+  pros           Pro[]
+  cons           Con[]
+  imageUrl       String?
+  isArchived     Boolean              @default(false)
+  designImages   DesignImage[]
+  templateId     Int?
+  template       Template?            @relation(fields: [templateId], references: [id])
   clientSessions ClientImageSession[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 }
 
 model ColorPattern {
-  id            Int         @id @default(autoincrement())
-  title         TextShort[] @relation("ColorPatternTitles")
-  description   TextLong[]  @relation("ColorPatternDescriptions")
-  background    String? 
-  imageUrl      String?
-  colors        ColorPatternColor[]
-  order         Int         @default(0)
-  isArchived    Boolean     @default(false)
-  isFullWidth     Boolean             @default(false) 
-  templateId    Int?
-  template      Template?   @relation(fields: [templateId], references: [id])
+  id             Int                  @id @default(autoincrement())
+  title          TextShort[]          @relation("ColorPatternTitles")
+  description    TextLong[]           @relation("ColorPatternDescriptions")
+  background     String?
+  imageUrl       String?
+  colors         ColorPatternColor[]
+  order          Int                  @default(0)
+  isArchived     Boolean              @default(false)
+  isFullWidth    Boolean              @default(false)
+  templateId     Int?
+  template       Template?            @relation(fields: [templateId], references: [id])
   clientSessions ClientImageSession[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 }
 
 model ColorPatternColor {
-  id                 Int    @id @default(autoincrement())
+  id                 Int          @id @default(autoincrement())
   colorHex           String
-  isEditableByClient Boolean @default(false)
-  order         Int         @default(0)
+  isEditableByClient Boolean      @default(false)
+  order              Int          @default(0)
   colorPatternId     Int
   colorPattern       ColorPattern @relation(fields: [colorPatternId], references: [id])
 }
 
-
 model DesignImage {
-  id         Int      @id @default(autoincrement())
+  id         Int                   @id @default(autoincrement())
   imageUrl   String
   styleId    Int
-  style      Style     @relation(fields: [styleId], references: [id])
+  style      Style                 @relation(fields: [styleId], references: [id])
   spaces     DesignImageSpace[]
   selectedIn ClientSelectedImage[]
-  isArchived Boolean   @default(false)
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  isArchived Boolean               @default(false)
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
 }
 
 model DesignImageSpace {
-  id            Int     @id @default(autoincrement())
+  id            Int         @id @default(autoincrement())
   designImageId Int
   designImage   DesignImage @relation(fields: [designImageId], references: [id])
   spaceId       Int
@@ -1179,13 +1313,13 @@ enum PageInfoType {
 }
 
 model PageInfo {
-  id         Int      @id @default(autoincrement())
-  type       PageInfoType   @unique 
-  title      TextShort[]   @relation("PageInfoTitles")
-  content    TextLong[]    @relation("PageInfoContents")
-  isArchived Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id         Int          @id @default(autoincrement())
+  type       PageInfoType @unique
+  title      TextShort[]  @relation("PageInfoTitles")
+  content    TextLong[]   @relation("PageInfoContents")
+  isArchived Boolean      @default(false)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
 }
 
 enum TemplateType {
@@ -1195,45 +1329,45 @@ enum TemplateType {
 }
 
 model Template {
-  id              Int       @id @default(autoincrement())
+  id              Int          @id @default(autoincrement())
   type            TemplateType
-  order           Int       @default(0)
-  showTitle       Boolean   @default(true)
-  showImage       Boolean   @default(true)
-  showPros        Boolean   @default(false)
-  showCons        Boolean   @default(false)
-  showColors      Boolean   @default(false)
-  showDescription Boolean   @default(false)
-  showOverlay     Boolean   @default(true)
-  isArchived      Boolean   @default(false)
-  blurValue       Int       @default(0)
+  order           Int          @default(0)
+  showTitle       Boolean      @default(true)
+  showImage       Boolean      @default(true)
+  showPros        Boolean      @default(false)
+  showCons        Boolean      @default(false)
+  showColors      Boolean      @default(false)
+  showDescription Boolean      @default(false)
+  showOverlay     Boolean      @default(true)
+  isArchived      Boolean      @default(false)
+  blurValue       Int          @default(0)
 
-  backgroundImage String?   @db.Text
-  overlayColor    String?   @db.VarChar(50)
-  overlayOpacity  Float?    @default(0)
-  padding         String?   @db.VarChar(50)
-  paddingX        String?   @db.VarChar(50)
-  paddingY        String?   @db.VarChar(50)
-  borderRadius    String?   @db.VarChar(50)
+  backgroundImage String?  @db.Text
+  overlayColor    String?  @db.VarChar(50)
+  overlayOpacity  Float?   @default(0)
+  padding         String?  @db.VarChar(50)
+  paddingX        String?  @db.VarChar(50)
+  paddingY        String?  @db.VarChar(50)
+  borderRadius    String?  @db.VarChar(50)
   colorSize       Int?
-  equalDimensions Boolean?  @default(false)
+  equalDimensions Boolean? @default(false)
   layout          Json?
-  colorsLayout    String    @default("vertical") @db.VarChar(100)
+  colorsLayout    String   @default("vertical") @db.VarChar(100)
   customStyle     Json?
-  
-  materials         Material[]
-  styles            Style[]
-  colorPatterns     ColorPattern[]
+
+  materials     Material[]
+  styles        Style[]
+  colorPatterns ColorPattern[]
 }
 
 model Space {
-  id         Int    @id @default(autoincrement())
-  title      TextShort[] @relation("SpaceTitles")
-  isArchived Boolean @default(false)
+  id          Int                         @id @default(autoincrement())
+  title       TextShort[]                 @relation("SpaceTitles")
+  isArchived  Boolean                     @default(false)
   selectedIn  ClientImageSessionToSpace[]
-  spaceImages     DesignImageSpace[]
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  spaceImages DesignImageSpace[]
+  createdAt   DateTime                    @default(now())
+  updatedAt   DateTime                    @updatedAt
 }
 
 enum SessionStatus {
@@ -1251,70 +1385,69 @@ enum SessionStatus {
 }
 
 model ClientImageSession {
-  id               Int                    @id @default(autoincrement())
-  token            String                 @unique
-  name             String?                // optional field
-  sessionStatus    SessionStatus          @default(INITIAL)
-  pdfUrl          String?
-  clientLeadId     Int
-  clientLead       ClientLead             @relation(fields: [clientLeadId], references: [id])
-  createdById      Int
-  createdBy        User                   @relation(fields: [createdById], references: [id])
-  selectedSpaces ClientImageSessionToSpace[] 
-  colorPatternId   Int?
-  colorPattern     ColorPattern?          @relation(fields: [colorPatternId], references: [id])
-  materials MaterialOnClientImageSession[]
-  styleId          Int?
-  style            Style?                 @relation(fields: [styleId], references: [id])
-  selectedImages   ClientSelectedImage[]
-  note             Note[]
-  customColors     Json?
-  signatureUrl     String?
-  submittedAt      DateTime?
-  isArchived       Boolean                @default(false)
-  createdAt        DateTime               @default(now())
-  updatedAt        DateTime               @updatedAt
+  id             Int                            @id @default(autoincrement())
+  token          String                         @unique
+  name           String? // optional field
+  sessionStatus  SessionStatus                  @default(INITIAL)
+  pdfUrl         String?
+  clientLeadId   Int
+  clientLead     ClientLead                     @relation(fields: [clientLeadId], references: [id])
+  createdById    Int
+  createdBy      User                           @relation(fields: [createdById], references: [id])
+  selectedSpaces ClientImageSessionToSpace[]
+  colorPatternId Int?
+  colorPattern   ColorPattern?                  @relation(fields: [colorPatternId], references: [id])
+  materials      MaterialOnClientImageSession[]
+  styleId        Int?
+  style          Style?                         @relation(fields: [styleId], references: [id])
+  selectedImages ClientSelectedImage[]
+  note           Note[]
+  customColors   Json?
+  signatureUrl   String?
+  submittedAt    DateTime?
+  isArchived     Boolean                        @default(false)
+  createdAt      DateTime                       @default(now())
+  updatedAt      DateTime                       @updatedAt
 }
 
 model MaterialOnClientImageSession {
   clientImageSessionId Int
   materialId           Int
 
-  clientImageSession   ClientImageSession @relation(fields: [clientImageSessionId], references: [id])
-  material             Material           @relation(fields: [materialId], references: [id])
+  clientImageSession ClientImageSession @relation(fields: [clientImageSessionId], references: [id])
+  material           Material           @relation(fields: [materialId], references: [id])
 
   @@id([clientImageSessionId, materialId])
 }
 
 model ClientSelectedImage {
-  id              Int                @id @default(autoincrement())
-  imageSessionId  Int
-  imageSession    ClientImageSession @relation(fields: [imageSessionId], references: [id])
-  designImageId   Int
-  designImage     DesignImage        @relation(fields: [designImageId], references: [id])
-  note            Note[]
-  createdAt       DateTime           @default(now())
+  id             Int                @id @default(autoincrement())
+  imageSessionId Int
+  imageSession   ClientImageSession @relation(fields: [imageSessionId], references: [id])
+  designImageId  Int
+  designImage    DesignImage        @relation(fields: [designImageId], references: [id])
+  note           Note[]
+  createdAt      DateTime           @default(now())
 }
+
 model ClientImageSessionToSpace {
   clientImageSessionId Int
   spaceId              Int
 
-  clientImageSession   ClientImageSession @relation(fields: [clientImageSessionId], references: [id])
-  space                Space              @relation(fields: [spaceId], references: [id])
+  clientImageSession ClientImageSession @relation(fields: [clientImageSessionId], references: [id])
+  space              Space              @relation(fields: [spaceId], references: [id])
 
   @@id([clientImageSessionId, spaceId])
 }
 
-
 // courses
-
 
 enum CoursesQuestionType {
   MULTIPLE_CHOICE
   SINGLE_CHOICE
   TRUE_FALSE
   TEXT
-  ORDERING   
+  ORDERING
 }
 
 enum TestType {
@@ -1325,73 +1458,75 @@ enum TestType {
 }
 
 model Course {
-  id            Int           @id @default(autoincrement())
-  title         String
-  description   String?       @db.Text
-  imageUrl      String?       @db.Text
-  isPublished   Boolean       @default(false)
-  roles         CourseRole[]
-  certificates  Certificate[]
-  lessons       Lesson[]
-  tests         Test[]
-  progress      CourseProgress[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id           Int              @id @default(autoincrement())
+  title        String
+  description  String?          @db.Text
+  imageUrl     String?          @db.Text
+  isPublished  Boolean          @default(false)
+  roles        CourseRole[]
+  certificates Certificate[]
+  lessons      Lesson[]
+  tests        Test[]
+  progress     CourseProgress[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
 }
 
 model CourseRole {
-  id        Int       @id @default(autoincrement())
-  course    Course    @relation(fields: [courseId], references: [id])
-  courseId  Int
-  role      UserRole
+  id       Int      @id @default(autoincrement())
+  course   Course   @relation(fields: [courseId], references: [id])
+  courseId Int
+  role     UserRole
 }
 
 model Lesson {
-  id             Int        @id @default(autoincrement())
-  course         Course     @relation(fields: [courseId], references: [id])
-  courseId       Int
-  title          String
-  description    String?    @db.Text
-  duration       Int?
-  order          Int        @default(0)
-  mustUploadHomework Boolean         @default(true) 
-  isPreviewable  Boolean    @default(false)
-  videos         LessonVideo[]
-  pdfs           LessonPDF[]
-  links          LessonLink[]
-  tests          Test[]
-  allowedUsers   LessonAccess[]
-  homeWorks LessonHomework[]
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  id                 Int              @id @default(autoincrement())
+  course             Course           @relation(fields: [courseId], references: [id])
+  courseId           Int
+  title              String
+  description        String?          @db.Text
+  duration           Int?
+  order              Int              @default(0)
+  mustUploadHomework Boolean          @default(true)
+  isPreviewable      Boolean          @default(false)
+  videos             LessonVideo[]
+  pdfs               LessonPDF[]
+  links              LessonLink[]
+  tests              Test[]
+  allowedUsers       LessonAccess[]
+  homeWorks          LessonHomework[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
   @@unique([courseId, order])
 }
 
 model LessonAccess {
-  id        Int     @id @default(autoincrement())
-  user      User    @relation(fields: [userId], references: [id])
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
   userId    Int
-  lesson    Lesson  @relation(fields: [lessonId], references: [id])
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
   lessonId  Int
   grantedAt DateTime @default(now())
 
   @@unique([userId, lessonId])
 }
+
 enum LessonVideoType {
   IFRAME
   URL
 }
 
 model LessonHomework {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
+  id        Int          @id @default(autoincrement())
+  user      User         @relation(fields: [userId], references: [id])
   userId    Int
-  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+  lesson    Lesson       @relation(fields: [lessonId], references: [id])
   lessonId  Int
   title     String
   url       String
   type      HomeworkType
-  createdAt DateTime @default(now())
+  createdAt DateTime     @default(now())
 
   @@index([userId])
   @@index([lessonId])
@@ -1401,23 +1536,24 @@ enum HomeworkType {
   VIDEO
   SUMMARY
 }
+
 model LessonVideo {
-  id        Int    @id @default(autoincrement())
-  lesson    Lesson @relation(fields: [lessonId], references: [id])
+  id        Int              @id @default(autoincrement())
+  lesson    Lesson           @relation(fields: [lessonId], references: [id])
   lessonId  Int
-  url       String @db.LongText
-  videoType LessonVideoType @default(IFRAME)
-  order     Int    @default(0)
-  pdfs      LessonVideoPdf[] 
+  url       String           @db.LongText
+  videoType LessonVideoType  @default(IFRAME)
+  order     Int              @default(0)
+  pdfs      LessonVideoPdf[]
 }
 
 model LessonVideoPdf {
-  id        Int         @id @default(autoincrement())
-  video     LessonVideo @relation(fields: [videoId], references: [id])
-  videoId   Int
-  title     String
-  url       String
-  uploadedAt DateTime   @default(now())
+  id         Int         @id @default(autoincrement())
+  video      LessonVideo @relation(fields: [videoId], references: [id])
+  videoId    Int
+  title      String
+  url        String
+  uploadedAt DateTime    @default(now())
 }
 
 model LessonPDF {
@@ -1437,32 +1573,31 @@ model LessonLink {
   order    Int    @default(0)
 }
 
-
 model Test {
-  id         Int       @id @default(autoincrement())
-  title      String?
-  type       TestType  @default(LESSON)
-  course     Course?   @relation(fields: [courseId], references: [id])
-  courseId   Int?
-  lesson     Lesson?   @relation(fields: [lessonId], references: [id])
-  lessonId   Int?
-  questions  TestQuestion[]
-  attempts   TestAttempt[]
-  certificateApprovedByAdmin Boolean @default(false)
-  attemptLimit  Int         @default(2)
-  timeLimit     Int?  
-  published                  Boolean    @default(false)
+  id                         Int            @id @default(autoincrement())
+  title                      String?
+  type                       TestType       @default(LESSON)
+  course                     Course?        @relation(fields: [courseId], references: [id])
+  courseId                   Int?
+  lesson                     Lesson?        @relation(fields: [lessonId], references: [id])
+  lessonId                   Int?
+  questions                  TestQuestion[]
+  attempts                   TestAttempt[]
+  certificateApprovedByAdmin Boolean        @default(false)
+  attemptLimit               Int            @default(2)
+  timeLimit                  Int?
+  published                  Boolean        @default(false)
 }
 
 model TestQuestion {
-  id        Int       @id @default(autoincrement())
-  test      Test      @relation(fields: [testId], references: [id])
-  testId    Int
-  type      CoursesQuestionType
-  question  String    @db.Text
-  choices   TestChoice[]
-  order Int @default(1) 
-  userAnswers  UserAnswer[]
+  id          Int                 @id @default(autoincrement())
+  test        Test                @relation(fields: [testId], references: [id])
+  testId      Int
+  type        CoursesQuestionType
+  question    String              @db.Text
+  choices     TestChoice[]
+  order       Int                 @default(1)
+  userAnswers UserAnswer[]
 }
 
 model TestChoice {
@@ -1472,82 +1607,82 @@ model TestChoice {
   text       String
   value      String
   isCorrect  Boolean      @default(false)
-  order      Int?    
+  order      Int?
 }
 
 model TestAttempt {
-  id            Int         @id @default(autoincrement())
-  test          Test        @relation(fields: [testId], references: [id])
-  testId        Int
-  user          User        @relation(fields: [userId], references: [id])
-  userId        Int
-  answers       UserAnswer[]
-  score         Float?
-  passed        Boolean     @default(false)
-  attemptCount  Int         @default(0)
-  attemptLimit  Int         @default(2)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  startTime     DateTime?  
-  endTime       DateTime? 
-  timePassed Int? 
+  id           Int          @id @default(autoincrement())
+  test         Test         @relation(fields: [testId], references: [id])
+  testId       Int
+  user         User         @relation(fields: [userId], references: [id])
+  userId       Int
+  answers      UserAnswer[]
+  score        Float?
+  passed       Boolean      @default(false)
+  attemptCount Int          @default(0)
+  attemptLimit Int          @default(2)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  startTime    DateTime?
+  endTime      DateTime?
+  timePassed   Int?
 }
 
 model UserAnswer {
-  id         Int           @id @default(autoincrement())
-  attempt    TestAttempt   @relation(fields: [attemptId], references: [id])
-  attemptId  Int
-  question   TestQuestion  @relation(fields: [questionId], references: [id])
-  questionId Int
+  id              Int              @id @default(autoincrement())
+  attempt         TestAttempt      @relation(fields: [attemptId], references: [id])
+  attemptId       Int
+  question        TestQuestion     @relation(fields: [questionId], references: [id])
+  questionId      Int
   selectedAnswers SelectedAnswer[]
-  textAnswer String?       @db.Text
-  isApproved      Boolean       @default(false)
+  textAnswer      String?          @db.Text
+  isApproved      Boolean          @default(false)
 }
 
 model SelectedAnswer {
-  id         Int          @id @default(autoincrement())
-  answer     UserAnswer   @relation(fields: [userAnswerId], references: [id])
+  id           Int        @id @default(autoincrement())
+  answer       UserAnswer @relation(fields: [userAnswerId], references: [id])
   userAnswerId Int
-  value      String
-  order        Int?  
+  value        String
+  order        Int?
 }
 
 model CourseProgress {
-  id              Int               @id @default(autoincrement())
-  user            User              @relation(fields: [userId], references: [id])
-  userId          Int
-  course          Course            @relation(fields: [courseId], references: [id])
-  courseId        Int
+  id               Int               @id @default(autoincrement())
+  user             User              @relation(fields: [userId], references: [id])
+  userId           Int
+  course           Course            @relation(fields: [courseId], references: [id])
+  courseId         Int
   completedLessons CompletedLesson[]
-  completedTests CompletedTest[]
+  completedTests   CompletedTest[]
 
-  updatedAt       DateTime          @updatedAt
-  createdAt       DateTime          @default(now())
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
 }
 
 model CompletedLesson {
-  id              Int             @id @default(autoincrement())
-  courseProgress  CourseProgress @relation(fields: [courseProgressId], references: [id])
+  id               Int            @id @default(autoincrement())
+  courseProgress   CourseProgress @relation(fields: [courseProgressId], references: [id])
   courseProgressId Int
   lessonId         Int
-  completedAt     DateTime @default(now())
-}
-model CompletedTest {
-  id              Int            @id @default(autoincrement())
-  courseProgress  CourseProgress @relation(fields: [courseProgressId], references: [id])
-  courseProgressId Int
-  testId          Int            // Reference to your existing Test model
-  completedAt     DateTime       @default(now())
+  completedAt      DateTime       @default(now())
 }
 
+model CompletedTest {
+  id               Int            @id @default(autoincrement())
+  courseProgress   CourseProgress @relation(fields: [courseProgressId], references: [id])
+  courseProgressId Int
+  testId           Int // Reference to your existing Test model
+  completedAt      DateTime       @default(now())
+}
 
 model Certificate {
-  id         Int       @id @default(autoincrement())
-  user       User      @relation(fields: [userId], references: [id])
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [userId], references: [id])
   userId     Int
-  course     Course    @relation(fields: [courseId], references: [id])
+  course     Course   @relation(fields: [courseId], references: [id])
   courseId   Int
-  isApproved Boolean   @default(false)
-  createdAt  DateTime  @default(now())
-  fileUrl    String?   @db.Text
+  isApproved Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  fileUrl    String?  @db.Text
 }

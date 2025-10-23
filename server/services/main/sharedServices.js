@@ -307,7 +307,7 @@ export async function getClientLeadsByDateRange({
       },
       contracts: {
         where: {
-          isInProgress: true,
+          status: "IN_PROGRESS",
         },
         orderBy: { id: "desc" },
         take: 1,
@@ -433,11 +433,12 @@ export async function getClientLeadsColumnStatus({
     }
     const updatesWhere = {};
     const sharedUpdatesWhere = {};
+
     if (searchParams.type === "CONTRACTLEVELS") {
       where.status = "FINALIZED";
       where.contracts = {
         some: {
-          isInProgress: true,
+          status: "IN_PROGRESS",
           contractLevel: searchParams.status,
         },
       };
@@ -524,7 +525,7 @@ export async function getClientLeadsColumnStatus({
         },
         contracts: {
           where: {
-            isInProgress: true,
+            status: "IN_PROGRESS",
           },
           orderBy: { id: "desc" },
           take: 1,
@@ -660,7 +661,7 @@ export async function getClientLeadDetails(
       stripieMetadata: true,
       contracts: {
         where: {
-          isInProgress: true,
+          status: "IN_PROGRESS",
         },
         orderBy: { id: "desc" },
         take: 1,
@@ -4850,9 +4851,9 @@ export async function linkADeliveryToMeeting({
   const updatedData = {
     meetingReminderId: Number(meetingReminderId),
   };
-  if (meeting && meeting.time) {
-    updatedData.deliveryAt = meeting.time;
-  }
+  // if (meeting && meeting.time) {
+  //   updatedData.deliveryAt = meeting.time;
+  // }
 
   const delivery = await prisma.deliverySchedule.update({
     where: { id: Number(deliveryId) },
@@ -4879,4 +4880,18 @@ export async function getAllMeetingRemindersByClientLeadId({ clientLeadId }) {
       user: true,
     },
   });
+}
+
+export async function getUniqueProjectGroups({ clientLeadId }) {
+  const where = {
+    clientLeadId: Number(clientLeadId),
+  };
+  const groups = await prisma.project.findMany({
+    where,
+    distinct: ["groupId", "groupTitle"],
+    select: { groupId: true, groupTitle: true },
+    orderBy: [{ groupTitle: "asc" }, { groupId: "asc" }],
+  });
+
+  return groups;
 }

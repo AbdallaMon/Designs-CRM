@@ -5,7 +5,24 @@ import {
 } from "react-icons/ai";
 import { BiNote, BiTransfer } from "react-icons/bi";
 import { MdAttachMoney, MdCall } from "react-icons/md";
-import { FaFileUpload } from "react-icons/fa";
+import {
+  FaBullhorn,
+  FaCalculator,
+  FaChartLine,
+  FaCheckCircle,
+  FaClipboardCheck,
+  FaClipboardList,
+  FaCube,
+  FaCubes,
+  FaFileUpload,
+  FaFlagCheckered,
+  FaHandshake,
+  FaProjectDiagram,
+  FaRulerCombined,
+  FaSpinner,
+  FaTimesCircle,
+  FaTools,
+} from "react-icons/fa";
 import React from "react";
 
 export const NotificationType = {
@@ -781,4 +798,124 @@ export const LEAD_SOURCE_LABELS = {
     ar: "توصية من صديق أو عميل سابق",
   },
   OTHER: { en: "Other", ar: "أخرى" },
+};
+
+export const contractStatus = {
+  IN_PROGRESS: {
+    name: "In progress",
+    pallete: "warning",
+    shade: "main",
+
+    icon: FaSpinner,
+  },
+  COMPLETED: {
+    name: "Completed",
+    pallete: "success",
+    shade: "main",
+
+    icon: FaCheckCircle,
+  },
+  CANCELLED: {
+    name: "Cancelled",
+    pallete: "error",
+    shade: "main",
+    icon: FaTimesCircle,
+  },
+};
+
+export const contractLevel = {
+  LEVEL_1: {
+    name: "تحليل وتقييم",
+    shade: "main",
+    pallete: "primary",
+
+    icon: FaChartLine,
+  },
+  LEVEL_2: {
+    name: "تخطيط المساحات",
+    shade: "main",
+    pallete: "info",
+
+    icon: FaRulerCombined,
+  },
+  LEVEL_3: {
+    name: "تصميم 3D",
+    shade: "main",
+    pallete: "secondary",
+
+    icon: FaCube,
+  },
+  LEVEL_4: {
+    name: "مخططات تنفيذية",
+    shade: "main",
+    pallete: "success",
+
+    icon: FaProjectDiagram,
+  },
+  LEVEL_5: {
+    name: "حساب كميات واسعار",
+    shade: "main",
+    pallete: "warning",
+
+    icon: FaCalculator,
+  },
+  LEVEL_6: {
+    name: "تنفيذ",
+    shade: "main",
+    pallete: "error",
+
+    icon: FaTools,
+  },
+  LEVEL_7: {
+    name: "تسويق",
+    shade: "main",
+    pallete: "info",
+    icon: FaBullhorn,
+  },
+};
+
+export const CONTRACT_LEVELSENUM = [
+  { enum: "LEVEL_1", label: "تحليل وتقييم" },
+  { enum: "LEVEL_2", label: "تخطيط المساحات" },
+  { enum: "LEVEL_3", label: "تصميم 3D" },
+  { enum: "LEVEL_4", label: "مخططات تنفيذية" },
+  { enum: "LEVEL_5", label: "حساب كميات واسعار" },
+  { enum: "LEVEL_6", label: "تنفيذ" },
+  { enum: "LEVEL_7", label: "تسويق" },
+];
+
+export const contractLevelStatus = {
+  IN_PROGRESS: {
+    name: "In progress",
+    shade: "main",
+    pallete: "warning",
+    icon: FaSpinner,
+  },
+  COMPLETED: {
+    name: "Completed",
+    shade: "main",
+    pallete: "success",
+
+    icon: FaCheckCircle,
+  },
+  NOT_STARTED: {
+    name: "Not started",
+    shade: "main",
+    pallete: "error",
+
+    icon: FaTimesCircle,
+  },
+};
+
+export const STAGE_STATUS = {
+  NOT_STARTED: "Not started",
+  IN_PROGRESS: "In progress",
+  COMPLETED: "Completed",
+};
+
+export const PAYMENT_STATUS_AR = {
+  NOT_DUE: "غير مستحق",
+  DUE: "مستحق",
+  RECEIVED: "تم الاستلام",
+  TRANSFERRED: "تم التحويل",
 };

@@ -1,4 +1,4 @@
-import { Alert, Box, Button, Link, Snackbar, TextField } from "@mui/material";
+import { Alert, Box, Link, Snackbar, TextField } from "@mui/material";
 import { useState } from "react";
 
 export default function SimpleFileInput({
@@ -23,6 +23,32 @@ export default function SimpleFileInput({
       return;
     }
     setError(null);
+    const accept = input?.accept || null;
+    const fileType = file.type;
+
+    const isVideo = accept?.includes("video/*");
+    const isImage = accept?.includes("image/*");
+    const isPdf = accept?.includes("application/pdf");
+
+    const isAccepted =
+      !accept ||
+      (isVideo && fileType.startsWith("video/")) ||
+      (isImage && fileType.startsWith("image/")) ||
+      (isPdf && fileType === "application/pdf");
+
+    if (!isAccepted) {
+      const allowedTypes = [];
+      if (isVideo) allowedTypes.push("Videos");
+      if (isImage) allowedTypes.push("Images");
+      if (isPdf) allowedTypes.push("PDFs");
+
+      setError(
+        `File type not allowed. Allowed types: ${allowedTypes.join(", ")}.`
+      );
+      setPreview(null);
+      setFileName("");
+      return;
+    }
     if (file) {
       setFileName(file.name); // Store file name
       const reader = new FileReader();

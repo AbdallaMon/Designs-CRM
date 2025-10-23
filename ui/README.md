@@ -1,9 +1,7 @@
-- https://my.telegram.org/apps
-- Add instagram
+- اول دفعه بتكون مستحقة عند التوقيع
+- شرط الدفعه مرتبط بالمشروع لو في مشروع بيكون حسب الحالة يعني بختار حالة المشروع لما تبقي ايه الدفعه تتحول لمستحقة
 
-- Add a schedule instead of one delivery time for each project more than one delivery time and can link one appointment to a meeting
-- For meeting allow to share meeting with users
-- Allow uploading more than one file
+-
 
 - dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf

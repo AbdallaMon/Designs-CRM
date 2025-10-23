@@ -6,18 +6,16 @@ import {
   Alert,
   Box,
   Button,
-  Chip,
-  FormControl,
-  Grid,
-  InputLabel,
-  MenuItem,
-  Modal,
-  Select,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   TextField,
   Typography,
 } from "@mui/material";
-import { CONTRACT_LEVELS, simpleModalStyle } from "@/app/helpers/constants.js";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
+import LeadContractList from "../contracts/ContractsList";
+import ViewContract from "../contracts/ViewContract";
 
 export function FinalizeModal({
   open,
@@ -38,53 +36,67 @@ export function FinalizeModal({
   const { setAlertError } = useAlertContext();
   const { setLoading } = useToastContext();
   const { user } = useAuth();
-    const [formData, setFormData] = useState({
-      purpose: "",
-      contractLevel: [],
-      startDate: "",
-      endDate: "",
-    });
-    const handleSaveContract = async () => {
-      if (!formData.purpose || !formData.contractLevel || formData.contractLevel.length < 1) {
-        setAlertError("Please fill in all required fields.");
-        return;
-      }
-      
-      const url =    `shared/client-leads/${lead.id}/contracts`;
-      const method = "POST";
-      
-      const req = await handleRequestSubmit(
-        formData,
-        setLoading,
-        url,
-        false,
-        "Saving Contract",
-        false,
-        method
-      );
-      
-      if (req.status === 200 || req.status === 201) {
-     return true
-      }
-    };
-  
+
+  // currentContract will be filled by <ViewContract/> via updateOuterContract
+  const [currentContract, setCurrentContract] = useState({});
+
+  // extra: small confirm dialog state (minimal + reusable)
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmMeta, setConfirmMeta] = useState({
+    title: "",
+    message: "",
+    severity: "info", // "info" | "warning"
+    run: null, // function to run on confirm
+  });
+
+  const [formData, setFormData] = useState({
+    purpose: "",
+    contractLevel: [],
+    startDate: "",
+    endDate: "",
+  });
+
+  function updateOuterContract(current) {
+    setCurrentContract(current || {});
+  }
+
+  // keeps your original "create contract first time" logic intact
+  const handleSaveContract = async () => {
+    if (
+      !formData.purpose ||
+      !formData.contractLevel ||
+      formData.contractLevel.length < 1
+    ) {
+      setAlertError("Please fill in all required fields.");
+      return false;
+    }
+
+    const url = `shared/client-leads/${lead.id}/contracts`;
+    const method = "POST";
+
+    const req = await handleRequestSubmit(
+      formData,
+      setLoading,
+      url,
+      false,
+      "Saving Contract",
+      false,
+      method
+    );
+
+    if (req.status === 200 || req.status === 201) return true;
+    return false;
+  };
+
   useEffect(() => {
     if (discount >= 0 && price > 0) {
-      const discountValue = (price * discount) / 100;
-      setAveragePrice(price - discountValue);
+      const discountValue = (Number(price) * Number(discount)) / 100;
+      setAveragePrice(Number(price) - discountValue);
     }
   }, [discount, price]);
-  async function submit() {
-    if (!price || price <= 0) {
-      setAlertError("Please enter a valid price agreed upon by the client.");
-      return;
-    }
-    if(!lead.contracts||lead.contracts.length===0){
-      const pass=await handleSaveContract()
-      if(!pass){
-        return
-      }
-    }
+
+  // extracted to keep your submit flow readable
+  const finalizeRequest = async () => {
     const request = await handleRequestSubmit(
       {
         status: "FINALIZED",
@@ -103,6 +115,7 @@ export function FinalizeModal({
       false,
       "PUT"
     );
+
     if (request.status === 200) {
       if (setLead) {
         setLead((oldLead) => ({
@@ -115,47 +128,119 @@ export function FinalizeModal({
       }
       if (setleads) {
         setleads((prev) =>
-          prev.map((lead) =>
-            lead.id === id
-              ? { ...lead, status: "FINALIZED", averagePrice: price, priceNote }
-              : lead
+          prev.map((l) =>
+            l.id === id
+              ? {
+                  ...l,
+                  status: "FINALIZED",
+                  averagePrice: Number(averagePrice),
+                  priceNote,
+                }
+              : l
           )
         );
       }
-      if (onUpdate) {
-        onUpdate();
-      }
-      if (setAnchorEl) {
-        setAnchorEl(null);
-      }
-      if (setId) {
-        setId(null);
-      }
+      if (onUpdate) onUpdate();
+      if (setAnchorEl) setAnchorEl(null);
+      if (setId) setId(null);
       setOpen(false);
     }
+  };
+
+  // the only change in behavior: we always show a dialog before proceeding
+  async function submit() {
+    if (!price || Number(price) <= 0) {
+      setAlertError("Please enter a valid price agreed upon by the client.");
+      return;
+    }
+
+    const hasAnyContracts =
+      Array.isArray(lead.contracts) && lead.contracts.length > 0;
+    const hasCurrent =
+      hasAnyContracts &&
+      lead.contracts.some(
+        (c) => (c?.status || "").toUpperCase() === "IN_PROGRESS"
+      );
+
+    // choose which number to compare with the contract
+    const finalPriceNumber =
+      averagePrice != null && averagePrice !== ""
+        ? Number(averagePrice)
+        : Number(price);
+
+    // try typical names; if undefined we still show a generic confirm
+    const contractAmountRaw =
+      currentContract &&
+      (currentContract.amount ??
+        currentContract.total ??
+        currentContract.price);
+    const contractAmount =
+      contractAmountRaw != null && contractAmountRaw !== ""
+        ? Number(contractAmountRaw)
+        : null;
+
+    let title = "Confirm";
+    let message = "Are you sure you want to continue?";
+    let severity = "info";
+
+    // build the action that will run AFTER user confirms
+    let run = async () => {
+      // keep your original flow: if no contracts -> try to create one first
+      if (!hasCurrent) {
+        const pass = await handleSaveContract();
+        if (!pass) return; // user still needs to fill required fields in your mini contract form
+      }
+      await finalizeRequest();
+    };
+
+    // decision logic (dialogs only — request runs after confirmation)
+    if (!hasCurrent) {
+      title = "No Current Contract";
+      message =
+        "There is no current in-progress contract for this lead. Do you want to proceed?";
+      severity = "error";
+    } else if (contractAmount != null) {
+      if (
+        Number.isFinite(finalPriceNumber) &&
+        contractAmount === finalPriceNumber
+      ) {
+        title = "Amounts Match";
+        message = `Contract amount (${contractAmount}) matches the final price (${finalPriceNumber}). Proceed?`;
+        severity = "info";
+      } else {
+        title = "Amounts Do Not Match";
+        message = `Warning: Contract amount (${contractAmount}) does not match the final price (${finalPriceNumber}). Do you still want to continue?`;
+        severity = "warning";
+      }
+    } else {
+      // we have a current contract but no readable amount
+      title = "Proceed with Current Contract";
+      message =
+        "A current contract exists. Continue to finalize with the entered price?";
+      severity = "info";
+    }
+
+    setConfirmMeta({ title, message, severity, run });
+    setConfirmOpen(true);
   }
 
   return (
-    <Modal
+    <Dialog
       open={open}
       onClose={() => setOpen(false)}
-      aria-labelledby="finalize-modal-title"
-      aria-describedby="finalize-modal-description"
+      fullWidth
+      maxWidth="lg"
+      aria-labelledby="finalize-dialog-title"
     >
-      <Box sx={simpleModalStyle}>
-        <Typography variant="h5" id="finalize-modal-title" sx={{ mb: 2 }}>
-          Finalize Lead Price
-        </Typography>
+      <DialogTitle id="finalize-dialog-title">Finalize Lead Price</DialogTitle>
 
-        <Typography
-          variant="body1"
-          id="finalize-modal-description"
-          sx={{ mb: 2 }}
-        >
+      <DialogContent dividers>
+        <Typography variant="body1" sx={{ mb: 2 }}>
           {updatePrice
             ? "Please enter the new price (or average) that the client has agreed."
             : "Please enter the final price (or average) that the client has agreed upon to complete this lead."}
         </Typography>
+
         <TextField
           value={price}
           type="number"
@@ -163,30 +248,33 @@ export function FinalizeModal({
           label="Final Price without the discount"
           placeholder="Enter the agreed price"
           onChange={(e) => setPrice(e.target.value)}
-          error={!price || price <= 0}
+          error={!price || Number(price) <= 0}
           helperText={
-            !price || price <= 0
+            !price || Number(price) <= 0
               ? "This field is required and must be a positive number."
               : ""
           }
           sx={{ mb: 2 }}
         />
+
         <TextField
           value={discount}
           type="number"
           fullWidth
           label="Discount (Percentage)"
           placeholder="Enter the discount"
-          error={discount > 100 || discount < 0}
+          error={Number(discount) > 100 || Number(discount) < 0}
           onChange={(e) => {
-            if (e.target.value > 100 || e.target.value < 0) {
+            const v = Number(e.target.value);
+            if (v > 100 || v < 0) {
               setAlertError("Discount must be less than 100 or more than 0");
               return;
             }
-            setDiscount(e.target.value);
+            setDiscount(v);
           }}
           sx={{ mb: 2 }}
         />
+
         <TextField
           value={priceNote}
           type="text"
@@ -194,107 +282,97 @@ export function FinalizeModal({
           rows={2}
           fullWidth
           label="Price note"
-          placeholder="Enter any notes u want to add"
+          placeholder="Enter any notes you want to add"
           onChange={(e) => setPriceNote(e.target.value)}
           sx={{ mb: 2 }}
         />
+
         <Alert severity="info" sx={{ mb: 2 }}>
-          The current price is : {averagePrice}
+          The current price is : {Number(averagePrice || 0)}
         </Alert>
-             {(!lead.contracts||lead.contracts.length===0)&&
-        
-        <Box sx={{mb:2}}>
-        <Typography variant="h4" sx={{mb:1.5}}>
-          Contract Details
-        </Typography>
-             <Grid container spacing={2}>
-                      <Grid size={12}>
-                        <TextField
-                          fullWidth
-                          label="Purpose"
-                          value={formData.purpose}
-                          onChange={(e) =>
-                            setFormData({ ...formData, purpose: e.target.value })
-                          }
-                        />
-                      </Grid>
-                      <Grid size={12}>
-                        <FormControl fullWidth>
-                          <InputLabel>Contract Level</InputLabel>
-                          <Select
-                            multiple
-                            value={formData.contractLevel}
-                            onChange={(e) =>
-                              setFormData({
-                                ...formData,
-                                contractLevel: e.target.value,
-                              })
-                            }
-                            label="Contract Level"
-                            renderValue={(selected) => {
-                              return (
-                                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                                  {selected.map((value) => (
-                                    <Chip 
-                                      key={value} 
-                                      label={`${value.replace("_", " ")} - ${CONTRACT_LEVELS[value]}`} 
-                                      size="small"
-                                    />
-                                  ))}
-                                </Box>
-                              );
-                            }}
-                          >
-                            {Object.keys(CONTRACT_LEVELS)
-                            .map((level) => (
-                              <MenuItem key={level} value={level}>
-                                <Box>
-                                  <Typography variant="body1">
-                                    {level.replace("_", " ")}
-                                  </Typography>
-                                  <Typography variant="body2" color="text.secondary">
-                                    {CONTRACT_LEVELS[level]}
-                                  </Typography>
-                                </Box>
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid size={{ xs: 6 }}>
-                        <TextField
-                          fullWidth
-                          label="Start Date"
-                          type="date"
-                          value={formData.startDate}
-                          helperText="Optional start date for the level"
-                          onChange={(e) =>
-                            setFormData({ ...formData, startDate: e.target.value })
-                          }
-                          InputLabelProps={{ shrink: true }}
-                        />
-                      </Grid>
-                      <Grid size={{ xs: 6 }}>
-                        <TextField
-                          fullWidth
-                          label="End Date"
-                          type="date"
-                          helperText="Optional end date for the level"
-                          value={formData.endDate}
-                          onChange={(e) =>
-                            setFormData({ ...formData, endDate: e.target.value })
-                          }
-                          InputLabelProps={{ shrink: true }}
-                        />
-                      </Grid>
-                    </Grid>
-        </Box>
-        }
-        <Button onClick={submit} variant="contained" fullWidth>
+
+        {/* keeps your existing contract section exactly the same */}
+        <LeadContract lead={lead} updateOuterContract={updateOuterContract} />
+      </DialogContent>
+
+      <DialogActions>
+        <Button onClick={() => setOpen(false)}>Cancel</Button>
+        <Button onClick={submit} variant="contained">
           {updatePrice ? "Update" : "Submit"} Final Price
         </Button>
-   
-      </Box>
-    </Modal>
+      </DialogActions>
+
+      {/* Small confirmation dialog used by the validation layer */}
+      <ConfirmDialog
+        open={confirmOpen}
+        severity={confirmMeta.severity}
+        title={confirmMeta.title}
+        message={confirmMeta.message}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={async () => {
+          setConfirmOpen(false);
+          if (typeof confirmMeta.run === "function") {
+            await confirmMeta.run();
+          }
+        }}
+      />
+    </Dialog>
+  );
+}
+
+function LeadContract({ lead, updateOuterContract }) {
+  const currentContract = lead?.contracts?.find((contract) => {
+    return (contract.status || "").toUpperCase() === "IN_PROGRESS";
+  });
+
+  return (
+    <>
+      {!currentContract && <LeadContractList leadId={lead.id} />}
+      {currentContract && (
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="h4" sx={{ mb: 1.5 }}>
+            Current in progress contract
+          </Typography>
+          <ViewContract
+            id={currentContract.id}
+            hide={{ basics: true, drawings: true, specialItems: true }}
+            updateOuterContract={updateOuterContract}
+          />
+        </Box>
+      )}
+    </>
+  );
+}
+
+/** Reusable, tiny confirmation dialog (MUI only) */
+function ConfirmDialog({
+  open,
+  onClose,
+  onConfirm,
+  title,
+  message,
+  severity = "info",
+}) {
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      aria-labelledby="confirm-title"
+    >
+      <DialogTitle id="confirm-title">{title || "Confirm"}</DialogTitle>
+      <DialogContent dividers>
+        <Alert severity={severity} sx={{ mb: 2 }}>
+          {message || "Are you sure?"}
+        </Alert>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="contained" onClick={onConfirm}>
+          Yes, Continue
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }

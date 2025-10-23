@@ -35,6 +35,7 @@ export async function uploadInChunks(file, setProgress, setOverlay, isClient) {
       );
 
       const json = await res.json();
+      console.log(json, "json");
       if (json.url) {
         finalFileUrl = json.url;
       }
@@ -43,13 +44,13 @@ export async function uploadInChunks(file, setProgress, setOverlay, isClient) {
       const percent = Math.round(((i + 1) / totalChunks) * 100);
       setProgress(percent);
     }
-
+    console.log(finalFileUrl, "finalFileUrl");
     setOverlay(false);
-    await toast.update(id, Success("Uploaded successfully"));
+    toast.update(id, Success("Uploaded successfully"));
 
     return { url: finalFileUrl, status: finalFileUrl && 200 };
   } catch (e) {
     setOverlay(false);
-    await toast.update(id, Failed("Upload failed"));
+    toast.update(id, Failed("Upload failed"));
   }
 }

@@ -181,6 +181,19 @@ LEVEL_6
 LEVEL_7
 }
 
+/// إعدادات عامة للموقع (Singleton: سجل واحد فقط)
+model SiteUtility {
+/// نثبت سجل واحد فقط برقم 1
+id Int @id @default(1)
+
+/// روابط اختيارية
+pdfFrame String? // لينك إطار الـ PDF
+pdfHeader String? // لينك هيدر الـ PDF
+
+/// تتحدث تلقائيًا عند أي تعديل
+updatedAt DateTime @updatedAt
+}
+
 model Contract {
 id Int @id @default(autoincrement())
 clientLead ClientLead @relation(fields: [clientLeadId], references: [id])
@@ -195,9 +208,117 @@ isCompleted Boolean @default(false)
 isInProgress Boolean @default(false)
 createdAt DateTime @default(now())
 
+// إضافاتك الجديدة فقط:
+pdfLinkAr String? // رابط PDF عربي (لينك)
+pdfLinkEn String? // رابط PDF إنجليزي (لينك، الاسم بنتعامل معه على مستوى العرض)
+projectType String? // نوع المشروع (نصي)
+writtenAt DateTime? // تاريخ كتابة العقد
+
+// علاقات جديدة:
+stages ContractStage[]
+paymentsNew ContractPayment[] // الدفعات الجديدة
+drawings ContractDrawing[] // صور المخططات
+specialItems ContractSpecialItem[]
+projects Project[]
+
 notes Note[]
 @@unique([clientLeadId, contractLevel, purpose])
 
+}
+
+/// المرحلة الجديدة بدل enum، مع عدد أيام المرحلة + عدد أيام القسم
+model ContractStage {
+id Int @id @default(autoincrement())
+contract Contract @relation(fields: [contractId], references: [id])
+contractId Int
+
+title String // اسم المرحلة (Meeting, Plan Study, 3D, ...)
+order Int // ترتيب المرحلة داخل العقد
+deliveryDays Int // إجمالي أيام تسليم المرحلة
+deptDeliveryDays Int? // أيام تسليم الجزء/القسم المختص (اختياري)
+
+startDate DateTime?
+endDate DateTime?
+stageStatus StageStatus @default(NOT_STARTED)
+
+// ربط اختياري بمشروع واحد فقط
+project Project? @relation(fields: [projectId], references: [id])
+projectId Int?
+
+// علاقات مساعدة
+payments ContractPayment[] // دفعات قد ترتبط بهذه المرحلة (اختياري)
+
+@@unique([contractId, order]) // يمنع ترتيب مكرر لنفس العقد
+@@index([projectId])
+@@index([contractId])
+}
+
+enum StageStatus {
+NOT_STARTED
+IN_PROGRESS
+COMPLETED
+}
+enum PaymentStatusNew {
+RECEIVED // تم الاستلام
+TRANSFERRED // تم التحويل
+DUE // مستحقة
+NOT_DUE // غير مستحقة
+}
+
+model ContractPayment {
+id Int @id @default(autoincrement())
+contract Contract @relation(fields: [contractId], references: [id])
+contractId Int
+
+stage ContractStage? @relation(fields: [stageId], references: [id])
+stageId Int?
+
+amount Decimal @db.Decimal(12, 2)
+currency String @default("AED")
+dueDate DateTime?
+status PaymentStatusNew @default(NOT_DUE)
+
+reference String?
+note String?
+
+project Project? @relation(fields: [projectId], references: [id])
+projectId Int?
+paymentCondition String?
+
+createdAt DateTime @default(now())
+updatedAt DateTime @updatedAt
+
+@@index([contractId])
+@@index([stageId])
+@@index([status, dueDate])
+@@index([projectId])
+}
+
+model ContractDrawing {
+id Int @id @default(autoincrement())
+contract Contract @relation(fields: [contractId], references: [id])
+contractId Int
+
+url String
+fileName String?
+mimeType String?
+sizeBytes Int?
+uploadedAt DateTime @default(now())
+uploadedById Int?
+
+@@index([contractId])
+}
+
+/// البنود الخاصة ثنائية اللغة (العربي إلزامي/الإنجليزي اختياري)
+model ContractSpecialItem {
+id Int @id @default(autoincrement())
+contract Contract @relation(fields: [contractId], references: [id])
+contractId Int
+
+labelAr String // اسم البند بالعربي (إلزامي)
+labelEn String? // الاسم بالإنجليزي (اختياري)
+
+@@index([contractId])
 }
 
 model ClientLeadUpdate {
@@ -286,7 +407,8 @@ model ClientLead {
 id Int @id @default(autoincrement())
 client Client @relation(fields: [clientId], references: [id])
 clientId Int
-assignedTo User? @relation(fields: [userId], references: [id])
+code String? @unique  
+ assignedTo User? @relation(fields: [userId], references: [id])
 userId Int?
 status ClientLeadStatus @default(NEW)
 telegramChannel TelegramChannel?
@@ -296,6 +418,7 @@ selectedCategory LeadCategory
 type LeadType @default(CONSTRUCTION_VILLA)
 description String?
 clientDescription String? @db.Text
+stripieMetadata Json?
 emirate Emirate?
 leadType LeadConversionType @default(NORMAL)
 previousLeadId Int?
@@ -394,6 +517,7 @@ model DeliverySchedule {
 id Int @id @default(autoincrement())
 project Project @relation(fields: [projectId], references: [id])
 projectId Int
+name String? @db.VarChar(255)
 
 deliveryAt DateTime  
  notes Note[]
@@ -440,6 +564,11 @@ clientLeadId Int
 clientLead ClientLead @relation(fields: [clientLeadId], references: [id])
 
 isModification Boolean @default(false)
+contract Contract? @relation(fields: [contractId], references: [id])
+contractId Int?
+
+contractStages ContractStage[]
+payments ContractPayment[]
 
 deliveryTime DateTime? // time to deliver the project (optional)
 deliverySchedules DeliverySchedule[]

@@ -69,6 +69,7 @@ import ContractManagement from "./extra/ContractManagement";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
+import LeadContractList from "../contracts/ContractsList";
 export function CallReminders({ lead, setleads, admin, notUser }) {
   const [callReminders, setCallReminders] = useState(lead?.callReminders);
   const theme = useTheme();
@@ -968,8 +969,8 @@ export function PriceOffersList({ admin, lead, notUser }) {
   return (
     <Card sx={cardStyles}>
       <CardContent>
-        <ContractManagement leadId={lead.id} />
-
+        {/* <ContractManagement leadId={lead.id} /> */}
+        <LeadContractList leadId={lead.id} />
         <Box
           display="flex"
           alignItems="center"
