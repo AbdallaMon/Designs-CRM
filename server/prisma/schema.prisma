@@ -262,6 +262,7 @@ model ContractStage {
 
   // علاقات مساعدة
   payments ContractPayment[]
+  deliverySchedule DeliverySchedule?
 
   @@unique([contractId, order]) // يمنع ترتيب مكرر لنفس العقد
   @@index([projectId])
@@ -532,8 +533,9 @@ model MeetingReminder {
 
 model DeliverySchedule {
   id        Int     @id @default(autoincrement())
-  project   Project @relation(fields: [projectId], references: [id])
-  projectId Int
+  project    Project?  @relation(fields: [projectId], references: [id])
+  projectId  Int?
+
   name      String? @db.VarChar(255)
 
   deliveryAt DateTime
@@ -545,6 +547,9 @@ model DeliverySchedule {
   createdById       Int?
 
   createdAt DateTime @default(now())
+
+  stage      ContractStage? @relation(fields: [stageId], references: [id])
+  stageId    Int?           @unique
 
   @@index([projectId])
   @@index([meetingReminderId])

@@ -30,6 +30,10 @@ import Stripe from "stripe";
 import { telegramChannelQueue } from "../queues/telegramChannelQueue.js";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
+import {
+  checkIfProjectHasPaymentAndUpdate,
+  checkIfProjectHasStagesAndUpdateNextAndPrevious,
+} from "./contract/contractServices.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -3726,6 +3730,14 @@ export async function updateProject({ data, isAdmin }) {
   } else if (isAdmin) {
     await updateProjectNotification(project.id, null, content + extra, isAdmin);
   }
+  await checkIfProjectHasStagesAndUpdateNextAndPrevious({
+    projectId: project.id,
+    status: project.status,
+  });
+  await checkIfProjectHasPaymentAndUpdate({
+    projectId: project.id,
+    status: project.status,
+  });
   return updatedProject;
 }
 

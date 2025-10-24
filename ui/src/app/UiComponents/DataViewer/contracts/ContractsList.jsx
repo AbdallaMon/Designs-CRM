@@ -38,7 +38,6 @@ import LoadingOverlay from "../../feedback/loaders/LoadingOverlay";
 import ViewContract from "./ViewContract";
 import { IoMdEye } from "react-icons/io";
 import CloneContract from "./CloneContract";
-import DeleteModal from "../../models/DeleteModal";
 import DeleteModelButton from "../leads/extra/DeleteModelButton";
 import { FaCopy } from "react-icons/fa";
 
@@ -406,6 +405,19 @@ function ContractStage({ stage, index }) {
                   }}
                 >
                   {conf.name}
+                </Typography>
+                <Typography
+                  color={conf.pallete}
+                  variant="subtitle2"
+                  component="div"
+                  sx={{
+                    fontWeight: 600,
+                    mt: 1,
+                    letterSpacing: "0.3px",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {stage.title}
                 </Typography>
               </Box>
             </Box>

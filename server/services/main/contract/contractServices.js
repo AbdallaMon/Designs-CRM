@@ -8,7 +8,9 @@ export async function getLeadContractList({ leadId }) {
   const contracts = await prisma.contract.findMany({
     where,
     include: {
-      stages: true,
+      stages: {
+        orderBy: { order: "asc" },
+      },
     },
   });
 
@@ -436,6 +438,27 @@ export async function updateContractStage({ stageId, newStage }) {
     }
     if (newStage.deptDeliveryDays) {
       data.deptDeliveryDays = newStage.deptDeliveryDays;
+
+      const currentStage = await prisma.contractStage.findUnique({
+        where: {
+          id: Number(stageId),
+        },
+        include: {
+          deliverySchedule: true,
+        },
+      });
+      if (currentStage?.deliverySchedule) {
+        const days = Number(newStage?.deptDeliveryDays);
+
+        const base = new Date(currentStage.createdAt);
+        const newDeliveryAt = new Date(base);
+        newDeliveryAt.setDate(newDeliveryAt.getDate() + days);
+
+        await prisma.deliverySchedule.update({
+          where: { id: currentStage.deliverySchedule.id },
+          data: { deliveryAt: newDeliveryAt },
+        });
+      }
     }
 
     return await prisma.contractStage.update({
@@ -478,6 +501,8 @@ export async function updateContractPaymentStatus({ status, paymentId }) {
       },
       select: {
         status: true,
+        paymentCondition: true,
+        contractId: true,
       },
     });
     if (payment.status === "NOT_DUE") {
@@ -485,7 +510,7 @@ export async function updateContractPaymentStatus({ status, paymentId }) {
         "Paymnet is not due yet, u can change status when the payment is due"
       );
     }
-    return await prisma.contractPayment.update({
+    await prisma.contractPayment.update({
       where: {
         id: Number(paymentId),
       },
@@ -493,8 +518,50 @@ export async function updateContractPaymentStatus({ status, paymentId }) {
         status,
       },
     });
+    if (payment.paymentCondition === "SIGNATURE") {
+      await updateSecondStageAfterFirstPayment({
+        contractId: payment.contractId,
+      });
+    }
+    await updateContractStatusToCompletedIfNoOtherPaymentsOrStages({
+      contractId: payment.contractId,
+    });
   } catch (e) {
     throw new Error(e.message);
+  }
+}
+async function checkIfNoOtherPaymentAndNoOtherStages({ contractId }) {
+  const stagesCount = await prisma.contractStage.count({
+    where: {
+      contractId: contractId,
+      stageStatus: {
+        in: ["IN_PROGRESS", "NOT_STARTED"],
+      },
+    },
+  });
+  const paymentsCount = await prisma.contractPayment.count({
+    where: {
+      contractId: contractId,
+      status: {
+        in: ["DUE", "NOT_DUE"],
+      },
+    },
+  });
+  return stagesCount === 0 && paymentsCount === 0;
+}
+async function updateContractStatusToCompletedIfNoOtherPaymentsOrStages({
+  contractId,
+}) {
+  const noOther = await checkIfNoOtherPaymentAndNoOtherStages({ contractId });
+  if (noOther) {
+    await prisma.contract.update({
+      where: {
+        id: Number(contractId),
+      },
+      data: {
+        status: "COMPLETED",
+      },
+    });
   }
 }
 
@@ -712,6 +779,176 @@ export async function deleteContractSpecialItem({ specialItemId }) {
   return await prisma.contractSpecialItem.delete({
     where: {
       id: Number(specialItemId),
+    },
+  });
+}
+
+export const STAGE_PREV_LEVELS_MAP = {
+  LEVEL1: null,
+  LEVEL2: ["LEVEL_1"],
+  LEVEL3: ["LEVEL_2", "LEVEL_1"],
+  LEVEL4: ["LEVEL_3", "LEVEL_2", "LEVEL_1"],
+  LEVEL5: ["LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
+  LEVEL6: ["LEVEL_5", "LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
+  LEVEL7: ["LEVEL_6", "LEVEL_5", "LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
+};
+
+export async function checkIfProjectHasStagesAndUpdateNextAndPrevious({
+  projectId,
+  status,
+}) {
+  if (status.toUpperCase() !== "COMPLETED") {
+    return;
+  }
+  const nextContractStage = await prisma.contractStage.findFirst({
+    where: {
+      projectId: Number(projectId),
+      stageStatus: "NOT_STARTED",
+      contract: {
+        status: "IN_PROGRESS",
+      },
+    },
+  });
+  if (nextContractStage) {
+    await prisma.contractStage.updateMany({
+      where: {
+        projectId: Number(projectId),
+        stageStatus: "NOT_STARTED",
+        contract: {
+          status: "IN_PROGRESS",
+        },
+      },
+      data: {
+        stageStatus: "IN_PROGRESS",
+      },
+    });
+
+    let prevStageLevels = STAGE_PREV_LEVELS_MAP[nextContractStage.title];
+    let lastStage = await prisma.contractStage.findFirst({
+      where: {
+        contractId: Number(nextContractStage.contractId),
+        title: { in: prevStageLevels },
+        stageStatus: "IN_PROGRESS",
+      },
+    });
+    if (prevStageLevels && prevStageLevels.length > 0) {
+      await prisma.contractStage.updateMany({
+        where: {
+          contractId: Number(nextContractStage.contractId),
+          title: { in: prevStageLevels },
+          stageStatus: "IN_PROGRESS",
+        },
+        data: {
+          stageStatus: "COMPLETED",
+        },
+      });
+    }
+    if (lastStage) {
+      await updateContractStatusToCompletedIfNoOtherPaymentsOrStages({
+        contractId: lastStage.contractId,
+      });
+    }
+
+    await createADeliveryScheduleAndRelateItToStage({
+      stageId: nextContractStage.id,
+      ...nextContractStage,
+    });
+  }
+  return true;
+}
+export async function updateSecondStageAfterFirstPayment({ contractId }) {
+  const oldStageWhere = {
+    contractId: Number(contractId),
+    stageStatus: "IN_PROGRESS",
+    title: "LEVEL_1",
+    contract: {
+      status: "IN_PROGRESS",
+    },
+  };
+
+  const where = {
+    contractId: Number(contractId),
+    stageStatus: "NOT_STARTED",
+    title: "LEVEL_2",
+    contract: {
+      status: "IN_PROGRESS",
+    },
+  };
+
+  await prisma.contractStage.updateMany({
+    where: oldStageWhere,
+    data: {
+      stageStatus: "COMPLETED",
+    },
+  });
+  const levelTwoStage = await prisma.contractStage.findFirst({
+    where,
+  });
+  await prisma.contractStage.updateMany({
+    where,
+    data: {
+      stageStatus: "IN_PROGRESS",
+    },
+  });
+
+  await createADeliveryScheduleAndRelateItToStage({
+    stageId: levelTwoStage.id,
+    ...levelTwoStage,
+  });
+  return true;
+}
+
+export async function checkIfProjectHasPaymentAndUpdate({ projectId, status }) {
+  const where = {
+    projectId: Number(projectId),
+    status: "NOT_DUE",
+    paymentCondition: status,
+  };
+  return await updateContractPaymentStatusToDue({ where });
+}
+
+export async function updateContractPaymentStatusToDue({ where }) {
+  return await prisma.contractPayment.updateMany({
+    where,
+    data: {
+      status: "DUE",
+    },
+  });
+}
+
+export async function updateContractPaymentOnContractSign({ contractId }) {
+  const where = {
+    contractId: Number(contractId),
+    status: "NOT_DUE",
+    paymentCondition: "SIGNATURE",
+  };
+  return await updateContractPaymentStatusToDue({ where });
+}
+
+export async function createADeliveryScheduleAndRelateItToStage({
+  stageId,
+  deptDeliveryDays,
+  projectId,
+}) {
+  const days = Number(deptDeliveryDays ?? 0); // guard null/undefined
+  const now = new Date();
+  const deliveryAt = new Date(now); // clone
+  deliveryAt.setDate(deliveryAt.getDate() + days);
+
+  const data = {
+    deliveryAt,
+    stage: {
+      connect: {
+        id: stageId,
+      },
+    },
+  };
+  if (projectId) {
+    data.projectId = projectId;
+  }
+  return await prisma.deliverySchedule.create({
+    data: {
+      ...data,
     },
   });
 }

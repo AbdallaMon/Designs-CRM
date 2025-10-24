@@ -828,7 +828,6 @@ export const contractLevel = {
     name: "تحليل وتقييم",
     shade: "main",
     pallete: "primary",
-
     icon: FaChartLine,
   },
   LEVEL_2: {

@@ -159,3 +159,14 @@ ADD COLUMN `enToken` VARCHAR(64) NULL;
 ALTER TABLE `contract`
 ADD INDEX idx_contract_clientLeadId_contractLevel (`clientLeadId`,`contractLevel`),
 DROP INDEX `unique_contract_combo`;
+
+ALTER TABLE `DeliverySchedule`
+MODIFY `projectId` INT NULL;
+
+ALTER TABLE `DeliverySchedule`
+ADD COLUMN `stageId` INT NULL,
+ADD UNIQUE KEY `DeliverySchedule_stageId_key` (`stageId`),
+ADD CONSTRAINT `DeliverySchedule_stageId_fkey`
+FOREIGN KEY (`stageId`) REFERENCES `ContractStage`(`id`)
+ON UPDATE CASCADE
+ON DELETE SET NULL;
