@@ -40,27 +40,6 @@ const AnimatedComponent = ({
   }, []);
 
   return <>{children}</>;
-  switch (animationType) {
-    case "slide":
-      return (
-        <Slide direction={direction} in={mounted} timeout={timeout}>
-          <Box>{children}</Box>
-        </Slide>
-      );
-    case "zoom":
-      return (
-        <Zoom in={mounted} timeout={timeout}>
-          <Box>{children}</Box>
-        </Zoom>
-      );
-    case "fade":
-    default:
-      return (
-        <Fade in={mounted} timeout={timeout}>
-          <Box>{children}</Box>
-        </Fade>
-      );
-  }
 };
 
 export default function ClientImageSelection({ token }) {

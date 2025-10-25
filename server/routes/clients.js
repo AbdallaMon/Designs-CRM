@@ -26,6 +26,8 @@ import {
 } from "../services/main/sharedServices.js";
 import calendarRoutes from "./calendar/client-calendar.js";
 import imageSessionRouter from "./image-session/client-image-session.js";
+import contractImageRouter from "./contract/client-contract.js";
+
 import { getLeadsWithOutChannel } from "../services/telegram/telegram-functions.js";
 const finalDir = "/home/panel.dreamstudiio.com/public_html/uploads";
 
@@ -67,6 +69,7 @@ const consultationLeadPrices = {
 router.use("/calendar", calendarRoutes);
 
 router.use("/image-session", imageSessionRouter);
+router.use("/contracts", contractImageRouter);
 
 router.post("/new-lead", async (req, res) => {
   const body = req.body;

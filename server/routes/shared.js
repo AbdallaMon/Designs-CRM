@@ -57,6 +57,7 @@ import {
   getRecentActivities,
   getSalesStages,
   getSharedSettings,
+  getSiteUtilities,
   getTaskDetails,
   getTasksWithNotesIncluded,
   getUniqueProjectGroups,
@@ -78,6 +79,7 @@ import {
   unAuthorizeDepartmentToUpdate,
   updateClientLeadStatus,
   updateProject,
+  updateSiteUtilities,
   updateTask,
 } from "../services/main/sharedServices.js";
 import {
@@ -1764,5 +1766,27 @@ router.post(
     }
   }
 );
-
+// site utilities
+router.get("/site-utilities", async (req, res) => {
+  try {
+    const data = await getSiteUtilities();
+    res.status(200).json({ data: data });
+  } catch (error) {
+    console.error("Error fetching site utilities:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching site utilities" });
+  }
+});
+router.post("/site-utilities", async (req, res) => {
+  try {
+    const data = await updateSiteUtilities({ data: req.body });
+    res
+      .status(200)
+      .json({ data: data, message: "Site utilities updated successfully" });
+  } catch (error) {
+    console.error("Error creating site utilities:", error.message);
+    res.status(500).json({ message: error.message });
+  }
+});
 export default router;

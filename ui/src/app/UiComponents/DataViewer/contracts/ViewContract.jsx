@@ -325,8 +325,17 @@ function ContractBasics({ id, contract, onReload }) {
   };
 
   // Build session URL exactly as requested (don't change it)
-  const buildSessionUrl = (token) =>
-    token ? `/contracts?token=${encodeURIComponent(token)}` : "";
+  const buildSessionUrl = (token) => {
+    if (!token) return "";
+
+    if (typeof window === "undefined") return ""; // prevent server-side errors
+
+    const { origin, pathname } = window.location;
+    // Example: http://dreamstudio.com/page → origin=http://dreamstudio.com, pathname=/page
+
+    // Construct full URL preserving current path before /contracts
+    return `${origin}/contracts?token=${encodeURIComponent(token)}`;
+  };
 
   const copyToClipboard = async (text) => {
     try {
@@ -1270,7 +1279,6 @@ function PaymentsSection({ contract, onReload }) {
 function AddSpecialItemDialog({ open, onClose, onCreate }) {
   const [labelAr, setLabelAr] = useState("");
   const [labelEn, setLabelEn] = useState("");
-
   useEffect(() => {
     if (open) {
       setLabelAr("");
@@ -1463,6 +1471,7 @@ function SpecialItemRow({ item, contractId, onReload }) {
 
 function SpecialItemsSection({ contract, onReload }) {
   const [open, setOpen] = useState(false);
+  const { setLoading } = useToastContext();
 
   const createItem = async (data) => {
     const req = await handleRequestSubmit(

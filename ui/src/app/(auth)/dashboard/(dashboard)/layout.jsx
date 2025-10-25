@@ -134,101 +134,14 @@ export const adminLinks = [
     href: "/dashboard/calendar",
     icon: <FiCalendar size={20} />,
   },
+  {
+    name: "Website utilities",
+    href: "/dashboard/website-utilities",
+    icon: <FiCalendar size={20} />,
+  },
 ];
 
-export const superAdminLinks = [
-  { name: "Dashboard", href: "/dashboard", icon: <FiGrid size={20} /> },
-  { name: "Leads", href: "/dashboard/leads", icon: <FiTarget size={20} /> },
-  {
-    name: "Deals",
-    href: "/dashboard/deals",
-    active: "deals",
-    icon: <FiDollarSign size={20} />,
-    subLinks: [
-      {
-        name: "Current Deals",
-        href: "/dashboard/deals",
-        active: "deals",
-        icon: <FiDollarSign size={20} />,
-      },
-      {
-        name: "On hold Deals",
-        href: "/dashboard/on-hold-deals",
-        icon: <FiClock size={18} />,
-        active: "on-hold",
-      },
-      {
-        name: "All Deals",
-        href: "/dashboard/all-deals",
-        icon: <FiList size={18} />,
-        active: "all-deals",
-      },
-    ],
-  },
-  {
-    name: "Work stages",
-    href: "/dashboard/work-stages",
-    active: "work",
-    icon: <FiDollarSign size={20} />,
-    subLinks: [
-      {
-        name: "All projects",
-        href: "/dashboard/projects",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "Archived projects",
-        href: "/dashboard/projects/archived",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "3D Work stage",
-        href: "/dashboard/work-stages",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "3D Modifcation",
-        href: "/dashboard/work-stages/modification",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "Plan study department",
-        href: "/dashboard/work-stages/study",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "Quantity calcualtion department",
-        href: "/dashboard/work-stages/quantity",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "Final plan department",
-        href: "/dashboard/work-stages/final-plan",
-        icon: <FiBriefcase size={20} />,
-      },
-    ],
-  },
-  // {
-  //   name: "Work stages",
-  //   href: "/dashboard/work-stages",
-  //   active: "work-stages",
-  //   icon: <FiDollarSign size={20} />,
-  //   subLinks: [
-  //     {
-  //       name: "Three D work stages",
-  //       href: "/dashboard/work-stages/three-d",
-  //       active: "three-d",
-  //       icon: <FiDollarSign size={20} />,
-  //     },
-  //     {
-  //       name: "Two D work stages",
-  //       href: "/dashboard/work-stages/two-d",
-  //       icon: <FiClock size={18} />,
-  //       active: "two-d",
-  //     },
-  //   ],
-  // },
-];
+export const superAdminLinks = adminLinks;
 // Regular user navigation links
 export const staffLinks = [
   { name: "Dashboard", href: "/dashboard", icon: <FiGrid size={20} /> },

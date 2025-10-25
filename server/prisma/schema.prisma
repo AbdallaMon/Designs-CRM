@@ -185,14 +185,13 @@ enum ContractLevel {
 
 /// إعدادات عامة للموقع (Singleton: سجل واحد فقط)
 model SiteUtility {
-  /// نثبت سجل واحد فقط برقم 1
   id Int @id @default(1)
 
-  /// روابط اختيارية
-  pdfFrame  String? // لينك إطار الـ PDF
-  pdfHeader String? // لينك هيدر الـ PDF
 
-  /// تتحدث تلقائيًا عند أي تعديل
+  pdfFrame  String? 
+  pdfHeader String? 
+  introPage  String?     
+  pageTitle String?   
   updatedAt DateTime @updatedAt
 }
 
@@ -202,10 +201,16 @@ enum ContractStatus {
   CANCELLED
 }
 
+enum ContractSessionStatus {
+  INITIAL       
+  SIGNING       
+  REGISTERED     
+}
 model Contract {
   id           Int        @id @default(autoincrement())
   clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
   clientLeadId Int
+  sessionStatus ContractSessionStatus @default(INITIAL)
 
   contractLevel ContractLevel
   purpose       String

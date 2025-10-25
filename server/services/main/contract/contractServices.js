@@ -253,6 +253,7 @@ async function createSpecialItems({ specialItems, contractId }) {
   }
 }
 async function createSpecialItem({ item, contractId }) {
+  contractId = Number(contractId);
   return await prisma.contractSpecialItem.create({
     data: {
       contractId,
@@ -266,6 +267,8 @@ async function createDrawings({ drawings, contractId }) {
   }
 }
 async function createDrawing({ contractId, drawing }) {
+  contractId == Number(contractId);
+
   return await prisma.contractDrawing.create({
     data: {
       contractId: Number(contractId),
