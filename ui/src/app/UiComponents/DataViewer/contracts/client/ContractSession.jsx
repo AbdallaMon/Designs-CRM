@@ -122,7 +122,7 @@ function buildPaymentLine({ payment, index, lng }) {
   }
 
   return lng === "ar"
-    ? `• ${ordinal} الانتهاء من $${
+    ? `• ${ordinal} الانتهاء من ${
         primary || ""
       }${beforeStageText} بقيمة : ${amt}`
     : `• ${ordinal} upon completion of ${
@@ -252,7 +252,7 @@ function ClientSection({ session, lng }) {
   return (
     <SectionCard title={FIXED_TEXT.titles.partyOne[lng]}>
       <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
+        <Grid size={{ md: 6 }}>
           <KeyValue
             label={lng === "ar" ? "اسم المالك" : "Owner name"}
             value={client?.name}
@@ -260,7 +260,7 @@ function ClientSection({ session, lng }) {
           />
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid size={{ md: 6 }}>
           <KeyValue
             label={lng === "ar" ? "العنوان" : "Address"}
             value={emirateOrCountryLabel(
@@ -271,39 +271,39 @@ function ClientSection({ session, lng }) {
           />
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid size={{ md: 6 }}>
           <KeyValue
             label={lng === "ar" ? "رقم الهاتف" : "Phone"}
             value={client?.phone}
           />
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid size={{ md: 6 }}>
           <KeyValue
             label={lng === "ar" ? "البريد الإلكتروني" : "Email"}
             value={client?.email}
           />
         </Grid>
-
-        <Grid item xs={12} md={6}>
+        <Grid size={{ md: 6 }}>
           <KeyValue
-            label={lng === "ar" ? "نوع المشروع" : "Project type/title"}
-            value={session?.title || session?.contract?.title}
+            label={lng === "ar" ? "نوع المشروع" : "Project Type"}
+            value={
+              lng === "ar" ? session?.title : session?.titleEn || session?.title
+            }
           />
         </Grid>
-
-        <Grid item xs={12} md={6}>
+        <Grid size={{ md: 6 }}>
           <KeyValue
             label={lng === "ar" ? "كود المشروع" : "Project Code"}
             value={lead?.code || lead?.id}
           />
         </Grid>
 
-        <Grid item xs={12}>
+        {/* <Grid item xs={12}>
           <Divider sx={{ my: 1 }} />
-        </Grid>
+        </Grid> */}
 
-        <Grid item xs={12}>
+        <Grid size={{ md: 6 }}>
           <Stack
             direction="row"
             spacing={1}
@@ -317,7 +317,7 @@ function ClientSection({ session, lng }) {
           </Stack>
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid size={{ md: 6 }}>
           <Chip
             icon={<FaInfoCircle />}
             label={FIXED_TEXT.todayWritten[lng](today)}
@@ -439,7 +439,7 @@ function StagesTable({ session, lng }) {
   const theme = useTheme();
   const isSmall = useMediaQuery((theme) => theme.breakpoints.down("sm"));
 
-  const baseStages = CONTRACT_LEVELSENUM.map((s, i) => ({
+  const baseStages = CONTRACT_LEVELSENUM.slice(0, 6).map((s, i) => ({
     key: s.enum,
     order: i + 1,
     label: lng === "ar" ? s.labelAr : s.labelEn,
@@ -563,102 +563,165 @@ function StagesTable({ session, lng }) {
     );
   }
 
-  // Desktop: table (kept similar to original)
+  const dir = lng === "ar" ? "rtl" : "ltr";
+
+  // Distribute stages across two rows to limit width.
+  // For 7 -> [3,4], otherwise split roughly half/half.
+  const distributeStages = (stages) => {
+    const n = stages.length;
+    if (n === 7) return [stages.slice(0, 3), stages.slice(3)];
+    const mid = Math.ceil(n / 2);
+    return [stages.slice(0, mid), stages.slice(mid)];
+  };
+
+  const [rowA, rowB] = distributeStages(baseStages);
+
+  const StageColumn = ({ s }) => {
+    const included = stagesMap.has(s.order);
+    const data = stagesMap.get(s.order) || {};
+    const status = data?.stageStatus || "NOT_STARTED";
+    const deliveryDays = data?.deliveryDays;
+    const details = STAGE_PROGRESS[s.order]?.[lng] || [];
+
+    return (
+      <Box
+        sx={{
+          border: 1,
+          borderColor: "divider",
+          borderRadius: 1,
+          p: 1.25,
+          display: "flex",
+          flexDirection: "column",
+          gap: 1,
+          backgroundColor: alpha(theme.palette.background.paper, 0.98),
+          minHeight: 280, // taller to fit the three parts nicely
+        }}
+      >
+        {/* Part 1: included/not + status + stage name */}
+        <Stack spacing={1}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            spacing={1}
+          >
+            <Chip
+              size="small"
+              color={included ? "success" : "default"}
+              icon={included ? <FaCheckCircle /> : <FaMinusCircle />}
+              label={
+                included
+                  ? lng === "ar"
+                    ? "يــــشمـــــل الــعـقـــــد"
+                    : "Included"
+                  : lng === "ar"
+                  ? "لا يــــشمـــــل"
+                  : "Not included"
+              }
+            />
+            <Chip
+              size="small"
+              color={
+                status === "COMPLETED"
+                  ? "success"
+                  : status === "IN_PROGRESS"
+                  ? "warning"
+                  : "default"
+              }
+              icon={status === "COMPLETED" ? <FaCheck /> : undefined}
+              label={STAGE_STATUS_LABEL[lng][status] || status}
+            />
+          </Stack>
+
+          <Typography
+            variant="body2"
+            sx={{ fontWeight: 700, textAlign: "center" }}
+          >
+            {s.order}. {s.label || defaultStageLabels[s.order][lng]}
+          </Typography>
+        </Stack>
+
+        {/* Part 2: delivery days (short form) */}
+        <Box
+          sx={{
+            border: 1,
+            borderColor: "divider",
+            borderRadius: 1,
+            p: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            {included && deliveryDays != null
+              ? lng === "ar"
+                ? `${deliveryDays} يوم`
+                : `${deliveryDays} days`
+              : "—"}
+          </Typography>
+        </Box>
+
+        {/* Part 3: details (taller) */}
+        <Box
+          sx={{
+            border: 1,
+            borderColor: "divider",
+            borderRadius: 1,
+            p: 1,
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <Stack spacing={0.5}>
+            {details.length ? (
+              details.map((t, i) => (
+                <Typography key={i} variant="body2">
+                  • {t}
+                </Typography>
+              ))
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                {lng === "ar" ? "لا تفاصيل" : "No details"}
+              </Typography>
+            )}
+            {data?.notes ? (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ mt: 0.5 }}
+              >
+                {data.notes}
+              </Typography>
+            ) : null}
+          </Stack>
+        </Box>
+      </Box>
+    );
+  };
+
+  const RowGrid = ({ items }) => (
+    <Box
+      sx={{
+        display: "grid",
+        gridTemplateColumns: `repeat(${items.length || 1}, minmax(220px, 1fr))`,
+        gap: 1.5,
+        mb: 1.5,
+      }}
+    >
+      {items.map((s) => (
+        <StageColumn key={s.key} s={s} />
+      ))}
+    </Box>
+  );
+
   return (
     <SectionCard title={FIXED_TEXT.titles.allStagesMatrix[lng]}>
-      <TableContainer>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              {head.map((h, i) => (
-                <TableCell key={i} sx={{ fontWeight: 700 }}>
-                  {h}
-                </TableCell>
-              ))}
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {baseStages.map((s) => {
-              const included = stagesMap.has(s.order);
-              const data = stagesMap.get(s.order) || {};
-              const status = data?.stageStatus || "NOT_STARTED";
-              const deliveryDays = data?.deliveryDays;
-
-              return (
-                <TableRow hover key={s.key}>
-                  <TableCell width={40}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {s.order}
-                    </Typography>
-                  </TableCell>
-
-                  <TableCell sx={{ maxWidth: 240, whiteSpace: "normal" }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {s.label || defaultStageLabels[s.order][lng]}
-                    </Typography>
-                  </TableCell>
-
-                  <TableCell>
-                    <Chip
-                      size="small"
-                      color={
-                        status === "COMPLETED"
-                          ? "success"
-                          : status === "IN_PROGRESS"
-                          ? "warning"
-                          : "default"
-                      }
-                      icon={status === "COMPLETED" ? <FaCheck /> : undefined}
-                      label={STAGE_STATUS_LABEL[lng][status] || status}
-                    />
-                  </TableCell>
-
-                  <TableCell>
-                    <Chip
-                      size="small"
-                      color={included ? "success" : "default"}
-                      icon={included ? <FaCheckCircle /> : <FaMinusCircle />}
-                      label={
-                        included
-                          ? lng === "ar"
-                            ? "يــــشمـــــل الــعـقـــــد"
-                            : "Included"
-                          : lng === "ar"
-                          ? "لا يــــشمـــــل الــعـقـــــد"
-                          : "Not included"
-                      }
-                    />
-                  </TableCell>
-
-                  <TableCell>
-                    {included && deliveryDays != null ? (
-                      <Typography variant="body2">
-                        {lng === "ar"
-                          ? `عدد ايام التسليم: ${deliveryDays} يوم`
-                          : `Delivery days: ${deliveryDays}`}
-                      </Typography>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        —
-                      </Typography>
-                    )}
-                  </TableCell>
-
-                  <TableCell sx={{ maxWidth: 400 }}>
-                    <Stack spacing={0.5}>
-                      {(STAGE_PROGRESS[s.order]?.[lng] || []).map((t, i) => (
-                        <Typography key={i} variant="body2">
-                          • {t}
-                        </Typography>
-                      ))}
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Box dir={dir} sx={{ px: 1, py: 1.5 }}>
+        {!!rowA.length && <RowGrid items={rowA} />}
+        {!!rowB.length && <RowGrid items={rowB} />}
+      </Box>
     </SectionCard>
   );
 }
@@ -749,35 +812,34 @@ function SpecialClauses({ items = [], lng }) {
 function DrawingsSection({ session, lng }) {
   const drawings = session?.drawings || [];
   const has = drawings.length > 0;
+  const defaultDrawingUrl = window.location.origin + "/default-drawing.jpg";
+  if (!has) {
+    drawings.push({
+      fileName: lng === "ar" ? "مخطط افتراضي" : "Default Drawing",
+      url: defaultDrawingUrl,
+    });
+  }
   return (
     <SectionCard title={FIXED_TEXT.titles.drawings[lng]} dense>
-      {has ? (
-        <Grid container spacing={2}>
-          {drawings.map((d) => (
-            <Grid item key={d.id} xs={12} sm={6} md={4}>
-              <Card variant="outlined">
-                <CardHeader
-                  title={d.fileName || (lng === "ar" ? "مخطط" : "Drawing")}
+      <Grid container spacing={2}>
+        {drawings.map((d) => (
+          <Grid size={{ md: 4 }}>
+            <Card variant="outlined">
+              <CardHeader
+                title={d.fileName || (lng === "ar" ? "مخطط" : "Drawing")}
+              />
+              <CardContent>
+                <Box
+                  component="img"
+                  src={d.url}
+                  alt={d.fileName || "drawing"}
+                  sx={{ width: "100%", borderRadius: 1 }}
                 />
-                <CardContent>
-                  <Box
-                    component="img"
-                    src={d.url}
-                    alt={d.fileName || "drawing"}
-                    sx={{ width: "100%", borderRadius: 1 }}
-                  />
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      ) : (
-        <Typography variant="body2" color="text.secondary">
-          {lng === "ar"
-            ? "لا توجد مخططات مضافة — سيتم استخدام المخطط الافتراضي."
-            : "No drawings provided — the fallback will be used."}
-        </Typography>
-      )}
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
     </SectionCard>
   );
 }

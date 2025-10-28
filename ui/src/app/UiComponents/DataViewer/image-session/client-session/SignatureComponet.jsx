@@ -20,6 +20,7 @@ const SignatureComponent = ({
   onSignatureSaved,
   disabled,
   handleBack,
+  reqUrl = `client/image-session/generate-pdf`,
 }) => {
   const { lng } = useLanguageSwitcherContext();
   const sigCanvas = useRef({});
@@ -62,7 +63,6 @@ const SignatureComponent = ({
         setOverlay
       );
 
-      console.log(uploadResponse, "upd");
       const url = uploadResponse.url;
 
       const request = await handleRequestSubmit(
@@ -73,7 +73,7 @@ const SignatureComponent = ({
           lng,
         },
         setToastLoading,
-        `client/image-session/generate-pdf`,
+        reqUrl,
         false,
         "Approving"
       );

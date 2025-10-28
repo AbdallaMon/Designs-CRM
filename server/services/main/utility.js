@@ -574,6 +574,20 @@ export async function uploadAsHttp(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
+function buildPublicUrl(remoteFilename, server = process.env.SERVER) {
+  if (!remoteFilename) return "";
+
+  // Grab everything starting from "/uploads"
+  const i = remoteFilename.indexOf("/uploads");
+  const uploadsPath = i >= 0 ? remoteFilename.slice(i) : remoteFilename;
+
+  // Safe join: avoid double slashes
+  const base = (server || "").replace(/\/+$/, "");
+  const path = uploadsPath.startsWith("/") ? uploadsPath : `/${uploadsPath}`;
+
+  return `${base}${path}`;
+}
+
 export async function uploadToFTPHttpAsBuffer(
   source,
   remoteFilename,
@@ -603,8 +617,9 @@ export async function uploadToFTPHttpAsBuffer(
       maxBodyLength: Infinity,
       timeout: 10 * 60 * 1000,
     });
+    const url = buildPublicUrl(remoteFilename);
 
-    console.log(`✅ Uploaded via HTTP: ${remoteFilename}`);
+    console.log(`✅ Uploaded via HTTP: ${url}`);
   } catch (err) {
     console.error(`❌ Failed to upload ${remoteFilename}:`, err.message);
     throw err;

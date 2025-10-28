@@ -173,6 +173,11 @@ ON DELETE SET NULL;
 
 ALTER TABLE `SiteUtility` ADD COLUMN `introPage` VARCHAR(191) NULL;
 ALTER TABLE `SiteUtility` ADD COLUMN `pageTitle` VARCHAR(191) NULL;
+ALTER TABLE `SiteUtility` ADD COLUMN `pdfSignaturePart` VARCHAR(191) NULL;
 
 ALTER TABLE `Contract`
 ADD COLUMN `sessionStatus` ENUM('INITIAL', 'SIGNING', 'REGISTERED') NOT NULL DEFAULT 'INITIAL';
+
+ALTER TABLE `Contract`
+ADD COLUMN `signatureUrl` TEXT NULL AFTER `pdfLinkEn`,
+ADD COLUMN `handWrittenSignatureUrl` TEXT NULL AFTER `signatureUrl`;

@@ -15,6 +15,13 @@ const __filename = fileURLToPath(import.meta.url);
 import "dayjs/locale/ar.js";
 import "dayjs/locale/en.js";
 import { notifyUsersThatAClientHasSubmittedAPdf } from "../telegram/telegram-functions.js";
+import {
+  fetchImageBuffer,
+  getRTLTextX,
+  isArabicText,
+  reText,
+  splitTextIntoLines,
+} from "../utilityServices.js";
 const __dirname = path.dirname(__filename);
 const fontPath = path.join(__dirname, "../fonts/Ya-ModernPro-Bold.otf");
 const fontBase64 = fs.readFileSync(fontPath);
@@ -142,83 +149,6 @@ export async function uploadPdfAndApproveSession({
   }
 }
 
-async function compressImageBuffer(buffer) {
-  const sharpImage = sharp(buffer);
-  const metadata = await sharpImage.metadata();
-
-  // Resize logic
-  sharpImage.resize({ width: 1000 });
-
-  // Handle format appropriately
-  if (metadata.format === "jpeg" || metadata.format === "jpg") {
-    return await sharpImage.jpeg({ quality: 90 }).toBuffer();
-  } else if (metadata.format === "png") {
-    return await sharpImage.png({ compressionLevel: 6 }).toBuffer();
-  } else {
-    return await sharpImage.jpeg({ quality: 90 }).toBuffer();
-  }
-}
-
-async function fetchImageBuffer(url, options = {}) {
-  const {
-    retries = 3,
-    retryDelayMs = 1000,
-    timeoutMs = 15000, // Default timeout for each fetch attempt
-  } = options;
-
-  const errors = [];
-
-  for (let i = 0; i < retries; i++) {
-    try {
-      const controller = new AbortController();
-      // Set a timeout for the fetch request
-      const id = setTimeout(() => controller.abort(), timeoutMs);
-
-      const res = await fetch(url, { signal: controller.signal });
-      clearTimeout(id); // Clear the timeout if the fetch completes
-
-      if (!res.ok) {
-        throw new Error(
-          `HTTP Error ${res.status}: ${res.statusText} for URL: ${url}`
-        );
-      }
-
-      return await compressImageBuffer(await res.arrayBuffer());
-    } catch (error) {
-      // Store specific error messages for debugging
-      let errorMessage = `Attempt ${i + 1} failed: ${error.message}`;
-      if (error.name === "AbortError") {
-        errorMessage = `Attempt ${i + 1} timed out after ${timeoutMs}ms: ${
-          error.message
-        }`;
-      } else if (
-        error instanceof TypeError &&
-        error.message.includes("network error")
-      ) {
-        errorMessage = `Attempt ${
-          i + 1
-        } network error (possibly CORS or connectivity): ${error.message}`;
-      }
-      errors.push(errorMessage);
-
-      // Only retry if it's not the last attempt
-      if (i < retries - 1) {
-        console.warn(
-          `Retrying fetch for ${url} in ${retryDelayMs}ms... (Error: ${errorMessage})`
-        );
-        await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
-      }
-    }
-  }
-
-  // If all retries fail, throw a comprehensive error message
-  const detailedErrorMessage = `Failed to fetch image from ${url} after ${retries} attempts.\nDetailed Errors:\n${errors.join(
-    "\n"
-  )}`;
-  console.error(detailedErrorMessage);
-  throw new Error(`Could not load image: ${url}. See console for details.`);
-}
-
 export async function generateImageSessionPdf({
   sessionData,
   signatureUrl,
@@ -242,9 +172,9 @@ export async function generateImageSessionPdf({
 
     const font = mainFont();
     const boldFont = mainBoldFont();
-    const isArabicText = (text) => {
-      return /[\u0600-\u06FF]/.test(text);
-    };
+    // const isArabicText = (text) => {
+    //   return /[\u0600-\u06FF]/.test(text);
+    // };
     // Enhanced Color Palette
     const colors = {
       primary: rgb(0.827, 0.675, 0.443),
@@ -275,19 +205,19 @@ export async function generateImageSessionPdf({
     let page = pdfDoc.addPage([pageWidth, pageHeight]);
     let y = pageHeight - headerHeight;
 
-    const reText = (text) => {
-      const reshaped = reshaper.ArabicShaper.convertArabic(text);
-      const clean = reshaped
-        .replace(/\r?\n|\r/g, " ") // Replace line breaks with spaces
-        .replace(/\u200B/g, "") // Remove zero-width spaces
-        .replace(/\u200E/g, "") // Remove left-to-right marks
-        .replace(/\u200F/g, "") // Remove right-to-left marks
-        .replace(/\u00A0/g, " ") // Replace non-breaking spaces
-        .replace(/\s{2,}/g, " ")
-        .replace(/[\u0610-\u061A\u064B-\u065F\u06D6-\u06ED]/g, "")
-        .trim();
-      return clean;
-    };
+    // const reText = (text) => {
+    //   const reshaped = reshaper.ArabicShaper.convertArabic(text);
+    //   const clean = reshaped
+    //     .replace(/\r?\n|\r/g, " ") // Replace line breaks with spaces
+    //     .replace(/\u200B/g, "") // Remove zero-width spaces
+    //     .replace(/\u200E/g, "") // Remove left-to-right marks
+    //     .replace(/\u200F/g, "") // Remove right-to-left marks
+    //     .replace(/\u00A0/g, " ") // Replace non-breaking spaces
+    //     .replace(/\s{2,}/g, " ")
+    //     .replace(/[\u0610-\u061A\u064B-\u065F\u06D6-\u06ED]/g, "")
+    //     .trim();
+    //   return clean;
+    // };
     function getLines(textToLine, maxCharsPerLine, maxChars, maxLines) {
       const text = maxChars
         ? textToLine.trim().slice(0, maxChars)
@@ -318,16 +248,16 @@ export async function generateImageSessionPdf({
     };
 
     // Helper function to calculate RTL text position
-    const getRTLTextX = (
-      text,
-      fontSize,
-      font,
-      containerStartX = margin,
-      containerWidth = contentWidth
-    ) => {
-      const textWidth = font.widthOfTextAtSize(text, fontSize);
-      return containerStartX + containerWidth - textWidth;
-    };
+    // const getRTLTextX = (
+    //   text,
+    //   fontSize,
+    //   font,
+    //   containerStartX = margin,
+    //   containerWidth = contentWidth
+    // ) => {
+    //   const textWidth = font.widthOfTextAtSize(text, fontSize);
+    //   return containerStartX + containerWidth - textWidth;
+    // };
 
     // Draw page border and frame
     const drawPageBorder = (isWide = false) => {
@@ -470,24 +400,24 @@ export async function generateImageSessionPdf({
         });
       }
     };
-    function splitTextIntoLines(text, maxWidth, font, fontSize) {
-      const words = text.split(" ");
-      const lines = [];
-      let currentLine = "";
+    // function splitTextIntoLines(text, maxWidth, font, fontSize) {
+    //   const words = text.split(" ");
+    //   const lines = [];
+    //   let currentLine = "";
 
-      for (const word of words) {
-        const testLine = currentLine ? currentLine + " " + word : word;
-        const width = font.widthOfTextAtSize(testLine, fontSize);
-        if (width <= maxWidth) {
-          currentLine = testLine;
-        } else {
-          if (currentLine) lines.push(currentLine);
-          currentLine = word;
-        }
-      }
-      if (currentLine) lines.push(currentLine);
-      return lines;
-    }
+    //   for (const word of words) {
+    //     const testLine = currentLine ? currentLine + " " + word : word;
+    //     const width = font.widthOfTextAtSize(testLine, fontSize);
+    //     if (width <= maxWidth) {
+    //       currentLine = testLine;
+    //     } else {
+    //       if (currentLine) lines.push(currentLine);
+    //       currentLine = word;
+    //     }
+    //   }
+    //   if (currentLine) lines.push(currentLine);
+    //   return lines;
+    // }
 
     const drawIntroPage = async () => {
       try {

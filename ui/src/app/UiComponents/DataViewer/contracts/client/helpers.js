@@ -1,4 +1,4 @@
-export const sessionStatusFlow = {
+export const contractSessionStatusFlow = {
   INITIAL: {
     next: "SIGNING",
     back: null,

@@ -8,6 +8,9 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { Alert, Box, Container, Typography } from "@mui/material";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 import ContractSession from "./ContractSession";
+import { contractSessionStatusFlow } from "./helpers";
+import ContractSignature from "./ContractSignature";
+import ContractSignedSuccessSection from "./ContractSignedSuccessSection";
 const AnimatedComponent = ({
   children,
   animationType = "fade",
@@ -50,7 +53,7 @@ export default function ClientContractPage({ token }) {
     const req = await handleRequestSubmit(
       {
         token: token,
-        sessionStatus: sessionStatusFlow[status].next,
+        sessionStatus: contractSessionStatusFlow[status].next,
       },
       setToastLoading,
       `client/contracts/session/status`,
@@ -68,7 +71,7 @@ export default function ClientContractPage({ token }) {
     const req = await handleRequestSubmit(
       {
         token: token,
-        sessionStatus: sessionStatusFlow[status].back,
+        sessionStatus: contractSessionStatusFlow[status].back,
       },
       setToastLoading,
       `client/contracts/session/status`,
@@ -117,7 +120,16 @@ export default function ClientContractPage({ token }) {
             animationType="slide"
             direction="left"
             timeout={500}
-          ></AnimatedComponent>
+          >
+            <ContractSignature
+              session={session}
+              token={token}
+              onSignatureSaved={getSessionData}
+              nextStatus={contractSessionStatusFlow[status].next}
+              handleBack={simpleHandleBack}
+              disabled={toastLoading}
+            />
+          </AnimatedComponent>
         );
       case "REGISTERED":
         return (
@@ -126,7 +138,13 @@ export default function ClientContractPage({ token }) {
             animationType="zoom"
             timeout={400}
           >
-            <Box sx={{ px: 2 }}></Box>
+            <Box sx={{ px: 2 }}>
+              <ContractSignedSuccessSection
+                lng={lng}
+                pdfAr={session?.pdfLinkAr}
+                pdfEn={session?.pdfLinkEn}
+              />
+            </Box>
           </AnimatedComponent>
         );
       default:
@@ -157,7 +175,7 @@ export default function ClientContractPage({ token }) {
 
   return (
     <>
-      <Container maxWidth="md" sx={{ py: 1, pb: 8, px: 0 }}>
+      <Container maxWidth="lg" sx={{ py: 1, pb: 8, px: 0 }}>
         <Box sx={{ mb: 2, px: 2 }}>
           <ClientImageAppBar />
         </Box>
