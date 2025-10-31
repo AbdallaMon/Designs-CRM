@@ -968,14 +968,25 @@ export function PriceOffersList({ admin, lead, notUser }) {
   };
   return (
     <Card sx={cardStyles}>
-      <CardContent>
-        {/* <ContractManagement leadId={lead.id} /> */}
-        <LeadContractList leadId={lead.id} />
+      <CardContent
+        sx={{
+          pt: 0,
+        }}
+      >
+        <Box
+          sx={{
+            height: "350px",
+            overflowY: "auto",
+          }}
+        >
+          <LeadContractList leadId={lead.id} />
+        </Box>
         <Box
           display="flex"
           alignItems="center"
           justifyContent="space-between"
           mb={3}
+          mt={3}
         >
           <Box>
             <FaMoneyBillWave style={{ ...iconStyles, fontSize: "1.5rem" }} />

@@ -327,7 +327,9 @@ function LeadContract({ lead, updateOuterContract }) {
 
   return (
     <>
-      {!currentContract && <LeadContractList leadId={lead.id} />}
+      {!currentContract && (
+        <LeadContractList leadId={lead.id} finalModal={true} />
+      )}
       {currentContract && (
         <Box sx={{ mb: 2 }}>
           <Typography variant="h4" sx={{ mb: 1.5 }}>

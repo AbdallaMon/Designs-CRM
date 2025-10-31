@@ -41,7 +41,7 @@ import CloneContract from "./CloneContract";
 import DeleteModelButton from "../leads/extra/DeleteModelButton";
 import { FaCopy } from "react-icons/fa";
 
-export default function LeadContractList({ leadId }) {
+export default function LeadContractList({ leadId, finalModal }) {
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openView, setOpenView] = useState(false);
@@ -93,8 +93,8 @@ export default function LeadContractList({ leadId }) {
     <Box
       position="relative"
       sx={{
-        minHeight: "100vh",
-        py: 3,
+        minHeight: finalModal ? "100vh" : "100%",
+        pb: 3,
         px: { xs: 2, sm: 3 },
       }}
     >
@@ -245,7 +245,6 @@ function ContractAccordion({
 }) {
   const theme = useTheme();
   const statusChip = contractStatus[contract.status];
-  console.log(contract, "contract");
   const levelConf = contractLevel[contract.level];
 
   return (
