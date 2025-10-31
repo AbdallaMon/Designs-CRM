@@ -230,8 +230,8 @@ model Contract {
   handWrittenSignatureUrl    String? @db.Text
 
   taxRate     Decimal   @default(0) @db.Decimal(5, 2)
-  totalAmount Decimal   @db.Decimal(12, 2)
-  amount      Decimal   @db.Decimal(12, 2)
+  totalAmount    Decimal?  @db.Decimal(12, 2)  // ← now nullable
+  amount         Decimal?  @db.Decimal(12, 2)  
   // إضافاتك الجديدة فقط:
   pdfLinkAr   String? // رابط PDF عربي (لينك)
   pdfLinkEn   String? // رابط PDF إنجليزي (لينك، الاسم بنتعامل معه على مستوى العرض)
