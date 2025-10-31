@@ -259,6 +259,7 @@ function ContractBasics({ id, contract, onReload }) {
   const [form, setForm] = useState({
     title: "",
     projectGroupId: "",
+    enTitle: "",
     // read-only preview fields:
     startDate: "",
     endDate: "",
@@ -276,6 +277,7 @@ function ContractBasics({ id, contract, onReload }) {
     if (contract) {
       setForm({
         title: contract.title || "",
+        enTitle: contract.enTitle || "",
         projectGroupId: contract.projectGroupId || "",
         startDate: contract.startDate ? isoDateOnly(contract.startDate) : "",
         endDate: contract.endDate ? isoDateOnly(contract.endDate) : "",
@@ -297,11 +299,13 @@ function ContractBasics({ id, contract, onReload }) {
     const changes = {};
     if ((form.title || "") !== (contract.title || ""))
       changes.title = form.title || null;
+    if ((form.enTitle || "") !== (contract.enTitle || ""))
+      changes.enTitle = form.enTitle || null;
     if ((form.projectGroupId || "") !== (contract.projectGroupId || ""))
       changes.projectGroupId = form.projectGroupId || null;
 
     return Object.keys(changes).length ? changes : null;
-  }, [form.title, form.projectGroupId, contract]);
+  }, [form.title, form.enTitle, form.projectGroupId, contract]);
 
   const save = async () => {
     if (!changedPatch) {
@@ -537,11 +541,23 @@ function ContractBasics({ id, contract, onReload }) {
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, md: 6 }}>
                 <TextField
-                  label="Title"
+                  label="Arabic contract type"
                   fullWidth
                   value={form.title}
                   onChange={(e) =>
                     setForm((o) => ({ ...o, title: e.target.value }))
+                  }
+                  disabled={!edit}
+                  size="small"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  label="English contract type"
+                  fullWidth
+                  value={form.enTitle}
+                  onChange={(e) =>
+                    setForm((o) => ({ ...o, enTitle: e.target.value }))
                   }
                   disabled={!edit}
                   size="small"
@@ -1150,7 +1166,6 @@ function PaymentRow({ payment, contractId, onReload }) {
               size="small"
             />
 
-            {/* Project type chips (unchanged) */}
             {!conditionIsSignature && (
               <Stack spacing={1}>
                 <Typography

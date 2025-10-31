@@ -1405,10 +1405,19 @@ export async function getAdminClientLeadDetails(clientLeadId, searchParams) {
       },
       contracts: {
         where: {
-          isInProgress: true,
+          status: "IN_PROGRESS",
         },
         orderBy: { id: "desc" },
         take: 1,
+        select: {
+          id: true,
+          stages: {
+            select: {
+              title: true,
+              stageStatus: true,
+            },
+          },
+        },
       },
       extraServices: true,
       notes: {
@@ -1437,6 +1446,13 @@ export async function getAdminClientLeadDetails(clientLeadId, searchParams) {
       },
     },
   });
+  if (clientLead.contracts?.length > 0) {
+    const currentStage = clientLead.contracts[0].stages?.find(
+      (stage) => stage.stageStatus === "IN_PROGRESS"
+    );
+    clientLead.contracts[0].stage = currentStage;
+    clientLead.contracts[0].contractLevel = currentStage?.title;
+  }
   return clientLead;
 }
 

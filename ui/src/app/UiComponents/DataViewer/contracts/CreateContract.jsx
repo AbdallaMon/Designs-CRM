@@ -866,6 +866,7 @@ export default function CreateContractDialog({
   const { setLoading } = useToastContext();
 
   const [title, setTitle] = useState("");
+  const [enTitle, setEnTitle] = useState("");
   const [projectGroup, setProjectGroup] = useState("");
   const [selectedStages, setSelectedStages] = useState([]);
   const [perStageMeta, setPerStageMeta] = useState({});
@@ -886,6 +887,7 @@ export default function CreateContractDialog({
   const canGoNext = () => {
     if (activeStep === 0) {
       if (!title.trim()) return false;
+      if (!enTitle.trim()) return false;
       if (!projectGroup) return false;
       if (selectedStages.length === 0) return false;
       for (const s of selectedStages) {
@@ -938,6 +940,7 @@ export default function CreateContractDialog({
     const payload = {
       clientLeadId,
       title: title.trim(),
+      enTitle: enTitle.trim(),
       projectGroupId: projectGroup,
       stages: stagesPayload,
       payments: paymentsPayload,
@@ -1035,14 +1038,22 @@ export default function CreateContractDialog({
             {activeStep === 0 && (
               <Stack spacing={3}>
                 <TextField
-                  label="Contract Title"
+                  label="Arabic Contract type"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   fullWidth
                   size="small"
-                  placeholder="Enter contract title"
+                  placeholder="Enter arabic contract type"
                 />
 
+                <TextField
+                  label="English Contract type"
+                  value={enTitle}
+                  onChange={(e) => setEnTitle(e.target.value)}
+                  fullWidth
+                  size="small"
+                  placeholder="Enter english contract type"
+                />
                 <Box>
                   <Typography
                     variant="subtitle2"

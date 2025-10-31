@@ -217,6 +217,7 @@ const LeadContent = ({
   }
   const currentContract =
     lead.contracts && lead.contracts.length > 0 && lead.contracts[0];
+
   const levelColor = currentContract
     ? contractLevelColors[currentContract.contractLevel]
     : "#000000";

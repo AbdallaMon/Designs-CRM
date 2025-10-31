@@ -83,13 +83,13 @@ function RowActions({
         </Tooltip>
       ) : (
         <>
-          {canDoActions && (
+          {/* {canDoActions && (
             <Tooltip title="Link to meeting">
               <IconButton onClick={onLinkMeeting} color="primary">
                 <FiLink />
               </IconButton>
             </Tooltip>
-          )}
+          )} */}
         </>
       )}
       <Tooltip title="Preview notes">
@@ -462,7 +462,7 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
           <FiClock />
           <Typography variant="h6">Delivery Schedule</Typography>
         </Stack>
-        {canDoActions && (
+        {/* {canDoActions && (
           <Button
             variant="contained"
             startIcon={<FiPlus />}
@@ -470,7 +470,7 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
           >
             New delivery
           </Button>
-        )}
+        )} */}
       </Stack>
 
       <Divider sx={{ mb: 2 }} />
@@ -546,23 +546,17 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
                         >
                           <FiUser />
                           <Typography variant="body2">
-                            Created by: <b>{row.createdBy.name}</b>
+                            Created by: <b>{row.createdBy?.name}</b>
                           </Typography>
                         </Stack>
                         <Typography variant="body2" color="text.secondary">
                           Created {dayjs(row.createdAt).fromNow()}
                         </Typography>
-                        {row.meetingReminderId ? (
+                        {row.meetingReminderId && (
                           <Chip
                             size="small"
                             color="primary"
                             label={`Meeting #${row.meetingReminderId}`}
-                          />
-                        ) : (
-                          <Chip
-                            size="small"
-                            variant="outlined"
-                            label="No meeting"
                           />
                         )}
                       </Stack>
@@ -576,12 +570,12 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
         </List>
       )}
 
-      <CreateDeliveryDialog
+      {/* <CreateDeliveryDialog
         open={openCreate}
         onClose={() => setOpenCreate(false)}
         onCreate={reload}
         projectId={projectId}
-      />
+      /> */}
 
       <MeetingDetailsDialog
         open={meetingDialog.open}
@@ -589,13 +583,13 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
         onClose={() => setMeetingDialog({ open: false, meetingId: null })}
       />
 
-      <LinkMeetingDialog
+      {/* <LinkMeetingDialog
         open={linkDialog.open}
         deliveryId={linkDialog.deliveryId}
         clientLeadId={clientLeadId}
         onClose={() => setLinkDialog({ open: false, deliveryId: null })}
         onLink={handleLink}
-      />
+      /> */}
     </Box>
   );
 }

@@ -6,25 +6,26 @@ import {
   Box,
   Card,
   CardContent,
-  CardActions,
   Button,
   Typography,
-  Divider,
   Stack,
+  useTheme,
+  alpha,
 } from "@mui/material";
 import { MdCheckCircle, MdFileDownload } from "react-icons/md";
 
 export default function ContractSignedSuccessSection({
   lng = "en",
-  pdfAr, // string | undefined  -> Arabic PDF link
-  pdfEn, // string | undefined  -> English PDF link
-  onClose, // optional: callback after download or to go back/home
+  pdfAr,
+  pdfEn,
+  onClose,
 }) {
+  const theme = useTheme();
   const isAr = lng === "ar";
 
   const T = useMemo(
     () => ({
-      title: isAr ? "تم توقيع العقد بنجاح" : "Contract signed successfully",
+      title: isAr ? "تم توقيع العقد بنجاح" : "Contract Signed Successfully",
       sub: isAr
         ? "شكرًا لتعاونك. يمكنك تنزيل نسخة العقد بصيغة PDF."
         : "Thank you! You can download your contract PDF below.",
@@ -42,96 +43,125 @@ export default function ContractSignedSuccessSection({
   const hasAny = Boolean(pdfAr || pdfEn);
 
   return (
-    <Box dir={isAr ? "rtl" : "ltr"} sx={{ px: 2 }}>
+    <Box
+      dir={isAr ? "rtl" : "ltr"}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100%",
+        p: 2,
+      }}
+    >
       <Card
-        elevation={3}
+        elevation={0}
         sx={{
+          maxWidth: 560,
+          width: "100%",
           borderRadius: 3,
-          overflow: "hidden",
+          border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          bgcolor: theme.palette.background.paper,
         }}
       >
-        <CardContent sx={{ py: 4 }}>
-          <Stack
-            direction="column"
-            alignItems="center"
-            justifyContent="center"
-            spacing={2}
-            sx={{ textAlign: "center" }}
-          >
+        <CardContent sx={{ p: { xs: 3, sm: 5 } }}>
+          <Stack spacing={3} alignItems="center">
             <Box
               sx={{
-                display: "grid",
-                placeItems: "center",
-                width: 84,
-                height: 84,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 72,
+                height: 72,
                 borderRadius: "50%",
-                bgcolor: (t) => t.palette.success.light,
+                bgcolor: alpha(theme.palette.success.main, 0.1),
+                color: theme.palette.success.main,
               }}
             >
-              <MdCheckCircle size={56} color="currentColor" />
+              <MdCheckCircle size={40} />
             </Box>
 
-            <Typography variant="h5" fontWeight={700}>
-              {T.title}
-            </Typography>
-
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ maxWidth: 560 }}
-            >
-              {T.sub}
-            </Typography>
-          </Stack>
-
-          <Divider sx={{ my: 3 }} />
-
-          <Stack
-            direction={isAr ? "row-reverse" : "row"}
-            spacing={2}
-            alignItems="center"
-            justifyContent="center"
-            sx={{ flexWrap: "wrap" }}
-          >
-            {!hasAny && (
-              <Typography variant="body2" color="warning.main">
-                {T.noPdf}
+            <Stack spacing={1} alignItems="center" textAlign="center">
+              <Typography variant="h5" fontWeight={600} color="text.primary">
+                {T.title}
               </Typography>
-            )}
 
-            {pdfAr && (
-              <Button
-                component="a"
-                href={pdfAr}
-                target="_blank"
-                rel="noopener noreferrer"
-                variant={showBoth ? "contained" : "contained"}
-                startIcon={<MdFileDownload />}
-                sx={{ minWidth: 220 }}
+              <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ maxWidth: 400 }}
               >
-                {T.btnAr}
-              </Button>
-            )}
+                {T.sub}
+              </Typography>
+            </Stack>
 
-            {pdfEn && (
+            <Stack
+              direction={showBoth ? "column" : "row"}
+              spacing={1.5}
+              sx={{ width: "100%", mt: 2 }}
+            >
+              {!hasAny && (
+                <Typography
+                  variant="body2"
+                  color="warning.main"
+                  textAlign="center"
+                >
+                  {T.noPdf}
+                </Typography>
+              )}
+
+              {pdfAr && (
+                <Button
+                  component="a"
+                  href={pdfAr}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="contained"
+                  startIcon={<MdFileDownload />}
+                  fullWidth
+                  sx={{
+                    py: 1.25,
+                    textTransform: "none",
+                    fontWeight: 500,
+                  }}
+                >
+                  {T.btnAr}
+                </Button>
+              )}
+
+              {pdfEn && (
+                <Button
+                  component="a"
+                  href={pdfEn}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant={showBoth ? "outlined" : "contained"}
+                  startIcon={<MdFileDownload />}
+                  fullWidth
+                  sx={{
+                    py: 1.25,
+                    textTransform: "none",
+                    fontWeight: 500,
+                  }}
+                >
+                  {T.btnEn}
+                </Button>
+              )}
+            </Stack>
+
+            {onClose && (
               <Button
-                component="a"
-                href={pdfEn}
-                target="_blank"
-                rel="noopener noreferrer"
-                variant={showBoth ? "outlined" : "contained"}
-                startIcon={<MdFileDownload />}
-                sx={{ minWidth: 220 }}
+                onClick={onClose}
+                sx={{
+                  mt: 1,
+                  textTransform: "none",
+                  color: "text.secondary",
+                }}
               >
-                {T.btnEn}
+                {T.done}
               </Button>
             )}
           </Stack>
         </CardContent>
-
-        <CardActions sx={{ justifyContent: "center", pb: 3 }}>
-          {onClose && <Button onClick={onClose}>{T.done}</Button>}
-        </CardActions>
       </Card>
     </Box>
   );

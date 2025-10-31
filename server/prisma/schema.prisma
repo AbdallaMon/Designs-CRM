@@ -216,6 +216,7 @@ model Contract {
   contractLevel ContractLevel
   purpose       String
   title         String?
+  enTitle        String? 
   startDate     DateTime?
   endDate       DateTime?
   isCompleted   Boolean       @default(false)

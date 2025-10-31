@@ -288,7 +288,7 @@ function ClientSection({ session, lng }) {
           <KeyValue
             label={lng === "ar" ? "نوع المشروع" : "Project Type"}
             value={
-              lng === "ar" ? session?.title : session?.titleEn || session?.title
+              lng === "ar" ? session?.title : session?.enTitle || session?.title
             }
           />
         </Grid>

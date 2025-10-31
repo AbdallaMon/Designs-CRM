@@ -181,3 +181,6 @@ ADD COLUMN `sessionStatus` ENUM('INITIAL', 'SIGNING', 'REGISTERED') NOT NULL DEF
 ALTER TABLE `Contract`
 ADD COLUMN `signatureUrl` TEXT NULL AFTER `pdfLinkEn`,
 ADD COLUMN `handWrittenSignatureUrl` TEXT NULL AFTER `signatureUrl`;
+
+ALTER TABLE `Contract`
+ADD COLUMN `enTitle` VARCHAR(191) NULL;

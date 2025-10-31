@@ -9,6 +9,7 @@ import sharp from "sharp";
 const __filename = fileURLToPath(import.meta.url);
 import "dayjs/locale/ar.js";
 import "dayjs/locale/en.js";
+import dayjs from "dayjs";
 const __dirname = path.dirname(__filename);
 const fontPath = path.join(__dirname, "./fonts/Amiri-Regular.ttf");
 const fontBoldPath = path.join(__dirname, "./fonts/Ya-ModernPro-Bold.otf");
@@ -138,7 +139,23 @@ export function splitTextIntoLines(text, maxWidth, font, fontSize) {
   if (cur) lines.push(cur);
   return lines;
 }
-function reverseNumber(n) {
+export function formatDate(date, lng) {
+  try {
+    const locale = lng === "ar" ? "ar-AE" : "en-US";
+    return new Intl.DateTimeFormat(locale, {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(dayjs().toDate());
+  } catch (e) {
+    console.error("formatDate error:", e);
+    return date;
+  }
+}
+export function reverseString(s) {
+  return Array.from(s).reverse().join("");
+}
+export function reverseNumber(n) {
   const s = String(n); // handles numbers too
   return Array.from(s).reverse().join("");
 }

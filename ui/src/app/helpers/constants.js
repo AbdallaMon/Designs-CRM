@@ -4,7 +4,12 @@ import {
   AiOutlineUserAdd,
 } from "react-icons/ai";
 import { BiNote, BiTransfer } from "react-icons/bi";
-import { MdAttachMoney, MdCall } from "react-icons/md";
+import {
+  MdAttachMoney,
+  MdBlock,
+  MdCall,
+  MdNotAccessible,
+} from "react-icons/md";
 import {
   FaBullhorn,
   FaCalculator,
@@ -824,6 +829,15 @@ export const contractStatus = {
 };
 
 export const contractLevel = {
+  null: {
+    name: "لا يوجد مرحلة حاليا",
+    nameAr: "لا يوجد مرحلة حاليا",
+    nameEn: "No current active stage",
+    shade: "main",
+    pallete: "error",
+
+    icon: MdBlock,
+  },
   LEVEL_1: {
     name: "تحليل وتقييم",
     nameAr: "تحليل وتقييم",

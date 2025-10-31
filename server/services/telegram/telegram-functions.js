@@ -319,6 +319,18 @@ export async function notifyUsersThatAClientHasSubmittedAPdf({ clientLeadId }) {
   await uploadANote(note);
 }
 
+export async function notifyUsersThatAContractWasSigned({ clientLeadId }) {
+  const dashboardLink = `${process.env.OLDORIGIN}/dashboard/deals/${clientLeadId}`;
+  const note = {
+    id: `contract-signed-${clientLeadId}`,
+    clientLeadId: Number(clientLeadId),
+    content:
+      `A client has signed a contract for lead #${clientLeadId}. ` +
+      `Open the lead: ${dashboardLink}`,
+  };
+  await uploadANote(note);
+}
+
 export async function notifyUsersAddedToProject({
   projectId,
   clientLeadId,

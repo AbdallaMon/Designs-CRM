@@ -13,12 +13,11 @@ export async function getLeadContractList({ leadId }) {
       },
     },
   });
-
   for (const contract of contracts) {
     const currentStage = contract.stages.find(
       (s) => s.stageStatus === "IN_PROGRESS"
     );
-    contract.level = currentStage.title;
+    contract.level = currentStage ? currentStage.title : null;
   }
 
   return contracts;
@@ -62,6 +61,7 @@ export async function createContract({ payload }) {
       stages,
       taxRate,
       title,
+      enTitle,
     } = payload;
 
     await validatePayments(payments);
@@ -75,6 +75,7 @@ export async function createContract({ payload }) {
       data: {
         clientLeadId: Number(clientLeadId),
         title,
+        enTitle,
         purpose: title,
         amount,
         taxRate,
@@ -178,11 +179,17 @@ function getStageOrder(stageLevel) {
   const m = stageLevel.match(/\d+(?!.*\d)/);
   return Number(m[0]);
 }
-const stageLevelProject = {
+export const stageLevelStartProject = {
   LEVEL_3: "2D_Study",
   LEVEL_4: "3D_Designer",
   LEVEL_5: "2D_Final_Plans",
   LEVEL_6: "2D_Quantity_Calculation",
+};
+export const stageLevelRelatedProject = {
+  LEVEL_2: "2D_Study",
+  LEVEL_3: "3D_Designer",
+  LEVEL_4: "2D_Final_Plans",
+  LEVEL_5: "2D_Quantity_Calculation",
 };
 
 async function createStages({
@@ -220,7 +227,7 @@ async function createStage({
 
   let projectId;
 
-  const projectType = stageLevelProject[levelEnum];
+  const projectType = stageLevelStartProject[levelEnum];
   if (projectType) {
     const relatedProject = await prisma.project.findFirst({
       where: {
@@ -302,11 +309,15 @@ export async function getContractDetailsById({ contractId }) {
 export async function updateContractBasics({
   projectGroupId,
   title,
+  enTitle,
   contractId,
 }) {
   const data = {};
   if (title) {
     data.title = title;
+  }
+  if (enTitle) {
+    data.enTitle = enTitle;
   }
   if (projectGroupId) {
     data.projectGroupId = projectGroupId;
@@ -503,6 +514,7 @@ export async function updateContractPaymentStatus({ status, paymentId }) {
         id: Number(paymentId),
       },
       select: {
+        id: true,
         status: true,
         paymentCondition: true,
         contractId: true,
@@ -513,6 +525,7 @@ export async function updateContractPaymentStatus({ status, paymentId }) {
         "Paymnet is not due yet, u can change status when the payment is due"
       );
     }
+    console.log(payment, "payment");
     await prisma.contractPayment.update({
       where: {
         id: Number(paymentId),
@@ -851,11 +864,12 @@ export async function checkIfProjectHasStagesAndUpdateNextAndPrevious({
         contractId: lastStage.contractId,
       });
     }
-
-    await createADeliveryScheduleAndRelateItToStage({
-      stageId: nextContractStage.id,
-      ...nextContractStage,
-    });
+    if (nextContractStage) {
+      await createADeliveryScheduleAndRelateItToStage({
+        stageId: nextContractStage.id,
+        ...nextContractStage,
+      });
+    }
   }
   return true;
 }
@@ -893,11 +907,13 @@ export async function updateSecondStageAfterFirstPayment({ contractId }) {
       stageStatus: "IN_PROGRESS",
     },
   });
-
-  await createADeliveryScheduleAndRelateItToStage({
-    stageId: levelTwoStage.id,
-    ...levelTwoStage,
-  });
+  console.log(levelTwoStage, "levelTwoStage");
+  if (levelTwoStage) {
+    await createADeliveryScheduleAndRelateItToStage({
+      stageId: levelTwoStage.id,
+      ...levelTwoStage,
+    });
+  }
   return true;
 }
 
@@ -933,21 +949,39 @@ export async function createADeliveryScheduleAndRelateItToStage({
   deptDeliveryDays,
   projectId,
 }) {
-  const days = Number(deptDeliveryDays ?? 0); // guard null/undefined
+  const days = Number(deptDeliveryDays ?? 0);
   const now = new Date();
-  const deliveryAt = new Date(now); // clone
+  const deliveryAt = new Date(now);
   deliveryAt.setDate(deliveryAt.getDate() + days);
-
-  const data = {
-    deliveryAt,
-    stage: {
-      connect: {
-        id: stageId,
+  const stage = await prisma.contractStage.findUnique({
+    where: { id: stageId },
+    select: {
+      title: true,
+      contract: {
+        select: {
+          clientLeadId: true,
+          projectGroupId: true,
+        },
       },
     },
+  });
+  const projectType = stageLevelRelatedProject[stage.title];
+  const data = {
+    deliveryAt,
+    stageId,
   };
-  if (projectId) {
-    data.projectId = projectId;
+  if (projectType) {
+    const relatedProject = await prisma.project.findFirst({
+      where: {
+        clientLeadId: stage.contract.clientLeadId,
+        groupId: stage.contract.projectGroupId,
+        type: projectType,
+      },
+      select: {
+        id: true,
+      },
+    });
+    data.projectId = relatedProject.id;
   }
   return await prisma.deliverySchedule.create({
     data: {

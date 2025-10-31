@@ -281,7 +281,13 @@ export async function getClientLeadsByDateRange({
   if (filters.contractLevel && filters.contractLevel !== "all") {
     where.contracts = {
       some: {
-        contractLevel: { in: [filters.contractLevel] },
+        status: "IN_PROGRESS",
+        stages: {
+          some: {
+            title: { in: [filters.contractLevel] },
+            stageStatus: "IN_PROGRESS",
+          },
+        },
       },
     };
   }
@@ -303,7 +309,6 @@ export async function getClientLeadsByDateRange({
       discount: true,
       paymentStatus: true,
       stripieMetadata: true,
-
       callReminders: {
         where: callRemindersWhere,
         orderBy: { time: "desc" },
@@ -315,6 +320,15 @@ export async function getClientLeadsByDateRange({
         },
         orderBy: { id: "desc" },
         take: 1,
+        select: {
+          id: true,
+          stages: {
+            select: {
+              title: true,
+              stageStatus: true,
+            },
+          },
+        },
       },
       updates: {
         orderBy: { updatedAt: "desc" },
@@ -341,12 +355,16 @@ export async function getClientLeadsByDateRange({
 
   const groupedLeads = {};
   let result = clientLeads;
-
   // Optional: filter by the latest contract level
   if (filters.contractLevel && filters.contractLevel !== "all") {
     result = result.filter((lead) => {
       if (lead.contracts.length) {
-        return lead.contracts[0].contractLevel === filters.contractLevel;
+        return lead.contracts[0].stages?.some((stage) => {
+          return (
+            stage.title === filters.contractLevel &&
+            stage.stageStatus === "IN_PROGRESS"
+          );
+        });
       }
     });
   }
@@ -443,7 +461,13 @@ export async function getClientLeadsColumnStatus({
       where.contracts = {
         some: {
           status: "IN_PROGRESS",
-          contractLevel: searchParams.status,
+
+          stages: {
+            some: {
+              title: { in: [searchParams.status] },
+              stageStatus: "IN_PROGRESS",
+            },
+          },
         },
       };
     }
@@ -492,7 +516,13 @@ export async function getClientLeadsColumnStatus({
     if (filters.contractLevel && filters.contractLevel !== "all") {
       where.contracts = {
         some: {
-          contractLevel: { in: [filters.contractLevel] },
+          status: "IN_PROGRESS",
+          stages: {
+            some: {
+              title: { in: [filters.contractLevel] },
+              stageStatus: "IN_PROGRESS",
+            },
+          },
         },
       };
     }
@@ -506,6 +536,7 @@ export async function getClientLeadsColumnStatus({
       where,
       skip: Number(searchParams.skip) || 0,
       take: Number(searchParams.take) || 20,
+      skip: 0,
       orderBy: { updatedAt: "desc" },
       select: {
         id: true,
@@ -533,6 +564,15 @@ export async function getClientLeadsColumnStatus({
           },
           orderBy: { id: "desc" },
           take: 1,
+          select: {
+            id: true,
+            stages: {
+              select: {
+                title: true,
+                stageStatus: true,
+              },
+            },
+          },
         },
         extraServices: {
           select: {
@@ -555,13 +595,46 @@ export async function getClientLeadsColumnStatus({
     let result = clientLeads;
 
     // Optional: filter by the latest contract level
-    if (filters.contractLevel && filters.contractLevel !== "all") {
-      result = result.filter(
-        (lead) =>
-          lead.contracts.length &&
-          lead.contracts[0].contractLevel === filters.contractLevel
-      );
-    }
+
+    result = result.map((lead) => {
+      if (lead.contracts.length) {
+        let contractZeroStage;
+        if (filters.contractLevel && filters.contractLevel !== "all") {
+          contractZeroStage = lead.contracts[0]?.stages?.find(
+            (stage) =>
+              stage.title === filters.contractLevel &&
+              stage.stageStatus === "IN_PROGRESS"
+          );
+        } else {
+          contractZeroStage = lead.contracts[0]?.stages?.find(
+            (stage) => stage.stageStatus === "IN_PROGRESS"
+          );
+        }
+        lead.contracts[0].stage = contractZeroStage;
+        lead.contracts[0].contractLevel = contractZeroStage?.title;
+      }
+      return lead;
+    });
+    // if (filters.contractLevel && filters.contractLevel !== "all") {
+    //   result = result.filter((lead) => {
+    //     if (lead.contracts.length) {
+    //       const contractZeroStage = lead.contracts[0]?.stages?.find(
+    //         (stage) =>
+    //           stage.title === filters.contractLevel &&
+    //           stage.stageStatus === "IN_PROGRESS"
+    //       );
+    //       lead.contracts[0].stage = contractZeroStage;
+    //       lead.contracts[0].contractLevel = contractZeroStage?.title;
+    //       return lead.contracts[0].stages?.some((stage) => {
+    //         return (
+    //           stage.title === filters.contractLevel &&
+    //           stage.stageStatus === "IN_PROGRESS"
+    //         );
+    //       });
+    //     }
+    //   });
+    // }
+
     // Step 1: Aggregate averagePrice from clientLead
     const consolusion = await prisma.clientLead.aggregate({
       where,
@@ -669,6 +742,15 @@ export async function getClientLeadDetails(
         },
         orderBy: { id: "desc" },
         take: 1,
+        select: {
+          id: true,
+          stages: {
+            select: {
+              title: true,
+              stageStatus: true,
+            },
+          },
+        },
       },
       client: {
         select: {
@@ -810,13 +892,19 @@ export async function getClientLeadDetails(
     ...clientLead.callReminders.filter((call) => call.status === "IN_PROGRESS"),
     ...clientLead.callReminders.filter((call) => call.status !== "IN_PROGRESS"),
   ];
+  if (clientLead.contracts?.length > 0) {
+    const currentStage = clientLead.contracts[0].stages?.find(
+      (stage) => stage.stageStatus === "IN_PROGRESS"
+    );
+    clientLead.contracts[0].stage = currentStage;
+    clientLead.contracts[0].contractLevel = currentStage.title;
+  }
   return clientLead;
 }
 
 export async function getContractForLead({ clientLeadId }) {
   const contracts = await prisma.contract.findMany({
     where: { clientLeadId: Number(clientLeadId) },
-    orderBy: { contractLevel: "asc" },
   });
 
   const grouped = contracts.reduce((acc, contract) => {

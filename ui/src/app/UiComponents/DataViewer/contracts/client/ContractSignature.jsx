@@ -432,7 +432,7 @@ const ContractSignature = ({
   };
 
   return (
-    <Box>
+    <Box sx={{ px: 1 }}>
       <MethodSelector method={method} onChange={setMethod} lng={lng} />
 
       {method === "online" && (

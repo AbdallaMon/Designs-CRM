@@ -245,6 +245,7 @@ function ContractAccordion({
 }) {
   const theme = useTheme();
   const statusChip = contractStatus[contract.status];
+  console.log(contract, "contract");
   const levelConf = contractLevel[contract.level];
 
   return (
@@ -302,6 +303,7 @@ function ContractAccordion({
             </Typography>
             <Box sx={{ display: "flex", gap: 1 }}>
               <ChipWithIcon conf={statusChip} />
+
               <ChipWithIcon conf={levelConf} />
             </Box>
           </Box>

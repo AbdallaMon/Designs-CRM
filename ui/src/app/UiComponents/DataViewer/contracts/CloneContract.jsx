@@ -849,6 +849,7 @@ export default function CloneContract({
   // editable states (default all editable)
   const [clientLeadId, setClientLeadId] = useState(null);
   const [title, setTitle] = useState("");
+  const [enTitle, setEnTitle] = useState("");
   const [projectGroup, setProjectGroup] = useState("");
 
   const [selectedStages, setSelectedStages] = useState([]); // [{enum,label}]
@@ -886,6 +887,7 @@ export default function CloneContract({
 
     setClientLeadId(src.clientLeadId);
     setTitle((src.title || "").trim());
+    setEnTitle((src.enTitle || "").trim());
     setProjectGroup(src.projectGroupId || "");
 
     // stages → try to map by label to enum in CONTRACT_LEVELSENUM
@@ -949,6 +951,7 @@ export default function CloneContract({
   const canGoNext = () => {
     if (activeStep === 0) {
       if (!title.trim()) return false;
+      if (!enTitle.trim()) return false;
       if (!projectGroup) return false;
       if (selectedStages.length === 0) return false;
       for (const s of selectedStages) {
@@ -1005,6 +1008,7 @@ export default function CloneContract({
     const payload = {
       clientLeadId,
       title: title.trim(),
+      enTitle: enTitle.trim(),
       projectGroupId: projectGroup,
       stages: stagesPayload,
       payments: paymentsPayload,
@@ -1085,9 +1089,16 @@ export default function CloneContract({
               {activeStep === 0 && (
                 <Stack spacing={3}>
                   <TextField
-                    label="Contract Title"
+                    label="Arabic Contract type"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
+                    fullWidth
+                    size="small"
+                  />
+                  <TextField
+                    label="English Contract type"
+                    value={enTitle}
+                    onChange={(e) => setEnTitle(e.target.value)}
                     fullWidth
                     size="small"
                   />

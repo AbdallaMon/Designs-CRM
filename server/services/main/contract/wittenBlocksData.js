@@ -1,3 +1,5 @@
+import { reverseNumber, reverseString } from "../../utilityServices.js";
+
 // wittenBlocksData.js  (only the requested edits)
 export const FIXED_TEXT = {
   titles: {
@@ -63,7 +65,9 @@ export const STAGE_CLAUSES_DEFAULT = {
     ar:
       `تعريف: تعتبر المرحلة الاولي اجتماع اولي بين الشركة والمالك لتحديد الاحتياجات ودراسة الافكار والمقترحات وتعتبر مرجع اساسي للمراحل القادمة و يتم عقد الاجتماع من خلال الحضور الي المكتب او اونلاين ) جوجل ميت او غيرها من الخدمات (\n` +
       ` في حال توقيع العقد يقدم نموذج يتم تعبئته من قبل المالك لتحديد صلاحيات التعديلات المطلوبة في المراحل القادمة.`,
-    en: "Definition: Stage 1 is an initial meeting between the company and the owner to identify needs and proposals; it becomes the reference for subsequent stages. Meeting in-office or online. • Upon signing, a form is provided to define revision permissions for later stages.",
+    en:
+      `Definition: The first stage is an initial meeting between the company and the owner to identify needs, discuss ideas and proposals, and establish the reference for all upcoming stages. The meeting can be held at the office or online (via Google Meet or other services).\n` +
+      `Upon signing the contract, a form is provided to be filled by the owner to specify the permissions for modifications in later stages.`,
   },
   2: {
     ar:
@@ -85,7 +89,25 @@ export const STAGE_CLAUSES_DEFAULT = {
       ` * في حال اي اجتماع جديد او اي اعمال تعديلات اضافية تكون بتكلفة اضافية.\n` +
       ` في حال تم الاعتماد وعدم طلب تعديلات  خلال اجتماع المناقشة يتم انهاء المرحلة الثانية.\n` +
       ` التسليم النهائي هو ملفات بصيغة بي دي اف .`,
-    en: "Definition: Apply Stage-1 ideas to the areas covered by the contract within defined permissions; 2D study, furniture layout, sockets, services, bathrooms, and fixes to owner-provided plan. Components: apply ideas, discussion meeting, perform edits if needed, final meeting; any extra meetings/edits are chargeable. Terms: owner files are the reference; delivery cap from start (workdays; excludes revisions), responses and payments affect timing; communication via email/WhatsApp; one revision; final delivery PDF.",
+    en:
+      `Definition: In this stage, the ideas proposed during the first meeting are applied to the contract’s covered spaces according to the permissions defined in the signed form. It includes studying the spaces, furniture layout, electrical sockets, service distribution, bathrooms, and resolving issues in the owner’s provided plans.\n` +
+      `Stage Components:\n` +
+      `                  Applying approved ideas from Stage One\n` +
+      `                  A meeting to discuss applied ideas on the drawings\n` +
+      `                  Implementing any requested changes if present\n` +
+      `                  Final meeting to review modifications and close Stage Two\n` +
+      `                  Any new meetings or additional changes are subject to extra fees\n` +
+      `Stage Terms:\n` +
+      ` The files received from the owner are considered the primary reference. The company bears no responsibility for errors or missing information, and any resulting modifications are chargeable.\n` +
+      ` The second party commits to deliver Stage Two within a maximum of (   ) days from the start date and after payment of the related installments. Only official working days are counted; modification time is excluded.\n` +
+      ` If the delivery duration is not defined, delivery follows the company’s schedule.\n` +
+      ` If the first party delays responses to inquiries, they bear full responsibility for any resulting delay.\n` +
+      ` If the owner delays payments, they are responsible for any delay in design or delivery.\n` +
+      ` Communication between both parties occurs via email or WhatsApp for sending studies and detailed drawings.\n` +
+      ` Only one revision is allowed by the client.\n` +
+      ` * Any additional meetings or edits are at extra cost.\n` +
+      ` If approval is given and no further changes are requested during the discussion meeting, Stage Two is concluded.\n` +
+      ` Final delivery is in PDF format.`,
   },
   3: {
     ar:
@@ -106,8 +128,25 @@ export const STAGE_CLAUSES_DEFAULT = {
       ` يسمح بتعديلان  فقط من قبل العميل.\n` +
       ` * في حال اي اجتماع جديد او اي اعمال تعديلات اضافية تكون بتكلفة اضافية.\n` +
       ` في حال تم الاعتماد وعدم طلب تعديلات  خلال اجتماع المناقشة يتم انهاء المرحلة الثالثة.\n` +
-      ` التسليم النهائي هو ملفات بصيغة PDF .`,
-    en: "Definition: Interior design per selected style with 3D visuals. Components: style selection, design start, presentation meeting, two revisions right, finish and move to final stage. Terms as provided in Arabic.",
+      ` التسليم النهائي هو ملفات بصيغة ${reverseString("PDF")}  .`,
+    en:
+      `Definition: Includes the interior design process according to the style selected by the owner. The design team develops and visualizes the approved ideas in 3D.\n` +
+      `Stage Components:\n` +
+      `                  Defining the design style\n` +
+      `                  Starting design work by the team\n` +
+      `                  Presentation meeting with the owner (in-office or online)\n` +
+      `                  Right for two design revisions\n` +
+      `                  Completion and transition to the final stage\n` +
+      `Stage Terms:\n` +
+      ` Owner-provided files are the main reference. The company is not responsible for errors or missing data, and any resulting edits incur additional costs.\n` +
+      ` The second party commits to deliver Stage Three within (   ) days from the start date and after related payments. Only working days are counted, excluding revision time.\n` +
+      ` If not specified, delivery follows the company’s schedule.\n` +
+      ` Delayed responses or payments by the first party result in responsibility for any delays.\n` +
+      ` Communication is via email or WhatsApp.\n` +
+      ` Two revisions are allowed only.\n` +
+      ` Any new meetings or extra edits are chargeable.\n` +
+      ` If the design is approved with no further changes requested, Stage Three is considered complete.\n` +
+      ` Final delivery in PDF format.`,
   },
   4: {
     ar:
@@ -120,9 +159,20 @@ export const STAGE_CLAUSES_DEFAULT = {
       ` يتم التعامل من خلال البريد الالكتروني او الواتس اب  بين الطرفين في ارسال الدراسات  والمخططات التفصيلة\n` +
       `  في حال اي اجتماع جديد او اي اعمال تعديلات اضافية تكون بتكلفة اضافية.\n` +
       ` عند الانتقال الي مرحلة المخططات النهائية لا يحق اجراء اي تعديل علي التصميم المعتمد.\n` +
-      ` التسليم النهائي هو ملفات بصيغة PDF .\n` +
-      ` يتم تسليم المخططات بنسخة PDF  فقط وفي حال طلب نسخ اضافية بصيغ اخرى قد يطلب تكلفة اضافية.`,
-    en: "Definition: Begin detailed drawings; no changes to base design/layout once started. Terms as provided in Arabic.",
+      ` التسليم النهائي هو ملفات بصيغة ${reverseString("PDF")}  .\n` +
+      ` يتم تسليم المخططات بنسخة ${reverseString(
+        "PDF"
+      )}   فقط وفي حال طلب نسخ اضافية بصيغ اخرى قد يطلب تكلفة اضافية.`,
+    en:
+      `Definition: Start preparing the project’s detailed drawings covering all contract-related works. Once this stage begins, no modifications to the approved design or layout are permitted.\n` +
+      `Stage Terms:\n` +
+      ` The second party commits to deliver Stage Four within (   ) days from the start date and after related payments. Only official working days are counted; modification work time excluded.\n` +
+      ` If the delivery period is not defined, the project will be delivered according to the company’s schedule.\n` +
+      ` Delays in responses or payments from the owner may cause design or delivery delays for which the owner is responsible.\n` +
+      ` Communication between parties will be via email or WhatsApp for studies and detailed drawings.\n` +
+      ` Any new meetings or additional edits are subject to extra charges.\n` +
+      ` Once entering the final drawings stage, no modifications to the approved design are allowed.\n` +
+      ` Final delivery in PDF format only. Additional formats may incur extra fees.`,
   },
   5: {
     ar:
@@ -139,31 +189,53 @@ export const STAGE_CLAUSES_DEFAULT = {
       ` يتم التعامل من خلال البريد الالكتروني او الواتس اب  بين الطرفين في ارسال الدراسات  والمخططات التفصيلة\n` +
       `  في حال اي اجتماع جديد او اي اعمال تعديلات اضافية تكون بتكلفة اضافية.\n` +
       ` عند الانتقال الي مرحلة المخططات النهائية لا يحق اجراء اي تعديل علي التصميم المعتمد.\n` +
-      ` التسليم النهائي هو ملفات بصيغة PDF .\n` +
-      ` يتم تسليم المخططات بنسخة PDF  فقط وفي حال طلب نسخ اضافية بصيغ اخرى قد يطلب تكلفة اضافية.`,
-    en: "Definition: BOQ/specs/pricing; UAE market/specs scope; terms as provided in Arabic.",
+      ` التسليم النهائي هو ملفات بصيغة ${reverseString("PDF")}  .\n` +
+      ` يتم تسليم المخططات بنسخة ${reverseString(
+        "PDF"
+      )}  فقط وفي حال طلب نسخ اضافية بصيغ اخرى قد يطلب تكلفة اضافية.`,
+    en:
+      `Definition: Start quantity takeoff and specification/pricing process for the project.\n` +
+      `Stage Terms:\n` +
+      ` The second party commits to deliver Stage Five within (   ) days from the start date and after related payments. Only official working days are counted.\n` +
+      ` Specifications are defined according to the UAE market only.\n` +
+      ` Pricing applies only to UAE-based projects.\n` +
+      ` Quantities may vary from one company to another depending on calculation methods.\n` +
+      ` Communication via email or WhatsApp between parties for studies and drawings.\n` +
+      ` Any new meetings or additional modifications are chargeable.\n` +
+      ` No changes are allowed once moving to final drawing stage.\n` +
+      ` Final delivery is in PDF format only. Additional formats may incur extra cost.`,
   },
   6: {
     ar:
       `تعريف: مرحلة البدء باعمال التنفيذ بعد توقيع عقد التنفيذ المفصل  \n` +
       ` هذه المرحلة لها عقد منفصل .`,
-    en: "Definition: Execution stage after signing a separate detailed execution contract (separate agreement).",
+    en:
+      `Definition: Stage of starting execution works after signing the detailed execution contract.\n` +
+      `This stage has a separate agreement.`,
   },
 };
 
 export const HANDWRITTEN_SPECIAL_CLAUSES = {
   ar: [
     `موعد التسليم المجمل للاعمال ..... يوم من تاريخ استلام الدفعة الاولي لا يشمل ايام التعديلات او التاخير الذي يحصل من طرف المالك في اي مرحلة من مراحل العمل.`,
-    `في حالة فسخ العقد قبل البدء باي اعمال تخص الطرف الاول يتم ارجاع 50 % من قيمة الدفعة الاولي .`,
+    `في حالة فسخ العقد قبل البدء باي اعمال تخص الطرف الاول يتم ارجاع ${reverseNumber(
+      50
+    )} % من قيمة الدفعة الاولي .`,
     `اي مخططات اضافيه يطلبها الفريق الاول تكون بتكلفة اضافيه يحددها قسم المحاسبه للشركه.`,
     `في حالة فسخ الاتفاق بعد البدء بأي اعمال تخص الطرف الاول  تعتبر الدفعة الأولى غير مستردة ولا يحق المطالبة بها.`,
     `يتوجب حضور الفريق الأول لمناقشة  تفاصيل المشروع في المكتب او اي وسيله رسميه للتواصل.`,
     `تتم المطالبات المالية من خلال محاسب الشركه او من خلال ممثل الشركه فقط .`,
-    `يحق للفريق الثاني مشاركه كافه اعمال التصميم علي وسائل التواصل الخاصه بالشركه او اي وسيله اعلاميه وفي حال رفض الفريق الاول ذلك يتم زيادة 20٪ علي قيمه المبلغ الاساسي لاعمال التصميم وتدفع خلال الدفعه الاولي.`,
+    `يحق للفريق الثاني مشاركه كافه اعمال التصميم علي وسائل التواصل الخاصه بالشركه او اي وسيله اعلاميه وفي حال رفض الفريق الاول ذلك يتم زيادة ${reverseNumber(
+      20
+    )}٪ علي قيمه المبلغ الاساسي لاعمال التصميم وتدفع خلال الدفعه الاولي.`,
     `تنتهي صلاحية هذه الاتفاقية بعد  تسليم المخططات النهائية الي الطرف الاول ولا يجوز طلب تعديلات او اضافات علي المشروع الا بعقد جديد.`,
     `لطلب اي معلومات او استشارات او تفاصيل عن المشروع اثناء مرحلة التنفيذ يتم من خلال اتفاقية جديدة يندرج تحت مسمى الاشراف الهندسي او الاستشرات الهندسيه`,
-    `في حال تم تسليم اعمال التصميم ولم نتلقى رد من العميل  خلال مدة 20 يوم من تسليم التصميم يتحول المشروع  لمرحلة المخططات تلقائيا  ويفقد المالك احقية التعديلات واي مستحقات مالية تخص المرحلة يكون العميل مطالب فيها`,
-    `في حال تأخر العميل عن سداد أي دفعة لأكثر من 30 يوما من تاريخ الاستحقاق، يحق للشركة اتخاذ الاجراءيت التاليين:\n• الغاء أي خصم تم منحه مسبقا ضمن الاتفاق\n• إعادة احتساب قيمة الخصم بما يتناسب مع مدة التأخير، واعتبار الخصم غير ساري جزئياً او كلياً وفقاً لتقدير الشركة`,
+    `في حال تم تسليم اعمال التصميم ولم نتلقى رد من العميل  خلال مدة ${reverseNumber(
+      20
+    )} يوم من تسليم التصميم يتحول المشروع  لمرحلة المخططات تلقائيا  ويفقد المالك احقية التعديلات واي مستحقات مالية تخص المرحلة يكون العميل مطالب فيها`,
+    `في حال تأخر العميل عن سداد أي دفعة لأكثر من ${reverseNumber(
+      30
+    )} يوما من تاريخ الاستحقاق، يحق للشركة اتخاذ الاجراءيت التاليين:\n• الغاء أي خصم تم منحه مسبقا ضمن الاتفاق\n• إعادة احتساب قيمة الخصم بما يتناسب مع مدة التأخير، واعتبار الخصم غير ساري جزئياً او كلياً وفقاً لتقدير الشركة`,
   ],
   en: [
     "The overall project delivery time is ..... days from the date of receipt of the first payment. This does not include revision days or any delays caused by the owner at any stage of the works.",

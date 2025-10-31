@@ -44,9 +44,18 @@ router.post("/generate-pdf", async (req, res) => {
       lng,
       defaultDrawingUrl: `${process.env.SERVER}/uploads/default-drawing.jpg`,
     });
-    return res
-      .status(200)
-      .json({ data: {}, message: "Response saved succussfully", url: null });
+    await changeContractSessionStatus({
+      token: sessionData.arToken,
+      sessionStatus: "REGISTERED",
+      extra: {
+        writtenAt: new Date(),
+      },
+    });
+    return res.status(200).json({
+      data: {},
+      message: lng ? "تم حفظ الاستجابة بنجاح" : "Response saved successfully",
+      url: null,
+    });
   } catch (err) {
     console.error("PDF generation error:", err);
     return res.status(500).json({
