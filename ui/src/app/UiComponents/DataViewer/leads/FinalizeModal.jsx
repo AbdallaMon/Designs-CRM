@@ -16,6 +16,7 @@ import {
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import LeadContractList from "../contracts/ContractsList";
 import ViewContract from "../contracts/ViewContract";
+import { getData } from "@/app/helpers/functions/getData";
 
 export function FinalizeModal({
   open,
@@ -35,11 +36,11 @@ export function FinalizeModal({
   const [averagePrice, setAveragePrice] = useState(lead.averagePrice);
   const { setAlertError } = useAlertContext();
   const { setLoading } = useToastContext();
+  const [loadContract, setLoadingContract] = useState(false);
   const { user } = useAuth();
 
   // currentContract will be filled by <ViewContract/> via updateOuterContract
-  const [currentContract, setCurrentContract] = useState({});
-
+  const [currentContract, setCurrentContract] = useState(null);
   // extra: small confirm dialog state (minimal + reusable)
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmMeta, setConfirmMeta] = useState({
@@ -49,44 +50,21 @@ export function FinalizeModal({
     run: null, // function to run on confirm
   });
 
-  const [formData, setFormData] = useState({
-    purpose: "",
-    contractLevel: [],
-    startDate: "",
-    endDate: "",
-  });
-
-  function updateOuterContract(current) {
-    setCurrentContract(current || {});
-  }
-
-  // keeps your original "create contract first time" logic intact
-  const handleSaveContract = async () => {
-    if (
-      !formData.purpose ||
-      !formData.contractLevel ||
-      formData.contractLevel.length < 1
-    ) {
-      setAlertError("Please fill in all required fields.");
-      return false;
+  async function updateOuterContract(current, type) {
+    if (type === "DATA") {
+      setCurrentContract(current || null);
+    } else if (type === "ID") {
+      if (current) {
+        const req = await getData({
+          url: `shared/contracts/${current}`,
+          setLoading: setLoadingContract,
+        });
+        if (req.status === 200) {
+          setCurrentContract(req.data);
+        }
+      }
     }
-
-    const url = `shared/client-leads/${lead.id}/contracts`;
-    const method = "POST";
-
-    const req = await handleRequestSubmit(
-      formData,
-      setLoading,
-      url,
-      false,
-      "Saving Contract",
-      false,
-      method
-    );
-
-    if (req.status === 200 || req.status === 201) return true;
-    return false;
-  };
+  }
 
   useEffect(() => {
     if (discount >= 0 && price > 0) {
@@ -115,7 +93,6 @@ export function FinalizeModal({
       false,
       "PUT"
     );
-
     if (request.status === 200) {
       if (setLead) {
         setLead((oldLead) => ({
@@ -144,6 +121,7 @@ export function FinalizeModal({
       if (setAnchorEl) setAnchorEl(null);
       if (setId) setId(null);
       setOpen(false);
+      setCurrentContract(null);
     }
   };
 
@@ -157,11 +135,11 @@ export function FinalizeModal({
     const hasAnyContracts =
       Array.isArray(lead.contracts) && lead.contracts.length > 0;
     const hasCurrent =
-      hasAnyContracts &&
-      lead.contracts.some(
-        (c) => (c?.status || "").toUpperCase() === "IN_PROGRESS"
-      );
-
+      currentContract ||
+      (hasAnyContracts &&
+        lead.contracts.some(
+          (c) => (c?.status || "").toUpperCase() === "IN_PROGRESS"
+        ));
     // choose which number to compare with the contract
     const finalPriceNumber =
       averagePrice != null && averagePrice !== ""
@@ -169,11 +147,7 @@ export function FinalizeModal({
         : Number(price);
 
     // try typical names; if undefined we still show a generic confirm
-    const contractAmountRaw =
-      currentContract &&
-      (currentContract.amount ??
-        currentContract.total ??
-        currentContract.price);
+    const contractAmountRaw = currentContract && currentContract.amount;
     const contractAmount =
       contractAmountRaw != null && contractAmountRaw !== ""
         ? Number(contractAmountRaw)
@@ -185,11 +159,6 @@ export function FinalizeModal({
 
     // build the action that will run AFTER user confirms
     let run = async () => {
-      // keep your original flow: if no contracts -> try to create one first
-      if (!hasCurrent) {
-        const pass = await handleSaveContract();
-        if (!pass) return; // user still needs to fill required fields in your mini contract form
-      }
       await finalizeRequest();
     };
 
@@ -213,11 +182,10 @@ export function FinalizeModal({
         severity = "warning";
       }
     } else {
-      // we have a current contract but no readable amount
       title = "Proceed with Current Contract";
       message =
-        "A current contract exists. Continue to finalize with the entered price?";
-      severity = "info";
+        "A current contract exists with no payments. Continue to finalize with the entered price?";
+      severity = "error";
     }
 
     setConfirmMeta({ title, message, severity, run });
@@ -292,7 +260,11 @@ export function FinalizeModal({
         </Alert>
 
         {/* keeps your existing contract section exactly the same */}
-        <LeadContract lead={lead} updateOuterContract={updateOuterContract} />
+        <LeadContract
+          lead={lead}
+          updateOuterContract={updateOuterContract}
+          outerContract={currentContract}
+        />
       </DialogContent>
 
       <DialogActions>
@@ -320,25 +292,29 @@ export function FinalizeModal({
   );
 }
 
-function LeadContract({ lead, updateOuterContract }) {
-  const currentContract = lead?.contracts?.find((contract) => {
-    return (contract.status || "").toUpperCase() === "IN_PROGRESS";
-  });
-
+function LeadContract({ lead, updateOuterContract, outerContract }) {
   return (
     <>
-      {!currentContract && (
-        <LeadContractList leadId={lead.id} finalModal={true} />
+      {!outerContract && (
+        <LeadContractList
+          leadId={lead.id}
+          finalModal={true}
+          updateOuterContract={(id) => {
+            updateOuterContract(id, "ID");
+          }}
+        />
       )}
-      {currentContract && (
+      {outerContract && (
         <Box sx={{ mb: 2 }}>
           <Typography variant="h4" sx={{ mb: 1.5 }}>
             Current in progress contract
           </Typography>
           <ViewContract
-            id={currentContract.id}
+            id={outerContract.id}
             hide={{ basics: true, drawings: true, specialItems: true }}
-            updateOuterContract={updateOuterContract}
+            updateOuterContract={(data) => {
+              updateOuterContract(data, "DATA");
+            }}
           />
         </Box>
       )}

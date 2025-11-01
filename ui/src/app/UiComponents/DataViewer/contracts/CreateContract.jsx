@@ -859,6 +859,7 @@ function ContractDrawingsEditor({ drawings, setDrawings }) {
 export default function CreateContractDialog({
   onUpdate,
   clientLeadId = null,
+  updatedOuterContract,
 }) {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
@@ -959,6 +960,16 @@ export default function CreateContractDialog({
 
     if (req.status === 200) {
       onUpdate();
+      if (updatedOuterContract) {
+        const detailsReq = await getDataAndSet({
+          url: `shared/contracts/${req?.data?.id}`,
+          setLoading,
+        });
+        console.log(detailsReq, "detailsReq");
+        console.log(req, "req");
+
+        updatedOuterContract(detailsReq.data);
+      }
       handleClose();
     }
   };

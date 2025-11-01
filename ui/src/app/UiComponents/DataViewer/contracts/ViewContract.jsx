@@ -1885,7 +1885,7 @@ export default function ViewContract({ id, hide, updateOuterContract }) {
               Contract Viewer / Editor
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              ID #${id}
+              ID #{id}
             </Typography>
           </Box>
           <Stack

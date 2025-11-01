@@ -32,7 +32,9 @@ export async function getDataAndSet({
     const status = response.status;
     const result = await response.json();
     if (status === 200) {
-      setData(result.data);
+      if (setData) {
+        setData(result.data);
+      }
     }
     result.status = status;
     return result;

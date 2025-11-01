@@ -77,10 +77,10 @@ export async function createContract({ payload }) {
         title,
         enTitle,
         purpose: title,
-        amount,
+        amount: +amount,
         taxRate,
         contractLevel: stages[0].levelEnum,
-        totalAmount,
+        totalAmount: +totalAmount,
         projectGroupId,
         startDate: new Date(),
       },
@@ -115,7 +115,7 @@ export async function createContract({ payload }) {
         },
       });
     }
-    return true;
+    return contract;
   } catch (e) {
     console.log(e.message, "error in contract");
     throw new Error(e.message);

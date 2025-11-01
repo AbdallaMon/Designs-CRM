@@ -41,7 +41,12 @@ import CloneContract from "./CloneContract";
 import DeleteModelButton from "../leads/extra/DeleteModelButton";
 import { FaCopy } from "react-icons/fa";
 
-export default function LeadContractList({ leadId, finalModal }) {
+export default function LeadContractList({
+  leadId,
+  finalModal,
+  updateOuterContract,
+}) {
+  console.log(leadId, "leadId");
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openView, setOpenView] = useState(false);
@@ -81,6 +86,13 @@ export default function LeadContractList({ leadId, finalModal }) {
       setLoading,
       setData: setContracts,
     });
+    if (req && updateOuterContract) {
+      console.log(req, "data");
+      updateOuterContract(
+        req.data.find((c) => c.status === "IN_PROGRESS" && c.amount > 0)?.id ||
+          null
+      );
+    }
   }
 
   useEffect(() => {

@@ -2011,7 +2011,7 @@ async function generateContractPdfLinksInBothLanguages({
   const remotePath = `public_html/uploads/${fileName}`;
   await uploadToFTPHttpAsBuffer(pdfBytes, remotePath, true);
   const publicUrl = `${
-    process.env.ISLOCAL ? "https://panel.dreamstudiio.com" : process.env.SERVER
+    !process.env.ISLOCAL ? "https://panel.dreamstudiio.com" : process.env.SERVER
   }/uploads/${fileName}`;
 
   if (lng === "ar") {

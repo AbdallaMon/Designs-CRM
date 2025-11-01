@@ -322,6 +322,9 @@ export async function getClientLeadsByDateRange({
         take: 1,
         select: {
           id: true,
+          status: true,
+          amount: true,
+          totalAmount: true,
           stages: {
             select: {
               title: true,
@@ -566,6 +569,9 @@ export async function getClientLeadsColumnStatus({
           take: 1,
           select: {
             id: true,
+            status: true,
+            amount: true,
+            totalAmount: true,
             stages: {
               select: {
                 title: true,
@@ -744,6 +750,9 @@ export async function getClientLeadDetails(
         take: 1,
         select: {
           id: true,
+          status: true,
+          amount: true,
+          totalAmount: true,
           stages: {
             select: {
               title: true,
