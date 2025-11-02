@@ -26,3 +26,4 @@ const stringSession = new StringSession("");
   console.log(client.session.save());
 })();
 
+// $2b$08$Xqn72mfDdomnscpyCoNQROw.dclzHH3C7hztcA9602weMQolp8RSO

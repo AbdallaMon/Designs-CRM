@@ -906,7 +906,7 @@ export async function getClientLeadDetails(
       (stage) => stage.stageStatus === "IN_PROGRESS"
     );
     clientLead.contracts[0].stage = currentStage;
-    clientLead.contracts[0].contractLevel = currentStage.title;
+    clientLead.contracts[0].contractLevel = currentStage?.title;
   }
   return clientLead;
 }
