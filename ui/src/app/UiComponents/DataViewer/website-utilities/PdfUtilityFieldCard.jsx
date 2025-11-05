@@ -85,7 +85,7 @@ function ImgOrLink({ label, url }) {
   );
 }
 
-export default function UtilityFieldCard({
+export default function PdfUtilityFieldCard({
   title,
   value,
   onSubmit,

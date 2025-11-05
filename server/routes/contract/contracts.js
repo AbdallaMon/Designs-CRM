@@ -18,6 +18,8 @@ import {
   updateContractPayment,
   updateContractPaymentStatus,
   updateContractSpecialItem,
+  markContractAsCancelled,
+  getContractPaymentsGroupedService,
 } from "../../services/main/contract/contractServices.js";
 
 const router = Router();
@@ -49,6 +51,17 @@ router.get("/:contractId", async (req, res) => {
     const contractId = req.params.contractId;
     const result = await getContractDetailsById({ contractId });
     res.status(200).json({ data: result });
+  } catch (error) {
+    console.error("Error fetching client leads contracts:", error);
+    res.status(500).json({ message: error?.message });
+  }
+});
+router.patch("/:contractId/cancel", async (req, res) => {
+  try {
+    const result = await markContractAsCancelled({
+      contractId: Number(req.params.contractId),
+    });
+    res.status(200).json({ data: result, message: "Contract Cancelled" });
   } catch (error) {
     console.error("Error fetching client leads contracts:", error);
     res.status(500).json({ message: error?.message });
@@ -120,6 +133,34 @@ router.delete("/:contractId/stages/:stageId", async (req, res) => {
     res
       .status(200)
       .json({ data: result, message: "Contract level delete successfully" });
+  } catch (error) {
+    console.error("Error fetching client leads contracts:", error);
+    res.status(500).json({ message: error?.message });
+  }
+});
+router.get("/payments/all", async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status = "DUE" } = req.query;
+    const data = await getContractPaymentsGroupedService({
+      page,
+      limit,
+      status,
+    });
+    res.status(200).json({ data });
+  } catch (err) {
+    console.error("Error fetching grouped contract payments:", err.message);
+    res.status(500).json({ message: err.message });
+  }
+});
+router.post("/payments/:paymentId/status", async (req, res) => {
+  try {
+    const result = await updateContractPaymentStatus({
+      paymentId: req.params.paymentId,
+      status: req.body.status,
+    });
+    res
+      .status(200)
+      .json({ data: result, message: "Contract payment updated successfully" });
   } catch (error) {
     console.error("Error fetching client leads contracts:", error);
     res.status(500).json({ message: error?.message });

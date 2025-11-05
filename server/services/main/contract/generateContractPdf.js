@@ -1,5 +1,5 @@
 // server/services/main/contract/generateContractPdf.js
-import { PDFDocument, rgb } from "pdf-lib";
+import { PDFDocument, rgb, degrees } from "pdf-lib";
 import {
   fetchImageBuffer,
   getRTLTextX,
@@ -283,6 +283,9 @@ async function renderClientSection(ctx, { lng, contract, fonts, colors }) {
   await ctx.writeTitle(FIXED_TEXT.titles.partyOne[lng]);
 
   const owner = contract?.clientLead?.client || {};
+  const name =
+    (lng === "ar" ? owner?.arName : owner?.enName || owner?.arName) ||
+    owner?.name;
   const lead = contract?.clientLead || {};
   const emirate = lead?.emirate || null;
   const country = lead?.country || null;
@@ -310,7 +313,7 @@ async function renderClientSection(ctx, { lng, contract, fonts, colors }) {
 
   // Prepare items (label/value)
   const items = [
-    [lng === "ar" ? "اسم المالك" : "Owner name", String(owner?.name || "-")],
+    [lng === "ar" ? "اسم المالك" : "Owner name", String(name || "-")],
     [lng === "ar" ? "العنوان" : "Address", String(address || "-")],
     [lng === "ar" ? "رقم الهاتف" : "Phone", String(owner?.phone || "-")],
     [lng === "ar" ? "البريد الإلكتروني" : "Email", String(owner?.email || "-")],
@@ -494,26 +497,38 @@ async function renderAmountSection(ctx, { lng, contract }) {
     );
   }
 }
-function buildPaymentLine({ payment, index, lng }) {
+// SERVER / PDF
+function buildPaymentLine({ payment, index, lng, taxRate }) {
   const ordinal =
     PAYMENT_ORDINAL[lng][index] ||
     (lng === "ar" ? `دفعة ${index}` : `Payment ${index}`);
-  const amt = formatAED(payment.amount, lng);
-  const beforeStageText =
-    payment.beforeStageOrder && lng === "ar"
-      ? ` وقبل البدء بالمرحلة ${payment.beforeStageOrder}`
-      : payment.beforeStageOrder && lng === "en"
-      ? ` and before starting stage ${payment.beforeStageOrder}`
-      : "";
-  const primary = PROJECT_TYPES_LABELS[payment?.project?.type]?.[lng] || "";
+
+  const baseAmountNum = Number(payment.amount || 0);
+  const rate = taxRate > 1 ? taxRate / 100 : taxRate; // expects 0.05, but handles 5 too
+  const amountWithTaxNum = baseAmountNum * (1 + (rate || 0));
+
+  const amt = formatAED(baseAmountNum, lng);
+  const amtWithTax = formatAED(amountWithTaxNum, lng);
+
+  let primary =
+    lng === "ar"
+      ? payment.conditionItem?.labelAr
+      : payment.conditionItem?.labelEn || payment.conditionItem?.labelAr;
+
+  const taxNote =
+    lng === "ar"
+      ? ` )ما يعادل ${amtWithTax} بإضافة الضريبة(`
+      : ` (equivalent to ${amtWithTax} with tax)`;
+
   if (index === 1) {
     return lng === "ar"
-      ? ` ${ordinal} عند توقيع العقد بقيمه: ${amt}`
-      : ` ${ordinal} on contract signature: ${amt}`;
+      ? ` ${ordinal} عند توقيع العقد بقيمه: ${amt}${taxNote}`
+      : ` ${ordinal} on contract signature: ${amt}${taxNote}`;
   }
+
   return lng === "ar"
-    ? `- ${ordinal} الانتهاء من ${primary}${beforeStageText} بقيمة : ${amt}`
-    : `- ${ordinal} upon completion of ${primary}${beforeStageText}: ${amt}`;
+    ? `- ${ordinal} ${primary} بقيمة : ${amt}${taxNote}`
+    : `- ${ordinal} ${primary}: ${amt}${taxNote}`;
 }
 
 async function renderDbSpecialItems(ctx, { lng, contract, fonts, colors }) {
@@ -537,6 +552,7 @@ async function renderPartyOneWithPayments(
     lng === "ar" ? "التزامات الفريق الأول" : "Party One Obligations"
   );
 
+  const taxRate = Number(contract?.taxRate || 5);
   const base = OBLIGATIONS_TEXT.partyOne[lng].base || "";
   const items = base
     .split(/\r?\n/)
@@ -559,7 +575,7 @@ async function renderPartyOneWithPayments(
       { fonts, colors, fs: 12 }
     );
     const paymentLines = payments.map((p, i) =>
-      buildPaymentLine({ payment: p, index: i + 1, lng })
+      buildPaymentLine({ payment: p, index: i + 1, lng, taxRate })
     );
     await writeParagraphOrList(ctx, paymentLines.join("\n"), {
       fonts,
@@ -1318,7 +1334,9 @@ async function renderDrawingsSection(
     : defaultDrawingUrl
     ? [defaultDrawingUrl]
     : [];
-
+  if (!toRender.length) {
+    return;
+  }
   const maxW = ctx.pageWidth - ctx.margin.left - ctx.margin.right;
   const maxH = 150;
 
@@ -1763,6 +1781,148 @@ async function renderFooterPageNumbers(
     });
   }
 }
+// Call exactly like before:
+// await drawCancelledWatermarkOnAllPages(pdfDoc, { fonts, lng, opacity: 0.14 })
+// import { PDFDocument, rgb, degrees } from "pdf-lib";
+
+async function drawCancelledWatermarkOnAllPages(
+  pdfDoc,
+  {
+    fonts,
+    textAr = "تم إلغاء هذا العقد",
+    textEn = "THIS CONTRACT HAS BEEN CANCELLED",
+    lng,
+    color = rgb(1, 0, 0),
+
+    // opacities
+    opacity = 0.14, // main headline fill
+    bandOpacity = 0.08, // diagonal ribbon
+    strokeOpacity = 0.22, // subtle outline/shadow text
+    microOpacity = 0.045, // tiled micro-text (set to 0 to disable)
+
+    // geometry
+    angleDeg = 33,
+    gap = 260, // minimum micro-text gap
+  } = {}
+) {
+  const wantAr = lng === "ar";
+
+  // choose fonts strictly by language
+  const mainFont =
+    (wantAr
+      ? fonts?.arBold || fonts?.arFont
+      : fonts?.enBold || fonts?.enFont) || null;
+
+  const microFont =
+    (wantAr
+      ? fonts?.arFont || fonts?.arBold
+      : fonts?.enFont || fonts?.enBold) || null;
+
+  // choose text strictly by language
+  const text = wantAr ? reText(String(textAr || "")) : String(textEn || "");
+
+  const pages = pdfDoc.getPages();
+  for (const page of pages) {
+    const pw = page.getWidth();
+    const ph = page.getHeight();
+    const cx = pw / 2;
+    const cy = ph / 2;
+
+    // full corner-to-corner diagonal
+    const diagonal = Math.sqrt(pw * pw + ph * ph);
+
+    // base font size scaled to page; we will downscale if it doesn't fit diagonal
+    let fs = Math.max(40, Math.min(76, Math.floor(Math.max(pw, ph) / 11)));
+
+    if (mainFont) {
+      // ensure headline fits inside the ribbon length with padding
+      const PAD = 140; // diagonal padding
+      while (fs > 20 && mainFont.widthOfTextAtSize(text, fs) > diagonal - PAD) {
+        fs -= 2;
+      }
+    }
+
+    // ribbon height relative to font size
+    const bandH = Math.max(52, Math.floor(fs * 1.35));
+
+    // 1) Diagonal ribbon
+    page.drawRectangle({
+      x: cx - diagonal / 2 - 40,
+      y: cy - bandH / 2,
+      width: diagonal + 80,
+      height: bandH,
+      color,
+      opacity: bandOpacity,
+      borderColor: color,
+      borderWidth: 0.6,
+      rotate: degrees(angleDeg),
+    });
+
+    if (mainFont && text) {
+      // helper to draw centered, rotated text with a soft outline
+      const drawCentered = ({ t, font, size }) => {
+        const w = font.widthOfTextAtSize(t, size);
+        const x = cx - w / 2;
+        const y = cy - size / 3;
+
+        // tiny shadow for contrast at low opacity
+        page.drawText(t, {
+          x: x + 0.9,
+          y: y - 0.9,
+          size,
+          font,
+          color: rgb(1, 1, 1),
+          opacity: Math.min(0.9, strokeOpacity),
+          rotate: degrees(angleDeg),
+        });
+
+        page.drawText(t, {
+          x,
+          y,
+          size,
+          font,
+          color,
+          opacity,
+          rotate: degrees(angleDeg),
+        });
+      };
+
+      // 2) Single-language headline centered on ribbon
+      drawCentered({ t: text, font: mainFont, size: fs });
+    }
+
+    // 3) Very faint single-language tiled micro-text (optional)
+    if (microOpacity > 0 && microFont && text) {
+      const fsMicro = Math.max(20, Math.floor(fs * 0.52));
+      const microGap = Math.max(gap, Math.floor((pw + ph) / 2));
+
+      for (let y = -microGap; y < ph + microGap; y += microGap) {
+        for (let x = -microGap; x < pw + microGap; x += microGap) {
+          // small shadow to keep legible at very low opacity
+          page.drawText(text, {
+            x: x + 0.6,
+            y: y - 0.6,
+            size: fsMicro,
+            font: microFont,
+            color: rgb(1, 1, 1),
+            opacity: Math.min(0.9, strokeOpacity * 0.5),
+            rotate: degrees(angleDeg),
+          });
+
+          page.drawText(text, {
+            x,
+            y,
+            size: fsMicro,
+            font: microFont,
+            color,
+            opacity: microOpacity,
+            rotate: degrees(angleDeg),
+          });
+        }
+      }
+    }
+  }
+}
 
 // ===== Public API =====
 export async function generateContractPdf({
@@ -1777,6 +1937,9 @@ export async function generateContractPdf({
   pageHeight = 800,
   padding = { top: 72, right: 56, bottom: 72, left: 56 },
   defaultDrawingUrl = null,
+  canceled = false,
+  cancelWatermarkTextAr = "تم إلغاء هذا العقد",
+  cancelWatermarkTextEn = "THIS CONTRACT HAS BEEN CANCELLED",
 }) {
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
@@ -1921,9 +2084,20 @@ export async function generateContractPdf({
     colors,
   });
 
-  // 4) Footer (exclude intro page and push lower)
   await renderFooterPageNumbers(pdfDoc, { lng, fonts, colors, pageWidth });
+  if (canceled) {
+    await drawCancelledWatermarkOnAllPages(pdfDoc, {
+      fonts,
+      lng,
 
+      textAr: cancelWatermarkTextAr,
+      textEn: cancelWatermarkTextEn,
+      color: colors.red,
+      opacity: 0.14,
+      angleDeg: 33,
+      gap: 260,
+    });
+  }
   return await pdfDoc.save();
 }
 
@@ -1931,6 +2105,8 @@ export async function buildAndUploadContractPdf({
   token,
   lng = "ar",
   signatureUrl,
+  // defaultDrawingUrl = `${process.env.SERVER}/uploads/default-drawing.jpg`,
+  canceled = false,
   defaultDrawingUrl = null,
 }) {
   const siteUtility = await prisma.siteUtility.findFirst();
@@ -1949,6 +2125,7 @@ export async function buildAndUploadContractPdf({
       paymentsNew: {
         include: {
           project: true,
+          conditionItem: true,
         },
       },
       drawings: true,
@@ -1968,6 +2145,7 @@ export async function buildAndUploadContractPdf({
     introImageUrl,
     defaultDrawingUrl,
     padding: { top: 72, right: 56, bottom: 72, left: 56 },
+    canceled,
   });
   const arPublicUrl = await generateContractPdfLinksInBothLanguages({
     contract,
@@ -1983,21 +2161,24 @@ export async function buildAndUploadContractPdf({
     introImageUrl,
     defaultDrawingUrl,
     padding: { top: 72, right: 56, bottom: 72, left: 56 },
+    canceled,
   });
   const enPublicUrl = await generateContractPdfLinksInBothLanguages({
     contract,
     lng: "en",
     pdfBytes: enPdfBytes,
   });
-  await notifyUsersThatAContractWasSigned({ clientLeadId: clientLeadId });
+  if (!canceled) {
+    await notifyUsersThatAContractWasSigned({ clientLeadId: clientLeadId });
 
-  await sendSuccessEmailAfterContractSigned({
-    token,
-    clientLeadId,
-    arPdfUrl: arPublicUrl,
-    enPdfUrl: enPublicUrl,
-    lng,
-  });
+    await sendSuccessEmailAfterContractSigned({
+      token,
+      clientLeadId,
+      arPdfUrl: arPublicUrl,
+      enPdfUrl: enPublicUrl,
+      lng,
+    });
+  }
   await updateContractPaymentOnContractSign({ contractId: contract.id });
   return arPublicUrl;
 }

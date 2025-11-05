@@ -1,8 +1,3 @@
-- اول دفعه بتكون مستحقة عند التوقيع
-- شرط الدفعه مرتبط بالمشروع لو في مشروع بيكون حسب الحالة يعني بختار حالة المشروع لما تبقي ايه الدفعه تتحول لمستحقة
-
--
-
 - dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
 

@@ -42,7 +42,6 @@ router.post("/generate-pdf", async (req, res) => {
       token: sessionData.arToken,
       signatureUrl,
       lng,
-      defaultDrawingUrl: `${process.env.SERVER}/uploads/default-drawing.jpg`,
     });
     await changeContractSessionStatus({
       token: sessionData.arToken,

@@ -135,9 +135,14 @@ export const adminLinks = [
     icon: <FiCalendar size={20} />,
   },
   {
+    name: "Payments",
+    href: "/dashboard/payments",
+    icon: <FiDollarSign size={20} />,
+  },
+  {
     name: "Website utilities",
     href: "/dashboard/website-utilities",
-    icon: <FiCalendar size={20} />,
+    icon: <FiHome size={20} />,
   },
 ];
 

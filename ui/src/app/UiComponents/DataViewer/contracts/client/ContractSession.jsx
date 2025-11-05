@@ -72,7 +72,7 @@ const formatAED = (value, lng) => {
     return new Intl.NumberFormat(locale, {
       style: "currency",
       currency: "AED",
-      minimumFractionDigits: 2,
+      minimumFractionDigits: 0,
     }).format(n);
   } catch {
     return `${value} AED`;
@@ -101,33 +101,38 @@ const getToday = (lng) => {
   return dayjs().locale(locale).format("YYYY/MM/DD");
 };
 
-function buildPaymentLine({ payment, index, lng }) {
+// FRONTEND
+function buildPaymentLine({ payment, index, lng, taxRate }) {
   const ordinal =
     PAYMENT_ORDINAL[lng][index] ||
     (lng === "ar" ? `دفعة ${index}` : `Payment ${index}`);
-  const amt = formatAED(payment.amount, lng);
-  const beforeStageText =
-    payment.beforeStageOrder && lng === "ar"
-      ? ` وقبل البدء بالمرحلة ${payment.beforeStageOrder}`
-      : payment.beforeStageOrder && lng === "en"
-      ? ` and before starting stage ${payment.beforeStageOrder}`
-      : "";
 
-  let primary = PROJECT_TYPES_LABELS[payment?.project?.type]?.[lng];
+  const baseAmountNum = Number(payment.amount || 0);
+  const rate = taxRate > 1 ? taxRate / 100 : taxRate; // expects 0.05, but handles 5 too
+  const amountWithTaxNum = baseAmountNum * (1 + (rate || 0));
+
+  const amt = formatAED(baseAmountNum, lng);
+  const amtWithTax = formatAED(amountWithTaxNum, lng);
+
+  let primary =
+    lng === "ar"
+      ? payment.conditionItem?.labelAr
+      : payment.conditionItem?.labelEn || payment.conditionItem?.labelAr;
+
+  const taxNote =
+    lng === "ar"
+      ? ` (ما يعادل ${amtWithTax} بإضافة الضريبة)`
+      : ` (equivalent to ${amtWithTax} with tax)`;
 
   if (index === 1) {
     return lng === "ar"
-      ? `• ${ordinal} عند توقيع العقد بقيمه: ${amt}`
-      : `• ${ordinal} on contract signature: ${amt}`;
+      ? `• ${ordinal} عند توقيع العقد بقيمه: ${amt}${taxNote}`
+      : `• ${ordinal} on contract signature: ${amt}${taxNote}`;
   }
 
   return lng === "ar"
-    ? `• ${ordinal} الانتهاء من ${
-        primary || ""
-      }${beforeStageText} بقيمة : ${amt}`
-    : `• ${ordinal} upon completion of ${
-        primary || ""
-      }${beforeStageText}: ${amt}`;
+    ? `• ${ordinal} ${primary || ""} بقيمة : ${amt}${taxNote}`
+    : `• ${ordinal} ${primary || ""}: ${amt}${taxNote}`;
 }
 
 // small util to split first sentence (for highlighting)
@@ -248,14 +253,16 @@ function ClientSection({ session, lng }) {
   }, [session?.stages]);
 
   const today = useMemo(() => getToday(lng), [lng]);
-
+  const name =
+    (lng === "ar" ? client?.arName : client?.enName || client?.arName) ||
+    client?.name;
   return (
     <SectionCard title={FIXED_TEXT.titles.partyOne[lng]}>
       <Grid container spacing={2}>
         <Grid size={{ md: 6 }}>
           <KeyValue
             label={lng === "ar" ? "اسم المالك" : "Owner name"}
-            value={client?.name}
+            value={name}
             isRtlValue={lng === "ar"}
           />
         </Grid>
@@ -340,11 +347,11 @@ function AmountParagraph({ session, lng }) {
         <Stack spacing={1.25}>
           <Typography variant="body2" sx={{ whiteSpace: "pre-line" }}>
             اتفق الفريقان على أن تكون تكلفة التصميم الداخلي للمشروع هي:{" "}
-            <b>{formatAED(amount, "ar")}</b> {FIXED_TEXT.currencyAED[lng]}
+            <b>{formatAED(amount, "ar")}</b>
           </Typography>
           <Typography variant="body2" sx={{ whiteSpace: "pre-line" }}>
             مع ضريبة <b>{vatRate}%</b> تصبح تكلفة التصميم{" "}
-            <b>{formatAED(total, "ar")}</b> {FIXED_TEXT.currencyAED[lng]}.
+            <b>{formatAED(total, "ar")}</b>
           </Typography>
         </Stack>
       </SectionCard>
@@ -356,11 +363,11 @@ function AmountParagraph({ session, lng }) {
       <Stack spacing={1.25}>
         <Typography variant="body2">
           Both parties agreed that the interior design cost is:{" "}
-          <b>{formatAED(amount, "en")}</b> {FIXED_TEXT.currencyAED[lng]}.
+          <b>{formatAED(amount, "en")}</b>.
         </Typography>
         <Typography variant="body2">
           With VAT <b>{vatRate}%</b>, the total design cost becomes{" "}
-          <b>{formatAED(total, "en")}</b> {FIXED_TEXT.currencyAED[lng]}.
+          <b>{formatAED(total, "en")}</b>.
         </Typography>
       </Stack>
     </SectionCard>
@@ -419,6 +426,7 @@ function PartyOneWithPayments({ session, lng }) {
                         payment: p,
                         index: idx,
                         lng,
+                        taxRate: session?.taxRate,
                       })}
                     />
                   </ListItem>
@@ -814,6 +822,7 @@ function DrawingsSection({ session, lng }) {
   const has = drawings.length > 0;
   const defaultDrawingUrl = window.location.origin + "/default-drawing.jpg";
   if (!has) {
+    return;
     drawings.push({
       fileName: lng === "ar" ? "مخطط افتراضي" : "Default Drawing",
       url: defaultDrawingUrl,

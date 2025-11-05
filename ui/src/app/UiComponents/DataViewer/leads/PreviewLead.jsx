@@ -320,9 +320,15 @@ const LeadContent = ({
                   >
                     {lead.client.name}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    #{lead.id.toString().padStart(7, "0")}
-                  </Typography>
+                  <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                    <Typography variant="body2" color="text.secondary">
+                      #{lead.id.toString().padStart(7, "0")}
+                    </Typography>
+                    -------
+                    <Typography variant="body2" color="text.secondary">
+                      code {lead.code}
+                    </Typography>
+                  </Box>
                 </>
               )}
             </Box>

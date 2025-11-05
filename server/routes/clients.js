@@ -70,7 +70,21 @@ router.use("/calendar", calendarRoutes);
 
 router.use("/image-session", imageSessionRouter);
 router.use("/contracts", contractImageRouter);
-
+async function generateCodeForNewLead(clientId) {
+  const firstLead = await prisma.clientLead.findFirst({
+    where: {
+      clientId: clientId,
+    },
+  });
+  const countedLeads = await prisma.clientLead.count({
+    where: {
+      clientId: clientId,
+    },
+  });
+  return firstLead
+    ? `${firstLead.id.toString().padStart(7, "0")}.${countedLeads + 1}`
+    : null;
+}
 router.post("/new-lead", async (req, res) => {
   const body = req.body;
 
@@ -118,6 +132,7 @@ router.post("/new-lead", async (req, res) => {
         });
       }
     }
+
     const data = {
       client: {
         connect: { id: client.id },
@@ -133,6 +148,9 @@ router.post("/new-lead", async (req, res) => {
           : ""
       }`,
     };
+
+    data.code = await generateCodeForNewLead(client.id);
+
     if (body.clientDescription) {
       data.clientDescription = body.clientDescription;
     }
@@ -246,6 +264,8 @@ router.post("/new-lead/register", async (req, res) => {
       status: "NEW",
       description: `Didn't complete register yet`,
     };
+    data.code = await generateCodeForNewLead(client.id);
+
     data.initialConsult = false;
     const clientLead = await prisma.clientLead.create({
       data,
@@ -920,4 +940,109 @@ router.get("/telegram", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+router.get("/generate-leads-code", async (req, res) => {
+  try {
+    const result = await backfillLeadCodes({
+      rewriteAll: Boolean(true),
+    });
+    res.status(200).json({ data: result });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+export async function backfillLeadCodes({
+  rewriteAll = false,
+  limitClientIds = null,
+} = {}) {
+  let processedClients = 0;
+  let updatedLeads = 0;
+
+  // get distinct clientIds that actually have leads
+  const groups = await prisma.clientLead.groupBy({ by: ["clientId"] });
+  const clientIds =
+    Array.isArray(limitClientIds) && limitClientIds.length
+      ? limitClientIds
+      : groups.map((g) => g.clientId);
+
+  // helper
+  const pad7 = (n) => String(n).padStart(7, "0");
+
+  for (const clientId of clientIds) {
+    const leads = await prisma.clientLead.findMany({
+      where: { clientId },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      select: { id: true, code: true, createdAt: true },
+    });
+
+    if (!leads.length) continue;
+    processedClients++;
+
+    const baseId = leads[0].id;
+    const prefix = pad7(baseId);
+
+    // Gather already-taken indices (only from valid same-prefix codes) to avoid collisions
+    const taken = new Set();
+    if (!rewriteAll) {
+      for (const l of leads) {
+        if (typeof l.code === "string") {
+          const [p, s] = l.code.split(".");
+          const idx = Number(s);
+          if (p === prefix && Number.isInteger(idx) && idx > 0) taken.add(idx);
+        }
+      }
+    }
+
+    // Build updates (only when needed)
+    const ops = [];
+    let nextIdx = 1;
+
+    for (let pos = 0; pos < leads.length; pos++) {
+      const lead = leads[pos];
+
+      // choose the target index
+      const targetIdx = rewriteAll
+        ? pos + 1 // strict re-sequence from 1..n
+        : (() => {
+            while (taken.has(nextIdx)) nextIdx++;
+            return nextIdx++;
+          })();
+
+      const targetCode = `${prefix}.${targetIdx}`;
+
+      if (rewriteAll) {
+        if (lead.code !== targetCode) {
+          ops.push(
+            prisma.clientLead.update({
+              where: { id: lead.id },
+              data: { code: targetCode },
+            })
+          );
+          updatedLeads++;
+        }
+      } else {
+        // safe mode: only fill blanks
+        if (!lead.code) {
+          ops.push(
+            prisma.clientLead.update({
+              where: { id: lead.id },
+              data: { code: targetCode },
+            })
+          );
+          updatedLeads++;
+          taken.add(targetIdx);
+        }
+      }
+    }
+
+    if (ops.length) {
+      // Chunk transactions (just in case you have thousands)
+      const BATCH = 500;
+      for (let i = 0; i < ops.length; i += BATCH) {
+        await prisma.$transaction(ops.slice(i, i + BATCH));
+      }
+    }
+  }
+
+  return { processedClients, updatedLeads };
+}
 export default router;

@@ -979,7 +979,7 @@ export function PriceOffersList({ admin, lead, notUser }) {
             overflowY: "auto",
           }}
         >
-          <LeadContractList leadId={lead.id} />
+          <LeadContractList leadId={lead.id} lead={lead} />
         </Box>
         <Box
           display="flex"

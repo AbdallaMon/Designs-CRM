@@ -10,6 +10,7 @@ export async function getContractSessionByToken({ token }) {
       paymentsNew: {
         include: {
           project: true,
+          conditionItem: true,
         },
       },
       drawings: true,

@@ -40,13 +40,16 @@ import { IoMdEye } from "react-icons/io";
 import CloneContract from "./CloneContract";
 import DeleteModelButton from "../leads/extra/DeleteModelButton";
 import { FaCopy } from "react-icons/fa";
+import ConfirmWithActionModel from "../../models/ConfirmsWithActionModel";
+import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 
 export default function LeadContractList({
   leadId,
   finalModal,
   updateOuterContract,
+  lead,
 }) {
-  console.log(leadId, "leadId");
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openView, setOpenView] = useState(false);
@@ -113,7 +116,11 @@ export default function LeadContractList({
       {loading && <LoadingOverlay />}
 
       <Box mb={4}>
-        <CreateContractDialog clientLeadId={leadId} onUpdate={fetchContracts} />
+        <CreateContractDialog
+          clientLeadId={leadId}
+          onUpdate={fetchContracts}
+          lead={lead}
+        />
       </Box>
 
       <Stack spacing={2}>
@@ -198,13 +205,30 @@ export default function LeadContractList({
 function ContractMenu({
   contract,
   handleViewOpen,
-  handleEditOpen,
-  setContracts,
+
   handleCloneOpen,
   fetchContracts,
 }) {
   const theme = useTheme();
-
+  const isCancelled = contract?.status === "CANCELLED"; // if your API returns it
+  const { setLoading } = useToastContext();
+  async function cancelContractReq() {
+    const req = await handleRequestSubmit(
+      {
+        canceled: true,
+      },
+      setLoading,
+      `shared/contracts/${contract.id}/cancel`,
+      false,
+      "Cancelling",
+      false,
+      "PATCH"
+    );
+    if (req.status === 200) {
+      fetchContracts();
+      return req;
+    }
+  }
   return (
     <>
       <Tooltip title="Clone contract" placement="top">
@@ -234,6 +258,21 @@ function ContractMenu({
           <IoMdEye size={18} />
         </IconButton>
       </Tooltip>
+      {isCancelled ? (
+        <Chip label="Canceled" sx={{ bgcolor: "error.main", color: "white" }} />
+      ) : (
+        <ConfirmWithActionModel
+          title="Mark this contract as canceled?"
+          description="This will mark the contract as canceled. You can still clone it later."
+          isDelete
+          label={isCancelled ? "Canceled" : "Mark as canceled"}
+          color="error"
+          size="small"
+          fullWidth={false}
+          removeAfterConfirm={true}
+          handleConfirm={cancelContractReq}
+        />
+      )}
       <DeleteModelButton
         item={contract}
         model={"contract"}

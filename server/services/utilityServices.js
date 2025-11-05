@@ -183,10 +183,7 @@ export function formatNumber(n, lng) {
 export function formatAED(n, lng) {
   try {
     // make n to string with commas as thousands separators
-    n = Number(n).toLocaleString(lng === "ar" ? "ar-AE" : "en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
+    n = Number(n).toLocaleString(lng === "ar" ? "ar-AE" : "en-US", {});
     const lngBasedValue = lng === "ar" ? reverseNumber(n) : n;
     const lngSuffix = lng === "ar" ? " درهم إماراتي " : " AED ";
     return `${lngBasedValue}${lngSuffix}`;

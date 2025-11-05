@@ -58,6 +58,7 @@ import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import SelectPaymentCondition from "./payments/SelectPaymentCondition";
 
 // Sum helper
 const sum = (arr) => arr.reduce((a, b) => a + (Number(b) || 0), 0);
@@ -269,7 +270,7 @@ function StagesSelector({ selected, onChange, perStageMeta, setPerStageMeta }) {
 
 // --- Payments Editor ---
 
-function PaymentsEditor({ payments, setPayments, taxRate, setTaxRate }) {
+function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
   const theme = useTheme();
   const total = useMemo(() => sum(payments.map((p) => p.amount)), [payments]);
   const tax = useMemo(
@@ -279,12 +280,28 @@ function PaymentsEditor({ payments, setPayments, taxRate, setTaxRate }) {
   const grand = useMemo(() => total + tax, [total, tax]);
 
   const addPayment = () => {
-    setPayments([...payments, { amount: "", note: "" }]);
+    setPayments([
+      ...payments,
+      {
+        amount: "",
+        note: "",
+        condition: payments?.length === 0 ? "SIGNATURE" : "",
+        type: "",
+        conditionId: null,
+        conditionItem: null,
+      },
+    ]);
   };
 
   const updatePayment = (idx, key, value) => {
     const copy = payments.slice();
     copy[idx] = { ...copy[idx], [key]: value };
+    setPayments(copy);
+  };
+
+  const updatePaymentFields = (idx, newData) => {
+    const copy = payments.slice();
+    copy[idx] = { ...copy[idx], ...newData };
     setPayments(copy);
   };
 
@@ -353,7 +370,16 @@ function PaymentsEditor({ payments, setPayments, taxRate, setTaxRate }) {
                       size="small"
                     />
                   </Grid>
-                  <Grid size={{ sm: 4 }}>
+                  <Grid size={{ sm: 6 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mt: 1 }}>
+                      Amount with Tax:
+                      {(
+                        Number(p.amount || 0) *
+                        (1 + (Number(taxRate) || 0) / 100)
+                      ).toFixed(2)}
+                    </Typography>
+                  </Grid>
+                  <Grid size={{ sm: 10 }}>
                     <TextField
                       label="Note (Optional)"
                       value={p.note || ""}
@@ -364,10 +390,9 @@ function PaymentsEditor({ payments, setPayments, taxRate, setTaxRate }) {
                       size="small"
                     />
                   </Grid>
+
                   <Grid
-                    item
-                    xs={12}
-                    sm={2}
+                    size={{ sm: 2 }}
                     sx={{ display: "flex", justifyContent: "flex-end" }}
                   >
                     <Tooltip title="Remove">
@@ -381,6 +406,26 @@ function PaymentsEditor({ payments, setPayments, taxRate, setTaxRate }) {
                         </IconButton>
                       </span>
                     </Tooltip>
+                  </Grid>
+                  <Grid size={12}>
+                    {idx === 0 ? (
+                      <Typography variant="caption" color="text.secondary">
+                        This payment will be due after the client signs the
+                        contract.
+                      </Typography>
+                    ) : (
+                      <SelectPaymentCondition
+                        initialCondition={p.conditionItem}
+                        onConditionChange={(value) => {
+                          updatePaymentFields(idx, {
+                            condition: value.condition,
+                            type: value.conditionType,
+                            conditionId: value.id,
+                            conditionItem: value,
+                          });
+                        }}
+                      />
+                    )}
                   </Grid>
                 </Grid>
               </CardContent>
@@ -400,16 +445,6 @@ function PaymentsEditor({ payments, setPayments, taxRate, setTaxRate }) {
         }}
       >
         <Grid container spacing={2} alignItems="center">
-          <Grid size={{ sm: 2 }}>
-            <TextField
-              type="number"
-              label="Tax %"
-              value={taxRate}
-              onChange={(e) => setTaxRate(e.target.value)}
-              fullWidth
-              size="small"
-            />
-          </Grid>
           <Grid sm="auto">
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <Stack spacing={0.5}>
@@ -860,24 +895,24 @@ export default function CreateContractDialog({
   onUpdate,
   clientLeadId = null,
   updatedOuterContract,
+  lead,
 }) {
+  const taxRate = 5;
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const { setLoading } = useToastContext();
-
   const [title, setTitle] = useState("");
   const [enTitle, setEnTitle] = useState("");
   const [projectGroup, setProjectGroup] = useState("");
   const [selectedStages, setSelectedStages] = useState([]);
   const [perStageMeta, setPerStageMeta] = useState({});
   const [payments, setPayments] = useState([]);
-  const [taxRate, setTaxRate] = useState(0);
-  const [paymentRules, setPaymentRules] = useState([]);
   const [specialItems, setSpecialItems] = useState([]);
   const [drawings, setDrawings] = useState([]);
-
-  const steps = ["Basics", "Payment Terms", "Items & Drawings"];
+  const [arClientName, setArClientName] = useState(lead?.client?.arName);
+  const [enClientName, setEnClientName] = useState(lead?.client?.enName);
+  const steps = ["Basics", "Items & Drawings"];
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
@@ -886,9 +921,12 @@ export default function CreateContractDialog({
   };
 
   const canGoNext = () => {
+    //to do check payments conditions
     if (activeStep === 0) {
       if (!title.trim()) return false;
       if (!enTitle.trim()) return false;
+      if (!arClientName || !arClientName.trim()) return false;
+      if (!enClientName || !enClientName.trim()) return false;
       if (!projectGroup) return false;
       if (selectedStages.length === 0) return false;
       for (const s of selectedStages) {
@@ -900,17 +938,18 @@ export default function CreateContractDialog({
       if (payments.length === 0) return false;
       if (payments.some((p) => !p.amount || Number(p.amount) <= 0))
         return false;
+      if (payments.some((p) => !p.condition)) return false;
       return true;
     }
-    if (activeStep === 1) {
-      for (let i = 1; i < payments.length; i++) {
-        const r = paymentRules[i] || {};
-        if (!r.activateOnSigning) {
-          if (!r.projectName || !r.condition) return false;
-        }
-      }
-      return true;
-    }
+    // if (activeStep === 1) {
+    //   for (let i = 1; i < payments.length; i++) {
+    //     const r = paymentRules[i] || {};
+    //     if (!r.activateOnSigning) {
+    //       if (!r.projectName || !r.condition) return false;
+    //     }
+    //   }
+    //   return true;
+    // }
     return true;
   };
 
@@ -930,22 +969,15 @@ export default function CreateContractDialog({
         : null,
     }));
 
-    const paymentsPayload = payments.map((p, idx) => ({
-      amount: Number(p.amount),
-      note: p.note || "",
-      rule: {
-        ...(paymentRules[idx] || {}),
-      },
-    }));
-
     const payload = {
       clientLeadId,
       title: title.trim(),
       enTitle: enTitle.trim(),
+      arName: arClientName.trim(),
+      enName: enClientName.trim(),
       projectGroupId: projectGroup,
       stages: stagesPayload,
-      payments: paymentsPayload,
-      taxRate: Number(taxRate || 0),
+      payments: payments,
       specialItems,
       drawings,
     };
@@ -965,8 +997,6 @@ export default function CreateContractDialog({
           url: `shared/contracts/${req?.data?.id}`,
           setLoading,
         });
-        console.log(detailsReq, "detailsReq");
-        console.log(req, "req");
 
         updatedOuterContract(detailsReq.data);
       }
@@ -1065,6 +1095,26 @@ export default function CreateContractDialog({
                   size="small"
                   placeholder="Enter english contract type"
                 />
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  Lead Client Name : {lead?.client?.name}
+                </Typography>
+                <TextField
+                  label="Arabic client name"
+                  value={arClientName}
+                  onChange={(e) => setArClientName(e.target.value)}
+                  fullWidth
+                  size="small"
+                  placeholder="Enter arabic client name"
+                />
+
+                <TextField
+                  label="English client name"
+                  value={enClientName}
+                  onChange={(e) => setEnClientName(e.target.value)}
+                  fullWidth
+                  size="small"
+                  placeholder="Enter english client name"
+                />
                 <Box>
                   <Typography
                     variant="subtitle2"
@@ -1094,83 +1144,19 @@ export default function CreateContractDialog({
                   payments={payments}
                   setPayments={setPayments}
                   taxRate={taxRate}
-                  setTaxRate={setTaxRate}
                 />
-
-                <Paper
-                  sx={{
-                    p: 2,
-                    bgcolor: alpha(theme.palette.primary.main, 0.08),
-                    border: `1px solid ${alpha(
-                      theme.palette.primary.main,
-                      0.2
-                    )}`,
-                    borderRadius: 2,
-                  }}
-                >
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid>
-                      <Stack spacing={0.5}>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ fontWeight: 600 }}
-                        >
-                          Subtotal
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {subtotal.toFixed(2)}
-                        </Typography>
-                      </Stack>
-                    </Grid>
-                    <Grid>
-                      <Stack spacing={0.5}>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ fontWeight: 600 }}
-                        >
-                          Tax
-                        </Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          {tax.toFixed(2)}
-                        </Typography>
-                      </Stack>
-                    </Grid>
-                    <Grid sx={{ ml: "auto" }}>
-                      <Stack spacing={0.5}>
-                        <Typography
-                          variant="caption"
-                          sx={{ fontWeight: 600, color: "primary.main" }}
-                        >
-                          Total
-                        </Typography>
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            fontWeight: 700,
-                            color: "primary.main",
-                            fontSize: "1.25rem",
-                          }}
-                        >
-                          {grand.toFixed(2)}
-                        </Typography>
-                      </Stack>
-                    </Grid>
-                  </Grid>
-                </Paper>
               </Stack>
             )}
 
-            {activeStep === 1 && (
+            {/* {activeStep === 1 && (
               <PaymentsRulesEditor
                 payments={payments}
                 rules={paymentRules}
                 setRules={setPaymentRules}
               />
-            )}
+            )} */}
 
-            {activeStep === 2 && (
+            {activeStep === 1 && (
               <Stack spacing={3}>
                 <SpecialItemsEditor
                   items={specialItems}

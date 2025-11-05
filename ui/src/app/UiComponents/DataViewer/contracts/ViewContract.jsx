@@ -61,7 +61,9 @@ import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import LoadingOverlay from "../../feedback/loaders/LoadingOverlay";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import AddPaymentDialog from "./AddPaymentDialog";
+import AddPaymentDialog from "./payments/AddPaymentDialog";
+import ContractPaymentConditions from "../website-utilities/ContractPaymentConditions";
+import SelectPaymentCondition from "./payments/SelectPaymentCondition";
 
 const canEditStageDays = (stageStatus) =>
   stageStatus === "IN_PROGRESS" || stageStatus === "NOT_STARTED";
@@ -260,7 +262,8 @@ function ContractBasics({ id, contract, onReload }) {
     title: "",
     projectGroupId: "",
     enTitle: "",
-    // read-only preview fields:
+    arClientName: "",
+    enClientName: "",
     startDate: "",
     endDate: "",
     writtenAt: "",
@@ -278,6 +281,8 @@ function ContractBasics({ id, contract, onReload }) {
       setForm({
         title: contract.title || "",
         enTitle: contract.enTitle || "",
+        arClientName: contract.clientLead?.client?.arName || "",
+        enClientName: contract.clientLead?.client?.enName || "",
         projectGroupId: contract.projectGroupId || "",
         startDate: contract.startDate ? isoDateOnly(contract.startDate) : "",
         endDate: contract.endDate ? isoDateOnly(contract.endDate) : "",
@@ -303,9 +308,21 @@ function ContractBasics({ id, contract, onReload }) {
       changes.enTitle = form.enTitle || null;
     if ((form.projectGroupId || "") !== (contract.projectGroupId || ""))
       changes.projectGroupId = form.projectGroupId || null;
-
+    if (
+      (form.arClientName || "") !== (contract.clientLead?.client?.arName || "")
+    )
+      changes.arName = form.arClientName || null;
+    if (form.enClientName || "" !== (contract.clientLead?.client?.enName || ""))
+      changes.enName = form.enClientName || null;
     return Object.keys(changes).length ? changes : null;
-  }, [form.title, form.enTitle, form.projectGroupId, contract]);
+  }, [
+    form.title,
+    form.enTitle,
+    form.projectGroupId,
+    contract,
+    form.arClientName,
+    form.enClientName,
+  ]);
 
   const save = async () => {
     if (!changedPatch) {
@@ -563,6 +580,40 @@ function ContractBasics({ id, contract, onReload }) {
                   size="small"
                 />
               </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  label="Arabic client name"
+                  value={form.arClientName}
+                  disabled={!edit}
+                  onChange={(e) =>
+                    setForm((o) => ({
+                      ...o,
+                      arClientName: e.target.value,
+                    }))
+                  }
+                  fullWidth
+                  size="small"
+                  placeholder="Enter arabic client name"
+                />
+              </Grid>
+
+              <Grid size={{ xs: 12, md: 6 }}>
+                <TextField
+                  label="English client name"
+                  value={form.enClientName}
+                  disabled={!edit}
+                  onChange={(e) =>
+                    setForm((o) => ({
+                      ...o,
+                      enClientName: e.target.value,
+                    }))
+                  }
+                  fullWidth
+                  size="small"
+                  placeholder="Enter english client name"
+                />
+              </Grid>
+
               <Grid size={{ xs: 12, md: 6 }}>
                 <ProjectGroupSelect
                   clientLeadId={contract?.clientLeadId}
@@ -949,7 +1000,7 @@ function StagesSection({ contract, onReload }) {
 
 /* ===================== Payments ===================== */
 
-function PaymentRow({ payment, contractId, onReload }) {
+function PaymentRow({ payment, contractId, onReload, taxRate }) {
   const theme = useTheme();
   const relatedType = payment?.project?.type || "";
   const [edit, setEdit] = useState(false);
@@ -962,7 +1013,10 @@ function PaymentRow({ payment, contractId, onReload }) {
   const [amount, setAmount] = useState(Number(payment.amount) || 0);
   const [chosenType, setChosenType] = useState(relatedType || "");
   const [condition, setCondition] = useState(payment.paymentCondition || "");
-
+  const [conditionItem, setConditionItem] = useState(
+    payment.conditionItem || ""
+  );
+  const [conditionId, setConditionId] = useState(payment.conditionId || "");
   const conditionIsSignature =
     ((condition || "") + "").toUpperCase() === "SIGNATURE";
 
@@ -971,12 +1025,16 @@ function PaymentRow({ payment, contractId, onReload }) {
     setChosenType(relatedType || "");
     setCondition(payment.paymentCondition || "");
     setStatus(payment.status);
+    setConditionItem(payment.conditionItem || "");
+    setConditionId(payment.conditionId || "");
   }, [
     payment.id,
     relatedType,
     payment.amount,
     payment.paymentCondition,
     payment.status,
+    payment.conditionItem,
+    payment.conditionId,
   ]);
 
   // === NEW: independent request for status ===
@@ -1004,13 +1062,15 @@ function PaymentRow({ payment, contractId, onReload }) {
     const payload = diffPayload(
       {
         amount: Number(payment.amount) || 0,
-        paymentCondition: payment.paymentCondition || "",
-        projectType: relatedType || "",
+        condition: payment.paymentCondition || "",
+        type: relatedType || "",
+        conditionId: payment.conditionId || "",
       },
       {
         amount,
-        paymentCondition: condition,
-        projectType: chosenType,
+        condition: condition,
+        type: chosenType,
+        conditionId: conditionId,
       }
     );
 
@@ -1056,8 +1116,6 @@ function PaymentRow({ payment, contractId, onReload }) {
 
   const deletable = canDeletePayment(payment.status);
 
-  const typeList = PROJECT_TYPES || [];
-  const statusList = chosenType ? PROJECT_STATUSES[chosenType] || [] : [];
   // color for Chip preview
   const statusColor =
     status === "RECEIVED"
@@ -1155,7 +1213,6 @@ function PaymentRow({ payment, contractId, onReload }) {
               </FormControl>
             </Stack>
 
-            {/* Amount (unchanged) */}
             <TextField
               type="number"
               label="Amount"
@@ -1165,63 +1222,26 @@ function PaymentRow({ payment, contractId, onReload }) {
               fullWidth
               size="small"
             />
-
-            {!conditionIsSignature && (
-              <Stack spacing={1}>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  Project Type
-                </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap">
-                  {typeList.map((t) => {
-                    const active = chosenType === t;
-                    return (
-                      <Chip
-                        key={t}
-                        label={t}
-                        color={active ? "primary" : "default"}
-                        variant={active ? "filled" : "outlined"}
-                        onClick={() => {
-                          if (!edit) return;
-                          setChosenType(t);
-                          const nextList = PROJECT_STATUSES[t] || [];
-                          if (!nextList.includes(condition)) setCondition("");
-                        }}
-                        disabled={!edit}
-                        sx={{ cursor: !edit ? "default" : "pointer" }}
-                      />
-                    );
-                  })}
-                </Stack>
-              </Stack>
-            )}
+            <Typography variant="body2" sx={{ fontWeight: 600, mt: 1 }}>
+              Amount with Tax:
+              {(
+                Number(amount || 0) *
+                (1 + (Number(taxRate) || 0) / 100)
+              ).toFixed(2)}
+            </Typography>
 
             {/* Condition select (unchanged) */}
             {!conditionIsSignature && (
-              <FormControl
-                fullWidth
-                disabled={!edit || conditionIsSignature || !chosenType}
-                size="small"
-              >
-                <InputLabel>Payment Condition</InputLabel>
-                <Select
-                  label="Payment Condition"
-                  value={condition || ""}
-                  onChange={(e) => setCondition(e.target.value)}
-                >
-                  {(statusList || []).map((c) => (
-                    <MenuItem key={c} value={c}>
-                      {c}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <SelectPaymentCondition
+                initialCondition={payment?.conditionItem}
+                disabled={!edit}
+                onConditionChange={(value) => {
+                  setCondition(value.condition);
+                  setChosenType(value.conditionType);
+                  setConditionItem(value.conditionItem);
+                  setConditionId(value.id);
+                }}
+              />
             )}
             {conditionIsSignature && (
               <Typography variant="caption" color="text.secondary">
@@ -1275,6 +1295,7 @@ function PaymentsSection({ contract, onReload }) {
               payment={p}
               contractId={contract.id}
               onReload={onReload}
+              taxRate={contract.taxRate || 5}
             />
           ))}
         </Stack>

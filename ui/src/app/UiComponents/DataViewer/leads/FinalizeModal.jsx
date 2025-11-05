@@ -299,6 +299,7 @@ function LeadContract({ lead, updateOuterContract, outerContract }) {
         <LeadContractList
           leadId={lead.id}
           finalModal={true}
+          lead={lead}
           updateOuterContract={(id) => {
             updateOuterContract(id, "ID");
           }}

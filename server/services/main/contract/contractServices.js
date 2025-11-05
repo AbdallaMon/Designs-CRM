@@ -1,5 +1,6 @@
 import prisma from "../../../prisma/prisma.js";
 import { v4 as uuidv4 } from "uuid";
+import { buildAndUploadContractPdf } from "./generateContractPdf.js";
 
 export async function getLeadContractList({ leadId }) {
   const where = {
@@ -30,7 +31,7 @@ async function validatePayments(payments) {
   }
   if (!payments.every((payment) => payment.amount > 0))
     throw new Error("You have to add amount > 0 for each payment");
-  if (!payments.every((payment) => payment.paymentCondition !== "To Do")) {
+  if (!payments.every((payment) => payment.condition !== "To Do")) {
     throw new Error(
       "You cant select this condition as it is the project initial condition by default"
     );
@@ -59,14 +60,20 @@ export async function createContract({ payload }) {
       projectGroupId,
       specialItems,
       stages,
-      taxRate,
       title,
       enTitle,
+      arName,
+      enName,
     } = payload;
 
+    const taxRate = 5;
     await validatePayments(payments);
     await validateStages(stages);
-    const amount = payments.reduce((sum, payment) => sum + payment.amount, 0);
+    const amount = payments.reduce(
+      (sum, payment) => sum + Number(payment.amount),
+      0
+    );
+    console.log(amount, "amount");
     const totalAmount =
       amount != null && taxRate != null
         ? (Number(amount) + (Number(amount) * Number(taxRate)) / 100).toFixed(2)
@@ -106,12 +113,27 @@ export async function createContract({ payload }) {
       await createSpecialItems({ specialItems, contractId: contract.id });
     }
     if (payload.oldContractId && payload.markOldAsCancelled) {
-      await prisma.contract.update({
+      await markContractAsCancelled({
+        contractId: Number(payload.oldContractId),
+      });
+    }
+    if (arName || enName) {
+      const client = await prisma.client.findFirst({
         where: {
-          id: Number(payload.oldContractId),
+          clientLeads: {
+            some: {
+              id: Number(clientLeadId),
+            },
+          },
+        },
+      });
+      await prisma.client.update({
+        where: {
+          id: client.id,
         },
         data: {
-          status: "CANCELLED",
+          arName,
+          enName,
         },
       });
     }
@@ -134,7 +156,7 @@ async function createPayments({
     if (i === 0) {
       paymentCondition = "SIGNATURE";
     } else {
-      paymentCondition = payment.rule.condition;
+      paymentCondition = payment.condition;
     }
     const createdPayment = await createContractPayment({
       payment,
@@ -142,6 +164,7 @@ async function createPayments({
       projectGroupId,
       clientLeadId,
       contractId,
+      conditionId: payment.conditionId,
     });
     if (i === 0) {
       firstPaymentId = createdPayment.id;
@@ -155,15 +178,19 @@ async function createContractPayment({
   clientLeadId,
   contractId,
   paymentCondition,
+  conditionId,
 }) {
   const data = { amount: payment.amount, note: payment.note, contractId };
+  if (conditionId) {
+    data.conditionId = Number(conditionId);
+  }
   data.paymentCondition = paymentCondition;
   if (paymentCondition !== "SIGNATURE") {
     const project = await prisma.project.findFirst({
       where: {
         clientLeadId: Number(clientLeadId),
         groupId: projectGroupId,
-        type: payment.rule.projectName,
+        type: payment.type,
       },
       select: {
         id: true,
@@ -296,6 +323,12 @@ export async function getContractDetailsById({ contractId }) {
       paymentsNew: {
         include: {
           project: true,
+          conditionItem: true,
+        },
+      },
+      clientLead: {
+        include: {
+          client: true,
         },
       },
       drawings: true,
@@ -310,6 +343,8 @@ export async function updateContractBasics({
   projectGroupId,
   title,
   enTitle,
+  arName,
+  enName,
   contractId,
 }) {
   const data = {};
@@ -324,7 +359,31 @@ export async function updateContractBasics({
     await reAssignAllContractStages({ contractId, projectGroupId });
     await reAssignAllContractPayments({ contractId, projectGroupId });
   }
-
+  const contract = await prisma.contract.findUnique({
+    where: {
+      id: Number(contractId),
+    },
+  });
+  if (arName || enName) {
+    const client = await prisma.client.findFirst({
+      where: {
+        clientLeads: {
+          some: {
+            id: Number(contract.clientLeadId),
+          },
+        },
+      },
+    });
+    await prisma.client.update({
+      where: {
+        id: client.id,
+      },
+      data: {
+        arName,
+        enName,
+      },
+    });
+  }
   await prisma.contract.update({
     where: {
       id: Number(contractId),
@@ -525,7 +584,6 @@ export async function updateContractPaymentStatus({ status, paymentId }) {
         "Paymnet is not due yet, u can change status when the payment is due"
       );
     }
-    console.log(payment, "payment");
     await prisma.contractPayment.update({
       where: {
         id: Number(paymentId),
@@ -584,7 +642,7 @@ async function updateContractStatusToCompletedIfNoOtherPaymentsOrStages({
 export async function createNewContractPayment({ contractId, payment }) {
   // update total payment
   contractId = Number(contractId);
-  if (payment.paymentCondition === "To Do") {
+  if (payment.condition === "To Do") {
     throw new Error(
       "You cant select this condition as it is the project initial condition by default"
     );
@@ -604,14 +662,14 @@ export async function createNewContractPayment({ contractId, payment }) {
     });
     payment = {
       ...payment,
-      rule: {
-        projectName: payment.projectType,
-      },
+
+      // type: payment.projectType,
     };
     const newPayment = await createContractPayment({
       contractId,
       payment,
-      paymentCondition: payment.paymentCondition,
+      paymentCondition: payment.condition,
+      conditionId: payment.conditionId,
       ...contract,
     });
     await updateContractTotals(contract.id);
@@ -625,12 +683,12 @@ export async function createNewContractPayment({ contractId, payment }) {
 export async function updateContractPayment({ paymentId, newPayment }) {
   // update total payment if amount updated
   let data = {};
-  if (newPayment.paymentCondition === "To Do") {
+  if (newPayment.condition === "To Do") {
     throw new Error(
       "You cant select this condition as it is the project initial condition by default"
     );
   }
-  if (newPayment.projectType && !newPayment.paymentCondition) {
+  if (newPayment.type && !newPayment.condition) {
     throw new Error("You have to choose a payment condition");
   }
   const payment = await prisma.contractPayment.findUnique({
@@ -643,6 +701,7 @@ export async function updateContractPayment({ paymentId, newPayment }) {
       contractId: true,
       contract: {
         select: {
+          clientLeadId: true,
           id: true,
           projectGroupId: true,
           amount: true,
@@ -660,18 +719,22 @@ export async function updateContractPayment({ paymentId, newPayment }) {
   if (newPayment.amount) {
     data.amount = newPayment.amount;
   }
-  if (newPayment.paymentCondition) {
-    data.paymentCondition = newPayment.paymentCondition;
+  if (newPayment.condition) {
+    data.paymentCondition = newPayment.condition;
   }
-  if (newPayment.projectType) {
+  if (newPayment.conditionId) {
+    data.conditionId = Number(newPayment.conditionId);
+  }
+  if (newPayment.type) {
     let groupId = payment.project?.groupId;
     if (!groupId) {
       groupId = payment.contract.projectGroupId;
     }
     const newProject = await prisma.project.findFirst({
       where: {
-        type: newPayment.projectType,
+        type: newPayment.type,
         groupId: groupId,
+        clientLeadId: payment.contract.clientLeadId,
       },
       select: {
         id: true,
@@ -907,7 +970,6 @@ export async function updateSecondStageAfterFirstPayment({ contractId }) {
       stageStatus: "IN_PROGRESS",
     },
   });
-  console.log(levelTwoStage, "levelTwoStage");
   if (levelTwoStage) {
     await createADeliveryScheduleAndRelateItToStage({
       stageId: levelTwoStage.id,
@@ -988,4 +1050,179 @@ export async function createADeliveryScheduleAndRelateItToStage({
       ...data,
     },
   });
+}
+
+export async function markContractAsCancelled({ contractId }) {
+  const contract = await prisma.contract.findUnique({
+    where: {
+      id: Number(contractId),
+    },
+  });
+  await buildAndUploadContractPdf({
+    token: contract.arToken,
+    signatureUrl: contract.signatureUrl,
+    lng: "ar",
+    canceled: true,
+  });
+  return await prisma.contract.update({
+    where: {
+      id: Number(contractId),
+    },
+    data: {
+      status: "CANCELLED",
+    },
+  });
+}
+
+// contract payments page
+
+const STATUS = {
+  RECEIVED: "RECEIVED",
+  TRANSFERRED: "TRANSFERRED",
+  DUE: "DUE",
+  NOT_DUE: "NOT_DUE",
+};
+
+function toNumber(d) {
+  if (d === null || d === undefined) return 0;
+  const n = typeof d === "string" ? Number(d) : Number(d);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function withTax(amount, taxRate) {
+  const rate = typeof taxRate === "number" ? taxRate : 5; // default 5%
+  return toNumber(amount) * (1 + rate / 100);
+}
+
+export async function getContractPaymentsGroupedService({
+  page = 1,
+  limit = 10,
+  status = "DUE",
+}) {
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const take = Math.max(1, parseInt(limit, 10) || 10);
+  const skip = (pageNum - 1) * take;
+
+  const filterStatus = status && status !== "ALL" ? status : null;
+
+  // Count contracts that match the filter (have at least one payment with that status)
+  const whereForCount = filterStatus
+    ? { paymentsNew: { some: { status: filterStatus } } }
+    : { paymentsNew: { some: {} } };
+  whereForCount.status = { not: "CANCELLED" };
+  const total = await prisma.contract.count({ where: whereForCount });
+
+  const contracts = await prisma.contract.findMany({
+    where: whereForCount,
+    orderBy: { createdAt: "desc" },
+    skip,
+    take,
+    include: {
+      clientLead: {
+        select: {
+          id: true,
+          code: true,
+          client: { select: { name: true } },
+        },
+      },
+      stages: {
+        where: {
+          stageStatus: "IN_PROGRESS",
+        },
+        select: {
+          id: true,
+          title: true,
+          order: true,
+          stageStatus: true,
+        },
+      },
+      paymentsNew: {
+        include: {
+          conditionItem: { select: { id: true, labelAr: true, labelEn: true } },
+          project: { select: { id: true, groupTitle: true } },
+          stage: { select: { id: true, title: true, order: true } },
+        },
+        orderBy: [{ dueDate: "asc" }, { id: "asc" }],
+      },
+    },
+  });
+
+  const items = contracts.map((c) => {
+    const taxRate = typeof c.taxRate === "number" ? c.taxRate : 5; // if you have contract.taxRate in schema; otherwise default 5
+    const all = c.paymentsNew || [];
+
+    // Totals across ALL statuses
+    const sumBy = (fn) => all.reduce((acc, p) => acc + toNumber(fn(p)), 0);
+
+    const received = sumBy((p) =>
+      p.status === STATUS.RECEIVED ? p.amount : 0
+    );
+    const transferred = sumBy((p) =>
+      p.status === STATUS.TRANSFERRED ? p.amount : 0
+    );
+    const due = sumBy((p) => (p.status === STATUS.DUE ? p.amount : 0));
+    const notDue = sumBy((p) => (p.status === STATUS.NOT_DUE ? p.amount : 0));
+    const grand = received + transferred + due + notDue;
+    const grandWithTax = withTax(grand, taxRate);
+
+    const visiblePayments = filterStatus
+      ? all.filter((p) => p.status === filterStatus)
+      : all;
+    console.log(c, "stage");
+    return {
+      contract: {
+        id: c.id,
+        contractLevel: c.stages.length > 0 ? c.stages[0].title : "-",
+        contractType: c.title,
+        taxRate,
+        clientLead: {
+          id: c.clientLead?.id,
+          code: c.clientLead?.code,
+          client: { name: c.clientLead?.client?.name || "-" },
+        },
+      },
+      totals: {
+        received,
+        transferred,
+        due,
+        notDue,
+        grand,
+        grandWithTax,
+      },
+      payments: visiblePayments.map((p) => ({
+        id: p.id,
+        amount: toNumber(p.amount),
+        amountWithTax: withTax(p.amount, taxRate),
+        currency: p.currency,
+        dueDate: p.dueDate,
+        status: p.status,
+        reference: p.reference,
+        note: p.note,
+        project: p.project
+          ? { id: p.project.id, title: p.project.groupTitle }
+          : null,
+        stage: p.stage
+          ? { id: p.stage.id, title: p.stage.title, order: p.stage.order }
+          : null,
+        conditionItem: p.conditionItem
+          ? {
+              id: p.conditionItem.id,
+              labelAr: p.conditionItem.labelAr,
+              labelEn: p.conditionItem.labelEn,
+            }
+          : {
+              id: null,
+              labelAr: p.paymentCondition,
+            },
+      })),
+    };
+  });
+
+  return {
+    items,
+    page: pageNum,
+    limit: take,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / take)),
+  };
 }

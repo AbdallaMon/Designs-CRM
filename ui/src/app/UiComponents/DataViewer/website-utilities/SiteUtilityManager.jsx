@@ -1,83 +1,56 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Stack, Typography, IconButton, Grid, Container } from "@mui/material";
-import { FaSync } from "react-icons/fa";
-import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
+import { Container, Tab, Tabs } from "@mui/material";
+import { useEffect, useState } from "react";
+import PdfUtility from "./PdfUtility";
+import { useSearchParams } from "next/navigation";
+import ContractPaymentConditionsManager from "./ContractPaymentConditions";
 
-import UtilityFieldCard from "./UtilityFieldCard";
-import LoadingOverlay from "../../feedback/loaders/LoadingOverlay";
-
-export default function SiteUtilityManager({
-  fields = [
+export default function SiteUtilityManager() {
+  const [value, setValue] = useState(0);
+  const tabsData = [
+    { label: "PDF Utility", component: <PdfUtility /> },
     {
-      key: "pdfFrame",
-      label: "PDF Frame",
-      endpoint: "shared/site-utilities",
+      label: "Contract Payment Conditions",
+      component: <ContractPaymentConditionsManager />,
     },
-    // {
-    //   key: "pdfHeader",
-    //   label: "PDF Header",
-    //   endpoint: "shared/site-utilities",
-    // },
-    {
-      key: "introPage",
-      label: "Intro Page",
-      endpoint: "shared/site-utilities",
-    },
-    // {
-    //   key: "pageTitle",
-    //   label: "Page Title",
-    //   endpoint: "shared/site-utilities",
-    // },
-  ],
-  fetchUrl = "shared/site-utilities",
-}) {
-  const [data, setData] = useState(null);
-  const [loading, setLoadingState] = useState(true);
-
-  const fetchData = useCallback(async () => {
-    await getDataAndSet({
-      url: fetchUrl,
-      setData,
-      setLoading: setLoadingState,
-    });
-  }, [fetchUrl]);
-
+  ];
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (tabParam) {
+      if (tabParam !== value) {
+        setValue(Number(tabParam));
+      }
+    }
+  }, [tabParam, value]);
+  const handleChange = (event, newValue) => {
+    //we need to set searchParams here
+    const searchParams = new URLSearchParams(window.location.search);
+    searchParams.set("tab", newValue);
+    const newRelativePathQuery =
+      window.location.pathname + "?" + searchParams.toString();
+    window.history.pushState(null, "", newRelativePathQuery);
+    // setValue(newValue);
+  };
+
   return (
     <Container maxWidth="xl" sx={{ position: "relative", py: 4 }}>
-      {loading && <LoadingOverlay />}
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{ mb: 2 }}
-      >
-        <Typography variant="h6">Website Utility</Typography>
-        <IconButton onClick={fetchData}>
-          <FaSync />
-        </IconButton>
-      </Stack>
-
-      <Grid container spacing={2}>
-        {data &&
-          fields?.map((f) => {
-            const value = data?.[f.key] || "";
-            return (
-              <Grid size={{ md: 6 }} key={f.key}>
-                <UtilityFieldCard
-                  title={f.label}
-                  value={value}
-                  onSubmit={fetchData}
-                  itemKey={f.key}
-                />
-              </Grid>
-            );
-          })}
-      </Grid>
+      <Tabs value={value} onChange={handleChange} centered>
+        {tabsData.map((tab, index) => (
+          <Tab label={tab.label} key={index} />
+        ))}
+      </Tabs>
+      {tabsData.map((tab, index) => (
+        <div
+          role="tabpanel"
+          hidden={value !== index}
+          key={index}
+          id={`tabpanel-${index}`}
+        >
+          {tab.component}
+        </div>
+      ))}
     </Container>
   );
 }

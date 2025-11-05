@@ -6,7 +6,6 @@ import {
   finalizedLeadCreated,
   newProjectAssingmentNotification,
   newTaskCreatedNotification,
-  sendPaymentReminderEmail,
   sendPaymentReminderEmailByStaff,
   sendPaymentSuccessEmail,
   updateLeadStatusNotification,
@@ -767,6 +766,8 @@ export async function getClientLeadDetails(
           name: true,
           phone: true,
           email: true,
+          arName: true,
+          enName: true,
         },
       },
       assignedTo: {
@@ -5003,29 +5004,4 @@ export async function getUniqueProjectGroups({ clientLeadId }) {
   });
 
   return groups;
-}
-
-export async function getSiteUtilities() {
-  let siteUtility = await prisma.siteUtility.findUnique({
-    where: {
-      id: 1,
-    },
-  });
-  if (!siteUtility) {
-    siteUtility = await prisma.siteUtility.create({
-      data: { id: 1 },
-    });
-    return;
-  }
-  return siteUtility;
-}
-
-export async function updateSiteUtilities({ data }) {
-  await prisma.siteUtility.update({
-    where: {
-      id: 1,
-    },
-    data,
-  });
-  return true;
 }

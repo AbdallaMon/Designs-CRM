@@ -311,6 +311,10 @@ model ContractPayment {
   projectId        Int?
   paymentCondition String?
 
+  conditionId   Int?
+  conditionItem ContractPaymentCondition? @relation(fields: [conditionId], references: [id])
+
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -318,6 +322,22 @@ model ContractPayment {
   @@index([stageId])
   @@index([status, dueDate])
   @@index([projectId])
+}
+
+model ContractPaymentCondition {
+  id           Int              @id @default(autoincrement())
+
+  payments      ContractPayment[]
+
+  conditionType String
+  condition     String
+  labelAr       String
+  labelEn       String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([conditionType, condition, labelAr, labelEn])
 }
 
 model ContractDrawing {
@@ -837,6 +857,8 @@ model Assignment {
 model Client {
   id          Int          @id @default(autoincrement())
   name        String       @db.VarChar(255)
+  arName    String?  @db.VarChar(255)
+  enName    String?  @db.VarChar(255)
   phone       String       @db.VarChar(20)
   email       String       @unique @db.VarChar(255)
   clientLeads ClientLead[]

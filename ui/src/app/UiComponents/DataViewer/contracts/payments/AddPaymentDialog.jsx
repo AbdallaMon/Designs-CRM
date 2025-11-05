@@ -19,6 +19,7 @@ import { FaMoneyBill } from "react-icons/fa";
 import { PROJECT_TYPES, PROJECT_STATUSES } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import SelectPaymentCondition from "./SelectPaymentCondition";
 
 export default function AddPaymentDialog({
   open,
@@ -32,10 +33,6 @@ export default function AddPaymentDialog({
   const [condition, setCondition] = useState("");
   const [error, setError] = useState("");
   const { setLoading } = useToastContext();
-  const conditionsForType = useMemo(
-    () => (projectType ? PROJECT_STATUSES[projectType] || [] : []),
-    [projectType]
-  );
 
   const valid = useMemo(() => {
     const amt = Number(amount);
@@ -99,44 +96,12 @@ export default function AddPaymentDialog({
             size="small"
             inputProps={{ min: 0, step: "0.01" }}
           />
-
-          <FormControl fullWidth size="small" required>
-            <InputLabel>Project Type</InputLabel>
-            <Select
-              label="Project Type"
-              value={projectType}
-              onChange={(e) => {
-                setProjectType(e.target.value);
-                // reset condition if not in list anymore
-                if (
-                  !(PROJECT_STATUSES[e.target.value] || []).includes(condition)
-                ) {
-                  setCondition("");
-                }
-              }}
-            >
-              {(PROJECT_TYPES || []).map((t) => (
-                <MenuItem key={t} value={t}>
-                  {t}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <FormControl fullWidth size="small" required disabled={!projectType}>
-            <InputLabel>Payment Condition</InputLabel>
-            <Select
-              label="Payment Condition"
-              value={condition}
-              onChange={(e) => setCondition(e.target.value)}
-            >
-              {(conditionsForType || []).map((c) => (
-                <MenuItem key={c} value={c}>
-                  {c}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <SelectPaymentCondition
+            onConditionChange={(value) => {
+              setCondition(value.condition);
+              setProjectType(value.type);
+            }}
+          />
 
           <TextField
             label="Note (optional)"

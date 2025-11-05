@@ -1398,6 +1398,7 @@ export async function getAdminClientLeadDetails(clientLeadId, searchParams) {
           user: { select: { name: true } },
         },
       },
+
       payments: {
         include: {
           invoices: true,

@@ -58,6 +58,7 @@ import {
   contractLevel,
 } from "@/app/helpers/constants";
 import SimpleFileInput from "../../formComponents/SimpleFileInput";
+import SelectPaymentCondition from "./payments/SelectPaymentCondition";
 
 /* ----------------- small helpers ----------------- */
 const sum = (arr) => arr.reduce((a, b) => a + (Number(b) || 0), 0);
@@ -259,7 +260,7 @@ function StagesSelector({ selected, onChange, perStageMeta, setPerStageMeta }) {
 }
 
 /* ----------------- Payments Editor (same UX as create) ----------------- */
-function PaymentsEditor({ payments, setPayments, taxRate, setTaxRate }) {
+function PaymentsEditor({ payments, setPayments, taxRate }) {
   const theme = useTheme();
   const total = useMemo(
     () => sum(payments.map((p) => Number(p.amount || 0))),
@@ -271,10 +272,26 @@ function PaymentsEditor({ payments, setPayments, taxRate, setTaxRate }) {
   );
   const grand = useMemo(() => total + tax, [total, tax]);
 
-  const addPayment = () => setPayments([...payments, { amount: "", note: "" }]);
+  const addPayment = () =>
+    setPayments([
+      ...payments,
+      {
+        amount: "",
+        note: "",
+        type: "",
+        condition: "",
+        conditionItem: null,
+        conditionId: null,
+      },
+    ]);
   const updatePayment = (idx, key, value) => {
     const copy = payments.slice();
     copy[idx] = { ...copy[idx], [key]: value };
+    setPayments(copy);
+  };
+  const updatePaymentFields = (idx, newData) => {
+    const copy = payments.slice();
+    copy[idx] = { ...copy[idx], ...newData };
     setPayments(copy);
   };
   const removePayment = (idx) => {
@@ -327,7 +344,7 @@ function PaymentsEditor({ payments, setPayments, taxRate, setTaxRate }) {
               <Divider />
               <CardContent>
                 <Grid container spacing={2} alignItems="flex-start">
-                  <Grid size={{ xs: 12, sm: 12 }}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       type="number"
                       label="Amount"
@@ -340,7 +357,16 @@ function PaymentsEditor({ payments, setPayments, taxRate, setTaxRate }) {
                       size="small"
                     />
                   </Grid>
-                  <Grid size={{ xs: 12, sm: 5 }}>
+                  <Grid size={{ sm: 6 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mt: 1 }}>
+                      Amount with Tax:
+                      {(
+                        Number(p.amount || 0) *
+                        (1 + (Number(taxRate) || 0) / 100)
+                      ).toFixed(2)}
+                    </Typography>
+                  </Grid>
+                  <Grid size={{ xs: 12, sm: 10 }}>
                     <TextField
                       label="Note (Optional)"
                       value={p.note || ""}
@@ -352,7 +378,7 @@ function PaymentsEditor({ payments, setPayments, taxRate, setTaxRate }) {
                     />
                   </Grid>
                   <Grid
-                    size={{ xs: 12, sm: 1 }}
+                    size={{ xs: 12, sm: 2 }}
                     sx={{ display: "flex", justifyContent: "flex-end" }}
                   >
                     <Tooltip title="Remove">
@@ -366,6 +392,26 @@ function PaymentsEditor({ payments, setPayments, taxRate, setTaxRate }) {
                         </IconButton>
                       </span>
                     </Tooltip>
+                  </Grid>
+                  <Grid size={12}>
+                    {idx === 0 ? (
+                      <Typography variant="caption" color="text.secondary">
+                        This payment will be due after the client signs the
+                        contract.
+                      </Typography>
+                    ) : (
+                      <SelectPaymentCondition
+                        initialCondition={p.conditionItem}
+                        onConditionChange={(value) => {
+                          updatePaymentFields(idx, {
+                            conditionItem: value,
+                            condition: value.condition,
+                            type: value.conditionType,
+                            conditionId: value.id,
+                          });
+                        }}
+                      />
+                    )}
                   </Grid>
                 </Grid>
               </CardContent>
@@ -385,16 +431,6 @@ function PaymentsEditor({ payments, setPayments, taxRate, setTaxRate }) {
         }}
       >
         <Grid container spacing={2} alignItems="center">
-          <Grid size={{ xs: 12, sm: 2 }}>
-            <TextField
-              type="number"
-              label="Tax %"
-              value={taxRate}
-              onChange={(e) => setTaxRate(e.target.value)}
-              fullWidth
-              size="small"
-            />
-          </Grid>
           <Grid sm="auto">
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <Stack spacing={0.5}>
@@ -832,15 +868,14 @@ export default function CloneContract({
   sourceId,
   onCloned,
   open,
-  setOpen,
   handleCloneClose,
-  handleCloneOpen,
 }) {
   const theme = useTheme();
   const { setLoading } = useToastContext();
 
+  const taxRate = 5;
   const [activeStep, setActiveStep] = useState(0);
-  const steps = ["Basics", "Payment Terms", "Items & Drawings"];
+  const steps = ["Basics", "Items & Drawings"];
 
   // fetched
   const [loadingSrc, setLoadingSrc] = useState(false);
@@ -850,20 +885,20 @@ export default function CloneContract({
   const [clientLeadId, setClientLeadId] = useState(null);
   const [title, setTitle] = useState("");
   const [enTitle, setEnTitle] = useState("");
+  const [arClientName, setArClientName] = useState("");
+  const [enClientName, setEnClientName] = useState("");
   const [projectGroup, setProjectGroup] = useState("");
 
   const [selectedStages, setSelectedStages] = useState([]); // [{enum,label}]
   const [perStageMeta, setPerStageMeta] = useState({}); // { [enum]: {deliveryDays, deptDeliveryDays} }
 
   const [payments, setPayments] = useState([]); // [{amount, note}]
-  const [taxRate, setTaxRate] = useState(0);
-  const [paymentRules, setPaymentRules] = useState([]); // align with create
 
   const [specialItems, setSpecialItems] = useState([]); // [{labelAr,labelEn}]
   const [drawings, setDrawings] = useState([]); // [{url,fileName}]
   useEffect(() => {
     async function fetchCurrent() {
-      await getDataAndSet({
+      const req = await getDataAndSet({
         url: `shared/contracts/${sourceId}`,
         setData: (data) => {
           setSrc(data);
@@ -890,6 +925,8 @@ export default function CloneContract({
     setEnTitle((src.enTitle || "").trim());
     setProjectGroup(src.projectGroupId || "");
 
+    setArClientName(src.clientLead?.client?.arName || "");
+    setEnClientName(src.clientLead?.client?.enName || "");
     // stages → try to map by label to enum in CONTRACT_LEVELSENUM
     const levels = CONTRACT_LEVELSENUM || [];
     const deduced = (src.stages || []).map((s) => {
@@ -911,27 +948,15 @@ export default function CloneContract({
     setPerStageMeta(meta);
 
     // payments
-    const pmts = (src.paymentsNew || []).map((p) => ({
+    const pmts = (src.paymentsNew || []).map((p, idx) => ({
       amount: Number(p.amount || 0),
       note: p.note || "",
-      _projectType: p.project?.type || "",
-      _condition: p.paymentCondition || "",
+      type: p.project?.type || "",
+      condition: idx === 0 ? "SIGNATURE" : p.paymentCondition || "",
+      conditionId: p.conditionId || null,
+      conditionItem: p.conditionItem || null,
     }));
     setPayments(pmts);
-
-    // rules (first payment by signing, others from project/condition if available)
-    const rules = pmts.map((p, idx) =>
-      idx === 0
-        ? { activateOnSigning: true, projectName: "", condition: "" }
-        : {
-            activateOnSigning: false,
-            projectName: p._projectType || "",
-            condition: p._condition || "",
-          }
-    );
-    setPaymentRules(rules);
-
-    setTaxRate(Number(src.taxRate || 0));
 
     setSpecialItems(
       (src.specialItems || []).map((it) => ({
@@ -963,17 +988,9 @@ export default function CloneContract({
       if (payments.length === 0) return false;
       if (payments.some((p) => !p.amount || Number(p.amount) <= 0))
         return false;
-      return true;
+      if (payments.some((r) => !r.condition)) return false;
     }
-    if (activeStep === 1) {
-      for (let i = 1; i < payments.length; i++) {
-        const r = paymentRules[i] || {};
-        if (!r.activateOnSigning) {
-          if (!r.projectName || !r.condition) return false;
-        }
-      }
-      return true;
-    }
+
     return true;
   };
 
@@ -997,22 +1014,13 @@ export default function CloneContract({
         : null,
     }));
 
-    const paymentsPayload = payments.map((p, idx) => ({
-      amount: Number(p.amount),
-      note: p.note || "",
-      rule: {
-        ...(paymentRules[idx] || {}),
-      },
-    }));
-
     const payload = {
       clientLeadId,
       title: title.trim(),
       enTitle: enTitle.trim(),
       projectGroupId: projectGroup,
       stages: stagesPayload,
-      payments: paymentsPayload,
-      taxRate: Number(taxRate || 0),
+      payments,
       specialItems,
       drawings,
       // clone extras:
@@ -1102,7 +1110,26 @@ export default function CloneContract({
                     fullWidth
                     size="small"
                   />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Lead Client Name : {src?.clientLead?.client?.name}
+                  </Typography>
+                  <TextField
+                    label="Arabic client name"
+                    value={arClientName}
+                    onChange={(e) => setArClientName(e.target.value)}
+                    fullWidth
+                    size="small"
+                    placeholder="Enter arabic client name"
+                  />
 
+                  <TextField
+                    label="English client name"
+                    value={enClientName}
+                    onChange={(e) => setEnClientName(e.target.value)}
+                    fullWidth
+                    size="small"
+                    placeholder="Enter english client name"
+                  />
                   <Box>
                     <Typography
                       variant="subtitle2"
@@ -1132,20 +1159,19 @@ export default function CloneContract({
                     payments={payments}
                     setPayments={setPayments}
                     taxRate={taxRate}
-                    setTaxRate={setTaxRate}
                   />
                 </Stack>
               )}
 
-              {activeStep === 1 && (
+              {/* {activeStep === 1 && (
                 <PaymentsRulesEditor
                   payments={payments}
                   rules={paymentRules}
                   setRules={setPaymentRules}
                 />
-              )}
+              )} */}
 
-              {activeStep === 2 && (
+              {activeStep === 1 && (
                 <Stack spacing={3}>
                   <SpecialItemsEditor
                     items={specialItems}
