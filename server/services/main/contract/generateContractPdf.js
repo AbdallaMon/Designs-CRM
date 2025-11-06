@@ -289,7 +289,10 @@ async function renderClientSection(ctx, { lng, contract, fonts, colors }) {
   const lead = contract?.clientLead || {};
   const emirate = lead?.emirate || null;
   const country = lead?.country || null;
-  const code = lead?.code || lead?.id || null;
+  const code =
+    lng === "ar"
+      ? reverseString(lead?.code || lead?.id.toString())
+      : lead?.code || lead?.id.toString();
   const projectType =
     lng === "ar" ? contract.title : contract.enTitle || contract.title;
 
