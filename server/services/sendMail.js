@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
-import { engName } from "./constants.js";
+import { companyName, engName } from "./constants.js";
 dotenv.config();
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST, // Your iRedMail server's hostname or IP
@@ -19,7 +19,7 @@ export const sendEmail = async (to, subject, html, isClient = false) => {
   const fromUser = isClient
     ? process.env.AHMED_EMAIL
     : process.env.EMAIL_USERNAME;
-  const fromName = isClient ? engName : fromUser;
+  const fromName = isClient ? engName : companyName;
 
   const mailOptions = {
     from: `${fromName} <${fromUser}>`,

@@ -730,6 +730,7 @@ export async function getClientLeadDetails(
       id: true,
       userId: true,
       clientDescription: true,
+      code: true,
       country: true,
       timeToContact: true,
       priceNote: true,

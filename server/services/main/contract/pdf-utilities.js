@@ -85,7 +85,7 @@ export async function sendContractEmailToClient({
   const T = getClientEmailText(lng);
 
   const html = `
-  <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px;">
+  <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px 15px;">
     <div style="max-width: 600px; margin: auto; background: #fcfbf9; border-radius: 12px; box-shadow: 0 0 10px rgba(0,0,0,0.03); overflow: hidden; ${
       lng === "ar"
         ? "direction:rtl; text-align:right;"
@@ -93,22 +93,22 @@ export async function sendContractEmailToClient({
     }">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #be975c 0%, #d3ac71 100%);">
         <tr>
-          <td align="center" style="padding:20px;">
+          <td align="center" style="padding:16px;">
             <img src="https://dreamstudiio.com/main-logo.jpg" alt="Dream Studio" width="90" style="display:block; max-width:90px; height:auto; border:0; margin:0 auto;" />
           </td>
         </tr>
       </table>
 
-      <div style="padding: 20px 18px;">
+      <div style="padding: 20px 16px;">
         <h2 style="color: #383028; margin:0 0 6px 0;">${T.title(
           clientName
         )}</h2>
         <p style="margin: 0 0 12px 0;">${T.subtitle}</p>
 
-        <div style="background: #f8f6f3; border-radius: 8px; padding: 14px; margin: 18px 0;">
+        <div style="background: #f8f6f3; border-radius: 8px; padding: 12px; margin: 18px 0;">
           <h3 style="color: #383028; margin-top: 0;">${T.actions}</h3>
 
-          <div style="margin: 14px 0; padding: 14px; background: white; border-radius: 6px; border-${
+          <div style="margin: 14px 0; padding: 12px; background: white; border-radius: 6px; border-${
             lng === "ar" ? "right" : "left"
           }: 4px solid #be975c;">
             <p style="margin: 0 0 8px 0; font-weight: bold; color: #383028;">🔎 ${
@@ -122,7 +122,7 @@ export async function sendContractEmailToClient({
   }</a>
           </div>
 
-          <div style="margin: 14px 0; padding: 14px; background: white; border-radius: 6px; border-${
+          <div style="margin: 14px 0; padding: 12px; background: white; border-radius: 6px; border-${
             lng === "ar" ? "right" : "left"
           }: 4px solid #d3ac71;">
             <p style="margin: 0 0 8px 0; font-weight: bold; color: #383028;">📄 ${
