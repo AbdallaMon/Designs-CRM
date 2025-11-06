@@ -60,12 +60,7 @@ export async function sendEmailToClient({
       </div>
     </div>
   `;
-  await sendEmail(
-    clientEmail,
-    "✅ Your Image Session is Approved",
-    clientHtml,
-    true
-  );
+  await sendEmail(clientEmail, "✅ Your Image Session is Approved", clientHtml);
 }
 export async function sendEmailForStaff({
   staffs,
@@ -170,12 +165,7 @@ export async function sendReminderCreatedToClient({
     </div>
   `;
 
-  await sendEmail(
-    clientEmail,
-    `📅 Reminder Set: ${reminderTitle}`,
-    clientHtml,
-    true
-  );
+  await sendEmail(clientEmail, `📅 Reminder Set: ${reminderTitle}`, clientHtml);
 }
 
 export async function sendReminderToUser({
@@ -233,8 +223,7 @@ export async function sendReminderToUser({
   await sendEmail(
     userEmail,
     `📞 ${label} Reminder - ${minutesLabel} | ${callDetails}`,
-    html,
-    true
+    html
   );
 }
 
@@ -304,7 +293,6 @@ export async function sendReminderToClient({
   await sendEmail(
     clientEmail,
     `📞 ${label} Reminder - ${minutesLabel} | ${callDetails}`,
-    html,
-    true
+    html
   );
 }

@@ -166,8 +166,7 @@ export async function sendContractEmailToClient({
     lng === "ar"
       ? "✅ تم توقيع عقدك بنجاح"
       : "✅ Your Contract Has Been Signed",
-    html,
-    true
+    html
   );
 }
 
