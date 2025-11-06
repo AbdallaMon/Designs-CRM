@@ -1,4 +1,3 @@
-import { th } from "@faker-js/faker";
 import prisma from "../../prisma/prisma.js";
 
 export async function getPdfSiteUtilities() {
