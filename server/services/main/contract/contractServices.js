@@ -863,13 +863,13 @@ export async function deleteContractSpecialItem({ specialItemId }) {
 }
 
 export const STAGE_PREV_LEVELS_MAP = {
-  LEVEL1: null,
-  LEVEL2: ["LEVEL_1"],
-  LEVEL3: ["LEVEL_2", "LEVEL_1"],
-  LEVEL4: ["LEVEL_3", "LEVEL_2", "LEVEL_1"],
-  LEVEL5: ["LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
-  LEVEL6: ["LEVEL_5", "LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
-  LEVEL7: ["LEVEL_6", "LEVEL_5", "LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
+  LEVEL_1: null,
+  LEVEL_2: ["LEVEL_1"],
+  LEVEL_3: ["LEVEL_2", "LEVEL_1"],
+  LEVEL_4: ["LEVEL_3", "LEVEL_2", "LEVEL_1"],
+  LEVEL_5: ["LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
+  LEVEL_6: ["LEVEL_5", "LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
+  LEVEL_7: ["LEVEL_6", "LEVEL_5", "LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
 };
 
 export async function checkIfProjectHasStagesAndUpdateNextAndPrevious({
@@ -882,7 +882,7 @@ export async function checkIfProjectHasStagesAndUpdateNextAndPrevious({
   const nextContractStage = await prisma.contractStage.findFirst({
     where: {
       projectId: Number(projectId),
-      stageStatus: "NOT_STARTED",
+      // stageStatus: "NOT_STARTED",
       contract: {
         status: "IN_PROGRESS",
       },
@@ -901,38 +901,38 @@ export async function checkIfProjectHasStagesAndUpdateNextAndPrevious({
         stageStatus: "IN_PROGRESS",
       },
     });
+  }
+  let prevStageLevels = STAGE_PREV_LEVELS_MAP[nextContractStage.title];
 
-    let prevStageLevels = STAGE_PREV_LEVELS_MAP[nextContractStage.title];
-    let lastStage = await prisma.contractStage.findFirst({
+  let lastStage = await prisma.contractStage.findFirst({
+    where: {
+      contractId: Number(nextContractStage.contractId),
+      title: { in: prevStageLevels },
+      stageStatus: "IN_PROGRESS",
+    },
+  });
+  if (prevStageLevels && prevStageLevels.length > 0) {
+    await prisma.contractStage.updateMany({
       where: {
         contractId: Number(nextContractStage.contractId),
         title: { in: prevStageLevels },
         stageStatus: "IN_PROGRESS",
       },
+      data: {
+        stageStatus: "COMPLETED",
+      },
     });
-    if (prevStageLevels && prevStageLevels.length > 0) {
-      await prisma.contractStage.updateMany({
-        where: {
-          contractId: Number(nextContractStage.contractId),
-          title: { in: prevStageLevels },
-          stageStatus: "IN_PROGRESS",
-        },
-        data: {
-          stageStatus: "COMPLETED",
-        },
-      });
-    }
-    if (lastStage) {
-      await updateContractStatusToCompletedIfNoOtherPaymentsOrStages({
-        contractId: lastStage.contractId,
-      });
-    }
-    if (nextContractStage) {
-      await createADeliveryScheduleAndRelateItToStage({
-        stageId: nextContractStage.id,
-        ...nextContractStage,
-      });
-    }
+  }
+  if (lastStage) {
+    await updateContractStatusToCompletedIfNoOtherPaymentsOrStages({
+      contractId: lastStage.contractId,
+    });
+  }
+  if (nextContractStage) {
+    await createADeliveryScheduleAndRelateItToStage({
+      stageId: nextContractStage.id,
+      ...nextContractStage,
+    });
   }
   return true;
 }
@@ -1044,6 +1044,12 @@ export async function createADeliveryScheduleAndRelateItToStage({
       },
     });
     data.projectId = relatedProject.id;
+  }
+  const checkIfThereIsOne = await prisma.deliverySchedule.findFirst({
+    where: { stageId: stageId },
+  });
+  if (checkIfThereIsOne) {
+    return checkIfThereIsOne;
   }
   return await prisma.deliverySchedule.create({
     data: {
