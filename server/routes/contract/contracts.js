@@ -21,6 +21,7 @@ import {
   markContractAsCancelled,
   getContractPaymentsGroupedService,
 } from "../../services/main/contract/contractServices.js";
+import { getCurrentUser } from "../../services/main/utility.js";
 
 const router = Router();
 
@@ -141,10 +142,12 @@ router.delete("/:contractId/stages/:stageId", async (req, res) => {
 router.get("/payments/all", async (req, res) => {
   try {
     const { page = 1, limit = 10, status = "DUE" } = req.query;
+    const user = await getCurrentUser(req);
     const data = await getContractPaymentsGroupedService({
       page,
       limit,
       status,
+      user,
     });
     res.status(200).json({ data });
   } catch (err) {

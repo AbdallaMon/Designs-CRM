@@ -181,6 +181,11 @@ export const staffLinks = [
     href: "/dashboard/calendar",
     icon: <FiCalendar size={20} />,
   },
+  {
+    name: "Payments",
+    href: "/dashboard/payments",
+    icon: <FiDollarSign size={20} />,
+  },
 ];
 export const contactInitiatorLinks = [
   { name: "Leads", href: "/dashboard", icon: <FiTarget size={20} /> },

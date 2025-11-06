@@ -1104,6 +1104,7 @@ export async function getContractPaymentsGroupedService({
   page = 1,
   limit = 10,
   status = "DUE",
+  user,
 }) {
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const take = Math.max(1, parseInt(limit, 10) || 10);
@@ -1115,6 +1116,11 @@ export async function getContractPaymentsGroupedService({
   const whereForCount = filterStatus
     ? { paymentsNew: { some: { status: filterStatus } } }
     : { paymentsNew: { some: {} } };
+  if (user && user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+    whereForCount.clientLead = {
+      userId: user.id,
+    };
+  }
   whereForCount.status = { not: "CANCELLED" };
   const total = await prisma.contract.count({ where: whereForCount });
 

@@ -121,8 +121,8 @@ function buildPaymentLine({ payment, index, lng, taxRate }) {
 
   const taxNote =
     lng === "ar"
-      ? ` (ما يعادل ${amtWithTax} بإضافة الضريبة)`
-      : ` (equivalent to ${amtWithTax} with tax)`;
+      ? `${amtWithTax} (شامل الضريبة)`
+      : `${amtWithTax} (VAT included)`;
 
   if (index === 1) {
     return lng === "ar"
@@ -131,8 +131,8 @@ function buildPaymentLine({ payment, index, lng, taxRate }) {
   }
 
   return lng === "ar"
-    ? `• ${ordinal} ${primary || ""} بقيمة : ${amt}${taxNote}`
-    : `• ${ordinal} ${primary || ""}: ${amt}${taxNote}`;
+    ? `• ${ordinal} ${primary || ""} : ${taxNote}`
+    : `• ${ordinal} ${primary || ""} : ${taxNote}`;
 }
 
 // small util to split first sentence (for highlighting)

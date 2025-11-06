@@ -520,8 +520,8 @@ function buildPaymentLine({ payment, index, lng, taxRate }) {
 
   const taxNote =
     lng === "ar"
-      ? ` )ما يعادل ${amtWithTax} بإضافة الضريبة(`
-      : ` (equivalent to ${amtWithTax} with tax)`;
+      ? ` ${amtWithTax} )شامل الضريبة(`
+      : ` ${amtWithTax} (VAT included)`;
 
   if (index === 1) {
     return lng === "ar"
@@ -530,8 +530,8 @@ function buildPaymentLine({ payment, index, lng, taxRate }) {
   }
 
   return lng === "ar"
-    ? `- ${ordinal} ${primary} بقيمة : ${amt}${taxNote}`
-    : `- ${ordinal} ${primary}: ${amt}${taxNote}`;
+    ? `- ${ordinal} ${primary}: ${taxNote}`
+    : `- ${ordinal} ${primary}: ${taxNote}`;
 }
 
 async function renderDbSpecialItems(ctx, { lng, contract, fonts, colors }) {
@@ -1587,7 +1587,7 @@ async function renderConfirmationAndSignaturePage(
   const secondParty = lng === "ar" ? "الفـــــريق الـــــثاني" : "Second Party";
   const firstParty = lng === "ar" ? "الفـــــريـــــق الاول" : "First Party";
   const sigLabel = lng === "ar" ? "التوقيع:" : "Signature:";
-  const secondPartyName = "دريم ستوديوو";
+  const secondPartyName = lng === "ar" ? "دريم ستوديوو" : "Dream Studiio";
   const firstPartyName = clientName || (lng === "ar" ? "المالك" : "Owner");
 
   // helper: resolve x according to language (RTL aligns to the right edge of the cell)
@@ -1797,131 +1797,64 @@ async function drawCancelledWatermarkOnAllPages(
     lng,
     color = rgb(1, 0, 0),
 
-    // opacities
-    opacity = 0.14, // main headline fill
-    bandOpacity = 0.08, // diagonal ribbon
-    strokeOpacity = 0.22, // subtle outline/shadow text
-    microOpacity = 0.045, // tiled micro-text (set to 0 to disable)
-
-    // geometry
-    angleDeg = 33,
-    gap = 260, // minimum micro-text gap
+    // شفافية و زوايا
+    opacity = 0.06, // شفافية العلامة المائية الأساسية (قابلة للتعديل)
+    angleDeg = 33, // زاوية الميل
+    gap = 180, // المسافة الرأسية بين السطور (قابلة للتعديل)
   } = {}
 ) {
   const wantAr = lng === "ar";
 
-  // choose fonts strictly by language
+  // اختيار الخط حسب اللغة (بدون خلط)
   const mainFont =
     (wantAr
       ? fonts?.arBold || fonts?.arFont
       : fonts?.enBold || fonts?.enFont) || null;
 
-  const microFont =
-    (wantAr
-      ? fonts?.arFont || fonts?.arBold
-      : fonts?.enFont || fonts?.enBold) || null;
+  if (!mainFont) return; // لو مفيش خط، نخرج بهدوء بدون ما نبوظ الـ PDF
 
-  // choose text strictly by language
-  const text = wantAr ? reText(String(textAr || "")) : String(textEn || "");
+  // النص حسب اللغة
+  const rawText = wantAr ? (textAr || "").trim() : (textEn || "").trim();
+  if (!rawText) return;
+
+  const text = wantAr ? reText(String(rawText)) : String(rawText);
 
   const pages = pdfDoc.getPages();
+  const angle = degrees(angleDeg);
+
   for (const page of pages) {
     const pw = page.getWidth();
     const ph = page.getHeight();
-    const cx = pw / 2;
-    const cy = ph / 2;
 
-    // full corner-to-corner diagonal
-    const diagonal = Math.sqrt(pw * pw + ph * ph);
+    // حجم الخط الأساسي مناسب للصفحة (مياه بين كبيرة وواضحة بس مش مزعجة)
+    let fs = Math.max(32, Math.min(64, Math.floor(Math.max(pw, ph) / 18)));
 
-    // base font size scaled to page; we will downscale if it doesn't fit diagonal
-    let fs = Math.max(40, Math.min(76, Math.floor(Math.max(pw, ph) / 11)));
-
-    if (mainFont) {
-      // ensure headline fits inside the ribbon length with padding
-      const PAD = 140; // diagonal padding
-      while (fs > 20 && mainFont.widthOfTextAtSize(text, fs) > diagonal - PAD) {
-        fs -= 2;
-      }
+    // تأكد إنه مش عريض أوي
+    const maxLineWidth = pw * 0.9;
+    while (fs > 18 && mainFont.widthOfTextAtSize(text, fs) > maxLineWidth) {
+      fs -= 2;
     }
 
-    // ribbon height relative to font size
-    const bandH = Math.max(52, Math.floor(fs * 1.35));
+    const textWidth = mainFont.widthOfTextAtSize(text, fs);
 
-    // 1) Diagonal ribbon
-    page.drawRectangle({
-      x: cx - diagonal / 2 - 40,
-      y: cy - bandH / 2,
-      width: diagonal + 80,
-      height: bandH,
-      color,
-      opacity: bandOpacity,
-      borderColor: color,
-      borderWidth: 0.6,
-      rotate: degrees(angleDeg),
-    });
+    // خطوة أفقية بين كل تكرار (علشان يملأ الصفحة من غير فراغ كبير)
+    const stepX = textWidth + 80;
 
-    if (mainFont && text) {
-      // helper to draw centered, rotated text with a soft outline
-      const drawCentered = ({ t, font, size }) => {
-        const w = font.widthOfTextAtSize(t, size);
-        const x = cx - w / 2;
-        const y = cy - size / 3;
+    // خطوة رأسية بين السطور (باستخدام gap اللي بتمرره)
+    const stepY = Math.max(gap, fs * 2.2);
 
-        // tiny shadow for contrast at low opacity
-        page.drawText(t, {
-          x: x + 0.9,
-          y: y - 0.9,
-          size,
-          font,
-          color: rgb(1, 1, 1),
-          opacity: Math.min(0.9, strokeOpacity),
-          rotate: degrees(angleDeg),
-        });
-
-        page.drawText(t, {
+    // نغطي مساحة أكبر من الصفحة شوية علشان الدوران
+    for (let y = -ph; y < ph * 2; y += stepY) {
+      for (let x = -pw; x < pw * 2; x += stepX) {
+        page.drawText(text, {
           x,
           y,
-          size,
-          font,
+          size: fs,
+          font: mainFont,
           color,
           opacity,
-          rotate: degrees(angleDeg),
+          rotate: angle,
         });
-      };
-
-      // 2) Single-language headline centered on ribbon
-      drawCentered({ t: text, font: mainFont, size: fs });
-    }
-
-    // 3) Very faint single-language tiled micro-text (optional)
-    if (microOpacity > 0 && microFont && text) {
-      const fsMicro = Math.max(20, Math.floor(fs * 0.52));
-      const microGap = Math.max(gap, Math.floor((pw + ph) / 2));
-
-      for (let y = -microGap; y < ph + microGap; y += microGap) {
-        for (let x = -microGap; x < pw + microGap; x += microGap) {
-          // small shadow to keep legible at very low opacity
-          page.drawText(text, {
-            x: x + 0.6,
-            y: y - 0.6,
-            size: fsMicro,
-            font: microFont,
-            color: rgb(1, 1, 1),
-            opacity: Math.min(0.9, strokeOpacity * 0.5),
-            rotate: degrees(angleDeg),
-          });
-
-          page.drawText(text, {
-            x,
-            y,
-            size: fsMicro,
-            font: microFont,
-            color,
-            opacity: microOpacity,
-            rotate: degrees(angleDeg),
-          });
-        }
       }
     }
   }
@@ -1931,7 +1864,6 @@ async function drawCancelledWatermarkOnAllPages(
 export async function generateContractPdf({
   contract,
   lng = "ar",
-  clientName,
   signatureUrl,
   backgroundImageUrl,
   introImageUrl,
@@ -1946,7 +1878,10 @@ export async function generateContractPdf({
 }) {
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
-
+  const owner = contract?.clientLead?.client;
+  const clientName =
+    (lng === "ar" ? owner?.arName : owner?.enName || owner?.arName) ||
+    owner?.name;
   const arFont = await pdfDoc.embedFont(fontBase64);
   const arBold = await pdfDoc.embedFont(fontBoldBase64);
   const enFont = await pdfDoc.embedFont(enfontBase64);
