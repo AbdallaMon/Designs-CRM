@@ -525,8 +525,8 @@ function buildPaymentLine({ payment, index, lng, taxRate }) {
 
   if (index === 1) {
     return lng === "ar"
-      ? ` ${ordinal} عند توقيع العقد بقيمه: ${amt}${taxNote}`
-      : ` ${ordinal} on contract signature: ${amt}${taxNote}`;
+      ? ` ${ordinal} عند توقيع العقد بقيمه: ${taxNote}`
+      : ` ${ordinal} on contract signature: ${taxNote}`;
   }
 
   return lng === "ar"

@@ -681,8 +681,18 @@ export async function getClientLeadDetails(
 ) {
   let where = {};
   let leadWhere = {};
+
   if (searchParams.userId && role !== "ADMIN" && role !== "SUPER_ADMIN") {
-    where.userId = Number(searchParams.userId);
+    const checkIfCurrenUserIsAssignedToLead = await prisma.clientLead.findFirst(
+      {
+        where: {
+          userId: Number(searchParams.userId),
+        },
+      }
+    );
+    if (!checkIfCurrenUserIsAssignedToLead) {
+      where.userId = Number(searchParams.userId);
+    }
   }
 
   if (role !== "ADMIN" && role !== "SUPER_ADMIN") {
@@ -724,6 +734,7 @@ export async function getClientLeadDetails(
   if (searchParams.checkConsult) {
     initialConsultWhere.initialConsult = true;
   }
+  console.log(where, "where");
   const clientLead = await prisma.clientLead.findUnique({
     where: { id: clientLeadId, ...initialConsultWhere, ...where, ...leadWhere },
     select: {
@@ -3363,12 +3374,21 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
 }
 
 const PROJECT_TYPES = [
-  "3D_Designer",
   "3D_Modification",
   "2D_Study",
+  "3D_Designer",
   "2D_Final_Plans",
   "2D_Quantity_Calculation",
 ];
+function sortProjectsByTypeOrder(projects, order = PROJECT_TYPES) {
+  const orderIndex = new Map(order.map((t, i) => [t, i]));
+  const FALLBACK = order.length; // unknown types go last
+  return [...projects].sort((a, b) => {
+    const ai = orderIndex.has(a.type) ? orderIndex.get(a.type) : FALLBACK;
+    const bi = orderIndex.has(b.type) ? orderIndex.get(b.type) : FALLBACK;
+    return ai - bi;
+  });
+}
 
 async function getProjects(clientLeadId) {
   const { now, start, end } = todayRange();
@@ -3379,7 +3399,7 @@ async function getProjects(clientLeadId) {
       { meetingReminderId: null },
     ],
   };
-  return await prisma.project.findMany({
+  const projects = await prisma.project.findMany({
     where: {
       clientLeadId: Number(clientLeadId),
     },
@@ -3406,6 +3426,7 @@ async function getProjects(clientLeadId) {
       },
     },
   });
+  return projects;
 }
 
 export async function getProjectsByClientLeadId({ searchParams }) {
@@ -3429,16 +3450,26 @@ export async function getProjectsByClientLeadId({ searchParams }) {
             : "TWO_D_DESIGNER",
       });
     });
-    await prisma.project.createMany({
-      data: newProjects.map((project) => ({
-        ...project,
+    const isPresent = await prisma.project.findFirst({
+      where: {
+        groupId: 1,
         clientLeadId: Number(clientLeadId),
-      })),
+        groupTitle: "Initial Project",
+      },
     });
+
+    if (!isPresent) {
+      await prisma.project.createMany({
+        data: newProjects.map((project) => ({
+          ...project,
+          clientLeadId: Number(clientLeadId),
+        })),
+      });
+    }
     projects = await getProjects(clientLeadId);
   }
 
-  const groupedProjects = groupProjects(projects);
+  const groupedProjects = groupProjects(sortProjectsByTypeOrder(projects));
 
   return groupedProjects;
 }
@@ -4992,17 +5023,53 @@ export async function getAllMeetingRemindersByClientLeadId({ clientLeadId }) {
     },
   });
 }
-
-export async function getUniqueProjectGroups({ clientLeadId }) {
+async function getProjectsGrouped({ clientLeadId }) {
   const where = {
     clientLeadId: Number(clientLeadId),
   };
-  const groups = await prisma.project.findMany({
+  return await prisma.project.findMany({
     where,
     distinct: ["groupId", "groupTitle"],
     select: { groupId: true, groupTitle: true },
     orderBy: [{ groupTitle: "asc" }, { groupId: "asc" }],
   });
+}
+export async function getUniqueProjectGroups({ clientLeadId }) {
+  const groups = await getProjectsGrouped({ clientLeadId });
+  if (!groups || groups.length === 0) {
+    const newProjects = [];
+    PROJECT_TYPES.forEach((type) => {
+      newProjects.push({
+        type,
+        status: "To Do",
+        priority: "MEDIUM",
+        startedAt: null,
+        endedAt: null,
+        groupTitle: "Initial Project",
+        groupId: 1,
+        role:
+          type === "3D_Designer" || type === "3D_Modification"
+            ? "THREE_D_DESIGNER"
+            : "TWO_D_DESIGNER",
+      });
+    });
+    const isPresent = await prisma.project.findFirst({
+      where: {
+        groupId: 1,
+        clientLeadId: Number(clientLeadId),
+        groupTitle: "Initial Project",
+      },
+    });
+    if (!isPresent) {
+      await prisma.project.createMany({
+        data: newProjects.map((project) => ({
+          ...project,
+          clientLeadId: Number(clientLeadId),
+        })),
+      });
+    }
+    groups = await getProjectsGrouped({ clientLeadId });
+  }
 
   return groups;
 }

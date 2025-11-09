@@ -1,6 +1,6 @@
-import OptimizedClientKanbanLead from "@/app/UiComponents/DataViewer/Kanban/staff/ClientKanbanLead";
+import StaffLeadsKanbanBoard from "@/app/UiComponents/DataViewer/Kanban/staff/StaffLeadsKanbanBoard";
 
 export default async function page(props) {
   const searchParams = await props.searchParams;
-  return <OptimizedClientKanbanLead staffId={searchParams.staffId} />;
+  return <StaffLeadsKanbanBoard staffId={searchParams.staffId} />;
 }

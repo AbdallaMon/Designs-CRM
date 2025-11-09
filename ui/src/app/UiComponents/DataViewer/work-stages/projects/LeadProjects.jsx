@@ -112,7 +112,6 @@ export const LeadProjects = ({
     project: null,
     anchorEl: null,
   });
-
   useEffect(() => {
     if (noIntialLoad) {
       setGroupedProjects(initialProjects);

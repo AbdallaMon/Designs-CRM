@@ -1,4 +1,4 @@
-import PreviewDialog from "@/app/UiComponents/DataViewer/leads/PreviewLead.jsx";
+import PreviewDialog from "@/app/UiComponents/DataViewer/leads/PreviewLeadDialog.jsx";
 import React from "react";
 
 export default async function page(props) {

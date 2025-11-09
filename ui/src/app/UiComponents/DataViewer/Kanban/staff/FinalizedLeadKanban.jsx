@@ -5,7 +5,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { CONTRACT_LEVELS } from "@/app/helpers/constants";
 
-import OptimizedKanbanLead from "./OptimizedKanbanLead";
+import KanbanBoard from "../shared/KanbanBoard";
 
 dayjs.extend(relativeTime);
 
@@ -19,7 +19,7 @@ const FinalizedLeadKanban = ({ staffId }) => {
 
   return (
     <>
-      <OptimizedKanbanLead
+      <KanbanBoard
         statusArray={statusArray}
         type="CONTRACTLEVELS"
         reRenderColumns={reRenderColumns}

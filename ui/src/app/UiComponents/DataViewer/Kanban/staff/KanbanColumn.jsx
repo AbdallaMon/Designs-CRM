@@ -15,7 +15,7 @@ import { BsKanban } from "react-icons/bs";
 import LeadCard from "../KanbanLeadCard";
 import { useDrop } from "react-dnd";
 import WorkStageKanbanCard from "../WorkStageKanbanCard";
-import { FinalizeModal } from "../../leads/FinalizeModal";
+import { FinalizeModal } from "../../leads/widgets/FinalizeModal";
 import { useEffect, useState } from "react";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";

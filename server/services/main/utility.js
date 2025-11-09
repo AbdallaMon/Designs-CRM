@@ -327,8 +327,18 @@ export async function searchData(body) {
           },
         },
       ];
+      const codeIdOr = {
+        OR: [
+          {
+            code: {
+              contains: query,
+            },
+          },
+        ],
+      };
       if (!isNaN(query)) {
-        where.OR.push({ id: { equals: Number(query) } });
+        codeIdOr.OR.push({ id: { equals: Number(query) } });
+        where.OR.push(codeIdOr);
       }
     } else {
       where.OR = [
@@ -427,6 +437,7 @@ export async function searchData(body) {
     },
     clientLead: {
       id: true,
+      code: true,
       client: {
         select: {
           name: true,

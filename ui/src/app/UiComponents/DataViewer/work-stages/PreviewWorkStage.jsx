@@ -36,16 +36,18 @@ import { GoPaperclip } from "react-icons/go";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { generatePDF } from "@/app/UiComponents/buttons/GenerateLeadPdf.jsx";
 import Link from "next/link";
-import { CallReminders, FileList, LeadNotes } from "../leads/LeadTabs";
-import { MdModeEdit, MdTask, MdWork, MdWorkHistory } from "react-icons/md";
+import { LeadNotes } from "../leads/tabs/LeadsNotes";
+import { MdModeEdit, MdTask, MdWork } from "react-icons/md";
 import LeadProjects from "./projects/LeadProjects";
 import { TasksList } from "../utility/TasksList";
 import { ProjectDetails } from "./projects/ProjectDetails";
 import TelegramLink from "./utility/TelegramLink";
-import { InfoCard } from "../leads/extra/InfoCard";
-import { LeadContactInfo } from "../leads/extra/LeadContactInfo";
-import { LeadInfo } from "../leads/extra/LeadInfo";
-import { PreviewLead } from "../leads/extra/PreviewLead";
+import { InfoCard } from "../leads/core/InfoCard";
+import { LeadContactInfo } from "../leads/panels/LeadContactInfo";
+import { LeadInfo } from "../leads/panels/LeadInfo";
+import { PreviewLead } from "../leads/features/PreviewLead";
+import { CallReminders } from "../leads/tabs/CallReminders";
+import { FileList } from "../leads/tabs/Files";
 
 const TabPanel = ({ children, value, index }) => (
   <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>

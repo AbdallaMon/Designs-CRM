@@ -1,4 +1,4 @@
-import NewLeadsPage from "@/app/UiComponents/DataViewer/leads/new-leads/NewLeadsPage.jsx";
+import NewLeadsPage from "@/app/UiComponents/DataViewer/leads/pages/NewLeadsPage.jsx";
 
 export default async function Page(props) {
   const searchParams = await props.searchParams;

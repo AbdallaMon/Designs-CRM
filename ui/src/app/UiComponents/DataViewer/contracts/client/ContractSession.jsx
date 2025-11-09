@@ -37,10 +37,7 @@ import {
   FaInfoCircle,
   FaCheck,
   FaMinusCircle,
-  FaChevronDown,
-  FaChevronUp,
 } from "react-icons/fa";
-import { MdMore as ExpandMoreIcon } from "react-icons/md";
 // ====== bring shared constants from your codebase =====
 // (Assume these imports remain the same in your project)
 import {
@@ -49,7 +46,6 @@ import {
   EMIRATE_LABEL,
   UAE_LABEL,
   STAGE_STATUS_LABEL,
-  PROJECT_TYPES_LABELS,
 } from "@/app/helpers/constants";
 import {
   STAGE_CLAUSES_DEFAULT,
@@ -126,8 +122,8 @@ function buildPaymentLine({ payment, index, lng, taxRate }) {
 
   if (index === 1) {
     return lng === "ar"
-      ? `• ${ordinal} عند توقيع العقد بقيمه: ${amt}${taxNote}`
-      : `• ${ordinal} on contract signature: ${amt}${taxNote}`;
+      ? `• ${ordinal} عند توقيع العقد بقيمه: ${taxNote}`
+      : `• ${ordinal} on contract signature: ${taxNote}`;
   }
 
   return lng === "ar"

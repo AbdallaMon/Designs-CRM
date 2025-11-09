@@ -39,7 +39,7 @@ import {
   MdPhone,
   MdToday,
 } from "react-icons/md";
-import { CallCard, MeetingCard } from "../../leads/extra/CallAndMeetingCard";
+import { CallCard, MeetingCard } from "../../leads/core/CallAndMeetingCard";
 import { getData } from "@/app/helpers/functions/getData";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
 

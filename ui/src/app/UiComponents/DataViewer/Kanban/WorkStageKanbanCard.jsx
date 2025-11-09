@@ -41,10 +41,7 @@ import {
   statusColors,
   taskStatusColors,
 } from "@/app/helpers/constants.js";
-import {
-  NewCallDialog,
-  NewNoteDialog,
-} from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
+import { NewNoteDialog } from "@/app/UiComponents/DataViewer/leads/dialogs/NoteDialog";
 import { checkIfAdmin } from "@/app/helpers/functions/utility.js";
 import { FaEye } from "react-icons/fa";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -62,10 +59,11 @@ import { ProjectTasksDialog } from "../work-stages/utility/ProjectTasksDialog";
 import TaskDetails from "../utility/TaskDetails";
 import colors from "@/app/helpers/colors";
 import TelegramLink from "../work-stages/utility/TelegramLink";
-import FloatingIdBadge from "../leads/extra/IdBadge";
+import FloatingIdBadge from "../leads/core/IdBadge";
 import { KanbanUpdateSection } from "../leads/leadUpdates/KanbanUpdateSection";
 import ClientImageSessionManager from "../image-session/users/ClientSessionImageManager";
-import CountdownTimer from "../leads/extra/CountdownTimer";
+import CountdownTimer from "../leads/widgets/CountdownTimer";
+import { NewCallDialog } from "../leads/dialogs/CallsDialog";
 
 const ItemTypes = {
   CARD: "card",

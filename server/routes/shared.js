@@ -1,4 +1,6 @@
 import { Router } from "express";
+
+/* ============================== Shared Utils & Middleware ============================== */
 import {
   getAndThrowError,
   getCurrentUser,
@@ -7,6 +9,8 @@ import {
   getTokenData,
   verifyTokenAndHandleAuthorization,
 } from "../services/main/utility.js";
+
+/* ================================== Shared Services =================================== */
 import {
   addNote,
   assignLeadToAUser,
@@ -15,7 +19,6 @@ import {
   checkIfUserAllowedToTakeALead,
   checkUserLog,
   createAnUpdate,
-  createNewContract,
   createNewDeliverySchedule,
   createNewTask,
   deleteAModel,
@@ -32,7 +35,6 @@ import {
   getClientLeads,
   getClientLeadsByDateRange,
   getClientLeadsColumnStatus,
-  getContractForLead,
   getDashboardLeadStatusData,
   getDeliveryScheduleByProjectId,
   getDesignerMetrics,
@@ -80,11 +82,15 @@ import {
   updateProject,
   updateTask,
 } from "../services/main/sharedServices.js";
+
+/* =================================== Admin Services =================================== */
 import {
   getAdminClientLeadDetails,
   getModelIds,
   updateLeadField,
 } from "../services/main/adminServices.js";
+
+/* =================================== Staff Services =================================== */
 import {
   createCallReminder,
   createFile,
@@ -96,6 +102,7 @@ import {
   updateMeetingReminderStatus,
 } from "../services/main/staffServices.js";
 
+/* =================================== Reviews OAuth ==================================== */
 import {
   createAuthUrl,
   getLocations,
@@ -103,15 +110,15 @@ import {
   handleOAuthCallback,
 } from "../services/reviews.js";
 
-const router = Router();
+/* ================================== Sub-Routers ======================================= */
 import questionsRoutes from "./questions/questions.js";
 import calendarRoutes from "./calendar/calendar.js";
 import coursesRouter from "./courses/staffCourses.js";
 import contractRouter from "./contract/contracts.js";
-
 import imageSessionRouter from "./image-session/image-session.js";
 import siteUtilitiesServices from "./site-utilities/siteUtility.js";
 
+/* =============================== Calendar Services ==================================== */
 import {
   addCutsomDate,
   createAvailableDatesForMoreThanOneDay,
@@ -121,17 +128,36 @@ import {
   updateAvailableDay,
 } from "../services/main/calendarServices.js";
 
+/* ======================================================================================= */
+/*                                          Init                                           */
+/* ======================================================================================= */
+
+const router = Router();
+
+/* ======================================================================================= */
+/*                                  Global Auth Middleware                                 */
+/* ======================================================================================= */
+
 router.use(async (req, res, next) => {
   await verifyTokenAndHandleAuthorization(req, res, next, "SHARED");
 });
+
+/* ======================================================================================= */
+/*                                     Mounted Routers                                     */
+/* ======================================================================================= */
+
 router.use("/courses", coursesRouter);
 router.use("/contracts", contractRouter);
 router.use("/site-utilities", siteUtilitiesServices);
-
 router.use("/questions", questionsRoutes);
 router.use("/calendar", calendarRoutes);
 router.use("/image-session", imageSessionRouter);
 
+/* ======================================================================================= */
+/*                                      Client Leads                                       */
+/* ======================================================================================= */
+
+// List client leads (+ pagination)
 router.get("/client-leads", async (req, res) => {
   try {
     const searchParams = req.query;
@@ -153,6 +179,8 @@ router.get("/client-leads", async (req, res) => {
       .json({ message: "An error occurred while fetching client leads" });
   }
 });
+
+// Deals (date range)
 router.get("/client-leads/deals", async (req, res) => {
   try {
     const searchParams = req.query;
@@ -184,6 +212,7 @@ router.get("/client-leads/deals", async (req, res) => {
   }
 });
 
+// Kanban columns summary
 router.get("/client-leads/columns", async (req, res) => {
   try {
     const searchParams = req.query;
@@ -214,32 +243,12 @@ router.get("/client-leads/columns", async (req, res) => {
       .json({ message: "An error occurred while fetching client leads" });
   }
 });
-// router.get("/client-leads/:id/contracts", async (req, res) => {
-//   try {
-//     const contracts = await getContractForLead({ clientLeadId: req.params.id });
-//     res.status(200).json({ data: contracts });
-//   } catch (e) {
-//     console.log(e, "e");
-//     res.status(500).json({ message: e.message });
-//   }
-// });
-// router.post("/client-leads/:id/contracts", async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const newContract = await createNewContract({
-//       clientLeadId: id,
-//       ...req.body,
-//     });
 
-//     res.status(200).json({
-//       data: newContract,
-//       message: "Contract updated successfully",
-//     });
-//   } catch (e) {
-//     console.log(e, "e");
-//     res.status(500).json({ message: e.message });
-//   }
-// });
+// (Commented) Lead contracts list/create
+// router.get("/client-leads/:id/contracts", async (req, res) => { ... })
+// router.post("/client-leads/:id/contracts", async (req, res) => { ... })
+
+// Update single contract by id
 router.put("/client-leads/contract/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -255,6 +264,7 @@ router.put("/client-leads/contract/:id", async (req, res) => {
   }
 });
 
+// Mark contract as current
 router.put("/client-leads/contract/:id/current", async (req, res) => {
   try {
     const { id } = req.params;
@@ -272,6 +282,8 @@ router.put("/client-leads/contract/:id/current", async (req, res) => {
     res.status(500).json({ message: e.message });
   }
 });
+
+// Mark contract as completed
 router.put("/client-leads/contract/:id/completed", async (req, res) => {
   try {
     const { id } = req.params;
@@ -289,6 +301,8 @@ router.put("/client-leads/contract/:id/completed", async (req, res) => {
     res.status(500).json({ message: e.message });
   }
 });
+
+// Delete contract
 router.delete("/client-leads/contract/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -304,6 +318,7 @@ router.delete("/client-leads/contract/:id", async (req, res) => {
   }
 });
 
+// Update lead field (admin)
 router.put("/lead/update/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -318,9 +333,10 @@ router.put("/lead/update/:id", async (req, res) => {
     res.status(500).json({ message: e.message });
   }
 });
+
+// Check if user allowed to take a lead by country
 router.post("/:userId/client-leads/countries", async (req, res) => {
   const { userId } = req.params;
-
   try {
     const isAllowed = await checkIfUserAllowedToTakeALead(
       userId,
@@ -339,6 +355,8 @@ router.post("/:userId/client-leads/countries", async (req, res) => {
       .json({ message: "An error occurred while fetching supervisors" });
   }
 });
+
+// Next calls (reminders)
 router.get("/client-leads/calls", async (req, res) => {
   try {
     const searchParams = req.query;
@@ -356,6 +374,8 @@ router.get("/client-leads/calls", async (req, res) => {
       .json({ message: "An error occurred while fetching client leads" });
   }
 });
+
+// Update call reminder status
 router.put("/client-leads/call-reminders/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -378,6 +398,7 @@ router.put("/client-leads/call-reminders/:id", async (req, res) => {
   }
 });
 
+// Next meetings (reminders)
 router.get("/client-leads/meetings", async (req, res) => {
   try {
     const searchParams = req.query;
@@ -395,6 +416,8 @@ router.get("/client-leads/meetings", async (req, res) => {
       .json({ message: "An error occurred while fetching client leads" });
   }
 });
+
+// Get all meeting reminders for a client lead
 router.get(
   "/client-leads/:clientLeadId/meeting-reminders/",
   async (req, res) => {
@@ -417,6 +440,8 @@ router.get(
     }
   }
 );
+
+// Update meeting reminder status
 router.put("/client-leads/meeting-reminders/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -438,11 +463,14 @@ router.put("/client-leads/meeting-reminders/:id", async (req, res) => {
     });
   }
 });
+
+// Get a client lead (admin/self scoping)
 router.get("/client-leads/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const token = getTokenData(req, res);
     const searchParams = req.query;
+
     if (
       token.role !== "ADMIN" &&
       token.role !== "SUPER_ADMIN" &&
@@ -453,6 +481,7 @@ router.get("/client-leads/:id", async (req, res) => {
     if (token.role !== "ADMIN" && token.role !== "CONTACT_INITIATOR") {
       searchParams.checkConsult = true;
     }
+
     const clientLeadDetails =
       token.role === "ADMIN" ||
       token.role === "SUPER_ADMIN" ||
@@ -466,6 +495,7 @@ router.get("/client-leads/:id", async (req, res) => {
             token.id,
             token
           );
+
     res.status(200).json({ data: clientLeadDetails });
   } catch (error) {
     console.error("Error fetching client lead details:", error);
@@ -477,6 +507,7 @@ router.get("/client-leads/:id", async (req, res) => {
   }
 });
 
+// Create call reminder
 router.post("/client-leads/:id/call-reminders", async (req, res) => {
   try {
     const { id } = req.params;
@@ -497,6 +528,8 @@ router.post("/client-leads/:id/call-reminders", async (req, res) => {
     });
   }
 });
+
+// Create meeting reminder
 router.post("/client-leads/:id/meeting-reminders", async (req, res) => {
   try {
     const { id } = req.params;
@@ -518,6 +551,8 @@ router.post("/client-leads/:id/meeting-reminders", async (req, res) => {
     });
   }
 });
+
+// Create meeting reminder (with token)
 router.post("/client-leads/:id/meeting-reminders/token", async (req, res) => {
   try {
     const { id } = req.params;
@@ -539,6 +574,8 @@ router.post("/client-leads/:id/meeting-reminders/token", async (req, res) => {
     });
   }
 });
+
+// Create price offer
 router.post("/client-leads/:id/price-offers", async (req, res) => {
   try {
     const { id } = req.params;
@@ -557,6 +594,8 @@ router.post("/client-leads/:id/price-offers", async (req, res) => {
     });
   }
 });
+
+// Upload file to a lead
 router.post("/client-leads/:id/files", async (req, res) => {
   try {
     const { id } = req.params;
@@ -570,6 +609,8 @@ router.post("/client-leads/:id/files", async (req, res) => {
     res.status(500).json({ message: "Failed to save the file." });
   }
 });
+
+// Add payments / extra-service payments
 router.post("/client-leads/:id/payments", async (req, res) => {
   const { id } = req.params;
   let payments;
@@ -593,12 +634,12 @@ router.post("/client-leads/:id/payments", async (req, res) => {
   }
 });
 
+// Price offer change status
 router.post("/client-lead/price-offers/change-status", async (req, res) => {
   let priceOffer = await editPriceOfferStatus(
     req.body.priceOfferId,
     req.body.isAccepted
   );
-
   try {
     res.status(200).json({
       data: priceOffer,
@@ -610,6 +651,7 @@ router.post("/client-lead/price-offers/change-status", async (req, res) => {
   }
 });
 
+// Assign lead to user / convert to deal (admin/self)
 router.put("/client-leads", async (req, res) => {
   try {
     const clientLead = req.body;
@@ -633,6 +675,8 @@ router.put("/client-leads", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+// Move lead to converted list
 router.put("/client-leads/convert", async (req, res) => {
   try {
     const body = req.body;
@@ -651,6 +695,8 @@ router.put("/client-leads/convert", async (req, res) => {
       .json({ message: "An error occurred while assigning client leads" });
   }
 });
+
+// Update lead status / price
 router.put("/client-leads/:id/status", async (req, res) => {
   try {
     const { id } = req.params;
@@ -672,7 +718,11 @@ router.put("/client-leads/:id/status", async (req, res) => {
   }
 });
 
-/* Updates */
+/* ======================================================================================= */
+/*                                            Updates                                      */
+/* ======================================================================================= */
+
+// List updates for a client lead
 router.get("/client-leads/:clientLeadId/updates", async (req, res) => {
   try {
     const searchParams = {
@@ -692,6 +742,8 @@ router.get("/client-leads/:clientLeadId/updates", async (req, res) => {
       .json({ message: "An error occurred while fetching updates." });
   }
 });
+
+// Get shared settings for a specific update
 router.get("/client-leads/shared-settings/:updateId", async (req, res) => {
   try {
     const updates = await getSharedSettings(req.params.updateId);
@@ -704,12 +756,10 @@ router.get("/client-leads/shared-settings/:updateId", async (req, res) => {
   }
 });
 
-// POST: Create a new update for a client lead
+// Create a new update
 router.post("/client-leads/:clientLeadId/updates", async (req, res) => {
   try {
-    const searchParams = {
-      ...req.query,
-    };
+    const searchParams = { ...req.query };
     req.body.clientLeadId = Number(req.params.clientLeadId);
     const user = await getCurrentUser(req);
     const newUpdate = await createAnUpdate({
@@ -728,7 +778,7 @@ router.post("/client-leads/:clientLeadId/updates", async (req, res) => {
   }
 });
 
-// POST: Authorize department to access an update
+// Authorize department to access an update
 router.post("/client-leads/updates/:updateId/authorize", async (req, res) => {
   try {
     const result = await authorizeDepartmentToUpdate({
@@ -746,7 +796,7 @@ router.post("/client-leads/updates/:updateId/authorize", async (req, res) => {
   }
 });
 
-// DELETE: Unauthorize department from accessing an update
+// Unauthorize department from a shared update
 router.post(
   "/client-leads/updates/:updateId/authorize/shared",
   async (req, res) => {
@@ -768,7 +818,7 @@ router.post(
   }
 );
 
-// PUT: Toggle archive for a client lead update
+// Archive / unarchive update
 router.put("/client-leads/updates/:updateId/archive", async (req, res) => {
   try {
     const result = await toggleArchieveAnUpdate({
@@ -786,7 +836,7 @@ router.put("/client-leads/updates/:updateId/archive", async (req, res) => {
   }
 });
 
-// PUT: Toggle archive for a shared update
+// Archive / unarchive shared update
 router.put(
   "/client-leads/shared-updates/:sharedUpdateId/archive",
   async (req, res) => {
@@ -806,7 +856,8 @@ router.put(
     }
   }
 );
-// PUT: mark an update as done
+
+// Mark update as done (and optionally archive)
 router.put("/client-leads/updates/:updateId/mark-done", async (req, res) => {
   try {
     const data = req.body;
@@ -829,8 +880,10 @@ router.put("/client-leads/updates/:updateId/mark-done", async (req, res) => {
   }
 });
 
-/* end of updates */
-/* dashboard */
+/* ======================================================================================= */
+/*                                        Dashboard                                        */
+/* ======================================================================================= */
+
 router.get("/dashboard/key-metrics", async (req, res) => {
   try {
     const searchParams = req.query;
@@ -866,7 +919,6 @@ router.get("/dashboard/leads-status", async (req, res) => {
 router.get("/dashboard/monthly-performance", async (req, res) => {
   try {
     const searchParams = req.query;
-
     const data = await getMonthlyPerformanceData(searchParams);
     res.status(200).json({ data });
   } catch (error) {
@@ -878,10 +930,10 @@ router.get("/dashboard/monthly-performance", async (req, res) => {
     });
   }
 });
+
 router.get("/dashboard/emirates-analytics", async (req, res) => {
   try {
     const searchParams = req.query;
-
     const data = await getEmiratesAnalytics(searchParams);
     res.status(200).json({ data });
   } catch (error) {
@@ -893,6 +945,7 @@ router.get("/dashboard/emirates-analytics", async (req, res) => {
     });
   }
 });
+
 router.get("/dashboard/leads-monthly-overview", async (req, res) => {
   try {
     const data = await getLeadsMonthlyOverview(req.query);
@@ -906,7 +959,6 @@ router.get("/dashboard/leads-monthly-overview", async (req, res) => {
 router.get("/dashboard/week-performance", async (req, res) => {
   try {
     const searchParams = req.query;
-
     const data = await getPerformanceMetrics(searchParams);
     res.status(200).json({ data });
   } catch (error) {
@@ -918,6 +970,7 @@ router.get("/dashboard/week-performance", async (req, res) => {
     });
   }
 });
+
 router.get("/dashboard/latest-leads", async (req, res) => {
   try {
     const data = await getLatestNewLeads();
@@ -931,12 +984,12 @@ router.get("/dashboard/latest-leads", async (req, res) => {
     });
   }
 });
+
 router.get("/dashboard/recent-activities", async (req, res) => {
   try {
     const searchParams = req.query;
     const { user } = await getCurrentUser(req);
     const data = await getRecentActivities(searchParams, user.role);
-
     res.status(200).json({ data });
   } catch (error) {
     console.error("Error fetching client lead details:", error);
@@ -947,10 +1000,11 @@ router.get("/dashboard/recent-activities", async (req, res) => {
     });
   }
 });
+
+// Get user role (by id)
 router.get("/users/role/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
-
     const newUser = await getUserRole(userId);
     res.status(200).json({
       data: newUser,
@@ -960,7 +1014,8 @@ router.get("/users/role/:userId", async (req, res) => {
     console.error("Error fetching personal info:", error);
   }
 });
-//desginer dashboard
+
+// Designer dashboard metrics
 router.get("/dashboard/designer-metrics", async (req, res) => {
   try {
     const searchParams = req.query;
@@ -974,10 +1029,12 @@ router.get("/dashboard/designer-metrics", async (req, res) => {
     });
   }
 });
-// end of desginer dashboard
 
-/////////////////// Projects ///////////////////
+/* ======================================================================================= */
+/*                                         Projects                                        */
+/* ======================================================================================= */
 
+// Projects (designers) list
 router.get("/client-leads/projects/designers", async (req, res) => {
   try {
     const searchParams = req.query;
@@ -989,6 +1046,7 @@ router.get("/client-leads/projects/designers", async (req, res) => {
       searchParams.userId = token.id;
     }
     searchParams.userRole = token.role;
+
     const clientLeads = await getLeadByPorjects({
       searchParams,
       isAdmin: token.role === "ADMIN" || token.role === "SUPER_ADMIN",
@@ -1002,6 +1060,7 @@ router.get("/client-leads/projects/designers", async (req, res) => {
   }
 });
 
+// Projects (designers) columns
 router.get("/client-leads/projects/designers/columns", async (req, res) => {
   try {
     const searchParams = req.query;
@@ -1013,6 +1072,7 @@ router.get("/client-leads/projects/designers/columns", async (req, res) => {
       searchParams.userId = token.id;
     }
     searchParams.userRole = token.role;
+
     const clientLeads = await getLeadByPorjectsColumn({
       searchParams,
       isAdmin: token.role === "ADMIN" || token.role === "SUPER_ADMIN",
@@ -1025,11 +1085,14 @@ router.get("/client-leads/projects/designers/columns", async (req, res) => {
       .json({ message: "An error occurred while fetching work stages leads" });
   }
 });
+
+// Lead details by project id
 router.get("/client-leads/projects/designers/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const token = getTokenData(req, res);
     const searchParams = req.query;
+
     if (
       token.role !== "ADMIN" &&
       token.role !== "SUPER_ADMIN" &&
@@ -1040,6 +1103,7 @@ router.get("/client-leads/projects/designers/:id", async (req, res) => {
     if (token.role === "ADMIN" || token.role === "SUPER_ADMIN") {
       searchParams.isAdmin = true;
     }
+
     const clientLeadDetails = await getLeadDetailsByProject(
       Number(id),
       searchParams
@@ -1054,6 +1118,8 @@ router.get("/client-leads/projects/designers/:id", async (req, res) => {
     });
   }
 });
+
+// Projects list (by clientLead / scoped by user unless admin)
 router.get("/projects", async (req, res) => {
   try {
     const searchParams = req.query;
@@ -1070,6 +1136,8 @@ router.get("/projects", async (req, res) => {
       .json({ message: "An error occurred while fetching work stages leads" });
   }
 });
+
+// Archived projects (paginated)
 router.get("/archived-projects", async (req, res) => {
   try {
     const { limit, skip } = getPagination(req);
@@ -1086,6 +1154,7 @@ router.get("/archived-projects", async (req, res) => {
   }
 });
 
+// User profile projects
 router.get("/projects/user-profile/:userId", async (req, res) => {
   try {
     const searchParams = req.query;
@@ -1106,6 +1175,8 @@ router.get("/projects/user-profile/:userId", async (req, res) => {
       .json({ message: "An error occurred while fetching work stages leads" });
   }
 });
+
+// Project details by id (scoped)
 router.get("/projects/:id", async (req, res) => {
   try {
     const searchParams = req.query;
@@ -1127,6 +1198,8 @@ router.get("/projects/:id", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+// Update project
 router.put("/projects/:id", async (req, res) => {
   try {
     const project = req.body;
@@ -1139,6 +1212,8 @@ router.put("/projects/:id", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+// Assign designer to project
 router.put("/projects/:id/assign-designer", async (req, res) => {
   try {
     const { id } = req.params;
@@ -1160,6 +1235,8 @@ router.put("/projects/:id/assign-designer", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+// Update project status (designers board)
 router.put("/client-leads/designers/:leadId/status", async (req, res) => {
   try {
     const token = getTokenData(req, res);
@@ -1178,10 +1255,10 @@ router.put("/client-leads/designers/:leadId/status", async (req, res) => {
   }
 });
 
+// Unique project groups for a lead
 router.get("/client-leads/:leadId/projects/groups", async (req, res) => {
   try {
     const { leadId } = req.params;
-
     const groups = await getUniqueProjectGroups({
       clientLeadId: leadId,
     });
@@ -1193,8 +1270,12 @@ router.get("/client-leads/:leadId/projects/groups", async (req, res) => {
       .json({ message: "An error occurred while fetching work stages leads" });
   }
 });
-///////////// end of projects ///////////////
-// utility
+
+/* ======================================================================================= */
+/*                                          Utility                                        */
+/* ======================================================================================= */
+
+// Notifications (paginated)
 router.get("/notifications", async (req, res) => {
   const searchParams = req.query;
   const { limit = 9, skip = 1 } = getPagination(req);
@@ -1216,6 +1297,8 @@ router.get("/notifications", async (req, res) => {
     res.status(500).json({ message: "Error getting notification" });
   }
 });
+
+// Fixed data
 router.get("/fixed-data", async (req, res) => {
   try {
     const result = await getAllFixedData();
@@ -1227,10 +1310,11 @@ router.get("/fixed-data", async (req, res) => {
       .json({ message: "An error occurred while fetching client leads" });
   }
 });
+
+// User logs (get within time range)
 router.get("/user-logs", async (req, res) => {
   try {
     const searchParams = req.query;
-
     const data = await checkUserLog(
       searchParams.userId,
       searchParams.startTime,
@@ -1246,6 +1330,8 @@ router.get("/user-logs", async (req, res) => {
     });
   }
 });
+
+// Submit user log
 router.post("/user-logs", async (req, res) => {
   try {
     const data = await submitUserLog(
@@ -1264,6 +1350,12 @@ router.post("/user-logs", async (req, res) => {
     });
   }
 });
+
+/* ======================================================================================= */
+/*                                           Tasks                                         */
+/* ======================================================================================= */
+
+// List tasks
 router.get("/tasks", async (req, res) => {
   try {
     const searchParams = req.query;
@@ -1284,6 +1376,8 @@ router.get("/tasks", async (req, res) => {
       .json({ message: "An error occurred while fetching work stages leads" });
   }
 });
+
+// Create task
 router.post("/tasks", async (req, res) => {
   try {
     const token = getTokenData(req, res);
@@ -1304,6 +1398,8 @@ router.post("/tasks", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+// Task details
 router.get("/tasks/:id", async (req, res) => {
   try {
     const searchParams = req.query;
@@ -1325,80 +1421,10 @@ router.get("/tasks/:id", async (req, res) => {
   }
 });
 
-// delivery schedule
-
-router.get("/projects/:projectId/delivery-schedules", async (req, res) => {
-  try {
-    const { projectId } = req.params;
-    const deliverySchedule = await getDeliveryScheduleByProjectId({
-      projectId,
-    });
-    res.status(200).json({ data: deliverySchedule });
-  } catch (error) {
-    console.error("Error fetching delivery schedule:", error);
-    res.status(500).json({ message: "Failed to fetch delivery schedule." });
-  }
-});
-router.post("/delivery-schedule", async (req, res) => {
-  try {
-    const user = await getCurrentUser(req);
-    const newDelivery = await createNewDeliverySchedule({
-      userId: user.id,
-      ...req.body,
-    });
-    res.status(200).json({ data: newDelivery, message: "Added Successfully" });
-  } catch (error) {
-    console.error("Error creating delivery schedule:", error);
-    res.status(500).json({ message: "Failed to create delivery schedule." });
-  }
-});
-
-router.post("/delivery-schedule/:deliveryId/link-meeting", async (req, res) => {
-  try {
-    const { deliveryId } = req.params;
-    const { meetingReminderId } = req.body;
-    console.log(req.body);
-    const updatedDelivery = await linkADeliveryToMeeting({
-      deliveryId,
-      meetingReminderId: meetingReminderId,
-    });
-    res
-      .status(200)
-      .json({ data: updatedDelivery, message: "Linked Successfully" });
-  } catch (error) {
-    console.error("Error linking delivery to meeting:", error);
-    res.status(500).json({ message: "Failed to link delivery to meeting." });
-  }
-});
-router.delete("/delivery-schedule/:deliveryId", async (req, res) => {
-  try {
-    const { deliveryId } = req.params;
-
-    await deleteDeliverySchedule({ deliveryId });
-    res.status(200).json({ message: "Delivery deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting delivery:", error);
-    res.status(500).json({ message: "Failed to delete delivery." });
-  }
-});
-
-router.get("/meeting-reminders/:meetingId", async (req, res) => {
-  try {
-    const { meetingId } = req.params;
-    const deliveries = await getMeetingById({ meetingId });
-    res.status(200).json({ data: deliveries });
-  } catch (error) {
-    console.error("Error fetching deliveries by meeting ID:", error);
-    res.status(500).json({ message: "Failed to fetch deliveries." });
-  }
-});
-
-// end of delivery schedule
-
+// Update task
 router.put("/tasks/:taskId", async (req, res) => {
   try {
     const token = getTokenData(req, res);
-
     const { taskId } = req.params;
     const task = req.body;
     const isAdmin = token.role === "ADMIN" || token.role === "SUPER_ADMIN";
@@ -1418,6 +1444,12 @@ router.put("/tasks/:taskId", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+/* ======================================================================================= */
+/*                                           Notes                                         */
+/* ======================================================================================= */
+
+// List notes
 router.get("/notes", async (req, res) => {
   try {
     const searchParams = req.query;
@@ -1428,6 +1460,8 @@ router.get("/notes", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+// Create note (generic)
 router.post("/notes", async (req, res) => {
   try {
     const token = getTokenData(req, res);
@@ -1443,6 +1477,8 @@ router.post("/notes", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+// Delete by model (generic)
 router.delete("/delete/:id", async (req, res) => {
   try {
     const token = getTokenData(req, res);
@@ -1459,6 +1495,8 @@ router.delete("/delete/:id", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+// Add note to a lead
 router.post("/client-leads/:id/notes", async (req, res) => {
   try {
     const { id } = req.params;
@@ -1469,64 +1507,12 @@ router.post("/client-leads/:id/notes", async (req, res) => {
     res.status(500).json({ message: "Failed to create note." });
   }
 });
-router.get("/roles", async (req, res) => {
-  try {
-    const token = getTokenData(req, res);
-    const roles = await getOtherRoles(token.id);
-    res.status(200).json({ data: roles });
-  } catch (error) {
-    console.error("Error fetching roles:", error);
-    res.status(500).json({ message: "An error occurred while fetching roles" });
-  }
-});
 
-router.get("/oauth2callback", async (req, res) => {
-  try {
-    const token = await handleOAuthCallback(req.query.code);
+/* ======================================================================================= */
+/*                                       Image Session                                     */
+/* ======================================================================================= */
 
-    res.status(200).json({ data: token });
-  } catch (error) {
-    res.status(500).json({ message: "An error occurred while fetching " });
-  }
-});
-router.get("/locations", async (req, res) => {
-  try {
-    const locations = await getLocations(req.query.code);
-
-    res.status(200).json({ data: locations });
-  } catch (error) {
-    res.status(500).json({ message: "An error occurred while fetching " });
-  }
-});
-router.get("/reviews", async (req, res) => {
-  try {
-    const reviews = await getReviews(req.query.accountId, req.query.locationId);
-
-    res.status(200).json({ data: reviews });
-  } catch (error) {
-    res.status(500).json({ message: "An error occurred while fetching " });
-  }
-});
-
-router.get("/ids", async (req, res) => {
-  try {
-    const model = req.query.model;
-    delete req.query.model;
-    const data = await getModelIds({
-      searchParams: req.query,
-      model,
-    });
-    res.status(200).json({ data });
-  } catch (e) {
-    console.log(e, "e");
-    res
-      .status(500)
-      .json({ message: "An error occurred while fetching Spaces" });
-  }
-});
-/////////////// end of utility /////////
-
-////////// start of image sesssion //////////////
+// Get images (by patterns / spaces)
 router.get("/image-session/images", async (req, res) => {
   try {
     const { patternIds, spaceIds } = req.query;
@@ -1543,6 +1529,8 @@ router.get("/image-session/images", async (req, res) => {
       .json({ message: "An error occurred while fetching images" });
   }
 });
+
+// Get image session model
 router.get("/image-session", async (req, res) => {
   try {
     const data = await getImageSesssionModel({
@@ -1558,10 +1546,10 @@ router.get("/image-session", async (req, res) => {
   }
 });
 
+// Admin users
 router.get("/users/admins", async (req, res) => {
   try {
     const users = await getAdmins();
-
     res.status(200).json({ data: users });
   } catch (error) {
     console.error("Error fetching client leads:", error);
@@ -1570,10 +1558,12 @@ router.get("/users/admins", async (req, res) => {
       .json({ message: "An error occurred while fetching client leads" });
   }
 });
-//////// end of image sesssion ////////
 
-///calendar
+/* ======================================================================================= */
+/*                                         Calendar                                        */
+/* ======================================================================================= */
 
+// Create available day
 router.post("/calendar/available-days", async (req, res) => {
   try {
     const { date, fromHour, toHour, duration, breakMinutes } = req.body;
@@ -1599,6 +1589,8 @@ router.post("/calendar/available-days", async (req, res) => {
     });
   }
 });
+
+// Update available day
 router.put("/calendar/available-days/:dayId", async (req, res) => {
   try {
     const { dayId } = req.params;
@@ -1626,6 +1618,8 @@ router.put("/calendar/available-days/:dayId", async (req, res) => {
     });
   }
 });
+
+// Create multiple available days
 router.post("/calendar/available-days/multiple", async (req, res) => {
   try {
     const { days, fromHour, toHour, duration, breakMinutes } = req.body;
@@ -1651,6 +1645,8 @@ router.post("/calendar/available-days/multiple", async (req, res) => {
     });
   }
 });
+
+// Add custom availability to a day
 router.post("/calendar/add-custom/:dayId", async (req, res) => {
   try {
     const { date, startTime, endTime } = req.body;
@@ -1675,12 +1671,12 @@ router.post("/calendar/add-custom/:dayId", async (req, res) => {
     });
   }
 });
+
+// Delete a slot
 router.delete("/calendar/slots/:slotId", async (req, res) => {
   try {
     const { slotId } = req.params;
-    const data = await deleteASlot({
-      slotId,
-    });
+    const data = await deleteASlot({ slotId });
     res.status(200).json({
       message: "Slot deleted successfully",
       data: data,
@@ -1693,12 +1689,12 @@ router.delete("/calendar/slots/:slotId", async (req, res) => {
     });
   }
 });
+
+// Delete a day
 router.delete("/calendar/days/:dayId", async (req, res) => {
   try {
     const { dayId } = req.params;
-    const data = await deleteADay({
-      dayId,
-    });
+    const data = await deleteADay({ dayId });
     res.status(200).json({
       message: "Day deleted successfully",
       data: data,
@@ -1712,20 +1708,99 @@ router.delete("/calendar/days/:dayId", async (req, res) => {
   }
 });
 
-// sales stages
+/* ======================================================================================= */
+/*                                    Delivery Schedule                                    */
+/* ======================================================================================= */
 
+// Delivery schedules of a project
+router.get("/projects/:projectId/delivery-schedules", async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const deliverySchedule = await getDeliveryScheduleByProjectId({
+      projectId,
+    });
+    res.status(200).json({ data: deliverySchedule });
+  } catch (error) {
+    console.error("Error fetching delivery schedule:", error);
+    res.status(500).json({ message: "Failed to fetch delivery schedule." });
+  }
+});
+
+// Create delivery schedule
+router.post("/delivery-schedule", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req);
+    const newDelivery = await createNewDeliverySchedule({
+      userId: user.id,
+      ...req.body,
+    });
+    res.status(200).json({ data: newDelivery, message: "Added Successfully" });
+  } catch (error) {
+    console.error("Error creating delivery schedule:", error);
+    res.status(500).json({ message: "Failed to create delivery schedule." });
+  }
+});
+
+// Link delivery schedule to meeting
+router.post("/delivery-schedule/:deliveryId/link-meeting", async (req, res) => {
+  try {
+    const { deliveryId } = req.params;
+    const { meetingReminderId } = req.body;
+    console.log(req.body);
+    const updatedDelivery = await linkADeliveryToMeeting({
+      deliveryId,
+      meetingReminderId: meetingReminderId,
+    });
+    res
+      .status(200)
+      .json({ data: updatedDelivery, message: "Linked Successfully" });
+  } catch (error) {
+    console.error("Error linking delivery to meeting:", error);
+    res.status(500).json({ message: "Failed to link delivery to meeting." });
+  }
+});
+
+// Delete delivery schedule
+router.delete("/delivery-schedule/:deliveryId", async (req, res) => {
+  try {
+    const { deliveryId } = req.params;
+    await deleteDeliverySchedule({ deliveryId });
+    res.status(200).json({ message: "Delivery deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting delivery:", error);
+    res.status(500).json({ message: "Failed to delete delivery." });
+  }
+});
+
+// Get meeting reminder by id
+router.get("/meeting-reminders/:meetingId", async (req, res) => {
+  try {
+    const { meetingId } = req.params;
+    const deliveries = await getMeetingById({ meetingId });
+    res.status(200).json({ data: deliveries });
+  } catch (error) {
+    console.error("Error fetching deliveries by meeting ID:", error);
+    res.status(500).json({ message: "Failed to fetch deliveries." });
+  }
+});
+
+/* ======================================================================================= */
+/*                                       Sales Stages                                      */
+/* ======================================================================================= */
+
+// Get sales stages for a lead
 router.get("/client-lead/:clientLeadId/sales-stages", async (req, res) => {
   try {
     const imageSesssions = await getSalesStages({
       clientLeadId: Number(req.params.clientLeadId),
     });
-
     res.status(200).json({ data: imageSesssions });
   } catch (e) {
     getAndThrowError(e, res);
   }
 });
 
+// Edit sales stage
 router.post("/client-lead/:clientLeadId/sales-stages", async (req, res) => {
   try {
     const user = await getCurrentUser(req);
@@ -1741,6 +1816,7 @@ router.post("/client-lead/:clientLeadId/sales-stages", async (req, res) => {
   }
 });
 
+// Remind to pay
 router.post(
   "/client-leads/:clientLeadId/payment-reminder",
   async (req, res) => {
@@ -1754,6 +1830,8 @@ router.post(
     }
   }
 );
+
+// Remind to complete register
 router.post(
   "/client-leads/:clientLeadId/complete-register",
   async (req, res) => {
@@ -1767,5 +1845,77 @@ router.post(
     }
   }
 );
+
+/* ======================================================================================= */
+/*                                      Reviews OAuth                                      */
+/* ======================================================================================= */
+
+// OAuth callback
+router.get("/oauth2callback", async (req, res) => {
+  try {
+    const token = await handleOAuthCallback(req.query.code);
+    res.status(200).json({ data: token });
+  } catch (error) {
+    res.status(500).json({ message: "An error occurred while fetching " });
+  }
+});
+
+// Locations
+router.get("/locations", async (req, res) => {
+  try {
+    const locations = await getLocations(req.query.code);
+    res.status(200).json({ data: locations });
+  } catch (error) {
+    res.status(500).json({ message: "An error occurred while fetching " });
+  }
+});
+
+// Reviews
+router.get("/reviews", async (req, res) => {
+  try {
+    const reviews = await getReviews(req.query.accountId, req.query.locationId);
+    res.status(200).json({ data: reviews });
+  } catch (error) {
+    res.status(500).json({ message: "An error occurred while fetching " });
+  }
+});
+
+/* ======================================================================================= */
+/*                                         IDs Helper                                      */
+/* ======================================================================================= */
+
+// get ids for a model with search params
+router.get("/ids", async (req, res) => {
+  try {
+    const model = req.query.model;
+    delete req.query.model;
+    const data = await getModelIds({
+      searchParams: req.query,
+      model,
+    });
+    res.status(200).json({ data });
+  } catch (e) {
+    console.log(e, "e");
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching Spaces" });
+  }
+});
+/*
+ */
+router.get("/roles", async (req, res) => {
+  try {
+    const token = getTokenData(req, res);
+    const roles = await getOtherRoles(token.id);
+    res.status(200).json({ data: roles });
+  } catch (error) {
+    console.error("Error fetching roles:", error);
+    res.status(500).json({ message: "An error occurred while fetching roles" });
+  }
+});
+
+/* ======================================================================================= */
+/*                                        Export Router                                    */
+/* ======================================================================================= */
 
 export default router;

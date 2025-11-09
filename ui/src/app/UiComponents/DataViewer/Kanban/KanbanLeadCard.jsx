@@ -30,18 +30,18 @@ import {
 import { styled } from "@mui/material/styles";
 import dayjs from "dayjs";
 import { CONTRACT_LEVELS, statusColors } from "@/app/helpers/constants.js";
-import PreviewDialog from "@/app/UiComponents/DataViewer/leads/PreviewLead.jsx";
+import PreviewDialog from "@/app/UiComponents/DataViewer/leads/PreviewLeadDialog.jsx";
+import { NewNoteDialog } from "@/app/UiComponents/DataViewer/leads/dialogs/NoteDialog";
 import {
   CallResultDialog,
   NewCallDialog,
-  NewNoteDialog,
-} from "@/app/UiComponents/DataViewer/leads/leadsDialogs.jsx";
+} from "@/app/UiComponents/DataViewer/leads/dialogs/CallsDialog.jsx";
 import { hideMoreData } from "@/app/helpers/functions/utility.js";
 import { FaEye } from "react-icons/fa";
-import { InProgressCall } from "@/app/UiComponents/DataViewer/leads/InProgressCall.jsx";
+import { InProgressCall } from "@/app/UiComponents/DataViewer/leads/widgets/InProgressCall.jsx";
 import { useAuth } from "@/app/providers/AuthProvider";
 import PreviewWorkStage from "../work-stages/PreviewWorkStage";
-import FloatingIdBadge from "../leads/extra/IdBadge";
+import FloatingIdBadge from "../leads/core/IdBadge";
 
 import { KanbanUpdateSection } from "../leads/leadUpdates/KanbanUpdateSection";
 import ClientImageSessionManager from "../image-session/users/ClientSessionImageManager";

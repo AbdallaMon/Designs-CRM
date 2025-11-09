@@ -1,5 +1,5 @@
-import OptimizedClientKanbanLead from "@/app/UiComponents/DataViewer/Kanban/staff/ClientKanbanLead";
+import StaffLeadsKanbanBoard from "@/app/UiComponents/DataViewer/Kanban/staff/StaffLeadsKanbanBoard";
 
 export default function page() {
-  return <OptimizedClientKanbanLead />;
+  return <StaffLeadsKanbanBoard />;
 }

@@ -27,7 +27,6 @@ import {
 } from "react-icons/fi";
 
 import Navbar from "@/app/UiComponents/utility/Navbar.jsx";
-import ActivityLogDialog from "@/app/UiComponents/feedback/UserLogsUpdate";
 
 let toastId;
 export const adminLinks = [
@@ -72,8 +71,8 @@ export const adminLinks = [
         icon: <FiBriefcase size={20} />,
       },
       {
-        name: "Archived projects",
-        href: "/dashboard/projects/archived",
+        name: "Plan study department",
+        href: "/dashboard/work-stages/study",
         icon: <FiBriefcase size={20} />,
       },
       {
@@ -82,13 +81,8 @@ export const adminLinks = [
         icon: <FiBriefcase size={20} />,
       },
       {
-        name: "3D Modifcation",
-        href: "/dashboard/work-stages/modification",
-        icon: <FiBriefcase size={20} />,
-      },
-      {
-        name: "Plan study department",
-        href: "/dashboard/work-stages/study",
+        name: "Final plan department",
+        href: "/dashboard/work-stages/final-plan",
         icon: <FiBriefcase size={20} />,
       },
       {
@@ -97,8 +91,13 @@ export const adminLinks = [
         icon: <FiBriefcase size={20} />,
       },
       {
-        name: "Final plan department",
-        href: "/dashboard/work-stages/final-plan",
+        name: "Archived projects",
+        href: "/dashboard/projects/archived",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
+        name: "3D Modifcation",
+        href: "/dashboard/work-stages/modification",
         icon: <FiBriefcase size={20} />,
       },
     ],
@@ -258,14 +257,15 @@ export const twoDLinks = [
         href: "/dashboard/study",
         icon: <FiBriefcase size={20} />,
       },
-      {
-        name: "Quantity calcualtion department",
-        href: "/dashboard/quantity",
-        icon: <FiBriefcase size={20} />,
-      },
+
       {
         name: "Final plan department",
         href: "/dashboard/final-plan",
+        icon: <FiBriefcase size={20} />,
+      },
+      {
+        name: "Quantity calcualtion department",
+        href: "/dashboard/quantity",
         icon: <FiBriefcase size={20} />,
       },
       {

@@ -287,18 +287,19 @@ export const PROJECT_STATUSES = {
     "To Do",
     "3D",
     "Render",
+    "Modification",
     "Delivery",
     "Hold",
-    "Modification",
     "Completed",
   ],
   "3D_Modification": ["To Do", "Modification", "Completed"],
   "2D_Study": [
     "To Do",
     "Studying",
-    "Delivery",
-    "Hold",
     "Modification",
+    "Delivery",
+    "Electricity",
+    "Hold",
     "Completed",
   ],
   "2D_Final_Plans": ["To Do", "Started", "In Progress", "Completed"],
@@ -407,6 +408,7 @@ export const statusColors = {
   Completed: "#10b981", // Green
   Modification: "#f97316", // Orange
   Studying: "#3b82f6", // Blue
+  Electricity: "#a9bd3aff",
   Delivery: "#0d9488", // Teal
   Started: "#3b82f6", // Blue
   "In Progress": "#0d9488", // Teal
