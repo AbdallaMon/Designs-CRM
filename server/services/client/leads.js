@@ -1,15 +1,31 @@
 import prisma from "../../prisma/prisma.js";
 
-export async function generateCodeForNewLead(clientId) {
-  const firstLead = await prisma.clientLead.findFirst({
-    where: { clientId: clientId },
+export async function generateCodeForNewLead(clientId, tx = prisma) {
+  // 1) Stable prefix from the *oldest* lead id for this client
+  const oldestLead = await tx.clientLead.findFirst({
+    where: { clientId: Number(clientId) },
+    orderBy: { id: "asc" },
+    select: { id: true },
   });
-  const countedLeads = await prisma.clientLead.count({
-    where: { clientId: clientId },
+  if (!oldestLead) return null; // same behavior you had
+
+  const prefix = `${String(oldestLead.id).padStart(7, "0")}.`;
+
+  // 2) Pull the last code for this client with that prefix, then +1
+  const lastWithCode = await tx.clientLead.findFirst({
+    where: {
+      clientId: Number(clientId),
+      code: { startsWith: prefix },
+    },
+    orderBy: { code: "desc" }, // lexicographic works here since suffix is plain int
+    select: { code: true },
   });
-  return firstLead
-    ? `${firstLead.id.toString().padStart(7, "0")}.${countedLeads + 1}`
-    : null;
+
+  const nextSeq = lastWithCode
+    ? (parseInt(lastWithCode.code.split(".").pop(), 10) || 0) + 1
+    : 1;
+
+  return `${prefix}${nextSeq}`;
 }
 
 export async function uploadFile(body, clientLeadId) {
