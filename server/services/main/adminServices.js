@@ -1628,7 +1628,9 @@ export async function deleteALead(leadId) {
 
       // Now it's safe to delete payments
       await prisma.payment.deleteMany({ where: { clientLeadId } });
-
+      await prisma.FetchedTelegramMessage.deleteMany({
+        where: { clientLeadId },
+      });
       // Finally, delete the ClientLead
       return await prisma.clientLead.delete({
         where: { id: clientLeadId },
