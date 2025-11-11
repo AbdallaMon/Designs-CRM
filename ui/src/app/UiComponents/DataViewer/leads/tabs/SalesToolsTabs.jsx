@@ -26,6 +26,7 @@ import { personalityEnum } from "@/app/helpers/constants";
 import VersaObjectionSystem from "../../meeting/VERSA/VERSADialog";
 
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import { FaUser } from "react-icons/fa";
 
 export function SalesToolsTabs({ lead, setLead, setleads }) {
   const { user } = useAuth();

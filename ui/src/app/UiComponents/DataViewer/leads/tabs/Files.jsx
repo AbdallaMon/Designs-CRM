@@ -20,6 +20,7 @@ import {
   getFileTypeIcon,
   renderFilePreview,
 } from "@/app/UiComponents/utility/Files";
+import { FaEye } from "react-icons/fa";
 
 export function FileList({ lead, admin, notUser }) {
   const [currentTab, setCurrentTab] = useState(0);
