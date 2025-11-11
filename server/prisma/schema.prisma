@@ -477,10 +477,10 @@ model ClientLead {
   averagePrice         Decimal?          @db.Decimal(10, 2)
   priceNote            String?           @db.Text
   priceWithOutDiscount Decimal           @default(0) @db.Decimal(10, 2)
+
   sessionQuestions     SessionQuestion[]
   versaModel           VersaModel[]
   contracts            Contract[]
-
   projects         Project[]
   priceOffers      PriceOffers[]
   payments         Payment[]

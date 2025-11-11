@@ -1557,9 +1557,73 @@ export async function deleteALead(leadId) {
       await prisma.callReminder.deleteMany({ where: { clientLeadId } });
       await prisma.extraService.deleteMany({ where: { clientLeadId } });
       await prisma.priceOffers.deleteMany({ where: { clientLeadId } });
-
+      await prisma.meetingReminder.deleteMany({ where: { clientLeadId } });
+      await prisma.contract.deleteMany({ where: { clientLeadId } });
+      await prisma.note.deleteMany({
+        where: {
+          clientImageSession: {
+            clientLeadId,
+          },
+        },
+      });
+      await prisma.note.deleteMany({
+        where: {
+          clientSelectedImage: {
+            imageSession: {
+              clientLeadId,
+            },
+          },
+        },
+      });
+      await prisma.clientSelectedImage.deleteMany({
+        where: {
+          imageSession: {
+            clientLeadId,
+          },
+        },
+      });
+      await prisma.clientImageSession.deleteMany({ where: { clientLeadId } });
+      await prisma.versaModel.deleteMany({ where: { clientLeadId } });
+      await prisma.sessionQuestion.deleteMany({ where: { clientLeadId } });
+      await prisma.note.deleteMany({
+        where: {
+          salesStage: {
+            clientLeadId,
+          },
+        },
+      });
+      await prisma.salesStage.deleteMany({ where: { clientLeadId } });
+      await prisma.note.deleteMany({
+        where: {
+          update: {
+            clientLeadId,
+          },
+        },
+      });
+      await prisma.note.deleteMany({
+        where: {
+          sharedUpdate: {
+            update: {
+              clientLeadId,
+            },
+          },
+        },
+      });
+      await prisma.sharedUpdate.deleteMany({
+        where: {
+          update: { clientLeadId },
+        },
+      });
+      await prisma.clientLeadUpdate.deleteMany({ where: { clientLeadId } });
+      await prisma.note.deleteMany({
+        where: {
+          commission: {
+            leadId: clientLeadId,
+          },
+        },
+      });
+      await prisma.commission.deleteMany({ where: { leadId: clientLeadId } });
       // Delete projects
-
       await prisma.project.deleteMany({ where: { clientLeadId } });
 
       // Now it's safe to delete payments
