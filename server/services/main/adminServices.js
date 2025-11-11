@@ -1499,12 +1499,14 @@ export async function updateClientField({ data, clientId }) {
   } catch (e) {
     throw new Error(e);
   }
-}
+} // utils/checkLeadFKs.js
+
 export async function deleteALead(leadId) {
   const clientLeadId = Number(leadId);
   return await prisma.$transaction(async (prisma) => {
     try {
       // Find all associated records
+
       const clientLead = await prisma.clientLead.findUnique({
         where: { id: clientLeadId },
         include: {
@@ -1557,6 +1559,19 @@ export async function deleteALead(leadId) {
       await prisma.callReminder.deleteMany({ where: { clientLeadId } });
       await prisma.extraService.deleteMany({ where: { clientLeadId } });
       await prisma.priceOffers.deleteMany({ where: { clientLeadId } });
+      await prisma.availableSlot.updateMany({
+        where: { meetingReminder: { clientLeadId } },
+        data: { meetingReminderId: null },
+      });
+      await prisma.deliverySchedule.deleteMany({
+        where: { project: { clientLeadId } },
+      });
+      await prisma.assignment.deleteMany({
+        where: { project: { clientLeadId } },
+      });
+      await prisma.telegramChannel.deleteMany({
+        where: { clientLeadId },
+      });
       await prisma.meetingReminder.deleteMany({ where: { clientLeadId } });
       await prisma.contract.deleteMany({ where: { clientLeadId } });
       await prisma.note.deleteMany({
@@ -1628,9 +1643,10 @@ export async function deleteALead(leadId) {
 
       // Now it's safe to delete payments
       await prisma.payment.deleteMany({ where: { clientLeadId } });
-      await prisma.FetchedTelegramMessage.deleteMany({
+      await prisma.fetchedTelegramMessage.deleteMany({
         where: { clientLeadId },
       });
+
       // Finally, delete the ClientLead
       return await prisma.clientLead.delete({
         where: { id: clientLeadId },

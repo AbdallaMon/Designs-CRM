@@ -459,7 +459,6 @@ model ClientLead {
   status               ClientLeadStatus         @default(NEW)
   telegramChannel      TelegramChannel?
   telegramLink         String?
-  lastTelegramMessages FetchedTelegramMessage[]
   selectedCategory     LeadCategory
   type                 LeadType                 @default(CONSTRUCTION_VILLA)
   description          String?
@@ -469,7 +468,7 @@ model ClientLead {
   leadType             LeadConversionType       @default(NORMAL)
   previousLeadId       Int?
   personality          ClientPersonality?
-  salesStages          SalesStage[]
+
   discoverySource      LeadSource?
 
   discount             Decimal           @default(0) @db.Decimal(10, 2)
@@ -478,6 +477,8 @@ model ClientLead {
   priceNote            String?           @db.Text
   priceWithOutDiscount Decimal           @default(0) @db.Decimal(10, 2)
 
+  salesStages          SalesStage[]
+  lastTelegramMessages FetchedTelegramMessage[]
   sessionQuestions     SessionQuestion[]
   versaModel           VersaModel[]
   contracts            Contract[]
