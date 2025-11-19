@@ -888,6 +888,7 @@ export async function checkIfProjectHasStagesAndUpdateNextAndPrevious({
       },
     },
   });
+  let prevStageLevels;
   if (nextContractStage) {
     await prisma.contractStage.updateMany({
       where: {
@@ -901,17 +902,18 @@ export async function checkIfProjectHasStagesAndUpdateNextAndPrevious({
         stageStatus: "IN_PROGRESS",
       },
     });
+    prevStageLevels = STAGE_PREV_LEVELS_MAP[nextContractStage?.title];
   }
-  let prevStageLevels = STAGE_PREV_LEVELS_MAP[nextContractStage.title];
 
-  let lastStage = await prisma.contractStage.findFirst({
-    where: {
-      contractId: Number(nextContractStage.contractId),
-      title: { in: prevStageLevels },
-      stageStatus: "IN_PROGRESS",
-    },
-  });
+  let lastStage;
   if (prevStageLevels && prevStageLevels.length > 0) {
+    lastStage = await prisma.contractStage.findFirst({
+      where: {
+        contractId: Number(nextContractStage.contractId),
+        title: { in: prevStageLevels },
+        stageStatus: "IN_PROGRESS",
+      },
+    });
     await prisma.contractStage.updateMany({
       where: {
         contractId: Number(nextContractStage.contractId),
