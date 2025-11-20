@@ -1288,7 +1288,7 @@ export const PROJECT_TYPES_LABELS = {
 export const usersHexColors = {
   SUPER_ADMIN: "#FF4B4B", // bright red
   STAFF: "#4C8DFF", // strong blue
-  isPrimary: "#FFE2A0", // very light soft amber (lighter than TWO_D_EXECUTOR)
+  isPrimary: "#b1975bff", // very light soft amber (lighter than TWO_D_EXECUTOR)
   isSuperSales: "#26C6DA", // teal (different from ACCOUNTANT green)
   THREE_D_DESIGNER: "#B35CFF", // vivid violet
   TWO_D_DESIGNER: "#FF7B5A", // warm coral

@@ -53,14 +53,52 @@ import {
 import UserRestrictedCountries from "@/app/UiComponents/DataViewer/UserRestrictedCountries";
 import Commission from "@/app/UiComponents/DataViewer/utility/Commission";
 import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes";
-import { datacatalog } from "googleapis/build/src/apis/datacatalog";
 
 const columns = [
   { name: "name", label: "User Name" },
   { name: "email", label: "Email" },
   { name: "telegramUsername", label: "Telegram user name" },
 
-  { name: "role", label: "Main role", type: "enum", enum: userRolesEnum },
+  {
+    name: "role",
+    label: "Main role",
+    type: "enum",
+    enum: userRolesEnum,
+    type: "function",
+    render: (item) => {
+      const color = item.isActive
+        ? item.isSuperSales
+          ? usersHexColors.isSuperSales
+          : item.isPrimary
+          ? usersHexColors.isPrimary
+          : usersHexColors[item.role]
+        : usersHexColors.banned;
+      const role = item.isSuperSales
+        ? "SUPER_SALES"
+        : item.isPrimary
+        ? "PRIMARY_SALES"
+        : item.role;
+      return (
+        <Badge
+          variant="dot"
+          sx={{
+            color: color,
+            backgroundColor: lighten(color, 0.6),
+            px: 2,
+            py: 1,
+            borderRadius: 1,
+            fontWeight: "bold",
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            width: "fit-content",
+          }}
+        >
+          {roleIcons[role]} {role}
+        </Badge>
+      );
+    },
+  },
   {
     name: "isActive",
     label: "Account status",
@@ -277,7 +315,7 @@ export default function UsersPage() {
                   ? usersHexColors.isPrimary
                   : usersHexColors[user.role]
                 : usersHexColors.banned,
-              0.6
+              0.95
             ),
           };
         }}
@@ -345,6 +383,8 @@ const roleIcons = {
   ACCOUNTANT: "💰",
   SUPER_ADMIN: "🛡",
   TWO_D_EXECUTOR: "🖌",
+  SUPER_SALES: "🚀",
+  PRIMARY_SALES: "⭐",
 };
 
 export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
