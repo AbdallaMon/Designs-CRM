@@ -42,7 +42,8 @@ export default function UserProfile({ id, role }) {
                 <Box>
                   <Commission userId={user.id} />
                 </Box>
-                {user.role === "STAFF" && (
+                {(user.role === "STAFF" ||
+                  user.subRoles?.some((r) => r.subRole === "STAFF")) && (
                   <>
                     <UserRestrictedCountries userId={user.id} />
                     <UpdateUserMaxLeadsCounts setUser={setUser} user={user} />

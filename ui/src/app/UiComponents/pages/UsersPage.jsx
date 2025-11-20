@@ -67,17 +67,22 @@ const columns = [
     type: "function",
     render: (item) => {
       const color = item.isActive
-        ? item.isSuperSales
-          ? usersHexColors.isSuperSales
-          : item.isPrimary
-          ? usersHexColors.isPrimary
+        ? item.role === "STAFF"
+          ? item.isSuperSales
+            ? usersHexColors.isSuperSales
+            : item.isPrimary
+            ? usersHexColors.isPrimary
+            : usersHexColors[item.role]
           : usersHexColors[item.role]
         : usersHexColors.banned;
-      const role = item.isSuperSales
-        ? "SUPER_SALES"
-        : item.isPrimary
-        ? "PRIMARY_SALES"
-        : item.role;
+      const role =
+        item.role === "STAFF"
+          ? item.isSuperSales
+            ? "SUPER_SALES"
+            : item.isPrimary
+            ? "PRIMARY_SALES"
+            : item.role
+          : item.role;
       return (
         <Badge
           variant="dot"
@@ -99,12 +104,12 @@ const columns = [
       );
     },
   },
-  {
-    name: "isActive",
-    label: "Account status",
-    type: "boolean",
-    enum: { TRUE: "Active", FALSE: "Banned" },
-  },
+  // {
+  //   name: "isActive",
+  //   label: "Account status",
+  //   type: "boolean",
+  //   enum: { TRUE: "Active", FALSE: "Banned" },
+  // },
 ];
 
 const inputs = [
@@ -309,10 +314,12 @@ export default function UsersPage() {
           return {
             backgroundColor: lighten(
               user.isActive
-                ? user.isSuperSales
-                  ? usersHexColors.isSuperSales
-                  : user.isPrimary
-                  ? usersHexColors.isPrimary
+                ? user.role === "STAFF"
+                  ? user.isSuperSales
+                    ? usersHexColors.isSuperSales
+                    : user.isPrimary
+                    ? usersHexColors.isPrimary
+                    : usersHexColors[user.role]
                   : usersHexColors[user.role]
                 : usersHexColors.banned,
               0.95

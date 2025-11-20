@@ -196,12 +196,10 @@ router.put("/users/max-leads-per-day/:userId", async (req, res) => {
       userId,
       req.body.maxLeadCountPerDay
     );
-    return res
-      .status(200)
-      .json({
-        data: update,
-        message: "Max leads counts per day updated successfully",
-      });
+    return res.status(200).json({
+      data: update,
+      message: "Max leads counts per day updated successfully",
+    });
   } catch (e) {
     handlePrismaError(res, e);
   }

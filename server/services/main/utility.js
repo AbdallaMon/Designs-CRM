@@ -95,6 +95,7 @@ export function handleTokenSession(token, res, options = {}) {
   return decoded;
 }
 export function handlePrismaError(res, error) {
+  console.error("Prisma error:", error);
   if (error.name === "PrismaClientValidationError") {
     return res.status(400).json({
       message:

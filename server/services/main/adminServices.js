@@ -95,6 +95,9 @@ export async function getUserById(userId) {
     where: {
       id: Number(userId),
     },
+    include: {
+      subRoles: true,
+    },
   });
 }
 export async function createStaffUser(user) {
@@ -158,10 +161,32 @@ export async function updateUserRoles(userId, roles) {
       subRole: { in: roles.removed },
     },
   });
-  const newRoles = roles.added.map((role) => ({
+  let newRoles = roles.added.map((role) => ({
     userId: Number(userId),
     subRole: role,
   }));
+  const superSales = newRoles.find((r) => r.subRole === "SUPER_SALES");
+  const primarySales = newRoles.find((r) => r.subRole === "PRIMARY_SALES");
+  if (superSales) {
+    await prisma.user.update({
+      where: { id: Number(userId) },
+      data: { isSuperSales: true },
+    });
+    newRoles = newRoles.filter((r) => r.subRole === "PRIMARY_SALES");
+  }
+  if (primarySales) {
+    await prisma.user.update({
+      where: { id: Number(userId) },
+      data: { isPrimary: true },
+    });
+    newRoles = newRoles.filter((r) => r.subRole === "SUPER_SALES");
+  }
+  if (superSales || primarySales) {
+    newRoles.push({
+      userId: Number(userId),
+      subRole: "STAFF",
+    });
+  }
   return await prisma.UserSubRole.createMany({
     data: newRoles,
     skipDuplicates: true,
