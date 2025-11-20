@@ -2135,3 +2135,30 @@ export async function addAllProjectUsersToChannel({ clientLeadId }) {
     usersList: Array.from(usersSet.values()),
   });
 }
+// auto assigments
+export async function getAutoAssignmentsForAUser({ userId }) {
+  const assigments = await prisma.autoAssignment.findMany({
+    where: {
+      userId: Number(userId),
+    },
+  });
+  return assigments.map((assigment) => assigment.type);
+}
+
+export async function updateUserAutoAssignment(userId, assigments) {
+  await prisma.autoAssignment.deleteMany({
+    where: {
+      userId: Number(userId),
+      type: { in: assigments.removed },
+    },
+  });
+  let newAssignMents = assigments.added.map((assigment) => ({
+    userId: Number(userId),
+    type: assigment,
+  }));
+
+  return await prisma.autoAssignment.createMany({
+    data: newAssignMents,
+    skipDuplicates: true,
+  });
+}

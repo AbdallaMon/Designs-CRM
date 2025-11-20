@@ -12,7 +12,7 @@ import EmiratesAnalytics from "@/app/UiComponents/DataViewer/dashbaord/EmiratesA
 import PerformanceMetricsCard from "@/app/UiComponents/DataViewer/dashbaord/PerformanceMetrics.jsx";
 import NewLeadsList from "@/app/UiComponents/DataViewer/dashbaord/NewLeadsList.jsx";
 import RecentActivities from "@/app/UiComponents/DataViewer/dashbaord/RecenteActivity.jsx";
-import UserProfile from "@/app/UiComponents/DataViewer/UserProfile.jsx";
+import UserProfile from "@/app/UiComponents/DataViewer/users/UserProfile.jsx";
 import DesignerDashboard from "./designers/DesignerDashboard";
 import FullScreenLoader from "../../feedback/loaders/FullscreenLoader";
 import { getData } from "@/app/helpers/functions/getData";

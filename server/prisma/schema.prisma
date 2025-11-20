@@ -813,8 +813,25 @@ model User {
 
   baseSalary          BaseEmployeeSalary?
   notAllowedCountries Json?
+  autoAssignments AutoAssignment[]
 
   @@index([email])
+}
+
+model AutoAssignment {
+  id Int @id @default(autoincrement())
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  type              String
+  isActive Boolean   @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, type]) 
+  @@index([userId])
 }
 
 model UserSubRole {

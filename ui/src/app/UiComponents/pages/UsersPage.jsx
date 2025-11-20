@@ -38,6 +38,7 @@ import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithAction
 import Link from "next/link";
 import CreateModal from "@/app/UiComponents/models/CreateModal.jsx";
 import {
+  roleIcons,
   userRoles,
   userRolesEnum,
   usersColors,
@@ -50,9 +51,11 @@ import {
   MdMoreHoriz,
   MdVisibility,
 } from "react-icons/md";
-import UserRestrictedCountries from "@/app/UiComponents/DataViewer/UserRestrictedCountries";
+import UserRestrictedCountries from "@/app/UiComponents/DataViewer/users/UserRestrictedCountries";
 import Commission from "@/app/UiComponents/DataViewer/utility/Commission";
 import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes";
+import { RoleManagerDialog } from "../DataViewer/users/RoleManagerDialog";
+import { ProjectAutoAssignmentDialog } from "../DataViewer/users/ProjectAutoAssignmentDialog";
 
 const columns = [
   { name: "name", label: "User Name" },
@@ -383,142 +386,6 @@ export default function UsersPage() {
   );
 }
 
-const roleIcons = {
-  STAFF: "👷",
-  THREE_D_DESIGNER: "🎨",
-  TWO_D_DESIGNER: "🖌",
-  ACCOUNTANT: "💰",
-  SUPER_ADMIN: "🛡",
-  TWO_D_EXECUTOR: "🖌",
-  SUPER_SALES: "🚀",
-  PRIMARY_SALES: "⭐",
-};
-
-export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
-  const allRoles = Object.keys(roleIcons); // Available roles
-  const [open, setOpen] = useState(false);
-  const [selectedSubRoles, setSelectedSubRoles] = useState([...subRoles]); // SubRoles state
-  const [tempRole, setTempRole] = useState(""); // Temp role to add
-  const { setLoading } = useToastContext();
-  function onClose() {
-    setOpen(false);
-  }
-  async function onSave(updatedRoles) {
-    const request = await handleRequestSubmit(
-      updatedRoles,
-      setLoading,
-      `admin/users/${userId}/roles`,
-      false,
-      "Updating roles",
-      null,
-      "PUT"
-    );
-    if (request.status === 200) {
-      window.location.reload();
-      onClose();
-    }
-  }
-  useEffect(() => {
-    setSelectedSubRoles([...subRoles]); // Sync when props change
-  }, [subRoles]);
-
-  // Add a new role if not already in the list
-  const handleAddRole = () => {
-    if (tempRole && !selectedSubRoles.includes(tempRole)) {
-      setSelectedSubRoles([...selectedSubRoles, tempRole]);
-      setTempRole(""); // Reset selection
-    }
-  };
-
-  // Remove role from subRoles list
-  const handleRemoveRole = (roleToRemove) => {
-    setSelectedSubRoles(selectedSubRoles.filter((r) => r !== roleToRemove));
-  };
-
-  // Save changes and send to API
-  const handleSave = () => {
-    const updatedRoles = {
-      added: selectedSubRoles.filter((r) => !subRoles.includes(r)), // New roles
-      removed: subRoles.filter((r) => !selectedSubRoles.includes(r)), // Deleted roles
-    };
-    onSave(updatedRoles);
-  };
-  if (!open)
-    return (
-      <Button onClick={() => setOpen(true)} variant="contained" fullWidth>
-        Manage Roles
-      </Button>
-    );
-  return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Manage User Roles</DialogTitle>
-      <DialogContent>
-        <Typography variant="h6">Main Role:</Typography>
-        <List>
-          <ListItem>
-            <ListItemIcon>{roleIcons[role]}</ListItemIcon>
-            <ListItemText primary={role} />
-          </ListItem>
-        </List>
-
-        <Typography variant="h6">Sub Roles:</Typography>
-        <List>
-          {selectedSubRoles.length > 0 ? (
-            selectedSubRoles.map((r) => (
-              <ListItem key={r}>
-                <ListItemIcon>{roleIcons[r]}</ListItemIcon>
-                <ListItemText primary={r} />
-                <IconButton onClick={() => handleRemoveRole(r)} color="error">
-                  <MdDelete />
-                </IconButton>
-              </ListItem>
-            ))
-          ) : (
-            <Typography variant="body2" color="textSecondary">
-              No sub-roles assigned.
-            </Typography>
-          )}
-        </List>
-
-        <FormControl fullWidth margin="normal">
-          <InputLabel>Add Sub-Role</InputLabel>
-          <Select
-            value={tempRole}
-            onChange={(e) => setTempRole(e.target.value)}
-          >
-            {allRoles
-              .filter((r) => r !== role && !selectedSubRoles.includes(r)) // Exclude main role & already selected ones
-              .map((r) => (
-                <MenuItem key={r} value={r}>
-                  {roleIcons[r]} {r}
-                </MenuItem>
-              ))}
-          </Select>
-        </FormControl>
-
-        <Button
-          variant="contained"
-          startIcon={<MdAddCircleOutline />}
-          onClick={handleAddRole}
-          fullWidth
-          disabled={!tempRole}
-        >
-          Add Role
-        </Button>
-      </DialogContent>
-
-      <DialogActions>
-        <Button onClick={onClose} color="secondary">
-          Cancel
-        </Button>
-        <Button onClick={handleSave} color="primary" variant="contained">
-          Save
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-};
-
 function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
   const theme = useTheme();
   const smDown = useMediaQuery(theme.breakpoints.down("sm"));
@@ -636,7 +503,9 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
             userId={item.id}
           />
         </Box>
-
+        <Box sx={{ px: 1, py: 0.5 }}>
+          <ProjectAutoAssignmentDialog userId={item.id} />
+        </Box>
         <Box sx={{ px: 1, py: 0.5 }}>
           <UserRestrictedCountries userId={item.id} />
         </Box>

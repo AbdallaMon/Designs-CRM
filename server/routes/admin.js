@@ -28,6 +28,7 @@ import {
   generateStaffReport,
   getAdminProjects,
   getAllUsers,
+  getAutoAssignmentsForAUser,
   getCommissionByUserId,
   getModelIds,
   getNotAllowedCountries,
@@ -41,6 +42,7 @@ import {
   updateCommission,
   updateLeadField,
   updateNotAllowedCountries,
+  updateUserAutoAssignment,
   updateUserMaxLeads,
   updateUserMaxLeadsPerDay,
   updateUserRoles,
@@ -174,6 +176,32 @@ router.put("/users/:userId/roles", async (req, res) => {
     return res
       .status(200)
       .json({ data: update, message: "Roles updated succussfully" });
+  } catch (e) {
+    handlePrismaError(res, e);
+  }
+});
+router.get("/users/:userId/auto-assignments", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const autoAssignments = await getAutoAssignmentsForAUser({
+      userId: Number(userId),
+    });
+    res.status(200).json({ data: autoAssignments });
+  } catch (error) {
+    console.error("Error fetching autoAssignments:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching supervisors" });
+  }
+});
+router.put("/users/:userId/auto-assignments", async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const update = await updateUserAutoAssignment(userId, req.body);
+    return res
+      .status(200)
+      .json({ data: update, message: "Auto assignments updated successfully" });
   } catch (e) {
     handlePrismaError(res, e);
   }

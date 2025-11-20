@@ -485,7 +485,6 @@ export const userRoles = [
   { value: "THREE_D_DESIGNER", label: "3D Designer" },
   { value: "TWO_D_DESIGNER", label: "2D Designer" },
   { value: "ACCOUNTANT", label: "Accountant" },
-  { value: "TWO_D_EXECUTOR", label: "Two d executor" },
   { value: "SUPER_ADMIN", label: "Admin" },
 ];
 
@@ -494,7 +493,6 @@ export const userRolesEnum = {
   THREE_D_DESIGNER: "3D Designer",
   TWO_D_DESIGNER: "2D Designer",
   ACCOUNTANT: "Accountant",
-  TWO_D_EXECUTOR: "Two d executor",
   SUPER_ADMIN: "Admin",
   SUPER_SALES: "Super sales",
   CONTACT_INITIATOR: "Contact initiator",
@@ -1294,7 +1292,6 @@ export const usersHexColors = {
   TWO_D_DESIGNER: "#FF7B5A", // warm coral
   banned: "#B00020", // deep dark red (much darker than SUPER_ADMIN)
   ACCOUNTANT: "#3ECF7A", // fresh green
-  TWO_D_EXECUTOR: "#FFC658", // bright golden
 };
 
 export const usersColors = Object.fromEntries(
@@ -1302,3 +1299,13 @@ export const usersColors = Object.fromEntries(
 );
 
 export const usersColorsArray = [...Object.values(usersHexColors)];
+
+export const roleIcons = {
+  STAFF: "👷",
+  THREE_D_DESIGNER: "🎨",
+  TWO_D_DESIGNER: "🖌",
+  ACCOUNTANT: "💰",
+  SUPER_ADMIN: "🛡",
+  SUPER_SALES: "🚀",
+  PRIMARY_SALES: "⭐",
+};

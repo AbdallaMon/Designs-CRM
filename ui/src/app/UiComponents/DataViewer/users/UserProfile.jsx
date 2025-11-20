@@ -2,11 +2,11 @@ import { useEffect, useState } from "react";
 import { getData } from "@/app/helpers/functions/getData.js";
 import { Box, Button, Card, CardContent, Typography } from "@mui/material";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
-import UserLogs from "@/app/UiComponents/DataViewer/UserLogs.jsx";
-import LastSeen from "../buttons/LastSeen";
-import EditModal from "../models/EditModal";
+import UserLogs from "@/app/UiComponents/DataViewer/users/UserLogs.jsx";
+import LastSeen from "../../buttons/LastSeen";
+import EditModal from "../../models/EditModal";
 import UserRestrictedCountries from "./UserRestrictedCountries";
-import Commission from "./utility/Commission";
+import Commission from "../utility/Commission";
 
 export default function UserProfile({ id, role }) {
   const [user, setUser] = useState(null);

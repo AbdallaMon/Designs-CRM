@@ -718,6 +718,7 @@ router.put("/client-leads/:id/status", async (req, res) => {
       clientLeadId: Number(id),
       ...req.body,
       isAdmin,
+      userId: Number(currentUser.id),
     });
 
     res.status(200).json({

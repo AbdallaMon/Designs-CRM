@@ -30,6 +30,7 @@ import { telegramChannelQueue } from "../queues/telegramChannelQueue.js";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import {
+  assignDesignersForProjectsInContractIfAutoAssigned,
   checkIfProjectHasPaymentAndUpdate,
   checkIfProjectHasStagesAndUpdateNextAndPrevious,
 } from "./contract/contractServices.js";
@@ -2324,6 +2325,7 @@ export async function updateClientLeadStatus({
   isAdmin,
   updatePrice,
   priceNote,
+  userId,
 }) {
   if (!isAdmin) {
     if (
@@ -2446,7 +2448,12 @@ export async function updateClientLeadStatus({
         }
       );
     }
+    await assignDesignersForProjectsInContractIfAutoAssigned({
+      leadId: lead.id,
+      userId,
+    });
     await finalizedLeadCreated(lead.id, lead.userId);
+    //to do handle auto assignment of designers
   }
 }
 

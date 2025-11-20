@@ -1,6 +1,7 @@
 import prisma from "../../../prisma/prisma.js";
 import { v4 as uuidv4 } from "uuid";
 import { buildAndUploadContractPdf } from "./generateContractPdf.js";
+import { assignProjectToUser } from "../sharedServices.js";
 
 export async function getLeadContractList({ leadId }) {
   const where = {
@@ -1182,7 +1183,6 @@ export async function getContractPaymentsGroupedService({
     const visiblePayments = filterStatus
       ? all.filter((p) => p.status === filterStatus)
       : all;
-    console.log(c, "stage");
     return {
       contract: {
         id: c.id,
@@ -1239,4 +1239,69 @@ export async function getContractPaymentsGroupedService({
     total,
     totalPages: Math.max(1, Math.ceil(total / take)),
   };
+}
+// export const stageLevelRelatedProject = {
+//   LEVEL_2: "2D_Study",
+//   LEVEL_3: "3D_Designer",
+//   LEVEL_4: "2D_Final_Plans",
+//   LEVEL_5: "2D_Quantity_Calculation",
+// };
+
+export async function assignDesignersForProjectsInContractIfAutoAssigned({
+  leadId,
+}) {
+  const inProgressContracts = await prisma.contract.findMany({
+    where: {
+      clientLeadId: Number(leadId),
+      status: "IN_PROGRESS",
+    },
+    include: {
+      stages: true,
+    },
+  });
+  for (const contract of inProgressContracts) {
+    for (const stage of contract.stages) {
+      try {
+        const projectType = stageLevelRelatedProject[stage.title];
+        if (!projectType) continue;
+
+        const projectGroupId = contract.projectGroupId;
+
+        const userAutoAssignments = await prisma.autoAssignment.findMany({
+          where: {
+            type: projectType,
+          },
+        });
+
+        if (!userAutoAssignments || userAutoAssignments.length === 0) continue;
+
+        const project = await prisma.project.findFirst({
+          where: {
+            clientLeadId: Number(leadId),
+            groupId: projectGroupId,
+            type: projectType,
+          },
+        });
+        if (!project) continue;
+        for (const assignment of userAutoAssignments) {
+          const userId = assignment.userId;
+          if (!userId) continue;
+          await assignProjectToUser({
+            projectId: project.id,
+            userId: Number(userId),
+            groupId: projectGroupId,
+          });
+        }
+      } catch (err) {
+        // هنا بنطنّش أي error حصل في الstage ده ونكمّل على اللي بعده
+        console.error("Error in single contract/stage auto-assign", {
+          error: err,
+          leadId,
+          contractId: contract.id,
+          stageId: stage.id,
+        });
+        // مفيش throw => نكمل باقي اللوب
+      }
+    }
+  }
 }
