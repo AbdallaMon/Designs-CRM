@@ -86,19 +86,19 @@ export function LeadContactInfo({ lead, setleads, setLead }) {
                   </EditFieldButton>
                 </Box>
                 <Box width="100%">
-                  <EditFieldButton
+                  {/* <EditFieldButton
                     path={`admin/client/update/${lead.client.id}`}
                     reqType="PUT"
                     field="email"
                     onUpdate={(data) => {
                       onUpdate("email", "Client", data);
                     }}
-                  >
-                    <Typography color="text.secondary" variant="caption">
-                      Client Email
-                    </Typography>
-                    <EmailRedirect email={lead.client.email} />
-                  </EditFieldButton>
+                  > */}
+                  <Typography color="text.secondary" variant="caption">
+                    Client Email
+                  </Typography>
+                  <EmailRedirect email={lead.client.email} />
+                  {/* </EditFieldButton> */}
                 </Box>
               </Grid>
               {lead.assignedTo && (

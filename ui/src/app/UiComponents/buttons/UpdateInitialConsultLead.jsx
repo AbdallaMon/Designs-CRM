@@ -52,7 +52,7 @@ function UpdateInitialConsultButton({ clientLead }) {
     }
   };
 
-  if (user.role !== "ADMIN") return null;
+  if (user.role !== "ADMIN" && !user.isSuperSales) return null;
 
   return (
     <>
@@ -60,13 +60,8 @@ function UpdateInitialConsultButton({ clientLead }) {
         <Button
           variant="contained"
           onClick={handleOpen}
-          startIcon={<MdTrendingUp />}
-          endIcon={<FaArrowRight size={14} />}
           sx={{
-            borderRadius: 3,
-            px: 4,
-            py: 1.5,
-            fontWeight: 700,
+            borderRadius: 2,
             textTransform: "none",
             fontSize: "0.925rem",
             position: "relative",

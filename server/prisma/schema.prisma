@@ -105,6 +105,7 @@ enum ClientLeadStatus {
   INTERESTED
   NEEDS_IDENTIFIED
   NEGOTIATING
+  LEADEXCHANGE
   REJECTED
   FINALIZED
   CONVERTED
@@ -799,6 +800,7 @@ model User {
   files                    File[]
   lastSeenAt               DateTime?
   maxLeadsCounts           Int?                 @default(50)
+  maxLeadCountPerDay       Int                  @default(5)   
   accountantLeads          ClientLead[]         @relation("AccountantLeads")
   commissions              Commission[]
   assignments              Assignment[]

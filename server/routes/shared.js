@@ -221,18 +221,18 @@ router.get("/client-leads/columns", async (req, res) => {
       token.role !== "ADMIN" &&
       token.role !== "SUPER_ADMIN" &&
       token.role !== "ACCOUNTANT" &&
-      token.role !== "SUPER_SALES"
+      !token.isSuperSales
     ) {
       searchParams.selfId = token.id;
       searchParams.userId = token.id;
     }
-
+    const isAdmin =
+      token.role === "ADMIN" ||
+      token.role === "SUPER_ADMIN" ||
+      token.isSuperSales;
     const clientLeads = await getClientLeadsColumnStatus({
       searchParams,
-      isAdmin:
-        token.role === "ADMIN" ||
-        token.role === "SUPER_ADMIN" ||
-        token.role !== "SUPER_SALES",
+      isAdmin,
       user: token,
     });
     res.status(200).json({ data: clientLeads });
@@ -474,18 +474,24 @@ router.get("/client-leads/:id", async (req, res) => {
     if (
       token.role !== "ADMIN" &&
       token.role !== "SUPER_ADMIN" &&
-      token.role !== "ACCOUNTANT"
+      token.role !== "ACCOUNTANT" &&
+      !token.isSuperSales
     ) {
       searchParams.userId = token.id;
     }
-    if (token.role !== "ADMIN" && token.role !== "CONTACT_INITIATOR") {
+    if (
+      token.role !== "ADMIN" &&
+      token.role !== "CONTACT_INITIATOR" &&
+      token.role !== "SUPER_ADMIN" &&
+      !token.isSuperSales
+    ) {
       searchParams.checkConsult = true;
     }
 
     const clientLeadDetails =
       token.role === "ADMIN" ||
       token.role === "SUPER_ADMIN" ||
-      token.role === "SUPER_SALES" ||
+      token.isSuperSales ||
       token.role === "CONTACT_INITIATOR"
         ? await getAdminClientLeadDetails(Number(id), searchParams)
         : await getClientLeadDetails(
@@ -657,7 +663,9 @@ router.put("/client-leads", async (req, res) => {
     const clientLead = req.body;
     const currentUser = await getCurrentUser(req);
     const isAdmin =
-      currentUser.role === "ADMIN" || currentUser.role === "SUPER_ADMIN";
+      currentUser.role === "ADMIN" ||
+      currentUser.role === "SUPER_ADMIN" ||
+      currentUser.isSuperSales;
     const result = await assignLeadToAUser(
       Number(clientLead.id),
       isAdmin ? req.body.userId : Number(currentUser.id),
@@ -701,10 +709,15 @@ router.put("/client-leads/:id/status", async (req, res) => {
   try {
     const { id } = req.params;
     const { updatePrice } = req.body;
-
+    const currentUser = await getCurrentUser(req);
+    const isAdmin =
+      currentUser.role === "ADMIN" ||
+      currentUser.role === "SUPER_ADMIN" ||
+      currentUser.isSuperSales;
     await updateClientLeadStatus({
       clientLeadId: Number(id),
       ...req.body,
+      isAdmin,
     });
 
     res.status(200).json({

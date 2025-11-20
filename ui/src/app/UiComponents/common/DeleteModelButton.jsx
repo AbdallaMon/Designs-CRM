@@ -37,8 +37,16 @@ export default function DeleteModelButton({
 
   const isOlderThanTimeLimit =
     dayjs().diff(dayjs(item.createdAt), "minute") > timeLimit;
+  const isSuperSalesAndTimeNotExceedTwoDays =
+    user.isSuperSales && dayjs().diff(dayjs(item.createdAt), "day") < 2;
+
   const isAdmin = checkIfAdmin(user);
-  const canDelete = isAdmin || !isOlderThanTimeLimit;
+  const isMeeting = model === "MeetingReminder";
+  const canDelete =
+    isAdmin ||
+    !isOlderThanTimeLimit ||
+    isSuperSalesAndTimeNotExceedTwoDays ||
+    (isMeeting && user.isSuperSales);
 
   if (!canDelete) return null;
 

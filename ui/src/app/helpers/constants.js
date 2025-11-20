@@ -242,16 +242,19 @@ export const KanbanLeadsStatus = {
   INTERESTED: "Interested",
   NEEDS_IDENTIFIED: "Needs Identified",
   NEGOTIATING: "Negotiating",
+  LEADEXCHANGE: "Lead Exchange",
   FINALIZED: "Finalized",
   REJECTED: "Rejected",
   ARCHIVED: "Archived",
   ON_HOLD: "On Hold",
 };
+
 export const KanbanBeginerLeadsStatus = {
   IN_PROGRESS: "In Progress",
   INTERESTED: "Interested",
   NEEDS_IDENTIFIED: "Needs Identified",
   NEGOTIATING: "Negotiating",
+  LEADEXCHANGE: "Lead Exchange",
 };
 export const CONTRACT_LEVELS = {
   LEVEL_1: "تحليل وتقييم",
@@ -366,6 +369,7 @@ export const statusColors = {
   INTERESTED: "#10b981",
   NEEDS_IDENTIFIED: "#f59e0b",
   NEGOTIATING: "#3b82f6",
+  LEADEXCHANGE: "#f97316",
   REJECTED: "#ef4444",
   FINALIZED: "#0f766e",
   ARCHIVED: "0f757d",
@@ -1280,3 +1284,21 @@ export const PROJECT_TYPES_LABELS = {
     en: "2D Quantity Calculation",
   },
 };
+
+export const usersHexColors = {
+  SUPER_ADMIN: "#FF4B4B", // bright red
+  STAFF: "#4C8DFF", // strong blue
+  isPrimary: "#FFE2A0", // very light soft amber (lighter than TWO_D_EXECUTOR)
+  isSuperSales: "#26C6DA", // teal (different from ACCOUNTANT green)
+  THREE_D_DESIGNER: "#B35CFF", // vivid violet
+  TWO_D_DESIGNER: "#FF7B5A", // warm coral
+  banned: "#B00020", // deep dark red (much darker than SUPER_ADMIN)
+  ACCOUNTANT: "#3ECF7A", // fresh green
+  TWO_D_EXECUTOR: "#FFC658", // bright golden
+};
+
+export const usersColors = Object.fromEntries(
+  Object.entries(usersHexColors).map(([key, value]) => [value, key])
+);
+
+export const usersColorsArray = [...Object.values(usersHexColors)];

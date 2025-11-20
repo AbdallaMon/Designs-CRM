@@ -3,7 +3,6 @@ import { getData } from "@/app/helpers/functions/getData.js";
 import { Box, Button, Card, CardContent, Typography } from "@mui/material";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
 import UserLogs from "@/app/UiComponents/DataViewer/UserLogs.jsx";
-import Link from "next/link";
 import LastSeen from "../buttons/LastSeen";
 import EditModal from "../models/EditModal";
 import UserRestrictedCountries from "./UserRestrictedCountries";
@@ -40,11 +39,17 @@ export default function UserProfile({ id, role }) {
             {!loading && (
               <>
                 <LastSeen initialLastSeen={user.lastSeenAt} userId={user.id} />
-                <Commission userId={user.id} />
+                <Box>
+                  <Commission userId={user.id} />
+                </Box>
                 {user.role === "STAFF" && (
                   <>
                     <UserRestrictedCountries userId={user.id} />
                     <UpdateUserMaxLeadsCounts setUser={setUser} user={user} />
+                    <UpdateUserMaxLeadsCountPerDay
+                      setUser={setUser}
+                      user={user}
+                    />
                     <Button
                       variant="outlined"
                       component="a"
@@ -87,6 +92,42 @@ function UpdateUserMaxLeadsCounts({ user, setUser }) {
         ]}
         isObject={true}
         href={`admin/users/max-leads`}
+        setData={setUser}
+        extraProps={{
+          formTitle: "Change max leads count",
+          btnText: "Change",
+          variant: "outlined",
+        }}
+      />
+    </Box>
+  );
+}
+
+function UpdateUserMaxLeadsCountPerDay({ user, setUser }) {
+  return (
+    <Box>
+      <EditModal
+        editButtonText={
+          "Edit leads counts per day" + " " + user.maxLeadCountPerDay
+        }
+        item={user}
+        inputs={[
+          {
+            data: {
+              id: "maxLeadCountPerDay",
+              label: "Enter a number",
+              type: "text",
+            },
+            pattern: {
+              required: {
+                value: true,
+                message: "Please enter a number",
+              },
+            },
+          },
+        ]}
+        isObject={true}
+        href={`admin/users/max-leads-per-day`}
         setData={setUser}
         extraProps={{
           formTitle: "Change max leads count",

@@ -27,7 +27,13 @@ export function NonConsultedLeads() {
       setPage(1);
     }
   }, [filters]);
-  if (user.role !== "ADMIN" && user.role !== "CONTACT_INITIATOR") return;
+  console.log("user", user);
+  if (
+    user.role !== "ADMIN" &&
+    user.role !== "CONTACT_INITIATOR" &&
+    !user.isSuperSales
+  )
+    return;
   return (
     <>
       <Box mb={2}>

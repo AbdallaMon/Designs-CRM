@@ -5,6 +5,7 @@ import {
   getPagination,
   getTokenData,
   handlePrismaError,
+  uploadFiles,
   verifyTokenAndHandleAuthorization,
 } from "../services/main/utility.js";
 import {
@@ -41,6 +42,7 @@ import {
   updateLeadField,
   updateNotAllowedCountries,
   updateUserMaxLeads,
+  updateUserMaxLeadsPerDay,
   updateUserRoles,
 } from "../services/main/adminServices.js";
 import multer from "multer";
@@ -50,6 +52,7 @@ import { createGroupProjects } from "../services/main/sharedServices.js";
 
 import imageSessionRouter from "./image-session/admin-image-session.js";
 import coursesRouter from "./courses/adminCourses.js";
+import { generateCodeForNewLead } from "../services/client/leads.js";
 
 const router = Router();
 
@@ -62,9 +65,14 @@ router.use("/courses", coursesRouter);
 router.get("/users", async (req, res) => {
   const searchParams = req.query;
   const { limit, skip } = getPagination(req);
-
+  const currentUser = await getCurrentUser(req);
   try {
-    const { users, total } = await getUser(searchParams, limit, skip);
+    const { users, total } = await getUser(
+      searchParams,
+      limit,
+      skip,
+      currentUser
+    );
     const totalPages = Math.ceil(total / limit);
     if (!users) {
       return res.status(404).json({ message: "No users found" });
@@ -177,6 +185,23 @@ router.put("/users/max-leads/:userId", async (req, res) => {
     return res
       .status(200)
       .json({ data: update, message: "Max leads counts updated successfully" });
+  } catch (e) {
+    handlePrismaError(res, e);
+  }
+});
+router.put("/users/max-leads-per-day/:userId", async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const update = await updateUserMaxLeadsPerDay(
+      userId,
+      req.body.maxLeadCountPerDay
+    );
+    return res
+      .status(200)
+      .json({
+        data: update,
+        message: "Max leads counts per day updated successfully",
+      });
   } catch (e) {
     handlePrismaError(res, e);
   }
@@ -551,4 +576,96 @@ router.post("/client-leads/:leadId/telegram/assign-users", async (req, res) => {
   }
 });
 
+router.post("/new-lead", async (req, res) => {
+  const body = req.body;
+
+  try {
+    let client = await prisma.client.findUnique({
+      where: { email: body.email },
+    });
+
+    if (!client) {
+      client = await prisma.client.create({
+        data: {
+          name: body.name,
+          phone: body.phone.replace(/\s+/g, ""),
+          email: body.email,
+        },
+      });
+    } else {
+      await prisma.client.update({
+        where: { id: client.id },
+        data: { phone: body.phone },
+      });
+    }
+
+    const data = {
+      client: { connect: { id: client.id } },
+      selectedCategory: body.category,
+      type: body.item,
+      status: "NEW",
+      description: `${body.category} ${body.item} ${
+        body.category === "DESIGN"
+          ? body.emirate
+            ? body.emirate
+            : "OUTSIDE UAE"
+          : ""
+      }`,
+    };
+
+    data.code = await generateCodeForNewLead(client.id);
+
+    if (body.clientDescription) data.clientDescription = body.clientDescription;
+    if (body.emirate) data.emirate = body.emirate;
+    if (body.location === "OUTSIDE_UAE") data.emirate = "OUTSIDE";
+
+    if (body.timeToContact) {
+      const date = new Date(body.timeToContact);
+      if (!isNaN(date)) data.timeToContact = date.toISOString();
+    }
+
+    if (body.country) data.country = body.country;
+
+    if (body.priceRange) {
+      data.price = `${body.priceRange[0]} - ${body.priceRange[1]}`;
+      const averagePrice = (body.priceRange[0] + body.priceRange[1]) / 2;
+      data.averagePrice = averagePrice;
+      data.priceWithOutDiscount = averagePrice;
+    }
+
+    if (body.priceOption) {
+      data.price = body.priceOption;
+      data.averagePrice = priceRangeValues[body.priceOption];
+      data.priceWithOutDiscount = priceRangeValues[body.priceOption];
+    }
+
+    if (body.category === "CONSULTATION") {
+      data.price = consultationLeadPrices[body.item];
+      data.averagePrice = Number(consultationLeadPrices[body.item]);
+      data.priceWithOutDiscount = Number(consultationLeadPrices[body.item]);
+    }
+
+    data.initialConsult = false;
+
+    const clientLead = await prisma.clientLead.create({ data });
+    if (body.url) await uploadFiles(body, clientLead.id);
+
+    await newLeadNotification(clientLead.id, client, true);
+
+    const message = body.notClientPage
+      ? "Lead added successfully"
+      : body.lng === "ar"
+      ? "خطوة واحدة تفصلنا عن بدء العمل على مشروعك!، يرجى إتمام الدفع الآن."
+      : "You're just one step away from starting your project! Complete the payment now to proceed.";
+
+    res.status(200).json({ data: clientLead, message });
+  } catch (error) {
+    console.error("Error fetching client form:", error);
+    const message =
+      body.lng === "ar"
+        ? "حدث خطا غير متوقع حاول مره اخره لاحقا"
+        : "Some thing wrong happen try again later";
+    res.status(500).json({ message });
+  }
+});
 export default router;

@@ -215,7 +215,8 @@ export function LeadSliderCard({ lead, setData }) {
       >
         {(user.role === "ADMIN" ||
           user.role === "SUPER_ADMIN" ||
-          user.role === "CONTACT_INITIATOR") && (
+          user.role === "CONTACT_INITIATOR" ||
+          user.isSuperSales) && (
           <>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
               {lead.client.name}
@@ -248,8 +249,10 @@ export function LeadSliderCard({ lead, setData }) {
         )}
       </CardContent>
 
-      <CardActions sx={{ justifyContent: "flex-end", gap: 1, paddingTop: 1.5 }}>
-        {user.role === "STAFF" && (
+      <CardActions
+        sx={{ justifyContent: "flex-end", gap: 1, paddingTop: 1.5, px: 0 }}
+      >
+        {user.role === "STAFF" && !user.isSuperSales && (
           <ConfirmWithActionModel
             title="Are you sure you want to get this lead and assign it to you as a new deal?"
             handleConfirm={() => createADeal(lead)}
@@ -259,7 +262,14 @@ export function LeadSliderCard({ lead, setData }) {
             variant="outlined"
           />
         )}
-        <Box display="flex" flexDirection="column" gap={2}>
+        <Box
+          display="flex"
+          flexDirection="column"
+          sx={{
+            gap:
+              user.role !== "CONTACT_INITIATOR" && !user.isSuperSales ? 1 : 0,
+          }}
+        >
           <UpdateInitialConsultButton clientLead={lead} />
           {user.role !== "CONTACT_INITIATOR" && (
             <Button

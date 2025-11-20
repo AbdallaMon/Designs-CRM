@@ -2,7 +2,10 @@
 
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import {
+  checkIfAdmin,
+  checkIfAdminOrSuperSales,
+} from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import {
@@ -27,7 +30,7 @@ export function AssignNewStaffModal({ lead, onUpdate }) {
   const [users, setUsers] = useState([]);
   const { setLoading: setToastLoading } = useToastContext();
   const [, setLoading] = useState(true);
-  const isAdmin = checkIfAdmin(user);
+  const isAdmin = checkIfAdminOrSuperSales(user);
   useEffect(() => {
     async function getUsers() {
       const usersRequest = await getData({

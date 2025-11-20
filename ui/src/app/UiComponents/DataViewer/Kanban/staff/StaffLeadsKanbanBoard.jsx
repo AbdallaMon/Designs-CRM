@@ -18,7 +18,7 @@ const StaffLeadsKanbanBoard = ({ staffId }) => {
   const { user } = useAuth();
   const [filters, setFilters] = useState();
   const statusArray = Object.keys(
-    user.role === "STAFF" && !user.isPrimary
+    user.role === "STAFF" && !user.isPrimary && !user.isSuperSales
       ? KanbanBeginerLeadsStatus
       : KanbanLeadsStatus
   );

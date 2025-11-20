@@ -12,6 +12,7 @@ import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks";
 import KanbanColumn from "../staff/KanbanColumn";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { CONTRACT_LEVELS } from "@/app/helpers/constants";
+import { checkIfAdminOrSuperSales } from "@/app/helpers/functions/utility";
 
 dayjs.extend(relativeTime);
 
@@ -27,7 +28,7 @@ const KanbanBoard = ({
   isNotStaff,
 }) => {
   const { user } = useAuth();
-  const admin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+  const admin = checkIfAdminOrSuperSales(user);
 
   return (
     <>

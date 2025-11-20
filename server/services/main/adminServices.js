@@ -8,22 +8,26 @@ const { groupBy } = pkg;
 import XLSX from "xlsx";
 import { groupProjects } from "./sharedServices.js";
 import {
-  addUsersToATeleChannel,
   addUsersToATeleChannelUsingQueue,
   createChannelAndAddUsers,
-  getChannelEntitiyByTeleRecordAndLeadId,
-  getUserEntitiy,
 } from "../telegram/telegram-functions.js";
-export async function getUser(searchParams, limit, skip) {
+import { UserRole } from "@prisma/client";
+export async function getUser(searchParams, limit, skip, currentUser) {
   try {
     const filters = searchParams.filters && JSON.parse(searchParams.filters);
     const staffFilter = searchParams.staffId
       ? { userId: Number(searchParams.staffId) }
       : {};
     let where = {
-      role: { not: "ADMIN" },
+      role: { not: UserRole.ADMIN },
       ...staffFilter,
     };
+    if (currentUser) {
+      where.id = { not: Number(currentUser.id) };
+      where.role = {
+        notIn: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+      };
+    }
 
     if (filters.status !== undefined) {
       if (filters.status === "active") {
@@ -112,6 +116,8 @@ export async function createStaffUser(user) {
       role: true,
       subRoles: true,
       telegramUsername: true,
+      maxLeadsCounts: true,
+      maxLeadCountPerDay: true,
     },
   });
 
@@ -1358,6 +1364,12 @@ export async function updateUserMaxLeads(userId, maxLeadCount) {
     data: { maxLeadsCounts: Number(maxLeadCount) },
   });
 }
+export async function updateUserMaxLeadsPerDay(userId, maxLeadCountPerDay) {
+  return await prisma.user.update({
+    where: { id: Number(userId) },
+    data: { maxLeadCountPerDay: Number(maxLeadCountPerDay) },
+  });
+}
 
 export async function getNotAllowedCountries(userId) {
   const user = await prisma.user.findUnique({
@@ -1465,7 +1477,10 @@ export async function updateLeadField({ data, leadId }) {
   if (type === "date") {
     data[field] = new Date(data[field]);
   }
-  console.log(data);
+  console.log(data, "data");
+  // if(field==="email"){
+
+  // }
   try {
     const updatedLead = await prisma.clientLead.update({
       where: {
@@ -1482,6 +1497,9 @@ export async function updateLeadField({ data, leadId }) {
 }
 
 export async function updateClientField({ data, clientId }) {
+  if (data.field === "email") {
+    throw new Error("Cannot update email field");
+  }
   if (data.inputType) {
     delete data.inputType;
   }

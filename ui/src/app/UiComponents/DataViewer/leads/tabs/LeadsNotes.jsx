@@ -53,7 +53,7 @@ export function LeadNotes({ lead, admin, notUser }) {
                 </Avatar>
                 <Typography variant="caption" color="text.secondary">
                   {note.user.name} •{" "}
-                  {dayjs(note.createdAt).format("MM/DD/YYYY")}
+                  {dayjs(note.createdAt).format("DD/MM/YYYY")}
                 </Typography>
                 <DeleteModelButton
                   item={note}

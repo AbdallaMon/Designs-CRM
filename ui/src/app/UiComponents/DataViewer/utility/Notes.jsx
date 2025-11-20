@@ -40,6 +40,7 @@ export function NotesComponent({
   isOpen = false,
   onClose,
   text = "Notes & Attachments",
+  fullWidth = false,
 }) {
   const [openModal, setOpenModal] = useState(isOpen);
   const [notes, setNotes] = useState([]);
@@ -134,6 +135,7 @@ export function NotesComponent({
         color="primary"
         size={simpleButton ? "small" : "medium"}
         startIcon={simpleButton ? null : <MdStickyNote2 size={20} />}
+        fullWidth={fullWidth}
       >
         {text}
       </Button>

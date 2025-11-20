@@ -1,5 +1,8 @@
 import { getData } from "@/app/helpers/functions/getData";
-import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import {
+  checkIfAdmin,
+  checkIfAdminOrSuperSales,
+} from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 import {
@@ -42,7 +45,7 @@ export const PreviewLead = ({
   const [loading, setLoading] = useState(true);
   const [lead, setLead] = useState(null);
   const { user } = useAuth();
-  const isAdmin = checkIfAdmin(user);
+  const isAdmin = checkIfAdminOrSuperSales(user);
   const LeadContent = leadContent;
   useEffect(() => {
     async function getALeadDetails() {

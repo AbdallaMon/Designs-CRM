@@ -213,6 +213,7 @@ export const verifyTokenAndHandleAuthorization = async (
       where: { id: Number(decoded.id) },
       select: {
         role: true,
+        isSuperSales: true,
         subRoles: {
           select: {
             subRole: true,
@@ -228,12 +229,9 @@ export const verifyTokenAndHandleAuthorization = async (
     const isAdmin =
       user.role === "ADMIN" ||
       user.role === "SUPER_ADMIN" ||
-      user.role === "SUPER_SALES" ||
+      user.isSuperSales ||
       user.subRoles.some(
-        (r) =>
-          r.subRole === "ADMIN" ||
-          r.subRole === "SUPER_ADMIN" ||
-          user.role === "SUPER_SALES"
+        (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN"
       );
 
     if (role === "ADMIN" && isAdmin) {

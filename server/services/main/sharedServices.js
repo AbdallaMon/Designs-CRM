@@ -1162,6 +1162,7 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
     where: { id: Number(userId) },
     select: {
       maxLeadsCounts: true,
+      maxLeadCountPerDay: true,
     },
   });
   if (activeLeadsCount >= (maxUserLeadsCount.maxLeadsCounts || 50)) {
@@ -1171,7 +1172,28 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
       } active leads.`
     );
   }
-
+  // dayjs get today and check the leads that taking todays count
+  const startOfToday = dayjs().startOf("day").toDate();
+  const endOfToday = dayjs().endOf("day").toDate();
+  const todaysLeadsCount = await prisma.clientLead.count({
+    where: {
+      userId: userId,
+      assignedAt: {
+        gte: startOfToday,
+        lte: endOfToday,
+      },
+    },
+  });
+  if (
+    todaysLeadsCount >= (maxUserLeadsCount.maxLeadCountPerDay || 5) &&
+    !isAdmin
+  ) {
+    throw new Error(
+      `You cannot take more than ${
+        maxUserLeadsCount.maxLeadCountPerDay || 5
+      } leads per day.`
+    );
+  }
   if (clientLead.status === "ON_HOLD" || isAdmin) {
     const shadowLead = await prisma.clientLead.create({
       data: {
@@ -3374,9 +3396,9 @@ export async function getLeadDetailsByProject(clientLeadId, searchParams) {
 }
 
 const PROJECT_TYPES = [
-  "3D_Modification",
   "2D_Study",
   "3D_Designer",
+  "3D_Modification",
   "2D_Final_Plans",
   "2D_Quantity_Calculation",
 ];

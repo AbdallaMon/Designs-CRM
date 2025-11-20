@@ -164,9 +164,28 @@ export const checkIfADesigner = (user) => {
   return user.role === "TWO_D_DESIGNER" || user.role === "THREE_D_DESIGNER";
 };
 export const checkIfAdmin = (user) => {
-  return user.role === "ADMIN" || user.role === "SUPER_ADMIN"||user.role==="SUPER_SALES"||user.role==="CONTACT_INITIATOR";
+  return (
+    user.role === "ADMIN" ||
+    user.role === "SUPER_ADMIN" ||
+    user.role === "CONTACT_INITIATOR"
+  );
 };
-
+export const checkIfAdminOnly = (user) => {
+  return user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+};
+export const checkIfAdminOrSuperSales = (user) => {
+  return (
+    user.role === "ADMIN" || user.role === "SUPER_ADMIN" || user.isSuperSales
+  );
+};
+export const checkIfAdminOrSuperOrContactInitiator = (user) => {
+  return (
+    user.role === "ADMIN" ||
+    user.role === "SUPER_ADMIN" ||
+    user.isSuperSales ||
+    user.role === "CONTACT_INITIATOR"
+  );
+};
 export function ensureHttps(url) {
   if (typeof url !== "string") return url;
   return url.startsWith("http://") ? url.replace("http://", "https://") : url;

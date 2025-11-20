@@ -147,6 +147,7 @@ router.post("/new-lead/register", async (req, res) => {
     let client = await prisma.client.findUnique({
       where: { email: body.email },
     });
+    console.log("client found:", client);
     if (!client) {
       client = await prisma.client.create({
         data: {

@@ -73,6 +73,7 @@ export default function AdminTable({
   renderFormTitle,
   editFormButton,
   children,
+  rowSx,
 }) {
   const ExtraComponent = extraComponent;
   const theme = useTheme();
@@ -174,6 +175,9 @@ export default function AdminTable({
                     "&:hover": {
                       backgroundColor: theme.palette.action.hover,
                     },
+                    ...(rowSx && typeof rowSx === "function"
+                      ? rowSx(item)
+                      : {}),
                   }}
                 >
                   {columns.map((column) => (

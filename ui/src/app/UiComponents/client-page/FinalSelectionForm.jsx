@@ -191,7 +191,7 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
       const request = await handleRequestSubmit(
         data,
         setLoading,
-        "client/new-lead",
+        notClientPage ? "admin/new-lead" : "client/new-lead",
         false,
         translate("Submitting")
       );

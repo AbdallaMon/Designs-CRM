@@ -190,33 +190,8 @@ export const contactInitiatorLinks = [
   { name: "Leads", href: "/dashboard", icon: <FiTarget size={20} /> },
 ];
 export const superSalesLinks = [
-  { name: "Dashboard", href: "/dashboard", icon: <FiGrid size={20} /> },
-
-  {
-    name: "Deals",
-    href: "/dashboard/deals",
-    icon: <FiDollarSign size={20} />,
-    subLinks: [
-      {
-        name: "Current Deals",
-        href: "/dashboard/deals",
-        icon: <FiDollarSign size={20} />,
-        active: "deals",
-      },
-      {
-        name: "On hold Deals",
-        href: "/dashboard/on-hold-deals",
-        icon: <FiClock size={18} />,
-        active: "on-hold",
-      },
-      {
-        name: "All Deals",
-        href: "/dashboard/all-deals",
-        icon: <FiList size={18} />,
-        active: "all-deals",
-      },
-    ],
-  },
+  ...staffLinks,
+  { name: "Users", href: "/dashboard/users", icon: <FiUsers size={20} /> },
 ];
 export const threeDLinks = [
   { name: "Dashboard", href: "/dashboard", icon: <FiTarget size={20} /> },
@@ -365,7 +340,9 @@ export default function Layout({
           role === "ADMIN"
             ? adminLinks
             : role === "STAFF"
-            ? staffLinks
+            ? user.isSuperSales
+              ? superSalesLinks
+              : staffLinks
             : role === "THREE_D_DESIGNER"
             ? threeDLinks
             : role === "TWO_D_DESIGNER"
@@ -385,7 +362,9 @@ export default function Layout({
       {role === "ADMIN"
         ? admin
         : role === "STAFF"
-        ? staff
+        ? user.isSuperSales
+          ? super_sales
+          : staff
         : role === "THREE_D_DESIGNER"
         ? threeD
         : role === "TWO_D_DESIGNER"

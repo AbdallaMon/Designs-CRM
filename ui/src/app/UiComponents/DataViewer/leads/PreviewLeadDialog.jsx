@@ -42,6 +42,7 @@ import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoad
 import { AiOutlineSwap } from "react-icons/ai";
 import {
   checkIfAdmin,
+  checkIfAdminOrSuperSales,
   enumToKeyValueArray,
 } from "@/app/helpers/functions/utility.js";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
@@ -110,7 +111,7 @@ const LeadContent = ({
   setRerenderColumns,
 }) => {
   const { user } = useAuth();
-  const admin = checkIfAdmin(user);
+  const admin = checkIfAdminOrSuperSales(user);
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
   const { setLoading } = useToastContext();
@@ -334,10 +335,7 @@ const LeadContent = ({
 
           {/* Right Section - Status & Actions */}
           <Stack direction="row" spacing={1} alignItems="center">
-            {(user.role === "ADMIN" ||
-              user.role === "SUPER_ADMIN" ||
-              user.role === "STAFF" ||
-              user.role === "SUPER_SALES") && (
+            {(admin || user.role === "STAFF") && (
               <>
                 <Chip
                   icon={<IoMdContract sx={{ fontSize: "12px !important" }} />}

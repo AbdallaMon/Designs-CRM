@@ -21,7 +21,7 @@ import { MdClose } from "react-icons/md";
 import { FinalSelectionForm } from "@/app/UiComponents/client-page/FinalSelectionForm";
 import { designLead } from "@/app/UiComponents/client-page/clientPageData";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import { checkIfAdminOrSuperSales } from "@/app/helpers/functions/utility";
 import LanguageProvider from "@/app/providers/LanguageProvider";
 
 export default function CreateNewLead() {
@@ -32,8 +32,7 @@ export default function CreateNewLead() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { user } = useAuth();
-  const isAdmin = checkIfAdmin(user);
-  if(user.role==="CONTACT_INITIATOR")return
+  const isAdmin = checkIfAdminOrSuperSales(user);
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
     setOpen(false);
@@ -60,9 +59,6 @@ export default function CreateNewLead() {
     }
   };
 
-  const handleBack = () => {
-    setStep(0);
-  };
   if (!isAdmin) return;
 
   return (
@@ -91,6 +87,7 @@ export default function CreateNewLead() {
           sx: {
             borderRadius: 3,
             overflow: "hidden",
+            zIndex: theme.zIndex.modal + 1,
           },
         }}
       >
@@ -130,6 +127,7 @@ export default function CreateNewLead() {
               item={selectedDesignLead}
               location={location}
               notClientPage={true}
+              isAdmin={true}
             />
           )}
         </DialogContent>

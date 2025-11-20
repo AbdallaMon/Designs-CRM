@@ -16,7 +16,6 @@ import UserProfile from "@/app/UiComponents/DataViewer/UserProfile.jsx";
 import DesignerDashboard from "./designers/DesignerDashboard";
 import FullScreenLoader from "../../feedback/loaders/FullscreenLoader";
 import { getData } from "@/app/helpers/functions/getData";
-import DesignerMetricsCard from "./designers/DesignerMatricsCard";
 import LeadsMonthlyOverviewSingle from "./LeadsMonthlyOverviewSingle";
 
 const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {

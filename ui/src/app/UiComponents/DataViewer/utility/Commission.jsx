@@ -130,8 +130,8 @@ const Commission = ({ userId }) => {
     <>
       <Button
         variant="contained"
+        fullWidth
         color="primary"
-        startIcon={<MdAttachMoney />}
         onClick={handleOpen}
       >
         Staff Commissions

@@ -127,20 +127,16 @@ const UserRestrictedCountries = ({ userId }) => {
   return (
     <Box>
       <Button
-        variant="outlined"
+        variant="contained"
+        fullWidth
         color="primary"
         onClick={handleOpen}
-        startIcon={<FiGlobe />}
         sx={{
           borderRadius: "8px",
           textTransform: "none",
           fontWeight: 600,
           boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
           transition: "all 0.2s ease",
-          "&:hover": {
-            boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
-            transform: "translateY(-1px)",
-          },
         }}
       >
         Manage Restricted Countries
