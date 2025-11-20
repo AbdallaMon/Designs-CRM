@@ -94,7 +94,7 @@ const columns = [
             width: "fit-content",
           }}
         >
-          {roleIcons[role]} {role}
+          {roleIcons[role]} {item.isActive ? role : `${role} (BANNED)`}
         </Badge>
       );
     },
