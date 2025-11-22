@@ -147,7 +147,6 @@ router.post("/new-lead/register", async (req, res) => {
     let client = await prisma.client.findUnique({
       where: { email: body.email },
     });
-    console.log("client found:", client);
     if (!client) {
       client = await prisma.client.create({
         data: {
@@ -191,10 +190,14 @@ router.post("/new-lead/register", async (req, res) => {
     const clientLead = await prisma.clientLead.create({ data });
     await newClientLeadNotification(clientLead.id, client, true);
 
+    // const message =
+    //   body.lng === "ar"
+    //     ? " .يرجى إتمام الدفع الآن."
+    //     : "Complete the payment now to proceed.";
     const message =
       body.lng === "ar"
-        ? " .يرجى إتمام الدفع الآن."
-        : "Complete the payment now to proceed.";
+        ? "تم استلام استفسارك بنجاح! سنقوم بالتواصل معك في أقرب وقت ممكن."
+        : "Your inquiry has been received successfully! We will get back to you as soon as possible.";
 
     res.status(200).json({ data: clientLead, message });
   } catch (error) {
