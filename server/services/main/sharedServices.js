@@ -2428,7 +2428,8 @@ export async function updateClientLeadStatus({
     updatePrice ? "FINAL_PRICE_ADDED" : "LEAD_UPDATED",
     lead.userId,
     isAdmin,
-    !isAdmin ? lead.userId : null
+    !isAdmin ? lead.userId : null,
+    status === "FINALIZED"
   );
   if (status === "FINALIZED") {
     const hasChannel = await prisma.telegramChannel.findFirst({
@@ -2452,7 +2453,7 @@ export async function updateClientLeadStatus({
       leadId: lead.id,
       userId,
     });
-    await finalizedLeadCreated(lead.id, lead.userId);
+    // await finalizedLeadCreated(lead.id, lead.userId);
     //to do handle auto assignment of designers
   }
 }

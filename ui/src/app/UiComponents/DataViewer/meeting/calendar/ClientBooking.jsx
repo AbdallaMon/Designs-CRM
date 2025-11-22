@@ -38,7 +38,6 @@ import {
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
-
 import timezone from "dayjs/plugin/timezone";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
@@ -76,17 +75,28 @@ const ClientBooking = ({ token }) => {
     dayId: null,
     token,
   });
+
+  // 🔁 Get slots for selected date (same structure as admin/staff)
   const getSlotsData = async () => {
+    if (!sessionData.selectedDate) return;
+
+    const dateParam = dayjs(sessionData.selectedDate).format("YYYY-MM-DD");
+
     const slotsReq = await getData({
-      url: `client/calendar/slots/${sessionData.dayId}?date=${sessionData.selectedDate}&token=${token}&timezone=${sessionData.selectedTimezone}&`,
+      url: `client/calendar/slots?date=${dateParam}&token=${token}&timezone=${
+        sessionData.selectedTimezone
+      }&isMobile=${isMobile ? 1 : 0}&`,
       setLoading,
     });
+
     if (slotsReq.status === 200) {
-      setAvailableSlots(slotsReq.data.filter((slot) => !slot.isBooked));
+      // same structure as admin / staff
+      setAvailableSlots(slotsReq.data || []);
     } else {
       setAvailableSlots([]);
     }
   };
+
   const getTimezoneOptions = async () => {
     const timeZoneReq = await getData({
       url: `client/calendar/timezones`,
@@ -96,11 +106,15 @@ const ClientBooking = ({ token }) => {
       setGroupedTimezoneOptions(timeZoneReq.data);
     }
   };
+
+  // 🔁 Refetch slots when date or timezone changes
   useEffect(() => {
     if (sessionData && sessionData.selectedDate) {
       getSlotsData();
     }
-  }, [sessionData && sessionData?.dayId, sessionData.selectedDate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionData.selectedDate, sessionData.selectedTimezone]);
+
   useEffect(() => {
     getTimezoneOptions();
   }, []);
@@ -115,6 +129,14 @@ const ClientBooking = ({ token }) => {
   };
 
   const handleBack = () => {
+    if (activeStep === 1) {
+      setAvailableSlots([]);
+      setSessionData((prev) => ({
+        ...prev,
+        selectedSlot: null,
+        selectedDate: null,
+      }));
+    }
     if (activeStep === 2 && sessionData.selectedDate) {
       getSlotsData();
     }
@@ -122,12 +144,13 @@ const ClientBooking = ({ token }) => {
   };
 
   const handleDateSelect = (date, day) => {
+    // date is a dayjs object from Calendar
     handleNext();
     const parsedDate = typeof date === "string" ? new Date(date) : date;
     setSessionData((prev) => ({
       ...prev,
       selectedDate: parsedDate,
-      dayId: day ? day.id : null,
+      dayId: day ? day.id : null, // still stored if backend needs it, but slots are by date now
       selectedSlot: null,
     }));
   };
@@ -150,10 +173,11 @@ const ClientBooking = ({ token }) => {
         "Booking..."
       );
       if (bookingReq.status === 200) {
-        handleNext();
+        setActiveStep((prevActiveStep) => prevActiveStep + 1);
       }
     }
   };
+
   const renderStepContent = (step) => {
     switch (step) {
       case 0:
@@ -208,7 +232,6 @@ const ClientBooking = ({ token }) => {
               onDateSelect={handleDateSelect}
               timezone={sessionData.selectedTimezone || tz}
               token={token}
-              sessionData={sessionData}
               setSessionData={setSessionData}
               setError={setError}
               setActiveStep={setActiveStep}
@@ -323,7 +346,7 @@ const ClientBooking = ({ token }) => {
             </Fade>
           </Box>
         );
-      case 3: // Success step
+      case 3:
         return (
           <Fade in timeout={500}>
             <Box textAlign="center">
@@ -427,6 +450,7 @@ const ClientBooking = ({ token }) => {
         return null;
     }
   };
+
   const handleRefresh = () => {
     window.location.reload();
   };
@@ -453,7 +477,6 @@ const ClientBooking = ({ token }) => {
               borderColor: "error.light",
             }}
           >
-            {/* Error Icon */}
             <Avatar
               sx={{
                 bgcolor: "error.light",
@@ -466,7 +489,6 @@ const ClientBooking = ({ token }) => {
               <MdError size={40} color="white" />
             </Avatar>
 
-            {/* Error Title */}
             <Typography
               variant="h4"
               component="h1"
@@ -476,7 +498,6 @@ const ClientBooking = ({ token }) => {
               Oops! Something went wrong
             </Typography>
 
-            {/* Error Message */}
             <Alert
               severity="error"
               sx={{
@@ -492,7 +513,6 @@ const ClientBooking = ({ token }) => {
               </Typography>
             </Alert>
 
-            {/* Action Buttons */}
             <Stack spacing={2}>
               <Button
                 variant="contained"
@@ -511,7 +531,6 @@ const ClientBooking = ({ token }) => {
               </Button>
             </Stack>
 
-            {/* Additional Help Text */}
             <Typography
               variant="body2"
               color="text.secondary"
@@ -525,6 +544,7 @@ const ClientBooking = ({ token }) => {
       </Box>
     );
   }
+
   return (
     <Container maxWidth="md" sx={{ px: { xs: 1 } }}>
       <Typography variant="h4" gutterBottom align="center">

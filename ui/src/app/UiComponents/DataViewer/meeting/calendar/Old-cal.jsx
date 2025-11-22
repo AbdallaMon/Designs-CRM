@@ -1,38 +1,52 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import {
+  Container,
+  Paper,
+  Typography,
   Box,
   Button,
-  Chip,
-  Grid,
-  Card,
-  CardContent,
-  IconButton,
-  Switch,
-  FormControlLabel,
-  AppBar,
-  Toolbar,
-  Typography,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   TextField,
-  Paper,
+  Chip,
+  Grid,
+  Card,
+  CardContent,
+  Tabs,
+  Tab,
+  IconButton,
+  Switch,
+  FormControlLabel,
+  AppBar,
+  Toolbar,
+  Badge,
+  Alert,
   Stack,
   useTheme,
   useMediaQuery,
+  alpha,
   lighten,
 } from "@mui/material";
 import {
-  MdSchedule as Schedule,
+  MdCalendarToday as CalendarToday,
+  MdAccessTime as AccessTime,
+  MdDelete as Delete,
   MdAdd as Add,
-  MdDelete as DeleteIcon,
+  MdPerson as Person,
+  MdAdminPanelSettings as AdminPanelSettings,
+  MdSchedule as Schedule,
+  MdCheckCircle as CheckCircle,
   MdArrowBack as ArrowBack,
   MdArrowForward as ArrowForward,
   MdClose as Close,
+  MdLocationOn as LocationOn,
+  MdVideoCall as VideoCall,
+  MdPhone as Phone,
+  MdDelete,
 } from "react-icons/md";
-
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -40,32 +54,31 @@ import weekday from "dayjs/plugin/weekday";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
-
 import { getData } from "@/app/helpers/functions/getData";
-import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
-import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
+import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
+import "dayjs/locale/en";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
+// Initialize dayjs plugins
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.extend(weekday);
+
 dayjs.extend(customParseFormat);
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
 dayjs.locale("en");
-
-// =================== CALENDAR ===================
-
 export const Calendar = ({
   selectedDate,
   onDateSelect,
   multiSelect = false,
   selectedDates = [],
-  timezone: userTimezone = "Asia/Dubai",
+  timezone: userTimezone = "Asia/Dubai", // User's current timezone
   isAdmin,
   token,
   setError,
@@ -75,135 +88,173 @@ export const Calendar = ({
   adminId,
   type,
 }) => {
+  const [displayMonth, setDisplayMonth] = useState(dayjs());
+  const [bookedDays, setBookedDays] = useState([]);
+  const [availableDays, setAvailableDays] = useState([]);
+  const [loading, setLoading] = useState(true);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-  const [displayMonth, setDisplayMonth] = useState(() =>
-    dayjs().tz(userTimezone)
-  );
-  const [monthData, setMonthData] = useState({ month: "", weeks: [] });
-  const [loading, setLoading] = useState(true);
-  const fetchMonth = async () => {
-    try {
-      setLoading(true);
-
-      const monthParam = displayMonth.tz(userTimezone).format("YYYY-MM-DD");
-
-      // If client with token, validate token / get session once here
-      if (token) {
-        const tokenData = await getData({
-          url: `client/calendar/meeting-data?token=${token}&timezone=${userTimezone}&`,
-          setLoading,
-        });
-
-        if (!tokenData || tokenData.status !== 200) {
-          setError(
-            "Invalid or expired token please ask the customer support to resend the link"
-          );
-          return;
-        } else {
-          if (!tokenData.data.selectedTimezone && tokenData.data.userTimezone) {
-            tokenData.data.selectedTimezone = tokenData.data.userTimezone;
-          }
-          setSessionData?.((old) => ({
-            ...old,
-            ...tokenData.data,
-          }));
-          if (tokenData.data.time) {
-            setActiveStep?.(3);
-          }
-        }
-      }
-
-      const baseUrl =
-        type === "STAFF"
-          ? `shared/calendar/available-days?month=${monthParam}&adminId=${adminId}&`
-          : isAdmin
-          ? `shared/calendar/available-days?month=${monthParam}&`
-          : `client/calendar/available-days?month=${monthParam}&token=${token}&`;
-
-      const url =
-        baseUrl + `&timezone=${userTimezone}&isMobile=${isMobile ? 1 : 0}&`;
-
-      const dataReq = await getData({
-        url,
+  async function getAvailableDays() {
+    if (token) {
+      const tokenData = await getData({
+        url: `client/calendar/meeting-data?token=${token}&timezone=${userTimezone}&`,
         setLoading,
       });
-
-      if (dataReq.status === 200) {
-        // Expected shape:
-        // {
-        //   month: "2025-11",
-        //   weeks: [
-        //     [ { isoDate, label, isCurrentMonth, isPast, hasAvailableSlots, fullyBooked, availableDay }, ... 7 ],
-        //     ...
-        //   ]
-        // }
-        setMonthData(dataReq.data || { month: "", weeks: [] });
+      if (!tokenData || tokenData.status !== 200) {
+        setError(
+          "Invalid or expired token please ask the customer support to resend the link"
+        );
+        return;
       } else {
-        setMonthData({ month: "", weeks: [] });
+        if (!tokenData.data.selectedTimezone && tokenData.data.userTimezone) {
+          tokenData.data.selectedTimezone = tokenData.data.userTimezone;
+        }
+        setSessionData((old) => ({
+          ...old,
+          ...tokenData.data,
+        }));
+        if (tokenData.data.time) {
+          setActiveStep(3);
+        }
       }
-    } finally {
-      setLoading(false);
     }
-  };
+    const dataReq = await getData({
+      url:
+        type === "STAFF"
+          ? `shared/calendar/available-days?month=${displayMonth}&adminId=${adminId}&`
+          : isAdmin
+          ? `shared/calendar/available-days?month=${displayMonth}&`
+          : `client/calendar/available-days?month=${displayMonth}&token=${token}&`,
+      setLoading,
+    });
+    if (dataReq.status === 200) {
+      setAvailableDays(dataReq.data);
+      setBookedDays(dataReq.data.filter((day) => day.fullyBooked));
+    }
+  }
 
   useEffect(() => {
-    fetchMonth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayMonth, rerender, adminId, userTimezone]);
+    getAvailableDays();
+  }, [displayMonth, rerender, adminId]);
 
-  const navigateMonth = (direction) => {
-    setDisplayMonth((prev) => prev.add(direction, "month"));
+  const getDaysInMonth = () => {
+    const startOfMonth = displayMonth
+      .tz(userTimezone)
+      .locale("en")
+      .startOf("month");
+    const endOfMonth = displayMonth
+      .tz(userTimezone)
+      .locale("en")
+      .endOf("month");
+
+    const startDate = startOfMonth.startOf("week");
+    const endDate = endOfMonth.endOf("week");
+
+    const days = [];
+    let current = startDate.clone().locale("en").tz(userTimezone);
+
+    while (current.isBefore(endDate) || current.isSame(endDate, "day")) {
+      days.push(current);
+      current = current.add(1, "day").locale("en");
+    }
+
+    return days;
   };
 
-  const monthYear = displayMonth.tz(userTimezone).format("MMMM YYYY");
-  const weekDays = isMobile
-    ? ["S", "M", "T", "W", "T", "F", "S"]
-    : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  // Helper function to convert GMT stored date to user's timezone and get the date string
+  const getDateInUserTimezone = (gmtDate) => {
+    return dayjs.utc(gmtDate).tz(userTimezone).format("YYYY-MM-DD");
+  };
 
-  // ---- Click / selection logic (only) ----
+  // Helper function to check if a date is past in user's timezone
+  const isPastInUserTimezone = (dayToCheck, log) => {
+    const dayInTz = dayjs(dayToCheck).tz(userTimezone).startOf("day");
+    const todayInTz = dayjs().tz(userTimezone).startOf("day");
+    if (log) {
+    }
+    return dayInTz.isBefore(todayInTz);
+  };
 
-  const handleDayClick = (cell) => {
-    const { isPast, isCurrentMonth, hasAvailableSlots, availableDay } = cell;
+  const getDayStatus = (day, index) => {
+    const dayStrInUserTz = day.format("YYYY-MM-DD");
 
-    if (isPast) return;
-    if (!isCurrentMonth && !multiSelect) return;
+    // Find available day by converting stored GMT dates to user timezone
+    const availableDay = availableDays.find((d) => {
+      return d.slots.some(
+        (slot) =>
+          dayjs.utc(slot.startTime).tz(userTimezone).format("YYYY-MM-DD") ===
+          dayStrInUserTz
+      );
+    });
 
-    const dayJs = dayjs.tz(cell.isoDate, userTimezone);
+    const hasAvailableSlots = !!availableDay;
+
+    // Check if fully booked using the same timezone conversion
+    const isFullyBooked = bookedDays.some((d) => {
+      // Check if any slot in the booked day matches the calendar day
+      return (
+        d.slots.some(
+          (slot) =>
+            dayjs.utc(slot.startTime).tz(userTimezone).format("YYYY-MM-DD") ===
+            dayStrInUserTz
+        ) && d.fullyBooked
+      );
+    });
+    const isSelected = multiSelect
+      ? selectedDates.some((d) => dayjs(d).isSame(day, "day"))
+      : selectedDate && !isAdmin && dayjs(selectedDate).isSame(day, "day");
+
+    const isPastDate = isPastInUserTimezone(day);
+    if (index === 6) {
+    }
+    return {
+      hasAvailableSlots,
+      isFullyBooked,
+      isSelected,
+      isPastDate,
+      isCurrentMonth: day.month() === displayMonth.month(),
+      availableDay,
+    };
+  };
+
+  const handleDateClick = (day, availableDay) => {
+    const status = getDayStatus(day);
+    if (status.isPastDate) return;
+
+    if (!status.isCurrentMonth && !multiSelect) return;
 
     if (multiSelect) {
-      const alreadySelected = selectedDates.some((d) =>
-        dayjs(d).isSame(dayJs, "day")
+      const isAlreadySelected = selectedDates.some((d) =>
+        dayjs(d).isSame(day, "day")
       );
 
-      if (!alreadySelected && !isAdmin && !hasAvailableSlots) return;
+      if (status.hasAvailableSlots && !isAlreadySelected) {
+        return;
+      }
 
-      if (alreadySelected) {
-        const newSelected = selectedDates.filter(
-          (d) => !dayjs(d).isSame(dayJs, "day")
+      if (isAlreadySelected) {
+        const newSelectedDates = selectedDates.filter(
+          (d) => !dayjs(d).isSame(day, "day")
         );
-        onDateSelect(newSelected, availableDay || null);
+        onDateSelect(newSelectedDates, availableDay);
       } else {
-        onDateSelect([...selectedDates, dayJs], availableDay || null);
+        onDateSelect([...selectedDates, day], availableDay);
       }
     } else {
-      onDateSelect(dayJs, availableDay || null);
+      onDateSelect(day, availableDay);
     }
   };
 
-  const isCellSelected = (cell) => {
-    const dayJs = dayjs.tz(cell.isoDate, userTimezone);
-
-    if (multiSelect) {
-      return selectedDates.some((d) => dayjs(d).isSame(dayJs, "day"));
-    }
-    if (selectedDate && !isAdmin) {
-      return dayjs(selectedDate).isSame(dayJs, "day");
-    }
-    return false;
+  const navigateMonth = (direction) => {
+    const newMonth = displayMonth.add(direction, "month");
+    setDisplayMonth(newMonth);
   };
 
+  const days = getDaysInMonth();
+  const weekDays = isMobile
+    ? ["S", "M", "T", "W", "T", "F", "S"] // Keep this for display, but logic is handled by dayjs
+    : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const monthYear = displayMonth.format("MMMM YYYY");
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="en-gb">
       <Paper
@@ -215,7 +266,6 @@ export const Calendar = ({
           overflow: "hidden",
         }}
       >
-        {/* Header */}
         <Box
           sx={{
             bgcolor: "primary.main",
@@ -253,112 +303,108 @@ export const Calendar = ({
           </IconButton>
         </Box>
 
-        {/* Weekday headers + month grid */}
         <Grid container spacing={0} sx={{ position: "relative" }}>
           {loading && <LoadingOverlay />}
-
-          {weekDays.map((dayLabel) => (
-            <Grid key={dayLabel} size={{ xs: 12 / 7 }}>
+          {weekDays.map((day) => (
+            <Grid key={day} size={{ xs: 12 / 7 }}>
               <Box textAlign="center" py={1}>
                 <Typography
                   variant="caption"
                   fontWeight="bold"
                   color="text.secondary"
                 >
-                  {dayLabel}
+                  {day}
                 </Typography>
               </Box>
             </Grid>
           ))}
 
-          {monthData.weeks.map((week, wIndex) =>
-            week.map((cell, index) => {
-              const selected = isCellSelected(cell);
-              const { isCurrentMonth, isPast, hasAvailableSlots, fullyBooked } =
-                cell;
-
-              const canClick =
-                !isPast &&
-                (isCurrentMonth || multiSelect) &&
-                (isAdmin || (!isAdmin && hasAvailableSlots)) &&
-                ((isAdmin &&
-                  ((multiSelect && !hasAvailableSlots) || !multiSelect)) ||
-                  !isAdmin);
-
-              return (
-                <Grid key={`${wIndex}-${index}`} size={{ xs: 12 / 7 }}>
-                  <Box
-                    onClick={() => canClick && handleDayClick(cell)}
+          {days.map((day, index) => {
+            const status = getDayStatus(day, index);
+            const currentMonth = status.isCurrentMonth;
+            const selected = status.isSelected;
+            const available = status.hasAvailableSlots;
+            const past = status.isPastDate;
+            const canClick =
+              !past &&
+              (currentMonth || multiSelect) &&
+              (isAdmin || (!isAdmin && available)) &&
+              ((isAdmin && ((multiSelect && !available) || !multiSelect)) ||
+                !isAdmin);
+            const availableDay = status.availableDay;
+            const isFullyBooked = status.isFullyBooked;
+            return (
+              <Grid key={index} size={{ xs: 12 / 7 }}>
+                <Box
+                  onClick={() => canClick && handleDateClick(day, availableDay)}
+                  sx={{
+                    height: isMobile ? 40 : 48,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: canClick ? "pointer" : "not-allowed",
+                    borderRadius: 2,
+                    m: 0.5,
+                    backgroundColor: isFullyBooked
+                      ? lighten(theme.palette.error.main, 0.85)
+                      : selected
+                      ? "primary.main"
+                      : available && !past
+                      ? lighten(theme.palette.success.main, 0.85)
+                      : "background.paper",
+                    color: selected
+                      ? "primary.contrastText"
+                      : !currentMonth || past
+                      ? "text.disabled"
+                      : "text.primary",
+                    border: "1px solid",
+                    borderColor: isFullyBooked
+                      ? "error.main"
+                      : !canClick
+                      ? "transparent"
+                      : selected
+                      ? "primary.main"
+                      : available
+                      ? "success.main"
+                      : "transparent",
+                    "&:hover": canClick
+                      ? {
+                          bgcolor: selected ? "primary.dark" : "primary.50",
+                          transform: "scale(1.05)",
+                          boxShadow: 2,
+                        }
+                      : {},
+                    transition: "all 0.2s ease",
+                    opacity:
+                      (!canClick && type === "CLIENT") || !currentMonth || past
+                        ? 0.4
+                        : 1,
+                  }}
+                >
+                  <Typography
+                    variant={isMobile ? "caption" : "body2"}
+                    fontWeight={selected ? 600 : 400}
                     sx={{
-                      height: isMobile ? 40 : 48,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: canClick ? "pointer" : "not-allowed",
-                      borderRadius: 2,
-                      m: 0.5,
-                      backgroundColor: fullyBooked
-                        ? lighten(theme.palette.error.main, 0.85)
-                        : selected
-                        ? "primary.main"
-                        : hasAvailableSlots && !isPast
-                        ? lighten(theme.palette.success.main, 0.85)
-                        : "background.paper",
-                      color: selected
-                        ? "primary.contrastText"
-                        : !isCurrentMonth || isPast
-                        ? "text.disabled"
-                        : "text.primary",
-                      border: "1px solid",
-                      borderColor: fullyBooked
-                        ? "error.main"
-                        : !canClick
-                        ? "transparent"
-                        : selected
-                        ? "primary.main"
-                        : hasAvailableSlots
-                        ? "success.main"
-                        : "transparent",
-                      "&:hover": canClick
-                        ? {
-                            bgcolor: selected ? "primary.dark" : "primary.50",
-                            transform: "scale(1.05)",
-                            boxShadow: 2,
-                          }
-                        : {},
-                      transition: "all 0.2s ease",
-                      opacity:
-                        (!canClick && type === "CLIENT") ||
-                        !isCurrentMonth ||
-                        (isPast && type === "CLIENT")
-                          ? 0.4
-                          : 1,
+                      color:
+                        !currentMonth || past
+                          ? "text.disabled"
+                          : (!canClick && type === "CLIENT") || isFullyBooked
+                          ? "red"
+                          : selected
+                          ? "primary.contrastText"
+                          : !currentMonth || past
+                          ? "text.disabled"
+                          : "text.priamry",
                     }}
                   >
-                    <Typography
-                      variant={isMobile ? "caption" : "body2"}
-                      fontWeight={selected ? 600 : 400}
-                      sx={{
-                        color:
-                          !isCurrentMonth || isPast
-                            ? "text.disabled"
-                            : (!canClick && type === "CLIENT") || fullyBooked
-                            ? "red"
-                            : selected
-                            ? "primary.contrastText"
-                            : "text.primary",
-                      }}
-                    >
-                      {cell.label}
-                    </Typography>
-                  </Box>
-                </Grid>
-              );
-            })
-          )}
+                    {day.date()}
+                  </Typography>
+                </Box>
+              </Grid>
+            );
+          })}
         </Grid>
 
-        {/* Legend */}
         <Box mt={3}>
           <Grid container spacing={2} sx={{ px: 2 }} alignItems="center">
             <Grid>
@@ -425,8 +471,7 @@ export const Calendar = ({
   );
 };
 
-// =================== TIME SLOT MANAGER ===================
-
+// Enhanced Time Slot Manager Component with Dialog
 const TimeSlotManager = ({
   open,
   onClose,
@@ -455,7 +500,6 @@ const TimeSlotManager = ({
   const { setAlertError } = useAlertContext();
   const { setLoading: setToastLoading } = useToastContext();
   const [loading, setLoading] = useState(false);
-
   const generateSlots = async () => {
     if (!startTime || !endTime || !meetingDuration || !breakDuration) {
       setAlertError("Please fill all fields before generating slots.");
@@ -466,37 +510,26 @@ const TimeSlotManager = ({
       return;
     }
 
-    const dateStr = date ? dayjs(date).format("YYYY-MM-DD") : null;
-    const daysStr = selectedDates.map((d) => dayjs(d).format("YYYY-MM-DD"));
-
     const data = {
-      date: dateStr,
-      days: daysStr,
+      date: date,
+      days: selectedDates,
       fromHour: startTime,
       toHour: endTime,
       duration: meetingDuration,
       breakMinutes: breakDuration,
+      dayId: dayId,
     };
-
-    let url;
-    if (isMultiDate) {
-      url = `shared/calendar/available-days/multiple?timezone=${tz}&isMobile=${
-        isMobile ? 1 : 0
-      }&`;
-    } else {
-      url = `shared/calendar/available-days?timezone=${tz}&isMobile=${
-        isMobile ? 1 : 0
-      }&`;
-    }
-
+    const url = `shared/calendar/available-days/${
+      dayId ? dayId : isMultiDate ? "multiple" : ""
+    }`;
     const slotReq = await handleRequestSubmit(
       data,
       setToastLoading,
-      url,
+      url + `?timezone=${tz}`,
       false,
       "Updating slots...",
       false,
-      "POST"
+      dayId ? "PUT" : "POST"
     );
 
     if (slotReq.status === 200) {
@@ -543,9 +576,7 @@ const TimeSlotManager = ({
       const slotReq = await handleRequestSubmit(
         data,
         setToastLoading,
-        `shared/calendar/add-custom/${dayId}?timezone=${tz}&isMobile=${
-          isMobile ? 1 : 0
-        }&`,
+        `shared/calendar/add-custom/${dayId}?timezone=${tz}`,
         false,
         "Adding custom slot..."
       );
@@ -563,16 +594,17 @@ const TimeSlotManager = ({
   };
 
   const getSlotsData = async () => {
-    if (!selectedDate) {
+    if (!date) {
       return;
     }
-    const dateParam = dayjs(selectedDate).format("YYYY-MM-DD");
-    console.log(tz, "tz");
+    const userTimezone = dayjs.tz.guess();
+    const submittedUtcDate = dayjs.utc(date);
+    const offsetInMinutes = dayjs().tz(userTimezone).utcOffset(); // e.g. 180
+    const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
     const slotsReq = await getData({
-      url: `shared/calendar/slots?date=${dateParam}&adminId=${adminId}&timezone=${tz}&`,
+      url: `shared/calendar/slots?date=${selectedDate}&adminId=${adminId}&timezone=${tz}`,
       setLoading,
     });
-    console.log(slotsReq, "slotsReq");
     if (slotsReq.status === 200) {
       setSlots(slotsReq.data);
       if (slotsReq.data.length > 0) {
@@ -608,19 +640,17 @@ const TimeSlotManager = ({
       }
     }
   };
-
   useEffect(() => {
-    if (!isMultiDate && selectedDate) {
+    if (!isMultiDate) {
       getSlotsData();
     }
-  }, [isMultiDate, selectedDates, selectedDate]);
-
+  }, [isMultiDate, selectedDates, date]);
   const groupedSlots = isMultiDate
     ? []
     : slots.reduce((acc, slot) => {
-        const dateKey = slot.date || dayjs(slot.startTime).format("YYYY-MM-DD");
-        if (!acc[dateKey]) acc[dateKey] = [];
-        acc[dateKey].push(slot);
+        const date = slot.date || dayjs(slot.startTime).format("YYYY-MM-DD");
+        if (!acc[date]) acc[date] = [];
+        acc[date].push(slot);
         return acc;
       }, {});
 
@@ -739,7 +769,6 @@ const TimeSlotManager = ({
               </Stack>
             </Box>
           )}
-
           <Box>
             <Typography variant="h6" gutterBottom fontWeight="600">
               Generated Slots ({slots.length})
@@ -748,9 +777,9 @@ const TimeSlotManager = ({
             {groupedSlots &&
               !isMultiDate &&
               !loading &&
-              Object.entries(groupedSlots).map(([dateKey, dateSlots]) => (
+              Object.entries(groupedSlots).map(([date, dateSlots]) => (
                 <Paper
-                  key={dateKey}
+                  key={date}
                   elevation={0}
                   sx={{
                     mb: 2,
@@ -761,7 +790,7 @@ const TimeSlotManager = ({
                   }}
                 >
                   <Typography variant="subtitle1" fontWeight="600" gutterBottom>
-                    {dayjs(dateKey).format("dddd, MMMM D, YYYY")}
+                    {dayjs(date).format("dddd, MMMM D, YYYY")}
                   </Typography>
                   <Grid container spacing={1}>
                     {dateSlots.map((slot) => (
@@ -804,7 +833,7 @@ const TimeSlotManager = ({
                                   size="small"
                                   color="error"
                                 >
-                                  <DeleteIcon />
+                                  <Delete />
                                 </IconButton>
                               )}
                             </Box>
@@ -821,7 +850,7 @@ const TimeSlotManager = ({
         <DialogActions sx={{ p: 3, gap: 1 }}>
           {dayId && type !== "STAFF" && (
             <Button
-              startIcon={<DeleteIcon />}
+              startIcon={<MdDelete />}
               color="error"
               onClick={deleteDay}
               variant="outlined"
@@ -873,8 +902,6 @@ const TimeSlotManager = ({
   );
 };
 
-// =================== ADMIN BOOKING PANEL ===================
-
 export const AdminBookingPanel = ({
   timezone: tz = Intl.DateTimeFormat().resolvedOptions().timeZone ||
     "Asia/Dubai",
@@ -889,11 +916,13 @@ export const AdminBookingPanel = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [rerender, setRerender] = useState(false);
-
   const handleDateSelect = (date, d) => {
     if (multiSelectMode) {
       setSelectedDates(Array.isArray(date) ? date : [date]);
     } else {
+      console.log(date, "see");
+      const parsedDate = typeof date === "string" ? new Date(date) : date;
+
       setSelectedDate(date);
       setOpenSlotManager(true);
       setDayId(d ? d.id : null);

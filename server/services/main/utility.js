@@ -767,6 +767,51 @@ export async function createNotification(
 ) {
   let subAdmins = [];
   const forAll = !userId && !isAdmin && !staffId;
+
+  if (isAdmin) {
+    const admin = await prisma.user.findFirst({
+      where: {
+        role: "ADMIN",
+      },
+      select: {
+        id: true,
+      },
+    });
+    subAdmins = await prisma.user.findMany({
+      where: {
+        role: "SUPER_ADMIN",
+      },
+      select: {
+        id: true,
+      },
+    });
+    await sendNotification(
+      admin.id,
+      content,
+      href,
+      type,
+      emailSubject,
+      withEmail,
+      contentType,
+      clientLeadId,
+      staffId
+    );
+    if (subAdmins?.length > 0) {
+      subAdmins.forEach(async (admin) => {
+        await sendNotification(
+          admin.id,
+          content,
+          href,
+          type,
+          emailSubject,
+          withEmail,
+          contentType,
+          clientLeadId,
+          staffId
+        );
+      });
+    }
+  }
   if (specifiRole) {
     const users = await prisma.user.findMany({
       where: {
@@ -814,28 +859,7 @@ export async function createNotification(
         clientLeadId
       );
     });
-  } else {
-    if (isAdmin) {
-      const admin = await prisma.user.findFirst({
-        where: {
-          role: "ADMIN",
-        },
-        select: {
-          id: true,
-        },
-      });
-      subAdmins = await prisma.user.findMany({
-        where: {
-          role: "SUPER_ADMIN",
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      userId = admin.id;
-    }
-
+  } else if (userId) {
     await sendNotification(
       userId,
       content,
@@ -847,21 +871,6 @@ export async function createNotification(
       clientLeadId,
       staffId
     );
-    if (subAdmins?.length > 0) {
-      subAdmins.forEach(async (admin) => {
-        await sendNotification(
-          admin.id,
-          content,
-          href,
-          type,
-          emailSubject,
-          withEmail,
-          contentType,
-          clientLeadId,
-          staffId
-        );
-      });
-    }
   }
 }
 
@@ -920,9 +929,13 @@ async function sendNotification(
 `;
 
       setImmediate(() => {
-        sendEmail(user.email, emailSubject, email).catch((error) => {
-          console.error(`Failed to send email to user ${userId}:`, error);
-        });
+        sendEmail(user.email, emailSubject, email)
+          .then(() => {
+            console.log(`Email sent to user ${userId} regarding notification.`);
+          })
+          .catch((error) => {
+            console.error(`Failed to send email to user ${userId}:`, error);
+          });
       });
     }
   }

@@ -1,70 +1,154 @@
-import { Router } from "express";
+// routes/sharedCalendarRoutes.js
+import express from "express";
 import {
   getAvailableDays,
   getAvailableSlotsForDay,
+  createOrUpdateAvailableDay,
+  createOrUpdateMultipleDays,
+} from "./new-calendar.js";
+import { getCurrentUser } from "../../services/main/utility.js";
+import {
   getCalendarDataForMonth,
   getRemindersForDay,
 } from "../../services/main/calendarServices.js";
-import {
-  getCurrentUser,
-  verifyTokenAndHandleAuthorization,
-} from "../../services/main/utility.js";
 
-const router = Router();
+const router = express.Router();
 
-router.use(async (req, res, next) => {
-  await verifyTokenAndHandleAuthorization(req, res, next, "SHARED");
-});
-
+// GET /shared/calendar/available-days
+// returns { month, weeks: [ [day, day, ...7], ... ] }
 router.get("/available-days", async (req, res) => {
   try {
+    let { month, adminId, timezone, type } = req.query;
     const user = await getCurrentUser(req);
-    let adminId = req.query.adminId;
+
+    const userId = user.id;
     if (!adminId || adminId === "undefined") {
       adminId = user.id;
     }
     const data = await getAvailableDays({
-      month: req.query.month,
-      adminId: adminId,
+      month,
+      adminId,
+      userId,
+      type: type || "ADMIN",
+      timezone: timezone || "Asia/Dubai",
     });
-    res.status(200).json({
-      message: "Available days fetched successfully",
-      data: data,
-    });
-  } catch (e) {
-    console.log(e, "e");
-    res.status(500).json({
-      message: "Error fetching available days",
-      error: e.message || "Internal Server Error",
-    });
+
+    res.status(200).json({ data });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(400)
+      .json({ message: err.message || "Error loading calendar days" });
   }
 });
+
+// GET /shared/calendar/slots
 router.get("/slots", async (req, res) => {
   try {
+    let { date, adminId, dayId, timezone, type } = req.query;
     const user = await getCurrentUser(req);
-
-    let adminId = req.query.adminId;
-    console.log("adminId", adminId);
+    const userId = user.id;
     if (!adminId || adminId === "undefined") {
       adminId = user.id;
     }
-    console.log("adminId after", adminId);
+    const slots = await getAvailableSlotsForDay({
+      date,
+      adminId,
+      dayId,
+      userId,
+      timezone: timezone || "Asia/Dubai",
+      type: type || "ADMIN",
+    });
 
-    const data = await getAvailableSlotsForDay({
-      date: req.query.date,
-      adminId: adminId,
-      timezone: req.query.timezone,
+    res.status(200).json({ data: slots });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(400)
+      .json({ message: err.message || "Error loading slots for day" });
+  }
+});
+
+// POST /shared/calendar/available-days   (single day)
+router.post("/available-days", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req);
+
+    const userId = user.id;
+    const { date, fromHour, toHour, duration, breakMinutes } = req.body;
+    const timezone = req.query.timezone || "Asia/Dubai";
+
+    const day = await createOrUpdateAvailableDay({
+      userId,
+      date,
+      fromTime: fromHour,
+      toTime: toHour,
+      duration,
+      breakMinutes,
+      timeZone: timezone,
     });
-    res.status(200).json({
-      message: "Available days fetched successfully",
-      data: data,
+
+    res.status(200).json({ data: day });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(400)
+      .json({ message: err.message || "Error generating slots for day" });
+  }
+});
+
+// POST /shared/calendar/available-days/multiple  (multi dates)
+router.post("/available-days/multiple", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req);
+
+    const userId = user.id;
+    const { days, fromHour, toHour, duration, breakMinutes } = req.body;
+    const timezone = req.query.timezone || "Asia/Dubai";
+
+    const result = await createOrUpdateMultipleDays({
+      userId,
+      dates: days,
+      fromTime: fromHour,
+      toTime: toHour,
+      duration,
+      breakMinutes,
+      timeZone: timezone,
     });
-  } catch (e) {
-    console.log(e, "e");
-    res.status(500).json({
-      message: e.message || "Error fetching available slots",
-      error: e.message || "Internal Server Error",
-    });
+
+    res.status(200).json({ data: result });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(400)
+      .json({ message: err.message || "Error generating slots for days" });
+  }
+});
+
+// DELETE /shared/calendar/days/:id
+router.delete("/days/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    await prisma.availableSlot.deleteMany({ where: { availableDayId: id } });
+    await prisma.availableDay.delete({ where: { id } });
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(400)
+      .json({ message: err.message || "Error deleting available day" });
+  }
+});
+
+// DELETE /shared/calendar/slots/:id
+router.delete("/slots/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    await prisma.availableSlot.delete({ where: { id } });
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: err.message || "Error deleting slot" });
   }
 });
 

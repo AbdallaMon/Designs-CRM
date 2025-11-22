@@ -1,9 +1,8 @@
 import {
   bookAMeeting,
-  getAvailableDays,
-  getAvailableSlotsForDay,
   verifyAndExtractCalendarToken,
 } from "../../services/main/calendarServices.js";
+import { getAvailableDays, getAvailableSlotsForDay } from "./new-calendar.js";
 import express from "express";
 
 const router = express.Router();
@@ -26,13 +25,15 @@ router.get("/meeting-data", async (req, res) => {
 });
 router.get("/available-days", async (req, res) => {
   try {
-    const { month, token } = req.query;
+    const { month, token, timezone } = req.query;
     const tokenData = await verifyAndExtractCalendarToken(token);
     const data = await getAvailableDays({
       month: month,
       ...tokenData,
       type: "CLIENT",
+      timezone: timezone,
     });
+
     res.status(200).json({
       message: "Available days fetched successfully",
       data: data,
@@ -45,10 +46,11 @@ router.get("/available-days", async (req, res) => {
     });
   }
 });
-router.get("/slots/:dayId", async (req, res) => {
+router.get("/slots/", async (req, res) => {
   try {
-    const { token } = req.query;
+    const { token, date } = req.query;
     const tokenData = await verifyAndExtractCalendarToken(token);
+
     const data = await getAvailableSlotsForDay({
       date: req.query.date,
       dayId: req.params.dayId,

@@ -5,10 +5,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 
-import {
-  newCallNotification,
-  newMeetingNotification,
-} from "../notification.js";
+import { newMeetingNotification } from "../notification.js";
 import { sendReminderCreatedToClient } from "./emailTemplates.js";
 dayjs.extend(timezone);
 dayjs.extend(utc);
@@ -22,21 +19,6 @@ export async function getAvailableDays({ month, adminId, type, userId }) {
       throw new Error("AdminId is required");
     }
   }
-
-  // if (!adminId && role) {
-  //   const mockDays = [];
-  //   for (let i = 0; i <= end.date() - 1; i++) {
-  //     const date = start.add(i, "day").toDate();
-  //     mockDays.push({
-  //       id: `mock-${i}`,
-  //       date,
-  //       createdAt: date,
-  //       slots: [],
-  //       fullyBooked: false,
-  //     });
-  //   }
-  //   return mockDays;
-  // }
 
   const where = {
     userId: Number(adminId),
@@ -216,7 +198,6 @@ async function createSlotsForDay({
     });
     current = addMinutes(end, breakMinutes);
   }
-  console.log(slots, "slots");
   await prisma.availableSlot.createMany({
     data: slots,
   });
@@ -277,35 +258,6 @@ export async function getAvailableSlotsForDay({
       throw new Error("AdminId is required");
     }
   }
-  // if (!adminId && role) {
-  //   const now = dayjs(); // or specific date if needed
-  //   const mockDate = dayjs
-  //     .tz(`${now.format("YYYY-MM-DD")} 09:00`, timezone)
-  //     .utc()
-  //     .toDate();
-  //   const slots = [];
-  //   let current = new Date(mockDate);
-
-  //   while (
-  //     isBefore(
-  //       addMinutes(current, 60),
-  //       new Date(mockDate.getTime() + 12 * 60 * 60 * 1000)
-  //     )
-  //   ) {
-  //     const end = addMinutes(current, 60);
-  //     slots.push({
-  //       id: `mock-${current.toISOString()}`,
-  //       startTime: current,
-  //       endTime: end,
-  //       isBooked: false,
-  //       meetingReminderId: null,
-  //       type: "MOCK",
-  //     });
-  //     current = addMinutes(end, 15);
-  //   }
-
-  //   return slots;
-  // }
 
   const start = dayjs.utc(date);
   const startDate = start.toDate();
@@ -340,7 +292,6 @@ export async function getAvailableSlotsForDay({
     slotWhere = {
       startTime: {
         gte: startDate,
-        // gt: now,
         lte: endDate,
       },
       availableDay: {
@@ -564,7 +515,9 @@ export async function updateMeetingReminderTime({
     data: { time, userTimezone },
   });
 
-  return updatedReminder;
+  return await prisma.meetingReminder.findUnique({
+    where: { id: updatedReminder.id },
+  });
 }
 export async function assignSlotToMeeting({
   slotId,

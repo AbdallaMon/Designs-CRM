@@ -24,6 +24,7 @@ import { arEngName, engName } from "./constants.js";
 
 export async function convertALeadNotification(lead) {
   const user = await getUserDetailsWithSpecificFields(lead.userId);
+  return;
   const notificationHtml = `<div>
     <a href="${userLink + user.id}">#${
     user.name
@@ -33,7 +34,7 @@ export async function convertALeadNotification(lead) {
 </div>`;
   await createNotification(
     null,
-    true,
+    false,
     notificationHtml,
     null,
     "LEAD_STATUS_CHANGE",
@@ -45,6 +46,7 @@ export async function convertALeadNotification(lead) {
   );
 }
 export async function overdueALeadNotification(convertedLead, newClientLead) {
+  return;
   const notificationHtml = `<div>
 Deal <a href="${dealsLink + convertedLead.id}" >#${
     convertedLead.id
@@ -59,7 +61,7 @@ Deal <a href="${dealsLink + convertedLead.id}" >#${
 </div>`;
   await createNotification(
     null,
-    true,
+    false,
     notificationHtml,
     null,
     "LEAD_TRANSFERRED",
@@ -75,6 +77,7 @@ export async function assignLeadNotification(
   userId,
   updatedClientLead
 ) {
+  return;
   const notificationHtml = `<div>
     Lead <a href="${
       dealsLink + clientLeadId
@@ -102,6 +105,7 @@ export async function assignWorkStageNotification(
   updatedClientLead,
   type
 ) {
+  return;
   const notificationHtml = `<div>
     Lead <a href="${
       dealsLink + clientLeadId
@@ -116,7 +120,7 @@ export async function assignWorkStageNotification(
 
   await createNotification(
     null,
-    true,
+    false,
     notificationHtml,
     null,
     "LEAD_TRANSFERRED",
@@ -128,6 +132,7 @@ export async function assignWorkStageNotification(
   );
 }
 export async function newNoteNotification(leadId, content, userId) {
+  return;
   const notificationHtml = `<div>
        <strong>Note</strong> was added to Lead <a href="${
          dealsLink + leadId
@@ -137,7 +142,7 @@ export async function newNoteNotification(leadId, content, userId) {
 `;
   await createNotification(
     null,
-    true,
+    false,
     notificationHtml,
     null,
     "NEW_NOTE",
@@ -149,6 +154,8 @@ export async function newNoteNotification(leadId, content, userId) {
   );
 }
 export async function newCallNotification(leadId, callReminder) {
+  return;
+
   const notificationHtml = `<div>
        <strong>Call reminder</strong> was added to Lead <a href="${
          dealsLink + leadId
@@ -162,7 +169,7 @@ export async function newCallNotification(leadId, callReminder) {
     </div>`;
   await createNotification(
     null,
-    true,
+    false,
     notificationHtml,
     null,
     "CALL_REMINDER_CREATED",
@@ -174,6 +181,9 @@ export async function newCallNotification(leadId, callReminder) {
   );
 }
 export async function newMeetingNotification(leadId, meetingReminder) {
+  console.log(meetingReminder, "newMeetingNotification called");
+  const isAdmin = meetingReminder.isAdmin;
+
   const notificationHtml = `<div>
        <strong>Meeting reminder</strong> was added to Lead <a href="${
          dealsLink + leadId
@@ -186,8 +196,8 @@ export async function newMeetingNotification(leadId, meetingReminder) {
 </div>
     </div>`;
   await createNotification(
-    null,
-    true,
+    isAdmin ? meetingReminder.adminId : meetingReminder.userId,
+    false,
     notificationHtml,
     null,
     "CALL_REMINDER_CREATED",
@@ -199,6 +209,8 @@ export async function newMeetingNotification(leadId, meetingReminder) {
   );
 }
 export async function newPriceOffer(leadId, priceOffer) {
+  return;
+
   const notificationHtml = `<div>
        <strong>New Price offer</strong> was added to Lead <a href="${
          dealsLink + leadId
@@ -209,7 +221,7 @@ export async function newPriceOffer(leadId, priceOffer) {
     </div>`;
   await createNotification(
     null,
-    true,
+    false,
     notificationHtml,
     null,
     "PRICE_OFFER_SUBMITTED",
@@ -221,6 +233,8 @@ export async function newPriceOffer(leadId, priceOffer) {
   );
 }
 export async function newFileUploaded(leadId, file, userId) {
+  return;
+
   const notificationHtml = `<div>
        <strong>New File</strong> was added to Lead <a href="${
          dealsLink + leadId
@@ -236,7 +250,7 @@ export async function newFileUploaded(leadId, file, userId) {
     </div>`;
   await createNotification(
     null,
-    true,
+    false,
     notificationHtml,
     null,
     "NEW_FILE",
@@ -248,6 +262,8 @@ export async function newFileUploaded(leadId, file, userId) {
   );
 }
 export async function updateCallNotification(leadId, callReminder, userId) {
+  return;
+
   const notificationHtml = `<div>
        <strong>Call reminder</strong> updated in Lead <a href="${
          dealsLink + leadId
@@ -264,7 +280,7 @@ export async function updateCallNotification(leadId, callReminder, userId) {
     </div>`;
   await createNotification(
     null,
-    true,
+    false,
     notificationHtml,
     null,
     "CALL_REMINDER_STATUS",
@@ -280,6 +296,8 @@ export async function updateMettingNotification(
   meetingReminder,
   userId
 ) {
+  return;
+
   const notificationHtml = `<div>
        <strong>Meeting reminder</strong> updated in Lead <a href="${
          dealsLink + leadId
@@ -314,8 +332,10 @@ export async function updateLeadStatusNotification(
   type,
   userId,
   isAdmin,
-  staffId
+  staffId,
+  sendToAdmin
 ) {
+  if (!sendToAdmin && !userId) return;
   const notificationHtml = `<div>
        <strong>${heading}</strong> updated in Lead <a href="${
     dealsLink + leadId
@@ -324,9 +344,10 @@ export async function updateLeadStatusNotification(
   ${content}
 </div>
     </div>`;
+
   await createNotification(
     isAdmin ? userId : null,
-    !isAdmin,
+    sendToAdmin,
     notificationHtml,
     null,
     type ? "LEAD_STATUS_CHANGE" : "LEAD_UPDATED",
@@ -347,6 +368,7 @@ export async function updateWorkStageStatusNotification(
   staffId,
   workType
 ) {
+  if (!userId) return;
   const link = isAdmin
     ? workStagesLink
     : workType === "THREE_D"
@@ -374,6 +396,7 @@ export async function updateWorkStageStatusNotification(
   );
 }
 export async function newLeadNotification(leadId, client, isAdmin) {
+  return;
   const leadHref = `${dealsLink + leadId}`;
   const notificationHtml = `<div>
        <strong>New lead created</strong> <a href="${leadHref}" >#${leadId}</a> 
@@ -385,7 +408,7 @@ export async function newLeadNotification(leadId, client, isAdmin) {
 
   await createNotification(
     null,
-    isAdmin,
+    false,
     notificationHtml,
     null,
     "NEW_LEAD",
@@ -396,6 +419,7 @@ export async function newLeadNotification(leadId, client, isAdmin) {
   );
 }
 export async function newClientLeadNotification(leadId, client, isAdmin) {
+  return false;
   const leadHref = `${dealsLink + leadId}`;
   const notificationHtml = `<div>
        <strong>New Client submit initial form</strong> <a href="${leadHref}" >#${leadId}</a> 
@@ -407,7 +431,7 @@ export async function newClientLeadNotification(leadId, client, isAdmin) {
 
   await createNotification(
     null,
-    isAdmin,
+    false,
     notificationHtml,
     null,
     "NEW_LEAD",
@@ -418,6 +442,7 @@ export async function newClientLeadNotification(leadId, client, isAdmin) {
   );
 }
 export async function newLeadCompletedNotification(leadId, client, isAdmin) {
+  return false;
   const leadHref = `${dealsLink + leadId}`;
   const notificationHtml = `<div>
        <strong>New lead register completed with sucussfull payment </strong> <a href="${leadHref}" >#${leadId}</a> 
@@ -429,7 +454,7 @@ export async function newLeadCompletedNotification(leadId, client, isAdmin) {
 
   await createNotification(
     null,
-    isAdmin,
+    false,
     notificationHtml,
     null,
     "NEW_LEAD",
@@ -440,6 +465,8 @@ export async function newLeadCompletedNotification(leadId, client, isAdmin) {
   );
 }
 export async function leadPaymentSuccessed(leadId) {
+  return false;
+
   const leadHref = `${dealsLink + leadId}`;
   const notificationHtml = `<div>
        <strong>New lead payment successed </strong> <a href="${leadHref}" >#${leadId}</a> 
@@ -451,7 +478,7 @@ export async function leadPaymentSuccessed(leadId) {
 
   await createNotification(
     null,
-    true,
+    false,
     notificationHtml,
     null,
     "PAYMENT_STATUS_UPDATED",
@@ -1324,7 +1351,7 @@ export async function attemptFailedByUser({ testId, userId }) {
 `;
   await createNotification(
     null,
-    true,
+    false,
     notificationHtml,
     null,
     "ATTEMPT_FAILED",
