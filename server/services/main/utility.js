@@ -294,7 +294,16 @@ export async function getCurrentUser(req) {
   const decoded = jwt.verify(token, SECRET_KEY);
   return decoded;
 }
-
+function checkIsAllowedToSearchAll(user) {
+  const adminRoles = ["ADMIN", "SUPER_ADMIN"];
+  if (
+    adminRoles.includes(user.role) ||
+    user.isSuperSales ||
+    (user.subRoles && user.subRoles.some((r) => adminRoles.includes(r.subRole)))
+  ) {
+    return true;
+  }
+}
 export async function searchData(body) {
   let { model, query, filters } = body;
   const prismaModel = modelMap[model] || modelMap["user"];
@@ -367,7 +376,14 @@ export async function searchData(body) {
       parsedFilters.staffId &&
       model === "clientLead"
     ) {
-      where.userId = Number(parsedFilters.staffId);
+      const user = await prisma.user.findUnique({
+        where: { id: Number(parsedFilters.staffId) },
+        select: { role: true, subRoles: true, isSuperSales: true },
+      });
+      const isAllowedToSearchAll = checkIsAllowedToSearchAll(user);
+      if (!isAllowedToSearchAll) {
+        where.userId = Number(parsedFilters.staffId);
+      }
     }
     if (
       (parsedFilters.userRole === "THREE_D_DESIGNER" ||
@@ -420,7 +436,6 @@ export async function searchData(body) {
     model = "user";
     where.AND = where.AND[0];
   }
-
   const selectFields = {
     user: {
       id: true,
