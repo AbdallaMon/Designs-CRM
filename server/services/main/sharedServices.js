@@ -3742,15 +3742,15 @@ export async function updateProject({ data, isAdmin }) {
         "You can't change the status after Completion or Cancellation or Rejection"
       );
     }
-    if (
-      !data.isAdmin &&
-      data.oldStatus === "Modification" &&
-      status !== "Completed"
-    ) {
-      throw new Error(
-        "You can't change the status from Modification to any other status except Completed (You can ask the admin to do that)"
-      );
-    }
+    // if (
+    //   !data.isAdmin &&
+    //   data.oldStatus === "Modification" &&
+    //   status !== "Completed"
+    // ) {
+    //   throw new Error(
+    //     "You can't change the status from Modification to any other status except Completed (You can ask the admin to do that)"
+    //   );
+    // }
 
     delete rest.oldStatus;
     delete rest.isAdmin;

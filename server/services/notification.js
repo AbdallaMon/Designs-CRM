@@ -24,7 +24,6 @@ import { arEngName, engName } from "./constants.js";
 
 export async function convertALeadNotification(lead) {
   const user = await getUserDetailsWithSpecificFields(lead.userId);
-  return;
   const notificationHtml = `<div>
     <a href="${userLink + user.id}">#${
     user.name
@@ -39,14 +38,13 @@ export async function convertALeadNotification(lead) {
     null,
     "LEAD_STATUS_CHANGE",
     "Lead on hold",
-    true,
+    false,
     "HTML",
     null,
     lead.userId
   );
 }
 export async function overdueALeadNotification(convertedLead, newClientLead) {
-  return;
   const notificationHtml = `<div>
 Deal <a href="${dealsLink + convertedLead.id}" >#${
     convertedLead.id
@@ -66,7 +64,7 @@ Deal <a href="${dealsLink + convertedLead.id}" >#${
     null,
     "LEAD_TRANSFERRED",
     "Lead transferred",
-    true,
+    false,
     "HTML",
     null,
     newClientLead.userId
@@ -77,7 +75,6 @@ export async function assignLeadNotification(
   userId,
   updatedClientLead
 ) {
-  return;
   const notificationHtml = `<div>
     Lead <a href="${
       dealsLink + clientLeadId
@@ -93,7 +90,7 @@ export async function assignLeadNotification(
     null,
     "LEAD_TRANSFERRED",
     "Lead transferred",
-    true,
+    false,
     "HTML",
     null,
     Number(userId)
@@ -105,7 +102,6 @@ export async function assignWorkStageNotification(
   updatedClientLead,
   type
 ) {
-  return;
   const notificationHtml = `<div>
     Lead <a href="${
       dealsLink + clientLeadId
@@ -125,14 +121,13 @@ export async function assignWorkStageNotification(
     null,
     "LEAD_TRANSFERRED",
     "Lead transferred",
-    true,
+    false,
     "HTML",
     null,
     Number(userId)
   );
 }
 export async function newNoteNotification(leadId, content, userId) {
-  return;
   const notificationHtml = `<div>
        <strong>Note</strong> was added to Lead <a href="${
          dealsLink + leadId
@@ -147,15 +142,13 @@ export async function newNoteNotification(leadId, content, userId) {
     null,
     "NEW_NOTE",
     "New note",
-    true,
+    false,
     "HTML",
     null,
     userId
   );
 }
 export async function newCallNotification(leadId, callReminder) {
-  return;
-
   const notificationHtml = `<div>
        <strong>Call reminder</strong> was added to Lead <a href="${
          dealsLink + leadId
@@ -174,14 +167,13 @@ export async function newCallNotification(leadId, callReminder) {
     null,
     "CALL_REMINDER_CREATED",
     "New call reminder",
-    true,
+    false,
     "HTML",
     null,
     callReminder.userId
   );
 }
 export async function newMeetingNotification(leadId, meetingReminder) {
-  console.log(meetingReminder, "newMeetingNotification called");
   const isAdmin = meetingReminder.isAdmin;
 
   const notificationHtml = `<div>
@@ -209,8 +201,6 @@ export async function newMeetingNotification(leadId, meetingReminder) {
   );
 }
 export async function newPriceOffer(leadId, priceOffer) {
-  return;
-
   const notificationHtml = `<div>
        <strong>New Price offer</strong> was added to Lead <a href="${
          dealsLink + leadId
@@ -226,15 +216,13 @@ export async function newPriceOffer(leadId, priceOffer) {
     null,
     "PRICE_OFFER_SUBMITTED",
     "New price offer",
-    true,
+    false,
     "HTML",
     null,
     priceOffer.user.id
   );
 }
 export async function newFileUploaded(leadId, file, userId) {
-  return;
-
   const notificationHtml = `<div>
        <strong>New File</strong> was added to Lead <a href="${
          dealsLink + leadId
@@ -255,15 +243,13 @@ export async function newFileUploaded(leadId, file, userId) {
     null,
     "NEW_FILE",
     "New file upload",
-    true,
+    false,
     "HTML",
     null,
     Number(userId)
   );
 }
 export async function updateCallNotification(leadId, callReminder, userId) {
-  return;
-
   const notificationHtml = `<div>
        <strong>Call reminder</strong> updated in Lead <a href="${
          dealsLink + leadId
@@ -285,7 +271,7 @@ export async function updateCallNotification(leadId, callReminder, userId) {
     null,
     "CALL_REMINDER_STATUS",
     "Call reminder status changed",
-    true,
+    false,
     "HTML",
     null,
     Number(userId)
@@ -296,8 +282,6 @@ export async function updateMettingNotification(
   meetingReminder,
   userId
 ) {
-  return;
-
   const notificationHtml = `<div>
        <strong>Meeting reminder</strong> updated in Lead <a href="${
          dealsLink + leadId
@@ -319,7 +303,7 @@ export async function updateMettingNotification(
     null,
     "CALL_REMINDER_STATUS",
     "Meeting reminder status changed",
-    true,
+    false,
     "HTML",
     null,
     Number(userId)
@@ -335,7 +319,7 @@ export async function updateLeadStatusNotification(
   staffId,
   sendToAdmin
 ) {
-  if (!sendToAdmin && !userId) return;
+  // if (!sendToAdmin && !userId) return;
   const notificationHtml = `<div>
        <strong>${heading}</strong> updated in Lead <a href="${
     dealsLink + leadId
@@ -347,12 +331,12 @@ export async function updateLeadStatusNotification(
 
   await createNotification(
     isAdmin ? userId : null,
-    sendToAdmin,
+    true,
     notificationHtml,
     null,
     type ? "LEAD_STATUS_CHANGE" : "LEAD_UPDATED",
     "Lead updated",
-    true,
+    sendToAdmin,
     "HTML",
     null,
     staffId
@@ -396,7 +380,6 @@ export async function updateWorkStageStatusNotification(
   );
 }
 export async function newLeadNotification(leadId, client, isAdmin) {
-  return;
   const leadHref = `${dealsLink + leadId}`;
   const notificationHtml = `<div>
        <strong>New lead created</strong> <a href="${leadHref}" >#${leadId}</a> 
@@ -413,13 +396,12 @@ export async function newLeadNotification(leadId, client, isAdmin) {
     null,
     "NEW_LEAD",
     "New lead",
-    true,
+    false,
     "HTML",
     leadId
   );
 }
 export async function newClientLeadNotification(leadId, client, isAdmin) {
-  return false;
   const leadHref = `${dealsLink + leadId}`;
   const notificationHtml = `<div>
        <strong>New Client submit initial form</strong> <a href="${leadHref}" >#${leadId}</a> 
@@ -436,13 +418,12 @@ export async function newClientLeadNotification(leadId, client, isAdmin) {
     null,
     "NEW_LEAD",
     "New lead",
-    true,
+    false,
     "HTML",
     leadId
   );
 }
 export async function newLeadCompletedNotification(leadId, client, isAdmin) {
-  return false;
   const leadHref = `${dealsLink + leadId}`;
   const notificationHtml = `<div>
        <strong>New lead register completed with sucussfull payment </strong> <a href="${leadHref}" >#${leadId}</a> 
@@ -459,14 +440,12 @@ export async function newLeadCompletedNotification(leadId, client, isAdmin) {
     null,
     "NEW_LEAD",
     "New lead",
-    true,
+    false,
     "HTML",
     leadId
   );
 }
 export async function leadPaymentSuccessed(leadId) {
-  return false;
-
   const leadHref = `${dealsLink + leadId}`;
   const notificationHtml = `<div>
        <strong>New lead payment successed </strong> <a href="${leadHref}" >#${leadId}</a> 
@@ -483,7 +462,7 @@ export async function leadPaymentSuccessed(leadId) {
     null,
     "PAYMENT_STATUS_UPDATED",
     "Payment process done successfully",
-    true,
+    false,
     "HTML",
     leadId
   );
