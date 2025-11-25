@@ -1,7 +1,8 @@
 import {
   bookAMeeting,
   verifyAndExtractCalendarToken,
-} from "../../services/main/calendarServices.js";
+  verifySlotIsAvailableAndNotBooked,
+} from "../../services/client/calendar.js";
 import { getAvailableDays, getAvailableSlotsForDay } from "./new-calendar.js";
 import express from "express";
 
@@ -70,9 +71,31 @@ router.get("/slots/", async (req, res) => {
     });
   }
 });
+router.get("/slots/details", async (req, res) => {
+  try {
+    const { token, slotId, timezone } = req.query;
+    const tokenData = await verifyAndExtractCalendarToken(token);
+
+    const data = await verifySlotIsAvailableAndNotBooked({
+      slotId: Number(slotId),
+      timezone: timezone,
+    });
+    res.status(200).json({
+      message: "Available days fetched successfully",
+      data: data,
+    });
+  } catch (e) {
+    console.log(e, "e");
+    res.status(500).json({
+      message: "Error fetching available days",
+      error: e.message || "Internal Server Error",
+    });
+  }
+});
 router.post("/book", async (req, res) => {
   try {
     const tokenData = await verifyAndExtractCalendarToken(req.query.token);
+
     const data = await bookAMeeting({
       ...req.body,
       ...tokenData,

@@ -47,6 +47,7 @@ import { getData } from "@/app/helpers/functions/getData";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import { useAlertContext } from "@/app/providers/MuiAlert";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -66,7 +67,7 @@ const ClientBooking = ({ token }) => {
   const [loadingTimezone, setLoadingTimezone] = useState(false);
   const { setLoading: setToastLoading } = useToastContext();
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Dubai";
-
+  const { setAlertError } = useAlertContext();
   const [error, setError] = useState(null);
   const [sessionData, setSessionData] = useState({
     selectedDate: null,
@@ -75,7 +76,7 @@ const ClientBooking = ({ token }) => {
     dayId: null,
     token,
   });
-
+  const [loadingSlotSelect, setLoadingSlotSelect] = useState(false);
   // 🔁 Get slots for selected date (same structure as admin/staff)
   const getSlotsData = async () => {
     if (!sessionData.selectedDate) return;
@@ -155,12 +156,32 @@ const ClientBooking = ({ token }) => {
     }));
   };
 
-  const handleSlotSelect = (slot) => {
-    setSessionData((prev) => ({
-      ...prev,
-      selectedSlot: slot,
-    }));
+  const handleSlotSelect = async (slot) => {
+    const req = await getData({
+      url: `client/calendar/slots/details?slotId=${slot.id}&token=${token}&timezone=${sessionData.selectedTimezone}&`,
+      setLoading: setLoadingSlotSelect,
+    });
+    console.log("Slot Details Response:", req);
     handleNext();
+    if (req.status === 200) {
+      setSessionData((prev) => ({
+        ...prev,
+        selectedSlot: req.data,
+      }));
+      // handleNext();
+    } else {
+      setAlertError(
+        req?.error ||
+          req?.message ||
+          "Failed to fetch slot details. Please try again."
+      );
+      setSessionData((prev) => ({
+        ...prev,
+        selectedSlot: null,
+        selectedDate: null,
+      }));
+      setActiveStep(0);
+    }
   };
 
   const handleBooking = async () => {
@@ -303,9 +324,11 @@ const ClientBooking = ({ token }) => {
                     border: "2px solid",
                     borderColor: "primary.main",
                     bgcolor: "primary.50",
+                    position: "relative",
                   }}
                 >
                   <CardContent sx={{ p: 3 }}>
+                    {loadingSlotSelect && <LoadingOverlay />}
                     <Stack spacing={2}>
                       <Box display="flex" alignItems="center" gap={2}>
                         <Avatar sx={{ bgcolor: "primary.main" }}>
@@ -314,8 +337,8 @@ const ClientBooking = ({ token }) => {
                         <Box>
                           <Typography variant="body1" gutterBottom>
                             <strong>Date:</strong>{" "}
-                            {sessionData.selectedDate &&
-                              dayjs(sessionData.selectedDate)
+                            {sessionData.selectedSlot &&
+                              dayjs(sessionData.selectedSlot.startTime)
                                 ?.tz(sessionData.selectedTimezone)
                                 .format("dddd, MMMM D, YYYY")}
                           </Typography>
@@ -394,8 +417,8 @@ const ClientBooking = ({ token }) => {
                       <Box textAlign="left">
                         <Typography variant="body1">
                           <strong>Date:</strong>{" "}
-                          {sessionData.selectedDate &&
-                            dayjs(sessionData.selectedDate)
+                          {sessionData.selectedSlot &&
+                            dayjs(sessionData.selectedSlot.startTime)
                               .tz(sessionData.selectedTimezone)
                               .format("dddd, MMMM D, YYYY")}
                         </Typography>
