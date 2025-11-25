@@ -20,7 +20,6 @@ export async function getDefaultContractDataAndGenerateIfNotFound() {
       },
     },
   });
-  console.log("contractUtilityData:", contractUtilityData);
   if (
     contractUtilityData?.stageClauses?.length < 1 ||
     contractUtilityData?.specialClauses?.length < 1 ||
