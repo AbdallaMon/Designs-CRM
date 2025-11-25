@@ -3,6 +3,7 @@ import { getAndThrowError } from "../../services/main/utility.js";
 import {
   changeContractSessionStatus,
   getContractSessionByToken,
+  getDefaultContractUtilityData,
 } from "../../services/main/contract/clientContractServices.js";
 import { buildAndUploadContractPdf } from "../../services/main/contract/generateContractPdf.js";
 const router = Router();
@@ -12,7 +13,11 @@ router.get(`/session`, async (req, res) => {
     const contractSession = await getContractSessionByToken({
       token: req.query.token,
     });
-    res.status(200).json({ data: contractSession });
+    const defaultContractUtilityData = await getDefaultContractUtilityData();
+    res.status(200).json({
+      data: contractSession,
+      contractUtility: defaultContractUtilityData,
+    });
   } catch (e) {
     getAndThrowError(e, res);
   }

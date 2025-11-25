@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import PdfUtility from "./PdfUtility";
 import { useSearchParams } from "next/navigation";
 import ContractPaymentConditionsManager from "./ContractPaymentConditions";
+import ContractUtilityPage from "../contracts/ContractUtility";
 
 export default function SiteUtilityManager() {
   const [value, setValue] = useState(0);
@@ -13,6 +14,10 @@ export default function SiteUtilityManager() {
     {
       label: "Contract Payment Conditions",
       component: <ContractPaymentConditionsManager />,
+    },
+    {
+      label: "Contract utility",
+      component: <ContractUtilityPage />,
     },
   ];
   const searchParams = useSearchParams();

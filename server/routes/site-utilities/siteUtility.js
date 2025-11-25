@@ -7,9 +7,9 @@ import {
   updateContractPaymentConditions,
   updatePdfSiteUtilities,
 } from "../../services/main/siteUtilityServices.js";
-
+import contractUtilityRouter from "./contract-utilities.js";
 const router = Router();
-
+router.use("/contract-utility", contractUtilityRouter);
 router.get("/pdf-utility", async (req, res) => {
   try {
     const data = await getPdfSiteUtilities();

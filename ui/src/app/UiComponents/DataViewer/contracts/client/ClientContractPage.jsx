@@ -28,22 +28,24 @@ const AnimatedComponent = ({
 export default function ClientContractPage({ token }) {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
+  const [contractUtility, setContractUtility] = useState(null);
   const [animationKey, setAnimationKey] = useState(0); // Key to force re-animation
   const status = loading ? "LOADING" : session?.sessionStatus || "ERROR";
   const { lng } = useLanguageSwitcherContext();
   const { loading: toastLoading, setLoading: setToastLoading } =
     useToastContext();
   async function getSessionData() {
-    await getDataAndSet({
-      url: `client/contracts/session?token=${token}&`,
+    const req = await getDataAndSet({
+      url: `client/contracts/session?token=${token}&lng=${lng}&`,
       setData: setSession,
       setLoading,
     });
+    setContractUtility(req?.contractUtility || null);
   }
 
   useEffect(() => {
     getSessionData();
-  }, []);
+  }, [lng]);
 
   useEffect(() => {
     setAnimationKey((prev) => prev + 1);
@@ -109,6 +111,7 @@ export default function ClientContractPage({ token }) {
                 session={session}
                 lng={lng}
                 onSubmit={simpleHandleNext}
+                contractUtility={contractUtility}
               />
             </Box>
           </AnimatedComponent>

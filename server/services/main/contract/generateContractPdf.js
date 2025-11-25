@@ -41,6 +41,7 @@ import {
 import { notifyUsersThatAContractWasSigned } from "../../telegram/telegram-functions.js";
 import { sendSuccessEmailAfterContractSigned } from "./pdf-utilities.js";
 import { updateContractPaymentOnContractSign } from "./contractServices.js";
+import { getDefaultContractUtilityData } from "./clientContractServices.js";
 
 // ===== Helpers =====
 const ASCII_RE = /^[\x00-\x7F\s.,:;@!?#%&*()+\-\/\\\[\]{}"'<>=|]+$/; // latin-ish
@@ -151,7 +152,113 @@ async function writeSubhead(ctx, text, { fonts, colors, fs = 12 }) {
   });
   ctx.y -= fs + 6;
 }
+async function writeBolxParagraphOrList(ctx, text, { fonts, colors, fs = 11 }) {
+  const raw = String(text ?? "");
+  if (!raw.trim()) return;
 
+  const linesIn = raw
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const isLikelyList =
+    linesIn.some((ln) => /^(\u2022|•|-|–|\d+[).])\s*/.test(ln)) ||
+    linesIn.length > 1;
+
+  if (!isLikelyList) {
+    const forceLatin = ASCII_RE.test(raw);
+    await ctx.writeLineAuto(
+      raw,
+      fs,
+      true,
+      colors.textColor,
+      forceLatin ? "ltr" : ctx.lng === "ar" ? "rtl" : null
+    );
+    return;
+  }
+
+  const contentW = ctx.pageWidth - ctx.margin.left - ctx.margin.right;
+  const indent = 14;
+  const wrapW = contentW - indent;
+  const bulletFS = fs;
+
+  let isFirstBullet = true;
+
+  for (const original of linesIn) {
+    const lnText = original.replace(/^(\u2022|•|-|–|\d+[).])\s*/, "").trim();
+    const isLatin = ASCII_RE.test(lnText);
+    const useFontObj = isLatin
+      ? { font: fonts.enFont, bold: fonts.enBold }
+      : pickFontsForText(lnText, fonts);
+    const useFont = useFontObj.bold;
+
+    const rtl = !isLatin && ctx.lng === "ar";
+    const shaped = rtl ? reText(lnText) : lnText;
+    const wrapped = splitTextIntoLines(shaped, wrapW, useFont, fs);
+
+    for (let i = 0; i < wrapped.length; i++) {
+      const line = wrapped[i];
+      await ctx.need(fs + 8);
+
+      const bullet = "•";
+      const bFont = fonts.enFont;
+
+      // extra margin before the very first bullet in a block
+      if (isFirstBullet && i === 0) {
+        ctx.y -= 4;
+        isFirstBullet = false;
+      }
+
+      if (rtl) {
+        if (i === 0) {
+          const bw = widthOf(bullet, bulletFS, bFont);
+          ctx.page.drawText(bullet, {
+            x: ctx.margin.left + contentW - bw,
+            y: ctx.y,
+            size: bulletFS,
+            font: bFont,
+            color: colors.textColor,
+          });
+        }
+        const tx = getRTLTextX(
+          line,
+          fs,
+          useFont,
+          ctx.margin.left,
+          contentW - indent
+        );
+        ctx.page.drawText(line, {
+          x: tx,
+          y: ctx.y,
+          size: fs,
+          font: useFont,
+          color: colors.textColor,
+        });
+      } else {
+        if (i === 0) {
+          ctx.page.drawText(bullet, {
+            x: ctx.margin.left,
+            y: ctx.y,
+            size: bulletFS,
+            font: bFont,
+            color: colors.textColor,
+          });
+        }
+        const tx = ctx.margin.left + indent;
+        ctx.page.drawText(line, {
+          x: tx,
+          y: ctx.y,
+          size: fs,
+          font: useFont,
+          color: colors.textColor,
+        });
+      }
+      ctx.y -= fs + 6;
+    }
+    // extra space between bullets
+    ctx.y -= 4;
+  }
+  ctx.y -= 2;
+}
 // Draw a paragraph or bullet list; bullets always in English font to avoid glyph issues
 async function writeParagraphOrList(ctx, text, { fonts, colors, fs = 11 }) {
   const raw = String(text ?? "");
@@ -549,14 +656,17 @@ async function renderDbSpecialItems(ctx, { lng, contract, fonts, colors }) {
 
 async function renderPartyOneWithPayments(
   ctx,
-  { lng, contract, fonts, colors }
+  { lng, contract, fonts, colors, defaultContractUtilityData }
 ) {
   await ctx.writeTitle(
     lng === "ar" ? "التزامات الفريق الأول" : "Party One Obligations"
   );
 
   const taxRate = Number(contract?.taxRate || 5);
-  const base = OBLIGATIONS_TEXT.partyOne[lng].base || "";
+  const base =
+    lng === "ar"
+      ? defaultContractUtilityData?.obligationsPartyOneAr
+      : defaultContractUtilityData?.obligationsPartyOneEn;
   const items = base
     .split(/\r?\n/)
     .map((s) => s.trim())
@@ -831,7 +941,10 @@ async function renderStagesCards(ctx, { lng, contract, fonts, colors }) {
   }
 }
 
-async function renderStagesTable(ctx, { lng, contract, fonts, colors }) {
+async function renderStagesTable(
+  ctx,
+  { lng, contract, fonts, colors, defaultContractUtilityData }
+) {
   // ===== Data =====
   const allStages = CONTRACT_LEVELSENUM.map((s, i) => ({
     order: i + 1,
@@ -1146,8 +1259,13 @@ async function renderStagesTable(ctx, { lng, contract, fonts, colors }) {
           ? `${formatNumber(deliveryDays, "ar")} يوم`
           : `${deliveryDays} days`
         : "—";
-
-    const details = (STAGE_PROGRESS?.[s.order]?.[lng] || []).slice();
+    const currentDetails = defaultContractUtilityData?.levelClauses.find(
+      (clause) => clause.order === s.order
+    );
+    const details =
+      (lng === "ar" ? currentDetails.textAr : currentDetails.textEn)?.split(
+        "\n"
+      ) || [];
     if (stData?.notes) details.push(String(stData.notes));
 
     const x = colXAt(i, colW);
@@ -1269,7 +1387,10 @@ async function renderStagesTable(ctx, { lng, contract, fonts, colors }) {
 //two sections (kept commented)
 
 // === PAGE-SPACE GUARDS ADDED HERE ===
-async function renderStageClauses(ctx, { lng, fonts, colors }) {
+async function renderStageClauses(
+  ctx,
+  { lng, fonts, colors, defaultContractUtilityData }
+) {
   // Require at least 20% of page; otherwise new page
   const usableHeight = ctx.pageHeight - ctx.margin.top - ctx.margin.bottom;
   const minHeightNeeded = usableHeight * 0.2;
@@ -1283,16 +1404,26 @@ async function renderStageClauses(ctx, { lng, fonts, colors }) {
 
   await ctx.writeTitle(lng === "ar" ? "بنود المراحل" : "Stage Clauses");
   for (const i of [1, 2, 3, 4, 5, 6]) {
-    const text = STAGE_CLAUSES_DEFAULT?.[i]?.[lng];
-    if (!text) continue;
-    const head = lng === "ar" ? `بنود المرحلة ${i}` : `Stage ${i} Terms`;
+    // const text = STAGE_CLAUSES_DEFAULT?.[i]?.[lng];
+    const data = defaultContractUtilityData?.stageClauses.find(
+      (clause) => clause.order === i
+    );
+
+    const head = lng === "ar" ? data.headingAr : data.headingEn;
+    const title = lng === "ar" ? data.titleAr : data.titleEn;
+    const text =
+      (lng === "ar" ? data?.descriptionAr : data?.descriptionEn) || "";
     await writeSubhead(ctx, head, { fonts, colors, fs: 12 });
+    await writeBolxParagraphOrList(ctx, title, { fonts, colors, fs: 11 });
     await writeParagraphOrList(ctx, text, { fonts, colors, fs: 11 });
     ctx.y -= 2;
   }
 }
 
-async function renderPartyTwoObligations(ctx, { lng, fonts, colors }) {
+async function renderPartyTwoObligations(
+  ctx,
+  { lng, fonts, colors, defaultContractUtilityData }
+) {
   // Require at least 20% of page; otherwise new page
   const usableHeight = ctx.pageHeight - ctx.margin.top - ctx.margin.bottom;
   const minHeightNeeded = usableHeight * 0.2;
@@ -1304,11 +1435,18 @@ async function renderPartyTwoObligations(ctx, { lng, fonts, colors }) {
   await ctx.writeTitle(
     lng === "ar" ? "التزامات الفريق الثاني" : "Party Two Obligations"
   );
-  const text = OBLIGATIONS_TEXT.partyTwo[lng] || "";
+  // const text = OBLIGATIONS_TEXT.partyTwo[lng] || "";
+  const text =
+    lng === "ar"
+      ? defaultContractUtilityData?.obligationsPartyTwoAr
+      : defaultContractUtilityData?.obligationsPartyTwoEn;
   await writeParagraphOrList(ctx, text, { fonts, colors, fs: 11 });
 }
 
-async function renderHandwrittenSpecialClauses(ctx, { lng, fonts, colors }) {
+async function renderHandwrittenSpecialClauses(
+  ctx,
+  { lng, fonts, colors, defaultContractUtilityData }
+) {
   // Require at least 30% of page; otherwise new page
   const usableHeight = ctx.pageHeight - ctx.margin.top - ctx.margin.bottom;
   const minHeightNeeded = usableHeight * 0.3;
@@ -1317,14 +1455,18 @@ async function renderHandwrittenSpecialClauses(ctx, { lng, fonts, colors }) {
     await ctx.need(usableHeight);
   }
 
-  const items = HANDWRITTEN_SPECIAL_CLAUSES?.[lng] || [];
+  const items = defaultContractUtilityData?.specialClauses;
   if (!items.length) return;
   await ctx.writeTitle(lng === "ar" ? "بنود خاصة " : "Special Terms");
-  await writeParagraphOrList(ctx, items.map((t) => ` ${t}`).join("\n"), {
-    fonts,
-    colors,
-    fs: 11,
-  });
+  await writeParagraphOrList(
+    ctx,
+    items.map((t) => ` ${lng === "ar" ? t.textAr : t.textEn}`).join("\n"),
+    {
+      fonts,
+      colors,
+      fs: 11,
+    }
+  );
 }
 
 async function renderDrawingsSection(
@@ -1875,6 +2017,7 @@ export async function generateContractPdf({
   canceled = false,
   cancelWatermarkTextAr = "تم إلغاء هذا العقد",
   cancelWatermarkTextEn = "THIS CONTRACT HAS BEEN CANCELLED",
+  defaultContractUtilityData,
 }) {
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
@@ -2000,11 +2143,38 @@ export async function generateContractPdf({
   await renderClientSection(ctx, { lng, contract, fonts, colors });
   await renderAmountSection(ctx, { lng, contract });
   await renderDbSpecialItems(ctx, { lng, contract, fonts, colors });
-  await renderPartyOneWithPayments(ctx, { lng, contract, fonts, colors });
-  await renderStagesTable(ctx, { lng, contract, fonts, colors });
-  await renderStageClauses(ctx, { lng, fonts, colors });
-  await renderPartyTwoObligations(ctx, { lng, fonts, colors });
-  await renderHandwrittenSpecialClauses(ctx, { lng, fonts, colors });
+  await renderPartyOneWithPayments(ctx, {
+    lng,
+    contract,
+    fonts,
+    colors,
+    defaultContractUtilityData,
+  });
+  await renderStagesTable(ctx, {
+    lng,
+    contract,
+    fonts,
+    colors,
+    defaultContractUtilityData,
+  });
+  await renderStageClauses(ctx, {
+    lng,
+    fonts,
+    colors,
+    defaultContractUtilityData,
+  });
+  await renderPartyTwoObligations(ctx, {
+    lng,
+    fonts,
+    colors,
+    defaultContractUtilityData,
+  });
+  await renderHandwrittenSpecialClauses(ctx, {
+    lng,
+    fonts,
+    colors,
+    defaultContractUtilityData,
+  });
   await renderDrawingsSection(ctx, {
     lng,
     contract,
@@ -2074,6 +2244,7 @@ export async function buildAndUploadContractPdf({
 
   const clientName = contract.clientLead?.client?.name || "";
   const clientLeadId = contract.clientLeadId;
+  const defaultContractUtilityData = await getDefaultContractUtilityData();
   const arPdfBytes = await generateContractPdf({
     contract,
     lng: "ar",
@@ -2084,6 +2255,7 @@ export async function buildAndUploadContractPdf({
     defaultDrawingUrl,
     padding: { top: 72, right: 56, bottom: 72, left: 56 },
     canceled,
+    defaultContractUtilityData,
   });
   const arPublicUrl = await generateContractPdfLinksInBothLanguages({
     contract,
@@ -2100,6 +2272,7 @@ export async function buildAndUploadContractPdf({
     defaultDrawingUrl,
     padding: { top: 72, right: 56, bottom: 72, left: 56 },
     canceled,
+    defaultContractUtilityData,
   });
   const enPublicUrl = await generateContractPdfLinksInBothLanguages({
     contract,

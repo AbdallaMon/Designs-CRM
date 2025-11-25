@@ -197,6 +197,75 @@ model SiteUtility {
   updatedAt DateTime @updatedAt
 }
 
+model ContractUtility {
+  id Int @id @default(1)
+
+  obligationsPartyOneAr String @db.Text
+  obligationsPartyOneEn String @db.Text
+
+  obligationsPartyTwoAr String @db.Text
+  obligationsPartyTwoEn String @db.Text
+
+  stageClauses   ContractStageClauseTemplate[]
+  specialClauses ContractSpecialClauseTemplate[]
+  levelClauses   ContractLevelClauseTemplate[]
+
+  updatedAt DateTime @updatedAt
+}
+model ContractStageClauseTemplate {
+  id Int @id @default(autoincrement())
+
+  contractUtilityId Int
+  contractUtility   ContractUtility @relation(fields: [contractUtilityId], references: [id])
+
+  headingAr     String @db.VarChar(255)
+  headingEn     String @db.VarChar(255)
+
+  titleAr       String @db.VarChar(255)
+  titleEn       String @db.VarChar(255)
+
+  descriptionAr String @db.Text    
+  descriptionEn String @db.Text
+
+  order Int @default(0)
+
+  @@index([contractUtilityId])
+}
+
+model ContractSpecialClauseTemplate {
+  id Int @id @default(autoincrement())
+
+  contractUtilityId Int
+  contractUtility   ContractUtility @relation(fields: [contractUtilityId], references: [id])
+
+  textAr String @db.Text
+  textEn String? @db.Text  
+
+  order    Int     @default(0)
+  isActive Boolean @default(true)
+
+  @@index([contractUtilityId])
+}
+model ContractLevelClauseTemplate {
+  id Int @id @default(autoincrement())
+
+  contractUtilityId Int
+  contractUtility   ContractUtility @relation(fields: [contractUtilityId], references: [id])
+
+  level ContractLevel   
+
+  textAr String @db.Text
+  textEn String? @db.Text
+
+  order    Int     @default(0)
+  isActive Boolean @default(true)
+
+  @@index([contractUtilityId])
+  @@index([level])
+}
+
+
+
 enum ContractStatus {
   IN_PROGRESS
   COMPLETED

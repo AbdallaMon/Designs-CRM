@@ -48,13 +48,10 @@ import {
   STAGE_STATUS_LABEL,
 } from "@/app/helpers/constants";
 import {
-  STAGE_CLAUSES_DEFAULT,
-  OBLIGATIONS_TEXT,
   FIXED_TEXT,
   PAYMENT_ORDINAL,
   defaultStageLabels,
   STAGE_PROGRESS,
-  HANDWRITTEN_SPECIAL_CLAUSES,
 } from "./wittenBlocksData";
 import { FloatingActionButton } from "../../image-session/client-session/Utility";
 
@@ -395,7 +392,7 @@ function DbSpecialItems({ session, lng }) {
   );
 }
 
-function PartyOneWithPayments({ session, lng }) {
+function PartyOneWithPayments({ session, lng, contractUtility }) {
   const payments = session?.payments || session?.paymentsNew || [];
 
   return (
@@ -404,7 +401,13 @@ function PartyOneWithPayments({ session, lng }) {
       dense
     >
       <Stack spacing={1.25}>
-        <BulletText text={OBLIGATIONS_TEXT.partyOne[lng].base} />
+        <BulletText
+          text={
+            lng === "ar"
+              ? contractUtility.obligationsPartyOneAr
+              : contractUtility.obligationsPartyOneEn
+          }
+        />
 
         {!!payments.length && (
           <Fragment>
@@ -439,7 +442,21 @@ function PartyOneWithPayments({ session, lng }) {
 // -----------------------------
 // Stages: responsive -- mobile: show all stages expanded (no Accordion).
 // -----------------------------
-function StagesTable({ session, lng }) {
+function RenderStageBullets({ details }) {
+  const seperateByNewLineIntoBullets = details
+    .split("\n")
+    .filter((line) => line.trim() !== "");
+  return (
+    <Stack spacing={0.5}>
+      {seperateByNewLineIntoBullets.map((line, i) => (
+        <Typography key={i} variant="body2">
+          • {line}
+        </Typography>
+      ))}
+    </Stack>
+  );
+}
+function StagesTable({ session, lng, levelClauses }) {
   const theme = useTheme();
   const isSmall = useMediaQuery((theme) => theme.breakpoints.down("sm"));
 
@@ -471,6 +488,7 @@ function StagesTable({ session, lng }) {
             const data = stagesMap.get(s.order) || {};
             const status = data?.stageStatus || "NOT_STARTED";
             const deliveryDays = data?.deliveryDays;
+            const currentLevel = levelClauses.find((l) => l.level === s.key);
 
             return (
               <Box
@@ -547,11 +565,20 @@ function StagesTable({ session, lng }) {
                   </Stack>
 
                   <Stack spacing={0.5}>
-                    {(STAGE_PROGRESS[s.order]?.[lng] || []).map((t, i) => (
+                    <RenderStageBullets
+                      details={
+                        lng === "ar"
+                          ? currentLevel?.textAr
+                          : currentLevel
+                          ? currentLevel.textEn
+                          : ""
+                      }
+                    />
+                    {/* {(STAGE_PROGRESS[s.order]?.[lng] || []).map((t, i) => (
                       <Typography key={i} variant="body2">
                         • {t}
                       </Typography>
-                    ))}
+                    ))} */}
                   </Stack>
                   {data?.notes && (
                     <Typography variant="body2" color="text.secondary">
@@ -585,7 +612,7 @@ function StagesTable({ session, lng }) {
     const data = stagesMap.get(s.order) || {};
     const status = data?.stageStatus || "NOT_STARTED";
     const deliveryDays = data?.deliveryDays;
-    const details = STAGE_PROGRESS[s.order]?.[lng] || [];
+    const details = levelClauses.find((l) => l.level === s.key);
 
     return (
       <Box
@@ -679,17 +706,12 @@ function StagesTable({ session, lng }) {
           }}
         >
           <Stack spacing={0.5}>
-            {details.length ? (
-              details.map((t, i) => (
-                <Typography key={i} variant="body2">
-                  • {t}
-                </Typography>
-              ))
-            ) : (
-              <Typography variant="body2" color="text.secondary">
-                {lng === "ar" ? "لا تفاصيل" : "No details"}
-              </Typography>
-            )}
+            <RenderStageBullets
+              details={
+                lng === "ar" ? details?.textAr : details ? details.textEn : ""
+              }
+            />
+
             {data?.notes ? (
               <Typography
                 variant="caption"
@@ -736,16 +758,14 @@ function ReadableStageClauses({ lng, stageClauses }) {
   return (
     <SectionCard title={lng === "ar" ? "بنود المراحل" : "Stage Clauses"}>
       <Stack spacing={2.5}>
-        {[1, 2, 3, 4, 5, 6].map((i) => (
+        {stageClauses.map((clause, i) => (
           <Box key={i}>
             <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 0.5 }}>
-              {lng === "ar"
-                ? `بنــود المـــرحلة ${toArabicIndex(i)} : ${i}`
-                : `Stage ${i} Terms`}
+              {lng === "ar" ? clause.headingAr : clause.headingEn}
             </Typography>
             <ClauseCard
-              title={null}
-              text={stageClauses?.[i]?.[lng]}
+              title={lng === "ar" ? clause.titleAr : clause.titleEn}
+              text={lng === "ar" ? clause.descriptionAr : clause.descriptionEn}
               theme={theme}
               isRtl={lng === "ar"}
             />
@@ -773,13 +793,19 @@ function toArabicIndex(n) {
   );
 }
 
-function PartyTwoObligations({ lng }) {
+function PartyTwoObligations({ lng, contractUtility }) {
   return (
     <SectionCard
       title={lng === "ar" ? "التزامات الفريق الثاني" : "Party Two Obligations"}
       dense
     >
-      <BulletText text={OBLIGATIONS_TEXT.partyTwo[lng]} />
+      <BulletText
+        text={
+          lng === "ar"
+            ? contractUtility.obligationsPartyTwoAr
+            : contractUtility.obligationsPartyTwoEn
+        }
+      />
     </SectionCard>
   );
 }
@@ -858,32 +884,38 @@ export default function ContractSession({
   extraSpecialClauses = [],
   stageClausesOverride,
   onSubmit,
+  contractUtility,
 }) {
   const [confirmed, setConfirmed] = useState(false);
 
   // choose clauses: prefer external override if provided
   const stageClauses = useMemo(() => {
-    const base = STAGE_CLAUSES_DEFAULT;
-    if (!stageClausesOverride) return base;
-    const merged = { ...base };
-    for (const k of [1, 2, 3, 4, 5, 6]) {
-      if (stageClausesOverride[k]) {
-        merged[k] = {
-          ar: stageClausesOverride[k].ar ?? base[k].ar,
-          en: stageClausesOverride[k].en ?? base[k].en,
-        };
-      }
-    }
-    return merged;
+    return contractUtility?.stageClauses;
+    // const base = STAGE_CLAUSES_DEFAULT;
+    // if (!stageClausesOverride) return base;
+    // const merged = { ...base };
+    // for (const k of [1, 2, 3, 4, 5, 6]) {
+    //   if (stageClausesOverride[k]) {
+    //     merged[k] = {
+    //       ar: stageClausesOverride[k].ar ?? base[k].ar,
+    //       en: stageClausesOverride[k].en ?? base[k].en,
+    //     };
+    //   }
+    // }
+    // return merged;
   }, [stageClausesOverride]);
 
   // Default handwritten list if not provided
+
   const handwritten = useMemo(() => {
     if (extraSpecialClauses?.length) return extraSpecialClauses;
-    return lng === "ar"
-      ? HANDWRITTEN_SPECIAL_CLAUSES.ar
-      : HANDWRITTEN_SPECIAL_CLAUSES.en;
-  }, [extraSpecialClauses, lng]);
+
+    const specialClauses = contractUtility?.specialClauses || [];
+    const groupedTexts = specialClauses.map((clause) =>
+      lng === "ar" ? clause.textAr : clause.textEn || clause.textAr
+    );
+    return groupedTexts;
+  }, [extraSpecialClauses, lng, contractUtility]);
 
   // apply direction for Arabic
   const isRtl = lng === "ar";
@@ -905,16 +937,24 @@ export default function ContractSession({
         <DbSpecialItems session={session} lng={lng} />
 
         {/* 3) Party One Obligations + Payments */}
-        <PartyOneWithPayments session={session} lng={lng} />
+        <PartyOneWithPayments
+          session={session}
+          lng={lng}
+          contractUtility={contractUtility}
+        />
 
         {/* 4) Stages Table */}
-        <StagesTable session={session} lng={lng} />
+        <StagesTable
+          session={session}
+          lng={lng}
+          levelClauses={contractUtility?.levelClauses}
+        />
 
         {/* 5) Readable Stage Clauses */}
         <ReadableStageClauses lng={lng} stageClauses={stageClauses} />
 
         {/* 6) Party Two Obligations */}
-        <PartyTwoObligations lng={lng} />
+        <PartyTwoObligations lng={lng} contractUtility={contractUtility} />
 
         {/* 7) Handwritten Special Clauses — must be AFTER team two obligations */}
         <SpecialClauses lng={lng} items={handwritten} />
