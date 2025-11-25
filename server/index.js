@@ -20,6 +20,7 @@ export const allowedOrigins = [
   process.env.ORIGIN,
   process.env.OLDORIGIN,
   process.env.COURSESORIGIN,
+  process.env.PORTFOLIOORIGIN,
 ];
 
 app.use(
