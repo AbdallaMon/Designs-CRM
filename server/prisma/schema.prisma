@@ -218,11 +218,12 @@ model ContractStageClauseTemplate {
   contractUtilityId Int
   contractUtility   ContractUtility @relation(fields: [contractUtilityId], references: [id])
 
-  headingAr     String @db.VarChar(255)
-  headingEn     String @db.VarChar(255)
+  headingAr String @db.Text
+  headingEn String @db.Text
 
-  titleAr       String @db.VarChar(255)
-  titleEn       String @db.VarChar(255)
+  // ✅ make titles long text
+  titleAr   String @db.Text
+  titleEn   String @db.Text
 
   descriptionAr String @db.Text    
   descriptionEn String @db.Text
