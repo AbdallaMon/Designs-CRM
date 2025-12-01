@@ -3,7 +3,7 @@ import {
   getPagination,
   getTokenData,
   verifyTokenAndHandleAuthorization,
-} from "../services/main/utility.js";
+} from "../../services/main/utility.js";
 import {
   addNote,
   changePaymentLevel,
@@ -24,8 +24,8 @@ import {
   markPaymentAsOverdue,
   processPayment,
   renewRentAndMakeOutCome,
-} from "../services/main/accountantServices.js";
-import { getUserLogs } from "../services/main/adminServices.js";
+} from "../../services/main/accountantServices.js";
+import { getUserLogs } from "../../services/main/adminServices.js";
 
 const router = Router();
 
