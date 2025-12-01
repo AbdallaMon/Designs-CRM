@@ -79,7 +79,7 @@ export const ProjectTasksDialog = ({
             >
               <IconButton
                 component="a"
-                href={`/dashbaord/projects/${project.id}`}
+                href={`/dashboard/projects/${project.id}`}
               >
                 #{project.id}
               </IconButton>

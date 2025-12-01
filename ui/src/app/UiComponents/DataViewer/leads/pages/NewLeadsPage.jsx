@@ -28,7 +28,7 @@ import OnHoldLeads from "@/app/UiComponents/DataViewer/leads/pages/OnHoldLeads.j
 import NextCalls from "@/app/UiComponents/DataViewer/leads/widgets/NextCalls.jsx";
 import { FixedData } from "@/app/UiComponents/DataViewer/leads/widgets/FixedData.jsx";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
-import { NonConsultedLeads } from "./Non-consulted-leads";
+import { NonConsultedLeads } from "./NonConsultedLeads";
 import UpdateInitialConsultButton from "@/app/UiComponents/buttons/UpdateInitialConsultLead";
 import {
   MdCheck,
