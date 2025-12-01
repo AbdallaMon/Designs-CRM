@@ -51,7 +51,6 @@ function ImportLeadsExcel() {
                   <VisuallyHiddenInput
                         type="file"
                         onChange={handleFileUpload}
-                        multiple
                   />
               </Button>
               {file && (
