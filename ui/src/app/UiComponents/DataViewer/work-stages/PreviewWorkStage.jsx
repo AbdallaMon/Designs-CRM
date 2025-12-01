@@ -34,7 +34,7 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 import { GoPaperclip } from "react-icons/go";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
-import { generatePDF } from "@/app/UiComponents/buttons/GenerateLeadPdf.jsx";
+import { generatePDF } from "@/app/UiComponents/DataViewer/leads/utilities/GenerateLeadPdf.jsx";
 import Link from "next/link";
 import { LeadNotes } from "../leads/tabs/LeadsNotes";
 import { MdModeEdit, MdTask, MdWork } from "react-icons/md";

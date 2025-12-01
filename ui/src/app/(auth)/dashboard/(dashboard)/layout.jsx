@@ -26,7 +26,7 @@ import {
   FiCalendar,
 } from "react-icons/fi";
 
-import Navbar from "@/app/UiComponents/utility/Navbar.jsx";
+import Navbar from "@/app/UiComponents/layout/Navbar.jsx";
 
 let toastId;
 export const adminLinks = [

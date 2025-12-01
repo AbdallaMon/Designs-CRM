@@ -8,7 +8,7 @@ import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
 import { LeadCategory } from "@/app/helpers/constants.js";
 import { FaBusinessTime } from "react-icons/fa";
-import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks.jsx";
+import TabsWithLinks from "@/app/UiComponents/layout/TabsWithLinks.jsx";
 import PreviewDialog from "@/app/UiComponents/DataViewer/leads/PreviewLeadDialog.jsx";
 import DateRangeFilter from "@/app/UiComponents/formComponents/DateRangeFilter.jsx";
 

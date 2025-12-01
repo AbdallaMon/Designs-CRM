@@ -1,5 +1,5 @@
 import React from "react";
-import LanguageSelector from "@/app/UiComponents/utility/LanguageSelector";
+import LanguageSelector from "@/app/UiComponents/layout/LanguageSelector";
 import {
   AppBar,
   Toolbar,

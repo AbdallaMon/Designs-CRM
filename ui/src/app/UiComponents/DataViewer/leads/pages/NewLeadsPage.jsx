@@ -29,7 +29,7 @@ import NextCalls from "@/app/UiComponents/DataViewer/leads/widgets/NextCalls.jsx
 import { FixedData } from "@/app/UiComponents/DataViewer/leads/widgets/FixedData.jsx";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { NonConsultedLeads } from "./Non-consulted-leads";
-import UpdateInitialConsultButton from "@/app/UiComponents/buttons/UpdateInitialConsultLead";
+import MoveToNewLeadsButton from "@/app/UiComponents/DataViewer/leads/features/MoveToNewLeadsButton";
 import {
   MdCheck,
   MdHourglassEmpty,
@@ -270,7 +270,7 @@ export function LeadSliderCard({ lead, setData }) {
               user.role !== "CONTACT_INITIATOR" && !user.isSuperSales ? 1 : 0,
           }}
         >
-          <UpdateInitialConsultButton clientLead={lead} />
+          <MoveToNewLeadsButton clientLead={lead} />
           {user.role !== "CONTACT_INITIATOR" && (
             <Button
               sx={{

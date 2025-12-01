@@ -20,7 +20,7 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 
-function UpdateInitialConsultButton({ clientLead }) {
+function MoveToNewLeadsButton({ clientLead }) {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
   const { setLoading } = useToastContext();
@@ -296,4 +296,4 @@ function UpdateInitialConsultButton({ clientLead }) {
   );
 }
 
-export default UpdateInitialConsultButton;
+export default MoveToNewLeadsButton;

@@ -54,7 +54,7 @@ import { MobileDatePicker } from "@mui/x-date-pickers";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
-import DeleteModelButton from "../../../common/DeleteModelButton";
+import DeleteModelButton from "../../../inline-actions/DeleteModelButton";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { NotesComponent } from "../../utility/Notes";

@@ -35,7 +35,7 @@ import SimpleFileInput from "../../../formComponents/SimpleFileInput";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import DeleteModelButton from "../../../common/DeleteModelButton";
+import DeleteModelButton from "../../../inline-actions/DeleteModelButton";
 import { SPAINQuestionsDialog } from "../../meeting/SPAIN/SPAINQuestionDialog";
 import { personalityEnum } from "@/app/helpers/constants";
 import VersaObjectionSystem from "../../meeting/VERSA/VERSADialog";

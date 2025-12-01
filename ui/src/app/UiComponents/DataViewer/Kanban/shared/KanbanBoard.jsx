@@ -8,7 +8,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent";
 import DateRangeFilter from "@/app/UiComponents/formComponents/DateRangeFilter";
 import FilterSelect from "@/app/UiComponents/formComponents/FilterSelect";
-import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks";
+import TabsWithLinks from "@/app/UiComponents/layout/TabsWithLinks";
 import KanbanColumn from "../staff/KanbanColumn";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { CONTRACT_LEVELS } from "@/app/helpers/constants";

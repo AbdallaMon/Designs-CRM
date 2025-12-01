@@ -5,7 +5,7 @@ import { FinalPriceCalc } from "../core/FinalPriceCalc";
 import { BsBuilding } from "react-icons/bs";
 import dayjs from "dayjs";
 import { LEAD_SOURCE_LABELS, LeadCategory } from "@/app/helpers/constants";
-import { EditFieldButton } from "../../../common/EditFieldButton";
+import { EditFieldButton } from "../../../inline-actions/EditFieldButton";
 
 export function LeadInfo({ lead, setleads, setLead }) {
   const theme = useTheme();
