@@ -15,7 +15,7 @@ import {
 import { MdArchive, MdUnarchive, MdImage, MdStyle } from "react-icons/md";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { EditDesignImage } from "./EditDesignImage";
-import ImageLoader from "../shared/ImageLoader ";
+import ImageLoader from "../shared/ImageLoader";
 
 export const DesignImageItem = ({ item, onUpdate }) => {
   const [isArchiving, setIsArchiving] = useState(false);

@@ -4,14 +4,14 @@
 import React, { useEffect, useState } from "react";
 import { Grid, Typography, Box } from "@mui/material";
 
-import LeadStatusChart from "@/app/UiComponents/DataViewer/dashbaord/LeadStatusChart.jsx";
-import KeyMetricsCard from "@/app/UiComponents/DataViewer/dashbaord/KeyMetricsCard.jsx";
-import CallRemindersCard from "@/app/UiComponents/DataViewer/dashbaord/CallRemindersList.jsx";
-import IncomeOverTimeChart from "@/app/UiComponents/DataViewer/dashbaord/IncomeOverTimeChart.jsx";
-import EmiratesAnalytics from "@/app/UiComponents/DataViewer/dashbaord/EmiratesAnalytics.jsx";
-import PerformanceMetricsCard from "@/app/UiComponents/DataViewer/dashbaord/PerformanceMetrics.jsx";
-import NewLeadsList from "@/app/UiComponents/DataViewer/dashbaord/NewLeadsList.jsx";
-import RecentActivities from "@/app/UiComponents/DataViewer/dashbaord/RecenteActivity.jsx";
+import LeadStatusChart from "@/app/UiComponents/DataViewer/dashboard/LeadStatusChart.jsx";
+import KeyMetricsCard from "@/app/UiComponents/DataViewer/dashboard/KeyMetricsCard.jsx";
+import CallRemindersCard from "@/app/UiComponents/DataViewer/dashboard/CallRemindersList.jsx";
+import IncomeOverTimeChart from "@/app/UiComponents/DataViewer/dashboard/IncomeOverTimeChart.jsx";
+import EmiratesAnalytics from "@/app/UiComponents/DataViewer/dashboard/EmiratesAnalytics.jsx";
+import PerformanceMetricsCard from "@/app/UiComponents/DataViewer/dashboard/PerformanceMetrics.jsx";
+import NewLeadsList from "@/app/UiComponents/DataViewer/dashboard/NewLeadsList.jsx";
+import RecentActivities from "@/app/UiComponents/DataViewer/dashboard/RecenteActivity.jsx";
 import UserProfile from "@/app/UiComponents/DataViewer/users/UserProfile.jsx";
 import DesignerDashboard from "./designers/DesignerDashboard";
 import FullScreenLoader from "../../feedback/loaders/FullscreenLoader";
