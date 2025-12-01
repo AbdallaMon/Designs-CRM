@@ -7,7 +7,7 @@ import {
   handlePrismaError,
   uploadFiles,
   verifyTokenAndHandleAuthorization,
-} from "../services/main/utility.js";
+} from "../../services/main/utility.js";
 import {
   addAllProjectUsersToChannel,
   changeUserStatus,
@@ -46,15 +46,15 @@ import {
   updateUserMaxLeads,
   updateUserMaxLeadsPerDay,
   updateUserRoles,
-} from "../services/main/adminServices.js";
+} from "../../services/main/adminServices.js";
 import multer from "multer";
-import prisma from "../prisma/prisma.js";
-import { newLeadNotification } from "../services/notification.js";
-import { createGroupProjects } from "../services/main/sharedServices.js";
+import prisma from "../../prisma/prisma.js";
+import { newLeadNotification } from "../../services/notification.js";
+import { createGroupProjects } from "../../services/main/sharedServices.js";
 
-import imageSessionRouter from "./image-session/admin-image-session.js";
-import coursesRouter from "./courses/adminCourses.js";
-import { generateCodeForNewLead } from "../services/client/leads.js";
+import imageSessionRouter from "../image-session/admin-image-session.js";
+import coursesRouter from "../courses/adminCourses.js";
+import { generateCodeForNewLead } from "../../services/client/leads.js";
 
 const router = Router();
 

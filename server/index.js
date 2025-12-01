@@ -1,16 +1,26 @@
+/**
+ * Server Entry Point
+ *
+ * This is the main server file that initializes Express, mounts routes,
+ * and starts the HTTP server.
+ */
+
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";
 import { createServer } from "http";
 import { initSocket } from "./services/socket.js";
-import clientsRoutes from "./routes/clients.js";
-import authRoutes from "./routes/auth.js";
-import sharedRoutes from "./routes/shared.js";
-import utilityRoutes from "./routes/utility.js";
-import staffRoutes from "./routes/staff.js";
-import adminRoutes from "./routes/admin.js";
-import accountantRoutes from "./routes/accountant.js";
+
+// Import routes from organized folder structure
+import clientRoutes from "./routes/client/index.js";
+import authRoutes from "./routes/auth/index.js";
+import sharedRoutes from "./routes/shared/index.js";
+import utilityRoutes from "./routes/utility/index.js";
+import staffRoutes from "./routes/staff/index.js";
+import adminRoutes from "./routes/admin/index.js";
+import accountantRoutes from "./routes/accountant/index.js";
+
 import { connectToTelegram } from "./services/telegram/connectToTelegram.js";
 
 dotenv.config();
@@ -46,13 +56,15 @@ if (process.env.ISLOCAL) {
 }
 app.use(express.json());
 app.use(cookieParser());
+
+// Mount routes
 app.use("/auth", authRoutes);
 app.use("/shared", sharedRoutes);
 app.use("/utility", utilityRoutes);
 app.use("/staff", staffRoutes);
 app.use("/admin", adminRoutes);
 app.use("/accountant", accountantRoutes);
-app.use("/client", clientsRoutes);
+app.use("/client", clientRoutes);
 
 (async () => {
   await connectToTelegram();

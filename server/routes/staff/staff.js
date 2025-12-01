@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { verifyTokenAndHandleAuthorization } from "../services/main/utility.js";
-import { getCallReminders } from "../services/main/staffServices.js";
+import { verifyTokenAndHandleAuthorization } from "../../services/main/utility.js";
+import { getCallReminders } from "../../services/main/staffServices.js";
 
 const router = Router();
 

@@ -7,7 +7,7 @@ import {
   searchData,
   uploadFiles,
   verifyTokenUsingReq,
-} from "../services/main/utility.js";
+} from "../../services/main/utility.js";
 
 const router = express.Router();
 const finalDir = "/home/panel.dreamstudiio.com/public_html/uploads";

@@ -8,7 +8,7 @@ import {
   getPagination,
   getTokenData,
   verifyTokenAndHandleAuthorization,
-} from "../services/main/utility.js";
+} from "../../services/main/utility.js";
 
 /* ================================== Shared Services =================================== */
 import {
@@ -81,14 +81,14 @@ import {
   updateClientLeadStatus,
   updateProject,
   updateTask,
-} from "../services/main/sharedServices.js";
+} from "../../services/main/sharedServices.js";
 
 /* =================================== Admin Services =================================== */
 import {
   getAdminClientLeadDetails,
   getModelIds,
   updateLeadField,
-} from "../services/main/adminServices.js";
+} from "../../services/main/adminServices.js";
 
 /* =================================== Staff Services =================================== */
 import {
@@ -100,7 +100,7 @@ import {
   createPriceOffer,
   updateCallReminderStatus,
   updateMeetingReminderStatus,
-} from "../services/main/staffServices.js";
+} from "../../services/main/staffServices.js";
 
 /* =================================== Reviews OAuth ==================================== */
 import {
@@ -108,15 +108,15 @@ import {
   getLocations,
   getReviews,
   handleOAuthCallback,
-} from "../services/reviews.js";
+} from "../../services/reviews.js";
 
 /* ================================== Sub-Routers ======================================= */
-import questionsRoutes from "./questions/questions.js";
-import calendarRoutes from "./calendar/calendar.js";
-import coursesRouter from "./courses/staffCourses.js";
-import contractRouter from "./contract/contracts.js";
-import imageSessionRouter from "./image-session/image-session.js";
-import siteUtilitiesServices from "./site-utilities/siteUtility.js";
+import questionsRoutes from "../questions/questions.js";
+import calendarRoutes from "../calendar/calendar.js";
+import coursesRouter from "../courses/staffCourses.js";
+import contractRouter from "../contract/contracts.js";
+import imageSessionRouter from "../image-session/image-session.js";
+import siteUtilitiesServices from "../site-utilities/siteUtility.js";
 
 /* =============================== Calendar Services ==================================== */
 import {
@@ -126,7 +126,7 @@ import {
   deleteADay,
   deleteASlot,
   updateAvailableDay,
-} from "../services/main/calendarServices.js";
+} from "../../services/main/calendarServices.js";
 
 /* ======================================================================================= */
 /*                                          Init                                           */
