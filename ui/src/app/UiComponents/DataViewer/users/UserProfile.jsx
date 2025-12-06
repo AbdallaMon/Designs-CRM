@@ -3,7 +3,7 @@ import { getData } from "@/app/helpers/functions/getData.js";
 import { Box, Button, Card, CardContent, Typography } from "@mui/material";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
 import UserLogs from "@/app/UiComponents/DataViewer/users/UserLogs.jsx";
-import LastSeen from "../../buttons/LastSeen";
+import UserLastSeen from "./UserLastSeen";
 import EditModal from "../../models/EditModal";
 import UserRestrictedCountries from "./UserRestrictedCountries";
 import Commission from "../utility/Commission";
@@ -38,7 +38,7 @@ export default function UserProfile({ id, role }) {
           <Box display="flex" flexWrap="wrap" justifyContent="flex-end" gap={2}>
             {!loading && (
               <>
-                <LastSeen initialLastSeen={user.lastSeenAt} userId={user.id} />
+                <UserLastSeen initialLastSeen={user.lastSeenAt} userId={user.id} />
                 <Box>
                   <Commission userId={user.id} />
                 </Box>

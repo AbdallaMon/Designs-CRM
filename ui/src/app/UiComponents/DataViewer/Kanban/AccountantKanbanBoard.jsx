@@ -5,7 +5,7 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { Box, Grid, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks.jsx";
+import TabsWithLinks from "@/app/UiComponents/layout/TabsWithLinks.jsx";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
 import AccountantKanbanColumn from "./AccountantKanbanColumn";
 import { useSearchParams } from "next/navigation";

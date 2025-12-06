@@ -36,7 +36,7 @@ import {
   RiLink,
 } from "react-icons/ri";
 import { CallResultDialog } from "../dialogs/CallsDialog";
-import DeleteModelButton from "../../../common/DeleteModelButton";
+import DeleteModelButton from "../../../inline-actions/DeleteModelButton";
 import { InProgressCall } from "../widgets/InProgressCall";
 import { useAuth } from "@/app/providers/AuthProvider";
 

@@ -16,7 +16,7 @@ const VisuallyHiddenInput = styled('input')({
     width: 1,
 });
 
-function ExcelAnalyzer() {
+function ImportLeadsExcel() {
     const [file, setFile] = useState(null);
     const { setLoading } = useToastContext();
 
@@ -51,7 +51,6 @@ function ExcelAnalyzer() {
                   <VisuallyHiddenInput
                         type="file"
                         onChange={handleFileUpload}
-                        multiple
                   />
               </Button>
               {file && (
@@ -68,4 +67,4 @@ function ExcelAnalyzer() {
     );
 }
 
-export default ExcelAnalyzer;
+export default ImportLeadsExcel;

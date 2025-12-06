@@ -24,7 +24,7 @@ import { useAuth } from "@/app/providers/AuthProvider";
 
 import { Button } from "@mui/material";
 
-import DeleteModelButton from "../../../common/DeleteModelButton";
+import DeleteModelButton from "../../../inline-actions/DeleteModelButton";
 
 export function MeetingReminders({ lead, setleads, admin, notUser }) {
   const [meetingReminders, setMeetingReminders] = useState(

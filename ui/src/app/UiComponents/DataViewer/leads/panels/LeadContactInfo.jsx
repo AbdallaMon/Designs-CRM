@@ -6,7 +6,7 @@ import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";
 import dayjs from "dayjs";
 import { BsPerson } from "react-icons/bs";
-import { EditFieldButton } from "../../../common/EditFieldButton";
+import { EditFieldButton } from "../../../inline-actions/EditFieldButton";
 export function LeadContactInfo({ lead, setleads, setLead }) {
   const { user } = useAuth();
 

@@ -160,7 +160,7 @@ const NotificationsIcon = () => {
         >
           {notifications?.length === 0 ? (
             <Typography textAlign="center" sx={{ padding: "16px" }}>
-              No new Notification
+              No new notifications
             </Typography>
           ) : (
             <>
@@ -241,7 +241,7 @@ const NotificationsIcon = () => {
             component={Link}
             href="/dashboard/notifications"
           >
-            View all notification
+            View all notifications
           </Button>
         )}
       </Menu>

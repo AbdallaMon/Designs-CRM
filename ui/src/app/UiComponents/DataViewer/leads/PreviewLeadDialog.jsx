@@ -51,7 +51,7 @@ import { FinalizeModal } from "@/app/UiComponents/DataViewer/leads/widgets/Final
 import { GoPaperclip } from "react-icons/go";
 import { PiCurrencyDollarSimpleLight } from "react-icons/pi";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
-import { generatePDF } from "@/app/UiComponents/buttons/GenerateLeadPdf.jsx";
+import { generatePDF } from "@/app/UiComponents/DataViewer/leads/utilities/GenerateLeadPdf.jsx";
 import dayjs from "dayjs";
 import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
 import AddPayments from "./payments/AddPayments";
@@ -75,7 +75,7 @@ import TelegramLink from "../work-stages/utility/TelegramLink";
 import { LeadContactInfo } from "./panels/LeadContactInfo";
 import { LeadInfo } from "./panels/LeadInfo";
 import { PreviewLead } from "./features/PreviewLead";
-import UpdateInitialConsultButton from "../../buttons/UpdateInitialConsultLead";
+import MoveToNewLeadsButton from "./features/MoveToNewLeadsButton";
 import DeleteModal from "../../models/DeleteModal";
 import { AssignNewStaffModal } from "../utility/AssignNewStaffModal";
 import UpdatesList from "./leadUpdates/UpdatesList";
@@ -481,7 +481,7 @@ const LeadContent = ({
             }}
           >
             <TelegramLink lead={lead} setLead={setLead} />
-            <UpdateInitialConsultButton clientLead={lead} />
+            <MoveToNewLeadsButton clientLead={lead} />
 
             <ClientImageSessionManager clientLeadId={lead.id} />
 

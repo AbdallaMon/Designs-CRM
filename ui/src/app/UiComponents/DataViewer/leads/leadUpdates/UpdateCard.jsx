@@ -50,7 +50,7 @@ import {
 } from "react-icons/md";
 import { NotesComponent } from "../../utility/Notes";
 import { getData } from "@/app/helpers/functions/getData";
-import DeleteModelButton from "../../../common/DeleteModelButton";
+import DeleteModelButton from "../../../inline-actions/DeleteModelButton";
 
 const getDepartmentConfig = (dept) =>
   DEPARTMENTS.find((d) => d.value === dept) || { label: dept, color: "#666" };

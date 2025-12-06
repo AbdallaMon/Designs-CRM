@@ -19,8 +19,8 @@ import {
   Collapse,
 } from "@mui/material";
 import { FiMenu, FiChevronDown, FiChevronRight } from "react-icons/fi";
-import Logout from "@/app/UiComponents/buttons/Logout.jsx";
-import NotificationsIcon from "@/app/UiComponents/utility/NotificationIcon.jsx";
+import LogoutButton from "@/app/UiComponents/buttons/LogoutButton.jsx";
+import NotificationBadge from "@/app/UiComponents/layout/NotificationBadge.jsx";
 import SignInWithDifferentUserRole from "../DataViewer/users/UserRoles";
 import { useAuth } from "@/app/providers/AuthProvider";
 
@@ -303,8 +303,8 @@ const Navbar = ({ links }) => {
 
           <Box sx={{ display: "flex", alignItems: "center" }}>
             {user.role !== "ADMIN" && <SignInWithDifferentUserRole />}
-            <NotificationsIcon />
-            <Logout />
+            <NotificationBadge />
+            <LogoutButton />
           </Box>
         </Toolbar>
       </AppBar>

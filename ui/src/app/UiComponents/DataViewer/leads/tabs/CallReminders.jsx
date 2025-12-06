@@ -23,7 +23,7 @@ import { InProgressCall } from "@/app/UiComponents/DataViewer/leads/widgets/InPr
 import dayjs from "dayjs";
 import { useAuth } from "@/app/providers/AuthProvider";
 
-import DeleteModelButton from "../../../common/DeleteModelButton";
+import DeleteModelButton from "../../../inline-actions/DeleteModelButton";
 
 export function CallReminders({ lead, setleads, admin, notUser }) {
   const [callReminders, setCallReminders] = useState(lead?.callReminders);

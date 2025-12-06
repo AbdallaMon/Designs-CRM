@@ -8,7 +8,7 @@ import {useAuth} from "@/app/providers/AuthProvider";
 import {FiLogOut} from "react-icons/fi";
 import React from "react";
 
-export default function Logout({fit}) {
+export default function LogoutButton({fit}) {
     const {setLoading} = useToastContext();
     const {setUser, setIsLoggedIn} = useAuth()
     const router = useRouter();

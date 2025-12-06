@@ -38,7 +38,7 @@ import LoadingOverlay from "../../feedback/loaders/LoadingOverlay";
 import ViewContract from "./ViewContract";
 import { IoMdEye } from "react-icons/io";
 import CloneContract from "./CloneContract";
-import DeleteModelButton from "../../common/DeleteModelButton";
+import DeleteModelButton from "../../inline-actions/DeleteModelButton";
 import { FaCopy } from "react-icons/fa";
 import ConfirmWithActionModel from "../../models/ConfirmsWithActionModel";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";

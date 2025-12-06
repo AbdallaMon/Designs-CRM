@@ -33,7 +33,7 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import DeleteModal from "../../models/DeleteModal";
-import DeleteModelButton from "../../common/DeleteModelButton";
+import DeleteModelButton from "../../inline-actions/DeleteModelButton";
 
 function RowActions({ row, onEditClick, onDelete }) {
   return (

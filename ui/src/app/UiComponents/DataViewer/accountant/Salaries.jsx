@@ -6,7 +6,7 @@ import { Box } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
-import LastSeen from "@/app/UiComponents/buttons/LastSeen";
+import UserLastSeen from "@/app/UiComponents/DataViewer/users/UserLastSeen";
 import { userRolesEnum } from "@/app/helpers/constants";
 import SalaryInfoButton from "./SalaryDialog";
 import CreateModal from "../../models/CreateModal";
@@ -101,7 +101,7 @@ export default function Salaries() {
         extraComponent={({ item }) => (
           <>
             <Box sx={{ display: "flex", gap: 2 }}>
-              <LastSeen
+              <UserLastSeen
                 initialLastSeen={item}
                 userId={item.id}
                 accountant={true}

@@ -14,12 +14,12 @@ import {
   Link as MuiLink,
 } from "@mui/material";
 
-import DeleteModelButton from "../../../common/DeleteModelButton";
+import DeleteModelButton from "../../../inline-actions/DeleteModelButton";
 import {
   getFileType,
   getFileTypeIcon,
   renderFilePreview,
-} from "@/app/UiComponents/utility/Files";
+} from "@/app/UiComponents/layout/FilePreviewUtils";
 import { FaEye } from "react-icons/fa";
 
 export function FileList({ lead, admin, notUser }) {

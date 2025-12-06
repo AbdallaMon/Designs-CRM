@@ -6,7 +6,7 @@ import dayjs from "dayjs";
 import { Avatar } from "@mui/material";
 import { NewNoteDialog } from "@/app/UiComponents/DataViewer/leads/dialogs/NoteDialog";
 
-import DeleteModelButton from "../../../common/DeleteModelButton";
+import DeleteModelButton from "../../../inline-actions/DeleteModelButton";
 
 export function LeadNotes({ lead, admin, notUser }) {
   const [notes, setNotes] = useState(lead?.notes);

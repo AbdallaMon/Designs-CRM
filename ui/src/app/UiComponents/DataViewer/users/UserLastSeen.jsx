@@ -38,7 +38,7 @@ dayjs.locale("en");
 const renderTimeInUAE = (time) => {
   return dayjs(time).tz("Asia/Dubai").format("HH:mm"); // Format time in HH:mm format for UAE time zone
 };
-export default function LastSeen({ userId, initialLastSeen, accountant }) {
+export default function UserLastSeen({ userId, initialLastSeen, accountant }) {
   const [userLog, setUserLog] = useState(initialLastSeen);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
