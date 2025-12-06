@@ -22,6 +22,8 @@ import { PROJECT_TYPES } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { getData } from "@/app/helpers/functions/getData";
+import { useAuth } from "@/app/providers/AuthProvider";
+import { checkIfAdmin } from "@/app/helpers/functions/utility";
 
 export const ProjectAutoAssignmentDialog = ({ userId }) => {
   const { setLoading } = useToastContext();
@@ -35,7 +37,8 @@ export const ProjectAutoAssignmentDialog = ({ userId }) => {
 
   const [tempType, setTempType] = useState(""); // type to add
   const [isFetching, setIsFetching] = useState(false);
-
+  const { user } = useAuth();
+  const admin = checkIfAdmin(user);
   const onClose = () => {
     setOpen(false);
     setTempType("");

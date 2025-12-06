@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import PdfUtility from "./PdfUtility";
 import { useSearchParams } from "next/navigation";
 import ContractPaymentConditionsManager from "./ContractPaymentConditions";
-import ContractUtilityPage from "../contracts/ContractUtility";
+import ContractUtilityPage from "../contracts/ContractUtilityPage/ContractUtility";
 
 export default function SiteUtilityManager() {
   const [value, setValue] = useState(0);

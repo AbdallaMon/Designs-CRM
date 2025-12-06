@@ -1,6 +1,6 @@
 import express from "express";
+import { getLanguages } from "../../services/main/client/clientServices.js";
 const router = express.Router();
-import { getLanguages } from "../../services/main/clientServices.js";
 
 router.get("/languages", async (req, res) => {
   try {

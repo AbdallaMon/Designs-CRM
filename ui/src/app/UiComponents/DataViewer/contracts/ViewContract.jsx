@@ -205,8 +205,8 @@ function ProjectGroupSelect({ clientLeadId, value, onChange, disabled }) {
   const [groups, setGroups] = useState([]);
 
   const fetchGroups = async () => {
-    await getDataAndSet({
-      url: `shared/client-leads/${clientLeadId}/projects/groups`,
+    const req = await getDataAndSet({
+      url: `shared/projects/${clientLeadId}/groups`,
       setData: setGroups,
       setLoading,
     });

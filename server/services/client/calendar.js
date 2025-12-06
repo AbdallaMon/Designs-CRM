@@ -2,9 +2,10 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 
-import { sendReminderCreatedToClient } from "../main/emailTemplates.js";
+// import { sendReminderCreatedToClient } from "../main/emailTemplates.js";
 import { newMeetingNotification } from "../notification.js";
 import prisma from "../../prisma/prisma.js";
+import { sendReminderCreatedToClient } from "../main/email/emailTemplates.js";
 dayjs.extend(timezone);
 dayjs.extend(utc);
 

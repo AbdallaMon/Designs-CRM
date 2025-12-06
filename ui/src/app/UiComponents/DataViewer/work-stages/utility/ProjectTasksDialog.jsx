@@ -11,7 +11,7 @@ import {
   Typography,
 } from "@mui/material";
 import { MdClose, MdList } from "react-icons/md";
-import { TasksList } from "../../utility/TasksList";
+import { TasksList } from "../../tasks/TasksList";
 import { StyledCard } from "../projects/ProjectDetails";
 import { useState } from "react";
 

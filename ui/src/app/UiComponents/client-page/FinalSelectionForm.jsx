@@ -170,7 +170,7 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
         const request = await handleRequestSubmit(
           data,
           setLoading,
-          "client/new-lead",
+          notClientPage ? "admin/new-lead" : "client/new-lead",
           false,
           translate("Submitting")
         );
@@ -305,28 +305,7 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
                   "&:hover fieldset": { borderColor: "primary.main" },
                 }}
               />
-              {/* <TextField
-              fullWidth
-              label={translate("Phone")}
-              name="phone"
-              type="tel"
-              variant="outlined"
-              value={formData.phone}
-              onChange={handleChange}
-              sx={{
-                direction: lng === "ar" ? "ltr" : "rtl",
-              }}
-              InputProps={{
-                sx: {
-                  borderRadius: 2,
-                  "&:hover": {
-                    "& fieldset": {
-                      borderColor: "primary.main",
-                    },
-                  },
-                },
-              }}
-            /> */}
+
               <TextField
                 fullWidth
                 label={translate("Email")}

@@ -519,7 +519,7 @@ const TimeSlotManager = ({
       breakMinutes: breakDuration,
       dayId: dayId,
     };
-    const url = `shared/calendar/available-days/${
+    const url = `shared/calendar-management/available-days/${
       dayId ? dayId : isMultiDate ? "multiple" : ""
     }`;
     const slotReq = await handleRequestSubmit(
@@ -552,7 +552,7 @@ const TimeSlotManager = ({
     const deleteReq = await handleRequestSubmit(
       { id: slotId },
       setToastLoading,
-      `shared/calendar/slots/${slotId}`,
+      `shared/calendar-management/slots/${slotId}`,
       false,
       "Deleting slot...",
       false,
@@ -576,7 +576,7 @@ const TimeSlotManager = ({
       const slotReq = await handleRequestSubmit(
         data,
         setToastLoading,
-        `shared/calendar/add-custom/${dayId}?timezone=${tz}`,
+        `shared/calendar-management/add-custom/${dayId}?timezone=${tz}`,
         false,
         "Adding custom slot..."
       );
@@ -602,7 +602,7 @@ const TimeSlotManager = ({
     const offsetInMinutes = dayjs().tz(userTimezone).utcOffset(); // e.g. 180
     const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
     const slotsReq = await getData({
-      url: `shared/calendar/slots?date=${selectedDate}&adminId=${adminId}&timezone=${tz}`,
+      url: `shared/calendar-management/slots?date=${selectedDate}&adminId=${adminId}&timezone=${tz}`,
       setLoading,
     });
     if (slotsReq.status === 200) {
@@ -625,7 +625,7 @@ const TimeSlotManager = ({
     const deleteReq = await handleRequestSubmit(
       { id: dayId },
       setToastLoading,
-      `shared/calendar/days/${dayId}`,
+      `shared/calendar-management/days/${dayId}`,
       false,
       "Deleting Day...",
       false,

@@ -180,6 +180,13 @@ export const checkIfStaff = (user) => {
     user.role === "STAFF" || user.subRoles?.some((r) => r.subRole === "STAFF")
   );
 };
+export const checkIfPrimaryStaff = (user) => {
+  return (
+    (user.role === "STAFF" ||
+      user.subRoles?.some((r) => r.subRole === "STAFF")) &&
+    user.isPrimary
+  );
+};
 export const checkIfAdmin = (user) => {
   return (
     user.role === "ADMIN" ||
@@ -195,6 +202,7 @@ export const checkIfAdminOrSuperSales = (user) => {
     user.role === "ADMIN" || user.role === "SUPER_ADMIN" || user.isSuperSales
   );
 };
+
 export const checkIfAdminOrSuperOrContactInitiator = (user) => {
   return (
     user.role === "ADMIN" ||

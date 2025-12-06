@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
   getAndThrowError,
   getPagination,
-} from "../../services/main/utility.js";
+} from "../../services/main/utility/utility.js";
 import {
   approveUserAnswer,
   createALessonVideoPdf,

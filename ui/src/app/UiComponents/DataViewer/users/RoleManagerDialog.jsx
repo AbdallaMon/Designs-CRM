@@ -1,5 +1,7 @@
 import { roleIcons } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
+import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import { useAuth } from "@/app/providers/AuthProvider";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import {
   Button,
@@ -27,6 +29,8 @@ export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
   const [selectedSubRoles, setSelectedSubRoles] = useState([...subRoles]); // SubRoles state
   const [tempRole, setTempRole] = useState(""); // Temp role to add
   const { setLoading } = useToastContext();
+  const { user } = useAuth();
+  const admin = checkIfAdmin(user);
   function onClose() {
     setOpen(false);
   }
@@ -70,6 +74,7 @@ export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
     };
     onSave(updatedRoles);
   };
+  if (!admin) return null; // Only admins can manage roles
   if (!open)
     return (
       <Button onClick={() => setOpen(true)} variant="contained" fullWidth>

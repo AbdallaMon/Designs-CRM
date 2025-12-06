@@ -488,6 +488,13 @@ export const userRoles = [
   { value: "ACCOUNTANT", label: "Accountant" },
   { value: "SUPER_ADMIN", label: "Admin" },
 ];
+export const superSalesUserRoles = [
+  {
+    value: "STAFF",
+    label: "Sales",
+  },
+  { value: "SUPER_SALES", label: "Super sales" },
+];
 
 export const userRolesEnum = {
   STAFF: "Staff",
@@ -499,6 +506,10 @@ export const userRolesEnum = {
   CONTACT_INITIATOR: "Contact initiator",
 };
 
+export const superSalesUserRolesEnum = {
+  STAFF: "Staff",
+  SUPER_SALES: "Super sales",
+};
 export const countriesByRegion = {
   Asia: [
     "Afghanistan",
@@ -1286,6 +1297,7 @@ export const PROJECT_TYPES_LABELS = {
 
 export const usersHexColors = {
   SUPER_ADMIN: "#FF4B4B", // bright red
+  SUPER_SALES: "#26C6DA", // vibrant amber
   STAFF: "#4C8DFF", // strong blue
   isPrimary: "#b1975bff", // very light soft amber (lighter than TWO_D_EXECUTOR)
   isSuperSales: "#26C6DA", // teal (different from ACCOUNTANT green)

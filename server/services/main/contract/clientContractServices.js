@@ -1,9 +1,15 @@
 import prisma from "../../../prisma/prisma.js";
 import { getDefaultContractDataAndGenerateIfNotFound } from "./generateDefaultContractData.js";
 export async function getDefaultContractUtilityData(lng) {
-  let contractUtility = await getDefaultContractDataAndGenerateIfNotFound();
+  try {
+    let contractUtility = await getDefaultContractDataAndGenerateIfNotFound({
+      dontGenerate: true,
+    });
 
-  return contractUtility;
+    return contractUtility;
+  } catch (e) {
+    console.error("Error in getDefaultContractUtilityData:", e);
+  }
 }
 export async function getContractSessionByToken({ token }) {
   const session = await prisma.contract.findUnique({

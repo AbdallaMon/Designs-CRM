@@ -6,19 +6,10 @@ import {
   Box,
   Button,
   Container,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControl,
   FormControlLabel,
   IconButton,
   InputLabel,
   lighten,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Menu,
   MenuItem,
   Select,
@@ -30,7 +21,7 @@ import {
   useTheme,
 } from "@mui/material";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
@@ -86,12 +77,14 @@ const columns = [
             ? "PRIMARY_SALES"
             : item.role
           : item.role;
+
+      const safeColor = color || usersHexColors.default || "#ffffff";
       return (
         <Badge
           variant="dot"
           sx={{
             color: color,
-            backgroundColor: lighten(color, 0.6),
+            backgroundColor: lighten(safeColor, 0.6),
             px: 2,
             py: 1,
             borderRadius: 1,
@@ -314,19 +307,23 @@ export default function UsersPage() {
         loading={loading}
         withEdit={true}
         rowSx={(user) => {
+          const baseColor = user.isActive
+            ? user.role === "STAFF"
+              ? user.isSuperSales
+                ? usersHexColors.isSuperSales
+                : user.isPrimary
+                ? usersHexColors.isPrimary
+                : usersHexColors[user.role]
+              : usersHexColors[user.role]
+            : usersHexColors.banned;
+
+          // fallback if undefined / invalid
+          const safeColor = baseColor || usersHexColors.default || "#ffffff";
+          if (safeColor === "#ffffff") {
+            console.log(user, "user");
+          }
           return {
-            backgroundColor: lighten(
-              user.isActive
-                ? user.role === "STAFF"
-                  ? user.isSuperSales
-                    ? usersHexColors.isSuperSales
-                    : user.isPrimary
-                    ? usersHexColors.isPrimary
-                    : usersHexColors[user.role]
-                  : usersHexColors[user.role]
-                : usersHexColors.banned,
-              0.95
-            ),
+            backgroundColor: lighten(safeColor, 0.95),
           };
         }}
         editHref={"admin/users"}
@@ -357,7 +354,7 @@ export default function UsersPage() {
           >
             <Box sx={{ width: { xs: "100%", md: "fit-content" } }}>
               <SearchComponent
-                apiEndpoint="search?model=user"
+                apiEndpoint="search?model=all-users"
                 setFilters={setFilters}
                 inputLabel="Search by name or email"
                 renderKeys={["name", "email"]}
@@ -454,9 +451,6 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
         maxWidth: 520,
       }}
     >
-      {/* Inline essentials on md+, or hide on small screens */}
-
-      {/* More menu (contains heavier controls and everything on small screens) */}
       <Tooltip title="More actions">
         <IconButton size="small" onClick={(e) => setAnchorEl(e.currentTarget)}>
           <MdMoreHoriz />

@@ -6,7 +6,7 @@ import {
   getPdfSiteUtilities,
   updateContractPaymentConditions,
   updatePdfSiteUtilities,
-} from "../../services/main/siteUtilityServices.js";
+} from "../../services/main/site-utilities/siteUtilityServices.js";
 import contractUtilityRouter from "./contract-utilities.js";
 const router = Router();
 router.use("/contract-utility", contractUtilityRouter);

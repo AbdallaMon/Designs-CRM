@@ -42,7 +42,7 @@ const SalesStageComponent = ({ clientLeadId }) => {
     useToastContext();
   const fetchSalesStages = async () => {
     await getDataAndSet({
-      url: `shared/client-lead/${clientLeadId}/sales-stages`,
+      url: `shared/sales-stages/${clientLeadId}`,
       setLoading,
       setData: setSalesStages,
     });
@@ -57,7 +57,7 @@ const SalesStageComponent = ({ clientLeadId }) => {
     const req = await handleRequestSubmit(
       data,
       setActionLoading,
-      `shared/client-lead/${clientLeadId}/sales-stages`,
+      `shared/sales-stages/${clientLeadId}`,
       false,
       "Updating"
     );

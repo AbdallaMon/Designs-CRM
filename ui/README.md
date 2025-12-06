@@ -1,3 +1,5 @@
+- we need to enhance the kanban card ui ux specially for the header and the actions there is a lot of actions
+
 - dJkmjERCZGCEgaxl
   root@dreamstudiio:~# sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
 

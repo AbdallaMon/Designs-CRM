@@ -24,7 +24,7 @@ const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {
   useEffect(() => {
     async function getUserRole() {
       const userRequest = await getData({
-        url: `shared/users/role/${staffId}?`,
+        url: `shared/utilities/users/role/${staffId}?`,
         setLoading,
       });
       if (userRequest && userRequest.status === 200) {

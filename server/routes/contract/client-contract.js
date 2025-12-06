@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getAndThrowError } from "../../services/main/utility.js";
+import { getAndThrowError } from "../../services/main/utility/utility.js";
 import {
   changeContractSessionStatus,
   getContractSessionByToken,

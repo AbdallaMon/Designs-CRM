@@ -1,15 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import {
-  Avatar,
   Box,
   Button,
-  Container,
-  Dialog,
-  DialogActions,
-  DialogTitle,
   Divider,
-  IconButton,
   Menu,
   MenuItem,
   Paper,
@@ -21,7 +15,6 @@ import {
   useTheme,
 } from "@mui/material";
 import {
-  BsArrowLeft,
   BsFileText,
   BsInfoCircle,
   BsPersonCheckFill,
@@ -34,26 +27,20 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 import { GoPaperclip } from "react-icons/go";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
-import { generatePDF } from "@/app/UiComponents/buttons/GenerateLeadPdf.jsx";
 import Link from "next/link";
 import { LeadNotes } from "../leads/tabs/LeadsNotes";
 import { MdModeEdit, MdTask, MdWork } from "react-icons/md";
 import LeadProjects from "./projects/LeadProjects";
-import { TasksList } from "../utility/TasksList";
+import { TasksList } from "../tasks/TasksList";
 import { ProjectDetails } from "./projects/ProjectDetails";
-import TelegramLink from "./utility/TelegramLink";
 import { InfoCard } from "../leads/core/InfoCard";
 import { LeadContactInfo } from "../leads/panels/LeadContactInfo";
 import { LeadInfo } from "../leads/panels/LeadInfo";
 import { PreviewLead } from "../leads/features/PreviewLead";
 import { CallReminders } from "../leads/tabs/CallReminders";
 import { FileList } from "../leads/tabs/Files";
-
-const TabPanel = ({ children, value, index }) => (
-  <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
-    {value === index && children}
-  </Box>
-);
+import { TabPanel } from "../leads/shared/TabPanel";
+import { WorkStageDialogHeader } from "../leads/shared/WorkStageDialogHeader";
 
 // LeadContent Component (Extracted Shared Content)
 const LeadContent = ({
@@ -99,20 +86,6 @@ const LeadContent = ({
           [value]: !prev[value],
         }));
       }
-      // if (setleads) {
-      //   setleads((prev) =>
-      //     prev.map((l) =>
-      //       l.id === lead.id
-      //         ? {
-      //             ...l,
-      //             projects: l.projects.map((project, index) =>
-      //               index === 0 ? { ...project, status: value } : project
-      //             ),
-      //           }
-      //         : l
-      //     )
-      //   );
-      // }
       if (setLead) {
         setLead((oldLead) => ({
           ...oldLead,
@@ -124,117 +97,61 @@ const LeadContent = ({
       setAnchorEl(null);
     }
   };
+
   const isNotUser = () => {
     if (lead.projects.length === 0) return false;
     return user.id !== lead.projects[0].userId;
   };
+
   const notUser = isNotUser(user);
   const modificationProject = lead.projects?.filter(
     (project) => project.status === "Modification"
   );
+
+  const projectStatuses = lead.projects?.[0]?.type
+    ? PROJECT_STATUSES[lead.projects[0].type]
+    : [];
+
   return (
     <>
-      <DialogTitle
-        sx={{
-          borderBottom: 1,
-          borderColor: "divider",
-          pb: 2,
-        }}
-      >
-        <Stack spacing={2}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            {handleClose && (
-              <IconButton onClick={() => handleClose(isPage)} sx={{ mr: 1 }}>
-                <BsArrowLeft size={20} />
-              </IconButton>
-            )}
-            <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
-              {lead.client.name[0]}
-            </Avatar>
-            {(lead.status === "NEW" || lead.status === "ON_HOLD") &&
-            !isAdmin ? (
-              ""
-            ) : (
-              <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                <Typography variant="body2" color="text.secondary">
-                  #{lead.id.toString().padStart(7, "0")} {lead.client.name}
-                </Typography>
-                -------
-                <Typography variant="body2" color="text.secondary">
-                  code {lead.code}
-                </Typography>
-              </Box>
-            )}
-          </Stack>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <TelegramLink lead={lead} setLead={setLead} />
-          </Stack>
-          <Stack
-            direction={isMobile ? "column" : "row"}
-            spacing={1}
-            alignItems={{ sm: "center" }}
-            justifyContent="flex-end"
-          >
-            {
-              <>
-                {isAdmin && (
-                  <>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      type={Link}
-                      href={`/dashboard/deals/${lead.id}`}
-                    >
-                      See the deal
-                    </Button>
-                    {lead.twoDDesignerId && (
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        type={Link}
-                        href={`/dashboard/work-stages/two-d/${lead.id}`}
-                      >
-                        See the two d lead
-                      </Button>
-                    )}
-                  </>
-                )}
+      {/* Header */}
+      <WorkStageDialogHeader
+        lead={lead}
+        theme={theme}
+        handleClose={handleClose}
+        isPage={isPage}
+        admin={isAdmin}
+        user={user}
+        setLead={setLead}
+        dealLink={`/dashboard/deals/${lead.id}`}
+        twoDLink={
+          lead.twoDDesignerId ? `/dashboard/work-stages/two-d/${lead.id}` : null
+        }
+      />
 
-                {lead.projects?.map((project) => {
-                  return (
-                    <Menu
-                      id="basic-menu"
-                      anchorEl={anchorEl}
-                      key={project.id}
-                      open={open}
-                      onClose={() => setAnchorEl(null)}
-                      MenuListProps={{
-                        "aria-labelledby": "basic-button",
-                      }}
-                    >
-                      {PROJECT_STATUSES[project.type].map((status) => (
-                        <MenuItem
-                          key={status}
-                          value={status}
-                          onClick={() => handleMenuClose(status)}
-                        >
-                          Type :{project.type} - {status}
-                        </MenuItem>
-                      ))}
-                    </Menu>
-                  );
-                })}
-              </>
-            }
-            {user.role !== "THREE_D_DESIGNER" &&
-              user.role !== "TWO_D_DESIGNER" && (
-                <Button onClick={() => generatePDF(lead, user)}>
-                  Generate pdf
-                </Button>
-              )}
-          </Stack>
-        </Stack>
-      </DialogTitle>
+      {/* Project Status Menu */}
+      {lead.projects?.map((project) => (
+        <Menu
+          id="basic-menu"
+          anchorEl={anchorEl}
+          key={project.id}
+          open={open}
+          onClose={() => setAnchorEl(null)}
+          MenuListProps={{
+            "aria-labelledby": "basic-button",
+          }}
+        >
+          {projectStatuses.map((status) => (
+            <MenuItem
+              key={status}
+              value={status}
+              onClick={() => handleMenuClose(status)}
+            >
+              Type: {project.type} - {status}
+            </MenuItem>
+          ))}
+        </Menu>
+      ))}
       <Tabs
         value={activeTab}
         onChange={(e, newValue) => setActiveTab(newValue)}

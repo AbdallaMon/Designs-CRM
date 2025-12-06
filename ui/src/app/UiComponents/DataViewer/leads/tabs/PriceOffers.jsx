@@ -30,21 +30,11 @@ import {
 import { Grid, Button } from "@mui/material";
 import { FaMoneyBillWave, FaUserAlt, FaCalendarAlt } from "react-icons/fa";
 import { AddPriceOffers } from "@/app/UiComponents/DataViewer/leads/dialogs/PriceOffersDialog.jsx";
-import { MdAttachFile, MdQuestionAnswer, MdTouchApp } from "react-icons/md";
-import SimpleFileInput from "../../../formComponents/SimpleFileInput";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { useAlertContext } from "@/app/providers/MuiAlert";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import DeleteModelButton from "../../../common/DeleteModelButton";
-import { SPAINQuestionsDialog } from "../../meeting/SPAIN/SPAINQuestionDialog";
-import { personalityEnum } from "@/app/helpers/constants";
-import VersaObjectionSystem from "../../meeting/VERSA/VERSADialog";
 
-import { checkIfAdmin } from "@/app/helpers/functions/utility";
-import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
-import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import LeadContractList from "../../contracts/ContractsList";
-import { AddExtraService } from "../dialogs/AddExtraService";
 
 export function PriceOffersList({ admin, lead, notUser }) {
   const [offers, setOffers] = useState(lead.priceOffers);
@@ -232,7 +222,7 @@ function PriceOfferSwitch({ priceOffer, setPriceOffers }) {
     const request = await handleRequestSubmit(
       { priceOfferId: priceOffer.id, isAccepted: event.target.checked },
       setLoading,
-      `shared/client-lead/price-offers/change-status`,
+      `shared/client-leads/price-offers/change-status`,
       false,
       "Updating"
     );

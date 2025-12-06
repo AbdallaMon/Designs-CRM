@@ -1,6 +1,6 @@
 import express from "express";
 const router = express.Router();
-import { addNote, getNotes } from "../../services/main/sharedServices.js";
+import { addNote, getNotes } from "../../services/main/shared/index.js";
 
 router.get("/notes", async (req, res) => {
   try {

@@ -19,7 +19,7 @@ import { sendEmail } from "./sendMail.js";
 import {
   createNotification,
   getUserDetailsWithSpecificFields,
-} from "./main/utility.js";
+} from "./main/utility/utility.js";
 import { arEngName, engName } from "./constants.js";
 
 export async function convertALeadNotification(lead) {

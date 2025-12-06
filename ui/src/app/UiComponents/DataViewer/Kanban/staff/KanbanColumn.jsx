@@ -12,9 +12,9 @@ import {
 } from "@mui/material";
 import { BiDollarCircle } from "react-icons/bi";
 import { BsKanban } from "react-icons/bs";
-import LeadCard from "../KanbanLeadCard";
+import LeadCard from "../leads/KanbanLeadCard";
 import { useDrop } from "react-dnd";
-import WorkStageKanbanCard from "../WorkStageKanbanCard";
+import WorkStageKanbanCard from "../work-stages/WorkStageKanbanCard";
 import { FinalizeModal } from "../../leads/widgets/FinalizeModal";
 import { useEffect, useState } from "react";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
@@ -93,7 +93,7 @@ const KanbanColumn = ({
   const fetchLeads = async () => {
     const request = await getData({
       url: isNotStaff
-        ? `shared/client-leads/projects/designers/columns?skip=${
+        ? `shared/projects/designers/columns?skip=${
             page * take
           }&take=${take}&type=${type}&status=${status}&staffId=${staffId}&`
         : `shared/client-leads/columns?status=${status}&skip=${
@@ -126,6 +126,9 @@ const KanbanColumn = ({
     }
   };
   const movelead = async (l, newStatus) => {
+    if (type === "CONTRACTLEVELS") {
+      return;
+    }
     if (isNotStaff) {
       const request = await handleRequestSubmit(
         {
@@ -135,7 +138,7 @@ const KanbanColumn = ({
           id: l.projects[0].id,
         },
         setLoading,
-        `shared/client-leads/designers/${l.id}/status`,
+        `shared/projects/designers/${l.id}/status`,
         false,
         "Updating",
         false,
@@ -321,6 +324,8 @@ const KanbanColumn = ({
                     type={type}
                     statusArray={statusArray}
                     setRerenderColumns={setRerenderColumns}
+                                        reRenderColumns={reRenderColumns}
+
                   />
                 );
               } else {
@@ -334,6 +339,7 @@ const KanbanColumn = ({
                     type={type}
                     statusArray={statusArray}
                     setRerenderColumns={setRerenderColumns}
+                    reRenderColumns={reRenderColumns}
                   />
                 );
               }

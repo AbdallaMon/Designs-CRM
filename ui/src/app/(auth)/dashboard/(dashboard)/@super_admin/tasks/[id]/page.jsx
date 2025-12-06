@@ -1,4 +1,4 @@
-import TaskDetails from "@/app/UiComponents/DataViewer/utility/TaskDetails";
+import { TaskDetails } from "@/app/UiComponents/DataViewer/tasks";
 
 export default function TaskPage({ params }) {
   const { id } = params;

@@ -1,7 +1,7 @@
 import prisma from "../../../prisma/prisma.js";
 import { v4 as uuidv4 } from "uuid";
 import { buildAndUploadContractPdf } from "./generateContractPdf.js";
-import { assignProjectToUser } from "../sharedServices.js";
+import { assignProjectToUser } from "../shared/projectServices.js";
 
 export async function getLeadContractList({ leadId }) {
   const where = {
@@ -74,7 +74,6 @@ export async function createContract({ payload }) {
       (sum, payment) => sum + Number(payment.amount),
       0
     );
-    console.log(amount, "amount");
     const totalAmount =
       amount != null && taxRate != null
         ? (Number(amount) + (Number(amount) * Number(taxRate)) / 100).toFixed(2)
@@ -1069,6 +1068,7 @@ export async function markContractAsCancelled({ contractId }) {
   });
   await buildAndUploadContractPdf({
     token: contract.arToken,
+    id: contract.id,
     signatureUrl: contract.signatureUrl,
     lng: "ar",
     canceled: true,
@@ -1119,7 +1119,12 @@ export async function getContractPaymentsGroupedService({
   const whereForCount = filterStatus
     ? { paymentsNew: { some: { status: filterStatus } } }
     : { paymentsNew: { some: {} } };
-  if (user && user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+  if (
+    user &&
+    user.role !== "ADMIN" &&
+    user.role !== "SUPER_ADMIN" &&
+    !user.isSuperSales
+  ) {
     whereForCount.clientLead = {
       userId: user.id,
     };

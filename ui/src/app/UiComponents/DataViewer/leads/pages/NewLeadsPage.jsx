@@ -28,22 +28,14 @@ import OnHoldLeads from "@/app/UiComponents/DataViewer/leads/pages/OnHoldLeads.j
 import NextCalls from "@/app/UiComponents/DataViewer/leads/widgets/NextCalls.jsx";
 import { FixedData } from "@/app/UiComponents/DataViewer/leads/widgets/FixedData.jsx";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
-import { NonConsultedLeads } from "./Non-consulted-leads";
+import { NonConsultedLeads } from "./NonConsultedLeads";
 import UpdateInitialConsultButton from "@/app/UiComponents/buttons/UpdateInitialConsultLead";
-import {
-  MdCheck,
-  MdHourglassEmpty,
-  MdPreview,
-  MdTimelapse,
-} from "react-icons/md";
+import { MdCheck, MdHourglassEmpty, MdPreview } from "react-icons/md";
 import CreateNewLead from "../features/AddNewLead";
 import NextMeetings from "../widgets/NextMeetings";
-import { FaEye } from "react-icons/fa";
 import PreviewDialog from "../PreviewLeadDialog";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
-import FloatingIdBadge from "../core/IdBadge";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent";
-import ReminderButtons from "../core/ReminderButtons";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
 import { EmailRedirect, WhatsAppRedirect } from "../core/Utility";
@@ -288,9 +280,9 @@ export function LeadSliderCard({ lead, setData }) {
               Preview Details
             </Button>
           )}
-          <Box sx={{ width: "100%" }}>
+          {/* <Box sx={{ width: "100%" }}>
             <ReminderButtons lead={lead} clientLeadId={lead.id} />
-          </Box>
+          </Box> */}
         </Box>
       </CardActions>
       <PreviewDialog

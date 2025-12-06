@@ -25,7 +25,7 @@ export const MultiAutoCompleteSelector = ({
   useEffect(() => {
     const fetchItems = async () => {
       const response = await getDataAndSet({
-        url: `shared/ids?where=${JSON.stringify(
+        url: `shared/utilities/ids?where=${JSON.stringify(
           where
         )}&model=${model}&select=${select}&isLanguage=${isLanguage}&`,
         setLoading,

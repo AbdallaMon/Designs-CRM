@@ -15,7 +15,6 @@ const WorkStageKanban = ({ staffId, type }) => {
   const [reRenderColumns, setReRenderColumns] = useState(
     Object.fromEntries(statusArray.map((key) => [key, false]))
   );
-
   const links = [
     {
       href: "/dashboard/all-deals",

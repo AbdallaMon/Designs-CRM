@@ -40,7 +40,7 @@ const NotificationsIcon = () => {
     const fetchUnreadNotifications = async () => {
       try {
         const response = await fetch(
-          `${url}/shared/notifications?userId=${user.id}&`,
+          `${url}/shared/utilities/notifications?userId=${user.id}&`,
           {
             credentials: "include",
           }

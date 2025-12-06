@@ -42,7 +42,7 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
     const request = await handleRequestSubmit(
       { personality },
       setLoading,
-      `shared/lead/update/${lead.id}`,
+      `shared/client-leads/update/${lead.id}`,
       false,
       "Updating",
       false,

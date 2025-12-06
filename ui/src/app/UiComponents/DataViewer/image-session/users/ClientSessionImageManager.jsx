@@ -50,10 +50,8 @@ import {
   FaPlay,
   FaObjectGroup,
 } from "react-icons/fa";
-import { getData } from "@/app/helpers/functions/getData";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import dayjs from "dayjs";
-import { NotesComponent } from "../../utility/Notes";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import FullScreenLoader from "../../../feedback/loaders/FullscreenLoader";
@@ -197,7 +195,7 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
       setData: setSessions,
     });
     await getDataAndSet({
-      url: `shared/ids?where=${JSON.stringify({
+      url: `shared/image-session/ids?where=${JSON.stringify({
         isArchived: false,
       })}&model=space&select=id,title&isLanguage=true&`,
       setLoading,
@@ -1039,7 +1037,7 @@ function ClientImageSessionName({
     const req = await handleRequestSubmit(
       { name: trimmed },
       setLoading,
-      `shared/image-session/${clientLeadId}/sessions/${sessionId}`,
+      `shared/utilities/image-session/${clientLeadId}/sessions/${sessionId}`,
       false,
       "Updating",
       false,

@@ -114,6 +114,7 @@ const SearchComponent = ({
             label={inputLabel}
             variant="outlined"
             fullWidth
+            type="search"
             InputProps={{
               ...params.InputProps,
               endAdornment: (

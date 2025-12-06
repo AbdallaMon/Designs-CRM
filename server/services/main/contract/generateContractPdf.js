@@ -15,7 +15,7 @@ import {
   formatDate,
   reverseString,
 } from "../../utilityServices.js";
-import { uploadToFTPHttpAsBuffer } from "../utility.js";
+import { uploadToFTPHttpAsBuffer } from "../utility/utility.js";
 import prisma from "../../../prisma/prisma.js";
 import { v4 as uuidv4 } from "uuid";
 import dayjs from "dayjs";
@@ -641,7 +641,11 @@ function buildPaymentLine({ payment, index, lng, taxRate }) {
     : `- ${ordinal} ${primary}: ${taxNote}`;
 }
 
-async function renderDbSpecialItems(ctx, { lng, contract, fonts, colors }) {
+async function renderDbSpecialItems(
+  ctx,
+  { lng, contract, fonts, colors, defaultContractUtilityData }
+) {
+  if (!defaultContractUtilityData?.specialClauses?.length) return;
   const items = (contract?.specialItems || [])
     .map((it) => (lng === "ar" ? it.labelAr : it.labelEn || it.labelAr))
     .filter(Boolean);
@@ -1377,7 +1381,8 @@ async function renderStagesTable(
   });
 
   ctx.y = rowTop - colH;
-
+  // increase gap with bottom after main row
+  ctx.y -= lastRowGapY;
   // ===== Seventh stage (disabled in this version) =====
   if (stageLast) {
     // (kept as in your source; unreachable since stageLast is undefined)
@@ -1391,6 +1396,7 @@ async function renderStageClauses(
   ctx,
   { lng, fonts, colors, defaultContractUtilityData }
 ) {
+  if (!defaultContractUtilityData?.stageClauses?.length) return;
   // Require at least 20% of page; otherwise new page
   const usableHeight = ctx.pageHeight - ctx.margin.top - ctx.margin.bottom;
   const minHeightNeeded = usableHeight * 0.2;
@@ -1448,6 +1454,7 @@ async function renderHandwrittenSpecialClauses(
   { lng, fonts, colors, defaultContractUtilityData }
 ) {
   // Require at least 30% of page; otherwise new page
+  if (!defaultContractUtilityData?.specialClauses?.length) return;
   const usableHeight = ctx.pageHeight - ctx.margin.top - ctx.margin.bottom;
   const minHeightNeeded = usableHeight * 0.3;
   const remaining = ctx.y - ctx.margin.bottom;
@@ -2216,13 +2223,19 @@ export async function buildAndUploadContractPdf({
   // defaultDrawingUrl = `${process.env.SERVER}/uploads/default-drawing.jpg`,
   canceled = false,
   defaultDrawingUrl = null,
+  id,
 }) {
   const siteUtility = await prisma.siteUtility.findFirst();
   const backgroundImageUrl = siteUtility?.pdfFrame || null;
   const introImageUrl = siteUtility?.introPage || null;
-
-  const contract = await prisma.contract.findUnique({
-    where: { arToken: token },
+  const OR = [{ arToken: token }];
+  if (id && !isNaN(Number(id))) {
+    OR.push({ id: Number(id) });
+  }
+  const contract = await prisma.contract.findFirst({
+    where: {
+      OR,
+    },
     include: {
       clientLead: { include: { client: true } },
       stages: {

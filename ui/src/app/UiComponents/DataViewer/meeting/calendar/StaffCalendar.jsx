@@ -24,7 +24,7 @@ function StaffAdminCalendar() {
   const [loadingAdmins, setLoadingAdmins] = useState(false);
   const loadAdminUsers = async () => {
     const response = await getData({
-      url: "shared/users/admins",
+      url: "shared/utilities/users/admins",
       setLoading: setLoadingAdmins,
     });
 
@@ -72,7 +72,7 @@ function StaffAdminCalendar() {
     </>
   );
 }
-const StaffCalendarPanel = () => {
+const StaffCalendarPanel = ({ isAdmin = false }) => {
   const searchParams = useSearchParams();
   const router = useRouter();
 

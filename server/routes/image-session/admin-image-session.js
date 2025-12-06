@@ -3,7 +3,7 @@ import {
   getAndThrowError,
   getPagination,
   verifyTokenAndHandleAuthorization,
-} from "../../services/main/utility.js";
+} from "../../services/main/utility/utility.js";
 import {
   createBulkDesignImage,
   createColorPallete,

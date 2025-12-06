@@ -27,23 +27,24 @@ const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const isAdmin = checkIfAdmin(user);
+  async function getInitialData() {
+    const clientLeadUpdates = await getData({
+      url: `shared/updates/${clientLeadId}?type=${currentUserDepartment}&department=${departmentFilter}&`,
+      setLoading,
+    });
+    if (clientLeadUpdates && clientLeadUpdates.status === 200) {
+      setUpdates(clientLeadUpdates.data);
+    }
+  }
   useEffect(() => {
     if (clientLeadId) {
-      async function getInitialData() {
-        const clientLeadUpdates = await getData({
-          url: `shared/client-leads/${clientLeadId}/updates?type=${currentUserDepartment}&department=${departmentFilter}&`,
-          setLoading,
-        });
-        if (clientLeadUpdates && clientLeadUpdates.status === 200) {
-          setUpdates(clientLeadUpdates.data);
-        }
-      }
       getInitialData();
     }
   }, [clientLeadId, departmentFilter]);
 
   const handleCreateUpdate = (updateData) => {
-    setUpdates((prev) => [updateData, ...prev]);
+    // setUpdates((prev) => [updateData, ...prev]);
+    getInitialData();
   };
 
   const handleToggleArchive = (newUpdate) => {
@@ -53,15 +54,16 @@ const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
     );
   };
   function onUpdate(newUpdate) {
-    setUpdates((oldUpdates) =>
-      oldUpdates.map((up) => {
-        if (up.id === newUpdate.id) {
-          return newUpdate;
-        } else {
-          return up;
-        }
-      })
-    );
+    getInitialData();
+    // setUpdates((oldUpdates) =>
+    //   oldUpdates.map((up) => {
+    //     if (up.id === newUpdate.id) {
+    //       return newUpdate;
+    //     } else {
+    //       return up;
+    //     }
+    //   })
+    // );
   }
 
   if (loading) {

@@ -80,7 +80,7 @@ export const CreateUpdateModal = ({
     const request = await handleRequestSubmit(
       formData,
       setLoading,
-      `shared/client-leads/${clientLeadId}/updates?department=${department}&`,
+      `shared/updates/${clientLeadId}?department=${department}&`,
       false,
       "Creating"
     );

@@ -755,6 +755,7 @@ function StagesTable({ session, lng, levelClauses }) {
 // Readable stage clauses (now always fully expanded — no collapse)
 function ReadableStageClauses({ lng, stageClauses }) {
   const theme = useTheme();
+  if (!stageClauses || !stageClauses.length) return null;
   return (
     <SectionCard title={lng === "ar" ? "بنود المراحل" : "Stage Clauses"}>
       <Stack spacing={2.5}>
@@ -887,7 +888,10 @@ export default function ContractSession({
   contractUtility,
 }) {
   const [confirmed, setConfirmed] = useState(false);
-
+  console.log(
+    contractUtility?.stageClauses,
+    "<< stage clauses in contract session"
+  );
   // choose clauses: prefer external override if provided
   const stageClauses = useMemo(() => {
     return contractUtility?.stageClauses;

@@ -8,7 +8,7 @@ import {
 import {
   getImages,
   getImageSesssionModel,
-} from "../../services/main/sharedServices.js";
+} from "../../services/main/shared/index.js";
 
 router.get(`/data`, async (req, res) => {
   try {

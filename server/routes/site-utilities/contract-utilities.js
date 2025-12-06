@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { getAndThrowError } from "../../services/main/utility.js";
 import {
   createContractLevelClause,
   createContractSpecialClause,
@@ -14,7 +13,8 @@ import {
   updateContractSpecialClause,
   updateContractStageClause,
   updateContractUtilityData,
-} from "../../services/main/siteUtilityServices.js";
+} from "../../services/main/site-utilities/siteUtilityServices.js";
+import { getAndThrowError } from "../../services/main/utility/utility.js";
 
 // 1. API: GET "/obligations"
 //    - Purpose: Fetch the obligations of both parties in Arabic and English.

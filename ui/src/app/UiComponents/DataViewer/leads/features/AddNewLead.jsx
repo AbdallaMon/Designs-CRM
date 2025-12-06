@@ -73,6 +73,7 @@ export default function CreateNewLead() {
           fontSize: "1rem",
           fontWeight: 600,
           textTransform: "none",
+          mb: 2,
         }}
       >
         Add new lead
@@ -81,13 +82,13 @@ export default function CreateNewLead() {
       <Dialog
         open={open}
         onClose={handleClose}
-        fullWidth
         maxWidth="md"
+        fullWidth={true}
         PaperProps={{
           sx: {
             borderRadius: 3,
             overflow: "hidden",
-            zIndex: theme.zIndex.modal + 1,
+            zIndex: theme.zIndex.modal + 60000,
           },
         }}
       >

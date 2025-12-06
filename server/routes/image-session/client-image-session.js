@@ -14,8 +14,8 @@ import {
   saveClientSelectedMaterials,
   saveClientSelectedStyle,
 } from "../../services/main/image-session/imageSessionSevices.js";
-import { getAndThrowError } from "../../services/main/utility.js";
-import { uploadPdfAndApproveSession } from "../../services/main/clientServices.js";
+import { getAndThrowError } from "../../services/main/utility/utility.js";
+import { uploadPdfAndApproveSession } from "../../services/main/client/clientServices.js";
 const router = Router();
 router.get("/page-info", async (req, res) => {
   try {

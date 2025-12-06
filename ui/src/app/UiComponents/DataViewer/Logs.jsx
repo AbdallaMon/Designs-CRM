@@ -40,9 +40,13 @@ const NotificationPage = ({ searchParams }) => {
     total,
     totalPages,
     setFilters,
-  } = useDataFetcher("shared/notifications?userId=" + user.id + "&", false, {
-    staffId,
-  });
+  } = useDataFetcher(
+    "shared/utilities/notifications?userId=" + user.id + "&",
+    false,
+    {
+      staffId,
+    }
+  );
   const handleClearAllSearchParams = () => {
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);

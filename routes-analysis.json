@@ -1,0 +1,1141 @@
+{
+  "metadata": {
+    "file": "server/routes/shared.js",
+    "totalLines": 1936,
+    "totalRoutes": 91,
+    "analysisDate": "2025-12-04",
+    "description": "Complete route extraction organized by domain/category with HTTP methods, paths, and service functions"
+  },
+  "subrouters": [
+    {
+      "domain": "Courses",
+      "path": "/courses",
+      "router": "coursesRouter",
+      "file": "courses/staffCourses.js"
+    },
+    {
+      "domain": "Contracts",
+      "path": "/contracts",
+      "router": "contractRouter",
+      "file": "contract/contracts.js"
+    },
+    {
+      "domain": "Site Utilities",
+      "path": "/site-utilities",
+      "router": "siteUtilitiesServices",
+      "file": "site-utilities/siteUtility.js"
+    },
+    {
+      "domain": "Questions",
+      "path": "/questions",
+      "router": "questionsRoutes",
+      "file": "questions/questions.js"
+    },
+    {
+      "domain": "Calendar",
+      "path": "/calendar",
+      "router": "calendarRoutes",
+      "file": "calendar/calendar.js"
+    },
+    {
+      "domain": "Image Session",
+      "path": "/image-session",
+      "router": "imageSessionRouter",
+      "file": "image-session/image-session.js"
+    }
+  ],
+  "routes": {
+    "client_leads": {
+      "domain": "Client Leads",
+      "description": "Lead management, status updates, conversions, and deal assignment",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/client-leads",
+          "name": "List Client Leads (Paginated)",
+          "description": "Get all client leads with pagination, filtering by consultation status",
+          "serviceFunctions": ["getClientLeads"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["limit", "page", "filters"],
+          "scoping": "User-scoped (consultation check)"
+        },
+        {
+          "method": "GET",
+          "path": "/client-leads/deals",
+          "name": "Get Leads by Date Range",
+          "description": "Retrieve leads within a date range, admin vs staff scoping",
+          "serviceFunctions": ["getClientLeadsByDateRange"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["startDate", "endDate", "filters"],
+          "scoping": "Admin unrestricted; Staff/Sales scoped to self"
+        },
+        {
+          "method": "GET",
+          "path": "/client-leads/columns",
+          "name": "Get Kanban Columns Summary",
+          "description": "Get column status summary for Kanban view",
+          "serviceFunctions": ["getClientLeadsColumnStatus"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["filters"],
+          "scoping": "Admin unrestricted; Staff scoped to self"
+        },
+        {
+          "method": "GET",
+          "path": "/client-leads/:id",
+          "name": "Get Client Lead Details",
+          "description": "Fetch full details of a specific client lead (admin/self scoped)",
+          "serviceFunctions": [
+            "getAdminClientLeadDetails",
+            "getClientLeadDetails"
+          ],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "scoping": "Admin sees all; Staff sees their own or assigned"
+        },
+        {
+          "method": "PUT",
+          "path": "/client-leads",
+          "name": "Assign Lead to User / Convert Deal",
+          "description": "Assign or convert a lead (requires admin privileges or self-assignment)",
+          "serviceFunctions": ["assignLeadToAUser"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "bodyParams": ["id", "userId"]
+        },
+        {
+          "method": "PUT",
+          "path": "/client-leads/convert",
+          "name": "Move Lead to Converted List",
+          "description": "Mark lead as converted and move to converted list with reason",
+          "serviceFunctions": ["markClientLeadAsConverted"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "bodyParams": ["id", "reasonToConvert"]
+        },
+        {
+          "method": "PUT",
+          "path": "/client-leads/:id/status",
+          "name": "Update Lead Status or Price",
+          "description": "Change lead status or update pricing information",
+          "serviceFunctions": ["updateClientLeadStatus"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "bodyParams": ["status", "updatePrice"]
+        },
+        {
+          "method": "POST",
+          "path": "/:userId/client-leads/countries",
+          "name": "Check Country Restrictions",
+          "description": "Verify if user is allowed to take a lead from a specific country",
+          "serviceFunctions": ["checkIfUserAllowedToTakeALead"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["userId"],
+          "bodyParams": ["country"]
+        }
+      ]
+    },
+    "contracts": {
+      "domain": "Contracts",
+      "description": "Lead contract management (CRUD operations)",
+      "routes": [
+        {
+          "method": "PUT",
+          "path": "/client-leads/contract/:id",
+          "name": "Update Contract",
+          "description": "Edit a single contract by ID",
+          "serviceFunctions": ["editContract"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "bodyParams": ["contract data"]
+        },
+        {
+          "method": "PUT",
+          "path": "/client-leads/contract/:id/current",
+          "name": "Mark Contract as Current",
+          "description": "Set contract as the active/current contract",
+          "serviceFunctions": ["markAsCurrent"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"]
+        },
+        {
+          "method": "PUT",
+          "path": "/client-leads/contract/:id/completed",
+          "name": "Mark Contract as Completed",
+          "description": "Mark contract as completed/fulfilled",
+          "serviceFunctions": ["markAsCompleted"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"]
+        },
+        {
+          "method": "DELETE",
+          "path": "/client-leads/contract/:id",
+          "name": "Delete Contract",
+          "description": "Remove a contract permanently",
+          "serviceFunctions": ["deleteContract"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"]
+        }
+      ]
+    },
+    "call_reminders": {
+      "domain": "Call Reminders",
+      "description": "Call reminder management for follow-ups",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/client-leads/calls",
+          "name": "Get Next Calls/Reminders",
+          "description": "List upcoming call reminders with pagination",
+          "serviceFunctions": ["getNextCalls"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["limit", "page", "filters"]
+        },
+        {
+          "method": "POST",
+          "path": "/client-leads/:id/call-reminders",
+          "name": "Create Call Reminder",
+          "description": "Create a new call reminder for a lead",
+          "serviceFunctions": ["createCallReminder"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "bodyParams": ["callDetails"]
+        },
+        {
+          "method": "PUT",
+          "path": "/client-leads/call-reminders/:id",
+          "name": "Update Call Reminder Status",
+          "description": "Update call reminder status and mark as done/pending",
+          "serviceFunctions": ["updateCallReminderStatus"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "bodyParams": ["status", "notes"]
+        }
+      ]
+    },
+    "meeting_reminders": {
+      "domain": "Meeting Reminders",
+      "description": "Meeting reminder management and scheduling",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/client-leads/meetings",
+          "name": "Get Next Meetings/Reminders",
+          "description": "List upcoming meeting reminders with pagination",
+          "serviceFunctions": ["getNextMeetings"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["limit", "page", "filters"]
+        },
+        {
+          "method": "GET",
+          "path": "/client-leads/:clientLeadId/meeting-reminders/",
+          "name": "Get All Meeting Reminders for Lead",
+          "description": "Fetch all meeting reminders associated with a client lead",
+          "serviceFunctions": ["getAllMeetingRemindersByClientLeadId"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["clientLeadId"]
+        },
+        {
+          "method": "POST",
+          "path": "/client-leads/:id/meeting-reminders",
+          "name": "Create Meeting Reminder",
+          "description": "Create a new meeting reminder for a lead",
+          "serviceFunctions": ["createMeetingReminder"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "bodyParams": ["meetingDetails"]
+        },
+        {
+          "method": "POST",
+          "path": "/client-leads/:id/meeting-reminders/token",
+          "name": "Create Meeting Reminder (with Token)",
+          "description": "Create meeting reminder using token authentication",
+          "serviceFunctions": ["createMeetingReminderWithToken"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "bodyParams": ["token", "meetingDetails"]
+        },
+        {
+          "method": "PUT",
+          "path": "/client-leads/meeting-reminders/:id",
+          "name": "Update Meeting Reminder Status",
+          "description": "Update meeting reminder status and details",
+          "serviceFunctions": ["updateMeetingReminderStatus"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "bodyParams": ["status", "notes"]
+        },
+        {
+          "method": "GET",
+          "path": "/meeting-reminders/:meetingId",
+          "name": "Get Meeting Reminder by ID",
+          "description": "Fetch details of a specific meeting reminder",
+          "serviceFunctions": ["getMeetingById"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["meetingId"]
+        }
+      ]
+    },
+    "price_offers": {
+      "domain": "Price Offers",
+      "description": "Price offer creation and status management",
+      "routes": [
+        {
+          "method": "POST",
+          "path": "/client-leads/:id/price-offers",
+          "name": "Create Price Offer",
+          "description": "Create a new price offer for a lead",
+          "serviceFunctions": ["createPriceOffer"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "bodyParams": ["priceOfferDetails"]
+        },
+        {
+          "method": "POST",
+          "path": "/client-lead/price-offers/change-status",
+          "name": "Change Price Offer Status",
+          "description": "Accept or reject a price offer",
+          "serviceFunctions": ["editPriceOfferStatus"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "bodyParams": ["priceOfferId", "isAccepted"]
+        }
+      ]
+    },
+    "payments": {
+      "domain": "Payments",
+      "description": "Payment recording and tracking",
+      "routes": [
+        {
+          "method": "POST",
+          "path": "/client-leads/:id/payments",
+          "name": "Add Payments / Extra-Service Payments",
+          "description": "Record regular or extra-service payments for a lead",
+          "serviceFunctions": ["makePayments", "makeExtraServicePayments"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "bodyParams": ["payments", "paymentType"]
+        }
+      ]
+    },
+    "notes_files": {
+      "domain": "Notes & Files",
+      "description": "Note and file management for leads and projects",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/notes",
+          "name": "Get Notes",
+          "description": "Retrieve notes based on search parameters",
+          "serviceFunctions": ["getNotes"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["filters"]
+        },
+        {
+          "method": "POST",
+          "path": "/notes",
+          "name": "Create Note (Generic)",
+          "description": "Create a generic note not tied to a specific lead",
+          "serviceFunctions": ["addNote"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "bodyParams": ["noteContent", "relatedTo"]
+        },
+        {
+          "method": "POST",
+          "path": "/client-leads/:id/notes",
+          "name": "Add Note to Lead",
+          "description": "Create a note attached to a specific lead",
+          "serviceFunctions": ["createNote"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "bodyParams": ["noteContent", "attachments"]
+        },
+        {
+          "method": "POST",
+          "path": "/client-leads/:id/files",
+          "name": "Upload File to Lead",
+          "description": "Upload and attach a file to a client lead",
+          "serviceFunctions": ["createFile"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "bodyParams": ["file", "fileDetails"]
+        },
+        {
+          "method": "DELETE",
+          "path": "/delete/:id",
+          "name": "Delete by Model (Generic)",
+          "description": "Delete any model by ID (notes, files, etc.)",
+          "serviceFunctions": ["deleteAModel"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "bodyParams": ["modelType"]
+        }
+      ]
+    },
+    "updates_approvals": {
+      "domain": "Updates & Approvals",
+      "description": "Lead update workflow and departmental authorization",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/client-leads/:clientLeadId/updates",
+          "name": "Get Updates for Lead",
+          "description": "List all updates for a specific client lead",
+          "serviceFunctions": ["getUpdates"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["clientLeadId"],
+          "queryParams": ["filters"]
+        },
+        {
+          "method": "GET",
+          "path": "/client-leads/shared-settings/:updateId",
+          "name": "Get Shared Settings for Update",
+          "description": "Retrieve shared settings/configuration for an update",
+          "serviceFunctions": ["getSharedSettings"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["updateId"]
+        },
+        {
+          "method": "POST",
+          "path": "/client-leads/:clientLeadId/updates",
+          "name": "Create New Update",
+          "description": "Create a new update/workflow item for a lead",
+          "serviceFunctions": ["createAnUpdate"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["clientLeadId"],
+          "bodyParams": ["updateData"]
+        },
+        {
+          "method": "POST",
+          "path": "/client-leads/updates/:updateId/authorize",
+          "name": "Authorize Department",
+          "description": "Grant department access to an update",
+          "serviceFunctions": ["authorizeDepartmentToUpdate"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["updateId"],
+          "bodyParams": ["type"]
+        },
+        {
+          "method": "POST",
+          "path": "/client-leads/updates/:updateId/authorize/shared",
+          "name": "Unauthorize Department",
+          "description": "Revoke department access from a shared update",
+          "serviceFunctions": ["unAuthorizeDepartmentToUpdate"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["updateId"],
+          "bodyParams": ["type"]
+        },
+        {
+          "method": "PUT",
+          "path": "/client-leads/updates/:updateId/archive",
+          "name": "Archive/Unarchive Update",
+          "description": "Toggle archive status of an update",
+          "serviceFunctions": ["toggleArchieveAnUpdate"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["updateId"],
+          "bodyParams": ["isArchived"]
+        },
+        {
+          "method": "PUT",
+          "path": "/client-leads/shared-updates/:sharedUpdateId/archive",
+          "name": "Archive/Unarchive Shared Update",
+          "description": "Toggle archive status of a shared update",
+          "serviceFunctions": ["toggleArchieveASharedUpdate"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["sharedUpdateId"],
+          "bodyParams": ["isArchived"]
+        },
+        {
+          "method": "PUT",
+          "path": "/client-leads/updates/:updateId/mark-done",
+          "name": "Mark Update as Done",
+          "description": "Mark update as complete and optionally archive",
+          "serviceFunctions": ["markAnUpdateAsDone"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["updateId"],
+          "bodyParams": ["clientLeadId", "isArchived"]
+        },
+        {
+          "method": "PUT",
+          "path": "/lead/update/:id",
+          "name": "Update Lead Field (Admin)",
+          "description": "Admin endpoint to update specific lead fields",
+          "serviceFunctions": ["updateLeadField"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "bodyParams": ["fieldUpdates"]
+        }
+      ]
+    },
+    "projects": {
+      "domain": "Projects",
+      "description": "Project management including designer assignment and work stages",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/client-leads/projects/designers",
+          "name": "Get Projects by Designers",
+          "description": "List all projects organized by designer (with scoping)",
+          "serviceFunctions": ["getLeadByPorjects"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["filters"],
+          "scoping": "Admin sees all; Staff sees their own"
+        },
+        {
+          "method": "GET",
+          "path": "/client-leads/projects/designers/columns",
+          "name": "Get Projects Designer Columns",
+          "description": "Get column summary for designer project board (Kanban)",
+          "serviceFunctions": ["getLeadByPorjectsColumn"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["filters"],
+          "scoping": "Admin sees all; Staff sees their own"
+        },
+        {
+          "method": "GET",
+          "path": "/client-leads/projects/designers/:id",
+          "name": "Get Lead Details by Project",
+          "description": "Fetch lead details filtered by project ID",
+          "serviceFunctions": ["getLeadDetailsByProject"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "scoping": "Scoped by user role"
+        },
+        {
+          "method": "GET",
+          "path": "/projects",
+          "name": "Get Projects List",
+          "description": "List all projects (scoped by user unless admin)",
+          "serviceFunctions": ["getProjectsByClientLeadId"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["filters"],
+          "scoping": "User-scoped unless admin"
+        },
+        {
+          "method": "GET",
+          "path": "/archived-projects",
+          "name": "Get Archived Projects",
+          "description": "List archived projects with pagination",
+          "serviceFunctions": ["getArchivedProjects"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["limit", "page", "filters"],
+          "scoping": "User-scoped unless admin"
+        },
+        {
+          "method": "GET",
+          "path": "/projects/user-profile/:userId",
+          "name": "Get User Profile Projects",
+          "description": "Get all projects for a specific user profile",
+          "serviceFunctions": ["getUserProjects"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["userId"],
+          "queryParams": ["limit", "page", "filters"]
+        },
+        {
+          "method": "GET",
+          "path": "/projects/:id",
+          "name": "Get Project Details",
+          "description": "Fetch full details of a specific project",
+          "serviceFunctions": ["getProjectDetailsById"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "scoping": "Designer-scoped if not admin"
+        },
+        {
+          "method": "PUT",
+          "path": "/projects/:id",
+          "name": "Update Project",
+          "description": "Update project information and metadata",
+          "serviceFunctions": ["updateProject"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "bodyParams": ["projectData"]
+        },
+        {
+          "method": "PUT",
+          "path": "/projects/:id/assign-designer",
+          "name": "Assign Designer to Project",
+          "description": "Assign or change designer, manage modifications",
+          "serviceFunctions": ["assignProjectToUser"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "bodyParams": [
+            "designerId",
+            "assignmentId",
+            "deleteDesigner",
+            "addToModification"
+          ]
+        },
+        {
+          "method": "PUT",
+          "path": "/client-leads/designers/:leadId/status",
+          "name": "Update Project Status (Designer Board)",
+          "description": "Update project work stage status from designer board",
+          "serviceFunctions": ["updateProject"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["leadId"],
+          "bodyParams": ["status"]
+        },
+        {
+          "method": "GET",
+          "path": "/client-leads/:leadId/projects/groups",
+          "name": "Get Unique Project Groups",
+          "description": "Get all unique project groups for a lead",
+          "serviceFunctions": ["getUniqueProjectGroups"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["leadId"]
+        }
+      ]
+    },
+    "tasks": {
+      "domain": "Tasks",
+      "description": "Task and modification management",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/tasks",
+          "name": "Get Tasks List",
+          "description": "List all tasks with filtering, designer/staff scoped",
+          "serviceFunctions": ["getTasksWithNotesIncluded"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["filters"],
+          "scoping": "Designer/Staff scoped; includes notes"
+        },
+        {
+          "method": "POST",
+          "path": "/tasks",
+          "name": "Create Task",
+          "description": "Create a new task or modification",
+          "serviceFunctions": ["createNewTask"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "bodyParams": ["taskData", "type"],
+          "notes": "Type can be 'TASK' or 'MODIFICATION'"
+        },
+        {
+          "method": "GET",
+          "path": "/tasks/:id",
+          "name": "Get Task Details",
+          "description": "Fetch details of a specific task",
+          "serviceFunctions": ["getTaskDetails"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["id"],
+          "scoping": "Designer/Staff scoped"
+        },
+        {
+          "method": "PUT",
+          "path": "/tasks/:taskId",
+          "name": "Update Task",
+          "description": "Update task information and status",
+          "serviceFunctions": ["updateTask"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["taskId"],
+          "bodyParams": ["taskData", "status"]
+        }
+      ]
+    },
+    "dashboard": {
+      "domain": "Dashboard",
+      "description": "Analytics and dashboard metrics endpoints",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/dashboard/key-metrics",
+          "name": "Get Key Metrics",
+          "description": "Retrieve primary KPIs (leads, conversions, revenue)",
+          "serviceFunctions": ["getKeyMetrics"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["dateRange", "filters"]
+        },
+        {
+          "method": "GET",
+          "path": "/dashboard/leads-status",
+          "name": "Get Lead Status Distribution",
+          "description": "Analytics on lead status breakdown",
+          "serviceFunctions": ["getDashboardLeadStatusData"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["filters"]
+        },
+        {
+          "method": "GET",
+          "path": "/dashboard/monthly-performance",
+          "name": "Get Monthly Performance Data",
+          "description": "Performance metrics organized by month",
+          "serviceFunctions": ["getMonthlyPerformanceData"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["month", "year"]
+        },
+        {
+          "method": "GET",
+          "path": "/dashboard/emirates-analytics",
+          "name": "Get Emirates Analytics",
+          "description": "Geographic analytics broken down by emirates",
+          "serviceFunctions": ["getEmiratesAnalytics"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["filters"]
+        },
+        {
+          "method": "GET",
+          "path": "/dashboard/leads-monthly-overview",
+          "name": "Get Leads Monthly Overview",
+          "description": "Monthly summary of lead activity",
+          "serviceFunctions": ["getLeadsMonthlyOverview"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["filters"]
+        },
+        {
+          "method": "GET",
+          "path": "/dashboard/week-performance",
+          "name": "Get Week Performance",
+          "description": "Weekly performance metrics and trends",
+          "serviceFunctions": ["getPerformanceMetrics"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["week", "filters"]
+        },
+        {
+          "method": "GET",
+          "path": "/dashboard/latest-leads",
+          "name": "Get Latest New Leads",
+          "description": "Recently created leads",
+          "serviceFunctions": ["getLatestNewLeads"],
+          "usesSubRouter": false,
+          "authorization": "SHARED"
+        },
+        {
+          "method": "GET",
+          "path": "/dashboard/recent-activities",
+          "name": "Get Recent Activities",
+          "description": "Recent actions/events across the system",
+          "serviceFunctions": ["getRecentActivities"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["filters"]
+        },
+        {
+          "method": "GET",
+          "path": "/dashboard/designer-metrics",
+          "name": "Get Designer Metrics",
+          "description": "Performance metrics specific to designers",
+          "serviceFunctions": ["getDesignerMetrics"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["filters"]
+        }
+      ]
+    },
+    "calendar": {
+      "domain": "Calendar",
+      "description": "Availability calendar and slot management",
+      "routes": [
+        {
+          "method": "POST",
+          "path": "/calendar/available-days",
+          "name": "Create Available Day",
+          "description": "Add a new available day with time slots",
+          "serviceFunctions": ["createAvailableDay"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "bodyParams": [
+            "date",
+            "fromHour",
+            "toHour",
+            "duration",
+            "breakMinutes"
+          ],
+          "queryParams": ["timezone"]
+        },
+        {
+          "method": "PUT",
+          "path": "/calendar/available-days/:dayId",
+          "name": "Update Available Day",
+          "description": "Modify an existing available day",
+          "serviceFunctions": ["updateAvailableDay"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["dayId"],
+          "bodyParams": [
+            "date",
+            "fromHour",
+            "toHour",
+            "duration",
+            "breakMinutes"
+          ],
+          "queryParams": ["timezone"]
+        },
+        {
+          "method": "POST",
+          "path": "/calendar/available-days/multiple",
+          "name": "Create Multiple Available Days",
+          "description": "Batch create available days for date range",
+          "serviceFunctions": ["createAvailableDatesForMoreThanOneDay"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "bodyParams": [
+            "days",
+            "fromHour",
+            "toHour",
+            "duration",
+            "breakMinutes"
+          ],
+          "queryParams": ["timezone"]
+        },
+        {
+          "method": "POST",
+          "path": "/calendar/add-custom/:dayId",
+          "name": "Add Custom Availability to Day",
+          "description": "Add custom time slots to an existing day",
+          "serviceFunctions": ["addCutsomDate"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["dayId"],
+          "bodyParams": ["date", "startTime", "endTime"],
+          "queryParams": ["timezone"]
+        },
+        {
+          "method": "DELETE",
+          "path": "/calendar/slots/:slotId",
+          "name": "Delete Slot",
+          "description": "Remove a specific time slot",
+          "serviceFunctions": ["deleteASlot"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["slotId"]
+        },
+        {
+          "method": "DELETE",
+          "path": "/calendar/days/:dayId",
+          "name": "Delete Day",
+          "description": "Remove an entire available day",
+          "serviceFunctions": ["deleteADay"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["dayId"]
+        }
+      ]
+    },
+    "delivery_schedule": {
+      "domain": "Delivery Schedule",
+      "description": "Project delivery timeline management",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/projects/:projectId/delivery-schedules",
+          "name": "Get Delivery Schedules",
+          "description": "Fetch delivery schedules for a project",
+          "serviceFunctions": ["getDeliveryScheduleByProjectId"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["projectId"]
+        },
+        {
+          "method": "POST",
+          "path": "/delivery-schedule",
+          "name": "Create Delivery Schedule",
+          "description": "Create a new delivery timeline item",
+          "serviceFunctions": ["createNewDeliverySchedule"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "bodyParams": ["scheduleData"]
+        },
+        {
+          "method": "POST",
+          "path": "/delivery-schedule/:deliveryId/link-meeting",
+          "name": "Link Delivery to Meeting",
+          "description": "Associate a delivery with a meeting reminder",
+          "serviceFunctions": ["linkADeliveryToMeeting"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["deliveryId"],
+          "bodyParams": ["meetingReminderId"]
+        },
+        {
+          "method": "DELETE",
+          "path": "/delivery-schedule/:deliveryId",
+          "name": "Delete Delivery Schedule",
+          "description": "Remove a delivery schedule entry",
+          "serviceFunctions": ["deleteDeliverySchedule"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["deliveryId"]
+        }
+      ]
+    },
+    "utilities": {
+      "domain": "Utilities & Admin",
+      "description": "System utilities, user management, and logging",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/notifications",
+          "name": "Get Notifications",
+          "description": "Retrieve user notifications with pagination",
+          "serviceFunctions": ["getNotifications"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["limit", "page", "filters"]
+        },
+        {
+          "method": "GET",
+          "path": "/fixed-data",
+          "name": "Get Fixed Data",
+          "description": "Get system-wide constants and enumerations",
+          "serviceFunctions": ["getAllFixedData"],
+          "usesSubRouter": false,
+          "authorization": "SHARED"
+        },
+        {
+          "method": "GET",
+          "path": "/user-logs",
+          "name": "Get User Logs",
+          "description": "Retrieve user activity logs within time range",
+          "serviceFunctions": ["checkUserLog"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["userId", "startTime", "endTime"]
+        },
+        {
+          "method": "POST",
+          "path": "/user-logs",
+          "name": "Submit User Log",
+          "description": "Record user activity/time entry",
+          "serviceFunctions": ["submitUserLog"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "bodyParams": ["userId", "date", "description", "totalMinutes"]
+        },
+        {
+          "method": "GET",
+          "path": "/users/role/:userId",
+          "name": "Get User Role",
+          "description": "Fetch user role information by ID",
+          "serviceFunctions": ["getUserRole"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["userId"]
+        },
+        {
+          "method": "GET",
+          "path": "/users/admins",
+          "name": "Get Admin Users",
+          "description": "List all admin/super-admin users",
+          "serviceFunctions": ["getAdmins"],
+          "usesSubRouter": false,
+          "authorization": "SHARED"
+        },
+        {
+          "method": "GET",
+          "path": "/roles",
+          "name": "Get Other Roles",
+          "description": "Get available roles the user can assign",
+          "serviceFunctions": ["getOtherRoles"],
+          "usesSubRouter": false,
+          "authorization": "SHARED"
+        }
+      ]
+    },
+    "image_session": {
+      "domain": "Image Session",
+      "description": "Image session and space management",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/image-session/images",
+          "name": "Get Images",
+          "description": "Retrieve images by pattern or space IDs",
+          "serviceFunctions": ["getImages"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["patternIds", "spaceIds"]
+        },
+        {
+          "method": "GET",
+          "path": "/image-session",
+          "name": "Get Image Session Model",
+          "description": "Fetch image session data for a model",
+          "serviceFunctions": ["getImageSesssionModel"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["model", "filters"]
+        }
+      ]
+    },
+    "sales_stages": {
+      "domain": "Sales Stages",
+      "description": "Sales stage workflow management",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/client-lead/:clientLeadId/sales-stages",
+          "name": "Get Sales Stages",
+          "description": "Retrieve sales stage workflow for a lead",
+          "serviceFunctions": ["getSalesStages"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["clientLeadId"]
+        },
+        {
+          "method": "POST",
+          "path": "/client-lead/:clientLeadId/sales-stages",
+          "name": "Edit Sales Stage",
+          "description": "Update lead's current sales stage",
+          "serviceFunctions": ["editSalesSage"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["clientLeadId"],
+          "bodyParams": ["stageData"]
+        }
+      ]
+    },
+    "reminders": {
+      "domain": "Reminders",
+      "description": "Payment and registration reminders",
+      "routes": [
+        {
+          "method": "POST",
+          "path": "/client-leads/:clientLeadId/payment-reminder",
+          "name": "Send Payment Reminder",
+          "description": "Send payment reminder to client",
+          "serviceFunctions": ["remindUserToPay"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["clientLeadId"]
+        },
+        {
+          "method": "POST",
+          "path": "/client-leads/:clientLeadId/complete-register",
+          "name": "Send Registration Reminder",
+          "description": "Remind client to complete registration",
+          "serviceFunctions": ["remindUserToCompleteRegister"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "pathParams": ["clientLeadId"]
+        }
+      ]
+    },
+    "reviews_oauth": {
+      "domain": "Reviews & OAuth",
+      "description": "Google My Business reviews and OAuth integration",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/oauth2callback",
+          "name": "OAuth2 Callback",
+          "description": "Handle OAuth2 callback from Google",
+          "serviceFunctions": ["handleOAuthCallback"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["code"]
+        },
+        {
+          "method": "GET",
+          "path": "/locations",
+          "name": "Get Locations",
+          "description": "Get GMB locations for an account",
+          "serviceFunctions": ["getLocations"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["code", "accountId"]
+        },
+        {
+          "method": "GET",
+          "path": "/reviews",
+          "name": "Get Reviews",
+          "description": "Fetch reviews for a location",
+          "serviceFunctions": ["getReviews"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["accountId", "locationId"]
+        }
+      ]
+    },
+    "helpers": {
+      "domain": "Helper Endpoints",
+      "description": "Utility endpoints for IDs and metadata",
+      "routes": [
+        {
+          "method": "GET",
+          "path": "/ids",
+          "name": "Get Model IDs",
+          "description": "Get IDs for a model with search parameters",
+          "serviceFunctions": ["getModelIds"],
+          "usesSubRouter": false,
+          "authorization": "SHARED",
+          "queryParams": ["model", "filters"]
+        }
+      ]
+    }
+  },
+  "summary": {
+    "totalDomains": 20,
+    "totalIndividualRoutes": 91,
+    "totalSubrouters": 6,
+    "mainAuthMiddleware": "verifyTokenAndHandleAuthorization(req, res, next, 'SHARED')",
+    "allRoutesRequireAuth": true,
+    "defaultErrorHandling": "Try-catch with 500 status and error message",
+    "globalMiddleware": [
+      "Authentication middleware (JWT token verification + role-based access)",
+      "Pagination helper (getPagination from query params)"
+    ],
+    "commonServicePatterns": [
+      "User scoping based on role (ADMIN/SUPER_ADMIN vs STAFF)",
+      "Token data extraction via getTokenData(req, res)",
+      "Current user context via getCurrentUser(req)",
+      "Pagination via getPagination(req) for list endpoints",
+      "Consistent response format: { data, message, status }"
+    ]
+  }
+}

@@ -1,7 +1,7 @@
 "use client";
 import { ThreeDWorkStages } from "@/app/helpers/constants";
 import { useAlertContext } from "@/app/providers/MuiAlert";
-import AccountantKanbanBoard from "@/app/UiComponents/DataViewer/Kanban/AccountantKanbanBoard";
+import AccountantKanbanBoard from "@/app/UiComponents/DataViewer/Kanban/accountant/AccountantKanbanBoard";
 import { FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
 
 export default function AccountantPage() {

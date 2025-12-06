@@ -480,11 +480,11 @@ const TimeSlotManager = ({
 
     let url;
     if (isMultiDate) {
-      url = `shared/calendar/available-days/multiple?timezone=${tz}&isMobile=${
+      url = `shared/calendar-management/available-days/multiple?timezone=${tz}&isMobile=${
         isMobile ? 1 : 0
       }&`;
     } else {
-      url = `shared/calendar/available-days?timezone=${tz}&isMobile=${
+      url = `shared/calendar-management/available-days?timezone=${tz}&isMobile=${
         isMobile ? 1 : 0
       }&`;
     }
@@ -519,7 +519,7 @@ const TimeSlotManager = ({
     const deleteReq = await handleRequestSubmit(
       { id: slotId },
       setToastLoading,
-      `shared/calendar/slots/${slotId}`,
+      `shared/calendar-management/slots/${slotId}`,
       false,
       "Deleting slot...",
       false,
@@ -543,7 +543,7 @@ const TimeSlotManager = ({
       const slotReq = await handleRequestSubmit(
         data,
         setToastLoading,
-        `shared/calendar/add-custom/${dayId}?timezone=${tz}&isMobile=${
+        `shared/calendar-management/add-custom/${dayId}?timezone=${tz}&isMobile=${
           isMobile ? 1 : 0
         }&`,
         false,
@@ -569,7 +569,7 @@ const TimeSlotManager = ({
     const dateParam = dayjs(selectedDate).format("YYYY-MM-DD");
     console.log(tz, "tz");
     const slotsReq = await getData({
-      url: `shared/calendar/slots?date=${dateParam}&adminId=${adminId}&timezone=${tz}&`,
+      url: `shared/calendar-management/slots?date=${dateParam}&adminId=${adminId}&timezone=${tz}&`,
       setLoading,
     });
     console.log(slotsReq, "slotsReq");
@@ -593,7 +593,7 @@ const TimeSlotManager = ({
     const deleteReq = await handleRequestSubmit(
       { id: dayId },
       setToastLoading,
-      `shared/calendar/days/${dayId}`,
+      `shared/calendar-management/days/${dayId}`,
       false,
       "Deleting Day...",
       false,

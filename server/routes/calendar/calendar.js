@@ -6,11 +6,11 @@ import {
   createOrUpdateAvailableDay,
   createOrUpdateMultipleDays,
 } from "./new-calendar.js";
-import { getCurrentUser } from "../../services/main/utility.js";
+import { getCurrentUser } from "../../services/main/utility/utility.js";
 import {
   getCalendarDataForMonth,
   getRemindersForDay,
-} from "../../services/main/calendarServices.js";
+} from "../../services/main/calendar/calendarServices.js";
 
 const router = express.Router();
 
@@ -155,12 +155,17 @@ router.delete("/slots/:id", async (req, res) => {
 router.get("/dates/month", async (req, res) => {
   try {
     const user = await getCurrentUser(req);
-
     const data = await getCalendarDataForMonth({
       year: req.query.year,
       month: req.query.month,
-      userId: user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && user.id,
+      userId:
+        user.role !== "ADMIN" &&
+        user.role !== "SUPER_ADMIN" &&
+        !user.isSuperSales &&
+        user.id,
       adminId: req.query.isAdmin === "true" ? user.id : null,
+      isSuperSales: user.isSuperSales,
+      superSalesId: user.id,
     });
     res.status(200).json({
       message: "Available dates fetched successfully",

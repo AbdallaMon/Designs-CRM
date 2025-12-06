@@ -11,11 +11,12 @@ import {
   makeAnswerToAQuestion,
   submitMoreThanAnswer,
   updateVersa,
-} from "../../services/main/shared-questions.js";
+} from "../../services/main/shared-questions/shared-questions.js";
+
 import {
   getCurrentUser,
   verifyTokenAndHandleAuthorization,
-} from "../../services/main/utility.js";
+} from "../../services/main/utility/utility.js";
 
 const router = Router();
 

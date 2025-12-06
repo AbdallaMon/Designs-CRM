@@ -6,7 +6,9 @@ import {
   STAGE_PROGRESS,
 } from "./wittenBlocksData.js";
 
-export async function getDefaultContractDataAndGenerateIfNotFound() {
+export async function getDefaultContractDataAndGenerateIfNotFound({
+  dontGenerate = true,
+}) {
   let contractUtilityData = await prisma.ContractUtility.findFirst({
     include: {
       stageClauses: {
@@ -20,6 +22,8 @@ export async function getDefaultContractDataAndGenerateIfNotFound() {
       },
     },
   });
+  console.log("contractUtilityData", contractUtilityData);
+  if (dontGenerate) return contractUtilityData;
   if (
     contractUtilityData?.stageClauses?.length < 1 ||
     contractUtilityData?.specialClauses?.length < 1 ||

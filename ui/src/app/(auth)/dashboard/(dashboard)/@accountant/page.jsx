@@ -2,7 +2,7 @@
 import { PaymentLevels } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import AccountantKanbanBoard from "@/app/UiComponents/DataViewer/Kanban/AccountantKanbanBoard";
+import AccountantKanbanBoard from "@/app/UiComponents/DataViewer/Kanban/accountant/AccountantKanbanBoard";
 import { FaCheckCircle, FaCube, FaExclamationCircle } from "react-icons/fa";
 
 export default function AccountantPage() {

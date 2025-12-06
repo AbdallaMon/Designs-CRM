@@ -56,7 +56,7 @@ const DayDetailDialog = ({ open, onClose, selectedDay, isAdmin }) => {
     const offsetInMinutes = dayjs().tz(userTimezone).utcOffset(); // e.g. 180
     const correctedDate = submittedUtcDate.add(offsetInMinutes, "minute");
     const req = await getData({
-      url: `shared/calendar/dates/day?date=${correctedDate}&isAdmin=${isAdmin}&`,
+      url: `shared/calendar-management/dates/day?date=${correctedDate}&isAdmin=${isAdmin}&`,
       setLoading,
     });
 
@@ -179,7 +179,7 @@ export default function BigCalendar({
       setLoading(true);
 
       const req = await getData({
-        url: `shared/calendar/dates/month?year=${displayMonth.year()}&month=${
+        url: `shared/calendar-management/dates/month?year=${displayMonth.year()}&month=${
           displayMonth.month() + 1
         }&isAdmin=${isAdmin}&`,
         setLoading,

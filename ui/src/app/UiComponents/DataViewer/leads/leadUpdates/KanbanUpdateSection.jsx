@@ -6,37 +6,60 @@ import { UpdateCard } from "./UpdateCard";
 export function KanbanUpdateSection({
   lead,
   currentUserDepartment = "STAFF",
-  setleads,setRerenderColumns
+  setleads,
+  setRerenderColumns,
+  reRenderColumns,
+  type,
 }) {
-  const onToggleArchive = (update) => {
-    window.location.reload();
-  };
   function onUpdate(newUpdate) {
-if(setRerenderColumns){
+    if (setRerenderColumns) {
+      if (type === "CONTRACTLEVELS") {
+        const currentLevel = lead.contracts?.find(
+          (c) => c.status === "IN_PROGRESS"
+        )?.contractLevel;
+        console.log(currentLevel, "currentLevel");
+        if (currentLevel) {
           setRerenderColumns((prev) => ({
+            ...prev,
+            [currentLevel]: !prev[currentLevel],
+          }));
+        } else {
+          window.location.reload();
+        }
+      } else if (currentUserDepartment === "STAFF") {
+        setRerenderColumns((prev) => ({
           ...prev,
           [lead.status]: !prev[lead.status],
         }));
-        return
-}
-    if(setleads){
-setleads((oldleads) =>
-      oldleads.map((l) => {
-        if (l.id === lead.id) {
+      } else {
+        setRerenderColumns((prev) => {
           return {
-            ...l,
-            updates: l.updates.map((up) => {
-              if (up.id === newUpdate.id) {
-                return newUpdate;
-              }
-              return up;
-            }),
+            ...prev,
+            [lead.projects[0].status]:
+              !reRenderColumns[lead.projects[0].status],
           };
-        }
-        return l;
-      })
-    );
-  }
+        });
+      }
+      return;
+    }
+    if (setleads) {
+      setleads((oldleads) =>
+        oldleads.map((l) => {
+          if (l.id === lead.id) {
+            return {
+              ...l,
+              updates: l.updates.map((up) => {
+                if (up.id === newUpdate.id) {
+                  return newUpdate;
+                }
+                return up;
+              }),
+            };
+          }
+          return l;
+        })
+      );
+    }
   }
   if (lead.status !== "FINALIZED") return null;
 

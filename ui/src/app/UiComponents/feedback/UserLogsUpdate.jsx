@@ -95,7 +95,7 @@ const ActivityLogDialog = ({ userId }) => {
             .format("YYYY-MM-DDTHH:mm:ss[Z]");
 
           const response = await getData({
-            url: `shared/user-logs?userId=${userId}&startTime=${formattedStartTime}&endTime=${formattedEndTime}&`,
+            url: `shared/utilities/user-logs?userId=${userId}&startTime=${formattedStartTime}&endTime=${formattedEndTime}&`,
             setLoading: setCheckLoading,
           });
           // If there is no log for the specified time range, show the dialog
@@ -143,7 +143,7 @@ const ActivityLogDialog = ({ userId }) => {
             : 60,
         },
         setLoading,
-        `shared/user-logs`
+        `shared/utilities/user-logs`
       );
       setOpen(false);
     } catch (error) {

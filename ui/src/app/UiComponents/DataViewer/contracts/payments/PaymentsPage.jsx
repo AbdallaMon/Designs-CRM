@@ -214,7 +214,6 @@ export default function ContractPaymentsPage() {
       sort: {},
       others: `status=${status}`,
     });
-    console.log(req, "req");
   }, [page, limit, status]);
 
   useEffect(() => {

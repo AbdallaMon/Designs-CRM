@@ -58,6 +58,7 @@ import DeleteModelButton from "../../../common/DeleteModelButton";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { NotesComponent } from "../../utility/Notes";
+import { checkIfAdmin } from "@/app/helpers/functions/utility";
 
 function RowActions({
   reload,
@@ -137,9 +138,10 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
   const [name, setName] = useState("");
   const [days, setDays] = useState(1);
   const [value, setValue] = useState(dayjs().add(1, "day"));
-
+  const { user } = useAuth();
   const { loading: submitting, setLoading: setSubmitting } = useToastContext();
   const { setAlertError } = useAlertContext();
+  const admin = checkIfAdmin(user);
 
   useEffect(() => {
     const n = Number(days);
@@ -156,7 +158,7 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
     const req = await handleRequestSubmit(
       { projectId, deliveryAt: deliveryAtUtc, name }, // ← send name too
       setSubmitting,
-      `shared/delivery-schedule`,
+      `shared/delivery/`,
       false,
       "Adding"
     );
@@ -165,7 +167,7 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
       await onCreate();
     }
   };
-
+  if (!admin) return null;
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>
@@ -241,7 +243,7 @@ function MeetingDetailsDialog({ open, onClose, meetingId }) {
     (async () => {
       if (!active) return;
       await getDataAndSet({
-        url: `shared/meeting-reminders/${meetingId}`,
+        url: `shared/client-leads/meeting-reminders/${meetingId}`,
         setLoading,
         setData: setMeeting,
       });
@@ -414,6 +416,7 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
     user.role === "ADMIN" ||
     user.role === "SUPER_ADMIN" ||
     user.role === "STAFF";
+  const admin = checkIfAdmin(user);
   const { setLoading: setSubmitting } = useToastContext();
   const [openCreate, setOpenCreate] = useState(false);
   const [meetingDialog, setMeetingDialog] = useState({
@@ -427,7 +430,7 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
 
   const reload = async () => {
     await getDataAndSet({
-      url: `shared/projects/${projectId}/delivery-schedules`,
+      url: `shared/delivery/${projectId}/schedules`,
       setLoading,
       setData: setRows,
     });
@@ -441,7 +444,7 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
     const req = await handleRequestSubmit(
       { deliveryId, meetingReminderId },
       setSubmitting,
-      `shared/delivery-schedule/${deliveryId}/link-meeting`,
+      `shared/delivery/${deliveryId}/link-meeting`,
       false,
       "Linking meeting..."
     );
@@ -462,7 +465,7 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
           <FiClock />
           <Typography variant="h6">Delivery Schedule</Typography>
         </Stack>
-        {/* {canDoActions && (
+        {admin && (
           <Button
             variant="contained"
             startIcon={<FiPlus />}
@@ -470,7 +473,7 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
           >
             New delivery
           </Button>
-        )} */}
+        )}
       </Stack>
 
       <Divider sx={{ mb: 2 }} />
@@ -570,12 +573,12 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
         </List>
       )}
 
-      {/* <CreateDeliveryDialog
+      <CreateDeliveryDialog
         open={openCreate}
         onClose={() => setOpenCreate(false)}
         onCreate={reload}
         projectId={projectId}
-      /> */}
+      />
 
       <MeetingDetailsDialog
         open={meetingDialog.open}

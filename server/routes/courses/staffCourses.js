@@ -20,7 +20,7 @@ import {
   getAndThrowError,
   getCurrentUser,
   getPagination,
-} from "../../services/main/utility.js";
+} from "../../services/main/utility/utility.js";
 
 const router = Router();
 

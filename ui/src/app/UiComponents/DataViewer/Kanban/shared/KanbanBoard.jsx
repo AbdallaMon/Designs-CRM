@@ -29,7 +29,6 @@ const KanbanBoard = ({
 }) => {
   const { user } = useAuth();
   const admin = checkIfAdminOrSuperSales(user);
-
   return (
     <>
       <DndProvider backend={HTML5Backend}>

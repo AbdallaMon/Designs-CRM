@@ -24,7 +24,7 @@ export const AutoCompleteSelector = ({
   useEffect(() => {
     const fetchItems = async () => {
       const req = await getDataAndSet({
-        url: `shared/ids?where=${JSON.stringify({
+        url: `shared/utilities/ids?where=${JSON.stringify({
           ...where,
         })}&model=${model}&select=${select}&isLanguage=${isLanguage}&`,
         setLoading,

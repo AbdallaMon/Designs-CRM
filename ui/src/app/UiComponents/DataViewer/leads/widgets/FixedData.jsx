@@ -53,7 +53,10 @@ const inputs = [
   },
 ];
 export function FixedData() {
-  const { data, loading, setData } = useDataFetcher("shared/fixed-data", false);
+  const { data, loading, setData } = useDataFetcher(
+    "shared/utilities/fixed-data",
+    false
+  );
   return (
     <FixedDataSlider
       data={data}

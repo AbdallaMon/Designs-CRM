@@ -58,7 +58,7 @@ export const NewMeetingDialog = ({
   // Function to load admin users
   const loadAdminUsers = async () => {
     const response = await getData({
-      url: "shared/users/admins",
+      url: "shared/utilities/users/admins",
       setLoading: setLoadingAdmins,
     });
 
@@ -415,7 +415,7 @@ export const NewClientMeetingDialog = ({
   // Function to load admin users
   const loadAdminUsers = async () => {
     const response = await getData({
-      url: "shared/users/admins",
+      url: "shared/utilities/users/admins",
       setLoading: setLoadingAdmins,
     });
 

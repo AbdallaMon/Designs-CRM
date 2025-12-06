@@ -10,7 +10,8 @@ import {
   getAndThrowError,
   getCurrentUser,
   verifyTokenAndHandleAuthorization,
-} from "../../services/main/utility.js";
+} from "../../services/main/utility/utility.js";
+import { getModelIds } from "../../services/main/admin/adminServices.js";
 
 const router = Router();
 router.use(async (req, res, next) => {
@@ -82,6 +83,22 @@ router.delete("/:clientLeadId/sessions/:sessionId", async (req, res) => {
     });
   } catch (e) {
     getAndThrowError(e, res);
+  }
+});
+router.get("/ids", async (req, res) => {
+  try {
+    const model = req.query.model;
+    delete req.query.model;
+    const data = await getModelIds({
+      searchParams: req.query,
+      model,
+    });
+    res.status(200).json({ data });
+  } catch (e) {
+    console.log(e, "e");
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching Spaces" });
   }
 });
 export default router;
