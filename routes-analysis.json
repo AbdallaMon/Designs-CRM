@@ -1066,42 +1066,7 @@
         }
       ]
     },
-    "reviews_oauth": {
-      "domain": "Reviews & OAuth",
-      "description": "Google My Business reviews and OAuth integration",
-      "routes": [
-        {
-          "method": "GET",
-          "path": "/oauth2callback",
-          "name": "OAuth2 Callback",
-          "description": "Handle OAuth2 callback from Google",
-          "serviceFunctions": ["handleOAuthCallback"],
-          "usesSubRouter": false,
-          "authorization": "SHARED",
-          "queryParams": ["code"]
-        },
-        {
-          "method": "GET",
-          "path": "/locations",
-          "name": "Get Locations",
-          "description": "Get GMB locations for an account",
-          "serviceFunctions": ["getLocations"],
-          "usesSubRouter": false,
-          "authorization": "SHARED",
-          "queryParams": ["code", "accountId"]
-        },
-        {
-          "method": "GET",
-          "path": "/reviews",
-          "name": "Get Reviews",
-          "description": "Fetch reviews for a location",
-          "serviceFunctions": ["getReviews"],
-          "usesSubRouter": false,
-          "authorization": "SHARED",
-          "queryParams": ["accountId", "locationId"]
-        }
-      ]
-    },
+
     "helpers": {
       "domain": "Helper Endpoints",
       "description": "Utility endpoints for IDs and metadata",
@@ -1120,7 +1085,7 @@
     }
   },
   "summary": {
-    "totalDomains": 20,
+    "totalDomains": 19,
     "totalIndividualRoutes": 91,
     "totalSubrouters": 6,
     "mainAuthMiddleware": "verifyTokenAndHandleAuthorization(req, res, next, 'SHARED')",
