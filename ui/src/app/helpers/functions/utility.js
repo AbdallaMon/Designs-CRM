@@ -161,7 +161,13 @@ export const calculateTimeLeft = (setTimeLeft, nextCall) => {
 };
 
 export const checkIfADesigner = (user) => {
-  return user.role === "TWO_D_DESIGNER" || user.role === "THREE_D_DESIGNER";
+  return (
+    user.role === "TWO_D_DESIGNER" ||
+    user.role === "THREE_D_DESIGNER" ||
+    user.subRoles?.some(
+      (r) => r.subRole === "TWO_D_DESIGNER" || r.subRole === "THREE_D_DESIGNER"
+    )
+  );
 };
 export const checkIfThreeDDesigner = (user) => {
   return (

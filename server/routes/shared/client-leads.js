@@ -6,13 +6,7 @@ import {
   getTokenData,
 } from "../../services/main/utility/utility.js";
 import {
-  addNote,
   assignLeadToAUser,
-  deleteAModel,
-  editContract,
-  deleteContract,
-  markAsCurrent,
-  markAsCompleted,
   updateClientLeadStatus,
   markClientLeadAsConverted,
   getClientLeads,
@@ -26,6 +20,7 @@ import {
   checkIfUserAllowedToTakeALead,
   remindUserToPay,
   remindUserToCompleteRegister,
+  bulkAssignLeadTsoAUser,
 } from "../../services/main/shared/index.js";
 import {
   getAdminClientLeadDetails,
@@ -197,75 +192,75 @@ router.get("/:id", async (req, res) => {
 /*                                   Contracts Management                                  */
 /* ======================================================================================= */
 
-// Update single contract by id
-router.put("/contract/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updatedContract = await editContract({ id: id, ...req.body });
+// // Update single contract by id
+// router.put("/contract/:id", async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const updatedContract = await editContract({ id: id, ...req.body });
 
-    res.status(200).json({
-      data: updatedContract,
-      message: "Contract updated successfully",
-    });
-  } catch (e) {
-    console.log(e, "e");
-    res.status(500).json({ message: e.message });
-  }
-});
+//     res.status(200).json({
+//       data: updatedContract,
+//       message: "Contract updated successfully",
+//     });
+//   } catch (e) {
+//     console.log(e, "e");
+//     res.status(500).json({ message: e.message });
+//   }
+// });
 
-// Mark contract as current
-router.put("/contract/:id/current", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updatedContract = await markAsCurrent({
-      contractId: Number(id),
-      ...req.body,
-    });
+// // Mark contract as current
+// router.put("/contract/:id/current", async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const updatedContract = await markAsCurrent({
+//       contractId: Number(id),
+//       ...req.body,
+//     });
 
-    res.status(200).json({
-      data: updatedContract,
-      message: "Contract updated successfully",
-    });
-  } catch (e) {
-    console.log(e, "e");
-    res.status(500).json({ message: e.message });
-  }
-});
+//     res.status(200).json({
+//       data: updatedContract,
+//       message: "Contract updated successfully",
+//     });
+//   } catch (e) {
+//     console.log(e, "e");
+//     res.status(500).json({ message: e.message });
+//   }
+// });
 
-// Mark contract as completed
-router.put("/contract/:id/completed", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updatedContract = await markAsCompleted({
-      contractId: Number(id),
-      ...req.body,
-    });
+// // Mark contract as completed
+// router.put("/contract/:id/completed", async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const updatedContract = await markAsCompleted({
+//       contractId: Number(id),
+//       ...req.body,
+//     });
 
-    res.status(200).json({
-      data: updatedContract,
-      message: "Contract updated successfully",
-    });
-  } catch (e) {
-    console.log(e, "e");
-    res.status(500).json({ message: e.message });
-  }
-});
+//     res.status(200).json({
+//       data: updatedContract,
+//       message: "Contract updated successfully",
+//     });
+//   } catch (e) {
+//     console.log(e, "e");
+//     res.status(500).json({ message: e.message });
+//   }
+// });
 
-// Delete contract
-router.delete("/contract/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const deletedContract = await deleteContract({ contractId: Number(id) });
+// // Delete contract
+// router.delete("/contract/:id", async (req, res) => {
+//   try {
+//     const { id } = req.params;
+//     const deletedContract = await deleteContract({ contractId: Number(id) });
 
-    res.status(200).json({
-      data: deletedContract,
-      message: "Contract deleted successfully",
-    });
-  } catch (e) {
-    console.log(e, "e");
-    res.status(500).json({ message: e.message });
-  }
-});
+//     res.status(200).json({
+//       data: deletedContract,
+//       message: "Contract deleted successfully",
+//     });
+//   } catch (e) {
+//     console.log(e, "e");
+//     res.status(500).json({ message: e.message });
+//   }
+// });
 
 /* ======================================================================================= */
 /*                                      Lead Status                                        */
@@ -347,6 +342,36 @@ router.put("/", async (req, res) => {
     });
   } catch (error) {
     console.error("Error assigning client leads:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+router.put("/bulk-convert", async (req, res) => {
+  try {
+    const clientLead = req.body;
+    const currentUser = await getCurrentUser(req);
+    const isAdmin =
+      currentUser.role === "ADMIN" ||
+      currentUser.role === "SUPER_ADMIN" ||
+      currentUser.isSuperSales;
+    if (!isAdmin) {
+      throw new Error(
+        "Only admin/super-admin/super-sales can bulk assign leads"
+      );
+    }
+    console.log(req.body, " req.body");
+    const result = await bulkAssignLeadTsoAUser(
+      req.body.ids,
+      req.body.userId,
+      isAdmin
+    );
+
+    res.status(200).json({
+      data: result,
+      message: "Deals converted successfully",
+    });
+  } catch (error) {
+    console.error("Error assigning client leads:", error.message);
     res.status(500).json({ message: error.message });
   }
 });

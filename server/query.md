@@ -1,1 +1,3 @@
-pEyA4UQug5wQc7
+ALTER TABLE `ContractPayment`
+ADD COLUMN `amountLost` DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER `amount`,
+ADD COLUMN `amountReceived` DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER `amountLost`;

@@ -66,7 +66,10 @@ import colors from "@/app/helpers/colors";
 import { RelatedLinks } from "../../utility/RelatedLinks";
 import { AiOutlineSwap } from "react-icons/ai";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import {
+  checkIfADesigner,
+  checkIfAdmin,
+} from "@/app/helpers/functions/utility";
 import { AssignDesignerModal } from "./AssignDesignerModal";
 import { ProjectTasksDialog, TasksDialog } from "../utility/ProjectTasksDialog";
 import DeliverySchedulesPanel from "../utility/ProjectDeilverySchedule";
@@ -360,7 +363,9 @@ export const ProjectDetails = ({
   const cantDoActions = user.role === "STAFF";
   const { setAlertError } = useAlertContext();
   const isAdmin = checkIfAdmin(user);
-
+  const isDesigner = checkIfADesigner(user);
+  console.log(isDesigner, "isDesigner");
+  //if designer he can edit area only
   const [anchorEl, setAnchorEl] = useState(null);
   const menuOpen = Boolean(anchorEl);
 
@@ -381,7 +386,7 @@ export const ProjectDetails = ({
         id: project.id,
       },
       setLoading,
-      `shared/client-leads/designers/${project.clientLeadId}/status`,
+      `shared/designers/${project.clientLeadId}/status`,
       false,
       "Updating",
       null,
@@ -488,26 +493,27 @@ export const ProjectDetails = ({
               </FormControl>
             </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }}>
-              <FormControl fullWidth variant="outlined">
-                <InputLabel id="priority-label">Priority Level</InputLabel>
-                <Select
-                  labelId="priority-label"
-                  value={editedProject.priority}
-                  label="Priority Level"
-                  onChange={(e) =>
-                    handleInputChange("priority", e.target.value)
-                  }
-                >
-                  <MenuItem value="VERY_LOW">Very Low</MenuItem>
-                  <MenuItem value="LOW">Low</MenuItem>
-                  <MenuItem value="MEDIUM">Medium</MenuItem>
-                  <MenuItem value="HIGH">High</MenuItem>
-                  <MenuItem value="VERY_HIGH">Very High</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
+            {!isDesigner && (
+              <Grid size={{ xs: 12, md: 6 }}>
+                <FormControl fullWidth variant="outlined">
+                  <InputLabel id="priority-label">Priority Level</InputLabel>
+                  <Select
+                    labelId="priority-label"
+                    value={editedProject.priority}
+                    label="Priority Level"
+                    onChange={(e) =>
+                      handleInputChange("priority", e.target.value)
+                    }
+                  >
+                    <MenuItem value="VERY_LOW">Very Low</MenuItem>
+                    <MenuItem value="LOW">Low</MenuItem>
+                    <MenuItem value="MEDIUM">Medium</MenuItem>
+                    <MenuItem value="HIGH">High</MenuItem>
+                    <MenuItem value="VERY_HIGH">Very High</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            )}
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
@@ -566,7 +572,14 @@ export const ProjectDetails = ({
               }}
             >
               <Grid size={3}>
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2.5 }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 2.5,
+                    width: "100%",
+                  }}
+                >
                   <InfoCard>
                     <Box
                       sx={{
@@ -582,7 +595,7 @@ export const ProjectDetails = ({
                     >
                       <MdOutlineSquareFoot size={24} />
                     </Box>
-                    <Box>
+                    <Box sx={{ width: "100%" }}>
                       <Typography variant="body2" color="text.secondary">
                         Project Area
                       </Typography>
@@ -842,7 +855,7 @@ export const ProjectDetails = ({
                 />
               </Box>
 
-              {!isStaff && !cantDoActions && (
+              {((!isStaff && !cantDoActions) || isDesigner) && (
                 <Box sx={{ display: "flex", gap: 2 }}>
                   <StyledButton
                     variant="outlined"
@@ -855,15 +868,16 @@ export const ProjectDetails = ({
                   >
                     Edit Details
                   </StyledButton>
-
-                  <StyledButton
-                    variant="contained"
-                    color="primary"
-                    component="a"
-                    href={`/dashboard/projects/grouped/${project.clientLeadId}`}
-                  >
-                    View All Lead Projects
-                  </StyledButton>
+                  {!isDesigner && (
+                    <StyledButton
+                      variant="contained"
+                      color="primary"
+                      component="a"
+                      href={`/dashboard/projects/grouped/${project.clientLeadId}`}
+                    >
+                      View All Lead Projects
+                    </StyledButton>
+                  )}
                 </Box>
               )}
             </Box>

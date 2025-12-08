@@ -14,6 +14,10 @@ import {
   Grid,
   alpha,
   useTheme,
+  Box,
+  Switch,
+  FormControl,
+  FormLabel,
 } from "@mui/material";
 import { FaClipboardList, FaCheckCircle } from "react-icons/fa";
 import { CONTRACT_LEVELSENUM, contractLevel } from "@/app/helpers/constants";
@@ -25,7 +29,6 @@ export default function StagesSelector({
   setPerStageMeta,
 }) {
   const theme = useTheme();
-
   const toggleStage = (stg) => {
     const exists = selected.find((s) => s.enum === stg.enum);
     if (exists) {
@@ -114,6 +117,37 @@ export default function StagesSelector({
                       contractLevel[s.label]?.name ||
                       contractLevel[s.enum]?.name
                     }
+                    // action={
+                    //   <Box>
+                    //     {s.enum === "LEVEL_1" && (
+                    //       <>
+                    //         <FormControl>
+                    //           <FormLabel
+                    //             component="legend"
+                    //             sx={{ fontSize: 12 }}
+                    //           >
+                    //             Active before client sign
+                    //           </FormLabel>
+                    //           <Switch
+                    //             checked={
+                    //               perStageMeta?.[s.enum]?.isActive || false
+                    //             }
+                    //             id="active-status"
+                    //             onChange={(e) =>
+                    //               setPerStageMeta({
+                    //                 ...perStageMeta,
+                    //                 [s.enum]: {
+                    //                   ...perStageMeta?.[s.enum],
+                    //                   isActive: e.target.checked,
+                    //                 },
+                    //               })
+                    //             }
+                    //           />
+                    //         </FormControl>
+                    //       </>
+                    //     )}
+                    //   </Box>
+                    // }
                     titleTypographyProps={{ fontWeight: 600 }}
                   />
                   <Divider />

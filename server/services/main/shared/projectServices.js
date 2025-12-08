@@ -165,7 +165,6 @@ export function groupProjects(projects) {
 export async function getProjectsByClientLeadId({ searchParams }) {
   const { clientLeadId } = searchParams;
   let projects = await getProjects(clientLeadId);
-  console.log(projects, "projects");
   if (!projects || projects.length === 0) {
     const newProjects = [];
     PROJECT_TYPES.forEach((type) => {
@@ -407,7 +406,6 @@ export async function updateProject({ data, isAdmin }) {
   delete updatedData.clientLead;
   delete updatedData.assignments;
   delete updatedData.tasks;
-  console.log("Updated Data:", updatedData);
   if (updatedData.deliverySchedules?.length === 0) {
     delete updatedData.deliverySchedules;
   }
@@ -445,7 +443,6 @@ export async function updateProject({ data, isAdmin }) {
     )
   ) {
     const now = dayjs.utc().startOf("day");
-
     const deliveryDate = dayjs(updatedData.deliveryTime);
     const daysLeft = deliveryDate.diff(now, "day");
 
@@ -530,10 +527,14 @@ export async function updateProject({ data, isAdmin }) {
   await checkIfProjectHasStagesAndUpdateNextAndPrevious({
     projectId: project.id,
     status: project.status,
+    clientLeadId: project.clientLeadId,
+    groupId: project.groupId,
+    groupTitle: project.groupTitle,
   });
   await checkIfProjectHasPaymentAndUpdate({
     projectId: project.id,
     status: project.status,
+    clientLeadId: project.clientLeadId,
   });
   return updatedProject;
 }
@@ -608,7 +609,6 @@ export async function getProjectDetailsById({ id, searchParams }) {
   if (searchParams.clientLeadId) {
     where.clientLeadId = Number(searchParams.clientLeadId);
   }
-  console.log(where, "where");
   const project = await prisma.project.findUnique({
     where,
     include: {

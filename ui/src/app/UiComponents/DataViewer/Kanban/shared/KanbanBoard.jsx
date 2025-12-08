@@ -1,8 +1,8 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import { Box, Grid } from "@mui/material";
+import { Box, Grid, Button, Menu, MenuItem } from "@mui/material";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent";
@@ -13,6 +13,8 @@ import KanbanColumn from "../staff/KanbanColumn";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { CONTRACT_LEVELS } from "@/app/helpers/constants";
 import { checkIfAdminOrSuperSales } from "@/app/helpers/functions/utility";
+import { FaEllipsisV } from "react-icons/fa";
+import BulkConvertLeadsModal from "./BulkConvertLeadsModal";
 
 dayjs.extend(relativeTime);
 
@@ -28,7 +30,10 @@ const KanbanBoard = ({
   isNotStaff,
 }) => {
   const { user } = useAuth();
-  const admin = checkIfAdminOrSuperSales(user);
+  const isAdminOrSuperSales = checkIfAdminOrSuperSales(user);
+  const [selectedLeads, setSelectedLeads] = useState([]);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [bulkConvertOpen, setBulkConvertOpen] = useState(false);
   return (
     <>
       <DndProvider backend={HTML5Backend}>
@@ -79,7 +84,7 @@ const KanbanBoard = ({
                 localFilters={{ staffId: user.id, userRole: user.role }}
                 withParamsChange={true}
               />
-              {admin && (
+              {isAdminOrSuperSales && (
                 <SearchComponent
                   apiEndpoint={`search?model=${
                     type && type !== "CONTRACTLEVELS" ? type : "STAFF"
@@ -153,6 +158,42 @@ const KanbanBoard = ({
                 />
               </Box>
             )}
+            {selectedLeads.length > 0 && (
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 1,
+                  alignItems: "center",
+                  position: "fixed",
+                  bottom: 30,
+                  right: 50,
+                  zIndex: 1000,
+                }}
+              >
+                <Button
+                  variant="contained"
+                  size="small"
+                  onClick={(e) => setAnchorEl(e.currentTarget)}
+                  endIcon={<FaEllipsisV />}
+                >
+                  Actions ({selectedLeads.length})
+                </Button>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={Boolean(anchorEl)}
+                  onClose={() => setAnchorEl(null)}
+                >
+                  <MenuItem
+                    onClick={() => {
+                      setBulkConvertOpen(true);
+                      setAnchorEl(null);
+                    }}
+                  >
+                    Convert Leads
+                  </MenuItem>
+                </Menu>
+              </Box>
+            )}
           </Box>
         </Box>
         <Grid
@@ -189,12 +230,29 @@ const KanbanBoard = ({
               staffId={staffId}
               filters={filters}
               setFilters={setFilters}
-              admin={admin}
               type={type}
               isNotStaff={isNotStaff}
+              isAdminOrSuperSales={isAdminOrSuperSales}
+              selectedLeads={selectedLeads}
+              setSelectedLeads={setSelectedLeads}
             />
           ))}
         </Grid>
+        {bulkConvertOpen && (
+          <BulkConvertLeadsModal
+            leads={selectedLeads}
+            open={bulkConvertOpen}
+            onClose={() => setBulkConvertOpen(false)}
+            onSuccess={() => {
+              setSelectedLeads([]);
+              setReRenderColumns((prev) =>
+                Object.fromEntries(
+                  statusArray.map((status) => [status, !prev[status]])
+                )
+              );
+            }}
+          />
+        )}
       </DndProvider>
     </>
   );

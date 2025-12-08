@@ -75,11 +75,12 @@ export async function assignLeadNotification(
   userId,
   updatedClientLead
 ) {
+  const user = await getUserDetailsWithSpecificFields(userId);
   const notificationHtml = `<div>
     Lead <a href="${
       dealsLink + clientLeadId
     }" >#${clientLeadId}</a> assigned to user <a href="${userLink + userId}">#${
-    updatedClientLead.assignedTo.name
+    user.name
   }</a> 
     </div>`;
 
@@ -96,21 +97,41 @@ export async function assignLeadNotification(
     Number(userId)
   );
 }
+export async function assignMultipleLeadsNotification(leadIds, userId) {
+  const leadLinks = leadIds
+    .map((id) => `<a href="${dealsLink + id}"> #${id}</a>`)
+    .join(", ");
+  // render each lead as list of links instead
+  const user = await getUserDetailsWithSpecificFields(userId);
+  const notificationHtml = `<div>Leads numbers ${leadLinks} assigned to user <a href="${
+    userLink + userId
+  }">#${user.name}</a></div>`;
+
+  await createNotification(
+    userId,
+    true,
+    notificationHtml,
+    null,
+    "LEAD_TRANSFERRED",
+    "Leads transferred",
+    true,
+    "HTML",
+    null,
+    Number(userId)
+  );
+}
 export async function assignWorkStageNotification(
   clientLeadId,
   userId,
   updatedClientLead,
   type
 ) {
+  const user = await getUserDetailsWithSpecificFields(userId);
   const notificationHtml = `<div>
     Lead <a href="${
       dealsLink + clientLeadId
     }" >#${clientLeadId}</a> assigned to user <a href="${userLink + userId}">#${
-    type === "three-d"
-      ? updatedClientLead.threeDDesigner.name
-      : type === "two-d"
-      ? updatedClientLead.twoDDesigner.name
-      : updatedClientLead.twoDExacuter.name
+    user.name
   }</a> 
     </div>`;
 

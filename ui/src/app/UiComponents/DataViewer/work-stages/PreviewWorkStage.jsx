@@ -100,7 +100,11 @@ const LeadContent = ({
 
   const isNotUser = () => {
     if (lead.projects.length === 0) return false;
-    return user.id !== lead.projects[0].userId;
+    return lead.projects[0].assignments?.some(
+      (assignment) => assignment.user?.id === user.id
+    )
+      ? false
+      : true;
   };
 
   const notUser = isNotUser(user);

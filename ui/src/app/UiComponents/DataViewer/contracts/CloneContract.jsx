@@ -20,7 +20,7 @@ import {
   useTheme,
   Alert,
 } from "@mui/material";
-import { FaCopy } from "react-icons/fa";
+import { FaCopy, FaExclamationCircle } from "react-icons/fa";
 
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
@@ -65,6 +65,7 @@ export default function CloneContract({
 
   const [specialItems, setSpecialItems] = useState([]); // [{labelAr,labelEn}]
   const [drawings, setDrawings] = useState([]); // [{url,fileName}]
+  const [validationErrors, setValidationErrors] = useState([]);
   useEffect(() => {
     async function fetchCurrent() {
       const req = await getDataAndSet({
@@ -181,6 +182,7 @@ export default function CloneContract({
       deptDeliveryDays: perStageMeta?.[s.enum]?.deptDeliveryDays
         ? Number(perStageMeta[s.enum].deptDeliveryDays)
         : null,
+      isActive: perStageMeta?.[s.enum]?.isActive || false,
     }));
 
     const payload = {
@@ -194,7 +196,7 @@ export default function CloneContract({
       drawings,
       // clone extras:
       oldContractId: sourceId,
-      markOldAsCancelled: true,
+      // markOldAsCancelled: true,
     };
 
     const req = await handleRequestSubmit(
@@ -240,6 +242,20 @@ export default function CloneContract({
             </Stack>
           ) : (
             <Stack spacing={3}>
+              {validationErrors.length > 0 && (
+                <Alert severity="error">
+                  <Stack spacing={0.5}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      Please fix the following errors:
+                    </Typography>
+                    {validationErrors.map((error, idx) => (
+                      <Typography key={idx} variant="body2" sx={{ ml: 1 }}>
+                        • {error}
+                      </Typography>
+                    ))}
+                  </Stack>
+                </Alert>
+              )}
               <Stepper activeStep={activeStep} alternativeLabel sx={{ pt: 1 }}>
                 {steps.map((label, idx) => (
                   <Step key={label}>
@@ -420,13 +436,8 @@ export default function CloneContract({
       >
         <DialogTitle sx={{ fontWeight: 700 }}>Confirm Clone</DialogTitle>
         <DialogContent dividers>
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            This will create a new contract and mark the old contract (#
-            {sourceId}) as
-            <strong>&nbsp;CANCELLED</strong>.
-          </Alert>
           <Typography variant="body2">
-            Continue and send the new data along with the old contract ID?
+            Continue and send the new data ?
           </Typography>
         </DialogContent>
         <DialogActions>

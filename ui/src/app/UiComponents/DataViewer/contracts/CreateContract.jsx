@@ -17,8 +17,11 @@ import {
   useTheme,
   alpha,
   Divider,
+  Alert,
+  Snackbar,
+  IconButton,
 } from "@mui/material";
-import { FaPlus, FaUpload } from "react-icons/fa";
+import { FaPlus, FaUpload, FaExclamationCircle } from "react-icons/fa";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 
@@ -30,6 +33,7 @@ import PaymentsRulesEditor from "./shared/PaymentsRulesEditor";
 import SpecialItemsEditor from "./shared/SpecialItemsEditor";
 import ContractDrawingsEditor from "./shared/ContractDrawingsEditor";
 import { sum } from "./shared/contractHelpers";
+import { MdClose } from "react-icons/md";
 
 // --- Main Dialog ---
 
@@ -39,7 +43,6 @@ export default function CreateContractDialog({
   updatedOuterContract,
   lead,
 }) {
-  console.log(clientLeadId, "clientLeadId in CreateContractDialog");
   const taxRate = 5;
   const theme = useTheme();
   const [open, setOpen] = useState(false);
@@ -55,6 +58,7 @@ export default function CreateContractDialog({
   const [drawings, setDrawings] = useState([]);
   const [arClientName, setArClientName] = useState(lead?.client?.arName);
   const [enClientName, setEnClientName] = useState(lead?.client?.enName);
+  const [validationErrors, setValidationErrors] = useState([]);
   const steps = ["Basics", "Items & Drawings"];
 
   const handleOpen = () => setOpen(true);
@@ -63,41 +67,45 @@ export default function CreateContractDialog({
     setActiveStep(0);
   };
 
-  const canGoNext = () => {
-    //to do check payments conditions
+  const validateStep = () => {
+    const errors = [];
+
     if (activeStep === 0) {
-      if (!title.trim()) return false;
-      if (!enTitle.trim()) return false;
-      if (!arClientName || !arClientName.trim()) return false;
-      if (!enClientName || !enClientName.trim()) return false;
-      if (!projectGroup) return false;
-      if (selectedStages.length === 0) return false;
+      if (!title.trim()) errors.push("Arabic contract title is required");
+      if (!enTitle.trim()) errors.push("English contract title is required");
+      if (!arClientName || !arClientName.trim())
+        errors.push("Arabic client name is required");
+      if (!enClientName || !enClientName.trim())
+        errors.push("English client name is required");
+      if (!projectGroup) errors.push("Project group must be selected");
+      if (selectedStages.length === 0)
+        errors.push("At least one stage must be selected");
+
       for (const s of selectedStages) {
         const dd = perStageMeta?.[s.enum]?.deliveryDays;
         const deptDd = perStageMeta?.[s.enum]?.deptDeliveryDays;
-        if (!dd || Number(dd) <= 0) return false;
-        if (!deptDd || Number(deptDd) <= 0) return false;
+        if (!dd || Number(dd) <= 0)
+          errors.push(`Stage ${s.enum}: Delivery days must be greater than 0`);
+        if (!deptDd || Number(deptDd) <= 0)
+          errors.push(
+            `Stage ${s.enum}: Department days must be greater than 0`
+          );
       }
-      if (payments.length === 0) return false;
+      if (payments.length === 0)
+        errors.push("At least one payment must be added");
       if (payments.some((p) => !p.amount || Number(p.amount) <= 0))
-        return false;
-      if (payments.some((p) => !p.condition)) return false;
-      return true;
+        errors.push("All payments must have an amount greater than 0");
+      if (payments.some((p) => !p.condition))
+        errors.push("All payments must have a payment condition");
     }
-    // if (activeStep === 1) {
-    //   for (let i = 1; i < payments.length; i++) {
-    //     const r = paymentRules[i] || {};
-    //     if (!r.activateOnSigning) {
-    //       if (!r.projectName || !r.condition) return false;
-    //     }
-    //   }
-    //   return true;
-    // }
-    return true;
+
+    return errors;
   };
 
   const next = () => {
-    if (!canGoNext()) return;
+    const errors = validateStep();
+    setValidationErrors(errors);
+    if (errors.length > 0) return;
     setActiveStep((s) => Math.min(s + 1, steps.length - 1));
   };
   const back = () => setActiveStep((s) => Math.max(s - 1, 0));
@@ -110,6 +118,7 @@ export default function CreateContractDialog({
       deptDeliveryDays: perStageMeta?.[s.enum]?.deptDeliveryDays
         ? Number(perStageMeta[s.enum].deptDeliveryDays)
         : null,
+      isActive: perStageMeta?.[s.enum]?.isActive || false,
     }));
 
     const payload = {
@@ -196,6 +205,44 @@ export default function CreateContractDialog({
           sx={{ p: 3, bgcolor: alpha(theme.palette.background.paper, 0.8) }}
         >
           <Stack spacing={3}>
+            {validationErrors.length > 0 && (
+              <Snackbar
+                open={true}
+                anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                autoHideDuration={10000}
+                onClose={() => setValidationErrors([])}
+              >
+                <Alert
+                  severity="error"
+                  sx={{
+                    position: "relative",
+                  }}
+                >
+                  <Stack spacing={0.5}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                      Please fix the following errors:
+                    </Typography>
+                    {validationErrors.map((error, idx) => (
+                      <Typography key={idx} variant="body2" sx={{ ml: 1 }}>
+                        • {error}
+                      </Typography>
+                    ))}
+                  </Stack>
+                  <IconButton
+                    aria-label="close"
+                    onClick={() => setValidationErrors([])}
+                    sx={{
+                      position: "absolute",
+                      right: 8,
+                      top: 8,
+                      color: (theme) => theme.palette.grey[500],
+                    }}
+                  >
+                    <MdClose />
+                  </IconButton>
+                </Alert>
+              </Snackbar>
+            )}
             <Stepper activeStep={activeStep} alternativeLabel sx={{ pt: 1 }}>
               {steps.map((label, idx) => (
                 <Step key={label}>
@@ -342,7 +389,6 @@ export default function CreateContractDialog({
             <Button
               onClick={next}
               variant="contained"
-              disabled={!canGoNext()}
               sx={{
                 background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
                 textTransform: "none",

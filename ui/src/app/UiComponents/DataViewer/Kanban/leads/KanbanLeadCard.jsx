@@ -15,6 +15,7 @@ import {
   Stack,
   Tooltip,
   Typography,
+  Checkbox,
 } from "@mui/material";
 import {
   AiOutlineDollar as MoneyIcon,
@@ -36,7 +37,10 @@ import {
   CallResultDialog,
   NewCallDialog,
 } from "@/app/UiComponents/DataViewer/leads/dialogs/CallsDialog.jsx";
-import { hideMoreData } from "@/app/helpers/functions/utility.js";
+import {
+  checkIfAdminOrSuperSales,
+  hideMoreData,
+} from "@/app/helpers/functions/utility.js";
 import { FaEye } from "react-icons/fa";
 import { InProgressCall } from "@/app/UiComponents/DataViewer/leads/widgets/InProgressCall.jsx";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -89,6 +93,8 @@ const LeadCard = ({
   statusArray,
   setRerenderColumns,
   reRenderColumns,
+  selectedLeads = [],
+  setSelectedLeads = () => {},
 }) => {
   const [, drag] = useDrag({
     type: ItemTypes.CARD,
@@ -102,9 +108,20 @@ const LeadCard = ({
     },
   });
   const { user } = useAuth();
-  const admin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
+  const admin = checkIfAdminOrSuperSales(user);
   const [menuAnchorEl, setMenuAnchorEl] = React.useState(null);
   const [previewDialogOpen, setPreviewDialogOpen] = React.useState(false);
+  const [hovered, setHovered] = React.useState(false);
+
+  const isSelected = selectedLeads.includes(lead.id);
+  const showCheckbox = admin && (hovered || selectedLeads.length > 0);
+
+  const handleCheckboxChange = (e) => {
+    e.stopPropagation();
+    setSelectedLeads((prev) =>
+      isSelected ? prev.filter((id) => id !== lead.id) : [...prev, lead.id]
+    );
+  };
 
   const handleMenuClick = (event) => {
     setMenuAnchorEl(event.currentTarget);
@@ -150,7 +167,11 @@ const LeadCard = ({
     ? contractLevelColors[currentContract.contractLevel]
     : "#000000";
   return (
-    <div ref={drag}>
+    <div
+      ref={drag}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
       <StyledCard
         borderColor={
           type === "STAFF" || type === "CONTRACTLEVELS"
@@ -158,6 +179,25 @@ const LeadCard = ({
             : statusColors[lead.projects[0].status]
         }
       >
+        {showCheckbox && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              zIndex: 1001,
+            }}
+          >
+            <Checkbox
+              checked={isSelected}
+              onChange={handleCheckboxChange}
+              onClick={(e) => e.stopPropagation()}
+              sx={{
+                color: isSelected ? "primary.main" : "action.disabled",
+              }}
+            />
+          </Box>
+        )}
         <FloatingIdBadge
           leadId={lead.id}
           backgroundColor={`${levelColor}60`}

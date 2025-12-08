@@ -1,6 +1,7 @@
 import dayjs from "dayjs";
 import {
   assignLeadNotification,
+  assignMultipleLeadsNotification,
   convertALeadNotification,
   updateLeadStatusNotification,
 } from "../../notification.js";
@@ -971,6 +972,20 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
 
   return updatedClientLead;
 }
+export async function bulkAssignLeadTsoAUser(leadsIds, userId, isAdmin) {
+  await prisma.clientLead.updateMany({
+    where: {
+      id: { in: leadsIds },
+    },
+    data: {
+      userId: Number(userId),
+      assignedAt: new Date(),
+    },
+  });
+  await assignMultipleLeadsNotification(leadsIds, userId);
+
+  return true;
+}
 
 export async function updateClientLeadStatus({
   clientLeadId,
@@ -1106,10 +1121,9 @@ export async function updateClientLeadStatus({
         }
       );
     }
-    await assignDesignersForProjectsInContractIfAutoAssigned({
-      leadId: lead.id,
-      userId,
-    });
+    // await assignDesignersForProjectsInContractIfAutoAssigned({
+    //   leadId: lead.id,
+    // });
   }
 }
 

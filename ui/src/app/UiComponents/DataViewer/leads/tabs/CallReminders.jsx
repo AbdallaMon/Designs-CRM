@@ -50,7 +50,7 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
         DONE: theme.palette.success.main,
       }[status] || theme.palette.grey[300],
   });
-
+  console.log(notUser, "notUser");
   return (
     <Stack spacing={3}>
       {!notUser && (

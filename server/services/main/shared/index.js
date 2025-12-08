@@ -1,6 +1,5 @@
 // Barrel export file - combines all shared services modules
 export * from "./leadServices.js";
-export * from "./contractServices.js";
 export * from "./paymentServices.js";
 export * from "./projectServices.js";
 export * from "./taskServices.js";

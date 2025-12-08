@@ -2,7 +2,33 @@ import prisma from "../../../prisma/prisma.js";
 import { v4 as uuidv4 } from "uuid";
 import { buildAndUploadContractPdf } from "./generateContractPdf.js";
 import { assignProjectToUser } from "../shared/projectServices.js";
-
+export const stageLevelStartProject = {
+  LEVEL_3: "2D_Study",
+  LEVEL_4: "3D_Designer",
+  LEVEL_5: "2D_Final_Plans",
+  LEVEL_6: "2D_Quantity_Calculation",
+};
+export const stageLevelRelatedProject = {
+  LEVEL_2: "2D_Study",
+  LEVEL_3: "3D_Designer",
+  LEVEL_4: "2D_Final_Plans",
+  LEVEL_5: "2D_Quantity_Calculation",
+};
+const projectTypeForStageLevel = {
+  "2D_Study": "LEVEL_2",
+  "3D_Designer": "LEVEL_3",
+  "2D_Final_Plans": "LEVEL_4",
+  "2D_Quantity_Calculation": "LEVEL_5",
+};
+export const STAGE_PREV_LEVELS_MAP = {
+  LEVEL_1: null,
+  LEVEL_2: ["LEVEL_1"],
+  LEVEL_3: ["LEVEL_2", "LEVEL_1"],
+  LEVEL_4: ["LEVEL_3", "LEVEL_2", "LEVEL_1"],
+  LEVEL_5: ["LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
+  LEVEL_6: ["LEVEL_5", "LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
+  LEVEL_7: ["LEVEL_6", "LEVEL_5", "LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
+};
 export async function getLeadContractList({ leadId }) {
   const where = {
     clientLeadId: Number(leadId),
@@ -38,6 +64,7 @@ async function validatePayments(payments) {
     );
   }
 }
+
 async function validateStages(stages) {
   {
     if (stages.length === 0)
@@ -206,18 +233,6 @@ function getStageOrder(stageLevel) {
   const m = stageLevel.match(/\d+(?!.*\d)/);
   return Number(m[0]);
 }
-export const stageLevelStartProject = {
-  LEVEL_3: "2D_Study",
-  LEVEL_4: "3D_Designer",
-  LEVEL_5: "2D_Final_Plans",
-  LEVEL_6: "2D_Quantity_Calculation",
-};
-export const stageLevelRelatedProject = {
-  LEVEL_2: "2D_Study",
-  LEVEL_3: "3D_Designer",
-  LEVEL_4: "2D_Final_Plans",
-  LEVEL_5: "2D_Quantity_Calculation",
-};
 
 async function createStages({
   contractId,
@@ -271,6 +286,9 @@ async function createStage({
     ...stage,
     title: levelEnum,
   };
+  if (data.isActive || data.isActive === false) {
+    delete data.isActive;
+  }
   if (projectId) {
     data.projectId = projectId;
   }
@@ -862,19 +880,12 @@ export async function deleteContractSpecialItem({ specialItemId }) {
   });
 }
 
-export const STAGE_PREV_LEVELS_MAP = {
-  LEVEL_1: null,
-  LEVEL_2: ["LEVEL_1"],
-  LEVEL_3: ["LEVEL_2", "LEVEL_1"],
-  LEVEL_4: ["LEVEL_3", "LEVEL_2", "LEVEL_1"],
-  LEVEL_5: ["LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
-  LEVEL_6: ["LEVEL_5", "LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
-  LEVEL_7: ["LEVEL_6", "LEVEL_5", "LEVEL_4", "LEVEL_3", "LEVEL_2", "LEVEL_1"],
-};
-
 export async function checkIfProjectHasStagesAndUpdateNextAndPrevious({
   projectId,
   status,
+  clientLeadId,
+  groupId,
+  groupTitle,
 }) {
   if (status.toUpperCase() !== "COMPLETED") {
     return;
@@ -931,6 +942,14 @@ export async function checkIfProjectHasStagesAndUpdateNextAndPrevious({
     });
   }
   if (nextContractStage) {
+    const relatedProjectType =
+      stageLevelRelatedProject[nextContractStage.title];
+    await assignDesignersForStageRelatedProject({
+      groupId: groupId,
+      projectType: relatedProjectType,
+      leadId: clientLeadId,
+      groupTitle,
+    });
     await createADeliveryScheduleAndRelateItToStage({
       stageId: nextContractStage.id,
       ...nextContractStage,
@@ -976,6 +995,18 @@ export async function updateSecondStageAfterFirstPayment({ contractId }) {
     await createADeliveryScheduleAndRelateItToStage({
       stageId: levelTwoStage.id,
       ...levelTwoStage,
+    });
+    const contract = await prisma.contract.findUnique({
+      where: {
+        id: Number(contractId),
+      },
+    });
+    const { clientLeadId, projectGroupId } = contract;
+    const relatedProjectType = stageLevelRelatedProject["LEVEL_2"];
+    await assignDesignersForStageRelatedProject({
+      groupId: projectGroupId,
+      projectType: relatedProjectType,
+      leadId: clientLeadId,
     });
   }
   return true;
@@ -1212,6 +1243,8 @@ export async function getContractPaymentsGroupedService({
         id: p.id,
         amount: toNumber(p.amount),
         amountWithTax: withTax(p.amount, taxRate),
+        amountLost: toNumber(p.amountLost),
+        amountReceived: toNumber(p.amountReceived),
         currency: p.currency,
         dueDate: p.dueDate,
         status: p.status,
@@ -1245,6 +1278,57 @@ export async function getContractPaymentsGroupedService({
     totalPages: Math.max(1, Math.ceil(total / take)),
   };
 }
+export async function updateContractPaymentAmounts({
+  paymentId,
+  amountLost,
+  amountReceived,
+  status,
+}) {
+  const payment = await prisma.contractPayment.findUnique({
+    where: { id: Number(paymentId) },
+    select: { amount: true, paymentCondition: true, contractId: true },
+  });
+  const contract = await prisma.contract.findFirst({
+    where: { id: payment.contractId },
+    select: { taxRate: true },
+  });
+  const taxRate = contract?.taxRate ?? 5;
+  if (!payment) {
+    throw new Error("Payment not found");
+  }
+
+  const lost = Number(amountLost ?? 0);
+  const received = Number(amountReceived ?? 0);
+  // const total = Number(payment.amount ?? 0);
+  const total = withTax(payment.amount, taxRate);
+  if (Number.isNaN(lost) || Number.isNaN(received)) {
+    throw new Error("Invalid amount values");
+  }
+
+  if (lost + received > total) {
+    throw new Error(
+      "Amount lost + received cannot be more than the payment total"
+    );
+  }
+
+  const updated = prisma.contractPayment.update({
+    where: { id: Number(paymentId) },
+    data: {
+      amountLost: lost,
+      amountReceived: received,
+      status,
+    },
+  });
+  if (payment.paymentCondition === "SIGNATURE") {
+    await updateSecondStageAfterFirstPayment({
+      contractId: payment.contractId,
+    });
+  }
+  await updateContractStatusToCompletedIfNoOtherPaymentsOrStages({
+    contractId: payment.contractId,
+  });
+  return updated;
+}
 // export const stageLevelRelatedProject = {
 //   LEVEL_2: "2D_Study",
 //   LEVEL_3: "3D_Designer",
@@ -1261,7 +1345,11 @@ export async function assignDesignersForProjectsInContractIfAutoAssigned({
       status: "IN_PROGRESS",
     },
     include: {
-      stages: true,
+      stages: {
+        where: {
+          stageStatus: "IN_PROGRESS",
+        },
+      },
     },
   });
   for (const contract of inProgressContracts) {
@@ -1308,5 +1396,46 @@ export async function assignDesignersForProjectsInContractIfAutoAssigned({
         // مفيش throw => نكمل باقي اللوب
       }
     }
+  }
+}
+
+export async function assignDesignersForStageRelatedProject({
+  projectType,
+  leadId,
+  groupId,
+}) {
+  try {
+    const userAutoAssignments = await prisma.autoAssignment.findMany({
+      where: {
+        type: projectType,
+      },
+    });
+
+    if (!userAutoAssignments || userAutoAssignments.length === 0) return;
+
+    const project = await prisma.project.findFirst({
+      where: {
+        clientLeadId: Number(leadId),
+        groupId: groupId,
+        type: projectType,
+      },
+    });
+    if (!project) return;
+    for (const assignment of userAutoAssignments) {
+      const userId = assignment.userId;
+      if (!userId) continue;
+      await assignProjectToUser({
+        projectId: project.id,
+        userId: Number(userId),
+        groupId: groupId,
+      });
+    }
+  } catch (err) {
+    // هنا بنطنّش أي error حصل في الstage ده ونكمّل على اللي بعده
+    console.error("Error in single contract/stage auto-assign", {
+      error: err,
+      leadId,
+      groupId,
+    });
   }
 }

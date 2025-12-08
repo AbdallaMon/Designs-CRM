@@ -20,6 +20,7 @@ import {
   updateContractSpecialItem,
   markContractAsCancelled,
   getContractPaymentsGroupedService,
+  updateContractPaymentAmounts,
 } from "../../services/main/contract/contractServices.js";
 import { getCurrentUser } from "../../services/main/utility/utility.js";
 
@@ -167,6 +168,24 @@ router.post("/payments/:paymentId/status", async (req, res) => {
   } catch (error) {
     console.error("Error fetching client leads contracts:", error);
     res.status(500).json({ message: error?.message });
+  }
+});
+
+router.post("/payments/:paymentId/amounts", async (req, res) => {
+  try {
+    const result = await updateContractPaymentAmounts({
+      paymentId: req.params.paymentId,
+      amountLost: req.body.amountLost,
+      amountReceived: req.body.amountReceived,
+      status: req.body.status,
+    });
+    res.status(200).json({
+      data: result,
+      message: "Contract payment amounts updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating contract payment amounts:", error);
+    res.status(400).json({ message: error?.message });
   }
 });
 

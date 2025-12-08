@@ -58,7 +58,7 @@ export const StatusChip = styled(Chip)(({ theme, statuscolor }) => ({
 
 const KanbanColumn = ({
   status,
-  admin,
+  isAdminOrSuperSales,
   type,
   statusArray,
   reRenderColumns,
@@ -66,7 +66,10 @@ const KanbanColumn = ({
   staffId,
   filters,
   isNotStaff = false,
+  selectedLeads = [],
+  setSelectedLeads = () => {},
 }) => {
+  const admin = isAdminOrSuperSales;
   const [finalizeModel, setFinalizeModel] = useState(false);
   const [currentId, setCurrentId] = useState(null);
   const [leads, setleads] = useState([]);
@@ -324,8 +327,9 @@ const KanbanColumn = ({
                     type={type}
                     statusArray={statusArray}
                     setRerenderColumns={setRerenderColumns}
-                                        reRenderColumns={reRenderColumns}
-
+                    reRenderColumns={reRenderColumns}
+                    selectedLeads={selectedLeads}
+                    setSelectedLeads={setSelectedLeads}
                   />
                 );
               } else {
