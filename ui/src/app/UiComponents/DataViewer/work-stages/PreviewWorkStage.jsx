@@ -354,7 +354,7 @@ const PreviewWorkStage = ({
       onClose={onClose}
       setleads={setleads}
       page={page}
-      url={`shared/client-leads/projects/designers/${id}?type=${type}&`}
+      url={`shared/projects/designers/${id}?type=${type}&`}
       type={type}
       dontCheckIfNotUser={true}
       setRerenderColumns={setRerenderColumns}
