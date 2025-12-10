@@ -506,7 +506,6 @@ export async function getClientLeadsColumnStatus({
       where,
       skip: Number(searchParams.skip) || 0,
       take: Number(searchParams.take) || 20,
-      skip: 0,
       orderBy: { updatedAt: "desc" },
       select: {
         id: true,

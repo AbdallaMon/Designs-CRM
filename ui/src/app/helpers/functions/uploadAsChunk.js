@@ -11,8 +11,9 @@ export async function uploadInChunks(file, setProgress, setOverlay, isClient) {
     const chunkSize = 1 * 1024 * 1024; // 1MB
     const totalChunks = Math.ceil(file.size / chunkSize);
     let finalFileUrl;
-
-    setOverlay(true);
+    if (setOverlay) {
+      setOverlay(true);
+    }
 
     for (let i = 0; i < totalChunks; i++) {
       const chunk = file.slice(i * chunkSize, (i + 1) * chunkSize);
@@ -45,12 +46,16 @@ export async function uploadInChunks(file, setProgress, setOverlay, isClient) {
       setProgress(percent);
     }
     console.log(finalFileUrl, "finalFileUrl");
-    setOverlay(false);
+    if (setOverlay) {
+      setOverlay(false);
+    }
     toast.update(id, Success("Uploaded successfully"));
 
     return { url: finalFileUrl, status: finalFileUrl && 200 };
   } catch (e) {
-    setOverlay(false);
+    if (setOverlay) {
+      setOverlay(false);
+    }
     toast.update(id, Failed("Upload failed"));
   }
 }

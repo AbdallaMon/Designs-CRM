@@ -82,6 +82,8 @@ export function handleTokenSession(token, res, options = {}) {
       accountStatus: decoded.accountStatus,
       isPrimary: decoded.isPrimary,
       isSuperSales: decoded.isSuperSales,
+      name: decoded.name,
+      email: decoded.email,
     });
 
     res.cookie("token", refreshedToken, {

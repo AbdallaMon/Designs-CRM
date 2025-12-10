@@ -75,6 +75,7 @@ router.get("/status", (req, res) => {
   }
   try {
     const decoded = verifyToken(token, res);
+    console.log(decoded, "decoded");
     res.status(200).json({
       message: "User is authenticated",
       user: {

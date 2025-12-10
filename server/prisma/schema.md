@@ -7,6 +7,7 @@ datasource db {
 provider = "mysql"
 url = env("DATABASE_URL")
 }
+
 enum LeadSource {
 INSTAGRAM
 TIKTOK
@@ -18,6 +19,7 @@ INTERIOR_MAGAZINE_SITE
 REFERRAL
 OTHER
 }
+
 enum NotificationType {
 NEW_LEAD
 LEAD_ASSIGNED
@@ -46,6 +48,14 @@ ATTEMPT_PASSED
 ATTEMPT_FAILED
 NEW_ATTEMPT_CREATED
 NEW_ATTEMPT_ADDED
+
+// Chat notifications
+NEW_CHAT_MESSAGE
+CHAT_MENTION
+CHAT_ROOM_CREATED
+CHAT_MEMBER_ADDED
+CHAT_CALL_INCOMING
+CHAT_CALL_MISSED
 }
 
 enum ContentType {
@@ -103,6 +113,7 @@ IN_PROGRESS
 INTERESTED
 NEEDS_IDENTIFIED
 NEGOTIATING
+LEADEXCHANGE
 REJECTED
 FINALIZED
 CONVERTED
@@ -141,6 +152,56 @@ HIGH
 VERY_HIGH
 }
 
+// ==================== Chat System Enums ====================
+
+enum ChatRoomType {
+STAFF_TO_STAFF
+PROJECT_GROUP
+CLIENT_TO_STAFF
+MULTI_PROJECT
+}
+
+enum ChatMessageType {
+TEXT
+FILE
+IMAGE
+VOICE
+VIDEO
+SYSTEM
+}
+
+enum ChatMessageStatus {
+SENT
+DELIVERED
+READ
+}
+
+enum ChatMemberRole {
+ADMIN
+MODERATOR
+MEMBER
+}
+
+enum CallStatus {
+RINGING
+ONGOING
+ENDED
+MISSED
+CANCELLED
+}
+
+enum CallType {
+AUDIO
+VIDEO
+}
+
+enum ScheduledMessageStatus {
+PENDING
+SENT
+CANCELLED
+FAILED
+}
+
 enum TaskStatus {
 TODO
 IN_PROGRESS
@@ -161,7 +222,7 @@ CANCELLED
 
 enum MeetingType {
 SALES_MEETING
-DESIGN_MEETING  
+DESIGN_MEETING
 }
 
 enum ClientPersonality {
@@ -183,32 +244,121 @@ LEVEL_7
 
 /// إعدادات عامة للموقع (Singleton: سجل واحد فقط)
 model SiteUtility {
-/// نثبت سجل واحد فقط برقم 1
 id Int @id @default(1)
 
-/// روابط اختيارية
-pdfFrame String? // لينك إطار الـ PDF
-pdfHeader String? // لينك هيدر الـ PDF
-
-/// تتحدث تلقائيًا عند أي تعديل
+pdfFrame String?
+pdfHeader String?
+introPage String?  
+ pageTitle String?  
+ pdfSignaturePart String?
 updatedAt DateTime @updatedAt
 }
 
+model ContractUtility {
+id Int @id @default(1)
+
+obligationsPartyOneAr String @db.Text
+obligationsPartyOneEn String @db.Text
+
+obligationsPartyTwoAr String @db.Text
+obligationsPartyTwoEn String @db.Text
+
+stageClauses ContractStageClauseTemplate[]
+specialClauses ContractSpecialClauseTemplate[]
+levelClauses ContractLevelClauseTemplate[]
+
+updatedAt DateTime @updatedAt
+}
+model ContractStageClauseTemplate {
+id Int @id @default(autoincrement())
+
+contractUtilityId Int
+contractUtility ContractUtility @relation(fields: [contractUtilityId], references: [id])
+
+headingAr String @db.Text
+headingEn String @db.Text
+
+// ✅ make titles long text
+titleAr String @db.Text
+titleEn String @db.Text
+
+descriptionAr String @db.Text  
+ descriptionEn String @db.Text
+
+order Int @default(0)
+
+@@index([contractUtilityId])
+}
+
+model ContractSpecialClauseTemplate {
+id Int @id @default(autoincrement())
+
+contractUtilityId Int
+contractUtility ContractUtility @relation(fields: [contractUtilityId], references: [id])
+
+textAr String @db.Text
+textEn String? @db.Text
+
+order Int @default(0)
+isActive Boolean @default(true)
+
+@@index([contractUtilityId])
+}
+model ContractLevelClauseTemplate {
+id Int @id @default(autoincrement())
+
+contractUtilityId Int
+contractUtility ContractUtility @relation(fields: [contractUtilityId], references: [id])
+
+level ContractLevel
+
+textAr String @db.Text
+textEn String? @db.Text
+
+order Int @default(0)
+isActive Boolean @default(true)
+
+@@index([contractUtilityId])
+@@index([level])
+}
+
+enum ContractStatus {
+IN_PROGRESS
+COMPLETED
+CANCELLED
+}
+
+enum ContractSessionStatus {
+INITIAL  
+ SIGNING  
+ REGISTERED  
+}
 model Contract {
 id Int @id @default(autoincrement())
 clientLead ClientLead @relation(fields: [clientLeadId], references: [id])
 clientLeadId Int
+sessionStatus ContractSessionStatus @default(INITIAL)
 
 contractLevel ContractLevel
-purpose String  
- title String?
+purpose String
+title String?
+enTitle String?
 startDate DateTime?
 endDate DateTime?
 isCompleted Boolean @default(false)
 isInProgress Boolean @default(false)
 createdAt DateTime @default(now())
+projectGroupId Int?
+arToken String? @unique @db.VarChar(64)
+enToken String? @unique @db.VarChar(64)
+status ContractStatus @default(IN_PROGRESS)
+signatureUrl String? @db.Text
+handWrittenSignatureUrl String? @db.Text
 
-// إضافاتك الجديدة فقط:
+taxRate Decimal @default(0) @db.Decimal(5, 2)
+totalAmount Decimal? @db.Decimal(12, 2) // ← now nullable
+amount Decimal? @db.Decimal(12, 2)  
+ // إضافاتك الجديدة فقط:
 pdfLinkAr String? // رابط PDF عربي (لينك)
 pdfLinkEn String? // رابط PDF إنجليزي (لينك، الاسم بنتعامل معه على مستوى العرض)
 projectType String? // نوع المشروع (نصي)
@@ -216,14 +366,14 @@ writtenAt DateTime? // تاريخ كتابة العقد
 
 // علاقات جديدة:
 stages ContractStage[]
-paymentsNew ContractPayment[] // الدفعات الجديدة
-drawings ContractDrawing[] // صور المخططات
+paymentsNew ContractPayment[]
+drawings ContractDrawing[]
 specialItems ContractSpecialItem[]
 projects Project[]
 
 notes Note[]
-@@unique([clientLeadId, contractLevel, purpose])
 
+@@index([clientLeadId, contractLevel])
 }
 
 /// المرحلة الجديدة بدل enum، مع عدد أيام المرحلة + عدد أيام القسم
@@ -232,10 +382,10 @@ id Int @id @default(autoincrement())
 contract Contract @relation(fields: [contractId], references: [id])
 contractId Int
 
-title String // اسم المرحلة (Meeting, Plan Study, 3D, ...)
-order Int // ترتيب المرحلة داخل العقد
-deliveryDays Int // إجمالي أيام تسليم المرحلة
-deptDeliveryDays Int? // أيام تسليم الجزء/القسم المختص (اختياري)
+title String
+order Int
+deliveryDays Int
+deptDeliveryDays Int?
 
 startDate DateTime?
 endDate DateTime?
@@ -246,7 +396,8 @@ project Project? @relation(fields: [projectId], references: [id])
 projectId Int?
 
 // علاقات مساعدة
-payments ContractPayment[] // دفعات قد ترتبط بهذه المرحلة (اختياري)
+payments ContractPayment[]
+deliverySchedule DeliverySchedule?
 
 @@unique([contractId, order]) // يمنع ترتيب مكرر لنفس العقد
 @@index([projectId])
@@ -258,6 +409,7 @@ NOT_STARTED
 IN_PROGRESS
 COMPLETED
 }
+
 enum PaymentStatusNew {
 RECEIVED // تم الاستلام
 TRANSFERRED // تم التحويل
@@ -274,6 +426,8 @@ stage ContractStage? @relation(fields: [stageId], references: [id])
 stageId Int?
 
 amount Decimal @db.Decimal(12, 2)
+amountLost Decimal @default(0) @db.Decimal(12, 2)
+amountReceived Decimal @default(0) @db.Decimal(12, 2)
 currency String @default("AED")
 dueDate DateTime?
 status PaymentStatusNew @default(NOT_DUE)
@@ -285,6 +439,9 @@ project Project? @relation(fields: [projectId], references: [id])
 projectId Int?
 paymentCondition String?
 
+conditionId Int?
+conditionItem ContractPaymentCondition? @relation(fields: [conditionId], references: [id])
+
 createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
 
@@ -292,6 +449,22 @@ updatedAt DateTime @updatedAt
 @@index([stageId])
 @@index([status, dueDate])
 @@index([projectId])
+}
+
+model ContractPaymentCondition {
+id Int @id @default(autoincrement())
+
+payments ContractPayment[]
+
+conditionType String
+condition String
+labelAr String
+labelEn String
+
+createdAt DateTime @default(now())
+updatedAt DateTime @updatedAt
+
+@@unique([conditionType, condition, labelAr, labelEn])
 }
 
 model ContractDrawing {
@@ -314,9 +487,8 @@ model ContractSpecialItem {
 id Int @id @default(autoincrement())
 contract Contract @relation(fields: [contractId], references: [id])
 contractId Int
-
-labelAr String // اسم البند بالعربي (إلزامي)
-labelEn String? // الاسم بالإنجليزي (اختياري)
+labelAr String @db.Text
+labelEn String? @db.Text
 
 @@index([contractId])
 }
@@ -388,10 +560,11 @@ stage SalesStageType
 notes Note[]
 createdAt DateTime @default(now())
 
+@@unique([clientLeadId, stage])
 @@index([clientLeadId])
 @@index([userId])
-@@unique([clientLeadId, stage])
 }
+
 model TelegramChannel {
 id Int @id @default(autoincrement())
 clientLead ClientLead @relation(fields: [clientLeadId], references: [id])
@@ -407,13 +580,12 @@ model ClientLead {
 id Int @id @default(autoincrement())
 client Client @relation(fields: [clientId], references: [id])
 clientId Int
-code String? @unique  
- assignedTo User? @relation(fields: [userId], references: [id])
+code String? @unique
+assignedTo User? @relation(fields: [userId], references: [id])
 userId Int?
 status ClientLeadStatus @default(NEW)
 telegramChannel TelegramChannel?
 telegramLink String?
-lastTelegramMessages FetchedTelegramMessage[]
 selectedCategory LeadCategory
 type LeadType @default(CONSTRUCTION_VILLA)
 description String?
@@ -423,7 +595,7 @@ emirate Emirate?
 leadType LeadConversionType @default(NORMAL)
 previousLeadId Int?
 personality ClientPersonality?
-salesStages SalesStage[]
+
 discoverySource LeadSource?
 
 discount Decimal @default(0) @db.Decimal(10, 2)
@@ -431,10 +603,12 @@ price String?
 averagePrice Decimal? @db.Decimal(10, 2)
 priceNote String? @db.Text
 priceWithOutDiscount Decimal @default(0) @db.Decimal(10, 2)
+
+salesStages SalesStage[]
+lastTelegramMessages FetchedTelegramMessage[]
 sessionQuestions SessionQuestion[]
 versaModel VersaModel[]
 contracts Contract[]
-
 projects Project[]
 priceOffers PriceOffers[]
 payments Payment[]
@@ -469,6 +643,9 @@ accountantId Int?
 
 accountantAssignedAt DateTime?
 
+// Chat relations
+chatRooms ChatRoom[]
+
 @@index([clientId])
 @@index([userId])
 }
@@ -478,8 +655,9 @@ id Int @id @default(autoincrement())
 clientLead ClientLead @relation(fields: [clientLeadId], references: [id])
 clientLeadId Int
 
-messageId Int  
- fetchedAt DateTime @default(now())
+messageId Int
+fetchedAt DateTime @default(now())
+
 @@index([clientLeadId])
 }
 
@@ -499,8 +677,8 @@ isAdmin Boolean @default(false)
 type MeetingType?
 token String? @unique
 availableSlot AvailableSlot? @relation("SlotToMeeting")
-availableSlotId Int? @unique  
- userTimezone String?
+availableSlotId Int? @unique
+userTimezone String?
 notified Boolean @default(false)
 notified4h Boolean @default(false)
 notified12h Boolean @default(false)
@@ -515,12 +693,13 @@ deliverySchedules DeliverySchedule[]
 
 model DeliverySchedule {
 id Int @id @default(autoincrement())
-project Project @relation(fields: [projectId], references: [id])
-projectId Int
+project Project? @relation(fields: [projectId], references: [id])
+projectId Int?
+
 name String? @db.VarChar(255)
 
-deliveryAt DateTime  
- notes Note[]
+deliveryAt DateTime
+notes Note[]
 
 meeting MeetingReminder? @relation(fields: [meetingReminderId], references: [id])
 meetingReminderId Int?
@@ -528,6 +707,9 @@ createdBy User? @relation("DeliverySchedulesCreatedBy", fields: [createdById], r
 createdById Int?
 
 createdAt DateTime @default(now())
+
+stage ContractStage? @relation(fields: [stageId], references: [id])
+stageId Int? @unique
 
 @@index([projectId])
 @@index([meetingReminderId])
@@ -588,6 +770,10 @@ notified1Day Boolean @default(false)
 
 createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
+
+// Chat relations
+chatRooms ChatRoom[]
+chatRoomProjects ChatRoomProject[] @relation("ChatRoomProjects")
 
 @@index([clientLeadId])
 @@index([groupId])
@@ -718,8 +904,8 @@ email String @unique @db.VarChar(255)
 name String @db.VarChar(255)
 password String @db.VarChar(255)
 isActive Boolean @default(true)
-isPrimary Boolean @default(false)  
- isSuperSales Boolean @default(false)
+isPrimary Boolean @default(false)
+isSuperSales Boolean @default(false)
 role UserRole @default(STAFF)
 telegramUsername String?
 subRoles UserSubRole[]
@@ -738,8 +924,8 @@ callReminders CallReminder[]
 meetingReminders MeetingReminder[]
 adminMeetingReminders MeetingReminder[] @relation("AdminMeetingReminders")
 createdQuestions SessionQuestion[]
-answers Answer[]  
- updates ClientLeadUpdate[]
+answers Answer[]
+updates ClientLeadUpdate[]
 versaModels VersaModel[]
 availableDays AvailableDay[]
 salesStages SalesStage[]
@@ -747,11 +933,12 @@ createdImageSessions ClientImageSession[]
 files File[]
 lastSeenAt DateTime?
 maxLeadsCounts Int? @default(50)
-accountantLeads ClientLead[] @relation("AccountantLeads")
+maxLeadCountPerDay Int @default(5)  
+ accountantLeads ClientLead[] @relation("AccountantLeads")
 commissions Commission[]
 assignments Assignment[]
 courseProgress CourseProgress[]
-examAttempts TestAttempt []
+examAttempts TestAttempt[]
 certificates Certificate[]
 allowedLessons LessonAccess[]
 homeWorks LessonHomework[]
@@ -759,8 +946,38 @@ deliverySchedulesCreated DeliverySchedule[] @relation("DeliverySchedulesCreatedB
 
 baseSalary BaseEmployeeSalary?
 notAllowedCountries Json?
+autoAssignments AutoAssignment[]
+
+// Chat relations
+chatRoomsCreated ChatRoom[] @relation("ChatRoomCreator")
+chatMemberships ChatMember[]
+chatMessages ChatMessage[]
+chatReactions ChatReaction[]
+chatMentions ChatMention[]
+chatBookmarks ChatBookmark[]
+chatTemplates ChatTemplate[]
+scheduledMessages ChatScheduledMessage[]
+callsInitiated Call[]
+callParticipations CallParticipant[]
+pinnedMessages ChatPinnedMessage[]
 
 @@index([email])
+}
+
+model AutoAssignment {
+id Int @id @default(autoincrement())
+
+user User @relation(fields: [userId], references: [id])
+userId Int
+
+type String
+isActive Boolean @default(true)
+
+createdAt DateTime @default(now())
+updatedAt DateTime @updatedAt
+
+@@unique([userId, type])
+@@index([userId])
 }
 
 model UserSubRole {
@@ -806,11 +1023,21 @@ createdAt DateTime @default(now())
 model Client {
 id Int @id @default(autoincrement())
 name String @db.VarChar(255)
+arName String? @db.VarChar(255)
+enName String? @db.VarChar(255)
 phone String @db.VarChar(20)
 email String @unique @db.VarChar(255)
 clientLeads ClientLead[]
 createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
+
+// Chat relations
+chatMemberships ChatMember[]
+chatMessages ChatMessage[]
+chatReactions ChatReaction[]
+chatMentions ChatMention[]
+chatBookmarks ChatBookmark[]
+callParticipations CallParticipant[]
 
 @@index([email])
 }
@@ -884,7 +1111,6 @@ deliveryScheduleId Int?
 @@index([salesStageId])
 @@index([notedUserId])
 @@index([deliveryScheduleId])
-
 }
 
 model Notification {
@@ -901,6 +1127,7 @@ staffId Int?
 clientLead ClientLead? @relation(fields: [clientLeadId], references: [id])
 clientLeadId Int?
 createdAt DateTime @default(now())
+
 @@index([userId])
 @@index([clientLeadId])
 }
@@ -999,8 +1226,8 @@ monthlySalaries MonthlySalary[] // Optional relation back to OperationalExpenses
 model QuestionType {
 id Int @id @default(autoincrement())
 name String @unique
-label String  
- baseQuestions BaseQuestion[]
+label String
+baseQuestions BaseQuestion[]
 sessionQuestions SessionQuestion[]
 createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
@@ -1015,7 +1242,6 @@ order Int @default(0)
 isArchived Boolean @default(false)
 createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
-
 }
 
 model SessionQuestion {
@@ -1191,6 +1417,7 @@ con Con? @relation("ConTexts", fields: [conId], references: [id])
 pageInfoId Int?
 pageInfo PageInfo? @relation("PageInfoContents", fields: [pageInfoId], references: [id])
 }
+
 model Pro {
 id Int @id @default(autoincrement())
 content TextLong[] @relation("ProTexts")
@@ -1412,6 +1639,7 @@ designImage DesignImage @relation(fields: [designImageId], references: [id])
 note Note[]
 createdAt DateTime @default(now())
 }
+
 model ClientImageSessionToSpace {
 clientImageSessionId Int
 spaceId Int
@@ -1429,7 +1657,7 @@ MULTIPLE_CHOICE
 SINGLE_CHOICE
 TRUE_FALSE
 TEXT
-ORDERING  
+ORDERING
 }
 
 enum TestType {
@@ -1479,6 +1707,7 @@ allowedUsers LessonAccess[]
 homeWorks LessonHomework[]
 createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
+
 @@unique([courseId, order])
 }
 
@@ -1492,6 +1721,7 @@ grantedAt DateTime @default(now())
 
 @@unique([userId, lessonId])
 }
+
 enum LessonVideoType {
 IFRAME
 URL
@@ -1516,6 +1746,7 @@ enum HomeworkType {
 VIDEO
 SUMMARY
 }
+
 model LessonVideo {
 id Int @id @default(autoincrement())
 lesson Lesson @relation(fields: [lessonId], references: [id])
@@ -1564,8 +1795,8 @@ questions TestQuestion[]
 attempts TestAttempt[]
 certificateApprovedByAdmin Boolean @default(false)
 attemptLimit Int @default(2)
-timeLimit Int?  
- published Boolean @default(false)
+timeLimit Int?
+published Boolean @default(false)
 }
 
 model TestQuestion {
@@ -1586,7 +1817,7 @@ questionId Int
 text String
 value String
 isCorrect Boolean @default(false)
-order Int?  
+order Int?
 }
 
 model TestAttempt {
@@ -1602,8 +1833,8 @@ attemptCount Int @default(0)
 attemptLimit Int @default(2)
 createdAt DateTime @default(now())
 updatedAt DateTime @updatedAt
-startTime DateTime?  
- endTime DateTime?
+startTime DateTime?
+endTime DateTime?
 timePassed Int?
 }
 
@@ -1623,7 +1854,7 @@ id Int @id @default(autoincrement())
 answer UserAnswer @relation(fields: [userAnswerId], references: [id])
 userAnswerId Int
 value String
-order Int?  
+order Int?
 }
 
 model CourseProgress {
@@ -1646,6 +1877,7 @@ courseProgressId Int
 lessonId Int
 completedAt DateTime @default(now())
 }
+
 model CompletedTest {
 id Int @id @default(autoincrement())
 courseProgress CourseProgress @relation(fields: [courseProgressId], references: [id])
@@ -1663,4 +1895,346 @@ courseId Int
 isApproved Boolean @default(false)
 createdAt DateTime @default(now())
 fileUrl String? @db.Text
+}
+
+// ==================== Chat System Models ====================
+
+model ChatRoom {
+id Int @id @default(autoincrement())
+type ChatRoomType
+name String?
+avatarUrl String?
+
+projectId Int?
+project Project? @relation(fields: [projectId], references: [id])
+clientLeadId Int?
+clientLead ClientLead? @relation(fields: [clientLeadId], references: [id])
+
+isMuted Boolean @default(false)
+isArchived Boolean @default(false)
+allowFiles Boolean @default(true)
+allowCalls Boolean @default(true)
+
+// Chat room password (instead of client)
+chatPasswordHash String?
+isChatEnabled Boolean @default(true)
+
+createdById Int?
+createdBy User? @relation("ChatRoomCreator", fields: [createdById], references: [id])
+
+createdAt DateTime @default(now())
+updatedAt DateTime @updatedAt
+
+members ChatMember[]
+messages ChatMessage[]
+calls Call[]
+pinnedMessages ChatPinnedMessage[]
+scheduledMessages ChatScheduledMessage[]
+multiProjectRooms ChatRoomProject[]
+
+@@index([type])
+@@index([projectId])
+@@index([clientLeadId])
+@@index([createdById])
+}
+
+model ChatMember {
+id Int @id @default(autoincrement())
+roomId Int
+room ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+userId Int?
+user User? @relation(fields: [userId], references: [id])
+
+clientId Int?
+client Client? @relation(fields: [clientId], references: [id])
+
+role ChatMemberRole @default(MEMBER)
+
+isMuted Boolean @default(false)
+isPinned Boolean @default(false)
+lastReadAt DateTime?
+notifyOnReply Boolean @default(true)
+
+joinedAt DateTime @default(now())
+leftAt DateTime?
+
+readReceipts ChatReadReceipt[]
+typingStatus ChatTypingStatus[]
+
+@@unique([roomId, userId])
+@@unique([roomId, clientId])
+@@index([roomId])
+@@index([userId])
+@@index([clientId])
+@@index([userId, leftAt])
+@@index([roomId, leftAt])
+}
+
+model ChatMessage {
+id Int @id @default(autoincrement())
+roomId Int
+room ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+senderId Int?
+sender User? @relation(fields: [senderId], references: [id])
+senderClient Int?
+client Client? @relation(fields: [senderClient], references: [id])
+
+type ChatMessageType
+content String? @db.Text
+
+fileUrl String?
+fileName String?
+fileSize Int?
+fileMimeType String?
+
+// Reply to message
+replyToId Int?
+replyTo ChatMessage? @relation("MessageReply", fields: [replyToId], references: [id], onDelete: SetNull)
+replies ChatMessage[] @relation("MessageReply")
+
+// Forward message
+forwardedFromId Int?
+forwardedFrom ChatMessage? @relation("ForwardedMessage", fields: [forwardedFromId], references: [id], onDelete: SetNull)
+forwardedTo ChatMessage[] @relation("ForwardedMessage")
+
+isEdited Boolean @default(false)
+isDeleted Boolean @default(false)
+
+createdAt DateTime @default(now())
+updatedAt DateTime @updatedAt
+
+readReceipts ChatReadReceipt[]
+attachments ChatAttachment[]
+reactions ChatReaction[]
+mentions ChatMention[]
+bookmarks ChatBookmark[]
+pinnedIn ChatPinnedMessage?
+
+@@index([roomId])
+@@index([senderId])
+@@index([senderClient])
+@@index([replyToId])
+@@index([forwardedFromId])
+@@index([createdAt])
+@@index([roomId, createdAt])
+@@index([roomId, isDeleted])
+@@index([senderId, createdAt])
+}
+
+model ChatAttachment {
+id Int @id @default(autoincrement())
+messageId Int
+message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+fileUrl String
+fileName String
+fileSize Int?
+fileMimeType String?
+thumbnailUrl String?
+
+uploadedAt DateTime @default(now())
+
+@@index([messageId])
+}
+
+model ChatReadReceipt {
+id Int @id @default(autoincrement())
+messageId Int
+message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+memberId Int
+member ChatMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+readAt DateTime @default(now())
+
+@@unique([messageId, memberId])
+@@index([messageId])
+@@index([memberId])
+}
+
+model ChatTypingStatus {
+id Int @id @default(autoincrement())
+memberId Int
+member ChatMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+isTyping Boolean @default(false)
+lastTyping DateTime @default(now())
+
+@@unique([memberId])
+@@index([memberId])
+}
+
+model ChatReaction {
+id Int @id @default(autoincrement())
+messageId Int
+message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+userId Int?
+user User? @relation(fields: [userId], references: [id])
+
+clientId Int?
+client Client? @relation(fields: [clientId], references: [id])
+
+emoji String
+
+createdAt DateTime @default(now())
+
+@@unique([messageId, userId, emoji])
+@@unique([messageId, clientId, emoji])
+@@index([messageId])
+@@index([userId])
+@@index([clientId])
+}
+
+model ChatMention {
+id Int @id @default(autoincrement())
+messageId Int
+message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+userId Int?
+user User? @relation(fields: [userId], references: [id])
+
+clientId Int?
+client Client? @relation(fields: [clientId], references: [id])
+
+createdAt DateTime @default(now())
+
+@@unique([messageId, userId])
+@@unique([messageId, clientId])
+@@index([messageId])
+@@index([userId])
+@@index([clientId])
+}
+
+model ChatPinnedMessage {
+id Int @id @default(autoincrement())
+roomId Int
+room ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+messageId Int @unique
+message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+pinnedById Int?
+pinnedBy User? @relation(fields: [pinnedById], references: [id])
+
+pinnedAt DateTime @default(now())
+
+@@index([roomId])
+@@index([pinnedById])
+}
+
+model ChatBookmark {
+id Int @id @default(autoincrement())
+messageId Int
+message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+userId Int?
+user User? @relation(fields: [userId], references: [id])
+
+clientId Int?
+client Client? @relation(fields: [clientId], references: [id])
+
+note String? @db.Text
+
+createdAt DateTime @default(now())
+
+@@unique([messageId, userId])
+@@unique([messageId, clientId])
+@@index([messageId])
+@@index([userId])
+@@index([clientId])
+}
+
+model ChatTemplate {
+id Int @id @default(autoincrement())
+userId Int?
+user User? @relation(fields: [userId], references: [id])
+title String
+content String @db.Text
+isGlobal Boolean @default(false)
+category String?
+
+createdAt DateTime @default(now())
+updatedAt DateTime @updatedAt
+
+@@index([userId])
+@@index([isGlobal])
+}
+
+model ChatScheduledMessage {
+id Int @id @default(autoincrement())
+roomId Int
+room ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+senderId Int?
+sender User? @relation(fields: [senderId], references: [id])
+
+content String @db.Text
+fileUrl String?
+
+scheduledFor DateTime
+status ScheduledMessageStatus @default(PENDING)
+sentMessageId Int?
+
+createdAt DateTime @default(now())
+
+@@index([roomId, scheduledFor])
+@@index([status])
+@@index([senderId])
+}
+
+// Junction table for multi-project chat rooms
+model ChatRoomProject {
+id Int @id @default(autoincrement())
+roomId Int
+room ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+projectId Int
+project Project @relation("ChatRoomProjects", fields: [projectId], references: [id], onDelete: Cascade)
+
+addedAt DateTime @default(now())
+
+@@unique([roomId, projectId])
+@@index([roomId])
+@@index([projectId])
+}
+
+model Call {
+id Int @id @default(autoincrement())
+roomId Int
+room ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+type CallType
+status CallStatus @default(RINGING)
+
+initiatorId Int
+initiator User @relation(fields: [initiatorId], references: [id])
+
+startedAt DateTime @default(now())
+endedAt DateTime?
+duration Int?
+
+participants CallParticipant[]
+
+@@index([roomId])
+@@index([initiatorId])
+@@index([status])
+}
+
+model CallParticipant {
+id Int @id @default(autoincrement())
+callId Int
+call Call @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+userId Int?
+user User? @relation(fields: [userId], references: [id])
+clientId Int?
+client Client? @relation(fields: [clientId], references: [id])
+
+joinedAt DateTime @default(now())
+leftAt DateTime?
+
+@@index([callId])
+@@index([userId])
+@@index([clientId])
 }

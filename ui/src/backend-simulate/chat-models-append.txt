@@ -1,0 +1,348 @@
+
+
+// ==================== Chat System Models ====================
+
+model ChatRoom {
+  id        Int          @id @default(autoincrement())
+  type      ChatRoomType
+  name      String?
+  avatarUrl String?
+
+  projectId    Int?
+  project      Project?     @relation(fields: [projectId], references: [id])
+  clientLeadId Int?
+  clientLead   ClientLead?  @relation(fields: [clientLeadId], references: [id])
+
+  isMuted    Boolean @default(false)
+  isArchived Boolean @default(false)
+  allowFiles Boolean @default(true)
+  allowCalls Boolean @default(true)
+  
+  // Chat room password (instead of client)
+  chatPasswordHash String?
+  isChatEnabled    Boolean @default(true)
+
+  createdById Int?
+  createdBy   User? @relation("ChatRoomCreator", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members           ChatMember[]
+  messages          ChatMessage[]
+  calls             Call[]
+  pinnedMessages    ChatPinnedMessage[]
+  invites           ChatRoomInvite[]
+  scheduledMessages ChatScheduledMessage[]
+
+  @@index([type])
+  @@index([projectId])
+  @@index([clientLeadId])
+  @@index([createdById])
+}
+
+model ChatMember {
+  id     Int      @id @default(autoincrement())
+  roomId Int
+  room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
+  
+  clientId Int?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  role ChatMemberRole @default(MEMBER)
+
+  isMuted       Boolean   @default(false)
+  isPinned      Boolean   @default(false)
+  lastReadAt    DateTime?
+  notifyOnReply Boolean   @default(true)
+
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
+
+  readReceipts ChatReadReceipt[]
+  typingStatus ChatTypingStatus[]
+
+  @@unique([roomId, userId])
+  @@unique([roomId, clientId])
+  @@index([roomId])
+  @@index([userId])
+  @@index([clientId])
+  @@index([userId, leftAt])
+  @@index([roomId, leftAt])
+}
+
+model ChatMessage {
+  id     Int      @id @default(autoincrement())
+  roomId Int
+  room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  
+  senderId     Int?
+  sender       User?   @relation(fields: [senderId], references: [id])
+  senderClient Int?
+  client       Client? @relation(fields: [senderClient], references: [id])
+
+  type    ChatMessageType
+  content String?         @db.Text
+  
+  fileUrl      String?
+  fileName     String?
+  fileSize     Int?
+  fileMimeType String?
+  
+  // Reply to message
+  replyToId Int?
+  replyTo   ChatMessage?  @relation("MessageReply", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   ChatMessage[] @relation("MessageReply")
+  
+  // Forward message
+  forwardedFromId Int?
+  forwardedFrom   ChatMessage?  @relation("ForwardedMessage", fields: [forwardedFromId], references: [id], onDelete: SetNull)
+  forwardedTo     ChatMessage[] @relation("ForwardedMessage")
+
+  isEdited  Boolean @default(false)
+  isDeleted Boolean @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  readReceipts ChatReadReceipt[]
+  attachments  ChatAttachment[]
+  reactions    ChatReaction[]
+  mentions     ChatMention[]
+  bookmarks    ChatBookmark[]
+  pinnedIn     ChatPinnedMessage?
+
+  @@index([roomId])
+  @@index([senderId])
+  @@index([senderClient])
+  @@index([replyToId])
+  @@index([forwardedFromId])
+  @@index([createdAt])
+  @@index([roomId, createdAt])
+  @@index([roomId, isDeleted])
+  @@index([senderId, createdAt])
+}
+
+model ChatAttachment {
+  id        Int         @id @default(autoincrement())
+  messageId Int
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  fileUrl      String
+  fileName     String
+  fileSize     Int?
+  fileMimeType String?
+  thumbnailUrl String?
+
+  uploadedAt DateTime @default(now())
+
+  @@index([messageId])
+}
+
+model ChatReadReceipt {
+  id        Int         @id @default(autoincrement())
+  messageId Int
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  memberId Int
+  member   ChatMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  readAt DateTime @default(now())
+
+  @@unique([messageId, memberId])
+  @@index([messageId])
+  @@index([memberId])
+}
+
+model ChatTypingStatus {
+  id       Int        @id @default(autoincrement())
+  memberId Int
+  member   ChatMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  isTyping   Boolean  @default(false)
+  lastTyping DateTime @default(now())
+
+  @@unique([memberId])
+  @@index([memberId])
+}
+
+model ChatReaction {
+  id        Int         @id @default(autoincrement())
+  messageId Int
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
+  
+  clientId Int?
+  client   Client? @relation(fields: [clientId], references: [id])
+  
+  emoji String
+
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, userId, emoji])
+  @@unique([messageId, clientId, emoji])
+  @@index([messageId])
+  @@index([userId])
+  @@index([clientId])
+}
+
+model ChatMention {
+  id        Int         @id @default(autoincrement())
+  messageId Int
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
+  
+  clientId Int?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, userId])
+  @@unique([messageId, clientId])
+  @@index([messageId])
+  @@index([userId])
+  @@index([clientId])
+}
+
+model ChatPinnedMessage {
+  id        Int         @id @default(autoincrement())
+  roomId    Int
+  room      ChatRoom    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  messageId Int         @unique
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  pinnedById Int?
+  pinnedBy   User? @relation(fields: [pinnedById], references: [id])
+  
+  pinnedAt DateTime @default(now())
+
+  @@index([roomId])
+  @@index([pinnedById])
+}
+
+model ChatBookmark {
+  id        Int         @id @default(autoincrement())
+  messageId Int
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  
+  userId Int?
+  user   User? @relation(fields: [userId], references: [id])
+  
+  clientId Int?
+  client   Client? @relation(fields: [clientId], references: [id])
+  
+  note String? @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@unique([messageId, userId])
+  @@unique([messageId, clientId])
+  @@index([messageId])
+  @@index([userId])
+  @@index([clientId])
+}
+
+model ChatTemplate {
+  id       Int    @id @default(autoincrement())
+  userId   Int?
+  user     User?  @relation(fields: [userId], references: [id])
+  title    String
+  content  String @db.Text
+  isGlobal Boolean @default(false)
+  category String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isGlobal])
+}
+
+model ChatScheduledMessage {
+  id       Int      @id @default(autoincrement())
+  roomId   Int
+  room     ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderId Int?
+  sender   User?    @relation(fields: [senderId], references: [id])
+  
+  content  String @db.Text
+  fileUrl  String?
+  
+  scheduledFor  DateTime
+  status        ScheduledMessageStatus @default(PENDING)
+  sentMessageId Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([roomId, scheduledFor])
+  @@index([status])
+  @@index([senderId])
+}
+
+model ChatRoomInvite {
+  id      Int      @id @default(autoincrement())
+  roomId  Int
+  room    ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  code    String   @unique
+  
+  createdById Int?
+  createdBy   User? @relation(fields: [createdById], references: [id])
+  
+  expiresAt DateTime?
+  maxUses   Int?
+  usedCount Int     @default(0)
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@index([roomId])
+  @@index([code])
+  @@index([createdById])
+}
+
+model Call {
+  id     Int      @id @default(autoincrement())
+  roomId Int
+  room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  
+  type   CallType
+  status CallStatus @default(RINGING)
+
+  initiatorId Int
+  initiator   User @relation(fields: [initiatorId], references: [id])
+
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  duration  Int?
+
+  participants CallParticipant[]
+
+  @@index([roomId])
+  @@index([initiatorId])
+  @@index([status])
+}
+
+model CallParticipant {
+  id     Int  @id @default(autoincrement())
+  callId Int
+  call   Call @relation(fields: [callId], references: [id], onDelete: Cascade)
+  
+  userId   Int?
+  user     User?   @relation(fields: [userId], references: [id])
+  clientId Int?
+  client   Client? @relation(fields: [clientId], references: [id])
+
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
+
+  @@index([callId])
+  @@index([userId])
+  @@index([clientId])
+}

@@ -22,6 +22,12 @@ import coursesRouter from "../courses/staffCourses.js";
 import contractRouter from "../contract/contracts.js";
 import imageSessionRouter from "../image-session/image-session.js";
 import siteUtilitiesServices from "../site-utilities/siteUtility.js";
+
+// Chat routers
+import chatRoomsRouter from "../chat/rooms.js";
+import chatMessagesRouter from "../chat/messages.js";
+import chatMembersRouter from "../chat/members.js";
+
 import {
   addNote,
   deleteAModel,
@@ -48,6 +54,11 @@ router.use("/site-utilities", siteUtilitiesServices);
 router.use("/questions", questionsRoutes);
 router.use("/calendar", calendarRoutes);
 router.use("/image-session", imageSessionRouter);
+
+// Chat routes
+router.use("/chat/rooms", chatRoomsRouter);
+router.use("/chat", chatMessagesRouter);
+router.use("/chat/rooms", chatMembersRouter);
 
 /* ======================================================================================= */
 /*                                  Feature Sub-Routers                                    */

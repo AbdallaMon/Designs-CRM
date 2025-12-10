@@ -1,0 +1,144 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { getData } from "@/app/helpers/functions/getData";
+import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+
+export function useChatRooms({
+  category = null,
+  projectId = null,
+  limit = 25,
+} = {}) {
+  const [rooms, setRooms] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const { setLoading: setToastLoading } = useToastContext();
+
+  const fetchRooms = useCallback(
+    async (nextPage = 0, append = false) => {
+      if (append) setLoadingMore(true);
+      else setLoading(true);
+      setError(null);
+      try {
+        let url = `shared/chat/rooms?page=${nextPage}&limit=${limit}&`;
+        if (category) url += `category=${category}&`;
+        if (projectId) url += `projectId=${projectId}&`;
+
+        const response = await getData({
+          url,
+          setLoading: () => {},
+        });
+
+        if (response?.status === 200) {
+          setTotalPages(response.totalPages || 1);
+          setPage(nextPage);
+          setRooms((prev) =>
+            append ? [...prev, ...(response.data || [])] : response.data || []
+          );
+        } else {
+          setError("Failed to fetch chat rooms");
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        if (append) setLoadingMore(false);
+        else setLoading(false);
+      }
+    },
+    [category, projectId, limit]
+  );
+
+  useEffect(() => {
+    fetchRooms(0, false);
+  }, [fetchRooms]);
+
+  const loadMoreRooms = useCallback(() => {
+    if (loadingMore) return;
+    const nextPage = page + 1;
+    if (nextPage > totalPages) return;
+    fetchRooms(nextPage, true);
+  }, [page, totalPages, fetchRooms, loadingMore]);
+
+  const createRoom = useCallback(
+    async (roomData) => {
+      const response = await handleRequestSubmit(
+        roomData,
+        setToastLoading,
+        "shared/chat/rooms",
+        false,
+        "Creating chat room",
+        false,
+        "POST"
+      );
+
+      if (response?.status === 200) {
+        setRooms((prev) => [response.data, ...prev]);
+        return response.data;
+      }
+      return null;
+    },
+    [setToastLoading]
+  );
+
+  const updateRoom = useCallback(
+    async (roomId, updates) => {
+      const response = await handleRequestSubmit(
+        updates,
+        setToastLoading,
+        `shared/chat/rooms/${roomId}`,
+        false,
+        "Updating chat room",
+        false,
+        "PUT"
+      );
+
+      if (response?.status === 200) {
+        setRooms((prev) =>
+          prev.map((r) => (r.id === roomId ? response.data : r))
+        );
+        return response.data;
+      }
+      return null;
+    },
+    [setToastLoading]
+  );
+
+  const deleteRoom = useCallback(
+    async (roomId) => {
+      const response = await handleRequestSubmit(
+        { id: roomId },
+        setToastLoading,
+        `shared/chat/rooms/${roomId}`,
+        false,
+        "Deleting chat room",
+        false,
+        "DELETE"
+      );
+
+      if (response?.status === 200) {
+        setRooms((prev) => prev.filter((r) => r.id !== roomId));
+        return true;
+      }
+      return false;
+    },
+    [setToastLoading]
+  );
+
+  return {
+    rooms,
+    loading,
+    loadingMore,
+    error,
+    page,
+    totalPages,
+    loadMoreRooms,
+    fetchRooms,
+    createRoom,
+    updateRoom,
+    deleteRoom,
+  };
+}

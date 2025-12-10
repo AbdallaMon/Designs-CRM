@@ -6,48 +6,55 @@ import prisma from "../../../prisma/prisma.js";
 const SECRET_KEY = process.env.SECRET_KEY;
 
 export async function loginUser(email, password) {
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: {
-      id: true,
-      role: true,
-      password: true,
-      isActive: true,
-      isPrimary: true,
-      isSuperSales: true,
-    },
-  });
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        role: true,
+        password: true,
+        isActive: true,
+        isPrimary: true,
+        isSuperSales: true,
+        email: true,
+        name: true,
+      },
+    });
+    if (!user) {
+      throw new Error("No user found with this email address");
+    }
 
-  if (!user) {
-    throw new Error("No user found with this email address");
+    if (!user.password) {
+      throw new Error("You do not have a password, please reset your password");
+    }
+
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      throw new Error("Incorrect password");
+    }
+
+    if (!user.isActive) {
+      throw new Error("Your account is blocked, you cannot log in");
+    }
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        role: user.role,
+        accountStatus: user.isActive,
+        isPrimary: user.isPrimary,
+        isSuperSales: user.isSuperSales,
+        name: user.name,
+        email: user.email,
+      },
+      SECRET_KEY,
+      { expiresIn: "4h" }
+    );
+
+    return { user, token };
+  } catch (e) {
+    console.log(e.messsage, "error loging");
   }
-
-  if (!user.password) {
-    throw new Error("You do not have a password, please reset your password");
-  }
-
-  const validPassword = await bcrypt.compare(password, user.password);
-  if (!validPassword) {
-    throw new Error("Incorrect password");
-  }
-
-  if (!user.isActive) {
-    throw new Error("Your account is blocked, you cannot log in");
-  }
-
-  const token = jwt.sign(
-    {
-      id: user.id,
-      role: user.role,
-      accountStatus: user.isActive,
-      isPrimary: user.isPrimary,
-      isSuperSales: user.isSuperSales,
-    },
-    SECRET_KEY,
-    { expiresIn: "4h" }
-  );
-
-  return { user, token };
 }
 
 export function logoutUser() {
