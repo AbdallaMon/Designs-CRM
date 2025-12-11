@@ -5,13 +5,7 @@
 
 microcode_ctl-4:20250812-1.el9.noarch
 
-$2b$08$KXiH7ITBGRIwW3pHol3bCOWE5qhNE3I4Vr.6jxSBKlDoGZhJNh20q
-dreamstudiio.com has SSL from Let's Encrypt.
-Your SSL will expire in 42 days
-jqI0soz4oA1yrlM1
-
-db
-OM6HYwoZxmtfWX
+03uWS3aAjIeqIUR0
 
 chown -R vmail:vmail /home/vmail
 find /home/vmail -type d -exec chmod 700 {} \;
