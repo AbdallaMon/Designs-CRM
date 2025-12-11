@@ -23,19 +23,29 @@ export const allowedOrigins = [
   process.env.PORTFOLIOORIGIN,
 ];
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin(origin, callback) {
+    // allow non-browser tools (curl, Postman) with no Origin header
+    if (!origin) return callback(null, true);
 
+    const isAllowed = allowedOrigins.includes(origin);
+
+    console.log("CORS Origin:", origin, "allowed?", isAllowed);
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error(`Not allowed by CORS: ${origin}`));
+    }
+  },
+  credentials: true,
+};
+
+// 🔥 MUST be before routes
+app.use(cors(corsOptions));
+
+// 🔥 MUST handle preflight for ALL routes
+app.options("*", cors(corsOptions));
 export const httpServer = createServer(app);
 initSocket(httpServer);
 if (process.env.ISLOCAL) {
