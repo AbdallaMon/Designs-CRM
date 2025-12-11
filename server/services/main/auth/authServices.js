@@ -53,7 +53,7 @@ export async function loginUser(email, password) {
 
     return { user, token };
   } catch (e) {
-    console.log(e.messsage, "error loging");
+    console.log(e, "error loging");
   }
 }
 
