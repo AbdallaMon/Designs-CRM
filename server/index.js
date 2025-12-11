@@ -67,7 +67,12 @@ if (process.env.ISLOCAL) {
 }
 app.use(express.json());
 app.use(cookieParser());
-app.use("/auth", authRoutes);
+app.use("/auth", (req, res) => {
+  console.log(req.rawHeaders, "req.rawHeaders");
+  console.log("origin header parsed by Node:", req.headers.origin);
+
+  authRoutes(req, res);
+});
 app.use("/shared", sharedRoutes);
 app.use("/utility", utilityRoutes);
 app.use("/staff", staffRoutes);
