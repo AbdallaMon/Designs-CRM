@@ -28,6 +28,16 @@ const corsOptions = {
     // allow non-browser tools (curl, Postman) with no Origin header
     if (!origin) return callback(null, true);
 
+    // Some proxies (e.g., OpenLiteSpeed) may concatenate duplicate Origin headers with commas
+    if (typeof origin === "string" && origin.includes(",")) {
+      origin = origin.split(",")[0].trim();
+    }
+
+    // Normalize trailing slashes to match env values
+    if (origin.endsWith("/")) {
+      origin = origin.slice(0, -1);
+    }
+
     const isAllowed = allowedOrigins.includes(origin);
 
     console.log("CORS Origin:", origin, "allowed?", isAllowed);
@@ -42,15 +52,11 @@ const corsOptions = {
 };
 
 // 🔥 MUST be before routes
-// app.use(cors(corsOptions));
-
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
-app.options("*", (req, res) => {
-  res.sendStatus(204);
-});
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 export const httpServer = createServer(app);
 initSocket(httpServer);
 if (process.env.ISLOCAL) {
