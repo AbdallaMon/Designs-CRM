@@ -52,6 +52,28 @@ const corsOptions = {
 };
 
 // 🔥 MUST be before routes
+app.use((req, res, next) => {
+  if (req.rawHeaders) {
+    const origins = [];
+    for (let i = 0; i < req.rawHeaders.length; i += 2) {
+      const headerName = req.rawHeaders[i];
+      const headerValue = req.rawHeaders[i + 1];
+      if (headerName && headerName.toLowerCase() === "origin") {
+        origins.push(headerValue);
+      }
+    }
+
+    if (origins.length > 0) {
+      // take the first one and override the merged one
+      const firstOrigin = origins[0];
+      req.headers.origin = firstOrigin;
+      // optional logs:
+      // console.log("Normalized Origin:", firstOrigin, "from", origins);
+    }
+  }
+
+  next();
+});
 app.use(cors(corsOptions));
 
 app.use(express.json());
