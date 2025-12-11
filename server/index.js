@@ -42,13 +42,13 @@ const corsOptions = {
 };
 
 // 🔥 MUST be before routes
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
 
-// 🔥 MUST handle preflight for ALL routes
-app.options("*", cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.set("trust proxy", 1);
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+app.options("*", (req, res) => {
+  res.sendStatus(204);
+});
 export const httpServer = createServer(app);
 initSocket(httpServer);
 if (process.env.ISLOCAL) {
