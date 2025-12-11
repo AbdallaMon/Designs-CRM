@@ -17,7 +17,7 @@ const router = Router();
 router.post("/login", async (req, res) => {
   console.log(req.rawHeaders, "req.rawHeaders");
   console.log("origin header parsed by Node:", req.headers.origin);
-
+  console.log(req.body, " req.body");
   const { email, password } = req.body;
   try {
     const { user, token } = await loginUser(email, password);
