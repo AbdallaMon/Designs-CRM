@@ -13,13 +13,59 @@ import {
 let io;
 const userSessions = new Map();
 const typingTimeouts = new Map(); // Track typing timeouts
+export function normalizeOrigin(origin) {
+  if (!origin || typeof origin !== "string") return origin;
+
+  // if "https://site.com, https://site.com" => take first
+  const first = origin.split(",")[0].trim();
+
+  // drop trailing slash to match env values
+  if (first.endsWith("/")) return first.slice(0, -1);
+
+  return first;
+}
 
 export function initSocket(httpServer) {
   io = new Server(httpServer, {
+    // Let us control who is allowed at handshake level
+    allowRequest: (req, callback) => {
+      let origin = normalizeOrigin(req.headers.origin);
+      req.headers.origin = origin; // 👈 fix duplicate here
+
+      const isAllowed =
+        !origin || // same-origin / non-browser
+        allowedOrigins.includes(origin);
+
+      console.log(
+        "Socket.IO allowRequest origin:",
+        req.headers.origin,
+        "allowed?",
+        isAllowed
+      );
+
+      if (!isAllowed) {
+        return callback("Not allowed by CORS", false);
+      }
+
+      callback(null, true);
+    },
+
+    // Let Socket.IO add CORS headers, we’ll override the value if needed
     cors: {
-      origin: allowedOrigins,
+      origin: true, // reflect req.headers.origin
       credentials: true,
     },
+  });
+
+  // 🔧 Final safety: override Access-Control-Allow-Origin with cleaned origin
+  io.engine.on("headers", (headers, req) => {
+    const origin = normalizeOrigin(req.headers.origin);
+
+    if (origin && allowedOrigins.includes(origin)) {
+      headers["Access-Control-Allow-Origin"] = origin;
+      headers["Access-Control-Allow-Credentials"] = "true";
+      headers["Vary"] = "Origin";
+    }
   });
 
   io.on("connection", async (socket) => {
