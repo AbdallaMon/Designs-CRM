@@ -40,8 +40,6 @@ const corsOptions = {
 
     const isAllowed = allowedOrigins.includes(origin);
 
-    console.log("CORS Origin:", origin, "allowed?", isAllowed);
-
     if (isAllowed) {
       callback(null, true);
     } else {
@@ -68,7 +66,6 @@ app.use((req, res, next) => {
       const firstOrigin = origins[0];
       req.headers.origin = firstOrigin;
       // optional logs:
-      // console.log("Normalized Origin:", firstOrigin, "from", origins);
     }
   }
 
@@ -90,9 +87,6 @@ if (process.env.ISLOCAL) {
 app.use(express.json());
 app.use(cookieParser());
 app.use("/auth", (req, res) => {
-  console.log(req.rawHeaders, "req.rawHeaders");
-  console.log("origin header parsed by Node:", req.headers.origin);
-
   authRoutes(req, res);
 });
 app.use("/shared", sharedRoutes);

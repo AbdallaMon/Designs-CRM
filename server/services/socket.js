@@ -29,9 +29,10 @@ export function initSocket(httpServer) {
   io = new Server(httpServer, {
     // Let us control who is allowed at handshake level
     allowRequest: (req, callback) => {
+      console.log(req.headers.origin, "origin before allow request");
       let origin = normalizeOrigin(req.headers.origin);
       req.headers.origin = origin; // 👈 fix duplicate here
-
+      console.log(origin, "origin in allow request");
       const isAllowed =
         !origin || // same-origin / non-browser
         allowedOrigins.includes(origin);
@@ -50,17 +51,17 @@ export function initSocket(httpServer) {
       callback(null, true);
     },
 
-    // Let Socket.IO add CORS headers, we’ll override the value if needed
     cors: {
-      origin: true, // reflect req.headers.origin
+      origin: true,
       credentials: true,
     },
   });
 
   // 🔧 Final safety: override Access-Control-Allow-Origin with cleaned origin
   io.engine.on("headers", (headers, req) => {
+    console.log(req.headers.origin, "headers");
     const origin = normalizeOrigin(req.headers.origin);
-
+    console.log(origin, "origin");
     if (origin && allowedOrigins.includes(origin)) {
       headers["Access-Control-Allow-Origin"] = origin;
       headers["Access-Control-Allow-Credentials"] = "true";
