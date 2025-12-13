@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { usePathname } from "next/navigation";
 import {
   AppBar,
@@ -17,17 +17,26 @@ import {
   Menu,
   MenuItem,
   Collapse,
+  Divider,
 } from "@mui/material";
-import { FiMenu, FiChevronDown, FiChevronRight } from "react-icons/fi";
+import {
+  FiMenu,
+  FiChevronDown,
+  FiChevronRight,
+  FiMoreHorizontal,
+} from "react-icons/fi";
 import Logout from "@/app/UiComponents/buttons/Logout.jsx";
 import NotificationsIcon from "@/app/UiComponents/utility/NotificationIcon.jsx";
-import ChatNotificationIcon from "@/app/UiComponents/utility/ChatNotificationIcon.jsx";
 import SignInWithDifferentUserRole from "../DataViewer/users/UserRoles";
 import { useAuth } from "@/app/providers/AuthProvider";
 
 const Navbar = ({ links }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [openSubMenus, setOpenSubMenus] = useState({});
+  const [moreMenuAnchor, setMoreMenuAnchor] = useState(null);
+  const [visibleLinks, setVisibleLinks] = useState(links);
+  const [overflowLinks, setOverflowLinks] = useState([]);
+  const navContainerRef = useRef(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const pathname = usePathname();
@@ -37,6 +46,43 @@ const Navbar = ({ links }) => {
   useEffect(() => {
     if (loading) setLoading(false);
   }, []);
+
+  // Calculate overflow links on desktop
+  useEffect(() => {
+    if (isMobile) {
+      setVisibleLinks(links);
+      setOverflowLinks([]);
+      return;
+    }
+
+    const calculateOverflow = () => {
+      if (!navContainerRef.current) return;
+
+      const containerWidth = navContainerRef.current.offsetWidth;
+      // Approximate width per link (adjusted for icon + text + padding)
+      const estimatedLinkWidth = 140;
+      // Reserve space for "More" button
+      const moreButtonWidth = 80;
+      const availableWidth = containerWidth - moreButtonWidth;
+      const maxVisibleLinks = Math.floor(availableWidth / estimatedLinkWidth);
+
+      if (links.length > maxVisibleLinks && maxVisibleLinks > 0) {
+        setVisibleLinks(links.slice(0, maxVisibleLinks));
+        setOverflowLinks(links.slice(maxVisibleLinks));
+      } else {
+        setVisibleLinks(links);
+        setOverflowLinks([]);
+      }
+    };
+
+    calculateOverflow();
+
+    // Recalculate on window resize
+    const handleResize = () => calculateOverflow();
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, [links, isMobile]);
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
@@ -295,16 +341,140 @@ const Navbar = ({ links }) => {
             />
           </Box>
           {!isMobile && (
-            <Box sx={{ display: "flex", flexGrow: 1, mx: 4 }}>
-              {links.map((link) => (
+            <Box
+              ref={navContainerRef}
+              sx={{ display: "flex", flexGrow: 1, mx: 4, alignItems: "center" }}
+            >
+              {visibleLinks.map((link) => (
                 <NavigationItem key={link.name} link={link} />
               ))}
+              {overflowLinks.length > 0 && (
+                <Box sx={{ position: "relative" }}>
+                  <Button
+                    onClick={(e) => setMoreMenuAnchor(e.currentTarget)}
+                    startIcon={<FiMoreHorizontal />}
+                    sx={{
+                      mx: 1,
+                      px: 1.5,
+                      borderRadius: 1,
+                      color: "text.primary",
+                      bgcolor: "transparent",
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        bgcolor: "primary.light",
+                        color: "primary.main",
+                        transform: "scale(1.05)",
+                      },
+                    }}
+                  >
+                    More
+                  </Button>
+                  <Menu
+                    anchorEl={moreMenuAnchor}
+                    open={Boolean(moreMenuAnchor)}
+                    onClose={() => setMoreMenuAnchor(null)}
+                    PaperProps={{
+                      sx: {
+                        mt: 0.5,
+                        minWidth: 220,
+                        maxHeight: 400,
+                        overflowY: "auto",
+                        boxShadow:
+                          "0px 6px 16px rgba(0, 0, 0, 0.08), 0px 3px 6px rgba(0, 0, 0, 0.12)",
+                        border: "1px solid",
+                        borderColor: "divider",
+                        borderRadius: 2,
+                        bgcolor: "background.paper",
+                      },
+                    }}
+                    transformOrigin={{ vertical: "top", horizontal: "left" }}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                  >
+                    {overflowLinks.map((link, index) => (
+                      <Box key={link.name}>
+                        {index > 0 && <Divider />}
+                        <MenuItem
+                          component={"a"}
+                          href={link.href}
+                          onClick={() => setMoreMenuAnchor(null)}
+                          sx={{
+                            py: 1.5,
+                            px: 2,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1.5,
+                            transition: "all 0.2s ease",
+                            "&:hover": {
+                              bgcolor: "primary.light",
+                              color: "primary.main",
+                            },
+                          }}
+                        >
+                          {link.icon && (
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                color: "text.secondary",
+                                "& svg": { fontSize: "1.25rem" },
+                              }}
+                            >
+                              {link.icon}
+                            </Box>
+                          )}
+                          <Box
+                            sx={{ display: "flex", flexDirection: "column" }}
+                          >
+                            <Box sx={{ fontWeight: 500 }}>{link.name}</Box>
+                          </Box>
+                        </MenuItem>
+                        {link.subLinks && link.subLinks.length > 0 && (
+                          <Box sx={{ pl: 4, pb: 1 }}>
+                            {link.subLinks.map((subLink) => (
+                              <MenuItem
+                                key={subLink.href}
+                                component={"a"}
+                                href={subLink.href}
+                                onClick={() => setMoreMenuAnchor(null)}
+                                sx={{
+                                  py: 0.75,
+                                  px: 2,
+                                  fontSize: "0.875rem",
+                                  transition: "all 0.2s ease",
+                                  "&:hover": {
+                                    bgcolor: "action.hover",
+                                    color: "primary.main",
+                                  },
+                                }}
+                              >
+                                {subLink.icon && (
+                                  <Box
+                                    sx={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      mr: 1,
+                                      color: "text.secondary",
+                                      "& svg": { fontSize: "1rem" },
+                                    }}
+                                  >
+                                    {subLink.icon}
+                                  </Box>
+                                )}
+                                {subLink.name}
+                              </MenuItem>
+                            ))}
+                          </Box>
+                        )}
+                      </Box>
+                    ))}
+                  </Menu>
+                </Box>
+              )}
             </Box>
           )}
 
           <Box sx={{ display: "flex", alignItems: "center" }}>
             {user.role !== "ADMIN" && <SignInWithDifferentUserRole />}
-            <ChatNotificationIcon />
             <NotificationsIcon />
             <Logout />
           </Box>

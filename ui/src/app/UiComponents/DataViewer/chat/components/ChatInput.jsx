@@ -33,7 +33,6 @@ export function ChatInput({
   loading = false,
   disabled = false,
   onTyping = () => {},
-  socketConnected = false,
 }) {
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]); // Multiple files
@@ -69,7 +68,7 @@ export function ChatInput({
           );
 
           // Only send message if upload successful
-          console.log(fileUpload, "fileUpload");
+
           if (fileUpload?.status === 200) {
             await onSendMessage(text || message, {
               file,
@@ -162,7 +161,7 @@ export function ChatInput({
   const handleMessageChange = (e) => {
     const newValue = e.target.value;
     setMessage(newValue);
-    if (socketConnected && onTyping && newValue.length > 0) {
+    if (onTyping && newValue.length > 0) {
       onTyping();
     }
   };

@@ -93,6 +93,29 @@ export async function getMessages({ roomId, userId, page = 0, limit = 50 }) {
   };
 }
 
+export async function emitToAllUsersRelatedToARoom({
+  roomId,
+  userId,
+  content,
+  type,
+}) {
+  const members = await prisma.chatMember.findMany({
+    where: {
+      roomId: parseInt(roomId),
+      leftAt: null,
+      userId: { not: parseInt(userId) },
+    },
+    select: { userId: true },
+  });
+  try {
+    const io = getIo();
+    for (const member of members) {
+      io.to(`user:${member.userId}`).emit(type, {
+        ...content,
+      });
+    }
+  } catch (e) {}
+}
 /**
  * Send a message
  */
@@ -172,9 +195,19 @@ export async function sendMessage({
       ...message,
       roomId: parseInt(roomId),
     });
+
     io.to(`room:${roomId}`).emit("user:stop_typing", {
       userId,
       roomId,
+    });
+    await emitToAllUsersRelatedToARoom({
+      roomId,
+      userId,
+      content: {
+        message,
+        roomId: parseInt(roomId),
+      },
+      type: "notification:new_message",
     });
   } catch (error) {
     console.error("Socket.IO emit error:", error);
@@ -282,6 +315,7 @@ export async function markMessagesAsRead({ roomId, userId, messageId }) {
     where: { id: member.id },
     data: { lastReadAt: new Date() },
   });
+  const io = getIo();
 
   // If specific message, create read receipt
   if (messageId) {
@@ -301,16 +335,20 @@ export async function markMessagesAsRead({ roomId, userId, messageId }) {
 
     // Emit read receipt
     try {
-      const io = getIo();
       io.to(`room:${roomId}`).emit("message:read", {
         messageId: parseInt(messageId),
         userId: parseInt(userId),
         readAt: new Date(),
       });
+      console.log("Emitted read receipt");
     } catch (error) {
       console.error("Socket.IO emit error:", error);
     }
   }
+  io.to(`user:${userId}`).emit("notification:messages_read", {
+    roomId: parseInt(roomId),
+    userId: parseInt(userId),
+  });
 
   return { success: true };
 }

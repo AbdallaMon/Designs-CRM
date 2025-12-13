@@ -12,6 +12,7 @@ export const initSocket = (url, options = {}) => {
   if (socket) {
     return socket;
   }
+  console.log(options, "options");
 
   socket = io(url, {
     reconnection: true,
@@ -24,16 +25,18 @@ export const initSocket = (url, options = {}) => {
   });
 
   // Global event listeners
-  socket.on("connect", () => {
-    console.log("Socket.IO connected:", socket.id);
-  });
+  socket.on("connect", () => {});
 
-  socket.on("disconnect", (reason) => {
-    console.log("Socket.IO disconnected:", reason);
-  });
+  socket.on("disconnect", (reason) => {});
 
   socket.on("error", (error) => {
-    console.error("Socket.IO error:", error);
+    console.error("⚠️ Socket.IO error:", error);
+  });
+
+  // Universal message listener to log ALL incoming events (for debugging)
+  socket.onAny((event, ...args) => {
+    if (!event.includes("ping") && !event.includes("pong")) {
+    }
   });
 
   return socket;
@@ -66,7 +69,7 @@ export const emitSocket = (event, data) => {
   if (socket && socket.connected) {
     socket.emit(event, data);
   } else {
-    console.warn("Socket.IO not connected");
+    console.warn(`⚠️ [Socket] Cannot emit "${event}" - Socket not connected`);
   }
 };
 
@@ -95,6 +98,7 @@ export const offSocket = (event, callback) => {
 /**
  * Join a chat room namespace
  * @param {number} roomId - Chat room ID
+ * @param {object} user - User object
  */
 export const joinChatRoom = (roomId, user) => {
   emitSocket("join_room", { roomId, user });

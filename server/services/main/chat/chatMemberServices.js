@@ -13,9 +13,6 @@ export async function addMembersToRoom({ roomId, userId, userIds }) {
       leftAt: null,
     },
   });
-  console.log(roomId, "roomId");
-  console.log(userId, "userId");
-  console.log(userIds, "userIds");
 
   if (
     !requester ||

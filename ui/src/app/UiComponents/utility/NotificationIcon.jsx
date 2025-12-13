@@ -14,7 +14,6 @@ import {
 } from "@mui/material";
 import { FaBell, FaClock } from "react-icons/fa";
 import Link from "next/link";
-import io from "socket.io-client";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { NotificationType } from "@/app/helpers/constants";
 import dayjs from "dayjs";
@@ -22,6 +21,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/ar";
 import parse from "html-react-parser";
 import { NotificationColors } from "@/app/helpers/colors.js";
+import { useSocket } from "../DataViewer/chat/hooks/useSocket";
 
 dayjs.extend(relativeTime);
 dayjs.locale("ar");
@@ -34,6 +34,7 @@ const NotificationsIcon = () => {
   const [notifications, setNotifications] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+
   const notificationSound =
     typeof Audio !== "undefined" && new Audio("/notification-sound.mp3");
   useEffect(() => {
@@ -51,7 +52,7 @@ const NotificationsIcon = () => {
           res.data.filter((notification) => !notification.isRead).length
         );
       } catch (error) {
-        console.error("Error fetching unread notifications:", error);
+        // Error fetching unread notifications
       }
     };
 
@@ -60,32 +61,18 @@ const NotificationsIcon = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    const socket = io(url, {
-      transports: ["websocket", "polling"],
-      query: { userId: user.id },
-    });
-
-    socket.emit("join-room", { userId: user.id });
-    const interval = setInterval(() => {
-      socket.emit("heartbeat", { userId: user.id });
-    }, 5 * 60 * 1000);
-    socket.on("notification", (notification) => {
+  // Use socket events hook
+  useSocket({
+    onNotification: (notification) => {
       setNotifications((prev) => [notification, ...prev]);
       setUnreadCount((prev) => prev + 1); // Increase unread count
       if (notificationSound) {
         notificationSound.play().catch((error) => {
-          console.error("Error playing notification sound:", error);
+          // Error playing notification sound
         });
       }
-    });
-
-    return () => {
-      clearInterval(interval);
-      socket.off("notification");
-      socket.disconnect();
-    };
-  }, [user]);
+    },
+  });
 
   useEffect(() => {
     if (open) {

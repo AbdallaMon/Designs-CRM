@@ -9,6 +9,7 @@ import { Noto_Kufi_Arabic } from "next/font/google";
 import UploadingProvider, {
   UploadingContext,
 } from "./providers/UploadingProgressProvider";
+import SocketProvider from "./providers/SocketProvider";
 
 const noto = Noto_Kufi_Arabic({
   weight: ["400", "500", "700"],
@@ -92,8 +93,10 @@ export default function RootLayout({ children }) {
             <UploadingProvider>
               <ToastProvider>
                 <AuthProvider>
-                  <DotsLoader />
-                  {children}
+                  <SocketProvider>
+                    <DotsLoader />
+                    {children}
+                  </SocketProvider>
                 </AuthProvider>
               </ToastProvider>
             </UploadingProvider>

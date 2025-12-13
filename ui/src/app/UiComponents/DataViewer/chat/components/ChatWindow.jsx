@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box,
   Paper,
@@ -38,9 +38,15 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
-import { useChatMessages } from "../hooks/useChatMessages";
-import { useSocketIO } from "../hooks/useSocketIO";
-import { markMessagesRead, markMessageAsRead } from "../utils/socketIO";
+import { useChatMessages, useSocket } from "../hooks";
+
+import {
+  markMessagesRead,
+  markMessageAsRead,
+  joinChatRoom,
+  typing,
+  emitStopTyping,
+} from "../utils/socketIO";
 import dayjs from "dayjs";
 
 export function ChatWindow({
@@ -63,6 +69,7 @@ export function ChatWindow({
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [typingUsers, setTypingUsers] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const typingTimeoutRef = useRef(null);
 
   const {
     messages,
@@ -72,59 +79,84 @@ export function ChatWindow({
     messagesEndRef,
     setMessages,
   } = useChatMessages(room?.id);
-  // Real-time updates with Socket.IO
-  const {
-    isConnected,
-    typingUsers: socketTypingUsers,
-    onlineUsers: socketOnlineUsers,
-    emitTyping,
-  } = useSocketIO(room?.id, {
-    enabled: !!room?.id,
-    onNewMessage: (data) => {
-      // Message added via API call will update through useChatMessages
-      // This is for receiving messages from other users
-      console.log("New message from socket:", data);
-      setMessages((prev) => [...prev, data]);
 
-      // Mark as read immediately when receiving new message
-      onRoomActivity?.(data);
-      if (room?.id) {
+  // Join room when it changes
+  useEffect(() => {
+    if (room?.id && user) {
+      joinChatRoom(room.id, user);
+    }
+  }, [room?.id, user]);
+  const emitTyping = useCallback(() => {
+    typing({ roomId: room?.id, user });
+    clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      stopTyping();
+    }, 3000);
+  }, [room?.id, user]);
+
+  // Function to emit stop typing
+  const stopTyping = useCallback(() => {
+    clearTimeout(typingTimeoutRef.current);
+    emitStopTyping({ roomId: room?.id, user });
+  }, [room?.id, user]);
+  // Listen to socket events
+  useSocket({
+    onMessageCreated: (data) => {
+      // Only add if it's for this room and not from self
+      if (data.roomId === room?.id && data.senderId !== user.id) {
+        setMessages((prev) => [...prev, data]);
+        onRoomActivity?.(data);
         markMessageAsRead(room.id, data.id, user.id);
       }
     },
     onMessageEdited: (data) => {
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === data.id ? { ...msg, isEdited: true } : msg
-        )
-      );
+      if (data.roomId === room?.id) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === data.id ? { ...msg, isEdited: true, ...data } : msg
+          )
+        );
+      }
     },
     onMessageDeleted: (data) => {
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === data.id ? { ...msg, isDeleted: true } : msg
-        )
-      );
+      if (data.roomId === room?.id) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === data.id ? { ...msg, isDeleted: true } : msg
+          )
+        );
+      }
     },
     onTyping: (data) => {
-      if (data.userId !== user.id) {
-        setTypingUsers((prev) => [...new Set([...prev, data.userId])]);
+      if (data.roomId === room?.id && data.userId !== user.id) {
+        const key = `${data.userId}:${data.roomId}`;
+
+        setTypingUsers((prev) => {
+          const map = new Map(prev.map((u) => [`${u.userId}:${u.roomId}`, u]));
+          map.set(key, data); // overwrite/update same user+room
+          return Array.from(map.values());
+        });
       }
     },
     onStopTyping: (data) => {
-      console.log(data, "data");
-
-      setTypingUsers((prev) => prev.filter((id) => id !== data.userId));
+      if (data.roomId === room?.id) {
+        setTypingUsers((prev) =>
+          prev.filter((items) => items.userId !== data.userId)
+        );
+      }
     },
     onMemberJoined: (data) => {
-      console.log("Member joined:", data);
-      setOnlineUsers((prev) => [...new Set([...prev, data.userId])]);
+      if (data.roomId === room?.id) {
+        setOnlineUsers((prev) => [...new Set([...prev, data.userId])]);
+      }
     },
     onMemberLeft: (data) => {
-      console.log("Member left:", data);
-      setOnlineUsers((prev) => prev.filter((id) => id !== data.userId));
+      if (data.roomId === room?.id) {
+        setOnlineUsers((prev) => prev.filter((id) => id !== data.userId));
+      }
     },
   });
+
   const isAdmin =
     user.role === "ADMIN" ||
     user.role === "SUPER_ADMIN" ||
@@ -133,6 +165,7 @@ export function ChatWindow({
   const isMember = room?.members?.some((m) => m.userId === user.id);
   const canManageMembers =
     isAdmin && room?.type !== CHAT_ROOM_TYPES.STAFF_TO_STAFF;
+  console.log(typingUsers, "typingUsers");
 
   useEffect(() => {
     if (room?.id) {
@@ -242,7 +275,7 @@ export function ChatWindow({
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        maxHeight: "80vh",
+        maxHeight: "calc(100vh - 100px)",
         bgcolor: "background.paper",
         overflow: "hidden",
       }}
@@ -472,10 +505,7 @@ export function ChatWindow({
               sx={{ fontStyle: "italic", color: "textSecondary" }}
             >
               {typingUsers.length === 1
-                ? `${
-                    members.find((m) => m.userId === typingUsers[0])?.message ||
-                    "Someone"
-                  } is typing`
+                ? `${typingUsers[0]?.message || "Someone"} is typing`
                 : `${typingUsers.length} people are typing`}
             </Typography>
             <Box sx={{ display: "flex", gap: 0.5 }}>
@@ -510,7 +540,6 @@ export function ChatWindow({
           loading={messagesLoading}
           disabled={!isMember && !isAdmin}
           onTyping={emitTyping}
-          socketConnected={isConnected}
         />
       </Box>
 

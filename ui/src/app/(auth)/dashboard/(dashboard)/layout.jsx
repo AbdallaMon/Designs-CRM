@@ -328,7 +328,7 @@ export default function Layout({
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: "calc(100vh - 80px)",
         backgroundColor: colors.bgSecondary,
       }}
     >

@@ -1,7 +1,5 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
-import { io } from "socket.io-client";
-const url = process.env.NEXT_PUBLIC_URL;
 export const AuthContext = createContext(null);
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState({
@@ -59,27 +57,6 @@ export default function AuthProvider({ children }) {
 
     fetchData();
   }, []);
-  console.log(user, "user in auth provider");
-  useEffect(() => {
-    const socket = io(url);
-    if (socket && user && user.id) {
-      socket.emit("online", {
-        userId: user.id,
-        user: {
-          name: user.name,
-          email: user.email,
-          id: user.id,
-        },
-      });
-      socket.on("user:online", (data) => {
-        console.log(data, "data");
-      });
-    }
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [user]);
 
   return (
     <AuthContext.Provider

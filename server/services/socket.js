@@ -5,6 +5,7 @@ import {
   addReaction,
   deleteMessage,
   editMessage,
+  emitToAllUsersRelatedToARoom,
   markMessagesAsRead,
   removeReaction,
   sendMessage,
@@ -29,20 +30,11 @@ export function initSocket(httpServer) {
   io = new Server(httpServer, {
     // Let us control who is allowed at handshake level
     allowRequest: (req, callback) => {
-      console.log(req.headers.origin, "origin before allow request");
       let origin = normalizeOrigin(req.headers.origin);
       req.headers.origin = origin; // 👈 fix duplicate here
-      console.log(origin, "origin in allow request");
       const isAllowed =
         !origin || // same-origin / non-browser
         allowedOrigins.includes(origin);
-
-      console.log(
-        "Socket.IO allowRequest origin:",
-        req.headers.origin,
-        "allowed?",
-        isAllowed
-      );
 
       if (!isAllowed) {
         return callback("Not allowed by CORS", false);
@@ -59,9 +51,7 @@ export function initSocket(httpServer) {
 
   // 🔧 Final safety: override Access-Control-Allow-Origin with cleaned origin
   io.engine.on("headers", (headers, req) => {
-    console.log(req.headers.origin, "headers");
     const origin = normalizeOrigin(req.headers.origin);
-    console.log(origin, "origin");
     if (origin && allowedOrigins.includes(origin)) {
       headers["Access-Control-Allow-Origin"] = origin;
       headers["Access-Control-Allow-Credentials"] = "true";
@@ -73,6 +63,7 @@ export function initSocket(httpServer) {
     let userId;
     socket.on("online", ({ userId: id, user }) => {
       // const id = user.id;
+
       socket.join(`user:${id}`);
       userId = id;
       // Broadcast user is online
@@ -84,7 +75,6 @@ export function initSocket(httpServer) {
       });
     });
     userId = !userId ? Number(socket.handshake.query.userId) : userId;
-
     // ==================== EXISTING HEARTBEAT ====================
 
     // ==================== CHAT ROOM EVENTS ====================
@@ -146,8 +136,6 @@ export function initSocket(httpServer) {
         roomId,
         timestamp: new Date(),
       });
-
-      console.log(`User ${userId} left room ${roomId}`);
     });
 
     // ==================== TYPING INDICATORS ====================
@@ -155,9 +143,9 @@ export function initSocket(httpServer) {
     /**
      * User is typing
      */
-    socket.on("user:typing", (data) => {
+    socket.on("user:typing", async (data) => {
       const { roomId, user } = data;
-      const userId = user.userId;
+      const userId = user.id;
       if (!roomId) return;
 
       // Clear existing timeout
@@ -165,20 +153,38 @@ export function initSocket(httpServer) {
       if (typingTimeouts.has(timeoutKey)) {
         clearTimeout(typingTimeouts.get(timeoutKey));
       }
-
+      const message = `${user?.name || "Some one"} is typing`;
       // Broadcast to room (except sender)
       socket.to(`room:${roomId}`).emit("user:typing", {
         userId,
         roomId,
-        timestamp: new Date(),
-        message: `${user?.name || "Some one"} is typign`,
+        // timestamp: new Date(),
+        message,
       });
-
-      // Auto-stop typing after 3 seconds
-      const timeout = setTimeout(() => {
+      await emitToAllUsersRelatedToARoom({
+        roomId,
+        userId,
+        content: {
+          user,
+          roomId,
+          message,
+        },
+        type: "notification:user_typing",
+      });
+      const timeout = setTimeout(async () => {
         socket.to(`room:${roomId}`).emit("user:stop_typing", {
           userId,
           roomId,
+        });
+        await emitToAllUsersRelatedToARoom({
+          roomId,
+          userId,
+          content: {
+            user,
+            roomId,
+            message: "",
+          },
+          type: "notification:user_stopped_typing",
         });
         typingTimeouts.delete(timeoutKey);
       }, 3000);
@@ -220,7 +226,6 @@ export function initSocket(httpServer) {
           fileMimeType,
           roomId,
         } = data;
-        console.log(data, "data");
         await sendMessage({
           content,
           type,
@@ -259,7 +264,6 @@ export function initSocket(httpServer) {
      */
     socket.on("message:delete", async (data) => {
       const { messageId, roomId, userId } = data;
-      console.log(messageId, roomId, "messageId, roomId");
       if (!messageId || !roomId) return;
 
       try {
@@ -277,7 +281,6 @@ export function initSocket(httpServer) {
      */
     socket.on("message:mark_read", async (data) => {
       const { roomId, messageId, userId } = data;
-      console.log(data, "data in mark as read");
       if (!roomId) return;
 
       try {
@@ -287,10 +290,6 @@ export function initSocket(httpServer) {
         console.error("Mark as read error:", error);
       }
     });
-
-    /**
-     * reactions
-     */
 
     socket.on("reaction:added", async (data) => {
       const { emoji, messageId, userId } = data;
@@ -342,10 +341,6 @@ export function initSocket(httpServer) {
           roomId,
           timestamp: new Date(),
         });
-
-        console.log(
-          `Call ${call.id} initiated in room ${roomId} by user ${userId}`
-        );
       } catch (error) {
         console.error("Call initiation error:", error);
         socket.emit("error", { message: "Error initiating call" });
@@ -381,8 +376,6 @@ export function initSocket(httpServer) {
           answeredBy: userId,
           roomId,
         });
-
-        console.log(`Call ${callId} answered by user ${userId}`);
       } catch (error) {
         console.error("Call answer error:", error);
         socket.emit("error", { message: "Error answering call" });
@@ -422,8 +415,6 @@ export function initSocket(httpServer) {
           endedBy: userId,
           roomId,
         });
-
-        console.log(`Call ${callId} ended by user ${userId}`);
       } catch (error) {
         console.error("Call end error:", error);
         socket.emit("error", { message: "Error ending call" });
@@ -433,7 +424,6 @@ export function initSocket(httpServer) {
     // ==================== DISCONNECT ====================
 
     socket.on("disconnect", () => {
-      console.log(`User ${userId} disconnected: ${socket.id}`);
       userSessions.delete(userId);
 
       // Clear any typing timeouts for this user
@@ -449,8 +439,6 @@ export function initSocket(httpServer) {
         userId,
         timestamp: new Date(),
       });
-
-      console.log(`User ${userId} disconnected`);
     });
   });
 }

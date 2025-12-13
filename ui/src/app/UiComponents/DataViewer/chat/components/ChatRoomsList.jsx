@@ -53,6 +53,7 @@ export function ChatRoomsList({
   onLoadMore,
   hasMore = false,
   isWidget = false,
+  typingRooms = {},
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuAnchor, setMenuAnchor] = useState(null);
@@ -97,6 +98,27 @@ export function ChatRoomsList({
   };
 
   const getLastMessageText = (room) => {
+    // Show typing indicator if someone is typing in this room and it's not the selected room
+    if (typingRooms[room.id]) {
+      // Handle both Set and old number format
+      const typingCount =
+        typingRooms[room.id] instanceof Set
+          ? typingRooms[room.id].size
+          : typingRooms[room.id];
+
+      if (typingCount > 0) {
+        return (
+          <Typography
+            variant="caption"
+            sx={{ fontStyle: "italic", color: "primary.main", fontWeight: 500 }}
+          >
+            {typingCount} {typingCount === 1 ? "person is" : "people are"}{" "}
+            typing...
+          </Typography>
+        );
+      }
+    }
+
     const last = room.lastMessage;
     if (!last) return "No messages yet";
     if (last.type === "FILE") return last.fileName || "File";
@@ -205,6 +227,8 @@ export function ChatRoomsList({
                 bgcolor:
                   selectedRoomId === room.id
                     ? "action.selected"
+                    : getUnreadCount(room) > 0
+                    ? "primary.lighter"
                     : "transparent",
                 "&:hover": {
                   bgcolor: "action.hover",
@@ -216,6 +240,8 @@ export function ChatRoomsList({
                 borderLeft:
                   selectedRoomId === room.id
                     ? "3px solid"
+                    : getUnreadCount(room) > 0
+                    ? "3px solid error.main"
                     : "3px solid transparent",
                 borderLeftColor: "primary.main",
               }}
@@ -272,7 +298,13 @@ export function ChatRoomsList({
                       <Typography
                         variant="body2"
                         sx={{
-                          fontWeight: selectedRoomId === room.id ? 600 : 500,
+                          fontWeight:
+                            selectedRoomId === room.id ||
+                            getUnreadCount(room) > 0
+                              ? 700
+                              : 500,
+                          color:
+                            getUnreadCount(room) > 0 ? "error.main" : "inherit",
                         }}
                       >
                         {getRoomLabel(room)}

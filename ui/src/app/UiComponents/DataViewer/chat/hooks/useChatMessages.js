@@ -58,10 +58,25 @@ export function useChatMessages(roomId, initialPage = 0) {
   };
 
   const sendMessage = async (messageData) => {
-    console.log("sending message", messageData);
-    console.log("roomId message", roomId);
-
     if (!roomId) return null;
+
+    // Create optimistic message object
+    const optimisticMessage = {
+      id: `temp-${Date.now()}`, // Temporary ID
+      ...messageData,
+      roomId,
+      senderId: user.id,
+      sender: user,
+      createdAt: new Date().toISOString(),
+      isEdited: false,
+      isDeleted: false,
+    };
+
+    // Add message immediately to UI (optimistic update)
+    setMessages((prev) => [...prev, optimisticMessage]);
+    scrollToBottom();
+
+    // Then emit to backend
     sendNewMessage({
       data: { ...messageData, roomId, user, userId: user.id },
     });
