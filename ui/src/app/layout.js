@@ -11,6 +11,7 @@ import UploadingProvider, {
 } from "./providers/UploadingProgressProvider";
 import SocketProvider from "./providers/SocketProvider";
 import GoogleProvider from "./providers/GoogleProvider";
+import { Suspense } from "react";
 
 const noto = Noto_Kufi_Arabic({
   weight: ["400", "500", "700"],
@@ -94,12 +95,14 @@ export default function RootLayout({ children }) {
             <UploadingProvider>
               <ToastProvider>
                 <AuthProvider>
-                  {/* <GoogleProvider> */}
-                  <SocketProvider>
-                    <DotsLoader />
-                    {children}
-                  </SocketProvider>
-                  {/* </GoogleProvider> */}
+                  <Suspense fallback={<div>Loading...</div>}>
+                    <GoogleProvider>
+                      <SocketProvider>
+                        <DotsLoader />
+                        {children}
+                      </SocketProvider>
+                    </GoogleProvider>
+                  </Suspense>
                 </AuthProvider>
               </ToastProvider>
             </UploadingProvider>
