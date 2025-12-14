@@ -108,6 +108,8 @@ export const Calendar = ({
           setSessionData?.((old) => ({
             ...old,
             ...tokenData.data,
+            selectedTimezone:
+              old.selectedTimezone || tokenData.data.userTimezone,
           }));
           if (tokenData.data.time) {
             setActiveStep?.(3);

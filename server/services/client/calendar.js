@@ -6,6 +6,7 @@ import timezone from "dayjs/plugin/timezone.js";
 import { newMeetingNotification } from "../notification.js";
 import prisma from "../../prisma/prisma.js";
 import { sendReminderCreatedToClient } from "../main/email/emailTemplates.js";
+import { createCalendarEvent } from "../main/calendar/googleCalendar.js";
 dayjs.extend(timezone);
 dayjs.extend(utc);
 
@@ -21,6 +22,7 @@ export async function bookAMeeting({
     time,
     userTimezone: selectedTimezone,
   });
+  console.log(selectedSlot, "selectedSlot");
   if (selectedSlot.type !== "MOCK") {
     await assignSlotToMeeting({
       slotId: selectedSlot.id,
@@ -140,7 +142,6 @@ export async function assignSlotToMeeting({
 }) {
   slotId = Number(slotId);
   meetingReminderId = Number(meetingReminderId);
-
   const slot = await prisma.availableSlot.findUnique({
     where: { id: slotId },
   });
@@ -148,13 +149,15 @@ export async function assignSlotToMeeting({
   if (!slot || slot.isBooked)
     throw new Error("Time already booked book another");
 
-  await prisma.meetingReminder.update({
+  const reminder = await prisma.meetingReminder.update({
     where: { id: meetingReminderId },
     data: { availableSlotId: slotId },
   });
 
-  return await prisma.availableSlot.update({
+  const availableSlot = await prisma.availableSlot.update({
     where: { id: slotId },
     data: { isBooked: true, meetingReminderId, userTimezone },
   });
+  await createCalendarEvent(reminder);
+  return availableSlot;
 }

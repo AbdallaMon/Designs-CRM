@@ -10,6 +10,7 @@ import UploadingProvider, {
   UploadingContext,
 } from "./providers/UploadingProgressProvider";
 import SocketProvider from "./providers/SocketProvider";
+import GoogleProvider from "./providers/GoogleProvider";
 
 const noto = Noto_Kufi_Arabic({
   weight: ["400", "500", "700"],
@@ -93,10 +94,12 @@ export default function RootLayout({ children }) {
             <UploadingProvider>
               <ToastProvider>
                 <AuthProvider>
-                  <SocketProvider>
-                    <DotsLoader />
-                    {children}
-                  </SocketProvider>
+                  <GoogleProvider>
+                    <SocketProvider>
+                      <DotsLoader />
+                      {children}
+                    </SocketProvider>
+                  </GoogleProvider>
                 </AuthProvider>
               </ToastProvider>
             </UploadingProvider>

@@ -1,3 +1,9 @@
-ALTER TABLE `ContractPayment`
-ADD COLUMN `amountLost` DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER `amount`,
-ADD COLUMN `amountReceived` DECIMAL(12,2) NOT NULL DEFAULT 0 AFTER `amountLost`;
+ALTER TABLE `user` ADD COLUMN `googleRefreshToken` LONGTEXT,
+ADD COLUMN `googleAccessToken` LONGTEXT,
+ADD COLUMN `googleTokenExpiresAt` DATETIME(3),
+ADD COLUMN `googleCalendarId` VARCHAR(191),
+ADD COLUMN `googleEmail` VARCHAR(255);
+-- AlterTable
+ALTER TABLE `meetingreminder` ADD COLUMN `googleEventId` VARCHAR(255),
+ADD COLUMN `googleCalendarSynced` BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE `user` ADD COLUMN `profilePicture` LONGTEXT;

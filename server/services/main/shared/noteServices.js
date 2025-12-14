@@ -4,6 +4,7 @@ import {
   uploadANote,
 } from "../../telegram/telegram-functions.js";
 import prisma from "../../../prisma/prisma.js";
+import { deleteCalendarEvent } from "../calendar/googleCalendar.js";
 
 export async function getNotes({ idKey, id }) {
   const notes = await prisma.note.findMany({
@@ -186,8 +187,14 @@ export async function deleteAModel({ id, isAdmin, data, isSuperSales }) {
       },
       select: {
         availableSlotId: true,
+        googleEventId: true,
+        userId: true,
+        adminId: true,
       },
     });
+    if (meeting && meeting.googleEventId) {
+      await deleteCalendarEvent(meeting);
+    }
     if (meeting && meeting.availableSlotId) {
       await prisma.availableSlot.update({
         where: {

@@ -689,6 +689,8 @@ model MeetingReminder {
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   deliverySchedules DeliverySchedule[]
+  googleEventId   String?            @db.VarChar(255)
+  googleCalendarSynced Boolean          @default(false)
 
   @@index([clientLeadId])
   @@index([userId])
@@ -951,6 +953,16 @@ model User {
   baseSalary          BaseEmployeeSalary?
   notAllowedCountries Json?
   autoAssignments AutoAssignment[]
+
+  profilePicture          String?   @db.Text
+
+  // google calendar
+
+  googleRefreshToken      String?   @db.Text
+  googleAccessToken       String?   @db.Text
+  googleTokenExpiresAt    DateTime?
+  googleCalendarId        String? 
+  googleEmail              String?  @db.VarChar(255)
   
   // Chat relations
   chatRoomsCreated     ChatRoom[]          @relation("ChatRoomCreator")

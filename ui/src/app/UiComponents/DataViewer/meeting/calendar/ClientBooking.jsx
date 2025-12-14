@@ -48,6 +48,7 @@ import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
+import { useSearchParams } from "next/navigation";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -57,7 +58,9 @@ dayjs.extend(isSameOrAfter);
 dayjs.locale("en");
 
 // Client Booking Component with Steps
-const ClientBooking = ({ token }) => {
+const ClientBooking = () => {
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
   const [activeStep, setActiveStep] = useState(0);
   const [availableSlots, setAvailableSlots] = useState([]);
   const theme = useTheme();
@@ -76,13 +79,14 @@ const ClientBooking = ({ token }) => {
     dayId: null,
     token,
   });
+  console.log(sessionData, "sessionData");
   const [loadingSlotSelect, setLoadingSlotSelect] = useState(false);
+
   // 🔁 Get slots for selected date (same structure as admin/staff)
   const getSlotsData = async () => {
     if (!sessionData.selectedDate) return;
 
     const dateParam = dayjs(sessionData.selectedDate).format("YYYY-MM-DD");
-
     const slotsReq = await getData({
       url: `client/calendar/slots?date=${dateParam}&token=${token}&timezone=${
         sessionData.selectedTimezone
@@ -161,7 +165,6 @@ const ClientBooking = ({ token }) => {
       url: `client/calendar/slots/details?slotId=${slot.id}&token=${token}&timezone=${sessionData.selectedTimezone}&`,
       setLoading: setLoadingSlotSelect,
     });
-    console.log("Slot Details Response:", req);
     handleNext();
     if (req.status === 200) {
       setSessionData((prev) => ({
@@ -226,6 +229,7 @@ const ClientBooking = ({ token }) => {
                     ) || null
                   }
                   onChange={(e, newValue) => {
+                    console.log(newValue, "newValue");
                     setSessionData((prev) => ({
                       ...prev,
                       selectedTimezone: newValue?.value || "",

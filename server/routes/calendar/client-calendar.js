@@ -27,7 +27,10 @@ router.get("/meeting-data", async (req, res) => {
 router.get("/available-days", async (req, res) => {
   try {
     const { month, token, timezone } = req.query;
+    console.log(req.query, "req.query");
+
     const tokenData = await verifyAndExtractCalendarToken(token);
+    console.log(tokenData, "tokenData");
     const data = await getAvailableDays({
       month: month,
       ...tokenData,

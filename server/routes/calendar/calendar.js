@@ -11,6 +11,7 @@ import {
   getCalendarDataForMonth,
   getRemindersForDay,
 } from "../../services/main/calendar/calendarServices.js";
+import googleRoutes from "./google.js";
 
 const router = express.Router();
 
@@ -199,4 +200,5 @@ router.get("/dates/day", async (req, res) => {
     });
   }
 });
+router.use("/google", googleRoutes);
 export default router;
