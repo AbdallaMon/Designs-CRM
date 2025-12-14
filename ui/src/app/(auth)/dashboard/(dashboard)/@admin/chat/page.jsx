@@ -1,7 +1,8 @@
 import ChatPage from "@/app/UiComponents/DataViewer/chat/ChatPage";
-import { Suspense } from "react";
+import { connection } from "next/server";
 
-export default function page() {
+export default async function page() {
+  await connection();
   return (
     <Suspense fallback={<div>Loading Chat...</div>}>
       <ChatPage />;

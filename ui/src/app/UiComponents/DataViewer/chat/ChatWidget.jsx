@@ -1,18 +1,20 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { Suspense } from "react";
 import { ChatContainer } from "./ChatContainer";
 import { usePathname } from "next/navigation";
 
 export function ChatWidget({ projectId = null, clientLeadId = null }) {
   const pathname = usePathname();
-  if (pathname === "/dashboard/chat") return;
+  if (pathname === "/dashboard/chat") return null;
   return (
-    <ChatContainer
-      type="widget"
-      projectId={projectId}
-      clientLeadId={clientLeadId}
-    />
+    <Suspense fallback={null}>
+      <ChatContainer
+        type="widget"
+        projectId={projectId}
+        clientLeadId={clientLeadId}
+      />
+    </Suspense>
   );
 }
 

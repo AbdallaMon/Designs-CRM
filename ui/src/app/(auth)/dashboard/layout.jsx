@@ -3,6 +3,7 @@
 import { Box } from "@mui/material";
 import colors from "@/app/helpers/colors.js";
 import ChatWidget from "@/app/UiComponents/DataViewer/chat/ChatWidget";
+import { Suspense } from "react";
 
 export default function AuthLayout({ children }) {
   return (
@@ -16,7 +17,9 @@ export default function AuthLayout({ children }) {
       }}
     >
       {children}
-      <ChatWidget />
+      <Suspense fallback={null}>
+        <ChatWidget />
+      </Suspense>
     </Box>
   );
 }
