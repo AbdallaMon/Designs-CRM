@@ -1,14 +1,14 @@
-"use client";
-
-import React from "react";
+import React, { Suspense } from "react";
 import { ChatContainer } from "./ChatContainer";
 
 export default function ChatPage({ projectId = null, clientLeadId = null }) {
   return (
-    <ChatContainer
-      type="page"
-      projectId={projectId}
-      clientLeadId={clientLeadId}
-    />
+    <Suspense fallback={<div>Loading Chat...</div>}>
+      <ChatContainer
+        type="page"
+        projectId={projectId}
+        clientLeadId={clientLeadId}
+      />
+    </Suspense>
   );
 }
