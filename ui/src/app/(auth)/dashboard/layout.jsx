@@ -17,9 +17,9 @@ export default function AuthLayout({ children }) {
       }}
     >
       {children}
-      <Suspense fallback={null}>
+      {/* <Suspense fallback={null}>
         <ChatWidget />
-      </Suspense>
+      </Suspense> */}
     </Box>
   );
 }
