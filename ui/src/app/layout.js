@@ -94,12 +94,12 @@ export default function RootLayout({ children }) {
             <UploadingProvider>
               <ToastProvider>
                 <AuthProvider>
-                  <GoogleProvider>
-                    <SocketProvider>
-                      <DotsLoader />
-                      {children}
-                    </SocketProvider>
-                  </GoogleProvider>
+                  {/* <GoogleProvider> */}
+                  <SocketProvider>
+                    <DotsLoader />
+                    {children}
+                  </SocketProvider>
+                  {/* </GoogleProvider> */}
                 </AuthProvider>
               </ToastProvider>
             </UploadingProvider>
