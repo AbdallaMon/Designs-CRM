@@ -3,12 +3,10 @@ import { ChatContainer } from "./ChatContainer";
 
 export default function ChatPage({ projectId = null, clientLeadId = null }) {
   return (
-    <Suspense fallback={<div>Loading Chat...</div>}>
-      <ChatContainer
-        type="page"
-        projectId={projectId}
-        clientLeadId={clientLeadId}
-      />
-    </Suspense>
+    <ChatContainer
+      type="page"
+      projectId={projectId}
+      clientLeadId={clientLeadId}
+    />
   );
 }
