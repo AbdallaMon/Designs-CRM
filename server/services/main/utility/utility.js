@@ -451,6 +451,9 @@ export async function searchData(body, currentUser) {
       },
     ];
   }
+  console.log(where, "final where");
+  console.log(model, "model");
+  console.log(parsedFilters, "parsedFilters");
   const selectFields = {
     user: {
       id: true,
