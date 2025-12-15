@@ -422,7 +422,6 @@ export async function searchData(body, currentUser) {
   } else if (where && where.role?.startsWith("2D")) {
     where.role = "TWO_D_DESIGNER";
   }
-  console.log(where, "where");
   if (where.role) {
     const role = where.role;
     delete where.role;
@@ -452,9 +451,6 @@ export async function searchData(body, currentUser) {
       },
     ];
   }
-  console.log(where, "final where");
-  console.log(model, "model");
-  console.log(filters, "parsedFilters");
 
   const selectFields = {
     user: {

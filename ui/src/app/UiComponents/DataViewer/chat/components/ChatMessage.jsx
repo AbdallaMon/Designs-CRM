@@ -120,7 +120,60 @@ export function ChatMessage({
         </Avatar>
       )}
 
-      <Box sx={{ maxWidth: "60%", display: "flex", flexDirection: "column" }}>
+      <Box
+        sx={{
+          maxWidth: "60%",
+          display: "flex",
+          flexDirection: "column",
+          position: "relative",
+          backgroundColor: isOwnMessage ? "primary.main" : "grey.100",
+          color: isOwnMessage ? "primary.contrastText" : "text.primary",
+          borderRadius: 1.5,
+          p: 1.5,
+          pr: 4,
+        }}
+      >
+        {(isOwnMessage || isCurrentUserAdmin) && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 4,
+              right: 4,
+            }}
+          >
+            <IconButton
+              size="small"
+              onClick={handleMenuOpen}
+              sx={{
+                opacity: 0.3,
+                transition: "opacity 0.2s ease",
+                "&:hover": { opacity: 1 },
+              }}
+            >
+              <FaEllipsisV size={12} />
+            </IconButton>
+            <Menu
+              anchorEl={menuAnchor}
+              open={Boolean(menuAnchor)}
+              onClose={handleMenuClose}
+            >
+              <MenuItem onClick={() => onReply(message)}>
+                <FaReply size={14} style={{ marginRight: 8 }} />
+                Reply
+              </MenuItem>
+              {isOwnMessage && (
+                <MenuItem onClick={() => onEdit(message.id)}>
+                  <FaEdit size={14} style={{ marginRight: 8 }} />
+                  Edit
+                </MenuItem>
+              )}
+              <MenuItem onClick={() => setDeleteConfirm(true)}>
+                <FaTrash size={14} style={{ marginRight: 8 }} />
+                Delete
+              </MenuItem>
+            </Menu>
+          </Box>
+        )}
         {!isOwnMessage && (
           <Typography
             variant="caption"
@@ -163,23 +216,15 @@ export function ChatMessage({
             </Box>
           </Box>
         ) : (
-          <Paper
+          <Box
             sx={{
-              px: 2,
-              py: 1.5,
-              backgroundColor: isOwnMessage ? "primary.main" : "grey.100",
-              color: isOwnMessage ? "primary.contrastText" : "text.primary",
-              borderRadius: 3,
+              px: 1.5,
+              py: 1,
+              // color: isOwnMessage ? "primary.contrastText" : "text.primary",
               wordBreak: "break-word",
-              boxShadow: isOwnMessage
-                ? "0 2px 8px rgba(0,0,0,0.1)"
-                : "0 1px 4px rgba(0,0,0,0.05)",
+
               transition: "all 0.2s ease",
-              "&:hover": {
-                boxShadow: isOwnMessage
-                  ? "0 4px 12px rgba(0,0,0,0.15)"
-                  : "0 2px 8px rgba(0,0,0,0.1)",
-              },
+              backgroundColor: "transparent",
             }}
           >
             {message.replyTo && (
@@ -248,49 +293,13 @@ export function ChatMessage({
                 (edited)
               </Typography>
             )}
-          </Paper>
+          </Box>
         )}
 
         <Box sx={{ display: "flex", gap: 1, mt: 0.5, alignItems: "center" }}>
           <Typography variant="caption" sx={{ opacity: 0.6 }}>
             {dayjs(message.createdAt).format("HH:mm")}
           </Typography>
-
-          {(isOwnMessage || isCurrentUserAdmin) && (
-            <Box>
-              <IconButton
-                size="small"
-                onClick={handleMenuOpen}
-                sx={{
-                  opacity: 0.3,
-                  transition: "opacity 0.2s ease",
-                  "&:hover": { opacity: 1 },
-                }}
-              >
-                <FaEllipsisV size={12} />
-              </IconButton>
-              <Menu
-                anchorEl={menuAnchor}
-                open={Boolean(menuAnchor)}
-                onClose={handleMenuClose}
-              >
-                <MenuItem onClick={() => onReply(message)}>
-                  <FaReply size={14} style={{ marginRight: 8 }} />
-                  Reply
-                </MenuItem>
-                {isOwnMessage && (
-                  <MenuItem onClick={() => onEdit(message.id)}>
-                    <FaEdit size={14} style={{ marginRight: 8 }} />
-                    Edit
-                  </MenuItem>
-                )}
-                <MenuItem onClick={() => setDeleteConfirm(true)}>
-                  <FaTrash size={14} style={{ marginRight: 8 }} />
-                  Delete
-                </MenuItem>
-              </Menu>
-            </Box>
-          )}
         </Box>
       </Box>
 

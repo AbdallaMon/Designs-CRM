@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useMemo,
+} from "react";
 import {
   Box,
   Paper,
@@ -47,7 +53,7 @@ import {
   typing,
   emitStopTyping,
 } from "../utils/socketIO";
-import dayjs from "dayjs";
+import DeleteModelButton from "@/app/UiComponents/common/DeleteModelButton";
 
 export function ChatWindow({
   room,
@@ -165,7 +171,6 @@ export function ChatWindow({
   const isMember = room?.members?.some((m) => m.userId === user.id);
   const canManageMembers =
     isAdmin && room?.type !== CHAT_ROOM_TYPES.STAFF_TO_STAFF;
-  console.log(typingUsers, "typingUsers");
 
   useEffect(() => {
     if (room?.id) {
@@ -269,18 +274,45 @@ export function ChatWindow({
     );
   }
 
+  const getAvatarSrc = useCallback((entity) => {
+    return (
+      entity?.profilePicture ||
+      entity?.avatar ||
+      entity?.user?.profilePicture ||
+      entity?.user?.avatar ||
+      null
+    );
+  }, []);
+
+  const toggleSelectUser = useCallback((userToToggle) => {
+    setSelectedUsers((prev) => {
+      const exists = prev.some((u) => u.id === userToToggle.id);
+      if (exists) {
+        return prev.filter((u) => u.id !== userToToggle.id);
+      }
+      return [...prev, userToToggle];
+    });
+  }, []);
+
+  const availableUsersSorted = useMemo(
+    () =>
+      [...availableUsers].sort((a, b) =>
+        (a.name || "").localeCompare(b.name || "")
+      ),
+    [availableUsers]
+  );
+
   return (
     <Paper
       sx={{
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        maxHeight: "calc(100vh - 100px)",
+        maxHeight: "calc(100vh - 120px)",
         bgcolor: "background.paper",
         overflow: "hidden",
       }}
     >
-      {/* Header */}
       <Box
         sx={{
           display: "flex",
@@ -377,42 +409,6 @@ export function ChatWindow({
               </IconButton>
             </Tooltip>
           )}
-          <IconButton
-            size="small"
-            onClick={(e) => setMenuAnchor(e.currentTarget)}
-            sx={{
-              transition: "all 0.2s ease",
-              "&:hover": {
-                bgcolor: "action.hover",
-                transform: "scale(1.1)",
-              },
-            }}
-          >
-            <FaEllipsisV size={18} />
-          </IconButton>
-          <Menu
-            anchorEl={menuAnchor}
-            open={Boolean(menuAnchor)}
-            onClose={() => setMenuAnchor(null)}
-          >
-            {canManageMembers && (
-              <MenuItem
-                onClick={() => {
-                  setMenuAnchor(null);
-                  setShowAddMembers(true);
-                }}
-              >
-                <FaPlus size={14} style={{ marginRight: 8 }} />
-                Add Members
-              </MenuItem>
-            )}
-            {isAdmin && (
-              <MenuItem>
-                <FaInfo size={14} style={{ marginRight: 8 }} />
-                Room Settings
-              </MenuItem>
-            )}
-          </Menu>
         </Box>
       </Box>
 
@@ -547,64 +543,130 @@ export function ChatWindow({
       <Dialog
         open={showAddMembers && canManageMembers}
         onClose={() => setShowAddMembers(false)}
-        maxWidth="sm"
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>Add Members to Chat</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
           <Stack spacing={2}>
-            {/* Existing members */}
+            {/* Existing members with avatars */}
             {members.length > 0 && (
               <Box>
                 <Typography variant="subtitle2" sx={{ mb: 1 }}>
                   Current Members
                 </Typography>
-                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                <Stack spacing={1.5}>
                   {members.map((m) => (
-                    <Chip
+                    <Stack
                       key={m.id}
-                      avatar={<Avatar src={m.user?.avatar} />}
-                      label={m.user?.name || m.client?.name || "Unknown"}
-                      size="small"
-                    />
+                      direction="row"
+                      alignItems="center"
+                      spacing={1.5}
+                    >
+                      <Avatar src={getAvatarSrc(m.user)}>
+                        {(m.user?.name || m.client?.name || "?").charAt(0)}
+                      </Avatar>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography fontWeight={600} noWrap>
+                          {m.user?.name || m.client?.name || "Unknown"}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          noWrap
+                        >
+                          {m.user?.email || m.client?.email || ""}
+                        </Typography>
+                      </Box>
+                    </Stack>
                   ))}
-                </Box>
+                </Stack>
               </Box>
             )}
 
-            {/* New members select */}
+            {/* New members list with selectable rows */}
             {loadingUsers ? (
               <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
                 <CircularProgress />
               </Box>
+            ) : availableUsersSorted.length === 0 ? (
+              <Box sx={{ p: 2 }}>
+                <Typography color="textSecondary">
+                  No new members available
+                </Typography>
+              </Box>
             ) : (
-              <FormControl fullWidth>
-                <InputLabel>Select Members to Add</InputLabel>
-                <Select
-                  multiple
-                  value={selectedUsers}
-                  onChange={(e) => setSelectedUsers(e.target.value)}
-                  label="Select Members to Add"
-                  disabled={loadingUsers || availableUsers.length === 0}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                      {selected.map((user) => (
-                        <Chip key={user.id} label={user.name} size="small" />
-                      ))}
-                    </Box>
-                  )}
-                >
-                  {availableUsers.length === 0 ? (
-                    <MenuItem disabled>No new members available</MenuItem>
-                  ) : (
-                    availableUsers.map((u) => (
-                      <MenuItem key={u.id} value={u}>
-                        {u.name} ({u.email})
-                      </MenuItem>
-                    ))
-                  )}
-                </Select>
-              </FormControl>
+              <Box sx={{ maxHeight: 360, overflow: "auto", pr: 1 }}>
+                <Stack spacing={1}>
+                  {availableUsersSorted.map((u) => {
+                    const isSelected = selectedUsers.some((s) => s.id === u.id);
+                    return (
+                      <Paper
+                        key={u.id}
+                        variant="outlined"
+                        sx={{
+                          p: 1,
+                          borderRadius: 2,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1.5,
+                          cursor: "pointer",
+                          borderColor: isSelected ? "primary.main" : "divider",
+                          bgcolor: isSelected
+                            ? "primary.lighter"
+                            : "background.paper",
+                        }}
+                        onClick={() => toggleSelectUser(u)}
+                      >
+                        <Avatar src={getAvatarSrc(u)}>
+                          {(u.name || "?").charAt(0)}
+                        </Avatar>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography fontWeight={600} noWrap>
+                            {u.name || "Unknown"}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            noWrap
+                          >
+                            {u.email || ""}
+                          </Typography>
+                        </Box>
+                        <Chip
+                          label={isSelected ? "Selected" : "Select"}
+                          color={isSelected ? "primary" : "default"}
+                          size="small"
+                          variant={isSelected ? "filled" : "outlined"}
+                        />
+                      </Paper>
+                    );
+                  })}
+                </Stack>
+              </Box>
+            )}
+
+            {/* Selected summary */}
+            {selectedUsers.length > 0 && (
+              <Box>
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Selected to add ({selectedUsers.length})
+                </Typography>
+                <Stack direction="row" flexWrap="wrap" gap={1}>
+                  {selectedUsers.map((u) => (
+                    <Chip
+                      key={u.id}
+                      avatar={
+                        <Avatar src={getAvatarSrc(u)}>
+                          {(u.name || "?").charAt(0)}
+                        </Avatar>
+                      }
+                      label={u.name}
+                      onDelete={() => toggleSelectUser(u)}
+                    />
+                  ))}
+                </Stack>
+              </Box>
             )}
           </Stack>
         </DialogContent>

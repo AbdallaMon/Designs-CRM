@@ -11,6 +11,7 @@ export async function getChatRooms({
   clientLeadId,
   page = 0,
   limit = 20,
+  search = "",
 }) {
   const parsedUserId = parseInt(userId);
   const pageNumber = Number.isFinite(parseInt(page)) ? parseInt(page) : 0;
@@ -34,7 +35,26 @@ export async function getChatRooms({
   } else if (category === "PROJECT") {
     where.type = { in: ["PROJECT_GROUP", "MULTI_PROJECT"] };
   }
-
+  if (search) {
+    where.OR = [
+      {
+        members: {
+          some: {
+            user: {
+              name: {
+                contains: search,
+              },
+            },
+          },
+        },
+      },
+      {
+        name: {
+          contains: search,
+        },
+      },
+    ];
+  }
   if (projectId) {
     where.projectId = parseInt(projectId);
   }
@@ -59,7 +79,9 @@ export async function getChatRooms({
           select: { id: true, code: true },
         },
         members: {
-          where: { leftAt: null },
+          where: {
+            leftAt: null,
+          },
           select: {
             id: true,
             userId: true,
@@ -108,8 +130,9 @@ export async function getChatRooms({
   const roomWithMeta = await Promise.all(
     rooms.map(async (room) => {
       const selfMember = room.members.find((m) => m.userId === parsedUserId);
-      const lastReadAt = selfMember?.lastReadAt || null;
-
+      const otherMembers = room.members.filter(
+        (m) => m.userId !== parsedUserId
+      );
       const unreadCount = await prisma.chatMessage.count({
         where: {
           roomId: room.id,
@@ -120,13 +143,13 @@ export async function getChatRooms({
         },
       });
 
-      // Ensure lastMessage always present as a flat field for UI
       const lastMessage = room.messages?.[0] || null;
 
       return {
         ...room,
         unreadCount,
         lastMessage,
+        otherMembers,
       };
     })
   );

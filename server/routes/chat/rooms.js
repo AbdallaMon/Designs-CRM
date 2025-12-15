@@ -15,7 +15,8 @@ router.get("/", async (req, res) => {
   try {
     const user = await getCurrentUser(req, res);
     const userId = user.id;
-    const { category, projectId, clientLeadId, page, limit } = req.query;
+    const { category, projectId, clientLeadId, page, limit, searchKey } =
+      req.query;
 
     const result = await getChatRooms({
       userId,
@@ -24,6 +25,7 @@ router.get("/", async (req, res) => {
       clientLeadId,
       page: page ? parseInt(page, 10) : 0,
       limit: limit ? parseInt(limit, 10) : 25,
+      search: searchKey ? searchKey : "",
     });
 
     res.json({ status: 200, ...result });

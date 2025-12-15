@@ -40,7 +40,6 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { getData } from "@/app/helpers/functions/getData";
 import { CHAT_ROOM_TYPES } from "./utils/chatConstants";
 import { useRouter, useSearchParams } from "next/navigation";
-import { joinChatRoom } from "./utils/socketIO";
 
 /**
  * Unified Chat Container Component
@@ -57,7 +56,6 @@ export function ChatContainer({
   projectId = null,
   clientLeadId = null,
 }) {
-  return;
   const { user, isLoggedIn } = useAuth();
   const { setLoading: setToastLoading } = useToastContext();
   const theme = useTheme();
@@ -98,13 +96,11 @@ export function ChatContainer({
 
   // Message sound (widget only)
   const messageSound =
-    type === "widget" && typeof Audio !== "undefined"
-      ? new Audio("/message-sound.mp3")
-      : null;
+    typeof Audio !== "undefined" ? new Audio("/message-sound.mp3") : null;
 
   useSocket({
     onMessagesReadNotification: (data) => {
-      const { roomId, userId, messageId } = data;
+      const { roomId, userId } = data;
       const id = searchParams?.get("roomId");
 
       if (roomId !== parseInt(id) && user?.id === userId) {
@@ -113,29 +109,23 @@ export function ChatContainer({
     },
     onNewMessageNotification: (data) => {
       fetchRooms(0, false);
-
       // Play sound in widget if message is from another user and not in selected room
+      console.log("New message notification received:", data);
       if (
+        !data.isMuted &&
         messageSound &&
-        data.senderId !== user?.id &&
+        data.message.senderId !== user?.id &&
         data.roomId !== selectedRoom?.id
       ) {
+        console.log("Playing message sound");
         messageSound.play().catch((error) => {
           // Sound play error - continue anyway
         });
       }
     },
     onTypingNotification: (data) => {
-      console.log("⌨️ ChatContainer - onTyping:", data);
-      console.log(
-        "Current room:",
-        selectedRoom?.id,
-        "Typing room:",
-        data.roomId
-      );
       // Only show typing if not in the room and not from self
       if (data.roomId !== selectedRoom?.id && data.userId !== user?.id) {
-        console.log("✅ Adding typing indicator for room", data.roomId);
         setTypingRooms((prev) => {
           const roomTyping = prev[data.roomId] || new Set();
           if (roomTyping instanceof Set) {
@@ -319,6 +309,7 @@ export function ChatContainer({
       initialLoading={roomsLoading}
       isWidget={type === "widget"}
       typingRooms={typingRooms}
+      onSearch={(search) => fetchRooms(0, false, search)}
     />
   );
 
@@ -578,7 +569,7 @@ export function ChatContainer({
     return (
       <Box
         sx={{
-          height: "calc(100vh - 100px)",
+          height: "calc(100vh - 120px)",
           display: "flex",
           flexDirection: "column",
           bgcolor: "grey.50",
@@ -591,7 +582,7 @@ export function ChatContainer({
                 <Paper
                   elevation={3}
                   sx={{
-                    height: "calc(100vh - 100px)",
+                    height: "calc(100vh - 120px)",
                     overflow: "hidden",
                     display: "flex",
                     flexDirection: "column",

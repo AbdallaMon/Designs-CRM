@@ -48,7 +48,7 @@ export async function getMessages({ roomId, userId, page = 0, limit = 50 }) {
       },
       skip,
       take: limit,
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
       include: {
         sender: {
           select: { id: true, name: true, email: true },
@@ -183,9 +183,12 @@ export async function sendMessage({
   });
 
   // Update room's updatedAt
-  await prisma.chatRoom.update({
+  const room = await prisma.chatRoom.update({
     where: { id: parseInt(roomId) },
     data: { updatedAt: new Date() },
+    select: {
+      isMuted: true,
+    },
   });
 
   // Emit to all room members for live chat
@@ -206,6 +209,7 @@ export async function sendMessage({
       content: {
         message,
         roomId: parseInt(roomId),
+        isMuted: room.isMuted,
       },
       type: "notification:new_message",
     });

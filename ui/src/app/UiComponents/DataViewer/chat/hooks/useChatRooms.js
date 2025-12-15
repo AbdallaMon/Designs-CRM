@@ -19,7 +19,7 @@ export function useChatRooms({
   const { setLoading: setToastLoading } = useToastContext();
 
   const fetchRooms = useCallback(
-    async (nextPage = 0, append = false) => {
+    async (nextPage = 0, append = false, search) => {
       if (append) setLoadingMore(true);
       else setLoading(true);
       setError(null);
@@ -27,6 +27,7 @@ export function useChatRooms({
         let url = `shared/chat/rooms?page=${nextPage}&limit=${limit}&`;
         if (category) url += `category=${category}&`;
         if (projectId) url += `projectId=${projectId}&`;
+        if (search) url += `searchKey=${encodeURIComponent(search)}&`;
 
         const response = await getData({
           url,
@@ -55,7 +56,6 @@ export function useChatRooms({
   useEffect(() => {
     fetchRooms(0, false);
   }, [fetchRooms]);
-
   const loadMoreRooms = useCallback(() => {
     if (loadingMore) return;
     const nextPage = page + 1;

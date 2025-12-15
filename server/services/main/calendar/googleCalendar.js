@@ -30,7 +30,6 @@ export function getAuthUrl(userId) {
 export async function handleOAuthCallback(code, userId) {
   try {
     const { tokens } = await oauth2Client.getToken(code);
-    console.log(tokens, "tokens");
     // Save tokens to database
     await prisma.user.update({
       where: { id: parseInt(userId) },

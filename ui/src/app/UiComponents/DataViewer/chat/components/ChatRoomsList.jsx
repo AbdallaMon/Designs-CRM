@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   List,
@@ -54,23 +54,32 @@ export function ChatRoomsList({
   hasMore = false,
   isWidget = false,
   typingRooms = {},
+  onSearch,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [menuRoomId, setMenuRoomId] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const DEBOUNCE_MS = 450;
+  // Debounce utility with cancel/flush controls
+  function debounce(fn, wait) {
+    let t;
+    const debounced = (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), wait);
+    };
+    debounced.cancel = () => clearTimeout(t);
+    debounced.flush = (...args) => {
+      clearTimeout(t);
+      fn(...args);
+    };
+    return debounced;
+  }
 
-  const filteredRooms = rooms.filter((room) => {
-    const matchesSearch =
-      room.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      room.members?.some((m) =>
-        (m.user?.name || m.client?.name)
-          ?.toLowerCase()
-          .includes(searchQuery.toLowerCase())
-      );
-
-    return matchesSearch;
-  });
+  const debouncedSearch = useMemo(
+    () => debounce(onSearch, DEBOUNCE_MS),
+    [onSearch]
+  );
 
   const handleMenuOpen = (e, roomId) => {
     e.stopPropagation();
@@ -143,6 +152,12 @@ export function ChatRoomsList({
   };
 
   const getRoomLabel = (room) => {
+    if (room.type === "STAFF_TO_STAFF") {
+      const otherMember = room.otherMembers?.[0];
+      if (otherMember?.user) {
+        return otherMember.user.name;
+      }
+    }
     if (room.name) return room.name;
     if (room.type === "CLIENT_TO_STAFF") {
       const member = room.members?.find((m) => m.user);
@@ -150,6 +165,9 @@ export function ChatRoomsList({
     }
     return CHAT_ROOM_TYPE_LABELS[room.type] || room.type || "Chat";
   };
+  useEffect(() => {
+    return () => debouncedSearch.cancel?.();
+  }, [debouncedSearch]);
   return (
     <Box
       sx={{
@@ -177,7 +195,17 @@ export function ChatRoomsList({
           size="small"
           placeholder="Search chats..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e) => {
+            const v = e.target.value;
+            setSearchQuery(v);
+            debouncedSearch(v.trim());
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              const q = searchQuery.trim();
+              debouncedSearch.flush?.(q);
+            }
+          }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -214,12 +242,12 @@ export function ChatRoomsList({
           },
         }}
       >
-        {filteredRooms.length === 0 ? (
+        {rooms?.length === 0 ? (
           <Box sx={{ display: "flex", justifyContent: "center", pt: 3 }}>
             <Typography color="textSecondary">No chats found</Typography>
           </Box>
         ) : (
-          filteredRooms.map((room) => (
+          rooms?.map((room) => (
             <ListItem
               key={room.id}
               disablePadding
@@ -316,29 +344,6 @@ export function ChatRoomsList({
                   }
                   secondary={
                     <Stack spacing={0.4} sx={{ pr: 1 }}>
-                      <Chip
-                        label={CHAT_ROOM_TYPE_LABELS[room.type] || room.type}
-                        size="small"
-                        sx={{
-                          fontSize: 10,
-                          px: 0.75,
-                          py: 0.25,
-                          borderRadius: 1,
-                          bgcolor:
-                            room.type === CHAT_ROOM_TYPES.STAFF_TO_STAFF
-                              ? "primary.light"
-                              : room.type === CHAT_ROOM_TYPES.PROJECT_GROUP
-                              ? "secondary.light"
-                              : "info.light",
-                          color:
-                            room.type === CHAT_ROOM_TYPES.STAFF_TO_STAFF
-                              ? "primary.dark"
-                              : room.type === CHAT_ROOM_TYPES.PROJECT_GROUP
-                              ? "secondary.dark"
-                              : "info.dark",
-                        }}
-                        variant="filled"
-                      />
                       <Typography
                         variant="caption"
                         color="textPrimary"
@@ -420,28 +425,6 @@ export function ChatRoomsList({
           </Button>
         </DialogActions>
       </Dialog>
-
-      {loading && hasMore && (
-        <Box sx={{ py: 1, display: "flex", justifyContent: "center" }}>
-          <CircularProgress size={18} />
-        </Box>
-      )}
-
-      {initialLoading && (
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            bgcolor: "rgba(255,255,255,0.7)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 2,
-          }}
-        >
-          {/* <CircularProgress size={28} /> */}
-        </Box>
-      )}
     </Box>
   );
 }

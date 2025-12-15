@@ -31,9 +31,9 @@ export function useChatMessages(roomId, initialPage = 0) {
       if (response?.status === 200) {
         const newMessages = response.data || [];
         if (pageNum === 0) {
-          setMessages(newMessages.reverse());
+          setMessages(newMessages);
         } else {
-          setMessages((prev) => [...newMessages.reverse(), ...prev]);
+          setMessages((prev) => [...newMessages, ...prev]);
         }
         setTotalMessages(response.total || 0);
         setHasMore((pageNum + 1) * 50 < (response.total || 0));
