@@ -6,7 +6,7 @@ export default function BookingPage({ params, searchParams }) {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <MuiAlertProvider>
-        <ClientBooking token={searchParams.token} />;
+        <ClientBooking />;
       </MuiAlertProvider>
     </Suspense>
   );
