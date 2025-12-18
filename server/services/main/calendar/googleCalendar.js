@@ -11,10 +11,7 @@ const oauth2Client = new google.auth.OAuth2(
  * Generate OAuth2 URL for user to authorize
  */
 export function getAuthUrl(userId) {
-  const scopes = [
-    "https://www.googleapis.com/auth/calendar",
-    "https://www.googleapis.com/auth/calendar.events",
-  ];
+  const scopes = ["https://www.googleapis.com/auth/calendar"];
 
   return oauth2Client.generateAuthUrl({
     access_type: "offline", // Required for refresh token
@@ -76,6 +73,8 @@ export async function getCalendarClient(userId) {
       googleTokenExpiresAt: true,
     },
   });
+  console.log("Getting calendar client for user:", user);
+  console.log("Getting calendar client for userId:", userId);
 
   if (!user.googleRefreshToken) {
     throw new Error("Google Calendar not connected");
@@ -121,7 +120,6 @@ export async function createCalendarEvent(meetingReminder) {
   const userId = meetingReminder.userId || meetingReminder.adminId;
 
   if (!userId) {
-    console.error("No userId for meeting reminder:", meetingReminder.id);
     return;
   }
 
@@ -270,54 +268,13 @@ export async function disconnectGoogleCalendar(userId) {
 }
 
 export async function isGoogleCalendarConnected(userId) {
-  const user = await prisma.user.findUnique({
-    where: { id: parseInt(userId) },
-    select: {
-      googleRefreshToken: true,
-      googleAccessToken: true,
-      googleTokenExpiresAt: true,
-    },
-  });
-
-  // Check if refresh token exists (user is connected)
-  if (!user.googleRefreshToken) {
-    return false;
+  const isConnected = await getCalendarClient(userId);
+  if (isConnected) {
+    return await resyncMeetingRemindersWithGoogleCalendar(Number(userId));
   }
-
-  const now = new Date();
-  const expiresAt = new Date(user.googleTokenExpiresAt);
-  const thirtyMinutesFromNow = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes
-  // If token expires within 30 minutes, auto-refresh it
-  if (expiresAt <= thirtyMinutesFromNow) {
-    try {
-      oauth2Client.setCredentials({
-        refresh_token: user.googleRefreshToken,
-      });
-
-      const { credentials } = await oauth2Client.refreshAccessToken();
-
-      // Update tokens in DB
-      await prisma.user.update({
-        where: { id: parseInt(userId) },
-        data: {
-          googleAccessToken: credentials.access_token,
-          googleTokenExpiresAt: new Date(credentials.expiry_date),
-        },
-      });
-    } catch (error) {
-      console.error("Token refresh failed:", error);
-      // If refresh fails, mark as disconnected
-      await prisma.user.update({
-        where: { id: parseInt(userId) },
-        data: { googleRefreshToken: null },
-      });
-      return false;
-    }
-  }
-  await resyncMeetingRemindersWithGoogleCalendar();
-  return true;
+  return false;
 }
-export async function resyncMeetingRemindersWithGoogleCalendar() {
+export async function resyncMeetingRemindersWithGoogleCalendar(userId) {
   // check meeting that are today or comming and has an availableSLot and no googleEventId
   const now = new Date();
   const meetingReminders = await prisma.meetingReminder.findMany({
@@ -325,12 +282,14 @@ export async function resyncMeetingRemindersWithGoogleCalendar() {
       time: {
         gte: now,
       },
+      OR: [{ userId: userId }, { adminId: userId }],
       availableSlot: {
         isNot: null,
       },
       googleEventId: null,
     },
   });
+  console.log(meetingReminders, "meetingReminders");
   for (const meeting of meetingReminders) {
     try {
       await createCalendarEvent(meeting);
@@ -338,4 +297,5 @@ export async function resyncMeetingRemindersWithGoogleCalendar() {
       console.error("Resync meeting reminder error:", e);
     }
   }
+  return true;
 }

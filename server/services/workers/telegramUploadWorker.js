@@ -2,7 +2,7 @@ import { Worker } from "bullmq";
 import connection from "../redis/bullmqConnection.js";
 import { uploadItemsToTele } from "../telegram/telegram-functions.js";
 import { connectToTelegram } from "../telegram/connectToTelegram.js";
-await connectToTelegram();
+// Connection is initialized once in start-telegram-system.js
 export const telegramUploadWorker = new Worker(
   "telegram-upload-queue",
   async (job) => {

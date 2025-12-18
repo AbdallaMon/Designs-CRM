@@ -34,12 +34,16 @@ export default function GoogleProvider({ children }) {
     connectGoogle();
   }, []);
   useEffect(() => {
-    if (searchParams && searchParams.get("googleAuthSuccess") === "true") {
+    if (searchParams && searchParams.get("googleAuthSuccess") === "1") {
       setShowAlert(false);
       setSuccess(true);
       // Auto-hide success after 5 seconds
-      setTimeout(() => setSuccess(false), 5000);
+      setTimeout(() => setSuccess(false), 10000);
     }
+    console.log(
+      searchParams.get("googleAuthError"),
+      "searchParams.get(googleAuthError)"
+    );
     if (searchParams && searchParams.get("googleAuthError")) {
       setError(
         decodeURIComponent(searchParams.get("googleAuthError")).replace(
@@ -58,7 +62,8 @@ export default function GoogleProvider({ children }) {
       setTimeout(() => setIsConnecting(false), 1000);
     }
   };
-
+  console.log(error, "error");
+  console.log(success, "success");
   return (
     <>
       <Box sx={{}}>

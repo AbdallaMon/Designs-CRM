@@ -22,7 +22,6 @@ export async function bookAMeeting({
     time,
     userTimezone: selectedTimezone,
   });
-  console.log(selectedSlot, "selectedSlot");
   if (selectedSlot.type !== "MOCK") {
     await assignSlotToMeeting({
       slotId: selectedSlot.id,

@@ -45,8 +45,7 @@ router.get("/callback", async (req, res) => {
 
   try {
     await handleOAuthCallback(code, state);
-    await resyncMeetingRemindersWithGoogleCalendar();
-    // res.redirect("https://calendar.google.com/calendar");
+    console.log("Redirecting to dashboard after Google Calendar connect");
     res.redirect(`${process.env.OLDORIGIN}/dashboard?googleAuthSuccess=1`);
   } catch (error) {
     console.error("Callback error:", error);

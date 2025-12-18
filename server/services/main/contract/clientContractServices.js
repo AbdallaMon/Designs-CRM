@@ -12,6 +12,7 @@ export async function getDefaultContractUtilityData(lng) {
   }
 }
 export async function getContractSessionByToken({ token }) {
+  console.log(token, " token in service");
   const session = await prisma.contract.findUnique({
     where: { arToken: token },
     include: {

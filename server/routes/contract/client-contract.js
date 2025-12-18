@@ -10,6 +10,7 @@ const router = Router();
 
 router.get(`/session`, async (req, res) => {
   try {
+    console.log(req.query, " req.query");
     const contractSession = await getContractSessionByToken({
       token: req.query.token,
     });

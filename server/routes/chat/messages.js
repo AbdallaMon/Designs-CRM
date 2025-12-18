@@ -3,9 +3,6 @@ import multer from "multer";
 import prisma from "../../prisma/prisma.js";
 import {
   getMessages,
-  sendMessage,
-  editMessage,
-  deleteMessage,
   markMessagesAsRead,
   addReaction,
   removeReaction,
