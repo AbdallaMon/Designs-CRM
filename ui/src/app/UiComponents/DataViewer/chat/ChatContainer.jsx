@@ -56,6 +56,7 @@ export function ChatContainer({
   projectId = null,
   clientLeadId = null,
 }) {
+  return;
   const { user, isLoggedIn } = useAuth();
   const { setLoading: setToastLoading } = useToastContext();
   const theme = useTheme();
