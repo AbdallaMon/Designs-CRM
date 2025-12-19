@@ -159,6 +159,7 @@ enum ChatRoomType {
   PROJECT_GROUP
   CLIENT_TO_STAFF
   MULTI_PROJECT
+  GROUP
 }
 
 enum ChatMessageType {

@@ -73,8 +73,6 @@ export async function getCalendarClient(userId) {
       googleTokenExpiresAt: true,
     },
   });
-  console.log("Getting calendar client for user:", user);
-  console.log("Getting calendar client for userId:", userId);
 
   if (!user.googleRefreshToken) {
     throw new Error("Google Calendar not connected");
@@ -268,11 +266,17 @@ export async function disconnectGoogleCalendar(userId) {
 }
 
 export async function isGoogleCalendarConnected(userId) {
-  const isConnected = await getCalendarClient(userId);
-  if (isConnected) {
-    return await resyncMeetingRemindersWithGoogleCalendar(Number(userId));
+  try {
+    const isConnected = await getCalendarClient(userId);
+    console.log("Google Calendar is connected:", isConnected);
+    if (isConnected) {
+      return await resyncMeetingRemindersWithGoogleCalendar(Number(userId));
+    }
+    return false;
+  } catch (error) {
+    console.error("Error checking Google Calendar connection:", error);
+    return false;
   }
-  return false;
 }
 export async function resyncMeetingRemindersWithGoogleCalendar(userId) {
   // check meeting that are today or comming and has an availableSLot and no googleEventId

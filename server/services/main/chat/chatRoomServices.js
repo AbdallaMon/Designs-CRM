@@ -12,6 +12,7 @@ export async function getChatRooms({
   page = 0,
   limit = 20,
   search = "",
+  chatType,
 }) {
   const parsedUserId = parseInt(userId);
   const pageNumber = Number.isFinite(parseInt(page)) ? parseInt(page) : 0;
@@ -26,8 +27,45 @@ export async function getChatRooms({
       },
     },
   };
-
+  // const chipsItems = [
+  //   { label: "All", value: "all" },
+  //   { label: "Unread", value: "unread" },
+  //   { label: "Archived", value: "archived" },
+  //   { label: "Direct", value: "direct" },
+  //   { label: "Group", value: "group" },
+  //   { label: "Project", value: "project" },
+  //   { label: "Client leads", value: "client_leads" },
+  // ];
   // Apply filters
+  if (chatType) {
+    if (chatType === "DIRECT") {
+      where.type = "STAFF_TO_STAFF";
+    } else if (chatType === "GROUP") {
+      where.type = "GROUP";
+    } else if (chatType === "PROJECT") {
+      where.type = { in: ["PROJECT_GROUP", "MULTI_PROJECT"] };
+    } else if (chatType === "CLIENT_LEADS") {
+      where.type = "CLIENT_TO_STAFF";
+    } else if (chatType === "ARCHIVED") {
+      where.isArchived = true;
+    } else if (chatType === "UNREAD") {
+      where.messages = {
+        some: {
+          readReceipts: {
+            none: {
+              member: {
+                userId: parsedUserId,
+              },
+            },
+          },
+          senderId: { not: parsedUserId },
+        },
+      };
+    }
+  }
+  if (!chatType || chatType !== "ARCHIVED") {
+    where.isArchived = false;
+  }
   if (category === "ARCHIVED") {
     where.isArchived = true;
   } else if (category === "DIRECT") {
@@ -38,6 +76,7 @@ export async function getChatRooms({
   if (search) {
     where.OR = [
       {
+        type: "STAFF_TO_STAFF",
         members: {
           some: {
             user: {

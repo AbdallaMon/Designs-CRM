@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Paper,
@@ -36,37 +36,21 @@ import { ChatRoomsList } from "./components/ChatRoomsList";
 import { ChatWindow } from "./components/ChatWindow";
 import { useChatRooms, useSocket } from "./hooks";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { getData } from "@/app/helpers/functions/getData";
 import { CHAT_ROOM_TYPES } from "./utils/chatConstants";
 import { useRouter, useSearchParams } from "next/navigation";
 
-/**
- * Unified Chat Container Component
- * Handles all chat logic and renders different UIs based on type
- *
- * Types:
- * - "page": Full page chat (for /dashboard/chat)
- * - "widget": Floating chat widget (bottom right)
- * - "project": Project-specific chat
- * - "clientLead": Client lead chat
- */
 export function ChatContainer({
   type = "page", // "page" | "widget" | "project" | "clientLead"
   projectId = null,
   clientLeadId = null,
 }) {
-  return;
   const { user, isLoggedIn } = useAuth();
-  const { setLoading: setToastLoading } = useToastContext();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // ============================================
-  // STATE MANAGEMENT
-  // ============================================
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [createRoomOpen, setCreateRoomOpen] = useState(false);
   const [roomName, setRoomName] = useState("");
@@ -93,11 +77,16 @@ export function ChatContainer({
     loadMoreRooms,
     totalPages,
     page,
+    onSearchChange,
+    onChatTypeChange,
   } = useChatRooms({ projectId, category: null, limit: 25 });
 
   // Message sound (widget only)
-  const messageSound =
-    typeof Audio !== "undefined" ? new Audio("/message-sound.mp3") : null;
+  const messageSoundRef = useRef(null);
+  useEffect(() => {
+    if (typeof Audio !== "undefined")
+      messageSoundRef.current = new Audio("/message-sound.mp3");
+  }, []);
 
   useSocket({
     onMessagesReadNotification: (data) => {
@@ -111,15 +100,13 @@ export function ChatContainer({
     onNewMessageNotification: (data) => {
       fetchRooms(0, false);
       // Play sound in widget if message is from another user and not in selected room
-      console.log("New message notification received:", data);
       if (
         !data.isMuted &&
-        messageSound &&
+        messageSoundRef.current &&
         data.message.senderId !== user?.id &&
         data.roomId !== selectedRoom?.id
       ) {
-        console.log("Playing message sound");
-        messageSound.play().catch((error) => {
+        messageSoundRef.current.play().catch((error) => {
           // Sound play error - continue anyway
         });
       }
@@ -128,18 +115,11 @@ export function ChatContainer({
       // Only show typing if not in the room and not from self
       if (data.roomId !== selectedRoom?.id && data.userId !== user?.id) {
         setTypingRooms((prev) => {
-          const roomTyping = prev[data.roomId] || new Set();
-          if (roomTyping instanceof Set) {
-            roomTyping.add(data.userId);
-          } else {
-            const newSet = new Set();
-            newSet.add(data.userId);
-            return { ...prev, [data.roomId]: newSet };
-          }
-          return { ...prev, [data.roomId]: roomTyping };
+          const next = new Set(prev[data.roomId] || []);
+          next.add(data.userId);
+          return { ...prev, [data.roomId]: next };
         });
       } else {
-        console.log("❌ Ignoring typing (same room or self)");
       }
     },
     onStopTypingNotification: (data) => {
@@ -310,7 +290,8 @@ export function ChatContainer({
       initialLoading={roomsLoading}
       isWidget={type === "widget"}
       typingRooms={typingRooms}
-      onSearch={(search) => fetchRooms(0, false, search)}
+      onSearch={(search) => onSearchChange(search)}
+      onSelectChatType={(chatType) => onChatTypeChange(chatType)}
     />
   );
 
@@ -439,12 +420,15 @@ export function ChatContainer({
             color="error"
             badgeContent={totalUnread}
             overlap="circular"
+            anchorOrigin={{ vertical: "top", horizontal: "right" }}
             sx={{
               "& .MuiBadge-badge": {
                 fontWeight: 600,
                 fontSize: "0.75rem",
                 minWidth: "20px",
                 height: "20px",
+                right: -6,
+                top: -6,
               },
             }}
           >
@@ -471,10 +455,10 @@ export function ChatContainer({
 
         <Slide direction="up" in={widgetOpen} mountOnEnter unmountOnExit>
           <Paper
-            elevation={20}
+            elevation={24}
             sx={{
               position: "fixed",
-              zIndex: 1399,
+              zIndex: 500,
               bottom: isMobile ? 12 : 80,
               right: isMobile ? 12 : 16,
               left: isMobile ? 12 : "auto",

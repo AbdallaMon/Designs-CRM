@@ -2,7 +2,7 @@ import prisma from "../../../prisma/prisma.js";
 import { getIo } from "../../socket.js";
 
 /**
- * Get messages for a room
+ * Get messages for a room with day grouping
  */
 export async function getMessages({ roomId, userId, page = 0, limit = 50 }) {
   const skip = page * limit;
@@ -39,7 +39,8 @@ export async function getMessages({ roomId, userId, page = 0, limit = 50 }) {
       },
     });
   }
-
+  console.log(page, limit, "page,limit");
+  console.log(skip, "skip");
   const [messages, total] = await Promise.all([
     prisma.chatMessage.findMany({
       where: {
@@ -51,7 +52,7 @@ export async function getMessages({ roomId, userId, page = 0, limit = 50 }) {
       orderBy: { createdAt: "desc" },
       include: {
         sender: {
-          select: { id: true, name: true, email: true },
+          select: { id: true, name: true, email: true, profilePicture: true },
         },
         client: {
           select: { id: true, name: true, email: true },
@@ -84,13 +85,75 @@ export async function getMessages({ roomId, userId, page = 0, limit = 50 }) {
       },
     }),
   ]);
-  // mark latest unread messagess as read
 
+  // Add day grouping metadata
+  const messagesWithGrouping = addDayGrouping(messages.reverse());
   return {
-    data: messages.reverse(), // Oldest first
+    data: messagesWithGrouping,
     total,
     totalPages: Math.ceil(total / limit),
   };
+}
+
+/**
+ * Add day grouping metadata to messages
+ */
+function addDayGrouping(messages) {
+  if (!messages || messages.length === 0) return [];
+
+  const now = new Date();
+  let previousDayGroup = null;
+
+  return messages.map((msg) => {
+    const msgDate = new Date(msg.createdAt);
+    const dayGroup = getDayGroup(msgDate, now);
+    const showDayDivider = dayGroup !== previousDayGroup;
+
+    previousDayGroup = dayGroup;
+
+    return {
+      ...msg,
+      dayGroup,
+      showDayDivider,
+    };
+  });
+}
+
+/**
+ * Determine day group label for a message
+ */
+function getDayGroup(msgDate, now) {
+  // Reset time to midnight for comparison
+  const msgDay = new Date(
+    msgDate.getFullYear(),
+    msgDate.getMonth(),
+    msgDate.getDate()
+  );
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const diffTime = today.getTime() - msgDay.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) {
+    return "today";
+  } else if (diffDays === 1) {
+    return "yesterday";
+  } else if (diffDays < 7) {
+    // Return day name for current week
+    const days = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    return days[msgDate.getDay()];
+  } else {
+    // Return formatted date for older messages
+    return msgDate.toISOString().split("T")[0]; // YYYY-MM-DD
+  }
 }
 
 export async function emitToAllUsersRelatedToARoom({

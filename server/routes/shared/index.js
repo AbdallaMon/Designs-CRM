@@ -27,6 +27,7 @@ import siteUtilitiesServices from "../site-utilities/siteUtility.js";
 import chatRoomsRouter from "../chat/rooms.js";
 import chatMessagesRouter from "../chat/messages.js";
 import chatMembersRouter from "../chat/members.js";
+import chatFilesRouter from "../chat/files.js";
 
 import {
   addNote,
@@ -59,6 +60,7 @@ router.use("/image-session", imageSessionRouter);
 router.use("/chat/rooms", chatRoomsRouter);
 router.use("/chat", chatMessagesRouter);
 router.use("/chat/rooms", chatMembersRouter);
+router.use("/chat/rooms", chatFilesRouter);
 
 /* ======================================================================================= */
 /*                                  Feature Sub-Routers                                    */

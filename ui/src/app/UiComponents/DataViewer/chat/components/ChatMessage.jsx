@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import {
   Box,
-  Paper,
   Typography,
   IconButton,
   Menu,
@@ -12,7 +11,6 @@ import {
   Stack,
   Chip,
   Avatar,
-  Tooltip,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -25,11 +23,181 @@ import {
   FaEdit,
   FaTrash,
   FaDownload,
+  FaPlay,
+  FaFile,
 } from "react-icons/fa";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { FILE_TYPE_CONFIG } from "@/app/helpers/constants";
 
 dayjs.extend(relativeTime);
+
+/* ===================== Helpers ===================== */
+
+function getFileConfig(mimeType) {
+  return (
+    FILE_TYPE_CONFIG[mimeType] || {
+      icon: FaFile,
+      color: "#757575",
+      label: "File",
+    }
+  );
+}
+
+function isImage(mime) {
+  return mime?.startsWith("image/");
+}
+function isVideo(mime) {
+  return mime?.startsWith("video/");
+}
+function isAudio(mime) {
+  return mime?.startsWith("audio/");
+}
+function isPdf(mime) {
+  return mime === "application/pdf";
+}
+
+/* ===================== Media Renderer ===================== */
+
+function MediaRenderer({ file }) {
+  const [open, setOpen] = useState(false);
+  const { icon: Icon, color, label } = getFileConfig(file.fileMimeType);
+
+  /* ---------- IMAGE ---------- */
+  if (isImage(file.fileMimeType)) {
+    return (
+      <>
+        <Box
+          component="img"
+          src={file.fileUrl}
+          alt={file.fileName}
+          sx={{
+            maxWidth: "100%",
+            maxHeight: 280,
+            borderRadius: 1,
+            cursor: "pointer",
+          }}
+          onClick={() => setOpen(true)}
+        />
+
+        <Dialog
+          open={open}
+          onClose={() => setOpen(false)}
+          maxWidth="lg"
+          fullWidth
+        >
+          <DialogContent sx={{ p: 0 }}>
+            <Box
+              component="img"
+              src={file.fileUrl}
+              alt={file.fileName}
+              sx={{ width: "100%", height: "100%", objectFit: "contain" }}
+            />
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
+  /* ---------- VIDEO ---------- */
+  if (isVideo(file.fileMimeType)) {
+    return (
+      <>
+        <Box sx={{ position: "relative" }}>
+          <video
+            src={file.fileUrl}
+            controls
+            style={{ width: "100%", borderRadius: 8 }}
+          />
+          <IconButton
+            onClick={() => setOpen(true)}
+            sx={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              bgcolor: "rgba(0,0,0,0.6)",
+              color: "#fff",
+            }}
+          >
+            <FaPlay />
+          </IconButton>
+        </Box>
+
+        <Dialog
+          open={open}
+          onClose={() => setOpen(false)}
+          maxWidth="lg"
+          fullWidth
+        >
+          <DialogContent sx={{ p: 0 }}>
+            <video
+              src={file.fileUrl}
+              controls
+              autoPlay
+              style={{ width: "100%" }}
+            />
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
+  /* ---------- AUDIO ---------- */
+  if (isAudio(file.fileMimeType)) {
+    return <audio src={file.fileUrl} controls style={{ width: "100%" }} />;
+  }
+
+  /* ---------- PDF ---------- */
+  if (isPdf(file.fileMimeType)) {
+    return (
+      <>
+        <Box
+          onClick={() => setOpen(true)}
+          sx={{
+            cursor: "pointer",
+            border: "1px solid #ddd",
+            borderRadius: 1,
+            overflow: "hidden",
+          }}
+        >
+          <iframe
+            src={file.fileUrl}
+            style={{ width: "100%", height: 300, border: "none" }}
+          />
+        </Box>
+
+        <Dialog
+          open={open}
+          onClose={() => setOpen(false)}
+          maxWidth="lg"
+          fullWidth
+        >
+          <DialogContent sx={{ p: 0 }}>
+            <iframe
+              src={file.fileUrl}
+              style={{ width: "100%", height: "90vh", border: "none" }}
+            />
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
+  /* ---------- OTHER FILES ---------- */
+  return (
+    <Chip
+      icon={<Icon color={color} />}
+      label={`${label} • ${file.fileName}`}
+      onClick={() => window.open(file.fileUrl, "_blank")}
+      deleteIcon={<FaDownload />}
+      onDelete={() => window.open(file.fileUrl, "_blank")}
+      variant="outlined"
+      sx={{ cursor: "pointer" }}
+    />
+  );
+}
+
+/* ===================== Main Component ===================== */
 
 export function ChatMessage({
   message,
@@ -41,47 +209,16 @@ export function ChatMessage({
   isEditing = false,
 }) {
   const [menuAnchor, setMenuAnchor] = useState(null);
-  const [editText, setEditText] = useState(message.content || "");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const isOwnMessage =
-    (message.sender?.id === currentUserId && message.type !== "SYSTEM") ||
-    (message.client?.id === currentUserId && message.type !== "SYSTEM");
-
-  const handleMenuOpen = (e) => setMenuAnchor(e.currentTarget);
-  const handleMenuClose = () => setMenuAnchor(null);
-
-  const handleEditSave = () => {
-    if (editText.trim()) {
-      onEdit(message.id, editText);
-    }
-  };
-
-  const handleDeleteConfirm = () => {
-    onDelete(message.id);
-    setDeleteConfirm(false);
-  };
-
-  const senderName = message.sender?.name || message.client?.name || "Unknown";
-  const senderAvatar = message.sender?.avatar || message.client?.avatar;
-
-  const formatFileSize = (bytes) => {
-    if (!bytes) return "0 B";
-    const k = 1024;
-    const sizes = ["B", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
-  };
+    message.sender?.id === currentUserId ||
+    message.client?.id === currentUserId;
 
   if (message.type === "SYSTEM") {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
-        <Chip
-          label={message.content}
-          size="small"
-          variant="outlined"
-          color="default"
-        />
+        <Chip label={message.content} size="small" />
       </Box>
     );
   }
@@ -93,250 +230,92 @@ export function ChatMessage({
         justifyContent: isOwnMessage ? "flex-end" : "flex-start",
         mb: 2,
         gap: 1,
-        animation: "fadeIn 0.3s ease-in",
-        "@keyframes fadeIn": {
-          from: { opacity: 0, transform: "translateY(10px)" },
-          to: { opacity: 1, transform: "translateY(0)" },
-        },
       }}
     >
       {!isOwnMessage && (
-        <Avatar
-          sx={{
-            width: 32,
-            height: 32,
-            cursor: "pointer",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-            transition: "all 0.2s ease",
-            "&:hover": {
-              transform: "scale(1.1)",
-              boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
-            },
-          }}
-          src={senderAvatar}
-          alt={senderName}
-        >
-          {senderName.charAt(0)}
+        <Avatar src={message.sender?.avatar}>
+          {message.sender?.name?.[0]}
         </Avatar>
       )}
 
       <Box
         sx={{
-          maxWidth: "60%",
-          display: "flex",
-          flexDirection: "column",
-          position: "relative",
-          backgroundColor: isOwnMessage ? "primary.main" : "grey.100",
-          color: isOwnMessage ? "primary.contrastText" : "text.primary",
-          borderRadius: 1.5,
+          maxWidth: "65%",
           p: 1.5,
           pr: 4,
+          borderRadius: 2,
+          bgcolor: isOwnMessage ? "primary.main" : "grey.100",
+          color: isOwnMessage ? "primary.contrastText" : "text.primary",
+          position: "relative",
         }}
       >
-        {(isOwnMessage || isCurrentUserAdmin) && (
-          <Box
-            sx={{
-              position: "absolute",
-              top: 4,
-              right: 4,
-            }}
-          >
+        {
+          <>
             <IconButton
               size="small"
-              onClick={handleMenuOpen}
-              sx={{
-                opacity: 0.3,
-                transition: "opacity 0.2s ease",
-                "&:hover": { opacity: 1 },
-              }}
+              onClick={(e) => setMenuAnchor(e.currentTarget)}
+              sx={{ position: "absolute", top: 4, right: 4 }}
             >
-              <FaEllipsisV size={12} />
+              <FaEllipsisV />
             </IconButton>
+
             <Menu
               anchorEl={menuAnchor}
               open={Boolean(menuAnchor)}
-              onClose={handleMenuClose}
+              onClose={() => setMenuAnchor(null)}
             >
               <MenuItem onClick={() => onReply(message)}>
-                <FaReply size={14} style={{ marginRight: 8 }} />
-                Reply
+                <FaReply style={{ marginRight: 8 }} /> Reply
               </MenuItem>
               {isOwnMessage && (
                 <MenuItem onClick={() => onEdit(message.id)}>
-                  <FaEdit size={14} style={{ marginRight: 8 }} />
-                  Edit
+                  <FaEdit style={{ marginRight: 8 }} /> Edit
                 </MenuItem>
               )}
-              <MenuItem onClick={() => setDeleteConfirm(true)}>
-                <FaTrash size={14} style={{ marginRight: 8 }} />
-                Delete
-              </MenuItem>
+              {(isOwnMessage || isCurrentUserAdmin) && (
+                <MenuItem onClick={() => setDeleteConfirm(true)}>
+                  <FaTrash style={{ marginRight: 8 }} /> Delete
+                </MenuItem>
+              )}
             </Menu>
-          </Box>
+          </>
+        }
+
+        {message.type === "TEXT" && (
+          <Typography variant="body2">{message.content}</Typography>
         )}
-        {!isOwnMessage && (
-          <Typography
-            variant="caption"
-            sx={{
-              mb: 0.5,
-              ml: 1,
-              fontWeight: 600,
-              color: "primary.main",
-              letterSpacing: "0.02em",
+
+        {message.type !== "TEXT" && message.fileUrl && (
+          <MediaRenderer
+            file={{
+              fileUrl: message.fileUrl,
+              fileName: message.fileName,
+              fileMimeType: message.fileMimeType,
             }}
-          >
-            {senderName}
-          </Typography>
+          />
         )}
 
-        {isEditing ? (
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <TextField
-              size="small"
-              fullWidth
-              multiline
-              maxRows={4}
-              value={editText}
-              onChange={(e) => setEditText(e.target.value)}
-              variant="outlined"
-            />
-            <Box sx={{ display: "flex", gap: 0.5 }}>
-              <Button size="small" onClick={handleEditSave}>
-                Save
-              </Button>
-              <Button
-                size="small"
-                onClick={() => {
-                  setEditText(message.content);
-                  onEdit(null);
-                }}
-              >
-                Cancel
-              </Button>
-            </Box>
-          </Box>
-        ) : (
-          <Box
-            sx={{
-              px: 1.5,
-              py: 1,
-              // color: isOwnMessage ? "primary.contrastText" : "text.primary",
-              wordBreak: "break-word",
-
-              transition: "all 0.2s ease",
-              backgroundColor: "transparent",
-            }}
-          >
-            {message.replyTo && (
-              <Box
-                sx={{
-                  mb: 1,
-                  pb: 1,
-                  borderLeft: `3px solid ${
-                    isOwnMessage ? "rgba(255,255,255,0.3)" : "primary.main"
-                  }`,
-                  pl: 1,
-                  opacity: 0.8,
-                  fontSize: "0.85rem",
-                }}
-              >
-                <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                  Reply to {message.replyTo.sender?.name}
-                </Typography>
-                <Typography variant="caption" sx={{ display: "block" }}>
-                  {message.replyTo.content?.substring(0, 50)}
-                  {message.replyTo.content?.length > 50 ? "..." : ""}
-                </Typography>
-              </Box>
-            )}
-
-            {message.type === "TEXT" && (
-              <Typography variant="body2">{message.content}</Typography>
-            )}
-
-            {message.type === "FILE" && (
-              <Stack spacing={0.5}>
-                <Typography variant="body2">{message.content}</Typography>
-                <Chip
-                  label={`📎 ${message.fileName} (${formatFileSize(
-                    message.fileSize
-                  )})`}
-                  onClick={() => window.open(message.fileUrl, "_blank")}
-                  deleteIcon={<FaDownload />}
-                  onDelete={() => window.open(message.fileUrl, "_blank")}
-                  size="small"
-                  variant="outlined"
-                />
-              </Stack>
-            )}
-
-            {message.type === "IMAGE" && (
-              <Box
-                component="img"
-                src={message.fileUrl}
-                alt="Message image"
-                sx={{
-                  maxWidth: "100%",
-                  maxHeight: 300,
-                  borderRadius: 1,
-                  cursor: "pointer",
-                }}
-                onClick={() => window.open(message.fileUrl, "_blank")}
-              />
-            )}
-
-            {message.isEdited && (
-              <Typography
-                variant="caption"
-                sx={{ display: "block", mt: 0.5, opacity: 0.7 }}
-              >
-                (edited)
-              </Typography>
-            )}
-          </Box>
-        )}
-
-        <Box sx={{ display: "flex", gap: 1, mt: 0.5, alignItems: "center" }}>
-          <Typography variant="caption" sx={{ opacity: 0.6 }}>
-            {dayjs(message.createdAt).format("HH:mm")}
-          </Typography>
-        </Box>
+        <Typography
+          variant="caption"
+          sx={{ display: "block", mt: 0.5, opacity: 0.6 }}
+        >
+          {dayjs(message.createdAt).format("HH:mm")}
+          {message.isEdited && " • edited"}
+        </Typography>
       </Box>
 
       {isOwnMessage && (
-        <Avatar
-          sx={{
-            width: 32,
-            height: 32,
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-            transition: "all 0.2s ease",
-            "&:hover": {
-              transform: "scale(1.1)",
-              boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
-            },
-          }}
-          src={senderAvatar}
-          alt={senderName}
-        >
-          {senderName.charAt(0)}
+        <Avatar src={message.sender?.avatar}>
+          {message.sender?.name?.[0]}
         </Avatar>
       )}
 
+      {/* Delete Confirm */}
       <Dialog open={deleteConfirm} onClose={() => setDeleteConfirm(false)}>
-        <DialogTitle>Delete Message?</DialogTitle>
-        <DialogContent>
-          <Typography>
-            This action cannot be undone. Are you sure you want to delete this
-            message?
-          </Typography>
-        </DialogContent>
+        <DialogTitle>Delete message?</DialogTitle>
         <DialogActions>
           <Button onClick={() => setDeleteConfirm(false)}>Cancel</Button>
-          <Button
-            onClick={handleDeleteConfirm}
-            variant="contained"
-            color="error"
-          >
+          <Button color="error" onClick={() => onDelete(message.id)}>
             Delete
           </Button>
         </DialogActions>

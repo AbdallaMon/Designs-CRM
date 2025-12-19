@@ -19,7 +19,14 @@ import {
   FaClipboardList,
   FaCube,
   FaCubes,
+  FaFileArchive,
+  FaFileAudio,
+  FaFileExcel,
+  FaFileImage,
+  FaFilePdf,
   FaFileUpload,
+  FaFileVideo,
+  FaFileWord,
   FaFlagCheckered,
   FaHandshake,
   FaProjectDiagram,
@@ -1322,3 +1329,46 @@ export const roleIcons = {
   SUPER_SALES: "🚀",
   PRIMARY_SALES: "⭐",
 };
+
+export const FILE_TYPE_CONFIG = {
+  "application/pdf": { icon: FaFilePdf, color: "#D32F2F", label: "PDF" },
+  "image/jpeg": { icon: FaFileImage, color: "#1976D2", label: "Image" },
+  "image/png": { icon: FaFileImage, color: "#1976D2", label: "Image" },
+  "image/gif": { icon: FaFileImage, color: "#1976D2", label: "Image" },
+  "image/webp": { icon: FaFileImage, color: "#1976D2", label: "Image" },
+  "video/mp4": { icon: FaFileVideo, color: "#7B1FA2", label: "Video" },
+  "video/webm": { icon: FaFileVideo, color: "#7B1FA2", label: "Video" },
+  "video/quicktime": { icon: FaFileVideo, color: "#7B1FA2", label: "Video" },
+  "audio/mpeg": { icon: FaFileAudio, color: "#F57C00", label: "Audio" },
+  "audio/wav": { icon: FaFileAudio, color: "#F57C00", label: "Audio" },
+  "audio/ogg": { icon: FaFileAudio, color: "#F57C00", label: "Audio" },
+  "application/msword": { icon: FaFileWord, color: "#2196F3", label: "Word" },
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+    icon: FaFileWord,
+    color: "#2196F3",
+    label: "Word",
+  },
+  "application/vnd.ms-excel": {
+    icon: FaFileExcel,
+    color: "#388E3C",
+    label: "Excel",
+  },
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+    icon: FaFileExcel,
+    color: "#388E3C",
+    label: "Excel",
+  },
+  "application/zip": { icon: FaFileArchive, color: "#616161", label: "ZIP" },
+  "application/x-rar-compressed": {
+    icon: FaFileArchive,
+    color: "#616161",
+    label: "RAR",
+  },
+};
+
+export const FILE_TYPE_CATEGORIES = [
+  { value: "image", label: "Images", icon: FaFileImage },
+  { value: "video", label: "Videos", icon: FaFileVideo },
+  { value: "audio", label: "Audio", icon: FaFileAudio },
+  { value: "document", label: "Docs", icon: FaFileWord },
+];

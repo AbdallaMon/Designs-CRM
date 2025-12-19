@@ -37,6 +37,7 @@ import {
 import { CHAT_ROOM_TYPE_LABELS, CHAT_ROOM_TYPES } from "../utils/chatConstants";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import ChatChips from "./ChatChips";
 
 dayjs.extend(relativeTime);
 
@@ -55,6 +56,7 @@ export function ChatRoomsList({
   isWidget = false,
   typingRooms = {},
   onSearch,
+  onSelectChatType,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuAnchor, setMenuAnchor] = useState(null);
@@ -227,6 +229,9 @@ export function ChatRoomsList({
             },
           }}
         />
+      </Box>
+      <Box>
+        <ChatChips onSelect={onSelectChatType} />
       </Box>
 
       {/* Rooms list */}

@@ -17,21 +17,33 @@ export function useChatRooms({
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const { setLoading: setToastLoading } = useToastContext();
-
+  const [chatType, setChatType] = useState(null);
+  const [searchKey, setSearchKey] = useState(null);
+  function onSearchChange(newSearchKey) {
+    setSearchKey(newSearchKey);
+    setPage(0);
+  }
+  function onChatTypeChange(newChatType) {
+    setChatType(newChatType);
+    setPage(0);
+  }
   const fetchRooms = useCallback(
-    async (nextPage = 0, append = false, search) => {
+    async (nextPage = 0, append = false) => {
       if (append) setLoadingMore(true);
       else setLoading(true);
       setError(null);
       try {
-        let url = `shared/chat/rooms?page=${nextPage}&limit=${limit}&`;
+        let url = `shared/chat/rooms?`;
         if (category) url += `category=${category}&`;
         if (projectId) url += `projectId=${projectId}&`;
-        if (search) url += `searchKey=${encodeURIComponent(search)}&`;
+        if (searchKey) url += `searchKey=${encodeURIComponent(searchKey)}&`;
+        if (chatType) url += `chatType=${chatType}&`;
 
         const response = await getData({
           url,
           setLoading: () => {},
+          page: nextPage,
+          limit,
         });
 
         if (response?.status === 200) {
@@ -50,7 +62,7 @@ export function useChatRooms({
         else setLoading(false);
       }
     },
-    [category, projectId, limit]
+    [category, projectId, limit, searchKey, chatType]
   );
 
   useEffect(() => {
@@ -140,5 +152,9 @@ export function useChatRooms({
     createRoom,
     updateRoom,
     deleteRoom,
+    onSearchChange,
+    onChatTypeChange,
+    chatType,
+    searchKey,
   };
 }

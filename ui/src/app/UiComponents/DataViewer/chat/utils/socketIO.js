@@ -12,7 +12,6 @@ export const initSocket = (url, options = {}) => {
   if (socket) {
     return socket;
   }
-  console.log(options, "options");
 
   socket = io(url, {
     reconnection: true,
