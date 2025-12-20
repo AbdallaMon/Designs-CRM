@@ -1928,11 +1928,12 @@ model ChatRoom {
   clientLeadId Int?
   clientLead   ClientLead?  @relation(fields: [clientLeadId], references: [id])
 
-  isMuted    Boolean @default(false)
-  isArchived Boolean @default(false)
+
   allowFiles Boolean @default(true)
   allowCalls Boolean @default(true)
-  
+  allowMeetings Boolean @default(true)
+  allowChatForMembers Boolean @default(true)
+
   // Chat room password (instead of client)
   chatPasswordHash String?
   isChatEnabled    Boolean @default(true)
@@ -1970,13 +1971,16 @@ model ChatMember {
   role ChatMemberRole @default(MEMBER)
 
   isMuted       Boolean   @default(false)
+  isArchived    Boolean   @default(false)
   isPinned      Boolean   @default(false)
   lastReadAt    DateTime?
+  isDeleted     Boolean   @default(false)
   notifyOnReply Boolean   @default(true)
+  
 
   joinedAt DateTime  @default(now())
   leftAt   DateTime?
-
+  createdAt DateTime  @default(now())
   readReceipts ChatReadReceipt[]
   typingStatus ChatTypingStatus[]
 

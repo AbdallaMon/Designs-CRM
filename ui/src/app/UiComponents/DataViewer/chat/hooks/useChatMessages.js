@@ -23,6 +23,10 @@ export function useChatMessages(roomId, initialPage = 0) {
   const [totalMessages, setTotalMessages] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingJumpToMessage, setLoadingJumpToMessage] = useState(false);
+  const [replyLoaded, setReplyLoaded] = useState(false);
+  const [replayLoadingMessageId, setReplayLoadingMessageId] = useState(null);
+  const [newMessagesCount, setNewMessagesCount] = useState(0);
   const { user } = useAuth();
   // ✅ attach this ref to your scrollable messages container (Box/Paper/etc)
   const scrollContainerRef = useRef(null);
@@ -81,21 +85,23 @@ export function useChatMessages(roomId, initialPage = 0) {
     },
     [roomId]
   );
-
+  useEffect(() => {
+    setInitialLoading(true);
+  }, [roomId]);
   useEffect(() => {
     if (!initialLoading) return;
     setMessages([]);
     setPage(0);
-    setHasMore(true);
     fetchMessages(0, false);
-  }, [roomId, fetchMessages]);
+  }, [roomId, fetchMessages, initialLoading]);
   useEffect(() => {
     if (!hasMore) return;
+    if (initialLoading) return;
 
     fetchMessages(page, true);
   }, [page]);
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView();
     setInitialLoading(false);
   };
 
@@ -155,21 +161,32 @@ export function useChatMessages(roomId, initialPage = 0) {
     };
   }, [loadMore]);
 
+  function checkIfMessageExistsAndJump(messageId) {
+    const chceckMessageExists = messages.find((m) => m.id === messageId);
+    if (chceckMessageExists) {
+      const el = document.getElementById(`message-${messageId}`);
+      if (el) {
+        el.scrollIntoView({ block: "center" });
+      }
+      return true;
+    }
+    return false;
+  }
+  async function onJumpToMessage(messageId) {
+    setLoadingJumpToMessage(true);
+    checkIfMessageExistsAndJump(messageId);
+    while (!checkIfMessageExistsAndJump(messageId)) {
+      loadMore();
+    }
+    setLoadingJumpToMessage(false);
+    setReplyLoaded(true);
+    setReplayLoadingMessageId(messageId);
+  }
+
   const sendMessage = async (messageData) => {
     if (!roomId) return null;
 
-    const optimisticMessage = {
-      id: `temp-${Date.now()}`,
-      ...messageData,
-      roomId,
-      senderId: user.id,
-      sender: user,
-      createdAt: new Date().toISOString(),
-      isEdited: false,
-      isDeleted: false,
-    };
-
-    setMessages((prev) => [...prev, optimisticMessage]);
+    // setMessages((prev) => [...prev, optimisticMessage]);
     scrollToBottom();
 
     sendNewMessage({
@@ -210,5 +227,13 @@ export function useChatMessages(roomId, initialPage = 0) {
 
     loadingMore,
     initialLoading,
+    onJumpToMessage,
+    loadingJumpToMessage,
+    setReplyLoaded,
+    replyLoaded,
+    replayLoadingMessageId,
+    setReplayLoadingMessageId,
+    newMessagesCount,
+    setNewMessagesCount,
   };
 }

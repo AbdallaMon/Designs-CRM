@@ -40,10 +40,7 @@ export default function GoogleProvider({ children }) {
       // Auto-hide success after 5 seconds
       setTimeout(() => setSuccess(false), 10000);
     }
-    console.log(
-      searchParams.get("googleAuthError"),
-      "searchParams.get(googleAuthError)"
-    );
+
     if (searchParams && searchParams.get("googleAuthError")) {
       setError(
         decodeURIComponent(searchParams.get("googleAuthError")).replace(
@@ -62,8 +59,7 @@ export default function GoogleProvider({ children }) {
       setTimeout(() => setIsConnecting(false), 1000);
     }
   };
-  console.log(error, "error");
-  console.log(success, "success");
+
   return (
     <>
       <Box sx={{}}>

@@ -4,6 +4,8 @@ import { Box } from "@mui/material";
 import colors from "@/app/helpers/colors.js";
 import ChatWidget from "@/app/UiComponents/DataViewer/chat/ChatWidget";
 import { Suspense } from "react";
+import SocketProvider from "@/app/providers/SocketProvider";
+import GoogleProvider from "@/app/providers/GoogleProvider";
 
 export default function AuthLayout({ children }) {
   return (
@@ -16,9 +18,13 @@ export default function AuthLayout({ children }) {
         backgroundColor: colors.bgSecondary,
       }}
     >
-      {children}
       <Suspense fallback={null}>
-        <ChatWidget />
+        <GoogleProvider>
+          <SocketProvider>
+            {children}
+            <ChatWidget />
+          </SocketProvider>
+        </GoogleProvider>
       </Suspense>
     </Box>
   );

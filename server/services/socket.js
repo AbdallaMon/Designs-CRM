@@ -66,6 +66,7 @@ export function initSocket(httpServer) {
 
       socket.join(`user:${id}`);
       userId = id;
+
       // Broadcast user is online
       io.emit("user:online", {
         userId: id,
@@ -78,7 +79,10 @@ export function initSocket(httpServer) {
     // ==================== EXISTING HEARTBEAT ====================
 
     // ==================== CHAT ROOM EVENTS ====================
-
+    socket.on("user:online", ({ userId }) => {
+      console.log("Updating last seen for user online:", userId);
+      updateLastSeen(userId);
+    });
     /**
      * Join a chat room
      */

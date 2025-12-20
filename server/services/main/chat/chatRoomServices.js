@@ -1,5 +1,7 @@
+import { th } from "@faker-js/faker";
 import prisma from "../../../prisma/prisma.js";
 import { getIo } from "../../socket.js";
+import { emitToAllUsersRelatedToARoom } from "./chatMessageServices.js";
 
 /**
  * Get chat rooms for a user with filters
@@ -23,20 +25,11 @@ export async function getChatRooms({
     members: {
       some: {
         userId: parsedUserId,
-        leftAt: null,
+        isDeleted: false,
       },
     },
   };
-  // const chipsItems = [
-  //   { label: "All", value: "all" },
-  //   { label: "Unread", value: "unread" },
-  //   { label: "Archived", value: "archived" },
-  //   { label: "Direct", value: "direct" },
-  //   { label: "Group", value: "group" },
-  //   { label: "Project", value: "project" },
-  //   { label: "Client leads", value: "client_leads" },
-  // ];
-  // Apply filters
+
   if (chatType) {
     if (chatType === "DIRECT") {
       where.type = "STAFF_TO_STAFF";
@@ -47,7 +40,10 @@ export async function getChatRooms({
     } else if (chatType === "CLIENT_LEADS") {
       where.type = "CLIENT_TO_STAFF";
     } else if (chatType === "ARCHIVED") {
-      where.isArchived = true;
+      where.members.some = {
+        ...where.members.some,
+        isArchived: true,
+      };
     } else if (chatType === "UNREAD") {
       where.messages = {
         some: {
@@ -64,10 +60,17 @@ export async function getChatRooms({
     }
   }
   if (!chatType || chatType !== "ARCHIVED") {
-    where.isArchived = false;
+    // where.isArchived = false;
+    where.members.some = {
+      ...where.members.some,
+      isArchived: false,
+    };
   }
   if (category === "ARCHIVED") {
-    where.isArchived = true;
+    where.members.some = {
+      ...where.members.some,
+      isArchived: true,
+    };
   } else if (category === "DIRECT") {
     where.type = "STAFF_TO_STAFF";
   } else if (category === "PROJECT") {
@@ -78,6 +81,7 @@ export async function getChatRooms({
       {
         type: "STAFF_TO_STAFF",
         members: {
+          isDeleted: false,
           some: {
             user: {
               name: {
@@ -119,7 +123,10 @@ export async function getChatRooms({
         },
         members: {
           where: {
-            leftAt: null,
+            isDeleted: false,
+            room: {
+              type: "STAFF_TO_STAFF",
+            },
           },
           select: {
             id: true,
@@ -127,12 +134,17 @@ export async function getChatRooms({
             role: true,
             leftAt: true,
             lastReadAt: true,
+            isDeleted: true,
+            isArchived: true,
+            createdAt: true,
             user: {
               select: {
                 id: true,
                 name: true,
                 email: true,
                 role: true,
+                lastSeenAt: true,
+                profilePicture: true,
               },
             },
             client: {
@@ -168,10 +180,17 @@ export async function getChatRooms({
   // Compute unread counts per room for this user
   const roomWithMeta = await Promise.all(
     rooms.map(async (room) => {
-      const selfMember = room.members.find((m) => m.userId === parsedUserId);
+      const selfMember = await prisma.chatMember.findFirst({
+        where: {
+          roomId: room.id,
+          userId: parsedUserId,
+          isDeleted: false,
+        },
+      });
       const otherMembers = room.members.filter(
         (m) => m.userId !== parsedUserId
       );
+
       const unreadCount = await prisma.chatMessage.count({
         where: {
           roomId: room.id,
@@ -189,6 +208,8 @@ export async function getChatRooms({
         unreadCount,
         lastMessage,
         otherMembers,
+        lastSeenAt:
+          otherMembers?.length > 0 ? otherMembers[0].user.lastSeenAt : null,
       };
     })
   );
@@ -213,17 +234,9 @@ export async function createChatRoom({
   allowFiles = true,
   allowCalls = true,
   isChatEnabled = true,
+  allowChatForMembers = true,
+  allowMeetings = true,
 }) {
-  // Validate room type
-  const validTypes = [
-    "STAFF_TO_STAFF",
-    "PROJECT_GROUP",
-    "CLIENT_TO_STAFF",
-    "MULTI_PROJECT",
-  ];
-  if (!validTypes.includes(type)) {
-    throw new Error("Invalid room type");
-  }
   // Create room
   const room = await prisma.chatRoom.create({
     data: {
@@ -235,6 +248,8 @@ export async function createChatRoom({
       allowFiles,
       allowCalls,
       isChatEnabled,
+      allowChatForMembers,
+      allowMeetings,
     },
   });
 
@@ -258,17 +273,13 @@ export async function createChatRoom({
     role: "ADMIN",
   });
 
-  // Add other users
-  if (userIds && userIds.length > 0) {
-    userIds
-      .filter((id) => id !== createdById)
-      .forEach((uid) => {
-        memberData.push({
-          roomId: room.id,
-          userId: parseInt(uid),
-          role: "MEMBER",
-        });
-      });
+  const filteredUserIds = userIds?.filter((id) => id !== createdById) || [];
+  for (const uid of filteredUserIds) {
+    memberData.push({
+      roomId: room.id,
+      userId: parseInt(uid),
+      role: "MEMBER",
+    });
   }
 
   await prisma.chatMember.createMany({
@@ -301,8 +312,16 @@ export async function createChatRoom({
   // Emit Socket.IO event to notify members
   try {
     const io = getIo();
-    memberData.forEach((member) => {
-      io.to(`user:${member.userId}`).emit("room:created", completeRoom);
+    // memberData.forEach((member) => {
+    //   // io.to(`user:${member.userId}`).emit("room:created", completeRoom);
+    // });
+    await emitToAllUsersRelatedToARoom({
+      roomId: room.id,
+      userId: createdById,
+      content: {
+        roomId: parseInt(room.id),
+      },
+      type: "notification:room_created",
     });
   } catch (error) {
     console.error("Socket.IO emit error:", error);
@@ -320,7 +339,7 @@ export async function updateChatRoom(roomId, userId, updates) {
     where: {
       roomId: parseInt(roomId),
       userId: parseInt(userId),
-      leftAt: null,
+      isDeleted: false,
     },
   });
 
@@ -328,28 +347,12 @@ export async function updateChatRoom(roomId, userId, updates) {
     throw new Error("You don't have permission to update this room");
   }
 
-  const room = await prisma.chatRoom.update({
-    where: { id: parseInt(roomId) },
+  const update = await prisma.chatMember.update({
+    where: { id: member.id },
     data: updates,
-    include: {
-      members: {
-        where: { leftAt: null },
-        include: {
-          user: { select: { id: true, name: true, email: true } },
-        },
-      },
-    },
   });
 
-  // Emit update to all members
-  try {
-    const io = getIo();
-    io.to(`room:${roomId}`).emit("room:updated", room);
-  } catch (error) {
-    console.error("Socket.IO emit error:", error);
-  }
-
-  return room;
+  return update;
 }
 
 /**
@@ -362,12 +365,17 @@ export async function deleteChatRoom(roomId, userId) {
       roomId: parseInt(roomId),
       userId: parseInt(userId),
       role: "ADMIN",
-      leftAt: null,
+      isDeleted: false,
     },
   });
-
+  const room = await prisma.chatRoom.findUnique({
+    where: { id: parseInt(roomId) },
+  });
   if (!member) {
     throw new Error("You don't have permission to delete this room");
+  }
+  if (room.type === "STAFF_TO_STAFF" || room.type === "PROJECT_GROUP") {
+    throw new Error("Direct chat rooms cannot be deleted");
   }
 
   await prisma.chatRoom.delete({
@@ -375,12 +383,14 @@ export async function deleteChatRoom(roomId, userId) {
   });
 
   // Emit deletion to all members
-  try {
-    const io = getIo();
-    io.to(`room:${roomId}`).emit("room:deleted", { roomId });
-  } catch (error) {
-    console.error("Socket.IO emit error:", error);
-  }
+  await emitToAllUsersRelatedToARoom({
+    roomId,
+    userId,
+    content: {
+      roomId: parseInt(roomId),
+    },
+    type: "notification:room_deleted",
+  });
 
   return { message: "Chat room deleted successfully" };
 }
@@ -394,7 +404,7 @@ export async function getChatRoomById(roomId, userId) {
     where: {
       roomId: parseInt(roomId),
       userId: parseInt(userId),
-      leftAt: null,
+      isDeleted: false,
     },
   });
 
@@ -414,17 +424,7 @@ export async function getChatRoomById(roomId, userId) {
       clientLead: {
         select: { id: true, code: true },
       },
-      members: {
-        where: { leftAt: null },
-        include: {
-          user: {
-            select: { id: true, name: true, email: true, role: true },
-          },
-          client: {
-            select: { id: true, name: true, email: true },
-          },
-        },
-      },
+
       multiProjectRooms: {
         include: {
           project: { select: { id: true, groupTitle: true } },

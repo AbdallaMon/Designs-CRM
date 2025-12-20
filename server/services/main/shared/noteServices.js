@@ -172,10 +172,16 @@ export async function deleteAModel({ id, isAdmin, data, isSuperSales }) {
   }
   if (data.deleteModelesBeforeMain) {
     for (const mod of data.deleteModelesBeforeMain) {
+      let where = {};
+      if (mod.key) {
+        where[mod.key] = Number(id);
+      } else if (mod.keyIn) {
+        where = {
+          ...mod.keyIn,
+        };
+      }
       await prisma[mod.name].deleteMany({
-        where: {
-          [mod.key]: Number(id),
-        },
+        where,
       });
     }
   }

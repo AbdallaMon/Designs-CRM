@@ -1,14 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
   IconButton,
   Menu,
   MenuItem,
-  TextField,
-  Stack,
   Chip,
   Avatar,
   Dialog,
@@ -16,7 +14,9 @@ import {
   DialogContent,
   DialogActions,
   Button,
+  CircularProgress,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import {
   FaEllipsisV,
   FaReply,
@@ -57,13 +57,85 @@ function isPdf(mime) {
   return mime === "application/pdf";
 }
 
+function truncateText(text = "", max = 90) {
+  const t = String(text || "");
+  if (t.length <= max) return t;
+  return t.slice(0, max).trim() + "…";
+}
+
+/* ===================== Reply Preview ===================== */
+
+function ReplyPreview({
+  loadingReplayJump,
+  replyTo,
+  isOwnMessage,
+  onJumpToMessage,
+}) {
+  if (!replyTo) return null;
+
+  const repliedName =
+    replyTo?.sender?.name || replyTo?.senderClient?.name || "Unknown";
+
+  const repliedContent = replyTo?.isDeleted
+    ? "(Deleted message)"
+    : replyTo?.content?.trim()
+    ? truncateText(replyTo.content, 110)
+    : "(No text)";
+
+  return (
+    <Box
+      onClick={() => onJumpToMessage?.(replyTo.id)}
+      sx={{
+        mb: 1,
+        px: 1,
+        py: 0.75,
+        borderRadius: 1,
+        cursor: onJumpToMessage ? "pointer" : "default",
+        borderLeft: "4px solid",
+        borderLeftColor: isOwnMessage
+          ? "rgba(255,255,255,0.8)"
+          : "primary.main",
+        bgcolor: isOwnMessage
+          ? "rgba(255,255,255,0.12)"
+          : "rgba(25,118,210,0.08)",
+        position: "relative",
+      }}
+    >
+      {loadingReplayJump && (
+        <Box sx={{ position: "absolute", top: 8, right: 8 }}>
+          <CircularProgress size={12} />
+        </Box>
+      )}
+      <Typography
+        variant="caption"
+        sx={{
+          display: "block",
+          fontWeight: 700,
+          opacity: isOwnMessage ? 0.95 : 0.9,
+        }}
+      >
+        Replying to {repliedName}
+      </Typography>
+
+      <Typography
+        variant="caption"
+        sx={{
+          display: "block",
+          opacity: isOwnMessage ? 0.85 : 0.8,
+        }}
+      >
+        {repliedContent}
+      </Typography>
+    </Box>
+  );
+}
+
 /* ===================== Media Renderer ===================== */
 
 function MediaRenderer({ file }) {
   const [open, setOpen] = useState(false);
   const { icon: Icon, color, label } = getFileConfig(file.fileMimeType);
 
-  /* ---------- IMAGE ---------- */
   if (isImage(file.fileMimeType)) {
     return (
       <>
@@ -85,13 +157,23 @@ function MediaRenderer({ file }) {
           onClose={() => setOpen(false)}
           maxWidth="lg"
           fullWidth
+          sx={{
+            "& .MuiPaper-root": {
+              margin: "10px !important",
+            },
+          }}
         >
           <DialogContent sx={{ p: 0 }}>
             <Box
               component="img"
               src={file.fileUrl}
               alt={file.fileName}
-              sx={{ width: "100%", height: "100%", objectFit: "contain" }}
+              sx={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                maxHeight: "90vh",
+              }}
             />
           </DialogContent>
         </Dialog>
@@ -99,7 +181,6 @@ function MediaRenderer({ file }) {
     );
   }
 
-  /* ---------- VIDEO ---------- */
   if (isVideo(file.fileMimeType)) {
     return (
       <>
@@ -142,12 +223,10 @@ function MediaRenderer({ file }) {
     );
   }
 
-  /* ---------- AUDIO ---------- */
   if (isAudio(file.fileMimeType)) {
     return <audio src={file.fileUrl} controls style={{ width: "100%" }} />;
   }
 
-  /* ---------- PDF ---------- */
   if (isPdf(file.fileMimeType)) {
     return (
       <>
@@ -183,7 +262,6 @@ function MediaRenderer({ file }) {
     );
   }
 
-  /* ---------- OTHER FILES ---------- */
   return (
     <Chip
       icon={<Icon color={color} />}
@@ -206,14 +284,50 @@ export function ChatMessage({
   onReply,
   onEdit,
   onDelete,
-  isEditing = false,
+  onJumpToMessage,
+  loadingReplayJump,
+  setReplyLoaded,
+  replyLoaded,
+  replayLoadingMessageId,
+  setReplayLoadingMessageId,
 }) {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
+  // ✅ local state for the pulse animation
+  const [flashOn, setFlashOn] = useState(false);
+
   const isOwnMessage =
     message.sender?.id === currentUserId ||
     message.client?.id === currentUserId;
+
+  const isDeleted = Boolean(message.isDeleted);
+
+  const isFileLikeMessage =
+    message.type !== "TEXT" && message.type !== "SYSTEM";
+  const hasFile = Boolean(message.fileUrl) && isFileLikeMessage;
+  const hasContent = Boolean(message.content?.trim());
+
+  // ✅ should pulse when reply is loaded AND this is the target message
+  const shouldFlash =
+    Boolean(replyLoaded) &&
+    String(replayLoadingMessageId) === String(message.id);
+
+  useEffect(() => {
+    if (!shouldFlash) return;
+
+    setFlashOn(true);
+
+    const timer = setTimeout(() => {
+      setFlashOn(false);
+
+      // ✅ auto reset flags + remove the id after pulse ends
+      setReplyLoaded?.(false);
+      setReplayLoadingMessageId?.(null);
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [shouldFlash, setReplyLoaded, setReplayLoadingMessageId]);
 
   if (message.type === "SYSTEM") {
     return (
@@ -231,6 +345,7 @@ export function ChatMessage({
         mb: 2,
         gap: 1,
       }}
+      id={`message-${message.id}`}
     >
       {!isOwnMessage && (
         <Avatar src={message.sender?.avatar}>
@@ -239,22 +354,95 @@ export function ChatMessage({
       )}
 
       <Box
-        sx={{
-          maxWidth: "65%",
-          p: 1.5,
-          pr: 4,
-          borderRadius: 2,
-          bgcolor: isOwnMessage ? "primary.main" : "grey.100",
-          color: isOwnMessage ? "primary.contrastText" : "text.primary",
-          position: "relative",
+        sx={(theme) => {
+          const ringColor = isOwnMessage
+            ? alpha(theme.palette.common.white, 0.65)
+            : alpha(theme.palette.primary.main, 0.65);
+
+          const glowColor = isOwnMessage
+            ? alpha(theme.palette.common.white, 0.22)
+            : alpha(theme.palette.primary.main, 0.18);
+
+          return {
+            maxWidth: "65%",
+            p: 1.5,
+            pr: isDeleted ? 1.5 : 4,
+            borderRadius: 2,
+            bgcolor: isOwnMessage ? "action.selected" : "grey.100",
+            color: isOwnMessage ? "primary.contrastText" : "text.primary",
+            position: "relative",
+            overflow: "visible",
+            zIndex: 0,
+
+            // keep content above overlays
+
+            // ✅ keyframes (no backgroundColor changes)
+            "@keyframes replyGlow": {
+              "0%": { opacity: 0, transform: "scale(1)" },
+              "35%": { opacity: 1, transform: "scale(1.01)" },
+              "100%": { opacity: 0, transform: "scale(1.04)" },
+            },
+            "@keyframes replyRing": {
+              "0%": {
+                opacity: 0,
+                transform: "scale(0.96)",
+                boxShadow: `0 0 0 0 ${alpha(ringColor, 0.0)}`,
+              },
+              "30%": {
+                opacity: 1,
+                transform: "scale(1)",
+                boxShadow: `0 0 0 10px ${alpha(ringColor, 0.22)}`,
+              },
+              "100%": {
+                opacity: 0,
+                transform: "scale(1.03)",
+                boxShadow: `0 0 0 18px ${alpha(ringColor, 0.0)}`,
+              },
+            },
+
+            // ✅ inside soft glow overlay (keeps original bg)
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              inset: 0,
+              borderRadius: "inherit",
+              pointerEvents: "none",
+              opacity: 0,
+              transform: "scale(1)",
+              background: `radial-gradient(circle at 30% 25%, ${glowColor} 0%, transparent 55%)`,
+              willChange: "transform, opacity",
+              animation: flashOn ? "replyGlow 1.1s ease-out" : "none",
+            },
+
+            // ✅ outside ring pulse
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              inset: -6,
+              borderRadius: "inherit",
+              pointerEvents: "none",
+              opacity: 0,
+              transform: "scale(0.96)",
+              border: `2px solid ${alpha(ringColor, 0.55)}`,
+              willChange: "transform, opacity, box-shadow",
+              animation: flashOn ? "replyRing 1.1s ease-out" : "none",
+            },
+
+            // ✅ reduce motion support
+            "@media (prefers-reduced-motion: reduce)": {
+              "&::after": { animation: "none" },
+              "&::before": { animation: "none" },
+            },
+          };
         }}
       >
-        {
+        {/* ✅ Actions (disabled when deleted) */}
+        {!isDeleted && (
           <>
             <IconButton
               size="small"
               onClick={(e) => setMenuAnchor(e.currentTarget)}
-              sx={{ position: "absolute", top: 4, right: 4 }}
+              sx={{ position: "absolute", top: 4, right: 4, zIndex: 2 }}
             >
               <FaEllipsisV />
             </IconButton>
@@ -264,35 +452,104 @@ export function ChatMessage({
               open={Boolean(menuAnchor)}
               onClose={() => setMenuAnchor(null)}
             >
-              <MenuItem onClick={() => onReply(message)}>
+              <MenuItem
+                onClick={() => {
+                  setMenuAnchor(null);
+                  onReply?.(message);
+                }}
+              >
                 <FaReply style={{ marginRight: 8 }} /> Reply
               </MenuItem>
+
               {isOwnMessage && (
-                <MenuItem onClick={() => onEdit(message.id)}>
+                <MenuItem
+                  onClick={() => {
+                    setMenuAnchor(null);
+                    onEdit?.(message.id);
+                  }}
+                >
                   <FaEdit style={{ marginRight: 8 }} /> Edit
                 </MenuItem>
               )}
+
               {(isOwnMessage || isCurrentUserAdmin) && (
-                <MenuItem onClick={() => setDeleteConfirm(true)}>
+                <MenuItem
+                  onClick={() => {
+                    setMenuAnchor(null);
+                    setDeleteConfirm(true);
+                  }}
+                >
                   <FaTrash style={{ marginRight: 8 }} /> Delete
                 </MenuItem>
               )}
             </Menu>
           </>
-        }
-
-        {message.type === "TEXT" && (
-          <Typography variant="body2">{message.content}</Typography>
         )}
 
-        {message.type !== "TEXT" && message.fileUrl && (
-          <MediaRenderer
-            file={{
-              fileUrl: message.fileUrl,
-              fileName: message.fileName,
-              fileMimeType: message.fileMimeType,
-            }}
-          />
+        {/* ✅ Deleted message UI (no content / no file / no reply preview / no actions) */}
+        {isDeleted ? (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <FaTrash style={{ opacity: 0.75 }} />
+            <Typography
+              variant="body2"
+              sx={{
+                fontStyle: "italic",
+                opacity: isOwnMessage ? 0.9 : 0.8,
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+              }}
+            >
+              This message was deleted
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            {message.replyTo && (
+              <ReplyPreview
+                loadingReplayJump={loadingReplayJump}
+                replyTo={message.replyTo}
+                isOwnMessage={isOwnMessage}
+                onJumpToMessage={onJumpToMessage}
+              />
+            )}
+
+            {/* ✅ FILE (or non-text) message */}
+            {hasFile && (
+              <>
+                <MediaRenderer
+                  file={{
+                    fileUrl: message.fileUrl,
+                    fileName: message.fileName,
+                    fileMimeType: message.fileMimeType,
+                  }}
+                />
+
+                {/* ✅ if file message still has text content -> render it under the file */}
+                {hasContent && (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      mt: 1,
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
+                    }}
+                  >
+                    {message.content}
+                  </Typography>
+                )}
+              </>
+            )}
+
+            {/* ✅ TEXT message (or non-file message with content) */}
+            {!hasFile && hasContent && (
+              <Typography
+                variant="body2"
+                sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+              >
+                {message.content}
+              </Typography>
+            )}
+          </>
         )}
 
         <Typography
@@ -300,8 +557,31 @@ export function ChatMessage({
           sx={{ display: "block", mt: 0.5, opacity: 0.6 }}
         >
           {dayjs(message.createdAt).format("HH:mm")}
-          {message.isEdited && " • edited"}
+          {message.isDeleted
+            ? " • deleted"
+            : message.isEdited
+            ? " • edited"
+            : ""}
         </Typography>
+
+        {/* ✅ Delete Confirm (disabled when deleted) */}
+        {!isDeleted && (
+          <Dialog open={deleteConfirm} onClose={() => setDeleteConfirm(false)}>
+            <DialogTitle>Delete message?</DialogTitle>
+            <DialogActions>
+              <Button onClick={() => setDeleteConfirm(false)}>Cancel</Button>
+              <Button
+                color="error"
+                onClick={() => {
+                  setDeleteConfirm(false);
+                  onDelete?.(message.id);
+                }}
+              >
+                Delete
+              </Button>
+            </DialogActions>
+          </Dialog>
+        )}
       </Box>
 
       {isOwnMessage && (
@@ -309,17 +589,6 @@ export function ChatMessage({
           {message.sender?.name?.[0]}
         </Avatar>
       )}
-
-      {/* Delete Confirm */}
-      <Dialog open={deleteConfirm} onClose={() => setDeleteConfirm(false)}>
-        <DialogTitle>Delete message?</DialogTitle>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirm(false)}>Cancel</Button>
-          <Button color="error" onClick={() => onDelete(message.id)}>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 }

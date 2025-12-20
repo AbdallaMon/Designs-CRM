@@ -12,7 +12,7 @@ export async function getMessages({ roomId, userId, page = 0, limit = 50 }) {
     where: {
       roomId: parseInt(roomId),
       userId: parseInt(userId),
-      leftAt: null,
+      isDeleted: false,
     },
   });
 
@@ -23,7 +23,7 @@ export async function getMessages({ roomId, userId, page = 0, limit = 50 }) {
     where: {
       roomId: parseInt(roomId),
       senderId: { not: parseInt(userId) },
-      isDeleted: false,
+      // isDeleted: false,
       readReceipts: {
         none: { memberId: member.id },
       },
@@ -39,13 +39,12 @@ export async function getMessages({ roomId, userId, page = 0, limit = 50 }) {
       },
     });
   }
-  console.log(page, limit, "page,limit");
-  console.log(skip, "skip");
+
   const [messages, total] = await Promise.all([
     prisma.chatMessage.findMany({
       where: {
         roomId: parseInt(roomId),
-        isDeleted: false,
+        // isDeleted: false,
       },
       skip,
       take: limit,
@@ -81,7 +80,7 @@ export async function getMessages({ roomId, userId, page = 0, limit = 50 }) {
     prisma.chatMessage.count({
       where: {
         roomId: parseInt(roomId),
-        isDeleted: false,
+        // isDeleted: false,
       },
     }),
   ]);
@@ -165,7 +164,7 @@ export async function emitToAllUsersRelatedToARoom({
   const members = await prisma.chatMember.findMany({
     where: {
       roomId: parseInt(roomId),
-      leftAt: null,
+      isDeleted: false,
       userId: { not: parseInt(userId) },
     },
     select: { userId: true },
@@ -198,7 +197,7 @@ export async function sendMessage({
     where: {
       roomId: parseInt(roomId),
       userId: parseInt(userId),
-      leftAt: null,
+      isDeleted: false,
     },
   });
 
@@ -246,13 +245,6 @@ export async function sendMessage({
   });
 
   // Update room's updatedAt
-  const room = await prisma.chatRoom.update({
-    where: { id: parseInt(roomId) },
-    data: { updatedAt: new Date() },
-    select: {
-      isMuted: true,
-    },
-  });
 
   // Emit to all room members for live chat
   try {
@@ -272,7 +264,7 @@ export async function sendMessage({
       content: {
         message,
         roomId: parseInt(roomId),
-        isMuted: room.isMuted,
+        isMuted: member.isMuted,
       },
       type: "notification:new_message",
     });
@@ -329,15 +321,23 @@ export async function editMessage({ messageId, userId, content }) {
  */
 export async function deleteMessage({ messageId, userId }) {
   // Get message and verify ownership
+  console.log(messageId, userId, "messageId, userId delete message");
   const message = await prisma.chatMessage.findUnique({
     where: { id: parseInt(messageId) },
+  });
+  const member = await prisma.chatMember.findFirst({
+    where: {
+      roomId: message.roomId,
+      userId: parseInt(userId),
+      isDeleted: false,
+    },
   });
 
   if (!message) {
     throw new Error("Message not found");
   }
 
-  if (message.senderId !== parseInt(userId)) {
+  if (message.senderId !== parseInt(userId) && !member?.role === "ADMIN") {
     throw new Error("You can only delete your own messages");
   }
 
@@ -345,7 +345,9 @@ export async function deleteMessage({ messageId, userId }) {
     where: { id: parseInt(messageId) },
     data: { isDeleted: true },
   });
-
+  const deletedMessage = await prisma.chatMessage.findUnique({
+    where: { id: parseInt(messageId) },
+  });
   // Emit deletion
   try {
     const io = getIo();
@@ -369,7 +371,7 @@ export async function markMessagesAsRead({ roomId, userId, messageId }) {
     where: {
       roomId: parseInt(roomId),
       userId: parseInt(userId),
-      leftAt: null,
+      isDeleted: false,
     },
   });
 

@@ -6,7 +6,6 @@ import { useSocket as useSocketContext } from "@/app/providers/SocketProvider";
 export function useSocket(handlers = {}) {
   const { socket } = useSocketContext();
 
-  // Always keep latest handlers without re-binding socket listeners
   const handlersRef = useRef(handlers);
   useEffect(() => {
     handlersRef.current = handlers;
@@ -26,7 +25,8 @@ export function useSocket(handlers = {}) {
 
       "member:joined": "onMemberJoined",
       "member:left": "onMemberLeft",
-
+      "member:removed": "onMemberRemoved",
+      "members:added": "onMembersAdded",
       "call:initiated": "onCallInitiated",
       "call:ended": "onCallEnded",
 
@@ -36,6 +36,11 @@ export function useSocket(handlers = {}) {
       "notification:user_stopped_typing": "onStopTypingNotification",
       "notification:new_message": "onNewMessageNotification",
       "notification:messages_read": "onMessagesReadNotification",
+      "notification:room_removed": "onRoomDeletedNotification",
+      "notification:room_created": "onRoomCreatedNotification",
+      disconnect: () => {
+        console.log("Socket disconnected");
+      },
     };
 
     // ---- stable listener functions (must be same ref for off()) ----
@@ -58,4 +63,5 @@ export function useSocket(handlers = {}) {
       });
     };
   }, [socket]);
+  return { socket };
 }

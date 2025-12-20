@@ -41,7 +41,6 @@ export function ChatInput({
   const [uploadingFiles, setUploadingFiles] = useState({}); // Track progress per file
   const [isSending, setIsSending] = useState(false);
   const fileInputRef = useRef(null);
-
   const handleSendMessage = async () => {
     if (!message.trim() && selectedFiles.length === 0) return;
 

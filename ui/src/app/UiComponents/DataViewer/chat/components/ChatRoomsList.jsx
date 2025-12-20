@@ -38,6 +38,8 @@ import { CHAT_ROOM_TYPE_LABELS, CHAT_ROOM_TYPES } from "../utils/chatConstants";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import ChatChips from "./ChatChips";
+import { LastSeenAt, OnlineStatus } from "./LastSeenAt";
+import Link from "next/link";
 
 dayjs.extend(relativeTime);
 
@@ -294,6 +296,8 @@ export function ChatRoomsList({
             >
               <ListItemButton
                 onClick={() => onSelectRoom(room)}
+                // component={Link}
+                // href={`?roomId=${room.id}`}
                 sx={{
                   borderRadius: 1,
                   transition: "all 0.2s ease",
@@ -305,12 +309,14 @@ export function ChatRoomsList({
                     color="error"
                     overlap="circular"
                     sx={{
+                      position: "relative",
                       "& .MuiBadge-badge": {
                         fontWeight: 600,
                         fontSize: "0.7rem",
                       },
                     }}
                   >
+                    <OnlineStatus lastSeenAt={room.lastSeenAt} />
                     <Avatar
                       src={getRoomAvatar(room)}
                       alt={getRoomLabel(room)}
@@ -358,62 +364,61 @@ export function ChatRoomsList({
                         {getLastMessageText(room)}
                       </Typography>
                       <Typography variant="caption" color="textSecondary">
-                        {dayjs(room.updatedAt).fromNow()}
+                        <LastSeenAt lastSeenAt={room.lastSeenAt} />
                       </Typography>
                     </Stack>
                   }
                 />
               </ListItemButton>
+              <Menu
+                anchorEl={menuAnchor}
+                open={Boolean(menuAnchor && menuRoomId === room.id)}
+                onClose={handleMenuClose}
+              >
+                <MenuItem
+                  onClick={() => {
+                    onMuteRoom(room.id);
+                    handleMenuClose();
+                  }}
+                >
+                  {room?.isMuted ? (
+                    <>
+                      <FaBell size={14} style={{ marginRight: 8 }} />
+                      Unmute
+                    </>
+                  ) : (
+                    <>
+                      <FaBellSlash size={14} style={{ marginRight: 8 }} />
+                      Mute
+                    </>
+                  )}
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    onArchiveRoom(menuRoomId);
+                    handleMenuClose();
+                  }}
+                >
+                  <FaArchive size={14} style={{ marginRight: 8 }} />
+                  {room?.isArchived ? "Unarchive" : "Archive"}
+                </MenuItem>
+                {room.type !== CHAT_ROOM_TYPES.STAFF_TO_STAFF && (
+                  <MenuItem
+                    onClick={() => {
+                      setDeleteConfirm(true);
+                    }}
+                  >
+                    <FaTrash size={14} style={{ marginRight: 8 }} />
+                    Delete
+                  </MenuItem>
+                )}
+              </Menu>
             </ListItem>
           ))
         )}
       </List>
 
       {/* Menu */}
-      <Menu
-        anchorEl={menuAnchor}
-        open={Boolean(menuAnchor)}
-        onClose={handleMenuClose}
-      >
-        <MenuItem
-          onClick={() => {
-            onMuteRoom(menuRoomId);
-            handleMenuClose();
-          }}
-        >
-          {rooms.find((r) => r.id === menuRoomId)?.isMuted ? (
-            <>
-              <FaBell size={14} style={{ marginRight: 8 }} />
-              Unmute
-            </>
-          ) : (
-            <>
-              <FaBellSlash size={14} style={{ marginRight: 8 }} />
-              Mute
-            </>
-          )}
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            onArchiveRoom(menuRoomId);
-            handleMenuClose();
-          }}
-        >
-          <FaArchive size={14} style={{ marginRight: 8 }} />
-          Archive
-        </MenuItem>
-        {rooms.find((r) => r.id === menuRoomId)?.type !==
-          CHAT_ROOM_TYPES.STAFF_TO_STAFF && (
-          <MenuItem
-            onClick={() => {
-              setDeleteConfirm(true);
-            }}
-          >
-            <FaTrash size={14} style={{ marginRight: 8 }} />
-            Delete
-          </MenuItem>
-        )}
-      </Menu>
 
       {/* Delete confirmation */}
       <Dialog open={deleteConfirm} onClose={() => setDeleteConfirm(false)}>

@@ -45,7 +45,7 @@ export function ChatContainer({
   projectId = null,
   clientLeadId = null,
 }) {
-  return;
+  // return;
   const { user, isLoggedIn } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -63,7 +63,6 @@ export function ChatContainer({
   const [viewMode, setViewMode] = useState("LIST"); // LIST | CHAT (mobile only)
   const [typingRooms, setTypingRooms] = useState({});
   const [widgetOpen, setWidgetOpen] = useState(false); // Widget only
-
   // ============================================
   // DATA FETCHING
   // ============================================
@@ -90,16 +89,24 @@ export function ChatContainer({
   }, []);
 
   useSocket({
+    onRoomCreatedNotification: (data) => {
+      const { roomId, userId } = data;
+      const id = searchParams?.get("roomId");
+
+      if (roomId !== parseInt(id)) {
+        fetchRooms(false);
+      }
+    },
     onMessagesReadNotification: (data) => {
       const { roomId, userId } = data;
       const id = searchParams?.get("roomId");
 
-      if (roomId !== parseInt(id) && user?.id === userId) {
-        fetchRooms(0, false);
+      if (roomId !== parseInt(id)) {
+        fetchRooms(false);
       }
     },
     onNewMessageNotification: (data) => {
-      fetchRooms(0, false);
+      fetchRooms(false);
       // Play sound in widget if message is from another user and not in selected room
       if (
         !data.isMuted &&
@@ -111,6 +118,18 @@ export function ChatContainer({
           // Sound play error - continue anyway
         });
       }
+    },
+    onRoomDeletedNotification: (data) => {
+      const { roomId } = data;
+      console.log("Room deleted notification received for roomId:", roomId);
+      if (selectedRoom?.id === roomId) {
+        setSelectedRoom(null);
+        if (type === "page" && isMobile) {
+          setViewMode("LIST");
+        }
+        router.replace("?");
+      }
+      fetchRooms(false);
     },
     onTypingNotification: (data) => {
       // Only show typing if not in the room and not from self
@@ -224,6 +243,7 @@ export function ChatContainer({
       setSelectedRoom(result);
       if (isMobile) setViewMode("CHAT");
     }
+    fetchRooms(false);
     setCreating(false);
   };
 
@@ -293,6 +313,7 @@ export function ChatContainer({
       typingRooms={typingRooms}
       onSearch={(search) => onSearchChange(search)}
       onSelectChatType={(chatType) => onChatTypeChange(chatType)}
+      reFetchRooms={() => fetchRooms(false)}
     />
   );
 
@@ -316,7 +337,8 @@ export function ChatContainer({
         projectId={projectId}
         clientLeadId={clientLeadId}
         isMobile={isMobile || type === "widget"}
-        onRoomActivity={() => fetchRooms(0, false)}
+        onRoomActivity={() => fetchRooms(false)}
+        reFetchRooms={() => fetchRooms(false)}
       />
     ) : (
       <Paper
@@ -351,7 +373,7 @@ export function ChatContainer({
         },
       }}
     >
-      <DialogTitle>Create New Chat</DialogTitle>
+      <DialogTitle>Create New Group Chat</DialogTitle>
       <DialogContent sx={{ pt: 2 }}>
         <Stack spacing={2}>
           <TextField

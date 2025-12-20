@@ -1,8 +1,21 @@
+ALTER TABLE `ChatMember`
+ADD COLUMN `isArchived` TINYINT(1) NOT NULL DEFAULT 0;
+
 ALTER TABLE `ChatRoom`
-MODIFY `type` ENUM(
-'STAFF_TO_STAFF',
-'PROJECT_GROUP',
-'CLIENT_TO_STAFF',
-'STAFF_GROUP',
-'GROUP'
-) NOT NULL;
+DROP COLUMN `isMuted`,
+DROP COLUMN `isArchived`;
+
+ALTER TABLE `ChatRoom`
+ADD COLUMN `allowChatForMembers` TINYINT(1) NOT NULL DEFAULT 0;
+
+ALTER TABLE `ChatRoom`
+ADD COLUMN `allowMeetings` TINYINT(1) NOT NULL DEFAULT 0;
+
+added createdAt for chatMember as alter
+
+ALTER TABLE `ChatMember`
+ADD COLUMN `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;
+UPDATE `ChatMember` SET `createdAt` = NOW();
+
+ALTER TABLE `ChatMember`
+ADD COLUMN `isDeleted` TINYINT(1) NOT NULL DEFAULT 0;

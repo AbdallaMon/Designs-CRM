@@ -281,8 +281,13 @@ export function ChatFilesTab({ roomId }) {
       <Dialog
         open={!!previewFile}
         onClose={() => setPreviewFile(null)}
-        maxWidth="lg"
+        maxWidth="md"
         fullWidth
+        sx={{
+          "& .MuiPaper-root": {
+            margin: "10px !important",
+          },
+        }}
       >
         <DialogTitle sx={{ display: "flex", justifyContent: "space-between" }}>
           <Typography noWrap>{previewFile?.fileName}</Typography>
@@ -291,13 +296,18 @@ export function ChatFilesTab({ roomId }) {
           </IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ p: 0, bgcolor: "black" }}>
+        <DialogContent
+          sx={{
+            p: 0,
+            bgcolor: "black",
+          }}
+        >
           {previewFile?.fileMimeType?.startsWith("image/") && (
             <img
               src={previewFile.fileUrl}
               style={{
                 width: "100%",
-                maxHeight: "85vh",
+                maxHeight: "80vh",
                 objectFit: "contain",
               }}
             />
@@ -310,7 +320,7 @@ export function ChatFilesTab({ roomId }) {
               autoPlay
               style={{
                 width: "100%",
-                maxHeight: "85vh",
+                maxHeight: "80vh",
               }}
             />
           )}

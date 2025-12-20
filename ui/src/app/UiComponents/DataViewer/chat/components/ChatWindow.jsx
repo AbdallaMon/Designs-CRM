@@ -13,14 +13,13 @@ import {
   Stack,
   Typography,
   IconButton,
-  Menu,
-  MenuItem,
   Tooltip,
   Avatar,
   Chip,
   Dialog,
   DialogTitle,
   DialogContent,
+  DialogContentText,
   DialogActions,
   Button,
   FormControl,
@@ -60,7 +59,10 @@ import {
   typing,
   emitStopTyping,
 } from "../utils/socketIO";
-import DeleteModelButton from "@/app/UiComponents/common/DeleteModelButton";
+import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import { MdDelete } from "react-icons/md";
+import { useChatMembers } from "../hooks/useChatMembers";
+import { LastSeenAt, OnlineStatus } from "./LastSeenAt";
 
 export function ChatWindow({
   room,
@@ -69,10 +71,10 @@ export function ChatWindow({
   clientLeadId = null,
   isMobile = false,
   onRoomActivity = () => {},
+  reFetchRooms = () => {},
 }) {
   const { user } = useAuth();
   const { setLoading: setToastLoading } = useToastContext();
-  const [members, setMembers] = useState([]);
   const [showAddMembers, setShowAddMembers] = useState(false);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -81,8 +83,54 @@ export function ChatWindow({
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [typingUsers, setTypingUsers] = useState([]);
   const [onlineUsers, setOnlineUsers] = useState([]);
+  const [newMembersAdded, setNewMembersAdded] = useState([]);
+  const [newMemberAlertOpen, setNewMemberAlertOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState(0); // 0: Chat, 1: Files
   const typingTimeoutRef = useRef(null);
+  const getRoomLabel = (room) => {
+    if (room.type === "STAFF_TO_STAFF") {
+      const otherMember = room.otherMembers?.[0];
+      if (otherMember?.user) {
+        return otherMember.user.name;
+      }
+    }
+    if (room.name) return room.name;
+    if (room.type === "CLIENT_TO_STAFF") {
+      const member = room.members?.find((m) => m.user);
+      return member?.user?.name || "Client";
+    }
+    return CHAT_ROOM_TYPE_LABELS[room.type] || room.type || "Chat";
+  };
+  const roomLabel = getRoomLabel(room);
+  // ✅ Confirm delete dialog states
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTitle, setConfirmTitle] = useState("Confirm");
+  const [confirmDescription, setConfirmDescription] = useState("");
+  const confirmActionRef = useRef(null);
+
+  const openConfirm = useCallback((title, description, onConfirm) => {
+    setConfirmTitle(title || "Confirm");
+    setConfirmDescription(description || "");
+    confirmActionRef.current = onConfirm;
+    setConfirmOpen(true);
+  }, []);
+
+  const closeConfirm = useCallback(() => {
+    setConfirmOpen(false);
+    confirmActionRef.current = null;
+  }, []);
+
+  const handleConfirm = useCallback(async () => {
+    try {
+      const fn = confirmActionRef.current;
+      closeConfirm();
+      if (typeof fn === "function") {
+        await fn();
+      }
+    } catch (e) {
+      console.error("Confirm action failed:", e);
+    }
+  }, [closeConfirm]);
 
   const {
     messages,
@@ -97,7 +145,24 @@ export function ChatWindow({
     initialLoading,
     scrollContainerRef,
     hasMore,
+    onJumpToMessage,
+    loadingJumpToMessage,
+    setReplyLoaded,
+    replyLoaded,
+    replayLoadingMessageId,
+    setReplayLoadingMessageId,
+    loading,
+    newMessagesCount,
+    setNewMessagesCount,
   } = useChatMessages(room?.id);
+
+  const {
+    members,
+    loading: membersLoading,
+    fetchMembers,
+    setMembers,
+  } = useChatMembers(room?.id);
+
   const processedMessages = useMemo(() => {
     return processMessagesWithDayGroups(messages);
   }, [messages]);
@@ -108,6 +173,7 @@ export function ChatWindow({
       joinChatRoom(room.id, user);
     }
   }, [room?.id, user]);
+
   const emitTyping = useCallback(() => {
     typing({ roomId: room?.id, user });
     clearTimeout(typingTimeoutRef.current);
@@ -121,14 +187,31 @@ export function ChatWindow({
     clearTimeout(typingTimeoutRef.current);
     emitStopTyping({ roomId: room?.id, user });
   }, [room?.id, user]);
+
+  useEffect(() => {
+    //remove after 10 seconds
+    if (newMemberAlertOpen) {
+      const timer = setTimeout(() => {
+        setNewMemberAlertOpen(false);
+        setNewMembersAdded([]);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [newMemberAlertOpen]);
+
   // Listen to socket events
   useSocket({
     onMessageCreated: (data) => {
       // Only add if it's for this room and not from self
-      if (data.roomId === room?.id && data.senderId !== user.id) {
+      if (data.roomId === room?.id) {
         setMessages((prev) => [...prev, data]);
         onRoomActivity?.(data);
         markMessageAsRead(room.id, data.id, user.id);
+
+        setNewMessagesCount((prev) => prev + 1);
+        window.setTimeout(() => {
+          scrollToBottom();
+        }, 100);
       }
     },
     onMessageEdited: (data) => {
@@ -144,7 +227,7 @@ export function ChatWindow({
       if (data.roomId === room?.id) {
         setMessages((prev) =>
           prev.map((msg) =>
-            msg.id === data.id ? { ...msg, isDeleted: true } : msg
+            msg.id === data.messageId ? { ...msg, isDeleted: true } : msg
           )
         );
       }
@@ -177,20 +260,23 @@ export function ChatWindow({
         setOnlineUsers((prev) => prev.filter((id) => id !== data.userId));
       }
     },
+    onMembersAdded: (data) => {
+      if (data.roomId === room?.id) {
+        setNewMembersAdded(data.newMembers);
+        setNewMemberAlertOpen(true);
+      }
+    },
   });
 
-  const isAdmin =
-    user.role === "ADMIN" ||
-    user.role === "SUPER_ADMIN" ||
-    room?.createdBy?.id === user.id;
+  const isAdmin = checkIfAdmin(user) || room?.createdBy?.id === user.id;
 
-  const isMember = room?.members?.some((m) => m.userId === user.id);
-  const canManageMembers =
-    isAdmin && room?.type !== CHAT_ROOM_TYPES.STAFF_TO_STAFF;
+  const isMember = members?.some((m) => m.userId === user.id);
+
+  const isNotDirectChat = room?.type !== CHAT_ROOM_TYPES.STAFF_TO_STAFF;
+  const canManageMembers = isAdmin && isNotDirectChat;
 
   useEffect(() => {
     if (room?.id) {
-      setMembers(room.members || []);
       // Mark all messages in room as read when room opens
       markMessagesRead(room.id, user.id);
     }
@@ -227,15 +313,62 @@ export function ChatWindow({
     );
 
     if (response?.status === 200) {
-      setMembers(response.data.members || []);
-      setShowAddMembers(false);
+      fetchMembers();
       setSelectedUsers([]);
     }
   };
 
-  const loadAvailableUsers = async () => {
-    if (!canManageMembers) return;
+  const handleRemoveMember = async (memberId) => {
+    const response = await handleRequestSubmit(
+      { memberId: memberId },
+      setToastLoading,
+      `shared/chat/rooms/${room.id}/members/${memberId}`,
+      false,
+      "Removing member",
+      false,
+      "DELETE"
+    );
+    if (response?.status === 200) {
+      fetchMembers();
+    }
+  };
+
+  const confirmRemoveMember = useCallback(
+    (member) => {
+      const name = member?.user?.name || member?.client?.name || "this member";
+      openConfirm(
+        "Remove member?",
+        `Are you sure you want to remove ${name} from this chat?`,
+        async () => {
+          await handleRemoveMember(member.id);
+        }
+      );
+    },
+    [openConfirm]
+  );
+
+  // ✅ Confirm delete message wrapper (works whether ChatMessage sends id or message object)
+  const confirmDeleteMessage = useCallback(
+    (payload) => {
+      const msgId =
+        typeof payload === "object" && payload?.id ? payload.id : payload;
+      if (!msgId) return;
+
+      openConfirm(
+        "Delete message?",
+        "This will delete the message for everyone in the chat.",
+        async () => {
+          await deleteMessage(msgId);
+        }
+      );
+    },
+    [openConfirm, deleteMessage]
+  );
+
+  const loadAvailableUsers = async (wait) => {
+    if (!isNotDirectChat) return;
     setLoadingUsers(true);
+
     try {
       let url = `admin/all-users?`;
       if (projectId) {
@@ -262,10 +395,10 @@ export function ChatWindow({
   };
 
   useEffect(() => {
-    if (showAddMembers && canManageMembers) {
+    if (showAddMembers && isNotDirectChat) {
       loadAvailableUsers();
     }
-  }, [showAddMembers, canManageMembers]);
+  }, [showAddMembers, isNotDirectChat, members]);
 
   // Scroll to bottom whenever messages change (instant with scrollIntoView)
   useEffect(() => {
@@ -309,14 +442,6 @@ export function ChatWindow({
       return [...prev, userToToggle];
     });
   }, []);
-
-  const availableUsersSorted = useMemo(
-    () =>
-      [...availableUsers].sort((a, b) =>
-        (a.name || "").localeCompare(b.name || "")
-      ),
-    [availableUsers]
-  );
 
   return (
     <Paper
@@ -387,7 +512,7 @@ export function ChatWindow({
             </Avatar>
             <Box sx={{ cursor: "pointer" }}>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                {room.name || "Chat"}
+                {roomLabel}
               </Typography>
               <Typography variant="caption" color="textSecondary">
                 {CHAT_ROOM_TYPE_LABELS[room.type] || room.type}
@@ -425,11 +550,11 @@ export function ChatWindow({
               <FaVideo size={18} />
             </IconButton>
           </Tooltip>
-          {canManageMembers && (
+          {isNotDirectChat && (
             <Tooltip title="Members" arrow>
               <IconButton
                 size="small"
-                onClick={() => canManageMembers && setShowAddMembers(true)}
+                onClick={() => setShowAddMembers(true)}
                 sx={{
                   transition: "all 0.2s ease",
                   "&:hover": {
@@ -526,11 +651,25 @@ export function ChatWindow({
                       setEditingMessageId(null);
                     }
                   }}
-                  onDelete={deleteMessage}
+                  // ✅ confirm before delete
+                  onDelete={confirmDeleteMessage}
                   isEditing={editingMessageId === msg.id}
+                  loadingReplayJump={loadingJumpToMessage}
+                  onJumpToMessage={onJumpToMessage}
+                  replyLoaded={replyLoaded}
+                  setReplyLoaded={setReplyLoaded}
+                  replayLoadingMessageId={replayLoadingMessageId}
+                  setReplayLoadingMessageId={setReplayLoadingMessageId}
                 />
               ))}
-              <div ref={messagesEndRef} />
+
+              <Box
+                sx={{
+                  position: "sticky",
+                  bottom: 0,
+                }}
+                ref={messagesEndRef}
+              />
             </>
           )}
 
@@ -578,6 +717,33 @@ export function ChatWindow({
               </Box>
             </Box>
           )}
+          {newMemberAlertOpen && newMembersAdded.length > 0 && (
+            <Box
+              sx={{
+                mt: 2,
+                p: 1,
+                bgcolor: "info.lighter",
+                borderRadius: 1,
+                border: "1px solid",
+                borderColor: "info.main",
+              }}
+            >
+              <Typography variant="caption" sx={{ color: "info.main" }}>
+                {newMembersAdded
+                  .map((m) => m.name || m.user?.name || "A member")
+                  .join(", ")}{" "}
+                {newMembersAdded.length === 1 ? "has" : "have"} has been added
+                to the chat.
+              </Typography>
+              <IconButton
+                size="small"
+                onClick={() => setNewMemberAlertOpen(false)}
+                sx={{ ml: 1 }}
+              >
+                <FaTimes size={12} />
+              </IconButton>
+            </Box>
+          )}
         </Box>
 
         {/* Input area */}
@@ -587,7 +753,9 @@ export function ChatWindow({
             onReplyingTo={replyingTo}
             onCancelReply={() => setReplyingTo(null)}
             loading={messagesLoading}
-            disabled={!isMember && !isAdmin}
+            disabled={
+              (!isMember && !isAdmin) || (!isAdmin && !room.isChatEnabled)
+            }
             onTyping={emitTyping}
           />
         </Box>
@@ -598,6 +766,12 @@ export function ChatWindow({
         onClose={() => setCurrentTab(0)}
         fullWidth
         maxWidth="md"
+        sx={{
+          "& .MuiPaper-root": {
+            margin: "10px !important",
+            width: "calc(100% - 20px)",
+          },
+        }}
       >
         <DialogTitle>
           <Box
@@ -613,14 +787,19 @@ export function ChatWindow({
             </IconButton>
           </Box>
         </DialogTitle>
-        <DialogContent dividers>
+        <DialogContent
+          dividers
+          sx={{
+            padding: "12px !important",
+          }}
+        >
           <ChatFilesTab roomId={room?.id} />
         </DialogContent>
       </Dialog>
 
       {/* Add members dialog */}
       <Dialog
-        open={showAddMembers && canManageMembers}
+        open={showAddMembers}
         onClose={() => setShowAddMembers(false)}
         maxWidth="md"
         fullWidth
@@ -641,10 +820,29 @@ export function ChatWindow({
                       direction="row"
                       alignItems="center"
                       spacing={1.5}
+                      sx={{
+                        position: "relative",
+                      }}
                     >
-                      <Avatar src={getAvatarSrc(m.user)}>
-                        {(m.user?.name || m.client?.name || "?").charAt(0)}
-                      </Avatar>
+                      <Box
+                        sx={{
+                          position: "relative",
+                        }}
+                      >
+                        <OnlineStatus
+                          lastSeenAt={
+                            m.user?.lastSeenAt || m.client?.lastSeenAt
+                          }
+                        />
+                        <Avatar
+                          src={getAvatarSrc(m.user)}
+                          sx={{
+                            position: "relative",
+                          }}
+                        >
+                          {(m.user?.name || m.client?.name || "?").charAt(0)}
+                        </Avatar>
+                      </Box>
                       <Box sx={{ flex: 1 }}>
                         <Typography fontWeight={600} noWrap>
                           {m.user?.name || m.client?.name || "Unknown"}
@@ -656,7 +854,43 @@ export function ChatWindow({
                         >
                           {m.user?.email || m.client?.email || ""}
                         </Typography>
+                        <LastSeenAt
+                          lastSeenAt={
+                            m.user?.lastSeenAt || m.client?.lastSeenAt
+                          }
+                        />
                       </Box>
+                      <Box>
+                        <Chip
+                          label={
+                            m.role === "ADMIN"
+                              ? "Admin"
+                              : m.role === "MODERATOR"
+                              ? "Moderator"
+                              : "Member"
+                          }
+                          color={
+                            m.role === "ADMIN"
+                              ? "primary"
+                              : m.role === "MODERATOR"
+                              ? "secondary"
+                              : "default"
+                          }
+                          size="small"
+                        />
+                      </Box>
+                      {m.role !== "ADMIN" && canManageMembers && (
+                        <Box>
+                          <IconButton
+                            size="small"
+                            // ✅ confirm before remove member
+                            onClick={() => confirmRemoveMember(m)}
+                            color="error"
+                          >
+                            <MdDelete />
+                          </IconButton>
+                        </Box>
+                      )}
                     </Stack>
                   ))}
                 </Stack>
@@ -664,99 +898,122 @@ export function ChatWindow({
             )}
 
             {/* New members list with selectable rows */}
-            {loadingUsers ? (
-              <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
-                <CircularProgress />
-              </Box>
-            ) : availableUsersSorted.length === 0 ? (
-              <Box sx={{ p: 2 }}>
-                <Typography color="textSecondary">
-                  No new members available
-                </Typography>
-              </Box>
-            ) : (
-              <Box sx={{ maxHeight: 360, overflow: "auto", pr: 1 }}>
-                <Stack spacing={1}>
-                  {availableUsersSorted.map((u) => {
-                    const isSelected = selectedUsers.some((s) => s.id === u.id);
-                    return (
-                      <Paper
-                        key={u.id}
-                        variant="outlined"
-                        sx={{
-                          p: 1,
-                          borderRadius: 2,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 1.5,
-                          cursor: "pointer",
-                          borderColor: isSelected ? "primary.main" : "divider",
-                          bgcolor: isSelected
-                            ? "primary.lighter"
-                            : "background.paper",
-                        }}
-                        onClick={() => toggleSelectUser(u)}
-                      >
-                        <Avatar src={getAvatarSrc(u)}>
-                          {(u.name || "?").charAt(0)}
-                        </Avatar>
-                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Typography fontWeight={600} noWrap>
-                            {u.name || "Unknown"}
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            noWrap
+            {canManageMembers && (
+              <>
+                {loadingUsers ? (
+                  <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
+                    <CircularProgress />
+                  </Box>
+                ) : availableUsers.length === 0 ? (
+                  <Box sx={{ p: 2 }}>
+                    <Typography color="textSecondary">
+                      No new members available
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box sx={{ maxHeight: 360, overflow: "auto", pr: 1 }}>
+                    <Stack spacing={1}>
+                      {availableUsers.map((u) => {
+                        const isSelected = selectedUsers.some(
+                          (s) => s.id === u.id
+                        );
+                        return (
+                          <Paper
+                            key={u.id}
+                            variant="outlined"
+                            sx={{
+                              p: 1,
+                              borderRadius: 2,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1.5,
+                              cursor: "pointer",
+                              borderColor: isSelected
+                                ? "primary.main"
+                                : "divider",
+                              bgcolor: isSelected
+                                ? "primary.lighter"
+                                : "background.paper",
+                            }}
+                            onClick={() => toggleSelectUser(u)}
                           >
-                            {u.email || ""}
-                          </Typography>
-                        </Box>
-                        <Chip
-                          label={isSelected ? "Selected" : "Select"}
-                          color={isSelected ? "primary" : "default"}
-                          size="small"
-                          variant={isSelected ? "filled" : "outlined"}
-                        />
-                      </Paper>
-                    );
-                  })}
-                </Stack>
-              </Box>
-            )}
+                            <Avatar src={getAvatarSrc(u)}>
+                              {(u.name || "?").charAt(0)}
+                            </Avatar>
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                              <Typography fontWeight={600} noWrap>
+                                {u.name || "Unknown"}
+                              </Typography>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                noWrap
+                              >
+                                {u.email || ""}
+                              </Typography>
+                            </Box>
+                            <Chip
+                              label={isSelected ? "Selected" : "Select"}
+                              color={isSelected ? "primary" : "default"}
+                              size="small"
+                              variant={isSelected ? "filled" : "outlined"}
+                            />
+                          </Paper>
+                        );
+                      })}
+                    </Stack>
+                  </Box>
+                )}
 
-            {/* Selected summary */}
-            {selectedUsers.length > 0 && (
-              <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Selected to add ({selectedUsers.length})
-                </Typography>
-                <Stack direction="row" flexWrap="wrap" gap={1}>
-                  {selectedUsers.map((u) => (
-                    <Chip
-                      key={u.id}
-                      avatar={
-                        <Avatar src={getAvatarSrc(u)}>
-                          {(u.name || "?").charAt(0)}
-                        </Avatar>
-                      }
-                      label={u.name}
-                      onDelete={() => toggleSelectUser(u)}
-                    />
-                  ))}
-                </Stack>
-              </Box>
+                {selectedUsers.length > 0 && (
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                      Selected to add ({selectedUsers.length})
+                    </Typography>
+                    <Stack direction="row" flexWrap="wrap" gap={1}>
+                      {selectedUsers.map((u) => (
+                        <Chip
+                          key={u.id}
+                          avatar={
+                            <Avatar src={getAvatarSrc(u)}>
+                              {(u.name || "?").charAt(0)}
+                            </Avatar>
+                          }
+                          label={u.name}
+                          onDelete={() => toggleSelectUser(u)}
+                        />
+                      ))}
+                    </Stack>
+                  </Box>
+                )}
+              </>
             )}
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setShowAddMembers(false)}>Cancel</Button>
-          <Button
-            onClick={handleAddMembers}
-            variant="contained"
-            disabled={selectedUsers.length === 0 || loadingUsers}
-          >
-            Add Members
+          {canManageMembers && (
+            <Button
+              onClick={handleAddMembers}
+              variant="contained"
+              disabled={selectedUsers.length === 0 || loadingUsers}
+            >
+              Add Members
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      {/* ✅ Confirm Delete Dialog (reused for message delete + member remove) */}
+      <Dialog open={confirmOpen} onClose={closeConfirm} maxWidth="xs" fullWidth>
+        <DialogTitle>{confirmTitle}</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{confirmDescription}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeConfirm}>Cancel</Button>
+          <Button variant="contained" color="error" onClick={handleConfirm}>
+            Delete
           </Button>
         </DialogActions>
       </Dialog>

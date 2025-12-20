@@ -332,9 +332,6 @@ export default function Layout({
         backgroundColor: colors.bgSecondary,
       }}
     >
-      {/* {user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && (
-        <ActivityLogDialog userId={user.id} />
-      )} */}
       <Navbar
         links={
           role === "ADMIN"

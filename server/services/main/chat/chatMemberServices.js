@@ -10,7 +10,7 @@ export async function addMembersToRoom({ roomId, userId, userIds }) {
     where: {
       roomId: parseInt(roomId),
       userId: parseInt(userId),
-      leftAt: null,
+      isDeleted: false,
     },
   });
 
@@ -27,11 +27,25 @@ export async function addMembersToRoom({ roomId, userId, userIds }) {
     userId: parseInt(uid),
     role: "MEMBER",
   }));
-
-  await prisma.chatMember.createMany({
-    data: memberData,
-    skipDuplicates: true,
-  });
+  for (const member of memberData) {
+    const checkIfExist = await prisma.chatMember.findFirst({
+      where: {
+        roomId: member.roomId,
+        userId: member.userId,
+      },
+    });
+    if (checkIfExist) {
+      await prisma.chatMember.update({
+        where: { id: checkIfExist.id },
+        data: { isDeleted: false, leftAt: null },
+      });
+    } else {
+      await prisma.chatMember.createMany({
+        data: member,
+        skipDuplicates: true,
+      });
+    }
+  }
 
   // Fetch room with updated members
   const room = await prisma.chatRoom.findUnique({
@@ -45,16 +59,29 @@ export async function addMembersToRoom({ roomId, userId, userIds }) {
       },
     },
   });
+  const newMembers = await prisma.chatMember.findMany({
+    where: {
+      roomId: parseInt(roomId),
+      userId: { in: userIds.map((id) => parseInt(id)) },
+    },
+    include: {
+      user: { select: { id: true, name: true, email: true } },
+      client: { select: { id: true, name: true, email: true } },
+    },
+  });
 
   // Notify new members
   try {
     const io = getIo();
     userIds.forEach((uid) => {
-      io.to(`user:${uid}`).emit("room:added", room);
+      io.to(`user:${uid}`).emit("notification:room_created", {
+        roomId: parseInt(roomId),
+        userId: parseInt(userId),
+      });
     });
     io.to(`room:${roomId}`).emit("members:added", {
       roomId: parseInt(roomId),
-      userIds,
+      newMembers,
     });
   } catch (error) {
     console.error("Socket.IO emit error:", error);
@@ -72,17 +99,13 @@ export async function removeMemberFromRoom({ roomId, userId, memberId }) {
     where: {
       roomId: parseInt(roomId),
       userId: parseInt(userId),
-      leftAt: null,
+      isDeleted: false,
     },
   });
 
   const memberToRemove = await prisma.chatMember.findUnique({
     where: { id: parseInt(memberId) },
   });
-
-  if (!memberToRemove) {
-    throw new Error("Member not found");
-  }
 
   const isSelf = memberToRemove.userId === parseInt(userId);
   const isAdmin =
@@ -95,7 +118,7 @@ export async function removeMemberFromRoom({ roomId, userId, memberId }) {
   // Set leftAt instead of deleting
   await prisma.chatMember.update({
     where: { id: parseInt(memberId) },
-    data: { leftAt: new Date() },
+    data: { isDeleted: true },
   });
 
   // Emit removal
@@ -106,7 +129,7 @@ export async function removeMemberFromRoom({ roomId, userId, memberId }) {
       memberId: parseInt(memberId),
       userId: memberToRemove.userId,
     });
-    io.to(`user:${memberToRemove.userId}`).emit("room:removed", {
+    io.to(`user:${memberToRemove.userId}`).emit("notification:room_removed", {
       roomId: parseInt(roomId),
     });
   } catch (error) {
@@ -171,7 +194,7 @@ export async function getRoomMembers({ roomId, userId }) {
     where: {
       roomId: parseInt(roomId),
       userId: parseInt(userId),
-      leftAt: null,
+      isDeleted: false,
     },
   });
 
@@ -182,7 +205,7 @@ export async function getRoomMembers({ roomId, userId }) {
   const members = await prisma.chatMember.findMany({
     where: {
       roomId: parseInt(roomId),
-      leftAt: null,
+      isDeleted: false,
     },
     include: {
       user: {
@@ -190,7 +213,7 @@ export async function getRoomMembers({ roomId, userId }) {
           id: true,
           name: true,
           email: true,
-          profileImage: true,
+          profilePicture: true,
           role: true,
           lastSeenAt: true,
         },
@@ -202,4 +225,58 @@ export async function getRoomMembers({ roomId, userId }) {
   });
 
   return members;
+}
+
+export async function emitOnlineForAllRelatedMembers(userId) {
+  const memberships = await prisma.chatMember.findMany({
+    where: {
+      room: {
+        type: "STAFF_TO_STAFF",
+        members: {
+          some: {
+            userId: parseInt(userId),
+            isDeleted: false,
+          },
+        },
+      },
+    },
+    select: {
+      userId: true,
+      roomId: true,
+    },
+  });
+  const io = getIo();
+  for (const membership of memberships) {
+    io.to(`user:${membership.userId}`).emit("notification:user_online", {
+      userId: parseInt(userId),
+      roomId: membership.roomId,
+    });
+  }
+}
+
+export async function emitOfflineForAllRelatedMembers(userId) {
+  const memberships = await prisma.chatMember.findMany({
+    where: {
+      chatRoom: {
+        type: "STAFF_TO_STAFF",
+        members: {
+          some: {
+            userId: parseInt(userId),
+            isDeleted: false,
+          },
+        },
+      },
+    },
+    select: {
+      userId: true,
+      roomId: true,
+    },
+  });
+  const io = getIo();
+  for (const membership of memberships) {
+    io.to(`user:${membership.userId}`).emit("notification:user_offline", {
+      userId: parseInt(userId),
+      roomId: membership.roomId,
+    });
+  }
 }

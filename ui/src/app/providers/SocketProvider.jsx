@@ -12,7 +12,6 @@ export default function SocketProvider({ children }) {
   const { user } = useAuth();
   const [socket, setSocket] = useState(null);
   const socketRef = useRef(null);
-
   useEffect(() => {
     if (!user || !user.id) return;
 
@@ -32,6 +31,9 @@ export default function SocketProvider({ children }) {
           email: user.email,
           id: user.id,
         },
+      });
+      newSocket.emit("user:online", {
+        userId: user.id,
       });
     }
 

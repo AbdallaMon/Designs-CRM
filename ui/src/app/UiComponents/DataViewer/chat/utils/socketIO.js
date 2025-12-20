@@ -17,7 +17,7 @@ export const initSocket = (url, options = {}) => {
     reconnection: true,
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
-    reconnectionAttempts: 5,
+    autoConnect: true,
     transports: ["websocket", "polling"],
     credentials: "include", // Include cookies for auth
     ...options,

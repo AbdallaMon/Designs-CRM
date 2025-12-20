@@ -268,7 +268,6 @@ export async function disconnectGoogleCalendar(userId) {
 export async function isGoogleCalendarConnected(userId) {
   try {
     const isConnected = await getCalendarClient(userId);
-    console.log("Google Calendar is connected:", isConnected);
     if (isConnected) {
       return await resyncMeetingRemindersWithGoogleCalendar(Number(userId));
     }

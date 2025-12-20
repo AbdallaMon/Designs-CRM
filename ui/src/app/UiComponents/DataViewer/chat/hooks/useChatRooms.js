@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import { useSocket } from "./useSocket";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 export function useChatRooms({
   category = null,
@@ -19,6 +21,9 @@ export function useChatRooms({
   const { setLoading: setToastLoading } = useToastContext();
   const [chatType, setChatType] = useState(null);
   const [searchKey, setSearchKey] = useState(null);
+  const [refetchToggle, setRefetchToggle] = useState(false);
+  const { socket } = useSocket();
+  const { user } = useAuth();
   function onSearchChange(newSearchKey) {
     setSearchKey(newSearchKey);
     setPage(0);
@@ -28,7 +33,8 @@ export function useChatRooms({
     setPage(0);
   }
   const fetchRooms = useCallback(
-    async (nextPage = 0, append = false) => {
+    async (append = false) => {
+      const nextPage = page;
       if (append) setLoadingMore(true);
       else setLoading(true);
       setError(null);
@@ -66,13 +72,31 @@ export function useChatRooms({
   );
 
   useEffect(() => {
-    fetchRooms(0, false);
-  }, [fetchRooms]);
+    fetchRooms(false);
+  }, [fetchRooms, page, refetchToggle]);
+
+  // make effect to fetch rooms each  3 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (socket && user && user.id) {
+        socket.emit("user:online", {
+          userId: user.id,
+        });
+      }
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefetchToggle((prev) => !prev);
+    }, 120000);
+    return () => clearInterval(interval);
+  }, []);
   const loadMoreRooms = useCallback(() => {
     if (loadingMore) return;
     const nextPage = page + 1;
     if (nextPage > totalPages) return;
-    fetchRooms(nextPage, true);
+    setPage(nextPage);
   }, [page, totalPages, fetchRooms, loadingMore]);
 
   const createRoom = useCallback(
@@ -88,7 +112,7 @@ export function useChatRooms({
       );
 
       if (response?.status === 200) {
-        setRooms((prev) => [response.data, ...prev]);
+        fetchRooms(false);
         return response.data;
       }
       return null;
@@ -109,9 +133,7 @@ export function useChatRooms({
       );
 
       if (response?.status === 200) {
-        setRooms((prev) =>
-          prev.map((r) => (r.id === roomId ? response.data : r))
-        );
+        fetchRooms(false);
         return response.data;
       }
       return null;
@@ -132,7 +154,7 @@ export function useChatRooms({
       );
 
       if (response?.status === 200) {
-        setRooms((prev) => prev.filter((r) => r.id !== roomId));
+        fetchRooms(false);
         return true;
       }
       return false;

@@ -95,14 +95,8 @@ export default function RootLayout({ children }) {
             <UploadingProvider>
               <ToastProvider>
                 <AuthProvider>
-                  <Suspense fallback={<div>Loading...</div>}>
-                    <GoogleProvider>
-                      <SocketProvider>
-                        <DotsLoader />
-                        {children}
-                      </SocketProvider>
-                    </GoogleProvider>
-                  </Suspense>
+                  <DotsLoader />
+                  {children}
                 </AuthProvider>
               </ToastProvider>
             </UploadingProvider>
