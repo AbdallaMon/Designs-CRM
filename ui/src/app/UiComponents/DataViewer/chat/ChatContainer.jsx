@@ -39,6 +39,8 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { getData } from "@/app/helpers/functions/getData";
 import { CHAT_ROOM_TYPES } from "./utils/chatConstants";
 import { useRouter, useSearchParams } from "next/navigation";
+import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import CreateGroupDialog from "./components/CreateGroupDialog";
 
 export function ChatContainer({
   type = "page", // "page" | "widget" | "project" | "clientLead"
@@ -63,6 +65,7 @@ export function ChatContainer({
   const [viewMode, setViewMode] = useState("LIST"); // LIST | CHAT (mobile only)
   const [typingRooms, setTypingRooms] = useState({});
   const [widgetOpen, setWidgetOpen] = useState(false); // Widget only
+  const isAdmin = checkIfAdmin(user);
   // ============================================
   // DATA FETCHING
   // ============================================
@@ -207,7 +210,9 @@ export function ChatContainer({
   const loadAvailableUsers = async () => {
     setLoadingUsers(true);
     try {
-      let url = `admin/all-users?`;
+      let url = isAdmin
+        ? `admin/all-users?`
+        : `shared/chat/all-related-chat-users?`;
       if (projectId) url += `projectId=${projectId}&`;
       const response = await getData({
         url,
@@ -221,32 +226,6 @@ export function ChatContainer({
     } finally {
       setLoadingUsers(false);
     }
-  };
-
-  const handleCreateRoom = async () => {
-    if (!roomName.trim()) return;
-
-    setCreating(true);
-    const normalizedType = CHAT_ROOM_TYPES.PROJECT_GROUP;
-
-    const roomData = {
-      name: roomName,
-      type: normalizedType,
-      projectId,
-      clientLeadId,
-      userIds: selectedUsers.map((u) => u.id),
-    };
-
-    const result = await createRoom(roomData);
-    if (result) {
-      setCreateRoomOpen(false);
-      setRoomName("");
-      setSelectedUsers([]);
-      setSelectedRoom(result);
-      if (isMobile) setViewMode("CHAT");
-    }
-    fetchRooms(false);
-    setCreating(false);
   };
 
   const handleMuteRoom = async (roomId) => {
@@ -362,67 +341,6 @@ export function ChatContainer({
         </Typography>
       </Paper>
     );
-
-  const renderCreateRoomDialog = () => (
-    <Dialog
-      open={createRoomOpen}
-      onClose={() => setCreateRoomOpen(false)}
-      maxWidth="sm"
-      fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-        },
-      }}
-    >
-      <DialogTitle>Create New Group Chat</DialogTitle>
-      <DialogContent sx={{ pt: 2 }}>
-        <Stack spacing={2}>
-          <TextField
-            fullWidth
-            label="Group Name"
-            value={roomName}
-            onChange={(e) => setRoomName(e.target.value)}
-            placeholder="Enter group name"
-          />
-
-          <FormControl fullWidth>
-            <InputLabel>Add Members</InputLabel>
-            <Select
-              multiple
-              value={selectedUsers}
-              onChange={(e) => setSelectedUsers(e.target.value)}
-              label="Add Members"
-              disabled={loadingUsers}
-            >
-              {availableUsers.map((u) => (
-                <MenuItem key={u.id} value={u}>
-                  {u.name} - {u.email}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Stack>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => setCreateRoomOpen(false)}>Cancel</Button>
-        <Button
-          onClick={handleCreateRoom}
-          variant="contained"
-          disabled={!roomName.trim() || creating}
-          sx={{
-            transition: "all 0.2s ease",
-            "&:hover": {
-              transform: "scale(1.02)",
-            },
-          }}
-        >
-          {creating ? <CircularProgress size={20} color="inherit" /> : "Create"}
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
 
   // ============================================
   // RENDER BY TYPE
@@ -554,7 +472,20 @@ export function ChatContainer({
           </Paper>
         </Slide>
 
-        {renderCreateRoomDialog()}
+        <CreateGroupDialog
+          open={createRoomOpen}
+          onClose={() => setCreateRoomOpen(false)}
+          projectId={projectId}
+          clientLeadId={clientLeadId}
+          isAdmin={isAdmin}
+          createRoom={createRoom}
+          fetchRooms={fetchRooms}
+          onCreated={(room) => {
+            setSelectedRoom(room);
+            if (isMobile) setViewMode("CHAT");
+            if (type === "page") router.replace(`?roomId=${room.id}`);
+          }}
+        />
       </>
     );
   }
@@ -623,8 +554,20 @@ export function ChatContainer({
             </Grid>
           </Grid>
         )}
-
-        {renderCreateRoomDialog()}
+        <CreateGroupDialog
+          open={createRoomOpen}
+          onClose={() => setCreateRoomOpen(false)}
+          projectId={projectId}
+          clientLeadId={clientLeadId}
+          isAdmin={isAdmin}
+          createRoom={createRoom}
+          fetchRooms={fetchRooms}
+          onCreated={(room) => {
+            setSelectedRoom(room);
+            if (isMobile) setViewMode("CHAT");
+            if (type === "page") router.replace(`?roomId=${room.id}`);
+          }}
+        />{" "}
       </Box>
     );
   }

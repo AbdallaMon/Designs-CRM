@@ -334,10 +334,6 @@ export async function createChatRoom({
 
   // Emit Socket.IO event to notify members
   try {
-    const io = getIo();
-    // memberData.forEach((member) => {
-    //   // io.to(`user:${member.userId}`).emit("room:created", completeRoom);
-    // });
     await emitToAllUsersRelatedToARoom({
       roomId: room.id,
       userId: createdById,
@@ -398,7 +394,7 @@ export async function deleteChatRoom(roomId, userId) {
     throw new Error("You don't have permission to delete this room");
   }
   if (room.type === "STAFF_TO_STAFF" || room.type === "PROJECT_GROUP") {
-    throw new Error("Direct chat rooms cannot be deleted");
+    throw new Error("Direct chat or project group rooms cannot be deleted");
   }
 
   await prisma.chatRoom.delete({

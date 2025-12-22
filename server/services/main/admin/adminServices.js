@@ -79,7 +79,8 @@ export async function getUser(searchParams, limit, skip, currentUser) {
 export async function getAllUsers(
   searchParams,
   currentUser,
-  checkIfNotHasRelatedChat = false
+  checkIfNotHasRelatedChat = false,
+  checkIfHasRelatedChat
 ) {
   if (!searchParams.role) {
     searchParams.role = "STAFF";
@@ -116,6 +117,21 @@ export async function getAllUsers(
   if (checkIfNotHasRelatedChat) {
     where.chatMemberships = {
       none: {
+        room: {
+          type: "STAFF_TO_STAFF",
+          members: {
+            some: {
+              userId: Number(currentUser.id),
+              isDeleted: false,
+            },
+          },
+        },
+      },
+    };
+  }
+  if (checkIfHasRelatedChat) {
+    where.chatMemberships = {
+      some: {
         room: {
           type: "STAFF_TO_STAFF",
           members: {

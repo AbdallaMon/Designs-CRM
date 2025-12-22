@@ -113,6 +113,22 @@ router.get("/all-chat-users", async (req, res) => {
       .json({ message: "An error occurred while fetching supervisors", error });
   }
 });
+router.get("/all-related-chat-users", async (req, res) => {
+  const searchParams = req.query;
+
+  try {
+    const currentUser = await getCurrentUser(req);
+
+    const users = await getAllUsers(searchParams, currentUser, false, true);
+
+    res.status(200).json({ data: users });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching supervisors", error });
+  }
+});
 router.get("/notes", async (req, res) => {
   try {
     const searchParams = req.query;
