@@ -127,6 +127,12 @@ export const emitEditMessage = ({ messageId, roomId, content, userId }) => {
 export const emitDeleteMessage = ({ messageId, roomId, userId }) => {
   emitSocket("message:delete", { messageId, roomId, userId });
 };
+export const emitPinMessage = ({ messageId, roomId, userId }) => {
+  emitSocket("message:pin", { messageId, roomId, userId });
+};
+export const emitUnpinMessage = ({ messageId, roomId, userId }) => {
+  emitSocket("message:unpin", { messageId, roomId, userId });
+};
 export const isOnline = ({ userId }) => {
   emitSocket("online", { userId });
 };
@@ -136,7 +142,7 @@ export const isOnline = ({ userId }) => {
  * @param {number} roomId - Chat room ID
  */
 export const markMessagesRead = (roomId, userId) => {
-  emitSocket("message:mark_read", { roomId, userId });
+  emitSocket("messages:mark_read", { roomId, userId });
 };
 
 /**

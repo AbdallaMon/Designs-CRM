@@ -76,7 +76,11 @@ export async function getUser(searchParams, limit, skip, currentUser) {
   }
 }
 
-export async function getAllUsers(searchParams) {
+export async function getAllUsers(
+  searchParams,
+  currentUser,
+  checkIfNotHasRelatedChat = false
+) {
   if (!searchParams.role) {
     searchParams.role = "STAFF";
   }
@@ -88,6 +92,44 @@ export async function getAllUsers(searchParams) {
     ];
   }
   where.isActive = true;
+  if (currentUser) {
+    const checkIfNotAdmin =
+      currentUser.role !== "ADMIN" && currentUser.role !== "SUPER_ADMIN";
+    if (checkIfNotAdmin) {
+      const user = await prisma.user.findUnique({
+        where: { id: Number(currentUser.id) },
+        include: { subRoles: true },
+      });
+      const groupUserRoleAndSubRoles = [
+        user.role,
+        ...user.subRoles.map((r) => r.subRole),
+      ];
+      where.OR = [];
+      for (const role of groupUserRoleAndSubRoles) {
+        where.OR.push(
+          { role: role },
+          { subRoles: { some: { subRole: role } } }
+        );
+      }
+    }
+  }
+  if (checkIfNotHasRelatedChat) {
+    where.chatMemberships = {
+      none: {
+        room: {
+          type: "STAFF_TO_STAFF",
+          members: {
+            some: {
+              userId: Number(currentUser.id),
+              isDeleted: false,
+            },
+          },
+        },
+      },
+    };
+  }
+  // not me
+  where.id = { not: Number(currentUser.id) };
   const users = await prisma.user.findMany({
     where: where,
     select: {
@@ -99,6 +141,7 @@ export async function getAllUsers(searchParams) {
       isPrimary: true,
       isSuperSales: true,
       telegramUsername: true,
+      profilePicture: true,
     },
   });
 

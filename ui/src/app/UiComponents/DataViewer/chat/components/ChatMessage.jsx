@@ -26,6 +26,7 @@ import {
   FaPlay,
   FaFile,
 } from "react-icons/fa";
+import { MdPushPin } from "react-icons/md";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { FILE_TYPE_CONFIG } from "@/app/helpers/constants";
@@ -281,27 +282,45 @@ export function ChatMessage({
   message,
   currentUserId,
   isCurrentUserAdmin,
+  currentUserRole,
+  room,
   onReply,
   onEdit,
   onDelete,
+  onPin,
+  onUnPin,
   onJumpToMessage,
   loadingReplayJump,
   setReplyLoaded,
   replyLoaded,
   replayLoadingMessageId,
   setReplayLoadingMessageId,
+  onRemoveUnreadCount,
 }) {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   // ✅ local state for the pulse animation
   const [flashOn, setFlashOn] = useState(false);
+  // ✅ local state for unread count auto-remove
+  const [showUnreadCount, setShowUnreadCount] = useState(
+    message.showUnreadCount || false
+  );
 
   const isOwnMessage =
     message.sender?.id === currentUserId ||
     message.client?.id === currentUserId;
 
   const isDeleted = Boolean(message.isDeleted);
+
+  // Check if user can pin messages
+  const isGroupChat =
+    room?.type === "PROJECT_GROUP" ||
+    room?.type === "GROUP" ||
+    room?.type === "MULTI_PROJECT";
+  const canPin = isGroupChat
+    ? currentUserRole === "ADMIN" || currentUserRole === "MODERATOR"
+    : true;
 
   const isFileLikeMessage =
     message.type !== "TEXT" && message.type !== "SYSTEM";
@@ -329,6 +348,17 @@ export function ChatMessage({
     return () => clearTimeout(timer);
   }, [shouldFlash, setReplyLoaded, setReplayLoadingMessageId]);
 
+  // ✅ auto-remove unread count after 3 seconds
+  useEffect(() => {
+    if (showUnreadCount) {
+      const timer = setTimeout(() => {
+        setShowUnreadCount(false);
+        onRemoveUnreadCount?.(message.id);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showUnreadCount, message.id, onRemoveUnreadCount]);
+
   if (message.type === "SYSTEM") {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
@@ -337,258 +367,313 @@ export function ChatMessage({
     );
   }
 
-  return (
+  // ✅ Render day divider if needed
+  const dayDivider = message.showDayDivider && (
     <Box
       sx={{
         display: "flex",
-        justifyContent: isOwnMessage ? "flex-end" : "flex-start",
-        mb: 2,
-        gap: 1,
+        justifyContent: "center",
+        my: 2,
+        position: "sticky",
+        top: 0,
+        zIndex: 10,
+        mx: "auto",
       }}
-      id={`message-${message.id}`}
     >
-      {!isOwnMessage && (
-        <Avatar src={message.sender?.avatar}>
-          {message.sender?.name?.[0]}
-        </Avatar>
-      )}
-
-      <Box
-        sx={(theme) => {
-          const ringColor = isOwnMessage
-            ? alpha(theme.palette.common.white, 0.65)
-            : alpha(theme.palette.primary.main, 0.65);
-
-          const glowColor = isOwnMessage
-            ? alpha(theme.palette.common.white, 0.22)
-            : alpha(theme.palette.primary.main, 0.18);
-
-          return {
-            maxWidth: "65%",
-            p: 1.5,
-            pr: isDeleted ? 1.5 : 4,
-            borderRadius: 2,
-            bgcolor: isOwnMessage ? "action.selected" : "grey.100",
-            color: isOwnMessage ? "primary.contrastText" : "text.primary",
-            position: "relative",
-            overflow: "visible",
-            zIndex: 0,
-
-            // keep content above overlays
-
-            // ✅ keyframes (no backgroundColor changes)
-            "@keyframes replyGlow": {
-              "0%": { opacity: 0, transform: "scale(1)" },
-              "35%": { opacity: 1, transform: "scale(1.01)" },
-              "100%": { opacity: 0, transform: "scale(1.04)" },
+      <Chip label={message.dayGroup} size="small" variant="outlined" />
+    </Box>
+  );
+  return (
+    <>
+      {dayDivider}
+      {showUnreadCount && message.unreadCount && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            my: 1,
+            animation: "fadeOut 0.5s ease-out 2.5s forwards",
+            "@keyframes fadeOut": {
+              "0%": { opacity: 1 },
+              "100%": { opacity: 0 },
             },
-            "@keyframes replyRing": {
-              "0%": {
+          }}
+        >
+          <Chip
+            label={`${message.unreadCount} unread`}
+            size="small"
+            color="error"
+            variant="outlined"
+          />
+        </Box>
+      )}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: isOwnMessage ? "flex-end" : "flex-start",
+          mb: 2,
+          gap: 1,
+        }}
+        id={`message-${message.id}`}
+      >
+        {!isOwnMessage && (
+          <Avatar src={message.sender?.avatar}>
+            {message.sender?.name?.[0]}
+          </Avatar>
+        )}
+
+        <Box
+          sx={(theme) => {
+            const ringColor = isOwnMessage
+              ? alpha(theme.palette.primary.main, 0.65)
+              : alpha(theme.palette.primary.main, 0.65);
+
+            const glowColor = isOwnMessage
+              ? alpha(theme.palette.primary.main, 0.22)
+              : alpha(theme.palette.primary.main, 0.18);
+
+            return {
+              maxWidth: "65%",
+              p: 1.5,
+              pr: isDeleted ? 1.5 : 4,
+              borderRadius: 2,
+              bgcolor: isOwnMessage ? "action.selected" : "grey.100",
+              color: isOwnMessage ? "primary.contrastText" : "text.primary",
+              position: "relative",
+              overflow: "visible",
+              zIndex: 0,
+
+              // keep content above overlays
+
+              // ✅ keyframes (no backgroundColor changes)
+              "@keyframes replyGlow": {
+                "0%": { opacity: 0, transform: "scale(1)" },
+                "35%": { opacity: 1, transform: "scale(1.01)" },
+                "100%": { opacity: 0, transform: "scale(1.04)" },
+              },
+              "@keyframes replyRing": {
+                "0%": {
+                  opacity: 0,
+                  transform: "scale(0.96)",
+                  boxShadow: `0 0 0 0 ${alpha(ringColor, 0.0)}`,
+                },
+                "30%": {
+                  opacity: 1,
+                  transform: "scale(1)",
+                  boxShadow: `0 0 0 10px ${alpha(ringColor, 0.22)}`,
+                },
+                "100%": {
+                  opacity: 0,
+                  transform: "scale(1.03)",
+                  boxShadow: `0 0 0 18px ${alpha(ringColor, 0.0)}`,
+                },
+              },
+
+              // ✅ inside soft glow overlay (keeps original bg)
+              "&::after": {
+                content: '""',
+                position: "absolute",
+                inset: 0,
+                borderRadius: "inherit",
+                pointerEvents: "none",
+                opacity: 0,
+                transform: "scale(1)",
+                background: `radial-gradient(circle at 30% 25%, ${glowColor} 0%, transparent 55%)`,
+                willChange: "transform, opacity",
+                animation: flashOn ? "replyGlow 1.1s ease-out" : "none",
+              },
+
+              // ✅ outside ring pulse
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                inset: -6,
+                borderRadius: "inherit",
+                pointerEvents: "none",
                 opacity: 0,
                 transform: "scale(0.96)",
-                boxShadow: `0 0 0 0 ${alpha(ringColor, 0.0)}`,
+                border: `2px solid ${alpha(ringColor, 0.55)}`,
+                willChange: "transform, opacity, box-shadow",
+                animation: flashOn ? "replyRing 1.1s ease-out" : "none",
               },
-              "30%": {
-                opacity: 1,
-                transform: "scale(1)",
-                boxShadow: `0 0 0 10px ${alpha(ringColor, 0.22)}`,
+
+              // ✅ reduce motion support
+              "@media (prefers-reduced-motion: reduce)": {
+                "&::after": { animation: "none" },
+                "&::before": { animation: "none" },
               },
-              "100%": {
-                opacity: 0,
-                transform: "scale(1.03)",
-                boxShadow: `0 0 0 18px ${alpha(ringColor, 0.0)}`,
-              },
-            },
-
-            // ✅ inside soft glow overlay (keeps original bg)
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              inset: 0,
-              borderRadius: "inherit",
-              pointerEvents: "none",
-              opacity: 0,
-              transform: "scale(1)",
-              background: `radial-gradient(circle at 30% 25%, ${glowColor} 0%, transparent 55%)`,
-              willChange: "transform, opacity",
-              animation: flashOn ? "replyGlow 1.1s ease-out" : "none",
-            },
-
-            // ✅ outside ring pulse
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              inset: -6,
-              borderRadius: "inherit",
-              pointerEvents: "none",
-              opacity: 0,
-              transform: "scale(0.96)",
-              border: `2px solid ${alpha(ringColor, 0.55)}`,
-              willChange: "transform, opacity, box-shadow",
-              animation: flashOn ? "replyRing 1.1s ease-out" : "none",
-            },
-
-            // ✅ reduce motion support
-            "@media (prefers-reduced-motion: reduce)": {
-              "&::after": { animation: "none" },
-              "&::before": { animation: "none" },
-            },
-          };
-        }}
-      >
-        {/* ✅ Actions (disabled when deleted) */}
-        {!isDeleted && (
-          <>
-            <IconButton
-              size="small"
-              onClick={(e) => setMenuAnchor(e.currentTarget)}
-              sx={{ position: "absolute", top: 4, right: 4, zIndex: 2 }}
-            >
-              <FaEllipsisV />
-            </IconButton>
-
-            <Menu
-              anchorEl={menuAnchor}
-              open={Boolean(menuAnchor)}
-              onClose={() => setMenuAnchor(null)}
-            >
-              <MenuItem
-                onClick={() => {
-                  setMenuAnchor(null);
-                  onReply?.(message);
-                }}
+            };
+          }}
+        >
+          {/* ✅ Actions (disabled when deleted) */}
+          {!isDeleted && (
+            <>
+              <IconButton
+                size="small"
+                onClick={(e) => setMenuAnchor(e.currentTarget)}
+                sx={{ position: "absolute", top: 4, right: 4, zIndex: 2 }}
               >
-                <FaReply style={{ marginRight: 8 }} /> Reply
-              </MenuItem>
+                <FaEllipsisV />
+              </IconButton>
 
-              {isOwnMessage && (
+              <Menu
+                anchorEl={menuAnchor}
+                open={Boolean(menuAnchor)}
+                onClose={() => setMenuAnchor(null)}
+              >
                 <MenuItem
                   onClick={() => {
                     setMenuAnchor(null);
-                    onEdit?.(message.id);
+                    onReply?.(message);
                   }}
                 >
-                  <FaEdit style={{ marginRight: 8 }} /> Edit
+                  <FaReply style={{ marginRight: 8 }} /> Reply
                 </MenuItem>
-              )}
 
-              {(isOwnMessage || isCurrentUserAdmin) && (
-                <MenuItem
-                  onClick={() => {
-                    setMenuAnchor(null);
-                    setDeleteConfirm(true);
-                  }}
-                >
-                  <FaTrash style={{ marginRight: 8 }} /> Delete
-                </MenuItem>
-              )}
-            </Menu>
-          </>
-        )}
-
-        {/* ✅ Deleted message UI (no content / no file / no reply preview / no actions) */}
-        {isDeleted ? (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <FaTrash style={{ opacity: 0.75 }} />
-            <Typography
-              variant="body2"
-              sx={{
-                fontStyle: "italic",
-                opacity: isOwnMessage ? 0.9 : 0.8,
-                whiteSpace: "pre-wrap",
-                wordBreak: "break-word",
-              }}
-            >
-              This message was deleted
-            </Typography>
-          </Box>
-        ) : (
-          <>
-            {message.replyTo && (
-              <ReplyPreview
-                loadingReplayJump={loadingReplayJump}
-                replyTo={message.replyTo}
-                isOwnMessage={isOwnMessage}
-                onJumpToMessage={onJumpToMessage}
-              />
-            )}
-
-            {/* ✅ FILE (or non-text) message */}
-            {hasFile && (
-              <>
-                <MediaRenderer
-                  file={{
-                    fileUrl: message.fileUrl,
-                    fileName: message.fileName,
-                    fileMimeType: message.fileMimeType,
-                  }}
-                />
-
-                {/* ✅ if file message still has text content -> render it under the file */}
-                {hasContent && (
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      mt: 1,
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
+                {canPin && (
+                  <MenuItem
+                    onClick={() => {
+                      setMenuAnchor(null);
+                      if (message.isPinned) {
+                        onUnPin?.(message);
+                      } else {
+                        onPin?.(message);
+                      }
                     }}
                   >
-                    {message.content}
-                  </Typography>
+                    {message.isPinned ? (
+                      <>
+                        <MdPushPin style={{ marginRight: 8 }} /> Unpin
+                      </>
+                    ) : (
+                      <>
+                        <MdPushPin style={{ marginRight: 8 }} /> Pin
+                      </>
+                    )}
+                  </MenuItem>
                 )}
-              </>
-            )}
 
-            {/* ✅ TEXT message (or non-file message with content) */}
-            {!hasFile && hasContent && (
+                {(isOwnMessage || isCurrentUserAdmin) && (
+                  <MenuItem
+                    onClick={() => {
+                      setMenuAnchor(null);
+                      setDeleteConfirm(true);
+                    }}
+                  >
+                    <FaTrash style={{ marginRight: 8 }} /> Delete
+                  </MenuItem>
+                )}
+              </Menu>
+            </>
+          )}
+
+          {/* ✅ Deleted message UI (no content / no file / no reply preview / no actions) */}
+          {isDeleted ? (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <FaTrash style={{ opacity: 0.75 }} />
               <Typography
                 variant="body2"
-                sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
-              >
-                {message.content}
-              </Typography>
-            )}
-          </>
-        )}
-
-        <Typography
-          variant="caption"
-          sx={{ display: "block", mt: 0.5, opacity: 0.6 }}
-        >
-          {dayjs(message.createdAt).format("HH:mm")}
-          {message.isDeleted
-            ? " • deleted"
-            : message.isEdited
-            ? " • edited"
-            : ""}
-        </Typography>
-
-        {/* ✅ Delete Confirm (disabled when deleted) */}
-        {!isDeleted && (
-          <Dialog open={deleteConfirm} onClose={() => setDeleteConfirm(false)}>
-            <DialogTitle>Delete message?</DialogTitle>
-            <DialogActions>
-              <Button onClick={() => setDeleteConfirm(false)}>Cancel</Button>
-              <Button
-                color="error"
-                onClick={() => {
-                  setDeleteConfirm(false);
-                  onDelete?.(message.id);
+                sx={{
+                  fontStyle: "italic",
+                  opacity: isOwnMessage ? 0.9 : 0.8,
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
                 }}
               >
-                Delete
-              </Button>
-            </DialogActions>
-          </Dialog>
+                This message was deleted
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              {message.replyTo && (
+                <ReplyPreview
+                  loadingReplayJump={loadingReplayJump}
+                  replyTo={message.replyTo}
+                  isOwnMessage={isOwnMessage}
+                  onJumpToMessage={onJumpToMessage}
+                />
+              )}
+
+              {/* ✅ FILE (or non-text) message */}
+              {hasFile && (
+                <>
+                  <MediaRenderer
+                    file={{
+                      fileUrl: message.fileUrl,
+                      fileName: message.fileName,
+                      fileMimeType: message.fileMimeType,
+                    }}
+                  />
+
+                  {/* ✅ if file message still has text content -> render it under the file */}
+                  {hasContent && (
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        mt: 1,
+                        whiteSpace: "pre-wrap",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {message.content}
+                    </Typography>
+                  )}
+                </>
+              )}
+
+              {/* ✅ TEXT message (or non-file message with content) */}
+              {!hasFile && hasContent && (
+                <Typography
+                  variant="body2"
+                  sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}
+                >
+                  {message.content}
+                </Typography>
+              )}
+            </>
+          )}
+
+          <Typography
+            variant="caption"
+            sx={{ display: "block", mt: 0.5, opacity: 0.6 }}
+          >
+            {dayjs(message.createdAt).format("HH:mm")}
+            {message.isDeleted
+              ? " • deleted"
+              : message.isEdited
+              ? " • edited"
+              : ""}
+          </Typography>
+
+          {/* ✅ Delete Confirm (disabled when deleted) */}
+          {!isDeleted && (
+            <Dialog
+              open={deleteConfirm}
+              onClose={() => setDeleteConfirm(false)}
+            >
+              <DialogTitle>Delete message?</DialogTitle>
+              <DialogActions>
+                <Button onClick={() => setDeleteConfirm(false)}>Cancel</Button>
+                <Button
+                  color="error"
+                  onClick={() => {
+                    setDeleteConfirm(false);
+                    onDelete?.(message.id);
+                  }}
+                >
+                  Delete
+                </Button>
+              </DialogActions>
+            </Dialog>
+          )}
+        </Box>
+
+        {isOwnMessage && (
+          <Avatar src={message.sender?.avatar}>
+            {message.sender?.name?.[0]}
+          </Avatar>
         )}
       </Box>
-
-      {isOwnMessage && (
-        <Avatar src={message.sender?.avatar}>
-          {message.sender?.name?.[0]}
-        </Avatar>
-      )}
-    </Box>
+    </>
   );
 }

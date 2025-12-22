@@ -6,6 +6,7 @@ import {
   getRoomMembers,
 } from "../../services/main/chat/chatMemberServices.js";
 import { getCurrentUser } from "../../services/main/utility/utility.js";
+import { getAllUsers } from "../../services/main/admin/adminServices.js";
 
 const router = express.Router();
 

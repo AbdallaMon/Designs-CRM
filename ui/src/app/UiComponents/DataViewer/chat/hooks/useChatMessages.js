@@ -27,9 +27,11 @@ export function useChatMessages(roomId, initialPage = 0) {
   const [replyLoaded, setReplyLoaded] = useState(false);
   const [replayLoadingMessageId, setReplayLoadingMessageId] = useState(null);
   const [newMessagesCount, setNewMessagesCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const { user } = useAuth();
   // ✅ attach this ref to your scrollable messages container (Box/Paper/etc)
   const scrollContainerRef = useRef(null);
+  const pageRef = useRef(page);
 
   // keep your refs
   const messagesEndRef = useRef(null);
@@ -42,7 +44,7 @@ export function useChatMessages(roomId, initialPage = 0) {
   const TOP_THRESHOLD_PX = 80;
 
   const fetchMessages = useCallback(
-    async (pageNum = 0, isLoadMore = false) => {
+    async (pageNum = 0, isLoadMore = false, forceLimit) => {
       if (!roomId) return;
       if (loadingMore) return;
       if (loading) return;
@@ -59,7 +61,9 @@ export function useChatMessages(roomId, initialPage = 0) {
       }
 
       const response = await getData({
-        url: `shared/chat/${roomId}/messages?page=${pageNum}&limit=${LIMIT}&`,
+        url: `shared/chat/${roomId}/messages?page=${pageNum}&limit=${
+          forceLimit || LIMIT
+        }&`,
         setLoading: isLoadMore ? setLoadingMore : setLoading,
       });
 
@@ -75,16 +79,22 @@ export function useChatMessages(roomId, initialPage = 0) {
         }
 
         setTotalMessages(response.total || 0);
-        setHasMore((pageNum + 1) * LIMIT < (response.total || 0));
+        const hasMore = (pageNum + 1) * LIMIT < (response.total || 0);
 
+        setHasMore(hasMore);
+        setTotalPages(response.totalPages || 1);
         // ✅ on first load, scroll to bottom
         if (messagesEndRef.current && pageNum === 0) {
           messagesEndRef.current.scrollIntoView({ behavior: "auto" });
         }
+        return { messages: newMessages, page: pageNum };
       }
     },
     [roomId]
   );
+  useEffect(() => {
+    pageRef.current = page; // Keep ref in sync with state
+  }, [page]);
   useEffect(() => {
     setInitialLoading(true);
   }, [roomId]);
@@ -97,7 +107,7 @@ export function useChatMessages(roomId, initialPage = 0) {
   useEffect(() => {
     if (!hasMore) return;
     if (initialLoading) return;
-
+    if (loadingJumpToMessage) return;
     fetchMessages(page, true);
   }, [page]);
   const scrollToBottom = () => {
@@ -106,14 +116,20 @@ export function useChatMessages(roomId, initialPage = 0) {
   };
 
   const loadMore = useCallback(() => {
-    if (!hasMore) return;
-    if (loadingMore || loading || initialLoading) return;
-    setPage((prev) => {
-      const next = prev + 1;
-      return next;
-    });
+    if (!hasMore) return false;
+    if (loadingMore || loading || initialLoading || loadingJumpToMessage)
+      return false;
+    setPage((prev) => prev + 1);
     setLoadingMore(true);
-  }, [hasMore, loadingMore, loading, initialLoading, fetchMessages]);
+  }, [
+    page,
+    hasMore,
+    loadingMore,
+    loading,
+    initialLoading,
+    fetchMessages,
+    loadingJumpToMessage,
+  ]);
 
   useEffect(() => {
     const el = scrollContainerRef.current;
@@ -162,25 +178,48 @@ export function useChatMessages(roomId, initialPage = 0) {
   }, [loadMore]);
 
   function checkIfMessageExistsAndJump(messageId) {
-    const chceckMessageExists = messages.find((m) => m.id === messageId);
-    if (chceckMessageExists) {
-      const el = document.getElementById(`message-${messageId}`);
-      if (el) {
-        el.scrollIntoView({ block: "center" });
-      }
+    const el = document.getElementById(`message-${messageId}`);
+    if (el) {
+      el.scrollIntoView({ block: "center" });
       return true;
     }
     return false;
   }
+
   async function onJumpToMessage(messageId) {
+    if (loadingJumpToMessage) return;
     setLoadingJumpToMessage(true);
-    checkIfMessageExistsAndJump(messageId);
-    while (!checkIfMessageExistsAndJump(messageId)) {
-      loadMore();
+    try {
+      // Try current page first
+      if (checkIfMessageExistsAndJump(messageId)) {
+        return;
+      }
+
+      const req = await getData({
+        url: `shared/chat/${roomId}/messages/${messageId}/page`,
+        setLoading: () => {},
+        limit: LIMIT,
+      });
+      let lastReq;
+      if (req?.status === 200) {
+        // lets loop starting from current page till the messagePage loop and make a samll time out then we we finsih we jump
+        const messagePage = req?.page;
+        for (let p = pageRef.current + 1; p <= messagePage; p++) {
+          lastReq = await fetchMessages(p, true);
+          // scroll to top to load more smoothly
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = 0;
+          }
+        }
+        checkIfMessageExistsAndJump(messageId, lastReq.messages);
+        setPage(messagePage);
+        return;
+      }
+    } finally {
+      setLoadingJumpToMessage(false);
+      setReplyLoaded(true);
+      setReplayLoadingMessageId(messageId);
     }
-    setLoadingJumpToMessage(false);
-    setReplyLoaded(true);
-    setReplayLoadingMessageId(messageId);
   }
 
   const sendMessage = async (messageData) => {

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import {
+  getCurrentUser,
   getTokenData,
   verifyTokenAndHandleAuthorization,
 } from "../../services/main/utility/utility.js";
@@ -34,6 +35,7 @@ import {
   deleteAModel,
   getNotes,
 } from "../../services/main/shared/index.js";
+import { getAllUsers } from "../../services/main/admin/adminServices.js";
 
 const router = Router();
 
@@ -95,6 +97,22 @@ router.use("/sales-stages", salesStagesRoutes);
 
 // Reviews & OAuth integration
 router.use("/reviews", reviewsRoutes);
+router.get("/all-chat-users", async (req, res) => {
+  const searchParams = req.query;
+
+  try {
+    const currentUser = await getCurrentUser(req);
+
+    const users = await getAllUsers(searchParams, currentUser, true);
+
+    res.status(200).json({ data: users });
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res
+      .status(500)
+      .json({ message: "An error occurred while fetching supervisors", error });
+  }
+});
 router.get("/notes", async (req, res) => {
   try {
     const searchParams = req.query;

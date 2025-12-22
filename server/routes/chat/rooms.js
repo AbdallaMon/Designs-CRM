@@ -5,6 +5,7 @@ import {
   updateChatRoom,
   deleteChatRoom,
   getChatRoomById,
+  checkIfChatAlreadyExists,
 } from "../../services/main/chat/chatRoomServices.js";
 import { getCurrentUser } from "../../services/main/utility/utility.js";
 
@@ -102,6 +103,40 @@ router.post("/", async (req, res) => {
       allowFiles,
       allowCalls,
       isChatEnabled,
+    });
+
+    res.status(200).json({ status: 200, data: room });
+  } catch (error) {
+    console.error("Create chat room error:", error);
+    res.status(500).json({
+      status: 500,
+      message: error.message || "Error creating chat room",
+    });
+  }
+});
+router.post("/create-chat", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req, res);
+    const userId = user.id;
+
+    const name = "Staff to Staff Chat";
+    const participantId = Number(req.body.participantId);
+    const userIds = [participantId];
+    const existingRoom = await checkIfChatAlreadyExists({
+      userId: Number(userId),
+      otherUserId: participantId,
+    });
+    if (existingRoom) {
+      return res.status(200).json({ status: 200, data: existingRoom });
+    }
+    const room = await createChatRoom({
+      name,
+      type: "STAFF_TO_STAFF",
+      userIds,
+      createdById: userId,
+      allowFiles: true,
+      allowCalls: true,
+      isChatEnabled: true,
     });
 
     res.status(200).json({ status: 200, data: room });

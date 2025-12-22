@@ -49,8 +49,9 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInput } from "./ChatInput";
 import { ChatFilesTab } from "./ChatFilesTab";
+import ScrollButton from "./ScrollButton";
+import PinnedMessages from "../PinnedMessages";
 import { useChatMessages, useSocket } from "../hooks";
-import { processMessagesWithDayGroups } from "../utils/dayGrouping";
 
 import {
   markMessagesRead,
@@ -58,6 +59,8 @@ import {
   joinChatRoom,
   typing,
   emitStopTyping,
+  emitPinMessage,
+  emitUnpinMessage,
 } from "../utils/socketIO";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { MdDelete } from "react-icons/md";
@@ -72,6 +75,7 @@ export function ChatWindow({
   isMobile = false,
   onRoomActivity = () => {},
   reFetchRooms = () => {},
+  setTotalUnread,
 }) {
   const { user } = useAuth();
   const { setLoading: setToastLoading } = useToastContext();
@@ -102,6 +106,12 @@ export function ChatWindow({
     return CHAT_ROOM_TYPE_LABELS[room.type] || room.type || "Chat";
   };
   const roomLabel = getRoomLabel(room);
+  // Get current user's role in the room
+  const currentUserMember = room?.members?.find(
+    (m) => m.userId === user?.id || m.clientId === user?.id
+  );
+  const currentUserRole = currentUserMember?.role || "MEMBER";
+
   // ✅ Confirm delete dialog states
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmTitle, setConfirmTitle] = useState("Confirm");
@@ -155,17 +165,12 @@ export function ChatWindow({
     newMessagesCount,
     setNewMessagesCount,
   } = useChatMessages(room?.id);
-
   const {
     members,
     loading: membersLoading,
     fetchMembers,
     setMembers,
   } = useChatMembers(room?.id);
-
-  const processedMessages = useMemo(() => {
-    return processMessagesWithDayGroups(messages);
-  }, [messages]);
 
   // Join room when it changes
   useEffect(() => {
@@ -275,13 +280,6 @@ export function ChatWindow({
   const isNotDirectChat = room?.type !== CHAT_ROOM_TYPES.STAFF_TO_STAFF;
   const canManageMembers = isAdmin && isNotDirectChat;
 
-  useEffect(() => {
-    if (room?.id) {
-      // Mark all messages in room as read when room opens
-      markMessagesRead(room.id, user.id);
-    }
-  }, [room]);
-
   const handleSendMessage = async (content, fileData) => {
     const messageData = {
       content,
@@ -363,6 +361,40 @@ export function ChatWindow({
       );
     },
     [openConfirm, deleteMessage]
+  );
+
+  // Handle pin message
+  const handlePinMessage = useCallback(
+    (message) => {
+      emitPinMessage({
+        messageId: message.id,
+        roomId: room?.id,
+        userId: user?.id,
+      });
+    },
+    [room?.id, user?.id]
+  );
+  const handleUnPinMessage = useCallback(
+    (message) => {
+      emitUnpinMessage({
+        messageId: message.id,
+        roomId: room?.id,
+        userId: user?.id,
+      });
+    },
+    [room?.id, user?.id]
+  );
+
+  // ✅ Handler to remove unread count badge
+  const handleRemoveUnreadCount = useCallback(
+    (messageId) => {
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) =>
+          msg.id === messageId ? { ...msg, showUnreadCount: false } : msg
+        )
+      );
+    },
+    [setMessages]
   );
 
   const loadAvailableUsers = async (wait) => {
@@ -569,7 +601,12 @@ export function ChatWindow({
           )}
         </Box>
       </Box>
-
+      <PinnedMessages
+        roomId={room?.id}
+        handleJumpToMessage={onJumpToMessage}
+        loadingJumpToMessage={loadingJumpToMessage}
+        chatContainerRef={scrollContainerRef}
+      />
       {/* Tab Content */}
 
       <>
@@ -583,6 +620,7 @@ export function ChatWindow({
             display: "flex",
             flexDirection: "column",
             scrollBehavior: "smooth",
+            position: "relative",
             "&::-webkit-scrollbar": { width: "8px" },
             "&::-webkit-scrollbar-track": {
               backgroundColor: "transparent",
@@ -596,6 +634,13 @@ export function ChatWindow({
             },
           }}
         >
+          {/* Scroll to bottom button */}
+          <ScrollButton
+            containerRef={scrollContainerRef}
+            direction="down"
+            threshold={300}
+          />
+
           {messagesLoading ? (
             <Box
               sx={{
@@ -607,7 +652,7 @@ export function ChatWindow({
             >
               <CircularProgress />
             </Box>
-          ) : processedMessages.length === 0 ? (
+          ) : messages.length === 0 ? (
             <Box
               sx={{
                 display: "flex",
@@ -637,12 +682,14 @@ export function ChatWindow({
               )}
               {loadingMore && <CircularProgress />}
 
-              {processedMessages.map((msg) => (
+              {messages.map((msg) => (
                 <ChatMessage
                   key={msg.id}
                   message={msg}
                   currentUserId={user.id}
                   isCurrentUserAdmin={isAdmin}
+                  currentUserRole={currentUserRole}
+                  room={room}
                   onReply={setReplyingTo}
                   onEdit={(msgId) => {
                     if (msgId) {
@@ -651,8 +698,11 @@ export function ChatWindow({
                       setEditingMessageId(null);
                     }
                   }}
+                  onPin={handlePinMessage}
+                  onUnPin={handleUnPinMessage}
                   // ✅ confirm before delete
                   onDelete={confirmDeleteMessage}
+                  onRemoveUnreadCount={handleRemoveUnreadCount}
                   isEditing={editingMessageId === msg.id}
                   loadingReplayJump={loadingJumpToMessage}
                   onJumpToMessage={onJumpToMessage}
@@ -693,7 +743,7 @@ export function ChatWindow({
                 sx={{ fontStyle: "italic", color: "textSecondary" }}
               >
                 {typingUsers.length === 1
-                  ? `${typingUsers[0]?.message || "Someone"} is typing`
+                  ? `${typingUsers[0]?.message || "Someone is Typing"}`
                   : `${typingUsers.length} people are typing`}
               </Typography>
               <Box sx={{ display: "flex", gap: 0.5 }}>
@@ -1017,6 +1067,8 @@ export function ChatWindow({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* ✅ Pinned Messages Component */}
     </Paper>
   );
 }

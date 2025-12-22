@@ -22,6 +22,8 @@ export function useChatRooms({
   const [chatType, setChatType] = useState(null);
   const [searchKey, setSearchKey] = useState(null);
   const [refetchToggle, setRefetchToggle] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState({});
+  const [totalUnread, setTotalUnread] = useState(0);
   const { socket } = useSocket();
   const { user } = useAuth();
   function onSearchChange(newSearchKey) {
@@ -58,6 +60,8 @@ export function useChatRooms({
           setRooms((prev) =>
             append ? [...prev, ...(response.data || [])] : response.data || []
           );
+          setUnreadCounts(response.unreadCounts || {});
+          setTotalUnread(response.totalUnread || 0);
         } else {
           setError("Failed to fetch chat rooms");
         }
@@ -178,5 +182,9 @@ export function useChatRooms({
     onChatTypeChange,
     chatType,
     searchKey,
+    unreadCounts,
+    setUnreadCounts,
+    totalUnread,
+    setTotalUnread,
   };
 }

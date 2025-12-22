@@ -5,7 +5,6 @@ import { useSocket as useSocketContext } from "@/app/providers/SocketProvider";
 
 export function useSocket(handlers = {}) {
   const { socket } = useSocketContext();
-
   const handlersRef = useRef(handlers);
   useEffect(() => {
     handlersRef.current = handlers;
@@ -19,7 +18,8 @@ export function useSocket(handlers = {}) {
       "message:created": "onMessageCreated",
       "message:edited": "onMessageEdited",
       "message:deleted": "onMessageDeleted",
-
+      "message:pinned": "onMessagePinned",
+      "message:unpinned": "onMessageUnpinned",
       "user:typing": "onTyping",
       "user:stop_typing": "onStopTyping",
 
@@ -38,6 +38,7 @@ export function useSocket(handlers = {}) {
       "notification:messages_read": "onMessagesReadNotification",
       "notification:room_removed": "onRoomDeletedNotification",
       "notification:room_created": "onRoomCreatedNotification",
+
       disconnect: () => {
         console.log("Socket disconnected");
       },

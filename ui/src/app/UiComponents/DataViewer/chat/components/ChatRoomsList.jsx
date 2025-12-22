@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
   Box,
   List,
@@ -40,6 +40,8 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import ChatChips from "./ChatChips";
 import { LastSeenAt, OnlineStatus } from "./LastSeenAt";
 import Link from "next/link";
+import StartNewChat from "./StartNewChat";
+import ScrollButton from "./ScrollButton";
 
 dayjs.extend(relativeTime);
 
@@ -59,11 +61,13 @@ export function ChatRoomsList({
   typingRooms = {},
   onSearch,
   onSelectChatType,
+  unreadCounts,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [menuRoomId, setMenuRoomId] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const listContainerRef = useRef(null);
   const DEBOUNCE_MS = 450;
   // Debounce utility with cancel/flush controls
   function debounce(fn, wait) {
@@ -140,10 +144,7 @@ export function ChatRoomsList({
   };
 
   const getUnreadCount = (room) => {
-    // Prefer backend-provided unread count if available
-    if (typeof room.unreadCount === "number") return room.unreadCount;
-    // Fallback: derive from members read state
-    return room.members?.filter((m) => !m.lastReadAt)?.length || 0;
+    return unreadCounts?.[room.id] || 0;
   };
 
   const getRoomAvatar = (room) => {
@@ -182,15 +183,32 @@ export function ChatRoomsList({
       }}
     >
       {/* Header with new chat button (group only) */}
-      {!isWidget && (
-        <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider" }}>
-          <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-            <IconButton color="primary" onClick={onCreateNewRoom} size="small">
+      <Box
+        sx={{
+          p: 2,
+          borderBottom: "1px solid",
+          borderColor: "divider",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <StartNewChat />
+
+        {!isWidget && (
+          <Box sx={{ display: "flex" }}>
+            <Button
+              color="primary"
+              onClick={onCreateNewRoom}
+              size="small"
+              variant="outlined"
+            >
               <FaPlus />
-            </IconButton>
+              Group
+            </Button>
           </Box>
-        </Box>
-      )}
+        )}
+      </Box>
 
       {/* Search */}
       <Box sx={{ p: 2, pt: 1 }}>
@@ -238,10 +256,12 @@ export function ChatRoomsList({
 
       {/* Rooms list */}
       <List
+        ref={listContainerRef}
         onScroll={handleScroll}
         sx={{
           flex: 1,
           overflow: "auto",
+          position: "relative",
           "&::-webkit-scrollbar": { width: "6px" },
           "&::-webkit-scrollbar-thumb": {
             backgroundColor: "rgba(0,0,0,0.2)",
@@ -249,6 +269,13 @@ export function ChatRoomsList({
           },
         }}
       >
+        {/* Scroll to top button */}
+        <ScrollButton
+          containerRef={listContainerRef}
+          direction="up"
+          threshold={300}
+          position={{ top: 8, right: 8 }}
+        />
         {rooms?.length === 0 ? (
           <Box sx={{ display: "flex", justifyContent: "center", pt: 3 }}>
             <Typography color="textSecondary">No chats found</Typography>

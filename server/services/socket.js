@@ -6,10 +6,13 @@ import {
   deleteMessage,
   editMessage,
   emitToAllUsersRelatedToARoom,
+  markAMessageAsRead,
   markMessagesAsRead,
+  pinMessage,
   removeReaction,
   sendMessage,
 } from "./main/chat/chatMessageServices.js";
+import { unpinMessage } from "telegram/client/messages.js";
 
 let io;
 const userSessions = new Map();
@@ -283,18 +286,50 @@ export function initSocket(httpServer) {
     /**
      * Mark messages as read
      */
+    socket.on("messages:mark_read", async (data) => {
+      const { roomId, userId } = data;
+      if (!roomId) return;
+
+      try {
+        // Get member
+        await markMessagesAsRead({ roomId, userId });
+      } catch (error) {
+        console.error("Mark as read error:", error);
+      }
+    });
     socket.on("message:mark_read", async (data) => {
       const { roomId, messageId, userId } = data;
       if (!roomId) return;
 
       try {
         // Get member
-        await markMessagesAsRead({ messageId, roomId, userId });
+        await markAMessageAsRead({ messageId, roomId, userId });
       } catch (error) {
         console.error("Mark as read error:", error);
       }
     });
 
+    // message:pin
+    socket.on("message:pin", async (data) => {
+      const { roomId, messageId, userId } = data;
+      if (!roomId) return;
+      try {
+        await pinMessage({ roomId, messageId, userId });
+      } catch (error) {
+        console.error("Pin message error:", error);
+      }
+    });
+    // message:unpin
+    socket.on("message:unpin", async (data) => {
+      const { roomId, messageId, userId } = data;
+      if (!roomId) return;
+      try {
+        await unpinMessage({ roomId, messageId, userId });
+      } catch (error) {
+        console.error("Unpin message error:", error);
+      }
+    });
+    // message:reaction_added
     socket.on("reaction:added", async (data) => {
       const { emoji, messageId, userId } = data;
 

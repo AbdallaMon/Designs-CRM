@@ -19,32 +19,12 @@ export async function getMessages({ roomId, userId, page = 0, limit = 50 }) {
   if (!member) {
     throw new Error("You don't have access to this room");
   }
-  const unreadMessages = prisma.chatMessage.findMany({
-    where: {
-      roomId: parseInt(roomId),
-      senderId: { not: parseInt(userId) },
-      // isDeleted: false,
-      readReceipts: {
-        none: { memberId: member.id },
-      },
-    },
-    orderBy: { createdAt: "asc" },
-  });
 
-  for (const msg of await unreadMessages) {
-    await prisma.chatReadReceipt.create({
-      data: {
-        memberId: member.id,
-        messageId: msg.id,
-      },
-    });
-  }
-
-  const [messages, total] = await Promise.all([
+  const [messages, total, unreadCount] = await Promise.all([
     prisma.chatMessage.findMany({
       where: {
         roomId: parseInt(roomId),
-        // isDeleted: false,
+        isDeleted: false,
       },
       skip,
       take: limit,
@@ -75,45 +55,109 @@ export async function getMessages({ roomId, userId, page = 0, limit = 50 }) {
             user: { select: { id: true, name: true } },
           },
         },
+        readReceipts: {
+          where: { memberId: member.id },
+          select: { id: true },
+        },
       },
     }),
     prisma.chatMessage.count({
       where: {
         roomId: parseInt(roomId),
-        // isDeleted: false,
+        isDeleted: false,
+      },
+    }),
+    prisma.chatMessage.count({
+      where: {
+        roomId: parseInt(roomId),
+        isDeleted: false,
+        senderId: { not: parseInt(userId) },
+        readReceipts: {
+          none: { memberId: member.id },
+        },
       },
     }),
   ]);
 
-  // Add day grouping metadata
-  const messagesWithGrouping = addDayGrouping(messages.reverse());
+  // Convert to ascending chronological order
+  const ascending = messages.reverse();
+
+  // Add day grouping metadata with friendly label and unread marker
+  const messagesWithGrouping = addDayGrouping(ascending, {
+    userId: parseInt(userId),
+    unreadCount,
+  });
+
+  await markMessagesAsRead({ roomId, userId });
   return {
     data: messagesWithGrouping,
     total,
     totalPages: Math.ceil(total / limit),
   };
 }
+export async function getMessagePageByMessageId({ messageId, limit = 50 }) {
+  const message = await prisma.chatMessage.findUnique({
+    where: { id: messageId },
+    select: { createdAt: true, id: true, roomId: true },
+  });
+  if (!message) throw new Error("Message not found");
+
+  const { createdAt, id } = message;
+
+  const index = await prisma.chatMessage.count({
+    where: {
+      OR: [
+        { roomId: message.roomId, createdAt: { gt: createdAt } },
+        { roomId: message.roomId, createdAt, id: { gt: id } },
+      ],
+    },
+  });
+
+  // 3) Compute page (1-based)
+  const page = Math.floor(index / limit);
+
+  return { messageId, page, limit };
+}
 
 /**
  * Add day grouping metadata to messages
  */
-function addDayGrouping(messages) {
+function addDayGrouping(messages, options = {}) {
   if (!messages || messages.length === 0) return [];
 
   const now = new Date();
   let previousDayGroup = null;
+  let firstUnreadMarked = false;
+  const { userId, unreadCount } = options;
 
   return messages.map((msg) => {
     const msgDate = new Date(msg.createdAt);
     const dayGroup = getDayGroup(msgDate, now);
+    const dayLabel = getDayLabel(msgDate, now);
     const showDayDivider = dayGroup !== previousDayGroup;
 
     previousDayGroup = dayGroup;
 
+    // Determine unread for current member (requires readReceipts for this member)
+    const isUnreadForMember =
+      typeof userId === "number" &&
+      msg.senderId !== userId &&
+      (!msg.readReceipts || msg.readReceipts.length === 0);
+
+    const showUnreadCount =
+      !firstUnreadMarked && isUnreadForMember ? true : false;
+    const unreadCountValue = showUnreadCount ? unreadCount : undefined;
+    if (showUnreadCount) firstUnreadMarked = true;
+
     return {
       ...msg,
       dayGroup,
+      dayLabel,
       showDayDivider,
+      // Unread marker on the first unread message in this page
+      ...(showUnreadCount
+        ? { showUnreadCount: true, unreadCount: unreadCountValue }
+        : {}),
     };
   });
 }
@@ -155,6 +199,42 @@ function getDayGroup(msgDate, now) {
   }
 }
 
+/**
+ * Friendly day label for UI
+ */
+function getDayLabel(msgDate, now) {
+  const msgDay = new Date(
+    msgDate.getFullYear(),
+    msgDate.getMonth(),
+    msgDate.getDate()
+  );
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const diffTime = today.getTime() - msgDay.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) {
+    const days = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    return days[msgDate.getDay()];
+  }
+  // e.g., Jan 5, 2025
+  return msgDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 export async function emitToAllUsersRelatedToARoom({
   roomId,
   userId,
@@ -166,6 +246,28 @@ export async function emitToAllUsersRelatedToARoom({
       roomId: parseInt(roomId),
       isDeleted: false,
       userId: { not: parseInt(userId) },
+    },
+    select: { userId: true },
+  });
+  try {
+    const io = getIo();
+    for (const member of members) {
+      io.to(`user:${member.userId}`).emit(type, {
+        ...content,
+      });
+    }
+  } catch (e) {}
+}
+export async function emitToAllUsersIncludingSame({
+  roomId,
+  userId,
+  content,
+  type,
+}) {
+  const members = await prisma.chatMember.findMany({
+    where: {
+      roomId: parseInt(roomId),
+      isDeleted: false,
     },
     select: { userId: true },
   });
@@ -365,7 +467,64 @@ export async function deleteMessage({ messageId, userId }) {
 /**
  * Mark messages as read
  */
-export async function markMessagesAsRead({ roomId, userId, messageId }) {
+export async function markMessagesAsRead({ roomId, userId }) {
+  // Get member
+  const member = await prisma.chatMember.findFirst({
+    where: {
+      roomId: parseInt(roomId),
+      userId: parseInt(userId),
+      isDeleted: false,
+    },
+  });
+
+  if (!member) {
+    throw new Error("You don't have access to this room");
+  }
+  const unreadMessages = await prisma.chatMessage.findMany({
+    where: {
+      roomId: parseInt(roomId),
+      senderId: { not: parseInt(userId) },
+      readReceipts: {
+        none: { memberId: member.id },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  for (const msg of await unreadMessages) {
+    // check if already read
+    const existingReceipt = await prisma.chatReadReceipt.findFirst({
+      where: {
+        memberId: member.id,
+        messageId: msg.id,
+      },
+    });
+    if (existingReceipt) continue;
+    await prisma.chatReadReceipt.create({
+      data: {
+        memberId: member.id,
+        messageId: msg.id,
+      },
+    });
+  }
+
+  // Update lastReadAt
+  await prisma.chatMember.update({
+    where: { id: member.id },
+    data: { lastReadAt: new Date() },
+  });
+  const io = getIo();
+
+  io.to(`user:${userId}`).emit("notification:messages_read", {
+    roomId: parseInt(roomId),
+    userId: parseInt(userId),
+    count: unreadMessages.length,
+  });
+
+  return { success: true };
+}
+
+export async function markAMessageAsRead({ roomId, userId, messageId }) {
   // Get member
   const member = await prisma.chatMember.findFirst({
     where: {
@@ -421,7 +580,6 @@ export async function markMessagesAsRead({ roomId, userId, messageId }) {
 
   return { success: true };
 }
-
 /**
  * Add reaction to message
  */
@@ -497,4 +655,133 @@ export async function removeReaction({ messageId, userId, emoji }) {
   }
 
   return { success: true };
+}
+
+/**
+ * Get pinned messages for a room
+ */
+export async function getPinnedMessages({ roomId }) {
+  const pins = await prisma.chatPinnedMessage.findMany({
+    where: {
+      roomId: parseInt(roomId),
+      message: {
+        isDeleted: false,
+      },
+    },
+    orderBy: {
+      message: {
+        id: "desc",
+      },
+    },
+    include: {
+      message: {
+        include: {
+          sender: {
+            select: { id: true, name: true, email: true, profilePicture: true },
+          },
+          client: { select: { id: true, name: true, email: true } },
+          replyTo: {
+            select: {
+              id: true,
+              content: true,
+              sender: { select: { id: true, name: true } },
+            },
+          },
+        },
+      },
+      pinnedBy: { select: { id: true, name: true } },
+    },
+  });
+
+  // Return plain message objects for frontend convenience
+  const messages = pins.map((p) => p.message);
+
+  return messages;
+}
+export async function pinMessage({ roomId, messageId, userId }) {
+  // Verify user is member
+  const member = await prisma.chatMember.findFirst({
+    where: {
+      roomId: parseInt(roomId),
+      userId: parseInt(userId),
+      isDeleted: false,
+    },
+  });
+  const room = await prisma.chatRoom.findUnique({
+    where: { id: parseInt(roomId) },
+  });
+  if (!member) {
+    throw new Error("You don't have access to this room");
+  }
+  // check if room is staff to staff or use is admin or moderator else throw error
+  if (
+    room.type === "STAFF_TO_STAFF" &&
+    !(member.role === "ADMIN" || member.role === "MODERATOR")
+  ) {
+    throw new Error(
+      "Only admins and moderators can pin messages in staff to staff rooms"
+    );
+  }
+
+  const pinned = await prisma.chatPinnedMessage.create({
+    data: {
+      roomId: parseInt(roomId),
+      messageId: parseInt(messageId),
+      pinnedById: parseInt(userId),
+    },
+  });
+  emitToAllUsersIncludingSame({
+    roomId,
+    userId,
+    content: {
+      messageId: parseInt(messageId),
+      roomId: parseInt(roomId),
+      pinnedById: parseInt(userId),
+    },
+    type: "message:pinned",
+  });
+  return pinned;
+}
+
+export async function unpinMessage({ roomId, messageId, userId }) {
+  // Verify user is member
+  const member = await prisma.chatMember.findFirst({
+    where: {
+      roomId: parseInt(roomId),
+      userId: parseInt(userId),
+      isDeleted: false,
+    },
+  });
+  const room = await prisma.chatRoom.findUnique({
+    where: { id: parseInt(roomId) },
+  });
+  if (!member) {
+    throw new Error("You don't have access to this room");
+  }
+  // check if room is staff to staff or use is admin or moderator else throw error
+  if (
+    room.type === "STAFF_TO_STAFF" &&
+    !(member.role === "ADMIN" || member.role === "MODERATOR")
+  ) {
+    throw new Error(
+      "Only admins and moderators can unpin messages in staff to staff rooms"
+    );
+  }
+  const pinned = await prisma.chatPinnedMessage.deleteMany({
+    where: {
+      roomId: parseInt(roomId),
+      messageId: parseInt(messageId),
+    },
+  });
+  emitToAllUsersIncludingSame({
+    roomId,
+    userId,
+    content: {
+      messageId: parseInt(messageId),
+      roomId: parseInt(roomId),
+      unpinnedById: parseInt(userId),
+    },
+    type: "message:unpinned",
+  });
+  return pinned;
 }

@@ -79,6 +79,10 @@ export function ChatContainer({
     page,
     onSearchChange,
     onChatTypeChange,
+    unreadCounts,
+    setUnreadCounts,
+    totalUnread,
+    setTotalUnread,
   } = useChatRooms({ projectId, category: null, limit: 25 });
 
   // Message sound (widget only)
@@ -87,23 +91,22 @@ export function ChatContainer({
     if (typeof Audio !== "undefined")
       messageSoundRef.current = new Audio("/message-sound.mp3");
   }, []);
-
   useSocket({
     onRoomCreatedNotification: (data) => {
       const { roomId, userId } = data;
       const id = searchParams?.get("roomId");
-
       if (roomId !== parseInt(id)) {
         fetchRooms(false);
       }
     },
     onMessagesReadNotification: (data) => {
-      const { roomId, userId } = data;
-      const id = searchParams?.get("roomId");
-
-      if (roomId !== parseInt(id)) {
-        fetchRooms(false);
-      }
+      const { count, roomId } = data;
+      setTotalUnread((prev) => Math.max(0, prev - count));
+      setUnreadCounts((prev) => {
+        const updated = { ...prev };
+        updated[roomId] = 0;
+        return updated;
+      });
     },
     onNewMessageNotification: (data) => {
       fetchRooms(false);
@@ -114,6 +117,7 @@ export function ChatContainer({
         data.message.senderId !== user?.id &&
         data.roomId !== selectedRoom?.id
       ) {
+        // setTotalUnread((prev) => prev + 1);
         messageSoundRef.current.play().catch((error) => {
           // Sound play error - continue anyway
         });
@@ -121,7 +125,6 @@ export function ChatContainer({
     },
     onRoomDeletedNotification: (data) => {
       const { roomId } = data;
-      console.log("Room deleted notification received for roomId:", roomId);
       if (selectedRoom?.id === roomId) {
         setSelectedRoom(null);
         if (type === "page" && isMobile) {
@@ -146,7 +149,6 @@ export function ChatContainer({
       setTypingRooms((prev) => {
         const roomTyping = prev[data.roomId];
         if (!roomTyping) return prev;
-
         if (roomTyping instanceof Set) {
           roomTyping.delete(data.userId);
           if (roomTyping.size === 0) {
@@ -282,15 +284,14 @@ export function ChatContainer({
   };
 
   // Calculate total unread for widget
-  const totalUnread = useMemo(() => {
-    return rooms.reduce((total, room) => {
-      const unread =
-        typeof room.unreadCount === "number"
-          ? room.unreadCount
-          : room.members?.filter((m) => !m.lastReadAt)?.length || 0;
-      return total + unread;
-    }, 0);
-  }, [rooms]);
+  //unreadCounts ={1:1,2:4} i need to get total unread from it and if more than 99 show 99+
+  // const totalUnread = useMemo(() => {
+  //   let total = 0;
+  //   Object.values(unreadCounts).forEach((count) => {
+  //     total += count;
+  //   });
+  //   return total > 99 ? "99+" : total;
+  // }, [unreadCounts]);
 
   // ============================================
   // RENDER FUNCTIONS
@@ -314,6 +315,7 @@ export function ChatContainer({
       onSearch={(search) => onSearchChange(search)}
       onSelectChatType={(chatType) => onChatTypeChange(chatType)}
       reFetchRooms={() => fetchRooms(false)}
+      unreadCounts={unreadCounts}
     />
   );
 
@@ -339,6 +341,7 @@ export function ChatContainer({
         isMobile={isMobile || type === "widget"}
         onRoomActivity={() => fetchRooms(false)}
         reFetchRooms={() => fetchRooms(false)}
+        setTotalUnread={setTotalUnread}
       />
     ) : (
       <Paper
@@ -435,7 +438,7 @@ export function ChatContainer({
           sx={{
             position: "fixed",
             bottom: 16,
-            right: 16,
+            right: 20,
             zIndex: 1400,
           }}
         >
@@ -450,8 +453,8 @@ export function ChatContainer({
                 fontSize: "0.75rem",
                 minWidth: "20px",
                 height: "20px",
-                right: -6,
-                top: -6,
+                right: 0,
+                top: 0,
               },
             }}
           >
@@ -481,12 +484,12 @@ export function ChatContainer({
             elevation={24}
             sx={{
               position: "fixed",
-              zIndex: 500,
+              zIndex: 1000,
               bottom: isMobile ? 12 : 80,
               right: isMobile ? 12 : 16,
               left: isMobile ? 12 : "auto",
               width: isMobile ? "calc(100% - 24px)" : 420,
-              height: isMobile ? "75vh" : 560,
+              height: isMobile ? "75vh" : 640,
               borderRadius: 4,
               overflow: "hidden",
               display: "flex",
@@ -508,48 +511,32 @@ export function ChatContainer({
                 color: "primary.contrastText",
               }}
             >
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                  {selectedRoom ? selectedRoom.name : "Messages"}
-                </Typography>
-              </Stack>
               <Stack direction="row" spacing={1}>
-                {!selectedRoom && (
-                  <Link href="/dashboard/chat" passHref legacyBehavior>
-                    <IconButton
-                      size="small"
-                      component="a"
-                      sx={{
-                        color: "inherit",
-                        transition: "all 0.2s ease",
-                        "&:hover": {
-                          bgcolor: "rgba(255,255,255,0.2)",
-                          transform: "scale(1.1)",
-                        },
-                      }}
-                      title="View All Chats"
-                    >
-                      <FaExternalLinkAlt size={14} />
-                    </IconButton>
-                  </Link>
-                )}
-                <IconButton
-                  size="small"
-                  onClick={() => {
-                    setWidgetOpen(false);
-                    setSelectedRoom(null);
-                  }}
-                  sx={{
-                    color: "inherit",
-                    transition: "all 0.2s ease",
-                    "&:hover": {
-                      bgcolor: "rgba(255,255,255,0.2)",
-                      transform: "scale(1.1)",
-                    },
-                  }}
+                <Link
+                  href={
+                    selectedRoom && selectedRoom?.id
+                      ? `/dashboard/chat?roomId=${selectedRoom.id}`
+                      : `/dashboard/chat`
+                  }
+                  passHref
+                  legacyBehavior
                 >
-                  <FaTimes size={14} />
-                </IconButton>
+                  <IconButton
+                    size="small"
+                    component="a"
+                    sx={{
+                      color: "inherit",
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        bgcolor: "rgba(255,255,255,0.2)",
+                        transform: "scale(1.1)",
+                      },
+                    }}
+                    title="View All Chats"
+                  >
+                    <FaExternalLinkAlt size={14} />
+                  </IconButton>
+                </Link>
               </Stack>
             </Box>
 

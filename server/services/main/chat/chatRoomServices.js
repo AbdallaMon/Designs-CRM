@@ -178,6 +178,9 @@ export async function getChatRooms({
     prisma.chatRoom.count({ where }),
   ]);
   // Compute unread counts per room for this user
+  const unreadCounts = {};
+  let totalUnread = 0;
+
   const roomWithMeta = await Promise.all(
     rooms.map(async (room) => {
       const selfMember = await prisma.chatMember.findFirst({
@@ -202,6 +205,8 @@ export async function getChatRooms({
       });
 
       const lastMessage = room.messages?.[0] || null;
+      unreadCounts[room.id] = unreadCount;
+      totalUnread += unreadCount;
 
       return {
         ...room,
@@ -213,16 +218,34 @@ export async function getChatRooms({
       };
     })
   );
+
   return {
     data: roomWithMeta,
     total,
     totalPages: Math.ceil(total / pageSize),
+    totalUnread,
+    unreadCounts,
   };
 }
 
 /**
  * Create a new chat room
  */
+export async function checkIfChatAlreadyExists({ userId, otherUserId }) {
+  const type = "STAFF_TO_STAFF";
+  const existingRoom = await prisma.chatRoom.findFirst({
+    where: {
+      type,
+      members: {
+        every: {
+          OR: [{ userId: parseInt(userId) }, { userId: parseInt(otherUserId) }],
+          isDeleted: false,
+        },
+      },
+    },
+  });
+  return existingRoom;
+}
 export async function createChatRoom({
   name,
   type,
