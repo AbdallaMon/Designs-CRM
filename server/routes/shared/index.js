@@ -30,6 +30,8 @@ import chatMessagesRouter from "../chat/messages.js";
 import chatMembersRouter from "../chat/members.js";
 import chatFilesRouter from "../chat/files.js";
 
+import usersRouter from "./users.js";
+
 import {
   addNote,
   deleteAModel,
@@ -97,6 +99,7 @@ router.use("/sales-stages", salesStagesRoutes);
 
 // Reviews & OAuth integration
 router.use("/reviews", reviewsRoutes);
+router.use("/users", usersRouter);
 router.get("/all-chat-users", async (req, res) => {
   const searchParams = req.query;
 

@@ -22,7 +22,6 @@ export function useSocket(handlers = {}) {
       "message:unpinned": "onMessageUnpinned",
       "user:typing": "onTyping",
       "user:stop_typing": "onStopTyping",
-
       "member:joined": "onMemberJoined",
       "member:left": "onMemberLeft",
       "member:removed": "onMemberRemoved",
@@ -38,6 +37,7 @@ export function useSocket(handlers = {}) {
       "notification:messages_read": "onMessagesReadNotification",
       "notification:room_removed": "onRoomDeletedNotification",
       "notification:room_created": "onRoomCreatedNotification",
+      "notification:room_updated": "onRoomUpdated",
 
       disconnect: () => {
         console.log("Socket disconnected");

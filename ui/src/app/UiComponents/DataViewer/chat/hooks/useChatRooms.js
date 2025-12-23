@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
@@ -26,6 +26,8 @@ export function useChatRooms({
   const [totalUnread, setTotalUnread] = useState(0);
   const { socket } = useSocket();
   const { user } = useAuth();
+  const scrollContainerRef = useRef(null);
+  const roomsEndRef = useRef(null);
   function onSearchChange(newSearchKey) {
     setSearchKey(newSearchKey);
     setPage(0);
@@ -186,5 +188,7 @@ export function useChatRooms({
     setUnreadCounts,
     totalUnread,
     setTotalUnread,
+    scrollContainerRef,
+    roomsEndRef,
   };
 }

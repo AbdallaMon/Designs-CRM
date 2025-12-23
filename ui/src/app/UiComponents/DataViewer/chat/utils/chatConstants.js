@@ -59,7 +59,7 @@ export const CHAT_CATEGORIES = [
 ];
 
 export const FILE_UPLOAD_LIMITS = {
-  MAX_SIZE: 50 * 1024 * 1024, // 50MB
+  MAX_SIZE: 50000 * 1024 * 1024, // 50 GB
   ALLOWED_TYPES: [
     "image/jpeg",
     "image/png",

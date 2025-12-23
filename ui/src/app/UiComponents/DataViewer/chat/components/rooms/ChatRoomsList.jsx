@@ -34,14 +34,16 @@ import {
   FaTrash,
   FaPlus,
 } from "react-icons/fa";
-import { CHAT_ROOM_TYPE_LABELS, CHAT_ROOM_TYPES } from "../utils/chatConstants";
+import {
+  CHAT_ROOM_TYPE_LABELS,
+  CHAT_ROOM_TYPES,
+} from "../../utils/chatConstants";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import ChatChips from "./ChatChips";
-import { LastSeenAt, OnlineStatus } from "./LastSeenAt";
-import Link from "next/link";
-import StartNewChat from "./StartNewChat";
-import ScrollButton from "./ScrollButton";
+import { LastSeenAt, OnlineStatus } from "../members";
+import { ScrollButton } from "../messages";
+import { StartNewChat } from "../dialogs";
 
 dayjs.extend(relativeTime);
 
@@ -62,12 +64,13 @@ export function ChatRoomsList({
   onSearch,
   onSelectChatType,
   unreadCounts,
+  roomsEndRef,
+  scrollContainerRef,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [menuRoomId, setMenuRoomId] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const listContainerRef = useRef(null);
   const DEBOUNCE_MS = 450;
   // Debounce utility with cancel/flush controls
   function debounce(fn, wait) {
@@ -256,12 +259,13 @@ export function ChatRoomsList({
 
       {/* Rooms list */}
       <List
-        ref={listContainerRef}
+        ref={scrollContainerRef}
         onScroll={handleScroll}
         sx={{
           flex: 1,
           overflow: "auto",
           position: "relative",
+          maxHeight: "100px",
           "&::-webkit-scrollbar": { width: "6px" },
           "&::-webkit-scrollbar-thumb": {
             backgroundColor: "rgba(0,0,0,0.2)",
@@ -271,7 +275,7 @@ export function ChatRoomsList({
       >
         {/* Scroll to top button */}
         <ScrollButton
-          containerRef={listContainerRef}
+          containerRef={scrollContainerRef}
           direction="up"
           threshold={300}
           position={{ top: 8, right: 8 }}
@@ -443,6 +447,7 @@ export function ChatRoomsList({
             </ListItem>
           ))
         )}
+        <div ref={roomsEndRef} />
       </List>
 
       {/* Menu */}

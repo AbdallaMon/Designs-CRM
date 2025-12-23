@@ -21,7 +21,7 @@ import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 
-export default function StartNewChat() {
+export function StartNewChat() {
   const [open, setOpen] = useState(false);
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);

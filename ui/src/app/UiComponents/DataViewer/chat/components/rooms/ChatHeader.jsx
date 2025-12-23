@@ -1,0 +1,151 @@
+"use client";
+
+import React from "react";
+import { Box, Avatar, Typography, IconButton, Tooltip } from "@mui/material";
+import { FaArrowLeft, FaPhone, FaVideo, FaUsers } from "react-icons/fa";
+import {
+  CHAT_ROOM_TYPE_LABELS,
+  CHAT_ROOM_TYPES,
+} from "../../utils/chatConstants";
+import ChatSettings from "../members/ChatSettings";
+
+export function ChatHeader({
+  room,
+  roomLabel,
+  isMobile,
+  onClose,
+  isNotDirectChat,
+  onAddMembersClick,
+  onFilesClick,
+  members,
+  reFetchRooms,
+}) {
+  const getRoomAvatar = () => {
+    return room.name?.charAt(0) || "C";
+  };
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        p: 2,
+        borderBottom: "1px solid",
+        borderColor: "divider",
+        background:
+          "linear-gradient(135deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0) 100%)",
+      }}
+    >
+      {/* Left side - Back button and room info */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        {isMobile && onClose && (
+          <IconButton
+            size="small"
+            onClick={onClose}
+            sx={{
+              mr: 1,
+              transition: "all 0.2s ease",
+              "&:hover": {
+                bgcolor: "action.hover",
+                transform: "scale(1.1)",
+              },
+            }}
+          >
+            <FaArrowLeft size={18} />
+          </IconButton>
+        )}
+
+        {/* Room Avatar and Info */}
+        <Box
+          sx={{
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 2,
+          }}
+          onClick={onFilesClick}
+        >
+          <Avatar
+            sx={{
+              width: 40,
+              height: 40,
+              border: "2px solid",
+              borderColor: "background.paper",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              cursor: "pointer",
+            }}
+          >
+            {getRoomAvatar()}
+          </Avatar>
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+              {roomLabel}
+            </Typography>
+            <Typography variant="caption" color="textSecondary">
+              {CHAT_ROOM_TYPE_LABELS[room.type] || room.type}
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Right side - Action buttons */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+        <Tooltip title="Voice call" arrow>
+          <IconButton
+            size="small"
+            sx={{
+              transition: "all 0.2s ease",
+              "&:hover": {
+                bgcolor: "action.hover",
+                transform: "scale(1.1)",
+              },
+            }}
+          >
+            <FaPhone size={18} />
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title="Video call" arrow>
+          <IconButton
+            size="small"
+            sx={{
+              transition: "all 0.2s ease",
+              "&:hover": {
+                bgcolor: "action.hover",
+                transform: "scale(1.1)",
+              },
+            }}
+          >
+            <FaVideo size={18} />
+          </IconButton>
+        </Tooltip>
+
+        {isNotDirectChat && (
+          <Tooltip title="Members" arrow>
+            <IconButton
+              size="small"
+              onClick={onAddMembersClick}
+              sx={{
+                transition: "all 0.2s ease",
+                "&:hover": {
+                  bgcolor: "action.hover",
+                  transform: "scale(1.1)",
+                },
+              }}
+            >
+              <FaUsers size={18} />
+            </IconButton>
+          </Tooltip>
+        )}
+
+        {/* Chat Settings */}
+        <ChatSettings
+          members={members}
+          room={room}
+          reFetchRooms={reFetchRooms}
+        />
+      </Box>
+    </Box>
+  );
+}

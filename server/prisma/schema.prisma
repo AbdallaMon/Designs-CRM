@@ -914,6 +914,8 @@ model User {
   isPrimary                Boolean              @default(false)
   isSuperSales             Boolean              @default(false)
   role                     UserRole             @default(STAFF)
+  allowNotification       Boolean              @default(true)
+  allowEmailing            Boolean              @default(true)
   telegramUsername         String?
   subRoles                 UserSubRole[]
   logs                     UserLog[]

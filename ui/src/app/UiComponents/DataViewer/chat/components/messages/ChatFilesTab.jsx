@@ -29,11 +29,11 @@ import {
   FaSearch,
 } from "react-icons/fa";
 import dayjs from "dayjs";
-import { useChatFiles } from "../hooks";
 import {
   FILE_TYPE_CATEGORIES,
   FILE_TYPE_CONFIG,
 } from "@/app/helpers/constants";
+import { useChatFiles } from "../../hooks";
 
 /* ================= Helpers ================= */
 

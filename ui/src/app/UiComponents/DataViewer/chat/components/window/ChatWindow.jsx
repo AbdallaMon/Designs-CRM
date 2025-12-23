@@ -13,21 +13,12 @@ import {
   Stack,
   Typography,
   IconButton,
-  Tooltip,
   Avatar,
   Chip,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-  FormControl,
-  InputLabel,
-  Select,
   CircularProgress,
-  Tabs,
-  Tab,
 } from "@mui/material";
 import {
   FaArrowLeft,
@@ -41,17 +32,21 @@ import {
   FaFolder,
   FaTimes,
 } from "react-icons/fa";
-import { CHAT_ROOM_TYPE_LABELS, CHAT_ROOM_TYPES } from "../utils/chatConstants";
+import {
+  CHAT_ROOM_TYPE_LABELS,
+  CHAT_ROOM_TYPES,
+} from "../../utils/chatConstants";
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { ChatMessage } from "./ChatMessage";
-import { ChatInput } from "./ChatInput";
-import { ChatFilesTab } from "./ChatFilesTab";
-import ScrollButton from "./ScrollButton";
-import PinnedMessages from "../PinnedMessages";
-import { useChatMessages, useSocket } from "../hooks";
+import {
+  ChatMessage,
+  ChatInput,
+  ChatFilesTab,
+  ScrollButton,
+} from "../messages";
+import { useChatMessages, useSocket } from "../../hooks";
 
 import {
   markMessagesRead,
@@ -61,11 +56,16 @@ import {
   emitStopTyping,
   emitPinMessage,
   emitUnpinMessage,
-} from "../utils/socketIO";
+} from "../../utils/socketIO";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
-import { MdDelete } from "react-icons/md";
-import { useChatMembers } from "../hooks/useChatMembers";
-import { LastSeenAt, OnlineStatus } from "./LastSeenAt";
+import { useChatMembers } from "../../hooks/useChatMembers";
+import { LastSeenAt, OnlineStatus } from "../members/LastSeenAt";
+import { AddMembersDialog } from "../members/AddMembersDialog";
+import { ChatTypingIndicator } from "../indicators/ChatTypingIndicator";
+import { NewMemberAlert } from "../indicators/NewMemberAlert";
+import { ConfirmDialog } from "../dialogs/ConfirmDialog";
+import PinnedMessages from "./PinnedMessages";
+import { ChatWindowHeader } from "./ChatWindowHeader";
 
 export function ChatWindow({
   room,
@@ -237,6 +237,7 @@ export function ChatWindow({
         );
       }
     },
+
     onTyping: (data) => {
       if (data.roomId === room?.id && data.userId !== user.id) {
         const key = `${data.userId}:${data.roomId}`;
@@ -274,7 +275,7 @@ export function ChatWindow({
   });
 
   const isAdmin = checkIfAdmin(user) || room?.createdBy?.id === user.id;
-
+  const isAdminUser = checkIfAdmin(user);
   const isMember = members?.some((m) => m.userId === user.id);
 
   const isNotDirectChat = room?.type !== CHAT_ROOM_TYPES.STAFF_TO_STAFF;
@@ -402,7 +403,9 @@ export function ChatWindow({
     setLoadingUsers(true);
 
     try {
-      let url = `admin/all-users?`;
+      let url = isAdminUser
+        ? `admin/all-users?`
+        : `shared/all-related-chat-users?`;
       if (projectId) {
         url += `projectId=${projectId}&`;
       }
@@ -486,121 +489,19 @@ export function ChatWindow({
         overflow: "hidden",
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          p: 2,
-          borderBottom: "1px solid",
-          borderColor: "divider",
-          background:
-            "linear-gradient(135deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0) 100%)",
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          {((isMobile && onClose) || currentTab === 1) && (
-            <IconButton
-              size="small"
-              onClick={
-                currentTab === 1
-                  ? () => {
-                      setCurrentTab(0);
-                    }
-                  : onClose
-              }
-              sx={{
-                mr: 1,
-                transition: "all 0.2s ease",
-                "&:hover": {
-                  bgcolor: "action.hover",
-                  transform: "scale(1.1)",
-                },
-              }}
-            >
-              <FaArrowLeft size={18} />
-            </IconButton>
-          )}
-          <Box
-            sx={{
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-            }}
-            onClick={() => setCurrentTab(1)}
-          >
-            <Avatar
-              sx={{
-                width: 40,
-                height: 40,
-                border: "2px solid",
-                borderColor: "background.paper",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                cursor: "pointer",
-              }}
-            >
-              {room.name?.charAt(0) || "C"}
-            </Avatar>
-            <Box sx={{ cursor: "pointer" }}>
-              <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                {roomLabel}
-              </Typography>
-              <Typography variant="caption" color="textSecondary">
-                {CHAT_ROOM_TYPE_LABELS[room.type] || room.type}
-              </Typography>
-            </Box>
-          </Box>
-        </Box>
-
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          <Tooltip title="Voice call" arrow>
-            <IconButton
-              size="small"
-              sx={{
-                transition: "all 0.2s ease",
-                "&:hover": {
-                  bgcolor: "action.hover",
-                  transform: "scale(1.1)",
-                },
-              }}
-            >
-              <FaPhone size={18} />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Video call" arrow>
-            <IconButton
-              size="small"
-              sx={{
-                transition: "all 0.2s ease",
-                "&:hover": {
-                  bgcolor: "action.hover",
-                  transform: "scale(1.1)",
-                },
-              }}
-            >
-              <FaVideo size={18} />
-            </IconButton>
-          </Tooltip>
-          {isNotDirectChat && (
-            <Tooltip title="Members" arrow>
-              <IconButton
-                size="small"
-                onClick={() => setShowAddMembers(true)}
-                sx={{
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    bgcolor: "action.hover",
-                    transform: "scale(1.1)",
-                  },
-                }}
-              >
-                <FaUsers size={18} />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Box>
-      </Box>
+      {/* Header Section */}
+      <ChatWindowHeader
+        room={room}
+        roomLabel={roomLabel}
+        onClose={onClose}
+        isMobile={isMobile}
+        currentTab={currentTab}
+        setCurrentTab={setCurrentTab}
+        isNotDirectChat={isNotDirectChat}
+        onShowAddMembers={() => setShowAddMembers(true)}
+        members={members}
+        reFetchRooms={reFetchRooms}
+      />
       <PinnedMessages
         roomId={room?.id}
         handleJumpToMessage={onJumpToMessage}
@@ -635,11 +536,6 @@ export function ChatWindow({
           }}
         >
           {/* Scroll to bottom button */}
-          <ScrollButton
-            containerRef={scrollContainerRef}
-            direction="down"
-            threshold={300}
-          />
 
           {messagesLoading ? (
             <Box
@@ -712,6 +608,11 @@ export function ChatWindow({
                   setReplayLoadingMessageId={setReplayLoadingMessageId}
                 />
               ))}
+              <ScrollButton
+                containerRef={scrollContainerRef}
+                direction="down"
+                threshold={300}
+              />
 
               <Box
                 sx={{
@@ -724,85 +625,22 @@ export function ChatWindow({
           )}
 
           {/* Typing indicator */}
-          {typingUsers.length > 0 && (
-            <Box
-              sx={{
-                mt: 2,
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-                animation: "fadeIn 0.3s ease-in",
-                "@keyframes fadeIn": {
-                  from: { opacity: 0 },
-                  to: { opacity: 1 },
-                },
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{ fontStyle: "italic", color: "textSecondary" }}
-              >
-                {typingUsers.length === 1
-                  ? `${typingUsers[0]?.message || "Someone is Typing"}`
-                  : `${typingUsers.length} people are typing`}
-              </Typography>
-              <Box sx={{ display: "flex", gap: 0.5 }}>
-                {[0, 1, 2].map((i) => (
-                  <Box
-                    key={i}
-                    sx={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: "50%",
-                      backgroundColor: "primary.main",
-                      animation: "bounce 1.4s infinite",
-                      animationDelay: `${i * 0.2}s`,
-                      "@keyframes bounce": {
-                        "0%, 80%, 100%": { opacity: 0.5 },
-                        "40%": { opacity: 1 },
-                      },
-                    }}
-                  />
-                ))}
-              </Box>
-            </Box>
-          )}
-          {newMemberAlertOpen && newMembersAdded.length > 0 && (
-            <Box
-              sx={{
-                mt: 2,
-                p: 1,
-                bgcolor: "info.lighter",
-                borderRadius: 1,
-                border: "1px solid",
-                borderColor: "info.main",
-              }}
-            >
-              <Typography variant="caption" sx={{ color: "info.main" }}>
-                {newMembersAdded
-                  .map((m) => m.name || m.user?.name || "A member")
-                  .join(", ")}{" "}
-                {newMembersAdded.length === 1 ? "has" : "have"} has been added
-                to the chat.
-              </Typography>
-              <IconButton
-                size="small"
-                onClick={() => setNewMemberAlertOpen(false)}
-                sx={{ ml: 1 }}
-              >
-                <FaTimes size={12} />
-              </IconButton>
-            </Box>
-          )}
+          <ChatTypingIndicator typingUsers={typingUsers} />
+
+          {/* New Member Alert */}
+          <NewMemberAlert
+            newMembersAdded={newMembersAdded}
+            onClose={() => setNewMemberAlertOpen(false)}
+          />
         </Box>
 
-        {/* Input area */}
         <Box sx={{ p: 2, borderTop: "1px solid", borderColor: "divider" }}>
           <ChatInput
             onSendMessage={handleSendMessage}
             onReplyingTo={replyingTo}
             onCancelReply={() => setReplyingTo(null)}
             loading={messagesLoading}
+            room={room}
             disabled={
               (!isMember && !isAdmin) || (!isAdmin && !room.isChatEnabled)
             }
@@ -847,228 +685,31 @@ export function ChatWindow({
         </DialogContent>
       </Dialog>
 
-      {/* Add members dialog */}
-      <Dialog
+      {/* Add Members Dialog */}
+      <AddMembersDialog
         open={showAddMembers}
         onClose={() => setShowAddMembers(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>Add Members to Chat</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
-          <Stack spacing={2}>
-            {/* Existing members with avatars */}
-            {members.length > 0 && (
-              <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Current Members
-                </Typography>
-                <Stack spacing={1.5}>
-                  {members.map((m) => (
-                    <Stack
-                      key={m.id}
-                      direction="row"
-                      alignItems="center"
-                      spacing={1.5}
-                      sx={{
-                        position: "relative",
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          position: "relative",
-                        }}
-                      >
-                        <OnlineStatus
-                          lastSeenAt={
-                            m.user?.lastSeenAt || m.client?.lastSeenAt
-                          }
-                        />
-                        <Avatar
-                          src={getAvatarSrc(m.user)}
-                          sx={{
-                            position: "relative",
-                          }}
-                        >
-                          {(m.user?.name || m.client?.name || "?").charAt(0)}
-                        </Avatar>
-                      </Box>
-                      <Box sx={{ flex: 1 }}>
-                        <Typography fontWeight={600} noWrap>
-                          {m.user?.name || m.client?.name || "Unknown"}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          noWrap
-                        >
-                          {m.user?.email || m.client?.email || ""}
-                        </Typography>
-                        <LastSeenAt
-                          lastSeenAt={
-                            m.user?.lastSeenAt || m.client?.lastSeenAt
-                          }
-                        />
-                      </Box>
-                      <Box>
-                        <Chip
-                          label={
-                            m.role === "ADMIN"
-                              ? "Admin"
-                              : m.role === "MODERATOR"
-                              ? "Moderator"
-                              : "Member"
-                          }
-                          color={
-                            m.role === "ADMIN"
-                              ? "primary"
-                              : m.role === "MODERATOR"
-                              ? "secondary"
-                              : "default"
-                          }
-                          size="small"
-                        />
-                      </Box>
-                      {m.role !== "ADMIN" && canManageMembers && (
-                        <Box>
-                          <IconButton
-                            size="small"
-                            // ✅ confirm before remove member
-                            onClick={() => confirmRemoveMember(m)}
-                            color="error"
-                          >
-                            <MdDelete />
-                          </IconButton>
-                        </Box>
-                      )}
-                    </Stack>
-                  ))}
-                </Stack>
-              </Box>
-            )}
+        members={members}
+        availableUsers={availableUsers}
+        selectedUsers={selectedUsers}
+        loadingUsers={loadingUsers}
+        canManageMembers={canManageMembers}
+        onToggleSelectUser={toggleSelectUser}
+        onAddMembers={handleAddMembers}
+        onRemoveMember={confirmRemoveMember}
+        getAvatarSrc={getAvatarSrc}
+      />
 
-            {/* New members list with selectable rows */}
-            {canManageMembers && (
-              <>
-                {loadingUsers ? (
-                  <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
-                    <CircularProgress />
-                  </Box>
-                ) : availableUsers.length === 0 ? (
-                  <Box sx={{ p: 2 }}>
-                    <Typography color="textSecondary">
-                      No new members available
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Box sx={{ maxHeight: 360, overflow: "auto", pr: 1 }}>
-                    <Stack spacing={1}>
-                      {availableUsers.map((u) => {
-                        const isSelected = selectedUsers.some(
-                          (s) => s.id === u.id
-                        );
-                        return (
-                          <Paper
-                            key={u.id}
-                            variant="outlined"
-                            sx={{
-                              p: 1,
-                              borderRadius: 2,
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1.5,
-                              cursor: "pointer",
-                              borderColor: isSelected
-                                ? "primary.main"
-                                : "divider",
-                              bgcolor: isSelected
-                                ? "primary.lighter"
-                                : "background.paper",
-                            }}
-                            onClick={() => toggleSelectUser(u)}
-                          >
-                            <Avatar src={getAvatarSrc(u)}>
-                              {(u.name || "?").charAt(0)}
-                            </Avatar>
-                            <Box sx={{ flex: 1, minWidth: 0 }}>
-                              <Typography fontWeight={600} noWrap>
-                                {u.name || "Unknown"}
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
-                                noWrap
-                              >
-                                {u.email || ""}
-                              </Typography>
-                            </Box>
-                            <Chip
-                              label={isSelected ? "Selected" : "Select"}
-                              color={isSelected ? "primary" : "default"}
-                              size="small"
-                              variant={isSelected ? "filled" : "outlined"}
-                            />
-                          </Paper>
-                        );
-                      })}
-                    </Stack>
-                  </Box>
-                )}
-
-                {selectedUsers.length > 0 && (
-                  <Box>
-                    <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                      Selected to add ({selectedUsers.length})
-                    </Typography>
-                    <Stack direction="row" flexWrap="wrap" gap={1}>
-                      {selectedUsers.map((u) => (
-                        <Chip
-                          key={u.id}
-                          avatar={
-                            <Avatar src={getAvatarSrc(u)}>
-                              {(u.name || "?").charAt(0)}
-                            </Avatar>
-                          }
-                          label={u.name}
-                          onDelete={() => toggleSelectUser(u)}
-                        />
-                      ))}
-                    </Stack>
-                  </Box>
-                )}
-              </>
-            )}
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowAddMembers(false)}>Cancel</Button>
-          {canManageMembers && (
-            <Button
-              onClick={handleAddMembers}
-              variant="contained"
-              disabled={selectedUsers.length === 0 || loadingUsers}
-            >
-              Add Members
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
-
-      {/* ✅ Confirm Delete Dialog (reused for message delete + member remove) */}
-      <Dialog open={confirmOpen} onClose={closeConfirm} maxWidth="xs" fullWidth>
-        <DialogTitle>{confirmTitle}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>{confirmDescription}</DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeConfirm}>Cancel</Button>
-          <Button variant="contained" color="error" onClick={handleConfirm}>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* ✅ Pinned Messages Component */}
+      {/* Confirm Dialog (reused for delete & remove) */}
+      <ConfirmDialog
+        open={confirmOpen}
+        title={confirmTitle}
+        description={confirmDescription}
+        onConfirm={handleConfirm}
+        onCancel={closeConfirm}
+        confirmButtonText="Delete"
+        confirmButtonColor="error"
+      />
     </Paper>
   );
 }

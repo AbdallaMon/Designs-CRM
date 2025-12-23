@@ -29,6 +29,7 @@ import Logout from "@/app/UiComponents/buttons/Logout.jsx";
 import NotificationsIcon from "@/app/UiComponents/utility/NotificationIcon.jsx";
 import SignInWithDifferentUserRole from "../DataViewer/users/UserRoles";
 import { useAuth } from "@/app/providers/AuthProvider";
+import ProfileDialogTrigger from "../DataViewer/users/profile/ProfileDialogTrigger";
 
 const Navbar = ({ links }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -476,6 +477,7 @@ const Navbar = ({ links }) => {
           <Box sx={{ display: "flex", alignItems: "center" }}>
             {user.role !== "ADMIN" && <SignInWithDifferentUserRole />}
             <NotificationsIcon />
+            <ProfileDialogTrigger userId={user.id} />
             <Logout />
           </Box>
         </Toolbar>

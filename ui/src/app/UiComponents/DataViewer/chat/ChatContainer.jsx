@@ -32,15 +32,15 @@ import {
   FaExternalLinkAlt,
 } from "react-icons/fa";
 import Link from "next/link";
-import { ChatRoomsList } from "./components/ChatRoomsList";
-import { ChatWindow } from "./components/ChatWindow";
+import { ChatRoomsList } from "./components/rooms/ChatRoomsList";
+import { ChatWindow } from "./components/window/ChatWindow";
 import { useChatRooms, useSocket } from "./hooks";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { getData } from "@/app/helpers/functions/getData";
 import { CHAT_ROOM_TYPES } from "./utils/chatConstants";
 import { useRouter, useSearchParams } from "next/navigation";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
-import CreateGroupDialog from "./components/CreateGroupDialog";
+import { CreateGroupDialog } from "./components/dialogs";
 
 export function ChatContainer({
   type = "page", // "page" | "widget" | "project" | "clientLead"
@@ -58,10 +58,8 @@ export function ChatContainer({
   const [createRoomOpen, setCreateRoomOpen] = useState(false);
   const [roomName, setRoomName] = useState("");
   const [roomType, setRoomType] = useState(CHAT_ROOM_TYPES.PROJECT_GROUP);
-  const [selectedUsers, setSelectedUsers] = useState([]);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
-  const [creating, setCreating] = useState(false);
   const [viewMode, setViewMode] = useState("LIST"); // LIST | CHAT (mobile only)
   const [typingRooms, setTypingRooms] = useState({});
   const [widgetOpen, setWidgetOpen] = useState(false); // Widget only
@@ -86,8 +84,9 @@ export function ChatContainer({
     setUnreadCounts,
     totalUnread,
     setTotalUnread,
-  } = useChatRooms({ projectId, category: null, limit: 25 });
-
+    roomsEndRef,
+    scrollContainerRef,
+  } = useChatRooms({ projectId, category: null, limit: 2 });
   // Message sound (widget only)
   const messageSoundRef = useRef(null);
   useEffect(() => {
@@ -101,6 +100,10 @@ export function ChatContainer({
       if (roomId !== parseInt(id)) {
         fetchRooms(false);
       }
+    },
+    onRoomUpdated: (data) => {
+      console.log("Room updated notification received", data);
+      fetchRooms(false);
     },
     onMessagesReadNotification: (data) => {
       const { count, roomId } = data;
@@ -178,12 +181,6 @@ export function ChatContainer({
     return id ? Number(id) : null;
   }, [searchParams, type]);
 
-  useEffect(() => {
-    if (createRoomOpen) {
-      loadAvailableUsers();
-    }
-  }, [createRoomOpen]);
-
   // When rooms load, pick room from search params if present
   useEffect(() => {
     if (!rooms?.length || !roomIdFromParams) return;
@@ -206,27 +203,6 @@ export function ChatContainer({
   // ============================================
   // HANDLERS
   // ============================================
-
-  const loadAvailableUsers = async () => {
-    setLoadingUsers(true);
-    try {
-      let url = isAdmin
-        ? `admin/all-users?`
-        : `shared/chat/all-related-chat-users?`;
-      if (projectId) url += `projectId=${projectId}&`;
-      const response = await getData({
-        url,
-        setLoading: () => {},
-      });
-      if (response?.status === 200) {
-        setAvailableUsers(response.data || []);
-      }
-    } catch (err) {
-      // Error loading users
-    } finally {
-      setLoadingUsers(false);
-    }
-  };
 
   const handleMuteRoom = async (roomId) => {
     const room = rooms.find((r) => r.id === roomId);
@@ -295,6 +271,8 @@ export function ChatContainer({
       onSelectChatType={(chatType) => onChatTypeChange(chatType)}
       reFetchRooms={() => fetchRooms(false)}
       unreadCounts={unreadCounts}
+      scrollContainerRef={scrollContainerRef}
+      roomsEndRef={roomsEndRef}
     />
   );
 

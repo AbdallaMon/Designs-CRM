@@ -318,6 +318,16 @@ export async function sendMessage({
       throw new Error("File sharing is disabled in this room");
     }
   }
+  const room = await prisma.chatRoom.findUnique({
+    where: { id: parseInt(roomId) },
+    select: { isChatEnabled: true, allowFiles: true },
+  });
+  if (!room.isChatEnabled) {
+    throw new Error("Chat is disabled in this room");
+  }
+  if ((type === "FILE" || fileUrl) && !room.allowFiles) {
+    throw new Error("File sharing is disabled in this room");
+  }
 
   // Create message
   const message = await prisma.chatMessage.create({

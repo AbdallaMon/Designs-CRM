@@ -113,13 +113,19 @@ export async function getChatRooms({
       take: pageSize,
       include: {
         createdBy: {
-          select: { id: true, name: true, email: true },
+          select: { id: true, name: true, email: true, role: true },
         },
         project: {
-          select: { id: true, groupTitle: true },
+          select: { id: true, groupTitle: true, groupId: true },
         },
         clientLead: {
-          select: { id: true, code: true },
+          select: {
+            id: true,
+            code: true,
+            client: {
+              select: { id: true, name: true, email: true },
+            },
+          },
         },
         members: {
           where: {
@@ -361,16 +367,44 @@ export async function updateChatRoom(roomId, userId, updates) {
       isDeleted: false,
     },
   });
+  const room = await prisma.chatRoom.findUnique({
+    where: { id: parseInt(roomId) },
+  });
 
-  if (!member || (member.role !== "ADMIN" && member.role !== "MODERATOR")) {
+  if (
+    !member ||
+    (member.role !== "ADMIN" &&
+      member.role !== "MODERATOR" &&
+      room.type !== "STAFF_TO_STAFF")
+  ) {
     throw new Error("You don't have permission to update this room");
   }
 
-  const update = await prisma.chatMember.update({
-    where: { id: member.id },
+  // check if empty update remove it
+  for (const key in updates) {
+    if (
+      updates[key] === undefined ||
+      updates[key] === null ||
+      updates[key] === ""
+    ) {
+      delete updates[key];
+    }
+  }
+  const update = await prisma.chatRoom.update({
+    where: { id: parseInt(roomId) },
     data: updates,
   });
 
+  // Emit update to all members
+  await emitToAllUsersRelatedToARoom({
+    roomId,
+    userId,
+    content: {
+      roomId: parseInt(roomId),
+      updates,
+    },
+    type: "notification:room_updated",
+  });
   return update;
 }
 
@@ -435,13 +469,19 @@ export async function getChatRoomById(roomId, userId) {
     where: { id: parseInt(roomId) },
     include: {
       createdBy: {
-        select: { id: true, name: true, email: true },
+        select: { id: true, name: true, email: true, role: true },
       },
       project: {
-        select: { id: true, groupTitle: true },
+        select: { id: true, groupTitle: true, groupId: true },
       },
       clientLead: {
-        select: { id: true, code: true },
+        select: {
+          id: true,
+          code: true,
+          client: {
+            select: { id: true, name: true, email: true },
+          },
+        },
       },
 
       multiProjectRooms: {

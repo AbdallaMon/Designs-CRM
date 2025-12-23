@@ -25,7 +25,7 @@ import {
 } from "@mui/material";
 import { FaTimes } from "react-icons/fa";
 import { getData } from "@/app/helpers/functions/getData";
-import { CHAT_ROOM_TYPES } from "../utils/chatConstants";
+import { CHAT_ROOM_TYPES } from "../../utils/chatConstants";
 
 function getInitials(name = "") {
   const parts = name.trim().split(" ").filter(Boolean);
@@ -33,7 +33,7 @@ function getInitials(name = "") {
   return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
 }
 
-export default function CreateGroupDialog({
+export function CreateGroupDialog({
   open,
   onClose,
   projectId = null,
@@ -71,9 +71,7 @@ export default function CreateGroupDialog({
   const loadAvailableUsers = async () => {
     setLoadingUsers(true);
     try {
-      let url = isAdmin
-        ? `admin/all-users?`
-        : `shared/chat/all-related-chat-users?`;
+      let url = isAdmin ? `admin/all-users?` : `shared/all-related-chat-users?`;
       if (projectId) url += `projectId=${projectId}&`;
 
       const response = await getData({

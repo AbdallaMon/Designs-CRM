@@ -16,7 +16,7 @@ import colors from "@/app/helpers/colors";
 export default function ScrollButton({
   containerRef,
   direction = "down",
-  threshold = 300,
+  threshold = 1200,
   position = {},
 }) {
   const [showButton, setShowButton] = useState(false);
@@ -61,14 +61,14 @@ export default function ScrollButton({
   };
 
   const defaultPosition =
-    direction === "down" ? { bottom: 80, right: 16 } : { top: 16, right: 16 };
+    direction === "down" ? { bottom: 0, right: 6 } : { top: 16, right: 16 };
 
   return (
     <Zoom in={showButton}>
       <IconButton
         onClick={handleClick}
         sx={{
-          position: "fixed",
+          position: "sticky",
           ...defaultPosition,
           ...position,
           bgcolor: colors.primary,

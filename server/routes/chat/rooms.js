@@ -170,6 +170,25 @@ router.put("/:roomId", async (req, res) => {
   }
 });
 
+// PUT /shared/chat/rooms/:roomId/update-room-settings
+
+router.put("/:roomId/update-room-settings", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req, res);
+    const userId = user.id;
+    const { roomId } = req.params;
+    const updates = req.body;
+    const room = await updateChatRoom(roomId, userId, updates);
+    res.json({ status: 200, data: room });
+  } catch (error) {
+    console.error("Update chat room settings error:", error);
+    const statusCode = error.message?.includes("permission") ? 403 : 500;
+    res.status(statusCode).json({
+      status: statusCode,
+      message: error.message || "Error updating chat room settings",
+    });
+  }
+});
 // DELETE /shared/chat/rooms/:roomId - delete room
 router.delete("/:roomId", async (req, res) => {
   try {

@@ -225,7 +225,13 @@ function MediaRenderer({ file }) {
   }
 
   if (isAudio(file.fileMimeType)) {
-    return <audio src={file.fileUrl} controls style={{ width: "100%" }} />;
+    return (
+      <audio
+        src={file.fileUrl}
+        controls
+        style={{ width: "100%", minWidth: 300 }}
+      />
+    );
   }
 
   if (isPdf(file.fileMimeType)) {

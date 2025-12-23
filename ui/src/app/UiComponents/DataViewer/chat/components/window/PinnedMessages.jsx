@@ -29,7 +29,7 @@ import {
 } from "react-icons/fa";
 import { getData } from "@/app/helpers/functions/getData";
 import colors from "@/app/helpers/colors";
-import { useSocket } from "./hooks";
+import { useSocket } from "../../hooks";
 
 const MAX_PINNED = 20;
 

@@ -19,3 +19,10 @@ UPDATE `ChatMember` SET `createdAt` = NOW();
 
 ALTER TABLE `ChatMember`
 ADD COLUMN `isDeleted` TINYINT(1) NOT NULL DEFAULT 0;
+
+// allow adding allowNotification, allowEmailing settings for user
+
+ALTER TABLE `User`
+ADD COLUMN `allowNotification` TINYINT(1) NOT NULL DEFAULT 1;
+ALTER TABLE `User`
+ADD COLUMN `allowEmailing` TINYINT(1) NOT NULL DEFAULT 1;

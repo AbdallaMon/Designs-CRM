@@ -254,6 +254,31 @@ export async function deleteCalendarEvent(meetingReminder) {
  * Disconnect Google Calendar
  */
 export async function disconnectGoogleCalendar(userId) {
+  const user = await prisma.user.findUnique({
+    where: { id: parseInt(userId) },
+    select: {
+      googleRefreshToken: true,
+      googleAccessToken: true,
+      googleCalendarId: true,
+      googleTokenExpiresAt: true,
+    },
+  });
+
+  // Revoke token with Google
+  if (user.googleRefreshToken || user.googleAccessToken) {
+    try {
+      oauth2Client.setCredentials({
+        access_token: user.googleAccessToken,
+        refresh_token: user.googleRefreshToken,
+      });
+      await oauth2Client.revokeCredentials();
+    } catch (error) {
+      console.error("Error revoking Google credentials:", error);
+      // Continue with local cleanup even if revoke fails
+    }
+  }
+
+  // Clear from database
   await prisma.user.update({
     where: { id: parseInt(userId) },
     data: {
@@ -261,6 +286,7 @@ export async function disconnectGoogleCalendar(userId) {
       googleAccessToken: null,
       googleTokenExpiresAt: null,
       googleCalendarId: null,
+      googleEmail: null,
     },
   });
 }

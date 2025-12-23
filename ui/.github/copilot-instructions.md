@@ -91,6 +91,13 @@ API responses follow this structure:
 - Manages `useLanguage()` hook data
 - Stores language preference
 
+### SocketProvider
+
+- Provides: `{ socket }` via context
+- Initializes Socket.IO connection on client mount
+- Auto-reconnects with exponential backoff
+- Credentials included for auth cookie propagation
+
 ## Component Patterns
 
 ### Admin Data Table (`src/app/UiComponents/DataViewer/AdminTable.jsx`)
@@ -115,10 +122,46 @@ API responses follow this structure:
 
 ### DataViewer Submodules
 
-Each feature has dedicated folder: `accountant/`, `contracts/`, `dashbaord/`, `leads/`, `meeting/`, `image-session/`, etc.
+Each feature has dedicated folder: `accountant/`, `contracts/`, `dashbaord/`, `leads/`, `meeting/`, `image-session/`, `chat/`, etc.
 
 - Typically contain feature-specific AdminTable wrappers
 - Example: `leads/` folder contains `LeadsTable.jsx` with leads-specific columns
+
+### Chat System Architecture (Real-time, WebSocket)
+
+**Core Pattern**: Socket.IO for real-time messaging, chunked file uploads, presence awareness.
+
+**Key Files**:
+
+- [chat/hooks/useSocket.js](src/app/UiComponents/DataViewer/chat/hooks/useSocket.js) - Maps socket events to handler functions (message CRUD, typing, member updates)
+- [chat/utils/socketIO.js](src/app/UiComponents/DataViewer/chat/utils/socketIO.js) - Socket initialization, emit/listen wrappers
+- [chat/components/ChatInput.jsx](src/app/UiComponents/DataViewer/chat/components/ChatInput.jsx) - File/voice upload with chunking, emoji, reply context
+- [chat/components/ChatWindow.jsx](src/app/UiComponents/DataViewer/chat/components/ChatWindow.jsx) - Message display, real-time listeners
+
+**Socket Events Handled**:
+
+```
+message:created, message:edited, message:deleted, message:pinned, message:unpinned
+user:typing, user:stop_typing
+member:joined, member:left, member:removed, members:added
+call:initiated, call:ended
+notification (generic), notification:user_typing, notification:new_message, etc.
+```
+
+**Voice/File Upload Pattern** (`uploadAsChunk.js`):
+
+- 1MB chunk-based upload with progress tracking
+- Endpoints: `utility/upload-chunk` (admin) or `client/upload` (client)
+- Wrapper handles toast notifications automatically
+- Usage: `const res = await uploadInChunks(file, setProgress, setOverlay, isClient)`
+
+**Chat Hooks** (`src/app/UiComponents/DataViewer/chat/hooks/`):
+
+- `useChatMessages` - Fetch/manage messages for a room
+- `useChatRooms` - List/manage chat rooms
+- `useChatMembers` - Room members, add/remove
+- `useChatFiles` - File attachments in chat
+- `useSocket` - Socket event subscriptions (requires handlers map)
 
 ## Conventions & Best Practices
 
@@ -188,6 +231,13 @@ npm run lint       # ESLint next config
 2. API auto-formats response with pagination
 3. Handle `status !== 200` cases explicitly
 
+### Implement Voice Message Support
+
+1. Use `ChatInput` component (handles recording internally)
+2. Voice recorded → blob → chunked upload via `uploadInChunks(file, ..., isClient)`
+3. `onSendMessage(null, { file, fileUrl, messageType: 'VOICE' })`
+4. Display in ChatWindow with audio player control
+
 ## Critical File References
 
 - **Colors/Theme**: `src/app/helpers/colors.js`
@@ -196,9 +246,50 @@ npm run lint       # ESLint next config
 - **Auth Status**: `src/app/providers/AuthProvider.jsx` (validation flow)
 - **Main Form Template**: `src/app/UiComponents/formComponents/forms/MainForm.jsx`
 
+## Real-time Communication Patterns
+
+### Socket Events and Handlers
+
+When implementing real-time features, use the `useSocket` hook with handler object:
+
+```javascript
+useSocket({
+  onMessageCreated: (msg) => {
+    /* handle */
+  },
+  onTyping: (user) => {
+    /* handle */
+  },
+  onMemberJoined: (member) => {
+    /* handle */
+  },
+  // Maps to socket events: message:created, user:typing, member:joined, etc.
+});
+```
+
+### Broadcasting Events
+
+Use `emitSocket()` utility from `socketIO.js`:
+
+```javascript
+import { emitSocket } from "@/path/to/socketIO";
+emitSocket("message:create", { roomId, content, sender });
+```
+
+### File Upload Flow
+
+For files in chat/leads/contracts:
+
+1. Call `uploadInChunks(file, progressCallback, overlayCallback, isClient)`
+2. Function handles 1MB chunking automatically
+3. Returns `{ url: fileUrl, status: 200 }` on success
+4. Toast notifications auto-display (Success/Failed components)
+
 ## Debugging Tips
 
-- Check browser Network tab for `/auth/status` response
-- LocalStorage holds: `role`, `userId` (AuthProvider fallback)
-- Toast notifications appear top-center for all errors
-- Tables filter/sort via URL params, check Redux DevTools in Network
+- **Socket Connection**: Check browser DevTools → Network → WS tab for Socket.IO frames
+- **Auth Status**: Network tab `/auth/status` response shows user validation state
+- **LocalStorage**: Contains `role`, `userId` (AuthProvider fallback when offline)
+- **Toast Notifications**: Top-center, auto-dismiss on success/error
+- **File Upload**: Check Network → upload-chunk endpoint for chunk sequence
+- **Chat Events**: Browser console logs incoming socket events (socketIO.js `onAny` listener)
