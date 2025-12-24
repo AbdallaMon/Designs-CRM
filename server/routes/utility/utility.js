@@ -11,7 +11,7 @@ import {
 } from "../../services/main/utility/utility.js";
 
 const router = express.Router();
-const finalDir = "/home/panel.dreamstudiio.com/public_html/uploads";
+const finalDir = "/home/dreamstudiio.com/public_html/uploads";
 
 import fs from "fs";
 import path from "path";
