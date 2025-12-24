@@ -12,6 +12,7 @@ import UploadingProvider, {
 import SocketProvider from "./providers/SocketProvider";
 
 import { Suspense } from "react";
+import ServiceWorkerRegister from "./UiComponents/DataViewer/utility/RegisterServiceWorker";
 
 const noto = Noto_Kufi_Arabic({
   weight: ["400", "500", "700"],
@@ -98,6 +99,7 @@ export default function RootLayout({ children }) {
                   <DotsLoader />
                   {children}
                 </AuthProvider>
+                <ServiceWorkerRegister />
               </ToastProvider>
             </UploadingProvider>
           </MUIContextProvider>

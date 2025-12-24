@@ -47,11 +47,11 @@ router.post("/upload-chunk", upload.single("chunk"), async (req, res) => {
       writeStream.write(data);
       fs.unlinkSync(partPath); // clean up chunk
     }
-
+    // ${process.env.SERVER}
     const fileUrl = process.env.ISLOCAL
-      ? `${process.env.SERVER}/uploads/${uniqueFilename}`
-      : `https://dreamstudiio.com/uploads/${uniqueFilename}`;
-
+      ? `/uploads/${uniqueFilename}`
+      : `/uploads/${uniqueFilename}`;
+    // https://dreamstudiio.com
     writeStream.end();
     writeStream.on("finish", () => {
       console.log(fileUrl, "fileUrl");

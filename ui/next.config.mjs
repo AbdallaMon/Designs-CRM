@@ -1,17 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // images: {
-  //     remotePatterns: [
-  //         {
-  //             protocol: process.env.NEXT_PUBLIC_PROTOCOL,
-  //             hostname: process.env.NEXT_PUBLIC_HOST,
-  //             pathname: '/**',
-  //         },
-  //     ],
-  // },
-
   turbopack: {
     root: "",
+  },
+
+  async rewrites() {
+    // Only in local dev when you explicitly set: local="true"
+    if (process.env.local === "true") {
+      return [
+        {
+          source: "/uploads/:path*",
+          destination: "http://localhost:4000/uploads/:path*",
+        },
+      ];
+    }
+
+    return [];
   },
 };
 
