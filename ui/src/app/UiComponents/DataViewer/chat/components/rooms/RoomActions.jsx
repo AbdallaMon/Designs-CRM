@@ -2,6 +2,7 @@ import { Menu, MenuItem } from "@mui/material";
 import { CHAT_ROOM_TYPES } from "../../utils";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import { FaArchive, FaBellSlash, FaTrash } from "react-icons/fa";
 
 export function RoomActions({
   menuAnchor,
