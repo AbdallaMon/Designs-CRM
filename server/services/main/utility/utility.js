@@ -572,6 +572,8 @@ export const uploadFiles = async (req, res) => {
               ? `${process.env.SERVER}/uploads/${uniqueFilename}`
               : `https://dreamstudiio.com/uploads/${uniqueFilename}`;
             console.log(fileUrl, "fileUrl");
+            console.log(uniqueFilename, "uniqueFilename");
+
             const fieldName = file.fieldname;
 
             if (!fileUrls[fieldName]) fileUrls[fieldName] = [];
