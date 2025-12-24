@@ -50,7 +50,7 @@ router.post("/upload-chunk", upload.single("chunk"), async (req, res) => {
 
     const fileUrl = process.env.ISLOCAL
       ? `${process.env.SERVER}/uploads/${uniqueFilename}`
-      : `http://panel.dreamstudiio.com/uploads/${uniqueFilename}`;
+      : `https://dreamstudiio.com/uploads/${uniqueFilename}`;
 
     writeStream.end();
     writeStream.on("finish", () => {
