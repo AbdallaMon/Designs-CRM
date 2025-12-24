@@ -193,7 +193,6 @@ function GridFileItem({ file, onPreview }) {
 
 export function ChatFilesTab({ roomId }) {
   const [selectedType, setSelectedType] = useState([]);
-  const debounceRef = useRef(null);
 
   const {
     filesByMonth,
@@ -203,6 +202,8 @@ export function ChatFilesTab({ roomId }) {
     hasMore,
     loadMoreFiles,
     total,
+    totalPages,
+    pageRef,
   } = useChatFiles(roomId, {
     fileType: selectedType,
   });

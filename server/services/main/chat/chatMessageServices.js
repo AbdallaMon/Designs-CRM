@@ -288,10 +288,7 @@ export async function sendMessage({
   userId,
   content,
   type = "TEXT",
-  fileUrl,
-  fileName,
-  fileSize,
-  fileMimeType,
+  attachments,
   replyToId,
 }) {
   // Verify user is member
@@ -308,7 +305,7 @@ export async function sendMessage({
   }
 
   // Check if room allows files
-  if (type === "FILE" || fileUrl) {
+  if (type === "FILE" || (attachments && attachments.length > 0)) {
     const room = await prisma.chatRoom.findUnique({
       where: { id: parseInt(roomId) },
       select: { allowFiles: true },
@@ -325,25 +322,40 @@ export async function sendMessage({
   if (!room.isChatEnabled) {
     throw new Error("Chat is disabled in this room");
   }
-  if ((type === "FILE" || fileUrl) && !room.allowFiles) {
+  if (
+    (type === "FILE" || (attachments && attachments.length > 0)) &&
+    !room.allowFiles
+  ) {
     throw new Error("File sharing is disabled in this room");
   }
 
   // Create message
+
   const message = await prisma.chatMessage.create({
     data: {
       roomId: parseInt(roomId),
       senderId: parseInt(userId),
       content,
       type,
-      fileUrl,
-      fileName,
-      fileSize: fileSize ? parseInt(fileSize) : null,
-      fileMimeType,
+      attachments: attachments.length
+        ? {
+            create: attachments.map((a) => ({
+              fileUrl: a.fileUrl,
+              fileName: a.fileName,
+              fileSize: a.fileSize ? parseInt(a.fileSize) : null,
+              fileMimeType: a.fileMimeType || null,
+              thumbnailUrl: a.thumbnailUrl || null,
+            })),
+          }
+        : undefined,
+
       replyToId: replyToId ? parseInt(replyToId) : null,
     },
     include: {
       sender: {
+        select: { id: true, name: true, email: true, profilePicture: true },
+      },
+      client: {
         select: { id: true, name: true, email: true },
       },
       replyTo: {
@@ -352,6 +364,22 @@ export async function sendMessage({
           content: true,
           sender: { select: { id: true, name: true } },
         },
+      },
+      reactions: {
+        include: {
+          user: { select: { id: true, name: true } },
+          client: { select: { id: true, name: true } },
+        },
+      },
+      attachments: true,
+      mentions: {
+        include: {
+          user: { select: { id: true, name: true } },
+        },
+      },
+      readReceipts: {
+        where: { memberId: member.id },
+        select: { id: true },
       },
     },
   });

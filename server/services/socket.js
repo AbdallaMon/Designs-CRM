@@ -223,24 +223,12 @@ export function initSocket(httpServer) {
 
     socket.on("message:create", async ({ data }) => {
       try {
-        const {
-          content,
-          type,
-          replyToId,
-          fileUrl,
-          fileName,
-          fileSize,
-          fileMimeType,
-          roomId,
-        } = data;
+        const { content, type, replyToId, attachments, roomId } = data;
         await sendMessage({
           content,
           type,
           replyToId,
-          fileUrl,
-          fileName,
-          fileSize,
-          fileMimeType,
+          attachments,
           userId: data.userId,
           roomId,
         });

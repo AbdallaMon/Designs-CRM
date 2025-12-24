@@ -34,7 +34,6 @@ export function useChatRooms({
   const roomsEndRef = useRef(null);
   const BOTTOM_THRESHOLD_PX = 80;
   const pageRef = useRef(page);
-  const searchParams = useSearchParams();
   function onSearchChange(newSearchKey) {
     setSearchKey(newSearchKey);
     setInitialLoading(true);

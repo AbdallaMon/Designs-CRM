@@ -99,7 +99,7 @@ export async function uploadPdfAndApproveSession({
 
     await uploadToFTPHttpAsBuffer(pdfBytes, remotePath, true);
 
-    const publicUrl = `https://panel.dreamstudiio.com/uploads/${fileName}`;
+    const publicUrl = `/uploads/${fileName}`;
     await approveSession({
       token: sessionData.token,
       clientLeadId: sessionData.clientLeadId,

@@ -10,7 +10,8 @@ export async function uploadInChunks(file, setProgress, setOverlay, isClient) {
   try {
     const chunkSize = 1 * 1024 * 1024; // 1MB
     const totalChunks = Math.ceil(file.size / chunkSize);
-    let finalFileUrl;
+    let finalPayload = null;
+
     if (setOverlay) {
       setOverlay(true);
     }
@@ -26,7 +27,7 @@ export async function uploadInChunks(file, setProgress, setOverlay, isClient) {
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_URL}/${
-          isClient ? "client/upload" : "utility/upload-chunk"
+          isClient ? "client/upload-chunk" : "utility/upload-chunk"
         }`,
         {
           method: "POST",
@@ -36,22 +37,31 @@ export async function uploadInChunks(file, setProgress, setOverlay, isClient) {
       );
 
       const json = await res.json();
-      console.log(json, "json");
       if (json.url) {
-        finalFileUrl = json.url;
+        finalPayload = {
+          url: json.url,
+          thumbnailUrl: json.thumbnailUrl || null,
+          fileName: json.fileName || file.name,
+          fileSize: json.fileSize || file.size,
+          fileMimeType: json.fileMimeType || file.type || null,
+        };
       }
 
       // ✅ update progress
       const percent = Math.round(((i + 1) / totalChunks) * 100);
       setProgress(percent);
     }
-    console.log(finalFileUrl, "finalFileUrl");
     if (setOverlay) {
       setOverlay(false);
     }
     toast.update(id, Success("Uploaded successfully"));
 
-    return { url: finalFileUrl, status: finalFileUrl && 200 };
+    return {
+      thumbnailUrl: finalPayload.thumbnailUrl,
+      url: finalPayload.url,
+      status: finalPayload.url && 200,
+      ...finalPayload,
+    };
   } catch (e) {
     if (setOverlay) {
       setOverlay(false);

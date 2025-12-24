@@ -286,10 +286,7 @@ export function ChatWindow({
       content,
       replyToId: replyingTo?.id,
       type: fileData ? "FILE" : "TEXT",
-      fileUrl: fileData?.fileUrl ? fileData?.fileUrl : null,
-      fileName: fileData?.name,
-      fileSize: fileData?.file?.size,
-      fileMimeType: fileData?.type,
+      attachments: fileData ? fileData.attachments : [],
     };
 
     const result = await sendMessage(messageData);

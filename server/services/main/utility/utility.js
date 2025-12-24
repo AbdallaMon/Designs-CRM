@@ -569,10 +569,8 @@ export const uploadFiles = async (req, res) => {
             fs.writeFileSync(savePath, file.buffer);
 
             const fileUrl = process.env.ISLOCAL
-              ? `${process.env.SERVER}/uploads/${uniqueFilename}`
-              : `https://dreamstudiio.com/uploads/${uniqueFilename}`;
-            console.log(fileUrl, "fileUrl");
-            console.log(uniqueFilename, "uniqueFilename");
+              ? `/uploads/${uniqueFilename}`
+              : `/uploads/${uniqueFilename}`;
 
             const fieldName = file.fieldname;
 

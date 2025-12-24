@@ -438,11 +438,14 @@ export function ChatInput({
 
       if (uploadRes?.status === 200) {
         await onSendMessage(null, {
-          file,
-          name: file.name,
-          type: file.type,
-          fileUrl: uploadRes.url,
-          messageType: "VOICE",
+          attachments: [
+            {
+              fileName: file.name,
+              fileMimeType: file.type,
+              fileUrl: uploadRes.url,
+              fileSize: file.size,
+            },
+          ],
         });
 
         cancelRecording();
@@ -462,7 +465,7 @@ export function ChatInput({
     if (!message.trim() && selectedFiles.length === 0) return;
 
     setIsSending(true);
-
+    const attachments = [];
     try {
       if (selectedFiles.length > 0) {
         for (const fileObj of selectedFiles) {
@@ -480,11 +483,13 @@ export function ChatInput({
           );
 
           if (fileUpload?.status === 200) {
-            await onSendMessage(text || message, {
-              file,
-              name: file.name,
-              type: file.type,
+            attachments.push({
+              fileName: file.name,
+              fileMimeType: file.type,
               fileUrl: fileUpload.url,
+              thumbnailUrl: fileUpload.thumbnailUrl,
+              content: text,
+              fileSize: file.size,
             });
           } else {
             setFileError(`Failed to upload ${file.name}`);
@@ -499,9 +504,16 @@ export function ChatInput({
 
         setSelectedFiles([]);
         setFileError("");
-
+        console.log(message, "message");
+        console.log(attachments, "attachments");
         if (message && message.length > 0) {
-          await onSendMessage(message);
+          await onSendMessage(message, {
+            attachments,
+          });
+        } else {
+          await onSendMessage(null, {
+            attachments,
+          });
         }
       } else {
         await onSendMessage(message);

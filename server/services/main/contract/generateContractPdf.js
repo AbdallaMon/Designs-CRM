@@ -2315,9 +2315,7 @@ async function generateContractPdfLinksInBothLanguages({
   const fileName = `contract-${contract.id}-${lng}-${uuidv4()}.pdf`;
   const remotePath = `public_html/uploads/${fileName}`;
   await uploadToFTPHttpAsBuffer(pdfBytes, remotePath, true);
-  const publicUrl = `${
-    !process.env.ISLOCAL ? "https://panel.dreamstudiio.com" : process.env.SERVER
-  }/uploads/${fileName}`;
+  const publicUrl = `/uploads/${fileName}`;
 
   if (lng === "ar") {
     await prisma.contract.update({

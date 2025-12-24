@@ -1,3 +1,4 @@
+import { message } from "telegram/client/index.js";
 import prisma from "../../../prisma/prisma.js";
 
 /**
@@ -7,7 +8,7 @@ import prisma from "../../../prisma/prisma.js";
 export async function getChatRoomFiles({
   roomId,
   userId,
-  page = 1,
+  page = 0,
   limit = 20,
   sort = "newest",
   type = null, // image, video, document, audio, file
@@ -17,9 +18,7 @@ export async function getChatRoomFiles({
 }) {
   const parsedRoomId = parseInt(roomId);
   const parsedUserId = parseInt(userId);
-  const pageNumber = Math.max(1, parseInt(page));
-  const pageSize = Math.min(50, Math.max(1, parseInt(limit)));
-  const skip = (pageNumber - 1) * pageSize;
+  const skip = page * limit;
 
   // Verify user is a member of the room
   const member = await prisma.chatMember.findFirst({
@@ -57,84 +56,86 @@ export async function getChatRoomFiles({
   }
 
   const where = {
-    roomId: parsedRoomId,
-    isDeleted: false,
-    ...typeFilter,
-    ...searchFilter,
-    ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
+    message: {
+      roomId: parsedRoomId,
+      isDeleted: false,
+      ...typeFilter,
+      ...searchFilter,
+      ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
+    },
   };
 
   const [messages, total] = await Promise.all([
-    prisma.chatMessage.findMany({
+    prisma.chatAttachment.findMany({
       where,
       select: {
         id: true,
-        roomId: true,
-        type: true,
-        fileName: true,
         fileUrl: true,
+        fileName: true,
         fileMimeType: true,
         fileSize: true,
+        thumbnailUrl: true,
         content: true,
-        createdAt: true,
-        senderId: true,
-        senderClient: true,
-        sender: {
+        message: {
           select: {
             id: true,
-            name: true,
-            profilePicture: true,
-          },
-        },
-        client: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        attachments: {
-          select: {
-            id: true,
-            fileUrl: true,
+            roomId: true,
+            type: true,
             fileName: true,
+            fileUrl: true,
             fileMimeType: true,
             fileSize: true,
-            thumbnailUrl: true,
+            content: true,
+            createdAt: true,
+            senderId: true,
+            senderClient: true,
+            sender: {
+              select: {
+                id: true,
+                name: true,
+                profilePicture: true,
+              },
+            },
+            client: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
         },
       },
-      orderBy: { createdAt: sort === "oldest" ? "asc" : "desc" },
+      orderBy: { message: { createdAt: sort === "newest" ? "desc" : "asc" } },
       skip,
-      take: pageSize,
+      take: limit,
     }),
-    prisma.chatMessage.count({ where }),
+    prisma.chatAttachment.count({ where }),
   ]);
 
   // Format response with month grouping helper
   const formattedFiles = messages.map((msg) => {
     const file = {
       id: msg.id,
-      messageId: msg.id,
-      roomId: msg.roomId,
-      type: msg.type,
+      messageId: msg.message.id,
+      roomId: msg.message.roomId,
+      type: msg.message.type,
       fileName: msg.fileName,
       fileUrl: msg.fileUrl,
       fileMimeType: msg.fileMimeType,
       fileSize: msg.fileSize,
       content: msg.content,
-      sender: msg.senderId
-        ? msg.sender
-        : msg.senderClient
-        ? { id: msg.client.id, name: msg.client.name, isClient: true }
+      sender: msg.message.sender
+        ? msg.message.sender
+        : msg.message.senderClient
+        ? {
+            id: msg.message.client.id,
+            name: msg.message.client.name,
+            isClient: true,
+          }
         : null,
-      createdAt: msg.createdAt,
-      month: msg.createdAt.toISOString().slice(0, 7), // YYYY-MM
+      createdAt: msg.message.createdAt,
+      month: msg.message.createdAt.toISOString().slice(0, 7), // YYYY-MM
     };
-
-    // Include attachments if present
-    if (msg.attachments && msg.attachments.length > 0) {
-      file.attachments = msg.attachments;
-    }
 
     return file;
   });
@@ -158,9 +159,9 @@ export async function getChatRoomFiles({
       files: formattedFiles,
     },
     total,
-    totalPages: Math.ceil(total / pageSize),
-    page: pageNumber,
-    limit: pageSize,
+    totalPages: Math.ceil(total / limit),
+    page: page,
+    limit: limit,
   };
 }
 

@@ -14,11 +14,11 @@ router.get("/:roomId/files", async (req, res) => {
     const userId = user.id;
     const { roomId } = req.params;
     const { page, limit, sort, type, search, from, to } = req.query;
-
+    console.log(req.query, "query params");
     const result = await getChatRoomFiles({
       roomId,
       userId,
-      page: page ? parseInt(page, 10) : 1,
+      page: page ? parseInt(page, 10) : 0,
       limit: limit ? parseInt(limit, 10) : 20,
       sort: sort || "newest",
       type: type || null,

@@ -9,10 +9,7 @@ import {
   getMessagePageByMessageId,
   getPinnedMessages,
 } from "../../services/main/chat/chatMessageServices.js";
-import {
-  getCurrentUser,
-  uploadToFTPHttpAsBuffer,
-} from "../../services/main/utility/utility.js";
+import { getCurrentUser } from "../../services/main/utility/utility.js";
 
 const router = express.Router();
 

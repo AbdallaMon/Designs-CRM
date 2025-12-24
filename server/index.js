@@ -81,7 +81,7 @@ initSocket(httpServer);
 if (process.env.ISLOCAL) {
   app.use(
     "/uploads",
-    express.static("E:/home/panel.dreamstudiio.com/public_html/uploads")
+    express.static("E:/home/dreamstudiio.com/public_html/uploads")
   );
 }
 app.use(express.json());
