@@ -44,6 +44,9 @@ import ChatChips from "./ChatChips";
 import { LastSeenAt, OnlineStatus } from "../members";
 import { ScrollButton } from "../messages";
 import { StartNewChat } from "../dialogs";
+import { getRoomAvatar, getRoomLabel } from "./helpers";
+import { useAuth } from "@/app/providers/AuthProvider";
+import { RoomActions } from "./RoomActions";
 
 dayjs.extend(relativeTime);
 
@@ -55,9 +58,8 @@ export function ChatRoomsList({
   onArchiveRoom,
   onDeleteRoom,
   onCreateNewRoom,
-  loading = false,
-  initialLoading = false,
-  onLoadMore,
+  onLeaveRoom,
+
   hasMore = false,
   isWidget = false,
   typingRooms = {},
@@ -71,6 +73,7 @@ export function ChatRoomsList({
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [menuRoomId, setMenuRoomId] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [leaveConfirm, setLeaveConfirm] = useState(false);
   const DEBOUNCE_MS = 450;
   // Debounce utility with cancel/flush controls
   function debounce(fn, wait) {
@@ -108,13 +111,10 @@ export function ChatRoomsList({
     handleMenuClose();
     setDeleteConfirm(false);
   };
-
-  const handleScroll = (event) => {
-    const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
-    if (!onLoadMore || !hasMore || loading) return;
-    if (scrollTop + clientHeight >= scrollHeight - 120) {
-      onLoadMore();
-    }
+  const handleLeaveRoom = () => {
+    onLeaveRoom(menuRoomId);
+    handleMenuClose();
+    setLeaveConfirm(false);
   };
 
   const getLastMessageText = (room) => {
@@ -150,29 +150,6 @@ export function ChatRoomsList({
     return unreadCounts?.[room.id] || 0;
   };
 
-  const getRoomAvatar = (room) => {
-    if (room.avatarUrl) return room.avatarUrl;
-    if (room.members?.length === 2) {
-      const otherMember = room.members[0];
-      return otherMember.user?.avatar || otherMember.client?.avatar;
-    }
-    return room.name?.charAt(0);
-  };
-
-  const getRoomLabel = (room) => {
-    if (room.type === "STAFF_TO_STAFF") {
-      const otherMember = room.otherMembers?.[0];
-      if (otherMember?.user) {
-        return otherMember.user.name;
-      }
-    }
-    if (room.name) return room.name;
-    if (room.type === "CLIENT_TO_STAFF") {
-      const member = room.members?.find((m) => m.user);
-      return member?.user?.name || "Client";
-    }
-    return CHAT_ROOM_TYPE_LABELS[room.type] || room.type || "Chat";
-  };
   useEffect(() => {
     return () => debouncedSearch.cancel?.();
   }, [debouncedSearch]);
@@ -260,12 +237,11 @@ export function ChatRoomsList({
       {/* Rooms list */}
       <List
         ref={scrollContainerRef}
-        onScroll={handleScroll}
+        // onScroll={handleScroll}
         sx={{
           flex: 1,
           overflow: "auto",
           position: "relative",
-          maxHeight: "100px",
           "&::-webkit-scrollbar": { width: "6px" },
           "&::-webkit-scrollbar-thumb": {
             backgroundColor: "rgba(0,0,0,0.2)",
@@ -401,49 +377,16 @@ export function ChatRoomsList({
                   }
                 />
               </ListItemButton>
-              <Menu
-                anchorEl={menuAnchor}
-                open={Boolean(menuAnchor && menuRoomId === room.id)}
-                onClose={handleMenuClose}
-              >
-                <MenuItem
-                  onClick={() => {
-                    onMuteRoom(room.id);
-                    handleMenuClose();
-                  }}
-                >
-                  {room?.isMuted ? (
-                    <>
-                      <FaBell size={14} style={{ marginRight: 8 }} />
-                      Unmute
-                    </>
-                  ) : (
-                    <>
-                      <FaBellSlash size={14} style={{ marginRight: 8 }} />
-                      Mute
-                    </>
-                  )}
-                </MenuItem>
-                <MenuItem
-                  onClick={() => {
-                    onArchiveRoom(menuRoomId);
-                    handleMenuClose();
-                  }}
-                >
-                  <FaArchive size={14} style={{ marginRight: 8 }} />
-                  {room?.isArchived ? "Unarchive" : "Archive"}
-                </MenuItem>
-                {room.type !== CHAT_ROOM_TYPES.STAFF_TO_STAFF && (
-                  <MenuItem
-                    onClick={() => {
-                      setDeleteConfirm(true);
-                    }}
-                  >
-                    <FaTrash size={14} style={{ marginRight: 8 }} />
-                    Delete
-                  </MenuItem>
-                )}
-              </Menu>
+              <RoomActions
+                menuAnchor={menuAnchor}
+                menuRoomId={menuRoomId}
+                room={room}
+                handleMenuClose={handleMenuClose}
+                onMuteRoom={onMuteRoom}
+                onArchiveRoom={onArchiveRoom}
+                setDeleteConfirm={setDeleteConfirm}
+                setLeaveConfirm={setLeaveConfirm}
+              />
             </ListItem>
           ))
         )}
@@ -453,20 +396,53 @@ export function ChatRoomsList({
       {/* Menu */}
 
       {/* Delete confirmation */}
-      <Dialog open={deleteConfirm} onClose={() => setDeleteConfirm(false)}>
-        <DialogTitle>Delete Chat?</DialogTitle>
-        <DialogContent>
-          <Typography>
-            This action cannot be undone. All messages will be deleted.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirm(false)}>Cancel</Button>
-          <Button onClick={handleDeleteRoom} variant="contained" color="error">
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DeleteConfirmDialog
+        open={deleteConfirm}
+        onClose={() => setDeleteConfirm(false)}
+        onConfirm={handleDeleteRoom}
+      />
+      <LeaveConfirmDialog
+        open={leaveConfirm}
+        onClose={() => setLeaveConfirm(false)}
+        onConfirm={handleLeaveRoom}
+      />
     </Box>
+  );
+}
+function DeleteConfirmDialog({ open, onClose, onConfirm }) {
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>Delete Chat?</DialogTitle>
+      <DialogContent>
+        <Typography>
+          This action cannot be undone. All messages will be deleted.
+        </Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onConfirm} variant="contained" color="error">
+          Delete
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+function LeaveConfirmDialog({ open, onClose, onConfirm }) {
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>Leave Chat?</DialogTitle>
+      <DialogContent>
+        <Typography>
+          Are you sure you want to leave this chat? You will no longer receive
+          messages from this room.
+        </Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onConfirm} variant="contained" color="error">
+          Leave
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }

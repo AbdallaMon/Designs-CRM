@@ -44,7 +44,7 @@ export const SCHEDULED_MESSAGE_STATUSES = {
 };
 
 export const CHAT_ROOM_TYPE_LABELS = {
-  STAFF_TO_STAFF: "Staff to Staff",
+  STAFF_TO_STAFF: "Direct",
   PROJECT_GROUP: "Project Group",
   CLIENT_TO_STAFF: "Client to Staff",
   MULTI_PROJECT: "Multi-Project",

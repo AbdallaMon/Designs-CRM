@@ -27,7 +27,6 @@ export function useChatMessages(roomId, initialPage = 0) {
   const [replyLoaded, setReplyLoaded] = useState(false);
   const [replayLoadingMessageId, setReplayLoadingMessageId] = useState(null);
   const [newMessagesCount, setNewMessagesCount] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
   const { user } = useAuth();
   // ✅ attach this ref to your scrollable messages container (Box/Paper/etc)
   const scrollContainerRef = useRef(null);
@@ -82,7 +81,6 @@ export function useChatMessages(roomId, initialPage = 0) {
         const hasMore = (pageNum + 1) * LIMIT < (response.total || 0);
 
         setHasMore(hasMore);
-        setTotalPages(response.totalPages || 1);
         // ✅ on first load, scroll to bottom
         if (messagesEndRef.current && pageNum === 0) {
           messagesEndRef.current.scrollIntoView({ behavior: "auto" });

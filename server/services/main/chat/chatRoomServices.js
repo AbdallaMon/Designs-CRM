@@ -20,7 +20,6 @@ export async function getChatRooms({
   const pageNumber = Number.isFinite(parseInt(page)) ? parseInt(page) : 0;
   const pageSize = Number.isFinite(parseInt(limit)) ? parseInt(limit) : 20;
   const skip = pageNumber * pageSize;
-
   const where = {
     members: {
       some: {
@@ -81,8 +80,8 @@ export async function getChatRooms({
       {
         type: "STAFF_TO_STAFF",
         members: {
-          isDeleted: false,
           some: {
+            isDeleted: false,
             user: {
               name: {
                 contains: search,
@@ -105,7 +104,7 @@ export async function getChatRooms({
   if (clientLeadId) {
     where.clientLeadId = parseInt(clientLeadId);
   }
-
+  console.log("Chat rooms where clause:", where);
   const [rooms, total] = await Promise.all([
     prisma.chatRoom.findMany({
       where,

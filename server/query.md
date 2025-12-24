@@ -11,16 +11,12 @@ ADD COLUMN `allowChatForMembers` TINYINT(1) NOT NULL DEFAULT 0;
 ALTER TABLE `ChatRoom`
 ADD COLUMN `allowMeetings` TINYINT(1) NOT NULL DEFAULT 0;
 
-added createdAt for chatMember as alter
-
 ALTER TABLE `ChatMember`
 ADD COLUMN `createdAt` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP;
 UPDATE `ChatMember` SET `createdAt` = NOW();
 
 ALTER TABLE `ChatMember`
 ADD COLUMN `isDeleted` TINYINT(1) NOT NULL DEFAULT 0;
-
-// allow adding allowNotification, allowEmailing settings for user
 
 ALTER TABLE `User`
 ADD COLUMN `allowNotification` TINYINT(1) NOT NULL DEFAULT 1;

@@ -56,10 +56,6 @@ export function ChatContainer({
 
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [createRoomOpen, setCreateRoomOpen] = useState(false);
-  const [roomName, setRoomName] = useState("");
-  const [roomType, setRoomType] = useState(CHAT_ROOM_TYPES.PROJECT_GROUP);
-  const [availableUsers, setAvailableUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
   const [viewMode, setViewMode] = useState("LIST"); // LIST | CHAT (mobile only)
   const [typingRooms, setTypingRooms] = useState({});
   const [widgetOpen, setWidgetOpen] = useState(false); // Widget only
@@ -86,7 +82,8 @@ export function ChatContainer({
     setTotalUnread,
     roomsEndRef,
     scrollContainerRef,
-  } = useChatRooms({ projectId, category: null, limit: 2 });
+    leaveRoom,
+  } = useChatRooms({ projectId, category: null, limit: 9 });
   // Message sound (widget only)
   const messageSoundRef = useRef(null);
   useEffect(() => {
@@ -102,7 +99,6 @@ export function ChatContainer({
       }
     },
     onRoomUpdated: (data) => {
-      console.log("Room updated notification received", data);
       fetchRooms(false);
     },
     onMessagesReadNotification: (data) => {
@@ -224,6 +220,15 @@ export function ChatContainer({
       if (isMobile) setViewMode("LIST");
     }
   };
+  function handleLeaveRoom(roomId) {
+    const targetRoom = rooms.find((r) => r.id === roomId);
+    if (targetRoom?.type === CHAT_ROOM_TYPES.STAFF_TO_STAFF) return;
+    leaveRoom(roomId);
+    if (selectedRoom?.id === roomId) {
+      setSelectedRoom(null);
+      if (isMobile) setViewMode("LIST");
+    }
+  }
 
   const handleSelectRoom = (room) => {
     setSelectedRoom(room);
@@ -234,23 +239,8 @@ export function ChatContainer({
   };
 
   const handleOpenCreateRoom = () => {
-    setRoomType(CHAT_ROOM_TYPES.PROJECT_GROUP);
     setCreateRoomOpen(true);
   };
-
-  // Calculate total unread for widget
-  //unreadCounts ={1:1,2:4} i need to get total unread from it and if more than 99 show 99+
-  // const totalUnread = useMemo(() => {
-  //   let total = 0;
-  //   Object.values(unreadCounts).forEach((count) => {
-  //     total += count;
-  //   });
-  //   return total > 99 ? "99+" : total;
-  // }, [unreadCounts]);
-
-  // ============================================
-  // RENDER FUNCTIONS
-  // ============================================
 
   const renderChatRoomsList = () => (
     <ChatRoomsList
@@ -269,10 +259,10 @@ export function ChatContainer({
       typingRooms={typingRooms}
       onSearch={(search) => onSearchChange(search)}
       onSelectChatType={(chatType) => onChatTypeChange(chatType)}
-      reFetchRooms={() => fetchRooms(false)}
       unreadCounts={unreadCounts}
       scrollContainerRef={scrollContainerRef}
       roomsEndRef={roomsEndRef}
+      onLeaveRoom={handleLeaveRoom}
     />
   );
 

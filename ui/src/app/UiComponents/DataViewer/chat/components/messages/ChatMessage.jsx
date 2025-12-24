@@ -423,7 +423,7 @@ export function ChatMessage({
         id={`message-${message.id}`}
       >
         {!isOwnMessage && (
-          <Avatar src={message.sender?.avatar}>
+          <Avatar src={message.sender?.profilePicture}>
             {message.sender?.name?.[0]}
           </Avatar>
         )}
@@ -675,7 +675,7 @@ export function ChatMessage({
         </Box>
 
         {isOwnMessage && (
-          <Avatar src={message.sender?.avatar}>
+          <Avatar src={message.sender?.profilePicture}>
             {message.sender?.name?.[0]}
           </Avatar>
         )}

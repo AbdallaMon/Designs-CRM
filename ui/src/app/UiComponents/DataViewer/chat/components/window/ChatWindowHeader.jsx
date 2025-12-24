@@ -5,6 +5,7 @@ import { Box, IconButton, Avatar, Typography, Tooltip } from "@mui/material";
 import { FaArrowLeft, FaPhone, FaVideo, FaUsers } from "react-icons/fa";
 import { CHAT_ROOM_TYPE_LABELS } from "../../utils/chatConstants";
 import ChatSettings from "../members/ChatSettings";
+import { getRoomAvatar, getRoomLabel } from "../rooms/helpers";
 
 export function ChatWindowHeader({
   room,
@@ -59,6 +60,8 @@ export function ChatWindowHeader({
           onClick={() => setCurrentTab(1)}
         >
           <Avatar
+            src={getRoomAvatar(room)}
+            alt={getRoomLabel(room)}
             sx={{
               width: 40,
               height: 40,
@@ -68,8 +71,9 @@ export function ChatWindowHeader({
               cursor: "pointer",
             }}
           >
-            {room.name?.charAt(0) || "C"}
+            {getRoomLabel(room).charAt(0)}
           </Avatar>
+
           <Box sx={{ cursor: "pointer" }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
               {roomLabel}

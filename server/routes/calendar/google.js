@@ -32,6 +32,24 @@ router.get("/connect", async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+router.post("/connect", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req);
+    const isConnected = await isGoogleCalendarConnected(user.id);
+    if (isConnected) {
+      return res
+        .status(400)
+        .json({ message: "Google Calendar is already connected" });
+    }
+    const authUrl = getAuthUrl(user.id);
+    res.status(200).json({
+      data: { isConnected: false, redirectUrl: authUrl },
+      message: "Redirect user to this URL",
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 /**
  * GET /api/shared/calendar/google/callback
@@ -46,13 +64,15 @@ router.get("/callback", async (req, res) => {
   try {
     await handleOAuthCallback(code, state);
     console.log("Redirecting to dashboard after Google Calendar connect");
-    res.redirect(`${process.env.OLDORIGIN}/dashboard?googleAuthSuccess=1`);
+    res.redirect(
+      `${process.env.OLDORIGIN}/dashboard?googleAuthSuccess=1&profileOpen=true`
+    );
   } catch (error) {
     console.error("Callback error:", error);
     res.redirect(
       `${process.env.OLDORIGIN}/dashboard?googleAuthError=${encodeURIComponent(
         error.message
-      )}`
+      )}&profileOpen=true`
     );
   }
 });

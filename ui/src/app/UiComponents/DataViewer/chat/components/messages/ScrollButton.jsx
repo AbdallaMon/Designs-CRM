@@ -80,6 +80,7 @@ export default function ScrollButton({
           },
           width: 40,
           height: 40,
+          display: showButton ? "flex" : "none",
         }}
       >
         {direction === "down" ? (

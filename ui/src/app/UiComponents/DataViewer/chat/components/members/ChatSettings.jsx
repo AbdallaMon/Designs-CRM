@@ -65,11 +65,14 @@ export default function ChatSettings({ members, room, reFetchRooms }) {
     checkIfAdmin(user) ||
     room?.createdBy?.id === user.id ||
     currentMember?.role === "MODERATOR";
-  const isGroupMangedByAdmin = checkIfAdmin(room?.createdBy);
+  const owner = room?.createdBy?.id === user.id;
+  const isGroupManagedByAdmin = checkIfAdmin(room?.createdBy);
 
   const settings = isAdmin
     ? [...AdminSettings, ...sharedGroupSettings]
-    : sharedGroupSettings;
+    : owner
+    ? sharedGroupSettings
+    : [];
 
   function handleOpen() {
     setOpen(true);
@@ -77,7 +80,11 @@ export default function ChatSettings({ members, room, reFetchRooms }) {
   function handleClose() {
     setOpen(false);
   }
-  if ((isGroupMangedByAdmin && !isAdmin) || room.type === "STAFF_TO_STAFF") {
+  if (
+    (isGroupManagedByAdmin && !isAdmin) ||
+    room.type === "STAFF_TO_STAFF" ||
+    (room.type === "GROUP" && !owner)
+  ) {
     return null;
   }
 

@@ -10,7 +10,7 @@ import UploadingProvider, {
   UploadingContext,
 } from "./providers/UploadingProgressProvider";
 import SocketProvider from "./providers/SocketProvider";
-import GoogleProvider from "./providers/GoogleProvider";
+
 import { Suspense } from "react";
 
 const noto = Noto_Kufi_Arabic({

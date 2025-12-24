@@ -356,6 +356,10 @@ export async function sendMessage({
     },
   });
 
+  await prisma.chatRoom.update({
+    where: { id: parseInt(roomId) },
+    data: { updatedAt: new Date() },
+  });
   // Update room's updatedAt
 
   // Emit to all room members for live chat

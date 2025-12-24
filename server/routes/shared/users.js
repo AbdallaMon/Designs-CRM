@@ -31,7 +31,9 @@ router.put("/:userId/profile", async (req, res) => {
     const updates = req.body;
 
     const updatedProfile = await updateUserProfileById(userId, updates);
-    res.status(200).json({ data: updatedProfile });
+    res
+      .status(200)
+      .json({ data: updatedProfile, message: "Profile updated successfully." });
   } catch (error) {
     console.error("Error updating user profile:", error);
     res

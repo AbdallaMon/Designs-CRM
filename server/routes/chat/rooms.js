@@ -25,6 +25,7 @@ router.get("/", async (req, res) => {
       searchKey,
       chatType,
     } = req.query;
+    console.log("Fetching chat rooms with query:", req.query);
     const result = await getChatRooms({
       userId,
       category,
