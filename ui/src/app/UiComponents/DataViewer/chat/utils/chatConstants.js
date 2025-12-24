@@ -57,10 +57,11 @@ export const CHAT_CATEGORIES = [
   { value: "GROUP", label: "Group Chats" },
   { value: "ARCHIVED", label: "Archived" },
 ];
-
+// all types allowed
 export const FILE_UPLOAD_LIMITS = {
   MAX_SIZE: 50000 * 1024 * 1024, // 50 GB
   ALLOWED_TYPES: [
+    "image/jpg",
     "image/jpeg",
     "image/png",
     "image/gif",
@@ -69,5 +70,15 @@ export const FILE_UPLOAD_LIMITS = {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     "application/vnd.ms-excel",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "application/vnd.ms-powerpoint",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "text/plain",
+    "application/zip",
+    "application/x-rar-compressed",
+    "video/mp4",
+    "video/mpeg",
+    "video/quicktime",
+    "audio/mpeg",
+    "audio/wav",
   ],
 };
