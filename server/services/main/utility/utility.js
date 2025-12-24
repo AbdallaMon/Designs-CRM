@@ -555,6 +555,7 @@ export const uploadFiles = async (req, res) => {
           return reject(new Error("No files uploaded."));
 
         const uploadDir = "/home/dreamstudiio.com/public_html/uploads";
+        console.log(uploadDir, "uploadDir");
         if (!fs.existsSync(uploadDir)) {
           fs.mkdirSync(uploadDir, { recursive: true });
         }
@@ -570,6 +571,7 @@ export const uploadFiles = async (req, res) => {
             const fileUrl = process.env.ISLOCAL
               ? `${process.env.SERVER}/uploads/${uniqueFilename}`
               : `https://dreamstudiio.com/uploads/${uniqueFilename}`;
+            console.log(fileUrl, "fileUrl");
             const fieldName = file.fieldname;
 
             if (!fileUrls[fieldName]) fileUrls[fieldName] = [];
