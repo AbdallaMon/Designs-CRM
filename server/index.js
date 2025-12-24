@@ -84,7 +84,10 @@ if (process.env.ISLOCAL) {
     express.static("E:/home/panel.dreamstudiio.com/public_html/uploads")
   );
 } else {
-  app.use("/uploads", express.static("/home/dreamstudiio/public_html/uploads"));
+  app.use(
+    "/uploads",
+    express.static("/home/panel.dreamstudiio.com/public_html/uploads")
+  );
 }
 app.use(express.json());
 app.use(cookieParser());
