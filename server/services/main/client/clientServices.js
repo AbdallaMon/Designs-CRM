@@ -1,13 +1,11 @@
 ﻿import { PDFDocument, rgb } from "pdf-lib";
 import prisma from "../../../prisma/prisma.js";
-import fetch from "node-fetch";
 import { v4 as uuidv4 } from "uuid";
 import dayjs from "dayjs";
 import * as fontkit from "fontkit";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "url";
-import reshaper from "arabic-persian-reshaper";
 import { uploadToFTPHttpAsBuffer } from "../utility/utility.js";
 import {
   sendEmailForStaff,

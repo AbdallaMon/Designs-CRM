@@ -43,8 +43,7 @@ const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {
     <Box
       sx={{
         padding: { xs: 2, md: 4 },
-        minHeight: "100vh",
-        mb: "-60px",
+        // minHeight: "100vh",
         maxWidth: "1800px",
         mx: "auto",
       }}

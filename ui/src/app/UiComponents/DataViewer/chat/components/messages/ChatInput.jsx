@@ -214,10 +214,10 @@ export function ChatInput({
   disabled = false,
   onTyping = () => {},
   room,
+  inputRef,
 }) {
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
-
   // ✅ Emoji panel state (inline, attached to input)
   const [emojiOpen, setEmojiOpen] = useState(false);
 
@@ -234,7 +234,6 @@ export function ChatInput({
   const [voiceUploadProgress, setVoiceUploadProgress] = useState(null);
 
   const fileInputRef = useRef(null);
-  const inputRef = useRef(null);
 
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
@@ -504,8 +503,7 @@ export function ChatInput({
 
         setSelectedFiles([]);
         setFileError("");
-        console.log(message, "message");
-        console.log(attachments, "attachments");
+
         if (message && message.length > 0) {
           await onSendMessage(message, {
             attachments,
@@ -624,7 +622,15 @@ export function ChatInput({
       )}
 
       {!isVoiceMode && selectedFiles.length > 0 && (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 1.5,
+            maxHeight: 240,
+            overflowY: "auto",
+          }}
+        >
           {selectedFiles.map((fileObj) => (
             <Paper
               key={fileObj.id}

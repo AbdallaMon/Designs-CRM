@@ -13,8 +13,9 @@ router.get("/:roomId/files", async (req, res) => {
     const user = await getCurrentUser(req, res);
     const userId = user.id;
     const { roomId } = req.params;
-    const { page, limit, sort, type, search, from, to } = req.query;
-    console.log(req.query, "query params");
+    const { page, limit, sort, type, search, from, to, uniqueMonths } =
+      req.query;
+
     const result = await getChatRoomFiles({
       roomId,
       userId,
@@ -25,6 +26,7 @@ router.get("/:roomId/files", async (req, res) => {
       search: search || "",
       from: from || null,
       to: to || null,
+      uniqueMonthsString: uniqueMonths,
     });
 
     res.json({ status: 200, ...result });

@@ -130,7 +130,7 @@ router.get("/latest-leads", async (req, res) => {
 router.get("/recent-activities", async (req, res) => {
   try {
     const searchParams = req.query;
-    const { user } = await getCurrentUser(req);
+    const user = await getCurrentUser(req);
     const data = await getRecentActivities(searchParams, user.role);
     res.status(200).json({ data });
   } catch (error) {

@@ -14,6 +14,8 @@ import {
   sendNewMessage,
 } from "../utils/socketIO";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { CHAT_LIMITS } from "../utils/chatConstants";
+import { useScroll } from "@/app/helpers/hooks/useScroll";
 
 export function useChatMessages(roomId, initialPage = 0) {
   const [messages, setMessages] = useState([]);
@@ -39,8 +41,7 @@ export function useChatMessages(roomId, initialPage = 0) {
   // used to keep scroll position after prepending older messages
   const restoreScrollRef = useRef(null);
 
-  const LIMIT = 10;
-  const TOP_THRESHOLD_PX = 80;
+  const LIMIT = CHAT_LIMITS.MESSAGES;
 
   const fetchMessages = useCallback(
     async (pageNum = 0, isLoadMore = false, forceLimit) => {
@@ -51,6 +52,7 @@ export function useChatMessages(roomId, initialPage = 0) {
       // ✅ before load-more, remember current scroll state
       if (isLoadMore && scrollContainerRef.current) {
         const el = scrollContainerRef.current;
+
         restoreScrollRef.current = {
           prevScrollHeight: el.scrollHeight,
           prevScrollTop: el.scrollTop,
@@ -81,9 +83,21 @@ export function useChatMessages(roomId, initialPage = 0) {
         const hasMore = (pageNum + 1) * LIMIT < (response.total || 0);
 
         setHasMore(hasMore);
-        // ✅ on first load, scroll to bottom
-        if (messagesEndRef.current && pageNum === 0) {
-          messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+        if (
+          isLoadMore &&
+          restoreScrollRef.current &&
+          scrollContainerRef.current
+        ) {
+          window.setTimeout(() => {
+            // restore previous scroll position
+            const el = scrollContainerRef.current;
+            const { prevScrollHeight, prevScrollTop } =
+              restoreScrollRef.current;
+            const newScrollHeight = el.scrollHeight;
+            el.scrollTop = newScrollHeight - prevScrollHeight + prevScrollTop;
+
+            restoreScrollRef.current = null;
+          }, 100);
         }
         return { messages: newMessages, page: pageNum };
       }
@@ -109,7 +123,10 @@ export function useChatMessages(roomId, initialPage = 0) {
     fetchMessages(page, true);
   }, [page]);
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView();
+    messagesEndRef.current?.scrollIntoView({
+      behavior: initialLoading ? "smooth" : "instant",
+      block: "start",
+    });
     setInitialLoading(false);
   };
 
@@ -129,51 +146,7 @@ export function useChatMessages(roomId, initialPage = 0) {
     loadingJumpToMessage,
   ]);
 
-  useEffect(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-
-    let lastScrollTop = el.scrollTop;
-    let touchStartY = null;
-
-    const isNearTop = () => el.scrollTop <= TOP_THRESHOLD_PX;
-
-    const onScroll = () => {
-      const current = el.scrollTop;
-      const goingUp = current < lastScrollTop;
-      lastScrollTop = current;
-
-      if (goingUp && isNearTop()) loadMore();
-    };
-
-    const onWheel = (e) => {
-      // deltaY < 0 means user is trying to go UP
-      if (e.deltaY < 0 && isNearTop()) loadMore();
-    };
-
-    const onTouchStart = (e) => {
-      touchStartY = e.touches?.[0]?.clientY ?? null;
-    };
-
-    const onTouchMove = (e) => {
-      if (touchStartY == null) return;
-      const currentY = e.touches?.[0]?.clientY ?? touchStartY;
-      const movingDown = currentY > touchStartY; // finger down => content up
-      if (movingDown && isNearTop()) loadMore();
-    };
-
-    el.addEventListener("scroll", onScroll, { passive: true });
-    el.addEventListener("wheel", onWheel, { passive: true });
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: true });
-
-    return () => {
-      el.removeEventListener("scroll", onScroll);
-      el.removeEventListener("wheel", onWheel);
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-    };
-  }, [loadMore]);
+  useScroll(scrollContainerRef, loadMore, 80, "TOP");
 
   function checkIfMessageExistsAndJump(messageId) {
     const el = document.getElementById(`message-${messageId}`);
@@ -224,7 +197,6 @@ export function useChatMessages(roomId, initialPage = 0) {
     if (!roomId) return null;
 
     // setMessages((prev) => [...prev, optimisticMessage]);
-    scrollToBottom();
 
     sendNewMessage({
       data: { ...messageData, roomId, user, userId: user.id },
@@ -261,7 +233,7 @@ export function useChatMessages(roomId, initialPage = 0) {
     loadMore,
     scrollToBottom,
     setMessages,
-
+    initialLoading,
     loadingMore,
     initialLoading,
     onJumpToMessage,

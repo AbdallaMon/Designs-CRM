@@ -1,5 +1,6 @@
 import prisma from "../../../prisma/prisma.js";
 import { getIo } from "../../socket.js";
+import { getDayGroup, getDayLabel } from "./utils.js";
 
 /**
  * Get messages for a room with day grouping
@@ -41,6 +42,12 @@ export async function getMessages({ roomId, userId, page = 0, limit = 50 }) {
             id: true,
             content: true,
             sender: { select: { id: true, name: true } },
+          },
+        },
+        pinnedIn: {
+          select: {
+            id: true,
+            messageId: true,
           },
         },
         reactions: {
@@ -154,84 +161,12 @@ function addDayGrouping(messages, options = {}) {
       dayGroup,
       dayLabel,
       showDayDivider,
+      isPinned: msg.pinnedIn ? true : false,
       // Unread marker on the first unread message in this page
       ...(showUnreadCount
         ? { showUnreadCount: true, unreadCount: unreadCountValue }
         : {}),
     };
-  });
-}
-
-/**
- * Determine day group label for a message
- */
-function getDayGroup(msgDate, now) {
-  // Reset time to midnight for comparison
-  const msgDay = new Date(
-    msgDate.getFullYear(),
-    msgDate.getMonth(),
-    msgDate.getDate()
-  );
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  const diffTime = today.getTime() - msgDay.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) {
-    return "today";
-  } else if (diffDays === 1) {
-    return "yesterday";
-  } else if (diffDays < 7) {
-    // Return day name for current week
-    const days = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
-    return days[msgDate.getDay()];
-  } else {
-    // Return formatted date for older messages
-    return msgDate.toISOString().split("T")[0]; // YYYY-MM-DD
-  }
-}
-
-/**
- * Friendly day label for UI
- */
-function getDayLabel(msgDate, now) {
-  const msgDay = new Date(
-    msgDate.getFullYear(),
-    msgDate.getMonth(),
-    msgDate.getDate()
-  );
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  const diffTime = today.getTime() - msgDay.getTime();
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) {
-    const days = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
-    return days[msgDate.getDay()];
-  }
-  // e.g., Jan 5, 2025
-  return msgDate.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
   });
 }
 
@@ -465,7 +400,6 @@ export async function editMessage({ messageId, userId, content }) {
  */
 export async function deleteMessage({ messageId, userId }) {
   // Get message and verify ownership
-  console.log(messageId, userId, "messageId, userId delete message");
   const message = await prisma.chatMessage.findUnique({
     where: { id: parseInt(messageId) },
   });
@@ -555,8 +489,18 @@ export async function markMessagesAsRead({ roomId, userId }) {
     where: { id: member.id },
     data: { lastReadAt: new Date() },
   });
+  if (unreadMessages.length === 0) {
+    return { success: true };
+  }
   const io = getIo();
-
+  console.log(
+    "Emitting messages_read for user:",
+    userId,
+    "room:",
+    roomId,
+    "count:",
+    unreadMessages.length
+  );
   io.to(`user:${userId}`).emit("notification:messages_read", {
     roomId: parseInt(roomId),
     userId: parseInt(userId),

@@ -47,6 +47,7 @@ import { StartNewChat } from "../dialogs";
 import { getRoomAvatar, getRoomLabel } from "./helpers";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { RoomActions } from "./RoomActions";
+import { LoadMoreButton } from "../indicators/LoadMoreButton";
 
 dayjs.extend(relativeTime);
 
@@ -68,6 +69,10 @@ export function ChatRoomsList({
   unreadCounts,
   roomsEndRef,
   scrollContainerRef,
+  initialLoading,
+  loading,
+  loadingMore,
+  loadMoreRooms,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuAnchor, setMenuAnchor] = useState(null);
@@ -75,6 +80,8 @@ export function ChatRoomsList({
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [leaveConfirm, setLeaveConfirm] = useState(false);
   const DEBOUNCE_MS = 450;
+  const cantLoadMore = !hasMore || loading || loadingMore || initialLoading;
+
   // Debounce utility with cancel/flush controls
   function debounce(fn, wait) {
     let t;
@@ -237,7 +244,6 @@ export function ChatRoomsList({
       {/* Rooms list */}
       <List
         ref={scrollContainerRef}
-        // onScroll={handleScroll}
         sx={{
           flex: 1,
           overflow: "auto",
@@ -391,6 +397,11 @@ export function ChatRoomsList({
           ))
         )}
         <div ref={roomsEndRef} />
+        <LoadMoreButton
+          disabled={cantLoadMore}
+          onClick={loadMoreRooms}
+          loadingMore={loadingMore}
+        />
       </List>
 
       {/* Menu */}

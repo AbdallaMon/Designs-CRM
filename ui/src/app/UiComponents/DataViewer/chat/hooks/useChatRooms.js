@@ -7,11 +7,14 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useSocket } from "./useSocket";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useSearchParams } from "next/navigation";
+import { CHAT_LIMITS } from "../utils/chatConstants";
+import { useScroll } from "@/app/helpers/hooks/useScroll";
 
 export function useChatRooms({
   category = null,
   projectId = null,
-  limit = 25,
+  limit = CHAT_LIMITS.rooms,
+  widgetOpen,
 } = {}) {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -32,7 +35,6 @@ export function useChatRooms({
   const { user } = useAuth();
   const scrollContainerRef = useRef(null);
   const roomsEndRef = useRef(null);
-  const BOTTOM_THRESHOLD_PX = 80;
   const pageRef = useRef(page);
   function onSearchChange(newSearchKey) {
     setSearchKey(newSearchKey);
@@ -72,7 +74,7 @@ export function useChatRooms({
         );
         setUnreadCounts(response.unreadCounts || {});
         setTotalUnread(response.totalUnread || 0);
-        const hasMore = (page + 1) * LIMIT < (response.total || 0);
+        const hasMore = page + 1 < (response.totalPages || 1);
         setHasMore(hasMore);
       } else {
         setError("Failed to fetch chat rooms");
@@ -125,7 +127,6 @@ export function useChatRooms({
     }, 120000);
     return () => clearInterval(interval);
   }, []);
-
   const loadMoreRooms = useCallback(() => {
     if (loadingMore || loading || initialLoading || !hasMore) return;
     const nextPage = page + 1;
@@ -143,52 +144,7 @@ export function useChatRooms({
     initialLoading,
   ]);
 
-  useEffect(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-
-    // let lastScrollTop = el.scrollTop;
-    let LastScrollBottom = el.scrollHeight - el.clientHeight - el.scrollTop;
-    let touchStartY = null;
-
-    const isNearBottom = () => LastScrollBottom <= BOTTOM_THRESHOLD_PX;
-
-    const onScroll = () => {
-      const current = el.scrollTop;
-      const goingBottom = current > LastScrollBottom;
-      LastScrollBottom = el.scrollHeight - el.clientHeight - el.scrollTop;
-
-      if (goingBottom && isNearBottom()) loadMoreRooms();
-    };
-
-    const onWheel = (e) => {
-      // deltaY < 0 means user is trying to go UP
-      if (e.deltaY < 0 && isNearBottom()) loadMoreRooms();
-    };
-
-    const onTouchStart = (e) => {
-      touchStartY = e.touches?.[0]?.clientY ?? null;
-    };
-
-    const onTouchMove = (e) => {
-      if (touchStartY == null) return;
-      const currentY = e.touches?.[0]?.clientY ?? touchStartY;
-      const movingDown = currentY < touchStartY; // finger up => content down
-      if (movingDown && isNearBottom()) loadMoreRooms();
-    };
-
-    el.addEventListener("scroll", onScroll, { passive: true });
-    el.addEventListener("wheel", onWheel, { passive: true });
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: true });
-
-    return () => {
-      el.removeEventListener("scroll", onScroll);
-      el.removeEventListener("wheel", onWheel);
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-    };
-  }, [loadMoreRooms]);
+  useScroll(scrollContainerRef, loadMoreRooms, 80, "BOTTOM", widgetOpen);
   const createRoom = useCallback(
     async (roomData) => {
       const response = await handleRequestSubmit(
@@ -279,6 +235,7 @@ export function useChatRooms({
     page,
     totalPages,
     loadMoreRooms,
+    initialLoading,
     fetchRooms: refreshRooms,
     createRoom,
     updateRoom,
@@ -294,5 +251,6 @@ export function useChatRooms({
     scrollContainerRef,
     roomsEndRef,
     leaveRoom,
+    hasMore,
   };
 }

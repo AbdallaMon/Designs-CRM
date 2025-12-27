@@ -34,160 +34,10 @@ import {
   FILE_TYPE_CONFIG,
 } from "@/app/helpers/constants";
 import { useChatFiles } from "../../hooks";
+import { LoadMoreButton } from "../indicators/LoadMoreButton";
+import { RenderListOfFiles } from "../../../utility/Media/MediaRender";
 
 /* ================= Helpers ================= */
-
-function getFileConfig(mimeType) {
-  return (
-    FILE_TYPE_CONFIG[mimeType] || {
-      icon: FaFile,
-      color: "#757575",
-      label: "File",
-    }
-  );
-}
-
-function formatMonthYear(monthStr) {
-  const [year, month] = monthStr.split("-");
-  return dayjs(`${year}-${month}-01`).format("MMMM YYYY");
-}
-
-/* ================= Grid Item ================= */
-
-function GridFileItem({ file, onPreview }) {
-  const config = getFileConfig(file.fileMimeType);
-  const Icon = config.icon;
-
-  const isImage = file.fileMimeType?.startsWith("image/");
-  const isVideo = file.fileMimeType?.startsWith("video/");
-
-  const handleClick = () => {
-    if (isImage || isVideo) {
-      onPreview(file);
-    } else {
-      window.open(file.fileUrl, "_blank");
-    }
-  };
-
-  return (
-    <Box
-      onClick={handleClick}
-      sx={{
-        position: "relative",
-        borderRadius: 2,
-        overflow: "hidden",
-        cursor: "pointer",
-        bgcolor: "grey.100",
-        aspectRatio: "1 / 1",
-        "&:hover .overlay": {
-          opacity: 1,
-        },
-      }}
-    >
-      {/* IMAGE */}
-      {isImage && (
-        <img
-          src={file.fileUrl}
-          alt={file.fileName}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
-        />
-      )}
-
-      {/* VIDEO */}
-      {isVideo && (
-        <>
-          <video
-            src={file.fileUrl}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-            muted
-          />
-          <Box
-            sx={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              bgcolor: "rgba(0,0,0,0.4)",
-            }}
-          >
-            <FaPlay size={36} color="white" />
-          </Box>
-        </>
-      )}
-
-      {/* OTHER FILE TYPES */}
-      {!isImage && !isVideo && (
-        <Box
-          sx={{
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            bgcolor: config.color,
-            color: "white",
-            p: 1,
-            textAlign: "center",
-          }}
-        >
-          <Icon size={36} />
-          <Typography variant="caption" mt={1} noWrap>
-            {file.fileName}
-          </Typography>
-        </Box>
-      )}
-
-      {/* HOVER OVERLAY */}
-      <Box
-        className="overlay"
-        sx={{
-          position: "absolute",
-          inset: 0,
-          bgcolor: "rgba(0,0,0,0.55)",
-          color: "white",
-          opacity: 0,
-          transition: "0.2s",
-          display: "flex",
-          alignItems: "flex-end",
-          p: 1,
-        }}
-      >
-        <Typography variant="caption" noWrap>
-          {file.fileName}
-        </Typography>
-      </Box>
-
-      {/* DOWNLOAD */}
-      <IconButton
-        size="small"
-        component="a"
-        href={file.fileUrl}
-        download={file.fileName}
-        target="_blank"
-        onClick={(e) => e.stopPropagation()}
-        sx={{
-          position: "absolute",
-          top: 6,
-          right: 6,
-          bgcolor: "rgba(0,0,0,0.6)",
-          color: "white",
-          "&:hover": { bgcolor: "rgba(0,0,0,0.8)" },
-        }}
-      >
-        <FaDownload size={12} />
-      </IconButton>
-    </Box>
-  );
-}
 
 /* ================= Main Component ================= */
 
@@ -195,32 +45,23 @@ export function ChatFilesTab({ roomId }) {
   const [selectedType, setSelectedType] = useState([]);
 
   const {
-    filesByMonth,
-    sortedMonths,
     loading,
     loadingMore,
     hasMore,
-    loadMoreFiles,
+    loadMore,
     total,
     totalPages,
     pageRef,
+    initialLoading,
+    scrollContainerRef,
+    filesEndRef,
+    files,
+    uniqueMonths,
   } = useChatFiles(roomId, {
     fileType: selectedType,
   });
-
+  const canLoadMore = hasMore && !loadingMore && !initialLoading && !loading;
   const [previewFile, setPreviewFile] = useState(null);
-
-  const handleScroll = (e) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (
-      hasMore &&
-      !loadingMore &&
-      scrollTop + clientHeight >= scrollHeight - 100
-    ) {
-      loadMoreFiles();
-    }
-  };
-
   return (
     <>
       {/* SEARCH & FILTER */}
@@ -245,8 +86,19 @@ export function ChatFilesTab({ roomId }) {
       </Box>
 
       {/* GRID */}
-      <Box sx={{ flex: 1, overflow: "auto", p: 2 }} onScroll={handleScroll}>
-        {sortedMonths?.map((month) => (
+      <Box
+        sx={{ flex: 1, overflow: "auto", p: 2, height: "75vh" }}
+        ref={scrollContainerRef}
+      >
+        <RenderListOfFiles
+          attachments={files}
+          groupByMonth={true}
+          currentRenderedMonths={uniqueMonths}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          onNearToEnd={loadMore}
+        />
+        {/* {sortedMonths?.map((month) => (
           <Box key={month} mb={3}>
             <Typography variant="subtitle2" fontWeight={600} mb={1}>
               {formatMonthYear(month)}
@@ -269,7 +121,14 @@ export function ChatFilesTab({ roomId }) {
                 ))}
             </Box>
           </Box>
-        ))}
+        ))} */}
+        <div ref={filesEndRef} />
+
+        <LoadMoreButton
+          onClick={loadMore}
+          disabled={!canLoadMore}
+          loadingMore={loadingMore}
+        />
 
         {loadingMore && (
           <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>

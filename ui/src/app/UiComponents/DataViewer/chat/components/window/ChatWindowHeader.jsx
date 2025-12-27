@@ -25,7 +25,8 @@ export function ChatWindowHeader({
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        p: 2,
+        px: 2,
+        py: 1,
         borderBottom: "1px solid",
         borderColor: "divider",
         background:

@@ -11,8 +11,8 @@ import {
   pinMessage,
   removeReaction,
   sendMessage,
+  unpinMessage,
 } from "./main/chat/chatMessageServices.js";
-import { unpinMessage } from "telegram/client/messages.js";
 
 let io;
 const userSessions = new Map();

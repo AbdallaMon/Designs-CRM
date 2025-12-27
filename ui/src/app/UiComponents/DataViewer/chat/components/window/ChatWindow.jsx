@@ -66,6 +66,7 @@ import { NewMemberAlert } from "../indicators/NewMemberAlert";
 import { ConfirmDialog } from "../dialogs/ConfirmDialog";
 import PinnedMessages from "./PinnedMessages";
 import { ChatWindowHeader } from "./ChatWindowHeader";
+import { LoadMoreButton } from "../indicators/LoadMoreButton";
 
 export function ChatWindow({
   room,
@@ -91,6 +92,7 @@ export function ChatWindow({
   const [newMemberAlertOpen, setNewMemberAlertOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState(0); // 0: Chat, 1: Files
   const typingTimeoutRef = useRef(null);
+  const inputRef = useRef(null);
   const getRoomLabel = (room) => {
     if (room.type === "STAFF_TO_STAFF") {
       const otherMember = room.otherMembers?.[0];
@@ -164,6 +166,7 @@ export function ChatWindow({
     loading,
     newMessagesCount,
     setNewMessagesCount,
+    loadMore,
   } = useChatMessages(room?.id);
   const {
     members,
@@ -171,6 +174,7 @@ export function ChatWindow({
     fetchMembers,
     setMembers,
   } = useChatMembers(room?.id);
+  const cantLoad = !hasMore || loadingMore || initialLoading || loading;
 
   // Join room when it changes
   useEffect(() => {
@@ -214,6 +218,8 @@ export function ChatWindow({
         markMessageAsRead(room.id, data.id, user.id);
 
         setNewMessagesCount((prev) => prev + 1);
+        // scrollToBottom();
+        inputRef.current?.focus();
         window.setTimeout(() => {
           scrollToBottom();
         }, 100);
@@ -446,7 +452,11 @@ export function ChatWindow({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          height: "100%",
+          height: {
+            xs: "calc(100vh - 62px)",
+            md: "calc(100vh - 86px)",
+          },
+
           color: "textSecondary",
         }}
       >
@@ -481,7 +491,7 @@ export function ChatWindow({
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        maxHeight: "calc(100vh - 120px)",
+        height: { xs: "calc(100vh - 62px)", md: "calc(100vh - 115px)" },
         bgcolor: "background.paper",
         overflow: "hidden",
       }}
@@ -515,9 +525,9 @@ export function ChatWindow({
             flex: 1,
             overflow: "auto",
             p: 2,
+            pb: 0,
             display: "flex",
             flexDirection: "column",
-            scrollBehavior: "smooth",
             position: "relative",
             "&::-webkit-scrollbar": { width: "8px" },
             "&::-webkit-scrollbar-track": {
@@ -533,7 +543,11 @@ export function ChatWindow({
           }}
         >
           {/* Scroll to bottom button */}
-
+          <LoadMoreButton
+            disabled={cantLoad}
+            onClick={loadMore}
+            loadingMore={loadingMore}
+          />
           {messagesLoading ? (
             <Box
               sx={{
@@ -612,10 +626,12 @@ export function ChatWindow({
               />
 
               <Box
-                sx={{
-                  position: "sticky",
-                  bottom: 0,
-                }}
+                sx={
+                  {
+                    // position: "sticky",
+                    // bottom: 0,
+                  }
+                }
                 ref={messagesEndRef}
               />
             </>
@@ -638,6 +654,7 @@ export function ChatWindow({
             onCancelReply={() => setReplyingTo(null)}
             loading={messagesLoading}
             room={room}
+            inputRef={inputRef}
             disabled={
               (!isMember && !isAdmin) || (!isAdmin && !room.isChatEnabled)
             }

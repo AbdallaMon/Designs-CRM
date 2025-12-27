@@ -2,17 +2,23 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getData } from "@/app/helpers/functions/getData";
+import { CHAT_LIMITS } from "../utils/chatConstants";
+import { useScroll } from "@/app/helpers/hooks/useScroll";
 
 /**
  * Hook to fetch and manage chat room files with infinite scroll, search, and filtering
  */
 export function useChatFiles(
   roomId,
-  { limit = 5, sort = "newest", searchQuery = "", fileType = [] } = {}
+  {
+    limit = CHAT_LIMITS.FILES,
+    sort = "newest",
+    searchQuery = "",
+    fileType = {},
+  } = {}
 ) {
   const [files, setFiles] = useState([]);
-  const [filesByMonth, setFilesByMonth] = useState({});
-  const [sortedMonths, setSortedMonths] = useState([]);
+  const [uniqueMonths, setUniqueMonths] = useState({});
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(0);
@@ -32,7 +38,6 @@ export function useChatFiles(
     if (loading) return;
     else setLoading(true);
     const append = loadingMore;
-    console.log(append, "append");
     const LIMIT = append ? limit : page === 0 ? limit : (page + 1) * limit;
     let currentPage = append ? page : 0;
 
@@ -44,12 +49,15 @@ export function useChatFiles(
       if (searchQuery?.trim()) {
         queryParams += `q=${encodeURIComponent(searchQuery.trim())}&`;
       }
+      console.log("fileType in useChatFiles:", fileType);
       if (fileType?.length > 0) {
         queryParams += `type=${fileType}&`;
       }
 
       const response = await getData({
-        url: `shared/chat/rooms/${roomId}/files?${queryParams}`,
+        url: `shared/chat/rooms/${roomId}/files?${queryParams}&uniqueMonths=${JSON.stringify(
+          uniqueMonths
+        )}&`,
         setLoading: () => {},
         page: currentPage,
         limit: LIMIT,
@@ -61,17 +69,8 @@ export function useChatFiles(
         setFiles((prev) =>
           append ? [...prev, ...newFiles.files] : newFiles.files
         );
-        setFilesByMonth((prev) => {
-          const updated = append
-            ? { ...prev, ...newFiles.filesByMonth }
-            : newFiles.filesByMonth;
-          return updated;
-        });
-        setSortedMonths((prev) => {
-          const months = append
-            ? [...prev, ...newFiles.sortedMonths]
-            : newFiles.sortedMonths;
-          return months;
+        setUniqueMonths((prev) => {
+          return { ...prev, ...newFiles.uniqueMonths };
         });
 
         setTotalPages(response.totalPages || 1);
@@ -89,20 +88,35 @@ export function useChatFiles(
       setLoadingMore(false);
       setInitialLoading(false);
     }
-  }, [roomId, limit, sort, searchQuery, fileType]);
+  }, [
+    roomId,
+    limit,
+    sort,
+    searchQuery,
+    fileType,
+    loading,
+    loadingMore,
+    uniqueMonths,
+  ]);
+  // useEffect(() => {
+  //   refreshFiles();
+  // }, [fileType]);
 
   function refreshFiles() {
     setRefetchToggle((prev) => !prev);
   }
-  useEffect(() => {
-    if (!initialLoading) return;
+  function resetAll() {
     setFiles([]);
     setPage(0);
     fetchFiles();
+  }
+  useEffect(() => {
+    if (!initialLoading) return;
+    resetAll();
   }, [roomId, initialLoading]);
   useEffect(() => {
     setInitialLoading(true);
-  }, [roomId]);
+  }, [roomId, fileType]);
   useEffect(() => {
     if (loading || initialLoading || loadingMore) return;
     fetchFiles();
@@ -129,68 +143,23 @@ export function useChatFiles(
     initialLoading,
   ]);
 
-  useEffect(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-
-    // let lastScrollTop = el.scrollTop;
-    let LastScrollBottom = el.scrollHeight - el.clientHeight - el.scrollTop;
-    let touchStartY = null;
-
-    const isNearBottom = () => LastScrollBottom <= BOTTOM_THRESHOLD_PX;
-
-    const onScroll = () => {
-      const current = el.scrollTop;
-      const goingBottom = current > LastScrollBottom;
-      LastScrollBottom = el.scrollHeight - el.clientHeight - el.scrollTop;
-
-      if (goingBottom && isNearBottom()) loadMoreFiles();
-    };
-
-    const onWheel = (e) => {
-      // deltaY < 0 means user is trying to go UP
-      if (e.deltaY < 0 && isNearBottom()) loadMoreFiles();
-    };
-
-    const onTouchStart = (e) => {
-      touchStartY = e.touches?.[0]?.clientY ?? null;
-    };
-
-    const onTouchMove = (e) => {
-      if (touchStartY == null) return;
-      const currentY = e.touches?.[0]?.clientY ?? touchStartY;
-      const movingDown = currentY < touchStartY; // finger up => content down
-      if (movingDown && isNearBottom()) loadMoreFiles();
-    };
-
-    el.addEventListener("scroll", onScroll, { passive: true });
-    el.addEventListener("wheel", onWheel, { passive: true });
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: true });
-
-    return () => {
-      el.removeEventListener("scroll", onScroll);
-      el.removeEventListener("wheel", onWheel);
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-    };
-  }, [loadMoreFiles]);
-
+  useScroll(scrollContainerRef, loadMoreFiles, 100, "BOTTOM");
   return {
     files,
-    filesByMonth,
-    sortedMonths,
     loading,
     loadingMore,
     page,
+    initialLoading,
     totalPages,
     total,
     error,
-    loadMoreFiles,
+    loadMore: loadMoreFiles,
     refreshFiles,
     hasMore,
     filesEndRef,
     scrollContainerRef,
     pageRef,
+    files,
+    uniqueMonths,
   };
 }

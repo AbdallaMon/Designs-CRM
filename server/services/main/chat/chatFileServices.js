@@ -1,5 +1,10 @@
-import { message } from "telegram/client/index.js";
 import prisma from "../../../prisma/prisma.js";
+import {
+  getDayGroup,
+  getDayLabel,
+  getMonthGroup,
+  getMonthGroupLabel,
+} from "./utils.js";
 
 /**
  * Get all files/attachments from a chat room
@@ -15,7 +20,10 @@ export async function getChatRoomFiles({
   search = "",
   from = null,
   to = null,
+  uniqueMonthsString,
 }) {
+  sort = JSON.parse(sort);
+  const uniqueMonths = JSON.parse(uniqueMonthsString);
   const parsedRoomId = parseInt(roomId);
   const parsedUserId = parseInt(userId);
   const skip = page * limit;
@@ -65,7 +73,7 @@ export async function getChatRoomFiles({
     },
   };
 
-  const [messages, total] = await Promise.all([
+  const [attachments, total] = await Promise.all([
     prisma.chatAttachment.findMany({
       where,
       select: {
@@ -111,52 +119,44 @@ export async function getChatRoomFiles({
     }),
     prisma.chatAttachment.count({ where }),
   ]);
+  const formattedFiles = addMonthGrouping(attachments, uniqueMonths);
 
   // Format response with month grouping helper
-  const formattedFiles = messages.map((msg) => {
-    const file = {
-      id: msg.id,
-      messageId: msg.message.id,
-      roomId: msg.message.roomId,
-      type: msg.message.type,
-      fileName: msg.fileName,
-      fileUrl: msg.fileUrl,
-      fileMimeType: msg.fileMimeType,
-      fileSize: msg.fileSize,
-      content: msg.content,
-      sender: msg.message.sender
-        ? msg.message.sender
-        : msg.message.senderClient
-        ? {
-            id: msg.message.client.id,
-            name: msg.message.client.name,
-            isClient: true,
-          }
-        : null,
-      createdAt: msg.message.createdAt,
-      month: msg.message.createdAt.toISOString().slice(0, 7), // YYYY-MM
-    };
+  // const formattedFiles = messages.map((msg) => {
+  //   const file = {
+  //     id: msg.id,
+  //     messageId: msg.message.id,
+  //     roomId: msg.message.roomId,
+  //     type: msg.message.type,
+  //     fileName: msg.fileName,
+  //     fileUrl: msg.fileUrl,
+  //     fileMimeType: msg.fileMimeType,
+  //     fileSize: msg.fileSize,
+  //     content: msg.content,
+  //     sender: msg.message.sender
+  //       ? msg.message.sender
+  //       : msg.message.senderClient
+  //       ? {
+  //           id: msg.message.client.id,
+  //           name: msg.message.client.name,
+  //           isClient: true,
+  //         }
+  //       : null,
+  //     createdAt: msg.message.createdAt,
+  //     month: msg.message.createdAt.toISOString().slice(0, 7), // YYYY-MM
+  //   };
 
-    return file;
-  });
-  const filesByMonth = formattedFiles.reduce((acc, file) => {
-    const month = file.month || file.createdAt?.substring(0, 7); // YYYY-MM
-    if (!acc[month]) {
-      acc[month] = [];
-    }
-    acc[month].push(file);
-    return acc;
-  }, {});
+  //   return file;
+  // });
+  // make uniqueMonths an array
 
-  // Sort months descending (newest first)
-  const sortedMonths = Object.keys(filesByMonth).sort((a, b) =>
-    b.localeCompare(a)
-  );
   return {
     data: {
-      filesByMonth,
-      sortedMonths,
+      // formattedFiles,
+      // sortedMonths,
       files: formattedFiles,
+      // uniqueMonths: Object.keys(uniqueMonths),
+      uniqueMonths,
     },
     total,
     totalPages: Math.ceil(total / limit),
@@ -164,7 +164,58 @@ export async function getChatRoomFiles({
     limit: limit,
   };
 }
+function addMonthGrouping(attachments, uniqueMonths) {
+  if (!attachments || attachments.length === 0) return [];
 
+  let previousMonthGroup = null;
+  let countedMonths = {};
+  return attachments.map((attachment) => {
+    const file = {
+      id: attachment.id,
+      messageId: attachment.message.id,
+      roomId: attachment.message.roomId,
+      type: attachment.message.type,
+      fileName: attachment.fileName,
+      fileUrl: attachment.fileUrl,
+      fileMimeType: attachment.fileMimeType,
+      fileSize: attachment.fileSize,
+      content: attachment.content,
+      sender: attachment.message.sender
+        ? attachment.message.sender
+        : attachment.message.senderClient
+        ? {
+            id: attachment.message.client.id,
+            name: attachment.message.client.name,
+            isClient: true,
+          }
+        : null,
+      createdAt: attachment.message.createdAt,
+      month: attachment.message.createdAt.toISOString().slice(0, 7), // YYYY-MM
+    };
+
+    const fileDate = new Date(file.createdAt);
+    const monthGroup = getMonthGroup(fileDate);
+    const groupLabel = getMonthGroupLabel(fileDate);
+    const showMonthDivider = monthGroup !== previousMonthGroup;
+    const month = fileDate.toISOString().slice(0, 7); // YYYY-MM
+    previousMonthGroup = monthGroup;
+    console.log(countedMonths[month], "countedMonths[month]");
+    if (countedMonths[month] === undefined) {
+      console.log("Incrementing uniqueMonths for", month);
+      console.log(uniqueMonths, "before incrementing");
+
+      uniqueMonths[month] = uniqueMonths[month] + 1 || 1;
+    }
+    countedMonths[month] = true;
+    return {
+      ...file,
+      monthGroup,
+      groupLabel,
+      showMonthDivider,
+      month,
+    };
+  });
+}
 /**
  * Build Prisma filter for file types
  */

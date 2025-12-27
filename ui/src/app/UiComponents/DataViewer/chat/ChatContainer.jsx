@@ -47,7 +47,6 @@ export function ChatContainer({
   projectId = null,
   clientLeadId = null,
 }) {
-  // return;
   const { user, isLoggedIn } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -66,6 +65,7 @@ export function ChatContainer({
   const {
     rooms,
     loading: roomsLoading,
+    initialLoading,
     loadingMore: roomsLoadingMore,
     createRoom,
     updateRoom,
@@ -83,7 +83,9 @@ export function ChatContainer({
     roomsEndRef,
     scrollContainerRef,
     leaveRoom,
-  } = useChatRooms({ projectId, category: null, limit: 9 });
+    loadingMore,
+    hasMore,
+  } = useChatRooms({ projectId, category: null, widgetOpen });
   // Message sound (widget only)
   const messageSoundRef = useRef(null);
   useEffect(() => {
@@ -184,6 +186,9 @@ export function ChatContainer({
     if (match) {
       setSelectedRoom(match);
       if (isMobile) setViewMode("CHAT");
+    } else {
+      // clear searchPArams
+      router.replace("?");
     }
   }, [rooms, roomIdFromParams, isMobile]);
 
@@ -251,10 +256,11 @@ export function ChatContainer({
       onArchiveRoom={handleArchiveRoom}
       onDeleteRoom={handleDeleteRoom}
       onCreateNewRoom={handleOpenCreateRoom}
-      onLoadMore={loadMoreRooms}
-      hasMore={page < totalPages}
-      loading={roomsLoadingMore}
-      initialLoading={roomsLoading}
+      loadMoreRooms={loadMoreRooms}
+      hasMore={hasMore}
+      loading={roomsLoading}
+      initialLoading={initialLoading}
+      loadingMore={loadingMore}
       isWidget={type === "widget"}
       typingRooms={typingRooms}
       onSearch={(search) => onSearchChange(search)}
@@ -435,7 +441,16 @@ export function ChatContainer({
                 overflow: "hidden",
               }}
             >
-              {selectedRoom ? renderChatWindow() : renderChatRoomsList()}
+              {selectedRoom && renderChatWindow()}
+              <Box
+                sx={{
+                  display: selectedRoom ? "none" : "block",
+                  overflow: "auto",
+                  flex: 1,
+                }}
+              >
+                {renderChatRoomsList()}
+              </Box>
             </Box>
           </Paper>
         </Slide>
@@ -463,7 +478,7 @@ export function ChatContainer({
     return (
       <Box
         sx={{
-          height: "calc(100vh - 120px)",
+          // height: { xs: "calc(100vh - 62px)", md: "calc(100vh - 88px)" },
           display: "flex",
           flexDirection: "column",
           bgcolor: "grey.50",
@@ -471,28 +486,34 @@ export function ChatContainer({
       >
         {isMobile ? (
           <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-            {viewMode === "LIST" && (
-              <Box sx={{ flex: 1, p: 2, pt: 1 }}>
-                <Paper
-                  elevation={3}
-                  sx={{
-                    height: "calc(100vh - 120px)",
-                    overflow: "hidden",
-                    display: "flex",
-                    flexDirection: "column",
-                    borderRadius: 3,
-                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                  }}
-                >
-                  {renderChatRoomsList()}
-                </Paper>
-              </Box>
-            )}
+            {/* {viewMode === "LIST" && ( */}
+            <Box
+              sx={{
+                flex: 1,
+                p: 2,
+                pt: 1,
+                display: selectedRoom ? "none" : "block",
+              }}
+            >
+              <Paper
+                elevation={3}
+                sx={{
+                  height: "calc(100vh - 78px)",
+                  overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                  borderRadius: 3,
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                  display: viewMode === "LIST" ? "block" : "none",
+                }}
+              >
+                {renderChatRoomsList()}
+              </Paper>
+            </Box>
+            {/* )} */}
 
             {viewMode === "CHAT" && (
-              <Box sx={{ flex: 1, p: 0, height: "calc(100vh - 100px)" }}>
-                {renderChatWindow()}
-              </Box>
+              <Box sx={{ flex: 1, p: 0 }}>{renderChatWindow()}</Box>
             )}
           </Box>
         ) : (
@@ -505,7 +526,7 @@ export function ChatContainer({
               <Paper
                 elevation={3}
                 sx={{
-                  height: "100%",
+                  height: "calc(100vh - 120px)",
                   display: "flex",
                   flexDirection: "column",
                   overflow: "hidden",
@@ -517,7 +538,10 @@ export function ChatContainer({
               </Paper>
             </Grid>
 
-            <Grid size={{ xs: 12, md: 9 }} sx={{ height: "100%" }}>
+            <Grid
+              size={{ xs: 12, md: 9 }}
+              sx={{ height: "calc(100vh - 120px)" }}
+            >
               {renderChatWindow()}
             </Grid>
           </Grid>

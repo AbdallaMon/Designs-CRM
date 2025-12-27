@@ -72,6 +72,7 @@ export const FILE_UPLOAD_LIMITS = {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/vnd.ms-powerpoint",
     "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/x-zip-compressed",
     "text/plain",
     "application/zip",
     "application/x-rar-compressed",
@@ -81,4 +82,10 @@ export const FILE_UPLOAD_LIMITS = {
     "audio/mpeg",
     "audio/wav",
   ],
+};
+
+export const CHAT_LIMITS = {
+  FILES: 5,
+  MESSAGES: 10,
+  rooms: 10,
 };

@@ -248,7 +248,7 @@ export default function ProfileDialog({ open, onClose, userId }) {
         {headerRight}
       </DialogTitle>
 
-      <DialogContent dividers sx={{ px: 3, py: 3 }}>
+      <DialogContent dividers sx={{ px: 3, pb: 0 }}>
         <Stack spacing={3}>
           {/* Inline alerts */}
           <Fade in={Boolean(inlineSuccess || inlineError)}>

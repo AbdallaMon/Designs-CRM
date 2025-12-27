@@ -104,7 +104,6 @@ export async function getChatRooms({
   if (clientLeadId) {
     where.clientLeadId = parseInt(clientLeadId);
   }
-  console.log("Chat rooms where clause:", where);
   const [rooms, total] = await Promise.all([
     prisma.chatRoom.findMany({
       where,
@@ -126,6 +125,7 @@ export async function getChatRooms({
             },
           },
         },
+
         members: {
           where: {
             isDeleted: false,
