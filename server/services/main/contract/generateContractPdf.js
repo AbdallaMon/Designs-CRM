@@ -1489,6 +1489,7 @@ async function renderDrawingsSection(
   if (!toRender.length) {
     return;
   }
+  console.log(toRender, "todraw");
   const maxW = ctx.pageWidth - ctx.margin.left - ctx.margin.right;
   const maxH = 150;
 
@@ -2316,7 +2317,7 @@ async function generateContractPdfLinksInBothLanguages({
   const remotePath = `public_html/uploads/${fileName}`;
   await uploadToFTPHttpAsBuffer(pdfBytes, remotePath, true);
   const publicUrl = `/uploads/${fileName}`;
-
+  console.log("Generated PDF URL:", publicUrl);
   if (lng === "ar") {
     await prisma.contract.update({
       where: { id: Number(contract.id) },
