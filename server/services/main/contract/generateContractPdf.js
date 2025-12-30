@@ -1482,9 +1482,9 @@ async function renderDrawingsSection(
 ) {
   const drawings = contract?.drawings || [];
   const toRender = drawings.length
-    ? drawings.map((d) => `${process.env.IMAGEDOMAIN}${d.url}`)
+    ? drawings.map((d) => d.url)
     : defaultDrawingUrl
-    ? [`${process.env.IMAGEDOMAIN}${defaultDrawingUrl}`]
+    ? [defaultDrawingUrl]
     : [];
   if (!toRender.length) {
     return;
@@ -2262,7 +2262,7 @@ export async function buildAndUploadContractPdf({
     contract,
     lng: "ar",
     clientName,
-    signatureUrl: `${process.env.IMAGEDOMAIN}${signatureUrl}`,
+    signatureUrl,
     backgroundImageUrl,
     introImageUrl,
     defaultDrawingUrl,
@@ -2279,7 +2279,7 @@ export async function buildAndUploadContractPdf({
     contract,
     lng: "en",
     clientName,
-    signatureUrl: `${process.env.IMAGEDOMAIN}${signatureUrl}`,
+    signatureUrl,
     backgroundImageUrl,
     introImageUrl,
     defaultDrawingUrl,
@@ -2316,7 +2316,7 @@ async function generateContractPdfLinksInBothLanguages({
   const remotePath = `public_html/uploads/${fileName}`;
   await uploadToFTPHttpAsBuffer(pdfBytes, remotePath, true);
   const publicUrl = `/uploads/${fileName}`;
-  console.log("Generated PDF URL:", publicUrl);
+
   if (lng === "ar") {
     await prisma.contract.update({
       where: { id: Number(contract.id) },

@@ -636,6 +636,8 @@ export async function uploadToFTPHttpAsBuffer(
   remoteFilename,
   isBuffer = false
 ) {
+  console.log("Uploading to FTP via HTTP as buffer:", remoteFilename);
+  console.log(source.length, "Buffer size in bytes");
   try {
     let buffer;
 
