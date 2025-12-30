@@ -46,6 +46,7 @@ export function ChatContainer({
   type = "page", // "page" | "widget" | "project" | "clientLead" | "tab"
   clientLeadId = null,
 }) {
+  return;
   const { user, isLoggedIn } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));

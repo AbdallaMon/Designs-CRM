@@ -85,6 +85,7 @@ function ProjectsSelectionStep({ clientLeadId, onSelect, data }) {
         onChange={(value) => onSelect("projectGroup", value)}
         clientLeadId={clientLeadId}
       />
+      {data.projectGroup && <></>}
     </Box>
   );
 }
