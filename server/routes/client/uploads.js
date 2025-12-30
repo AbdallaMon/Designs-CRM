@@ -20,7 +20,14 @@ const upload = multer({ dest: tmpDir });
 const storage = multer.memoryStorage();
 const uploadMemory = multer({ storage });
 router.post("/upload-chunk", upload.single("chunk"), async (req, res) => {
-  return uploadAsChunk(req, res, tmpDir);
+  try {
+    return uploadAsChunk(req, res, tmpDir);
+  } catch (error) {
+    console.error("Error in /upload-chunk:", error);
+    res
+      .status(500)
+      .json({ message: "Error uploading chunk", error: error.message });
+  }
 });
 
 // exact same endpoint as your code

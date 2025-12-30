@@ -58,8 +58,8 @@ export function ImagePreviewDialog({
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
   const currentImage = images[currentIndex];
-  const isSelected = selectedImages.find((img) => img.id === currentImage?.id);
-  const photo = type === "SELECT" ? currentImage : currentImage.designImage;
+  const isSelected = selectedImages?.find((img) => img.id === currentImage?.id);
+  const photo = type === "SELECT" ? currentImage : currentImage?.designImage;
 
   const { lng } = useLanguageSwitcherContext();
   const UI_TEXT = {
