@@ -604,11 +604,15 @@ export async function uploadAsHttp(req, res) {
     const fileBuffer = req.file.buffer;
 
     const uploadDir = "/home/dreamstudiio.com/public_html/uploads";
+    console.log(uploadDir, "uploadDir in uploadAsHttp");
+    console.log(filename, "filename in uploadAsHttp");
+    console.log(req.file, "req.file.size in uploadAsHttp");
+    console.log(fileBuffer.length, "fileBuffer length in uploadAsHttp");
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
     const savePath = path.join(uploadDir, filename);
-
+    console.log(savePath, "savePath in uploadAsHttp");
     fs.writeFileSync(savePath, fileBuffer);
 
     res.status(200).json({ message: "? Upload successful." });
@@ -617,7 +621,7 @@ export async function uploadAsHttp(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
-function buildPublicUrl(remoteFilename, server = process.env.SERVER) {
+function buildPublicUrl(remoteFilename, server = process.env.IMAGEDOMAIN) {
   if (!remoteFilename) return "";
 
   // Grab everything starting from "/uploads"
