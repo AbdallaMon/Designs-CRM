@@ -1483,13 +1483,12 @@ async function renderDrawingsSection(
   const drawings = contract?.drawings || [];
   const toRender = drawings.length
     ? drawings.map((d) => `${process.env.IMAGEDOMAIN}${d.url}`)
-    : `${process.env.IMAGEDOMAIN}${defaultDrawingUrl}`
+    : defaultDrawingUrl
     ? [`${process.env.IMAGEDOMAIN}${defaultDrawingUrl}`]
     : [];
   if (!toRender.length) {
     return;
   }
-  console.log(toRender, "todraw");
   const maxW = ctx.pageWidth - ctx.margin.left - ctx.margin.right;
   const maxH = 150;
 
