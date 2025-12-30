@@ -38,8 +38,9 @@ export default function PinnedMessages({
   handleJumpToMessage,
   loadingJumpToMessage,
   chatContainerRef,
+  pinnedMessages,
+  setPinnedMessages,
 }) {
-  const [pinnedMessages, setPinnedMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);

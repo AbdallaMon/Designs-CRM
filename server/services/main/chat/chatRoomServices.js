@@ -103,6 +103,11 @@ export async function getChatRooms({
 
   if (clientLeadId) {
     where.clientLeadId = parseInt(clientLeadId);
+    where.multiProjectRooms.some = {
+      project: {
+        clientLeadId: parseInt(clientLeadId),
+      },
+    };
   }
   const [rooms, total] = await Promise.all([
     prisma.chatRoom.findMany({

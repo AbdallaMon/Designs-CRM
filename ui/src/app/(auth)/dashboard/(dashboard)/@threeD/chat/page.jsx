@@ -1,4 +1,4 @@
-import ChatPage from "@/app/UiComponents/DataViewer/chat/ChatPage";
+import ChatPage from "@/app/UiComponents/DataViewer/chat/components/chat/ChatPage";
 import { Suspense } from "react";
 
 export default function page() {

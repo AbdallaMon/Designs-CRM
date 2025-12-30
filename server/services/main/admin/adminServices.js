@@ -92,7 +92,6 @@ export async function getAllUsers(
       { subRoles: { some: { subRole: searchParams.role } } },
     ];
   }
-  where.isActive = true;
   if (currentUser) {
     const checkIfNotAdmin =
       currentUser.role !== "ADMIN" && currentUser.role !== "SUPER_ADMIN";
@@ -146,6 +145,8 @@ export async function getAllUsers(
   }
   // not me
   where.id = { not: Number(currentUser.id) };
+  where.isActive = true;
+
   const users = await prisma.user.findMany({
     where: where,
     select: {
@@ -2197,8 +2198,6 @@ export async function addAllProjectUsersToChannel({ clientLeadId }) {
       }
     }
   }
-
-  const usersList = [];
 
   if (!clientLead.telegramChannel) {
     throw new Error("?? No Telegram channel linked to this lead");

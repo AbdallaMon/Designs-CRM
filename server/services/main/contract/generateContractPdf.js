@@ -1482,9 +1482,9 @@ async function renderDrawingsSection(
 ) {
   const drawings = contract?.drawings || [];
   const toRender = drawings.length
-    ? drawings.map((d) => d.url)
-    : defaultDrawingUrl
-    ? [defaultDrawingUrl]
+    ? drawings.map((d) => `${process.env.IMAGEDOMAIN}${d.url}`)
+    : `${process.env.IMAGEDOMAIN}${defaultDrawingUrl}`
+    ? [`${process.env.IMAGEDOMAIN}${defaultDrawingUrl}`]
     : [];
   if (!toRender.length) {
     return;
@@ -2262,7 +2262,7 @@ export async function buildAndUploadContractPdf({
     contract,
     lng: "ar",
     clientName,
-    signatureUrl,
+    signatureUrl: `${process.env.IMAGEDOMAIN}${signatureUrl}`,
     backgroundImageUrl,
     introImageUrl,
     defaultDrawingUrl,
@@ -2279,7 +2279,7 @@ export async function buildAndUploadContractPdf({
     contract,
     lng: "en",
     clientName,
-    signatureUrl,
+    signatureUrl: `${process.env.IMAGEDOMAIN}${signatureUrl}`,
     backgroundImageUrl,
     introImageUrl,
     defaultDrawingUrl,

@@ -73,6 +73,8 @@ export function ChatRoomsList({
   loading,
   loadingMore,
   loadMoreRooms,
+  isTab = false,
+  clientLeadId = null,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuAnchor, setMenuAnchor] = useState(null);
@@ -191,7 +193,7 @@ export function ChatRoomsList({
               variant="outlined"
             >
               <FaPlus />
-              Group
+              {isTab ? "Group Chat" : "Group"}
             </Button>
           </Box>
         )}
@@ -238,7 +240,7 @@ export function ChatRoomsList({
         />
       </Box>
       <Box>
-        <ChatChips onSelect={onSelectChatType} />
+        <ChatChips onSelect={onSelectChatType} isTab={isTab} />
       </Box>
 
       {/* Rooms list */}
@@ -412,11 +414,13 @@ export function ChatRoomsList({
         onClose={() => setDeleteConfirm(false)}
         onConfirm={handleDeleteRoom}
       />
-      <LeaveConfirmDialog
-        open={leaveConfirm}
-        onClose={() => setLeaveConfirm(false)}
-        onConfirm={handleLeaveRoom}
-      />
+      {!isTab && (
+        <LeaveConfirmDialog
+          open={leaveConfirm}
+          onClose={() => setLeaveConfirm(false)}
+          onConfirm={handleLeaveRoom}
+        />
+      )}
     </Box>
   );
 }

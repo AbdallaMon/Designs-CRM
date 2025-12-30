@@ -12,9 +12,11 @@ import { useScroll } from "@/app/helpers/hooks/useScroll";
 
 export function useChatRooms({
   category = null,
-  projectId = null,
   limit = CHAT_LIMITS.rooms,
   widgetOpen,
+  type = null,
+  clientLeadId = null,
+  isTab,
 } = {}) {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -56,10 +58,9 @@ export function useChatRooms({
     try {
       let url = `shared/chat/rooms?`;
       if (category) url += `category=${category}&`;
-      if (projectId) url += `projectId=${projectId}&`;
+      if (clientLeadId) url += `clientLeadId=${clientLeadId}&`;
       if (searchKey) url += `searchKey=${encodeURIComponent(searchKey)}&`;
       if (chatType) url += `chatType=${chatType}&`;
-
       const response = await getData({
         url,
         setLoading: () => {},
@@ -86,19 +87,27 @@ export function useChatRooms({
       setLoadingMore(false);
       setInitialLoading(false);
     }
-  }, [category, projectId, limit, searchKey, chatType, loading, loadingMore]);
+  }, [
+    category,
+    clientLeadId,
+    limit,
+    searchKey,
+    chatType,
+    loading,
+    loadingMore,
+  ]);
   function refreshRooms() {
     setRefetchToggle((prev) => !prev);
   }
   useEffect(() => {
     setInitialLoading(true);
-  }, [projectId, category]);
+  }, [clientLeadId, category]);
   useEffect(() => {
     if (!initialLoading) return;
     setRooms([]);
     setPage(0);
     fetchRooms();
-  }, [projectId, category, initialLoading]);
+  }, [clientLeadId, category, initialLoading]);
 
   useEffect(() => {
     if (loading || initialLoading || loadingMore) return;

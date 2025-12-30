@@ -88,7 +88,7 @@ export async function uploadPdfAndApproveSession({
     });
     const pdfBytes = await generateImageSessionPdf({
       sessionData,
-      signatureUrl,
+      signatureUrl: `${process.env.IMAGEDOMAIN}${signatureUrl}`,
       lng,
       name: client.clientLead.client.name,
     });
@@ -98,6 +98,7 @@ export async function uploadPdfAndApproveSession({
     await uploadToFTPHttpAsBuffer(pdfBytes, remotePath, true);
 
     const publicUrl = `/uploads/${fileName}`;
+    console.log(publicUrl, "publicUrl in upload and approve");
     await approveSession({
       token: sessionData.token,
       clientLeadId: sessionData.clientLeadId,

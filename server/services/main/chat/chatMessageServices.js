@@ -493,14 +493,7 @@ export async function markMessagesAsRead({ roomId, userId }) {
     return { success: true };
   }
   const io = getIo();
-  console.log(
-    "Emitting messages_read for user:",
-    userId,
-    "room:",
-    roomId,
-    "count:",
-    unreadMessages.length
-  );
+
   io.to(`user:${userId}`).emit("notification:messages_read", {
     roomId: parseInt(roomId),
     userId: parseInt(userId),
@@ -554,7 +547,6 @@ export async function markAMessageAsRead({ roomId, userId, messageId }) {
         userId: parseInt(userId),
         readAt: new Date(),
       });
-      console.log("Emitted read receipt");
     } catch (error) {
       console.error("Socket.IO emit error:", error);
     }
@@ -701,7 +693,7 @@ export async function pinMessage({ roomId, messageId, userId }) {
   }
   // check if room is staff to staff or use is admin or moderator else throw error
   if (
-    room.type === "STAFF_TO_STAFF" &&
+    room.type !== "STAFF_TO_STAFF" &&
     !(member.role === "ADMIN" || member.role === "MODERATOR")
   ) {
     throw new Error(
@@ -746,7 +738,7 @@ export async function unpinMessage({ roomId, messageId, userId }) {
   }
   // check if room is staff to staff or use is admin or moderator else throw error
   if (
-    room.type === "STAFF_TO_STAFF" &&
+    room.type !== "STAFF_TO_STAFF" &&
     !(member.role === "ADMIN" || member.role === "MODERATOR")
   ) {
     throw new Error(

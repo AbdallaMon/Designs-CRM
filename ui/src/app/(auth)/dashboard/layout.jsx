@@ -2,7 +2,7 @@
 
 import { Box } from "@mui/material";
 import colors from "@/app/helpers/colors.js";
-import ChatWidget from "@/app/UiComponents/DataViewer/chat/ChatWidget";
+import ChatWidget from "@/app/UiComponents/DataViewer/chat/components/chat/ChatWidget";
 import { Suspense } from "react";
 import SocketProvider from "@/app/providers/SocketProvider";
 

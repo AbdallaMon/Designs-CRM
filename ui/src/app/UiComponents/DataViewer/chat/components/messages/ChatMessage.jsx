@@ -132,13 +132,15 @@ export function ChatMessage({
   replayLoadingMessageId,
   setReplayLoadingMessageId,
   onRemoveUnreadCount,
+  pinnedMessages,
 }) {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [flashOn, setFlashOn] = useState(false);
   const [showUnreadCount, setShowUnreadCount] = useState(
     message.showUnreadCount || false
   );
-
+  const isPinned =
+    message.isPinned || pinnedMessages?.some((pm) => pm.id === message.id);
   const isOwnMessage =
     message.sender?.id === currentUserId ||
     message.client?.id === currentUserId;
@@ -359,11 +361,14 @@ export function ChatMessage({
                   <MenuItem
                     onClick={() => {
                       setMenuAnchor(null);
-                      if (message.isPinned) onUnPin?.(message);
-                      else onPin?.(message);
+                      if (isPinned) {
+                        onUnPin?.(message);
+                      } else {
+                        onPin?.(message);
+                      }
                     }}
                   >
-                    {message.isPinned ? (
+                    {isPinned ? (
                       <>
                         <MdPushPin style={{ marginRight: 8 }} /> Unpin
                       </>

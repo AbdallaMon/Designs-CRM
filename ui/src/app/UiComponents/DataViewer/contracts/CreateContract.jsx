@@ -29,7 +29,6 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import ProjectGroupSelect from "./shared/ProjectGroupSelect";
 import StagesSelector from "./shared/StagesSelector";
 import PaymentsEditor from "./shared/PaymentsEditor";
-import PaymentsRulesEditor from "./shared/PaymentsRulesEditor";
 import SpecialItemsEditor from "./shared/SpecialItemsEditor";
 import ContractDrawingsEditor from "./shared/ContractDrawingsEditor";
 import { sum } from "./shared/contractHelpers";

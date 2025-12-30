@@ -43,8 +43,7 @@ import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { CreateGroupDialog } from "./components/dialogs";
 
 export function ChatContainer({
-  type = "page", // "page" | "widget" | "project" | "clientLead"
-  projectId = null,
+  type = "page", // "page" | "widget" | "project" | "clientLead" | "tab"
   clientLeadId = null,
 }) {
   const { user, isLoggedIn } = useAuth();
@@ -85,7 +84,13 @@ export function ChatContainer({
     leaveRoom,
     loadingMore,
     hasMore,
-  } = useChatRooms({ projectId, category: null, widgetOpen });
+  } = useChatRooms({
+    isTab: type === "tab",
+    clientLeadId,
+    category: null,
+    widgetOpen,
+    type,
+  });
   // Message sound (widget only)
   const messageSoundRef = useRef(null);
   useEffect(() => {
@@ -269,6 +274,8 @@ export function ChatContainer({
       scrollContainerRef={scrollContainerRef}
       roomsEndRef={roomsEndRef}
       onLeaveRoom={handleLeaveRoom}
+      isTab={type === "tab"}
+      clientLeadId={clientLeadId}
     />
   );
 
@@ -289,12 +296,12 @@ export function ChatContainer({
             setSelectedRoom(null);
           }
         }}
-        projectId={projectId}
         clientLeadId={clientLeadId}
         isMobile={isMobile || type === "widget"}
         onRoomActivity={() => fetchRooms(false)}
         reFetchRooms={() => fetchRooms(false)}
         setTotalUnread={setTotalUnread}
+        isTab={type === "tab"}
       />
     ) : (
       <Paper
@@ -325,247 +332,436 @@ export function ChatContainer({
     if (!isLoggedIn) return null;
 
     return (
-      <>
-        <Box
-          sx={{
-            position: "fixed",
-            bottom: 16,
-            right: 20,
-            zIndex: 1400,
-          }}
-        >
-          <Badge
-            color="error"
-            badgeContent={totalUnread}
-            overlap="circular"
-            anchorOrigin={{ vertical: "top", horizontal: "right" }}
-            sx={{
-              "& .MuiBadge-badge": {
-                fontWeight: 600,
-                fontSize: "0.75rem",
-                minWidth: "20px",
-                height: "20px",
-                right: 0,
-                top: 0,
-              },
-            }}
-          >
-            <Fab
-              color="primary"
-              size="medium"
-              onClick={() => setWidgetOpen((prev) => !prev)}
-              sx={{
-                boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-                transition: "all 0.3s ease",
-                "&:hover": {
-                  transform: "scale(1.1)",
-                  boxShadow: "0 6px 16px rgba(0,0,0,0.2)",
-                },
-                "&:active": {
-                  transform: "scale(0.95)",
-                },
-              }}
-            >
-              <FaComments size={20} />
-            </Fab>
-          </Badge>
-        </Box>
-
-        <Slide direction="up" in={widgetOpen} mountOnEnter unmountOnExit>
-          <Paper
-            elevation={24}
-            sx={{
-              position: "fixed",
-              zIndex: 1000,
-              bottom: isMobile ? 12 : 80,
-              right: isMobile ? 12 : 16,
-              left: isMobile ? 12 : "auto",
-              width: isMobile ? "calc(100% - 24px)" : 420,
-              height: isMobile ? "75vh" : 640,
-              borderRadius: 4,
-              overflow: "hidden",
-              display: "flex",
-              flexDirection: "column",
-              bgcolor: "background.paper",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                px: 2,
-                py: 1.5,
-                borderBottom: "1px solid",
-                borderColor: "divider",
-                bgcolor: "primary.main",
-                color: "primary.contrastText",
-              }}
-            >
-              <Stack direction="row" spacing={1}>
-                <Link
-                  href={
-                    selectedRoom && selectedRoom?.id
-                      ? `/dashboard/chat?roomId=${selectedRoom.id}`
-                      : `/dashboard/chat`
-                  }
-                  passHref
-                  legacyBehavior
-                >
-                  <IconButton
-                    size="small"
-                    component="a"
-                    sx={{
-                      color: "inherit",
-                      transition: "all 0.2s ease",
-                      "&:hover": {
-                        bgcolor: "rgba(255,255,255,0.2)",
-                        transform: "scale(1.1)",
-                      },
-                    }}
-                    title="View All Chats"
-                  >
-                    <FaExternalLinkAlt size={14} />
-                  </IconButton>
-                </Link>
-              </Stack>
-            </Box>
-
-            <Box
-              sx={{
-                flex: 1,
-                minHeight: 0,
-                display: "flex",
-                flexDirection: "column",
-                overflow: "hidden",
-              }}
-            >
-              {selectedRoom && renderChatWindow()}
-              <Box
-                sx={{
-                  display: selectedRoom ? "none" : "block",
-                  overflow: "auto",
-                  flex: 1,
-                }}
-              >
-                {renderChatRoomsList()}
-              </Box>
-            </Box>
-          </Paper>
-        </Slide>
-
-        <CreateGroupDialog
-          open={createRoomOpen}
-          onClose={() => setCreateRoomOpen(false)}
-          projectId={projectId}
-          clientLeadId={clientLeadId}
-          isAdmin={isAdmin}
-          createRoom={createRoom}
-          fetchRooms={fetchRooms}
-          onCreated={(room) => {
-            setSelectedRoom(room);
-            if (isMobile) setViewMode("CHAT");
-            if (type === "page") router.replace(`?roomId=${room.id}`);
-          }}
-        />
-      </>
+      <RenderWidgetChat
+        selectedRoom={selectedRoom}
+        setSelectedRoom={setSelectedRoom}
+        type={type}
+        isMobile={isMobile}
+        router={router}
+        renderChatRoomsList={renderChatRoomsList}
+        renderChatWindow={renderChatWindow}
+        totalUnread={totalUnread}
+        setWidgetOpen={setWidgetOpen}
+        widgetOpen={widgetOpen}
+        isAdmin={isAdmin}
+        clientLeadId={clientLeadId}
+        createRoom={createRoom}
+        fetchRooms={fetchRooms}
+        createRoomOpen={createRoomOpen}
+        setCreateRoomOpen={setCreateRoomOpen}
+      />
     );
   }
 
   // Page UI (default)
   if (type === "page") {
     return (
-      <Box
-        sx={{
-          // height: { xs: "calc(100vh - 62px)", md: "calc(100vh - 88px)" },
-          display: "flex",
-          flexDirection: "column",
-          bgcolor: "grey.50",
-        }}
-      >
-        {isMobile ? (
-          <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
-            {/* {viewMode === "LIST" && ( */}
-            <Box
-              sx={{
-                flex: 1,
-                p: 2,
-                pt: 1,
-                display: selectedRoom ? "none" : "block",
-              }}
-            >
-              <Paper
-                elevation={3}
-                sx={{
-                  height: "calc(100vh - 78px)",
-                  overflow: "hidden",
-                  display: "flex",
-                  flexDirection: "column",
-                  borderRadius: 3,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                  display: viewMode === "LIST" ? "block" : "none",
-                }}
-              >
-                {renderChatRoomsList()}
-              </Paper>
-            </Box>
-            {/* )} */}
-
-            {viewMode === "CHAT" && (
-              <Box sx={{ flex: 1, p: 0 }}>{renderChatWindow()}</Box>
-            )}
-          </Box>
-        ) : (
-          <Grid
-            container
-            spacing={2}
-            sx={{ flex: 1, height: "100%", p: 2, m: 0, width: "100%" }}
-          >
-            <Grid size={{ xs: 12, md: 3 }} sx={{ height: "100%" }}>
-              <Paper
-                elevation={3}
-                sx={{
-                  height: "calc(100vh - 120px)",
-                  display: "flex",
-                  flexDirection: "column",
-                  overflow: "hidden",
-                  borderRadius: 3,
-                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                }}
-              >
-                {renderChatRoomsList()}
-              </Paper>
-            </Grid>
-
-            <Grid
-              size={{ xs: 12, md: 9 }}
-              sx={{ height: "calc(100vh - 120px)" }}
-            >
-              {renderChatWindow()}
-            </Grid>
-          </Grid>
-        )}
-        <CreateGroupDialog
-          open={createRoomOpen}
-          onClose={() => setCreateRoomOpen(false)}
-          projectId={projectId}
-          clientLeadId={clientLeadId}
-          isAdmin={isAdmin}
-          createRoom={createRoom}
-          fetchRooms={fetchRooms}
-          onCreated={(room) => {
-            setSelectedRoom(room);
-            if (isMobile) setViewMode("CHAT");
-            if (type === "page") router.replace(`?roomId=${room.id}`);
-          }}
-        />{" "}
-      </Box>
+      <RenderPageChat
+        isMobile={isMobile}
+        router={router}
+        renderChatRoomsList={renderChatRoomsList}
+        renderChatWindow={renderChatWindow}
+        clientLeadId={clientLeadId}
+        isAdmin={isAdmin}
+        createRoom={createRoom}
+        fetchRooms={fetchRooms}
+        type={type}
+        selectedRoom={selectedRoom}
+        setViewMode={setViewMode}
+        createRoomOpen={createRoomOpen}
+        setCreateRoomOpen={setCreateRoomOpen}
+        viewMode={viewMode}
+        setSelectedRoom={setSelectedRoom}
+      />
+    );
+  }
+  if (type === "tab") {
+    return (
+      <RenderTabChat
+        isMobile={isMobile}
+        router={router}
+        renderChatRoomsList={renderChatRoomsList}
+        renderChatWindow={renderChatWindow}
+        clientLeadId={clientLeadId}
+        isAdmin={isAdmin}
+        createRoom={createRoom}
+        fetchRooms={fetchRooms}
+        type={type}
+        selectedRoom={selectedRoom}
+        setViewMode={setViewMode}
+        createRoomOpen={createRoomOpen}
+        setCreateRoomOpen={setCreateRoomOpen}
+        viewMode={viewMode}
+        setSelectedRoom={setSelectedRoom}
+      />
     );
   }
 
   // Default fallback
   return null;
 }
+function RenderWidgetChat({
+  selectedRoom,
+  setSelectedRoom,
+  type,
+  isMobile,
+  router,
+  renderChatRoomsList,
+  renderChatWindow,
+  totalUnread,
+  setWidgetOpen,
+  isAdmin,
+  clientLeadId,
+  createRoom,
+  fetchRooms,
+  createRoomOpen,
+  setCreateRoomOpen,
+  widgetOpen,
+}) {
+  return (
+    <>
+      <Box
+        sx={{
+          position: "fixed",
+          bottom: 16,
+          right: 20,
+          zIndex: 1400,
+        }}
+      >
+        <Badge
+          color="error"
+          badgeContent={totalUnread}
+          overlap="circular"
+          anchorOrigin={{ vertical: "top", horizontal: "right" }}
+          sx={{
+            "& .MuiBadge-badge": {
+              fontWeight: 600,
+              fontSize: "0.75rem",
+              minWidth: "20px",
+              height: "20px",
+              right: 0,
+              top: 0,
+            },
+          }}
+        >
+          <Fab
+            color="primary"
+            size="medium"
+            onClick={() => setWidgetOpen((prev) => !prev)}
+            sx={{
+              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              transition: "all 0.3s ease",
+              "&:hover": {
+                transform: "scale(1.1)",
+                boxShadow: "0 6px 16px rgba(0,0,0,0.2)",
+              },
+              "&:active": {
+                transform: "scale(0.95)",
+              },
+            }}
+          >
+            <FaComments size={20} />
+          </Fab>
+        </Badge>
+      </Box>
 
+      <Slide direction="up" in={widgetOpen} mountOnEnter unmountOnExit>
+        <Paper
+          elevation={24}
+          sx={{
+            position: "fixed",
+            zIndex: 1000,
+            bottom: isMobile ? 12 : 80,
+            right: isMobile ? 12 : 16,
+            left: isMobile ? 12 : "auto",
+            width: isMobile ? "calc(100% - 24px)" : 420,
+            height: isMobile ? "75vh" : 640,
+            borderRadius: 4,
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            bgcolor: "background.paper",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              px: 2,
+              py: 1.5,
+              borderBottom: "1px solid",
+              borderColor: "divider",
+              bgcolor: "primary.main",
+              color: "primary.contrastText",
+            }}
+          >
+            <Stack direction="row" spacing={1}>
+              <Link
+                href={
+                  selectedRoom && selectedRoom?.id
+                    ? `/dashboard/chat?roomId=${selectedRoom.id}`
+                    : `/dashboard/chat`
+                }
+                passHref
+                legacyBehavior
+              >
+                <IconButton
+                  size="small"
+                  component="a"
+                  sx={{
+                    color: "inherit",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      bgcolor: "rgba(255,255,255,0.2)",
+                      transform: "scale(1.1)",
+                    },
+                  }}
+                  title="View All Chats"
+                >
+                  <FaExternalLinkAlt size={14} />
+                </IconButton>
+              </Link>
+            </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              flex: 1,
+              minHeight: 0,
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+            }}
+          >
+            {selectedRoom && renderChatWindow()}
+            <Box
+              sx={{
+                display: selectedRoom ? "none" : "block",
+                overflow: "auto",
+                flex: 1,
+              }}
+            >
+              {renderChatRoomsList()}
+            </Box>
+          </Box>
+        </Paper>
+      </Slide>
+      <CreateGroupDialog
+        open={createRoomOpen}
+        onClose={() => setCreateRoomOpen(false)}
+        clientLeadId={clientLeadId}
+        isAdmin={isAdmin}
+        createRoom={createRoom}
+        fetchRooms={fetchRooms}
+        onCreated={(room) => {
+          setSelectedRoom(room);
+          if (isMobile) setViewMode("CHAT");
+          if (type === "page") router.replace(`?roomId=${room.id}`);
+        }}
+      />
+    </>
+  );
+}
+function RenderPageChat({
+  isMobile,
+  router,
+  renderChatRoomsList,
+  renderChatWindow,
+  clientLeadId,
+  isAdmin,
+  createRoom,
+  fetchRooms,
+  type,
+  selectedRoom,
+  setViewMode,
+  createRoomOpen,
+  setCreateRoomOpen,
+  viewMode,
+  setSelectedRoom,
+}) {
+  return (
+    <Box
+      sx={{
+        // height: { xs: "calc(100vh - 62px)", md: "calc(100vh - 88px)" },
+        display: "flex",
+        flexDirection: "column",
+        bgcolor: "grey.50",
+      }}
+    >
+      {isMobile ? (
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          {/* {viewMode === "LIST" && ( */}
+          <Box
+            sx={{
+              flex: 1,
+              p: 2,
+              pt: 1,
+              display: selectedRoom ? "none" : "block",
+            }}
+          >
+            <Paper
+              elevation={3}
+              sx={{
+                height: "calc(100vh - 78px)",
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+                borderRadius: 3,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                display: viewMode === "LIST" ? "block" : "none",
+              }}
+            >
+              {renderChatRoomsList()}
+            </Paper>
+          </Box>
+          {/* )} */}
+
+          {viewMode === "CHAT" && (
+            <Box sx={{ flex: 1, p: 0 }}>{renderChatWindow()}</Box>
+          )}
+        </Box>
+      ) : (
+        <Grid
+          container
+          spacing={2}
+          sx={{ flex: 1, height: "100%", p: 2, m: 0, width: "100%" }}
+        >
+          <Grid size={{ xs: 12, md: 3 }} sx={{ height: "100%" }}>
+            <Paper
+              elevation={3}
+              sx={{
+                height: "calc(100vh - 120px)",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                borderRadius: 3,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              }}
+            >
+              {renderChatRoomsList()}
+            </Paper>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 9 }} sx={{ height: "calc(100vh - 120px)" }}>
+            {renderChatWindow()}
+          </Grid>
+        </Grid>
+      )}
+      <CreateGroupDialog
+        open={createRoomOpen}
+        onClose={() => setCreateRoomOpen(false)}
+        clientLeadId={clientLeadId}
+        isAdmin={isAdmin}
+        createRoom={createRoom}
+        fetchRooms={fetchRooms}
+        onCreated={(room) => {
+          setSelectedRoom(room);
+          if (isMobile) setViewMode("CHAT");
+          if (type === "page") router.replace(`?roomId=${room.id}`);
+        }}
+      />{" "}
+    </Box>
+  );
+}
+function RenderTabChat({
+  isMobile,
+  router,
+  renderChatRoomsList,
+  renderChatWindow,
+  clientLeadId,
+  isAdmin,
+  createRoom,
+  fetchRooms,
+  type,
+  selectedRoom,
+  setViewMode,
+  viewMode,
+  createRoomOpen,
+  setCreateRoomOpen,
+  setSelectedRoom,
+}) {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        bgcolor: "grey.50",
+      }}
+    >
+      {isMobile ? (
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+          <Box
+            sx={{
+              flex: 1,
+              p: 2,
+              pt: 1,
+              display: selectedRoom ? "none" : "block",
+            }}
+          >
+            <Paper
+              elevation={3}
+              sx={{
+                height: "calc(100vh - 78px)",
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+                borderRadius: 3,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                display: viewMode === "LIST" ? "block" : "none",
+              }}
+            >
+              {renderChatRoomsList()}
+            </Paper>
+          </Box>
+          {/* )} */}
+
+          {viewMode === "CHAT" && (
+            <Box sx={{ flex: 1, p: 0 }}>{renderChatWindow()}</Box>
+          )}
+        </Box>
+      ) : (
+        <Grid
+          container
+          spacing={2}
+          sx={{ flex: 1, height: "100%", p: 2, m: 0, width: "100%" }}
+        >
+          <Grid size={{ xs: 12, md: 3 }} sx={{ height: "100%" }}>
+            <Paper
+              elevation={3}
+              sx={{
+                height: "calc(100vh - 120px)",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                borderRadius: 3,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              }}
+            >
+              {renderChatRoomsList()}
+            </Paper>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 9 }} sx={{ height: "calc(100vh - 120px)" }}>
+            {renderChatWindow()}
+          </Grid>
+        </Grid>
+      )}
+      {/* <CreateGroupDialog
+        open={createRoomOpen}
+        onClose={() => setCreateRoomOpen(false)}
+        clientLeadId={clientLeadId}
+        isAdmin={isAdmin}
+        createRoom={createRoom}
+        fetchRooms={fetchRooms}
+        onCreated={(room) => {
+          setSelectedRoom(room);
+          if (isMobile) setViewMode("CHAT");
+          if (type === "page") router.replace(`?roomId=${room.id}`);
+        }}
+      />{" "} */}
+    </Box>
+  );
+}
 export default ChatContainer;

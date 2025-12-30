@@ -77,6 +77,7 @@ export function ChatWindow({
   onRoomActivity = () => {},
   reFetchRooms = () => {},
   setTotalUnread,
+  isTab,
 }) {
   const { user } = useAuth();
   const { setLoading: setToastLoading } = useToastContext();
@@ -93,6 +94,8 @@ export function ChatWindow({
   const [currentTab, setCurrentTab] = useState(0); // 0: Chat, 1: Files
   const typingTimeoutRef = useRef(null);
   const inputRef = useRef(null);
+  const [pinnedMessages, setPinnedMessages] = useState([]);
+
   const getRoomLabel = (room) => {
     if (room.type === "STAFF_TO_STAFF") {
       const otherMember = room.otherMembers?.[0];
@@ -514,6 +517,8 @@ export function ChatWindow({
         handleJumpToMessage={onJumpToMessage}
         loadingJumpToMessage={loadingJumpToMessage}
         chatContainerRef={scrollContainerRef}
+        pinnedMessages={pinnedMessages}
+        setPinnedMessages={setPinnedMessages}
       />
       {/* Tab Content */}
 
@@ -596,6 +601,7 @@ export function ChatWindow({
                   currentUserId={user.id}
                   isCurrentUserAdmin={isAdmin}
                   currentUserRole={currentUserRole}
+                  pinnedMessages={room?.pinnedMessages}
                   room={room}
                   onReply={setReplyingTo}
                   onEdit={(msgId) => {

@@ -46,8 +46,9 @@ export const SCHEDULED_MESSAGE_STATUSES = {
 export const CHAT_ROOM_TYPE_LABELS = {
   STAFF_TO_STAFF: "Direct",
   PROJECT_GROUP: "Project Group",
-  CLIENT_TO_STAFF: "Client to Staff",
+  CLIENT_TO_STAFF: "Client lead",
   MULTI_PROJECT: "Multi-Project",
+  GROUP: "Group",
 };
 
 export const CHAT_CATEGORIES = [

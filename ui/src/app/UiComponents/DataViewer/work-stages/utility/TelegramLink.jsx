@@ -285,15 +285,13 @@ function CreateNewTeleGramGroup({ isAdmin, lead, setLead, setleads }) {
   return (
     <>
       {isAdmin && (
-        <Tooltip title="Create new telegram group">
-          <ConfirmWithActionModel
-            title="Create new telegram group"
-            description="By confirming we will create new telegram group and remove the current from the system"
-            removeAfterConfirm={true}
-            handleConfirm={createNewGroup}
-            label={"New Channel"}
-          />
-        </Tooltip>
+        <ConfirmWithActionModel
+          title="Create new telegram group"
+          description="By confirming we will create new telegram group and remove the current from the system"
+          removeAfterConfirm={true}
+          handleConfirm={createNewGroup}
+          label={"New Channel"}
+        />
       )}
     </>
   );
@@ -314,15 +312,13 @@ export function AddUserToAChannel({ isAdmin, lead }) {
   return (
     <>
       {isAdmin && (
-        <Tooltip title="Add users to the channel">
-          <ConfirmWithActionModel
-            title="Add users to the channel"
-            description="By confirming we will all users related to the project with a valid username to the channel"
-            removeAfterConfirm={true}
-            handleConfirm={createNewGroup}
-            label={"Add staff"}
-          />
-        </Tooltip>
+        <ConfirmWithActionModel
+          title="Add users to the channel"
+          description="By confirming we will all users related to the project with a valid username to the channel"
+          removeAfterConfirm={true}
+          handleConfirm={createNewGroup}
+          label={"Add staff"}
+        />
       )}
     </>
   );

@@ -10,8 +10,16 @@ const chipsItems = [
   { label: "Project", value: "PROJECT" },
   { label: "Client leads", value: "CLIENT_LEADS" },
 ];
-export default function ChatChips({ onSelect }) {
+const tabChipsItems = [
+  { label: "All", value: "ALL" },
+  { label: "Unread", value: "UNREAD" },
+  { label: "Project", value: "PROJECT" },
+  { label: "Client leads", value: "CLIENT_LEADS" },
+  { label: "Archived", value: "ARCHIVED" },
+];
+export default function ChatChips({ onSelect, isTab }) {
   const [selectedChip, setSelectedChip] = useState("ALL");
+  const tabsChips = isTab ? tabChipsItems : chipsItems;
 
   const handleChipClick = (event, value) => {
     setSelectedChip(value);
@@ -29,7 +37,7 @@ export default function ChatChips({ onSelect }) {
         scrollButtons="auto"
         onChange={handleChipClick}
       >
-        {chipsItems.map((chip) => (
+        {tabsChips.map((chip) => (
           <Tab key={chip.value} label={chip.label} value={chip.value} />
         ))}
       </Tabs>

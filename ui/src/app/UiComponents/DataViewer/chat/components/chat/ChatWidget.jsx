@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense } from "react";
-import { ChatContainer } from "./ChatContainer";
+import { ChatContainer } from "../../ChatContainer";
 import { usePathname } from "next/navigation";
 
 export function ChatWidget({ projectId = null, clientLeadId = null }) {
