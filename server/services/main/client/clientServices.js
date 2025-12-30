@@ -561,8 +561,13 @@ export async function generateImageSessionPdf({
 
       let imageEmbedded = false;
       let dontdrawTitle = false;
-      const image =
+      let image =
         materialData.imageUrl || materialData.template.backgroundImage;
+
+      // if image start with /upload directly from our server, convert to full url
+      if (image && image.startsWith("/upload")) {
+        image = `${process.env.IMAGEDOMAIN}${image}`;
+      }
       if (image) {
         try {
           const imgBytes = await fetchImageBuffer(image);
@@ -707,11 +712,14 @@ export async function generateImageSessionPdf({
       let imageEmbedded = false;
       let dontdrawTitle = false;
 
-      const imageUrl =
+      let imageUrl =
         styleData[0].imageUrl || styleData[0].template.backgroundImage;
 
       if (imageUrl) {
         try {
+          if (imageUrl && imageUrl.startsWith("/upload")) {
+            imageUrl = `${process.env.IMAGEDOMAIN}${imageUrl}`;
+          }
           const imgBytes = await fetchImageBuffer(imageUrl);
           let img;
           try {
@@ -1077,10 +1085,13 @@ export async function generateImageSessionPdf({
     // Keep selectedImages section unchanged
     if (sessionData.selectedImages && sessionData.selectedImages.length > 0) {
       for (const image of sessionData.selectedImages) {
-        const imageUrl = image.designImage?.imageUrl;
+        let imageUrl = image.designImage?.imageUrl;
         if (!imageUrl) continue;
 
         try {
+          if (imageUrl && imageUrl.startsWith("/upload")) {
+            imageUrl = `${process.env.IMAGEDOMAIN}${imageUrl}`;
+          }
           const imgBytes = await fetchImageBuffer(imageUrl);
           const sharpInstance = sharp(imgBytes);
           const metadata = await sharpInstance.metadata();
@@ -1193,7 +1204,7 @@ export async function generateImageSessionPdf({
     async function generateNotePage() {
       if (!sessionData.note || sessionData.note.length === 0) return;
 
-      const noteObj = sessionData.note[0];
+      let noteObj = sessionData.note[0];
       const noteText = noteObj.content?.trim() || "";
 
       const maxCharsPerLine = 90;
@@ -1221,6 +1232,9 @@ export async function generateImageSessionPdf({
 
       if (noteObj.attachment) {
         try {
+          if (noteObj.attachment && noteObj.attachment.startsWith("/upload")) {
+            noteObj.attachment = `${process.env.IMAGEDOMAIN}${noteObj.attachment}`;
+          }
           const imgBytes = await fetchImageBuffer(noteObj.attachment);
           const sharpInstance = sharp(imgBytes);
           metadata = await sharpInstance.metadata();
