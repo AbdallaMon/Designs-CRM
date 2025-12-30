@@ -23,6 +23,7 @@ import { SalesToolsTabs } from "./tabs/SalesToolsTabs";
 import {
   MdAnalytics,
   MdBlock,
+  MdChat,
   MdModeEdit,
   MdSchedule,
   MdTimeline,
@@ -47,6 +48,7 @@ import { TabPanel } from "./shared/TabPanel";
 import { MoreActionsMenu } from "./shared/MoreActionsMenu";
 import { LeadDialogHeader } from "./shared/LeadDialogHeader";
 import { StatusMenu } from "./shared/StatusMenu";
+import ChatsTab from "./tabs/ChatsTab";
 
 // LeadContent Component (Extracted Shared Content)
 const LeadContent = ({
@@ -61,6 +63,7 @@ const LeadContent = ({
   isPage,
   setRerenderColumns,
 }) => {
+  console.log(activeTab, "activeTab");
   const { user } = useAuth();
   const admin = checkIfAdminOrSuperSales(user);
   const isPrimaryStaff = checkIfPrimaryStaff(user);
@@ -339,6 +342,11 @@ const LeadContent = ({
             sx={{ textTransform: "none" }}
           />
         )}
+        <Tab
+          icon={<MdChat size={20} />}
+          label="Chats"
+          sx={{ textTransform: "none" }}
+        />
       </Tabs>
 
       <Box
@@ -402,11 +410,8 @@ const LeadContent = ({
           />
         </TabPanel>
 
-        {payments?.length > 0 && (
-          <TabPanel
-            value={activeTab}
-            index={isNotPrimaryUser && !admin ? 7 : 8}
-          >
+        {payments?.length > 0 && isNotPrimaryUser && !admin && (
+          <TabPanel value={activeTab} index={7}>
             <ExtraServicesList
               admin={admin}
               lead={lead}
@@ -417,6 +422,16 @@ const LeadContent = ({
         )}
         {isNotPrimaryUser && !admin ? null : (
           <>
+            {payments?.length > 0 && (
+              <TabPanel value={activeTab} index={8}>
+                <ExtraServicesList
+                  admin={admin}
+                  lead={lead}
+                  notUser={isPage && user.id !== lead.userId && !admin}
+                  setPayments={setPayments}
+                />
+              </TabPanel>
+            )}
             <TabPanel value={activeTab} index={payments?.length > 0 ? 9 : 8}>
               <LeadProjects clientLeadId={lead.id} />
             </TabPanel>
@@ -437,6 +452,24 @@ const LeadContent = ({
             )}
           </>
         )}
+        <TabPanel
+          value={activeTab}
+          index={
+            isNotPrimaryUser && !admin
+              ? payments?.length > 0
+                ? 8
+                : 7
+              : payments?.length > 0
+              ? lead.status === "FINALIZED"
+                ? 12
+                : 11
+              : lead.status === "FINALIZED"
+              ? 11
+              : 10
+          }
+        >
+          <ChatsTab clientLeadId={lead.id} />
+        </TabPanel>
       </Box>
     </>
   );

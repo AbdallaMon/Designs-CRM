@@ -100,12 +100,15 @@ export async function getChatRooms({
   if (projectId) {
     where.projectId = parseInt(projectId);
   }
-
   if (clientLeadId) {
-    where.clientLeadId = parseInt(clientLeadId);
-    where.multiProjectRooms.some = {
-      project: {
-        clientLeadId: parseInt(clientLeadId),
+    const id = Number(clientLeadId);
+
+    where.clientLeadId = id;
+    where.multiProjectRooms = {
+      some: {
+        project: {
+          clientLeadId: id,
+        },
       },
     };
   }
@@ -359,6 +362,162 @@ export async function createChatRoom({
   return completeRoom;
 }
 
+export async function createLeadsChatRoom({
+  name,
+  groupType,
+  clientLeadId,
+  projectGroupIds,
+  selectedProjectsTypes,
+  addClient,
+  addRelatedSalesStaff,
+  addRelatedDesigners,
+  chatPasswordHash,
+}) {
+  const projectWhere = {};
+  if (groupType === "MULTI_PROJECT") {
+    projectWhere = {
+      type: { in: selectedProjectsTypes || [] },
+      groupId: { in: projectGroupIds?.map((id) => parseInt(id)) || [] },
+    };
+  }
+
+  const clientLead = await prisma.clientLead.findUnique({
+    where: { id: parseInt(clientLeadId) },
+    include: {
+      client: true,
+      assignedTo: true,
+      projects: {
+        where: projectWhere,
+        include: {
+          assignments: true,
+        },
+      },
+    },
+  });
+  let userIds = [];
+
+  if (groupType === "CLIENT_TO_STAFF") {
+    if (!chatPasswordHash && addClient) {
+      throw new Error("Chat password is required to add client to the room");
+    }
+    if (addRelatedSalesStaff && clientLead.assignedTo) {
+      userIds.push(clientLead.assignedTo.id.toString());
+    }
+  }
+
+  const type = groupType;
+  const room = await prisma.chatRoom.create({
+    data: {
+      name,
+      type,
+      clientLeadId: clientLeadId ? parseInt(clientLeadId) : null,
+      createdById: parseInt(createdById),
+      chatPasswordHash: chatPasswordHash || null,
+    },
+  });
+
+  // Add multi-project associations if MULTI_PROJECT type
+  if (type === "MULTI_PROJECT") {
+    const projectIds = clientLead.projects.map((p) => p.id);
+    if (!projectIds || projectIds.length === 0) {
+      throw new Error("No projects found for the selected criteria");
+    }
+    await prisma.chatRoomProject.createMany({
+      data: projectIds.map((pid) => ({
+        roomId: room.id,
+        projectId: parseInt(pid),
+      })),
+    });
+  }
+
+  const assignments = clientLead.projects?.flatMap((p) => p.assignments);
+  if (assignments && assignments.length > 0) {
+    if (
+      (type === "CLIENT_TO_STAFF" && addRelatedDesigners) ||
+      type === "MULTI_PROJECT"
+    ) {
+      const staffIds = [
+        ...new Set(
+          assignments
+            .map((a) => a.userId.toString())
+            .filter((id) => id !== createdById)
+        ),
+      ];
+      userIds = userIds.concat(staffIds);
+    }
+  }
+  // Add members
+  const memberData = [];
+
+  // Add creator as admin
+  memberData.push({
+    roomId: room.id,
+    userId: parseInt(createdById),
+    role: "ADMIN",
+  });
+  if (groupType === "CLIENT_TO_STAFF") {
+    if (addClient) {
+      memberData.push({
+        roomId: room.id,
+        clientId: clientLead.clientId,
+        role: "MEMBER",
+      });
+      // check if we need to notify client about being added to chat
+    }
+  }
+
+  const filteredUserIds = userIds?.filter((id) => id !== createdById) || [];
+  for (const uid of filteredUserIds) {
+    memberData.push({
+      roomId: room.id,
+      userId: parseInt(uid),
+      role: "MEMBER",
+    });
+  }
+
+  await prisma.chatMember.createMany({
+    data: memberData,
+  });
+
+  // Fetch complete room with members
+  const completeRoom = await prisma.chatRoom.findUnique({
+    where: { id: room.id },
+    include: {
+      createdBy: {
+        select: { id: true, name: true, email: true },
+      },
+      members: {
+        where: { leftAt: null },
+        include: {
+          user: {
+            select: { id: true, name: true, email: true, role: true },
+          },
+        },
+      },
+      multiProjectRooms: {
+        include: {
+          project: { select: { id: true, groupTitle: true } },
+        },
+      },
+    },
+  });
+
+  // Emit Socket.IO event to notify members
+  try {
+    await emitToAllUsersRelatedToARoom({
+      roomId: room.id,
+      userId: createdById,
+      content: {
+        roomId: parseInt(room.id),
+      },
+      type: "notification:room_created",
+    });
+  } catch (error) {
+    console.error("Socket.IO emit error:", error);
+  }
+
+  return completeRoom;
+}
 /**
  * Update chat room
  */

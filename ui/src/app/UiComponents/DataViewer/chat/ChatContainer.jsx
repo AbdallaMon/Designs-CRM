@@ -36,17 +36,16 @@ import { ChatRoomsList } from "./components/rooms/ChatRoomsList";
 import { ChatWindow } from "./components/window/ChatWindow";
 import { useChatRooms, useSocket } from "./hooks";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { getData } from "@/app/helpers/functions/getData";
 import { CHAT_ROOM_TYPES } from "./utils/chatConstants";
 import { useRouter, useSearchParams } from "next/navigation";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { CreateGroupDialog } from "./components/dialogs";
+import CreateLeadChatGroup from "./components/dialogs/CreateLeadChatGroup";
 
 export function ChatContainer({
   type = "page", // "page" | "widget" | "project" | "clientLead" | "tab"
   clientLeadId = null,
 }) {
-  return;
   const { user, isLoggedIn } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -85,6 +84,7 @@ export function ChatContainer({
     leaveRoom,
     loadingMore,
     hasMore,
+    createLeadRoom,
   } = useChatRooms({
     isTab: type === "tab",
     clientLeadId,
@@ -385,7 +385,7 @@ export function ChatContainer({
         renderChatWindow={renderChatWindow}
         clientLeadId={clientLeadId}
         isAdmin={isAdmin}
-        createRoom={createRoom}
+        createRoom={createLeadRoom}
         fetchRooms={fetchRooms}
         type={type}
         selectedRoom={selectedRoom}
@@ -749,7 +749,8 @@ function RenderTabChat({
           </Grid>
         </Grid>
       )}
-      {/* <CreateGroupDialog
+      <CreateLeadChatGroup
+        onCreate={createRoom}
         open={createRoomOpen}
         onClose={() => setCreateRoomOpen(false)}
         clientLeadId={clientLeadId}
@@ -758,10 +759,8 @@ function RenderTabChat({
         fetchRooms={fetchRooms}
         onCreated={(room) => {
           setSelectedRoom(room);
-          if (isMobile) setViewMode("CHAT");
-          if (type === "page") router.replace(`?roomId=${room.id}`);
         }}
-      />{" "} */}
+      />{" "}
     </Box>
   );
 }

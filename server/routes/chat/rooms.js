@@ -6,6 +6,7 @@ import {
   deleteChatRoom,
   getChatRoomById,
   checkIfChatAlreadyExists,
+  createLeadsChatRoom,
 } from "../../services/main/chat/chatRoomServices.js";
 import { getCurrentUser } from "../../services/main/utility/utility.js";
 
@@ -25,6 +26,7 @@ router.get("/", async (req, res) => {
       searchKey,
       chatType,
     } = req.query;
+    console.log(req.query, "req query");
     const result = await getChatRooms({
       userId,
       category,
@@ -149,6 +151,46 @@ router.post("/create-chat", async (req, res) => {
   }
 });
 
+router.post("/lead-rooms", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req, res);
+    const userId = user.id;
+    const {
+      name,
+      groupType,
+      clientLeadId,
+      projectIds,
+      projectGroupIds,
+      selectedProjectsTypes,
+      addClient,
+      addRelatedSalesStaff,
+      addRelatedDesigners,
+      chatPasswordHash,
+    } = req.body;
+    console.log(req.body, "req body");
+    if (!groupType)
+      return res
+        .status(400)
+        .json({ status: 400, message: "Room type is required" });
+    return;
+
+    const room = await createLeadsChatRoom({
+      name,
+      type: groupType,
+      clientLeadId,
+      projectIds,
+      createdById: userId,
+    });
+
+    res.status(200).json({ status: 200, data: room });
+  } catch (error) {
+    console.error("Create chat room error:", error);
+    res.status(500).json({
+      status: 500,
+      message: error.message || "Error creating chat room",
+    });
+  }
+});
 // PUT /shared/chat/rooms/:roomId - update room
 router.put("/:roomId", async (req, res) => {
   try {

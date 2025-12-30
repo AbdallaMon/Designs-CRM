@@ -174,6 +174,26 @@ export function useChatRooms({
     },
     [setToastLoading]
   );
+  const createLeadRoom = useCallback(
+    async (roomData) => {
+      const response = await handleRequestSubmit(
+        roomData,
+        setToastLoading,
+        "shared/chat/rooms/lead-rooms",
+        false,
+        "Creating chat room",
+        false,
+        "POST"
+      );
+
+      if (response?.status === 200) {
+        refreshRooms();
+        return response.data;
+      }
+      return null;
+    },
+    [setToastLoading]
+  );
 
   const updateRoom = useCallback(
     async (roomId, updates) => {
@@ -261,5 +281,6 @@ export function useChatRooms({
     roomsEndRef,
     leaveRoom,
     hasMore,
+    createLeadRoom,
   };
 }

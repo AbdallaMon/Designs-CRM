@@ -182,8 +182,7 @@ export function ChatRoomsList({
           justifyContent: "space-between",
         }}
       >
-        <StartNewChat />
-
+        {!isTab && <StartNewChat />}
         {!isWidget && (
           <Box sx={{ display: "flex" }}>
             <Button
