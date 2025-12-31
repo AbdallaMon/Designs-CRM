@@ -28,6 +28,7 @@ export function useSocket(handlers = {}) {
       "members:added": "onMembersAdded",
       "call:initiated": "onCallInitiated",
       "call:ended": "onCallEnded",
+      "room:updated": "onRoomUpdatedEvent",
 
       notification: "onNotification",
       "notification:user_typing": "onTypingNotification",
@@ -69,13 +70,13 @@ export function useSocket(handlers = {}) {
     };
   }, [socket]);
 
-  useEffect(() => {
-    if (!socket) return;
-    const any = (event, ...args) =>
-      console.log("SOCKET ANY:", event, args?.[0]);
-    socket.onAny(any);
-    return () => socket.offAny(any);
-  }, [socket]);
+  // useEffect(() => {
+  //   if (!socket) return;
+  //   const any = (event, ...args) =>
+  //     console.log("SOCKET ANY:", event, args?.[0]);
+  //   socket.onAny(any);
+  //   return () => socket.offAny(any);
+  // }, [socket]);
 
   return { socket };
 }

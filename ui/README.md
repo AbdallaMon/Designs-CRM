@@ -16,5 +16,3 @@ Uuvzio1mIpURqzci
 
 - Allow full screen chat
 - If searchParams getRoom true and roomId doent load til u fetch the room details from backend and then open the chat.
-- when open room fetch room instead of counting on rooms list
-- display a mute icon if user is muted in chat room

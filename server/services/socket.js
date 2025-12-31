@@ -122,7 +122,7 @@ export function initSocket(httpServer) {
 
       // Join new room
       socket.join(`room:${roomId}`);
-
+      console.log("joined room:", `room:${roomId}`, "socket:", socket.id);
       // Notify others in room
       socket.to(`room:${roomId}`).emit("member:joined", {
         userId,

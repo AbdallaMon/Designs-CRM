@@ -174,7 +174,17 @@ export async function emitToAllUsersRelatedToARoom({
   userId,
   content,
   type,
+  isRoomOnly,
 }) {
+  const io = getIo();
+
+  if (isRoomOnly) {
+    io.to(`room:${roomId}`).emit(type, {
+      ...content,
+    });
+    console.log("isRoomOnly emitted");
+    return;
+  }
   const members = await prisma.chatMember.findMany({
     where: {
       roomId: parseInt(roomId),
@@ -184,7 +194,6 @@ export async function emitToAllUsersRelatedToARoom({
     select: { userId: true },
   });
   try {
-    const io = getIo();
     for (const member of members) {
       io.to(`user:${member.userId}`).emit(type, {
         ...content,
@@ -199,6 +208,15 @@ export async function emitToAllUsersIncludingSame({
   type,
   isRoomOnly,
 }) {
+  const io = getIo();
+  if (isRoomOnly) {
+    io.to(`room:${roomId}`).emit(type, {
+      ...content,
+    });
+    console.log("isRoomOnly emitted");
+
+    return;
+  }
   const members = await prisma.chatMember.findMany({
     where: {
       roomId: parseInt(roomId),
@@ -207,18 +225,10 @@ export async function emitToAllUsersIncludingSame({
     select: { userId: true },
   });
   try {
-    const io = getIo();
     for (const member of members) {
-      if (isRoomOnly) {
-        io.to(`room:${roomId}`).emit(type, {
-          ...content,
-        });
-      } else {
-        io.to(`user:${member.userId}`).emit(type, {
-          ...content,
-        });
-      }
-      console.log("Emitting to user:", member.userId, "type:", type);
+      io.to(`user:${member.userId}`).emit(type, {
+        ...content,
+      });
     }
   } catch (e) {}
 }

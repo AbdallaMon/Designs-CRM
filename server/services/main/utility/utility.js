@@ -947,7 +947,7 @@ async function sendNotification(
   });
 
   const io = getIo();
-  io.to(userId.toString()).emit("notification", notification);
+  io.to(`user:${userId}`).emit("notification", notification);
   if (withEmail) {
     const user = await prisma.user.findUnique({
       where: { id: Number(userId) },

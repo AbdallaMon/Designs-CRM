@@ -64,6 +64,7 @@ const NotificationsIcon = () => {
   // Use socket events hook
   useSocket({
     onNotification: (notification) => {
+      console.log(notification, "New notification received via socket");
       setNotifications((prev) => [notification, ...prev]);
       setUnreadCount((prev) => prev + 1); // Increase unread count
       if (notificationSound) {

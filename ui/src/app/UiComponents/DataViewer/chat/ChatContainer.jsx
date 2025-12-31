@@ -93,17 +93,14 @@ export function ChatContainer({
     onRoomCreatedNotification: (data) => {
       const { roomId, userId } = data;
       const id = searchParams?.get("roomId");
-      console.log("room created notification", data);
       if (roomId !== parseInt(id)) {
         fetchRooms(false);
       }
     },
     onRoomUpdated: (data) => {
-      console.log("room updated notification", data);
       fetchRooms(false);
     },
     onMessagesReadNotification: (data) => {
-      console.log("messages read notification", data);
       const { count, roomId } = data;
       setTotalUnread((prev) => Math.max(0, prev - count));
       setUnreadCounts((prev) => {
@@ -113,7 +110,6 @@ export function ChatContainer({
       });
     },
     onNewMessageNotification: (data) => {
-      console.log("new message notification", data);
       fetchRooms(false);
       // Play sound in widget if message is from another user and not in selected room
       if (
@@ -130,7 +126,6 @@ export function ChatContainer({
     },
     onRoomDeletedNotification: (data) => {
       const { roomId } = data;
-      console.log("room deleted notification", data);
 
       if (selectedRoom?.id === roomId) {
         setSelectedRoom(null);
@@ -142,7 +137,6 @@ export function ChatContainer({
       fetchRooms(false);
     },
     onTypingNotification: (data) => {
-      console.log("typing notification", data);
       // Only show typing if not in the room and not from self
       if (data.roomId !== selectedRoom?.id && data.userId !== user?.id) {
         setTypingRooms((prev) => {

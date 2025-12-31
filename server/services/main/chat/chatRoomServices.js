@@ -233,7 +233,6 @@ export async function getChatRooms({
       const otherMembers = room.members.filter(
         (m) => m.userId !== parsedUserId
       );
-      console.log(room.members, "room.members");
 
       const unreadCount = await prisma.chatMessage.count({
         where: {
@@ -746,8 +745,6 @@ export async function updateChatRoom(roomId, userId, updates) {
       isMember = true;
     }
   }
-  console.log(updates, "updates in service");
-  console.log(isMember, "isMember in isMember");
 
   const update = !isMember
     ? await prisma.chatRoom.update({
@@ -770,6 +767,16 @@ export async function updateChatRoom(roomId, userId, updates) {
       updates,
     },
     type: "notification:room_updated",
+  });
+  await emitToAllUsersRelatedToARoom({
+    userId,
+    content: {
+      roomId: parseInt(roomId),
+      updates,
+    },
+    type: "room:updated",
+    roomId,
+    isRoomOnly: true,
   });
   return update;
 }

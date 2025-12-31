@@ -232,7 +232,6 @@ export function ChatWindow({
       }
     },
     onMessagePinned: (data) => {
-      console.log("Message pinned event received:", data);
       if (data.roomId === roomId) fetchPinnedMessages();
     },
     onMessageUnpinned: (data) => {
@@ -256,7 +255,6 @@ export function ChatWindow({
         );
       }
     },
-
     onTyping: (data) => {
       if (data.roomId === roomId && data.userId !== user.id) {
         const key = `${data.userId}:${data.roomId}`;
@@ -289,6 +287,13 @@ export function ChatWindow({
       if (data.roomId === roomId) {
         setNewMembersAdded(data.newMembers);
         setNewMemberAlertOpen(true);
+      }
+    },
+    onRoomUpdatedEvent: (data) => {
+      console.log(data, "data");
+      console.log(roomId, "roomId");
+      if (data.roomId === roomId) {
+        fetchChatRoom();
       }
     },
   });
