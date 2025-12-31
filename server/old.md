@@ -1,6 +1,3 @@
--- Allow creating multi clientLead chat groups
--- Allow creating chat groups for projects
--- Allow creating chat groups for teams of different projects
 -- inside the chat for client lead if client is added allow admin to send email of latest messages
 -- If we added staff to a project they should be added to all the related project chat groups automatically
 -- If auto assignment to project is enabled staff should be added to all related project chat groups automatically
@@ -13,3 +10,6 @@
 -- allow forward message to multiple chat rooms
 -- Change role between moderator and staff
 -- If group type is project or clientLead filter members to only staff related to that project or client
+
+-- filter chat files by extension type not working
+-- how we will join the client in the chat room for client lead

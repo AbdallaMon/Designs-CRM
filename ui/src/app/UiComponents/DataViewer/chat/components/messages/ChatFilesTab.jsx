@@ -41,7 +41,7 @@ import { RenderListOfFiles } from "../../../utility/Media/MediaRender";
 
 /* ================= Main Component ================= */
 
-export function ChatFilesTab({ roomId }) {
+export function ChatFilesTab({ roomId, currentTab, setCurrentTab }) {
   const [selectedType, setSelectedType] = useState([]);
 
   const {
@@ -61,129 +61,89 @@ export function ChatFilesTab({ roomId }) {
     fileType: selectedType,
   });
   const canLoadMore = hasMore && !loadingMore && !initialLoading && !loading;
-  const [previewFile, setPreviewFile] = useState(null);
   return (
     <>
-      {/* SEARCH & FILTER */}
-      <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
-        <ToggleButtonGroup
-          value={selectedType}
-          onChange={(e, val) => setSelectedType(val)}
-          size="small"
-          exclusive
-          sx={{ flexWrap: "wrap", gap: 1 }}
-        >
-          {FILE_TYPE_CATEGORIES.map((c) => {
-            const Icon = c.icon;
-            return (
-              <ToggleButton key={c.value} value={c.value}>
-                <Icon size={14} style={{ marginRight: 4 }} />
-                {c.label}
-              </ToggleButton>
-            );
-          })}
-        </ToggleButtonGroup>
-      </Box>
-
-      {/* GRID */}
-      <Box
-        sx={{ flex: 1, overflow: "auto", p: 2, height: "75vh" }}
-        ref={scrollContainerRef}
-      >
-        <RenderListOfFiles
-          attachments={files}
-          groupByMonth={true}
-          currentRenderedMonths={uniqueMonths}
-          hasMore={hasMore}
-          loadingMore={loadingMore}
-          onNearToEnd={loadMore}
-        />
-        {/* {sortedMonths?.map((month) => (
-          <Box key={month} mb={3}>
-            <Typography variant="subtitle2" fontWeight={600} mb={1}>
-              {formatMonthYear(month)}
-            </Typography>
-
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-                gap: 1.5,
-              }}
-            >
-              {filesByMonth &&
-                filesByMonth[month].map((file) => (
-                  <GridFileItem
-                    key={file.id}
-                    file={file}
-                    onPreview={setPreviewFile}
-                  />
-                ))}
-            </Box>
-          </Box>
-        ))} */}
-        <div ref={filesEndRef} />
-
-        <LoadMoreButton
-          onClick={loadMore}
-          disabled={!canLoadMore}
-          loadingMore={loadingMore}
-        />
-
-        {loadingMore && (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-            <CircularProgress size={24} />
-          </Box>
-        )}
-      </Box>
-
-      {/* FULLSCREEN PREVIEW */}
       <Dialog
-        open={!!previewFile}
-        onClose={() => setPreviewFile(null)}
-        maxWidth="md"
+        open={currentTab === 1}
+        onClose={() => setCurrentTab(0)}
         fullWidth
+        maxWidth="md"
         sx={{
           "& .MuiPaper-root": {
             margin: "10px !important",
+            width: "calc(100% - 20px)",
           },
+          zIndex: 1302,
         }}
       >
-        <DialogTitle sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Typography noWrap>{previewFile?.fileName}</Typography>
-          <IconButton onClick={() => setPreviewFile(null)}>
-            <FaTimes />
-          </IconButton>
+        <DialogTitle>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <Typography>Chat Files</Typography>
+            <IconButton onClick={() => setCurrentTab(0)}>
+              <FaTimes />
+            </IconButton>
+          </Box>
         </DialogTitle>
-
         <DialogContent
+          dividers
           sx={{
-            p: 0,
-            bgcolor: "black",
+            padding: "12px !important",
           }}
         >
-          {previewFile?.fileMimeType?.startsWith("image/") && (
-            <img
-              src={previewFile.fileUrl}
-              style={{
-                width: "100%",
-                maxHeight: "80vh",
-                objectFit: "contain",
-              }}
+          {" "}
+          <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+            <ToggleButtonGroup
+              value={selectedType}
+              onChange={(e, val) => setSelectedType(val)}
+              size="small"
+              exclusive
+              sx={{ flexWrap: "wrap", gap: 1 }}
+            >
+              {FILE_TYPE_CATEGORIES.map((c) => {
+                const Icon = c.icon;
+                return (
+                  <ToggleButton key={c.value} value={c.value}>
+                    <Icon size={14} style={{ marginRight: 4 }} />
+                    {c.label}
+                  </ToggleButton>
+                );
+              })}
+            </ToggleButtonGroup>
+          </Box>
+          {/* GRID */}
+          <Box
+            sx={{ flex: 1, overflow: "auto", p: 2, height: "75vh" }}
+            ref={scrollContainerRef}
+          >
+            <RenderListOfFiles
+              attachments={files}
+              groupByMonth={true}
+              currentRenderedMonths={uniqueMonths}
+              hasMore={hasMore}
+              loadingMore={loadingMore}
+              onNearToEnd={loadMore}
             />
-          )}
 
-          {previewFile?.fileMimeType?.startsWith("video/") && (
-            <video
-              src={previewFile.fileUrl}
-              controls
-              autoPlay
-              style={{
-                width: "100%",
-                maxHeight: "80vh",
-              }}
+            <div ref={filesEndRef} />
+
+            <LoadMoreButton
+              onClick={loadMore}
+              disabled={!canLoadMore}
+              loadingMore={loadingMore}
             />
-          )}
+
+            {loadingMore && (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            )}
+          </Box>
         </DialogContent>
       </Dialog>
     </>

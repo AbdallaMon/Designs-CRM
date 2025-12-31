@@ -97,7 +97,7 @@ export function AssignDesignerModal({
     );
 
     if (updatedProject.status === 200) {
-      if (isThreeDDesigner) {
+      if (isThreeDDesigner && !onUpdate) {
         window.location.reload();
       }
       onUpdate(updatedProject.data);

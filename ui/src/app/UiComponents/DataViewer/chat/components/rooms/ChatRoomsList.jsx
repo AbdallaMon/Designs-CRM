@@ -24,6 +24,7 @@ import {
   DialogActions,
   Button,
   CircularProgress,
+  Tooltip,
 } from "@mui/material";
 import {
   FaSearch,
@@ -33,6 +34,7 @@ import {
   FaArchive,
   FaTrash,
   FaPlus,
+  FaExternalLinkAlt,
 } from "react-icons/fa";
 import {
   CHAT_ROOM_TYPE_LABELS,
@@ -83,7 +85,7 @@ export function ChatRoomsList({
   const [leaveConfirm, setLeaveConfirm] = useState(false);
   const DEBOUNCE_MS = 450;
   const cantLoadMore = !hasMore || loading || loadingMore || initialLoading;
-
+  const { user } = useAuth();
   // Debounce utility with cancel/flush controls
   function debounce(fn, wait) {
     let t;
@@ -268,134 +270,170 @@ export function ChatRoomsList({
             <Typography color="textSecondary">No chats found</Typography>
           </Box>
         ) : (
-          rooms?.map((room) => (
-            <ListItem
-              key={room.id}
-              disablePadding
-              sx={{
-                bgcolor:
-                  selectedRoomId === room.id
-                    ? "action.selected"
-                    : getUnreadCount(room) > 0
-                    ? "primary.lighter"
-                    : "transparent",
-                "&:hover": {
-                  bgcolor: "action.hover",
-                  "& .MuiIconButton-root": {
-                    opacity: 1,
-                  },
-                },
-                transition: "all 0.2s ease-in-out",
-                borderLeft:
-                  selectedRoomId === room.id
-                    ? "3px solid"
-                    : getUnreadCount(room) > 0
-                    ? "3px solid error.main"
-                    : "3px solid transparent",
-                borderLeftColor: "primary.main",
-              }}
-              secondaryAction={
-                <IconButton
-                  edge="end"
-                  size="small"
-                  onClick={(e) => handleMenuOpen(e, room.id)}
-                  sx={{
-                    opacity: 0.5,
-                    transition: "opacity 0.2s ease",
-                  }}
-                >
-                  <FaEllipsisV size={14} />
-                </IconButton>
-              }
-            >
-              <ListItemButton
-                onClick={() => onSelectRoom(room)}
-                // component={Link}
-                // href={`?roomId=${room.id}`}
+          rooms?.map((room) => {
+            const member = room?.members.find((m) => m.userId === user.id);
+            const isMuted = member?.isMuted;
+            const isArchived = member?.isArchived;
+            const unReadCount = getUnreadCount(room);
+            const roomLabel = getRoomLabel(room);
+            return (
+              <ListItem
+                key={room.id}
+                disablePadding
                 sx={{
-                  borderRadius: 1,
-                  transition: "all 0.2s ease",
+                  bgcolor:
+                    selectedRoomId === room.id
+                      ? "action.selected"
+                      : unReadCount > 0
+                      ? "primary.lighter"
+                      : "transparent",
+                  "&:hover": {
+                    bgcolor: "action.hover",
+                    "& .MuiIconButton-root": {
+                      opacity: 1,
+                    },
+                  },
+                  transition: "all 0.2s ease-in-out",
+                  borderLeft:
+                    selectedRoomId === room.id
+                      ? "3px solid"
+                      : unReadCount > 0
+                      ? "3px solid error.main"
+                      : "3px solid transparent",
+                  borderLeftColor: "primary.main",
                 }}
-              >
-                <ListItemAvatar>
-                  <Badge
-                    badgeContent={getUnreadCount(room)}
-                    color="error"
-                    overlap="circular"
+                secondaryAction={
+                  <Box
                     sx={{
-                      position: "relative",
-                      "& .MuiBadge-badge": {
-                        fontWeight: 600,
-                        fontSize: "0.7rem",
-                      },
+                      display: "flex",
+                      gap: 1,
+                      alignItems: "center",
                     }}
                   >
-                    <OnlineStatus lastSeenAt={room.lastSeenAt} />
-                    <Avatar
-                      src={getRoomAvatar(room)}
-                      alt={getRoomLabel(room)}
-                      sx={{
-                        border:
-                          selectedRoomId === room.id ? "2px solid" : "none",
-                        borderColor: "primary.main",
-                        transition: "all 0.2s ease",
-                      }}
-                    >
-                      {getRoomLabel(room).charAt(0)}
-                    </Avatar>
-                  </Badge>
-                </ListItemAvatar>
-                <ListItemText
-                  primary={
-                    <Stack direction="row" gap={0.5} alignItems="center">
-                      <Typography
-                        variant="body2"
+                    <Tooltip title="Open chat in new window">
+                      <IconButton
+                        edge="start"
+                        size="small"
                         sx={{
-                          fontWeight:
-                            selectedRoomId === room.id ||
-                            getUnreadCount(room) > 0
-                              ? 700
-                              : 500,
-                          color:
-                            getUnreadCount(room) > 0 ? "error.main" : "inherit",
+                          opacity: 0.5,
+                          transition: "opacity 0.2s ease",
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const url = new URL(
+                            window.location.origin + "/dashboard/chat"
+                          );
+                          url.searchParams.set("roomId", room.id);
+                          url.searchParams.set("getRoom", "true");
+                          window.open(url.toString(), "_blank");
                         }}
                       >
-                        {getRoomLabel(room)}
-                      </Typography>
-                      {room.isMuted && (
-                        <FaBellSlash size={12} style={{ opacity: 0.5 }} />
-                      )}
-                    </Stack>
-                  }
-                  secondary={
-                    <Stack spacing={0.4} sx={{ pr: 1 }}>
-                      <Typography
-                        variant="caption"
-                        color="textPrimary"
-                        noWrap
-                        sx={{ display: "block", maxWidth: "100%" }}
+                        <FaExternalLinkAlt size={14} />
+                      </IconButton>
+                    </Tooltip>
+                    <IconButton
+                      edge="end"
+                      size="small"
+                      onClick={(e) => handleMenuOpen(e, room.id)}
+                      sx={{
+                        opacity: 0.5,
+                        transition: "opacity 0.2s ease",
+                      }}
+                    >
+                      <FaEllipsisV size={14} />
+                    </IconButton>
+                  </Box>
+                }
+              >
+                <ListItemButton
+                  onClick={() => onSelectRoom(room)}
+                  // component={Link}
+                  // href={`?roomId=${room.id}`}
+                  sx={{
+                    borderRadius: 1,
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <ListItemAvatar>
+                    <Badge
+                      badgeContent={unReadCount}
+                      color="error"
+                      overlap="circular"
+                      sx={{
+                        position: "relative",
+                        "& .MuiBadge-badge": {
+                          fontWeight: 600,
+                          fontSize: "0.7rem",
+                        },
+                      }}
+                    >
+                      <OnlineStatus lastSeenAt={room.lastSeenAt} />
+                      <Avatar
+                        src={getRoomAvatar(room)}
+                        alt={roomLabel}
+                        sx={{
+                          border:
+                            selectedRoomId === room.id ? "2px solid" : "none",
+                          borderColor: "primary.main",
+                          transition: "all 0.2s ease",
+                        }}
                       >
-                        {getLastMessageText(room)}
-                      </Typography>
-                      <Typography variant="caption" color="textSecondary">
-                        <LastSeenAt lastSeenAt={room.lastSeenAt} />
-                      </Typography>
-                    </Stack>
-                  }
+                        {roomLabel.charAt(0)}
+                      </Avatar>
+                    </Badge>
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={
+                      <Stack direction="row" gap={0.5} alignItems="center">
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            fontWeight:
+                              selectedRoomId === room.id || unReadCount > 0
+                                ? 700
+                                : 500,
+                            color: unReadCount > 0 ? "error.main" : "inherit",
+                          }}
+                        >
+                          {roomLabel}
+                        </Typography>
+                        {isMuted && (
+                          <FaBellSlash size={12} style={{ opacity: 0.5 }} />
+                        )}
+                      </Stack>
+                    }
+                    secondary={
+                      <Stack spacing={0.4} sx={{ pr: 1 }}>
+                        <Typography
+                          variant="caption"
+                          color="textPrimary"
+                          noWrap
+                          sx={{ display: "block", maxWidth: "100%" }}
+                        >
+                          {getLastMessageText(room)}
+                        </Typography>
+                        <Typography variant="caption" color="textSecondary">
+                          <LastSeenAt lastSeenAt={room.lastSeenAt} />
+                        </Typography>
+                      </Stack>
+                    }
+                  />
+                </ListItemButton>
+                <RoomActions
+                  menuAnchor={menuAnchor}
+                  menuRoomId={menuRoomId}
+                  room={room}
+                  handleMenuClose={handleMenuClose}
+                  onMuteRoom={onMuteRoom}
+                  onArchiveRoom={onArchiveRoom}
+                  setDeleteConfirm={setDeleteConfirm}
+                  setLeaveConfirm={setLeaveConfirm}
+                  isMuted={isMuted}
+                  isArchived={isArchived}
                 />
-              </ListItemButton>
-              <RoomActions
-                menuAnchor={menuAnchor}
-                menuRoomId={menuRoomId}
-                room={room}
-                handleMenuClose={handleMenuClose}
-                onMuteRoom={onMuteRoom}
-                onArchiveRoom={onArchiveRoom}
-                setDeleteConfirm={setDeleteConfirm}
-                setLeaveConfirm={setLeaveConfirm}
-              />
-            </ListItem>
-          ))
+              </ListItem>
+            );
+          })
         )}
         <div ref={roomsEndRef} />
         <LoadMoreButton
@@ -425,7 +463,13 @@ export function ChatRoomsList({
 }
 function DeleteConfirmDialog({ open, onClose, onConfirm }) {
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      sx={{
+        zIndex: 1304,
+      }}
+    >
       <DialogTitle>Delete Chat?</DialogTitle>
       <DialogContent>
         <Typography>
@@ -443,7 +487,13 @@ function DeleteConfirmDialog({ open, onClose, onConfirm }) {
 }
 function LeaveConfirmDialog({ open, onClose, onConfirm }) {
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      sx={{
+        zIndex: 1304,
+      }}
+    >
       <DialogTitle>Leave Chat?</DialogTitle>
       <DialogContent>
         <Typography>

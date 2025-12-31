@@ -27,9 +27,7 @@ import {
   FaFileVideo,
   FaFileAudio,
 } from "react-icons/fa";
-import { getData } from "@/app/helpers/functions/getData";
 import colors from "@/app/helpers/colors";
-import { useSocket } from "../../hooks";
 
 const MAX_PINNED = 20;
 
@@ -39,9 +37,8 @@ export default function PinnedMessages({
   loadingJumpToMessage,
   chatContainerRef,
   pinnedMessages,
-  setPinnedMessages,
+  loadingPinnedMessages,
 }) {
-  const [loading, setLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -69,32 +66,6 @@ export default function PinnedMessages({
   useEffect(() => {
     setCurrentIndex((prev) => clampIndex(prev));
   }, [clampIndex]);
-
-  const fetchPinnedMessages = async () => {
-    if (!roomId) return;
-
-    const response = await getData({
-      url: `shared/chat/${roomId}/pinned-messages`,
-      setLoading,
-    });
-
-    if (response?.status === 200) {
-      setPinnedMessages(response.data || []);
-    }
-  };
-
-  useEffect(() => {
-    if (roomId) fetchPinnedMessages();
-  }, [roomId]);
-
-  useSocket({
-    onMessagePinned: (data) => {
-      if (data.roomId === roomId) fetchPinnedMessages();
-    },
-    onMessageUnpinned: (data) => {
-      if (data.roomId === roomId) fetchPinnedMessages();
-    },
-  });
 
   // ===== File icon =====
   const renderFileIcon = (mimeType) => {
@@ -448,7 +419,7 @@ export default function PinnedMessages({
 
           {/* Content */}
           <Box sx={{ flex: 1, overflow: "auto" }}>
-            {loading ? (
+            {loadingPinnedMessages ? (
               <Box
                 sx={{
                   display: "flex",

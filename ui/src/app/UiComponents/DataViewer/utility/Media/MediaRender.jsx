@@ -95,11 +95,11 @@ function GridFileItem({ file, onPreview }) {
   const config = getFileConfig(file.fileMimeType);
   const Icon = config.icon;
 
-  const isImage = file.fileMimeType?.startsWith("image/");
-  const isVideo = file.fileMimeType?.startsWith("video/");
+  const Image = isImage(file.fileMimeType);
+  const Video = isVideo(file.fileMimeType);
 
   const handleClick = () => {
-    if (isImage || isVideo) {
+    if (Image || Video) {
       onPreview(file);
     } else {
       window.open(file.fileUrl, "_blank");
@@ -122,7 +122,7 @@ function GridFileItem({ file, onPreview }) {
       }}
     >
       {/* IMAGE */}
-      {isImage && (
+      {Image && (
         <img
           src={file.fileUrl}
           alt={file.fileName}
@@ -135,7 +135,7 @@ function GridFileItem({ file, onPreview }) {
       )}
 
       {/* VIDEO */}
-      {isVideo && (
+      {Video && (
         <>
           <video
             src={file.fileUrl}
@@ -162,7 +162,7 @@ function GridFileItem({ file, onPreview }) {
       )}
 
       {/* OTHER FILE TYPES */}
-      {!isImage && !isVideo && (
+      {!Image && !Video && (
         <Box
           sx={{
             height: "100%",
@@ -387,6 +387,7 @@ export function RenderFileAccordingToType({
         index={index}
         iframe={iframe}
         groupByMonth={groupByMonth}
+        shouldLoadImmediately={iframe}
       />
     );
   } else if (isVideo(mime)) {
@@ -458,6 +459,7 @@ function ImageFileRow({
 
   const handleTileClick = async () => {
     // Non-image media tile (video/pdf) opens viewer directly
+    console.log("handleTileClick", { isImg, stage, fileUrl, mime });
     if (!isImg) {
       onOpen?.();
       return;
@@ -493,11 +495,12 @@ function ImageFileRow({
       handleMediaReady();
     }
   }, [att, handleMediaReady]);
+
   useEffect(() => {
     if (shouldLoadImmediately && stage !== "full") {
       handleTileClick();
     }
-  }, [shouldLoadImmediately, att]);
+  }, [shouldLoadImmediately, att, stage]);
 
   useEffect(() => {
     function onKeyDown(e) {
@@ -1075,8 +1078,23 @@ function AttachmentViewer({
   if (!att) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
-      <DialogContent sx={{ p: 0, bgcolor: "black", position: "relative" }}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="lg"
+      fullWidth
+      fullScreen
+      sx={{
+        zIndex: 1302,
+      }}
+    >
+      <DialogContent
+        sx={{
+          p: 0,
+          position: "relative",
+          bgcolor: "background.default",
+        }}
+      >
         <Box
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -1087,6 +1105,9 @@ function AttachmentViewer({
             touchAction: "pan-y", // allow vertical scroll, still lets us detect horizontal swipes
             width: "100%",
             height: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
           {/* Top bar */}
@@ -1102,6 +1123,10 @@ function AttachmentViewer({
                 alignItems: "center",
                 justifyContent: "space-between",
                 gap: 1,
+                backdropFilter: "blur(8px)",
+                bgcolor: "rgba(17, 14, 14, 0.25)",
+                p: 1,
+                borderRadius: 2,
               }}
             >
               <Chip
@@ -1170,7 +1195,7 @@ function AttachmentViewer({
           <Box
             sx={{
               width: "100%",
-              height: "90vh",
+              maxHeight: "90vh",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

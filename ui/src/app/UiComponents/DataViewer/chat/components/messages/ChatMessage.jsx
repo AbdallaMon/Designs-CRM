@@ -156,6 +156,8 @@ export function ChatMessage({
     ? currentUserRole === "ADMIN" || currentUserRole === "MODERATOR"
     : true;
 
+  const canDelete = isOwnMessage || isCurrentUserAdmin;
+
   const hasContent = Boolean(message.content?.trim());
 
   const attachments = Array.isArray(message.attachments)
@@ -347,6 +349,9 @@ export function ChatMessage({
                 anchorEl={menuAnchor}
                 open={Boolean(menuAnchor)}
                 onClose={() => setMenuAnchor(null)}
+                sx={{
+                  zIndex: 1305,
+                }}
               >
                 <MenuItem
                   onClick={() => {
@@ -380,7 +385,7 @@ export function ChatMessage({
                   </MenuItem>
                 )}
 
-                {(isOwnMessage || isCurrentUserAdmin) && (
+                {canDelete && (
                   <MenuItem
                     onClick={() => {
                       setMenuAnchor(null);

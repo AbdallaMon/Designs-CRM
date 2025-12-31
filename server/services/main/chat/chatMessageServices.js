@@ -25,7 +25,6 @@ export async function getMessages({ roomId, userId, page = 0, limit = 50 }) {
     prisma.chatMessage.findMany({
       where: {
         roomId: parseInt(roomId),
-        isDeleted: false,
       },
       skip,
       take: limit,
@@ -198,6 +197,7 @@ export async function emitToAllUsersIncludingSame({
   userId,
   content,
   type,
+  isRoomOnly,
 }) {
   const members = await prisma.chatMember.findMany({
     where: {
@@ -209,9 +209,16 @@ export async function emitToAllUsersIncludingSame({
   try {
     const io = getIo();
     for (const member of members) {
-      io.to(`user:${member.userId}`).emit(type, {
-        ...content,
-      });
+      if (isRoomOnly) {
+        io.to(`room:${roomId}`).emit(type, {
+          ...content,
+        });
+      } else {
+        io.to(`user:${member.userId}`).emit(type, {
+          ...content,
+        });
+      }
+      console.log("Emitting to user:", member.userId, "type:", type);
     }
   } catch (e) {}
 }
@@ -346,6 +353,7 @@ export async function sendMessage({
         isMuted: member.isMuted,
       },
       type: "notification:new_message",
+      isRoomOnly: false,
     });
   } catch (error) {
     console.error("Socket.IO emit error:", error);
@@ -717,6 +725,7 @@ export async function pinMessage({ roomId, messageId, userId }) {
       pinnedById: parseInt(userId),
     },
     type: "message:pinned",
+    isRoomOnly: true,
   });
   return pinned;
 }
@@ -760,6 +769,7 @@ export async function unpinMessage({ roomId, messageId, userId }) {
       unpinnedById: parseInt(userId),
     },
     type: "message:unpinned",
+    isRoomOnly: true,
   });
   return pinned;
 }

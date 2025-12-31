@@ -26,7 +26,6 @@ router.get("/", async (req, res) => {
       searchKey,
       chatType,
     } = req.query;
-    console.log(req.query, "req query");
     const result = await getChatRooms({
       userId,
       category,
@@ -128,6 +127,9 @@ router.post("/create-chat", async (req, res) => {
       userId: Number(userId),
       otherUserId: participantId,
     });
+    console.log(existingRoom, "existingRoom");
+    console.log(name, userIds, "name,userIds");
+
     if (existingRoom) {
       return res.status(200).json({ status: 200, data: existingRoom });
     }
@@ -167,22 +169,29 @@ router.post("/lead-rooms", async (req, res) => {
       addRelatedDesigners,
       chatPasswordHash,
     } = req.body;
-    console.log(req.body, "req body");
     if (!groupType)
       return res
         .status(400)
         .json({ status: 400, message: "Room type is required" });
-    return;
 
     const room = await createLeadsChatRoom({
       name,
-      type: groupType,
+      groupType,
       clientLeadId,
       projectIds,
       createdById: userId,
+      addRelatedSalesStaff,
+      addRelatedDesigners,
+      chatPasswordHash,
+      addClient,
+      selectedProjectsTypes,
     });
 
-    res.status(200).json({ status: 200, data: room });
+    res.status(200).json({
+      status: 200,
+      data: room,
+      message: "Lead chat room created successfully",
+    });
   } catch (error) {
     console.error("Create chat room error:", error);
     res.status(500).json({
@@ -201,7 +210,35 @@ router.put("/:roomId", async (req, res) => {
 
     const room = await updateChatRoom(roomId, userId, updates);
 
-    res.json({ status: 200, data: room });
+    res.json({
+      status: 200,
+      data: room,
+      message: "Chat room updated successfully",
+    });
+  } catch (error) {
+    console.error("Update chat room error:", error);
+    const statusCode = error.message?.includes("permission") ? 403 : 500;
+    res.status(statusCode).json({
+      status: statusCode,
+      message: error.message || "Error updating chat room",
+    });
+  }
+});
+
+router.put("/:roomId/manageClient", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req, res);
+    const userId = user.id;
+    const { roomId } = req.params;
+    const updates = req.body;
+    console.log(updates, "updates");
+    // const room = await updateChatRoom(roomId, userId, updates);
+
+    res.json({
+      status: 200,
+      // data: room,
+      message: "Chat room updated successfully",
+    });
   } catch (error) {
     console.error("Update chat room error:", error);
     const statusCode = error.message?.includes("permission") ? 403 : 500;
@@ -221,7 +258,11 @@ router.put("/:roomId/update-room-settings", async (req, res) => {
     const { roomId } = req.params;
     const updates = req.body;
     const room = await updateChatRoom(roomId, userId, updates);
-    res.json({ status: 200, data: room });
+    res.json({
+      status: 200,
+      data: room,
+      message: "Chat room updated successfully",
+    });
   } catch (error) {
     console.error("Update chat room settings error:", error);
     const statusCode = error.message?.includes("permission") ? 403 : 500;

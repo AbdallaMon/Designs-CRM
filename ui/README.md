@@ -12,11 +12,9 @@ find /home/vmail -type f -exec chmod 600 {} \;
 
 Uuvzio1mIpURqzci
 
--- New chat component allow admin to create multi project chat or single project chat or client lead chat
+# Changelog
 
-- if multi project ask him to select first which project group he needs to add
-- second ask him all the project types or some specific project types
-- if clientLead chat ask him if he wants to add the client now
-- second ask him if he wants to add the staff related to this lead
-- then ask he if he wants to add the designers related to projects inside this chat
-- then force hime to provide password for this chat
+- Allow full screen chat
+- If searchParams getRoom true and roomId doent load til u fetch the room details from backend and then open the chat.
+- when open room fetch room instead of counting on rooms list
+- display a mute icon if user is muted in chat room

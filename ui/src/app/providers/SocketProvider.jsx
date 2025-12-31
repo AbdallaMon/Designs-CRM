@@ -12,6 +12,7 @@ export default function SocketProvider({ children }) {
   const { user } = useAuth();
   const [socket, setSocket] = useState(null);
   const socketRef = useRef(null);
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     if (!user || !user.id) return;
 
@@ -23,18 +24,10 @@ export default function SocketProvider({ children }) {
       socketRef.current = newSocket;
       setSocket(newSocket);
 
-      // Emit online status
-      newSocket.emit("online", {
-        userId: user.id,
-        user: {
-          name: user.name,
-          email: user.email,
-          id: user.id,
-        },
-      });
       newSocket.emit("user:online", {
         userId: user.id,
       });
+      setLoading(false);
     }
 
     return () => {
@@ -48,7 +41,7 @@ export default function SocketProvider({ children }) {
 
   return (
     <SocketContext.Provider value={contextValue}>
-      {children}
+      {loading ? "Loading socket..." : children}
     </SocketContext.Provider>
   );
 }

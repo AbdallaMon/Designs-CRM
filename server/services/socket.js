@@ -67,7 +67,6 @@ export function initSocket(httpServer) {
     socket.on("online", ({ userId: id, user }) => {
       // const id = user.id;
 
-      socket.join(`user:${id}`);
       userId = id;
 
       // Broadcast user is online
@@ -79,6 +78,12 @@ export function initSocket(httpServer) {
       });
     });
     userId = !userId ? Number(socket.handshake.query.userId) : userId;
+    if (userId) {
+      socket.join(`user:${userId}`);
+      console.log("joined user room:", `user:${userId}`, "socket:", socket.id);
+    } else {
+      console.log("NO userId in handshake.query", socket.handshake.query);
+    }
     // ==================== EXISTING HEARTBEAT ====================
 
     // ==================== CHAT ROOM EVENTS ====================
@@ -91,7 +96,6 @@ export function initSocket(httpServer) {
      */
     socket.on("join_room", async (data) => {
       const { roomId, userId } = data;
-
       if (!roomId) return;
 
       // Verify user is member of room

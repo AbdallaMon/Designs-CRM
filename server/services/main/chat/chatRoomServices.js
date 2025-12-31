@@ -2,6 +2,7 @@ import { th } from "@faker-js/faker";
 import prisma from "../../../prisma/prisma.js";
 import { getIo } from "../../socket.js";
 import { emitToAllUsersRelatedToARoom } from "./chatMessageServices.js";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * Get chat rooms for a user with filters
@@ -102,15 +103,31 @@ export async function getChatRooms({
   }
   if (clientLeadId) {
     const id = Number(clientLeadId);
-
-    where.clientLeadId = id;
-    where.multiProjectRooms = {
-      some: {
-        project: {
-          clientLeadId: id,
+    if (chatType === "CLIENT_LEADS") {
+      where.clientLeadId = id;
+    } else if (chatType === "PROJECT") {
+      where.multiProjectRooms = {
+        some: {
+          project: {
+            clientLeadId: id,
+          },
         },
-      },
-    };
+      };
+    } else {
+      where.OR = where.OR || [];
+      where.OR.push({
+        clientLeadId: id,
+      });
+      where.OR.push({
+        multiProjectRooms: {
+          some: {
+            project: {
+              clientLeadId: id,
+            },
+          },
+        },
+      });
+    }
   }
   const [rooms, total] = await Promise.all([
     prisma.chatRoom.findMany({
@@ -137,9 +154,16 @@ export async function getChatRooms({
         members: {
           where: {
             isDeleted: false,
-            room: {
-              type: "STAFF_TO_STAFF",
-            },
+            OR: [
+              {
+                room: {
+                  type: "STAFF_TO_STAFF",
+                },
+              },
+              {
+                userId: Number(userId),
+              },
+            ],
           },
           select: {
             id: true,
@@ -149,6 +173,8 @@ export async function getChatRooms({
             lastReadAt: true,
             isDeleted: true,
             isArchived: true,
+            isMuted: true,
+
             createdAt: true,
             user: {
               select: {
@@ -191,6 +217,7 @@ export async function getChatRooms({
     prisma.chatRoom.count({ where }),
   ]);
   // Compute unread counts per room for this user
+
   const unreadCounts = {};
   let totalUnread = 0;
 
@@ -206,6 +233,7 @@ export async function getChatRooms({
       const otherMembers = room.members.filter(
         (m) => m.userId !== parsedUserId
       );
+      console.log(room.members, "room.members");
 
       const unreadCount = await prisma.chatMessage.count({
         where: {
@@ -238,6 +266,112 @@ export async function getChatRooms({
     totalPages: Math.ceil(total / pageSize),
     totalUnread,
     unreadCounts,
+  };
+}
+/**
+ * Get single room details
+ */
+export async function getChatRoomById(roomId, userId) {
+  // Verify user is member
+  const member = await prisma.chatMember.findFirst({
+    where: {
+      roomId: parseInt(roomId),
+      userId: parseInt(userId),
+      isDeleted: false,
+    },
+  });
+
+  if (!member) {
+    throw new Error("You don't have access to this room");
+  }
+
+  const room = await prisma.chatRoom.findUnique({
+    where: { id: parseInt(roomId) },
+    include: {
+      createdBy: {
+        select: { id: true, name: true, email: true, role: true },
+      },
+      project: {
+        select: { id: true, groupTitle: true, groupId: true },
+      },
+      clientLead: {
+        select: {
+          id: true,
+          code: true,
+          client: {
+            select: { id: true, name: true, email: true },
+          },
+        },
+      },
+
+      members: {
+        where: {
+          isDeleted: false,
+          room: {
+            type: "STAFF_TO_STAFF",
+          },
+        },
+        select: {
+          id: true,
+          userId: true,
+          role: true,
+          leftAt: true,
+          lastReadAt: true,
+          isDeleted: true,
+          isArchived: true,
+          isMuted: true,
+          createdAt: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              lastSeenAt: true,
+              profilePicture: true,
+            },
+          },
+          client: {
+            select: { id: true, name: true, email: true },
+          },
+        },
+      },
+      multiProjectRooms: {
+        include: {
+          project: {
+            select: { id: true, groupTitle: true },
+          },
+        },
+      },
+      messages: {
+        take: 1,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          content: true,
+          type: true,
+          createdAt: true,
+          sender: {
+            select: { id: true, name: true },
+          },
+        },
+      },
+    },
+  });
+  const selfMember = await prisma.chatMember.findFirst({
+    where: {
+      roomId: room.id,
+      userId: Number(userId),
+      isDeleted: false,
+    },
+  });
+  const otherMembers = room.members.filter((m) => m.userId !== Number(userId));
+  return {
+    ...room,
+    otherMembers,
+    lastSeenAt:
+      otherMembers?.length > 0 ? otherMembers[0].user.lastSeenAt : null,
+    selfMember,
   };
 }
 
@@ -317,7 +451,6 @@ export async function createChatRoom({
       role: "MEMBER",
     });
   }
-
   await prisma.chatMember.createMany({
     data: memberData,
   });
@@ -363,7 +496,6 @@ export async function createChatRoom({
 }
 
 export async function createLeadsChatRoom({
-  name,
   groupType,
   clientLeadId,
   projectGroupIds,
@@ -371,7 +503,7 @@ export async function createLeadsChatRoom({
   addClient,
   addRelatedSalesStaff,
   addRelatedDesigners,
-  chatPasswordHash,
+  createdById,
 }) {
   const projectWhere = {};
   if (groupType === "MULTI_PROJECT") {
@@ -395,24 +527,31 @@ export async function createLeadsChatRoom({
     },
   });
   let userIds = [];
-
+  let name = `${groupType === "CLIENT_TO_STAFF" ? "Lead" : "Projects"}${
+    clientLead.client.name
+  } #(${clientLead.code})`;
   if (groupType === "CLIENT_TO_STAFF") {
-    if (!chatPasswordHash && addClient) {
-      throw new Error("Chat password is required to add client to the room");
-    }
     if (addRelatedSalesStaff && clientLead.assignedTo) {
       userIds.push(clientLead.assignedTo.id.toString());
     }
   }
 
   const type = groupType;
+  const currentCountOfRooms = await prisma.chatRoom.count({
+    where: {
+      clientLeadId: parseInt(clientLeadId),
+      type,
+    },
+  });
+  name += ` #${currentCountOfRooms + 1}`;
+  const token = await generateChatPassword();
   const room = await prisma.chatRoom.create({
     data: {
       name,
       type,
       clientLeadId: clientLeadId ? parseInt(clientLeadId) : null,
       createdById: parseInt(createdById),
-      chatPasswordHash: chatPasswordHash || null,
+      chatAccessToken: token,
     },
   });
 
@@ -429,7 +568,6 @@ export async function createLeadsChatRoom({
       })),
     });
   }
-
   const assignments = clientLead.projects?.flatMap((p) => p.assignments);
   if (assignments && assignments.length > 0) {
     if (
@@ -446,6 +584,7 @@ export async function createLeadsChatRoom({
       userIds = userIds.concat(staffIds);
     }
   }
+
   // Add members
   const memberData = [];
 
@@ -466,7 +605,10 @@ export async function createLeadsChatRoom({
     }
   }
 
-  const filteredUserIds = userIds?.filter((id) => id !== createdById) || [];
+  let filteredUserIds = userIds?.filter((id) => id !== createdById) || [];
+  // make them unique
+  const uniqueUserIds = [...new Set(filteredUserIds)];
+  filteredUserIds = uniqueUserIds;
   for (const uid of filteredUserIds) {
     memberData.push({
       roomId: room.id,
@@ -478,7 +620,6 @@ export async function createLeadsChatRoom({
   await prisma.chatMember.createMany({
     data: memberData,
   });
-
   // Fetch complete room with members
   const completeRoom = await prisma.chatRoom.findUnique({
     where: { id: room.id },
@@ -502,7 +643,6 @@ export async function createLeadsChatRoom({
     },
   });
 
-  // Emit Socket.IO event to notify members
   try {
     await emitToAllUsersRelatedToARoom({
       roomId: room.id,
@@ -517,6 +657,56 @@ export async function createLeadsChatRoom({
   }
 
   return completeRoom;
+}
+export async function addClientToChatRoom(roomId) {
+  const room = await prisma.chatRoom.findUnique({
+    where: { id: parseInt(roomId) },
+    select: {
+      clientLeadId: true,
+      clientLead: {
+        select: {
+          id: true,
+          client: {
+            select: { id: true, name: true, email: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!room.clientLeadId) {
+    throw new Error("This room is not associated with any client lead");
+  }
+  const clientMember = await prisma.chatMember.findFirst({
+    where: {
+      roomId: parseInt(roomId),
+      clientId: room.clientLead.client.id,
+      isDeleted: false,
+    },
+  });
+  if (clientMember) {
+    throw new Error("Client is already a member of this chat room");
+  }
+  const newMember = await prisma.chatMember.create({
+    data: {
+      roomId: parseInt(roomId),
+      clientId: room.clientLead.client.id,
+      role: "MEMBER",
+    },
+  });
+  return newMember;
+}
+async function generateChatPassword() {
+  const charset =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+~`|}{[]:;?><,./-=";
+  let password = "";
+  for (let i = 0; i < 14; i++) {
+    const randomIndex = Math.floor(Math.random() * charset.length);
+    password += charset[randomIndex];
+  }
+  const token = uuidv4();
+
+  return token;
 }
 /**
  * Update chat room
@@ -542,7 +732,7 @@ export async function updateChatRoom(roomId, userId, updates) {
   ) {
     throw new Error("You don't have permission to update this room");
   }
-
+  let isMember = false;
   // check if empty update remove it
   for (const key in updates) {
     if (
@@ -552,11 +742,24 @@ export async function updateChatRoom(roomId, userId, updates) {
     ) {
       delete updates[key];
     }
+    if (key === "isMuted" || key === "isArchived") {
+      isMember = true;
+    }
   }
-  const update = await prisma.chatRoom.update({
-    where: { id: parseInt(roomId) },
-    data: updates,
-  });
+  console.log(updates, "updates in service");
+  console.log(isMember, "isMember in isMember");
+
+  const update = !isMember
+    ? await prisma.chatRoom.update({
+        where: { id: parseInt(roomId) },
+        data: updates,
+      })
+    : await prisma.chatMember.update({
+        where: {
+          id: member.id,
+        },
+        data: updates,
+      });
 
   // Emit update to all members
   await emitToAllUsersRelatedToARoom({
@@ -609,51 +812,4 @@ export async function deleteChatRoom(roomId, userId) {
   });
 
   return { message: "Chat room deleted successfully" };
-}
-
-/**
- * Get single room details
- */
-export async function getChatRoomById(roomId, userId) {
-  // Verify user is member
-  const member = await prisma.chatMember.findFirst({
-    where: {
-      roomId: parseInt(roomId),
-      userId: parseInt(userId),
-      isDeleted: false,
-    },
-  });
-
-  if (!member) {
-    throw new Error("You don't have access to this room");
-  }
-
-  const room = await prisma.chatRoom.findUnique({
-    where: { id: parseInt(roomId) },
-    include: {
-      createdBy: {
-        select: { id: true, name: true, email: true, role: true },
-      },
-      project: {
-        select: { id: true, groupTitle: true, groupId: true },
-      },
-      clientLead: {
-        select: {
-          id: true,
-          code: true,
-          client: {
-            select: { id: true, name: true, email: true },
-          },
-        },
-      },
-
-      multiProjectRooms: {
-        include: {
-          project: { select: { id: true, groupTitle: true } },
-        },
-      },
-    },
-  });
-
-  return room;
 }

@@ -1937,7 +1937,8 @@ model ChatRoom {
   allowChatForMembers Boolean @default(true)
 
   // Chat room password (instead of client)
-  chatPasswordHash String?
+  chatAccessToken String? @db.VarChar(255) @unique
+
   isChatEnabled    Boolean @default(true)
 
   createdById Int?

@@ -58,10 +58,15 @@ export function StartNewChat() {
     if (res?.status === 200) {
       setOpen(false);
       setSelectedUser(null);
-      console.log(res, "res new chat");
       const roomId = res?.id || res?.data?.id;
-      router.push(`/dashboard/chat?roomId=${roomId}`);
-      router.refresh();
+      // router.push(`/dashboard/chat?roomId=${roomId}&getChat=true`);
+      // set searchParams to window
+      window.history.replaceState(
+        null,
+        "",
+        `/dashboard/chat?roomId=${roomId}&getChat=true`
+      );
+      window.location.reload();
     }
   };
 
@@ -80,6 +85,9 @@ export function StartNewChat() {
         onClose={() => setOpen(false)}
         fullWidth
         maxWidth="sm"
+        sx={{
+          zIndex: 1302,
+        }}
       >
         <DialogTitle>Select a user to chat with</DialogTitle>
 

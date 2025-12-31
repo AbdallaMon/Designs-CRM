@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -18,6 +18,17 @@ import {
 } from "@mui/material";
 import { MdDelete } from "react-icons/md";
 import { LastSeenAt, OnlineStatus } from "./LastSeenAt";
+import { AddOrRemoveClient } from "../chat/utility/AddOrRemoveClient";
+import ChatAccessLinkBox from "../chat/utility/ChatAccessLinkBox";
+const getAvatarSrc = (entity) => {
+  return (
+    entity?.profilePicture ||
+    entity?.avatar ||
+    entity?.user?.profilePicture ||
+    entity?.user?.avatar ||
+    null
+  );
+};
 
 export function AddMembersDialog({
   open,
@@ -30,12 +41,41 @@ export function AddMembersDialog({
   onToggleSelectUser,
   onAddMembers,
   onRemoveMember,
-  getAvatarSrc,
+  reFetchMembers,
+  roomId,
+  clientLeadId,
+  reFetchRoom,
+  accessToken,
 }) {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      sx={{
+        zIndex: 1302,
+      }}
+    >
       <DialogTitle>Add Members to Chat</DialogTitle>
       <DialogContent sx={{ pt: 2 }}>
+        <Box sx={{ mb: 2 }}>
+          <AddOrRemoveClient
+            clientLeadId={clientLeadId}
+            roomId={roomId}
+            reFetchMembers={reFetchMembers}
+            handleClose={onClose}
+            isAdded={members?.some((m) => m.client)}
+            reFetchRoom={reFetchRoom}
+          />
+          <ChatAccessLinkBox
+            roomId={roomId}
+            accessToken={accessToken}
+            reFetchRoom={reFetchRoom}
+            disabled={!canManageMembers}
+            clientLeadId={clientLeadId}
+          />
+        </Box>
         <Stack spacing={2}>
           {/* Current Members Section */}
           {members.length > 0 && (
@@ -101,6 +141,8 @@ export function AddMembersDialog({
                             ? "Admin"
                             : m.role === "MODERATOR"
                             ? "Moderator"
+                            : m.client
+                            ? "Client"
                             : "Member"
                         }
                         color={
@@ -108,6 +150,8 @@ export function AddMembersDialog({
                             ? "primary"
                             : m.role === "MODERATOR"
                             ? "secondary"
+                            : m.client
+                            ? "info"
                             : "default"
                         }
                         size="small"

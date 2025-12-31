@@ -1,21 +1,23 @@
 import { CHAT_ROOM_TYPE_LABELS } from "../../utils/chatConstants";
 
 export const getRoomAvatar = (room) => {
+  if (!room) return null;
   if (room.avatarUrl) return room.avatarUrl;
   if (room.type === "STAFF_TO_STAFF") {
     const otherMember = room.otherMembers?.[0];
     return (
-      otherMember.user?.profilePicture || otherMember.client?.profilePicture
+      otherMember?.user?.profilePicture || otherMember?.client?.profilePicture
     );
   }
   return room.name?.charAt(0);
 };
 
 export const getRoomLabel = (room) => {
+  if (!room) return "Loading...";
   if (room.type === "STAFF_TO_STAFF") {
     const otherMember = room.otherMembers?.[0];
     if (otherMember?.user) {
-      return otherMember.user.name;
+      return otherMember?.user?.name;
     }
   }
   if (room.name) return room.name;

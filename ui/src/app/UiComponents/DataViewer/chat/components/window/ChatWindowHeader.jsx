@@ -1,15 +1,22 @@
 "use client";
 
 import React from "react";
-import { Box, IconButton, Avatar, Typography, Tooltip } from "@mui/material";
+import {
+  Box,
+  IconButton,
+  Avatar,
+  Typography,
+  Tooltip,
+  CircularProgress,
+} from "@mui/material";
 import { FaArrowLeft, FaPhone, FaVideo, FaUsers } from "react-icons/fa";
 import { CHAT_ROOM_TYPE_LABELS } from "../../utils/chatConstants";
-import ChatSettings from "../members/ChatSettings";
+import ChatSettings from "./ChatSettings";
 import { getRoomAvatar, getRoomLabel } from "../rooms/helpers";
+import { useChatRoom } from "../../hooks/useChatRoom";
 
 export function ChatWindowHeader({
-  room,
-  roomLabel,
+  roomId,
   onClose,
   isMobile,
   currentTab,
@@ -18,7 +25,14 @@ export function ChatWindowHeader({
   onShowAddMembers,
   members,
   reFetchRooms,
+  fetchMembers,
+  room,
+  loading,
+  fetchChatRoom,
 }) {
+  const roomLabelFinal = getRoomLabel(room);
+  const roomLabelToShow = roomLabelFinal;
+  const roomAvatar = getRoomAvatar(room);
   return (
     <Box
       sx={{
@@ -29,10 +43,31 @@ export function ChatWindowHeader({
         py: 1,
         borderBottom: "1px solid",
         borderColor: "divider",
+        position: "relative",
         background:
           "linear-gradient(135deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0) 100%)",
       }}
     >
+      {loading && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            backgroundColor: "rgba(255, 255, 255, 0.6)",
+            backdropFilter: "blur(4px)",
+            zIndex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            borderBottom: "1px solid",
+          }}
+        >
+          <CircularProgress size={24} />
+        </Box>
+      )}
       {/* Left Section: Room Info */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
         {((isMobile && onClose) || currentTab === 1) && (
@@ -61,8 +96,8 @@ export function ChatWindowHeader({
           onClick={() => setCurrentTab(1)}
         >
           <Avatar
-            src={getRoomAvatar(room)}
-            alt={getRoomLabel(room)}
+            src={roomAvatar}
+            alt={roomLabelToShow}
             sx={{
               width: 40,
               height: 40,
@@ -72,16 +107,18 @@ export function ChatWindowHeader({
               cursor: "pointer",
             }}
           >
-            {getRoomLabel(room).charAt(0)}
+            {roomLabelToShow.charAt(0)}
           </Avatar>
 
           <Box sx={{ cursor: "pointer" }}>
             <Typography variant="h6" sx={{ fontWeight: 600 }}>
-              {roomLabel}
+              {roomLabelToShow}
             </Typography>
-            <Typography variant="caption" color="textSecondary">
-              {CHAT_ROOM_TYPE_LABELS[room.type] || room.type}
-            </Typography>
+            {room && (
+              <Typography variant="caption" color="textSecondary">
+                {CHAT_ROOM_TYPE_LABELS[room.type] || room.type}
+              </Typography>
+            )}
           </Box>
         </Box>
       </Box>
@@ -137,6 +174,8 @@ export function ChatWindowHeader({
           members={members}
           room={room}
           reFetchRooms={reFetchRooms}
+          fetchMembers={fetchMembers}
+          fetchChatRoom={fetchChatRoom}
         />
       </Box>
     </Box>

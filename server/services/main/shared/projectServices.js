@@ -18,6 +18,10 @@ import {
   checkIfProjectHasStagesAndUpdateNextAndPrevious,
 } from "../contract/contractServices.js";
 import prisma from "../../../prisma/prisma.js";
+import {
+  addADesginerToAllRelatedProjectsRooms,
+  addMemberToRoomBySystem,
+} from "../chat/chatMemberServices.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -357,6 +361,10 @@ export async function assignProjectToUser({
       await addUsersToATeleChannelUsingQueue({
         clientLeadId: project.clientLeadId,
         usersList: [user],
+      });
+      await addADesginerToAllRelatedProjectsRooms({
+        clientLeadId: project.clientLeadId,
+        userId: user.id,
       });
       await notifyUsersAddedToProject({
         projectId: project.id,

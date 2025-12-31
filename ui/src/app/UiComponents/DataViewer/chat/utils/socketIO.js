@@ -1,6 +1,6 @@
 import io from "socket.io-client";
 
-let socket = null;
+export let socket = null;
 
 /**
  * Initialize Socket.IO connection
@@ -24,9 +24,13 @@ export const initSocket = (url, options = {}) => {
   });
 
   // Global event listeners
-  socket.on("connect", () => {});
+  socket.on("connect", () => {
+    console.log("✅ Socket connected:", socket.id);
+  });
 
-  socket.on("disconnect", (reason) => {});
+  socket.on("disconnect", (reason) => {
+    console.log("⚠️ Socket disconnected:", reason);
+  });
 
   socket.on("error", (error) => {
     console.error("⚠️ Socket.IO error:", error);

@@ -2,7 +2,7 @@ import { Menu, MenuItem } from "@mui/material";
 import { CHAT_ROOM_TYPES } from "../../utils";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
-import { FaArchive, FaBellSlash, FaTrash } from "react-icons/fa";
+import { FaArchive, FaBell, FaBellSlash, FaTrash } from "react-icons/fa";
 
 export function RoomActions({
   menuAnchor,
@@ -13,6 +13,9 @@ export function RoomActions({
   onArchiveRoom,
   setDeleteConfirm,
   setLeaveConfirm,
+  setMenuRoomId,
+  isMuted,
+  isArchived,
 }) {
   const { user, isLoggedIn } = useAuth();
   const isOwner = room?.createdBy?.id === user.id;
@@ -22,14 +25,25 @@ export function RoomActions({
       anchorEl={menuAnchor}
       open={Boolean(menuAnchor && menuRoomId === room.id)}
       onClose={handleMenuClose}
+      anchorOrigin={{
+        vertical: "bottom",
+        horizontal: "right",
+      }}
+      transformOrigin={{
+        vertical: "top",
+        horizontal: "right",
+      }}
+      sx={{
+        zIndex: 1302,
+      }}
     >
       <MenuItem
         onClick={() => {
-          onMuteRoom(room.id);
+          onMuteRoom(room.id, !isMuted);
           handleMenuClose();
         }}
       >
-        {room?.isMuted ? (
+        {isMuted ? (
           <>
             <FaBell size={14} style={{ marginRight: 8 }} />
             Unmute
@@ -43,12 +57,12 @@ export function RoomActions({
       </MenuItem>
       <MenuItem
         onClick={() => {
-          onArchiveRoom(menuRoomId);
+          onArchiveRoom(menuRoomId, !isArchived);
           handleMenuClose();
         }}
       >
         <FaArchive size={14} style={{ marginRight: 8 }} />
-        {room?.isArchived ? "Unarchive" : "Archive"}
+        {isArchived ? "Unarchive" : "Archive"}
       </MenuItem>
       {room.type !== CHAT_ROOM_TYPES.STAFF_TO_STAFF && isOwner && (
         <MenuItem

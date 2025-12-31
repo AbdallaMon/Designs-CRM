@@ -49,7 +49,6 @@ export function useChatFiles(
       if (searchQuery?.trim()) {
         queryParams += `q=${encodeURIComponent(searchQuery.trim())}&`;
       }
-      console.log("fileType in useChatFiles:", fileType);
       if (fileType?.length > 0) {
         queryParams += `type=${fileType}&`;
       }

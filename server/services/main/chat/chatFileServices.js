@@ -43,7 +43,6 @@ export async function getChatRoomFiles({
 
   // Build file type filter
   const typeFilter = buildTypeFilter(type);
-
   // Build search filter
   const searchFilter =
     search && search !== "undefined" && search?.trim().length > 0
@@ -67,10 +66,10 @@ export async function getChatRoomFiles({
     message: {
       roomId: parsedRoomId,
       isDeleted: false,
-      ...typeFilter,
       ...searchFilter,
       ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
     },
+    ...typeFilter,
   };
 
   const [attachments, total] = await Promise.all([
@@ -199,11 +198,7 @@ function addMonthGrouping(attachments, uniqueMonths) {
     const showMonthDivider = monthGroup !== previousMonthGroup;
     const month = fileDate.toISOString().slice(0, 7); // YYYY-MM
     previousMonthGroup = monthGroup;
-    console.log(countedMonths[month], "countedMonths[month]");
     if (countedMonths[month] === undefined) {
-      console.log("Incrementing uniqueMonths for", month);
-      console.log(uniqueMonths, "before incrementing");
-
       uniqueMonths[month] = uniqueMonths[month] + 1 || 1;
     }
     countedMonths[month] = true;
@@ -222,44 +217,30 @@ function addMonthGrouping(attachments, uniqueMonths) {
 function buildTypeFilter(type) {
   if (!type) {
     // Return all files/media
-    return {
-      OR: [
-        { type: { in: ["FILE", "IMAGE", "VIDEO", "VOICE"] } },
-        { attachments: { some: {} } },
-      ],
-    };
+    return {};
   }
 
   const typeMap = {
     image: {
-      OR: [
-        { type: "IMAGE" },
-        {
-          fileMimeType: {
-            in: ["image/jpeg", "image/png", "image/gif", "image/webp"],
-          },
-        },
-      ],
+      fileMimeType: {
+        in: ["image/jpeg", "image/png", "image/gif", "image/webp"],
+      },
     },
     video: {
-      OR: [
-        { type: "VIDEO" },
-        {
-          fileMimeType: {
-            in: ["video/mp4", "video/webm", "video/quicktime"],
-          },
-        },
-      ],
+      fileMimeType: {
+        in: ["video/mp4", "video/webm", "video/quicktime"],
+      },
     },
     audio: {
-      OR: [
-        { type: "VOICE" },
-        {
-          fileMimeType: {
-            in: ["audio/mpeg", "audio/wav", "audio/ogg"],
-          },
-        },
-      ],
+      fileMimeType: {
+        in: [
+          "audio/mpeg",
+          "audio/wav",
+          "audio/ogg",
+          "audio/webm",
+          "audio/webm;codecs=opus",
+        ],
+      },
     },
     document: {
       fileMimeType: {
@@ -269,11 +250,16 @@ function buildTypeFilter(type) {
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
           "application/vnd.ms-excel",
           "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          "application/vnd.ms-powerpoint",
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+          "text/plain",
+          "application/rtf",
+          "application/vnd.oasis.opendocument.text",
+          "application/x-zip-compressed",
+          "application/zip",
+          "application/x-rar-compressed",
         ],
       },
-    },
-    file: {
-      type: "FILE",
     },
   };
 

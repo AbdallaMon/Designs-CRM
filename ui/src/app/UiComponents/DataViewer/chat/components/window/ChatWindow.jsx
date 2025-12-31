@@ -56,6 +56,7 @@ import {
   emitStopTyping,
   emitPinMessage,
   emitUnpinMessage,
+  socket,
 } from "../../utils/socketIO";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useChatMembers } from "../../hooks/useChatMembers";
@@ -67,17 +68,16 @@ import { ConfirmDialog } from "../dialogs/ConfirmDialog";
 import PinnedMessages from "./PinnedMessages";
 import { ChatWindowHeader } from "./ChatWindowHeader";
 import { LoadMoreButton } from "../indicators/LoadMoreButton";
+import { useChatRoom } from "../../hooks/useChatRoom";
 
 export function ChatWindow({
-  room,
+  roomId,
   onClose,
   projectId = null,
   clientLeadId = null,
   isMobile = false,
   onRoomActivity = () => {},
   reFetchRooms = () => {},
-  setTotalUnread,
-  isTab,
 }) {
   const { user } = useAuth();
   const { setLoading: setToastLoading } = useToastContext();
@@ -95,27 +95,26 @@ export function ChatWindow({
   const typingTimeoutRef = useRef(null);
   const inputRef = useRef(null);
   const [pinnedMessages, setPinnedMessages] = useState([]);
+  const { room, loading: loadingRoom, fetchChatRoom } = useChatRoom(roomId);
+  const [loadingPinnedMessages, setLoadingPinnedMessages] = useState(false);
+  const fetchPinnedMessages = async () => {
+    if (!roomId) return;
 
-  const getRoomLabel = (room) => {
-    if (room.type === "STAFF_TO_STAFF") {
-      const otherMember = room.otherMembers?.[0];
-      if (otherMember?.user) {
-        return otherMember.user.name;
-      }
+    const response = await getData({
+      url: `shared/chat/${roomId}/pinned-messages`,
+      setLoading: setLoadingPinnedMessages,
+    });
+
+    if (response?.status === 200) {
+      setPinnedMessages(response.data || []);
     }
-    if (room.name) return room.name;
-    if (room.type === "CLIENT_TO_STAFF") {
-      const member = room.members?.find((m) => m.user);
-      return member?.user?.name || "Client";
-    }
-    return CHAT_ROOM_TYPE_LABELS[room.type] || room.type || "Chat";
   };
-  const roomLabel = getRoomLabel(room);
+
+  useEffect(() => {
+    if (roomId) fetchPinnedMessages();
+  }, [roomId]);
+
   // Get current user's role in the room
-  const currentUserMember = room?.members?.find(
-    (m) => m.userId === user?.id || m.clientId === user?.id
-  );
-  const currentUserRole = currentUserMember?.role || "MEMBER";
 
   // ✅ Confirm delete dialog states
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -170,35 +169,39 @@ export function ChatWindow({
     newMessagesCount,
     setNewMessagesCount,
     loadMore,
-  } = useChatMessages(room?.id);
+  } = useChatMessages(roomId);
   const {
     members,
     loading: membersLoading,
     fetchMembers,
     setMembers,
-  } = useChatMembers(room?.id);
+  } = useChatMembers(roomId);
   const cantLoad = !hasMore || loadingMore || initialLoading || loading;
+  const currentUserMember = members?.find(
+    (m) => m.userId === user?.id || m.clientId === user?.id
+  );
+  const currentUserRole = currentUserMember?.role || "MEMBER";
 
   // Join room when it changes
   useEffect(() => {
-    if (room?.id && user) {
-      joinChatRoom(room.id, user);
+    if (roomId && user && socket) {
+      joinChatRoom(roomId, user);
     }
-  }, [room?.id, user]);
+  }, [roomId, user, socket]);
 
   const emitTyping = useCallback(() => {
-    typing({ roomId: room?.id, user });
+    typing({ roomId: roomId, user });
     clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
       stopTyping();
     }, 3000);
-  }, [room?.id, user]);
+  }, [roomId, user]);
 
   // Function to emit stop typing
   const stopTyping = useCallback(() => {
     clearTimeout(typingTimeoutRef.current);
-    emitStopTyping({ roomId: room?.id, user });
-  }, [room?.id, user]);
+    emitStopTyping({ roomId: roomId, user });
+  }, [roomId, user]);
 
   useEffect(() => {
     //remove after 10 seconds
@@ -215,10 +218,10 @@ export function ChatWindow({
   useSocket({
     onMessageCreated: (data) => {
       // Only add if it's for this room and not from self
-      if (data.roomId === room?.id) {
+      if (data.roomId === roomId) {
         setMessages((prev) => [...prev, data]);
         onRoomActivity?.(data);
-        markMessageAsRead(room.id, data.id, user.id);
+        markMessageAsRead(roomId, data.id, user.id);
 
         setNewMessagesCount((prev) => prev + 1);
         // scrollToBottom();
@@ -228,8 +231,15 @@ export function ChatWindow({
         }, 100);
       }
     },
+    onMessagePinned: (data) => {
+      console.log("Message pinned event received:", data);
+      if (data.roomId === roomId) fetchPinnedMessages();
+    },
+    onMessageUnpinned: (data) => {
+      if (data.roomId === roomId) fetchPinnedMessages();
+    },
     onMessageEdited: (data) => {
-      if (data.roomId === room?.id) {
+      if (data.roomId === roomId) {
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === data.id ? { ...msg, isEdited: true, ...data } : msg
@@ -238,7 +248,7 @@ export function ChatWindow({
       }
     },
     onMessageDeleted: (data) => {
-      if (data.roomId === room?.id) {
+      if (data.roomId === roomId) {
         setMessages((prev) =>
           prev.map((msg) =>
             msg.id === data.messageId ? { ...msg, isDeleted: true } : msg
@@ -248,7 +258,7 @@ export function ChatWindow({
     },
 
     onTyping: (data) => {
-      if (data.roomId === room?.id && data.userId !== user.id) {
+      if (data.roomId === roomId && data.userId !== user.id) {
         const key = `${data.userId}:${data.roomId}`;
 
         setTypingUsers((prev) => {
@@ -259,24 +269,24 @@ export function ChatWindow({
       }
     },
     onStopTyping: (data) => {
-      if (data.roomId === room?.id) {
+      if (data.roomId === roomId) {
         setTypingUsers((prev) =>
           prev.filter((items) => items.userId !== data.userId)
         );
       }
     },
     onMemberJoined: (data) => {
-      if (data.roomId === room?.id) {
+      if (data.roomId === roomId) {
         setOnlineUsers((prev) => [...new Set([...prev, data.userId])]);
       }
     },
     onMemberLeft: (data) => {
-      if (data.roomId === room?.id) {
+      if (data.roomId === roomId) {
         setOnlineUsers((prev) => prev.filter((id) => id !== data.userId));
       }
     },
     onMembersAdded: (data) => {
-      if (data.roomId === room?.id) {
+      if (data.roomId === roomId) {
         setNewMembersAdded(data.newMembers);
         setNewMemberAlertOpen(true);
       }
@@ -310,7 +320,7 @@ export function ChatWindow({
     const response = await handleRequestSubmit(
       { userIds: memberIds },
       setToastLoading,
-      `shared/chat/rooms/${room.id}/members`,
+      `shared/chat/rooms/${roomId}/members`,
       false,
       "Adding members",
       false,
@@ -327,7 +337,7 @@ export function ChatWindow({
     const response = await handleRequestSubmit(
       { memberId: memberId },
       setToastLoading,
-      `shared/chat/rooms/${room.id}/members/${memberId}`,
+      `shared/chat/rooms/${roomId}/members/${memberId}`,
       false,
       "Removing member",
       false,
@@ -337,6 +347,15 @@ export function ChatWindow({
       fetchMembers();
     }
   };
+  const toggleSelectUser = useCallback((userToToggle) => {
+    setSelectedUsers((prev) => {
+      const exists = prev.some((u) => u.id === userToToggle.id);
+      if (exists) {
+        return prev.filter((u) => u.id !== userToToggle.id);
+      }
+      return [...prev, userToToggle];
+    });
+  }, []);
 
   const confirmRemoveMember = useCallback(
     (member) => {
@@ -375,21 +394,21 @@ export function ChatWindow({
     (message) => {
       emitPinMessage({
         messageId: message.id,
-        roomId: room?.id,
+        roomId: roomId,
         userId: user?.id,
       });
     },
-    [room?.id, user?.id]
+    [roomId, user?.id]
   );
   const handleUnPinMessage = useCallback(
     (message) => {
       emitUnpinMessage({
         messageId: message.id,
-        roomId: room?.id,
+        roomId: roomId,
         userId: user?.id,
       });
     },
-    [room?.id, user?.id]
+    [roomId, user?.id]
   );
 
   // ✅ Handler to remove unread count badge
@@ -467,26 +486,7 @@ export function ChatWindow({
       </Box>
     );
   }
-
-  const getAvatarSrc = useCallback((entity) => {
-    return (
-      entity?.profilePicture ||
-      entity?.avatar ||
-      entity?.user?.profilePicture ||
-      entity?.user?.avatar ||
-      null
-    );
-  }, []);
-
-  const toggleSelectUser = useCallback((userToToggle) => {
-    setSelectedUsers((prev) => {
-      const exists = prev.some((u) => u.id === userToToggle.id);
-      if (exists) {
-        return prev.filter((u) => u.id !== userToToggle.id);
-      }
-      return [...prev, userToToggle];
-    });
-  }, []);
+  // const toggleSelectUser = () => {};
 
   return (
     <Paper
@@ -501,8 +501,7 @@ export function ChatWindow({
     >
       {/* Header Section */}
       <ChatWindowHeader
-        room={room}
-        roomLabel={roomLabel}
+        roomId={roomId}
         onClose={onClose}
         isMobile={isMobile}
         currentTab={currentTab}
@@ -511,14 +510,19 @@ export function ChatWindow({
         onShowAddMembers={() => setShowAddMembers(true)}
         members={members}
         reFetchRooms={reFetchRooms}
+        fetchMembers={fetchMembers}
+        fetchChatRoom={fetchChatRoom}
+        loading={loadingRoom}
+        room={room}
       />
       <PinnedMessages
-        roomId={room?.id}
+        roomId={roomId}
         handleJumpToMessage={onJumpToMessage}
         loadingJumpToMessage={loadingJumpToMessage}
         chatContainerRef={scrollContainerRef}
         pinnedMessages={pinnedMessages}
         setPinnedMessages={setPinnedMessages}
+        loadingPinnedMessages={loadingPinnedMessages}
       />
       {/* Tab Content */}
 
@@ -601,7 +605,7 @@ export function ChatWindow({
                   currentUserId={user.id}
                   isCurrentUserAdmin={isAdmin}
                   currentUserRole={currentUserRole}
-                  pinnedMessages={room?.pinnedMessages}
+                  pinnedMessages={pinnedMessages}
                   room={room}
                   onReply={setReplyingTo}
                   onEdit={(msgId) => {
@@ -669,41 +673,11 @@ export function ChatWindow({
         </Box>
       </>
 
-      <Dialog
-        open={currentTab === 1}
-        onClose={() => setCurrentTab(0)}
-        fullWidth
-        maxWidth="md"
-        sx={{
-          "& .MuiPaper-root": {
-            margin: "10px !important",
-            width: "calc(100% - 20px)",
-          },
-        }}
-      >
-        <DialogTitle>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Typography>Chat Files</Typography>
-            <IconButton onClick={() => setCurrentTab(0)}>
-              <FaTimes />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        <DialogContent
-          dividers
-          sx={{
-            padding: "12px !important",
-          }}
-        >
-          <ChatFilesTab roomId={room?.id} />
-        </DialogContent>
-      </Dialog>
+      <ChatFilesTab
+        roomId={roomId}
+        currentTab={currentTab}
+        setCurrentTab={setCurrentTab}
+      />
 
       {/* Add Members Dialog */}
       <AddMembersDialog
@@ -717,7 +691,11 @@ export function ChatWindow({
         onToggleSelectUser={toggleSelectUser}
         onAddMembers={handleAddMembers}
         onRemoveMember={confirmRemoveMember}
-        getAvatarSrc={getAvatarSrc}
+        reFetchMembers={fetchMembers}
+        clientLeadId={clientLeadId}
+        roomId={roomId}
+        reFetchRoom={fetchChatRoom}
+        accessToken={room?.chatAccessToken}
       />
 
       {/* Confirm Dialog (reused for delete & remove) */}

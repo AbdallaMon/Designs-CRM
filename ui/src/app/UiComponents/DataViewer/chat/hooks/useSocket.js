@@ -6,6 +6,7 @@ import { useSocket as useSocketContext } from "@/app/providers/SocketProvider";
 export function useSocket(handlers = {}) {
   const { socket } = useSocketContext();
   const handlersRef = useRef(handlers);
+
   useEffect(() => {
     handlersRef.current = handlers;
   }, [handlers]);
@@ -13,7 +14,6 @@ export function useSocket(handlers = {}) {
   useEffect(() => {
     if (!socket) return;
 
-    // ---- event -> handler-key mapping ----
     const events = {
       "message:created": "onMessageCreated",
       "message:edited": "onMessageEdited",
@@ -29,7 +29,6 @@ export function useSocket(handlers = {}) {
       "call:initiated": "onCallInitiated",
       "call:ended": "onCallEnded",
 
-      // generic notification
       notification: "onNotification",
       "notification:user_typing": "onTypingNotification",
       "notification:user_stopped_typing": "onStopTypingNotification",
@@ -39,24 +38,29 @@ export function useSocket(handlers = {}) {
       "notification:room_created": "onRoomCreatedNotification",
       "notification:room_updated": "onRoomUpdated",
 
-      disconnect: () => {
-        console.log("Socket disconnected");
-      },
+      // always ok as inline
+      disconnect: () => console.log("Socket disconnected"),
     };
 
-    // ---- stable listener functions (must be same ref for off()) ----
     const listeners = {};
 
-    Object.entries(events).forEach(([eventName, handlerKey]) => {
+    Object.entries(events).forEach(([eventName, handlerKeyOrFn]) => {
+      // ✅ skip events that you didn't provide a handler for
+      if (typeof handlerKeyOrFn === "string") {
+        const hasHandler =
+          typeof handlersRef.current?.[handlerKeyOrFn] === "function";
+        if (!hasHandler) return;
+      }
+
       const listener = (data) => {
-        const fn = handlersRef.current?.[handlerKey];
+        if (typeof handlerKeyOrFn === "function") return handlerKeyOrFn(data);
+        const fn = handlersRef.current?.[handlerKeyOrFn];
         if (typeof fn === "function") fn(data);
       };
+
       listeners[eventName] = listener;
       socket.on(eventName, listener);
     });
-
-    // Special routing inside "notification"
 
     return () => {
       Object.entries(listeners).forEach(([eventName, listener]) => {
@@ -64,5 +68,14 @@ export function useSocket(handlers = {}) {
       });
     };
   }, [socket]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const any = (event, ...args) =>
+      console.log("SOCKET ANY:", event, args?.[0]);
+    socket.onAny(any);
+    return () => socket.offAny(any);
+  }, [socket]);
+
   return { socket };
 }

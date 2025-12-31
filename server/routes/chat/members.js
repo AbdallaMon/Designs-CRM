@@ -46,7 +46,11 @@ router.post("/:roomId/members", async (req, res) => {
 
     const room = await addMembersToRoom({ roomId, userId, userIds });
 
-    res.json({ status: 200, data: room });
+    res.json({
+      status: 200,
+      data: room,
+      message: "Members added successfully",
+    });
   } catch (error) {
     console.error("Add members error:", error);
     const statusCode = error.message?.includes("permission") ? 403 : 500;

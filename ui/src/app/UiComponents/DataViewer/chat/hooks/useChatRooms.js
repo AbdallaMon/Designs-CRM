@@ -175,7 +175,7 @@ export function useChatRooms({
     [setToastLoading]
   );
   const createLeadRoom = useCallback(
-    async (roomData) => {
+    async (roomData, onClose) => {
       const response = await handleRequestSubmit(
         roomData,
         setToastLoading,
@@ -188,7 +188,8 @@ export function useChatRooms({
 
       if (response?.status === 200) {
         refreshRooms();
-        return response.data;
+        if (onClose) onClose();
+        return response;
       }
       return null;
     },

@@ -4,17 +4,6 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Paper,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  CircularProgress,
   Stack,
   Typography,
   useMediaQuery,
@@ -41,6 +30,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { CreateGroupDialog } from "./components/dialogs";
 import CreateLeadChatGroup from "./components/dialogs/CreateLeadChatGroup";
+import { useChatRoom } from "./hooks/useChatRoom";
 
 export function ChatContainer({
   type = "page", // "page" | "widget" | "project" | "clientLead" | "tab"
@@ -53,6 +43,7 @@ export function ChatContainer({
   const searchParams = useSearchParams();
 
   const [selectedRoom, setSelectedRoom] = useState(null);
+
   const [createRoomOpen, setCreateRoomOpen] = useState(false);
   const [viewMode, setViewMode] = useState("LIST"); // LIST | CHAT (mobile only)
   const [typingRooms, setTypingRooms] = useState({});
@@ -102,14 +93,17 @@ export function ChatContainer({
     onRoomCreatedNotification: (data) => {
       const { roomId, userId } = data;
       const id = searchParams?.get("roomId");
+      console.log("room created notification", data);
       if (roomId !== parseInt(id)) {
         fetchRooms(false);
       }
     },
     onRoomUpdated: (data) => {
+      console.log("room updated notification", data);
       fetchRooms(false);
     },
     onMessagesReadNotification: (data) => {
+      console.log("messages read notification", data);
       const { count, roomId } = data;
       setTotalUnread((prev) => Math.max(0, prev - count));
       setUnreadCounts((prev) => {
@@ -119,6 +113,7 @@ export function ChatContainer({
       });
     },
     onNewMessageNotification: (data) => {
+      console.log("new message notification", data);
       fetchRooms(false);
       // Play sound in widget if message is from another user and not in selected room
       if (
@@ -135,6 +130,8 @@ export function ChatContainer({
     },
     onRoomDeletedNotification: (data) => {
       const { roomId } = data;
+      console.log("room deleted notification", data);
+
       if (selectedRoom?.id === roomId) {
         setSelectedRoom(null);
         if (type === "page" && isMobile) {
@@ -145,6 +142,7 @@ export function ChatContainer({
       fetchRooms(false);
     },
     onTypingNotification: (data) => {
+      console.log("typing notification", data);
       // Only show typing if not in the room and not from self
       if (data.roomId !== selectedRoom?.id && data.userId !== user?.id) {
         setTypingRooms((prev) => {
@@ -211,20 +209,17 @@ export function ChatContainer({
   // HANDLERS
   // ============================================
 
-  const handleMuteRoom = async (roomId) => {
-    const room = rooms.find((r) => r.id === roomId);
-    await updateRoom(roomId, { isMuted: !room?.isMuted });
+  const handleMuteRoom = async (roomId, isMuted) => {
+    await updateRoom(roomId, { isMuted });
   };
 
-  const handleArchiveRoom = async (roomId) => {
-    const room = rooms.find((r) => r.id === roomId);
-    await updateRoom(roomId, { isArchived: !room?.isArchived });
+  const handleArchiveRoom = async (roomId, isArchived) => {
+    await updateRoom(roomId, { isArchived });
   };
 
   const handleDeleteRoom = async (roomId) => {
     const targetRoom = rooms.find((r) => r.id === roomId);
     if (targetRoom?.type === CHAT_ROOM_TYPES.STAFF_TO_STAFF) return;
-
     await deleteRoom(roomId);
     if (selectedRoom?.id === roomId) {
       setSelectedRoom(null);
@@ -283,7 +278,7 @@ export function ChatContainer({
   const renderChatWindow = () =>
     selectedRoom ? (
       <ChatWindow
-        room={selectedRoom}
+        roomId={selectedRoom?.id}
         onClose={() => {
           if (type === "widget") {
             setViewMode("LIST");
@@ -471,7 +466,7 @@ function RenderWidgetChat({
           elevation={24}
           sx={{
             position: "fixed",
-            zIndex: 1000,
+            zIndex: 1301,
             bottom: isMobile ? 12 : 80,
             right: isMobile ? 12 : 16,
             left: isMobile ? 12 : "auto",
@@ -506,7 +501,6 @@ function RenderWidgetChat({
                     : `/dashboard/chat`
                 }
                 passHref
-                legacyBehavior
               >
                 <IconButton
                   size="small"

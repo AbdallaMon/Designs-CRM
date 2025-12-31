@@ -9,10 +9,10 @@ import { Noto_Kufi_Arabic } from "next/font/google";
 import UploadingProvider, {
   UploadingContext,
 } from "./providers/UploadingProgressProvider";
-import SocketProvider from "./providers/SocketProvider";
 
 import { Suspense } from "react";
 import ServiceWorkerRegister from "./UiComponents/DataViewer/utility/RegisterServiceWorker";
+import SocketProvider from "./providers/SocketProvider";
 
 const noto = Noto_Kufi_Arabic({
   weight: ["400", "500", "700"],
@@ -97,7 +97,7 @@ export default function RootLayout({ children }) {
               <ToastProvider>
                 <AuthProvider>
                   <DotsLoader />
-                  {children}
+                  <SocketProvider>{children}</SocketProvider>
                 </AuthProvider>
                 <ServiceWorkerRegister />
               </ToastProvider>

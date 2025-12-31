@@ -1,11 +1,8 @@
 "use client";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
-import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput";
 import UploadImageWithAvatarPreview from "@/app/UiComponents/formComponents/UploadImageWithAvatarPreview";
 import {
   Avatar,
@@ -22,6 +19,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { MdSettings } from "react-icons/md";
+import { ConfirmDialog } from "../dialogs";
 
 const AdminSettings = [
   {
@@ -57,16 +55,22 @@ const sharedGroupSettings = [
     key: "avatarUrl",
   },
 ];
-export default function ChatSettings({ members, room, reFetchRooms }) {
+export default function ChatSettings({
+  members,
+  room,
+  reFetchRooms,
+  fetchMembers,
+  fetchChatRoom,
+}) {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
-  const currentMember = members?.find((m) => m.user.id === user.id);
+  const currentMember = members?.find((m) => m.user?.id === user.id);
   const isAdmin =
     checkIfAdmin(user) ||
     room?.createdBy?.id === user.id ||
     currentMember?.role === "MODERATOR";
   const owner = room?.createdBy?.id === user.id;
-  const isGroupManagedByAdmin = checkIfAdmin(room?.createdBy);
+  const isGroupManagedByAdmin = room ? checkIfAdmin(room?.createdBy) : false;
 
   const settings = isAdmin
     ? [...AdminSettings, ...sharedGroupSettings]
@@ -82,8 +86,9 @@ export default function ChatSettings({ members, room, reFetchRooms }) {
   }
   if (
     (isGroupManagedByAdmin && !isAdmin) ||
-    room.type === "STAFF_TO_STAFF" ||
-    (room.type === "GROUP" && !owner)
+    room?.type === "STAFF_TO_STAFF" ||
+    (room?.type === "GROUP" && !owner) ||
+    !currentMember
   ) {
     return null;
   }
@@ -104,6 +109,8 @@ export default function ChatSettings({ members, room, reFetchRooms }) {
         settings={settings}
         isAdmin={isAdmin}
         reFetchRooms={reFetchRooms}
+        fetchMembers={fetchMembers}
+        fetchChatRoom={fetchChatRoom}
       />
     </>
   );
@@ -115,6 +122,8 @@ function ChatSettingsModal({
   settings,
   isAdmin,
   reFetchRooms,
+  fetchMembers,
+  fetchChatRoom,
 }) {
   const [formValues, setFormValues] = useState({});
   const { loading, setLoading } = useToastContext();
@@ -130,21 +139,36 @@ function ChatSettingsModal({
       false,
       "PUT"
     );
+
     if (req?.status === 200) {
-      reFetchRooms();
+      fetchChatRoom();
+      if (
+        room?.avatarUrl !== formValues.avatarUrl ||
+        room?.name !== formValues.name
+      ) {
+        reFetchRooms();
+      }
       handleClose();
     }
   }
   useEffect(() => {
     const initialValues = {};
     settings.forEach((setting) => {
-      initialValues[setting.key] = room[setting.key] || "";
+      initialValues[setting.key] = room?.[setting.key] || "";
     });
     setFormValues(initialValues);
   }, [room, settings]);
   return (
     <>
-      <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        maxWidth="lg"
+        fullWidth
+        sx={{
+          zIndex: 1302,
+        }}
+      >
         <DialogTitle>Chat Settings</DialogTitle>
         <DialogContent dividers>
           <Box sx={{ mt: 2 }}>

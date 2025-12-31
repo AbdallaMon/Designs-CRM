@@ -76,13 +76,17 @@ export default function CreateLeadChatGroup({
       </DialogTitle>
 
       <DialogContent sx={{ py: 2 }} dividers>
-        <LeadChatGroupForm clientLeadId={clientLeadId} onCreate={onCreate} />
+        <LeadChatGroupForm
+          clientLeadId={clientLeadId}
+          onCreate={onCreate}
+          onClose={onClose}
+        />
       </DialogContent>
     </Dialog>
   );
 }
 
-function LeadChatGroupForm({ clientLeadId, onCreate }) {
+function LeadChatGroupForm({ clientLeadId, onCreate, onClose }) {
   const [step, setStep] = useState(0);
 
   const [data, setData] = useState({
@@ -98,7 +102,6 @@ function LeadChatGroupForm({ clientLeadId, onCreate }) {
     addRelatedDesigners: false,
 
     // required only if addClient = true
-    chatPasswordHash: "",
   });
 
   const { setAlertError } = useAlertContext();
@@ -130,16 +133,6 @@ function LeadChatGroupForm({ clientLeadId, onCreate }) {
         if (!hasAny) {
           return "Please choose at least one option (client / sales staff / designers).";
         }
-
-        if (data.addClient) {
-          const v = (data.chatPasswordHash || "").trim();
-          if (!v) {
-            return "Chat password is required when adding a client (for privacy).";
-          }
-          if (v.length < 4) {
-            return "Chat password must be at least 4 characters.";
-          }
-        }
       }
 
       if (isMultiProject) {
@@ -156,12 +149,6 @@ function LeadChatGroupForm({ clientLeadId, onCreate }) {
     return null;
   }
 
-  const currentError = useMemo(
-    () => validateCurrentStep(),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [step, data]
-  );
-
   function handleNext() {
     const err = validateCurrentStep();
     if (err) {
@@ -171,7 +158,7 @@ function LeadChatGroupForm({ clientLeadId, onCreate }) {
 
     if (step === steps.length - 1) {
       // final step
-      onCreate(data); // ✅ now sends projectGroupIds: number[]
+      onCreate({ ...data, clientLeadId }, onClose); // ✅ now sends projectGroupIds: number[]
       return;
     }
 
@@ -206,7 +193,6 @@ function LeadChatGroupForm({ clientLeadId, onCreate }) {
                 addClient: false,
                 addRelatedSalesStaff: false,
                 addRelatedDesigners: false,
-                chatPasswordHash: "",
               }));
             }}
           />
@@ -351,19 +337,6 @@ function ClientToStaffQuestions({ data, onChange }) {
               </Box>
             }
           />
-
-          {data.addClient && (
-            <Box sx={{ mt: 1 }}>
-              <TextField
-                fullWidth
-                value={data.chatPasswordHash}
-                onChange={(e) => onChange("chatPasswordHash", e.target.value)}
-                label="Chat Password (saved as hash)"
-                placeholder="Enter a password the client will use"
-                helperText="Why? The client will enter this password to access the chat for privacy. We store only the hash."
-              />
-            </Box>
-          )}
         </Box>
 
         <Box

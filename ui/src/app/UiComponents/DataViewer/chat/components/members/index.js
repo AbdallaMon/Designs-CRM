@@ -1,3 +1,3 @@
 export { AddMembersDialog } from "./AddMembersDialog";
 export { LastSeenAt, OnlineStatus } from "./LastSeenAt";
-export { default as ChatSettings } from "./ChatSettings";
+export { default as ChatSettings } from "../window/ChatSettings";

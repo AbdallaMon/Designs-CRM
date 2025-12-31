@@ -364,7 +364,6 @@ export const ProjectDetails = ({
   const { setAlertError } = useAlertContext();
   const isAdmin = checkIfAdmin(user);
   const isDesigner = checkIfADesigner(user);
-  console.log(isDesigner, "isDesigner");
   //if designer he can edit area only
   const [anchorEl, setAnchorEl] = useState(null);
   const menuOpen = Boolean(anchorEl);

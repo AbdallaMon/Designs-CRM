@@ -40,15 +40,10 @@ export const ProjectsList = ({ userId }) => {
     totalPages,
     filters,
     setFilters,
+    setRender,
   } = useDataFetcher(`shared/projects/user-profile/${userId}?&`, false);
   const handleProjectUpdate = (updatedProject) => {
-    setData(
-      projects.map((project) =>
-        project.id === updatedProject.id
-          ? { ...project, ...updatedProject }
-          : project
-      )
-    );
+    setRender((prev) => !prev);
   };
 
   return (
