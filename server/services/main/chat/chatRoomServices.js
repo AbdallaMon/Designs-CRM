@@ -1,6 +1,4 @@
-import { th } from "@faker-js/faker";
 import prisma from "../../../prisma/prisma.js";
-import { getIo } from "../../socket.js";
 import { emitToAllUsersRelatedToARoom } from "./chatMessageServices.js";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -237,15 +235,15 @@ export async function getChatRooms({
       const otherMembers = room.members.filter(
         (m) => m.userId !== parsedUserId
       );
-
-      const unreadCount = await prisma.chatMessage.count({
-        where: {
-          roomId: room.id,
-          senderId: { not: parsedUserId },
-          readReceipts: {
-            none: { memberId: selfMember.id },
-          },
+      const unreadwhere = {
+        roomId: room.id,
+        senderId: { not: parsedUserId },
+        readReceipts: {
+          none: { memberId: selfMember.id },
         },
+      };
+      const unreadCount = await prisma.chatMessage.count({
+        where: unreadwhere,
       });
 
       const lastMessage = room.messages?.[0] || null;
@@ -275,7 +273,6 @@ export async function getChatRooms({
  * Get single room details
  */
 export async function verifyRoomAccessUsingtoken(token) {
-  console.log(token, "token");
   const room = await prisma.chatRoom.findFirst({
     where: { chatAccessToken: token },
   });

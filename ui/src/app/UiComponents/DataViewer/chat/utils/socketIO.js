@@ -160,3 +160,7 @@ export const markMessagesRead = (roomId, userId) => {
 export const markMessageAsRead = (roomId, messageId, userId) => {
   emitSocket("message:mark_read", { roomId, messageId, userId });
 };
+
+export const forwardMultipleMessages = ({ roomsIds, messageIds, userId }) => {
+  emitSocket("messages:forward", { roomsIds, messageIds, userId });
+};

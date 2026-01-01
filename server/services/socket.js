@@ -6,6 +6,7 @@ import {
   deleteMessage,
   editMessage,
   emitToAllUsersRelatedToARoom,
+  forwardMultipleMessages,
   markAMessageAsRead,
   markMessagesAsRead,
   pinMessage,
@@ -82,22 +83,18 @@ export function initSocket(httpServer) {
     clientId = !clientId ? socket.handshake.query.clientId : clientId;
     if (userId) {
       socket.join(`user:${userId}`);
-      console.log("joined user room:", `user:${userId}`, "socket:", socket.id);
     } else {
       if (clientId) {
         socket.join(`client:${clientId}`);
       }
-      console.log("NO userId in handshake.query", socket.handshake.query);
     }
     // ==================== EXISTING HEARTBEAT ====================
 
     // ==================== CHAT ROOM EVENTS ====================
     socket.on("user:online", () => {
-      console.log("Updating last seen for user online:", userId);
       updateLastSeen(userId);
     });
     socket.on("client:online", async () => {
-      console.log("Updating last seen for user online:", clientId);
       await updateLastSeenByClientId(clientId);
     });
     /**
@@ -106,13 +103,11 @@ export function initSocket(httpServer) {
     socket.on("join_room", async (data) => {
       const { roomId } = data;
       if (!roomId) return;
-
       // Verify user is member of room
       const member = await getChatMember({
         roomId: roomId,
         userId: userId,
       });
-      console.log(userId, "member of room check:", member);
 
       if (!member) {
         socket.emit("error", { message: "Not a member of this room" });
@@ -129,7 +124,6 @@ export function initSocket(httpServer) {
 
       // Join new room
       socket.join(`room:${roomId}`);
-      console.log("joined room:", `room:${roomId}`, "socket:", socket.id);
       // Notify others in room
       socket.to(`room:${roomId}`).emit("member:joined", {
         userId,
@@ -163,7 +157,6 @@ export function initSocket(httpServer) {
 
       // Join new room
       socket.join(`room:${roomId}`);
-      console.log("joined room:", `room:${roomId}`, "socket:", socket.id);
       // Notify others in room
       socket.to(`room:${roomId}`).emit("member:joined", {
         roomId,
@@ -171,6 +164,7 @@ export function initSocket(httpServer) {
         timestamp: new Date(),
       });
     });
+
     /**
      * Leave a chat room
      */
@@ -290,7 +284,14 @@ export function initSocket(httpServer) {
       }
     });
     // ==================== MESSAGE EVENTS ====================
-
+    socket.on("messages:forward", async (data) => {
+      const { roomsIds, messageIds } = data;
+      await forwardMultipleMessages({
+        roomsIds,
+        messageIds,
+        userId,
+      });
+    });
     /**
      * Edit message (broadcast handled by service, but we can also handle here)
      */

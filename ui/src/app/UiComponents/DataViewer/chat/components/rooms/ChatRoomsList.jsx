@@ -35,6 +35,7 @@ import {
   FaTrash,
   FaPlus,
   FaExternalLinkAlt,
+  FaCheck,
 } from "react-icons/fa";
 import {
   CHAT_ROOM_TYPE_LABELS,
@@ -77,6 +78,9 @@ export function ChatRoomsList({
   loadMoreRooms,
   isTab = false,
   clientLeadId = null,
+  isForward = false,
+  selectedForwardRooms = [],
+  onSelectForwardRoom,
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [menuAnchor, setMenuAnchor] = useState(null);
@@ -184,8 +188,8 @@ export function ChatRoomsList({
           justifyContent: "space-between",
         }}
       >
-        {!isTab && <StartNewChat />}
-        {!isWidget && (
+        {!isTab && !isForward && <StartNewChat />}
+        {!isWidget && !isForward && (
           <Box sx={{ display: "flex" }}>
             <Button
               color="primary"
@@ -240,9 +244,11 @@ export function ChatRoomsList({
           }}
         />
       </Box>
-      <Box>
-        <ChatChips onSelect={onSelectChatType} isTab={isTab} />
-      </Box>
+      {!isForward && (
+        <Box>
+          <ChatChips onSelect={onSelectChatType} isTab={isTab} />
+        </Box>
+      )}
 
       {/* Rooms list */}
       <List
@@ -276,17 +282,21 @@ export function ChatRoomsList({
             const isArchived = member?.isArchived;
             const unReadCount = getUnreadCount(room);
             const roomLabel = getRoomLabel(room);
+            const isSelected = selectedForwardRooms?.find(
+              (r) => r.id === room.id
+            );
             return (
               <ListItem
                 key={room.id}
                 disablePadding
                 sx={{
-                  bgcolor:
-                    selectedRoomId === room.id
-                      ? "action.selected"
-                      : unReadCount > 0
-                      ? "primary.lighter"
-                      : "transparent",
+                  bgcolor: isSelected
+                    ? "action.selected"
+                    : selectedRoomId === room.id
+                    ? "action.selected"
+                    : unReadCount > 0
+                    ? "primary.lighter"
+                    : "transparent",
                   "&:hover": {
                     bgcolor: "action.hover",
                     "& .MuiIconButton-root": {
@@ -310,43 +320,71 @@ export function ChatRoomsList({
                       alignItems: "center",
                     }}
                   >
-                    <Tooltip title="Open chat in new window">
+                    {!isForward && (
+                      <Tooltip title="Open chat in new window">
+                        <IconButton
+                          edge="start"
+                          size="small"
+                          sx={{
+                            opacity: 0.5,
+                            transition: "opacity 0.2s ease",
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const url = new URL(
+                              window.location.origin + "/dashboard/chat"
+                            );
+                            url.searchParams.set("roomId", room.id);
+                            url.searchParams.set("getRoom", "true");
+                            window.open(url.toString(), "_blank");
+                          }}
+                        >
+                          <FaExternalLinkAlt size={14} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {!isForward && (
                       <IconButton
-                        edge="start"
+                        edge="end"
                         size="small"
+                        onClick={(e) => handleMenuOpen(e, room.id)}
                         sx={{
                           opacity: 0.5,
                           transition: "opacity 0.2s ease",
                         }}
+                      >
+                        <FaEllipsisV size={14} />
+                      </IconButton>
+                    )}
+                    {isForward && (
+                      <IconButton
+                        edge="end"
+                        size="small"
                         onClick={(e) => {
                           e.stopPropagation();
-                          const url = new URL(
-                            window.location.origin + "/dashboard/chat"
-                          );
-                          url.searchParams.set("roomId", room.id);
-                          url.searchParams.set("getRoom", "true");
-                          window.open(url.toString(), "_blank");
+                          onSelectForwardRoom(room, isSelected);
+                        }}
+                        sx={{
+                          opacity: 0.5,
+                          transition: "opacity 0.2s ease",
                         }}
                       >
-                        <FaExternalLinkAlt size={14} />
+                        {isSelected ? (
+                          <FaCheck size={14} />
+                        ) : (
+                          <FaPlus size={14} />
+                        )}
                       </IconButton>
-                    </Tooltip>
-                    <IconButton
-                      edge="end"
-                      size="small"
-                      onClick={(e) => handleMenuOpen(e, room.id)}
-                      sx={{
-                        opacity: 0.5,
-                        transition: "opacity 0.2s ease",
-                      }}
-                    >
-                      <FaEllipsisV size={14} />
-                    </IconButton>
+                    )}
                   </Box>
                 }
               >
                 <ListItemButton
-                  onClick={() => onSelectRoom(room)}
+                  onClick={() =>
+                    isForward
+                      ? onSelectForwardRoom(room, isSelected)
+                      : onSelectRoom(room)
+                  }
                   // component={Link}
                   // href={`?roomId=${room.id}`}
                   sx={{

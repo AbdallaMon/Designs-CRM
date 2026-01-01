@@ -63,7 +63,6 @@ export async function getChatRoomFiles({
     },
     ...typeFilter,
   };
-
   const [attachments, total] = await Promise.all([
     prisma.chatAttachment.findMany({
       where,
@@ -87,13 +86,7 @@ export async function getChatRoomFiles({
             content: true,
             createdAt: true,
             senderId: true,
-            senderClient: {
-              select: {
-                id: true,
-                name: true,
-                profilePicture: true,
-              },
-            },
+
             sender: {
               select: {
                 id: true,
@@ -179,13 +172,8 @@ function addMonthGrouping(attachments, uniqueMonths) {
       content: attachment.content,
       sender: attachment.message.sender
         ? attachment.message.sender
-        : attachment.message.senderClient
-        ? {
-            id: attachment.message.client.id,
-            name: attachment.message.client.name,
-            isClient: true,
-          }
-        : null,
+        : attachment.message.client,
+
       createdAt: attachment.message.createdAt,
       month: attachment.message.createdAt.toISOString().slice(0, 7), // YYYY-MM
     };

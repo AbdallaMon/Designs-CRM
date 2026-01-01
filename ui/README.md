@@ -14,8 +14,6 @@ Uuvzio1mIpURqzci
 
 # Changelog
 
-- If searchParams getRoom true and roomId doent load til u fetch the room details from backend and then open the chat.
-- Client lead page
-- Handle socket connection for client
-- check online status for client also
-- Add name in chat message
+- Improve the ui of next and previous buttons in image viewer component
+- check the stop typing in chat list room
+- Emit online for client in chat window not chat rooms list

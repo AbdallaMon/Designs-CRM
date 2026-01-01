@@ -14,6 +14,7 @@ import {
   Typography,
   CircularProgress,
   Alert,
+  Snackbar,
 } from "@mui/material";
 
 import { CHAT_ROOM_TYPES } from "../../utils/chatConstants";
@@ -43,7 +44,7 @@ import {
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useChatMembers } from "../../hooks/useChatMembers";
 import { LastSeenAt, OnlineStatus } from "../members/LastSeenAt";
-import { AddMembersDialog } from "../members/AddMembersDialog";
+import { AddMembersDialog } from "../dialogs/AddMembersDialog";
 import { ChatTypingIndicator } from "../indicators/ChatTypingIndicator";
 import { NewMemberAlert } from "../indicators/NewMemberAlert";
 import { ConfirmDialog } from "../dialogs/ConfirmDialog";
@@ -52,6 +53,8 @@ import { ChatWindowHeader } from "./ChatWindowHeader";
 import { LoadMoreButton } from "../indicators/LoadMoreButton";
 import { useChatRoom } from "../../hooks/useChatRoom";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
+import { MultiActions } from "../messages/MultiActions";
+import { ForwardMessagesDialog } from "../dialogs/ForwardMessagesDialog";
 
 export function ChatWindow({
   roomId,
@@ -80,6 +83,9 @@ export function ChatWindow({
   const typingTimeoutRef = useRef(null);
   const inputRef = useRef(null);
   const [pinnedMessages, setPinnedMessages] = useState([]);
+  const [chatError, setChatError] = useState(null);
+  const [selectedMessages, setSelectedMessages] = useState([]);
+  const [openForwardDialog, setOpenForwardDialog] = useState(false);
   const {
     room,
     loading: loadingRoom,
@@ -161,13 +167,13 @@ export function ChatWindow({
     newMessagesCount,
     setNewMessagesCount,
     loadMore,
+    deleteSelectedMessages,
   } = useChatMessages(roomId, 0, clientId);
   const {
     members,
     loading: membersLoading,
     fetchMembers,
-    setMembers,
-  } = useChatMembers(roomId, clientId);
+  } = useChatMembers(roomId, clientId, showAddMembers);
   const cantLoad = !hasMore || loadingMore || initialLoading || loading;
   const currentUserMember = members?.find(
     (m) => m.userId === user?.id || m.clientId == clientId
@@ -213,7 +219,6 @@ export function ChatWindow({
   useSocket({
     onMessageCreated: (data) => {
       // Only add if it's for this room and not from self
-      console.log(data, "data");
       if (data.roomId === roomId) {
         setMessages((prev) => [...prev, data]);
         onRoomActivity?.(data);
@@ -284,12 +289,23 @@ export function ChatWindow({
         setNewMemberAlertOpen(true);
       }
     },
+    onMemberRoleUpdated: (data) => {
+      if (data.userId === user.id && data.roomId === roomId) {
+        fetchMembers();
+        fetchChatRoom();
+      }
+    },
     onRoomUpdatedEvent: (data) => {
-      console.log(data, "data");
-      console.log(roomId, "roomId");
       if (data.roomId === roomId) {
         fetchChatRoom();
       }
+    },
+    onChatError: (data) => {
+      console.error("Chat error:", data.message);
+      setChatError(data.message);
+      window.setTimeout(() => {
+        setChatError(null);
+      }, 5000);
     },
   });
 
@@ -390,6 +406,19 @@ export function ChatWindow({
     },
     [openConfirm, deleteMessage]
   );
+  const confirmDeleteSelectedMessages = useCallback(
+    (payload) => {
+      openConfirm(
+        "Delete message?",
+        "This will delete the message for everyone in the chat.",
+        async () => {
+          await deleteSelectedMessages(selectedMessages);
+          setSelectedMessages([]);
+        }
+      );
+    },
+    [openConfirm, deleteSelectedMessages, selectedMessages, setSelectedMessages]
+  );
 
   // Handle pin message
   const handlePinMessage = useCallback(
@@ -483,7 +512,7 @@ export function ChatWindow({
               }
             : {
                 xs: "calc(100vh - 62px)",
-                md: "calc(100vh - 86px)",
+                md: "calc(100vh - 105px)",
               },
 
           color: "textSecondary",
@@ -502,13 +531,29 @@ export function ChatWindow({
         flexDirection: "column",
         height: clientId
           ? { xs: "calc(100vh - 32px)", md: "calc(100vh - 32px)" }
-          : { xs: "calc(100vh - 62px)", md: "calc(100vh - 86px)" },
+          : { xs: "calc(100vh - 62px)", md: "calc(100vh - 105px)" },
         bgcolor: "background.paper",
         overflow: "hidden",
+        position: "relative",
       }}
     >
-      {loading && <LoadingOverlay />}
+      {/* {loading && <LoadingOverlay />} */}
       {error && <Alert severity="error">{error}</Alert>}
+      {chatError && (
+        <Snackbar
+          open={Boolean(chatError)}
+          autoHideDuration={6000}
+          onClose={() => setChatError(null)}
+        >
+          <Alert
+            onClose={() => setChatError(null)}
+            severity="error"
+            sx={{ width: "100%" }}
+          >
+            {chatError}
+          </Alert>
+        </Snackbar>
+      )}
       {/* Header Section */}
       <ChatWindowHeader
         roomId={roomId}
@@ -639,6 +684,8 @@ export function ChatWindow({
                   replayLoadingMessageId={replayLoadingMessageId}
                   setReplayLoadingMessageId={setReplayLoadingMessageId}
                   clientId={clientId}
+                  selectedMessages={selectedMessages}
+                  setSelectedMessages={setSelectedMessages}
                 />
               ))}
               <ScrollButton
@@ -693,6 +740,21 @@ export function ChatWindow({
       />
 
       {/* Add Members Dialog */}
+      <MultiActions
+        selectedMessages={selectedMessages}
+        setSelectedMessages={setSelectedMessages}
+        onDelete={confirmDeleteSelectedMessages}
+        openForwardDialog={openForwardDialog}
+        setOpenForwardDialog={setOpenForwardDialog}
+      />
+      <ForwardMessagesDialog
+        open={openForwardDialog}
+        onClose={() => {
+          setOpenForwardDialog(false);
+          setSelectedMessages([]);
+        }}
+        selectedMessages={selectedMessages}
+      />
       <AddMembersDialog
         open={showAddMembers}
         onClose={() => setShowAddMembers(false)}

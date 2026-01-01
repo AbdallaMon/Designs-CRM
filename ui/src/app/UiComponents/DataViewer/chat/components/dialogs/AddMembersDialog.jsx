@@ -18,9 +18,12 @@ import {
   Grid,
 } from "@mui/material";
 import { MdDelete } from "react-icons/md";
-import { LastSeenAt, OnlineStatus } from "./LastSeenAt";
+import { LastSeenAt, OnlineStatus } from "../members/LastSeenAt";
 import { AddOrRemoveClient } from "../chat/utility/AddOrRemoveClient";
 import ChatAccessLinkBox from "../chat/utility/ChatAccessLinkBox";
+import { ConfirmDialog } from ".";
+import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 const getAvatarSrc = (entity) => {
   return (
     entity?.profilePicture ||
@@ -144,6 +147,24 @@ export function AddMembersDialog({
                     </Box>
 
                     {/* Role badge */}
+                    {canManageMembers && !m.clientId && m.role !== "ADMIN" && (
+                      <MarkAsModerator
+                        member={m}
+                        onMark={() => reFetchMembers()}
+                        roomId={roomId}
+                      />
+                    )}
+                    {m.role !== "ADMIN" && !m.clientId && canManageMembers && (
+                      <Box>
+                        <IconButton
+                          size="small"
+                          onClick={() => onRemoveMember(m)}
+                          color="error"
+                        >
+                          <MdDelete />
+                        </IconButton>
+                      </Box>
+                    )}
                     <Box>
                       <Chip
                         label={
@@ -167,19 +188,6 @@ export function AddMembersDialog({
                         size="small"
                       />
                     </Box>
-
-                    {/* Remove button */}
-                    {m.role !== "ADMIN" && canManageMembers && (
-                      <Box>
-                        <IconButton
-                          size="small"
-                          onClick={() => onRemoveMember(m)}
-                          color="error"
-                        >
-                          <MdDelete />
-                        </IconButton>
-                      </Box>
-                    )}
                   </Stack>
                 ))}
               </Stack>
@@ -305,5 +313,49 @@ export function AddMembersDialog({
         )}
       </DialogActions>
     </Dialog>
+  );
+}
+
+function MarkAsModerator({ member, onMark, roomId }) {
+  const [openConfirm, setConfirmOpen] = useState(false);
+  const { setLoading } = useToastContext();
+  async function handleConfirm() {
+    const req = await handleRequestSubmit(
+      {
+        role: member.role === "MODERATOR" ? "MEMBER" : "MODERATOR",
+      },
+      setLoading,
+      `shared/chat/rooms/${roomId}/members/${member.id}`,
+      false,
+      "Update Role",
+      false,
+      "PUT"
+    );
+    if (req.status === 200) {
+      onMark();
+      setConfirmOpen(false);
+    }
+  }
+  return (
+    <>
+      <Button variant="outlined" onClick={() => setConfirmOpen(true)}>
+        Mark as {member.role === "MODERATOR" ? "Member" : "Moderator"}
+      </Button>
+      <ConfirmDialog
+        title={`Mark ${member.user?.name || "Unknown"} as ${
+          member.role === "MODERATOR" ? "Member" : "Moderator"
+        }`}
+        description={`Are you sure you want to mark ${
+          member.user?.name || "this user"
+        } as ${
+          member.role === "MODERATOR" ? "a regular member" : "a moderator"
+        }?`}
+        open={openConfirm}
+        onConfirm={handleConfirm}
+        onCancel={() => setConfirmOpen(false)}
+        confirmButtonText="Yes, Confirm"
+        confirmButtonColor="primary"
+      />
+    </>
   );
 }

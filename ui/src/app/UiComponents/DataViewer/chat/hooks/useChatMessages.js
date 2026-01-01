@@ -220,6 +220,11 @@ export function useChatMessages(roomId, initialPage = 0, clientId) {
     emitDeleteMessage({ messageId, roomId, userId: user.id });
     return null;
   };
+  const deleteSelectedMessages = async (selectedMessages) => {
+    for (const message of selectedMessages) {
+      await deleteMessage(message.id);
+    }
+  };
 
   return {
     messages,
@@ -250,5 +255,6 @@ export function useChatMessages(roomId, initialPage = 0, clientId) {
     setReplayLoadingMessageId,
     newMessagesCount,
     setNewMessagesCount,
+    deleteSelectedMessages,
   };
 }

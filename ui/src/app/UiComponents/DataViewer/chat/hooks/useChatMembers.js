@@ -1,7 +1,7 @@
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useCallback, useEffect, useState } from "react";
 
-export function useChatMembers(roomId, clientId) {
+export function useChatMembers(roomId, clientId, showAddMembers) {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -19,6 +19,6 @@ export function useChatMembers(roomId, clientId) {
     if (roomId) {
       fetchMembers();
     }
-  }, [roomId, fetchMembers]);
+  }, [roomId, fetchMembers, showAddMembers]);
   return { members, loading, fetchMembers, setMembers };
 }

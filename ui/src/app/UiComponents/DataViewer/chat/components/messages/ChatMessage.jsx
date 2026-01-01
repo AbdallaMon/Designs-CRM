@@ -27,6 +27,8 @@ import {
   FaTimes,
   FaChevronLeft,
   FaChevronRight,
+  FaShare,
+  FaCheck,
 } from "react-icons/fa";
 import { MdPushPin } from "react-icons/md";
 import dayjs from "dayjs";
@@ -134,16 +136,22 @@ export function ChatMessage({
   onRemoveUnreadCount,
   pinnedMessages,
   clientId,
+  selectedMessages,
+  setSelectedMessages,
 }) {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [flashOn, setFlashOn] = useState(false);
   const [showUnreadCount, setShowUnreadCount] = useState(
     message.showUnreadCount || false
   );
+  const isSelected = selectedMessages.some((m) => m.id === message.id);
   const isPinned =
     message.isPinned || pinnedMessages?.some((pm) => pm.id === message.id);
+  console.log(message, "message");
   const isOwnMessage =
-    message.sender?.id === currentUserId || message.senderClient == clientId;
+    message.sender?.id === currentUserId ||
+    (clientId && message.senderClient == clientId);
+  console.log(isOwnMessage, "isOwnMessage");
   const sender = message.sender?.name || message.client?.name || "Unknown";
   const isDeleted = Boolean(message.isDeleted);
 
@@ -157,7 +165,7 @@ export function ChatMessage({
     : true;
 
   const canDelete = isOwnMessage || isCurrentUserAdmin;
-
+  const canForward = !message.clientId;
   const hasContent = Boolean(message.content?.trim());
 
   const attachments = Array.isArray(message.attachments)
@@ -171,7 +179,14 @@ export function ChatMessage({
   const shouldFlash =
     Boolean(replyLoaded) &&
     String(replayLoadingMessageId) === String(message.id);
-
+  function handleSelect() {
+    if (isSelected) {
+      setSelectedMessages(selectedMessages.filter((m) => m.id !== message.id));
+    } else {
+      setSelectedMessages([...selectedMessages, message]);
+    }
+    setMenuAnchor(null);
+  }
   useEffect(() => {
     if (!shouldFlash) return;
 
@@ -221,7 +236,19 @@ export function ChatMessage({
   );
 
   return (
-    <>
+    <Box
+      sx={{
+        backgroundColor: isSelected
+          ? "action.selected"
+          : flashOn
+          ? (theme) => alpha(theme.palette.primary.main, 0.1)
+          : "transparent",
+        p: 1,
+        borderRadius: 2,
+        mb: 2,
+        position: "relative",
+      }}
+    >
       {dayDivider}
 
       {showUnreadCount && message.unreadCount && (
@@ -250,7 +277,6 @@ export function ChatMessage({
         sx={{
           display: "flex",
           justifyContent: isOwnMessage ? "flex-end" : "flex-start",
-          mb: 2,
           gap: 1,
         }}
         id={`message-${message.id}`}
@@ -343,65 +369,23 @@ export function ChatMessage({
           )}
           {!isDeleted && (
             <>
-              <IconButton
-                size="small"
-                onClick={(e) => setMenuAnchor(e.currentTarget)}
-                sx={{ position: "absolute", top: 4, right: 4, zIndex: 2 }}
-              >
-                <FaEllipsisV />
-              </IconButton>
-
-              <Menu
-                anchorEl={menuAnchor}
-                open={Boolean(menuAnchor)}
-                onClose={() => setMenuAnchor(null)}
-                sx={{
-                  zIndex: 1305,
-                }}
-              >
-                <MenuItem
-                  onClick={() => {
-                    setMenuAnchor(null);
-                    onReply?.(message);
-                  }}
-                >
-                  <FaReply style={{ marginRight: 8 }} /> Reply
-                </MenuItem>
-
-                {canPin && (
-                  <MenuItem
-                    onClick={() => {
-                      setMenuAnchor(null);
-                      if (isPinned) {
-                        onUnPin?.(message);
-                      } else {
-                        onPin?.(message);
-                      }
-                    }}
-                  >
-                    {isPinned ? (
-                      <>
-                        <MdPushPin style={{ marginRight: 8 }} /> Unpin
-                      </>
-                    ) : (
-                      <>
-                        <MdPushPin style={{ marginRight: 8 }} /> Pin
-                      </>
-                    )}
-                  </MenuItem>
-                )}
-
-                {canDelete && (
-                  <MenuItem
-                    onClick={() => {
-                      setMenuAnchor(null);
-                      onDelete?.(message.id);
-                    }}
-                  >
-                    <FaTrash style={{ marginRight: 8 }} /> Delete
-                  </MenuItem>
-                )}
-              </Menu>
+              <MessageActions
+                message={message}
+                isPinned={isPinned}
+                canPin={canPin}
+                canDelete={canDelete}
+                onReply={onReply}
+                onPin={onPin}
+                onUnPin={onUnPin}
+                onDelete={onDelete}
+                setMenuAnchor={setMenuAnchor}
+                menuAnchor={menuAnchor}
+                selectedMessages={selectedMessages}
+                setSelectedMessages={setSelectedMessages}
+                canForward={canForward}
+                isSelected={isSelected}
+                handleSelect={handleSelect}
+              />
             </>
           )}
 
@@ -479,6 +463,122 @@ export function ChatMessage({
           </Avatar>
         )}
       </Box>
+      {selectedMessages?.length > 0 && !message.isDeleted && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            [isOwnMessage ? "left" : "right"]: 0,
+            zIndex: 1,
+            width: 16,
+            height: 16,
+            bgcolor: "background.paper",
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: 1,
+            transform: "translate(25%, -25%)",
+            border: (theme) => `2px solid ${theme.palette.action.selected}`,
+            cursor: "pointer",
+            "&:hover": {
+              bgcolor: "action.hover",
+            },
+          }}
+          onClick={handleSelect}
+        >
+          {isSelected ? (
+            <FaCheck style={{ color: "green", width: 16, height: 16 }} />
+          ) : null}
+        </Box>
+      )}
+    </Box>
+  );
+}
+function MessageActions({
+  message,
+  isPinned,
+  canPin,
+  canDelete,
+  canForward,
+  onReply,
+  onPin,
+  onUnPin,
+  onDelete,
+  setMenuAnchor,
+  menuAnchor,
+  selectedMessages,
+  handleSelect,
+}) {
+  return (
+    <>
+      <IconButton
+        size="small"
+        onClick={(e) => setMenuAnchor(e.currentTarget)}
+        sx={{ position: "absolute", top: 4, right: 4, zIndex: 2 }}
+      >
+        <FaEllipsisV />
+      </IconButton>
+
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={() => setMenuAnchor(null)}
+        sx={{
+          zIndex: 1305,
+        }}
+      >
+        <MenuItem
+          onClick={() => {
+            setMenuAnchor(null);
+            onReply?.(message);
+          }}
+        >
+          <FaReply style={{ marginRight: 8 }} /> Reply
+        </MenuItem>
+
+        {canPin && (
+          <MenuItem
+            onClick={() => {
+              setMenuAnchor(null);
+              if (isPinned) {
+                onUnPin?.(message);
+              } else {
+                onPin?.(message);
+              }
+            }}
+          >
+            {isPinned ? (
+              <>
+                <MdPushPin style={{ marginRight: 8 }} /> Unpin
+              </>
+            ) : (
+              <>
+                <MdPushPin style={{ marginRight: 8 }} /> Pin
+              </>
+            )}
+          </MenuItem>
+        )}
+
+        {canDelete && (
+          <MenuItem
+            onClick={() => {
+              setMenuAnchor(null);
+              onDelete?.(message.id);
+            }}
+          >
+            <FaTrash style={{ marginRight: 8 }} /> Delete
+          </MenuItem>
+        )}
+        {canForward && !message.isDeleted && (
+          <MenuItem onClick={handleSelect}>
+            <FaShare style={{ marginRight: 8 }} />{" "}
+            {selectedMessages.some((m) => m.id === message.id)
+              ? "Deselect"
+              : "Select"}{" "}
+          </MenuItem>
+        )}
+      </Menu>
     </>
   );
 }

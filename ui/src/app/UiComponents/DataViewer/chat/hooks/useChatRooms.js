@@ -14,9 +14,7 @@ export function useChatRooms({
   category = null,
   limit = CHAT_LIMITS.rooms,
   widgetOpen,
-  type = null,
   clientLeadId = null,
-  isTab,
 } = {}) {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -129,7 +127,7 @@ export function useChatRooms({
       }
     }, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [socket, user]);
   useEffect(() => {
     const interval = setInterval(() => {
       refreshRooms();

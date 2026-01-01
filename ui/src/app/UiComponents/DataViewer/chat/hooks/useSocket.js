@@ -26,9 +26,11 @@ export function useSocket(handlers = {}) {
       "member:left": "onMemberLeft",
       "member:removed": "onMemberRemoved",
       "members:added": "onMembersAdded",
+      "member:role_updated": "onMemberRoleUpdated",
       "call:initiated": "onCallInitiated",
       "call:ended": "onCallEnded",
       "room:updated": "onRoomUpdatedEvent",
+      "chat:error": "onChatError",
 
       notification: "onNotification",
       "notification:user_typing": "onTypingNotification",

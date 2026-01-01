@@ -1,3 +1,5 @@
+import { getIo } from "../../socket.js";
+
 /**
  * Determine day group label for a message
  */
@@ -115,22 +117,28 @@ export async function checkIfUserAllowedToDoAdminActions(roomId, userId) {
 
 export async function checkIfUserIsRoomMember(roomId, userId, clientId) {
   if (userId) userId = parseInt(userId, 10);
+  console.log(userId, "userId in checkIfUserIsRoomMember");
+  const where = {};
+  if (userId) {
+    where.userId = userId;
+  }
+  if (clientId) {
+    where.clientId = clientId;
+  }
   const member = await prisma.chatMember.findFirst({
     where: {
       roomId: parseInt(roomId, 10),
       isDeleted: false,
-      OR: [
-        {
-          userId: userId ? Number(userId) : null,
-        },
-        {
-          clientId: clientId ? Number(clientId) : null,
-        },
-      ],
+      ...where,
     },
   });
   if (!member) {
     throw new Error("You do not have access to this chat room");
   }
   return member;
+}
+
+export async function emitError({ roomId, message }) {
+  const io = getIo();
+  io.to(`room:${roomId}`).emit("chat:error", { message });
 }

@@ -41,8 +41,7 @@ export function ChatContainer({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [selectedRoom, setSelectedRoom] = useState(null);
-
+  const [selectedRoomId, setSelectedRoomId] = useState(null);
   const [createRoomOpen, setCreateRoomOpen] = useState(false);
   const [viewMode, setViewMode] = useState("LIST"); // LIST | CHAT (mobile only)
   const [typingRooms, setTypingRooms] = useState({});
@@ -115,7 +114,7 @@ export function ChatContainer({
         !data.isMuted &&
         messageSoundRef.current &&
         data.message.senderId !== user?.id &&
-        data.roomId !== selectedRoom?.id
+        data.roomId !== selectedRoomId
       ) {
         // setTotalUnread((prev) => prev + 1);
         messageSoundRef.current.play().catch((error) => {
@@ -126,8 +125,8 @@ export function ChatContainer({
     onRoomDeletedNotification: (data) => {
       const { roomId } = data;
 
-      if (selectedRoom?.id === roomId) {
-        setSelectedRoom(null);
+      if (selectedRoomId === roomId) {
+        setSelectedRoomId(null);
         if (type === "page" && isMobile) {
           setViewMode("LIST");
         }
@@ -137,7 +136,7 @@ export function ChatContainer({
     },
     onTypingNotification: (data) => {
       // Only show typing if not in the room and not from self
-      if (data.roomId !== selectedRoom?.id && data.userId !== user?.id) {
+      if (data.roomId !== selectedRoomId && data.userId !== user?.id) {
         setTypingRooms((prev) => {
           const next = new Set(prev[data.roomId] || []);
           next.add(data.userId);
@@ -178,10 +177,8 @@ export function ChatContainer({
 
   // When rooms load, pick room from search params if present
   useEffect(() => {
-    if (!rooms?.length || !roomIdFromParams) return;
-    const match = rooms.find((r) => r.id === roomIdFromParams);
-    if (match) {
-      setSelectedRoom(match);
+    if (roomIdFromParams) {
+      setSelectedRoomId(roomIdFromParams);
       if (isMobile) setViewMode("CHAT");
     } else {
       // clear searchPArams
@@ -191,13 +188,12 @@ export function ChatContainer({
 
   // Update selected room when rooms change
   useEffect(() => {
-    if (!selectedRoom) return;
-    const updated = rooms.find((r) => r.id === selectedRoom.id);
-    if (updated && updated !== selectedRoom) {
-      setSelectedRoom(updated);
+    if (!selectedRoomId) return;
+    const updated = rooms.find((r) => r.id === selectedRoomId);
+    if (updated && updated?.id !== selectedRoomId) {
+      setSelectedRoomId(updated.id);
     }
-  }, [rooms, selectedRoom]);
-
+  }, [rooms, selectedRoomId]);
   // ============================================
   // HANDLERS
   // ============================================
@@ -214,8 +210,8 @@ export function ChatContainer({
     const targetRoom = rooms.find((r) => r.id === roomId);
     if (targetRoom?.type === CHAT_ROOM_TYPES.STAFF_TO_STAFF) return;
     await deleteRoom(roomId);
-    if (selectedRoom?.id === roomId) {
-      setSelectedRoom(null);
+    if (selectedRoomId === roomId) {
+      setSelectedRoomId(null);
       if (isMobile) setViewMode("LIST");
     }
   };
@@ -223,14 +219,14 @@ export function ChatContainer({
     const targetRoom = rooms.find((r) => r.id === roomId);
     if (targetRoom?.type === CHAT_ROOM_TYPES.STAFF_TO_STAFF) return;
     leaveRoom(roomId);
-    if (selectedRoom?.id === roomId) {
-      setSelectedRoom(null);
+    if (selectedRoomId === roomId) {
+      setSelectedRoomId(null);
       if (isMobile) setViewMode("LIST");
     }
   }
 
   const handleSelectRoom = (room) => {
-    setSelectedRoom(room);
+    setSelectedRoomId(room.id);
     if (type === "page") {
       router.replace(`?roomId=${room.id}`);
     }
@@ -244,7 +240,7 @@ export function ChatContainer({
   const renderChatRoomsList = () => (
     <ChatRoomsList
       rooms={rooms}
-      selectedRoomId={selectedRoom?.id}
+      selectedRoomId={selectedRoomId}
       onSelectRoom={handleSelectRoom}
       onMuteRoom={handleMuteRoom}
       onArchiveRoom={handleArchiveRoom}
@@ -269,20 +265,20 @@ export function ChatContainer({
   );
 
   const renderChatWindow = () =>
-    selectedRoom ? (
+    selectedRoomId ? (
       <ChatWindow
-        roomId={selectedRoom?.id}
+        roomId={selectedRoomId}
         onClose={() => {
           if (type === "widget") {
             setViewMode("LIST");
-            setSelectedRoom(null);
+            setSelectedRoomId(null);
             router.replace("?");
           } else if (type === "page" && isMobile) {
             setViewMode("LIST");
-            setSelectedRoom(null);
+            setSelectedRoomId(null);
             router.replace("?");
           } else {
-            setSelectedRoom(null);
+            setSelectedRoomId(null);
           }
         }}
         clientLeadId={clientLeadId}
@@ -322,8 +318,8 @@ export function ChatContainer({
 
     return (
       <RenderWidgetChat
-        selectedRoom={selectedRoom}
-        setSelectedRoom={setSelectedRoom}
+        selectedRoomId={selectedRoomId}
+        setSelectedRoomId={setSelectedRoomId}
         type={type}
         isMobile={isMobile}
         router={router}
@@ -355,12 +351,12 @@ export function ChatContainer({
         createRoom={createRoom}
         fetchRooms={fetchRooms}
         type={type}
-        selectedRoom={selectedRoom}
+        selectedRoomId={selectedRoomId}
         setViewMode={setViewMode}
         createRoomOpen={createRoomOpen}
         setCreateRoomOpen={setCreateRoomOpen}
         viewMode={viewMode}
-        setSelectedRoom={setSelectedRoom}
+        setSelectedRoomId={setSelectedRoomId}
       />
     );
   }
@@ -376,12 +372,12 @@ export function ChatContainer({
         createRoom={createLeadRoom}
         fetchRooms={fetchRooms}
         type={type}
-        selectedRoom={selectedRoom}
+        selectedRoomId={selectedRoomId}
         setViewMode={setViewMode}
         createRoomOpen={createRoomOpen}
         setCreateRoomOpen={setCreateRoomOpen}
         viewMode={viewMode}
-        setSelectedRoom={setSelectedRoom}
+        setSelectedRoomId={setSelectedRoomId}
       />
     );
   }
@@ -390,8 +386,8 @@ export function ChatContainer({
   return null;
 }
 function RenderWidgetChat({
-  selectedRoom,
-  setSelectedRoom,
+  selectedRoomId,
+  setSelectedRoomId,
   type,
   isMobile,
   router,
@@ -489,8 +485,8 @@ function RenderWidgetChat({
             <Stack direction="row" spacing={1}>
               <Link
                 href={
-                  selectedRoom && selectedRoom?.id
-                    ? `/dashboard/chat?roomId=${selectedRoom.id}`
+                  selectedRoomId
+                    ? `/dashboard/chat?roomId=${selectedRoomId}`
                     : `/dashboard/chat`
                 }
                 passHref
@@ -523,10 +519,10 @@ function RenderWidgetChat({
               overflow: "hidden",
             }}
           >
-            {selectedRoom && renderChatWindow()}
+            {selectedRoomId && renderChatWindow()}
             <Box
               sx={{
-                display: selectedRoom ? "none" : "block",
+                display: selectedRoomId ? "none" : "block",
                 overflow: "auto",
                 flex: 1,
               }}
@@ -544,7 +540,7 @@ function RenderWidgetChat({
         createRoom={createRoom}
         fetchRooms={fetchRooms}
         onCreated={(room) => {
-          setSelectedRoom(room);
+          setSelectedRoomId(room.id);
           if (isMobile) setViewMode("CHAT");
           if (type === "page") router.replace(`?roomId=${room.id}`);
         }}
@@ -562,12 +558,12 @@ function RenderPageChat({
   createRoom,
   fetchRooms,
   type,
-  selectedRoom,
+  selectedRoomId,
   setViewMode,
   createRoomOpen,
   setCreateRoomOpen,
   viewMode,
-  setSelectedRoom,
+  setSelectedRoomId,
 }) {
   return (
     <Box
@@ -586,7 +582,7 @@ function RenderPageChat({
               flex: 1,
               p: 2,
               pt: 1,
-              display: selectedRoom ? "none" : "block",
+              display: selectedRoomId ? "none" : "block",
             }}
           >
             <Paper
@@ -645,7 +641,7 @@ function RenderPageChat({
         createRoom={createRoom}
         fetchRooms={fetchRooms}
         onCreated={(room) => {
-          setSelectedRoom(room);
+          setSelectedRoomId(room.id);
           if (isMobile) setViewMode("CHAT");
           if (type === "page") router.replace(`?roomId=${room.id}`);
         }}
@@ -663,12 +659,12 @@ function RenderTabChat({
   createRoom,
   fetchRooms,
   type,
-  selectedRoom,
+  selectedRoomId,
   setViewMode,
   viewMode,
   createRoomOpen,
   setCreateRoomOpen,
-  setSelectedRoom,
+  setSelectedRoomId,
 }) {
   return (
     <Box
@@ -685,7 +681,7 @@ function RenderTabChat({
               flex: 1,
               p: 2,
               pt: 1,
-              display: selectedRoom ? "none" : "block",
+              display: selectedRoomId ? "none" : "block",
             }}
           >
             <Paper
@@ -745,7 +741,7 @@ function RenderTabChat({
         createRoom={createRoom}
         fetchRooms={fetchRooms}
         onCreated={(room) => {
-          setSelectedRoom(room);
+          setSelectedRoomId(room.id);
         }}
       />{" "}
     </Box>

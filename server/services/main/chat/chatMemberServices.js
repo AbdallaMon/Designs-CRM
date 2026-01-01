@@ -75,7 +75,6 @@ export async function addMembersToRoom({ roomId, userId, userIds }) {
   try {
     const io = getIo();
     userIds.forEach((uid) => {
-      console.log(uid, "uid");
       io.to(`user:${uid}`).emit("notification:room_created", {
         roomId: parseInt(roomId),
         userId: parseInt(userId),
@@ -213,8 +212,10 @@ export async function updateMemberRole({ roomId, userId, memberId, role }) {
     where: {
       roomId: parseInt(roomId),
       userId: parseInt(userId),
-      role: "ADMIN",
-      leftAt: null,
+      role: {
+        in: ["ADMIN", "MODERATOR"],
+      },
+      isDeleted: false,
     },
   });
 
@@ -230,9 +231,6 @@ export async function updateMemberRole({ roomId, userId, memberId, role }) {
   const updatedMember = await prisma.chatMember.update({
     where: { id: parseInt(memberId) },
     data: { role },
-    include: {
-      user: { select: { id: true, name: true, email: true } },
-    },
   });
 
   // Emit update
@@ -242,6 +240,7 @@ export async function updateMemberRole({ roomId, userId, memberId, role }) {
       roomId: parseInt(roomId),
       memberId: parseInt(memberId),
       role,
+      userId: updatedMember.userId,
     });
   } catch (error) {
     console.error("Socket.IO emit error:", error);
@@ -274,7 +273,7 @@ export async function getRoomMembers({ roomId, userId, clientId }) {
         },
       },
       client: {
-        select: { id: true, name: true, email: true },
+        select: { id: true, name: true, email: true, lastSeenAt: true },
       },
     },
   });

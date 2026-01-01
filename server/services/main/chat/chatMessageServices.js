@@ -1,6 +1,11 @@
 import prisma from "../../../prisma/prisma.js";
 import { getIo } from "../../socket.js";
-import { checkIfUserIsRoomMember, getDayGroup, getDayLabel } from "./utils.js";
+import {
+  checkIfUserIsRoomMember,
+  emitError,
+  getDayGroup,
+  getDayLabel,
+} from "./utils.js";
 
 /**
  * Get messages for a room with day grouping
@@ -68,13 +73,11 @@ export async function getMessages({
     prisma.chatMessage.count({
       where: {
         roomId: parseInt(roomId),
-        isDeleted: false,
       },
     }),
     prisma.chatMessage.count({
       where: {
         roomId: parseInt(roomId),
-        isDeleted: false,
         senderId: userId ? { not: parseInt(userId) } : undefined,
         senderClient: clientId ? { not: parseInt(clientId) } : undefined,
         readReceipts: {
@@ -204,13 +207,11 @@ export async function emitToAllUsersRelatedToARoom({
   });
   try {
     for (const member of members) {
-      console.log(member, "member");
       if (member.userId) {
         io.to(`user:${member.userId}`).emit(type, {
           ...content,
         });
       } else if (member.clientId) {
-        console.log("emitting to client:", member.clientId);
         io.to(`client:${member.clientId}`).emit(type, {
           ...content,
         });
@@ -268,7 +269,7 @@ export async function sendMessage({
 }) {
   // Verify user is member
   const member = await checkIfUserIsRoomMember(roomId, userId, clientId);
-
+  console.log(member, "send member");
   // Check if room allows files
   if (type === "FILE" || (attachments && attachments.length > 0)) {
     const room = await prisma.chatRoom.findUnique({
@@ -369,7 +370,6 @@ export async function sendMessage({
       ...message,
       roomId: parseInt(roomId),
     });
-    console.log("emitted to room:", roomId);
     io.to(`room:${roomId}`).emit("user:stop_typing", {
       userId,
       roomId,
@@ -390,6 +390,7 @@ export async function sendMessage({
     });
   } catch (error) {
     console.error("Socket.IO emit error:", error);
+    emitError({ roomId, message: "Error emitting new message" });
   }
 
   return message;
@@ -477,6 +478,10 @@ export async function deleteMessage({ messageId, userId, clientId }) {
     });
   } catch (error) {
     console.error("Socket.IO emit error:", error);
+    emitError({
+      roomId: message.roomId,
+      message: "Error emitting message deletion " + error.message,
+    });
   }
 
   return { message: "Message deleted successfully" };
@@ -490,6 +495,7 @@ export async function markMessagesAsRead({ roomId, userId, clientId }) {
 
   const where = {
     roomId: parseInt(roomId),
+    senderId: { not: parseInt(userId) },
     readReceipts: {
       none: { memberId: member.id },
     },
@@ -500,6 +506,7 @@ export async function markMessagesAsRead({ roomId, userId, clientId }) {
   if (userId) {
     where.senderId = { not: parseInt(userId) };
   }
+
   const unreadMessages = await prisma.chatMessage.findMany({
     where: {
       ...where,
@@ -729,78 +736,110 @@ export async function getPinnedMessages({ roomId, userId, clientId }) {
 }
 export async function pinMessage({ roomId, messageId, userId, clientId }) {
   // Verify user is member
-  const member = await checkIfUserIsRoomMember(roomId, userId, clientId);
-  const room = await prisma.chatRoom.findUnique({
-    where: { id: parseInt(roomId) },
-  });
-  if (!member) {
-    throw new Error("You don't have access to this room");
-  }
-  // check if room is staff to staff or use is admin or moderator else throw error
-  if (
-    room.type !== "STAFF_TO_STAFF" &&
-    !(member.role === "ADMIN" || member.role === "MODERATOR")
-  ) {
-    throw new Error(
-      "Only admins and moderators can pin messages in staff to staff rooms"
-    );
-  }
+  try {
+    const member = await checkIfUserIsRoomMember(roomId, userId, clientId);
+    const room = await prisma.chatRoom.findUnique({
+      where: { id: parseInt(roomId) },
+    });
+    if (!member) {
+      throw new Error("You don't have access to this room");
+    }
+    // check if room is staff to staff or use is admin or moderator else throw error
+    if (
+      room.type !== "STAFF_TO_STAFF" &&
+      !(member.role === "ADMIN" || member.role === "MODERATOR")
+    ) {
+      throw new Error("Only admins and moderators can pin messages");
+    }
 
-  const pinned = await prisma.chatPinnedMessage.create({
-    data: {
-      roomId: parseInt(roomId),
-      messageId: parseInt(messageId),
-      pinnedById: parseInt(userId),
-    },
-  });
-  emitToAllUsersIncludingSame({
-    roomId,
-    userId,
-    content: {
-      messageId: parseInt(messageId),
-      roomId: parseInt(roomId),
-      pinnedById: parseInt(userId),
-    },
-    type: "message:pinned",
-    isRoomOnly: true,
-  });
-  return pinned;
+    const pinned = await prisma.chatPinnedMessage.create({
+      data: {
+        roomId: parseInt(roomId),
+        messageId: parseInt(messageId),
+        pinnedById: parseInt(userId),
+      },
+    });
+    emitToAllUsersIncludingSame({
+      roomId,
+      userId,
+      content: {
+        messageId: parseInt(messageId),
+        roomId: parseInt(roomId),
+        pinnedById: parseInt(userId),
+      },
+      type: "message:pinned",
+      isRoomOnly: true,
+    });
+    return pinned;
+  } catch (error) {
+    emitError({ roomId, message: "Error pinning message: " + error.message });
+    throw new Error("Error pinning message: " + error.message);
+  }
 }
 
 export async function unpinMessage({ roomId, messageId, userId, clientId }) {
-  // Verify user is member
-  const member = await checkIfUserIsRoomMember(roomId, userId, clientId);
-  const room = await prisma.chatRoom.findUnique({
-    where: { id: parseInt(roomId) },
-  });
-  if (!member) {
-    throw new Error("You don't have access to this room");
+  try {
+    // Verify user is member
+    const member = await checkIfUserIsRoomMember(roomId, userId, clientId);
+    const room = await prisma.chatRoom.findUnique({
+      where: { id: parseInt(roomId) },
+    });
+    if (!member) {
+      throw new Error("You don't have access to this room");
+    }
+    // check if room is staff to staff or use is admin or moderator else throw error
+    if (
+      room.type !== "STAFF_TO_STAFF" &&
+      !(member.role === "ADMIN" || member.role === "MODERATOR")
+    ) {
+      throw new Error(
+        "Only admins and moderators can unpin messages in staff to staff rooms"
+      );
+    }
+    const pinned = await prisma.chatPinnedMessage.deleteMany({
+      where: {
+        roomId: parseInt(roomId),
+        messageId: parseInt(messageId),
+      },
+    });
+    emitToAllUsersIncludingSame({
+      roomId,
+      userId,
+      content: {
+        messageId: parseInt(messageId),
+        roomId: parseInt(roomId),
+        unpinnedById: parseInt(userId),
+      },
+      type: "message:unpinned",
+      isRoomOnly: true,
+    });
+    return pinned;
+  } catch (error) {
+    emitError({ roomId, message: "Error unpinning message: " + error.message });
+    throw new Error("Error unpinning message: " + error.message);
   }
-  // check if room is staff to staff or use is admin or moderator else throw error
-  if (
-    room.type !== "STAFF_TO_STAFF" &&
-    !(member.role === "ADMIN" || member.role === "MODERATOR")
-  ) {
-    throw new Error(
-      "Only admins and moderators can unpin messages in staff to staff rooms"
-    );
-  }
-  const pinned = await prisma.chatPinnedMessage.deleteMany({
-    where: {
-      roomId: parseInt(roomId),
-      messageId: parseInt(messageId),
+}
+
+export async function forwardMultipleMessages({
+  roomsIds,
+  messageIds,
+  userId,
+}) {
+  const messages = await prisma.chatMessage.findMany({
+    where: { id: { in: messageIds.map((id) => parseInt(id)) } },
+    include: {
+      attachments: true,
     },
   });
-  emitToAllUsersIncludingSame({
-    roomId,
-    userId,
-    content: {
-      messageId: parseInt(messageId),
-      roomId: parseInt(roomId),
-      unpinnedById: parseInt(userId),
-    },
-    type: "message:unpinned",
-    isRoomOnly: true,
-  });
-  return pinned;
+  for (const roomId of roomsIds) {
+    for (const msg of messages) {
+      await sendMessage({
+        roomId,
+        userId,
+        content: msg.content,
+        type: msg.type,
+        attachments: msg.attachments,
+      });
+    }
+  }
 }
