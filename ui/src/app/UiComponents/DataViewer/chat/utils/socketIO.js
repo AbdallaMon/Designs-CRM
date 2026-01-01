@@ -106,6 +106,9 @@ export const offSocket = (event, callback) => {
 export const joinChatRoom = (roomId, user) => {
   emitSocket("join_room", { roomId, user });
 };
+export const joinChatRoomAsClient = (roomId, clientId) => {
+  emitSocket("join_room_client", { roomId, clientId });
+};
 
 /**
  * Leave a chat room namespace

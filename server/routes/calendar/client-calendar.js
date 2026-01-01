@@ -2,7 +2,7 @@ import {
   bookAMeeting,
   verifyAndExtractCalendarToken,
   verifySlotIsAvailableAndNotBooked,
-} from "../../services/client/calendar.js";
+} from "../../services/main/client/calendar.js";
 import { getAvailableDays, getAvailableSlotsForDay } from "./new-calendar.js";
 import express from "express";
 

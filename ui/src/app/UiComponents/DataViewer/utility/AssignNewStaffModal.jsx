@@ -74,10 +74,10 @@ export function AssignNewStaffModal({ lead, onUpdate }) {
       }
     }
   };
-  if (!isAdmin || !lead.userId) return;
+  if (!isAdmin || !lead.userId) return <Box></Box>;
 
   return (
-    <>
+    <Box>
       <Button variant="contained" fullWidth onClick={() => setOpen(true)}>
         Convert lead
       </Button>
@@ -111,6 +111,6 @@ export function AssignNewStaffModal({ lead, onUpdate }) {
           </Button>
         </DialogActions>
       </Dialog>
-    </>
+    </Box>
   );
 }

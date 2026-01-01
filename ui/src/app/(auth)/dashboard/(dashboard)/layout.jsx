@@ -27,6 +27,8 @@ import {
 } from "react-icons/fi";
 
 import Navbar from "@/app/UiComponents/utility/Navbar.jsx";
+import SocketProvider from "@/app/providers/SocketProvider";
+import ChatWidget from "@/app/UiComponents/DataViewer/chat/components/chat/ChatWidget";
 
 let toastId;
 export const adminLinks = [
@@ -332,49 +334,52 @@ export default function Layout({
         backgroundColor: colors.bgSecondary,
       }}
     >
-      <Navbar
-        links={
-          role === "ADMIN"
-            ? adminLinks
-            : role === "STAFF"
-            ? user.isSuperSales
+      {" "}
+      <SocketProvider>
+        <Navbar
+          links={
+            role === "ADMIN"
+              ? adminLinks
+              : role === "STAFF"
+              ? user.isSuperSales
+                ? superSalesLinks
+                : staffLinks
+              : role === "THREE_D_DESIGNER"
+              ? threeDLinks
+              : role === "TWO_D_DESIGNER"
+              ? twoDLinks
+              : role === "ACCOUNTANT"
+              ? accountantLinks
+              : role === "TWO_D_EXECUTOR"
+              ? exacuterLinks
+              : role === "CONTACT_INITIATOR"
+              ? contactInitiatorLinks
+              : role === "SUPER_SALES"
               ? superSalesLinks
-              : staffLinks
-            : role === "THREE_D_DESIGNER"
-            ? threeDLinks
-            : role === "TWO_D_DESIGNER"
-            ? twoDLinks
-            : role === "ACCOUNTANT"
-            ? accountantLinks
-            : role === "TWO_D_EXECUTOR"
-            ? exacuterLinks
-            : role === "CONTACT_INITIATOR"
-            ? contactInitiatorLinks
-            : role === "SUPER_SALES"
-            ? superSalesLinks
-            : adminLinks
-        }
-      />
-
-      {role === "ADMIN"
-        ? admin
-        : role === "STAFF"
-        ? user.isSuperSales
+              : adminLinks
+          }
+        />
+        {role === "ADMIN"
+          ? admin
+          : role === "STAFF"
+          ? user.isSuperSales
+            ? super_sales
+            : staff
+          : role === "THREE_D_DESIGNER"
+          ? threeD
+          : role === "TWO_D_DESIGNER"
+          ? twoD
+          : role === "ACCOUNTANT"
+          ? accountant
+          : role === "TWO_D_EXECUTOR"
+          ? exacuter
+          : role === "CONTACT_INITIATOR"
+          ? contact_initiator
+          : role === "SUPER_SALES"
           ? super_sales
-          : staff
-        : role === "THREE_D_DESIGNER"
-        ? threeD
-        : role === "TWO_D_DESIGNER"
-        ? twoD
-        : role === "ACCOUNTANT"
-        ? accountant
-        : role === "TWO_D_EXECUTOR"
-        ? exacuter
-        : role === "CONTACT_INITIATOR"
-        ? contact_initiator
-        : role === "SUPER_SALES"
-        ? super_sales
-        : admin}
+          : admin}
+        <ChatWidget />
+      </SocketProvider>
     </Box>
   );
 }

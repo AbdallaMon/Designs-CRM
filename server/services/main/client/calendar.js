@@ -3,10 +3,10 @@ import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 
 // import { sendReminderCreatedToClient } from "../main/emailTemplates.js";
-import { newMeetingNotification } from "../notification.js";
-import prisma from "../../prisma/prisma.js";
-import { sendReminderCreatedToClient } from "../main/email/emailTemplates.js";
-import { createCalendarEvent } from "../main/calendar/googleCalendar.js";
+import { newMeetingNotification } from "../../notification.js";
+import prisma from "../../../prisma/prisma.js";
+import { sendReminderCreatedToClient } from "../email/emailTemplates.js";
+import { createCalendarEvent } from "../calendar/googleCalendar.js";
 dayjs.extend(timezone);
 dayjs.extend(utc);
 

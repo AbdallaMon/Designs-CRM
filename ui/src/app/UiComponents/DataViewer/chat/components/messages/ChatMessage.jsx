@@ -133,6 +133,7 @@ export function ChatMessage({
   setReplayLoadingMessageId,
   onRemoveUnreadCount,
   pinnedMessages,
+  clientId,
 }) {
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [flashOn, setFlashOn] = useState(false);
@@ -142,9 +143,8 @@ export function ChatMessage({
   const isPinned =
     message.isPinned || pinnedMessages?.some((pm) => pm.id === message.id);
   const isOwnMessage =
-    message.sender?.id === currentUserId ||
-    message.client?.id === currentUserId;
-
+    message.sender?.id === currentUserId || message.senderClient == clientId;
+  const sender = message.sender?.name || message.client?.name || "Unknown";
   const isDeleted = Boolean(message.isDeleted);
 
   const isGroupChat =
@@ -256,9 +256,7 @@ export function ChatMessage({
         id={`message-${message.id}`}
       >
         {!isOwnMessage && (
-          <Avatar src={message.sender?.profilePicture}>
-            {message.sender?.name?.[0]}
-          </Avatar>
+          <Avatar src={message.sender?.profilePicture}>{sender?.[0]}</Avatar>
         )}
 
         <Box
@@ -335,6 +333,14 @@ export function ChatMessage({
             };
           }}
         >
+          {!isOwnMessage && (
+            <Typography
+              variant="subtitle2"
+              sx={{ fontWeight: 600, mb: 0.5, opacity: 0.85 }}
+            >
+              {sender}
+            </Typography>
+          )}
           {!isDeleted && (
             <>
               <IconButton

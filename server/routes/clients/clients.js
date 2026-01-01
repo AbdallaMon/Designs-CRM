@@ -14,7 +14,10 @@ import imgSessionExtras from "../client/image-session.js";
 import notesRoutes from "../client/notes.js";
 import languagesRoutes from "../client/languages.js";
 import telegramRoutes from "../client/telegram.js";
-
+import chatRoomsRouter from "../client/chat/rooms.js";
+import chatMessagesRouter from "../client/chat/messages.js";
+import chatMembersRouter from "../client/chat/members.js";
+import chatFilesRouter from "../client/chat/files.js";
 // mount
 router.use("/calendar", calendarRoutes);
 router.use("/image-session", imageSessionRouter);
@@ -27,5 +30,8 @@ router.use(uploadsRoutes);
 router.use(notesRoutes);
 router.use(languagesRoutes);
 router.use(telegramRoutes);
-
+router.use("/chat/rooms", chatRoomsRouter);
+router.use("/chat", chatMessagesRouter);
+router.use("/chat/rooms", chatMembersRouter);
+router.use("/chat/rooms", chatFilesRouter);
 export default router;

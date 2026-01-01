@@ -141,7 +141,7 @@ function AddPayments({
 
   const isSubmitDisabled = !totalAmount || payments.length === 0;
   return (
-    <>
+    <Box>
       <Button
         variant="contained"
         onClick={() => setOpen(true)}
@@ -283,7 +283,7 @@ function AddPayments({
           </Button>
         </DialogActions>
       </Dialog>
-    </>
+    </Box>
   );
 }
 

@@ -10,7 +10,7 @@ import {
 import {
   uploadFile,
   generateCodeForNewLead,
-} from "../../services/client/leads.js";
+} from "../../services/main/client/leads.js";
 
 const priceRangeValues = {
   "300,000 AED or less": 200000,

@@ -7,6 +7,8 @@ import {
   getChatRoomById,
   checkIfChatAlreadyExists,
   createLeadsChatRoom,
+  manageClient,
+  regenerateChatAccessToken,
 } from "../../services/main/chat/chatRoomServices.js";
 import { getCurrentUser } from "../../services/main/utility/utility.js";
 
@@ -225,19 +227,48 @@ router.put("/:roomId", async (req, res) => {
   }
 });
 
-router.put("/:roomId/manageClient", async (req, res) => {
+router.post("/:roomId/manageClient", async (req, res) => {
   try {
     const user = await getCurrentUser(req, res);
-    const userId = user.id;
     const { roomId } = req.params;
     const updates = req.body;
-    console.log(updates, "updates");
-    // const room = await updateChatRoom(roomId, userId, updates);
+    const room = await manageClient({
+      clientLeadId: updates.clientLeadId,
+      action: updates.action,
+      roomId: Number(roomId),
+      userId: user.id,
+    });
 
     res.json({
       status: 200,
-      // data: room,
-      message: "Chat room updated successfully",
+      data: room,
+      message:
+        updates.action === "addClient"
+          ? "Client added successfully"
+          : "Client removed successfully",
+    });
+  } catch (error) {
+    console.error("Update chat room error:", error);
+    const statusCode = error.message?.includes("permission") ? 403 : 500;
+    res.status(statusCode).json({
+      status: statusCode,
+      message: error.message || "Error updating chat room",
+    });
+  }
+});
+router.post("/:roomId/regenerateToken", async (req, res) => {
+  try {
+    const user = await getCurrentUser(req, res);
+    const { roomId } = req.params;
+    const room = await regenerateChatAccessToken({
+      roomId: Number(roomId),
+      userId: user.id,
+    });
+
+    res.json({
+      status: 200,
+      data: room,
+      message: "Chat access token regenerated successfully",
     });
   } catch (error) {
     console.error("Update chat room error:", error);

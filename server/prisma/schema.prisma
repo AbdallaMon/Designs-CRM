@@ -1049,7 +1049,8 @@ model Client {
   clientLeads ClientLead[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
-  
+  lastSeenAt               DateTime?
+
   // Chat relations
   chatMemberships    ChatMember[]
   chatMessages       ChatMessage[]

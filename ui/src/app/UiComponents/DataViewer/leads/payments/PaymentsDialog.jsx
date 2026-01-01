@@ -9,6 +9,7 @@ import {
   ListItem,
   ListItemText,
   Typography,
+  Box,
 } from "@mui/material";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
@@ -28,7 +29,7 @@ const PaymentDialog = ({ payments }) => {
   };
 
   return (
-    <div>
+    <Box>
       <Button variant="contained" color="primary" onClick={handleClickOpen}>
         View Payments
       </Button>
@@ -89,7 +90,7 @@ const PaymentDialog = ({ payments }) => {
           </Button>
         </DialogActions>
       </Dialog>
-    </div>
+    </Box>
   );
 };
 

@@ -63,7 +63,6 @@ const LeadContent = ({
   isPage,
   setRerenderColumns,
 }) => {
-  console.log(activeTab, "activeTab");
   const { user } = useAuth();
   const admin = checkIfAdminOrSuperSales(user);
   const isPrimaryStaff = checkIfPrimaryStaff(user);

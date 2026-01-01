@@ -13,7 +13,6 @@ import { FaArrowLeft, FaPhone, FaVideo, FaUsers } from "react-icons/fa";
 import { CHAT_ROOM_TYPE_LABELS } from "../../utils/chatConstants";
 import ChatSettings from "./ChatSettings";
 import { getRoomAvatar, getRoomLabel } from "../rooms/helpers";
-import { useChatRoom } from "../../hooks/useChatRoom";
 
 export function ChatWindowHeader({
   roomId,
@@ -29,6 +28,7 @@ export function ChatWindowHeader({
   room,
   loading,
   fetchChatRoom,
+  clientId,
 }) {
   const roomLabelFinal = getRoomLabel(room);
   const roomLabelToShow = roomLabelFinal;
@@ -170,13 +170,15 @@ export function ChatWindowHeader({
             </IconButton>
           </Tooltip>
         )}
-        <ChatSettings
-          members={members}
-          room={room}
-          reFetchRooms={reFetchRooms}
-          fetchMembers={fetchMembers}
-          fetchChatRoom={fetchChatRoom}
-        />
+        {!clientId && (
+          <ChatSettings
+            members={members}
+            room={room}
+            reFetchRooms={reFetchRooms}
+            fetchMembers={fetchMembers}
+            fetchChatRoom={fetchChatRoom}
+          />
+        )}
       </Box>
     </Box>
   );

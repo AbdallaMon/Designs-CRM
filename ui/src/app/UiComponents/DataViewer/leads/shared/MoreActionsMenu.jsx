@@ -109,77 +109,73 @@ export const MoreActionsMenu = ({
           )}
 
         {/* Admin Actions */}
-        {admin && (
-          <>
-            <MenuItem>
-              <DeleteModal
-                item={lead}
-                href={"admin/client-leads"}
-                fullButtonWidth={true}
-                handleClose={() => {
+        {admin && [
+          <MenuItem key="delete-action">
+            <DeleteModal
+              item={lead}
+              href={"admin/client-leads"}
+              fullButtonWidth={true}
+              handleClose={() => {
+                window.location.reload();
+              }}
+            />
+          </MenuItem>,
+          <MenuItem key="assign-action">
+            <AssignNewStaffModal
+              lead={lead}
+              onUpdate={(newLead) => {
+                if (setLead) {
+                  setLead((oldLead) => ({
+                    ...oldLead,
+                    assignedTo: { ...newLead.assignedTo },
+                    status: newLead.status,
+                  }));
+                } else if (setleads) {
+                  setleads((oldLeads) =>
+                    oldLeads.map((l) => {
+                      if (l.id === lead.id) {
+                        return {
+                          ...lead,
+                          assignedTo: { ...newLead.assignedTo },
+                          status: newLead.status,
+                        };
+                      } else {
+                        return l;
+                      }
+                    })
+                  );
+                } else {
                   window.location.reload();
-                }}
-              />
-            </MenuItem>
-            <MenuItem>
-              <AssignNewStaffModal
-                lead={lead}
-                onUpdate={(newLead) => {
-                  if (setLead) {
-                    setLead((oldLead) => ({
-                      ...oldLead,
-                      assignedTo: { ...newLead.assignedTo },
-                      status: newLead.status,
-                    }));
-                  } else if (setleads) {
-                    setleads((oldLeads) =>
-                      oldLeads.map((l) => {
-                        if (l.id === lead.id) {
-                          return {
-                            ...lead,
-                            assignedTo: { ...newLead.assignedTo },
-                            status: newLead.status,
-                          };
-                        } else {
-                          return l;
-                        }
-                      })
-                    );
-                  } else {
-                    window.location.reload();
-                  }
-                }}
-              />
-            </MenuItem>
-          </>
-        )}
+                }
+              }}
+            />
+          </MenuItem>,
+        ]}
 
         {/* Payment Actions - Finalized/Archived Only */}
-        {(lead.status === "FINALIZED" || lead.status === "ARCHIVED") && (
-          <>
-            {(user.role === "STAFF" ||
-              user.role === "SUPER_ADMIN" ||
-              user.role === "ADMIN") &&
-              (!payments || payments?.length < 1) && (
-                <MenuItem>
-                  <AddPayments
-                    fullButtonWidth={true}
-                    lead={lead}
-                    open={paymentModal}
-                    paymentType={"final-price"}
-                    setOpen={setPaymentModal}
-                    totalAmount={lead.averagePrice}
-                    setOldPayments={setPayments}
-                  />
-                </MenuItem>
-              )}
-            {payments?.length > 0 && (
-              <MenuItem sx={{ py: 1.5 }}>
-                <PaymentDialog payments={payments} />
+        {(lead.status === "FINALIZED" || lead.status === "ARCHIVED") && [
+          (user.role === "STAFF" ||
+            user.role === "SUPER_ADMIN" ||
+            user.role === "ADMIN") &&
+            (!payments || payments?.length < 1) && (
+              <MenuItem key="add-payment">
+                <AddPayments
+                  fullButtonWidth={true}
+                  lead={lead}
+                  open={paymentModal}
+                  paymentType={"final-price"}
+                  setOpen={setPaymentModal}
+                  totalAmount={lead.averagePrice}
+                  setOldPayments={setPayments}
+                />
               </MenuItem>
-            )}
-          </>
-        )}
+            ),
+          payments?.length > 0 && (
+            <MenuItem key="view-payment" sx={{ py: 1.5 }}>
+              <PaymentDialog payments={payments} />
+            </MenuItem>
+          ),
+        ]}
       </Menu>
 
       {/* Convert Lead Confirmation Modal */}

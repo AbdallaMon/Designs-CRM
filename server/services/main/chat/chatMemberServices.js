@@ -1,5 +1,6 @@
 import prisma from "../../../prisma/prisma.js";
 import { getIo } from "../../socket.js";
+import { checkIfUserIsRoomMember } from "./utils.js";
 
 /**
  * Add members to a chat room
@@ -252,19 +253,9 @@ export async function updateMemberRole({ roomId, userId, memberId, role }) {
 /**
  * Get room members
  */
-export async function getRoomMembers({ roomId, userId }) {
+export async function getRoomMembers({ roomId, userId, clientId }) {
   // Verify user is member
-  const member = await prisma.chatMember.findFirst({
-    where: {
-      roomId: parseInt(roomId),
-      userId: parseInt(userId),
-      isDeleted: false,
-    },
-  });
-
-  if (!member) {
-    throw new Error("You don't have access to this room");
-  }
+  const member = await checkIfUserIsRoomMember(roomId, userId, clientId);
 
   const members = await prisma.chatMember.findMany({
     where: {

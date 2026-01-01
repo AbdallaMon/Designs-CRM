@@ -68,7 +68,7 @@ router.get("/:roomId/pinned-messages", async (req, res) => {
     // userId fetched for future authorization if needed
     const { roomId } = req.params;
 
-    const data = await getPinnedMessages({ roomId });
+    const data = await getPinnedMessages({ roomId, userId: user.id });
 
     res.json({ status: 200, data });
   } catch (error) {

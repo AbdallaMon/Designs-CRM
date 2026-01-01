@@ -459,7 +459,6 @@ function ImageFileRow({
 
   const handleTileClick = async () => {
     // Non-image media tile (video/pdf) opens viewer directly
-    console.log("handleTileClick", { isImg, stage, fileUrl, mime });
     if (!isImg) {
       onOpen?.();
       return;
@@ -542,6 +541,7 @@ function ImageFileRow({
               width: "100%",
               height: "100%",
               objectFit: "contain",
+              maxHeight: "100vh",
               display: "block",
               filter: stage !== "full" ? "saturate(0.95)" : "none",
               transform: "scale(1.001)",

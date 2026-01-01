@@ -64,9 +64,10 @@ export function initSocket(httpServer) {
 
   io.on("connection", async (socket) => {
     let userId;
-    socket.on("online", ({ userId: id, user }) => {
+    let clientId;
+    socket.on("online", (data) => {
       // const id = user.id;
-
+      const { id, user } = data;
       userId = id;
 
       // Broadcast user is online
@@ -78,34 +79,40 @@ export function initSocket(httpServer) {
       });
     });
     userId = !userId ? Number(socket.handshake.query.userId) : userId;
+    clientId = !clientId ? socket.handshake.query.clientId : clientId;
     if (userId) {
       socket.join(`user:${userId}`);
       console.log("joined user room:", `user:${userId}`, "socket:", socket.id);
     } else {
+      if (clientId) {
+        socket.join(`client:${clientId}`);
+      }
       console.log("NO userId in handshake.query", socket.handshake.query);
     }
     // ==================== EXISTING HEARTBEAT ====================
 
     // ==================== CHAT ROOM EVENTS ====================
-    socket.on("user:online", ({ userId }) => {
+    socket.on("user:online", () => {
       console.log("Updating last seen for user online:", userId);
       updateLastSeen(userId);
+    });
+    socket.on("client:online", async () => {
+      console.log("Updating last seen for user online:", clientId);
+      await updateLastSeenByClientId(clientId);
     });
     /**
      * Join a chat room
      */
     socket.on("join_room", async (data) => {
-      const { roomId, userId } = data;
+      const { roomId } = data;
       if (!roomId) return;
 
       // Verify user is member of room
-      const member = await prisma.chatMember.findFirst({
-        where: {
-          roomId: parseInt(roomId),
-          userId,
-          leftAt: null,
-        },
+      const member = await getChatMember({
+        roomId: roomId,
+        userId: userId,
       });
+      console.log(userId, "member of room check:", member);
 
       if (!member) {
         socket.emit("error", { message: "Not a member of this room" });
@@ -131,6 +138,39 @@ export function initSocket(httpServer) {
       });
     });
 
+    socket.on("join_room_client", async (data) => {
+      const { roomId } = data;
+      if (!roomId) return;
+
+      // Verify user is member of room
+      const member = await getChatMember({
+        roomId: roomId,
+        clientId: clientId,
+      });
+
+      if (!member) {
+        socket.emit("error", { message: "Not a member of this room" });
+        return;
+      }
+
+      // Leave previous rooms (except user room)
+      const rooms = Array.from(socket.rooms);
+      rooms.forEach((room) => {
+        if (room !== socket.id && !room.startsWith("user:")) {
+          socket.leave(room);
+        }
+      });
+
+      // Join new room
+      socket.join(`room:${roomId}`);
+      console.log("joined room:", `room:${roomId}`, "socket:", socket.id);
+      // Notify others in room
+      socket.to(`room:${roomId}`).emit("member:joined", {
+        roomId,
+        clientId: clientId,
+        timestamp: new Date(),
+      });
+    });
     /**
      * Leave a chat room
      */
@@ -145,6 +185,7 @@ export function initSocket(httpServer) {
       socket.to(`room:${roomId}`).emit("member:left", {
         userId,
         roomId,
+        clientId,
         timestamp: new Date(),
       });
     });
@@ -155,30 +196,34 @@ export function initSocket(httpServer) {
      * User is typing
      */
     socket.on("user:typing", async (data) => {
-      const { roomId, user } = data;
-      const userId = user.id;
+      const { roomId, user, client } = data;
       if (!roomId) return;
 
       // Clear existing timeout
-      const timeoutKey = `${userId}-${roomId}`;
+      const timeoutKey = clientId
+        ? `${clientId}_${roomId}_client`
+        : `${userId}-${roomId}`;
       if (typingTimeouts.has(timeoutKey)) {
         clearTimeout(typingTimeouts.get(timeoutKey));
       }
-      const message = `${user?.name || "Some one"} is typing`;
+      const message = `${user?.name || client?.name || "Some one"} is typing`;
       // Broadcast to room (except sender)
       socket.to(`room:${roomId}`).emit("user:typing", {
         userId,
         roomId,
+        clientId,
         // timestamp: new Date(),
         message,
       });
       await emitToAllUsersRelatedToARoom({
         roomId,
         userId,
+        clientId,
         content: {
           user,
           roomId,
           message,
+          client,
         },
         type: "notification:user_typing",
       });
@@ -186,14 +231,17 @@ export function initSocket(httpServer) {
         socket.to(`room:${roomId}`).emit("user:stop_typing", {
           userId,
           roomId,
+          clientId,
         });
         await emitToAllUsersRelatedToARoom({
           roomId,
+          clientId,
           userId,
           content: {
             user,
             roomId,
             message: "",
+            client,
           },
           type: "notification:user_stopped_typing",
         });
@@ -233,8 +281,9 @@ export function initSocket(httpServer) {
           type,
           replyToId,
           attachments,
-          userId: data.userId,
+          userId: userId,
           roomId,
+          clientId: clientId,
         });
       } catch (e) {
         console.log(e, "error in sending message");
@@ -262,11 +311,11 @@ export function initSocket(httpServer) {
      * Delete message (broadcast handled by service, but we can also handle here)
      */
     socket.on("message:delete", async (data) => {
-      const { messageId, roomId, userId } = data;
+      const { messageId, roomId, userId, clientId } = data;
       if (!messageId || !roomId) return;
 
       try {
-        await deleteMessage({ messageId, userId });
+        await deleteMessage({ messageId, userId, clientId });
       } catch (error) {
         console.error("Delete message error:", error);
         socket.emit("error", { message: "Error deleting message" });
@@ -279,23 +328,23 @@ export function initSocket(httpServer) {
      * Mark messages as read
      */
     socket.on("messages:mark_read", async (data) => {
-      const { roomId, userId } = data;
+      const { roomId } = data;
       if (!roomId) return;
 
       try {
         // Get member
-        await markMessagesAsRead({ roomId, userId });
+        await markMessagesAsRead({ roomId, userId, clientId });
       } catch (error) {
         console.error("Mark as read error:", error);
       }
     });
     socket.on("message:mark_read", async (data) => {
-      const { roomId, messageId, userId } = data;
+      const { roomId, messageId } = data;
       if (!roomId) return;
 
       try {
         // Get member
-        await markAMessageAsRead({ messageId, roomId, userId });
+        await markAMessageAsRead({ messageId, roomId, userId, clientId });
       } catch (error) {
         console.error("Mark as read error:", error);
       }
@@ -303,20 +352,20 @@ export function initSocket(httpServer) {
 
     // message:pin
     socket.on("message:pin", async (data) => {
-      const { roomId, messageId, userId } = data;
+      const { roomId, messageId } = data;
       if (!roomId) return;
       try {
-        await pinMessage({ roomId, messageId, userId });
+        await pinMessage({ roomId, messageId, userId, clientId });
       } catch (error) {
         console.error("Pin message error:", error);
       }
     });
     // message:unpin
     socket.on("message:unpin", async (data) => {
-      const { roomId, messageId, userId } = data;
+      const { roomId, messageId } = data;
       if (!roomId) return;
       try {
-        await unpinMessage({ roomId, messageId, userId });
+        await unpinMessage({ roomId, messageId, userId, clientId });
       } catch (error) {
         console.error("Unpin message error:", error);
       }
@@ -468,6 +517,7 @@ export function initSocket(httpServer) {
       // Broadcast user is offline
       io.emit("user:offline", {
         userId,
+        clientId,
         timestamp: new Date(),
       });
     });
@@ -482,7 +532,45 @@ function updateLastSeen(userId) {
     })
     .catch(console.error);
 }
-
+async function getClientChatMemberByClientId(clientId) {
+  const member = await prisma.chatMember.findFirst({
+    where: {
+      clientId: Number(clientId),
+    },
+    select: {
+      clientId: true,
+      client: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+  return member;
+}
+async function updateLastSeenByClientId(clientId) {
+  const chatMember = await getClientChatMemberByClientId(clientId);
+  if (chatMember) {
+    await prisma.client.update({
+      where: { id: Number(clientId) },
+      data: { lastSeenAt: new Date() },
+    });
+  }
+}
+async function getChatMember({ clientId, userId, roomId }) {
+  const member = await prisma.chatMember.findFirst({
+    where: {
+      roomId: roomId ? Number(roomId) : undefined,
+      isDeleted: false,
+      OR: [
+        { userId: userId ? Number(userId) : undefined },
+        { clientId: clientId ? Number(clientId) : undefined },
+      ],
+    },
+  });
+  return member;
+}
 export function getIo() {
   if (!io) throw new Error("Socket.io not initialized");
   return io;

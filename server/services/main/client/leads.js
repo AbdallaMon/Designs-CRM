@@ -1,4 +1,4 @@
-import prisma from "../../prisma/prisma.js";
+import prisma from "../../../prisma/prisma.js";
 
 export async function generateCodeForNewLead(clientId, tx = prisma) {
   // 1) Stable prefix from the *oldest* lead id for this client

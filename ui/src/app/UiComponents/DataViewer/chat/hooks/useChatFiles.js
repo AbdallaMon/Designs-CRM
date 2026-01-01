@@ -15,6 +15,7 @@ export function useChatFiles(
     sort = "newest",
     searchQuery = "",
     fileType = {},
+    clientId = null,
   } = {}
 ) {
   const [files, setFiles] = useState([]);
@@ -31,7 +32,6 @@ export function useChatFiles(
   const pageRef = useRef(page);
   const scrollContainerRef = useRef(null);
   const filesEndRef = useRef(null);
-  const BOTTOM_THRESHOLD_PX = 80;
   const fetchFiles = useCallback(async () => {
     if (!roomId) return;
     let page = pageRef.current;
@@ -54,9 +54,13 @@ export function useChatFiles(
       }
 
       const response = await getData({
-        url: `shared/chat/rooms/${roomId}/files?${queryParams}&uniqueMonths=${JSON.stringify(
-          uniqueMonths
-        )}&`,
+        url: clientId
+          ? `client/chat/rooms/${roomId}/files?clientId=${clientId}&${queryParams}&uniqueMonths=${JSON.stringify(
+              uniqueMonths
+            )}&`
+          : `shared/chat/rooms/${roomId}/files?${queryParams}&uniqueMonths=${JSON.stringify(
+              uniqueMonths
+            )}&`,
         setLoading: () => {},
         page: currentPage,
         limit: LIMIT,
@@ -97,9 +101,6 @@ export function useChatFiles(
     loadingMore,
     uniqueMonths,
   ]);
-  // useEffect(() => {
-  //   refreshFiles();
-  // }, [fileType]);
 
   function refreshFiles() {
     setRefetchToggle((prev) => !prev);

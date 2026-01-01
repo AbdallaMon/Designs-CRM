@@ -79,7 +79,7 @@ export default function DeleteModal({
       </Button>
     );
   return (
-    <>
+    <Box>
       <Modal open={open} onClose={() => setOpen(false)} closeAfterTransition>
         <Fade in={open}>
           <Box sx={{ ...simpleModalStyle }}>
@@ -113,6 +113,6 @@ export default function DeleteModal({
           </Box>
         </Fade>
       </Modal>
-    </>
+    </Box>
   );
 }

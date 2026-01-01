@@ -17,7 +17,7 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import { CHAT_LIMITS } from "../utils/chatConstants";
 import { useScroll } from "@/app/helpers/hooks/useScroll";
 
-export function useChatMessages(roomId, initialPage = 0) {
+export function useChatMessages(roomId, initialPage = 0, clientId) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(initialPage);
@@ -62,9 +62,13 @@ export function useChatMessages(roomId, initialPage = 0) {
       }
 
       const response = await getData({
-        url: `shared/chat/${roomId}/messages?page=${pageNum}&limit=${
-          forceLimit || LIMIT
-        }&`,
+        url: clientId
+          ? `client/chat/${roomId}/messages?page=${pageNum}&limit=${
+              forceLimit || LIMIT
+            }&clientId=${clientId}&`
+          : `shared/chat/${roomId}/messages?page=${pageNum}&limit=${
+              forceLimit || LIMIT
+            }&`,
         setLoading: isLoadMore ? setLoadingMore : setLoading,
       });
 
@@ -167,7 +171,9 @@ export function useChatMessages(roomId, initialPage = 0) {
       }
 
       const req = await getData({
-        url: `shared/chat/${roomId}/messages/${messageId}/page`,
+        url: clientId
+          ? `client/chat/${roomId}/messages/${messageId}/page?clientId=${clientId}&`
+          : `shared/chat/${roomId}/messages/${messageId}/page`,
         setLoading: () => {},
         limit: LIMIT,
       });

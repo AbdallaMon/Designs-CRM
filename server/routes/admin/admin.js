@@ -52,8 +52,8 @@ import { newLeadNotification } from "../../services/notification.js";
 
 import imageSessionRouter from "../image-session/admin-image-session.js";
 import coursesRouter from "../courses/adminCourses.js";
-import { generateCodeForNewLead } from "../../services/client/leads.js";
 import { createGroupProjects } from "../../services/main/shared/projectServices.js";
+import { generateCodeForNewLead } from "../../services/main/client/leads.js";
 
 const router = Router();
 

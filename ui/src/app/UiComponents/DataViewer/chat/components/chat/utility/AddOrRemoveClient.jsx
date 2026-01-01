@@ -50,7 +50,7 @@ export function AddOrRemoveClient({
         disabled={loading}
       >
         {loading && <CircularProgress size={20} sx={{ mr: 1 }} />}
-        {isAdded ? "Remove" : "Add"} Client from Chat
+        {isAdded ? "Remove" : "Add"} Client {isAdded ? "from" : "to"} Chat
       </Button>
       <ConfirmDialog
         title={isAdded ? "Remove Client" : "Add Client"}

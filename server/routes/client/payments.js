@@ -11,7 +11,7 @@ import {
   asKV,
   first,
   backfillStripeSessions,
-} from "../../services/client/payments.js";
+} from "../../services/main/client/payments.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 

@@ -15,6 +15,7 @@ import {
   Chip,
   IconButton,
   Paper,
+  Grid,
 } from "@mui/material";
 import { MdDelete } from "react-icons/md";
 import { LastSeenAt, OnlineStatus } from "./LastSeenAt";
@@ -47,6 +48,7 @@ export function AddMembersDialog({
   reFetchRoom,
   accessToken,
 }) {
+  const isAdded = members?.some((m) => m.client);
   return (
     <Dialog
       open={open}
@@ -59,23 +61,31 @@ export function AddMembersDialog({
     >
       <DialogTitle>Add Members to Chat</DialogTitle>
       <DialogContent sx={{ pt: 2 }}>
-        <Box sx={{ mb: 2 }}>
-          <AddOrRemoveClient
-            clientLeadId={clientLeadId}
-            roomId={roomId}
-            reFetchMembers={reFetchMembers}
-            handleClose={onClose}
-            isAdded={members?.some((m) => m.client)}
-            reFetchRoom={reFetchRoom}
-          />
-          <ChatAccessLinkBox
-            roomId={roomId}
-            accessToken={accessToken}
-            reFetchRoom={reFetchRoom}
-            disabled={!canManageMembers}
-            clientLeadId={clientLeadId}
-          />
-        </Box>
+        {canManageMembers && (
+          <Grid container spacing={2} mb={2}>
+            <Grid size={4}>
+              <AddOrRemoveClient
+                clientLeadId={clientLeadId}
+                roomId={roomId}
+                reFetchMembers={reFetchMembers}
+                handleClose={onClose}
+                isAdded={isAdded}
+                reFetchRoom={reFetchRoom}
+              />
+            </Grid>
+            <Grid size={8}>
+              {isAdded && (
+                <ChatAccessLinkBox
+                  roomId={roomId}
+                  accessToken={accessToken}
+                  reFetchRoom={reFetchRoom}
+                  disabled={!canManageMembers}
+                  clientLeadId={clientLeadId}
+                />
+              )}
+            </Grid>
+          </Grid>
+        )}
         <Stack spacing={2}>
           {/* Current Members Section */}
           {members.length > 0 && (

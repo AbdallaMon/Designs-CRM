@@ -12,30 +12,11 @@ import {
   Paper,
   Stack,
   Typography,
-  IconButton,
-  Avatar,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
   CircularProgress,
+  Alert,
 } from "@mui/material";
-import {
-  FaArrowLeft,
-  FaEllipsisV,
-  FaPhone,
-  FaVideo,
-  FaInfo,
-  FaPlus,
-  FaUsers,
-  FaComments,
-  FaFolder,
-  FaTimes,
-} from "react-icons/fa";
-import {
-  CHAT_ROOM_TYPE_LABELS,
-  CHAT_ROOM_TYPES,
-} from "../../utils/chatConstants";
+
+import { CHAT_ROOM_TYPES } from "../../utils/chatConstants";
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -57,6 +38,7 @@ import {
   emitPinMessage,
   emitUnpinMessage,
   socket,
+  joinChatRoomAsClient,
 } from "../../utils/socketIO";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useChatMembers } from "../../hooks/useChatMembers";
@@ -69,6 +51,7 @@ import PinnedMessages from "./PinnedMessages";
 import { ChatWindowHeader } from "./ChatWindowHeader";
 import { LoadMoreButton } from "../indicators/LoadMoreButton";
 import { useChatRoom } from "../../hooks/useChatRoom";
+import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
 
 export function ChatWindow({
   roomId,
@@ -78,6 +61,8 @@ export function ChatWindow({
   isMobile = false,
   onRoomActivity = () => {},
   reFetchRooms = () => {},
+  clientId,
+  client,
 }) {
   const { user } = useAuth();
   const { setLoading: setToastLoading } = useToastContext();
@@ -95,13 +80,20 @@ export function ChatWindow({
   const typingTimeoutRef = useRef(null);
   const inputRef = useRef(null);
   const [pinnedMessages, setPinnedMessages] = useState([]);
-  const { room, loading: loadingRoom, fetchChatRoom } = useChatRoom(roomId);
+  const {
+    room,
+    loading: loadingRoom,
+    fetchChatRoom,
+    error,
+  } = useChatRoom(roomId, clientId);
   const [loadingPinnedMessages, setLoadingPinnedMessages] = useState(false);
   const fetchPinnedMessages = async () => {
     if (!roomId) return;
 
     const response = await getData({
-      url: `shared/chat/${roomId}/pinned-messages`,
+      url: clientId
+        ? `client/chat/${roomId}/pinned-messages?clientId=${clientId}&`
+        : `shared/chat/${roomId}/pinned-messages`,
       setLoading: setLoadingPinnedMessages,
     });
 
@@ -169,28 +161,31 @@ export function ChatWindow({
     newMessagesCount,
     setNewMessagesCount,
     loadMore,
-  } = useChatMessages(roomId);
+  } = useChatMessages(roomId, 0, clientId);
   const {
     members,
     loading: membersLoading,
     fetchMembers,
     setMembers,
-  } = useChatMembers(roomId);
+  } = useChatMembers(roomId, clientId);
   const cantLoad = !hasMore || loadingMore || initialLoading || loading;
   const currentUserMember = members?.find(
-    (m) => m.userId === user?.id || m.clientId === user?.id
+    (m) => m.userId === user?.id || m.clientId == clientId
   );
   const currentUserRole = currentUserMember?.role || "MEMBER";
 
   // Join room when it changes
   useEffect(() => {
-    if (roomId && user && socket) {
+    if (roomId && user && socket && socket?.connected && !clientId) {
       joinChatRoom(roomId, user);
     }
-  }, [roomId, user, socket]);
+    if (roomId && clientId && socket && socket?.connected) {
+      joinChatRoomAsClient(roomId, clientId);
+    }
+  }, [roomId, user, clientId, socket, socket?.connected]);
 
   const emitTyping = useCallback(() => {
-    typing({ roomId: roomId, user });
+    typing({ roomId: roomId, user, client });
     clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
       stopTyping();
@@ -218,11 +213,11 @@ export function ChatWindow({
   useSocket({
     onMessageCreated: (data) => {
       // Only add if it's for this room and not from self
+      console.log(data, "data");
       if (data.roomId === roomId) {
         setMessages((prev) => [...prev, data]);
         onRoomActivity?.(data);
         markMessageAsRead(roomId, data.id, user.id);
-
         setNewMessagesCount((prev) => prev + 1);
         // scrollToBottom();
         inputRef.current?.focus();
@@ -300,7 +295,9 @@ export function ChatWindow({
 
   const isAdmin = checkIfAdmin(user) || room?.createdBy?.id === user.id;
   const isAdminUser = checkIfAdmin(user);
-  const isMember = members?.some((m) => m.userId === user.id);
+  const isMember = members?.some(
+    (m) => m.userId === user.id || m.clientId == clientId
+  );
 
   const isNotDirectChat = room?.type !== CHAT_ROOM_TYPES.STAFF_TO_STAFF;
   const canManageMembers = isAdmin && isNotDirectChat;
@@ -460,10 +457,10 @@ export function ChatWindow({
   };
 
   useEffect(() => {
-    if (showAddMembers && isNotDirectChat) {
+    if (showAddMembers && isNotDirectChat && !clientId) {
       loadAvailableUsers();
     }
-  }, [showAddMembers, isNotDirectChat, members]);
+  }, [showAddMembers, isNotDirectChat, members, clientId]);
 
   // Scroll to bottom whenever messages change (instant with scrollIntoView)
   useEffect(() => {
@@ -479,10 +476,15 @@ export function ChatWindow({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          height: {
-            xs: "calc(100vh - 62px)",
-            md: "calc(100vh - 86px)",
-          },
+          height: clientId
+            ? {
+                xs: "calc(100vh - 32px)",
+                md: "calc(100vh - 32px)",
+              }
+            : {
+                xs: "calc(100vh - 62px)",
+                md: "calc(100vh - 86px)",
+              },
 
           color: "textSecondary",
         }}
@@ -498,12 +500,15 @@ export function ChatWindow({
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: "100%",
-        height: { xs: "calc(100vh - 62px)", md: "calc(100vh - 115px)" },
+        height: clientId
+          ? { xs: "calc(100vh - 32px)", md: "calc(100vh - 32px)" }
+          : { xs: "calc(100vh - 62px)", md: "calc(100vh - 86px)" },
         bgcolor: "background.paper",
         overflow: "hidden",
       }}
     >
+      {loading && <LoadingOverlay />}
+      {error && <Alert severity="error">{error}</Alert>}
       {/* Header Section */}
       <ChatWindowHeader
         roomId={roomId}
@@ -519,6 +524,7 @@ export function ChatWindow({
         fetchChatRoom={fetchChatRoom}
         loading={loadingRoom}
         room={room}
+        clientId={clientId}
       />
       <PinnedMessages
         roomId={roomId}
@@ -632,6 +638,7 @@ export function ChatWindow({
                   setReplyLoaded={setReplyLoaded}
                   replayLoadingMessageId={replayLoadingMessageId}
                   setReplayLoadingMessageId={setReplayLoadingMessageId}
+                  clientId={clientId}
                 />
               ))}
               <ScrollButton
@@ -682,6 +689,7 @@ export function ChatWindow({
         roomId={roomId}
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
+        clientId={clientId}
       />
 
       {/* Add Members Dialog */}
@@ -697,7 +705,7 @@ export function ChatWindow({
         onAddMembers={handleAddMembers}
         onRemoveMember={confirmRemoveMember}
         reFetchMembers={fetchMembers}
-        clientLeadId={clientLeadId}
+        clientLeadId={room?.clientLeadId}
         roomId={roomId}
         reFetchRoom={fetchChatRoom}
         accessToken={room?.chatAccessToken}

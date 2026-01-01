@@ -97,7 +97,7 @@ export default function RootLayout({ children }) {
               <ToastProvider>
                 <AuthProvider>
                   <DotsLoader />
-                  <SocketProvider>{children}</SocketProvider>
+                  {children}
                 </AuthProvider>
                 <ServiceWorkerRegister />
               </ToastProvider>

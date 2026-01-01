@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import prisma from "../../prisma/prisma.js";
+import prisma from "../../../prisma/prisma.js";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export const first = (...vals) =>
@@ -28,7 +28,6 @@ export async function normalizeFromSession(session) {
       "payment_intent.latest_charge.payment_method_details",
     ],
   });
-  console.log(full, "full");
 
   const pi = full.payment_intent || null;
   const charge = pi?.latest_charge || null;

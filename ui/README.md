@@ -14,5 +14,8 @@ Uuvzio1mIpURqzci
 
 # Changelog
 
-- Allow full screen chat
 - If searchParams getRoom true and roomId doent load til u fetch the room details from backend and then open the chat.
+- Client lead page
+- Handle socket connection for client
+- check online status for client also
+- Add name in chat message

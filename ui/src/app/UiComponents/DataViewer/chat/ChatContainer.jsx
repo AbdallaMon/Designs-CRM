@@ -30,7 +30,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { CreateGroupDialog } from "./components/dialogs";
 import CreateLeadChatGroup from "./components/dialogs/CreateLeadChatGroup";
-import { useChatRoom } from "./hooks/useChatRoom";
 
 export function ChatContainer({
   type = "page", // "page" | "widget" | "project" | "clientLead" | "tab"

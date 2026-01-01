@@ -3,6 +3,10 @@ import prisma from "../../../prisma/prisma.js";
 import { getIo } from "../../socket.js";
 import { emitToAllUsersRelatedToARoom } from "./chatMessageServices.js";
 import { v4 as uuidv4 } from "uuid";
+import {
+  checkIfUserAllowedToDoAdminActions,
+  checkIfUserIsRoomMember,
+} from "./utils.js";
 
 /**
  * Get chat rooms for a user with filters
@@ -270,19 +274,25 @@ export async function getChatRooms({
 /**
  * Get single room details
  */
-export async function getChatRoomById(roomId, userId) {
-  // Verify user is member
-  const member = await prisma.chatMember.findFirst({
+export async function verifyRoomAccessUsingtoken(token) {
+  console.log(token, "token");
+  const room = await prisma.chatRoom.findFirst({
+    where: { chatAccessToken: token },
+  });
+  const chatMember = await prisma.chatMember.findFirst({
     where: {
-      roomId: parseInt(roomId),
-      userId: parseInt(userId),
-      isDeleted: false,
+      roomId: room.id,
+      clientId: { not: null },
+    },
+    include: {
+      client: true,
     },
   });
-
-  if (!member) {
-    throw new Error("You don't have access to this room");
-  }
+  return { room, chatMember };
+}
+export async function getChatRoomById(roomId, userId, clientId) {
+  // Verify user is member
+  const selfMember = await checkIfUserIsRoomMember(roomId, userId, clientId);
 
   const room = await prisma.chatRoom.findUnique({
     where: { id: parseInt(roomId) },
@@ -357,13 +367,7 @@ export async function getChatRoomById(roomId, userId) {
       },
     },
   });
-  const selfMember = await prisma.chatMember.findFirst({
-    where: {
-      roomId: room.id,
-      userId: Number(userId),
-      isDeleted: false,
-    },
-  });
+
   const otherMembers = room.members.filter((m) => m.userId !== Number(userId));
   return {
     ...room,
@@ -819,4 +823,89 @@ export async function deleteChatRoom(roomId, userId) {
   });
 
   return { message: "Chat room deleted successfully" };
+}
+
+export async function manageClient({ action, roomId, userId }) {
+  try {
+    await checkIfUserAllowedToDoAdminActions(roomId, userId);
+    const room = await prisma.chatRoom.findUnique({
+      where: { id: parseInt(roomId) },
+      select: {
+        clientLeadId: true,
+        clientLead: {
+          select: {
+            id: true,
+            clientId: true,
+          },
+        },
+      },
+    });
+    if (action === "addClient") {
+      const checkIfClientExists = await prisma.chatMember.findFirst({
+        where: {
+          roomId: parseInt(roomId),
+          clientId: room.clientLead.clientId,
+        },
+      });
+      if (checkIfClientExists) {
+        await prisma.chatMember.updateMany({
+          where: {
+            id: checkIfClientExists.id,
+          },
+          data: {
+            isDeleted: false,
+          },
+        });
+      } else {
+        await prisma.chatMember.create({
+          data: {
+            roomId: parseInt(roomId),
+            clientId: room.clientLead.clientId,
+            role: "MEMBER",
+          },
+        });
+      }
+      const token = await generateChatPassword();
+      await prisma.chatRoom.update({
+        where: { id: parseInt(roomId) },
+        data: {
+          chatAccessToken: token,
+        },
+      });
+    } else if (action === "removeClient") {
+      await prisma.chatMember.updateMany({
+        where: {
+          roomId: parseInt(roomId),
+          clientId: room.clientLead.clientId,
+        },
+        data: {
+          isDeleted: true,
+        },
+      });
+      await prisma.chatRoom.update({
+        where: { id: parseInt(roomId) },
+        data: {
+          chatAccessToken: null,
+        },
+      });
+    }
+  } catch (e) {
+    throw e;
+  }
+}
+
+export async function regenerateChatAccessToken({ roomId, userId }) {
+  try {
+    await checkIfUserAllowedToDoAdminActions(roomId, userId);
+    const token = await generateChatPassword();
+    const room = await prisma.chatRoom.update({
+      where: { id: parseInt(roomId) },
+      data: {
+        chatAccessToken: token,
+      },
+    });
+    return room;
+  } catch (e) {
+    throw e;
+  }
 }

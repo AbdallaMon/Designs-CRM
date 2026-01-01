@@ -80,3 +80,57 @@ export function getMonthGroupLabel(date) {
     year: "numeric",
   });
 }
+export async function checkIfUserAllowedToDoAdminActions(roomId, userId) {
+  // Fetch room details
+  const room = await prisma.chatRoom.findUnique({
+    where: { id: parseInt(roomId, 10) },
+    select: {
+      createdById: true,
+      type: true,
+    },
+  });
+  if (!room) {
+    throw new Error("Chat room not found");
+  }
+  const currentMember = await prisma.chatMember.findFirst({
+    where: {
+      roomId: parseInt(roomId, 10),
+      userId: userId,
+      isDeleted: false,
+    },
+  });
+  // Check if user is room creator, project manager, client lead, or a member with admin rights
+  if (!currentMember) {
+    throw new Error("You do not have access to manage this chat room");
+  }
+  if (
+    currentMember.role !== "ADMIN" &&
+    currentMember.role !== "MODERATOR" &&
+    currentMember.userId !== room.createdById &&
+    room.type !== "STAFF_TO_STAFF"
+  ) {
+    throw new Error("You do not have access to manage this chat room");
+  }
+}
+
+export async function checkIfUserIsRoomMember(roomId, userId, clientId) {
+  if (userId) userId = parseInt(userId, 10);
+  const member = await prisma.chatMember.findFirst({
+    where: {
+      roomId: parseInt(roomId, 10),
+      isDeleted: false,
+      OR: [
+        {
+          userId: userId ? Number(userId) : null,
+        },
+        {
+          clientId: clientId ? Number(clientId) : null,
+        },
+      ],
+    },
+  });
+  if (!member) {
+    throw new Error("You do not have access to this chat room");
+  }
+  return member;
+}

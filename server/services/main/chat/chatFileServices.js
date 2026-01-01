@@ -1,5 +1,6 @@
 import prisma from "../../../prisma/prisma.js";
 import {
+  checkIfUserIsRoomMember,
   getDayGroup,
   getDayLabel,
   getMonthGroup,
@@ -21,6 +22,7 @@ export async function getChatRoomFiles({
   from = null,
   to = null,
   uniqueMonthsString,
+  clientId = null,
 }) {
   sort = JSON.parse(sort);
   const uniqueMonths = JSON.parse(uniqueMonthsString);
@@ -29,17 +31,7 @@ export async function getChatRoomFiles({
   const skip = page * limit;
 
   // Verify user is a member of the room
-  const member = await prisma.chatMember.findFirst({
-    where: {
-      roomId: parsedRoomId,
-      userId: parsedUserId,
-      leftAt: null,
-    },
-  });
-
-  if (!member) {
-    throw new Error("You don't have access to this room");
-  }
+  const member = await checkIfUserIsRoomMember(roomId, userId, clientId);
 
   // Build file type filter
   const typeFilter = buildTypeFilter(type);
@@ -95,7 +87,13 @@ export async function getChatRoomFiles({
             content: true,
             createdAt: true,
             senderId: true,
-            senderClient: true,
+            senderClient: {
+              select: {
+                id: true,
+                name: true,
+                profilePicture: true,
+              },
+            },
             sender: {
               select: {
                 id: true,
@@ -118,7 +116,7 @@ export async function getChatRoomFiles({
     }),
     prisma.chatAttachment.count({ where }),
   ]);
-  const formattedFiles = addMonthGrouping(attachments, uniqueMonths);
+  const formattedFiles = addMonthGrouping(attachments, uniqueMonths, member);
 
   // Format response with month grouping helper
   // const formattedFiles = messages.map((msg) => {
