@@ -604,10 +604,10 @@ export async function createColorPallete({ data }) {
     throw new Error("Please select a template");
   }
   if (!data.titles || titles.length === 0) {
-    throw new Error("Please Fill all data.");
+    throw new Error("Please select a title.");
   }
   if (!data.background) {
-    throw new Error("Please Fill all data.");
+    throw new Error("Please select a background.");
   }
 
   const titlesToCreate = createTextAndConnect(titles, "text");

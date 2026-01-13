@@ -27,11 +27,14 @@ import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 
 function isImageUrl(u) {
+  console.log(u, "u");
   if (!u) return false;
   try {
-    const ext = new URL(u).pathname.split(".").pop()?.toLowerCase();
+    const ext = u.split(".").pop()?.toLowerCase();
+    console.log(ext, "ext");
     return ["png", "jpg", "jpeg", "webp", "gif", "svg"].includes(ext);
-  } catch {
+  } catch (e) {
+    console.log("Invalid URL");
     return false;
   }
 }
@@ -48,6 +51,9 @@ function ImgOrLink({ label, url }) {
     );
   }
   const showImg = isImageUrl(url);
+  console.log(showImg, "showImg");
+  console.log(url, "url");
+
   return (
     <Stack spacing={1}>
       {showImg ? (
@@ -118,7 +124,7 @@ export default function PdfUtilityFieldCard({
     const res = await handleRequestSubmit(
       { [itemKey]: url },
       setSaving,
-      `shared/site-utilities`,
+      `shared/site-utilities/pdf-utility`,
       false,
       "Updating utility..."
     );

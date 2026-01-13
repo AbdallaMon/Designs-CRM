@@ -13,7 +13,7 @@ export default function PdfUtility({
     {
       key: "pdfFrame",
       label: "PDF Frame",
-      endpoint: "shared/site-utilities",
+      endpoint: "shared/site-utilities/pdf-utility",
     },
     // {
     //   key: "pdfHeader",
@@ -23,7 +23,7 @@ export default function PdfUtility({
     {
       key: "introPage",
       label: "Intro Page",
-      endpoint: "shared/site-utilities",
+      endpoint: "shared/site-utilities/pdf-utility",
     },
     // {
     //   key: "pageTitle",

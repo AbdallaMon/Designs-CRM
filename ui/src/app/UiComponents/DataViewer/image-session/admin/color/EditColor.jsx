@@ -39,7 +39,7 @@ export function EditColor({ onUpdate, initialData }) {
         setOverlay
       );
       if (uploadResponse.status === 200) {
-        data.imageUrl = fileUpload.url;
+        data.imageUrl = uploadResponse.url;
       }
 
       delete data.file;

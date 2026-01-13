@@ -628,6 +628,8 @@ model ClientLead {
   updates          ClientLeadUpdate[]
   imageSessions    ClientImageSession[]
 
+  driveNodeLinks DriveNodeClientLead[]
+
   reasonToConvert   String?
   paymentStatus     PaymentStatus @default(PENDING)
   paymentSessionId  String?
@@ -758,6 +760,7 @@ model Project {
 
   contractStages ContractStage[]
   payments       ContractPayment[]
+  driveNodeLinks DriveNodeProject[]
 
   deliveryTime      DateTime? // time to deliver the project (optional)
   deliverySchedules DeliverySchedule[]
@@ -952,6 +955,10 @@ model User {
   allowedLessons           LessonAccess[]
   homeWorks                LessonHomework[]
   deliverySchedulesCreated DeliverySchedule[]   @relation("DeliverySchedulesCreatedBy")
+  // drive relations
+  driveNodesOwned      DriveNode[]
+  driveAcls            DriveAcl[]
+  driveSharesCreated DrivePublicShare[]
 
   baseSalary          BaseEmployeeSalary?
   notAllowedCountries Json?
@@ -2265,4 +2272,155 @@ model CallParticipant {
   @@index([callId])
   @@index([userId])
   @@index([clientId])
+}
+
+
+
+// ==================== End of Chat System Models ====================
+// ==================== Folders and Files Models  ====================
+
+enum DriveNodeType {
+  FOLDER
+  FILE
+}
+
+enum DriveVisibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum StorageProvider {
+  LOCAL
+  GDRIVE
+}
+model DriveNode {
+  id Int @id @default(autoincrement())
+
+  type       DriveNodeType
+  visibility DriveVisibility @default(PRIVATE)
+
+  // مين أنشأ/رفع
+  owner   User @relation(fields: [ownerId], references: [id])
+  ownerId Int
+
+  // Tree
+  parent   DriveNode?  @relation("DriveNodeChildren", fields: [parentId], references: [id])
+  parentId Int?
+  children DriveNode[] @relation("DriveNodeChildren")
+
+  name String @db.VarChar(255)
+
+  // FILE only
+  storageProvider StorageProvider @default(LOCAL)
+  storageKey      String? @db.VarChar(1024)  // مهم: للـ LOCAL هتبقى relative path
+  mimeType        String? @db.VarChar(120)
+  sizeBytes       BigInt? @default(0)
+  checksum        String? @db.VarChar(128)
+
+  // soft delete
+  isDeleted Boolean  @default(false)
+  deletedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // ACL (لـ PRIVATE فقط عادةً)
+  acl DriveAcl[]
+
+  // Public external share links (tokens)
+  publicShares DrivePublicShare[]
+
+  // linking
+  nodeProjects   DriveNodeProject[]
+  nodeClientLeads DriveNodeClientLead[]
+
+  @@index([ownerId])
+  @@index([parentId])
+  @@index([visibility])
+  @@index([isDeleted])
+}
+
+model DriveAcl {
+  id Int @id @default(autoincrement())
+
+  node   DriveNode @relation(fields: [nodeId], references: [id])
+  nodeId Int
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  // صلاحيات CRUD + مشاركة
+  canView   Boolean @default(true)
+  canUpload Boolean @default(false) // لو Folder
+  canEdit   Boolean @default(false) // rename/move
+  canDelete Boolean @default(false)
+  canShare  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@unique([nodeId, userId])
+  @@index([userId])
+  @@index([nodeId])
+}
+
+model DrivePublicShare {
+  id Int @id @default(autoincrement())
+
+  node      DriveNode @relation(fields: [nodeId], references: [id])
+  nodeId    Int
+
+  createdBy User @relation(fields: [createdById], references: [id])
+  createdById Int
+
+  // token ثابت أو مؤقت
+  token      String   @unique @db.VarChar(80)
+  expiresAt  DateTime?
+  isRevoked  Boolean  @default(false)
+  revokedAt  DateTime?
+
+  // باسورد اختياري للينك
+  passwordHash String? @db.VarChar(255)
+
+  // صلاحيات اللينك الخارجي
+  canView     Boolean @default(true)
+  canDownload Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@index([nodeId])
+  @@index([createdById])
+}
+
+// Folder/Node مرتبط بمشاريع
+model DriveNodeProject {
+  id Int @id @default(autoincrement())
+
+  node   DriveNode @relation(fields: [nodeId], references: [id])
+  nodeId Int
+
+  project Project @relation(fields: [projectId], references: [id])
+  projectId Int
+
+  createdAt DateTime @default(now())
+
+  @@unique([nodeId, projectId])
+  @@index([projectId])
+  @@index([nodeId])
+}
+
+// Folder/Node مرتبط بـ Leads
+model DriveNodeClientLead {
+  id Int @id @default(autoincrement())
+
+  node   DriveNode @relation(fields: [nodeId], references: [id])
+  nodeId Int
+
+  clientLead ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
+
+  createdAt DateTime @default(now())
+
+  @@unique([nodeId, clientLeadId])
+  @@index([clientLeadId])
+  @@index([nodeId])
 }
