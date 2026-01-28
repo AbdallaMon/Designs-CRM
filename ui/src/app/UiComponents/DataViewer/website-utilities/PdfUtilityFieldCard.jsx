@@ -27,14 +27,11 @@ import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 
 function isImageUrl(u) {
-  console.log(u, "u");
   if (!u) return false;
   try {
     const ext = u.split(".").pop()?.toLowerCase();
-    console.log(ext, "ext");
     return ["png", "jpg", "jpeg", "webp", "gif", "svg"].includes(ext);
   } catch (e) {
-    console.log("Invalid URL");
     return false;
   }
 }
