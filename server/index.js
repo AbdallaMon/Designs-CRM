@@ -22,6 +22,7 @@ export const allowedOrigins = [
   process.env.COURSESORIGIN,
   process.env.PORTFOLIOORIGIN,
   process.env.CONTACTORIGIN,
+  process.env.REGISTERPAGEORIGIN,
 ];
 
 const corsOptions = {
