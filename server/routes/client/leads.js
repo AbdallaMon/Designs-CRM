@@ -127,8 +127,8 @@ router.post("/new-lead", async (req, res) => {
     const message = body.notClientPage
       ? "Lead added successfully"
       : body.lng === "ar"
-      ? "خطوة واحدة تفصلنا عن بدء العمل على مشروعك!، يرجى إتمام الدفع الآن."
-      : "You're just one step away from starting your project! Complete the payment now to proceed.";
+        ? "خطوة واحدة تفصلنا عن بدء العمل على مشروعك!، يرجى إتمام الدفع الآن."
+        : "You're just one step away from starting your project! Complete the payment now to proceed.";
 
     res.status(200).json({ data: clientLead, message });
   } catch (error) {
@@ -143,6 +143,7 @@ router.post("/new-lead", async (req, res) => {
 
 router.post("/new-lead/register", async (req, res) => {
   const body = req.body;
+  console.log("Received new lead registration:", body);
   try {
     let client = await prisma.client.findUnique({
       where: { email: body.email },

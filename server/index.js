@@ -21,6 +21,7 @@ export const allowedOrigins = [
   process.env.OLDORIGIN,
   process.env.COURSESORIGIN,
   process.env.PORTFOLIOORIGIN,
+  process.env.CONTACTORIGIN,
 ];
 
 const corsOptions = {
@@ -81,7 +82,7 @@ initSocket(httpServer);
 if (process.env.ISLOCAL) {
   app.use(
     "/uploads",
-    express.static("E:/home/dreamstudiio.com/public_html/uploads")
+    express.static("E:/home/dreamstudiio.com/public_html/uploads"),
   );
 }
 app.use(express.json());
