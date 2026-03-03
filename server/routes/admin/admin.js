@@ -54,6 +54,18 @@ import imageSessionRouter from "../image-session/admin-image-session.js";
 import coursesRouter from "../courses/adminCourses.js";
 import { createGroupProjects } from "../../services/main/shared/projectServices.js";
 import { generateCodeForNewLead } from "../../services/main/client/leads.js";
+const priceRangeValues = {
+  "300,000 AED or less": 200000,
+  "300,000 to 400,000 AED": 350000,
+  "400,000 to 600,000 AED": 500000,
+  "600,000 to 800,000 AED": 700000,
+  "800,000 AED and above": 900000,
+  "25,000 AED or less": 12500,
+  "25,000 to 45,000 AED": 35000,
+  "45,000 to 65,000 AED": 55000,
+  "65,000 to 85,000 AED": 75000,
+  "85,000 AED and above": 100000,
+};
 
 const router = Router();
 
@@ -72,7 +84,7 @@ router.get("/users", async (req, res) => {
       searchParams,
       limit,
       skip,
-      currentUser
+      currentUser,
     );
     const totalPages = Math.ceil(total / limit);
     if (!users) {
@@ -110,7 +122,7 @@ router.get("/users/:userId/last-seen", async (req, res) => {
     const userData = await getUserLogs(
       userId,
       searchParams.month,
-      searchParams.year
+      searchParams.year,
     );
     res.status(200).json(userData);
   } catch (error) {
@@ -232,7 +244,7 @@ router.put("/users/max-leads-per-day/:userId", async (req, res) => {
   try {
     const update = await updateUserMaxLeadsPerDay(
       userId,
-      req.body.maxLeadCountPerDay
+      req.body.maxLeadCountPerDay,
     );
     return res.status(200).json({
       data: update,
@@ -701,8 +713,8 @@ router.post("/new-lead", async (req, res) => {
     const message = body.notClientPage
       ? "Lead added successfully"
       : body.lng === "ar"
-      ? "خطوة واحدة تفصلنا عن بدء العمل على مشروعك!، يرجى إتمام الدفع الآن."
-      : "You're just one step away from starting your project! Complete the payment now to proceed.";
+        ? "خطوة واحدة تفصلنا عن بدء العمل على مشروعك!، يرجى إتمام الدفع الآن."
+        : "You're just one step away from starting your project! Complete the payment now to proceed.";
 
     res.status(200).json({ data: clientLead, message });
   } catch (error) {
