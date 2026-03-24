@@ -4,7 +4,11 @@ import { InfoCard } from "../core/InfoCard";
 import { FinalPriceCalc } from "../core/FinalPriceCalc";
 import { BsBuilding } from "react-icons/bs";
 import dayjs from "dayjs";
-import { LEAD_SOURCE_LABELS, LeadCategory } from "@/app/helpers/constants";
+import {
+  LEAD_SOURCE_LABELS,
+  LeadCategory,
+  statusOfTheProject,
+} from "@/app/helpers/constants";
 import { EditFieldButton } from "../../../common/EditFieldButton";
 
 export function LeadInfo({ lead, setleads, setLead }) {
@@ -34,7 +38,7 @@ export function LeadInfo({ lead, setleads, setLead }) {
           } else {
             return l;
           }
-        })
+        }),
       );
     }
   }
@@ -55,6 +59,24 @@ export function LeadInfo({ lead, setleads, setLead }) {
           </Typography>
           <Typography variant="body1">
             {lead.country ? lead.country : lead.emirate}
+          </Typography>
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Typography color="text.secondary" variant="caption">
+            Status of the project
+          </Typography>
+          <Typography variant="body1">
+            {lead.stateOfTheProject
+              ? statusOfTheProject[lead.stateOfTheProject]
+              : "Unknown"}
+          </Typography>
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Typography color="text.secondary" variant="caption">
+            Created at
+          </Typography>
+          <Typography variant="body1">
+            {dayjs(lead.createdAt).format("DD-MM-YYYY")}
           </Typography>
         </Grid>
         <FinalPriceCalc lead={lead} />

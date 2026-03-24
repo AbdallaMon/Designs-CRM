@@ -600,7 +600,7 @@ model ClientLead {
   leadType             LeadConversionType       @default(NORMAL)
   previousLeadId       Int?
   personality          ClientPersonality?
-
+  stateOfTheProject    String?                  @db.Text
   discoverySource      LeadSource?
 
   discount             Decimal           @default(0) @db.Decimal(10, 2)

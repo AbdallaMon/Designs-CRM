@@ -1,0 +1,1 @@
+ALTER TABLE ClientLead ADD COLUMN stateOfTheProject TEXT;

@@ -1315,7 +1315,7 @@ export const usersHexColors = {
 };
 
 export const usersColors = Object.fromEntries(
-  Object.entries(usersHexColors).map(([key, value]) => [value, key])
+  Object.entries(usersHexColors).map(([key, value]) => [value, key]),
 );
 
 export const usersColorsArray = [...Object.values(usersHexColors)];
@@ -1372,3 +1372,10 @@ export const FILE_TYPE_CATEGORIES = [
   { value: "audio", label: "Audio", icon: FaFileAudio },
   { value: "document", label: "Docs", icon: FaFileWord },
 ];
+
+export const statusOfTheProject = {
+  column_casting: "صب أعمدة",
+  ground_excavation: "حفر الارض",
+  plans: "مخططات",
+  finished_cutting_blocks: "انتهيت من تقطيع البلوك",
+};

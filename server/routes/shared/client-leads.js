@@ -174,8 +174,9 @@ router.get("/:id", async (req, res) => {
             searchParams,
             token.role,
             token.id,
-            token
+            token,
           );
+    console.log(clientLeadDetails, "clientLeadDetails");
 
     res.status(200).json({ data: clientLeadDetails });
   } catch (error) {
@@ -303,7 +304,7 @@ router.post("/:userId/countries", async (req, res) => {
   try {
     const isAllowed = await checkIfUserAllowedToTakeALead(
       userId,
-      req.body.country
+      req.body.country,
     );
     res.status(200).json({
       allowed: isAllowed,
@@ -331,7 +332,7 @@ router.put("/", async (req, res) => {
     const result = await assignLeadToAUser(
       Number(clientLead.id),
       isAdmin ? req.body.userId : Number(currentUser.id),
-      isAdmin
+      isAdmin,
     );
 
     res.status(200).json({
@@ -356,14 +357,14 @@ router.put("/bulk-convert", async (req, res) => {
       currentUser.isSuperSales;
     if (!isAdmin) {
       throw new Error(
-        "Only admin/super-admin/super-sales can bulk assign leads"
+        "Only admin/super-admin/super-sales can bulk assign leads",
       );
     }
     console.log(req.body, " req.body");
     const result = await bulkAssignLeadTsoAUser(
       req.body.ids,
       req.body.userId,
-      isAdmin
+      isAdmin,
     );
 
     res.status(200).json({
@@ -383,7 +384,7 @@ router.put("/convert", async (req, res) => {
     const result = await markClientLeadAsConverted(
       Number(body.id),
       body.reasonToConvert,
-      "ON_HOLD"
+      "ON_HOLD",
     );
     res
       .status(200)
@@ -644,7 +645,7 @@ router.post("/:id/price-offers", async (req, res) => {
 router.post("/price-offers/change-status", async (req, res) => {
   let priceOffer = await editPriceOfferStatus(
     req.body.priceOfferId,
-    req.body.isAccepted
+    req.body.isAccepted,
   );
   try {
     res.status(200).json({

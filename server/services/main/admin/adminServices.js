@@ -80,7 +80,7 @@ export async function getAllUsers(
   searchParams,
   currentUser,
   checkIfNotHasRelatedChat = false,
-  checkIfHasRelatedChat
+  checkIfHasRelatedChat,
 ) {
   if (!searchParams.role) {
     searchParams.role = "STAFF";
@@ -108,7 +108,7 @@ export async function getAllUsers(
       for (const role of groupUserRoleAndSubRoles) {
         where.OR.push(
           { role: role },
-          { subRoles: { some: { subRole: role } } }
+          { subRoles: { some: { subRole: role } } },
         );
       }
     }
@@ -297,11 +297,11 @@ const calculateSummary = (leads) => {
   const totalLeads = leads.length;
   const totalValue = leads.reduce(
     (sum, lead) => sum + Number(lead.averagePrice || 0),
-    0
+    0,
   );
   const totalDiscount = leads.reduce(
     (sum, lead) => sum + Number(lead.discount || 0),
-    0
+    0,
   );
 
   return {
@@ -485,12 +485,12 @@ export const generateExcelReport = async (req, res) => {
     clientName: "TOTALS",
     averagePrice: data.leads.reduce(
       (sum, lead) => sum + (lead.averagePrice || 0),
-      0
+      0,
     ),
     discount: data.leads.reduce((sum, lead) => sum + (lead.discount || 0), 0),
     priceWithOutDiscount: data.leads.reduce(
       (sum, lead) => sum + (lead.priceWithOutDiscount || 0),
-      0
+      0,
     ),
   });
 
@@ -519,7 +519,7 @@ export const generateExcelReport = async (req, res) => {
 
   res.setHeader(
     "Content-Type",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   );
   res.setHeader("Content-Disposition", "attachment; filename=lead-report.xlsx");
 
@@ -539,7 +539,7 @@ export const generatePDFReport = (req, res) => {
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      "attachment; filename=lead-report.pdf"
+      "attachment; filename=lead-report.pdf",
     );
     doc.pipe(res);
 
@@ -608,12 +608,12 @@ export const generatePDFReport = (req, res) => {
     const totals = {
       price: data.leads.reduce(
         (sum, lead) => sum + (lead.averagePrice || 0),
-        0
+        0,
       ),
       discount: data.leads.reduce((sum, lead) => sum + (lead.discount || 0), 0),
       priceWithOutDiscount: data.leads.reduce(
         (sum, lead) => sum + (lead.priceWithOutDiscount || 0),
-        0
+        0,
       ),
     };
 
@@ -647,7 +647,7 @@ function drawTable(doc, table, startY) {
     const cellPadding = 8;
     const availableWidth = doc.page.width - 100;
     const columnWidths = table.columnWidths.map(
-      (width) => width * availableWidth
+      (width) => width * availableWidth,
     );
     let currentY = startY;
 
@@ -705,7 +705,7 @@ function drawTable(doc, table, startY) {
             width: columnWidths[i] - cellPadding * 2,
             align: "left",
             ellipsis: true,
-          }
+          },
         );
         currentX += columnWidths[i];
       });
@@ -760,16 +760,16 @@ const calculateStaffStats = (staff, dateRange) => {
 
     const totalLeads = filteredLeads.length;
     const finalized = filteredLeads.filter(
-      (lead) => lead.status === "FINALIZED"
+      (lead) => lead.status === "FINALIZED",
     ).length;
     const converted = filteredLeads.filter(
-      (lead) => lead.status === "CONVERTED"
+      (lead) => lead.status === "CONVERTED",
     ).length;
     const onHold = filteredLeads.filter(
-      (lead) => lead.status === "ON_HOLD"
+      (lead) => lead.status === "ON_HOLD",
     ).length;
     const rejected = filteredLeads.filter(
-      (lead) => lead.status === "REJECTED"
+      (lead) => lead.status === "REJECTED",
     ).length;
     // Calculate success rate
     const totalClosedLeads = finalized + converted + rejected + onHold;
@@ -780,7 +780,7 @@ const calculateStaffStats = (staff, dateRange) => {
               ((finalized - (converted + rejected + onHold)) /
                 totalClosedLeads) *
               100
-            ).toFixed(2)
+            ).toFixed(2),
           )
         : 0.0;
 
@@ -790,7 +790,7 @@ const calculateStaffStats = (staff, dateRange) => {
       .reduce(
         (sum, lead) =>
           sum + parseFloat(Number(lead.averagePrice || 0).toFixed(2)),
-        0
+        0,
       );
 
     // Calculate discount
@@ -798,7 +798,7 @@ const calculateStaffStats = (staff, dateRange) => {
       .filter((lead) => lead.status === "FINALIZED")
       .reduce(
         (sum, lead) => sum + parseFloat(Number(lead.discount || 0).toFixed(2)),
-        0
+        0,
       );
 
     // Calculate conversion rate
@@ -816,8 +816,8 @@ const calculateStaffStats = (staff, dateRange) => {
       activeLeads: filteredLeads.filter(
         (lead) =>
           !["FINALIZED", "CONVERTED", "REJECTED", "ON_HOLD"].includes(
-            lead.status
-          )
+            lead.status,
+          ),
       ).length,
       finalized,
       converted,
@@ -878,7 +878,7 @@ export const generateStaffReport = async (req, res) => {
         (staffStats.length || 1),
       totalRevenue: staffStats.reduce(
         (sum, staff) => sum + staff.totalRevenue,
-        0
+        0,
       ),
       averageSuccessRate:
         staffStats.reduce((sum, staff) => sum + staff.successRate, 0) /
@@ -886,26 +886,26 @@ export const generateStaffReport = async (req, res) => {
       conversionRate:
         (staffStats.reduce(
           (sumConverted, staff) => sumConverted + (staff.converted || 0),
-          0
+          0,
         ) /
           (staffStats.reduce(
             (sumLeads, staff) => sumLeads + (staff.totalLeads || 0),
-            0
+            0,
           ) || 1)) *
         100,
       bestPerformer: staffStats.reduce(
         (best, current) =>
           current.successRate > (best?.successRate || 0) ? current : best,
-        null
+        null,
       ),
       topRevenue: staffStats.reduce(
         (best, current) =>
           current.totalRevenue > (best?.totalRevenue || 0) ? current : best,
-        null
+        null,
       ),
       totalCommission: staffStats.reduce(
         (sum, staff) => sum + staff.totalCommission,
-        0
+        0,
       ),
     };
 
@@ -1062,11 +1062,11 @@ export const generateStaffExcelReport = async (req, res) => {
   // Set response headers
   res.setHeader(
     "Content-Type",
-    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   );
   res.setHeader(
     "Content-Disposition",
-    "attachment; filename=staff-report.xlsx"
+    "attachment; filename=staff-report.xlsx",
   );
 
   // Write workbook to response
@@ -1086,7 +1086,7 @@ export const generateStaffPDFReport = (req, res) => {
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      "attachment; filename=staff-report.pdf"
+      "attachment; filename=staff-report.pdf",
     );
     doc.pipe(res);
 
@@ -1370,7 +1370,7 @@ export async function getUserLogs(userId, month, year) {
   // Calculate total month hours
   const totalMonthMinutes = logs.reduce(
     (total, log) => total + log.totalMinutes,
-    0
+    0,
   );
   const totalMonthHours = (totalMonthMinutes / 60).toFixed(2);
 
@@ -1561,7 +1561,7 @@ export async function getAdminClientLeadDetails(clientLeadId, searchParams) {
   });
   if (clientLead.contracts?.length > 0) {
     const currentStage = clientLead.contracts[0].stages?.find(
-      (stage) => stage.stageStatus === "IN_PROGRESS"
+      (stage) => stage.stageStatus === "IN_PROGRESS",
     );
     clientLead.contracts[0].stage = currentStage;
     clientLead.contracts[0].contractLevel = currentStage?.title;

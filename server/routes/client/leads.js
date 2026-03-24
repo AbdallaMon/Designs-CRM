@@ -144,7 +144,6 @@ router.post("/new-lead", async (req, res) => {
 
 router.post("/new-lead/register", async (req, res) => {
   const body = req.body;
-  console.log("Received new lead registration:", body);
   try {
     let client = await prisma.client.findUnique({
       where: { email: body.email },
@@ -188,7 +187,7 @@ router.post("/new-lead/register", async (req, res) => {
     };
     data.code = await generateCodeForNewLead(client.id);
     data.initialConsult = false;
-
+    if (body.stateOfTheProject) data.stateOfTheProject = body.stateOfTheProject;
     const clientLead = await prisma.clientLead.create({ data });
     await newClientLeadNotification(clientLead.id, client, true);
 
