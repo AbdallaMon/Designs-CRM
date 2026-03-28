@@ -1,0 +1,32 @@
+import dotenv from "dotenv";
+
+dotenv.config();
+
+export const env = {
+  PORT: process.env.PORT || 5000,
+  DATABASE_URL: process.env.DATABASE_URL,
+  JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET,
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET,
+  ACCESS_TOKEN_EXPIRES_IN: process.env.ACCESS_TOKEN_EXPIRES_IN || "15m",
+  REFRESH_TOKEN_EXPIRES_IN: process.env.REFRESH_TOKEN_EXPIRES_IN || "7d",
+  SMTP_HOST: process.env.SMTP_HOST,
+  EMAIL_USERNAME: process.env.EMAIL_USERNAME,
+  EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
+  AHMED_EMAIL: process.env.AHMED_EMAIL,
+  FTP_HOST: process.env.FTP_HOST,
+  FTP_USER: process.env.FTP_USER,
+  FTP_PASSWORD: process.env.FTP_PASSWORD,
+  FTP_PORT: process.env.FTP_PORT,
+  TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
+  TELE_API_ID: process.env.TELE_API_ID,
+  TELE_API_HASH: process.env.TELE_API_HASH,
+  TELEGRAM_PHONE_NUMBER: process.env.TELEGRAM_PHONE_NUMBER,
+  TELEGRAM_SESSION: process.env.TELEGRAM_SESSION,
+  SECRET_KEY: process.env.SECRET_KEY,
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
+  GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
+  ISLOCAL: process.env.ISLOCAL === "true",
+  ALLOW_ORIGIN: process.env.ALLOW_ORIGIN,
+  IMAGEDOMAIN: process.env.IMAGEDOMAIN,
+};

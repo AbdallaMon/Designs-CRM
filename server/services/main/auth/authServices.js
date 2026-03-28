@@ -20,6 +20,7 @@ export async function loginUser(email, password) {
         name: true,
       },
     });
+    // validation?
     if (!user) {
       throw new Error("No user found with this email address");
     }
@@ -48,7 +49,7 @@ export async function loginUser(email, password) {
         email: user.email,
       },
       SECRET_KEY,
-      { expiresIn: "4h" }
+      { expiresIn: "4h" },
     );
 
     return { user, token };
