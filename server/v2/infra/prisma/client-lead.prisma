@@ -1,0 +1,102 @@
+model ClientLead {
+  id                   Int                      @id @default(autoincrement())
+  client               Client                   @relation(fields: [clientId], references: [id])
+  clientId             Int
+  code                 String?                  @unique
+  assignedTo           User?                    @relation(fields: [userId], references: [id])
+  userId               Int?
+  status               ClientLeadStatus         @default(NEW)
+  telegramChannel      TelegramChannel?
+  telegramLink         String?
+  selectedCategory     LeadCategory
+  type                 LeadType                 @default(CONSTRUCTION_VILLA)
+  description          String?
+  clientDescription    String?                  @db.Text
+  stripieMetadata      Json?
+  emirate              Emirate?
+  leadType             LeadConversionType       @default(NORMAL)
+  previousLeadId       Int?
+  personality          ClientPersonality?
+  stateOfTheProject    String?                  @db.Text
+  discoverySource      LeadSource?
+  discount             Decimal                  @default(0) @db.Decimal(10, 2)
+  price                String?
+  averagePrice         Decimal?                 @db.Decimal(10, 2)
+  priceNote            String?                  @db.Text
+  priceWithOutDiscount Decimal                  @default(0) @db.Decimal(10, 2)
+  salesStages          SalesStage[]
+  lastTelegramMessages FetchedTelegramMessage[]
+  sessionQuestions     SessionQuestion[]
+  versaModel           VersaModel[]
+  contracts            Contract[]
+  projects             Project[]
+  priceOffers          PriceOffers[]
+  payments             Payment[]
+  tasks                Task[]
+  files                File[]
+  notes                Note[]
+  notifications        Notification[]
+  callReminders        CallReminder[]       @relation("clientLeadCallReminders")
+  meetingReminders     MeetingReminder[]    @relation("clientLeadMeetingReminders")
+  extraServices        ExtraService[]
+  commissions          Commission[]
+  updates              ClientLeadUpdate[]
+  imageSessions        ClientImageSession[]
+  driveNodeLinks       DriveNodeClientLead[]
+  reasonToConvert      String?
+  paymentStatus        PaymentStatus @default(PENDING)
+  paymentSessionId     String?
+  ourCost              String?
+  contractorCost       String?
+  country              String?
+  commissionCleared    Boolean       @default(false)
+  initialConsult       Boolean       @default(true)
+  assignedAt           DateTime?
+  timeToContact        DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  finalizedDate        DateTime?
+  accountant           User? @relation("AccountantLeads", fields: [accountantId], references: [id])
+  accountantId         Int?
+  accountantAssignedAt DateTime?
+  chatRooms            ChatRoom[]
+
+  @@index([clientId])
+  @@index([userId])
+}
+
+model TelegramChannel {
+  id           Int        @id @default(autoincrement())
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int        @unique
+  channelLink  String
+  channelId    BigInt     @unique
+  accessHash   BigInt
+  description  String?
+  createdAt    DateTime   @default(now())
+}
+
+model FetchedTelegramMessage {
+  id           Int        @id @default(autoincrement())
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
+  messageId    Int
+  fetchedAt    DateTime @default(now())
+
+  @@index([clientLeadId])
+}
+
+model SalesStage {
+  id           Int        @id @default(autoincrement())
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
+  user         User?      @relation(fields: [userId], references: [id])
+  userId       Int?
+  stage        SalesStageType
+  notes        Note[]
+  createdAt    DateTime       @default(now())
+
+  @@unique([clientLeadId, stage])
+  @@index([clientLeadId])
+  @@index([userId])
+}

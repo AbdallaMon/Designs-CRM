@@ -5,7 +5,7 @@ class JwtService {
   static #baseOptions = {
     httpOnly: true,
     secure: !env.ISLOCAL,
-    sameSite: "none",
+    sameSite: env.ISLOCAL ? "lax" : "none",
     path: "/",
   };
 
@@ -57,6 +57,14 @@ class JwtService {
    */
   static verifyRefresh(token) {
     return jwt.verify(token, env.JWT_REFRESH_SECRET);
+  }
+  static signReset(payload) {
+    return jwt.sign({ id: payload.id }, env.JWT_RESET_SECRET, {
+      expiresIn: env.JWT_RESET_EXPIRES_IN,
+    });
+  }
+  static verifyReset(token) {
+    return jwt.verify(token, env.JWT_RESET_SECRET);
   }
 }
 

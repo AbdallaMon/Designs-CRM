@@ -27,6 +27,12 @@ export const env = {
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
   ISLOCAL: process.env.ISLOCAL === "true",
-  ALLOW_ORIGIN: process.env.ALLOW_ORIGIN,
   IMAGEDOMAIN: process.env.IMAGEDOMAIN,
+  DREAMSTUDIIO_DOMAIN: process.env.DREAMSTUDIIO_DOMAIN,
+  AHMED_DOMAIN: process.env.AHMED_DOMAIN,
+  COURSES_DOMAIN: process.env.COURSES_DOMAIN,
+  ALLOW_ORIGIN: process.env.ALLOW_ORIGIN,
+  UPLOADS_PATH: process.env.UPLOADS_PATH || "uploads",
+  JWT_RESET_SECRET: process.env.JWT_RESET_SECRET,
+  JWT_RESET_EXPIRES_IN: process.env.JWT_RESET_EXPIRES_IN || "1h",
 };

@@ -1,0 +1,176 @@
+model ContractUtility {
+  id Int @id @default(1)
+
+  obligationsPartyOneAr String @db.Text
+  obligationsPartyOneEn String @db.Text
+  obligationsPartyTwoAr String @db.Text
+  obligationsPartyTwoEn String @db.Text
+  stageClauses         ContractStageClauseTemplate[]
+  specialClauses       ContractSpecialClauseTemplate[]
+  levelClauses         ContractLevelClauseTemplate[]
+  updatedAt            DateTime @updatedAt
+}
+
+model ContractStageClauseTemplate {
+  id                Int             @id @default(autoincrement())
+  contractUtilityId Int
+  contractUtility   ContractUtility @relation(fields: [contractUtilityId], references: [id])
+  headingAr         String @db.Text
+  headingEn         String @db.Text
+  titleAr           String @db.Text
+  titleEn           String @db.Text
+  descriptionAr     String @db.Text
+  descriptionEn     String @db.Text
+  order             Int    @default(0)
+
+  @@index([contractUtilityId])
+}
+
+model ContractSpecialClauseTemplate {
+  id                Int             @id @default(autoincrement())
+  contractUtilityId Int
+  contractUtility   ContractUtility @relation(fields: [contractUtilityId], references: [id])
+  textAr            String @db.Text
+  textEn            String? @db.Text
+  order             Int     @default(0)
+  isActive          Boolean @default(true)
+
+  @@index([contractUtilityId])
+}
+
+model ContractLevelClauseTemplate {
+  id                Int             @id @default(autoincrement())
+  contractUtilityId Int
+  contractUtility   ContractUtility @relation(fields: [contractUtilityId], references: [id])
+  level             ContractLevel
+  textAr            String @db.Text
+  textEn            String? @db.Text
+  order             Int     @default(0)
+  isActive          Boolean @default(true)
+
+  @@index([contractUtilityId])
+  @@index([level])
+}
+
+model Contract {
+  id                      Int                   @id @default(autoincrement())
+  clientLead              ClientLead            @relation(fields: [clientLeadId], references: [id])
+  clientLeadId            Int
+  sessionStatus           ContractSessionStatus @default(INITIAL)
+  contractLevel           ContractLevel
+  purpose                 String
+  title                   String?
+  enTitle                 String?
+  startDate               DateTime?
+  endDate                 DateTime?
+  isCompleted             Boolean       @default(false)
+  isInProgress            Boolean       @default(false)
+  createdAt               DateTime      @default(now())
+  projectGroupId          Int?
+  arToken                 String? @unique @db.VarChar(64)
+  enToken                 String? @unique @db.VarChar(64)
+  status                  ContractStatus @default(IN_PROGRESS)
+  signatureUrl            String? @db.Text
+  handWrittenSignatureUrl String? @db.Text
+  taxRate                 Decimal   @default(0) @db.Decimal(5, 2)
+  totalAmount             Decimal?  @db.Decimal(12, 2)
+  amount                  Decimal?  @db.Decimal(12, 2)
+  pdfLinkAr               String?
+  pdfLinkEn               String?
+  projectType             String?
+  writtenAt               DateTime?
+  stages                  ContractStage[]
+  paymentsNew             ContractPayment[]
+  drawings                ContractDrawing[]
+  specialItems            ContractSpecialItem[]
+  projects                Project[]
+  notes                   Note[]
+
+  @@index([clientLeadId, contractLevel])
+}
+
+model ContractStage {
+  id               Int             @id @default(autoincrement())
+  contract         Contract        @relation(fields: [contractId], references: [id])
+  contractId       Int
+  title            String
+  order            Int
+  deliveryDays     Int
+  deptDeliveryDays Int?
+  startDate        DateTime?
+  endDate          DateTime?
+  stageStatus      StageStatus @default(NOT_STARTED)
+  project          Project?    @relation(fields: [projectId], references: [id])
+  projectId        Int?
+  payments         ContractPayment[]
+  deliverySchedule DeliverySchedule?
+
+  @@unique([contractId, order])
+  @@index([projectId])
+  @@index([contractId])
+}
+
+model ContractPayment {
+  id               Int                       @id @default(autoincrement())
+  contract         Contract                  @relation(fields: [contractId], references: [id])
+  contractId       Int
+  stage            ContractStage?           @relation(fields: [stageId], references: [id])
+  stageId          Int?
+  amount           Decimal                  @db.Decimal(12, 2)
+  amountLost       Decimal                  @default(0) @db.Decimal(12, 2)
+  amountReceived   Decimal                  @default(0) @db.Decimal(12, 2)
+  currency         String                   @default("AED")
+  dueDate          DateTime?
+  status           PaymentStatusNew         @default(NOT_DUE)
+  reference        String?
+  note             String?
+  project          Project?                 @relation(fields: [projectId], references: [id])
+  projectId        Int?
+  paymentCondition String?
+  conditionId      Int?
+  conditionItem    ContractPaymentCondition? @relation(fields: [conditionId], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([contractId])
+  @@index([stageId])
+  @@index([status, dueDate])
+  @@index([projectId])
+}
+
+model ContractPaymentCondition {
+  id            Int               @id @default(autoincrement())
+  payments      ContractPayment[]
+  conditionType String
+  condition     String
+  labelAr       String
+  labelEn       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([conditionType, condition, labelAr, labelEn])
+}
+
+model ContractDrawing {
+  id           Int      @id @default(autoincrement())
+  contract     Contract @relation(fields: [contractId], references: [id])
+  contractId   Int
+  url          String
+  fileName     String?
+  mimeType     String?
+  sizeBytes    Int?
+  uploadedAt   DateTime @default(now())
+  uploadedById Int?
+
+  @@index([contractId])
+}
+
+model ContractSpecialItem {
+  id         Int      @id @default(autoincrement())
+  contract   Contract @relation(fields: [contractId], references: [id])
+  contractId Int
+  labelAr    String   @db.Text
+  labelEn    String?  @db.Text
+
+  @@index([contractId])
+}

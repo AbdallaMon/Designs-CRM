@@ -3,7 +3,7 @@ import {
   Failed,
   Success,
 } from "@/app/UiComponents/feedback/loaders/toast/ToastUpdate";
-
+import { handleRequestSubmit as handleRequestSubmitV2 } from "../../v2/lib/api/handleRequestSubmit";
 export async function handleRequestSubmit(
   data,
   setLoading,
@@ -12,15 +12,27 @@ export async function handleRequestSubmit(
   toastMessage = "Sending...",
   setRedirect,
   method = "POST",
-  header
+  header,
 ) {
+  return await handleRequestSubmitV2({
+    data,
+    setLoading,
+    path,
+    isFileUpload,
+    toastMessage,
+    setRedirect,
+    method,
+    header,
+    legacy: true,
+  });
+
   const toastId = toast.loading(toastMessage);
   const body = isFileUpload ? data : JSON.stringify(data);
   const headers = header
     ? { "Content-Type": header }
     : isFileUpload
-    ? {}
-    : { "Content-Type": "application/json" };
+      ? {}
+      : { "Content-Type": "application/json" };
   setLoading(true);
   const id = toastId;
   try {

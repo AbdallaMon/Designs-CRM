@@ -1,3 +1,4 @@
+import { getData as getDataV2 } from "../../v2/lib/api/getData";
 export async function getData({
   url = "",
   setLoading,
@@ -8,6 +9,18 @@ export async function getData({
   sort,
   others,
 }) {
+  return await getDataV2({
+    url,
+    setLoading,
+    page,
+    limit,
+    filters,
+    search,
+    sort,
+    others,
+    legacy: true,
+  });
+
   try {
     setLoading(true);
     let queryPrefix = "?";
@@ -21,14 +34,14 @@ export async function getData({
       `${
         process.env.NEXT_PUBLIC_URL
       }/${url}${queryPrefix}page=${page}&limit=${limit}&filters=${JSON.stringify(
-        filters
+        filters,
       )}&search=${search}&sort=${JSON.stringify(sort)}&${others}`,
       {
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
-      }
+      },
     );
     const status = response.status;
     const result = await response.json();

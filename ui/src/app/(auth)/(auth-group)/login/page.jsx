@@ -6,8 +6,10 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import AuthForm from "@/app/UiComponents/formComponents/forms/AuthForm";
 import { Button, Typography } from "@mui/material";
+import LoginPage from "@/app/v2/module/auth/pages/LoginPage";
 
 export default function Page() {
+  return <LoginPage />;
   const { setLoading } = useToastContext();
   const { setIsLoggedIn, setUser } = useAuth();
 
@@ -17,7 +19,7 @@ export default function Page() {
       setLoading,
       "auth/login",
       false,
-      "Logging"
+      "Logging",
     );
     if (response.status === 200) {
       setIsLoggedIn(true);

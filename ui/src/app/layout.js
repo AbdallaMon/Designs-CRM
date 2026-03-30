@@ -6,13 +6,9 @@ import DotsLoader from "@/app/UiComponents/feedback/loaders/DotsLoading";
 import MuiAlertProvider from "@/app/providers/MuiAlert.jsx";
 import colors from "@/app/helpers/colors.js";
 import { Noto_Kufi_Arabic } from "next/font/google";
-import UploadingProvider, {
-  UploadingContext,
-} from "./providers/UploadingProgressProvider";
+import UploadingProvider from "./providers/UploadingProgressProvider";
 
-import { Suspense } from "react";
 import ServiceWorkerRegister from "./UiComponents/DataViewer/utility/RegisterServiceWorker";
-import SocketProvider from "./providers/SocketProvider";
 
 const noto = Noto_Kufi_Arabic({
   weight: ["400", "500", "700"],

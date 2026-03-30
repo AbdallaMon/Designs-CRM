@@ -1,0 +1,131 @@
+model User {
+  id                       Int                  @id @default(autoincrement())
+  email                    String               @unique @db.VarChar(255)
+  name                     String               @db.VarChar(255)
+  password                 String               @db.VarChar(255)
+  isActive                 Boolean              @default(true)
+  isPrimary                Boolean              @default(false)
+  isSuperSales             Boolean              @default(false)
+  role                     UserRole             @default(STAFF)
+  allowNotification        Boolean              @default(true)
+  allowEmailing            Boolean              @default(true)
+  telegramUsername         String?
+  subRoles                 UserSubRole[]
+  logs                     UserLog[]
+  clientLeads              ClientLead[]
+  notifications            Notification[]       @relation("UserNotifications")
+  staffNotifications       Notification[]       @relation("StaffNotifications")
+  notes                    Note[]
+  userNotes                Note[]               @relation("UserSubjectNotes")
+  tasks                    Task[]
+  createdTasks             Task[]               @relation("CreatedTasks")
+  priceOffers              PriceOffers[]
+  createdAt                DateTime             @default(now())
+  updatedAt                DateTime             @updatedAt
+  callReminders            CallReminder[]
+  meetingReminders         MeetingReminder[]
+  adminMeetingReminders    MeetingReminder[]    @relation("AdminMeetingReminders")
+  createdQuestions         SessionQuestion[]
+  answers                  Answer[]
+  updates                  ClientLeadUpdate[]
+  versaModels              VersaModel[]
+  availableDays            AvailableDay[]
+  salesStages              SalesStage[]
+  createdImageSessions     ClientImageSession[]
+  files                    File[]
+  lastSeenAt               DateTime?
+  maxLeadsCounts           Int?                 @default(50)
+  maxLeadCountPerDay       Int                  @default(5)
+  accountantLeads          ClientLead[]         @relation("AccountantLeads")
+  commissions              Commission[]
+  assignments              Assignment[]
+  courseProgress           CourseProgress[]
+  examAttempts             TestAttempt[]
+  certificates             Certificate[]
+  allowedLessons           LessonAccess[]
+  homeWorks                LessonHomework[]
+  deliverySchedulesCreated DeliverySchedule[]   @relation("DeliverySchedulesCreatedBy")
+  driveNodesOwned          DriveNode[]
+  driveAcls                DriveAcl[]
+  driveSharesCreated       DrivePublicShare[]
+  baseSalary               BaseEmployeeSalary?
+  notAllowedCountries      Json?
+  autoAssignments          AutoAssignment[]
+  profilePicture           String?   @db.Text
+  googleRefreshToken       String?   @db.Text
+  googleAccessToken        String?   @db.Text
+  googleTokenExpiresAt     DateTime?
+  googleCalendarId         String?
+  googleEmail              String?   @db.VarChar(255)
+  chatRoomsCreated         ChatRoom[]          @relation("ChatRoomCreator")
+  chatMemberships          ChatMember[]
+  chatMessages             ChatMessage[]
+  chatReactions            ChatReaction[]
+  chatMentions             ChatMention[]
+  chatBookmarks            ChatBookmark[]
+  chatTemplates            ChatTemplate[]
+  scheduledMessages        ChatScheduledMessage[]
+  callsInitiated           Call[]
+  callParticipations       CallParticipant[]
+  pinnedMessages           ChatPinnedMessage[]
+
+  @@index([email])
+}
+
+model AutoAssignment {
+  id Int @id @default(autoincrement())
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  type     String
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, type])
+  @@index([userId])
+}
+
+model UserSubRole {
+  id      Int      @id @default(autoincrement())
+  userId  Int
+  subRole UserRole
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, subRole])
+}
+
+model UserLog {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         DateTime @default(now())
+  totalMinutes Int      @default(0)
+  description  String?
+
+  @@unique([userId])
+  @@index([userId])
+}
+
+model Client {
+  id                 Int          @id @default(autoincrement())
+  name               String       @db.VarChar(255)
+  arName             String?      @db.VarChar(255)
+  enName             String?      @db.VarChar(255)
+  phone              String       @db.VarChar(20)
+  email              String       @unique @db.VarChar(255)
+  clientLeads        ClientLead[]
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  lastSeenAt         DateTime?
+  chatMemberships    ChatMember[]
+  chatMessages       ChatMessage[]
+  chatReactions      ChatReaction[]
+  chatMentions       ChatMention[]
+  chatBookmarks      ChatBookmark[]
+  callParticipations CallParticipant[]
+
+  @@index([email])
+}

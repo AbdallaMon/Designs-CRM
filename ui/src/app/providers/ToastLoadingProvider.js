@@ -1,9 +1,13 @@
 "use client";
 import { createContext, useContext, useState } from "react";
 import { ToastContainer } from "react-toastify";
-
+import {
+  ToastProvider as ToastProviderV2,
+  useToastContext as useToastContextV2,
+} from "../v2/providers/ToastProvider";
 export const ToastContext = createContext(null);
 export default function ToastProvider({ children }) {
+  return <ToastProviderV2>{children}</ToastProviderV2>;
   const [loading, setLoading] = useState(false);
   return (
     <ToastContext.Provider value={{ loading, setLoading }}>
@@ -32,6 +36,7 @@ export default function ToastProvider({ children }) {
   );
 }
 export const useToastContext = () => {
+  return useToastContextV2();
   const context = useContext(ToastContext);
   return context;
 };

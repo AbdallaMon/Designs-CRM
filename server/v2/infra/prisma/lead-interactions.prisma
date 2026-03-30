@@ -1,0 +1,180 @@
+model ClientLeadUpdate {
+  id             Int              @id @default(autoincrement())
+  title          String
+  description    String?          @db.Text
+  status         UpdateStatus     @default(IN_PROGRESS)
+  department     String           @default("STAFF")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  isArchived     Boolean          @default(false)
+  isDone         Boolean          @default(false)
+  createdBy      User             @relation(fields: [createdById], references: [id])
+  createdById    Int
+  clientLead     ClientLead       @relation(fields: [clientLeadId], references: [id])
+  clientLeadId   Int
+  notes          Note[]
+  sharedSettings SharedUpdate[]
+
+  @@index([clientLeadId])
+  @@index([createdById])
+}
+
+model SharedUpdate {
+  id                Int              @id @default(autoincrement())
+  update            ClientLeadUpdate @relation(fields: [updateId], references: [id])
+  updateId          Int
+  type              String
+  notes             Note[]
+  isArchived        Boolean @default(false)
+  excludeFromSearch Boolean @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([updateId])
+}
+
+model CallReminder {
+  id             Int                @id @default(autoincrement())
+  clientLead     ClientLead         @relation(fields: [clientLeadId], references: [id], name: "clientLeadCallReminders")
+  clientLeadId   Int
+  time           DateTime
+  status         CallReminderStatus @default(IN_PROGRESS)
+  callResult     String?            @db.Text
+  reminderReason String?            @db.Text
+  user           User               @relation(fields: [userId], references: [id])
+  userId         Int
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  notified       Boolean            @default(false)
+
+  @@index([clientLeadId])
+  @@index([userId])
+}
+
+model MeetingReminder {
+  id                   Int                @id @default(autoincrement())
+  clientLead           ClientLead         @relation(fields: [clientLeadId], references: [id], name: "clientLeadMeetingReminders")
+  clientLeadId         Int
+  time                 DateTime?
+  status               CallReminderStatus @default(IN_PROGRESS)
+  meetingResult        String?            @db.Text
+  reminderReason       String?            @db.Text
+  user                 User               @relation(fields: [userId], references: [id])
+  userId               Int
+  admin                User?              @relation("AdminMeetingReminders", fields: [adminId], references: [id])
+  adminId              Int?
+  isAdmin              Boolean            @default(false)
+  type                 MeetingType?
+  token                String?            @unique
+  availableSlot        AvailableSlot?     @relation("SlotToMeeting")
+  availableSlotId      Int?               @unique
+  userTimezone         String?
+  notified             Boolean            @default(false)
+  notified4h           Boolean            @default(false)
+  notified12h          Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  deliverySchedules    DeliverySchedule[]
+  googleEventId        String?            @db.VarChar(255)
+  googleCalendarSynced Boolean            @default(false)
+
+  @@index([clientLeadId])
+  @@index([userId])
+  @@index([adminId])
+}
+
+model AvailableDay {
+  id        Int             @id @default(autoincrement())
+  date      DateTime
+  user      User            @relation(fields: [userId], references: [id])
+  userId    Int
+  slots     AvailableSlot[]
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+}
+
+model AvailableSlot {
+  id                Int              @id @default(autoincrement())
+  startTime         DateTime
+  endTime           DateTime
+  availableDay      AvailableDay     @relation(fields: [availableDayId], references: [id])
+  availableDayId    Int
+  isBooked          Boolean          @default(false)
+  userTimezone      String?
+  meetingReminder   MeetingReminder? @relation("SlotToMeeting", fields: [meetingReminderId], references: [id])
+  meetingReminderId Int?             @unique
+}
+
+model PriceOffers {
+  id           Int        @id @default(autoincrement())
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
+  user         User       @relation(fields: [userId], references: [id])
+  userId       Int
+  url          String?    @db.VarChar(255)
+  minPrice     Decimal?   @db.Decimal(10, 2)
+  maxPrice     Decimal?   @db.Decimal(10, 2)
+  note         String?    @db.Text
+  isAccepted   Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([clientLeadId])
+}
+
+model ExtraService {
+  id           Int        @id @default(autoincrement())
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
+  price        Decimal    @db.Decimal(10, 2)
+  note         String?    @db.Text
+  createdAt    DateTime   @default(now())
+}
+
+model ObjectionCategory {
+  id        Int          @id @default(autoincrement())
+  title     String       @db.VarChar(255)
+  label     String       @db.VarChar(255)
+  versas    VersaModel[]
+  createdAt DateTime     @default(now())
+}
+
+model VersaModel {
+  id           Int        @id @default(autoincrement())
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
+  createdBy    User       @relation(fields: [userId], references: [id])
+  userId       Int
+  category     ObjectionCategory @relation(fields: [categoryId], references: [id])
+  categoryId   Int
+  v            VersaStep? @relation("VStep", fields: [vId], references: [id])
+  vId          Int?       @unique
+  e            VersaStep? @relation("EStep", fields: [eId], references: [id])
+  eId          Int?       @unique
+  r            VersaStep? @relation("RStep", fields: [rId], references: [id])
+  rId          Int?       @unique
+  s            VersaStep? @relation("SStep", fields: [sId], references: [id])
+  sId          Int?       @unique
+  a            VersaStep? @relation("AStep", fields: [aId], references: [id])
+  aId          Int?       @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([clientLeadId])
+  @@index([userId])
+  @@index([categoryId])
+}
+
+model VersaStep {
+  id             Int     @id @default(autoincrement())
+  label          String? @db.VarChar(255)
+  question       String? @db.Text
+  answer         String? @db.Text
+  clientResponse String? @db.Text
+  vVersa         VersaModel? @relation("VStep")
+  eVersa         VersaModel? @relation("EStep")
+  rVersa         VersaModel? @relation("RStep")
+  sVersa         VersaModel? @relation("SStep")
+  aVersa         VersaModel? @relation("AStep")
+}

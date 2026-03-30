@@ -1,0 +1,218 @@
+model Course {
+  id           Int              @id @default(autoincrement())
+  title        String
+  description  String?          @db.Text
+  imageUrl     String?          @db.Text
+  isPublished  Boolean          @default(false)
+  roles        CourseRole[]
+  certificates Certificate[]
+  lessons      Lesson[]
+  tests        Test[]
+  progress     CourseProgress[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+}
+
+model CourseRole {
+  id       Int      @id @default(autoincrement())
+  course   Course   @relation(fields: [courseId], references: [id])
+  courseId Int
+  role     UserRole
+}
+
+model Lesson {
+  id                 Int              @id @default(autoincrement())
+  course             Course           @relation(fields: [courseId], references: [id])
+  courseId           Int
+  title              String
+  description        String?          @db.Text
+  duration           Int?
+  order              Int              @default(0)
+  mustUploadHomework Boolean          @default(true)
+  isPreviewable      Boolean          @default(false)
+  videos             LessonVideo[]
+  pdfs               LessonPDF[]
+  links              LessonLink[]
+  tests              Test[]
+  allowedUsers       LessonAccess[]
+  homeWorks          LessonHomework[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@unique([courseId, order])
+}
+
+model LessonAccess {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  lesson    Lesson   @relation(fields: [lessonId], references: [id])
+  lessonId  Int
+  grantedAt DateTime @default(now())
+
+  @@unique([userId, lessonId])
+}
+
+model LessonHomework {
+  id        Int          @id @default(autoincrement())
+  user      User         @relation(fields: [userId], references: [id])
+  userId    Int
+  lesson    Lesson       @relation(fields: [lessonId], references: [id])
+  lessonId  Int
+  title     String
+  url       String
+  type      HomeworkType
+  createdAt DateTime     @default(now())
+
+  @@index([userId])
+  @@index([lessonId])
+}
+
+model LessonVideo {
+  id        Int              @id @default(autoincrement())
+  lesson    Lesson           @relation(fields: [lessonId], references: [id])
+  lessonId  Int
+  url       String           @db.LongText
+  videoType LessonVideoType  @default(IFRAME)
+  order     Int              @default(0)
+  pdfs      LessonVideoPdf[]
+}
+
+model LessonVideoPdf {
+  id         Int         @id @default(autoincrement())
+  video      LessonVideo @relation(fields: [videoId], references: [id])
+  videoId    Int
+  title      String
+  url        String
+  uploadedAt DateTime    @default(now())
+}
+
+model LessonPDF {
+  id       Int    @id @default(autoincrement())
+  lesson   Lesson @relation(fields: [lessonId], references: [id])
+  lessonId Int
+  url      String @db.LongText
+  order    Int    @default(0)
+}
+
+model LessonLink {
+  id       Int    @id @default(autoincrement())
+  lesson   Lesson @relation(fields: [lessonId], references: [id])
+  lessonId Int
+  url      String @db.LongText
+  title    String
+  order    Int    @default(0)
+}
+
+model Test {
+  id                         Int            @id @default(autoincrement())
+  title                      String?
+  type                       TestType       @default(LESSON)
+  course                     Course?        @relation(fields: [courseId], references: [id])
+  courseId                   Int?
+  lesson                     Lesson?        @relation(fields: [lessonId], references: [id])
+  lessonId                   Int?
+  questions                  TestQuestion[]
+  attempts                   TestAttempt[]
+  certificateApprovedByAdmin Boolean        @default(false)
+  attemptLimit               Int            @default(2)
+  timeLimit                  Int?
+  published                  Boolean        @default(false)
+}
+
+model TestQuestion {
+  id          Int                 @id @default(autoincrement())
+  test        Test                @relation(fields: [testId], references: [id])
+  testId      Int
+  type        CoursesQuestionType
+  question    String              @db.Text
+  choices     TestChoice[]
+  order       Int                 @default(1)
+  userAnswers UserAnswer[]
+}
+
+model TestChoice {
+  id         Int          @id @default(autoincrement())
+  question   TestQuestion @relation(fields: [questionId], references: [id])
+  questionId Int
+  text       String
+  value      String
+  isCorrect  Boolean      @default(false)
+  order      Int?
+}
+
+model TestAttempt {
+  id           Int          @id @default(autoincrement())
+  test         Test         @relation(fields: [testId], references: [id])
+  testId       Int
+  user         User         @relation(fields: [userId], references: [id])
+  userId       Int
+  answers      UserAnswer[]
+  score        Float?
+  passed       Boolean      @default(false)
+  attemptCount Int          @default(0)
+  attemptLimit Int          @default(2)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  startTime    DateTime?
+  endTime      DateTime?
+  timePassed   Int?
+}
+
+model UserAnswer {
+  id              Int              @id @default(autoincrement())
+  attempt         TestAttempt      @relation(fields: [attemptId], references: [id])
+  attemptId       Int
+  question        TestQuestion     @relation(fields: [questionId], references: [id])
+  questionId      Int
+  selectedAnswers SelectedAnswer[]
+  textAnswer      String?          @db.Text
+  isApproved      Boolean          @default(false)
+}
+
+model SelectedAnswer {
+  id           Int        @id @default(autoincrement())
+  answer       UserAnswer @relation(fields: [userAnswerId], references: [id])
+  userAnswerId Int
+  value        String
+  order        Int?
+}
+
+model CourseProgress {
+  id               Int               @id @default(autoincrement())
+  user             User              @relation(fields: [userId], references: [id])
+  userId           Int
+  course           Course            @relation(fields: [courseId], references: [id])
+  courseId         Int
+  completedLessons CompletedLesson[]
+  completedTests   CompletedTest[]
+  updatedAt        DateTime @updatedAt
+  createdAt        DateTime @default(now())
+}
+
+model CompletedLesson {
+  id               Int            @id @default(autoincrement())
+  courseProgress   CourseProgress @relation(fields: [courseProgressId], references: [id])
+  courseProgressId Int
+  lessonId         Int
+  completedAt      DateTime       @default(now())
+}
+
+model CompletedTest {
+  id               Int            @id @default(autoincrement())
+  courseProgress   CourseProgress @relation(fields: [courseProgressId], references: [id])
+  courseProgressId Int
+  testId           Int
+  completedAt      DateTime       @default(now())
+}
+
+model Certificate {
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  course     Course   @relation(fields: [courseId], references: [id])
+  courseId   Int
+  isApproved Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  fileUrl    String?  @db.Text
+}

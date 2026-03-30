@@ -1,5 +1,5 @@
 import { prisma } from "../../infra/prisma/prisma.js";
-import { AuthSchema } from "./auth.schema.js";
+import { AuthSchema } from "./auth.dto.js";
 
 class AuthRepository {
   static findByEmail(email) {
@@ -15,11 +15,14 @@ class AuthRepository {
       select: AuthSchema.userAuthSelect,
     });
   }
-
-  static updatePassword(id, hashedPassword) {
+  static changePassword(password, userId) {
     return prisma.user.update({
-      where: { id },
-      data: { password: hashedPassword },
+      where: {
+        id: Number(userId),
+      },
+      data: {
+        password,
+      },
     });
   }
 }

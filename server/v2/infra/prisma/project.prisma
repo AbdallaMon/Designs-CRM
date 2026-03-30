@@ -1,0 +1,113 @@
+model Project {
+  id                Int    @id @default(autoincrement())
+  groupTitle        String @default("Initial Project") @db.VarChar(255)
+  groupId           Int    @default(1)
+  assignments       Assignment[]
+  clientLeadId      Int
+  clientLead        ClientLead @relation(fields: [clientLeadId], references: [id])
+  isModification    Boolean   @default(false)
+  contract          Contract? @relation(fields: [contractId], references: [id])
+  contractId        Int?
+  contractStages    ContractStage[]
+  payments          ContractPayment[]
+  driveNodeLinks    DriveNodeProject[]
+  deliveryTime      DateTime?
+  deliverySchedules DeliverySchedule[]
+  priority          Priority @default(MEDIUM)
+  area              Decimal? @db.Decimal(10, 2)
+  startedAt         DateTime?
+  endedAt           DateTime?
+  status            String
+  type              String
+  role              UserRole @default(THREE_D_DESIGNER)
+  tasks             Task[]
+  notified7Days     Boolean @default(false)
+  notified3Days     Boolean @default(false)
+  notified2Days     Boolean @default(false)
+  notified1Day      Boolean @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  chatRooms         ChatRoom[]
+  chatRoomProjects  ChatRoomProject[] @relation("ChatRoomProjects")
+
+  @@index([clientLeadId])
+  @@index([groupId])
+}
+
+model DeliverySchedule {
+  id                Int      @id @default(autoincrement())
+  project           Project? @relation(fields: [projectId], references: [id])
+  projectId         Int?
+  name              String?  @db.VarChar(255)
+  deliveryAt        DateTime
+  notes             Note[]
+  meeting           MeetingReminder? @relation(fields: [meetingReminderId], references: [id])
+  meetingReminderId Int?
+  createdBy         User?    @relation("DeliverySchedulesCreatedBy", fields: [createdById], references: [id])
+  createdById       Int?
+  createdAt         DateTime @default(now())
+  stage             ContractStage? @relation(fields: [stageId], references: [id])
+  stageId           Int?           @unique
+
+  @@index([projectId])
+  @@index([meetingReminderId])
+  @@index([deliveryAt])
+  @@index([createdById])
+}
+
+model Commission {
+  id               Int        @id @default(autoincrement())
+  user             User       @relation(fields: [userId], references: [id])
+  userId           Int
+  lead             ClientLead @relation(fields: [leadId], references: [id])
+  leadId           Int
+  amount           Decimal    @db.Decimal(10, 2)
+  amountPaid       Decimal    @default(0) @db.Decimal(10, 2)
+  createdAt        DateTime   @default(now())
+  isCleared        Boolean    @default(false)
+  commissionReason String     @default("Finalized Lead Commission") @db.VarChar(255)
+  notes            Note[]
+
+  @@index([userId])
+  @@index([leadId])
+}
+
+model Task {
+  id           Int        @id @default(autoincrement())
+  title        String     @db.VarChar(255)
+  description  String?    @db.Text
+  status       TaskStatus @default(TODO)
+  priority     Priority   @default(MEDIUM)
+  type         String     @default("NORMAL")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  dueDate      DateTime?
+  finishedAt   DateTime?
+  project      Project?    @relation(fields: [projectId], references: [id])
+  projectId    Int?
+  user         User?       @relation(fields: [userId], references: [id])
+  userId       Int?
+  clientLead   ClientLead? @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int?
+  createdBy    User?       @relation("CreatedTasks", fields: [createdById], references: [id])
+  createdById  Int?
+  notes        Note[]
+
+  @@index([projectId])
+  @@index([userId])
+}
+
+model Assignment {
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  project    Project? @relation(fields: [projectId], references: [id])
+  projectId  Int?
+  type       String?
+  role       UserRole @default(THREE_D_DESIGNER)
+  assignedAt DateTime? @default(now())
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+  @@index([projectId])
+}

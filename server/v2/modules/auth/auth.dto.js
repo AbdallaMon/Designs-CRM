@@ -59,10 +59,11 @@ class AuthSchema {
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role,
+      activeRole: user.role,
       isActive: user.isActive,
       isPrimary: user.isPrimary,
       isSuperSales: user.isSuperSales,
+      role: user.role,
     };
   }
 }

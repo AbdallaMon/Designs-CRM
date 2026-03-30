@@ -36,6 +36,7 @@ class AuthSchemas {
     .object({
       password: AuthSchemas.#password(),
       confirmPassword: z.string({ error: "Please confirm your password" }),
+      token: z.string({ error: "Reset token is required" }),
     })
     .refine((data) => data.password === data.confirmPassword, {
       message: "Passwords do not match",

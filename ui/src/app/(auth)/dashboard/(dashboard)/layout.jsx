@@ -297,35 +297,10 @@ export default function Layout({
   super_sales,
   contact_initiator,
 }) {
-  const router = useRouter();
-  let { user, isLoggedIn, validatingAuth } = useAuth();
+  let { user } = useAuth();
 
-  useEffect(() => {
-    async function fetchData() {
-      if (validatingAuth || toastId === undefined) {
-        toastId = toast.loading("Validating your session");
-      }
-      if (!isLoggedIn && !validatingAuth) {
-        window.localStorage.setItem("redirect", window.location.pathname);
-        toast.update(toastId, Failed("You must log in first, redirecting..."));
-        router.push("/login");
-        return;
-      }
-      if (isLoggedIn && !validatingAuth) {
-        toast.update(
-          toastId,
-          Success("Your session has been validated, loading data.")
-        );
-      }
-      if (typeof window !== "undefined") {
-        console.log(document.referrer, "refresres");
-      }
-    }
-
-    fetchData();
-  }, [validatingAuth]);
-  if (!user || !user.role) return null;
-  const role = user?.role;
+  if (!user || !user.activeRole) return null;
+  const role = user?.activeRole;
 
   return (
     <Box
@@ -341,43 +316,43 @@ export default function Layout({
             role === "ADMIN"
               ? adminLinks
               : role === "STAFF"
-              ? user.isSuperSales
-                ? superSalesLinks
-                : staffLinks
-              : role === "THREE_D_DESIGNER"
-              ? threeDLinks
-              : role === "TWO_D_DESIGNER"
-              ? twoDLinks
-              : role === "ACCOUNTANT"
-              ? accountantLinks
-              : role === "TWO_D_EXECUTOR"
-              ? exacuterLinks
-              : role === "CONTACT_INITIATOR"
-              ? contactInitiatorLinks
-              : role === "SUPER_SALES"
-              ? superSalesLinks
-              : adminLinks
+                ? user.isSuperSales
+                  ? superSalesLinks
+                  : staffLinks
+                : role === "THREE_D_DESIGNER"
+                  ? threeDLinks
+                  : role === "TWO_D_DESIGNER"
+                    ? twoDLinks
+                    : role === "ACCOUNTANT"
+                      ? accountantLinks
+                      : role === "TWO_D_EXECUTOR"
+                        ? exacuterLinks
+                        : role === "CONTACT_INITIATOR"
+                          ? contactInitiatorLinks
+                          : role === "SUPER_SALES"
+                            ? superSalesLinks
+                            : adminLinks
           }
         />
         {role === "ADMIN"
           ? admin
           : role === "STAFF"
-          ? user.isSuperSales
-            ? super_sales
-            : staff
-          : role === "THREE_D_DESIGNER"
-          ? threeD
-          : role === "TWO_D_DESIGNER"
-          ? twoD
-          : role === "ACCOUNTANT"
-          ? accountant
-          : role === "TWO_D_EXECUTOR"
-          ? exacuter
-          : role === "CONTACT_INITIATOR"
-          ? contact_initiator
-          : role === "SUPER_SALES"
-          ? super_sales
-          : admin}
+            ? user.isSuperSales
+              ? super_sales
+              : staff
+            : role === "THREE_D_DESIGNER"
+              ? threeD
+              : role === "TWO_D_DESIGNER"
+                ? twoD
+                : role === "ACCOUNTANT"
+                  ? accountant
+                  : role === "TWO_D_EXECUTOR"
+                    ? exacuter
+                    : role === "CONTACT_INITIATOR"
+                      ? contact_initiator
+                      : role === "SUPER_SALES"
+                        ? super_sales
+                        : admin}
         <ChatWidget />
       </SocketProvider>
     </Box>

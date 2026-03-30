@@ -3,7 +3,7 @@
 // بيعمل ايه؟ يشيك على req.body أو req.params أو req.query حسب ما تحدد.
 // لو فشل: يرمي AppError بـ 422 + تفاصيل الحقول الغلط.
 
-import { AppError } from "../errors/AppError";
+import { AppError } from "../errors/AppError.js";
 
 // src/shared/middlewares/validate.middleware.js
 
@@ -16,7 +16,9 @@ export function validate(schema, source = "body") {
         path: issue.path.join("."),
         message: issue.message,
       }));
-      throw new AppError("Validation failed", 422, details);
+      // throw new AppError("Validation failed", 422, details);
+      next(new AppError("Validation failed", 422, details));
+      return;
     }
 
     // ✅ نستبدل req[source] بالبيانات المنظفة (Zod strips unknown fields)

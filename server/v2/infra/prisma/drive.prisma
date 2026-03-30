@@ -1,0 +1,92 @@
+model DriveNode {
+  id              Int @id @default(autoincrement())
+  type            DriveNodeType
+  visibility      DriveVisibility @default(PRIVATE)
+  owner           User @relation(fields: [ownerId], references: [id])
+  ownerId         Int
+  parent          DriveNode?  @relation("DriveNodeChildren", fields: [parentId], references: [id])
+  parentId        Int?
+  children        DriveNode[] @relation("DriveNodeChildren")
+  name            String @db.VarChar(255)
+  storageProvider StorageProvider @default(LOCAL)
+  storageKey      String? @db.VarChar(1024)
+  mimeType        String? @db.VarChar(120)
+  sizeBytes       BigInt? @default(0)
+  checksum        String? @db.VarChar(128)
+  isDeleted       Boolean  @default(false)
+  deletedAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  acl             DriveAcl[]
+  publicShares    DrivePublicShare[]
+  nodeProjects    DriveNodeProject[]
+  nodeClientLeads DriveNodeClientLead[]
+
+  @@index([ownerId])
+  @@index([parentId])
+  @@index([visibility])
+  @@index([isDeleted])
+}
+
+model DriveAcl {
+  id        Int @id @default(autoincrement())
+  node      DriveNode @relation(fields: [nodeId], references: [id])
+  nodeId    Int
+  user      User @relation(fields: [userId], references: [id])
+  userId    Int
+  canView   Boolean @default(true)
+  canUpload Boolean @default(false)
+  canEdit   Boolean @default(false)
+  canDelete Boolean @default(false)
+  canShare  Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([nodeId, userId])
+  @@index([userId])
+  @@index([nodeId])
+}
+
+model DrivePublicShare {
+  id           Int @id @default(autoincrement())
+  node         DriveNode @relation(fields: [nodeId], references: [id])
+  nodeId       Int
+  createdBy    User @relation(fields: [createdById], references: [id])
+  createdById  Int
+  token        String   @unique @db.VarChar(80)
+  expiresAt    DateTime?
+  isRevoked    Boolean  @default(false)
+  revokedAt    DateTime?
+  passwordHash String?  @db.VarChar(255)
+  canView      Boolean @default(true)
+  canDownload  Boolean @default(true)
+  createdAt    DateTime @default(now())
+
+  @@index([nodeId])
+  @@index([createdById])
+}
+
+model DriveNodeProject {
+  id        Int @id @default(autoincrement())
+  node      DriveNode @relation(fields: [nodeId], references: [id])
+  nodeId    Int
+  project   Project @relation(fields: [projectId], references: [id])
+  projectId Int
+  createdAt DateTime @default(now())
+
+  @@unique([nodeId, projectId])
+  @@index([projectId])
+  @@index([nodeId])
+}
+
+model DriveNodeClientLead {
+  id           Int @id @default(autoincrement())
+  node         DriveNode @relation(fields: [nodeId], references: [id])
+  nodeId       Int
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
+  createdAt    DateTime @default(now())
+
+  @@unique([nodeId, clientLeadId])
+  @@index([clientLeadId])
+  @@index([nodeId])
+}

@@ -1,0 +1,113 @@
+model SiteUtility {
+  id               Int @id @default(1)
+  pdfFrame         String?
+  pdfHeader        String?
+  introPage        String?
+  pageTitle        String?
+  pdfSignaturePart String?
+  updatedAt        DateTime @updatedAt
+}
+
+model FixedData {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model File {
+  id           Int        @id @default(autoincrement())
+  name         String     @db.VarChar(255)
+  url          String     @db.VarChar(255)
+  description  String?    @db.Text
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int
+  isUserFile   Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  user         User?      @relation(fields: [userId], references: [id])
+  userId       Int?
+
+  @@index([clientLeadId, isUserFile])
+}
+
+model Note {
+  id                    Int         @id @default(autoincrement())
+  content               String?     @db.Text
+  attachment            String?     @db.Text
+  clientLead            ClientLead? @relation(fields: [clientLeadId], references: [id])
+  clientLeadId          Int?
+  user                  User        @relation(fields: [userId], references: [id])
+  userId                Int
+  createdAt             DateTime    @default(now())
+  notedUser             User? @relation("UserSubjectNotes", fields: [notedUserId], references: [id])
+  notedUserId           Int?
+  baseEmployeeSalary    BaseEmployeeSalary?  @relation(fields: [baseEmployeeSalaryId], references: [id])
+  baseEmployeeSalaryId  Int?
+  rent                  Rent?                @relation(fields: [rentId], references: [id])
+  rentId                Int?
+  rentPeriod            RentPeriod?          @relation(fields: [rentPeriodId], references: [id])
+  rentPeriodId          Int?
+  operationalExpenses   OperationalExpenses? @relation(fields: [operationalExpensesId], references: [id])
+  operationalExpensesId Int?
+  payment               Payment?             @relation(fields: [paymentId], references: [id])
+  paymentId             Int?
+  invoice               Invoice?             @relation(fields: [invoiceId], references: [id])
+  invoiceId             Int?
+  task                  Task?                @relation(fields: [taskId], references: [id])
+  taskId                Int?
+  commission            Commission?          @relation(fields: [commissionId], references: [id])
+  commissionId          Int?
+  contract              Contract?            @relation(fields: [contractId], references: [id])
+  contractId            Int?
+  update                ClientLeadUpdate?    @relation(fields: [updateId], references: [id])
+  updateId              Int?
+  sharedUpdate          SharedUpdate?        @relation(fields: [sharedUpdateId], references: [id])
+  sharedUpdateId        Int?
+  clientImageSession    ClientImageSession?  @relation(fields: [imageSessionId], references: [id])
+  imageSessionId        Int?
+  clientSelectedImage   ClientSelectedImage? @relation(fields: [selectedImageId], references: [id])
+  selectedImageId       Int?
+  salesStage            SalesStage?          @relation(fields: [salesStageId], references: [id])
+  salesStageId          Int?
+  deliverySchedule      DeliverySchedule?    @relation(fields: [deliveryScheduleId], references: [id])
+  deliveryScheduleId    Int?
+
+  @@index([taskId])
+  @@index([clientLeadId])
+  @@index([userId])
+  @@index([baseEmployeeSalaryId])
+  @@index([rentId])
+  @@index([rentPeriodId])
+  @@index([operationalExpensesId])
+  @@index([paymentId])
+  @@index([invoiceId])
+  @@index([commissionId])
+  @@index([sharedUpdateId])
+  @@index([updateId])
+  @@index([imageSessionId])
+  @@index([selectedImageId])
+  @@index([contractId])
+  @@index([salesStageId])
+  @@index([notedUserId])
+  @@index([deliveryScheduleId])
+}
+
+model Notification {
+  id           Int              @id @default(autoincrement())
+  type         NotificationType
+  content      String           @db.Text
+  contentType  ContentType      @default(TEXT)
+  link         String?          @db.VarChar(255)
+  isRead       Boolean          @default(false)
+  user         User?            @relation("UserNotifications", fields: [userId], references: [id])
+  userId       Int?
+  staff        User?            @relation("StaffNotifications", fields: [staffId], references: [id])
+  staffId      Int?
+  clientLead   ClientLead?      @relation(fields: [clientLeadId], references: [id])
+  clientLeadId Int?
+  createdAt    DateTime         @default(now())
+
+  @@index([userId])
+  @@index([clientLeadId])
+}

@@ -1,7 +1,12 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
 export const AuthContext = createContext(null);
+import {
+  AuthProvider as AuthProviderV2,
+  useAuth as useAuthV2,
+} from "@/app/v2/providers/AuthProvider";
 export default function AuthProvider({ children }) {
+  return <AuthProviderV2>{children}</AuthProviderV2>;
   const [user, setUser] = useState({
     role: null,
     emailConfirmed: null,
@@ -16,7 +21,7 @@ export default function AuthProvider({ children }) {
           `${process.env.NEXT_PUBLIC_URL}/auth/status`,
           {
             credentials: "include",
-          }
+          },
         );
         const result = await response.json();
         let user;
@@ -75,6 +80,7 @@ export default function AuthProvider({ children }) {
 }
 
 export const useAuth = () => {
+  return useAuthV2();
   const context = useContext(AuthContext);
   return context;
 };

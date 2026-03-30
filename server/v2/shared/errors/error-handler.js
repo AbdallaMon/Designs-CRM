@@ -1,7 +1,7 @@
 // ايه هو؟ آخر middleware في الـ app. أي throw أو next(err) بيوصل هنا.
 // ليه في shared؟ لأنه بيمسك errors من كل الموديولات (auth, chat, أي حاجه).
 
-import { AppError } from "./AppError";
+import { AppError } from "./AppError.js";
 
 // بيعمل ايه؟ يشوف لو AppError يرجع statusCode بتاعها، لو Error عادي يرجع 500.
 export function notFoundHandler(req, res, next) {
@@ -11,6 +11,7 @@ export function notFoundHandler(req, res, next) {
 // Global error handler — لازم يكون آخر app.use()
 // Express بيعرف إنه error handler لأن عنده 4 parameters (err, req, res, next)
 export function errorHandler(err, req, res, next) {
+  console.error("Error caught by errorHandler:", err);
   if (err instanceof AppError) {
     // خطأ متوقع (400, 401, 404, 409, 422 ...)
     return res.status(err.statusCode).json({

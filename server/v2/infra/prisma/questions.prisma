@@ -1,0 +1,45 @@
+model QuestionType {
+  id               Int               @id @default(autoincrement())
+  name             String            @unique
+  label            String
+  baseQuestions    BaseQuestion[]
+  sessionQuestions SessionQuestion[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+}
+
+model BaseQuestion {
+  id             Int          @id @default(autoincrement())
+  questionType   QuestionType @relation(fields: [questionTypeId], references: [id])
+  questionTypeId Int
+  title          String       @db.Text
+  order          Int          @default(0)
+  isArchived     Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model SessionQuestion {
+  id             Int          @id @default(autoincrement())
+  questionType   QuestionType @relation(fields: [questionTypeId], references: [id])
+  questionTypeId Int
+  title          String       @db.Text
+  isCustom       Boolean      @default(false)
+  order          Int          @default(0)
+  clientLead     ClientLead   @relation(fields: [clientLeadId], references: [id])
+  clientLeadId   Int
+  createdBy      User?        @relation(fields: [userId], references: [id])
+  userId         Int?
+  answer         Answer?
+  createdAt      DateTime @default(now())
+}
+
+model Answer {
+  id                Int             @id @default(autoincrement())
+  response          String          @db.Text
+  sessionQuestion   SessionQuestion @relation(fields: [sessionQuestionId], references: [id])
+  sessionQuestionId Int             @unique
+  answeredBy        User            @relation(fields: [userId], references: [id])
+  userId            Int
+  createdAt         DateTime @default(now())
+}

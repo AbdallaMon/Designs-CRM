@@ -1,0 +1,107 @@
+model Payment {
+  id            Int           @id @default(autoincrement())
+  clientLead    ClientLead    @relation(fields: [clientLeadId], references: [id], onDelete: Cascade)
+  clientLeadId  Int
+  status        PaymentStatus @default(PENDING)
+  amount        Decimal       @db.Decimal(10, 2)
+  amountPaid    Decimal       @default(0) @db.Decimal(10, 2)
+  amountLeft    Decimal       @db.Decimal(10, 2)
+  paymentLevel  PaymentLevel?
+  paymentReason String?       @db.Text
+  invoices      Invoice[]
+  notes         Note[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Invoice {
+  id            Int      @id @default(autoincrement())
+  payment       Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  paymentId     Int
+  issuedDate    DateTime @default(now())
+  amount        Decimal  @db.Decimal(10, 2)
+  notes         Note[]
+  createdAt     DateTime @default(now())
+  invoiceNumber String   @unique
+}
+
+model BaseEmployeeSalary {
+  id              Int             @id @default(autoincrement())
+  employee        User            @relation(fields: [userId], references: [id])
+  userId          Int             @unique
+  baseSalary      Decimal         @db.Decimal(10, 2)
+  taxAmount       Decimal         @default(0) @db.Decimal(10, 2)
+  baseWorkHours   Int
+  notes           Note[]
+  monthlySalaries MonthlySalary[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model MonthlySalary {
+  id               Int                @id @default(autoincrement())
+  baseSalary       BaseEmployeeSalary @relation(fields: [baseSalaryId], references: [id])
+  baseSalaryId     Int
+  totalHoursWorked Int
+  overtimeHours    Int                @default(0)
+  bonuses          Decimal            @default(0) @db.Decimal(10, 2)
+  deductions       Decimal            @default(0) @db.Decimal(10, 2)
+  netSalary        Decimal            @db.Decimal(10, 2)
+  isFulfilled      Boolean            @default(false)
+  paymentDate      DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  outcome          Outcome?           @relation(fields: [outcomeId], references: [id])
+  outcomeId        Int?
+}
+
+model Rent {
+  id          Int          @id @default(autoincrement())
+  name        String       @db.VarChar(255)
+  description String?      @db.Text
+  notes       Note[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  rentPeriods RentPeriod[]
+}
+
+model RentPeriod {
+  id        Int      @id @default(autoincrement())
+  rent      Rent     @relation(fields: [rentId], references: [id])
+  rentId    Int
+  startDate DateTime
+  endDate   DateTime
+  amount    Decimal  @db.Decimal(10, 2)
+  isPaid    Boolean  @default(false)
+  notes     Note[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  outcome   Outcome? @relation(fields: [outcomeId], references: [id])
+  outcomeId Int?
+}
+
+model OperationalExpenses {
+  id            Int           @id @default(autoincrement())
+  category      String        @db.VarChar(255)
+  description   String?       @db.Text
+  amount        Decimal       @db.Decimal(10, 2)
+  paymentDate   DateTime
+  paymentStatus PaymentStatus @default(PENDING)
+  notes         Note[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  outcome       Outcome?      @relation(fields: [outcomeId], references: [id])
+  outcomeId     Int?
+}
+
+model Outcome {
+  id                  Int                   @id @default(autoincrement())
+  type                String?               @db.VarChar(50)
+  amount              Decimal               @db.Decimal(10, 2)
+  description         String?               @db.Text
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  rentPeriods         RentPeriod[]
+  operationalExpenses OperationalExpenses[]
+  monthlySalaries     MonthlySalary[]
+}

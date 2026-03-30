@@ -7,24 +7,24 @@ import { Box, Paper, Typography, useTheme, useMediaQuery } from "@mui/material";
 import Image from "next/image";
 
 export default function HandleAuth({ children }) {
-  const { isLoggedIn } = useAuth();
-  const router = useRouter();
+  // const { isLoggedIn } = useAuth();
+  // const router = useRouter();
 
-  useEffect(() => {
-    function handleRedirect() {
-      const redirect = window.localStorage.getItem("redirect");
-      if (isLoggedIn) {
-        if (redirect && redirect.includes("dashboard")) {
-          window.localStorage.removeItem("redirect");
-          router.push(redirect);
-        } else {
-          router.push("/dashboard");
-        }
-      }
-    }
+  // useEffect(() => {
+  //   function handleRedirect() {
+  //     const redirect = window.localStorage.getItem("redirect");
+  //     if (isLoggedIn) {
+  //       if (redirect && redirect.includes("dashboard")) {
+  //         window.localStorage.removeItem("redirect");
+  //         router.push(redirect);
+  //       } else {
+  //         router.push("/dashboard");
+  //       }
+  //     }
+  //   }
 
-    handleRedirect();
-  }, [isLoggedIn, router]);
+  //   handleRedirect();
+  // }, [isLoggedIn, router]);
 
   return (
     <Box

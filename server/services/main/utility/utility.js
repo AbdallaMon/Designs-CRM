@@ -200,7 +200,7 @@ export const verifyTokenAndHandleAuthorization = async (
   req,
   res,
   next,
-  role
+  role,
 ) => {
   const token = req.cookies.token;
   if (!token) {
@@ -233,7 +233,7 @@ export const verifyTokenAndHandleAuthorization = async (
       user.role === "SUPER_ADMIN" ||
       user.isSuperSales ||
       user.subRoles.some(
-        (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN"
+        (r) => r.subRole === "ADMIN" || r.subRole === "SUPER_ADMIN",
       );
 
     if (role === "ADMIN" && isAdmin) {
@@ -503,7 +503,7 @@ const storage = multer.diskStorage({
   },
   filename: (req, file, cb) => {
     const uniqueFilename = `${uuidv4()}-${Date.now()}${path.extname(
-      file.originalname
+      file.originalname,
     )}`;
     cb(null, uniqueFilename);
   },
@@ -563,7 +563,7 @@ export const uploadFiles = async (req, res) => {
         try {
           for (const file of req.files) {
             const uniqueFilename = `${uuidv4()}${path.extname(
-              file.originalname
+              file.originalname,
             )}`;
             const savePath = path.join(uploadDir, uniqueFilename);
             fs.writeFileSync(savePath, file.buffer);
@@ -638,7 +638,7 @@ function buildPublicUrl(remoteFilename, server = process.env.IMAGEDOMAIN) {
 export async function uploadToFTPHttpAsBuffer(
   source,
   remoteFilename,
-  isBuffer = false
+  isBuffer = false,
 ) {
   console.log("Uploading to FTP via HTTP as buffer:", remoteFilename);
   console.log(source.length, "Buffer size in bytes");
@@ -678,7 +678,7 @@ export async function uploadToFTPHttpAsBuffer(
 export async function uploadToFTPAsBuffer(
   source,
   remotePath,
-  isBuffer = false
+  isBuffer = false,
 ) {
   const client = new Client();
   try {
@@ -725,7 +725,7 @@ export async function getNotifications(
   searchParams,
   limit,
   skip,
-  unread = true
+  unread = true,
 ) {
   const where = {};
   const filters = searchParams.filters && JSON.parse(searchParams.filters);
@@ -802,7 +802,7 @@ export async function createNotification(
   clientLeadId,
   staffId,
   role = ["STAFF"],
-  specifiRole
+  specifiRole,
 ) {
   let subAdmins = [];
   const forAll = !userId && !isAdmin && !staffId;
@@ -833,7 +833,7 @@ export async function createNotification(
       withEmail,
       contentType,
       clientLeadId,
-      staffId
+      staffId,
     );
     if (subAdmins?.length > 0) {
       subAdmins.forEach(async (admin) => {
@@ -846,7 +846,7 @@ export async function createNotification(
           withEmail,
           contentType,
           clientLeadId,
-          staffId
+          staffId,
         );
       });
     }
@@ -873,7 +873,7 @@ export async function createNotification(
         emailSubject,
         withEmail,
         contentType,
-        clientLeadId
+        clientLeadId,
       );
     });
   } else if (forAll) {
@@ -895,7 +895,7 @@ export async function createNotification(
         emailSubject,
         withEmail,
         contentType,
-        clientLeadId
+        clientLeadId,
       );
     });
   } else if (userId) {
@@ -908,7 +908,7 @@ export async function createNotification(
       withEmail,
       contentType,
       clientLeadId,
-      staffId
+      staffId,
     );
   }
 }
@@ -922,7 +922,7 @@ async function sendNotification(
   withEmail,
   contentType = "TEXT",
   clientLeadId,
-  staffId
+  staffId,
 ) {
   const link = href
     ? `<a href="${process.env.OLDORIGIN}${href}" style="color: #1a73e8; text-decoration: none;">See details from here</a>`
@@ -982,7 +982,7 @@ async function sendNotification(
 
 export async function getUserDetailsWithSpecificFields(
   id,
-  fields = { id: true, name: true, email: true }
+  fields = { id: true, name: true, email: true },
 ) {
   return await prisma.user.findUnique({
     where: { id: Number(id) },
@@ -998,7 +998,7 @@ export async function updateLead(clientLeadId) {
 }
 
 export const getTokenData = (req, res) => {
-  const token = req.cookies.token;
+  const token = req.cookies.token || req.cookies.access_token;
   if (!token) {
     return res.status(401).json({ message: "You have to login first" });
   }

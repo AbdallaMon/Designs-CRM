@@ -1,3 +1,4 @@
+import { getDataAndSet as getDataAndSetV2 } from "../../v2/lib/api/getDataAndSet";
 export async function getDataAndSet({
   url = "",
   setLoading,
@@ -10,6 +11,19 @@ export async function getDataAndSet({
   sort,
   others,
 }) {
+  return await getDataAndSetV2({
+    url,
+    setLoading,
+    setData,
+    setError,
+    page,
+    limit,
+    filters,
+    search,
+    sort,
+    others,
+    legacy: true,
+  });
   try {
     setLoading(true);
     let queryPrefix = "?";
@@ -20,14 +34,14 @@ export async function getDataAndSet({
       `${
         process.env.NEXT_PUBLIC_URL
       }/${url}${queryPrefix}page=${page}&limit=${limit}&filters=${JSON.stringify(
-        filters
+        filters,
       )}&search=${search}&sort=${JSON.stringify(sort)}&${others}`,
       {
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
-      }
+      },
     );
     const status = response.status;
     const result = await response.json();
