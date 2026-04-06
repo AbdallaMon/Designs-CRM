@@ -17,6 +17,7 @@ import {
   errorHandler,
   notFoundHandler,
 } from "./v2/shared/errors/error-handler.js";
+
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -102,7 +103,6 @@ app.use("/admin", adminRoutes);
 app.use("/accountant", accountantRoutes);
 app.use("/client", clientsRoutes);
 app.use("/v2", v2Routes);
-// ─── Error handling ───────────────────────────────────────────────────────────
 
 app.use(notFoundHandler);
 app.use(errorHandler);

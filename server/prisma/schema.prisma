@@ -56,6 +56,11 @@ enum NotificationType {
   CHAT_MEMBER_ADDED
   CHAT_CALL_INCOMING
   CHAT_CALL_MISSED
+
+  // v2 Module - Booking Leads
+  LEAD_CREATED // v2: When a new lead is created
+  LEAD_SUBMITTED // v2: When a lead is submitted for review
+  LEAD_STATUS_CHANGED // v2: When lead status changes (to avoid duplication with old LEAD_STATUS_CHANGE)
 }
 
 enum ContentType {
@@ -119,6 +124,11 @@ enum ClientLeadStatus {
   CONVERTED
   ON_HOLD
   ARCHIVED
+}
+
+enum BookingLeadRequestStatus {
+  IN_PROGRESS
+  SUBMITTED
 }
 
 enum CallReminderStatus {
@@ -594,6 +604,15 @@ model ClientLead {
   selectedCategory     LeadCategory
   type                 LeadType                 @default(CONSTRUCTION_VILLA)
   description          String?
+  location             String?                  @db.VarChar(255)
+  projectType          String?                  @db.VarChar(255)
+  projectStage         String?                  @db.VarChar(255)
+  previousWork         String?                  @db.Text
+  hasArchitecturalPlan String?                  @db.VarChar(255)
+  serviceType          String?                  @db.VarChar(255)
+  decisionMaker        String?                  @db.VarChar(255)
+  bookingRequestStatus BookingLeadRequestStatus @default(IN_PROGRESS)
+  bookingSubmittedAt   DateTime?
   clientDescription    String?                  @db.Text
   stripieMetadata      Json?
   emirate              Emirate?
@@ -1053,6 +1072,8 @@ model Client {
   enName    String?  @db.VarChar(255)
   phone       String       @db.VarChar(20)
   email       String       @unique @db.VarChar(255)
+  contactAgreement             Boolean?
+  contactInitialPriceAgreement Boolean?
   clientLeads ClientLead[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt

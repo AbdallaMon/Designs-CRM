@@ -1190,6 +1190,15 @@ export async function getNotificationForTodayByStaffId(userId) {
       },
       clientLead: {
         select: {
+          location: true,
+          projectType: true,
+          projectStage: true,
+          previousWork: true,
+          hasArchitecturalPlan: true,
+          serviceType: true,
+          decisionMaker: true,
+          bookingRequestStatus: true,
+          bookingSubmittedAt: true,
           client: {
             select: {
               name: true,

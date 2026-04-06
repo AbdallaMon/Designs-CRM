@@ -49,6 +49,7 @@ import { MoreActionsMenu } from "./shared/MoreActionsMenu";
 import { LeadDialogHeader } from "./shared/LeadDialogHeader";
 import { StatusMenu } from "./shared/StatusMenu";
 import ChatsTab from "./tabs/ChatsTab";
+import { BookingLeadDetailsCard } from "@/v2/modules/leads";
 
 // LeadContent Component (Extracted Shared Content)
 const LeadContent = ({
@@ -86,7 +87,7 @@ const LeadContent = ({
       false,
       "Assigning",
       false,
-      "PUT"
+      "PUT",
     );
     if (assign.status === 200) {
       window.location.reload();
@@ -121,7 +122,7 @@ const LeadContent = ({
       false,
       "Updating",
       null,
-      "PUT"
+      "PUT",
     );
     if (request.status === 200) {
       if (setRerenderColumns) {
@@ -147,7 +148,7 @@ const LeadContent = ({
       false,
       "Converting",
       false,
-      "PUT"
+      "PUT",
     );
     if (request.status === 200) {
       window.setTimeout(() => {
@@ -161,7 +162,7 @@ const LeadContent = ({
   const leadStatus = enumToKeyValueArray(
     user.role === "STAFF" && !user.isPrimary
       ? KanbanBeginerLeadsStatus
-      : KanbanLeadsStatus
+      : KanbanLeadsStatus,
   );
 
   if (isAllowedLoading) return <FullScreenLoader />;
@@ -459,12 +460,12 @@ const LeadContent = ({
                 ? 8
                 : 7
               : payments?.length > 0
-              ? lead.status === "FINALIZED"
-                ? 12
-                : 11
-              : lead.status === "FINALIZED"
-              ? 11
-              : 10
+                ? lead.status === "FINALIZED"
+                  ? 12
+                  : 11
+                : lead.status === "FINALIZED"
+                  ? 11
+                  : 10
           }
         >
           <ChatsTab clientLeadId={lead.id} />
@@ -479,6 +480,7 @@ function LeadData({ lead, setLead, setleads }) {
     <Stack spacing={3}>
       <LeadInfo lead={lead} setLead={setLead} setleads={setleads} />
       <LeadContactInfo lead={lead} setLead={setLead} setleads={setleads} />
+      <BookingLeadDetailsCard lead={lead} />
       <LeadStripeInfo lead={lead} />
     </Stack>
   );
