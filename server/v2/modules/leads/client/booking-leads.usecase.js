@@ -147,19 +147,6 @@ export async function updateBookingLeadStep(leadId, { field, value }) {
     clientData,
   });
 
-  try {
-    await sendToAdmins({
-      content: buildLeadUpdatedContent(updatedLead, field, value),
-      type: NOTIFICATION_TYPES.LEAD_STATUS_CHANGED,
-      options: {
-        contentType: CONTENT_TYPES.HTML,
-        clientLeadId: updatedLead.id,
-      },
-    });
-  } catch (error) {
-    console.error("Failed to send lead updated notification:", error);
-  }
-
   return mapBookingLeadResponse(updatedLead);
 }
 
