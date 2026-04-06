@@ -10,6 +10,7 @@ import {
 import {
   BOOKING_LEAD_FIELD_LABELS,
   BOOKING_LEAD_FIELDS,
+  BOOKING_LEAD_VALUE_LABELS,
 } from "../constants/bookingLeadFieldLabels";
 
 function formatValue(fieldKey, value) {
@@ -24,11 +25,12 @@ function formatValue(fieldKey, value) {
       return String(value);
     }
 
-    return date.toLocaleString();
+    return date.toLocaleString("ar-AE");
   }
 
-  if (fieldKey === "bookingRequestStatus") {
-    return String(value).replace(/_/g, " ");
+  const fieldMap = BOOKING_LEAD_VALUE_LABELS[fieldKey];
+  if (fieldMap) {
+    return fieldMap[value] ?? String(value);
   }
 
   return String(value);
@@ -53,7 +55,7 @@ export default function BookingLeadDetailsCard({ lead }) {
           justifyContent="space-between"
           spacing={2}
         >
-          <Typography variant="h6">Booking Details</Typography>
+          <Typography variant="h6">تفاصيل الحجز</Typography>
           <Chip
             size="small"
             color={
