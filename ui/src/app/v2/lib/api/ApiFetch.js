@@ -1,5 +1,41 @@
 import config from "../config";
+export function logToMd(...args) {
+  const time = new Date().toISOString();
 
+  const text = args
+    .map((item) => {
+      if (typeof item === "string") return item;
+      try {
+        return JSON.stringify(item, null, 2);
+      } catch {
+        return String(item);
+      }
+    })
+    .join(" ");
+
+  const entry = `## ${time}
+
+\`\`\`txt
+${text}
+\`\`\`
+
+`;
+
+  // normal browser console
+  console.log(...args);
+
+  // save all logs in one markdown string
+  if (typeof window !== "undefined") {
+    const prev = localStorage.getItem("debug-log-md") || "";
+    localStorage.setItem("debug-log-md", prev + entry);
+  }
+}
+
+export function clearMdLogs() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("debug-log-md");
+  }
+}
 class ApiFetch {
   constructor(baseUrl) {
     this.baseUrl = baseUrl;
@@ -84,8 +120,9 @@ class ApiFetch {
       result = { message: response.statusText };
     }
     result.status = status;
-
+    logToMd(result, "result");
     if (status === 401 && !_skipRefresh) {
+      logToMd("Unauthorized, attempting to refresh token...");
       const refreshed = await this._refreshToken();
 
       if (refreshed) {

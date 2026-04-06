@@ -111,13 +111,6 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
             onKeyDown={handleKeyDown}
             placeholder="Enter Telegram link"
             fullWidth
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <BsTelegram size={18} color="#1976d2" />
-                </InputAdornment>
-              ),
-            }}
             sx={{
               "& .MuiOutlinedInput-root": {
                 "&:hover fieldset": {
@@ -127,6 +120,15 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
                   borderColor: "primary.main",
                 },
               },
+            }}
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <BsTelegram size={18} color="#1976d2" />
+                  </InputAdornment>
+                ),
+              }
             }}
           />
           <Box display="flex" gap={0.5}>

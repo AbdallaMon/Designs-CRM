@@ -41,7 +41,6 @@ export const ImageLoader = ({
           animation="wave"
         />
       )}
-
       {/* Error State */}
       {imageError ? (
         <Box
@@ -62,7 +61,7 @@ export const ImageLoader = ({
         </Box>
       ) : (
         /* Image Container */
-        <Box
+        (<Box
           sx={{
             borderRadius,
             overflow: "hidden",
@@ -83,7 +82,6 @@ export const ImageLoader = ({
               ...style,
             }}
           />
-
           {/* Overlay for archived/special states */}
           {isArchived && imageLoaded && (
             <Box
@@ -109,7 +107,7 @@ export const ImageLoader = ({
               </Typography>
             </Box>
           )}
-        </Box>
+        </Box>)
       )}
     </Box>
   );

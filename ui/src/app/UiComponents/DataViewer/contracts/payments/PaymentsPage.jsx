@@ -246,7 +246,9 @@ function PaymentAmountsDialog({ open, onClose, payment, onSave, loading }) {
               fullWidth
               size="small"
               mt={2}
-              inputProps={{ step: "0.01" }}
+              slotProps={{
+                htmlInput: { step: "0.01" }
+              }}
             />
             <TextField
               label="Amount Received"
@@ -255,7 +257,9 @@ function PaymentAmountsDialog({ open, onClose, payment, onSave, loading }) {
               onChange={(e) => setAmountReceived(e.target.value)}
               fullWidth
               size="small"
-              inputProps={{ step: "0.01" }}
+              slotProps={{
+                htmlInput: { step: "0.01" }
+              }}
             />
             {payment && (
               <Alert severity="info">
@@ -282,7 +286,6 @@ function ContractCard({ node, onChangeStatus, onEditAmounts }) {
   return (
     <Card sx={{ mb: 2 }}>
       <CardHeader
-        titleTypographyProps={{ variant: "h6" }}
         title={
           <Stack direction="row" alignItems="center" spacing={1}>
             <FiFileText />
@@ -306,6 +309,9 @@ function ContractCard({ node, onChangeStatus, onEditAmounts }) {
             Tax: {c.taxRate}%
           </Typography>
         }
+        slotProps={{
+          title: { variant: "h6" }
+        }}
       />
       <CardContent>
         <Box sx={{ mb: 1 }}>

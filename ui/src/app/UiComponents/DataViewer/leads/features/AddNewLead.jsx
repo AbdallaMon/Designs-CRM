@@ -78,18 +78,19 @@ export default function CreateNewLead() {
       >
         Add new lead
       </Button>
-
       <Dialog
         open={open}
         onClose={handleClose}
         maxWidth="md"
         fullWidth={true}
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            overflow: "hidden",
-            zIndex: theme.zIndex.modal + 60000,
-          },
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 3,
+              overflow: "hidden",
+              zIndex: theme.zIndex.modal + 60000,
+            },
+          }
         }}
       >
         <DialogTitle

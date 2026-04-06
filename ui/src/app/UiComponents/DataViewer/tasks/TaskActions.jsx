@@ -115,15 +115,16 @@ export function TaskActions({ name, task, setTasks, setTask }) {
           sx={{ cursor: "pointer" }}
         />
       </Tooltip>
-
       <Menu
         id="status-menu"
         anchorEl={anchorEl}
         open={openMenu === MENU_TYPES.STATUS}
         onClose={handleMenuClose}
-        MenuListProps={{
-          "aria-labelledby": "status-menu-button",
-          dense: true,
+        slotProps={{
+          list: {
+            "aria-labelledby": "status-menu-button",
+            dense: true,
+          }
         }}
       >
         {TASKSTATUS.map((status) => (
@@ -137,7 +138,6 @@ export function TaskActions({ name, task, setTasks, setTask }) {
           </MenuItem>
         ))}
       </Menu>
-
       <Tooltip
         title={
           canChangePriority
@@ -157,15 +157,16 @@ export function TaskActions({ name, task, setTasks, setTask }) {
           }}
         />
       </Tooltip>
-
       <Menu
         id="priority-menu"
         anchorEl={anchorEl}
         open={openMenu === MENU_TYPES.PRIORITY}
         onClose={handleMenuClose}
-        MenuListProps={{
-          "aria-labelledby": "priority-menu-button",
-          dense: true,
+        slotProps={{
+          list: {
+            "aria-labelledby": "priority-menu-button",
+            dense: true,
+          }
         }}
       >
         {PRIORITY.map((priority) => (

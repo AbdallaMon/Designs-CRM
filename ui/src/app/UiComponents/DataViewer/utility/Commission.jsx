@@ -136,7 +136,6 @@ const Commission = ({ userId }) => {
       >
         Staff Commissions
       </Button>
-
       <Dialog open={open} onClose={handleClose} maxWidth="lg" fullWidth>
         <DialogTitle>
           <Box
@@ -252,7 +251,6 @@ const Commission = ({ userId }) => {
           )}
         </DialogContent>
       </Dialog>
-
       <Dialog
         open={paymentModalOpen}
         onClose={closePaymentModal}
@@ -296,7 +294,9 @@ const Commission = ({ userId }) => {
                 fullWidth
                 value={paymentAmount}
                 onChange={(e) => setPaymentAmount(e.target.value)}
-                inputProps={{ min: 0, step: "0.01" }}
+                slotProps={{
+                  htmlInput: { min: 0, step: "0.01" }
+                }}
               />
             </>
           )}
@@ -410,7 +410,6 @@ const AdminCommissionForm = ({ userId, onUpdate }) => {
           and not a part of the lead main commission (5%).
         </Alert>
       </DialogTitle>
-
       <DialogContent>
         <Box mt={2}>
           <TextField
@@ -430,8 +429,10 @@ const AdminCommissionForm = ({ userId, onUpdate }) => {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             type="number"
-            InputProps={{ inputProps: { min: 0, step: 0.01 } }}
             required
+            slotProps={{
+              input: { inputProps: { min: 0, step: 0.01 } }
+            }}
           />
 
           <TextField
@@ -445,7 +446,6 @@ const AdminCommissionForm = ({ userId, onUpdate }) => {
           />
         </Box>
       </DialogContent>
-
       <DialogActions>
         <Button onClick={handleClose} color="inherit">
           Cancel

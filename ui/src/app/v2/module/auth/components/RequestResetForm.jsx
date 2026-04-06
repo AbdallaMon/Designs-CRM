@@ -2,9 +2,9 @@
 import Link from "next/link";
 import AuthCard from "@/app/v2/shared/components/AuthCard";
 import AuthForm from "@/app/v2/shared/form/AuthForm";
-import { usePasswordReset } from "@/app/v2/module/auth/hooks/usePasswordReset";
 import { REQUEST_RESET_FIELDS } from "@/app/v2/module/auth/auth.constants";
 import { emailRules } from "@/app/v2/module/auth/auth.validation";
+import { useAuthHooks } from "../hooks/useAuthHooks";
 
 const rules = { email: emailRules };
 
@@ -15,7 +15,7 @@ const subtitle = (
 );
 
 export default function RequestResetForm() {
-  const { requestReset } = usePasswordReset();
+  const { requestReset } = useAuthHooks();
 
   return (
     <AuthCard title="Forgot Password" subtitle={subtitle}>

@@ -1,0 +1,575 @@
+/* ── Combined Refactor Plan – Light Theme ──────────────────────────────── */
+
+:root {
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
+    sans-serif;
+  --font-mono:
+    "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+
+  --bg: #ffffff;
+  --bg-alt: #f6f8fa;
+  --bg-code: #f0f2f5;
+  --bg-table-hd: #e9ecef;
+  --border: #d0d7de;
+  --border-light: #e5e8eb;
+
+  --text: #1f2328;
+  --text-muted: #636c76;
+  --text-link: #0969da;
+
+  --accent-green: #1a7f37;
+  --accent-red: #cf222e;
+  --accent-amber: #9a6700;
+  --accent-blue: #0550ae;
+  --accent-purple: #8250df;
+
+  --radius: 6px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* ── Reset & Base ──────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.65;
+}
+
+/* ── Layout ────────────────────────────────────────────────────────────── */
+
+.wrapper {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* ── Typography ────────────────────────────────────────────────────────── */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+h1 {
+  font-size: 2rem;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 0.4rem;
+}
+h2 {
+  font-size: 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+  padding-bottom: 0.3rem;
+}
+h3 {
+  font-size: 1.25rem;
+}
+h4 {
+  font-size: 1.1rem;
+}
+h5 {
+  font-size: 1rem;
+}
+h6 {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+p {
+  margin: 0 0 1rem;
+}
+
+a {
+  color: var(--text-link);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+strong {
+  font-weight: 600;
+}
+
+blockquote {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid var(--accent-blue);
+  background: var(--bg-alt);
+  color: var(--text-muted);
+}
+blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 2rem 0;
+}
+
+/* ── Code ──────────────────────────────────────────────────────────────── */
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  padding: 0.15em 0.35em;
+  background: var(--bg-code);
+  border-radius: 3px;
+  color: var(--accent-purple);
+}
+
+pre {
+  margin: 0 0 1rem;
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  background: var(--bg-alt);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+}
+pre code {
+  padding: 0;
+  background: none;
+  color: var(--text);
+}
+
+/* ── Tables ────────────────────────────────────────────────────────────── */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 0 1.5rem;
+  font-size: 0.9rem;
+}
+
+thead th {
+  background: var(--bg-table-hd);
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+th,
+td {
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--border-light);
+  vertical-align: top;
+}
+
+tbody tr:nth-child(even) {
+  background: var(--bg-alt);
+}
+tbody tr:hover {
+  background: #eef2f7;
+}
+
+/* ── Lists ─────────────────────────────────────────────────────────────── */
+
+ul,
+ol {
+  margin: 0 0 1rem;
+  padding-left: 1.75rem;
+}
+li {
+  margin-bottom: 0.3rem;
+}
+li > ul,
+li > ol {
+  margin-top: 0.3rem;
+  margin-bottom: 0;
+}
+
+/* ── Checkboxes ────────────────────────────────────────────────────────── */
+
+ul.checklist {
+  list-style: none;
+  padding-left: 0;
+}
+ul.checklist li {
+  position: relative;
+  padding-left: 1.65rem;
+  margin-bottom: 0.4rem;
+}
+ul.checklist li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.3rem;
+  width: 15px;
+  height: 15px;
+  border: 2px solid var(--border);
+  border-radius: 3px;
+  background: var(--bg);
+}
+ul.checklist li.done::before {
+  background: var(--accent-green);
+  border-color: var(--accent-green);
+}
+ul.checklist li.done::after {
+  content: "✓";
+  position: absolute;
+  left: 2px;
+  top: 0.15rem;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+input[type="checkbox"] {
+  margin-right: 0.4rem;
+  accent-color: var(--accent-green);
+  width: 14px;
+  height: 14px;
+  vertical-align: middle;
+  position: relative;
+  top: -1px;
+}
+
+/* ── Status badges ─────────────────────────────────────────────────────── */
+
+.badge {
+  display: inline-block;
+  padding: 0.15em 0.55em;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 10px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.badge-done {
+  background: #dafbe1;
+  color: var(--accent-green);
+}
+.badge-wip {
+  background: #fff8c5;
+  color: var(--accent-amber);
+}
+.badge-todo {
+  background: #ffebe9;
+  color: var(--accent-red);
+}
+.badge-info {
+  background: #ddf4ff;
+  color: var(--accent-blue);
+}
+
+/* ── Progress bar ──────────────────────────────────────────────────────── */
+
+.progress-track {
+  width: 100%;
+  height: 12px;
+  background: var(--bg-code);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 0.5rem 0 1rem;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent-green);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+/* ── Phase / Section cards ─────────────────────────────────────────────── */
+
+.phase-card {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  background: var(--bg);
+  box-shadow: var(--shadow-sm);
+}
+.phase-card h3 {
+  margin-top: 0;
+  border-bottom: none;
+}
+
+/* ── Flow diagrams ─────────────────────────────────────────────────────── */
+
+.flow-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.flow-box {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 1rem;
+  background: var(--bg-alt);
+}
+
+.flow-box.flow-current {
+  border-left: 4px solid var(--accent-red);
+}
+
+.flow-box.flow-target {
+  border-left: 4px solid var(--accent-green);
+}
+
+.flow-box h5 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.flow-box.flow-current h5 {
+  color: var(--accent-red);
+}
+
+.flow-box.flow-target h5 {
+  color: var(--accent-green);
+}
+
+.flow-box pre {
+  margin-bottom: 0;
+  font-size: 0.8rem;
+  background: var(--bg);
+}
+
+/* ── Module header with status ─────────────────────────────────────────── */
+
+.module-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-light);
+  margin-bottom: 1rem;
+}
+
+.module-header h2 {
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+
+.module-status {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* ── Backend / Frontend split ──────────────────────────────────────────── */
+
+.split-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.split-section > div {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+}
+
+.split-section > div:first-child {
+  border-top: 3px solid var(--accent-blue);
+}
+
+.split-section > div:last-child {
+  border-top: 3px solid var(--accent-purple);
+}
+
+.split-section h4 {
+  margin-top: 0;
+}
+
+/* ── Prerequisites box ─────────────────────────────────────────────────── */
+
+.prereq-box {
+  background: #fff8c5;
+  border: 1px solid #e9d78e;
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.prereq-box strong {
+  color: var(--accent-amber);
+}
+
+.prereq-box ul {
+  margin-bottom: 0;
+}
+
+/* ── Priority labels ───────────────────────────────────────────────────── */
+
+.priority-critical {
+  color: var(--accent-red);
+  font-weight: 700;
+}
+.priority-high {
+  color: var(--accent-amber);
+  font-weight: 600;
+}
+.priority-medium {
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+.priority-low {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* ── TOC ───────────────────────────────────────────────────────────────── */
+
+nav.toc {
+  background: var(--bg-alt);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  padding: 1rem 1.5rem;
+  margin-bottom: 2rem;
+}
+nav.toc h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+  border: none;
+  padding: 0;
+}
+nav.toc ol {
+  margin-bottom: 0;
+}
+nav.toc li {
+  margin-bottom: 0.2rem;
+}
+nav.toc a {
+  font-size: 0.92rem;
+}
+
+/* ── Dependency graph ──────────────────────────────────────────────────── */
+
+.dep-tree {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  background: var(--bg-alt);
+  padding: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-light);
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Collapsible sections ──────────────────────────────────────────────── */
+
+details {
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+details[open] {
+  box-shadow: var(--shadow-sm);
+}
+
+summary {
+  padding: 0.75rem 1rem;
+  background: var(--bg-alt);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  user-select: none;
+}
+
+summary:hover {
+  background: var(--bg-code);
+}
+
+details > *:not(summary) {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* ── Print ─────────────────────────────────────────────────────────────── */
+
+@media print {
+  body {
+    font-size: 12pt;
+  }
+  .wrapper {
+    max-width: none;
+    padding: 0;
+  }
+  nav.toc {
+    break-after: page;
+  }
+  .flow-container,
+  .split-section {
+    grid-template-columns: 1fr;
+  }
+  table {
+    font-size: 0.8rem;
+  }
+  pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+  details {
+    border: none;
+  }
+  details[open] {
+    box-shadow: none;
+  }
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .wrapper {
+    padding: 1rem;
+  }
+  .flow-container,
+  .split-section {
+    grid-template-columns: 1fr;
+  }
+  table {
+    font-size: 0.8rem;
+  }
+  th,
+  td {
+    padding: 0.4rem 0.5rem;
+  }
+  pre {
+    font-size: 0.78rem;
+    padding: 0.75rem;
+  }
+}

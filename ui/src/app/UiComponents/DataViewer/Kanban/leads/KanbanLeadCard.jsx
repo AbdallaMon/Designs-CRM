@@ -473,7 +473,6 @@ const LeadCard = ({
           ))}
         </Menu>
       )}
-
       {type === "STAFF" || type === "CONTRACTLEVELS" ? (
         <PreviewDialog
           open={previewDialogOpen}

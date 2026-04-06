@@ -176,7 +176,6 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
           <span>New Delivery Time</span>
         </Stack>
       </DialogTitle>
-
       <DialogContent dividers>
         <Stack spacing={2}>
           {/* 1) Name */}
@@ -196,7 +195,9 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
             onChange={(e) => setDays(e.target.value)}
             fullWidth
             size="small"
-            inputProps={{ min: 0, step: 1 }}
+            slotProps={{
+              htmlInput: { min: 0, step: 1 }
+            }}
           />
 
           <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -212,7 +213,6 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
           </LocalizationProvider>
         </Stack>
       </DialogContent>
-
       <DialogActions>
         <Button onClick={onClose} disabled={submitting}>
           Cancel

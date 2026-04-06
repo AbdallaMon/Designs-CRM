@@ -175,8 +175,10 @@ export const CreateUpdateModal = ({
         onClose={onClose}
         maxWidth="sm"
         fullWidth
-        PaperProps={{
-          sx: { borderRadius: 2 },
+        slotProps={{
+          paper: {
+            sx: { borderRadius: 2 },
+          }
         }}
       >
         <DialogTitle>Create New Update</DialogTitle>

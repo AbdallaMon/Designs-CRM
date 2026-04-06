@@ -12,6 +12,10 @@ import {
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { MdCloud } from "react-icons/md";
+import {
+  UploadingProvider as UploadingProviderV2,
+  useUploadContext as useUploadContextV2,
+} from "@/app/v2/providers/UploadingProvider";
 
 // Custom styled components
 const StyledBackdrop = styled(Backdrop)(({ theme }) => ({
@@ -60,6 +64,7 @@ const AnimatedIcon = styled(MdCloud)(({ theme }) => ({
 export const UploadingContext = createContext(null);
 
 export default function UploadingProvider({ children }) {
+  return <UploadingProviderV2>{children}</UploadingProviderV2>;
   const [progress, setProgress] = useState(0);
   const [overLay, setOverlay] = useState(false);
   const [fileName, setFileName] = useState("");
@@ -216,10 +221,11 @@ export default function UploadingProvider({ children }) {
 }
 
 export const useUploadContext = () => {
+  return useUploadContextV2();
   const context = useContext(UploadingContext);
   if (!context) {
     throw new Error(
-      "useUploadContext must be used within an UploadingProvider"
+      "useUploadContext must be used within an UploadingProvider",
     );
   }
   return context;

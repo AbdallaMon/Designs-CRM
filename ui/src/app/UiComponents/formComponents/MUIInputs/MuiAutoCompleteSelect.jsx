@@ -148,81 +148,83 @@ function MUIAutoComplete({
     };
 
     return (
-          <FormControl
-                fullWidth={fullWidth}
-                sx={{
-                    ...select.sx,
-                    display: "flex",
-                    flexDirection: "row",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: select.createData && 2,
-                    mb: 2,
-                }}
-          >
-              <Box display="flex" width="full">
-                  <Controller
-                        name={selectData.id}
-                        control={control}
-                        rules={select.pattern}
-                        sx={{
-                            direction: "ltr"
+        <FormControl
+              fullWidth={fullWidth}
+              sx={{
+                  ...select.sx,
+                  display: "flex",
+                  flexDirection: "row",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  gap: select.createData && 2,
+                  mb: 2,
+              }}
+        >
+            <Box display="flex" width="full">
+                <Controller
+                      name={selectData.id}
+                      control={control}
+                      rules={select.pattern}
+                      sx={{
+                          direction: "ltr"
 
-                        }}
-                        render={({field}) => (
-                              <Autocomplete
-                                    open={open}
-                                    onOpen={handleOpen}
-                                    onClose={handleClose}
-                                    getOptionDisabled={(option) => option.disabled} // Disable options based on the 'disabled' property
-                                    onChange={(event, newValue) => {
-                                        handleChange(event, newValue);
-                                        field.onChange(newValue ? newValue.id : null);
-                                    }}
-                                    sx={{}}
-                                    value={
-                                        value !== null
-                                              ? options?.find((option) => option.id == value)
-                                              : null
-                                    }
-                                    options={options ? options : []}
-                                    loading={loading}
-                                    disabled={
-                                          (disabled && disabled[selectData.id]) ||
-                                          selectData.disabled ||
-                                          select.disabled
-                                    }
-                                    getOptionLabel={(option) => option.name || ""}
-                                    renderInput={(params) => (
-                                          <TextField
-                                                {...params}
-                                                label={selectData.label}
-                                                variant={variant}
-                                                error={Boolean(errors[selectData.id])}
-                                                helperText={errors[selectData.id]?.message}
-                                                sx={{
-                                                    "& .MuiAutocomplete-input": {
-                                                        direction: 'ltr'
-                                                    }
-                                                }}
-                                                InputProps={{
-                                                    ...params.InputProps,
-                                                    readOnly: selectData.disabled,
-                                                    endAdornment: (
-                                                          <>
-                                                              {loading ? (
-                                                                    <CircularProgress color="inherit" size={20}/>
-                                                              ) : null}
-                                                              {params.InputProps.endAdornment}
-                                                          </>
-                                                    ),
-                                                }}
-                                          />
-                                    )}
-                              />
-                        )}
-                  />
-              </Box>
-          </FormControl>
+                      }}
+                      render={({field}) => (
+                            <Autocomplete
+                                  open={open}
+                                  onOpen={handleOpen}
+                                  onClose={handleClose}
+                                  getOptionDisabled={(option) => option.disabled} // Disable options based on the 'disabled' property
+                                  onChange={(event, newValue) => {
+                                      handleChange(event, newValue);
+                                      field.onChange(newValue ? newValue.id : null);
+                                  }}
+                                  sx={{}}
+                                  value={
+                                      value !== null
+                                            ? options?.find((option) => option.id == value)
+                                            : null
+                                  }
+                                  options={options ? options : []}
+                                  loading={loading}
+                                  disabled={
+                                        (disabled && disabled[selectData.id]) ||
+                                        selectData.disabled ||
+                                        select.disabled
+                                  }
+                                  getOptionLabel={(option) => option.name || ""}
+                                  renderInput={(params) => (
+                                        <TextField
+                                              {...params}
+                                              label={selectData.label}
+                                              variant={variant}
+                                              error={Boolean(errors[selectData.id])}
+                                              helperText={errors[selectData.id]?.message}
+                                              sx={{
+                                                  "& .MuiAutocomplete-input": {
+                                                      direction: 'ltr'
+                                                  }
+                                              }}
+                                              slotProps={{
+                                                  input: {
+                                                      ...params.InputProps,
+                                                      readOnly: selectData.disabled,
+                                                      endAdornment: (
+                                                            <>
+                                                                {loading ? (
+                                                                      <CircularProgress color="inherit" size={20}/>
+                                                                ) : null}
+                                                                {params.InputProps.endAdornment}
+                                                            </>
+                                                      ),
+                                                  }
+                                              }}
+                                        />
+                                  )}
+                            />
+                      )}
+                />
+            </Box>
+        </FormControl>
     );
 }

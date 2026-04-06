@@ -653,7 +653,6 @@ const WorkStageKanbanCard = ({
           />
         </CardContent>
       </StyledCard>
-
       {!admin && (
         <Menu
           anchorEl={menuAnchorEl}
@@ -719,7 +718,6 @@ const WorkStageKanbanCard = ({
           ))}
         </Menu>
       )}
-
       <PreviewWorkStage
         type={type}
         open={previewDialogOpen}
@@ -729,14 +727,12 @@ const WorkStageKanbanCard = ({
         admin={admin}
         setRerenderColumns={setRerenderColumns}
       />
-
       <TaskPreviewModal
         open={taskPreviewOpen}
         onClose={() => setTaskPreviewOpen(false)}
         task={selectedTask}
         isModification={false}
       />
-
       <TaskPreviewModal
         open={modificationPreviewOpen}
         onClose={() => setModificationPreviewOpen(false)}

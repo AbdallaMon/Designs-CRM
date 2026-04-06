@@ -43,12 +43,14 @@ export default function CreateLeadChatGroup({
       onClose={onClose}
       fullWidth
       maxWidth="sm"
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
-          overflow: "hidden",
-        },
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: 3,
+            boxShadow: "0 12px 40px rgba(0,0,0,0.18)",
+            overflow: "hidden",
+          },
+        }
       }}
     >
       <DialogTitle
@@ -74,7 +76,6 @@ export default function CreateLeadChatGroup({
           <MdClose />
         </IconButton>
       </DialogTitle>
-
       <DialogContent sx={{ py: 2 }} dividers>
         <LeadChatGroupForm
           clientLeadId={clientLeadId}

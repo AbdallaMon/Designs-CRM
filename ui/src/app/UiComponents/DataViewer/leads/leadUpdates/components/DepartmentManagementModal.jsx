@@ -186,7 +186,6 @@ export function DepartmentManagementModal({ update, onUpdate }) {
       >
         Manage Access
       </Button>
-
       {/* Confirmation Dialog */}
       <Dialog
         open={confirmationDialog.open}
@@ -227,17 +226,18 @@ export function DepartmentManagementModal({ update, onUpdate }) {
           </Button>
         </DialogActions>
       </Dialog>
-
       <Dialog
         open={isDepartmentModalOpen}
         onClose={() => setIsDepartmentModalOpen(false)}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-          },
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 2,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+            },
+          }
         }}
       >
         <DialogTitle
@@ -464,7 +464,7 @@ function MarkAsDoneModel({
     : "Are you sure you want to mark this update as done? This action cannot be changed once confirmed.";
   const dialogTitle = isArchived ? "Mark as Undone" : "Mark as Done";
   const iconComponent = isArchived ? (
-    <MdUndo fontSize="small" color="warning" /> // Use Undo icon and possibly a different color
+    (<MdUndo fontSize="small" color="warning" />) // Use Undo icon and possibly a different color
   ) : (
     <MdCheckCircle fontSize="small" color="success" />
   );
@@ -519,24 +519,27 @@ function MarkAsDoneModel({
         </ListItemIcon>
         <ListItemText
           primary={actionText}
-          primaryTypographyProps={{
-            fontSize: "0.875rem",
-            fontWeight: 500,
-            color: `${buttonColor}.main`, // Dynamic color
+          slotProps={{
+            primary: {
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              color: `${buttonColor}.main`, // Dynamic color
+            }
           }}
         />
       </MenuItem>
-
       <Dialog
         open={markDoneOpen}
         onClose={() => setMarkDoneOpen(false)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-          },
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 2,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+            },
+          }
         }}
       >
         <DialogTitle

@@ -260,15 +260,17 @@ export default function CloneContract({
                 {steps.map((label, idx) => (
                   <Step key={label}>
                     <StepLabel
-                      StepIconProps={{
-                        sx: {
-                          color:
-                            idx < activeStep
-                              ? "success.main"
-                              : idx === activeStep
-                              ? "primary.main"
-                              : "text.secondary",
-                        },
+                      slotProps={{
+                        stepIcon: {
+                          sx: {
+                            color:
+                              idx < activeStep
+                                ? "success.main"
+                                : idx === activeStep
+                                ? "primary.main"
+                                : "text.secondary",
+                          },
+                        }
                       }}
                     >
                       <Typography variant="caption" sx={{ fontWeight: 600 }}>
@@ -426,7 +428,6 @@ export default function CloneContract({
           )}
         </DialogActions>
       </Dialog>
-
       {/* final confirm warning */}
       <Dialog
         open={confirmOpen}

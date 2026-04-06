@@ -248,9 +248,6 @@ const Navbar = ({ links }) => {
             anchorEl={menuAnchor}
             open={Boolean(menuAnchor)}
             onClose={() => setMenuAnchor(null)}
-            MenuListProps={{
-              onMouseLeave: () => setMenuAnchor(null),
-            }}
             PaperProps={{
               sx: {
                 mt: 0.5,
@@ -265,6 +262,11 @@ const Navbar = ({ links }) => {
             }}
             transformOrigin={{ vertical: "top", horizontal: "left" }}
             anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+            slotProps={{
+              list: {
+                onMouseLeave: () => setMenuAnchor(null),
+              }
+            }}
           >
             {link.subLinks.map((subLink) => (
               <MenuItem

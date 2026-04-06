@@ -198,10 +198,12 @@ export const PreviewLead = ({
           onClose={onClose}
           fullWidth
           maxWidth="lg"
-          PaperProps={{
-            sx: { borderRadius: 2 },
-          }}
           fullScreen={isMobile}
+          slotProps={{
+            paper: {
+              sx: { borderRadius: 2 },
+            }
+          }}
         >
           {loading ? (
             <FullScreenLoader />

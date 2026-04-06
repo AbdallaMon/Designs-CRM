@@ -169,7 +169,6 @@ export default function PdfUtilityFieldCard({
           </Box>
         )}
       </Card>
-
       <Dialog
         open={open}
         onClose={saving ? undefined : handleClose}

@@ -80,7 +80,6 @@ export default function AddPaymentDialog({
           Add Payment
         </Stack>
       </DialogTitle>
-
       <DialogContent dividers>
         <Stack spacing={2}>
           {!!error && <Alert severity="error">{error}</Alert>}
@@ -94,7 +93,9 @@ export default function AddPaymentDialog({
             required
             autoFocus
             size="small"
-            inputProps={{ min: 0, step: "0.01" }}
+            slotProps={{
+              htmlInput: { min: 0, step: "0.01" }
+            }}
           />
           <SelectPaymentCondition
             onConditionChange={(value) => {
@@ -114,7 +115,6 @@ export default function AddPaymentDialog({
           />
         </Stack>
       </DialogContent>
-
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
         <Button variant="contained" onClick={handleSubmit} disabled={!valid}>

@@ -1,4 +1,5 @@
 "use client";
+import { MUIProvider as MUIProviderV2 } from "@/app/v2/providers/MUIProvider";
 import { createTheme, ThemeProvider } from "@mui/material";
 
 import colors from "@/app/helpers/colors";
@@ -8,13 +9,13 @@ const generateMuiShadows = (baseShadowColor, darkShadowColor) => {
   // Manually define first few subtle shadows, similar to MUI's defaults
   shadows.push(`0px 1px 2px ${baseShadowColor}`); // Elevation 1
   shadows.push(
-    `0px 1px 3px ${baseShadowColor}, 0px 2px 5px ${baseShadowColor}`
+    `0px 1px 3px ${baseShadowColor}, 0px 2px 5px ${baseShadowColor}`,
   ); // Elevation 2
   shadows.push(
-    `0px 2px 4px ${baseShadowColor}, 0px 4px 8px ${baseShadowColor}`
+    `0px 2px 4px ${baseShadowColor}, 0px 4px 8px ${baseShadowColor}`,
   ); // Elevation 3
   shadows.push(
-    `0px 3px 5px ${baseShadowColor}, 0px 6px 10px ${baseShadowColor}`
+    `0px 3px 5px ${baseShadowColor}, 0px 6px 10px ${baseShadowColor}`,
   ); // Elevation 4
 
   // Generate remaining shadows with increasing intensity
@@ -25,14 +26,14 @@ const generateMuiShadows = (baseShadowColor, darkShadowColor) => {
     const opacity = 0.05 + i * 0.015; // Progressive increase in opacity
     const currentShadowColor = `rgba(${parseInt(
       darkShadowColor.slice(5, 7),
-      16
+      16,
     )}, ${parseInt(darkShadowColor.slice(7, 9), 16)}, ${parseInt(
       darkShadowColor.slice(9, 11),
-      16
+      16,
     )}, ${opacity.toFixed(2)})`;
 
     shadows.push(
-      `0px ${yOffset}px ${blur}px ${spread}px ${currentShadowColor}`
+      `0px ${yOffset}px ${blur}px ${spread}px ${currentShadowColor}`,
     );
   }
   return shadows;
@@ -291,5 +292,6 @@ const theme = createTheme({
 });
 
 export default function MUIContextProvider({ children }) {
+  return <MUIProviderV2>{children}</MUIProviderV2>;
   return <ThemeProvider theme={theme}>{children}</ThemeProvider>;
 }

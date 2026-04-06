@@ -106,21 +106,23 @@ export const AnswerInput = ({ sessionQuestion, onSubmitAnswer }) => {
           variant="standard"
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          InputProps={{
-            disableUnderline: true,
-            sx: {
-              fontSize: "1rem",
-              lineHeight: 1.6,
-              "& .MuiInputBase-input": {
-                padding: 0,
-              },
-              "& .MuiInputBase-input::placeholder": {
-                opacity: 0.6,
-                fontStyle: "italic",
-              },
-            },
-          }}
           sx={{ flex: 1 }}
+          slotProps={{
+            input: {
+              disableUnderline: true,
+              sx: {
+                fontSize: "1rem",
+                lineHeight: 1.6,
+                "& .MuiInputBase-input": {
+                  padding: 0,
+                },
+                "& .MuiInputBase-input::placeholder": {
+                  opacity: 0.6,
+                  fontStyle: "italic",
+                },
+              },
+            }
+          }}
         />
 
         <Fade in={isHovered || isFocused || answer.trim().length > 0}>

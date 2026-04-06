@@ -135,17 +135,18 @@ export default function DeleteModelButton({
           </IconButton>
         </Box>
       </Tooltip>
-
       <Dialog
         open={confirmOpen}
         onClose={handleCancelDelete}
         aria-labelledby="delete-dialog-title"
         aria-describedby="delete-dialog-description"
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            minWidth: 320,
-          },
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 2,
+              minWidth: 320,
+            },
+          }
         }}
       >
         <DialogTitle

@@ -692,7 +692,9 @@ const CategoriesDialog = ({
       fullScreen
       open={open}
       onClose={onClose}
-      TransitionComponent={Transition}
+      slots={{
+        transition: Transition
+      }}
     >
       <AppBar
         sx={{
@@ -732,7 +734,6 @@ const CategoriesDialog = ({
           </Typography>
         </Toolbar>
       </AppBar>
-
       <DialogContent sx={{ p: 0 }}>
         <Box
           sx={{
@@ -878,19 +879,19 @@ const VersaObjectionSystem = ({ clientLeadId }) => {
       >
         Manage Objections
       </Button>
-
       <CategoriesDialog
         open={dialogOpen}
         onClose={handleCloseDialog}
         onCategorySelect={handleCategorySelect}
         clientLeadId={clientLeadId}
       />
-
       <Dialog
         fullScreen
         open={!!selectedCategory}
         onClose={handleBackToCategories}
-        TransitionComponent={Transition}
+        slots={{
+          transition: Transition
+        }}
       >
         {loadingVersa ? (
           <Box>

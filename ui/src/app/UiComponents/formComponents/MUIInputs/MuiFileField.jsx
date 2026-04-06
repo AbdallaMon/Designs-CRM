@@ -108,7 +108,6 @@ export default function MuiFileField({
                   ...(input.sx && input.sx),
                 })}
                 type="file"
-                InputLabelProps={{ shrink: true }}
                 {...register(id, !preview && input.pattern)}
                 error={Boolean(errors[id])}
                 helperText={errors[id]?.message}
@@ -120,7 +119,9 @@ export default function MuiFileField({
                   onChange(e); // default handler
                   handleFileChange(e); // our handler
                 }}
-              />
+                slotProps={{
+                  inputLabel: { shrink: true }
+                }} />
             );
           }}
         />

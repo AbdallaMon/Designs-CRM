@@ -692,7 +692,9 @@ const StyleEditor = ({
         <Accordion
           key={element.key}
           sx={{ mb: 1 }}
-          TransitionProps={{ unmountOnExit: true }}
+          slotProps={{
+            transition: { unmountOnExit: true }
+          }}
         >
           <AccordionSummary expandIcon={<ExpandMore />}>
             <Typography variant="subtitle1">

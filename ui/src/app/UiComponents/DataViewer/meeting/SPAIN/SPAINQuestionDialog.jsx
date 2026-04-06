@@ -49,15 +49,17 @@ const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
       maxWidth="lg"
       fullWidth
       fullScreen
-      PaperProps={{
-        sx: {
-          background: (theme) =>
-            `linear-gradient(135deg, ${alpha(
-              theme.palette.background.default,
-              0.95
-            )} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-          backdropFilter: "blur(20px)",
-        },
+      slotProps={{
+        paper: {
+          sx: {
+            background: (theme) =>
+              `linear-gradient(135deg, ${alpha(
+                theme.palette.background.default,
+                0.95
+              )} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+            backdropFilter: "blur(20px)",
+          },
+        }
       }}
     >
       <DialogTitle
@@ -106,7 +108,6 @@ const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
           <MdClose size={24} />
         </IconButton>
       </DialogTitle>
-
       <DialogContent sx={{ p: 3, py: 5, overflow: "auto" }}>
         <Container maxWidth="xxl" sx={{ py: 5,direction:"rtl" }}>
           {loading ? (
@@ -145,7 +146,6 @@ const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
           )}
         </Container>
       </DialogContent>
-
       <DialogActions
         sx={{
           borderTop: (theme) =>

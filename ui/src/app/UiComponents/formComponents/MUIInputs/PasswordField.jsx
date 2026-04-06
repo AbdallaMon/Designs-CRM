@@ -21,40 +21,42 @@ export default function PasswordField({
     };
 
     return (
-          <Controller
-                name={name}
-                control={control}
-                rules={validationRules}
-                render={({field}) => (
-                      <TextField
-                            {...field}
-                            fullWidth
-                            sx={{
-                                mt: 2,
-                            }}
-                            variant="outlined"
-                            label={label}
-                            type={showPassword ? "text" : "password"}
-                            error={Boolean(errors[name])}
-                            helperText={errors[name] ? errors[name].message : ""}
-                            inputRef={inputRef}
-                            InputProps={{
-                                endAdornment: (
-                                      <InputAdornment position="end">
-                                          <IconButton
-                                                aria-label="toggle password visibility"
-                                                onClick={handleClickShowPassword}
-                                                edge="end"
-                                                onMouseEnter={handleMouseEnter}
-                                                onMouseLeave={handleMouseLeave}
-                                          >
-                                              {showPassword ? <FaRegEyeSlash/> : <FaRegEye/>}
-                                          </IconButton>
-                                      </InputAdornment>
-                                ),
-                            }}
-                      />
-                )}
-          />
+        <Controller
+              name={name}
+              control={control}
+              rules={validationRules}
+              render={({field}) => (
+                    <TextField
+                          {...field}
+                          fullWidth
+                          sx={{
+                              mt: 2,
+                          }}
+                          variant="outlined"
+                          label={label}
+                          type={showPassword ? "text" : "password"}
+                          error={Boolean(errors[name])}
+                          helperText={errors[name] ? errors[name].message : ""}
+                          inputRef={inputRef}
+                          slotProps={{
+                              input: {
+                                  endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                  aria-label="toggle password visibility"
+                                                  onClick={handleClickShowPassword}
+                                                  edge="end"
+                                                  onMouseEnter={handleMouseEnter}
+                                                  onMouseLeave={handleMouseLeave}
+                                            >
+                                                {showPassword ? <FaRegEyeSlash/> : <FaRegEye/>}
+                                            </IconButton>
+                                        </InputAdornment>
+                                  ),
+                              }
+                          }}
+                    />
+              )}
+        />
     );
 }

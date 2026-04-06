@@ -1,0 +1,2173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Combined Refactor Plan — Backend + Frontend</title>
+    <link rel="stylesheet" href="combined-refactor-plan.css" />
+  </head>
+  <body>
+    <div class="wrapper">
+      <h1>Combined Refactor Plan — Backend + Frontend</h1>
+
+      <blockquote>
+        <p>
+          <strong>Purpose:</strong> Module-by-module migration plan. Each phase
+          covers one module — backend legacy, frontend legacy, what's broken,
+          current vs target flow, prerequisites, and an execution checklist.
+        </p>
+        <p>
+          Backend source of truth: <code>server/.github/refactor-plan.md</code
+          ><br />
+          Frontend codebase: <code>ui/src/app/</code>
+        </p>
+        <p>
+          <strong>Principle:</strong> When starting a module, only migrate what
+          that module needs. Don't migrate all of socket — only the chat socket
+          events when doing chat. Don't migrate all shared utils — only what
+          leads needs when doing leads.
+        </p>
+      </blockquote>
+
+      <!-- ─── TOC ──────────────────────────────────────────────────────── -->
+      <nav class="toc">
+        <h2>Table of Contents</h2>
+        <ol>
+          <li><a href="#phase-0">Phase 0 — Shared Foundation</a></li>
+          <li><a href="#phase-1">Phase 1 — Auth (✅ Done)</a></li>
+          <li><a href="#phase-2">Phase 2 — Chat</a></li>
+          <li><a href="#phase-3">Phase 3 — Notifications</a></li>
+          <li><a href="#phase-4">Phase 4 — Leads (CRM)</a></li>
+          <li><a href="#phase-5">Phase 5 — Projects &amp; Tasks</a></li>
+          <li><a href="#phase-6">Phase 6 — Calendar &amp; Meetings</a></li>
+          <li><a href="#phase-7">Phase 7 — Contracts</a></li>
+          <li><a href="#phase-8">Phase 8 — Finance / Accountant</a></li>
+          <li><a href="#phase-9">Phase 9 — Users &amp; Admin</a></li>
+          <li><a href="#phase-10">Phase 10 — Dashboard</a></li>
+          <li><a href="#phase-11">Phase 11 — Image Sessions</a></li>
+          <li><a href="#phase-12">Phase 12 — Courses</a></li>
+          <li><a href="#phase-13">Phase 13 — Small Modules</a></li>
+          <li><a href="#phase-14">Phase 14 — Cleanup &amp; Cutover</a></li>
+          <li><a href="#master-checklist">Master Checklist</a></li>
+        </ol>
+      </nav>
+
+      <!-- ─── Progress Dashboard ───────────────────────────────────────── -->
+      <h2>Progress Dashboard</h2>
+      <div class="progress-track">
+        <div class="progress-fill" style="width: 6%"></div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>Module</th>
+            <th>Backend</th>
+            <th>Frontend</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>0</td>
+            <td>Shared Foundation</td>
+            <td>⬜</td>
+            <td>⬜</td>
+            <td><span class="badge badge-todo">Not started</span></td>
+          </tr>
+          <tr>
+            <td>1</td>
+            <td>Auth</td>
+            <td>✅</td>
+            <td>✅</td>
+            <td><span class="badge badge-done">Done</span></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Chat</td>
+            <td>⬜</td>
+            <td>⬜</td>
+            <td><span class="badge badge-todo">Not started</span></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Notifications</td>
+            <td>⬜</td>
+            <td>⬜</td>
+            <td><span class="badge badge-todo">Not started</span></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Leads (CRM)</td>
+            <td>⬜</td>
+            <td>⬜</td>
+            <td><span class="badge badge-todo">Not started</span></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Projects &amp; Tasks</td>
+            <td>⬜</td>
+            <td>⬜</td>
+            <td><span class="badge badge-todo">Not started</span></td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>Calendar &amp; Meetings</td>
+            <td>⬜</td>
+            <td>⬜</td>
+            <td><span class="badge badge-todo">Not started</span></td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>Contracts</td>
+            <td>⬜</td>
+            <td>⬜</td>
+            <td><span class="badge badge-todo">Not started</span></td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>Finance / Accountant</td>
+            <td>⬜</td>
+            <td>⬜</td>
+            <td><span class="badge badge-todo">Not started</span></td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td>Users &amp; Admin</td>
+            <td>⬜</td>
+            <td>⬜</td>
+            <td><span class="badge badge-todo">Not started</span></td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>Dashboard</td>
+            <td>⬜</td>
+            <td>⬜</td>
+            <td><span class="badge badge-todo">Not started</span></td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td>Image Sessions</td>
+            <td>⬜</td>
+            <td>⬜</td>
+            <td><span class="badge badge-todo">Not started</span></td>
+          </tr>
+          <tr>
+            <td>12</td>
+            <td>Courses</td>
+            <td>⬜</td>
+            <td>⬜</td>
+            <td><span class="badge badge-todo">Not started</span></td>
+          </tr>
+          <tr>
+            <td>13</td>
+            <td>Small Modules</td>
+            <td>⬜</td>
+            <td>⬜</td>
+            <td><span class="badge badge-todo">Not started</span></td>
+          </tr>
+          <tr>
+            <td>14</td>
+            <td>Cleanup &amp; Cutover</td>
+            <td>⬜</td>
+            <td>⬜</td>
+            <td><span class="badge badge-todo">Not started</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Phase 0 — Shared Foundation                                      -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2 id="phase-0">Phase 0 — Shared Foundation</h2>
+      <blockquote>
+        <p>
+          Everything else depends on this. Build the shared infrastructure both
+          backend and frontend need.
+        </p>
+      </blockquote>
+
+      <h3>What needs to exist before any module</h3>
+
+      <div class="split-section">
+        <div>
+          <h4>Backend shared infra</h4>
+          <ul>
+            <li>
+              <code>v2/shared/pagination.js</code> — extract
+              <code>getPagination()</code> from
+              <code>services/main/utility/utility.js</code>
+            </li>
+            <li>
+              <code>v2/shared/enums.js</code> — move from
+              <code>services/enums.js</code>
+            </li>
+            <li>
+              <code>v2/shared/links.js</code> — move from
+              <code>services/links.js</code>
+            </li>
+            <li>
+              <code>v2/shared/constants.js</code> — move from
+              <code>services/constants.js</code>
+            </li>
+            <li>
+              <code>v2/infra/redis/redis.js</code> +
+              <code>bullmq-connection.js</code> — move from
+              <code>services/redis/</code>
+            </li>
+            <li>
+              Extend <code>v2/shared/middlewares/auth.middleware.js</code> with
+              <code>getCurrentUser()</code> + <code>getTokenData()</code>
+            </li>
+            <li>
+              Route mounting strategy: v2 routes coexist with legacy in
+              <code>index.js</code>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frontend shared infra</h4>
+          <ul>
+            <li><code>v2/lib/api/ApiFetch.js</code> — ✅ exists</li>
+            <li><code>v2/lib/api/getData.js</code> — ✅ exists</li>
+            <li><code>v2/lib/api/handleRequestSubmit.js</code> — ✅ exists</li>
+            <li><code>v2/lib/config.js</code> — ✅ exists</li>
+            <li><code>v2/lib/toast/toastUtils.js</code> — ✅ exists</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="split-section">
+        <div>
+          <h4>Backend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> Create
+              <code>v2/shared/pagination.js</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Move <code>services/enums.js</code> →
+              <code>v2/shared/enums.js</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Move <code>services/links.js</code> →
+              <code>v2/shared/links.js</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Move
+              <code>services/constants.js</code> →
+              <code>v2/shared/constants.js</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Create
+              <code>v2/infra/redis/redis.js</code> and
+              <code>bullmq-connection.js</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Extend
+              <code>v2/shared/middlewares/auth.middleware.js</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Establish route mounting strategy in
+              <code>v2/routes.js</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Verify auth v1↔v2 cookie compatibility
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frontend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> Verify <code>ApiFetch.js</code> handles
+              both <code>/v2/</code> and legacy prefixes
+            </li>
+            <li>
+              <input type="checkbox" /> Ensure <code>getData.js</code> supports
+              same pagination/filter/search/sort params
+            </li>
+            <li>
+              <input type="checkbox" /> Create shared
+              <code>v2/shared/hooks/useDataFetcher.js</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Create shared
+              <code>v2/shared/components/AdminTable.jsx</code> or adapter
+            </li>
+            <li>
+              <input type="checkbox" /> Verify
+              <code>v2/providers/AuthProvider.jsx</code> works with v2 endpoints
+            </li>
+            <li>
+              <input type="checkbox" /> Verify
+              <code>v2/providers/ToastProvider.jsx</code> matches legacy
+              behavior
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Phase 1 — Auth                                                   -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2 id="phase-1">
+        Phase 1 — Auth <span class="badge badge-done">Done</span>
+      </h2>
+
+      <div class="split-section">
+        <div>
+          <h4>Backend ✅</h4>
+          <ul>
+            <li>
+              ✅ Fully refactored in <code>v2/modules/auth/</code> (8 files)
+            </li>
+            <li>
+              ✅ Endpoints: login, refresh, logout, me, request-password-reset,
+              reset-password
+            </li>
+            <li>
+              ✅ Zod validation, rate limiting, timing-safe auth, refresh token
+              rotation
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frontend ✅</h4>
+          <ul>
+            <li>
+              ✅ <code>v2/module/auth/</code> — LoginPage, ResetPage, services,
+              validation
+            </li>
+            <li>
+              ✅ <code>v2/shared/form/AuthForm.jsx</code>,
+              <code>FormField.jsx</code>
+            </li>
+            <li>
+              ✅ <code>v2/shared/components/AuthCard.jsx</code>,
+              <code>AuthGuard.jsx</code>, <code>AuthLayout.jsx</code>
+            </li>
+            <li>✅ <code>v2/providers/AuthProvider.jsx</code></li>
+          </ul>
+        </div>
+      </div>
+
+      <h4>Remaining cleanup</h4>
+      <ul>
+        <li>
+          <input type="checkbox" /> Confirm all frontend pages switched from
+          <code>/auth/*</code> to <code>/v2/auth/*</code>
+        </li>
+        <li>
+          <input type="checkbox" /> Remove legacy
+          <code>services/main/auth/authServices.js</code> after confirming
+        </li>
+        <li>
+          <input type="checkbox" /> Remove legacy
+          <code>routes/auth/auth.js</code> after confirming
+        </li>
+        <li>
+          <input type="checkbox" /> Remove legacy
+          <code>src/app/(auth)/(auth-group)/login/</code> and
+          <code>reset/</code> pages if fully replaced
+        </li>
+      </ul>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Phase 2 — Chat                                                   -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2 id="phase-2">
+        Phase 2 — Chat <span class="badge badge-todo">Not started</span>
+      </h2>
+      <blockquote>
+        <p>
+          Complex, standalone, already scaffolded in backend. Heavy socket
+          usage. <strong>This is the most complex module.</strong>
+        </p>
+      </blockquote>
+
+      <div class="prereq-box">
+        <strong>⚠ Prerequisites — do these BEFORE chat</strong>
+        <p><strong>Socket infra (only chat-related parts):</strong></p>
+        <p>
+          The current <code>services/socket.js</code> (~580 lines) is a
+          monolith. For chat, only extract chat events.
+        </p>
+        <ul>
+          <li>
+            <input type="checkbox" /> Create
+            <code>v2/infra/socket/socket.js</code> — Socket.IO init + namespaces
+          </li>
+          <li>
+            <input type="checkbox" /> Create
+            <code>v2/infra/socket/chat.events.js</code> — extract chat events:
+            <code>message:create</code>, <code>message:edit</code>,
+            <code>message:delete</code>, <code>message:pin</code>,
+            <code>message:unpin</code>, <code>messages:forward</code>,
+            <code>messages:mark_read</code>, <code>join_room</code>,
+            <code>leave_room</code>, <code>user:typing</code>,
+            <code>user:stop_typing</code>, <code>message:react</code>
+          </li>
+          <li>
+            <input type="checkbox" /> Create
+            <code>v2/infra/socket/presence.events.js</code> — extract:
+            <code>online</code>, <code>offline</code>
+          </li>
+          <li><input type="checkbox" /> Leave call events in legacy for now</li>
+          <li>
+            <input type="checkbox" /> Add Zod validation for socket event
+            payloads
+          </li>
+          <li><input type="checkbox" /> Add socket error handling wrapper</li>
+        </ul>
+        <p><strong>Upload infra (only what chat needs):</strong></p>
+        <ul>
+          <li>
+            <input type="checkbox" /> Create
+            <code>v2/infra/upload/chunk-upload.js</code>
+          </li>
+          <li>
+            <input type="checkbox" /> Create
+            <code>v2/infra/upload/multer.js</code>
+          </li>
+        </ul>
+      </div>
+
+      <details>
+        <summary>Backend Legacy — What exists and what's wrong</summary>
+
+        <h5>Route files (8):</h5>
+        <ul>
+          <li><code>routes/chat/rooms.js</code> — staff room CRUD</li>
+          <li><code>routes/chat/messages.js</code> — staff message CRUD</li>
+          <li><code>routes/chat/members.js</code> — staff member management</li>
+          <li><code>routes/chat/files.js</code> — staff file listing</li>
+          <li>
+            <code>routes/client/chat/rooms.js</code> — client room access
+            (token-based)
+          </li>
+          <li><code>routes/client/chat/messages.js</code> — client messages</li>
+          <li><code>routes/client/chat/members.js</code> — client members</li>
+          <li><code>routes/client/chat/files.js</code> — client files</li>
+        </ul>
+
+        <h5>Service files (5, ~1,100 lines):</h5>
+        <ul>
+          <li><code>chatRoomServices.js</code> (~300 lines)</li>
+          <li><code>chatMessageServices.js</code> (~400 lines)</li>
+          <li><code>chatMemberServices.js</code> (~150 lines)</li>
+          <li><code>chatFileServices.js</code> (~150 lines)</li>
+          <li><code>utils.js</code> (~100 lines)</li>
+        </ul>
+
+        <h5>What's bad:</h5>
+        <ol>
+          <li>
+            Socket handlers have direct Prisma queries — business logic in
+            socket layer
+          </li>
+          <li>
+            <code>sendMessage()</code> calls
+            <code>emitToAllUsersRelatedToARoom()</code> — socket emit INSIDE
+            service
+          </li>
+          <li>
+            Message creation duplicated between socket handlers and chat
+            services
+          </li>
+          <li>
+            Client chat has no real auth — relies on token in query params
+          </li>
+          <li>
+            Room permission checks scattered across <code>utils.js</code> +
+            inline in services
+          </li>
+          <li>Day grouping / date formatting mixed into message queries</li>
+        </ol>
+      </details>
+
+      <h4>Current Flow vs Target Flow</h4>
+      <div class="flow-container">
+        <div class="flow-box flow-current">
+          <h5>❌ Current (bad)</h5>
+          <pre><code>Client → Socket.IO "message:create"
+  → services/socket.js handler
+    → chatMessageServices.sendMessage()
+      → Direct Prisma in service
+      → emitToAllUsersRelatedToARoom()  ← emit inside service!
+    → telegramMessageQueue.add()        ← inside socket handler</code></pre>
+        </div>
+        <div class="flow-box flow-target">
+          <h5>✅ Target (clean)</h5>
+          <pre><code>Client → Socket.IO "message:create"
+  → v2/infra/socket/chat.events.js
+    → chat.usecase.sendMessage(payload)
+      → chat.repo.createMessage()       ← Prisma only in repo
+      → returns created message
+    → socket.emit()                     ← emit in socket layer
+    → telegram queue (if needed)</code></pre>
+        </div>
+      </div>
+
+      <details>
+        <summary>
+          Frontend Legacy — What exists (30+ components, 6 hooks)
+        </summary>
+
+        <h5>Page routes (5):</h5>
+        <ul>
+          <li><code>src/app/chats/page.jsx</code> — client chat</li>
+          <li>
+            <code>@2D/chat/page.jsx</code>, <code>@3D/chat/page.jsx</code>,
+            <code>@super_admin/chat/page.jsx</code>,
+            <code>@super_sales/chat/page.jsx</code>
+          </li>
+        </ul>
+
+        <h5>Components (30+) in <code>UiComponents/DataViewer/chat/</code>:</h5>
+        <ul>
+          <li>
+            <code>ChatContainer.jsx</code> — main layout (page/widget/project
+            modes)
+          </li>
+          <li>
+            <code>ChatPage.jsx</code>, <code>ChatWidget.jsx</code>,
+            <code>ClientChatPage.jsx</code>
+          </li>
+          <li>
+            <code>ChatWindow.jsx</code>, <code>ChatInput.jsx</code>,
+            <code>ChatMessage.jsx</code>
+          </li>
+          <li>
+            <code>ChatRoomsList.jsx</code>, <code>ChatFilesTab.jsx</code>,
+            <code>MultiActions.jsx</code>
+          </li>
+          <li>
+            <code>CreateGroupDialog.jsx</code>, <code>StartNewChat.jsx</code>,
+            <code>AddMembersDialog.jsx</code>,
+            <code>ForwardMessagesDialog.jsx</code>
+          </li>
+          <li>
+            <code>ChatSettings.jsx</code>, <code>PinnedMessages.jsx</code>
+          </li>
+        </ul>
+
+        <h5>Hooks (6):</h5>
+        <ul>
+          <li>
+            <code>useChatRooms.js</code>, <code>useChatMessages.js</code>,
+            <code>useChatMembers.js</code>, <code>useChatFiles.js</code>,
+            <code>useChatRoom.js</code>, <code>useSocket.js</code>
+          </li>
+        </ul>
+
+        <h5>Endpoints consumed:</h5>
+        <ul>
+          <li><code>shared/chat/rooms</code> — CRUD + lead-rooms</li>
+          <li><code>shared/chat/rooms/:roomId/messages</code> — messages</li>
+          <li><code>shared/chat/rooms/:roomId/members</code> — members</li>
+          <li><code>shared/chat/rooms/:roomId/files</code> — files</li>
+          <li><code>client/chat/rooms/*</code> — client access</li>
+          <li><code>utility/upload-chunk</code> — file uploads</li>
+        </ul>
+      </details>
+
+      <div class="split-section">
+        <div>
+          <h4>Backend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> <code>chat.repo.js</code> — extract
+              Prisma from 5 legacy services
+            </li>
+            <li>
+              <input type="checkbox" /> <code>chat.dto.js</code> — select fields
+              + day grouping
+            </li>
+            <li>
+              <input type="checkbox" /> <code>chat.usecase.js</code> —
+              room/message/member ops + permissions
+            </li>
+            <li>
+              <input type="checkbox" /> <code>chat.validation.js</code> — Zod
+              schemas
+            </li>
+            <li>
+              <input type="checkbox" /> <code>chat.controller.js</code> — thin
+              HTTP handlers
+            </li>
+            <li>
+              <input type="checkbox" /> <code>chat.routes.js</code> — merge
+              rooms/messages/members/files
+            </li>
+            <li>
+              <input type="checkbox" /> <code>chat.middleware.js</code> — room
+              membership check
+            </li>
+            <li>
+              <input type="checkbox" /> <code>client-chat.routes.js</code> +
+              <code>client-chat.controller.js</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Wire <code>chat.events.js</code> →
+              <code>chat.usecase</code> (not Prisma)
+            </li>
+            <li>
+              <input type="checkbox" /> Remove
+              <code>emitToAllUsersRelatedToARoom()</code> from services
+            </li>
+            <li>
+              <input type="checkbox" /> Mount chat routes in
+              <code>v2/routes.js</code>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frontend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> Create
+              <code>v2/module/chat/</code> folder structure
+            </li>
+            <li>
+              <input type="checkbox" /> Move hooks →
+              <code>v2/module/chat/hooks/</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Move utils →
+              <code>v2/module/chat/utils/</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Move all chat components →
+              <code>v2/module/chat/components/</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update hooks to use
+              <code>v2/lib/api/</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update endpoints:
+              <code>shared/chat/*</code> → <code>v2/chat/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update client endpoints:
+              <code>client/chat/*</code> → <code>v2/chat/client/*</code>
+            </li>
+            <li><input type="checkbox" /> Update upload endpoint if changed</li>
+            <li>
+              <input type="checkbox" /> Verify socket event names align with v2
+            </li>
+            <li>
+              <input type="checkbox" /> Update all dashboard chat page imports
+            </li>
+            <li>
+              <input type="checkbox" /> Test: room CRUD, messages, files,
+              typing, members, client access
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <p>
+        <strong>Dependencies:</strong> Socket infra (prerequisite), Upload infra
+        (prerequisite), Auth ✅
+      </p>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Phase 3 — Notifications                                          -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2 id="phase-3">
+        Phase 3 — Notifications
+        <span class="badge badge-todo">Not started</span>
+      </h2>
+      <blockquote>
+        <p>
+          Most modules depend on notifications. Build this early so other
+          modules can use
+          <code>notifications.usecase.createNotification()</code>.
+        </p>
+      </blockquote>
+
+      <div class="prereq-box">
+        <strong>⚠ Prerequisites</strong>
+        <ul>
+          <li>Phase 0 shared foundation must be done</li>
+        </ul>
+      </div>
+
+      <details>
+        <summary>Backend Legacy — scattered across 3 places</summary>
+        <ul>
+          <li>
+            <code>services/main/utility/utility.js</code> →
+            <code>createNotification()</code> — in the god file
+          </li>
+          <li>
+            <code>services/notification.js</code> → lead-specific notifications
+          </li>
+          <li>
+            <code>services/main/email/emailTemplates.js</code> → HTML email
+            templates
+          </li>
+        </ul>
+        <h5>What's bad:</h5>
+        <ol>
+          <li>
+            <code>createNotification()</code> in utility god file — called from
+            10+ services
+          </li>
+          <li>Notification types are inline strings, not centralized</li>
+          <li>Socket emit coupled to <code>createNotification()</code></li>
+        </ol>
+      </details>
+
+      <h4>Current Flow vs Target Flow</h4>
+      <div class="flow-container">
+        <div class="flow-box flow-current">
+          <h5>❌ Current</h5>
+          <pre><code>Any service → utility.createNotification()
+  → Prisma create notification
+  → io.to(`user:${userId}`).emit("notification")
+    ← Socket emit inside utility!</code></pre>
+        </div>
+        <div class="flow-box flow-target">
+          <h5>✅ Target</h5>
+          <pre><code>Any usecase → notifications.usecase.create(payload)
+  → notifications.repo.create()
+  → returns notification
+  → caller handles socket emit</code></pre>
+        </div>
+      </div>
+
+      <div class="split-section">
+        <div>
+          <h4>Backend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> <code>notifications.repo.js</code> —
+              CRUD, unread count, mark-read
+            </li>
+            <li>
+              <input type="checkbox" /> <code>notifications.usecase.js</code> —
+              centralized <code>createNotification()</code>
+            </li>
+            <li>
+              <input type="checkbox" /> <code>notifications.emails.js</code> —
+              consolidate email templates
+            </li>
+            <li>
+              <input type="checkbox" /> <code>notifications.routes.js</code> —
+              GET unread, POST mark-read
+            </li>
+            <li>
+              <input type="checkbox" /> <code>notifications.controller.js</code>
+            </li>
+            <li>
+              <input type="checkbox" /> <code>notifications.validation.js</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Define notification type enum/constants
+            </li>
+            <li>
+              <input type="checkbox" /> Mount in <code>v2/routes.js</code>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frontend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> Create
+              <code>v2/module/notifications/</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Move <code>Logs.jsx</code> →
+              <code>v2/module/notifications/</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update endpoint:
+              <code>shared/utilities/notifications</code> →
+              <code>v2/notifications</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update notification constants/colors
+            </li>
+            <li>
+              <input type="checkbox" /> Update socket listeners if event shape
+              changes
+            </li>
+            <li>
+              <input type="checkbox" /> Update dashboard pages that import Logs
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <p>
+        <strong>Dependencies:</strong> Socket.IO infra (for real-time delivery),
+        Mail infra (✅ exists)
+      </p>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Phase 4 — Leads (CRM)                                            -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2 id="phase-4">
+        Phase 4 — Leads (CRM) <span class="badge badge-todo">Not started</span>
+      </h2>
+      <blockquote>
+        <p>
+          Core business module. Most other modules depend on leads. ~55 frontend
+          files.
+        </p>
+      </blockquote>
+
+      <div class="prereq-box">
+        <strong>⚠ Prerequisites</strong>
+        <ul>
+          <li>
+            Phase 3 (Notifications) — leads create assignment/conversion
+            notifications
+          </li>
+          <li>Shared upload infra (if not done in Phase 2)</li>
+        </ul>
+      </div>
+
+      <details>
+        <summary>Backend Legacy — 3 route files, 4 service files</summary>
+        <ul>
+          <li>
+            <code>routes/shared/client-leads.js</code> (~150 lines) — staff lead
+            CRUD
+          </li>
+          <li>
+            <code>routes/client/leads.js</code> (~200 lines, FAT) — public lead
+            creation with inline business logic
+          </li>
+          <li>
+            Part of <code>routes/admin/admin.js</code> — Excel lead import
+          </li>
+        </ul>
+        <h5>What's bad:</h5>
+        <ol>
+          <li>
+            <code>routes/client/leads.js</code> has inline: price range mapping,
+            consultation pricing, code gen, date handling, direct Prisma
+          </li>
+          <li>
+            Notes, payments, reminders, price offers all mixed into leads route
+          </li>
+          <li>
+            Lead creation in admin uses different logic than client
+            self-register
+          </li>
+        </ol>
+      </details>
+
+      <h4>Current Flow vs Target Flow</h4>
+      <div class="flow-container">
+        <div class="flow-box flow-current">
+          <h5>❌ Current</h5>
+          <pre><code>Client → POST /client/leads (register)
+  → routes/client/leads.js
+    → Inline price calc, code gen, date logic
+    → Direct Prisma create
+    → Notification + telegram channel</code></pre>
+        </div>
+        <div class="flow-box flow-target">
+          <h5>✅ Target</h5>
+          <pre><code>Client → POST /v2/leads/client/register
+  → client-leads.controller.js
+    → leads.usecase.createClientLead(data)
+      → leads.repo.create()
+      → notifications.usecase.notify()
+      → returns lead</code></pre>
+        </div>
+      </div>
+
+      <details>
+        <summary>Frontend Legacy — 55+ files across 11 subdirectories</summary>
+        <ul>
+          <li>
+            <strong>Pages (4):</strong> AllDealsPage, NewLeadsPage,
+            NonConsultedLeads, OnHoldLeads
+          </li>
+          <li><strong>Features (2):</strong> PreviewLead, AddNewLead</li>
+          <li>
+            <strong>Dialogs (7):</strong> PriceOffers, Notes, Meetings, Calls,
+            Files, PaymentSchedule, BulkConvert
+          </li>
+          <li>
+            <strong>Tabs (9):</strong> SalesStage, PriceOffers,
+            MeetingReminders, CallReminders, Notes, Files, SalesTools, Chats,
+            Extra
+          </li>
+          <li><strong>Widgets (6):</strong> Dashboard metric widgets</li>
+          <li><strong>Panels (3):</strong> Info panels</li>
+          <li>
+            <strong>Core (8):</strong> Display utilities, column definitions
+          </li>
+          <li>
+            <strong>Kanban (11):</strong> KanbanColumn, KanbanLeadCard,
+            BulkConvertModal, etc.
+          </li>
+          <li>
+            <strong>Client:</strong> ClientPage.jsx, FinalSelectionForm.jsx
+          </li>
+        </ul>
+      </details>
+
+      <div class="split-section">
+        <div>
+          <h4>Backend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> <code>leads.repo.js</code> — extract
+              from leadServices
+            </li>
+            <li>
+              <input type="checkbox" /> <code>leads.usecase.js</code> —
+              creation, code gen, price calc, assignment, conversion
+            </li>
+            <li>
+              <input type="checkbox" /> <code>leads.dto.js</code> — select
+              fields for list/detail
+            </li>
+            <li>
+              <input type="checkbox" /> <code>leads.validation.js</code> — Zod
+              schemas
+            </li>
+            <li>
+              <input type="checkbox" /> <code>leads.controller.js</code> +
+              <code>leads.routes.js</code>
+            </li>
+            <li><input type="checkbox" /> <code>leads.emails.js</code></li>
+            <li>
+              <input type="checkbox" /> <code>client-leads.routes.js</code> +
+              <code>client-leads.controller.js</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Move noteServices → leads.repo sub-ops
+            </li>
+            <li>
+              <input type="checkbox" /> Extract admin lead import →
+              leads.usecase
+            </li>
+            <li>
+              <input type="checkbox" /> Mount in <code>v2/routes.js</code>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frontend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> Create
+              <code>v2/module/leads/</code> folder structure
+            </li>
+            <li>
+              <input type="checkbox" /> Move <code>DataViewer/leads/*</code> →
+              <code>v2/module/leads/</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Move <code>DataViewer/Kanban/</code> →
+              <code>v2/module/leads/kanban/</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Move <code>client-page/</code> →
+              <code>v2/module/leads/client/</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update all <code>useDataFetcher</code> +
+              <code>getData</code> calls → v2 API
+            </li>
+            <li>
+              <input type="checkbox" /> Update endpoints:
+              <code>shared/client-leads/*</code> → <code>v2/leads/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update all dashboard page route imports
+            </li>
+            <li>
+              <input type="checkbox" /> Test: lead CRUD, assignment, conversion,
+              kanban, notes, meetings, calls, files, price offers, bulk convert
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <p>
+        <strong>Dependencies:</strong> Notifications (Phase 3), Calendar (Phase
+        6 — can use legacy temporarily), Finance (Phase 8 — can use legacy
+        temporarily)
+      </p>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Phase 5 — Projects & Tasks                                       -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2 id="phase-5">
+        Phase 5 — Projects &amp; Tasks
+        <span class="badge badge-todo">Not started</span>
+      </h2>
+      <blockquote>
+        <p>
+          Depend on leads and contracts. Projects are created from contracts.
+        </p>
+      </blockquote>
+
+      <div class="prereq-box">
+        <strong>⚠ Prerequisites</strong>
+        <ul>
+          <li>Phase 4 (Leads) — projects linked to leads</li>
+          <li>Contracts don't need to be done yet — can reference legacy</li>
+        </ul>
+      </div>
+
+      <div class="split-section">
+        <div>
+          <h4>Backend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> <code>v2/modules/projects/</code> —
+              repo, usecase, dto, validation, controller, routes
+            </li>
+            <li>
+              <input type="checkbox" /> <code>v2/modules/tasks/</code> — repo,
+              usecase, validation, controller, routes
+            </li>
+            <li>
+              <input type="checkbox" /> Move role-based filtering from route →
+              usecase
+            </li>
+            <li>
+              <input type="checkbox" /> Decouple project creation from contract
+              service
+            </li>
+            <li>
+              <input type="checkbox" /> Mount in <code>v2/routes.js</code>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frontend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> Create
+              <code>v2/module/projects/</code> — move
+              <code>work-stages/projects/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Create <code>v2/module/tasks/</code> —
+              move <code>DataViewer/tasks/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Move WorkStageKanban, PreviewWorkStage,
+              ProjectDeliverySchedule
+            </li>
+            <li>
+              <input type="checkbox" /> Update endpoints:
+              <code>shared/projects/*</code> → <code>v2/projects/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update <code>shared/tasks/*</code> →
+              <code>v2/tasks/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Test: project list, detail, assignment,
+              tasks CRUD, kanban, delivery
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <p>
+        <strong>Dependencies:</strong> Leads (Phase 4), Contracts (Phase 7 — can
+        use legacy), Notifications (Phase 3)
+      </p>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Phase 6 — Calendar & Meetings                                    -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2 id="phase-6">
+        Phase 6 — Calendar &amp; Meetings
+        <span class="badge badge-todo">Not started</span>
+      </h2>
+      <blockquote>
+        <p>Public booking, staff calendar, Google Calendar integration.</p>
+      </blockquote>
+
+      <div class="prereq-box">
+        <strong>⚠ Prerequisites</strong>
+        <ul>
+          <li>Phase 0 shared foundation</li>
+        </ul>
+      </div>
+
+      <details>
+        <summary>Backend Legacy — 5 route files (messy!)</summary>
+        <ul>
+          <li><code>routes/calendar/calendar.js</code> (~80 lines)</li>
+          <li>
+            <code>routes/calendar/new-calendar.js</code> (~250 lines) —
+            <strong>service file in routes folder!</strong>
+          </li>
+          <li>
+            <code>routes/calendar/client-calendar.js</code> (~90 lines) — public
+            booking
+          </li>
+          <li>
+            <code>routes/calendar/google.js</code> (~100 lines) — Google
+            Calendar OAuth
+          </li>
+          <li>
+            <code>routes/calendar/old-call.js</code> (~60 lines) —
+            <strong>legacy, likely unused</strong>
+          </li>
+        </ul>
+        <h5>What's bad:</h5>
+        <ol>
+          <li>
+            <code>new-calendar.js</code> is a SERVICE file in the ROUTES folder
+          </li>
+          <li><code>old-call.js</code> is dead code still mounted</li>
+          <li>
+            Call/meeting reminders are in <code>staffServices.js</code>, not
+            calendar
+          </li>
+        </ol>
+      </details>
+
+      <div class="split-section">
+        <div>
+          <h4>Backend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> <code>v2/modules/calendar/</code> —
+              repo, usecase, validation, controller, routes
+            </li>
+            <li>
+              <input type="checkbox" /> Move <code>new-calendar.js</code> logic
+              → <code>calendar.usecase.js</code>
+            </li>
+            <li><input type="checkbox" /> Consolidate Google Calendar OAuth</li>
+            <li>
+              <input type="checkbox" /> Create <code>calendar/client/</code> —
+              public booking
+            </li>
+            <li>
+              <input type="checkbox" /> Move reminders from
+              <code>staffServices.js</code> → <code>calendar.usecase.js</code>
+            </li>
+            <li><input type="checkbox" /> Delete <code>old-call.js</code></li>
+            <li>
+              <input type="checkbox" /> Mount in <code>v2/routes.js</code>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frontend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> Create
+              <code>v2/module/calendar/</code> — move
+              <code>meeting/calendar/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Create
+              <code>v2/module/questions/</code> — move SPAIN + VERSA
+            </li>
+            <li>
+              <input type="checkbox" /> Update booking page to import from v2
+            </li>
+            <li>
+              <input type="checkbox" /> Update endpoints:
+              <code>client/calendar/*</code> → <code>v2/calendar/client/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update
+              <code>shared/calendar-management/*</code> →
+              <code>v2/calendar/*</code>
+            </li>
+            <li><input type="checkbox" /> Delete <code>Old-cal.jsx</code></li>
+            <li>
+              <input type="checkbox" /> Test: public booking, admin calendar,
+              slots, SPAIN/VERSA
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <p>
+        <strong>Dependencies:</strong> Leads (reminders linked), Google OAuth
+      </p>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Phase 7 — Contracts                                              -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2 id="phase-7">
+        Phase 7 — Contracts <span class="badge badge-todo">Not started</span>
+      </h2>
+      <blockquote>
+        <p>
+          Complex module with PDF generation. Depends on leads, creates
+          projects.
+        </p>
+      </blockquote>
+
+      <div class="prereq-box">
+        <strong>⚠ Prerequisites</strong>
+        <ul>
+          <li>Phase 4 (Leads) — contracts linked to leads</li>
+          <li>
+            <code>v2/infra/pdf/pdf-utils.js</code> — move from
+            <code>services/utilityServices.js</code>
+          </li>
+          <li>PDF queue must work with v2</li>
+        </ul>
+      </div>
+
+      <div class="split-section">
+        <div>
+          <h4>Backend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> <code>v2/modules/contracts/</code> —
+              repo, usecase, dto, validation, controller, routes
+            </li>
+            <li>
+              <input type="checkbox" /> <code>contracts.pdf.js</code> — move
+              500+ lines PDF generation
+            </li>
+            <li>
+              <input type="checkbox" /> Merge <code>rules.js</code>,
+              <code>wittenBlocksData.js</code>,
+              <code>generateDefaultContractData.js</code> →
+              <code>contracts.dto.js</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Decouple contract creation from project
+              creation + telegram
+            </li>
+            <li>
+              <input type="checkbox" /> Create <code>contracts/client/</code> —
+              public signing
+            </li>
+            <li>
+              <input type="checkbox" /> <code>v2/infra/pdf/pdf-utils.js</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Mount in <code>v2/routes.js</code>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frontend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> Create
+              <code>v2/module/contracts/</code> — move
+              <code>DataViewer/contracts/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Move <code>contracts/client/</code>,
+              <code>shared/</code>, <code>payments/</code> subdirs
+            </li>
+            <li>
+              <input type="checkbox" /> Update endpoints:
+              <code>shared/contracts/*</code> → <code>v2/contracts/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update client:
+              <code>client/contracts/*</code> →
+              <code>v2/contracts/client/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update site-utilities: →
+              <code>v2/site-config/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Test: CRUD, PDF, payments, client
+              signing, clone
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <p>
+        <strong>Dependencies:</strong> Leads (Phase 4), Projects (Phase 5), Site
+        Config, PDF queue
+      </p>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Phase 8 — Finance / Accountant                                   -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2 id="phase-8">
+        Phase 8 — Finance / Accountant
+        <span class="badge badge-todo">Not started</span>
+      </h2>
+      <blockquote>
+        <p>
+          Payments, salaries, rents, expenses. Depends on leads and contracts.
+        </p>
+      </blockquote>
+
+      <div class="prereq-box">
+        <strong>⚠ Prerequisites</strong>
+        <ul>
+          <li>Phase 4 (Leads) — payments linked to leads</li>
+          <li>Phase 7 (Contracts) — payment conditions from contracts</li>
+        </ul>
+      </div>
+
+      <div class="split-section">
+        <div>
+          <h4>Backend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> <code>v2/modules/finance/</code> — repo,
+              usecase, dto, validation, controller, routes
+            </li>
+            <li>
+              <input type="checkbox" /> <code>finance/stripe.js</code> —
+              consolidate Stripe
+            </li>
+            <li>
+              <input type="checkbox" /> <code>finance/client/</code> — public
+              Stripe checkout
+            </li>
+            <li>
+              <input type="checkbox" /> Extract admin commission →
+              finance.usecase
+            </li>
+            <li>
+              <input type="checkbox" /> Mount in <code>v2/routes.js</code>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frontend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> Create <code>v2/module/finance/</code> —
+              move <code>DataViewer/accountant/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Move <code>Kanban/accountant/</code> →
+              <code>v2/module/finance/kanban/</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update endpoints:
+              <code>accountant/*</code> → <code>v2/finance/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update all dashboard accountant pages
+            </li>
+            <li>
+              <input type="checkbox" /> Test: payments, salaries, rents,
+              expenses, kanban, overdue
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <p>
+        <strong>Dependencies:</strong> Leads (Phase 4), Contracts (Phase 7),
+        Notifications (Phase 3), Stripe SDK
+      </p>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Phase 9 — Users & Admin                                          -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2 id="phase-9">
+        Phase 9 — Users &amp; Admin
+        <span class="badge badge-todo">Not started</span>
+      </h2>
+      <blockquote>
+        <p>
+          Admin user management. The admin route is a monolith that needs
+          decomposition.
+        </p>
+      </blockquote>
+
+      <div class="split-section">
+        <div>
+          <h4>Backend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> <code>v2/modules/users/</code> — repo,
+              usecase, dto, validation, controller, routes
+            </li>
+            <li>
+              <input type="checkbox" /> <code>v2/modules/profile/</code> — repo,
+              usecase, controller, routes
+            </li>
+            <li>
+              <input type="checkbox" /> Distribute admin actions to domain
+              modules
+            </li>
+            <li>
+              <input type="checkbox" /> Move staffServices logic to
+              calendar/leads modules
+            </li>
+            <li>
+              <input type="checkbox" /> Delete
+              <code>routes/staff/staff.js</code> after redistribution
+            </li>
+            <li>
+              <input type="checkbox" /> Mount in <code>v2/routes.js</code>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frontend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> Create <code>v2/module/users/</code> —
+              move <code>DataViewer/users/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Move <code>pages/UsersPage.jsx</code> →
+              <code>v2/module/users/</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Move <code>Commission.jsx</code> →
+              <code>v2/module/finance/</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update endpoints:
+              <code>admin/users/*</code> → <code>v2/users/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Test: user CRUD, roles,
+              auto-assignments, restricted countries
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <p>
+        <strong>Dependencies:</strong> Auth ✅, Domain modules for distributed
+        admin actions
+      </p>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Phase 10 — Dashboard                                             -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2 id="phase-10">
+        Phase 10 — Dashboard <span class="badge badge-todo">Not started</span>
+      </h2>
+      <blockquote>
+        <p>Analytics and KPIs. Depends on data from most modules.</p>
+      </blockquote>
+
+      <div class="split-section">
+        <div>
+          <h4>Backend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> <code>v2/modules/dashboard/</code> —
+              repo, usecase, controller, routes
+            </li>
+            <li>
+              <input type="checkbox" /> Move staff filtering from controller →
+              usecase
+            </li>
+            <li>
+              <input type="checkbox" /> Mount in <code>v2/routes.js</code>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frontend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> Create
+              <code>v2/module/dashboard/</code> — move
+              <code>DataViewer/dashbaord/*</code> (fix typo!)
+            </li>
+            <li>
+              <input type="checkbox" /> Update endpoints:
+              <code>shared/dashboard/*</code> → <code>v2/dashboard/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update all role-based dashboard pages
+            </li>
+            <li>
+              <input type="checkbox" /> Test: all views per role (admin, staff,
+              designer, accountant)
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <p>
+        <strong>Dependencies:</strong> All CRM modules (provides data for KPIs)
+      </p>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Phase 11 — Image Sessions                                        -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2 id="phase-11">
+        Phase 11 — Image Sessions
+        <span class="badge badge-todo">Not started</span>
+      </h2>
+      <blockquote>
+        <p>
+          Design image management. Client-facing gallery + admin management.
+        </p>
+      </blockquote>
+
+      <div class="split-section">
+        <div>
+          <h4>Backend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" />
+              <code>v2/modules/image-sessions/</code> — repo, usecase,
+              validation, controller, routes
+            </li>
+            <li>
+              <input type="checkbox" /> <code>image-sessions.pdf.js</code> —
+              move PDF gen from clientServices
+            </li>
+            <li>
+              <input type="checkbox" /> Create
+              <code>image-sessions/client/</code> — public session
+            </li>
+            <li>
+              <input type="checkbox" /> Mount in <code>v2/routes.js</code>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frontend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> Create
+              <code>v2/module/image-sessions/</code> — move
+              <code>DataViewer/image-session/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update endpoints:
+              <code>admin/image-session/*</code> →
+              <code>v2/image-sessions/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Update client:
+              <code>client/image-session/*</code> →
+              <code>v2/image-sessions/client/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Test: admin gallery, client selection,
+              PDF generation
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <p><strong>Dependencies:</strong> Leads (Phase 4), PDF queue/worker</p>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Phase 12 — Courses                                               -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2 id="phase-12">
+        Phase 12 — Courses <span class="badge badge-todo">Not started</span>
+      </h2>
+
+      <div class="split-section">
+        <div>
+          <h4>Backend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> <code>v2/modules/courses/</code> — repo,
+              usecase, dto, validation, controller, routes
+            </li>
+            <li>
+              <input type="checkbox" /> Merge admin + staff logic with
+              role-based middleware
+            </li>
+            <li>
+              <input type="checkbox" /> Mount in <code>v2/routes.js</code>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frontend Checklist</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> Create <code>v2/module/courses/</code> —
+              move course components
+            </li>
+            <li><input type="checkbox" /> Update endpoints</li>
+            <li>
+              <input type="checkbox" /> Test: course CRUD, lessons, tests,
+              homework
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Phase 13 — Small Modules                                         -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2 id="phase-13">
+        Phase 13 — Small Modules
+        <span class="badge badge-todo">Not started</span>
+      </h2>
+      <blockquote>
+        <p>
+          Questions/VERSA, Sales Stages, Updates, Delivery, Profile, Google
+          Reviews, Site Config, Drive/Uploads. Small modules batched together.
+        </p>
+      </blockquote>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>Backend</th>
+            <th>Frontend</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Questions / VERSA</td>
+            <td>
+              <input type="checkbox" /> <code>v2/modules/questions/</code>
+            </td>
+            <td>
+              <input type="checkbox" /> Verify
+              <code>v2/module/questions/</code> from Phase 6
+            </td>
+            <td>May already be covered by Calendar phase</td>
+          </tr>
+          <tr>
+            <td>Sales Stages</td>
+            <td>
+              <input type="checkbox" /> <code>v2/modules/sales-stages/</code>
+            </td>
+            <td>
+              <input type="checkbox" /> Update endpoint in leads SalesStage tab
+            </td>
+            <td>Tiny — 35 line route, 45 line service</td>
+          </tr>
+          <tr>
+            <td>Updates</td>
+            <td><input type="checkbox" /> <code>v2/modules/updates/</code></td>
+            <td>
+              <input type="checkbox" /> Update endpoint in leads update tabs
+            </td>
+            <td>Part of leads module functionally</td>
+          </tr>
+          <tr>
+            <td>Delivery</td>
+            <td><input type="checkbox" /> <code>v2/modules/delivery/</code></td>
+            <td>
+              <input type="checkbox" /> Update endpoint in delivery schedule
+            </td>
+            <td>Moved with Projects in Phase 5</td>
+          </tr>
+          <tr>
+            <td>Profile</td>
+            <td><input type="checkbox" /> <code>v2/modules/profile/</code></td>
+            <td><input type="checkbox" /> Update endpoint in ProfileDialog</td>
+            <td>25 line route, 15 line service</td>
+          </tr>
+          <tr>
+            <td>Google Reviews</td>
+            <td>
+              <input type="checkbox" /> <code>v2/infra/google/reviews.js</code>
+            </td>
+            <td><input type="checkbox" /> Update endpoint if consumed</td>
+            <td>30 line route, 50 line service</td>
+          </tr>
+          <tr>
+            <td>Site Config</td>
+            <td>
+              <input type="checkbox" /> <code>v2/modules/site-config/</code>
+            </td>
+            <td>
+              <input type="checkbox" /> Update
+              <code>shared/site-utilities/*</code> →
+              <code>v2/site-config/*</code>
+            </td>
+            <td>Contract utility pages</td>
+          </tr>
+          <tr>
+            <td>Drive / Uploads</td>
+            <td>
+              <input type="checkbox" /> <code>v2/modules/drive/</code> +
+              <code>v2/infra/upload/</code>
+            </td>
+            <td>
+              <input type="checkbox" /> Move <code>uploadAsChunk.js</code> →
+              <code>v2/lib/upload/</code>
+            </td>
+            <td>May be partially done in Phase 2</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Phase 14 — Cleanup & Cutover                                     -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2 id="phase-14">
+        Phase 14 — Cleanup &amp; Cutover
+        <span class="badge badge-todo">Not started</span>
+      </h2>
+      <blockquote>
+        <p>Remove all legacy code. Switch entry points.</p>
+      </blockquote>
+
+      <div class="split-section">
+        <div>
+          <h4>Backend</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> Update <code>index.js</code> or replace
+              with <code>v2/server.js</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Remove all legacy
+              <code>routes/</code> files
+            </li>
+            <li>
+              <input type="checkbox" /> Remove all legacy
+              <code>services/</code> files
+            </li>
+            <li><input type="checkbox" /> Remove root-level schedulers</li>
+            <li>
+              <input type="checkbox" /> Remove <code>prisma/prisma.js</code>
+            </li>
+            <li><input type="checkbox" /> Final route URL audit</li>
+            <li><input type="checkbox" /> Update deployment scripts</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Frontend</h4>
+          <ul>
+            <li>
+              <input type="checkbox" /> Remove all
+              <code>UiComponents/DataViewer/</code> components
+            </li>
+            <li>
+              <input type="checkbox" /> Remove legacy
+              <code>helpers/functions/</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Remove legacy
+              <code>helpers/hooks/useDataFetcher.js</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Remove legacy
+              <code>providers/</code> with v2 replacements
+            </li>
+            <li>
+              <input type="checkbox" /> Remove
+              <code>UiComponents/client-page/</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Remove legacy
+              <code>formComponents/</code> with v2 replacements
+            </li>
+            <li>
+              <input type="checkbox" /> Verify all pages import from
+              <code>v2/module/*</code>
+            </li>
+            <li>
+              <input type="checkbox" /> Final regression test across all roles
+            </li>
+            <li>
+              <input type="checkbox" /> Verify RTL/Arabic in all migrated
+              components
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Master Checklist                                                 -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2 id="master-checklist">Master Checklist</h2>
+
+      <h4>Foundation</h4>
+      <ul>
+        <li><input type="checkbox" /> Backend shared infra (Phase 0)</li>
+        <li><input type="checkbox" /> Frontend shared infra (Phase 0)</li>
+        <li>
+          <input type="checkbox" checked disabled /> Auth verified (Phase 1 ✅)
+        </li>
+      </ul>
+
+      <h4>Modules (in dependency order)</h4>
+      <ul>
+        <li>
+          <input type="checkbox" /> Chat — backend + socket extraction +
+          frontend (Phase 2)
+        </li>
+        <li>
+          <input type="checkbox" /> Notifications — backend + frontend (Phase 3)
+        </li>
+        <li><input type="checkbox" /> Leads — backend + frontend (Phase 4)</li>
+        <li>
+          <input type="checkbox" /> Projects &amp; Tasks — backend + frontend
+          (Phase 5)
+        </li>
+        <li>
+          <input type="checkbox" /> Calendar &amp; Meetings — backend + frontend
+          (Phase 6)
+        </li>
+        <li>
+          <input type="checkbox" /> Contracts — backend + frontend (Phase 7)
+        </li>
+        <li>
+          <input type="checkbox" /> Finance / Accountant — backend + frontend
+          (Phase 8)
+        </li>
+        <li>
+          <input type="checkbox" /> Users &amp; Admin — backend + frontend
+          (Phase 9)
+        </li>
+        <li>
+          <input type="checkbox" /> Dashboard — backend + frontend (Phase 10)
+        </li>
+        <li>
+          <input type="checkbox" /> Image Sessions — backend + frontend (Phase
+          11)
+        </li>
+        <li>
+          <input type="checkbox" /> Courses — backend + frontend (Phase 12)
+        </li>
+        <li><input type="checkbox" /> Small modules batch (Phase 13)</li>
+      </ul>
+
+      <h4>Cleanup</h4>
+      <ul>
+        <li>
+          <input type="checkbox" /> Remove all legacy backend code (Phase 14)
+        </li>
+        <li>
+          <input type="checkbox" /> Remove all legacy frontend code (Phase 14)
+        </li>
+        <li><input type="checkbox" /> Final regression test (Phase 14)</li>
+        <li><input type="checkbox" /> Update deployment (Phase 14)</li>
+      </ul>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Dependency Graph                                                 -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2>Dependency Graph</h2>
+      <div class="dep-tree">
+        Auth (✅ done) └── Everything depends on auth Phase 0: Shared Foundation
+        └── Everything depends on this Phase 2: Chat (standalone, needs socket
+        extraction for chat only) Phase 3: Notifications (standalone, needed by
+        most modules) Phase 4: Leads ← depends on Notifications Phase 5:
+        Projects &amp; Tasks ← depends on Leads Phase 6: Calendar ← can be
+        parallel with Phase 5 Phase 7: Contracts ← depends on Leads Phase 8:
+        Finance ← depends on Leads, Contracts Phase 9: Users ← depends on domain
+        modules being done Phase 10: Dashboard ← depends on most modules Phase
+        11-13: Can happen in any order after Phase 4 Phase 14: After everything
+        else
+      </div>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- URL Migration Reference                                          -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2>URL Migration Reference</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Old URL</th>
+            <th>New URL</th>
+            <th>Module</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>/auth/*</code></td>
+            <td><code>/v2/auth/*</code></td>
+            <td>✅ Auth</td>
+          </tr>
+          <tr>
+            <td><code>/shared/chat/*</code></td>
+            <td><code>/v2/chat/*</code></td>
+            <td>Chat</td>
+          </tr>
+          <tr>
+            <td><code>/client/chat/*</code></td>
+            <td><code>/v2/chat/client/*</code></td>
+            <td>Chat</td>
+          </tr>
+          <tr>
+            <td><code>/shared/client-leads/*</code></td>
+            <td><code>/v2/leads/*</code></td>
+            <td>Leads</td>
+          </tr>
+          <tr>
+            <td><code>/client/leads/*</code></td>
+            <td><code>/v2/leads/client/*</code></td>
+            <td>Leads</td>
+          </tr>
+          <tr>
+            <td><code>/shared/projects/*</code></td>
+            <td><code>/v2/projects/*</code></td>
+            <td>Projects</td>
+          </tr>
+          <tr>
+            <td><code>/shared/tasks/*</code></td>
+            <td><code>/v2/tasks/*</code></td>
+            <td>Tasks</td>
+          </tr>
+          <tr>
+            <td><code>/shared/calendar-management/*</code></td>
+            <td><code>/v2/calendar/*</code></td>
+            <td>Calendar</td>
+          </tr>
+          <tr>
+            <td><code>/client/calendar/*</code></td>
+            <td><code>/v2/calendar/client/*</code></td>
+            <td>Calendar</td>
+          </tr>
+          <tr>
+            <td><code>/shared/contracts/*</code></td>
+            <td><code>/v2/contracts/*</code></td>
+            <td>Contracts</td>
+          </tr>
+          <tr>
+            <td><code>/client/contracts/*</code></td>
+            <td><code>/v2/contracts/client/*</code></td>
+            <td>Contracts</td>
+          </tr>
+          <tr>
+            <td><code>/accountant/*</code></td>
+            <td><code>/v2/finance/*</code></td>
+            <td>Finance</td>
+          </tr>
+          <tr>
+            <td><code>/client/payments/*</code></td>
+            <td><code>/v2/finance/client/*</code></td>
+            <td>Finance</td>
+          </tr>
+          <tr>
+            <td><code>/admin/users/*</code></td>
+            <td><code>/v2/users/*</code></td>
+            <td>Users</td>
+          </tr>
+          <tr>
+            <td><code>/shared/dashboard/*</code></td>
+            <td><code>/v2/dashboard/*</code></td>
+            <td>Dashboard</td>
+          </tr>
+          <tr>
+            <td><code>/shared/image-session/*</code></td>
+            <td><code>/v2/image-sessions/*</code></td>
+            <td>Image Sessions</td>
+          </tr>
+          <tr>
+            <td><code>/client/image-session/*</code></td>
+            <td><code>/v2/image-sessions/client/*</code></td>
+            <td>Image Sessions</td>
+          </tr>
+          <tr>
+            <td><code>/admin/courses/*</code></td>
+            <td><code>/v2/courses/*</code></td>
+            <td>Courses</td>
+          </tr>
+          <tr>
+            <td><code>/shared/questions/*</code></td>
+            <td><code>/v2/questions/*</code></td>
+            <td>Questions</td>
+          </tr>
+          <tr>
+            <td><code>/shared/utilities/notifications</code></td>
+            <td><code>/v2/notifications</code></td>
+            <td>Notifications</td>
+          </tr>
+          <tr>
+            <td><code>/utility/upload-chunk</code></td>
+            <td><code>/v2/drive/upload-chunk</code></td>
+            <td>Drive</td>
+          </tr>
+          <tr>
+            <td><code>/shared/delivery/*</code></td>
+            <td><code>/v2/delivery/*</code></td>
+            <td>Delivery</td>
+          </tr>
+          <tr>
+            <td><code>/shared/sales-stages/*</code></td>
+            <td><code>/v2/sales-stages/*</code></td>
+            <td>Sales Stages</td>
+          </tr>
+          <tr>
+            <td><code>/shared/site-utilities/*</code></td>
+            <td><code>/v2/site-config/*</code></td>
+            <td>Site Config</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <hr />
+
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <!-- Frontend Old → New File Index                                    -->
+      <!-- ════════════════════════════════════════════════════════════════ -->
+      <h2>Frontend Old → New File Index</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Old Location</th>
+            <th>New Location</th>
+            <th>Phase</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>UiComponents/DataViewer/chat/</code></td>
+            <td><code>v2/module/chat/</code></td>
+            <td>2</td>
+          </tr>
+          <tr>
+            <td><code>providers/SocketProvider.jsx</code></td>
+            <td><code>v2/providers/SocketProvider.jsx</code> (or keep)</td>
+            <td>2</td>
+          </tr>
+          <tr>
+            <td><code>UiComponents/DataViewer/Logs.jsx</code></td>
+            <td><code>v2/module/notifications/</code></td>
+            <td>3</td>
+          </tr>
+          <tr>
+            <td><code>UiComponents/DataViewer/leads/</code></td>
+            <td><code>v2/module/leads/</code></td>
+            <td>4</td>
+          </tr>
+          <tr>
+            <td><code>UiComponents/DataViewer/Kanban/</code></td>
+            <td><code>v2/module/leads/kanban/</code> (or shared)</td>
+            <td>4</td>
+          </tr>
+          <tr>
+            <td><code>UiComponents/client-page/</code></td>
+            <td><code>v2/module/leads/client/</code></td>
+            <td>4</td>
+          </tr>
+          <tr>
+            <td><code>UiComponents/DataViewer/work-stages/</code></td>
+            <td><code>v2/module/projects/</code></td>
+            <td>5</td>
+          </tr>
+          <tr>
+            <td><code>UiComponents/DataViewer/tasks/</code></td>
+            <td><code>v2/module/tasks/</code></td>
+            <td>5</td>
+          </tr>
+          <tr>
+            <td><code>UiComponents/DataViewer/meeting/</code></td>
+            <td>
+              <code>v2/module/calendar/</code> +
+              <code>v2/module/questions/</code>
+            </td>
+            <td>6</td>
+          </tr>
+          <tr>
+            <td><code>UiComponents/DataViewer/contracts/</code></td>
+            <td><code>v2/module/contracts/</code></td>
+            <td>7</td>
+          </tr>
+          <tr>
+            <td><code>UiComponents/DataViewer/accountant/</code></td>
+            <td><code>v2/module/finance/</code></td>
+            <td>8</td>
+          </tr>
+          <tr>
+            <td><code>Kanban/accountant/</code></td>
+            <td><code>v2/module/finance/kanban/</code></td>
+            <td>8</td>
+          </tr>
+          <tr>
+            <td><code>UiComponents/DataViewer/users/</code></td>
+            <td><code>v2/module/users/</code></td>
+            <td>9</td>
+          </tr>
+          <tr>
+            <td><code>UiComponents/pages/UsersPage.jsx</code></td>
+            <td><code>v2/module/users/</code></td>
+            <td>9</td>
+          </tr>
+          <tr>
+            <td><code>UiComponents/DataViewer/dashbaord/</code></td>
+            <td><code>v2/module/dashboard/</code></td>
+            <td>10</td>
+          </tr>
+          <tr>
+            <td><code>UiComponents/DataViewer/image-session/</code></td>
+            <td><code>v2/module/image-sessions/</code></td>
+            <td>11</td>
+          </tr>
+          <tr>
+            <td><code>helpers/functions/getData.js</code></td>
+            <td><code>v2/lib/api/getData.js</code> ✅</td>
+            <td>0</td>
+          </tr>
+          <tr>
+            <td><code>helpers/functions/handleSubmit.js</code></td>
+            <td><code>v2/lib/api/handleRequestSubmit.js</code> ✅</td>
+            <td>0</td>
+          </tr>
+          <tr>
+            <td><code>helpers/functions/getDataAndSet.js</code></td>
+            <td><code>v2/lib/api/getDataAndSet.js</code> ✅</td>
+            <td>0</td>
+          </tr>
+          <tr>
+            <td><code>helpers/functions/uploadAsChunk.js</code></td>
+            <td><code>v2/lib/upload/uploadAsChunk.js</code></td>
+            <td>2/13</td>
+          </tr>
+          <tr>
+            <td><code>helpers/hooks/useDataFetcher.js</code></td>
+            <td><code>v2/shared/hooks/useDataFetcher.js</code></td>
+            <td>0</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- /.wrapper -->
+  </body>
+</html>

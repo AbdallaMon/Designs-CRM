@@ -188,15 +188,16 @@ export function LeadSliderCard({ lead, setData }) {
         {isFullyPaid ? <MdCheck size={16} /> : <MdHourglassEmpty size={16} />}
         {lead.paymentStatus}
       </Box>
-
       <CardHeader
         title={""}
-        titleTypographyProps={{
-          variant: "h6",
-          fontWeight: "bold",
-          color: "text.primary",
-        }}
         sx={{ paddingBottom: 0 }}
+        slotProps={{
+          title: {
+            variant: "h6",
+            fontWeight: "bold",
+            color: "text.primary",
+          }
+        }}
       />
       <CardContent
         sx={{
@@ -240,7 +241,6 @@ export function LeadSliderCard({ lead, setData }) {
           </Typography>
         )}
       </CardContent>
-
       <CardActions
         sx={{ justifyContent: "flex-end", gap: 1, paddingTop: 1.5, px: 0 }}
       >

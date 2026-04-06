@@ -94,24 +94,27 @@ export function MarkAsDoneModal({
         <ListItemIcon sx={{ minWidth: 36 }}>{iconComponent}</ListItemIcon>
         <ListItemText
           primary={actionText}
-          primaryTypographyProps={{
-            fontSize: "0.875rem",
-            fontWeight: 500,
-            color: `${buttonColor}.main`,
+          slotProps={{
+            primary: {
+              fontSize: "0.875rem",
+              fontWeight: 500,
+              color: `${buttonColor}.main`,
+            }
           }}
         />
       </MenuItem>
-
       <Dialog
         open={markDoneOpen}
         onClose={() => setMarkDoneOpen(false)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-          },
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 2,
+              boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+            },
+          }
         }}
       >
         <DialogTitle

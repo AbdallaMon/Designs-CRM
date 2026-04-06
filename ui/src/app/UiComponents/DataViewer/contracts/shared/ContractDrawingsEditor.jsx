@@ -70,7 +70,6 @@ export default function ContractDrawingsEditor({ drawings, setDrawings }) {
           Add
         </Button>
       </Stack>
-
       <Grid container spacing={2}>
         {drawings.map((d, idx) => (
           <Grid key={idx} size={{ xs: 12, md: 12 }}>
@@ -92,7 +91,9 @@ export default function ContractDrawingsEditor({ drawings, setDrawings }) {
                 avatar={
                   <Avatar sx={{ bgcolor: "info.main" }}>{idx + 1}</Avatar>
                 }
-                titleTypographyProps={{ fontWeight: 600 }}
+                slotProps={{
+                  title: { fontWeight: 600 }
+                }}
               />
               <Divider />
               <CardContent>

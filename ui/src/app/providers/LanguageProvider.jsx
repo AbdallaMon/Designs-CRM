@@ -4,6 +4,10 @@ import { dictionary } from "@/app/helpers/constants.js";
 import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import rtlPlugin from "stylis-plugin-rtl";
+import {
+  LanguageProvider as LanguageProviderV2,
+  useLanguageContext as useLanguageContextV2,
+} from "@/app/v2/providers/LanguageProvider";
 export const LanguageContext = createContext(null);
 const defaultCache = createCache({
   key: "mui",
@@ -18,13 +22,21 @@ export default function LanguageProvider({
   initialLng = "ar",
   dontChecklocalStorage = false,
 }) {
+  return (
+    <LanguageProviderV2
+      initialLng={initialLng}
+      dontChecklocalStorage={dontChecklocalStorage}
+    >
+      {children}
+    </LanguageProviderV2>
+  );
   const [lng, setLang] = useState(initialLng);
 
   function changeLanguage(value) {
     setLang(value);
     window.localStorage.setItem("lng", value);
     const clonedLocationTitle = document.querySelector(
-      ".cloned-location-title"
+      ".cloned-location-title",
     );
     const locationDic = {
       "Inside UAE": "داخل الامارات",
@@ -54,6 +66,7 @@ export default function LanguageProvider({
   );
 }
 export const useLanguageContext = () => {
+  return useLanguageContextV2();
   const context = useContext(LanguageContext);
   return context;
 };

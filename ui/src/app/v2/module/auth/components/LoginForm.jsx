@@ -3,17 +3,17 @@ import Link from "next/link";
 import { Button } from "@mui/material";
 import AuthCard from "@/app/v2/shared/components/AuthCard";
 import AuthForm from "@/app/v2/shared/form/AuthForm";
-import { useLogin } from "@/app/v2/module/auth/hooks/useLogin";
 import { LOGIN_FIELDS } from "@/app/v2/module/auth/auth.constants";
 import {
   emailRules,
   passwordRules,
 } from "@/app/v2/module/auth/auth.validation";
+import { useAuthHooks } from "../hooks/useAuthHooks";
 
 const rules = { email: emailRules, password: passwordRules };
 
 export default function LoginForm() {
-  const { login } = useLogin();
+  const { login } = useAuthHooks();
 
   return (
     <AuthCard title="Login">
@@ -28,7 +28,7 @@ export default function LoginForm() {
           href="/reset"
           color="secondary"
           size="small"
-          sx={{ alignSelf: "flex-end", mt: -1 }}
+          sx={{ alignSelf: "flex-start", mt: -1 }}
         >
           Forgot password?
         </Button>

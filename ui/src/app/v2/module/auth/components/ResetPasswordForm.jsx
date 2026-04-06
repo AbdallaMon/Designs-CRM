@@ -1,18 +1,18 @@
 "use client";
 import AuthCard from "@/app/v2/shared/components/AuthCard";
 import AuthForm from "@/app/v2/shared/form/AuthForm";
-import { usePasswordReset } from "@/app/v2/module/auth/hooks/usePasswordReset";
 import { RESET_PASSWORD_FIELDS } from "@/app/v2/module/auth/auth.constants";
 import {
   passwordRules,
   confirmPasswordRules,
 } from "@/app/v2/module/auth/auth.validation";
+import { useAuthHooks } from "../hooks/useAuthHooks";
 
 /**
  * @param {{ token: string }} props
  */
 export default function ResetPasswordForm({ token }) {
-  const { resetPassword } = usePasswordReset();
+  const { resetPassword } = useAuthHooks();
   return (
     <AuthCard title="Reset Password">
       <AuthForm

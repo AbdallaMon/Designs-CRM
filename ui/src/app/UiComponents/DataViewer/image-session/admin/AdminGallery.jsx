@@ -150,7 +150,6 @@ const GalleryDashboard = () => {
           </Typography>
         </Toolbar>
       </AppBar>
-
       {/* Main Content */}
       <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden" }}>
         {/* Sidebar Navigation */}
@@ -190,7 +189,7 @@ const GalleryDashboard = () => {
                 label={tab.label}
                 iconPosition="start"
                 sx={{
-                  "& .MuiTab-iconWrapper": {
+                  "& .MuiTab-icon": {
                     marginRight: 2,
                     marginBottom: 0,
                   },

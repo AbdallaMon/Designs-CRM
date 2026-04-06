@@ -299,6 +299,7 @@ export default function Layout({
 }) {
   let { user } = useAuth();
 
+  console.log(user, "suer");
   if (!user || !user.activeRole) return null;
   const role = user?.activeRole;
 

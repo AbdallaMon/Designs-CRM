@@ -265,7 +265,9 @@ export const NewCallDialog = ({
                   setCallData({ ...callData, time: e.target.value })
                 }
                 fullWidth
-                InputLabelProps={{ shrink: true }}
+                slotProps={{
+                  inputLabel: { shrink: true }
+                }}
               />
               <TextField
                 label="Reminder Reason"

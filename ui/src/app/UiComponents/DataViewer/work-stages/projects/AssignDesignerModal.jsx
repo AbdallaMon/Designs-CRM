@@ -119,7 +119,9 @@ export function AssignDesignerModal({
     <Dialog
       open={open}
       onClose={() => setOpen(false)}
-      PaperProps={{ sx: { width: "400px", maxWidth: "100%" } }}
+      slotProps={{
+        paper: { sx: { width: "400px", maxWidth: "100%" } }
+      }}
     >
       <DialogTitle>
         {deleteDesigner ? "Remove Designer" : "Assign Designer"}

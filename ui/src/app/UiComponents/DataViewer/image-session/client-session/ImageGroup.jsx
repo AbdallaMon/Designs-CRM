@@ -128,7 +128,7 @@ const LazyImageComponent = ({
         />
       ) : (
         // Placeholder while loading
-        <Box
+        (<Box
           sx={{
             height: 300,
             bgcolor: "grey.100",
@@ -140,7 +140,7 @@ const LazyImageComponent = ({
           }}
         >
           <CircularProgress size={24} />
-        </Box>
+        </Box>)
       )}
     </div>
   );
@@ -312,7 +312,6 @@ export function ImageGroup({
           </Box>
         )}
       </Box>
-
       {!loadingImages && images && images.length === 0 && type === "SELECT" && (
         <Box display="flex" justifyContent="center" p={4}>
           <Alert severity="error" color="error">
@@ -322,14 +321,13 @@ export function ImageGroup({
           </Alert>
         </Box>
       )}
-
       {loadingImages ? (
         <Box display="flex" justifyContent="center" p={4}>
           <CircularProgress size={48} />
         </Box>
       ) : images.length > 50 ? (
         // Use virtual scrolling for large datasets
-        <VirtualGrid
+        (<VirtualGrid
           images={images}
           selectedImages={selectedImages}
           handleImageSelect={handleImageSelect}
@@ -338,10 +336,10 @@ export function ImageGroup({
           cardsRef={cardsRef}
           canDelete={canDelete}
           setImages={setImages}
-        />
+        />)
       ) : (
         // Use regular grid for smaller datasets
-        <Box>
+        (<Box>
           <Grid container spacing={0}>
             {images.map((image, index) => {
               const isSelected = selectedImages.find(
@@ -372,9 +370,8 @@ export function ImageGroup({
               );
             })}
           </Grid>
-        </Box>
+        </Box>)
       )}
-
       <ImagePreviewDialog
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}

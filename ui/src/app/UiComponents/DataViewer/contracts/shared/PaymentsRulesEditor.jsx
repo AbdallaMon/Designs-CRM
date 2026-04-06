@@ -60,13 +60,11 @@ export default function PaymentsRulesEditor({ payments, rules, setRules }) {
           Payment Conditions
         </Typography>
       </Stack>
-
       {payments.length === 0 && (
         <Alert severity="info">
           No payments added. Go back to the previous step to add payments.
         </Alert>
       )}
-
       <Grid container spacing={2}>
         {payments.map((p, idx) => {
           const row = rules[idx] || {};
@@ -94,7 +92,9 @@ export default function PaymentsRulesEditor({ payments, rules, setRules }) {
                   avatar={
                     <Avatar sx={{ bgcolor: "warning.main" }}>{idx + 1}</Avatar>
                   }
-                  titleTypographyProps={{ fontWeight: 600 }}
+                  slotProps={{
+                    title: { fontWeight: 600 }
+                  }}
                 />
                 <Divider />
                 <CardContent>

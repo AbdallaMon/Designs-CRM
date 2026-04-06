@@ -17,15 +17,12 @@ export function proxy(request) {
 
   if (isProtected && !isAuthenticated) {
     const loginUrl = new URL("/login", request.url);
-    console.log(
-      "Unauthenticated access to protected route, redirecting to login...",
-    );
+
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
   if (isAuthRoute && isAuthenticated) {
-    console.log("Already authenticated, redirecting to dashboard...");
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
   return NextResponse.next();

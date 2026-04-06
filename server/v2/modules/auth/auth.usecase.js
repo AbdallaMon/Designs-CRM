@@ -3,7 +3,6 @@ import { JwtService } from "../../infra/security/jwt.js";
 import { AppError } from "../../shared/errors/AppError.js";
 import { AuthRepository } from "./auth.repo.js";
 import { AuthSchema } from "./auth.dto.js";
-import { ok } from "../../shared/http/response.js";
 import { sendEmail } from "../../infra/mail/mail.js";
 import { AuthEmails } from "./auth.emails.js";
 import { authSchemas } from "./auth.validation.js";

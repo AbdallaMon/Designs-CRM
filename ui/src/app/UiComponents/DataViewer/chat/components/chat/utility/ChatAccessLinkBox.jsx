@@ -98,35 +98,37 @@ export default function ChatAccessLinkBox({
           placeholder="Link will appear here..."
           fullWidth
           disabled={!chatLink || loading || disabled}
-          InputProps={{
-            readOnly: true,
-            endAdornment: (
-              <Stack direction="row" spacing={0.5} sx={{ mr: 0.5 }}>
-                <Tooltip title="Copy">
-                  <span>
-                    <IconButton
-                      size="small"
-                      onClick={handleCopy}
-                      disabled={!chatLink || loading || disabled}
-                    >
-                      <FaCopy size={16} />
-                    </IconButton>
-                  </span>
-                </Tooltip>
+          slotProps={{
+            input: {
+              readOnly: true,
+              endAdornment: (
+                <Stack direction="row" spacing={0.5} sx={{ mr: 0.5 }}>
+                  <Tooltip title="Copy">
+                    <span>
+                      <IconButton
+                        size="small"
+                        onClick={handleCopy}
+                        disabled={!chatLink || loading || disabled}
+                      >
+                        <FaCopy size={16} />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
 
-                <Tooltip title="Open">
-                  <span>
-                    <IconButton
-                      size="small"
-                      onClick={handleOpenLink}
-                      disabled={!chatLink || loading || disabled}
-                    >
-                      <FaExternalLinkAlt size={16} />
-                    </IconButton>
-                  </span>
-                </Tooltip>
-              </Stack>
-            ),
+                  <Tooltip title="Open">
+                    <span>
+                      <IconButton
+                        size="small"
+                        onClick={handleOpenLink}
+                        disabled={!chatLink || loading || disabled}
+                      >
+                        <FaExternalLinkAlt size={16} />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                </Stack>
+              ),
+            }
           }}
         />
 
@@ -153,7 +155,6 @@ export default function ChatAccessLinkBox({
           </Typography>
         </Box>
       </Stack>
-
       <ConfirmDialog
         title="Regenerate Token"
         description="Are you sure you want to regenerate the token? The old link will stop working."

@@ -385,13 +385,14 @@ export default function PinnedMessages({
           <CircularProgress size={16} sx={{ color: colors.primary }} />
         )}
       </Paper>
-
       {/* Drawer */}
       <Drawer
         anchor="right"
         open={drawerOpen}
         onClose={toggleDrawer}
-        PaperProps={{ sx: { width: { xs: "90%", sm: 400 }, maxWidth: "100%" } }}
+        slotProps={{
+          paper: { sx: { width: { xs: "90%", sm: 400 }, maxWidth: "100%" } }
+        }}
       >
         <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
           {/* Header */}

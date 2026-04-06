@@ -203,7 +203,6 @@ export function ChatRoomsList({
           </Box>
         )}
       </Box>
-
       {/* Search */}
       <Box sx={{ p: 2, pt: 1 }}>
         <TextField
@@ -222,13 +221,6 @@ export function ChatRoomsList({
               debouncedSearch.flush?.(q);
             }
           }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <FaSearch size={14} />
-              </InputAdornment>
-            ),
-          }}
           variant="outlined"
           sx={{
             "& .MuiOutlinedInput-root": {
@@ -242,6 +234,15 @@ export function ChatRoomsList({
               },
             },
           }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <FaSearch size={14} />
+                </InputAdornment>
+              ),
+            }
+          }}
         />
       </Box>
       {!isForward && (
@@ -249,7 +250,6 @@ export function ChatRoomsList({
           <ChatChips onSelect={onSelectChatType} isTab={isTab} />
         </Box>
       )}
-
       {/* Rooms list */}
       <List
         ref={scrollContainerRef}
@@ -480,9 +480,7 @@ export function ChatRoomsList({
           loadingMore={loadingMore}
         />
       </List>
-
       {/* Menu */}
-
       {/* Delete confirmation */}
       <DeleteConfirmDialog
         open={deleteConfirm}

@@ -155,12 +155,14 @@ export function CreateGroupDialog({
       onClose={resetAndClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
-          overflow: "hidden",
-        },
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: 3,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+            overflow: "hidden",
+          },
+        }
       }}
     >
       <DialogTitle sx={{ pr: 6 }}>
@@ -184,7 +186,6 @@ export function CreateGroupDialog({
           </IconButton>
         </Stack>
       </DialogTitle>
-
       <DialogContent sx={{ pt: 2 }}>
         <Stack spacing={2}>
           <TextField
@@ -335,7 +336,6 @@ export function CreateGroupDialog({
           </Paper>
         </Stack>
       </DialogContent>
-
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={resetAndClose}>Cancel</Button>
         <Button

@@ -114,7 +114,6 @@ export default function LeadContractList({
       }}
     >
       {loading && <LoadingOverlay />}
-
       <Box mb={4}>
         <CreateContractDialog
           clientLeadId={leadId}
@@ -122,7 +121,6 @@ export default function LeadContractList({
           lead={lead}
         />
       </Box>
-
       <Stack spacing={2}>
         {contracts?.length > 0
           ? contracts.map((contract, index) => (
@@ -166,11 +164,13 @@ export default function LeadContractList({
         maxWidth="lg"
         fullWidth
         onClose={handleClose}
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: theme.shadows[8],
-          },
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 2,
+              boxShadow: theme.shadows[8],
+            },
+          }
         }}
       >
         <DialogTitle

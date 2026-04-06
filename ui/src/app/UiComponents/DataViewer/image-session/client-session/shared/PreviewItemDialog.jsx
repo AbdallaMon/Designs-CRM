@@ -135,26 +135,28 @@ export function PreviewItemDialog({
       onClose={onClose}
       maxWidth={false}
       fullScreen={isMobile}
-      TransitionComponent={Transition}
-      slots={{ backdrop: Backdrop }}
+      slots={{
+        backdrop: Backdrop,
+        transition: Transition
+      }}
       slotProps={{
         backdrop: {
           sx: { bgcolor: "rgba(0, 0, 0, 0.95)", backdropFilter: "blur(4px)" },
         },
-      }}
-      PaperProps={{
-        sx: {
-          bgcolor: "transparent",
-          boxShadow: "none",
-          m: isMobile ? 0 : 2,
-          maxHeight: isMobile ? "100vh" : "calc(100vh - 32px)",
-          height: "100%",
-          width: isMobile ? "100vw" : "calc(100vw - 32px)",
-          borderRadius: isMobile ? 0 : 2,
-          overflow: "hidden",
-        },
-      }}
-    >
+
+        paper: {
+          sx: {
+            bgcolor: "transparent",
+            boxShadow: "none",
+            m: isMobile ? 0 : 2,
+            maxHeight: isMobile ? "100vh" : "calc(100vh - 32px)",
+            height: "100%",
+            width: isMobile ? "100vw" : "calc(100vw - 32px)",
+            borderRadius: isMobile ? 0 : 2,
+            overflow: "hidden",
+          },
+        }
+      }}>
       <DialogContent
         sx={{
           p: 0,

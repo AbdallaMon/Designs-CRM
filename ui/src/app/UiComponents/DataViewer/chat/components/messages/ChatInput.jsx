@@ -620,7 +620,6 @@ export function ChatInput({
           </Stack>
         </Paper>
       )}
-
       {!isVoiceMode && selectedFiles.length > 0 && (
         <Box
           sx={{
@@ -698,13 +697,11 @@ export function ChatInput({
           ))}
         </Box>
       )}
-
       {fileError && !isVoiceMode && (
         <Paper sx={{ p: 1, bgcolor: "error.lighter", color: "error.main" }}>
           <Typography variant="caption">{fileError}</Typography>
         </Paper>
       )}
-
       {isVoiceMode ? (
         <RecordingBar
           status={voiceStatus}
@@ -719,7 +716,7 @@ export function ChatInput({
         />
       ) : (
         // ✅ Input + Emoji panel attached (WhatsApp style)
-        <ClickAwayListener onClickAway={closeEmojiPicker}>
+        (<ClickAwayListener onClickAway={closeEmojiPicker}>
           <Box>
             <TextField
               fullWidth
@@ -741,16 +738,37 @@ export function ChatInput({
                   "&.Mui-focused": { bgcolor: "background.paper" },
                 },
               }}
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <Box sx={{ display: "flex", gap: 0.5 }}>
-                      {room?.allowFiles && (
-                        <Tooltip title="Attach files (multi-select)" arrow>
+              slotProps={{
+                input: {
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <Box sx={{ display: "flex", gap: 0.5 }}>
+                        {room?.allowFiles && (
+                          <Tooltip title="Attach files (multi-select)" arrow>
+                            <span>
+                              <IconButton
+                                size="small"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isInputDisabled}
+                                sx={{
+                                  transition: "all 0.2s ease",
+                                  "&:hover": {
+                                    bgcolor: "action.hover",
+                                    transform: "scale(1.1)",
+                                  },
+                                }}
+                              >
+                                <FaPaperclip size={18} />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        )}
+
+                        <Tooltip title="Emoji" arrow>
                           <span>
                             <IconButton
                               size="small"
-                              onClick={() => fileInputRef.current?.click()}
+                              onClick={toggleEmojiPicker}
                               disabled={isInputDisabled}
                               sx={{
                                 transition: "all 0.2s ease",
@@ -760,85 +778,66 @@ export function ChatInput({
                                 },
                               }}
                             >
-                              <FaPaperclip size={18} />
+                              <FaSmile size={18} />
                             </IconButton>
                           </span>
                         </Tooltip>
-                      )}
 
-                      <Tooltip title="Emoji" arrow>
-                        <span>
-                          <IconButton
-                            size="small"
-                            onClick={toggleEmojiPicker}
-                            disabled={isInputDisabled}
-                            sx={{
-                              transition: "all 0.2s ease",
-                              "&:hover": {
-                                bgcolor: "action.hover",
-                                transform: "scale(1.1)",
-                              },
-                            }}
-                          >
-                            <FaSmile size={18} />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-
-                      {canUseVoice ? (
-                        <Tooltip title="Record voice" arrow>
-                          <span>
-                            <IconButton
-                              size="small"
-                              onClick={startRecording}
-                              disabled={isInputDisabled}
-                              color="primary"
-                              sx={{
-                                transition: "all 0.2s ease",
-                                "&:hover": {
-                                  bgcolor: "primary.main",
-                                  color: "primary.contrastText",
-                                  transform: "scale(1.1)",
-                                },
-                              }}
-                            >
-                              <FaMicrophone size={18} />
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                      ) : (
-                        <Tooltip title="Send" arrow>
-                          <span>
-                            <IconButton
-                              size="small"
-                              onClick={handleSendMessage}
-                              disabled={
-                                isInputDisabled ||
-                                (!message.trim() && selectedFiles.length === 0)
-                              }
-                              color="primary"
-                              sx={{
-                                transition: "all 0.2s ease",
-                                "&:hover": {
-                                  bgcolor: "primary.main",
-                                  color: "primary.contrastText",
-                                  transform: "scale(1.1)",
-                                },
-                                "&:disabled": { opacity: 0.4 },
-                              }}
-                            >
-                              {loading || isSending ? (
-                                <CircularProgress size={20} />
-                              ) : (
-                                <FaPaperPlane size={18} />
-                              )}
-                            </IconButton>
-                          </span>
-                        </Tooltip>
-                      )}
-                    </Box>
-                  </InputAdornment>
-                ),
+                        {canUseVoice ? (
+                          <Tooltip title="Record voice" arrow>
+                            <span>
+                              <IconButton
+                                size="small"
+                                onClick={startRecording}
+                                disabled={isInputDisabled}
+                                color="primary"
+                                sx={{
+                                  transition: "all 0.2s ease",
+                                  "&:hover": {
+                                    bgcolor: "primary.main",
+                                    color: "primary.contrastText",
+                                    transform: "scale(1.1)",
+                                  },
+                                }}
+                              >
+                                <FaMicrophone size={18} />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        ) : (
+                          <Tooltip title="Send" arrow>
+                            <span>
+                              <IconButton
+                                size="small"
+                                onClick={handleSendMessage}
+                                disabled={
+                                  isInputDisabled ||
+                                  (!message.trim() && selectedFiles.length === 0)
+                                }
+                                color="primary"
+                                sx={{
+                                  transition: "all 0.2s ease",
+                                  "&:hover": {
+                                    bgcolor: "primary.main",
+                                    color: "primary.contrastText",
+                                    transform: "scale(1.1)",
+                                  },
+                                  "&:disabled": { opacity: 0.4 },
+                                }}
+                              >
+                                {loading || isSending ? (
+                                  <CircularProgress size={20} />
+                                ) : (
+                                  <FaPaperPlane size={18} />
+                                )}
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        )}
+                      </Box>
+                    </InputAdornment>
+                  ),
+                }
               }}
             />
 
@@ -892,9 +891,8 @@ export function ChatInput({
               </Paper>
             </Collapse>
           </Box>
-        </ClickAwayListener>
+        </ClickAwayListener>)
       )}
-
       <input
         ref={fileInputRef}
         type="file"

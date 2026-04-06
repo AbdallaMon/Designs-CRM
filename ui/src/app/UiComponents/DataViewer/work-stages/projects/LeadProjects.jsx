@@ -300,7 +300,6 @@ export const LeadProjects = ({
         }
       />
       <Divider />
-
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tabs
           value={activeGroupTab}
@@ -331,7 +330,6 @@ export const LeadProjects = ({
           ))}
         </Tabs>
       </Box>
-
       <CardContent>
         <>
           <Box

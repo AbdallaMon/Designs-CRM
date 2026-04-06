@@ -87,13 +87,15 @@ export default function SimpleFileInput({
                 : "inherit",
           })}
           type="file"
-          InputLabelProps={{ shrink: true }}
           variant={variant}
           helperText={helperText}
           fullWidth
           accept={input && input?.accept}
           onChange={(e) => {
             handleFileChange(e);
+          }}
+          slotProps={{
+            inputLabel: { shrink: true }
           }}
         />
         {renderPreview()}

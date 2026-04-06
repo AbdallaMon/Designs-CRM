@@ -1,21 +1,28 @@
-"use client";
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/v2/providers/AuthProvider";
 import { useToastContext } from "@/app/v2/providers/ToastProvider";
+import { useRouter } from "next/navigation";
 import {
   requestPasswordReset,
   resetPassword as resetPasswordService,
+  loginUser,
 } from "@/app/v2/module/auth/auth.service";
 
-/**
- * Hook that exposes password reset flows.
- *
- * requestReset  — sends a reset-link email
- * resetPassword — sets a new password using a token, then redirects to /login
- */
-export function usePasswordReset() {
+export function useAuthHooks() {
+  const { setAuthUser } = useAuth();
   const { setLoading } = useToastContext();
   const router = useRouter();
 
+  async function login(formData) {
+    const response = await loginUser(formData, setLoading);
+    if (response.status === 200) {
+      setAuthUser(response.user);
+      const searchParams = new URLSearchParams(window.location.search);
+      const redirectTo = searchParams.get("redirect") || "/dashboard";
+      window.location.href = redirectTo;
+    }
+
+    return response;
+  }
   async function requestReset(formData) {
     return requestPasswordReset(formData, setLoading);
   }
@@ -31,6 +38,5 @@ export function usePasswordReset() {
 
     return response;
   }
-
-  return { requestReset, resetPassword };
+  return { login, requestReset, resetPassword };
 }

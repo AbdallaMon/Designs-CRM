@@ -47,37 +47,39 @@ export default function MuiInputField({
     }, [inputData.type]);
 
     return (
-          <TextField
-                fullWidth
-                sx={(theme) => ({
-                    backgroundColor: variant === "outlined" ? theme.palette.background.default : 'inherit',
-                    width: "100%",
-                    ...(input.sx && input.sx),
-                })}
-                onInput={() => setType(true)}
-                variant={variant}
-                error={Boolean(errors[inputData.id])}
-                disabled={input.disabled}
-                helperText={errors[inputData.id]?.message ? errors[inputData.id]?.message : inputData.helperText}
-                margin="none"
-                ref={inputRef}
-                onChange={handleChange}
-                {...inputData}
-                {...register(inputData.id, input.pattern)}
-                InputProps={{
-                    endAdornment: input.data.type === "password" && (
-                          <InputAdornment position="end">
-                              <IconButton
-                                    aria-label="toggle password visibility"
-                                    onClick={handleClickShowPassword}
-                                    edge="end"
+        <TextField
+              fullWidth
+              sx={(theme) => ({
+                  backgroundColor: variant === "outlined" ? theme.palette.background.default : 'inherit',
+                  width: "100%",
+                  ...(input.sx && input.sx),
+              })}
+              onInput={() => setType(true)}
+              variant={variant}
+              error={Boolean(errors[inputData.id])}
+              disabled={input.disabled}
+              helperText={errors[inputData.id]?.message ? errors[inputData.id]?.message : inputData.helperText}
+              margin="none"
+              ref={inputRef}
+              onChange={handleChange}
+              {...inputData}
+              {...register(inputData.id, input.pattern)}
+              slotProps={{
+                  input: {
+                      endAdornment: input.data.type === "password" && (
+                            <InputAdornment position="end">
+                                <IconButton
+                                      aria-label="toggle password visibility"
+                                      onClick={handleClickShowPassword}
+                                      edge="end"
 
-                              >
-                                  {showPassword ? <FaRegEyeSlash/> : <FaRegEye/>}
-                              </IconButton>
-                          </InputAdornment>
-                    ),
-                }}
-          />
+                                >
+                                    {showPassword ? <FaRegEyeSlash/> : <FaRegEye/>}
+                                </IconButton>
+                            </InputAdornment>
+                      ),
+                  }
+              }}
+        />
     );
 }

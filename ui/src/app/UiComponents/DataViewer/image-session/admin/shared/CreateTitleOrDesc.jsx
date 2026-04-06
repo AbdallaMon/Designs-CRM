@@ -73,7 +73,7 @@ export function CreateTitleOrDesc({ data, setData, type = "TITLE" }) {
     <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
       {languages.map((lng) => (
         // ✅ Using the MemoizedTextField for maximum performance
-        <MemoizedTextField
+        (<MemoizedTextField
           key={lng.id}
           label={getLabel(lng)}
           value={localData[lng.id]?.text || ""}
@@ -83,7 +83,7 @@ export function CreateTitleOrDesc({ data, setData, type = "TITLE" }) {
           variant="outlined"
           fullWidth
           placeholder={`Enter ${type.toLowerCase()} in ${lng.name}`}
-        />
+        />)
       ))}
     </Box>
   );

@@ -165,17 +165,18 @@ export const NewMeetingDialog = ({
       ) : (
         <OpenButton handleOpen={handleOpen}>{children}</OpenButton>
       )}
-
       <Dialog
         open={open}
         onClose={onClose}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            boxShadow: 24,
-          },
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 3,
+              boxShadow: 24,
+            },
+          }
         }}
       >
         <DialogTitle
@@ -236,11 +237,13 @@ export const NewMeetingDialog = ({
                       handleMeetingDataChange("time", e.target.value)
                     }
                     fullWidth
-                    InputLabelProps={{ shrink: true }}
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         borderRadius: 2,
                       },
+                    }}
+                    slotProps={{
+                      inputLabel: { shrink: true }
                     }}
                   />
 
@@ -511,17 +514,18 @@ export const NewClientMeetingDialog = ({
       ) : (
         <OpenButton handleOpen={handleOpen}>{children}</OpenButton>
       )}
-
       <Dialog
         open={open}
         onClose={onClose}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            boxShadow: 24,
-          },
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 3,
+              boxShadow: 24,
+            },
+          }
         }}
       >
         <DialogTitle

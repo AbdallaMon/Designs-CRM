@@ -86,7 +86,6 @@ export default function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
           Add
         </Button>
       </Stack>
-
       <Grid container spacing={2}>
         {payments.map((p, idx) => (
           <Grid key={idx} size={{ xs: 12, md: 6 }}>
@@ -108,7 +107,9 @@ export default function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
                 avatar={
                   <Avatar sx={{ bgcolor: "success.main" }}>{idx + 1}</Avatar>
                 }
-                titleTypographyProps={{ fontWeight: 600 }}
+                slotProps={{
+                  title: { fontWeight: 600 }
+                }}
               />
               <Divider />
               <CardContent>
@@ -189,9 +190,7 @@ export default function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
           </Grid>
         ))}
       </Grid>
-
       <Divider sx={{ my: 1 }} />
-
       <Paper
         sx={{
           p: 2,

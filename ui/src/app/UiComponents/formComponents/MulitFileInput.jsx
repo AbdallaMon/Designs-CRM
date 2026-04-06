@@ -92,18 +92,6 @@ export default function MultiFileInput({
           variant={variant}
           fullWidth
           helperText={helperText}
-          InputLabelProps={{ shrink: true }}
-          inputProps={{
-            accept: input?.accept,
-            multiple: true,
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <MdAttachFile />
-              </InputAdornment>
-            ),
-          }}
           onChange={(e) => handleFileChange(e.target.files)}
           sx={(theme) => ({
             backgroundColor:
@@ -111,10 +99,24 @@ export default function MultiFileInput({
                 ? theme.palette.background.default
                 : "inherit",
           })}
-        />
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <MdAttachFile />
+                </InputAdornment>
+              ),
+            },
+
+            htmlInput: {
+              accept: input?.accept,
+              multiple: true,
+            },
+
+            inputLabel: { shrink: true }
+          }} />
         {renderPreviews()}
       </Box>
-
       {error && (
         <Snackbar
           open={!!error}

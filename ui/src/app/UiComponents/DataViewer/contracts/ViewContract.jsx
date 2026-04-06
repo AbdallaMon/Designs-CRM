@@ -399,7 +399,9 @@ function ContractBasics({ id, contract, onReload }) {
       >
         <CardHeader
           title={label}
-          titleTypographyProps={{ variant: "subtitle1", fontWeight: 600 }}
+          slotProps={{
+            title: { variant: "subtitle1", fontWeight: 600 }
+          }}
         />
         <Divider />
         <CardContent>
@@ -551,7 +553,9 @@ function ContractBasics({ id, contract, onReload }) {
         >
           <CardHeader
             title="Basics"
-            titleTypographyProps={{ variant: "subtitle1", fontWeight: 600 }}
+            slotProps={{
+              title: { variant: "subtitle1", fontWeight: 600 }
+            }}
           />
           <Divider />
           <CardContent>
@@ -638,7 +642,9 @@ function ContractBasics({ id, contract, onReload }) {
         >
           <CardHeader
             title="Dates & Status"
-            titleTypographyProps={{ variant: "subtitle1", fontWeight: 600 }}
+            slotProps={{
+              title: { variant: "subtitle1", fontWeight: 600 }
+            }}
           />
           <Divider />
           <CardContent>
@@ -681,7 +687,6 @@ function ContractBasics({ id, contract, onReload }) {
           )}
         </Grid>
       </Stack>
-
       <ConfirmDialog
         open={confirm.open}
         onCancel={closeConfirm}
@@ -845,7 +850,6 @@ function StageRow({ stage, onReload, contractId }) {
           subheader={`Status: ${
             STAGE_STATUS[stage.stageStatus] || stage.stageStatus
           }`}
-          titleTypographyProps={{ variant: "subtitle1", fontWeight: 600 }}
           action={
             <Stack direction="row" spacing={0.5}>
               {edit ? (
@@ -882,6 +886,9 @@ function StageRow({ stage, onReload, contractId }) {
               </IconButton>
             </Stack>
           }
+          slotProps={{
+            title: { variant: "subtitle1", fontWeight: 600 }
+          }}
         />
         <Divider />
         <CardContent>
@@ -921,7 +928,6 @@ function StageRow({ stage, onReload, contractId }) {
           </Grid>
         </CardContent>
       </Card>
-
       <ConfirmDialog
         open={confirmOpen}
         onCancel={() => setConfirmOpen(false)}
@@ -1429,7 +1435,6 @@ function SpecialItemRow({ item, contractId, onReload }) {
         <CardHeader
           title={item.labelAr}
           subheader={item.labelEn || "No English translation"}
-          titleTypographyProps={{ variant: "subtitle1", fontWeight: 600 }}
           action={
             <Stack direction="row" spacing={0.5}>
               {edit ? (
@@ -1459,6 +1464,9 @@ function SpecialItemRow({ item, contractId, onReload }) {
               </IconButton>
             </Stack>
           }
+          slotProps={{
+            title: { variant: "subtitle1", fontWeight: 600 }
+          }}
         />
         <Divider />
         <CardContent>
@@ -1490,7 +1498,6 @@ function SpecialItemRow({ item, contractId, onReload }) {
           </Grid>
         </CardContent>
       </Card>
-
       <ConfirmDialog
         open={confirmOpen}
         onCancel={() => setConfirmOpen(false)}
@@ -1710,7 +1717,6 @@ function DrawingRow({ row, contractId, onReload }) {
         <CardHeader
           title={row.fileName || "Drawing"}
           subheader={row.url}
-          titleTypographyProps={{ variant: "subtitle1", fontWeight: 600 }}
           action={
             <Stack direction="row" spacing={0.5}>
               {edit ? (
@@ -1740,6 +1746,9 @@ function DrawingRow({ row, contractId, onReload }) {
               </IconButton>
             </Stack>
           }
+          slotProps={{
+            title: { variant: "subtitle1", fontWeight: 600 }
+          }}
         />
         <Divider />
         <CardContent>
@@ -1774,7 +1783,6 @@ function DrawingRow({ row, contractId, onReload }) {
           </Stack>
         </CardContent>
       </Card>
-
       <ConfirmDialog
         open={confirmOpen}
         onCancel={() => setConfirmOpen(false)}

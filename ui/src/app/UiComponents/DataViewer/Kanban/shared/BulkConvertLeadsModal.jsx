@@ -77,7 +77,9 @@ export default function BulkConvertLeadsModal({
     <Dialog
       open={open}
       onClose={onClose}
-      PaperProps={{ sx: { width: "400px", maxWidth: "100%" } }}
+      slotProps={{
+        paper: { sx: { width: "400px", maxWidth: "100%" } }
+      }}
     >
       <DialogTitle>Convert {leads.length} Leads to New Staff</DialogTitle>
       <DialogContent>

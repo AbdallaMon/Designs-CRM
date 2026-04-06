@@ -57,7 +57,6 @@ export default function StagesSelector({
           Select Stages
         </Typography>
       </Stack>
-
       <Stack direction="row" spacing={1} flexWrap="wrap">
         {(CONTRACT_LEVELSENUM || []).map((item) => {
           const active = !!selected.find((s) => s.enum === item.enum);
@@ -74,7 +73,6 @@ export default function StagesSelector({
           );
         })}
       </Stack>
-
       {selected.length > 0 && (
         <Stack spacing={2} sx={{ mt: 2 }}>
           <Divider />
@@ -117,38 +115,9 @@ export default function StagesSelector({
                       contractLevel[s.label]?.name ||
                       contractLevel[s.enum]?.name
                     }
-                    // action={
-                    //   <Box>
-                    //     {s.enum === "LEVEL_1" && (
-                    //       <>
-                    //         <FormControl>
-                    //           <FormLabel
-                    //             component="legend"
-                    //             sx={{ fontSize: 12 }}
-                    //           >
-                    //             Active before client sign
-                    //           </FormLabel>
-                    //           <Switch
-                    //             checked={
-                    //               perStageMeta?.[s.enum]?.isActive || false
-                    //             }
-                    //             id="active-status"
-                    //             onChange={(e) =>
-                    //               setPerStageMeta({
-                    //                 ...perStageMeta,
-                    //                 [s.enum]: {
-                    //                   ...perStageMeta?.[s.enum],
-                    //                   isActive: e.target.checked,
-                    //                 },
-                    //               })
-                    //             }
-                    //           />
-                    //         </FormControl>
-                    //       </>
-                    //     )}
-                    //   </Box>
-                    // }
-                    titleTypographyProps={{ fontWeight: 600 }}
+                    slotProps={{
+                      title: { fontWeight: 600 }
+                    }}
                   />
                   <Divider />
                   <CardContent>

@@ -206,9 +206,7 @@ const SalesStageComponent = ({ clientLeadId }) => {
           </Paper>
         )}
       </Box>
-
       <Divider sx={{ mb: 4 }} />
-
       {/* Sales Stages List */}
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {salesStageEnum.map((stage, index) => {
@@ -406,18 +404,19 @@ const SalesStageComponent = ({ clientLeadId }) => {
           );
         })}
       </Box>
-
       {/* Dialog for Stage Details */}
       <Dialog
         open={dialogOpen}
         onClose={handleCloseDialog}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: theme.shadows[8],
-          },
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 2,
+              boxShadow: theme.shadows[8],
+            },
+          }
         }}
       >
         <DialogTitle

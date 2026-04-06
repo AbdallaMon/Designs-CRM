@@ -185,7 +185,6 @@ export default function CreateContractDialog({
       >
         Create New Contract
       </Button>
-
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
         <DialogTitle
           sx={{
@@ -246,15 +245,17 @@ export default function CreateContractDialog({
               {steps.map((label, idx) => (
                 <Step key={label}>
                   <StepLabel
-                    StepIconProps={{
-                      sx: {
-                        color:
-                          idx < activeStep
-                            ? "success.main"
-                            : idx === activeStep
-                            ? "primary.main"
-                            : "text.secondary",
-                      },
+                    slotProps={{
+                      stepIcon: {
+                        sx: {
+                          color:
+                            idx < activeStep
+                              ? "success.main"
+                              : idx === activeStep
+                              ? "primary.main"
+                              : "text.secondary",
+                        },
+                      }
                     }}
                   >
                     <Typography variant="caption" sx={{ fontWeight: 600 }}>

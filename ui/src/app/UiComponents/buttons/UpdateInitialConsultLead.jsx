@@ -75,25 +75,28 @@ function UpdateInitialConsultButton({ clientLead }) {
           Move to New Leads
         </Button>
       )}
-
       <Dialog
         open={open}
         onClose={handleClose}
         maxWidth="sm"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 4,
-            background:
-              "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)",
-            backdropFilter: "blur(20px)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            boxShadow: "0 24px 48px rgba(0, 0, 0, 0.12)",
-            overflow: "visible",
-          },
-        }}
-        TransitionComponent={Fade}
         transitionDuration={400}
+        slots={{
+          transition: Fade
+        }}
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 4,
+              background:
+                "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.95) 100%)",
+              backdropFilter: "blur(20px)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              boxShadow: "0 24px 48px rgba(0, 0, 0, 0.12)",
+              overflow: "visible",
+            },
+          }
+        }}
       >
         <Box sx={{ position: "relative" }}>
           {/* Decorative Background Elements */}

@@ -156,7 +156,6 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
       >
         Process Monthly Salary
       </Button>
-
       <Dialog
         open={open}
         onClose={handleClose}
@@ -278,12 +277,14 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                       type="number"
                       value={formData.totalHoursWorked}
                       onChange={handleInputChange}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <FaClock />
-                          </InputAdornment>
-                        ),
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <FaClock />
+                            </InputAdornment>
+                          ),
+                        }
                       }}
                     />
                   </Grid>
@@ -296,12 +297,14 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                       type="number"
                       value={formData.overtimeHours}
                       onChange={handleInputChange}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <FaClock />
-                          </InputAdornment>
-                        ),
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <FaClock />
+                            </InputAdornment>
+                          ),
+                        }
                       }}
                     />
                   </Grid>
@@ -314,12 +317,14 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                       type="number"
                       value={formData.bonuses}
                       onChange={handleInputChange}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <FaDollarSign />
-                          </InputAdornment>
-                        ),
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <FaDollarSign />
+                            </InputAdornment>
+                          ),
+                        }
                       }}
                     />
                   </Grid>
@@ -332,12 +337,14 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                       type="number"
                       value={formData.deductions}
                       onChange={handleInputChange}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <FaDollarSign />
-                          </InputAdornment>
-                        ),
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <FaDollarSign />
+                            </InputAdornment>
+                          ),
+                        }
                       }}
                     />
                   </Grid>
@@ -351,14 +358,16 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
                       helperText="This is the total amount that actually paid"
                       value={formData.netSalary}
                       onChange={handleInputChange}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <FaDollarSign />
-                          </InputAdornment>
-                        ),
-                      }}
                       variant="filled"
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <FaDollarSign />
+                            </InputAdornment>
+                          ),
+                        }
+                      }}
                     />
                   </Grid>
                 </Grid>

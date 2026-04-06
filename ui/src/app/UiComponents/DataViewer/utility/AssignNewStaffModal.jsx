@@ -84,7 +84,9 @@ export function AssignNewStaffModal({ lead, onUpdate }) {
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        PaperProps={{ sx: { width: "400px", maxWidth: "100%" } }}
+        slotProps={{
+          paper: { sx: { width: "400px", maxWidth: "100%" } }
+        }}
       >
         <DialogTitle>Convert lead to new staff</DialogTitle>
         <DialogContent>

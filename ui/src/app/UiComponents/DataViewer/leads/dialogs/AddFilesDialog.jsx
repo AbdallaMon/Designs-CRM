@@ -151,7 +151,9 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
                   setFileData({ ...fileData, name: e.target.value })
                 }
                 fullWidth
-                InputLabelProps={{ shrink: true }}
+                slotProps={{
+                  inputLabel: { shrink: true }
+                }}
               />
               <TextField
                 label="Description"
@@ -162,7 +164,9 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
                 fullWidth
                 multiline
                 rows={3}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{
+                  inputLabel: { shrink: true }
+                }}
               />
               <SimpleFileInput
                 label="File"

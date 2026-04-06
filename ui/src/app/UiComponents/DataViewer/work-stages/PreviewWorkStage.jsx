@@ -132,7 +132,6 @@ const LeadContent = ({
           lead.twoDDesignerId ? `/dashboard/work-stages/two-d/${lead.id}` : null
         }
       />
-
       {/* Project Status Menu */}
       {lead.projects?.map((project) => (
         <Menu
@@ -141,8 +140,10 @@ const LeadContent = ({
           key={project.id}
           open={open}
           onClose={() => setAnchorEl(null)}
-          MenuListProps={{
-            "aria-labelledby": "basic-button",
+          slotProps={{
+            list: {
+              "aria-labelledby": "basic-button",
+            }
           }}
         >
           {projectStatuses.map((status) => (
@@ -216,7 +217,6 @@ const LeadContent = ({
           />
         )}
       </Tabs>
-
       <Box
         sx={{
           p: { xs: 2, md: 3 },

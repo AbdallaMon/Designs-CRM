@@ -271,15 +271,17 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
                 variant="outlined"
                 value={formData.name}
                 onChange={handleChange}
-                InputProps={{
-                  sx: {
-                    borderRadius: 2,
-                    "&:hover": {
-                      "& fieldset": {
-                        borderColor: "primary.main",
+                slotProps={{
+                  input: {
+                    sx: {
+                      borderRadius: 2,
+                      "&:hover": {
+                        "& fieldset": {
+                          borderColor: "primary.main",
+                        },
                       },
                     },
-                  },
+                  }
                 }}
               />
               <MuiTelInput
@@ -314,15 +316,17 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
                 variant="outlined"
                 value={formData.email}
                 onChange={handleChange}
-                InputProps={{
-                  sx: {
-                    borderRadius: 2,
-                    "&:hover": {
-                      "& fieldset": {
-                        borderColor: "primary.main",
+                slotProps={{
+                  input: {
+                    sx: {
+                      borderRadius: 2,
+                      "&:hover": {
+                        "& fieldset": {
+                          borderColor: "primary.main",
+                        },
                       },
                     },
-                  },
+                  }
                 }}
               />
 
@@ -370,8 +374,10 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
                           value={formData.priceRange[0]}
                           onChange={(e) => handlePriceChange(0, e.target.value)}
                           sx={{ flex: 1 }}
-                          InputProps={{
-                            sx: { borderRadius: 2 },
+                          slotProps={{
+                            input: {
+                              sx: { borderRadius: 2 },
+                            }
                           }}
                         />
                         <TextField
@@ -380,8 +386,10 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
                           value={formData.priceRange[1]}
                           onChange={(e) => handlePriceChange(1, e.target.value)}
                           sx={{ flex: 1 }}
-                          InputProps={{
-                            sx: { borderRadius: 2 },
+                          slotProps={{
+                            input: {
+                              sx: { borderRadius: 2 },
+                            }
                           }}
                         />
                       </Stack>
@@ -427,15 +435,17 @@ export function DesignLeadForm({ category, item, location, notClientPage }) {
                     variant="outlined"
                     value={formData.clientDescription}
                     onChange={handleChange}
-                    InputProps={{
-                      sx: {
-                        borderRadius: 2,
-                        "&:hover": {
-                          "& fieldset": {
-                            borderColor: "primary.main",
+                    slotProps={{
+                      input: {
+                        sx: {
+                          borderRadius: 2,
+                          "&:hover": {
+                            "& fieldset": {
+                              borderColor: "primary.main",
+                            },
                           },
                         },
-                      },
+                      }
                     }}
                   />
                 </>
@@ -606,16 +616,18 @@ export const CountrySelector = ({
           name={name || "country"}
           variant="outlined"
           fullWidth={fullWidth}
-          InputProps={{
-            ...params.InputProps,
-            sx: {
-              borderRadius: 2,
-              "&:hover": {
-                "& fieldset": {
-                  borderColor: "primary.main",
+          slotProps={{
+            input: {
+              ...params.InputProps,
+              sx: {
+                borderRadius: 2,
+                "&:hover": {
+                  "& fieldset": {
+                    borderColor: "primary.main",
+                  },
                 },
               },
-            },
+            }
           }}
         />
       )}

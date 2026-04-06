@@ -128,19 +128,22 @@ export default function SignInWithDifferentUserRole() {
       >
         Switch Role
       </Button>
-
       <Dialog
         open={open}
         onClose={handleClose}
         maxWidth="sm"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            minHeight: 400,
-          },
+        slots={{
+          transition: Fade
         }}
-        TransitionComponent={Fade}
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 3,
+              minHeight: 400,
+            },
+          }
+        }}
       >
         <DialogTitle sx={{ pb: 1 }}>
           <Box

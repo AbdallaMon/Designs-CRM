@@ -141,18 +141,19 @@ const UserRestrictedCountries = ({ userId }) => {
       >
         Manage Restricted Countries
       </Button>
-
       <Dialog
         open={open}
         onClose={handleClose}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: "12px",
-            boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-            overflow: "hidden",
-          },
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: "12px",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+              overflow: "hidden",
+            },
+          }
         }}
       >
         <DialogTitle
@@ -202,21 +203,23 @@ const UserRestrictedCountries = ({ userId }) => {
                         variant="outlined"
                         label="Select Region"
                         placeholder="All Regions"
-                        InputProps={{
-                          ...params.InputProps,
-                          startAdornment: (
-                            <>
-                              <FiGlobe
-                                style={{ color: "#666", marginRight: "8px" }}
-                              />
-                              {params.InputProps.startAdornment}
-                            </>
-                          ),
-                        }}
                         sx={{
                           "& .MuiOutlinedInput-root": {
                             borderRadius: "8px",
                           },
+                        }}
+                        slotProps={{
+                          input: {
+                            ...params.InputProps,
+                            startAdornment: (
+                              <>
+                                <FiGlobe
+                                  style={{ color: "#666", marginRight: "8px" }}
+                                />
+                                {params.InputProps.startAdornment}
+                              </>
+                            ),
+                          }
                         }}
                       />
                     )}
@@ -250,21 +253,23 @@ const UserRestrictedCountries = ({ userId }) => {
                         variant="outlined"
                         label="Select Countries"
                         placeholder="Type to search countries"
-                        InputProps={{
-                          ...params.InputProps,
-                          startAdornment: (
-                            <>
-                              <FiSearch
-                                style={{ color: "#666", marginRight: "8px" }}
-                              />
-                              {params.InputProps.startAdornment}
-                            </>
-                          ),
-                        }}
                         sx={{
                           "& .MuiOutlinedInput-root": {
                             borderRadius: "8px",
                           },
+                        }}
+                        slotProps={{
+                          input: {
+                            ...params.InputProps,
+                            startAdornment: (
+                              <>
+                                <FiSearch
+                                  style={{ color: "#666", marginRight: "8px" }}
+                                />
+                                {params.InputProps.startAdornment}
+                              </>
+                            ),
+                          }
                         }}
                       />
                     )}

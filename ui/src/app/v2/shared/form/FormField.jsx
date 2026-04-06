@@ -50,8 +50,15 @@ export default function FormField({
             ? "current-password"
             : "off"
       }
-      InputProps={
-        isPassword
+      {...register(name, rules)}
+      sx={(theme) => ({
+        backgroundColor:
+          variant === "outlined" ? theme.palette.background.default : "inherit",
+        width: "100%",
+        ...(sx && sx),
+      })}
+      slotProps={{
+        input: isPassword
           ? {
               endAdornment: (
                 <InputAdornment position="end">
@@ -69,14 +76,6 @@ export default function FormField({
               ),
             }
           : undefined
-      }
-      {...register(name, rules)}
-      sx={(theme) => ({
-        backgroundColor:
-          variant === "outlined" ? theme.palette.background.default : "inherit",
-        width: "100%",
-        ...(sx && sx),
-      })}
-    />
+      }} />
   );
 }

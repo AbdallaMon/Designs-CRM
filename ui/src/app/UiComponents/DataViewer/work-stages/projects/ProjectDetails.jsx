@@ -454,10 +454,12 @@ export const ProjectDetails = ({
     <StyledCard sx={{ p: 2, mt: 3 }}>
       <CardHeader
         title="Edit Project Details"
-        titleTypographyProps={{
-          variant: "h6",
-          fontWeight: 600,
-          color: "primary.main",
+        slotProps={{
+          title: {
+            variant: "h6",
+            fontWeight: 600,
+            color: "primary.main",
+          }
         }}
       />
       <CardContent>
@@ -519,7 +521,6 @@ export const ProjectDetails = ({
                 label="Area (m²)"
                 type="number"
                 variant="outlined"
-                inputProps={{ step: 0.01 }}
                 value={editedProject.area || ""}
                 onChange={(e) =>
                   handleInputChange(
@@ -527,6 +528,9 @@ export const ProjectDetails = ({
                     e.target.value ? parseFloat(e.target.value) : null
                   )
                 }
+                slotProps={{
+                  htmlInput: { step: 0.01 }
+                }}
               />
             </Grid>
 

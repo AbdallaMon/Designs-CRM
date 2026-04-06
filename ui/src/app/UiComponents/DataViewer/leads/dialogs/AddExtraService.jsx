@@ -109,7 +109,9 @@ export const AddExtraService = ({
                   })
                 }
                 fullWidth
-                InputLabelProps={{ shrink: true }}
+                slotProps={{
+                  inputLabel: { shrink: true }
+                }}
               />
               <TextField
                 label="Note"
@@ -120,7 +122,9 @@ export const AddExtraService = ({
                 fullWidth
                 multiline
                 rows={3}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{
+                  inputLabel: { shrink: true }
+                }}
               />
             </Stack>
           </DialogContent>

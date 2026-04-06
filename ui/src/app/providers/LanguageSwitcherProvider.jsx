@@ -5,6 +5,10 @@ import { CacheProvider } from "@emotion/react";
 import rtlPlugin from "stylis-plugin-rtl";
 import { useSearchParams } from "next/navigation";
 import { Box } from "@mui/material";
+import {
+  LanguageSwitcherProvider as LanguageSwitcherProviderV2,
+  useLanguageSwitcherContext as useLanguageSwitcherContextV2,
+} from "@/app/v2/providers/LanguageSwitcherProvider";
 export const LanguageSwitcherContext = createContext(null);
 const defaultCache = createCache({
   key: "mui",
@@ -19,6 +23,14 @@ export default function LanguageSwitcherProvider({
   initialLng = "ar",
   dontChecklocalStorage = false,
 }) {
+  return (
+    <LanguageSwitcherProviderV2
+      initialLng={initialLng}
+      dontChecklocalStorage={dontChecklocalStorage}
+    >
+      {children}
+    </LanguageSwitcherProviderV2>
+  );
   const [lng, setLang] = useState(initialLng);
   const searchParams = useSearchParams();
   function changeLanguage(value) {
@@ -32,7 +44,7 @@ export default function LanguageSwitcherProvider({
   useEffect(() => {
     if (typeof window !== "undefined" && !dontChecklocalStorage) {
       setLang(
-        searchParams.get("lng") || window.localStorage.getItem("lng") || "ar"
+        searchParams.get("lng") || window.localStorage.getItem("lng") || "ar",
       );
     }
   }, []);
@@ -57,6 +69,7 @@ export default function LanguageSwitcherProvider({
   );
 }
 export const useLanguageSwitcherContext = () => {
+  return useLanguageSwitcherContextV2();
   const context = useContext(LanguageSwitcherContext);
   return context;
 };

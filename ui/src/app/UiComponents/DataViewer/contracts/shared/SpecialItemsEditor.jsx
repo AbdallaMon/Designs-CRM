@@ -56,7 +56,6 @@ export default function SpecialItemsEditor({ items, setItems }) {
           Add
         </Button>
       </Stack>
-
       <Grid container spacing={2}>
         {items.map((it, idx) => (
           <Grid key={idx} size={{ xs: 12, md: 12 }}>
@@ -78,7 +77,9 @@ export default function SpecialItemsEditor({ items, setItems }) {
                 avatar={
                   <Avatar sx={{ bgcolor: "secondary.main" }}>{idx + 1}</Avatar>
                 }
-                titleTypographyProps={{ fontWeight: 600 }}
+                slotProps={{
+                  title: { fontWeight: 600 }
+                }}
               />
               <Divider />
               <CardContent>

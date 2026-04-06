@@ -119,7 +119,9 @@ export const AddPriceOffers = ({
                 fullWidth
                 multiline
                 rows={3}
-                InputLabelProps={{ shrink: true }}
+                slotProps={{
+                  inputLabel: { shrink: true }
+                }}
               />
               <SimpleFileInput
                 label="File"

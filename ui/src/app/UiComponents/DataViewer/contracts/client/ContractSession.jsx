@@ -382,8 +382,10 @@ function DbSpecialItems({ session, lng }) {
         {items.map((t, i) => (
           <ListItem key={i} disableGutters sx={{ py: 0.25 }}>
             <ListItemText
-              primaryTypographyProps={{ variant: "body2" }}
               primary={`• ${t}`}
+              slotProps={{
+                primary: { variant: "body2" }
+              }}
             />
           </ListItem>
         ))}
@@ -420,13 +422,15 @@ function PartyOneWithPayments({ session, lng, contractUtility }) {
                 return (
                   <ListItem key={p.id || i} disableGutters sx={{ py: 0.25 }}>
                     <ListItemText
-                      primaryTypographyProps={{ variant: "body2" }}
                       primary={buildPaymentLine({
                         payment: p,
                         index: idx,
                         lng,
                         taxRate: session?.taxRate,
                       })}
+                      slotProps={{
+                        primary: { variant: "body2" }
+                      }}
                     />
                   </ListItem>
                 );

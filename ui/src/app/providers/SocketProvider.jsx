@@ -4,12 +4,17 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { initSocket } from "../UiComponents/DataViewer/chat/utils";
 import { useAuth } from "./AuthProvider";
 import DotsLoader from "../UiComponents/feedback/loaders/DotsLoading";
+import {
+  SocketProvider as SocketProviderV2,
+  useSocket as useSocketV2,
+} from "@/app/v2/providers/SocketProvider";
 
 export const SocketContext = createContext(null);
 
 const url = process.env.NEXT_PUBLIC_URL;
 
 export default function SocketProvider({ children, clientId }) {
+  return <SocketProviderV2 clientId={clientId}>{children}</SocketProviderV2>;
   const { user } = useAuth();
   const [socket, setSocket] = useState(null);
   const socketRef = useRef(null);
@@ -73,6 +78,7 @@ export default function SocketProvider({ children, clientId }) {
 }
 
 export const useSocket = () => {
+  return useSocketV2();
   const context = useContext(SocketContext);
   if (!context) {
     throw new Error("useSocket must be used within SocketProvider");

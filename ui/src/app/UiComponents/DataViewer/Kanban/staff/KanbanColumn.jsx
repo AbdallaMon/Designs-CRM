@@ -203,7 +203,6 @@ const KanbanColumn = ({
           }}
         />
       )}
-
       <Grid
         size={2}
         ref={drop}

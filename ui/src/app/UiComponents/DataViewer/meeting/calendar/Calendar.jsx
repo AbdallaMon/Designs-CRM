@@ -634,8 +634,10 @@ const TimeSlotManager = ({
         maxWidth="md"
         fullWidth
         fullScreen={isMobile}
-        PaperProps={{
-          sx: { borderRadius: isMobile ? 0 : 3 },
+        slotProps={{
+          paper: {
+            sx: { borderRadius: isMobile ? 0 : 3 },
+          }
         }}
       >
         {loading && <FullScreenLoader />}
@@ -680,8 +682,10 @@ const TimeSlotManager = ({
                     type="time"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
                     size="small"
+                    slotProps={{
+                      inputLabel: { shrink: true }
+                    }}
                   />
                 </Grid>
                 <Grid size={{ xs: 6, sm: 3 }}>
@@ -691,8 +695,10 @@ const TimeSlotManager = ({
                     type="time"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
                     size="small"
+                    slotProps={{
+                      inputLabel: { shrink: true }
+                    }}
                   />
                 </Grid>
                 <Grid size={{ xs: 6, sm: 3 }}>
@@ -837,7 +843,6 @@ const TimeSlotManager = ({
           </Button>
         </DialogActions>
       </Dialog>
-
       {/* Custom Slot Dialog */}
       <Dialog
         open={customSlotDialog}
@@ -852,7 +857,9 @@ const TimeSlotManager = ({
               type="time"
               value={customStart}
               onChange={(e) => setCustomStart(e.target.value)}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{
+                inputLabel: { shrink: true }
+              }}
             />
             <TextField
               fullWidth
@@ -860,7 +867,9 @@ const TimeSlotManager = ({
               type="time"
               value={customEnd}
               onChange={(e) => setCustomEnd(e.target.value)}
-              InputLabelProps={{ shrink: true }}
+              slotProps={{
+                inputLabel: { shrink: true }
+              }}
             />
           </Stack>
         </DialogContent>
