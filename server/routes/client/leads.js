@@ -398,4 +398,7 @@ router.post("/cooperation-requests", async (req, res) => {
     res.status(500).json({ message });
   }
 });
+
+// booking register lead
+
 export default router;

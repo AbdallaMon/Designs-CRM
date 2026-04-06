@@ -12,6 +12,7 @@ import staffRoutes from "./routes/staff/staff.js";
 import adminRoutes from "./routes/admin/admin.js";
 import accountantRoutes from "./routes/accountant/accountant.js";
 import { connectToTelegram } from "./services/telegram/connectToTelegram.js";
+import v2Routes from "./v2/shared/routes.js";
 
 dotenv.config();
 const app = express();
@@ -97,6 +98,7 @@ app.use("/staff", staffRoutes);
 app.use("/admin", adminRoutes);
 app.use("/accountant", accountantRoutes);
 app.use("/client", clientsRoutes);
+app.use("/v2", v2Routes);
 
 (async () => {
   await connectToTelegram();

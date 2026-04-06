@@ -174,7 +174,7 @@ router.get("/:id", async (req, res) => {
             searchParams,
             token.role,
             token.id,
-            token
+            token,
           );
 
     res.status(200).json({ data: clientLeadDetails });
@@ -187,84 +187,6 @@ router.get("/:id", async (req, res) => {
     });
   }
 });
-
-/* ======================================================================================= */
-/*                                   Contracts Management                                  */
-/* ======================================================================================= */
-
-// // Update single contract by id
-// router.put("/contract/:id", async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const updatedContract = await editContract({ id: id, ...req.body });
-
-//     res.status(200).json({
-//       data: updatedContract,
-//       message: "Contract updated successfully",
-//     });
-//   } catch (e) {
-//     console.log(e, "e");
-//     res.status(500).json({ message: e.message });
-//   }
-// });
-
-// // Mark contract as current
-// router.put("/contract/:id/current", async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const updatedContract = await markAsCurrent({
-//       contractId: Number(id),
-//       ...req.body,
-//     });
-
-//     res.status(200).json({
-//       data: updatedContract,
-//       message: "Contract updated successfully",
-//     });
-//   } catch (e) {
-//     console.log(e, "e");
-//     res.status(500).json({ message: e.message });
-//   }
-// });
-
-// // Mark contract as completed
-// router.put("/contract/:id/completed", async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const updatedContract = await markAsCompleted({
-//       contractId: Number(id),
-//       ...req.body,
-//     });
-
-//     res.status(200).json({
-//       data: updatedContract,
-//       message: "Contract updated successfully",
-//     });
-//   } catch (e) {
-//     console.log(e, "e");
-//     res.status(500).json({ message: e.message });
-//   }
-// });
-
-// // Delete contract
-// router.delete("/contract/:id", async (req, res) => {
-//   try {
-//     const { id } = req.params;
-//     const deletedContract = await deleteContract({ contractId: Number(id) });
-
-//     res.status(200).json({
-//       data: deletedContract,
-//       message: "Contract deleted successfully",
-//     });
-//   } catch (e) {
-//     console.log(e, "e");
-//     res.status(500).json({ message: e.message });
-//   }
-// });
-
-/* ======================================================================================= */
-/*                                      Lead Status                                        */
-/* ======================================================================================= */
 
 // Update lead field (admin)
 router.put("/update/:id", async (req, res) => {
@@ -303,7 +225,7 @@ router.post("/:userId/countries", async (req, res) => {
   try {
     const isAllowed = await checkIfUserAllowedToTakeALead(
       userId,
-      req.body.country
+      req.body.country,
     );
     res.status(200).json({
       allowed: isAllowed,
@@ -331,7 +253,7 @@ router.put("/", async (req, res) => {
     const result = await assignLeadToAUser(
       Number(clientLead.id),
       isAdmin ? req.body.userId : Number(currentUser.id),
-      isAdmin
+      isAdmin,
     );
 
     res.status(200).json({
@@ -356,14 +278,14 @@ router.put("/bulk-convert", async (req, res) => {
       currentUser.isSuperSales;
     if (!isAdmin) {
       throw new Error(
-        "Only admin/super-admin/super-sales can bulk assign leads"
+        "Only admin/super-admin/super-sales can bulk assign leads",
       );
     }
     console.log(req.body, " req.body");
     const result = await bulkAssignLeadTsoAUser(
       req.body.ids,
       req.body.userId,
-      isAdmin
+      isAdmin,
     );
 
     res.status(200).json({
@@ -383,7 +305,7 @@ router.put("/convert", async (req, res) => {
     const result = await markClientLeadAsConverted(
       Number(body.id),
       body.reasonToConvert,
-      "ON_HOLD"
+      "ON_HOLD",
     );
     res
       .status(200)
@@ -644,7 +566,7 @@ router.post("/:id/price-offers", async (req, res) => {
 router.post("/price-offers/change-status", async (req, res) => {
   let priceOffer = await editPriceOfferStatus(
     req.body.priceOfferId,
-    req.body.isAccepted
+    req.body.isAccepted,
   );
   try {
     res.status(200).json({

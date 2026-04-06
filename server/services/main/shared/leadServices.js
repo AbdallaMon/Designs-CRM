@@ -127,6 +127,15 @@ export async function getClientLeads({
         description: true,
         paymentStatus: true,
         initialConsult: true,
+        location: true,
+        projectType: true,
+        projectStage: true,
+        previousWork: true,
+        hasArchitecturalPlan: true,
+        serviceType: true,
+        decisionMaker: true,
+        bookingRequestStatus: true,
+        bookingSubmittedAt: true,
         client: {
           select: {
             name: true,
@@ -283,6 +292,15 @@ export async function getClientLeadsByDateRange({
       discount: true,
       paymentStatus: true,
       stripieMetadata: true,
+      location: true,
+      projectType: true,
+      projectStage: true,
+      previousWork: true,
+      hasArchitecturalPlan: true,
+      serviceType: true,
+      decisionMaker: true,
+      bookingRequestStatus: true,
+      bookingSubmittedAt: true,
       callReminders: {
         where: callRemindersWhere,
         orderBy: { time: "desc" },
@@ -522,6 +540,15 @@ export async function getClientLeadsColumnStatus({
         discount: true,
         paymentStatus: true,
         stripieMetadata: true,
+        location: true,
+        projectType: true,
+        projectStage: true,
+        previousWork: true,
+        hasArchitecturalPlan: true,
+        serviceType: true,
+        decisionMaker: true,
+        bookingRequestStatus: true,
+        bookingSubmittedAt: true,
         callReminders: {
           where: callRemindersWhere,
           orderBy: { time: "desc" },
@@ -572,11 +599,11 @@ export async function getClientLeadsColumnStatus({
           contractZeroStage = lead.contracts[0]?.stages?.find(
             (stage) =>
               stage.title === filters.contractLevel &&
-              stage.stageStatus === "IN_PROGRESS"
+              stage.stageStatus === "IN_PROGRESS",
           );
         } else {
           contractZeroStage = lead.contracts[0]?.stages?.find(
-            (stage) => stage.stageStatus === "IN_PROGRESS"
+            (stage) => stage.stageStatus === "IN_PROGRESS",
           );
         }
         lead.contracts[0].stage = contractZeroStage;
@@ -620,7 +647,7 @@ export async function getClientLeadDetails(
   searchParams,
   role,
   userId,
-  user
+  user,
 ) {
   let where = {};
   let leadWhere = {};
@@ -631,7 +658,7 @@ export async function getClientLeadDetails(
         where: {
           userId: Number(searchParams.userId),
         },
-      }
+      },
     );
     if (!checkIfCurrenUserIsAssignedToLead) {
       where.userId = Number(searchParams.userId);
@@ -695,6 +722,15 @@ export async function getClientLeadDetails(
       personality: true,
       discoverySource: true,
       stripieMetadata: true,
+      location: true,
+      projectType: true,
+      projectStage: true,
+      previousWork: true,
+      hasArchitecturalPlan: true,
+      serviceType: true,
+      decisionMaker: true,
+      bookingRequestStatus: true,
+      bookingSubmittedAt: true,
       contracts: {
         where: {
           status: "IN_PROGRESS",
@@ -858,7 +894,7 @@ export async function getClientLeadDetails(
   ];
   if (clientLead.contracts?.length > 0) {
     const currentStage = clientLead.contracts[0].stages?.find(
-      (stage) => stage.stageStatus === "IN_PROGRESS"
+      (stage) => stage.stageStatus === "IN_PROGRESS",
     );
     clientLead.contracts[0].stage = currentStage;
     clientLead.contracts[0].contractLevel = currentStage?.title;
@@ -881,11 +917,11 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
   }
   const isAlloedToTakeThisLead = await checkIfUserAllowedToTakeALead(
     Number(userId),
-    clientLead.country
+    clientLead.country,
   );
   if (!isAlloedToTakeThisLead) {
     throw new Error(
-      "You are not allowed to take this lead cause it is out of your allowed countries range"
+      "You are not allowed to take this lead cause it is out of your allowed countries range",
     );
   }
   const activeLeadsCount = await prisma.clientLead.count({
@@ -907,7 +943,7 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
     throw new Error(
       `You cannot take more than ${
         maxUserLeadsCount.maxLeadsCounts || 50
-      } active leads.`
+      } active leads.`,
     );
   }
   const startOfToday = dayjs().startOf("day").toDate();
@@ -928,7 +964,7 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
     throw new Error(
       `You cannot take more than ${
         maxUserLeadsCount.maxLeadCountPerDay || 5
-      } leads per day.`
+      } leads per day.`,
     );
   }
   if (clientLead.status === "ON_HOLD" || isAdmin) {
@@ -1005,12 +1041,12 @@ export async function updateClientLeadStatus({
       oldStatus === "ARCHIVED"
     ) {
       throw new Error(
-        "You cant change the status from rejected or finalized or archived only admin can ,Contact your administrator to take an action"
+        "You cant change the status from rejected or finalized or archived only admin can ,Contact your administrator to take an action",
       );
     }
     if (oldStatus === "ON_HOLD") {
       throw new Error(
-        "You cant change the status from hold only admin can ,Contact your administrator to take an action"
+        "You cant change the status from hold only admin can ,Contact your administrator to take an action",
       );
     }
   }
@@ -1100,7 +1136,7 @@ export async function updateClientLeadStatus({
     lead.userId,
     isAdmin,
     !isAdmin ? lead.userId : null,
-    status === "FINALIZED"
+    status === "FINALIZED",
   );
   if (status === "FINALIZED") {
     const hasChannel = await prisma.telegramChannel.findFirst({
@@ -1117,7 +1153,7 @@ export async function updateClientLeadStatus({
           jobId: `create-${lead.id}`,
           removeOnComplete: true,
           removeOnFail: false,
-        }
+        },
       );
     }
     // await assignDesignersForProjectsInContractIfAutoAssigned({
@@ -1130,7 +1166,7 @@ export async function markClientLeadAsConverted(
   clientLeadId,
   reasonToConvert,
   status = "CONVERTED",
-  withInclude = false
+  withInclude = false,
 ) {
   const reason = reasonToConvert || "Overdue";
 
