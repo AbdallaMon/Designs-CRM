@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import prisma from "../../../infra/prisma.js";
 
 const bookingLeadSelect = {
@@ -73,10 +74,8 @@ async function findExistingClientForSubmit(
   { currentClientId, email, phone },
 ) {
   const normalizedEmail = normalizeForLookup(email);
-  const normalizedPhone = normalizeForLookup(phone);
 
   let byEmail = null;
-  let byPhone = null;
 
   if (normalizedEmail) {
     byEmail = await tx.client.findFirst({
@@ -88,30 +87,8 @@ async function findExistingClientForSubmit(
     });
   }
 
-  if (normalizedPhone) {
-    byPhone = await tx.client.findFirst({
-      where: {
-        id: { not: currentClientId },
-        phone: normalizedPhone,
-      },
-      orderBy: { id: "asc" },
-      select: { id: true },
-    });
-  }
-
-  if (byEmail && byPhone && byEmail.id !== byPhone.id) {
-    throw createHttpError(
-      409,
-      "Cannot submit: email and phone are linked to different existing clients",
-    );
-  }
-
   if (byEmail) {
     return byEmail;
-  }
-
-  if (byPhone) {
-    return byPhone;
   }
 
   return null;
@@ -178,6 +155,11 @@ export async function submitBookingLead({
   clientData,
 }) {
   return prisma.$transaction(async (tx) => {
+    const checkIfClientHasSubmittedToday =
+      await checkIfClientSubmittedLeadToday(clientData.email);
+    if (checkIfClientHasSubmittedToday) {
+      throw createHttpError(409, "booking.alreadySubmittedToday");
+    }
     const existingClient = await findExistingClientForSubmit(tx, {
       currentClientId: clientId,
       email: clientData.email,
@@ -251,4 +233,16 @@ export async function submitBookingLead({
       select: bookingLeadSelect,
     });
   });
+}
+
+export async function checkIfClientSubmittedLeadToday(email) {
+  const todayStart = dayjs().startOf("day");
+  const todayEnd = dayjs().endOf("day");
+  const existingLead = await prisma.clientLead.findFirst({
+    where: {
+      client: { email: email },
+      createdAt: { gte: todayStart.toDate(), lte: todayEnd.toDate() },
+    },
+  });
+  return !!existingLead;
 }

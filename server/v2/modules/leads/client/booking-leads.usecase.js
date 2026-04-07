@@ -121,10 +121,7 @@ export async function updateBookingLeadStep(leadId, { field, value }) {
   const existingLead = await getExistingBookingLeadOrThrow(leadId);
 
   if (existingLead.bookingRequestStatus === "SUBMITTED") {
-    throw createHttpError(
-      409,
-      "Booking lead is already submitted and cannot be updated",
-    );
+    throw createHttpError(409, "booking.alreadySubmitted");
   }
 
   const leadData = isLeadField(field)
