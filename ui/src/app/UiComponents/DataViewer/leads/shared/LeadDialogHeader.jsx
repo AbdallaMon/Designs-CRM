@@ -9,6 +9,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import dayjs from "dayjs";
 import { BsArrowLeft, BsFileText } from "react-icons/bs";
 import { AiOutlineSwap } from "react-icons/ai";
 import { MdWork } from "react-icons/md";
@@ -108,6 +109,14 @@ export const LeadDialogHeader = ({
                   <Typography variant="body2" color="text.secondary">
                     code {lead.code}
                   </Typography>
+                  {lead.createdAt && (
+                    <>
+                      -------
+                      <Typography variant="body2" color="text.secondary">
+                        {dayjs(lead.createdAt).format("DD/MM/YYYY HH:mm")}
+                      </Typography>
+                    </>
+                  )}
                 </Box>
               </>
             )}

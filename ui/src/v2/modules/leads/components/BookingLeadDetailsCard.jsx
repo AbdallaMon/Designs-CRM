@@ -7,6 +7,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import dayjs from "dayjs";
 import {
   BOOKING_LEAD_FIELD_LABELS,
   BOOKING_LEAD_FIELDS,
@@ -19,13 +20,8 @@ function formatValue(fieldKey, value) {
   }
 
   if (fieldKey === "bookingSubmittedAt") {
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) {
-      return String(value);
-    }
-
-    return date.toLocaleString("ar-AE");
+    const d = dayjs(value);
+    return d.isValid() ? d.format("DD/MM/YYYY HH:mm") : String(value);
   }
 
   const fieldMap = BOOKING_LEAD_VALUE_LABELS[fieldKey];
