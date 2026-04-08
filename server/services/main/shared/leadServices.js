@@ -280,6 +280,7 @@ export async function getClientLeadsByDateRange({
     orderBy: { updatedAt: "desc" },
     select: {
       id: true,
+      createdAt: true,
       client: { select: { name: true } },
       assignedTo: { select: { name: true } },
       status: true,
@@ -528,6 +529,7 @@ export async function getClientLeadsColumnStatus({
       orderBy: { updatedAt: "desc" },
       select: {
         id: true,
+        createdAt: true,
         client: { select: { name: true } },
         assignedTo: { select: { name: true } },
         status: true,
@@ -733,6 +735,9 @@ export async function getClientLeadDetails(
       decisionMaker: true,
       bookingRequestStatus: true,
       bookingSubmittedAt: true,
+      createdAt: true,
+      updatedAt: true,
+      assignedAt: true,
       contracts: {
         where: {
           status: "IN_PROGRESS",
@@ -864,9 +869,7 @@ export async function getClientLeadDetails(
         },
         orderBy: { time: "desc" },
       },
-      createdAt: true,
-      updatedAt: true,
-      assignedAt: true,
+
       payments: {
         select: {
           id: true,

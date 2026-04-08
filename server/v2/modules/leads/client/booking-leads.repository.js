@@ -3,6 +3,7 @@ import prisma from "../../../infra/prisma.js";
 const bookingLeadSelect = {
   id: true,
   code: true,
+  createdAt: true,
   location: true,
   projectType: true,
   projectStage: true,
