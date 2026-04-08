@@ -1,8 +1,8 @@
 import { Router } from "express";
-import clientLeadsModule from "../modules/leads/client/leads.client.module.js";
+import { bookingLeadsRouter } from "../modules/leads/client/booking-lead/booking-leads.routes.js";
 
 const router = Router();
 
-router.use("/client/booking-leads", clientLeadsModule);
+router.use("/client/booking-leads", bookingLeadsRouter);
 
 export default router;
