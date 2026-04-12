@@ -3,7 +3,8 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import dotenv from "dotenv";
 import { createServer } from "http";
-import { initSocket } from "./services/socket.js";
+import { initSocket, getIo } from "./services/socket.js";
+import { startSocketSubscriber } from "./services/redis/socketSubscriber.js";
 import clientsRoutes from "./routes/clients/clients.js";
 import authRoutes from "./routes/auth/auth.js";
 import sharedRoutes from "./routes/shared/index.js";
@@ -13,18 +14,14 @@ import adminRoutes from "./routes/admin/admin.js";
 import accountantRoutes from "./routes/accountant/accountant.js";
 import { connectToTelegram } from "./services/telegram/connectToTelegram.js";
 import v2Routes from "./v2/shared/routes.js";
+import { coonnectToTelegramV2 } from "./v2/modules/telegram/connect.js";
+import { errorHandler } from "./v2/shared/errors/error-handler.js";
+import { connectRedis } from "./v2/infra/redis/redis.client.js";
+import { allowedOrigins } from "./v2/config/env.js";
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
-export const allowedOrigins = [
-  process.env.ORIGIN,
-  process.env.OLDORIGIN,
-  process.env.COURSESORIGIN,
-  process.env.PORTFOLIOORIGIN,
-  process.env.CONTACTORIGIN,
-  process.env.REGISTERPAGEORIGIN,
-];
 
 const corsOptions = {
   origin(origin, callback) {
@@ -81,6 +78,7 @@ app.use(express.urlencoded({ extended: true }));
 
 export const httpServer = createServer(app);
 initSocket(httpServer);
+startSocketSubscriber(getIo());
 if (process.env.ISLOCAL) {
   app.use(
     "/uploads",
@@ -99,9 +97,12 @@ app.use("/admin", adminRoutes);
 app.use("/accountant", accountantRoutes);
 app.use("/client", clientsRoutes);
 app.use("/v2", v2Routes);
+app.use(errorHandler);
 
 (async () => {
+  await connectRedis();
   await connectToTelegram();
+  await coonnectToTelegramV2();
   httpServer.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });

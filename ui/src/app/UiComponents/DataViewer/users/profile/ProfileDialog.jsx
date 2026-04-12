@@ -31,6 +31,7 @@ import UploadImageWithAvatarPreview from "@/app/UiComponents/formComponents/Uplo
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { getData } from "@/app/helpers/functions/getData";
+import TelegramAuth from "./TelegramAuth";
 
 export default function ProfileDialog({ open, onClose, userId }) {
   const { loading, setLoading } = useToastContext();
@@ -112,7 +113,7 @@ export default function ProfileDialog({ open, onClose, userId }) {
 
     if (google === "error") {
       setInlineError(
-        googleMsg || "Google connection failed. Please try again."
+        googleMsg || "Google connection failed. Please try again.",
       );
     }
 
@@ -120,7 +121,7 @@ export default function ProfileDialog({ open, onClose, userId }) {
     next.delete("google");
     next.delete("googleMsg");
     router.replace(
-      `${pathname}${next.toString() ? `?${next.toString()}` : ""}`
+      `${pathname}${next.toString() ? `?${next.toString()}` : ""}`,
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -146,7 +147,7 @@ export default function ProfileDialog({ open, onClose, userId }) {
       false,
       "Saving profile",
       false,
-      "PUT"
+      "PUT",
     );
 
     if (req?.status === 200) {
@@ -181,7 +182,7 @@ export default function ProfileDialog({ open, onClose, userId }) {
       false,
       "Connecting Google",
       false,
-      "POST"
+      "POST",
     );
 
     if (req?.status === 200 && req?.data?.redirectUrl) {
@@ -212,7 +213,7 @@ export default function ProfileDialog({ open, onClose, userId }) {
       false,
       "Disconnecting Google",
       false,
-      "POST"
+      "POST",
     );
 
     if (req?.status === 200) {
@@ -594,6 +595,8 @@ export default function ProfileDialog({ open, onClose, userId }) {
                     </Typography>
                   </Stack>
                 </Paper>
+
+                <TelegramAuth />
               </Box>
             </>
           )}
@@ -643,8 +646,8 @@ function GoogleRedirectStatus() {
       setError(
         decodeURIComponent(searchParams.get("googleAuthError")).replace(
           /\+/g,
-          " "
-        )
+          " ",
+        ),
       );
       // Auto-hide error after 8 seconds
       setTimeout(() => {

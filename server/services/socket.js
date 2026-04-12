@@ -1,6 +1,5 @@
 import { Server } from "socket.io";
 import prisma from "../prisma/prisma.js";
-import { allowedOrigins } from "../index.js";
 import {
   addReaction,
   deleteMessage,
@@ -14,6 +13,7 @@ import {
   sendMessage,
   unpinMessage,
 } from "./main/chat/chatMessageServices.js";
+import { allowedOrigins } from "../v2/config/env.js";
 
 let io;
 const userSessions = new Map();

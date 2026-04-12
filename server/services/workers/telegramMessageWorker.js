@@ -5,7 +5,6 @@ import {
   uploadAQueueAttachment,
   uploadAQueueNote,
 } from "../telegram/telegram-functions.js";
-import { connectToTelegram } from "../telegram/connectToTelegram.js";
 // await connectToTelegram();
 export const telegramMessageWorker = new Worker(
   "telegram-message-queue",
@@ -28,5 +27,5 @@ export const telegramMessageWorker = new Worker(
   {
     ...connection,
     concurrency: 1,
-  }
+  },
 );

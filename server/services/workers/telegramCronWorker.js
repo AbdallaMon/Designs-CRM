@@ -1,7 +1,6 @@
 import { Worker } from "bullmq";
 import connection from "../redis/bullmqConnection.js";
 import { getMeagsses } from "../telegram/telegram-functions.js";
-import { connectToTelegram } from "../telegram/connectToTelegram.js";
 // await connectToTelegram();
 export const telegramCronWorker = new Worker(
   "telegram-cron-queue",
@@ -9,7 +8,7 @@ export const telegramCronWorker = new Worker(
     try {
       const { clientLeadId } = job.data;
       console.log(
-        `🚀 Processing Telegram getting cron data for Lead ID: ${clientLeadId}`
+        `🚀 Processing Telegram getting cron data for Lead ID: ${clientLeadId}`,
       );
       await getMeagsses({ clientLeadId });
       console.log(`✅ Done in cron worker Lead ID: ${clientLeadId}`);
@@ -20,5 +19,5 @@ export const telegramCronWorker = new Worker(
   {
     ...connection,
     concurrency: 1, // strictly one at a time
-  }
+  },
 );

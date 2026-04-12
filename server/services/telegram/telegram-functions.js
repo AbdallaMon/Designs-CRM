@@ -1,10 +1,7 @@
 import { Api } from "telegram";
 import dotenv from "dotenv";
-import {
-  connectToTelegram,
-  teleClient,
-  io as serverIo,
-} from "./connectToTelegram.js";
+import { getTeleClient } from "./connectToTelegram.js";
+import { publishToSocket } from "../redis/socketPublisher.js";
 import prisma from "../../prisma/prisma.js";
 import { dealsLink, userLink } from "../links.js";
 import { sendEmail } from "../sendMail.js";
@@ -16,11 +13,11 @@ import { telegramAddUserQueue } from "../queues/telegramAddUserQueue.js";
 dotenv.config();
 
 export async function createChannelAndAddUsers({ clientLeadId }) {
-  const isUserAuthorized = await teleClient.checkAuthorization();
+  const isUserAuthorized = await getTeleClient().checkAuthorization();
 
   if (!isUserAuthorized) {
     console.warn(
-      "❌ Telegram client not authenticated. Aborting channel creation."
+      "❌ Telegram client not authenticated. Aborting channel creation.",
     );
     return;
   }
@@ -43,12 +40,12 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
   let channel = null;
 
   try {
-    const { chats } = await teleClient.invoke(
+    const { chats } = await getTeleClient().invoke(
       new Api.channels.CreateChannel({
         title: formattedId,
         about: clientLead.client.name,
         megagroup: true,
-      })
+      }),
     );
     channel = chats[0];
 
@@ -60,7 +57,7 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
       select: { telegramUsername: true },
     });
 
-    const self = await teleClient.getMe();
+    const self = await getTeleClient().getMe();
     const adminUsersToBeAdded = [];
 
     for (const user of adminUsers) {
@@ -71,7 +68,7 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
     if (adminUsersToBeAdded && adminUsersToBeAdded.length > 0) {
       await addUsersToATeleChannel({ channel, usersList: adminUsersToBeAdded });
       for (const user of adminUsersToBeAdded) {
-        await teleClient.invoke(
+        await getTeleClient().invoke(
           new Api.channels.EditAdmin({
             channel,
             userId: user,
@@ -87,7 +84,7 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
               manageCall: true,
             }),
             rank: "Admin",
-          })
+          }),
         );
       }
     }
@@ -95,8 +92,8 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
     const channelId = channel.id;
     const accessHash = channel.accessHash;
 
-    const exportedInvite = await teleClient.invoke(
-      new Api.messages.ExportChatInvite({ peer: channel })
+    const exportedInvite = await getTeleClient().invoke(
+      new Api.messages.ExportChatInvite({ peer: channel }),
     );
 
     const inviteLink = exportedInvite.link;
@@ -113,7 +110,7 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
     }
 
     const existingJob = await telegramUploadQueue.getJob(
-      `upload-${clientLeadId}`
+      `upload-${clientLeadId}`,
     );
     if (!existingJob) {
       await telegramUploadQueue.add(
@@ -130,25 +127,27 @@ export async function createChannelAndAddUsers({ clientLeadId }) {
           jobId: `upload-${clientLeadId}`,
           removeOnComplete: true,
           removeOnFail: 10,
-        }
+        },
       );
     }
     return { channel, inviteLink };
   } catch (err) {
     console.error(
       `❌ Error occurred during channel setup for ${clientLeadId}:`,
-      err.message
+      err.message,
     );
 
     if (channel) {
       try {
         console.warn("🧹 Attempting to delete incomplete channel...");
-        await teleClient.invoke(new Api.channels.DeleteChannel({ channel }));
+        await getTeleClient().invoke(
+          new Api.channels.DeleteChannel({ channel }),
+        );
         console.log("🗑️ Incomplete channel deleted.");
       } catch (cleanupErr) {
         console.error(
           "⚠️ Failed to delete incomplete channel:",
-          cleanupErr.message
+          cleanupErr.message,
         );
       }
     }
@@ -206,11 +205,11 @@ export async function getUserEntitiy(user) {
   }
 
   try {
-    return await teleClient.getEntity(user.telegramUsername);
+    return await getTeleClient().getEntity(user.telegramUsername);
   } catch (err) {
     console.error(
       `❌ Failed to get entity for ${user.telegramUsername}:`,
-      err.message
+      err.message,
     );
     return null;
   }
@@ -220,7 +219,7 @@ export async function addUsersToATeleChannel({ channel, usersList }) {
   for (const user of usersList) {
     try {
       await delay(200);
-      await teleClient.invoke(
+      await getTeleClient().invoke(
         new Api.channels.EditAdmin({
           channel,
           userId: user.id,
@@ -236,13 +235,13 @@ export async function addUsersToATeleChannel({ channel, usersList }) {
             manageCall: false,
           }),
           rank: "Admin",
-        })
+        }),
       );
 
       console.log(`✅ Invited @${user.username || user.id.value}`);
     } catch (e) {
       console.warn(
-        `❌ Failed to invite @${user.username || user.id.value}: ${e.message}`
+        `❌ Failed to invite @${user.username || user.id.value}: ${e.message}`,
       );
     }
   }
@@ -253,7 +252,7 @@ export async function addUsersToATeleChannelUsingQueue({
   usersList,
 }) {
   const existingJob = await telegramAddUserQueue.getJob(
-    `lead-${clientLeadId}-${userLink.length}`
+    `lead-${clientLeadId}-${userLink.length}`,
   );
   if (existingJob)
     throw new Error("We are added them to a queue and they will be added soon");
@@ -269,7 +268,7 @@ export async function addUsersToATeleChannelUsingQueue({
       jobId: `lead-${clientLeadId}-${userLink.length}`,
       removeOnComplete: true,
       removeOnFail: 10,
-    }
+    },
   );
 }
 
@@ -285,7 +284,7 @@ export async function addUserListToAChnnelUsingQueue({
     try {
       await delay(1000);
       const userInpt = await getUserEntitiy(user);
-      await teleClient.invoke(
+      await getTeleClient().invoke(
         new Api.channels.EditAdmin({
           channel,
           userId: userInpt.id,
@@ -301,7 +300,7 @@ export async function addUserListToAChnnelUsingQueue({
             manageCall: false,
           }),
           rank: "Admin",
-        })
+        }),
       );
       console.log(`✅ Invited @${userInpt.username || userInpt.id.value}`);
     } catch (e) {
@@ -370,7 +369,7 @@ export async function handleProjectReminder({
   try {
     // ✅ Do your action here (e.g., send notification)
     console.log(
-      `Sending ${timeLeft}-day reminder to clientLeadId: ${clientLeadId}`
+      `Sending ${timeLeft}-day reminder to clientLeadId: ${clientLeadId}`,
     );
     const note = {
       id: `${projectId}-${clientLeadId}-${notifiedKey}`,
@@ -391,14 +390,14 @@ export async function handleProjectReminder({
   } catch (error) {
     console.error(
       `❌ Failed to handle reminder for project ${projectId}:`,
-      error
+      error,
     );
   }
 }
 export async function getChannelEntityFromInviteLink({ inviteLink }) {
   try {
     console.log("🔗 Processing invite link:", inviteLink);
-    const isUserAuthorized = await teleClient.checkAuthorization();
+    const isUserAuthorized = await getTeleClient().checkAuthorization();
     console.log(isUserAuthorized, "isUserAuthorized");
 
     const lastPart = inviteLink.trim().split("/").pop();
@@ -407,7 +406,7 @@ export async function getChannelEntityFromInviteLink({ inviteLink }) {
     // Case 1: Regular public username (no +)
     if (!lastPart.startsWith("+")) {
       console.log("🔍 Resolving entity via username:", lastPart);
-      return await teleClient.getEntity(lastPart);
+      return await getTeleClient().getEntity(lastPart);
     }
 
     // Case 2: Invite link hash (starts with +)
@@ -415,8 +414,8 @@ export async function getChannelEntityFromInviteLink({ inviteLink }) {
 
     try {
       console.log("🕵️ Checking chat invite hash:", hash);
-      const result = await teleClient.invoke(
-        new Api.messages.CheckChatInvite({ hash })
+      const result = await getTeleClient().invoke(
+        new Api.messages.CheckChatInvite({ hash }),
       );
 
       if (result instanceof Api.ChatInviteAlready) {
@@ -447,7 +446,7 @@ export async function getChannelEntityFromInviteLink({ inviteLink }) {
 
     console.error(
       "❌ Failed to get channel entity from invite link:",
-      error.message
+      error.message,
     );
     return null;
   }
@@ -475,7 +474,9 @@ export async function getLeadsWithOutChannel() {
         inviteLink: lead.telegramLink,
       });
 
-      const lastMessage = await teleClient.getMessages(teleChat, { limit: 1 });
+      const lastMessage = await getTeleClient().getMessages(teleChat, {
+        limit: 1,
+      });
 
       const findLastMessage = await prisma.fetchedTelegramMessage.findFirst({
         where: {
@@ -506,7 +507,7 @@ export async function getLeadsWithOutChannel() {
       }
     } else {
       const existingJob = await telegramChannelQueue.getJob(
-        `create-${lead.id}`
+        `create-${lead.id}`,
       );
       if (existingJob) return;
       await telegramChannelQueue.add(
@@ -521,7 +522,7 @@ export async function getLeadsWithOutChannel() {
           jobId: `create-${lead.id}`, // optional: deduplicate
           removeOnComplete: true,
           removeOnFail: 10,
-        }
+        },
       );
     }
   }
@@ -551,7 +552,7 @@ export async function uploadItemsToTele({ clientLeadId }) {
     await uploadAnAttachment(file, channel);
   }
 
-  const lastMessage = await teleClient.getMessages(channel, { limit: 1 });
+  const lastMessage = await getTeleClient().getMessages(channel, { limit: 1 });
 
   const findLastMessage = await prisma.fetchedTelegramMessage.findFirst({
     where: {
@@ -601,11 +602,11 @@ export async function getChannelEntitiyByTeleRecordAndLeadId({ clientLeadId }) {
 }
 
 export async function getChannelEntitiy({ channelId, accessHash }) {
-  const channel = await teleClient.getEntity(
+  const channel = await getTeleClient().getEntity(
     new Api.InputPeerChannel({
       channelId,
       accessHash,
-    })
+    }),
   );
   return channel;
 }
@@ -636,7 +637,7 @@ export async function uploadANote(note, channel) {
       jobId: `note-${note.id}`,
       removeOnComplete: true,
       removeOnFail: 2,
-    }
+    },
   );
 }
 
@@ -662,7 +663,7 @@ export async function uploadAnAttachment(file, channel) {
       jobId: `file-${file.id}`,
       removeOnComplete: true,
       removeOnFail: 2,
-    }
+    },
   );
 }
 export async function uploadAQueueNote(note, channel) {
@@ -680,13 +681,13 @@ export async function uploadAQueueNote(note, channel) {
     message += `\n\n📎 [Attachment Link](${note.attachment})`;
   }
 
-  const sent = await teleClient.sendMessage(channel, {
+  const sent = await getTeleClient().sendMessage(channel, {
     message,
     parseMode: "",
   });
   console.log("Message sent");
   // if (note.binMessage) {
-  //   await teleClient.invoke(
+  //   await getTeleClient().invoke(
   //     new Api.messages.UpdatePinnedMessage({
   //       peer: channel,
   //       id: sent.id,
@@ -701,7 +702,7 @@ export async function uploadAQueueNote(note, channel) {
       data: note.update.data,
     });
     console.log(
-      `Updated succssfully for key:${note.update.key} , where:${note.update.where}`
+      `Updated succssfully for key:${note.update.key} , where:${note.update.where}`,
     );
   }
 }
@@ -725,7 +726,7 @@ export async function uploadAQueueAttachment(file, channel) {
 
   message += `\n\n🔗 [Open File](${file.url})`;
 
-  await teleClient.sendMessage(channel, {
+  await getTeleClient().sendMessage(channel, {
     message,
     parseMode: "markdown",
   });
@@ -749,7 +750,7 @@ export async function getMeagsses({ clientLeadId }) {
   if (lastFetchedMessage) {
     options.minId = Number(lastFetchedMessage.messageId);
   }
-  const fetchedMessages = await teleClient.getMessages(channel, options);
+  const fetchedMessages = await getTeleClient().getMessages(channel, options);
   let messages = fetchedMessages.sort((a, b) => a.id - b.id);
   const filterd = await filterTaggedMessages({
     clientLeadId,
@@ -793,7 +794,7 @@ async function filterTaggedMessages({ clientLeadId, messages, channel }) {
     } else if (content.startsWith("*file*")) {
       const url = generateTelegramMessageLink(
         channel.id.toString().replace("-100", ""),
-        messageId
+        messageId,
       );
       await createFile({
         clientLeadId,
@@ -946,7 +947,7 @@ export async function newFileUploaded(leadId, file, userId) {
     true,
     "HTML",
     null,
-    Number(userId)
+    Number(userId),
   );
 }
 export async function newNoteNotification(leadId, content, userId) {
@@ -967,7 +968,7 @@ export async function newNoteNotification(leadId, content, userId) {
     true,
     "HTML",
     null,
-    userId
+    userId,
   );
 }
 export async function createNotification(
@@ -982,7 +983,7 @@ export async function createNotification(
   clientLeadId,
   staffId,
   role = ["STAFF"],
-  specifiRole
+  specifiRole,
 ) {
   let subAdmins = [];
   const forAll = !userId && !isAdmin && !staffId;
@@ -1008,7 +1009,7 @@ export async function createNotification(
         emailSubject,
         withEmail,
         contentType,
-        clientLeadId
+        clientLeadId,
       );
     });
   } else if (forAll) {
@@ -1030,7 +1031,7 @@ export async function createNotification(
         emailSubject,
         withEmail,
         contentType,
-        clientLeadId
+        clientLeadId,
       );
     });
   } else {
@@ -1064,7 +1065,7 @@ export async function createNotification(
       withEmail,
       contentType,
       clientLeadId,
-      staffId
+      staffId,
     );
     if (subAdmins?.length > 0) {
       subAdmins.forEach(async (admin) => {
@@ -1077,7 +1078,7 @@ export async function createNotification(
           withEmail,
           contentType,
           clientLeadId,
-          staffId
+          staffId,
         );
       });
     }
@@ -1093,9 +1094,8 @@ async function sendNotification(
   withEmail,
   contentType = "TEXT",
   clientLeadId,
-  staffId
+  staffId,
 ) {
-  let io = serverIo;
   const link = href
     ? `<a href="${process.env.OLDORIGIN}${href}" style="color: #1a73e8; text-decoration: none;">See details from here</a>`
     : "";
@@ -1106,7 +1106,7 @@ async function sendNotification(
             ${link ? `<p>${link}</p>` : ""}
         </div>
     `;
-  let notification = await prisma.notification.create({
+  const notification = await prisma.notification.create({
     data: {
       userId: userId,
       content: content,
@@ -1117,10 +1117,7 @@ async function sendNotification(
       staffId: staffId && Number(staffId),
     },
   });
-  if (!io) {
-    io = await connectToTelegram(true);
-  }
-  io.to(userId.toString()).emit("notification", notification);
+  await publishToSocket("notification", userId.toString(), notification);
   if (withEmail) {
     const user = await prisma.user.findUnique({
       where: { id: Number(userId) },

@@ -9,6 +9,7 @@ export async function getDataAndSet({
   search,
   sort,
   others,
+  withError,
 }) {
   try {
     setLoading(true);
@@ -20,20 +21,31 @@ export async function getDataAndSet({
       `${
         process.env.NEXT_PUBLIC_URL
       }/${url}${queryPrefix}page=${page}&limit=${limit}&filters=${JSON.stringify(
-        filters
+        filters,
       )}&search=${search}&sort=${JSON.stringify(sort)}&${others}`,
       {
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
-      }
+      },
     );
     const status = response.status;
     const result = await response.json();
     if (status === 200) {
       if (setData) {
         setData(result.data);
+      }
+    } else {
+      if (
+        result?.success === false ||
+        status === 401 ||
+        status === 403 ||
+        status === 419 ||
+        status === 440 ||
+        status === 498
+      ) {
+        throw new Error(result.message || "Unauthorized");
       }
     }
     result.status = status;
@@ -42,7 +54,9 @@ export async function getDataAndSet({
     if (setError) {
       setError(e.message);
     }
-    console.log(e);
+    if (withError) {
+      throw e.message;
+    }
   } finally {
     setLoading(false);
   }

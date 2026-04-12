@@ -1,7 +1,7 @@
 // start-telegram-system.js
-import { connectToTelegram } from "./services/telegram/connectToTelegram.js";
 // Ensure single Telegram client connection for all workers in this process
-await connectToTelegram();
+import { coonnectToTelegramV2 } from "./v2/modules/telegram/connect.js";
+await coonnectToTelegramV2();
 
 import { telegramUploadWorker } from "./services/workers/telegramUploadWorker.js";
 import { telegramMessageWorker } from "./services/workers/telegramMessageWorker.js";

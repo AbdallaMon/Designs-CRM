@@ -30,6 +30,7 @@ import { CONTENT_TYPES, EMAIL_TEMPLATES } from "./notification.constants.js";
  * @param {number} params.userId
  * @param {string} params.userEmail
  * @param {boolean} params.allowEmailing
+ * @param {boolean} [params.isEmailOnly] - If true, only send email without creating DB notification or emitting Socket.IO
  * @param {string} params.content
  * @param {string} params.type
  * @param {string} [params.link]
@@ -50,26 +51,29 @@ async function sendNotificationToUser({
   emailSubject,
   clientLeadId,
   staffId,
+  isEmailOnly = false,
 }) {
   // 1. Persist to database
-  const notification = await prisma.notification.create({
-    data: {
-      userId,
-      content,
-      type,
-      link,
-      contentType,
-      clientLeadId: clientLeadId ? Number(clientLeadId) : null,
-      staffId: staffId ? Number(staffId) : null,
-    },
-  });
-
-  // 2. Emit real-time via Socket.IO
-  try {
-    const io = getIo();
-    io.to(`user:${userId}`).emit("notification", notification);
-  } catch {
-    // Socket.IO may not be available in all contexts — DB notification still saved
+  let notification;
+  if (!isEmailOnly) {
+    notification = await prisma.notification.create({
+      data: {
+        userId,
+        content,
+        type,
+        link,
+        contentType,
+        clientLeadId: clientLeadId ? Number(clientLeadId) : null,
+        staffId: staffId ? Number(staffId) : null,
+      },
+    });
+    // 2. Emit real-time via Socket.IO
+    try {
+      const io = getIo();
+      io.to(`user:${userId}`).emit("notification", notification);
+    } catch {
+      // Socket.IO may not be available in all contexts — DB notification still saved
+    }
   }
 
   // 3. Send email if user allows it
@@ -91,6 +95,7 @@ async function sendNotificationToUser({
  * @param {number} params.userId
  * @param {string} params.content
  * @param {string} params.type
+ * @param {boolean} [params.isEmailOnly] - If true, only send email without creating DB notification or emitting Socket.IO
  * @param {Object} [params.options]
  * @param {string} [params.options.link]
  * @param {string} [params.options.contentType] - "TEXT" or "HTML"
@@ -106,7 +111,13 @@ async function sendNotificationToUser({
  *   options: { link: "/leads/456", emailSubject: "Lead Updated" }
  * });
  */
-export async function sendToUser({ userId, content, type, options = {} }) {
+export async function sendToUser({
+  isEmailOnly,
+  userId,
+  content,
+  type,
+  options = {},
+}) {
   if (!userId) throw new Error("userId is required");
 
   const user = await prisma.user.findUnique({
@@ -125,6 +136,7 @@ export async function sendToUser({ userId, content, type, options = {} }) {
     emailSubject: options.emailSubject,
     clientLeadId: options.clientLeadId,
     staffId: options.staffId,
+    isEmailOnly: isEmailOnly,
   });
 }
 
@@ -134,6 +146,7 @@ export async function sendToUser({ userId, content, type, options = {} }) {
  * @param {Object} params
  * @param {string} params.content
  * @param {string} params.type
+ * @param {boolean} [params.isEmailOnly] - If true, only send email without creating DB notification or emitting Socket.IO
  * @param {Object} [params.options]
  * @param {string} [params.options.link]
  * @param {string} [params.options.contentType]
@@ -148,7 +161,12 @@ export async function sendToUser({ userId, content, type, options = {} }) {
  *   options: { contentType: CONTENT_TYPES.HTML, emailSubject: "New Booking Lead" }
  * });
  */
-export async function sendToAdmins({ content, type, options = {} }) {
+export async function sendToAdmins({
+  isEmailOnly,
+  content,
+  type,
+  options = {},
+}) {
   const adminUsers = await prisma.user.findMany({
     where: {
       isActive: true,
@@ -175,6 +193,7 @@ export async function sendToAdmins({ content, type, options = {} }) {
         emailSubject: options.emailSubject,
         clientLeadId: options.clientLeadId,
         staffId: options.staffId,
+        isEmailOnly: isEmailOnly,
       }),
     ),
   );
@@ -187,6 +206,7 @@ export async function sendToAdmins({ content, type, options = {} }) {
  * @param {Array<string>} params.roles - e.g. ["STAFF", "THREE_D_DESIGNER"]
  * @param {string} params.content
  * @param {string} params.type
+ * @param {boolean} [params.isEmailOnly] - If true, only send email without creating DB notification or emitting Socket.IO
  * @param {Object} [params.options]
  * @param {string} [params.options.link]
  * @param {string} [params.options.contentType]
@@ -202,7 +222,13 @@ export async function sendToAdmins({ content, type, options = {} }) {
  *   options: { emailSubject: "New Lead Alert" }
  * });
  */
-export async function sendToRoles({ roles, content, type, options = {} }) {
+export async function sendToRoles({
+  isEmailOnly,
+  roles,
+  content,
+  type,
+  options = {},
+}) {
   if (!Array.isArray(roles) || roles.length === 0) {
     throw new Error("roles must be a non-empty array");
   }
@@ -236,6 +262,7 @@ export async function sendToRoles({ roles, content, type, options = {} }) {
         emailSubject: options.emailSubject,
         clientLeadId: options.clientLeadId,
         staffId: options.staffId,
+        isEmailOnly,
       }),
     ),
   );
@@ -247,6 +274,7 @@ export async function sendToRoles({ roles, content, type, options = {} }) {
  * @param {Object} params
  * @param {string} params.content
  * @param {string} params.type
+ * @param {boolean} [params.isEmailOnly] - If true, only send email without creating DB notification or emitting Socket.IO
  * @param {Object} [params.options]
  * @param {string} [params.options.link]
  * @param {string} [params.options.contentType]
@@ -254,7 +282,7 @@ export async function sendToRoles({ roles, content, type, options = {} }) {
  * @param {number} [params.options.clientLeadId]
  * @param {number} [params.options.staffId]
  */
-export async function sendToAll({ content, type, options = {} }) {
+export async function sendToAll({ isEmailOnly, content, type, options = {} }) {
   const users = await prisma.user.findMany({
     where: {
       isActive: true,
@@ -281,6 +309,7 @@ export async function sendToAll({ content, type, options = {} }) {
         emailSubject: options.emailSubject,
         clientLeadId: options.clientLeadId,
         staffId: options.staffId,
+        isEmailOnly,
       }),
     ),
   );
