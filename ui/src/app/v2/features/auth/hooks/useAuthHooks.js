@@ -5,7 +5,7 @@ import {
   requestPasswordReset,
   resetPassword as resetPasswordService,
   loginUser,
-} from "@/app/v2/module/auth/auth.service";
+} from "@/app/v2/features/auth/auth.service";
 
 export function useAuthHooks() {
   const { setAuthUser } = useAuth();

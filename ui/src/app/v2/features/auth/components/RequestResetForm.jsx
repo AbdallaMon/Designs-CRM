@@ -2,8 +2,8 @@
 import Link from "next/link";
 import AuthCard from "@/app/v2/shared/components/AuthCard";
 import AuthForm from "@/app/v2/shared/form/AuthForm";
-import { REQUEST_RESET_FIELDS } from "@/app/v2/module/auth/auth.constants";
-import { emailRules } from "@/app/v2/module/auth/auth.validation";
+import { REQUEST_RESET_FIELDS } from "@/app/v2/features/auth/auth.constants";
+import { emailRules } from "@/app/v2/features/auth/auth.validation";
 import { useAuthHooks } from "../hooks/useAuthHooks";
 
 const rules = { email: emailRules };

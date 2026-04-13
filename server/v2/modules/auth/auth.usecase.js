@@ -5,7 +5,6 @@ import { AuthRepository } from "./auth.repo.js";
 import { AuthSchema } from "./auth.dto.js";
 import { sendEmail } from "../../infra/mail/mail.js";
 import { AuthEmails } from "./auth.emails.js";
-import { authSchemas } from "./auth.validation.js";
 
 class AuthUseCase {
   static async login(email, password) {

@@ -16,8 +16,9 @@ export function validate(schema, source = "body") {
         path: issue.path.join("."),
         message: issue.message,
       }));
+      const message = details.map((d) => `${d.path}: ${d.message}`).join("; ");
       // throw new AppError("Validation failed", 422, details);
-      next(new AppError("Validation failed", 422, details));
+      next(new AppError(message, 422, details));
       return;
     }
 

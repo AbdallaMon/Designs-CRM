@@ -1,11 +1,11 @@
 "use client";
 import AuthCard from "@/app/v2/shared/components/AuthCard";
 import AuthForm from "@/app/v2/shared/form/AuthForm";
-import { RESET_PASSWORD_FIELDS } from "@/app/v2/module/auth/auth.constants";
+import { RESET_PASSWORD_FIELDS } from "@/app/v2/features/auth/auth.constants";
 import {
   passwordRules,
   confirmPasswordRules,
-} from "@/app/v2/module/auth/auth.validation";
+} from "@/app/v2/features/auth/auth.validation";
 import { useAuthHooks } from "../hooks/useAuthHooks";
 
 /**

@@ -1,5 +1,5 @@
 import AuthLayout from "@/app/v2/shared/components/AuthLayout";
-import LoginForm from "@/app/v2/module/auth/components/LoginForm";
+import LoginForm from "@/app/v2/features/auth/components/LoginForm";
 
 /**
  * Self-contained login page for v2.

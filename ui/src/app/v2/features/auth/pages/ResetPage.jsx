@@ -2,8 +2,8 @@
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import AuthLayout from "@/app/v2/shared/components/AuthLayout";
-import RequestResetForm from "@/app/v2/module/auth/components/RequestResetForm";
-import ResetPasswordForm from "@/app/v2/module/auth/components/ResetPasswordForm";
+import RequestResetForm from "@/app/v2/features/auth/components/RequestResetForm";
+import ResetPasswordForm from "@/app/v2/features/auth/components/ResetPasswordForm";
 
 /**
  * Reads the `token` query param from the URL.
