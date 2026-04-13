@@ -1,16 +1,20 @@
 import { createServer } from "http";
-import { app } from "./app.js";
-import { initSocket } from "./infra/socket.js";
-import { connectToTelegram } from "./infra/telegram.js";
+import app from "./app.js";
+import { initSocket, getIo } from "./infra/socket/index.js";
+import { connectRedis } from "./infra/redis/redis.client.js";
+import { startSocketSubscriber } from "../services/redis/socketSubscriber.js";
+import { coonnectToTelegramV2 } from "./modules/telegram/connect.js";
 import { env } from "./config/env.js";
 
-const httpServer = createServer(app);
+export const httpServer = createServer(app);
 
 initSocket(httpServer);
+startSocketSubscriber(getIo());
 
 (async () => {
-  await connectToTelegram();
+  await connectRedis();
+  await coonnectToTelegramV2();
   httpServer.listen(env.PORT, () => {
-    console.log(`[v2] Server running on port ${env.PORT}`);
+    console.log(`✅ Server running on port ${env.PORT}`);
   });
 })();

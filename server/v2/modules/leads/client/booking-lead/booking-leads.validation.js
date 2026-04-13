@@ -117,7 +117,8 @@ export function validateCreateBookingLeadInput(payload) {
   const body = ensureObjectPayload(payload);
 
   return {
-    location: validateField("location", body.location, { required: true }),
+    name: validateField("name", body.name, { required: true }),
+    phone: validateField("phone", body.phone, { required: true }),
   };
 }
 

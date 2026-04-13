@@ -1,5 +1,3 @@
-// ليه؟ عشان كل الريسبونسز يكون ليهم نفس الشكل: { success, message, data }.
-// بدونه: كل controller يرجع JSON بشكل مختلف = inconsistency.
 export function ok(res, data, message = "OK") {
   return res.status(200).json({ success: true, message, data });
 }
@@ -30,6 +28,13 @@ export function notFound(res, message = "Not Found", details = null) {
 }
 export function conflict(res, message = "Conflict", details = null) {
   return res.status(409).json({ success: false, message, details });
+}
+export function internalServerError(
+  res,
+  message = "Internal Server Error",
+  details = null,
+) {
+  return res.status(500).json({ success: false, message, details });
 }
 
 // ✅ Usage in controller:

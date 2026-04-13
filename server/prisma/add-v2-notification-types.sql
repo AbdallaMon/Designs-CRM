@@ -41,5 +41,6 @@ ALTER TABLE `Notification`
     -- New v2 values:
     'LEAD_CREATED',
     'LEAD_SUBMITTED',
-    'LEAD_STATUS_CHANGED'
+    'LEAD_STATUS_CHANGED',
+    'TELEGRAM_REAUTH_NEEDED'
   ) NOT NULL;

@@ -131,6 +131,12 @@ enum BookingLeadRequestStatus {
   SUBMITTED
 }
 
+enum TelegramConnectionStatus {
+  CONNECTED
+  DISCONNECTED
+  INVALID_SESSION
+}
+
 enum CallReminderStatus {
   IN_PROGRESS
   DONE
@@ -591,6 +597,30 @@ model TelegramChannel {
   createdAt    DateTime   @default(now())
 }
 
+model TelegramConnection {
+  id              Int                      @id @default(autoincrement())
+  name            String                   @default("MAIN") @db.VarChar(100)
+  apiId           String?                  @db.VarChar(191)
+  apiHash         String?                  @db.VarChar(191)
+  sessionString   String?                  @db.Text
+  isActive        Boolean                  @default(true)
+  status          TelegramConnectionStatus @default(DISCONNECTED)
+  phoneNumber     String?                  @db.VarChar(20)
+  lastCheckedAt   DateTime?
+  lastConnectedAt DateTime?
+  lastError       String?                  @db.Text
+  notifiedOfDisconnection Boolean                  @default(false)
+  updatedByUserId Int?
+  updatedBy       User? @relation("TelegramConnectionUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name])
+  @@index([isActive])
+  @@index([updatedByUserId])
+}
+
 model ClientLead {
   id                   Int                      @id @default(autoincrement())
   client               Client                   @relation(fields: [clientId], references: [id])
@@ -939,6 +969,7 @@ model User {
   allowNotification       Boolean              @default(true)
   allowEmailing            Boolean              @default(true)
   telegramUsername         String?
+  telegramConnectionsUpdated TelegramConnection[] @relation("TelegramConnectionUpdatedBy")
   subRoles                 UserSubRole[]
   logs                     UserLog[]
   clientLeads              ClientLead[]

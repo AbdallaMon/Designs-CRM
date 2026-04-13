@@ -51,12 +51,26 @@ export async function handleRequestSubmit(
         setRedirect((prev) => !prev);
       }
     } else {
+      if (
+        response?.success === false ||
+        reqStatus === 401 ||
+        reqStatus === 403 ||
+        reqStatus === 419 ||
+        reqStatus === 440 ||
+        reqStatus === 498 ||
+        reqStatus === 400
+      ) {
+        const error = new Error(response.message);
+        error.status = reqStatus;
+        throw error;
+      }
       toast.update(id, Failed(response.message));
     }
     return response;
   } catch (err) {
+    console.log(err, "err");
     toast.update(id, Failed("Error, " + err.message));
-    return { status: 500, message: "Error, " + err.message };
+    return { status: err.status || 500, message: err.message };
   } finally {
     setLoading(false);
   }

@@ -1,36 +1,13 @@
-import { Server } from "socket.io";
-import prisma from "../prisma/prisma.js";
-import { allowedOrigins } from "../index.js";
-import {
-  addReaction,
-  deleteMessage,
-  editMessage,
-  emitToAllUsersRelatedToARoom,
-  forwardMultipleMessages,
-  markAMessageAsRead,
-  markMessagesAsRead,
-  pinMessage,
-  removeReaction,
-  sendMessage,
-  unpinMessage,
-} from "./main/chat/chatMessageServices.js";
-
-let io;
-const userSessions = new Map();
-const typingTimeouts = new Map(); // Track typing timeouts
-export function normalizeOrigin(origin) {
-  if (!origin || typeof origin !== "string") return origin;
-
-  // if "https://site.com, https://site.com" => take first
-  const first = origin.split(",")[0].trim();
-
-  // drop trailing slash to match env values
-  if (first.endsWith("/")) return first.slice(0, -1);
-
-  return first;
-}
-
-export function initSocket(httpServer) {
+// Backward-compat shim — all implementations have moved to v2/infra/socket/.
+// Legacy services (services/main/chat/*, services/main/utility/*) import
+// getIo() from here and will transparently receive the v2 io instance.
+export {
+  getIo,
+  initSocket,
+  normalizeOrigin,
+} from "../v2/infra/socket/index.js";
+// ─── Legacy implementation retained below for reference only (not exported) ───
+function _legacyInitSocket(httpServer) {
   io = new Server(httpServer, {
     // Let us control who is allowed at handshake level
     allowRequest: (req, callback) => {
@@ -523,6 +500,7 @@ export function initSocket(httpServer) {
       });
     });
   });
+  startSocketSubscriber(io);
 }
 
 function updateLastSeen(userId) {
@@ -572,7 +550,7 @@ async function getChatMember({ clientId, userId, roomId }) {
   });
   return member;
 }
-export function getIo() {
+function _legacyGetIo() {
   if (!io) throw new Error("Socket.io not initialized");
   return io;
 }

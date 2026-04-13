@@ -12,8 +12,14 @@ export function notFoundHandler(req, res, next) {
 // Express بيعرف إنه error handler لأن عنده 4 parameters (err, req, res, next)
 export function errorHandler(err, req, res, next) {
   console.error("Error caught by errorHandler:", err);
+
   if (err instanceof AppError) {
     // خطأ متوقع (400, 401, 404, 409, 422 ...)
+    console.log("isAppError:", {
+      message: err.message,
+      statusCode: err.statusCode,
+      details: err.details,
+    });
     return res.status(err.statusCode).json({
       success: false,
       message: err.message,
@@ -22,6 +28,13 @@ export function errorHandler(err, req, res, next) {
   }
 
   // خطأ غير متوقع (database crash, bug, etc.)
+  if (err?.code) {
+    return res.status(err.code).json({
+      success: false,
+      message:
+        err.errorMessage || err.message || "An unexpected error occurred",
+    });
+  }
   console.error("Unexpected error:", err);
   return res.status(500).json({
     success: false,

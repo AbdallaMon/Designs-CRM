@@ -10,6 +10,7 @@ export async function getDataAndSet({
   search,
   sort,
   others,
+  withError,
 }) {
   return await getDataAndSetV2({
     url,
@@ -49,6 +50,17 @@ export async function getDataAndSet({
       if (setData) {
         setData(result.data);
       }
+    } else {
+      if (
+        result?.success === false ||
+        status === 401 ||
+        status === 403 ||
+        status === 419 ||
+        status === 440 ||
+        status === 498
+      ) {
+        throw new Error(result.message || "Unauthorized");
+      }
     }
     result.status = status;
     return result;
@@ -56,7 +68,9 @@ export async function getDataAndSet({
     if (setError) {
       setError(e.message);
     }
-    console.log(e);
+    if (withError) {
+      throw e.message;
+    }
   } finally {
     setLoading(false);
   }

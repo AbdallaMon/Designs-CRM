@@ -16,9 +16,9 @@ export const env = {
   FTP_HOST: process.env.FTP_HOST,
   FTP_USER: process.env.FTP_USER,
   FTP_PASSWORD: process.env.FTP_PASSWORD,
-  FTP_PORT: process.env.FTP_PORT,
+  FTP_PORT: Number(process.env.FTP_PORT),
   TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
-  TELE_API_ID: process.env.TELE_API_ID,
+  TELE_API_ID: Number(process.env.TELE_API_ID),
   TELE_API_HASH: process.env.TELE_API_HASH,
   TELEGRAM_PHONE_NUMBER: process.env.TELEGRAM_PHONE_NUMBER,
   TELEGRAM_SESSION: process.env.TELEGRAM_SESSION,
@@ -35,4 +35,15 @@ export const env = {
   UPLOADS_PATH: process.env.UPLOADS_PATH || "uploads",
   JWT_RESET_SECRET: process.env.JWT_RESET_SECRET,
   JWT_RESET_EXPIRES_IN: process.env.JWT_RESET_EXPIRES_IN || "1h",
+  REDIS_HOST: process.env.REDIS_HOST || "127.0.0.1",
+  REDIS_PORT: Number(process.env.REDIS_PORT) || 6379,
+  REDIS_PASSWORD: process.env.REDIS_PASSWORD || undefined,
 };
+export const allowedOrigins = [
+  process.env.ORIGIN,
+  process.env.OLDORIGIN,
+  process.env.COURSESORIGIN,
+  process.env.PORTFOLIOORIGIN,
+  process.env.CONTACTORIGIN,
+  process.env.REGISTERPAGEORIGIN,
+];

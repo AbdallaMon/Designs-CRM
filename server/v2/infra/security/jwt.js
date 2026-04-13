@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { env } from "../../config/env.js";
-
+const currentMainTokenName = process.env.LEGACY === "true" ? "token" : "access";
 class JwtService {
   static #baseOptions = {
     httpOnly: true,
@@ -10,7 +10,10 @@ class JwtService {
   };
 
   static cookies = {
-    access: { ...JwtService.#baseOptions, maxAge: 15 * 60 * 1000 }, // 15 min
+    [currentMainTokenName]: {
+      ...JwtService.#baseOptions,
+      maxAge: 15 * 60 * 1000,
+    }, // 15 min
     refresh: { ...JwtService.#baseOptions, maxAge: 30 * 24 * 60 * 60 * 1000 }, // 30 days
     clear: { ...JwtService.#baseOptions, maxAge: -1 },
   };
@@ -23,11 +26,18 @@ class JwtService {
    * @returns {string}
    */
   static signAccess(payload) {
-    return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
-      expiresIn: env.ACCESS_TOKEN_EXPIRES_IN,
-    });
+    return jwt.sign(
+      payload,
+      currentMainTokenName === "token" ? env.SECRET_KEY : env.JWT_ACCESS_SECRET,
+      {
+        expiresIn: env.ACCESS_TOKEN_EXPIRES_IN,
+      },
+    );
   }
 
+  static get currentMainTokenName() {
+    return currentMainTokenName;
+  }
   /**
    * Signs a long-lived refresh token. Payload should be minimal — only { id }.
    * @param {{ id: number }} payload
@@ -47,7 +57,10 @@ class JwtService {
    * @returns {object} Decoded payload
    */
   static verifyAccess(token) {
-    return jwt.verify(token, env.JWT_ACCESS_SECRET);
+    return jwt.verify(
+      token,
+      currentMainTokenName === "token" ? env.SECRET_KEY : env.JWT_ACCESS_SECRET,
+    );
   }
 
   /**
