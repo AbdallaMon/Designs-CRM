@@ -31,7 +31,7 @@ class TelegramAuthRepository {
           isActive: true,
           status,
           updatedByUserId,
-          notifiedOfDisconnection: true,
+          notifiedOfDisconnection: false,
         },
         update: {
           apiId: String(apiId),
@@ -43,7 +43,7 @@ class TelegramAuthRepository {
           lastError: null,
           lastCheckedAt: null,
           updatedByUserId,
-          notifiedOfDisconnection: true,
+          notifiedOfDisconnection: false,
         },
       });
     });

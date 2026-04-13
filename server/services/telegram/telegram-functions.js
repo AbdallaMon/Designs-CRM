@@ -888,6 +888,7 @@ export async function createFile({
 }
 
 export async function createNote({ clientLeadId, userId, content }) {
+  console.log(content, "content");
   if (!content.trim()) {
     throw new Error("Note content cannot be empty.");
   }
@@ -1117,7 +1118,8 @@ async function sendNotification(
       staffId: staffId && Number(staffId),
     },
   });
-  await publishToSocket("notification", userId.toString(), notification);
+  console.log("notification created?", notification);
+  // await publishToSocket("notification", `user:${userId}`, notification);
   if (withEmail) {
     const user = await prisma.user.findUnique({
       where: { id: Number(userId) },

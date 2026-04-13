@@ -44,7 +44,12 @@ export function startSocketSubscriber(io) {
         return;
       }
       if (room) {
+        console.log(`Emitting socket event "${event}" to room "${room}"`);
         io.to(room).emit(event, data);
+        console.log(
+          `Event "${event}" emitted to room "${room}" with data:`,
+          data,
+        );
       } else {
         io.emit(event, data);
       }

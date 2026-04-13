@@ -14,6 +14,7 @@ import {
   unpinMessage,
 } from "./main/chat/chatMessageServices.js";
 import { allowedOrigins } from "../v2/config/env.js";
+import { startSocketSubscriber } from "./redis/socketSubscriber.js";
 
 let io;
 const userSessions = new Map();
@@ -523,6 +524,7 @@ export function initSocket(httpServer) {
       });
     });
   });
+  startSocketSubscriber(io);
 }
 
 function updateLastSeen(userId) {

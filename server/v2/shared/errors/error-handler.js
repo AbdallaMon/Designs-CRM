@@ -28,6 +28,13 @@ export function errorHandler(err, req, res, next) {
   }
 
   // خطأ غير متوقع (database crash, bug, etc.)
+  if (err?.code) {
+    return res.status(err.code).json({
+      success: false,
+      message:
+        err.errorMessage || err.message || "An unexpected error occurred",
+    });
+  }
   console.error("Unexpected error:", err);
   return res.status(500).json({
     success: false,

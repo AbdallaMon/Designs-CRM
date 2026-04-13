@@ -31,6 +31,7 @@ import {
 } from "react-icons/fa";
 import { MuiTelInput, matchIsValidTel } from "mui-tel-input";
 import { useEffect, useState } from "react";
+import { TELEGRAM_CONSTANTS } from "./constant";
 
 const STEPS = ["Phone Number", "Verification Code", "Connected"];
 
@@ -86,17 +87,34 @@ export default function TelegramAuth() {
   }
 
   async function handleTelegramAuth() {
+    const url =
+      currentTelegramAuthStep === TELEGRAM_CONSTANTS.STATUS.init ||
+      currentTelegramAuthStep === TELEGRAM_CONSTANTS.STATUS.PHONE_NUMBER
+        ? "v2/telegram/auth/init"
+        : currentTelegramAuthStep === TELEGRAM_CONSTANTS.STATUS.awaitCode
+          ? "v2/telegram/auth/verify-code"
+          : currentTelegramAuthStep ===
+                TELEGRAM_CONSTANTS.STATUS.requirePassword ||
+              currentTelegramAuthStep ===
+                TELEGRAM_CONSTANTS.STATUS.reWritePassword ||
+              currentTelegramAuthStep ===
+                TELEGRAM_CONSTANTS.STATUS.awaitPassword
+            ? "v2/telegram/auth/verify-password"
+            : "v2/telegram/auth/init";
     setAuthError(null);
     const req = await handleRequestSubmit(
-      { ...formData, currentTelegramAuthStep },
+      { ...formData },
       setToastLoading,
-      `v2/telegram/auth`,
+      url,
       false,
       "Updating",
       false,
     );
-
-    if (req?.message === "PHONE_CODE_EXPIRED") {
+    console.log("Telegram auth response:", req);
+    if (
+      req?.message ===
+      "The code you entered has expired. Please request a new code."
+    ) {
       setCurrentTelegramAuthStep("INIT");
       return;
     }

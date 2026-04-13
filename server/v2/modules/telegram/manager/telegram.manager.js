@@ -63,13 +63,13 @@ class TelegramManager {
         ok: true,
         connected: this.client.connected,
         authorized: true,
-        user: {
-          id: me?.id?.toString?.() || null,
-          username: me?.username || null,
-          phone: me?.phone || null,
-          firstName: me?.firstName || null,
-          lastName: me?.lastName || null,
-        },
+        // user: {
+        //   id: me?.id?.toString?.() || null,
+        //   username: me?.username || null,
+        //   phone: me?.phone || null,
+        //   firstName: me?.firstName || null,
+        //   lastName: me?.lastName || null,
+        // },
       };
     } catch (error) {
       return {

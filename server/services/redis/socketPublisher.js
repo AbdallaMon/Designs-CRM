@@ -18,7 +18,11 @@ const CHANNEL = "socket:emit";
  * @param {any} data  - Payload
  */
 export async function publishToSocket(event, room, data) {
-  await pub.publish(CHANNEL, JSON.stringify({ event, room, data }));
+  try {
+    await pub.publish(CHANNEL, JSON.stringify({ event, room, data }));
+  } catch (e) {
+    console.error("Failed to publish socket event:", e);
+  }
 }
 
 export { CHANNEL };

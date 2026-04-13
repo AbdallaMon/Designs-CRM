@@ -5,39 +5,42 @@ import { TelegramAuthusecase } from "./telegram.usecase.js";
 
 export class TelegramController {
   static async getCurrentTelegramAuth(req, res) {
-    try {
-      const result = await TelegramAuthusecase.getActiveAuth();
-
-      ok(
-        res,
-        mapTelegramDataToDTO(result),
-        "Current Telegram authentication retrieved successfully",
-      );
-    } catch (error) {
-      console.error(
-        "Error in TelegramController.getCurrentTelegramAuth:",
-        error,
-      );
-      throw new AppError(
-        "Failed to retrieve current Telegram authentication",
-        500,
-        error.message,
-      );
-    }
+    const result = await TelegramAuthusecase.getActiveAuth();
+    ok(
+      res,
+      mapTelegramDataToDTO(result),
+      "Current Telegram authentication retrieved successfully",
+    );
   }
-  static async handleTelegramAuth(req, res) {
-    const { phoneNumber, code, password, currentTelegramAuthStep } = req.body;
+  static async initTelegramAuth(req, res) {
+    const { phoneNumber } = req.body;
 
-    const result = await TelegramAuthusecase.authintecateTelegram({
+    const result = await TelegramAuthusecase.initTelegramAuth(phoneNumber);
+    ok(
+      res,
+      result.data,
+      result.message || "Telegram authentication initiated successfully",
+    );
+  }
+  static async verifyCode(req, res) {
+    const { phoneNumber, code } = req.body;
+    const result = await TelegramAuthusecase.verifyCode({ phoneNumber, code });
+    ok(
+      res,
+      result.data,
+      result.message || "Telegram code verified successfully",
+    );
+  }
+  static async verifyPassword(req, res) {
+    const { phoneNumber, password } = req.body;
+    const result = await TelegramAuthusecase.verifyPassword({
       phoneNumber,
-      code,
       password,
-      currentTelegramAuthStep,
     });
     ok(
       res,
-      result,
-      result.message || "Telegram authentication step handled successfully",
+      result.data,
+      result.message || "Telegram password verified successfully",
     );
   }
 }

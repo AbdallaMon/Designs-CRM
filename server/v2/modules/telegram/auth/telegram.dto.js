@@ -1,5 +1,7 @@
 import { TELEGRAM_CONSTANTS } from "../telegram.constant.js";
-
+export const mapTelegramPhone = (phoneNumber) => {
+  return phoneNumber.replace(/\s/g, "");
+};
 export const TELEGRAM_AUTH_CONNECTION_SELECT = {
   name: true,
   apiId: true,

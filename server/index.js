@@ -12,7 +12,6 @@ import utilityRoutes from "./routes/utility/utility.js";
 import staffRoutes from "./routes/staff/staff.js";
 import adminRoutes from "./routes/admin/admin.js";
 import accountantRoutes from "./routes/accountant/accountant.js";
-import { connectToTelegram } from "./services/telegram/connectToTelegram.js";
 import v2Routes from "./v2/shared/routes.js";
 import { coonnectToTelegramV2 } from "./v2/modules/telegram/connect.js";
 import { errorHandler } from "./v2/shared/errors/error-handler.js";
@@ -101,7 +100,6 @@ app.use(errorHandler);
 
 (async () => {
   await connectRedis();
-  await connectToTelegram();
   await coonnectToTelegramV2();
   httpServer.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
