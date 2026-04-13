@@ -1,8 +1,8 @@
-import { env } from "./env.js";
+import { allowedOrigins as allowedOriginsTemplate, env } from "./env.js";
 
 const allowedOrigins = env.ALLOW_ORIGIN
   ? env.ALLOW_ORIGIN.split(",").map((o) => o.trim())
-  : [];
+  : allowedOriginsTemplate.map((o) => o.trim());
 
 export const corsOptions = {
   origin(origin, callback) {

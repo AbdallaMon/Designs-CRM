@@ -1,10 +1,2 @@
-import { Queue } from "bullmq";
-import connection from "../redis/bullmqConnection.js";
-
-export const telegramMessageQueue = new Queue("telegram-message-queue", {
-  ...connection,
-  limiter: {
-    max: 1,
-    duration: 10_000,
-  },
-});
+// Re-exported from v2 canonical implementation
+export { telegramMessageQueue } from "../../v2/infra/queues/telegram-message.queue.js";

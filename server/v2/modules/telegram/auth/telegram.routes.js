@@ -11,19 +11,14 @@ import {
 import { mapTelegramPhone } from "./telegram.dto.js";
 
 const telegramRouter = Router();
+telegramRouter.use(AuthMiddleware.requireAuth);
+telegramRouter.use(AuthMiddleware.requireRole(["ADMIN"]));
+
 telegramRouter.get(
   "/current",
-  AuthMiddleware.requireAuth,
-  AuthMiddleware.requireRole(["ADMIN"]),
   asyncHandler(TelegramController.getCurrentTelegramAuth),
 );
 
-// telegramRouter.post(
-//   "/auth",
-//   AuthMiddleware.requireAuth,
-//   AuthMiddleware.requireRole(["ADMIN"]),
-//   asyncHandler(TelegramController.handleTelegramAuth),
-// );
 telegramRouter.post(
   "/auth/init",
   (req, res, next) => {
@@ -33,8 +28,6 @@ telegramRouter.post(
     next();
   },
   validate(initSchema),
-  AuthMiddleware.requireAuth,
-  AuthMiddleware.requireRole(["ADMIN"]),
   asyncHandler(TelegramController.initTelegramAuth),
 );
 telegramRouter.post(
@@ -48,16 +41,12 @@ telegramRouter.post(
   },
   validate(awaitCodeSchema),
 
-  AuthMiddleware.requireAuth,
-  AuthMiddleware.requireRole(["ADMIN"]),
   asyncHandler(TelegramController.verifyCode),
 );
 telegramRouter.post(
   "/auth/verify-password",
   validate(awaitPasswordSchema),
 
-  AuthMiddleware.requireAuth,
-  AuthMiddleware.requireRole(["ADMIN"]),
   asyncHandler(TelegramController.verifyPassword),
 );
 
