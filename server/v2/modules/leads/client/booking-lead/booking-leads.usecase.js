@@ -3,6 +3,9 @@ import {
   notifyLeadCreated,
   notifyLeadSubmitted,
 } from "./booking-leads.notification.js";
+import { bookingLeadsEmails } from "../booking-leads.emails.js";
+import { sendEmail } from "../../../../infra/mailer.js";
+import { env } from "../../../../config/env.js";
 
 const DRAFT_EMAIL_DOMAIN = "draft.local";
 
@@ -154,7 +157,17 @@ export class BookingLeadsUsecase {
       leadData,
       clientData,
     });
-
+    console.log("Updated Lead after submission:", updatedLead);
+    const thanksEmail = bookingLeadsEmails.leadThanksEmail({
+      email: updatedLead.client.email,
+      clientName: updatedLead.client.name,
+    });
+    await sendEmail(
+      updatedLead.client.email,
+      thanksEmail.subject,
+      thanksEmail.html,
+      true,
+    );
     await notifyLeadSubmitted(updatedLead);
 
     return mapBookingLeadResponse(updatedLead);

@@ -15,10 +15,18 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-export const sendEmail = async (to, subject, html, isClient = false) => {
-  const fromUser = isClient
-    ? process.env.AHMED_EMAIL
-    : process.env.EMAIL_USERNAME;
+export const sendEmail = async (
+  to,
+  subject,
+  html,
+  isClient = false,
+  form = null,
+) => {
+  const fromUser = form
+    ? form
+    : isClient
+      ? process.env.AHMED_EMAIL
+      : process.env.EMAIL_USERNAME;
   const fromName = isClient ? engName : companyName;
 
   const mailOptions = {
