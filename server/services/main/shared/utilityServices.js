@@ -52,7 +52,6 @@ export const getNextCalls = async ({ limit, skip, searchParams }) => {
   });
 
   const totalPages = Math.ceil(total / limit);
-
   return {
     data: nearestCallReminders,
     limit,
@@ -167,7 +166,7 @@ export const submitUserLog = async (
   userId,
   date,
   description,
-  totalMinutes
+  totalMinutes,
 ) => {
   if (!description || !description.trim()) {
     throw new Error("Please enter a description");

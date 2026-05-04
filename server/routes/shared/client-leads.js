@@ -139,55 +139,6 @@ router.get("/columns", async (req, res) => {
 /*                                   Client Lead Details                                   */
 /* ======================================================================================= */
 
-// Get a client lead (admin/self scoping)
-router.get("/:id", async (req, res) => {
-  try {
-    const { id } = req.params;
-    const token = getTokenData(req, res);
-    const searchParams = req.query;
-
-    if (
-      token.role !== "ADMIN" &&
-      token.role !== "SUPER_ADMIN" &&
-      token.role !== "ACCOUNTANT" &&
-      !token.isSuperSales
-    ) {
-      searchParams.userId = token.id;
-    }
-    if (
-      token.role !== "ADMIN" &&
-      token.role !== "CONTACT_INITIATOR" &&
-      token.role !== "SUPER_ADMIN" &&
-      !token.isSuperSales
-    ) {
-      searchParams.checkConsult = true;
-    }
-
-    const clientLeadDetails =
-      token.role === "ADMIN" ||
-      token.role === "SUPER_ADMIN" ||
-      token.isSuperSales ||
-      token.role === "CONTACT_INITIATOR"
-        ? await getAdminClientLeadDetails(Number(id), searchParams)
-        : await getClientLeadDetails(
-            Number(id),
-            searchParams,
-            token.role,
-            token.id,
-            token,
-          );
-
-    res.status(200).json({ data: clientLeadDetails });
-  } catch (error) {
-    console.error("Error fetching client lead details:", error);
-    res.status(500).json({
-      message:
-        error.message ||
-        "An error occurred while fetching client lead details.",
-    });
-  }
-});
-
 // Update lead field (admin)
 router.put("/update/:id", async (req, res) => {
   try {
@@ -362,7 +313,7 @@ router.get("/calls", async (req, res) => {
     });
     res.status(200).json(result);
   } catch (error) {
-    console.error("Error fetching client leads:", error);
+    console.error("Error fetching client leads:", error.message);
     res
       .status(500)
       .json({ message: "An error occurred while fetching client leads" });
@@ -652,6 +603,54 @@ router.post("/:clientLeadId/complete-register", async (req, res) => {
     res.status(200).json({ data: newSession, message: "Reminder sent" });
   } catch (e) {
     getAndThrowError(e, res);
+  }
+});
+// Get a client lead (admin/self scoping)
+router.get("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const token = getTokenData(req, res);
+    const searchParams = req.query;
+
+    if (
+      token.role !== "ADMIN" &&
+      token.role !== "SUPER_ADMIN" &&
+      token.role !== "ACCOUNTANT" &&
+      !token.isSuperSales
+    ) {
+      searchParams.userId = token.id;
+    }
+    if (
+      token.role !== "ADMIN" &&
+      token.role !== "CONTACT_INITIATOR" &&
+      token.role !== "SUPER_ADMIN" &&
+      !token.isSuperSales
+    ) {
+      searchParams.checkConsult = true;
+    }
+
+    const clientLeadDetails =
+      token.role === "ADMIN" ||
+      token.role === "SUPER_ADMIN" ||
+      token.isSuperSales ||
+      token.role === "CONTACT_INITIATOR"
+        ? await getAdminClientLeadDetails(Number(id), searchParams)
+        : await getClientLeadDetails(
+            Number(id),
+            searchParams,
+            token.role,
+            token.id,
+            token,
+          );
+
+    res.status(200).json({ data: clientLeadDetails });
+  } catch (error) {
+    console.error("Error fetching client lead details:", error);
+    res.status(500).json({
+      message:
+        error.message ||
+        "An error occurred while fetching client lead details.",
+    });
   }
 });
 
