@@ -104,9 +104,14 @@ export const getNextMeetings = async ({ limit, skip, searchParams }) => {
   const total = await prisma.meetingReminder.count({
     where: {
       status: "IN_PROGRESS",
+      time: {
+        not: null,
+      },
+      ...staffFilter,
+
       clientLead: {
         status: {
-          notIn: ["CONVERTED", "ON_HOLD", "FINALIZED", "REJECTED"],
+          notIn: ["CONVERTED", "ON_HOLD", "REJECTED"],
         },
         ...staffFilter,
       },
