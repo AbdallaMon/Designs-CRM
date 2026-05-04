@@ -1,20 +1,64 @@
 import { useCallTimer } from "@/app/helpers/hooks/useCallTimer.js";
-import { alpha, Box, Typography, useTheme } from "@mui/material";
+import { alpha, Box, Chip, Stack, Typography, useTheme } from "@mui/material";
 import React from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import "dayjs/locale/en"; // Ensure English locale
+import "dayjs/locale/en";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
 export function InProgressCall({ call, simple, type }) {
-  const userTimezone = dayjs.tz.guess(); // Detect user's timezone
-  const { timeLeft, hoursLeft } = useCallTimer(call, userTimezone, type);
+  const userTimezone = dayjs.tz.guess();
+
+  const { timeLeft, hoursLeft, status } = useCallTimer(
+    call,
+    userTimezone,
+    type,
+  );
+
   const theme = useTheme();
 
-  const isUrgent = hoursLeft !== null && hoursLeft <= 12; // Mark as urgent if within 12 hours
+  const isUrgent = status === "future" && hoursLeft !== null && hoursLeft <= 12;
+
+  const paletteKey =
+    status === "now"
+      ? "success"
+      : isUrgent
+        ? "error"
+        : status === "past"
+          ? "warning"
+          : status === "future"
+            ? "primary"
+            : "text";
+
+  const mainColor =
+    paletteKey === "text"
+      ? theme.palette.text.secondary
+      : theme.palette[paletteKey].main;
+
+  const bgColor =
+    paletteKey === "text"
+      ? alpha(theme.palette.text.secondary, 0.06)
+      : alpha(mainColor, status === "now" ? 0.14 : 0.08);
+
+  const borderColor =
+    paletteKey === "text"
+      ? alpha(theme.palette.text.secondary, 0.14)
+      : alpha(mainColor, status === "now" ? 0.35 : 0.18);
+
+  const icon =
+    status === "now"
+      ? "🟢"
+      : isUrgent
+        ? "⚠️"
+        : status === "past"
+          ? "🕘"
+          : status === "future"
+            ? "⏳"
+            : "ℹ️";
+
   const callTimeFormatted = call?.time
     ? dayjs(call.time)
         .tz(userTimezone)
@@ -26,29 +70,35 @@ export function InProgressCall({ call, simple, type }) {
     <Box
       sx={{
         display: "flex",
-        alignItems: "",
-        height: 100,
-        bgcolor: isUrgent
-          ? alpha(theme.palette.error.main, 0.1)
-          : alpha(theme.palette.primary.main, 0.05),
-        color: isUrgent ? theme.palette.error.main : theme.palette.primary.main,
+        minHeight: 100,
+        bgcolor: bgColor,
+        color: mainColor,
         p: simple ? 1 : 2,
         borderRadius: 2,
-        border: `1px solid ${alpha(
-          isUrgent ? theme.palette.error.main : theme.palette.primary.main,
-          0.1
-        )}`,
+        border: `1px solid ${borderColor}`,
         mb: simple && 1,
-        flexDirection: "column", // Stack timeLeft & actual time
+        flexDirection: "column",
+        justifyContent: "center",
+        gap: 0.75,
       }}
     >
-      <Typography variant="subtitle2" fontWeight="600">
-        {isUrgent ? "⚠️ Urgent: " : "⏳ Scheduled: "}
-        {timeLeft}
+      <Typography variant="subtitle2" fontWeight={700}>
+        {icon} {timeLeft}
       </Typography>
-      <Typography variant="body2" sx={{ mt: 0.5, opacity: 0.8 }}>
-        📅 {callTimeFormatted} ({userTimezone})
-      </Typography>
+
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1}
+        sx={{
+          flexWrap: "wrap",
+          rowGap: 0.75,
+        }}
+      >
+        <Typography variant="body2" sx={{ opacity: 0.85 }}>
+          📅 {callTimeFormatted} ({userTimezone})
+        </Typography>
+      </Stack>
     </Box>
   );
 }

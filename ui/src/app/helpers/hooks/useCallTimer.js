@@ -1,74 +1,106 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import duration from "dayjs/plugin/duration";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(duration);
+
+const MINUTE = 60 * 1000;
+const HOUR = 60 * MINUTE;
+
+const NOW_WINDOW = 3 * MINUTE;
+const SHOW_SECONDS_UNDER = 10 * MINUTE;
+
+function formatDuration(ms, { showSeconds = false } = {}) {
+  const absMs = Math.abs(ms);
+  const diff = dayjs.duration(absMs);
+
+  const months = Math.floor(diff.asMonths());
+  const days = Math.floor(diff.asDays()) % 30;
+  const hours = diff.hours();
+  const minutes = diff.minutes();
+  const seconds = diff.seconds();
+
+  const parts = [];
+
+  if (months > 0) {
+    parts.push(`${months} month${months > 1 ? "s" : ""}`);
+  }
+
+  if (days > 0) {
+    parts.push(`${days} day${days > 1 ? "s" : ""}`);
+  }
+
+  if (hours > 0) {
+    parts.push(`${hours}h`);
+  }
+
+  if (minutes > 0) {
+    parts.push(`${minutes}m`);
+  }
+
+  if (showSeconds) {
+    parts.push(`${seconds}s`);
+  }
+
+  return parts.length ? parts.join(" ") : "less than 1m";
+}
 
 export function useCallTimer(call, userTimezone = dayjs.tz.guess(), type) {
   const [timeLeft, setTimeLeft] = useState("");
   const [hoursLeft, setHoursLeft] = useState(null);
+  const [status, setStatus] = useState("unknown");
 
   useEffect(() => {
-    if (!call?.time) return;
+    if (!call?.time) {
+      setTimeLeft("Unknown time");
+      setHoursLeft(null);
+      setStatus("unknown");
+      return;
+    }
+
+    const label = type === "MEETING" ? "Meeting" : "Call";
 
     const updateTime = () => {
       const now = dayjs().tz(userTimezone);
-      const callTime = dayjs(call.time).tz(userTimezone); // Convert call time to user timezone
-      const diff = callTime.diff(now, "milliseconds");
+      const callTime = dayjs(call.time).tz(userTimezone);
 
-      const fiveMinutes = 5 * 60 * 1000; // 5 minutes in milliseconds
+      const diffMs = callTime.diff(now);
+      const absDiffMs = Math.abs(diffMs);
 
-      if (diff >= -fiveMinutes && diff <= fiveMinutes) {
-        // Call is happening within the ±5-minute window
-        setTimeLeft(`${type === "MEETING" ? "Meeting" : "Call"} is now`);
+      if (absDiffMs <= NOW_WINDOW) {
+        setTimeLeft(`${label} is now`);
         setHoursLeft(0);
+        setStatus("now");
         return;
       }
 
-      if (diff < -fiveMinutes) {
-        // Call has passed the 5-minute window
-        const passedHours = Math.floor(-diff / (1000 * 60 * 60));
-        const passedMinutes = Math.floor(
-          (-diff % (1000 * 60 * 60)) / (1000 * 60)
-        );
-
-        setTimeLeft(
-          `${type === "MEETING" ? "Meeting" : "Call"} was ${
-            passedHours > 0 ? `${passedHours}h ` : ""
-          }${passedMinutes > 0 ? `${passedMinutes}m ` : ""}ago`
-        );
-
-        setHoursLeft(null); // Call is in the past
+      if (diffMs < 0) {
+        setTimeLeft(`${label} was ${formatDuration(diffMs)} ago`);
+        setHoursLeft(null);
+        setStatus("past");
         return;
       }
 
-      // Calculate time components for upcoming calls
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor(
-        (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-      );
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      const showSeconds = diffMs <= SHOW_SECONDS_UNDER;
 
-      // Update state
       setTimeLeft(
-        `${type === "MEETING" ? "Meeting" : "Call"} in ${
-          days > 0 ? `${days}d ` : ""
-        }${hours > 0 ? `${hours}h ` : ""}${
-          minutes > 0 ? `${minutes}m ` : ""
-        }${seconds}s`
+        `${label} starts in ${formatDuration(diffMs, { showSeconds })}`,
       );
 
-      setHoursLeft(days * 24 + hours); // Total remaining hours
+      setHoursLeft(Math.floor(diffMs / HOUR));
+      setStatus("future");
     };
 
-    updateTime(); // Initial calculation
+    updateTime();
+
     const timer = setInterval(updateTime, 1000);
 
     return () => clearInterval(timer);
-  }, [call, userTimezone]);
+  }, [call?.time, userTimezone, type]);
 
-  return { timeLeft, hoursLeft };
+  return { timeLeft, hoursLeft, status };
 }
