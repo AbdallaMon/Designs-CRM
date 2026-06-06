@@ -38,6 +38,12 @@ const SHARED_AUTHED = [
   P.CHAT.MESSAGE_VIEW,
   P.CHAT.MESSAGE_SEND,
   P.UPLOAD.FILE_UPLOAD,
+  // staff-course (course-taking) — legacy `/shared/courses` was behind SHARED
+  // authentication (any logged-in role), so every role gets these. Object-level
+  // course/lesson access is gated by the course-role match + the attempt scope
+  // checker, not by the code.
+  P.STAFF_COURSE.VIEW,
+  P.STAFF_COURSE.TAKE,
 ];
 
 // Telegram management — ADMIN only today.
@@ -56,6 +62,18 @@ const SITE_UTILITY_ADMIN = [
   P.SITE_UTILITY.PAYMENT_CONDITION_DELETE,
 ];
 
+// Admin course management — ADMIN + SUPER_ADMIN (behavior-preserving 1:1 with the
+// legacy `/admin/courses` "ADMIN" gate, which admits ADMIN / SUPER_ADMIN, the
+// ADMIN/SUPER_ADMIN sub-roles, and `isSuperSales`). The `isSuperSales` slice is
+// granted via SUPER_SALES_EXTRA_PERMISSIONS below so the union matches legacy
+// `isAdmin` exactly without widening role grants.
+const COURSE_ADMIN = [
+  P.COURSE.VIEW,
+  P.COURSE.MANAGE,
+  P.COURSE.ACCESS_MANAGE,
+  P.COURSE.ATTEMPT_MANAGE,
+];
+
 /**
  * Base role → permission codes. Every UserRole value is present (no role may be
  * unmapped — an unmapped role would silently get nothing). De-duplication of the
@@ -64,11 +82,17 @@ const SITE_UTILITY_ADMIN = [
 export const ROLE_PERMISSIONS = {
   // ADMIN / SUPER_ADMIN are the privileged operators today: shared authed access
   // PLUS telegram management.
-  [USER_ROLES.ADMIN]: [...SHARED_AUTHED, ...TELEGRAM_ADMIN, ...SITE_UTILITY_ADMIN],
+  [USER_ROLES.ADMIN]: [
+    ...SHARED_AUTHED,
+    ...TELEGRAM_ADMIN,
+    ...SITE_UTILITY_ADMIN,
+    ...COURSE_ADMIN,
+  ],
   [USER_ROLES.SUPER_ADMIN]: [
     ...SHARED_AUTHED,
     ...TELEGRAM_ADMIN,
     ...SITE_UTILITY_ADMIN,
+    ...COURSE_ADMIN,
   ],
 
   // All other roles currently have the shared authenticated surface (chat, authed
@@ -88,5 +112,16 @@ export const ROLE_PERMISSIONS = {
  * super-sales-only in the current code) — kept as the documented augmentation
  * point so a future module can grant super-sales-specific codes here without
  * touching role logic.
+ *
+ * Course admin: the legacy `/admin/courses` gate admits `isSuperSales` users (see
+ * `verifyTokenAndHandleAuthorization` `isAdmin`). To preserve that exactly without
+ * widening any base role, the admin course-management codes are layered on here for
+ * `isSuperSales`. (The base SUPER_SALES role itself does NOT get them — only the
+ * `isSuperSales` flag, matching legacy.)
  */
-export const SUPER_SALES_EXTRA_PERMISSIONS = [];
+export const SUPER_SALES_EXTRA_PERMISSIONS = [
+  P.COURSE.VIEW,
+  P.COURSE.MANAGE,
+  P.COURSE.ACCESS_MANAGE,
+  P.COURSE.ATTEMPT_MANAGE,
+];

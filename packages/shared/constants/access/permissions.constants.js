@@ -84,6 +84,38 @@ export const SITE_UTILITY_PERMISSIONS = {
   PAYMENT_CONDITION_DELETE: "site_utility.payment_condition.delete", // DELETE /:id
 };
 
+// ── courses / LMS — admin-course (management surface) ───────────────────────────
+// Legacy: `routes/courses/adminCourses.js` mounted at `/admin/courses`, guarded by
+// `verifyTokenAndHandleAuthorization(..., "ADMIN")` — i.e. ADMIN / SUPER_ADMIN (and
+// `isSuperSales`, and ADMIN/SUPER_ADMIN sub-roles). These codes encode the same
+// privileged management surface (course/lesson/test/question CRUD, lesson access
+// grants, attempt admin actions, answer approval, admin dashboard). Granted to
+// ADMIN + SUPER_ADMIN in ROLE_PERMISSIONS, plus `isSuperSales` via
+// SUPER_SALES_EXTRA_PERMISSIONS — preserving observable behavior. Reads/writes split.
+export const COURSE_PERMISSIONS = {
+  // course / lesson / content / test management (reads)
+  VIEW: "course.view", // list courses, dashboard, course detail reads
+  // course / lesson / content / test management (writes)
+  MANAGE: "course.manage", // create/edit course, lessons, videos, pdfs, links, tests, questions
+  // lesson access grants (who may access a lesson)
+  ACCESS_MANAGE: "course.access.manage", // grant/revoke LessonAccess, view allowed users/roles
+  // per-user attempt administration + manual answer approval
+  ATTEMPT_MANAGE: "course.attempt.manage", // increase/decrease attempts, approve answers, attempt summaries
+};
+
+// ── courses / LMS — staff-course (consumption surface) ──────────────────────────
+// Legacy: `routes/courses/staffCourses.js` mounted at `/shared/courses`, guarded by
+// `verifyTokenAndHandleAuthorization(..., "SHARED")` — i.e. ANY authenticated role.
+// These codes encode course-taking (browse published courses by role, view lessons,
+// mark complete, submit homework, take tests, view OWN attempts/progress). Granted
+// to every role via SHARED_AUTHED in ROLE_PERMISSIONS. Object-level access (which
+// course/lesson/attempt) is enforced by the course-role gate + the attempt scope
+// checker, not by the code. Reads/writes split.
+export const STAFF_COURSE_PERMISSIONS = {
+  VIEW: "staff_course.view", // browse courses/lessons/tests, dashboard, progress, own attempts
+  TAKE: "staff_course.take", // mark lesson complete, submit homework, create attempt, submit answer, end attempt
+};
+
 // ── nested aggregate (canonical reference for app code) ───────────────────────
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
@@ -91,6 +123,8 @@ export const PERMISSIONS = {
   TELEGRAM: TELEGRAM_PERMISSIONS,
   UPLOAD: UPLOAD_PERMISSIONS,
   SITE_UTILITY: SITE_UTILITY_PERMISSIONS,
+  COURSE: COURSE_PERMISSIONS,
+  STAFF_COURSE: STAFF_COURSE_PERMISSIONS,
 };
 
 /**

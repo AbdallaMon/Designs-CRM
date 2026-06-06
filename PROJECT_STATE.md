@@ -31,7 +31,13 @@ Full operating manual: [`CLAUDE.md`](CLAUDE.md).
 
 ## 3. Where we have reached — STATUS
 
-**Current phase: PLANNING — COMPLETE. All open decisions resolved. No implementation has started; awaiting the user's go on the first build step.**
+**Current phase: EXECUTION (modules). Foundation + infra + auth/permissions DONE & committed; modules in progress.**
+
+Commits on `server-migration`: `5b9cc45` (planning checkpoint) → `3c84d5a` (foundation: Stages 1–3) → `d980950` (chat module) → `38f7bf0` (site-utility module). App boots; legacy + `/v2` coexist (strangler). Full suite: **54 tests / 7 files green**.
+
+**Modules done:** Chat (BE hardened + FE feature), site-utility (extracted + FE). Each went through BE∥FE → reconciliation review → rework → verify.
+**Key finding:** the legacy code's leaf domains (questions, notes, sales-stages, client-payments) are **entangled with the `clientLead` keystone**, so they migrate with/after **Leads** (the biggest module + the IDOR/security keystone). Reviews = thin Google-OAuth integration (no FE).
+**Next targets:** remaining standalone domains (courses/LMS, calendar) + the **Leads keystone**, then its dependents, then the frozen-PDF contract/image-session flows, then accounting/dashboard/notifications, then cutover.
 
 ### ✅ Done
 - **Audit of the current app** → `docs/migration/01-current-audit.md`

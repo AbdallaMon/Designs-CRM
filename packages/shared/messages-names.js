@@ -8,5 +8,6 @@ export const messagesNames = {
   authMessages: "authMessages",
   chatMessages: "chatMessages",
   siteUtilityMessages: "siteUtilityMessages",
+  coursesMessages: "coursesMessages",
   prismaKnowMessages: "prismaKnowMessages",
 };

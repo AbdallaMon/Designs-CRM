@@ -3,3 +3,4 @@ export * from "./core/index.js";
 export * from "./auth/index.js";
 export * from "./chat/index.js";
 export * from "./site-utility/index.js";
+export * from "./courses/index.js";

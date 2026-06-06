@@ -102,14 +102,26 @@ describe("getEffectivePermissions", () => {
     expect(unique.size).toBe(permissions.length);
   });
 
-  it("isSuperSales augments without breaking (empty extra set today)", () => {
+  it("isSuperSales augments the base set with the admin-course codes (legacy isAdmin)", () => {
+    // The Courses/LMS migration populated SUPER_SALES_EXTRA_PERMISSIONS with the four
+    // COURSE.* codes so the `isSuperSales` flag reproduces the legacy `/admin/courses`
+    // `isAdmin` gate (which admits isSuperSales) WITHOUT widening any base role.
     const base = getEffectivePermissions({ role: USER_ROLES.STAFF });
     const elevated = getEffectivePermissions({
       role: USER_ROLES.STAFF,
       isSuperSales: true,
     });
-    // no extra codes defined yet, so the set is unchanged — but the path runs
-    expect(elevated.permissions.sort()).toEqual(base.permissions.sort());
+    const added = elevated.permissions.filter(
+      (code) => !base.permissions.includes(code),
+    );
+    expect(added.sort()).toEqual(
+      [
+        PERMISSIONS.COURSE.VIEW,
+        PERMISSIONS.COURSE.MANAGE,
+        PERMISSIONS.COURSE.ACCESS_MANAGE,
+        PERMISSIONS.COURSE.ATTEMPT_MANAGE,
+      ].sort(),
+    );
   });
 });
 

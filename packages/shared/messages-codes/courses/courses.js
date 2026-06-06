@@ -1,0 +1,89 @@
+// Courses / LMS module message CODES. SCREAMING_SNAKE_CASE, key === value (the
+// string IS the code). Carried in the API envelope `message` field; the client
+// resolves (translationKey: coursesMessages, code) to a displayed string.
+// Language-neutral — never put Arabic/English prose here.
+//
+// Covers BOTH course surfaces: `admin-course` (course/lesson/test management) and
+// `staff-course` (enrollment, attempts, progress, certificates).
+export const coursesMessagesCodes = {
+  // ── reads (admin) ────────────────────────────────────────────────────────────
+  COURSES_FETCHED: "COURSES_FETCHED",
+  COURSE_FETCHED: "COURSE_FETCHED",
+  LESSONS_FETCHED: "LESSONS_FETCHED",
+  LESSON_FETCHED: "LESSON_FETCHED",
+  LESSON_VIDEOS_FETCHED: "LESSON_VIDEOS_FETCHED",
+  LESSON_PDFS_FETCHED: "LESSON_PDFS_FETCHED",
+  LESSON_LINKS_FETCHED: "LESSON_LINKS_FETCHED",
+  LESSON_VIDEO_PDFS_FETCHED: "LESSON_VIDEO_PDFS_FETCHED",
+  ALLOWED_ROLES_FETCHED: "ALLOWED_ROLES_FETCHED",
+  ALLOWED_USERS_FETCHED: "ALLOWED_USERS_FETCHED",
+  HOMEWORKS_FETCHED: "HOMEWORKS_FETCHED",
+  TESTS_FETCHED: "TESTS_FETCHED",
+  TEST_FETCHED: "TEST_FETCHED",
+  TEST_QUESTION_FETCHED: "TEST_QUESTION_FETCHED",
+  ATTEMPTS_FETCHED: "ATTEMPTS_FETCHED",
+  ATTEMPT_FETCHED: "ATTEMPT_FETCHED",
+  DASHBOARD_FETCHED: "DASHBOARD_FETCHED",
+  PROGRESS_FETCHED: "PROGRESS_FETCHED",
+
+  // ── mutations (admin) ──────────────────────────────────────────────────────────
+  COURSE_CREATED: "COURSE_CREATED",
+  COURSE_UPDATED: "COURSE_UPDATED",
+  LESSON_CREATED: "LESSON_CREATED",
+  LESSON_UPDATED: "LESSON_UPDATED",
+  LESSON_DELETED: "LESSON_DELETED",
+  LESSON_HOMEWORK_TOGGLED: "LESSON_HOMEWORK_TOGGLED",
+  LESSON_VIDEO_CREATED: "LESSON_VIDEO_CREATED",
+  LESSON_VIDEO_UPDATED: "LESSON_VIDEO_UPDATED",
+  LESSON_VIDEO_DELETED: "LESSON_VIDEO_DELETED",
+  LESSON_PDF_CREATED: "LESSON_PDF_CREATED",
+  LESSON_PDF_UPDATED: "LESSON_PDF_UPDATED",
+  LESSON_PDF_DELETED: "LESSON_PDF_DELETED",
+  LESSON_LINK_CREATED: "LESSON_LINK_CREATED",
+  LESSON_LINK_UPDATED: "LESSON_LINK_UPDATED",
+  LESSON_LINK_DELETED: "LESSON_LINK_DELETED",
+  LESSON_VIDEO_PDF_CREATED: "LESSON_VIDEO_PDF_CREATED",
+  LESSON_VIDEO_PDF_DELETED: "LESSON_VIDEO_PDF_DELETED",
+  LESSON_ACCESS_GRANTED: "LESSON_ACCESS_GRANTED",
+  LESSON_ACCESS_DELETED: "LESSON_ACCESS_DELETED",
+  TEST_CREATED: "TEST_CREATED",
+  TEST_UPDATED: "TEST_UPDATED",
+  TEST_DELETED: "TEST_DELETED",
+  TEST_QUESTION_CREATED: "TEST_QUESTION_CREATED",
+  TEST_QUESTION_UPDATED: "TEST_QUESTION_UPDATED",
+  TEST_QUESTION_DELETED: "TEST_QUESTION_DELETED",
+  TEST_QUESTIONS_REORDERED: "TEST_QUESTIONS_REORDERED",
+  ATTEMPT_INCREASED: "ATTEMPT_INCREASED",
+  ATTEMPT_DECREASED: "ATTEMPT_DECREASED",
+  ANSWER_APPROVED: "ANSWER_APPROVED",
+
+  // ── mutations (staff) ──────────────────────────────────────────────────────────
+  LESSON_COMPLETED: "LESSON_COMPLETED",
+  HOMEWORK_SAVED: "HOMEWORK_SAVED",
+  ATTEMPT_CREATED: "ATTEMPT_CREATED",
+  ANSWER_SUBMITTED: "ANSWER_SUBMITTED",
+  ATTEMPT_ENDED: "ATTEMPT_ENDED",
+
+  // ── errors ───────────────────────────────────────────────────────────────────
+  COURSE_NOT_FOUND: "COURSE_NOT_FOUND",
+  LESSON_NOT_FOUND: "LESSON_NOT_FOUND",
+  TEST_NOT_FOUND: "TEST_NOT_FOUND",
+  ATTEMPT_NOT_FOUND: "ATTEMPT_NOT_FOUND",
+  // Object-scope denial — user requested an attempt that is not theirs.
+  ATTEMPT_ACCESS_DENIED: "ATTEMPT_ACCESS_DENIED",
+  // Course-role / preview / lesson-access denial (staff consumption gates).
+  COURSE_ACCESS_DENIED: "COURSE_ACCESS_DENIED",
+  LESSON_ACCESS_DENIED: "LESSON_ACCESS_DENIED",
+  // Legacy invariant: previous lessons must be completed + their tests passed.
+  PREVIOUS_LESSONS_INCOMPLETE: "PREVIOUS_LESSONS_INCOMPLETE",
+  // Legacy invariant: attempt limit reached.
+  ATTEMPT_LIMIT_REACHED: "ATTEMPT_LIMIT_REACHED",
+  // Legacy invariant: cannot decrease below the consumed attempt count.
+  ATTEMPT_CANNOT_DECREASE: "ATTEMPT_CANNOT_DECREASE",
+  // Integrity: a staff caller tried to mutate an already-finalized attempt
+  // (endTime set). The admin re-score path bypasses this guard explicitly.
+  ATTEMPT_ALREADY_ENDED: "ATTEMPT_ALREADY_ENDED",
+  // Integrity: the submitted question does not belong to the attempt's test
+  // (foreign-test question — would skew scoring / IDOR on a question).
+  QUESTION_TEST_MISMATCH: "QUESTION_TEST_MISMATCH",
+};
