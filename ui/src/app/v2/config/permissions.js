@@ -27,11 +27,22 @@ export const UPLOAD_PERMISSIONS = {
   FILE_UPLOAD: "upload.file.upload",
 };
 
+// Site-utility module (admin/super-admin). Mirrors the backend @dms/shared codes.
+export const SITE_UTILITY_PERMISSIONS = {
+  PDF_CONFIG_VIEW: "site_utility.pdf_config.view",
+  PDF_CONFIG_EDIT: "site_utility.pdf_config.edit",
+  PAYMENT_CONDITION_LIST: "site_utility.payment_condition.list",
+  PAYMENT_CONDITION_CREATE: "site_utility.payment_condition.create",
+  PAYMENT_CONDITION_EDIT: "site_utility.payment_condition.edit",
+  PAYMENT_CONDITION_DELETE: "site_utility.payment_condition.delete",
+};
+
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
   CHAT: CHAT_PERMISSIONS,
   TELEGRAM: TELEGRAM_PERMISSIONS,
   UPLOAD: UPLOAD_PERMISSIONS,
+  SITE_UTILITY: SITE_UTILITY_PERMISSIONS,
 };
 
 export function splitPermissionCode(code) {

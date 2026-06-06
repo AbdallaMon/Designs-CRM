@@ -43,6 +43,19 @@ const SHARED_AUTHED = [
 // Telegram management — ADMIN only today.
 const TELEGRAM_ADMIN = [P.TELEGRAM.MANAGE];
 
+// Site-utility management — ADMIN + SUPER_ADMIN only. The legacy routes were only
+// behind SHARED authentication (any logged-in role could mutate them); the FE pages
+// are @admin / @super_admin, so the v2 module tightens this to a privileged-only
+// surface. This is a deliberate SECURITY FIX, not a behavior-preserving 1:1 grant.
+const SITE_UTILITY_ADMIN = [
+  P.SITE_UTILITY.PDF_CONFIG_VIEW,
+  P.SITE_UTILITY.PDF_CONFIG_EDIT,
+  P.SITE_UTILITY.PAYMENT_CONDITION_LIST,
+  P.SITE_UTILITY.PAYMENT_CONDITION_CREATE,
+  P.SITE_UTILITY.PAYMENT_CONDITION_EDIT,
+  P.SITE_UTILITY.PAYMENT_CONDITION_DELETE,
+];
+
 /**
  * Base role → permission codes. Every UserRole value is present (no role may be
  * unmapped — an unmapped role would silently get nothing). De-duplication of the
@@ -51,8 +64,12 @@ const TELEGRAM_ADMIN = [P.TELEGRAM.MANAGE];
 export const ROLE_PERMISSIONS = {
   // ADMIN / SUPER_ADMIN are the privileged operators today: shared authed access
   // PLUS telegram management.
-  [USER_ROLES.ADMIN]: [...SHARED_AUTHED, ...TELEGRAM_ADMIN],
-  [USER_ROLES.SUPER_ADMIN]: [...SHARED_AUTHED, ...TELEGRAM_ADMIN],
+  [USER_ROLES.ADMIN]: [...SHARED_AUTHED, ...TELEGRAM_ADMIN, ...SITE_UTILITY_ADMIN],
+  [USER_ROLES.SUPER_ADMIN]: [
+    ...SHARED_AUTHED,
+    ...TELEGRAM_ADMIN,
+    ...SITE_UTILITY_ADMIN,
+  ],
 
   // All other roles currently have the shared authenticated surface (chat, authed
   // upload, auth self-service) but NOT telegram.

@@ -18,7 +18,8 @@
 //  - Only seed codes for modules that EXIST TODAY. Do not invent codes for
 //    unmigrated modules — they arrive with their own migration.
 //
-// Seeded modules (Stage 3): auth, chat, leads/booking-lead, telegram, upload.
+// Seeded modules (Stage 3): auth, chat, leads/booking-lead, telegram, upload,
+// site-utility.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── auth ─────────────────────────────────────────────────────────────────────
@@ -68,12 +69,28 @@ export const UPLOAD_PERMISSIONS = {
   FILE_UPLOAD: "upload.file.upload",
 };
 
+// ── site-utility (PDF config + contract payment conditions) ────────────────────
+// SECURITY FIX (migration): the legacy `/site-utilities` routes were only behind
+// the SHARED authentication middleware — ANY authenticated role could read/mutate
+// the PDF config and contract payment conditions. The FE pages are @admin /
+// @super_admin only, so the v2 module gates these codes and ROLE_PERMISSIONS grants
+// them to ADMIN + SUPER_ADMIN only. Reads and writes are split per convention.
+export const SITE_UTILITY_PERMISSIONS = {
+  PDF_CONFIG_VIEW: "site_utility.pdf_config.view", // GET /pdf-utility
+  PDF_CONFIG_EDIT: "site_utility.pdf_config.edit", // POST /pdf-utility (upsert)
+  PAYMENT_CONDITION_LIST: "site_utility.payment_condition.list", // GET /contract-payment-conditions
+  PAYMENT_CONDITION_CREATE: "site_utility.payment_condition.create", // POST
+  PAYMENT_CONDITION_EDIT: "site_utility.payment_condition.edit", // PUT /:id
+  PAYMENT_CONDITION_DELETE: "site_utility.payment_condition.delete", // DELETE /:id
+};
+
 // ── nested aggregate (canonical reference for app code) ───────────────────────
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
   CHAT: CHAT_PERMISSIONS,
   TELEGRAM: TELEGRAM_PERMISSIONS,
   UPLOAD: UPLOAD_PERMISSIONS,
+  SITE_UTILITY: SITE_UTILITY_PERMISSIONS,
 };
 
 /**
