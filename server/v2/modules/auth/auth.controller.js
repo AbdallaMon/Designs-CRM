@@ -23,8 +23,8 @@ class AuthController {
         refreshToken,
         JwtService.cookies.refresh,
       )
-      // TODO: remove once all routes are migrated to v2
       .cookie("token", accessToken, JwtService.cookies.access);
+    console.log(res.getHeaders(), "res.getHeaders()");
 
     ok(res, { user }, "Login successful");
   }
@@ -32,7 +32,6 @@ class AuthController {
     res
       .cookie(AuthSchema.cookieNames.ACCESS, "", JwtService.cookies.clear)
       .cookie(AuthSchema.cookieNames.REFRESH, "", JwtService.cookies.clear)
-      // TODO: remove once all routes are migrated to v2
       .cookie("token", "", JwtService.cookies.clear);
     ok(res, null, "Logout successful");
   }

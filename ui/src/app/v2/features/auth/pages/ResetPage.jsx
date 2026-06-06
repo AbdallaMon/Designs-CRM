@@ -1,7 +1,7 @@
 "use client";
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import AuthLayout from "@/app/v2/shared/components/AuthLayout";
+import AuthLayout from "@/app/v2/features/auth/components/AuthLayout";
 import RequestResetForm from "@/app/v2/features/auth/components/RequestResetForm";
 import ResetPasswordForm from "@/app/v2/features/auth/components/ResetPasswordForm";
 

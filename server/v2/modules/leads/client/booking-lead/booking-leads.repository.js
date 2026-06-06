@@ -1,5 +1,6 @@
 import dayjs from "dayjs";
 import prisma from "../../../../infra/prisma.js";
+import { AppError } from "../../../../shared/errors/AppError.js";
 
 const bookingLeadSelect = {
   id: true,
@@ -24,12 +25,6 @@ const bookingLeadSelect = {
     },
   },
 };
-
-function createHttpError(status, message) {
-  const error = new Error(message);
-  error.status = status;
-  return error;
-}
 
 function normalizeForLookup(value) {
   if (typeof value !== "string") {
@@ -146,7 +141,7 @@ export class BookingLeadsRepository {
         clientData.email,
       );
       if (hasSubmittedToday) {
-        throw createHttpError(409, "booking.alreadySubmittedToday");
+        throw new AppError("booking.alreadySubmittedToday", 409);
       }
 
       const existingClient = await findExistingClientForSubmit(tx, {

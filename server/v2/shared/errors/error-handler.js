@@ -1,6 +1,7 @@
 // ايه هو؟ آخر middleware في الـ app. أي throw أو next(err) بيوصل هنا.
 // ليه في shared؟ لأنه بيمسك errors من كل الموديولات (auth, chat, أي حاجه).
 
+import multer from "multer";
 import { AppError } from "./AppError.js";
 
 // بيعمل ايه؟ يشوف لو AppError يرجع statusCode بتاعها، لو Error عادي يرجع 500.
@@ -27,8 +28,16 @@ export function errorHandler(err, req, res, next) {
     });
   }
 
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      success: false,
+      message: err.message || "File upload error",
+      code: err.code,
+    });
+  }
+
   // خطأ غير متوقع (database crash, bug, etc.)
-  if (err?.code) {
+  if (err?.code && typeof err.code === "number") {
     return res.status(err.code).json({
       success: false,
       message:

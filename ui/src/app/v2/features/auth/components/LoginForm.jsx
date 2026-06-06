@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { Button } from "@mui/material";
-import AuthCard from "@/app/v2/shared/components/AuthCard";
+import AuthCard from "@/app/v2/features/auth/components/AuthCard";
 import AuthForm from "@/app/v2/shared/form/AuthForm";
 import { LOGIN_FIELDS } from "@/app/v2/features/auth/auth.constants";
 import {

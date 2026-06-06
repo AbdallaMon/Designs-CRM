@@ -8,7 +8,7 @@ import {
   awaitPasswordSchema,
   initSchema,
 } from "../telegram.validation.js";
-import { mapTelegramPhone } from "./telegram.dto.js";
+import { normalizePhoneNumber } from "./telegram.middleware.js";
 
 const telegramRouter = Router();
 telegramRouter.use(AuthMiddleware.requireAuth);
@@ -21,32 +21,19 @@ telegramRouter.get(
 
 telegramRouter.post(
   "/auth/init",
-  (req, res, next) => {
-    if (req.body.phoneNumber) {
-      req.body.phoneNumber = mapTelegramPhone(req.body.phoneNumber);
-    }
-    next();
-  },
+  normalizePhoneNumber,
   validate(initSchema),
   asyncHandler(TelegramController.initTelegramAuth),
 );
 telegramRouter.post(
   "/auth/verify-code",
-  (req, res, next) => {
-    console.log("Original phone number input:", req.body);
-    if (req.body.phoneNumber) {
-      req.body.phoneNumber = mapTelegramPhone(req.body.phoneNumber);
-    }
-    next();
-  },
+  normalizePhoneNumber,
   validate(awaitCodeSchema),
-
   asyncHandler(TelegramController.verifyCode),
 );
 telegramRouter.post(
   "/auth/verify-password",
   validate(awaitPasswordSchema),
-
   asyncHandler(TelegramController.verifyPassword),
 );
 

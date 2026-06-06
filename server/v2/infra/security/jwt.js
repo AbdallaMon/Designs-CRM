@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
 import { env } from "../../config/env.js";
-const currentMainTokenName = process.env.LEGACY === "true" ? "token" : "access";
+const currentMainTokenName =
+  process.env.LEGACY === "true" ? "token" : "access_token";
 class JwtService {
   static #baseOptions = {
     httpOnly: true,

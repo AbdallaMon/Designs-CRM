@@ -3,14 +3,9 @@ import {
   notifyLeadCreated,
   notifyLeadSubmitted,
 } from "./booking-leads.notification.js";
+import { AppError } from "../../../../shared/errors/AppError.js";
 
 const DRAFT_EMAIL_DOMAIN = "draft.local";
-
-function createHttpError(status, message) {
-  const error = new Error(message);
-  error.status = status;
-  return error;
-}
 
 function buildDraftEmail() {
   const token = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -96,7 +91,7 @@ export class BookingLeadsUsecase {
     const existingLead = await this.#getExistingOrThrow(leadId);
 
     if (existingLead.bookingRequestStatus === "SUBMITTED") {
-      throw createHttpError(409, "booking.alreadySubmitted");
+      throw new AppError("booking.alreadySubmitted", 409);
     }
 
     const leadData = isLeadField(field)
@@ -126,9 +121,9 @@ export class BookingLeadsUsecase {
     const existingLead = await this.#getExistingOrThrow(leadId);
 
     if (existingLead.bookingRequestStatus === "SUBMITTED") {
-      throw createHttpError(
-        409,
+      throw new AppError(
         "This lead has already been submitted and cannot be submitted again",
+        409,
       );
     }
 
@@ -164,7 +159,7 @@ export class BookingLeadsUsecase {
     const lead = await this.repository.findById(leadId);
 
     if (!lead) {
-      throw createHttpError(404, "Booking lead not found");
+      throw new AppError("Booking lead not found", 404);
     }
 
     return lead;

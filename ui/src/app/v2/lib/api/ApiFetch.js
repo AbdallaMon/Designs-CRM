@@ -47,15 +47,16 @@ class ApiFetch {
     return `${this.baseUrl}/${path.replace(/^\//, "")}`;
   }
 
-  _buildHeaders(isFileUpload, customHeader) {
+  _buildHeaders(isFileUpload, customHeader, isMultipart) {
     if (customHeader) return { "Content-Type": customHeader };
-    if (isFileUpload) return {};
+    if (isFileUpload || isMultipart) return {};
+
     return { "Content-Type": "application/json" };
   }
 
-  _serializeBody(body, isFileUpload) {
+  _serializeBody(body, isFileUpload, isMultipart) {
     if (body === undefined || body === null) return undefined;
-    return isFileUpload ? body : JSON.stringify(body);
+    return isFileUpload || isMultipart ? body : JSON.stringify(body);
   }
 
   _buildPaginatedPath(url, { page, limit, filters, search, sort, others }) {
@@ -100,9 +101,10 @@ class ApiFetch {
       isFileUpload = false,
       customHeader,
       _skipRefresh = false,
+      isMultipart = false,
     } = opts;
 
-    const headers = this._buildHeaders(isFileUpload, customHeader);
+    const headers = this._buildHeaders(isFileUpload, customHeader, isMultipart);
 
     const response = await fetch(this._buildUrl(path), {
       method,
@@ -116,15 +118,13 @@ class ApiFetch {
     let result;
     try {
       result = await response.json();
-    } catch {
+    } catch (e) {
+      console.warn("Failed to parse JSON response:", e);
       result = { message: response.statusText };
     }
     result.status = status;
-    logToMd(result, "result");
     if (status === 401 && !_skipRefresh) {
-      logToMd("Unauthorized, attempting to refresh token...");
       const refreshed = await this._refreshToken();
-
       if (refreshed) {
         return this._request(path, opts);
       }
@@ -134,6 +134,15 @@ class ApiFetch {
       }
     }
     // ─────────────────────────────────────────────────────────────────────────
+
+    if (status >= 400) {
+      const error = new Error(
+        result.message || response.statusText || "Request failed",
+      );
+      error.status = status;
+      error.data = result;
+      throw error;
+    }
 
     return result;
   }
@@ -147,17 +156,38 @@ class ApiFetch {
     return this._request(path, { method: "GET" });
   }
 
-  async submit(method, path, body, isFileUpload = false, customHeader) {
+  async submit(
+    method,
+    path,
+    body,
+    isFileUpload = false,
+    customHeader,
+    isMultipart = false,
+  ) {
     return this._request(path, {
       method: method.toUpperCase(),
-      body: this._serializeBody(body, isFileUpload),
+      body: this._serializeBody(body, isFileUpload, isMultipart),
       isFileUpload,
       customHeader,
+      isMultipart,
     });
   }
 
-  async post(path, body, isFileUpload = false, customHeader) {
-    return this.submit("POST", path, body, isFileUpload, customHeader);
+  async post(
+    path,
+    body,
+    isFileUpload = false,
+    customHeader,
+    isMultipart = false,
+  ) {
+    return this.submit(
+      "POST",
+      path,
+      body,
+      isFileUpload,
+      customHeader,
+      isMultipart,
+    );
   }
 
   async put(path, body, isFileUpload = false, customHeader) {
@@ -170,6 +200,32 @@ class ApiFetch {
 
   async delete(path) {
     return this._request(path, { method: "DELETE" });
+  }
+  get public() {
+    const self = this;
+    return {
+      get: (path) => self._request(path, { method: "GET", _skipRefresh: true }),
+      post: (path, body) =>
+        self._request(path, {
+          method: "POST",
+          body: self._serializeBody(body),
+          _skipRefresh: true,
+        }),
+      put: (path, body) =>
+        self._request(path, {
+          method: "PUT",
+          body: self._serializeBody(body),
+          _skipRefresh: true,
+        }),
+      patch: (path, body) =>
+        self._request(path, {
+          method: "PATCH",
+          body: self._serializeBody(body),
+          _skipRefresh: true,
+        }),
+      delete: (path) =>
+        self._request(path, { method: "DELETE", _skipRefresh: true }),
+    };
   }
 }
 

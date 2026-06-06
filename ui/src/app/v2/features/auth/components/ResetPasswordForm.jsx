@@ -1,5 +1,5 @@
 "use client";
-import AuthCard from "@/app/v2/shared/components/AuthCard";
+import AuthCard from "@/app/v2/features/auth/components/AuthCard";
 import AuthForm from "@/app/v2/shared/form/AuthForm";
 import { RESET_PASSWORD_FIELDS } from "@/app/v2/features/auth/auth.constants";
 import {

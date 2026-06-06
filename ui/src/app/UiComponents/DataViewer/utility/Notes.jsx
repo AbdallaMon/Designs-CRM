@@ -29,6 +29,9 @@ import {
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
+import { useUpload } from "@/app/v2/hooks/useUpload";
+import { useOverlay } from "@/app/v2/hooks/useOverlay";
+import { UploadOverlay } from "@/app/v2/shared/components/feedback/UploadOverlay";
 
 export function NotesComponent({
   idKey,
@@ -51,7 +54,13 @@ export function NotesComponent({
   const { setLoading: setGlobalLoading } = useToastContext();
   const { setAlertError } = useAlertContext();
   const { user } = useAuth();
-  const { setProgress, setOverlay } = useUploadContext();
+  const { isOpen: overlayIsOpen, open, close } = useOverlay();
+  const { uploadAsChunk, progress, fileName, uploadSpeed, isUploading } =
+    useUpload({
+      onUploadStart: open,
+      onUploadEnd: close,
+      isClient: slug === "client",
+    });
 
   useEffect(() => {
     if (isOpen) {
@@ -93,25 +102,26 @@ export function NotesComponent({
     const data = { idKey, id, content };
 
     if (file) {
-      const fileUpload = await uploadInChunks(
-        file.file,
-        setProgress,
-        setOverlay,
-        slug === "client"
-      );
+      const uploadResponse = await uploadAsChunk({
+        file: file.file,
+        withThumbnail: false,
+      });
+      console.log(uploadResponse, "uploadResponse");
 
-      if (fileUpload.status === 200) {
-        data.attachment = fileUpload.url;
+      if (uploadResponse.status === 200) {
+        data.attachment = uploadResponse.url;
       }
     }
+    console.log({ data }, "Data to submit for note");
 
     const request = await handleRequestSubmit(
       data,
       setGlobalLoading,
       `${slug}/notes`,
       false,
-      "Creating"
+      "Creating",
     );
+    console.log({ request }, "Response from creating note");
 
     if (request.status === 200) {
       setContent("");
@@ -143,6 +153,13 @@ export function NotesComponent({
   }
   return (
     <>
+      <UploadOverlay
+        progress={progress}
+        fileName={fileName}
+        uploadSpeed={uploadSpeed}
+        isUploading={isUploading}
+        showOverlay={overlayIsOpen}
+      />
       <Modal
         open={openModal}
         onClose={handleClose}

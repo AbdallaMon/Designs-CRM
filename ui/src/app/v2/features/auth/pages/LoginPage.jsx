@@ -1,4 +1,4 @@
-import AuthLayout from "@/app/v2/shared/components/AuthLayout";
+import AuthLayout from "@/app/v2/features/auth/components/AuthLayout";
 import LoginForm from "@/app/v2/features/auth/components/LoginForm";
 
 /**

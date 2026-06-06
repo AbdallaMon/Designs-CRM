@@ -17,6 +17,9 @@ import SimpleFileInput from "../../formComponents/SimpleFileInput";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
+import { useOverlay } from "@/app/v2/hooks/useOverlay";
+import { useUpload } from "@/app/v2/hooks/useUpload";
+import { UploadOverlay } from "@/app/v2/shared/components/feedback/UploadOverlay";
 
 export function Notes({ idKey, id, slug = "accountant" }) {
   const [openModal, setOpenModal] = useState(false);
@@ -105,7 +108,14 @@ export function AddNotes({
   const [content, setContent] = useState("");
   const [file, setFile] = useState();
   const { setAlertError } = useAlertContext();
-  const { setProgress, setOverlay } = useUploadContext();
+
+  const { isOpen, open, close } = useOverlay();
+  const { uploadAsChunk, progress, fileName, uploadSpeed, isUploading } =
+    useUpload({
+      onUploadStart: open,
+      onUploadEnd: close,
+      isClient: slug === "client",
+    });
 
   async function addNote() {
     if (!content) {
@@ -118,11 +128,11 @@ export function AddNotes({
     }
     const data = { idKey, id, content };
     if (file) {
-      const uploadResponse = await uploadInChunks(
-        file,
-        setProgress,
-        setOverlay
-      );
+      const uploadResponse = await uploadAsChunk({
+        file: file.file,
+        withThumbnail: false,
+      });
+      console.log(uploadResponse, "uploadResponse");
       if (uploadResponse.status === 200) {
         data.attachment = uploadResponse.url;
       }
@@ -132,7 +142,7 @@ export function AddNotes({
       setLoading,
       `${slug}/notes`,
       false,
-      "Creating"
+      "Creating",
     );
     if (request.status === 200) {
       setOpenModal(false);
@@ -148,6 +158,15 @@ export function AddNotes({
       >
         {mustAddFile ? "Add attachment" : "Add note or attachment"}
       </Button>
+
+      <UploadOverlay
+        progress={progress}
+        fileName={fileName}
+        uploadSpeed={uploadSpeed}
+        isUploading={isUploading}
+        showOverlay={isOpen}
+      />
+
       <Modal
         open={openModal}
         onClose={() => setOpenModal(false)}

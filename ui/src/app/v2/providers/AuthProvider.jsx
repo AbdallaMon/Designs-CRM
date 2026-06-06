@@ -61,7 +61,6 @@ export function AuthProvider({ children }) {
       setValidatingAuth(true);
       try {
         const result = await apiFetch.get("auth/me");
-        if (result.status !== 200) throw new Error("Unauthenticated");
         setUser(result.data.user);
         setIsLoggedIn(true);
       } catch {

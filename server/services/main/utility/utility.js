@@ -509,41 +509,14 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 100 * 1024 * 1024 },
-}).any();
-
-const s = multer.memoryStorage();
 const storageUpload = multer({
   storage: storage,
   limits: { fileSize: 200 * 1024 * 1024 }, // 200MB
 }).any();
 
-// FTP Upload Function
-async function uploadToFTP(localFilePath, remotePath) {
-  const client = new Client();
-  try {
-    await client.access(ftpConfig);
-    await client.uploadFrom(localFilePath, remotePath);
-  } catch (err) {
-    console.error(`Failed to upload ${localFilePath}:`, err.message);
-  } finally {
-    client.close();
-  }
-}
-
-function deleteFile(filePath) {
-  try {
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-  } catch (err) {
-    console.error(`Error deleting file: ${filePath}`, err.message);
-  }
-}
-
 // Upload API
+// used
+
 export const uploadFiles = async (req, res) => {
   try {
     const fileUrls = {};
@@ -597,7 +570,7 @@ export const uploadFiles = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
+// used
 export async function uploadAsHttp(req, res) {
   try {
     const filename = req.file.originalname;
@@ -634,7 +607,7 @@ function buildPublicUrl(remoteFilename, server = process.env.IMAGEDOMAIN) {
 
   return `${base}${path}`;
 }
-
+// used
 export async function uploadToFTPHttpAsBuffer(
   source,
   remoteFilename,
@@ -675,51 +648,51 @@ export async function uploadToFTPHttpAsBuffer(
   }
 }
 
-export async function uploadToFTPAsBuffer(
-  source,
-  remotePath,
-  isBuffer = false,
-) {
-  const client = new Client();
-  try {
-    await client.access({
-      ...ftpConfig,
-      timeout: 120 * 1000, // 2 minutes for initial control connection
-    });
+// export async function uploadToFTPAsBuffer(
+//   source,
+//   remotePath,
+//   isBuffer = false,
+// ) {
+//   const client = new Client();
+//   try {
+//     await client.access({
+//       ...ftpConfig,
+//       timeout: 120 * 1000, // 2 minutes for initial control connection
+//     });
 
-    client.ftp.verbose = true; // Optional: helps with debugging
-    client.trackProgress((info) => {
-      console.log(`Transferred ${info.bytes} bytes`);
-    });
+//     client.ftp.verbose = true; // Optional: helps with debugging
+//     client.trackProgress((info) => {
+//       console.log(`Transferred ${info.bytes} bytes`);
+//     });
 
-    let dataToUpload = source;
-    if (isBuffer) {
-      if (Buffer.isBuffer(source)) {
-        dataToUpload = source;
-      } else if (source instanceof Uint8Array) {
-        dataToUpload = Buffer.from(source.buffer);
-      } else {
-        throw new Error("Invalid buffer source type.");
-      }
-    }
+//     let dataToUpload = source;
+//     if (isBuffer) {
+//       if (Buffer.isBuffer(source)) {
+//         dataToUpload = source;
+//       } else if (source instanceof Uint8Array) {
+//         dataToUpload = Buffer.from(source.buffer);
+//       } else {
+//         throw new Error("Invalid buffer source type.");
+//       }
+//     }
 
-    console.log("PDF size in KB:", (dataToUpload.length / 1024).toFixed(2));
+//     console.log("PDF size in KB:", (dataToUpload.length / 1024).toFixed(2));
 
-    const bufferStream = Readable.from(dataToUpload); // ? Stream-safe
-    client.ftp.socket.setTimeout(10 * 60 * 1000);
-    await client.uploadFrom(bufferStream, remotePath);
+//     const bufferStream = Readable.from(dataToUpload); // ? Stream-safe
+//     client.ftp.socket.setTimeout(10 * 60 * 1000);
+//     await client.uploadFrom(bufferStream, remotePath);
 
-    console.log(`? Uploaded to FTP: ${remotePath}`);
-  } catch (err) {
-    client.trackProgress((info) => {
-      console.log(`Transferred ${info.bytes} bytes in error`);
-    });
-    console.error(`? Failed to upload ${remotePath}:`, err.message);
-    throw err;
-  } finally {
-    client.close();
-  }
-}
+//     console.log(`? Uploaded to FTP: ${remotePath}`);
+//   } catch (err) {
+//     client.trackProgress((info) => {
+//       console.log(`Transferred ${info.bytes} bytes in error`);
+//     });
+//     console.error(`? Failed to upload ${remotePath}:`, err.message);
+//     throw err;
+//   } finally {
+//     client.close();
+//   }
+// }
 
 export async function getNotifications(
   searchParams,

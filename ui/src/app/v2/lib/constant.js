@@ -5,3 +5,11 @@ export const PROTECTED_PREFIXES = ["/dashboard"];
 
 /** Routes that should redirect away when already logged in. */
 export const AUTH_ROUTES = ["/login", "reset"];
+
+export const ZINDEXS = {
+  TOAST: 50,
+  TOASTLOADINGOVERLAY: 40,
+  DIALOG: 100,
+  LOADINGOVERLAY: 150,
+  OVERLAY: 200,
+};

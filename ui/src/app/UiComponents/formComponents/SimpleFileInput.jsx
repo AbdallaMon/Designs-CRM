@@ -1,3 +1,4 @@
+import { FILES } from "@/app/v2/shared/constants";
 import { Alert, Box, Link, Snackbar, TextField } from "@mui/material";
 import { useState } from "react";
 
@@ -8,16 +9,18 @@ export default function SimpleFileInput({
   variant = "filled",
   setData,
   handleUpload,
-  helperText = "Max file uploads : 80 mb",
+  helperText = `Max file uploads : ${FILES.SIZE_LIMIT / (1024 * 1024)} mb`,
 }) {
   const [preview, setPreview] = useState();
   const [fileName, setFileName] = useState(""); // Track file name
   const [error, setError] = useState(null); // Track file error
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    const MAX_FILE_SIZE = 80 * 1024 * 1024;
+    const MAX_FILE_SIZE = FILES.SIZE_LIMIT;
     if (file.size > MAX_FILE_SIZE) {
-      setError(`File size exceeds the 80 MB limit.`);
+      setError(
+        `File size exceeds the ${FILES.SIZE_LIMIT / (1024 * 1024)} MB limit.`,
+      );
       setPreview(null);
       setFileName("");
       return;
@@ -25,7 +28,6 @@ export default function SimpleFileInput({
     setError(null);
     const accept = input?.accept || null;
     const fileType = file.type;
-
     const isVideo = accept?.includes("video/*");
     const isImage = accept?.includes("image/*");
     const isPdf = accept?.includes("application/pdf");
@@ -43,7 +45,7 @@ export default function SimpleFileInput({
       if (isPdf) allowedTypes.push("PDFs");
 
       setError(
-        `File type not allowed. Allowed types: ${allowedTypes.join(", ")}.`
+        `File type not allowed. Allowed types: ${allowedTypes.join(", ")}.`,
       );
       setPreview(null);
       setFileName("");
@@ -95,7 +97,7 @@ export default function SimpleFileInput({
             handleFileChange(e);
           }}
           slotProps={{
-            inputLabel: { shrink: true }
+            inputLabel: { shrink: true },
           }}
         />
         {renderPreview()}

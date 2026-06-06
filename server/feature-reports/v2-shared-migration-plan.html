@@ -1,0 +1,1471 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>V2 Shared Migration Plan</title>
+    <style>
+      :root {
+        --bg: #0f1117;
+        --surface: #1a1d27;
+        --surface2: #222636;
+        --border: #2e3349;
+        --accent: #6c8cff;
+        --accent2: #4ade80;
+        --accent3: #f59e0b;
+        --accent4: #f43f5e;
+        --text: #e2e8f0;
+        --text-muted: #8892a4;
+        --badge-new: #1a3a2a;
+        --badge-new-text: #4ade80;
+        --badge-exists: #1a2540;
+        --badge-exists-text: #6c8cff;
+        --badge-split: #3a2a0a;
+        --badge-split-text: #f59e0b;
+        --badge-removed: #2a0a12;
+        --badge-removed-text: #f43f5e;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "Segoe UI", system-ui, sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+        padding: 32px 24px;
+        max-width: 1280px;
+        margin: 0 auto;
+      }
+
+      /* ── Typography ─────────────────────────────────────── */
+      h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--accent);
+        margin-bottom: 4px;
+      }
+      h2 {
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--text);
+        margin: 40px 0 16px;
+        border-left: 3px solid var(--accent);
+        padding-left: 12px;
+      }
+      h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--accent);
+        margin-bottom: 10px;
+      }
+      p {
+        color: var(--text-muted);
+        margin-bottom: 10px;
+      }
+      code {
+        font-family: "Consolas", "Fira Code", monospace;
+        font-size: 12px;
+        background: #12151e;
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: var(--accent3);
+      }
+
+      /* ── Header ─────────────────────────────────────────── */
+      .hero {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 28px 32px;
+        margin-bottom: 40px;
+      }
+      .hero-meta {
+        color: var(--text-muted);
+        font-size: 13px;
+        margin-top: 6px;
+      }
+      .hero-meta span {
+        margin-right: 20px;
+      }
+
+      /* ── Badges ─────────────────────────────────────────── */
+      .badge {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 99px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .badge-new {
+        background: var(--badge-new);
+        color: var(--badge-new-text);
+      }
+      .badge-exists {
+        background: var(--badge-exists);
+        color: var(--badge-exists-text);
+      }
+      .badge-split {
+        background: var(--badge-split);
+        color: var(--badge-split-text);
+      }
+      .badge-removed {
+        background: var(--badge-removed);
+        color: var(--badge-removed-text);
+      }
+
+      /* ── Cards ──────────────────────────────────────────── */
+      .card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 20px 24px;
+        margin-bottom: 16px;
+      }
+      .card-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .card-title {
+        font-weight: 600;
+        font-size: 15px;
+      }
+
+      /* ── Tables ─────────────────────────────────────────── */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        margin-bottom: 8px;
+      }
+      thead tr {
+        background: var(--surface2);
+      }
+      th {
+        padding: 8px 12px;
+        text-align: left;
+        color: var(--text-muted);
+        font-weight: 600;
+        border-bottom: 1px solid var(--border);
+      }
+      td {
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
+      tr:hover td {
+        background: var(--surface2);
+      }
+      .method {
+        font-weight: 700;
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: monospace;
+      }
+      .get {
+        background: #0f2d1a;
+        color: #4ade80;
+      }
+      .post {
+        background: #0d2035;
+        color: #60a5fa;
+      }
+      .put {
+        background: #2d1d0a;
+        color: #f59e0b;
+      }
+      .del {
+        background: #2a0a12;
+        color: #f43f5e;
+      }
+      .patch {
+        background: #1a0d2e;
+        color: #c084fc;
+      }
+
+      /* ── Module Tree ─────────────────────────────────────── */
+      .module-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .module-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px 20px;
+        position: relative;
+        overflow: hidden;
+      }
+      .module-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 3px;
+        height: 100%;
+      }
+      .module-card.new::before {
+        background: var(--accent2);
+      }
+      .module-card.exists::before {
+        background: var(--accent);
+      }
+      .module-card.split::before {
+        background: var(--accent3);
+      }
+      .module-card-name {
+        font-weight: 700;
+        font-size: 15px;
+        font-family: monospace;
+        margin-bottom: 4px;
+      }
+      .module-card-prefix {
+        font-size: 12px;
+        color: var(--accent3);
+        font-family: monospace;
+        margin-bottom: 10px;
+      }
+      .module-card-files {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+      .module-card-files li {
+        list-style: none;
+        padding: 2px 0;
+      }
+      .module-card-files li::before {
+        content: "├ ";
+        color: var(--border);
+        font-family: monospace;
+      }
+      .module-card-files li:last-child::before {
+        content: "└ ";
+        color: var(--border);
+        font-family: monospace;
+      }
+      .ep-count {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: var(--surface2);
+        color: var(--text-muted);
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 99px;
+      }
+
+      /* ── Flow Diagram ─────────────────────────────────────── */
+      .flow {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        overflow-x: auto;
+        padding-bottom: 8px;
+        flex-wrap: wrap;
+        gap: 0;
+      }
+      .flow-box {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 18px;
+        text-align: center;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .flow-box.highlight {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .flow-box.dim {
+        color: var(--text-muted);
+      }
+      .flow-arrow {
+        color: var(--text-muted);
+        padding: 0 8px;
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+
+      /* ── Comparison ──────────────────────────────────────── */
+      .compare-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .compare-card {
+        border-radius: 10px;
+        padding: 20px;
+      }
+      .compare-card.old {
+        background: #1e1215;
+        border: 1px solid #3a1a20;
+      }
+      .compare-card.new {
+        background: #121e14;
+        border: 1px solid #1a3a22;
+      }
+      .compare-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+      }
+      .compare-card.old .compare-label {
+        color: var(--accent4);
+      }
+      .compare-card.new .compare-label {
+        color: var(--accent2);
+      }
+      .compare-item {
+        font-size: 13px;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        display: flex;
+        gap: 8px;
+      }
+      .compare-item:last-child {
+        border-bottom: none;
+      }
+      .compare-card.old .compare-item::before {
+        content: "✗";
+        color: var(--accent4);
+        flex-shrink: 0;
+      }
+      .compare-card.new .compare-item::before {
+        content: "✓";
+        color: var(--accent2);
+        flex-shrink: 0;
+      }
+
+      /* ── Execution Order ─────────────────────────────────── */
+      .steps {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        position: relative;
+      }
+      .steps::before {
+        content: "";
+        position: absolute;
+        left: 19px;
+        top: 20px;
+        bottom: 20px;
+        width: 2px;
+        background: var(--border);
+      }
+      .step {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        padding: 10px 0;
+      }
+      .step-num {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 13px;
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+      }
+      .step.phase-a .step-num {
+        border-color: var(--accent2);
+        color: var(--accent2);
+      }
+      .step.phase-b .step-num {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .step.phase-c .step-num {
+        border-color: var(--accent3);
+        color: var(--accent3);
+      }
+      .step-body {
+        padding-top: 8px;
+      }
+      .step-title {
+        font-weight: 600;
+        margin-bottom: 2px;
+      }
+      .step-desc {
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+
+      /* ── Stats Row ───────────────────────────────────────── */
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 12px;
+        margin-bottom: 32px;
+      }
+      .stat {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 18px;
+        text-align: center;
+      }
+      .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--accent);
+      }
+      .stat-label {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 4px;
+      }
+
+      /* ── Sub-module breakdown ──────────────────────────────── */
+      .sub-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 12px;
+        margin: 12px 0;
+      }
+      .sub-module {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 12px 16px;
+      }
+      .sub-module-name {
+        font-weight: 700;
+        font-size: 13px;
+        font-family: monospace;
+        color: var(--accent2);
+        margin-bottom: 6px;
+      }
+      .sub-module-ep {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      /* ── TOC ─────────────────────────────────────────────── */
+      .toc {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 20px 24px;
+        margin-bottom: 40px;
+      }
+      .toc h3 {
+        color: var(--text-muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 12px;
+      }
+      .toc-list {
+        list-style: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .toc-list a {
+        background: var(--surface2);
+        border: 1px solid var(--border);
+        color: var(--accent);
+        text-decoration: none;
+        padding: 6px 14px;
+        border-radius: 99px;
+        font-size: 12px;
+        transition: border-color 0.15s;
+      }
+      .toc-list a:hover {
+        border-color: var(--accent);
+      }
+
+      @media (max-width: 700px) {
+        .compare-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ─── Hero ─────────────────────────────────────────────────────────────────── -->
+    <div class="hero">
+      <h1>V2 Shared Migration Plan</h1>
+      <div class="hero-meta">
+        <span>📅 April 13, 2026</span>
+        <span>🚀 Status: PLAN — No code touches yet</span>
+        <span
+          >📦 Scope: <code>server/routes/shared/</code> →
+          <code>server/v2/modules/</code></span
+        >
+      </div>
+    </div>
+
+    <!-- ─── TOC ──────────────────────────────────────────────────────────────────── -->
+    <div class="toc">
+      <h3>Jump to section</h3>
+      <ul class="toc-list">
+        <li><a href="#stats">At a Glance</a></li>
+        <li><a href="#compare">Old vs New</a></li>
+        <li><a href="#flow">Request Flow</a></li>
+        <li><a href="#modules">Module Map</a></li>
+        <li><a href="#leads">Leads Sub-Split</a></li>
+        <li><a href="#endpoints">Endpoint Audit</a></li>
+        <li><a href="#order">Execution Order</a></li>
+        <li><a href="#routes">routes.js Changes</a></li>
+        <li><a href="#risks">Risks</a></li>
+      </ul>
+    </div>
+
+    <!-- ─── Stats ─────────────────────────────────────────────────────────────────── -->
+    <h2 id="stats">At a Glance</h2>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value">0</div>
+        <div class="stat-label">Old files touched</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">13</div>
+        <div class="stat-label">New v2 modules</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">~110</div>
+        <div class="stat-label">New files created</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">26</div>
+        <div class="stat-label">Lead endpoints split</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">100%</div>
+        <div class="stat-label">Endpoints preserved</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">3</div>
+        <div class="stat-label">Utilities split into</div>
+      </div>
+    </div>
+
+    <!-- ─── Old vs New ─────────────────────────────────────────────────────────────── -->
+    <h2 id="compare">Old Code vs New Code Patterns</h2>
+    <div class="compare-grid">
+      <div class="compare-card old">
+        <div class="compare-label">Old Way (routes/shared)</div>
+        <div class="compare-item">
+          700-line client-leads.js doing everything
+        </div>
+        <div class="compare-item">Manual try/catch in every route handler</div>
+        <div class="compare-item">No input validation — raw req.body</div>
+        <div class="compare-item">
+          Role checks inline in route (12+ lines each)
+        </div>
+        <div class="compare-item">
+          getTokenData(req,res) / getCurrentUser(req)
+        </div>
+        <div class="compare-item">utilities.js = 3 unrelated domains mixed</div>
+        <div class="compare-item">
+          Duplicate endpoints (/update/:id AND /lead/update/:id)
+        </div>
+        <div class="compare-item">console.log scattered everywhere</div>
+        <div class="compare-item">No standard response shape enforcement</div>
+      </div>
+      <div class="compare-card new">
+        <div class="compare-label">New Way (v2/modules)</div>
+        <div class="compare-item">9 focused sub-modules under leads/staff/</div>
+        <div class="compare-item">
+          asyncHandler + AppError + global errorHandler
+        </div>
+        <div class="compare-item">Zod validate() middleware on every route</div>
+        <div class="compare-item">
+          resolveScope(req.auth) inside each usecase
+        </div>
+        <div class="compare-item">
+          req.auth set by AuthMiddleware.requireAuth
+        </div>
+        <div class="compare-item">
+          Split: notifications + user-logs + utilities
+        </div>
+        <div class="compare-item">Single PUT /:id/update in v2</div>
+        <div class="compare-item">Errors bubble to global handler silently</div>
+        <div class="compare-item">
+          ok() / created() / updated() from shared/http
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Request Flow ────────────────────────────────────────────────────────────── -->
+    <h2 id="flow">Request Flow (New v2 Pattern)</h2>
+    <div class="card">
+      <div class="flow">
+        <div class="flow-box highlight">HTTP Request</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">
+          app.js<br /><small style="color: var(--text-muted)"
+            >CORS, cookie-parser</small
+          >
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box highlight">AuthMiddleware<br />.requireAuth</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">
+          validate()<br /><small style="color: var(--text-muted)"
+            >Zod schema</small
+          >
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">
+          asyncHandler<br /><small style="color: var(--text-muted)"
+            >catches throws</small
+          >
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box highlight">
+          Controller<br /><small style="color: var(--text-muted)"
+            >parse+dispatch</small
+          >
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">
+          UseCase<br /><small style="color: var(--text-muted)"
+            >business logic</small
+          >
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box">
+          Repository<br /><small style="color: var(--text-muted)"
+            >wraps service</small
+          >
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box highlight">ok(res, data)</div>
+      </div>
+      <div style="margin-top: 12px; font-size: 12px; color: var(--text-muted)">
+        On any throw → asyncHandler catches → next(err) → global
+        <code>errorHandler</code> sends JSON response automatically
+      </div>
+    </div>
+
+    <!-- ─── Module Map ──────────────────────────────────────────────────────────────── -->
+    <h2 id="modules">New v2 Module Map</h2>
+    <p>
+      Each card = one module folder with 5 standard files. Click the badge to
+      see status.
+    </p>
+    <div class="module-grid">
+      <div class="module-card exists">
+        <div class="ep-count">EXISTS ✓</div>
+        <div class="module-card-name">auth/</div>
+        <div class="module-card-prefix">/v2/auth</div>
+        <ul class="module-card-files">
+          <li>auth.routes.js</li>
+          <li>auth.controller.js</li>
+          <li>auth.usecase.js</li>
+          <li>auth.repo.js</li>
+          <li>auth.validation.js</li>
+        </ul>
+      </div>
+
+      <div class="module-card exists">
+        <div class="ep-count">EXISTS ✓</div>
+        <div class="module-card-name">chat/</div>
+        <div class="module-card-prefix">/v2/chat</div>
+        <ul class="module-card-files">
+          <li>chat.routes.js</li>
+          <li>chat.controller.js</li>
+          <li>chat.usecase.js</li>
+          <li>chat.repository.js</li>
+          <li>chat.validation.js</li>
+        </ul>
+      </div>
+
+      <div class="module-card exists">
+        <div class="ep-count">EXISTS ✓</div>
+        <div class="module-card-name">leads/client/booking-lead/</div>
+        <div class="module-card-prefix">/v2/client/booking-leads</div>
+        <ul class="module-card-files">
+          <li>booking-leads.routes.js</li>
+          <li>booking-leads.controller.js</li>
+          <li>booking-leads.usecase.js</li>
+          <li>booking-leads.repository.js</li>
+          <li>booking-leads.validation.js</li>
+        </ul>
+      </div>
+
+      <div class="module-card new">
+        <div class="ep-count">26 endpoints</div>
+        <div class="module-card-name">leads/staff/</div>
+        <div class="module-card-prefix">/v2/staff/leads</div>
+        <ul class="module-card-files">
+          <li>staff-leads.routes.js (collector)</li>
+          <li>→ lead-list/ (3 ep)</li>
+          <li>→ lead-detail/ (3 ep)</li>
+          <li>→ lead-assignment/ (4 ep)</li>
+          <li>→ call-reminders/ (3 ep)</li>
+          <li>→ meeting-reminders/ (6 ep)</li>
+          <li>→ price-offers/ (2 ep)</li>
+          <li>→ lead-payments/ (1 ep)</li>
+          <li>→ lead-files-notes/ (4 ep)</li>
+          <li>→ sales-stages/ (2 ep)</li>
+        </ul>
+      </div>
+
+      <div class="module-card new">
+        <div class="ep-count">10 endpoints</div>
+        <div class="module-card-name">projects/</div>
+        <div class="module-card-prefix">/v2/projects</div>
+        <ul class="module-card-files">
+          <li>projects.routes.js</li>
+          <li>projects.controller.js</li>
+          <li>projects.usecase.js</li>
+          <li>projects.repository.js</li>
+          <li>projects.validation.js</li>
+        </ul>
+      </div>
+
+      <div class="module-card new">
+        <div class="ep-count">7 endpoints</div>
+        <div class="module-card-name">tasks/</div>
+        <div class="module-card-prefix">/v2/tasks</div>
+        <ul class="module-card-files">
+          <li>tasks.routes.js</li>
+          <li>tasks.controller.js</li>
+          <li>tasks.usecase.js</li>
+          <li>tasks.repository.js</li>
+          <li>tasks.validation.js</li>
+        </ul>
+      </div>
+
+      <div class="module-card new">
+        <div class="ep-count">8 endpoints</div>
+        <div class="module-card-name">updates/</div>
+        <div class="module-card-prefix">/v2/updates</div>
+        <ul class="module-card-files">
+          <li>updates.routes.js</li>
+          <li>updates.controller.js</li>
+          <li>updates.usecase.js</li>
+          <li>updates.repository.js</li>
+          <li>updates.validation.js</li>
+        </ul>
+      </div>
+
+      <div class="module-card new">
+        <div class="ep-count">9 endpoints</div>
+        <div class="module-card-name">dashboard/</div>
+        <div class="module-card-prefix">/v2/dashboard</div>
+        <ul class="module-card-files">
+          <li>dashboard.routes.js</li>
+          <li>dashboard.controller.js</li>
+          <li>dashboard.usecase.js</li>
+          <li>dashboard.repository.js</li>
+          <li>dashboard.validation.js</li>
+        </ul>
+      </div>
+
+      <div class="module-card new">
+        <div class="ep-count">4 endpoints</div>
+        <div class="module-card-name">delivery/</div>
+        <div class="module-card-prefix">/v2/delivery</div>
+        <ul class="module-card-files">
+          <li>delivery.routes.js</li>
+          <li>delivery.controller.js</li>
+          <li>delivery.usecase.js</li>
+          <li>delivery.repository.js</li>
+          <li>delivery.validation.js</li>
+        </ul>
+      </div>
+
+      <div class="module-card split">
+        <div class="ep-count">SPLIT from utilities</div>
+        <div class="module-card-name">notifications/</div>
+        <div class="module-card-prefix">/v2/notifications</div>
+        <ul class="module-card-files">
+          <li>notifications.routes.js</li>
+          <li>notifications.controller.js</li>
+          <li>notifications.usecase.js</li>
+          <li>notifications.repository.js</li>
+          <li>notifications.validation.js</li>
+        </ul>
+      </div>
+
+      <div class="module-card split">
+        <div class="ep-count">SPLIT from utilities</div>
+        <div class="module-card-name">user-logs/</div>
+        <div class="module-card-prefix">/v2/user-logs</div>
+        <ul class="module-card-files">
+          <li>user-logs.routes.js</li>
+          <li>user-logs.controller.js</li>
+          <li>user-logs.usecase.js</li>
+          <li>user-logs.repository.js</li>
+          <li>user-logs.validation.js</li>
+        </ul>
+      </div>
+
+      <div class="module-card split">
+        <div class="ep-count">SPLIT from utilities</div>
+        <div class="module-card-name">utilities/</div>
+        <div class="module-card-prefix">/v2/utilities</div>
+        <ul class="module-card-files">
+          <li>utilities.routes.js</li>
+          <li>utilities.controller.js</li>
+          <li>utilities.usecase.js</li>
+          <li>utilities.repository.js</li>
+          <li>utilities.validation.js</li>
+        </ul>
+      </div>
+
+      <div class="module-card new">
+        <div class="ep-count">4 endpoints</div>
+        <div class="module-card-name">users/</div>
+        <div class="module-card-prefix">/v2/users</div>
+        <ul class="module-card-files">
+          <li>users.routes.js</li>
+          <li>users.controller.js</li>
+          <li>users.usecase.js</li>
+          <li>users.repository.js</li>
+          <li>users.validation.js</li>
+        </ul>
+      </div>
+
+      <div class="module-card new">
+        <div class="ep-count">3 endpoints</div>
+        <div class="module-card-name">reviews/</div>
+        <div class="module-card-prefix">/v2/reviews</div>
+        <ul class="module-card-files">
+          <li>reviews.routes.js</li>
+          <li>reviews.controller.js</li>
+          <li>reviews.usecase.js</li>
+          <li>reviews.repository.js</li>
+          <li>reviews.validation.js</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ─── Leads Sub-Split ────────────────────────────────────────────────────────── -->
+    <h2 id="leads">Why client-leads.js Needs to Be Split into 9</h2>
+    <p>
+      The old <code>client-leads.js</code> is 700+ lines with 26 endpoints
+      spanning 6 conceptual domains. In v2 it becomes 9 focused sub-modules all
+      under <code>leads/staff/</code>:
+    </p>
+
+    <div class="sub-grid">
+      <div class="sub-module">
+        <div class="sub-module-name">lead-list/</div>
+        <div class="sub-module-ep">GET / · GET /deals · GET /columns</div>
+      </div>
+      <div class="sub-module">
+        <div class="sub-module-name">lead-detail/</div>
+        <div class="sub-module-ep">
+          GET /:id · PUT /:id/status · PUT /:id/update
+        </div>
+      </div>
+      <div class="sub-module">
+        <div class="sub-module-name">lead-assignment/</div>
+        <div class="sub-module-ep">
+          PUT /assign · PUT /bulk-assign · PUT /convert · POST
+          /:userId/countries
+        </div>
+      </div>
+      <div class="sub-module">
+        <div class="sub-module-name">call-reminders/</div>
+        <div class="sub-module-ep">
+          GET /calls · POST /:id/call-reminders · PUT /call-reminders/:id
+        </div>
+      </div>
+      <div class="sub-module">
+        <div class="sub-module-name">meeting-reminders/</div>
+        <div class="sub-module-ep">
+          GET /meetings · GET /:id/meeting-reminders · GET
+          /meeting-reminders/:id · POST /:id/meeting-reminders · POST
+          /:id/meeting-reminders/token · PUT /meeting-reminders/:id
+        </div>
+      </div>
+      <div class="sub-module">
+        <div class="sub-module-name">price-offers/</div>
+        <div class="sub-module-ep">
+          POST /:id/price-offers · POST /price-offers/change-status
+        </div>
+      </div>
+      <div class="sub-module">
+        <div class="sub-module-name">lead-payments/</div>
+        <div class="sub-module-ep">POST /:id/payments</div>
+      </div>
+      <div class="sub-module">
+        <div class="sub-module-name">lead-files-notes/</div>
+        <div class="sub-module-ep">
+          POST /:id/files · POST /:id/notes · POST /:id/payment-reminder · POST
+          /:id/complete-register
+        </div>
+      </div>
+      <div class="sub-module">
+        <div class="sub-module-name">sales-stages/</div>
+        <div class="sub-module-ep">
+          GET /:clientLeadId/sales-stages · POST /:clientLeadId/sales-stages
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Endpoint Audit ──────────────────────────────────────────────────────────── -->
+    <h2 id="endpoints">Full Endpoint Audit — Projects, Tasks, Updates</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">projects</div>
+        <span class="badge badge-new">NEW</span>
+        <code>/v2/projects</code>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Path</th>
+            <th>Description</th>
+            <th>Role Guard</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/designers</td>
+            <td>Designer project list</td>
+            <td>Scoped by role</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/designers/columns</td>
+            <td>Designer kanban columns</td>
+            <td>Scoped by role</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/designers/:id</td>
+            <td>Lead details by project</td>
+            <td>Scoped by role</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/</td>
+            <td>Project list</td>
+            <td>SHARED</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/archived</td>
+            <td>Archived projects</td>
+            <td>SHARED</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/user-profile/:userId</td>
+            <td>User profile projects</td>
+            <td>SHARED</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/:id</td>
+            <td>Project details</td>
+            <td>Scoped for designers</td>
+          </tr>
+          <tr>
+            <td><span class="method put">PUT</span></td>
+            <td>/:id</td>
+            <td>Update project</td>
+            <td>SHARED</td>
+          </tr>
+          <tr>
+            <td><span class="method put">PUT</span></td>
+            <td>/:id/assign-designer</td>
+            <td>Assign designer</td>
+            <td>Admin recommended</td>
+          </tr>
+          <tr>
+            <td><span class="method put">PUT</span></td>
+            <td>/designers/:leadId/status</td>
+            <td>Update designer status</td>
+            <td>isAdmin flag</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">tasks</div>
+        <span class="badge badge-new">NEW</span>
+        <code>/v2/tasks</code>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Path</th>
+            <th>Description</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/</td>
+            <td>List tasks</td>
+            <td>Scoped for designers</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td>/</td>
+            <td>Create task</td>
+            <td>isAdmin flag in usecase</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/:id</td>
+            <td>Task details</td>
+            <td>Scoped for designers</td>
+          </tr>
+          <tr>
+            <td><span class="method put">PUT</span></td>
+            <td>/:taskId</td>
+            <td>Update task</td>
+            <td>isAdmin flag</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/notes</td>
+            <td>List notes (generic)</td>
+            <td>query searchParams</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td>/notes</td>
+            <td>Create note</td>
+            <td>isAdmin flag</td>
+          </tr>
+          <tr>
+            <td><span class="method del">DELETE</span></td>
+            <td>/:id</td>
+            <td>Delete model</td>
+            <td>Validate model type in usecase</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">updates</div>
+        <span class="badge badge-new">NEW</span>
+        <code>/v2/updates</code>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Path</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/:clientLeadId</td>
+            <td>List updates for a lead</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td>/shared-settings/:updateId</td>
+            <td>Shared settings for update</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td>/:clientLeadId</td>
+            <td>Create update</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td>/:updateId/authorize</td>
+            <td>Authorize department</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td>/:updateId/authorize/shared</td>
+            <td>Unauthorize department</td>
+          </tr>
+          <tr>
+            <td><span class="method put">PUT</span></td>
+            <td>/:updateId/archive</td>
+            <td>Toggle archive</td>
+          </tr>
+          <tr>
+            <td><span class="method put">PUT</span></td>
+            <td>/shared-updates/:id/archive</td>
+            <td>Toggle shared archive</td>
+          </tr>
+          <tr>
+            <td><span class="method put">PUT</span></td>
+            <td>/:updateId/done</td>
+            <td>Mark as done</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ─── routes.js ──────────────────────────────────────────────────────────────── -->
+    <h2 id="routes">v2/routes.js — What Gets Added</h2>
+    <div class="card">
+      <p style="margin-bottom: 12px">Current mounts (unchanged):</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Path</th>
+            <th>Router</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>/auth</code></td>
+            <td>authRoutes</td>
+            <td><span class="badge badge-exists">EXISTS</span></td>
+          </tr>
+          <tr>
+            <td><code>/client/booking-leads</code></td>
+            <td>bookingLeadsRouter</td>
+            <td><span class="badge badge-exists">EXISTS</span></td>
+          </tr>
+          <tr>
+            <td><code>/chat</code></td>
+            <td>chatRouter</td>
+            <td><span class="badge badge-exists">EXISTS</span></td>
+          </tr>
+          <tr>
+            <td><code>/telegram</code></td>
+            <td>telegramRouter</td>
+            <td><span class="badge badge-exists">EXISTS</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin: 16px 0 12px">New mounts to add (all require auth):</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Path</th>
+            <th>Router</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>/staff/leads</code></td>
+            <td>staffLeadsRouter</td>
+            <td>Collects 9 sub-modules</td>
+          </tr>
+          <tr>
+            <td><code>/projects</code></td>
+            <td>projectsRouter</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><code>/tasks</code></td>
+            <td>tasksRouter</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><code>/updates</code></td>
+            <td>updatesRouter</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><code>/dashboard</code></td>
+            <td>dashboardRouter</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><code>/delivery</code></td>
+            <td>deliveryRouter</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><code>/notifications</code></td>
+            <td>notificationsRouter</td>
+            <td>Split from utilities</td>
+          </tr>
+          <tr>
+            <td><code>/user-logs</code></td>
+            <td>userLogsRouter</td>
+            <td>Split from utilities</td>
+          </tr>
+          <tr>
+            <td><code>/utilities</code></td>
+            <td>utilitiesRouter</td>
+            <td>Remaining utilities</td>
+          </tr>
+          <tr>
+            <td><code>/users</code></td>
+            <td>usersRouter</td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><code>/reviews</code></td>
+            <td>reviewsRouter</td>
+            <td>Google OAuth integration</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ─── Middleware Reference ────────────────────────────────────────────────────── -->
+    <h2>Middleware Reference (v2 Pattern)</h2>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Middleware</th>
+            <th>Import From</th>
+            <th>Purpose</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>AuthMiddleware.requireAuth</code></td>
+            <td><code>shared/middlewares/auth.middleware.js</code></td>
+            <td>Sets req.auth from cookie token</td>
+          </tr>
+          <tr>
+            <td><code>AuthMiddleware.requireRole([...])</code></td>
+            <td><code>shared/middlewares/auth.middleware.js</code></td>
+            <td>Admin-only route guard</td>
+          </tr>
+          <tr>
+            <td><code>asyncHandler(fn)</code></td>
+            <td><code>shared/middlewares/async-handler.js</code></td>
+            <td>Catches async throws, calls next(err)</td>
+          </tr>
+          <tr>
+            <td><code>validate(schema, source)</code></td>
+            <td><code>shared/middlewares/validate.middleware.js</code></td>
+            <td>Zod schema validation</td>
+          </tr>
+          <tr>
+            <td><code>AppError(msg, status)</code></td>
+            <td><code>shared/errors/AppError.js</code></td>
+            <td>Typed error with HTTP status code</td>
+          </tr>
+          <tr>
+            <td><code>ok / created / updated / deleted</code></td>
+            <td><code>shared/http/response.js</code></td>
+            <td>Standard JSON response helpers</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ─── Execution Order ──────────────────────────────────────────────────────────── -->
+    <h2 id="order">Recommended Execution Order</h2>
+    <p>Start with standalone modules, end with the complex leads split.</p>
+    <div class="steps">
+      <div class="step phase-a">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">notifications</div>
+          <div class="step-desc">
+            Standalone — wraps getNotifications utility. Easiest start.
+          </div>
+        </div>
+      </div>
+      <div class="step phase-a">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">user-logs</div>
+          <div class="step-desc">
+            Standalone — checkUserLog / submitUserLog.
+          </div>
+        </div>
+      </div>
+      <div class="step phase-a">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">utilities</div>
+          <div class="step-desc">
+            Fixed data, images, roles, model IDs. No deps.
+          </div>
+        </div>
+      </div>
+      <div class="step phase-a">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">users</div>
+          <div class="step-desc">
+            Profile get/put + all-chat-users endpoints.
+          </div>
+        </div>
+      </div>
+      <div class="step phase-a">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">reviews</div>
+          <div class="step-desc">
+            Google OAuth integration. Fully self-contained.
+          </div>
+        </div>
+      </div>
+      <div class="step phase-b">
+        <div class="step-num">6</div>
+        <div class="step-body">
+          <div class="step-title">dashboard</div>
+          <div class="step-desc">
+            Read-only, low risk. All GET, no side effects.
+          </div>
+        </div>
+      </div>
+      <div class="step phase-b">
+        <div class="step-num">7</div>
+        <div class="step-body">
+          <div class="step-title">delivery</div>
+          <div class="step-desc">
+            Small — 4 endpoints, straightforward CRUD.
+          </div>
+        </div>
+      </div>
+      <div class="step phase-b">
+        <div class="step-num">8</div>
+        <div class="step-body">
+          <div class="step-title">updates</div>
+          <div class="step-desc">Medium — authorization workflow logic.</div>
+        </div>
+      </div>
+      <div class="step phase-b">
+        <div class="step-num">9</div>
+        <div class="step-body">
+          <div class="step-title">tasks</div>
+          <div class="step-desc">
+            Medium — includes generic note/delete endpoints.
+          </div>
+        </div>
+      </div>
+      <div class="step phase-b">
+        <div class="step-num">10</div>
+        <div class="step-body">
+          <div class="step-title">projects</div>
+          <div class="step-desc">
+            Medium — designer role scoping and multi-endpoint.
+          </div>
+        </div>
+      </div>
+      <div class="step phase-c">
+        <div class="step-num">11–19</div>
+        <div class="step-body">
+          <div class="step-title">leads/staff/ (9 sub-modules)</div>
+          <div class="step-desc">
+            Start with lead-list → lead-detail → lead-assignment →
+            call-reminders → meeting-reminders → price-offers → lead-payments →
+            lead-files-notes → sales-stages. Wire all into staff-leads.routes.js
+            at end.
+          </div>
+        </div>
+      </div>
+      <div class="step phase-c">
+        <div class="step-num">20</div>
+        <div class="step-body">
+          <div class="step-title">Wire v2/routes.js</div>
+          <div class="step-desc">
+            Mount all new routers. Final step — nothing breaks the old routes.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Risks ─────────────────────────────────────────────────────────────────── -->
+    <h2 id="risks">Risks &amp; Notes</h2>
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>Risk</th>
+            <th>Mitigation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Frontend calls <code>/shared/...</code> URLs</td>
+            <td>
+              Old routes stay live in parallel. Frontend migrates per-feature.
+            </td>
+          </tr>
+          <tr>
+            <td>Complex role logic (9 roles + isSuperSales)</td>
+            <td>
+              Each usecase gets a <code>resolveScope(auth)</code> helper that
+              encapsulates the branch.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              Duplicate endpoints <code>/update/:id</code> +
+              <code>/lead/update/:id</code>
+            </td>
+            <td>
+              v2 exposes a single clean <code>PUT /:id/update</code>. Old
+              endpoints untouched.
+            </td>
+          </tr>
+          <tr>
+            <td><code>deleteAModel</code> is generic — deletes any model</td>
+            <td>Add allowed-model validation in tasks usecase.</td>
+          </tr>
+          <tr>
+            <td><code>createFile</code> may need multer upload pipeline</td>
+            <td>
+              Verify if it saves a URL or binary. Add multer middleware if
+              binary upload needed.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <code>getAdminClientLeadDetails</code> vs
+              <code>getClientLeadDetails</code>
+            </td>
+            <td>
+              Branch cleanly in <code>lead-detail.usecase.js</code> based on
+              <code>req.auth.role</code>.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div
+      style="
+        margin-top: 40px;
+        padding: 20px;
+        background: var(--surface);
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 12px;
+      "
+    >
+      Dream Studio CRM — V2 Migration Plan — Generated April 13, 2026
+    </div>
+  </body>
+</html>

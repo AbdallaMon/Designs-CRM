@@ -38,6 +38,11 @@ export const env = {
   REDIS_HOST: process.env.REDIS_HOST || "127.0.0.1",
   REDIS_PORT: Number(process.env.REDIS_PORT) || 6379,
   REDIS_PASSWORD: process.env.REDIS_PASSWORD || undefined,
+  UPLOAD_DIR: process.env.UPLOAD_DIR,
+  TEMP_UPLOAD_DIR: process.env.TEMP_UPLOAD_DIR,
+  THUMBNAIL_DIR: process.env.THUMBNAIL_DIR,
+  MAX_FILE_SIZE: Number(process.env.MAX_FILE_SIZE), // default 1GB
+  MAX_FILE_SIZE_FOR_CLIENT: Number(process.env.MAX_FILE_SIZE_FOR_CLIENT), // default 100MB
 };
 export const allowedOrigins = [
   process.env.ORIGIN,

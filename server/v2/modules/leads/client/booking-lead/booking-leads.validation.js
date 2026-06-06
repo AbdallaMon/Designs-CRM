@@ -1,20 +1,6 @@
-const TEXT_FIELDS = new Set([
-  "location",
-  "projectType",
-  "projectStage",
-  "previousWork",
-  "hasArchitecturalPlan",
-  "serviceType",
-  "decisionMaker",
-  "name",
-  "phone",
-  "email",
-]);
+import { z } from "zod";
 
-const BOOLEAN_FIELDS = new Set([
-  "contactAgreement",
-  "contactInitialPriceAgreement",
-]);
+// ── Field sets (still needed by usecase to route data to lead vs client) ───────
 
 const LEAD_FIELDS = new Set([
   "location",
@@ -34,134 +20,6 @@ const CLIENT_FIELDS = new Set([
   "contactInitialPriceAgreement",
 ]);
 
-const ALL_ALLOWED_FIELDS = [...LEAD_FIELDS, ...CLIENT_FIELDS];
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_REGEX = /^[0-9+()\-\s]{6,20}$/;
-
-function createValidationError(message) {
-  const error = new Error(message);
-  error.status = 400;
-  return error;
-}
-
-function ensureObjectPayload(payload) {
-  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
-    throw createValidationError("Request body must be a JSON object");
-  }
-
-  return payload;
-}
-
-function validateTextField(field, value, { required = false } = {}) {
-  if (typeof value !== "string") {
-    throw createValidationError(`${field} must be a string`);
-  }
-
-  const normalizedValue = value.trim();
-
-  if (required && !normalizedValue) {
-    throw createValidationError(`${field} is required`);
-  }
-
-  if (!normalizedValue) {
-    return null;
-  }
-
-  if (field === "email" && !EMAIL_REGEX.test(normalizedValue)) {
-    throw createValidationError("email must be a valid email address");
-  }
-
-  if (field === "phone" && !PHONE_REGEX.test(normalizedValue)) {
-    throw createValidationError("phone must be a valid phone number");
-  }
-
-  return normalizedValue;
-}
-
-function validateBooleanField(field, value, { requireTrue = false } = {}) {
-  if (typeof value !== "boolean") {
-    throw createValidationError(`${field} must be a boolean`);
-  }
-
-  if (requireTrue && value !== true) {
-    throw createValidationError(`${field} must be accepted`);
-  }
-
-  return value;
-}
-
-function validateField(field, value, options = {}) {
-  if (TEXT_FIELDS.has(field)) {
-    return validateTextField(field, value, options);
-  }
-
-  if (BOOLEAN_FIELDS.has(field)) {
-    return validateBooleanField(field, value, options);
-  }
-
-  throw createValidationError(`${field} is not allowed`);
-}
-
-export function validateLeadIdParam(leadIdParam) {
-  const leadId = Number(leadIdParam);
-
-  if (!Number.isInteger(leadId) || leadId <= 0) {
-    throw createValidationError("leadId must be a positive integer");
-  }
-
-  return leadId;
-}
-
-export function validateCreateBookingLeadInput(payload) {
-  const body = ensureObjectPayload(payload);
-
-  return {
-    name: validateField("name", body.name, { required: true }),
-    phone: validateField("phone", body.phone, { required: true }),
-  };
-}
-
-export function validatePatchBookingLeadInput(payload) {
-  const body = ensureObjectPayload(payload);
-  const definedKeys = Object.keys(body).filter(
-    (key) => body[key] !== undefined,
-  );
-
-  if (definedKeys.length !== 1) {
-    throw createValidationError(
-      "PATCH requires exactly one supported field per request",
-    );
-  }
-
-  const [field] = definedKeys;
-
-  if (!ALL_ALLOWED_FIELDS.includes(field)) {
-    throw createValidationError(`${field} is not allowed`);
-  }
-
-  return {
-    field,
-    value: validateField(field, body[field], { required: true }),
-  };
-}
-
-export function validateSubmitBookingLeadInput(payload) {
-  const body = ensureObjectPayload(payload);
-  const validatedPayload = {};
-
-  for (const field of ALL_ALLOWED_FIELDS) {
-    validatedPayload[field] = validateField(field, body[field], {
-      required: true,
-      requireTrue:
-        field === "contactAgreement" ||
-        field === "contactInitialPriceAgreement",
-    });
-  }
-
-  return validatedPayload;
-}
-
 export function isLeadField(field) {
   return LEAD_FIELDS.has(field);
 }
@@ -169,3 +27,105 @@ export function isLeadField(field) {
 export function isClientField(field) {
   return CLIENT_FIELDS.has(field);
 }
+
+// ── Shared field schemas ───────────────────────────────────────────────────────
+
+const phoneSchema = z
+  .string({ error: "phone must be a string" })
+  .trim()
+  .min(1, "phone is required")
+  .regex(/^[0-9+()\-\s]{6,20}$/, "phone must be a valid phone number");
+
+const emailSchema = z
+  .string({ error: "email must be a string" })
+  .trim()
+  .email("email must be a valid email address");
+
+// ── Schemas ────────────────────────────────────────────────────────────────────
+
+class BookingLeadSchemas {
+  leadIdParams = z.object({
+    leadId: z.coerce
+      .number()
+      .int()
+      .positive("leadId must be a positive integer"),
+  });
+
+  createBookingLead = z.object({
+    name: z
+      .string({ error: "name must be a string" })
+      .trim()
+      .min(1, "name is required"),
+    phone: phoneSchema,
+  });
+
+  // PATCH accepts exactly one field at a time — validated imperatively in the usecase.
+  // Here we just ensure the body is a plain object with at least one known key.
+  patchBookingLead = z
+    .object({
+      location: z.string().trim().optional(),
+      projectType: z.string().trim().optional(),
+      projectStage: z.string().trim().optional(),
+      previousWork: z.string().trim().optional(),
+      hasArchitecturalPlan: z.string().trim().optional(),
+      serviceType: z.string().trim().optional(),
+      decisionMaker: z.string().trim().optional(),
+      name: z.string().trim().optional(),
+      phone: phoneSchema.optional(),
+      email: emailSchema.optional(),
+      contactAgreement: z.boolean().optional(),
+      contactInitialPriceAgreement: z.boolean().optional(),
+    })
+    .refine(
+      (data) => Object.values(data).some((v) => v !== undefined),
+      "PATCH requires exactly one supported field per request",
+    );
+
+  submitBookingLead = z.object({
+    location: z
+      .string({ error: "location must be a string" })
+      .trim()
+      .min(1, "location is required"),
+    projectType: z
+      .string({ error: "projectType must be a string" })
+      .trim()
+      .min(1, "projectType is required"),
+    projectStage: z
+      .string({ error: "projectStage must be a string" })
+      .trim()
+      .min(1, "projectStage is required"),
+    previousWork: z
+      .string({ error: "previousWork must be a string" })
+      .trim()
+      .min(1, "previousWork is required"),
+    hasArchitecturalPlan: z
+      .string({ error: "hasArchitecturalPlan must be a string" })
+      .trim()
+      .min(1, "hasArchitecturalPlan is required"),
+    serviceType: z
+      .string({ error: "serviceType must be a string" })
+      .trim()
+      .min(1, "serviceType is required"),
+    decisionMaker: z
+      .string({ error: "decisionMaker must be a string" })
+      .trim()
+      .min(1, "decisionMaker is required"),
+    name: z
+      .string({ error: "name must be a string" })
+      .trim()
+      .min(1, "name is required"),
+    phone: phoneSchema,
+    email: emailSchema,
+    contactAgreement: z
+      .boolean({ error: "contactAgreement must be a boolean" })
+      .refine((v) => v === true, "contactAgreement must be accepted"),
+    contactInitialPriceAgreement: z
+      .boolean({ error: "contactInitialPriceAgreement must be a boolean" })
+      .refine(
+        (v) => v === true,
+        "contactInitialPriceAgreement must be accepted",
+      ),
+  });
+}
+
+export const bookingLeadSchemas = new BookingLeadSchemas();

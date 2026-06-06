@@ -1,0 +1,11 @@
+export const ZINDEXS = {
+  TOAST: 50,
+  TOASTLOADINGOVERLAY: 40,
+  DIALOG: 100,
+  LOADINGOVERLAY: 150,
+  OVERLAY: 200000,
+};
+
+export const FILES = {
+  SIZE_LIMIT: 500 * 1024 * 1024,
+};

@@ -1,9 +1,7 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import { env } from "./config/env.js";
 import { corsOptions, fixDuplicateOrigin } from "./config/cors.js";
-import { router } from "./routes.js";
 import {
   notFoundHandler,
   errorHandler,
@@ -16,8 +14,6 @@ import staffRoutes from "../routes/staff/staff.js";
 import adminRoutes from "../routes/admin/admin.js";
 import accountantRoutes from "../routes/accountant/accountant.js";
 import v2Routes from "./shared/routes.js";
-import { errorHandler } from "./shared/errors/error-handler.js";
-import { corsOptions, fixDuplicateOrigin } from "./config/cors.js";
 import { env } from "./config/env.js";
 
 const app = express();
@@ -40,14 +36,8 @@ app.use("/uploads", express.static(env.UPLOADS_PATH));
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 
-app.use("/v2", router);
-
 // ─── Error handling ───────────────────────────────────────────────────────────
 
-app.use(notFoundHandler);
-app.use(errorHandler);
-
-export { app };
 // ─── Static uploads (local dev only) ─────────────────────────────────────────
 if (env.ISLOCAL) {
   app.use(
@@ -57,7 +47,6 @@ if (env.ISLOCAL) {
 }
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
-app.use("/auth", (req, res) => authRoutes(req, res));
 app.use("/shared", sharedRoutes);
 app.use("/utility", utilityRoutes);
 app.use("/staff", staffRoutes);
@@ -67,6 +56,7 @@ app.use("/client", clientsRoutes);
 app.use("/v2", v2Routes);
 
 // ─── Global error handler ─────────────────────────────────────────────────────
+app.use(notFoundHandler);
 app.use(errorHandler);
 
 export default app;
