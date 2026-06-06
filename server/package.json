@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "postinstall": "npx prisma migrate deploy && node initData.js",
     "dev": "nodemon index.js",
-    "dev:v2": "nodemon v2/server.js"
+    "dev:src": "nodemon src/server.js",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "node initData.js"
   },
   "keywords": [],
   "author": "",

@@ -1,2 +1,2 @@
-// Re-exported from v2 canonical implementation
-export { telegramChannelWorker } from "../../v2/infra/workers/telegram-channel.worker.js";
+// Re-exported from src canonical implementation
+export { telegramChannelWorker } from "../../src/infra/workers/telegram-channel.worker.js";

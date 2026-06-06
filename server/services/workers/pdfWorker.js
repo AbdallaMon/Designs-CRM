@@ -1,2 +1,2 @@
-// Re-exported from v2 canonical implementation
-export { pdfWorker } from "../../v2/infra/workers/pdf.worker.js";
+// Re-exported from src canonical implementation
+export { pdfWorker } from "../../src/infra/workers/pdf.worker.js";

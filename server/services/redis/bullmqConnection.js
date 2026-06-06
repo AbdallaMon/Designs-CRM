@@ -1,9 +1,5 @@
-// redis/bullmqConnection.js
-import dotenv from "dotenv";
-dotenv.config();
-export default {
-  connection: {
-    host: process.env.REDIS_HOST || "127.0.0.1",
-    port: Number(process.env.REDIS_PORT) || 6379,
-  },
-};
+// DEPRECATED legacy shim. Not imported by live code (only by the equally-dead
+// `services/redis/redis.js`). Canonical BullMQ connection now lives at
+// `src/infra/redis/bullmq.connection.js`, sourced from the single ioredis factory.
+// Kept resolvable so any stale legacy import does not break.
+export { default } from "../../src/infra/redis/bullmq.connection.js";

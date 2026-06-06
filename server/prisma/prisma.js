@@ -1,13 +1,4 @@
-import { PrismaClient } from "@prisma/client";
-
-let prisma;
-if (process.env.NODE_ENV === "production") {
-  prisma = new PrismaClient();
-} else {
-  if (!global.prisma) {
-    global.prisma = new PrismaClient();
-  }
-  prisma = global.prisma;
-}
-
-export default prisma;
+// SHIM (Stage 1): the canonical Prisma client now lives in `@dms/db`.
+// This path is kept so every existing `import prisma from ".../prisma/prisma.js"`
+// keeps working unchanged. Do not instantiate a client here.
+export { prisma, default } from "@dms/db";

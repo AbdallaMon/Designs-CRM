@@ -1,2 +1,2 @@
-// Re-exported from v2 canonical implementation
-export { telegramCronWorker } from "../../v2/infra/workers/telegram-cron.worker.js";
+// Re-exported from src canonical implementation
+export { telegramCronWorker } from "../../src/infra/workers/telegram-cron.worker.js";

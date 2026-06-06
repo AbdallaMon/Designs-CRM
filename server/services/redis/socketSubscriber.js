@@ -2,10 +2,8 @@
 // Run this once in the main server process (index.js).
 // Subscribes to the Redis "socket:emit" channel and forwards events to the
 // real Socket.IO instance so any worker process can trigger socket emits.
-import Redis from "ioredis";
-import dotenv from "dotenv";
+import { createIoredisClient } from "../../src/infra/redis/ioredis.connection.js";
 import { CHANNEL } from "./socketPublisher.js";
-dotenv.config();
 
 let sub = null;
 
@@ -15,10 +13,7 @@ let sub = null;
 export function startSocketSubscriber(io) {
   if (sub) return; // already started
 
-  sub = new Redis({
-    host: process.env.REDIS_HOST || "127.0.0.1",
-    port: Number(process.env.REDIS_PORT) || 6379,
-  });
+  sub = createIoredisClient();
 
   sub.subscribe(CHANNEL, (err) => {
     if (err) {

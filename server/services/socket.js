@@ -1,11 +1,11 @@
-// Backward-compat shim — all implementations have moved to v2/infra/socket/.
+// Backward-compat shim — all implementations have moved to src/infra/socket/.
 // Legacy services (services/main/chat/*, services/main/utility/*) import
-// getIo() from here and will transparently receive the v2 io instance.
+// getIo() from here and will transparently receive the io instance.
 export {
   getIo,
   initSocket,
   normalizeOrigin,
-} from "../v2/infra/socket/index.js";
+} from "../src/infra/socket/index.js";
 // ─── Legacy implementation retained below for reference only (not exported) ───
 function _legacyInitSocket(httpServer) {
   io = new Server(httpServer, {

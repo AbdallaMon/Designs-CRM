@@ -6,7 +6,7 @@ import { Server } from "socket.io";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import { getTelegramManager } from "../../v2/modules/telegram/manager/telegram.manager.js";
+import { getTelegramManager } from "../../src/modules/telegram/manager/telegram.manager.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });

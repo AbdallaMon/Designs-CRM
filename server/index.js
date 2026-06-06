@@ -1,2 +1,2 @@
-// Entry point — all setup lives in v2/server.js
-import "./v2/server.js";
+// Entry point — all setup lives in src/server.js
+import "./src/server.js";

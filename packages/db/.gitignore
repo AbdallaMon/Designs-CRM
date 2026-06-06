@@ -1,0 +1,7 @@
+node_modules
+# Keep environment variables out of version control
+.env
+.env.prod
+# Generated Prisma client (default @prisma/client output lives in node_modules,
+# but ignore any local generated/ dir if a future custom output is ever added)
+/generated

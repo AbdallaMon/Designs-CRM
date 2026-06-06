@@ -1,2 +1,2 @@
-// Re-exported from v2 canonical implementation
-export { telegramMessageQueue } from "../../v2/infra/queues/telegram-message.queue.js";
+// Re-exported from src canonical implementation
+export { telegramMessageQueue } from "../../src/infra/queues/telegram-message.queue.js";
