@@ -6,5 +6,6 @@
 export const messagesNames = {
   generalMessages: "generalMessages",
   authMessages: "authMessages",
+  chatMessages: "chatMessages",
   prismaKnowMessages: "prismaKnowMessages",
 };

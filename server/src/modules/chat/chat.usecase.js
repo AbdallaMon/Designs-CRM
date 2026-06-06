@@ -1,7 +1,8 @@
 import { AppError } from "../../shared/errors/AppError.js";
 import { getIo } from "../../infra/socket/index.js";
 import { addDayGrouping, addMonthGrouping } from "./chat.helpers.js";
-import { authMessagesCodes } from "@dms/shared";
+import { computeRoomCapabilities } from "./chat.dto.js";
+import { chatMessagesCodes } from "@dms/shared";
 
 export class ChatUsecase {
   /** @param {import("./chat.repository.js").ChatRepository} repository */
@@ -23,7 +24,7 @@ export class ChatUsecase {
       clientId,
     });
     if (!member) {
-      throw new AppError(authMessagesCodes.ACCESS_DENIED, 403);
+      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
     }
     return member;
   }
@@ -70,7 +71,9 @@ export class ChatUsecase {
 
   // ── Rooms ──────────────────────────────────────────────────────────────────
 
-  async getRooms(userId, query) {
+  async getRooms(authUser, query) {
+    const userId = authUser.id;
+    const permissions = authUser.permissions || [];
     const {
       category,
       projectId,
@@ -80,18 +83,18 @@ export class ChatUsecase {
       searchKey,
       chatType,
     } = query;
+    const parsedPage = page ? Number(page) : 0;
+    const pageSize = limit ? Number(limit) : 25;
     const { rooms, total } = await this.repository.getRooms({
       userId,
       category,
       projectId,
       clientLeadId,
-      page: page ? Number(page) : 0,
-      limit: limit ? Number(limit) : 25,
+      page: parsedPage,
+      limit: pageSize,
       search: searchKey || "",
       chatType: chatType || null,
     });
-
-    const pageSize = limit ? Number(limit) : 25;
 
     const roomsWithMeta = await Promise.all(
       rooms.map(async (room) => {
@@ -114,6 +117,11 @@ export class ChatUsecase {
           otherMembers,
           lastSeenAt:
             otherMembers.length > 0 ? otherMembers[0]?.user?.lastSeenAt : null,
+          capabilities: computeRoomCapabilities(room, {
+            permissions,
+            authUserId: userId,
+            selfMember,
+          }),
         };
       }),
     );
@@ -124,24 +132,27 @@ export class ChatUsecase {
     );
 
     return {
-      data: roomsWithMeta,
+      items: roomsWithMeta,
       total,
-      totalPages: Math.ceil(total / pageSize),
+      page: parsedPage,
+      pageSize,
       totalUnread,
     };
   }
 
-  async getRoomById(roomId, userId, clientId) {
+  async getRoomById(roomId, authUser, clientId) {
+    const userId = authUser.id;
+    const permissions = authUser.permissions || [];
     const selfMember = await this.repository.getMember({
       roomId,
       userId,
       clientId,
     });
     if (!selfMember)
-      throw new AppError("You do not have access to this chat room", 403);
+      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
     const room = await this.repository.getRoomById(roomId, userId, clientId);
-    if (!room) throw new AppError("Chat room not found", 404);
+    if (!room) throw new AppError(chatMessagesCodes.ROOM_NOT_FOUND, 404);
 
     const otherMembers =
       room.members?.filter((m) => m.userId !== Number(userId)) || [];
@@ -151,6 +162,11 @@ export class ChatUsecase {
       lastSeenAt:
         otherMembers.length > 0 ? otherMembers[0]?.user?.lastSeenAt : null,
       selfMember,
+      capabilities: computeRoomCapabilities(room, {
+        permissions,
+        authUserId: userId,
+        selfMember,
+      }),
     };
   }
 
@@ -249,7 +265,7 @@ export class ChatUsecase {
       clientLeadId,
       projectWhere,
     );
-    if (!clientLead) throw new AppError("Client lead not found", 404);
+    if (!clientLead) throw new AppError(chatMessagesCodes.CLIENT_LEAD_NOT_FOUND, 404);
 
     let autoName = `${groupType === "CLIENT_TO_STAFF" ? "Lead" : "Projects"} ${clientLead.client.name} #(${clientLead.code})`;
     const count = await this.repository.countRoomsForLead(
@@ -271,7 +287,7 @@ export class ChatUsecase {
     if (groupType === "MULTI_PROJECT") {
       const pIds = clientLead.projects.map((p) => p.id);
       if (!pIds.length)
-        throw new AppError("No projects found for the selected criteria", 400);
+        throw new AppError(chatMessagesCodes.NO_PROJECTS_FOR_CRITERIA, 400);
       await this.repository.addRoomProjects(room.id, pIds);
     }
 
@@ -332,14 +348,14 @@ export class ChatUsecase {
 
   async updateRoom(roomId, userId, updates) {
     const member = await this.repository.getMember({ roomId, userId });
-    if (!member) throw new AppError("You are not a member of this room", 403);
+    if (!member) throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
     const room = await this.repository.findRoomBasic(roomId);
-    if (!room) throw new AppError("Chat room not found", 404);
+    if (!room) throw new AppError(chatMessagesCodes.ROOM_NOT_FOUND, 404);
 
     const isAdminOrMod = member.role === "ADMIN" || member.role === "MODERATOR";
     if (!isAdminOrMod && room.type !== "STAFF_TO_STAFF") {
-      throw new AppError("You don't have permission to update this room", 403);
+      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
     }
 
     // Sanitise — remove empty values
@@ -374,15 +390,12 @@ export class ChatUsecase {
   async deleteRoom(roomId, userId) {
     const member = await this.repository.getMember({ roomId, userId });
     if (!member || member.role !== "ADMIN")
-      throw new AppError("You don't have permission to delete this room", 403);
+      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
 
     const room = await this.repository.findRoomBasic(roomId);
-    if (!room) throw new AppError("Chat room not found", 404);
+    if (!room) throw new AppError(chatMessagesCodes.ROOM_NOT_FOUND, 404);
     if (room.type === "STAFF_TO_STAFF" || room.type === "PROJECT_GROUP") {
-      throw new AppError(
-        "Direct chat or project group rooms cannot be deleted",
-        400,
-      );
+      throw new AppError(chatMessagesCodes.ROOM_NOT_DELETABLE, 400);
     }
 
     await this.emitToAllMembersExcluding({
@@ -393,23 +406,20 @@ export class ChatUsecase {
     }).catch(console.error);
 
     await this.repository.deleteRoom(roomId);
-    return { message: "Chat room deleted successfully" };
+    return { code: chatMessagesCodes.ROOM_DELETED };
   }
 
   async manageClient(roomId, userId, action) {
     const member = await this.repository.getMember({ roomId, userId });
-    if (!member) throw new AppError("You are not a member of this room", 403);
+    if (!member) throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
     const isAdminOrMod = member.role === "ADMIN" || member.role === "MODERATOR";
     if (!isAdminOrMod)
-      throw new AppError(
-        "You don't have permission to manage clients in this room",
-        403,
-      );
+      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
 
     const room = await this.repository.findRoomBasic(roomId);
     if (!room?.clientLead)
-      throw new AppError("This room has no associated client lead", 400);
+      throw new AppError(chatMessagesCodes.NO_CLIENT_LEAD_ON_ROOM, 400);
 
     const clientId = room.clientLead.clientId;
 
@@ -419,7 +429,7 @@ export class ChatUsecase {
       ]);
       const token = await this.repository.generateChatToken();
       await this.repository.updateRoom(roomId, { chatAccessToken: token });
-      return { message: "Client added successfully" };
+      return { code: chatMessagesCodes.CLIENT_ADDED };
     }
 
     if (action === "removeClient") {
@@ -431,10 +441,10 @@ export class ChatUsecase {
         await this.repository.removeMember(clientMember.id);
       }
       await this.repository.updateRoom(roomId, { chatAccessToken: null });
-      return { message: "Client removed successfully" };
+      return { code: chatMessagesCodes.CLIENT_REMOVED };
     }
 
-    throw new AppError("Invalid action. Use addClient or removeClient", 400);
+    throw new AppError(chatMessagesCodes.INVALID_MANAGE_CLIENT_ACTION, 400);
   }
 
   async regenerateToken(roomId, userId) {
@@ -442,10 +452,7 @@ export class ChatUsecase {
     const isAdminOrMod =
       member?.role === "ADMIN" || member?.role === "MODERATOR";
     if (!isAdminOrMod)
-      throw new AppError(
-        "You don't have permission to regenerate the token",
-        403,
-      );
+      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
 
     const token = await this.repository.generateChatToken();
     const room = await this.repository.updateRoom(roomId, {
@@ -468,7 +475,7 @@ export class ChatUsecase {
       clientId,
     });
     if (!member)
-      throw new AppError("You do not have access to this chat room", 403);
+      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
     const [messages, total, unreadCount] = await Promise.all([
       this.repository.getMessagesWithReceipts({
@@ -514,7 +521,7 @@ export class ChatUsecase {
       clientId,
     });
     if (!member)
-      throw new AppError("You do not have access to this chat room", 403);
+      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
     const pins = await this.repository.getPinnedMessages(roomId);
     return pins.map((p) => p.message);
@@ -569,7 +576,7 @@ export class ChatUsecase {
       clientId,
     });
     if (!member)
-      throw new AppError("You do not have access to this chat room", 403);
+      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
     await this.repository.updateMemberReadAt(member.id);
 
@@ -601,7 +608,7 @@ export class ChatUsecase {
       userId,
       roomIds: resolvedRoomIds.map(Number),
     });
-    return { message: "All rooms marked as read" };
+    return { code: chatMessagesCodes.ALL_ROOMS_MARKED_READ };
   }
 
   async addReaction(messageId, userId, emoji) {
@@ -625,7 +632,7 @@ export class ChatUsecase {
       userId,
       emoji,
     });
-    if (!reaction) throw new AppError("Reaction not found", 404);
+    if (!reaction) throw new AppError(chatMessagesCodes.REACTION_NOT_FOUND, 404);
     await this.repository.deleteReaction(reaction.id);
     const io = getIo();
     io.to(`room:${reaction.message.roomId}`).emit("reaction:removed", {
@@ -653,13 +660,13 @@ export class ChatUsecase {
       clientId,
     });
     if (!member)
-      throw new AppError("You do not have access to this chat room", 403);
+      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
     const room = await this.repository.findRoomBasic(roomId);
     if (!room?.isChatEnabled)
-      throw new AppError("Chat is disabled in this room", 400);
+      throw new AppError(chatMessagesCodes.CHAT_DISABLED, 400);
     if ((type === "FILE" || attachments?.length) && !room.allowFiles) {
-      throw new AppError("File sharing is disabled in this room", 400);
+      throw new AppError(chatMessagesCodes.FILES_DISABLED, 400);
     }
 
     const message = await this.repository.createMessage({
@@ -702,14 +709,14 @@ export class ChatUsecase {
 
   async editMessage({ messageId, userId, clientId, content }) {
     const message = await this.repository.getMessageById(messageId);
-    if (!message) throw new AppError("Message not found", 404);
+    if (!message) throw new AppError(chatMessagesCodes.MESSAGE_NOT_FOUND, 404);
 
     const isOwner =
       (userId && message.senderId === Number(userId)) ||
       (clientId && message.senderClient === Number(clientId));
 
     if (!isOwner)
-      throw new AppError("You can only edit your own messages", 403);
+      throw new AppError(chatMessagesCodes.MESSAGE_FORBIDDEN, 403);
 
     const updated = await this.repository.updateMessage(messageId, {
       content,
@@ -724,7 +731,7 @@ export class ChatUsecase {
 
   async deleteMessage({ messageId, userId, clientId }) {
     const message = await this.repository.getMessageById(messageId);
-    if (!message) throw new AppError("Message not found", 404);
+    if (!message) throw new AppError(chatMessagesCodes.MESSAGE_NOT_FOUND, 404);
 
     const member = await this.repository.getMember({
       roomId: message.roomId,
@@ -737,7 +744,7 @@ export class ChatUsecase {
     const isAdmin = member?.role === "ADMIN" || member?.role === "MODERATOR";
 
     if (!isOwner && !isAdmin)
-      throw new AppError("You can only delete your own messages", 403);
+      throw new AppError(chatMessagesCodes.MESSAGE_FORBIDDEN, 403);
 
     await this.repository.softDeleteMessage(messageId);
 
@@ -756,7 +763,7 @@ export class ChatUsecase {
       userId,
       clientId,
     });
-    if (!member) throw new AppError("You don't have access to this room", 403);
+    if (!member) throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
     const room = await this.repository.findRoomBasic(roomId);
     if (
@@ -764,7 +771,7 @@ export class ChatUsecase {
       member.role !== "ADMIN" &&
       member.role !== "MODERATOR"
     ) {
-      throw new AppError("Only admins and moderators can pin messages", 403);
+      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
     }
 
     const pinned = await this.repository.createPin({
@@ -792,7 +799,7 @@ export class ChatUsecase {
       userId,
       clientId,
     });
-    if (!member) throw new AppError("You don't have access to this room", 403);
+    if (!member) throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
     const room = await this.repository.findRoomBasic(roomId);
     if (
@@ -800,7 +807,7 @@ export class ChatUsecase {
       member.role !== "ADMIN" &&
       member.role !== "MODERATOR"
     ) {
-      throw new AppError("Only admins and moderators can unpin messages", 403);
+      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
     }
 
     const result = await this.repository.deletePins({ roomId, messageId });
@@ -842,8 +849,17 @@ export class ChatUsecase {
       clientId,
     });
     if (!member)
-      throw new AppError("You do not have access to this chat room", 403);
-    return this.repository.getMembers(roomId);
+      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+    const members = await this.repository.getMembers(roomId);
+    // Members are not server-paginated (the room member set is small); we still
+    // return the normalized list envelope so the FE treats every list endpoint
+    // uniformly.
+    return {
+      items: members,
+      total: members.length,
+      page: 0,
+      pageSize: members.length,
+    };
   }
 
   async addMembers(roomId, userId, userIds) {
@@ -852,7 +868,7 @@ export class ChatUsecase {
       !requester ||
       (requester.role !== "ADMIN" && requester.role !== "MODERATOR")
     ) {
-      throw new AppError("You don't have permission to add members", 403);
+      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
     }
 
     const memberData = userIds.map((uid) => ({
@@ -887,17 +903,14 @@ export class ChatUsecase {
     const requester = await this.repository.getMember({ roomId, userId });
     const memberToRemove = await this.repository.getMemberById(memberId);
 
-    if (!memberToRemove) throw new AppError("Member not found", 404);
+    if (!memberToRemove) throw new AppError(chatMessagesCodes.MEMBER_NOT_FOUND, 404);
 
     const isSelf = memberToRemove.userId === Number(userId);
     const isAdmin =
       requester?.role === "ADMIN" || requester?.role === "MODERATOR";
 
     if (!isSelf && !isAdmin) {
-      throw new AppError(
-        "You don't have permission to remove this member",
-        403,
-      );
+      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
     }
 
     await this.repository.removeMember(memberId);
@@ -915,7 +928,7 @@ export class ChatUsecase {
       });
     }
 
-    return { message: "Member removed successfully" };
+    return { code: chatMessagesCodes.MEMBER_REMOVED };
   }
 
   async updateMemberRole(roomId, userId, memberId, role) {
@@ -924,13 +937,10 @@ export class ChatUsecase {
       userId,
     });
     if (!requester)
-      throw new AppError(
-        "You don't have permission to update member roles",
-        403,
-      );
+      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
 
     const validRoles = ["ADMIN", "MODERATOR", "MEMBER"];
-    if (!validRoles.includes(role)) throw new AppError("Invalid role", 400);
+    if (!validRoles.includes(role)) throw new AppError(chatMessagesCodes.INVALID_MEMBER_ROLE, 400);
 
     const updated = await this.repository.updateMemberRole(memberId, role);
 
@@ -956,7 +966,7 @@ export class ChatUsecase {
       clientId,
     });
     if (!member)
-      throw new AppError("You do not have access to this chat room", 403);
+      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
 
     const parsedUniqueMonths = uniqueMonths ? JSON.parse(uniqueMonths) : {};
 
@@ -979,11 +989,13 @@ export class ChatUsecase {
     const formattedFiles = addMonthGrouping(attachments, parsedUniqueMonths);
 
     return {
-      data: { files: formattedFiles, uniqueMonths: parsedUniqueMonths },
+      items: formattedFiles,
       total,
-      totalPages: Math.ceil(total / parsedLimit),
       page: parsedPage,
-      limit: parsedLimit,
+      pageSize: parsedLimit,
+      // Domain-specific extra the FE file gallery needs (month dividers); kept
+      // alongside the normalized list envelope.
+      uniqueMonths: parsedUniqueMonths,
     };
   }
 
@@ -994,7 +1006,7 @@ export class ChatUsecase {
       clientId,
     });
     if (!member)
-      throw new AppError("You do not have access to this chat room", 403);
+      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
     return this.repository.getFileStats(roomId);
   }
 

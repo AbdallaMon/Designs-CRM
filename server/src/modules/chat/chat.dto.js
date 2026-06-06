@@ -1,3 +1,53 @@
+import { PERMISSIONS, computeCapabilities, hasPermission } from "@dms/shared";
+
+// ── Per-record capabilities ───────────────────────────────────────────────────
+// Computed in the DTO (decision #3: mandatory on scoped responses) so the FE can
+// gate row/detail actions WITHOUT re-implementing the rules. Each rule combines a
+// permission CODE with object-scope facts (creator / member role / room type),
+// mirroring the server-side checks in chat.usecase.js. Backend stays the source of
+// truth; capabilities are a rendering hint.
+const ROOM_CAPABILITY_RULES = {
+  canEdit: ({ permissions, record, authUserId, selfMember }) =>
+    hasPermission(permissions, PERMISSIONS.CHAT.ROOM_EDIT) &&
+    (record.createdById === authUserId ||
+      selfMember?.role === "ADMIN" ||
+      selfMember?.role === "MODERATOR" ||
+      record.type === "STAFF_TO_STAFF"),
+  canDelete: ({ permissions, record, selfMember }) =>
+    hasPermission(permissions, PERMISSIONS.CHAT.ROOM_DELETE) &&
+    selfMember?.role === "ADMIN" &&
+    record.type !== "STAFF_TO_STAFF" &&
+    record.type !== "PROJECT_GROUP",
+  canManageMembers: ({ permissions, selfMember }) =>
+    hasPermission(permissions, PERMISSIONS.CHAT.MEMBER_MANAGE) &&
+    (selfMember?.role === "ADMIN" || selfMember?.role === "MODERATOR"),
+  canManageClient: ({ permissions, record, selfMember }) =>
+    hasPermission(permissions, PERMISSIONS.CHAT.MEMBER_MANAGE) &&
+    (selfMember?.role === "ADMIN" || selfMember?.role === "MODERATOR") &&
+    Boolean(record.clientLead || record.clientLeadId),
+  canSendMessage: ({ permissions, record }) =>
+    hasPermission(permissions, PERMISSIONS.CHAT.MESSAGE_SEND) &&
+    record.isChatEnabled !== false,
+  canUploadFiles: ({ permissions, record }) =>
+    hasPermission(permissions, PERMISSIONS.CHAT.MESSAGE_SEND) &&
+    record.allowFiles !== false &&
+    record.isChatEnabled !== false,
+};
+
+/**
+ * Compute the per-record `capabilities.*` object for a chat room.
+ * @param {object} room   the room record (must carry createdById, type, flags)
+ * @param {{ permissions?: string[], authUserId: number, selfMember?: object }} ctx
+ */
+export function computeRoomCapabilities(room, { permissions, authUserId, selfMember }) {
+  return computeCapabilities(ROOM_CAPABILITY_RULES, {
+    permissions: permissions || [],
+    record: room,
+    authUserId: Number(authUserId),
+    selfMember: selfMember ?? room?.selfMember ?? null,
+  });
+}
+
 // ── Shared Prisma select shapes ───────────────────────────────────────────────
 // Centralised here so both the repository and socket layer use the same projections.
 

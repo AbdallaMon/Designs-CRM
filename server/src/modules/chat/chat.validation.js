@@ -27,6 +27,21 @@ class ChatSchemas {
       .positive("memberId must be a positive integer"),
   });
 
+  // Combined params for routes that carry BOTH :roomId and :memberId.
+  // Must be validated in a SINGLE validate(..., "params") call: the validate
+  // middleware overwrites req.params with the parsed (unknown-stripped) object,
+  // so chaining two separate params validators drops one of the two ids.
+  roomMemberParams = z.object({
+    roomId: z.coerce
+      .number()
+      .int()
+      .positive("roomId must be a positive integer"),
+    memberId: z.coerce
+      .number()
+      .int()
+      .positive("memberId must be a positive integer"),
+  });
+
   messageIdParams = z.object({
     messageId: z.coerce
       .number()

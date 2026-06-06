@@ -1,9 +1,7 @@
 import { ok, created, deleted } from "../../shared/http/response.js";
-import {
-  PERMISSIONS,
-  computeCapabilities,
-  hasPermission,
-} from "@dms/shared";
+import { chatMessagesCodes, messagesNames } from "@dms/shared";
+
+const TK = messagesNames.chatMessages;
 
 export class ChatController {
   /** @param {import("./chat.usecase.js").ChatUsecase} usecase */
@@ -12,8 +10,9 @@ export class ChatController {
   }
 
   // ── Object-scope checker entry point (wired via requireSpecialChecker) ───────
-  // REFERENCE EXAMPLE: a thin controller method that delegates to the usecase
-  // checker. It THROWS on denial (via the usecase) and returns the loaded row.
+  // Thin controller method that delegates to the usecase checker. It THROWS on
+  // denial (via the usecase) and returns the loaded membership row on success.
+  // Wired on EVERY object-scoped `/rooms/:roomId/...` route (the IDOR gate).
   checkIfUserCanAccessRoom = (req) => {
     return this.usecase.checkIfUserCanAccessRoom({
       roomId: parseInt(req.params.roomId, 10),
@@ -24,77 +23,48 @@ export class ChatController {
   // ── Rooms ──────────────────────────────────────────────────────────────────
 
   getRooms = async (req, res) => {
-    const userId = req.auth.id;
-    const result = await this.usecase.getRooms(userId, req.query);
-    return ok(res, result);
+    const result = await this.usecase.getRooms(req.auth, req.query);
+    return ok(res, result, chatMessagesCodes.ROOMS_FETCHED, TK);
   };
 
   getRoomById = async (req, res) => {
-    const userId = req.auth.id;
     const { roomId } = req.params;
-    const room = await this.usecase.getRoomById(roomId, userId, null);
-
-    // REFERENCE EXAMPLE — per-record capabilities. Every scoped detail/list
-    // response attaches a `capabilities.{...}` object the FE gates actions on
-    // (decision: mandatory on scoped responses). Combines a permission CODE with
-    // object-scope facts (creator/admin membership). Backend stays the source of
-    // truth; capabilities are a rendering hint.
-    const capabilities = computeCapabilities(
-      {
-        canEdit: ({ permissions, record, authUserId, selfMember }) =>
-          hasPermission(permissions, PERMISSIONS.CHAT.ROOM_EDIT) &&
-          (record.createdById === authUserId ||
-            selfMember?.role === "ADMIN" ||
-            selfMember?.role === "MODERATOR"),
-        canDelete: ({ permissions, record, authUserId }) =>
-          hasPermission(permissions, PERMISSIONS.CHAT.ROOM_DELETE) &&
-          record.createdById === authUserId,
-        canManageMembers: ({ permissions, selfMember }) =>
-          hasPermission(permissions, PERMISSIONS.CHAT.MEMBER_MANAGE) &&
-          (selfMember?.role === "ADMIN" || selfMember?.role === "MODERATOR"),
-      },
-      {
-        permissions: req.auth.permissions,
-        record: room,
-        authUserId: userId,
-        selfMember: room.selfMember,
-      },
-    );
-
-    return ok(res, { ...room, capabilities });
+    // capabilities are computed in the usecase/dto and already attached to `room`.
+    const room = await this.usecase.getRoomById(roomId, req.auth, null);
+    return ok(res, room, chatMessagesCodes.ROOM_FETCHED, TK);
   };
 
   createRoom = async (req, res) => {
     const userId = req.auth.id;
     const room = await this.usecase.createRoom(userId, req.body);
-    return created(res, room);
+    return created(res, room, chatMessagesCodes.ROOM_CREATED, TK);
   };
 
   createDirectChat = async (req, res) => {
     const userId = req.auth.id;
     const { participantId } = req.body;
     const room = await this.usecase.createDirectChat(userId, participantId);
-    return ok(res, room);
+    return ok(res, room, chatMessagesCodes.ROOM_CREATED, TK);
   };
 
   createLeadsRoom = async (req, res) => {
     const userId = req.auth.id;
     const room = await this.usecase.createLeadsRoom(userId, req.body);
-    return created(res, room, "Lead chat room created successfully");
+    return created(res, room, chatMessagesCodes.LEAD_ROOM_CREATED, TK);
   };
 
   updateRoom = async (req, res) => {
     const userId = req.auth.id;
     const { roomId } = req.params;
     const room = await this.usecase.updateRoom(roomId, userId, req.body);
-    return ok(res, room, "Chat room updated successfully");
+    return ok(res, room, chatMessagesCodes.ROOM_UPDATED, TK);
   };
 
   deleteRoom = async (req, res) => {
     const userId = req.auth.id;
     const { roomId } = req.params;
     const result = await this.usecase.deleteRoom(roomId, userId);
-    return deleted(res, result.message);
+    return deleted(res, result.code, TK);
   };
 
   manageClient = async (req, res) => {
@@ -102,14 +72,14 @@ export class ChatController {
     const { roomId } = req.params;
     const { action } = req.body;
     const result = await this.usecase.manageClient(roomId, userId, action);
-    return ok(res, null, result.message);
+    return ok(res, null, result.code, TK);
   };
 
   regenerateToken = async (req, res) => {
     const userId = req.auth.id;
     const { roomId } = req.params;
     const room = await this.usecase.regenerateToken(roomId, userId);
-    return ok(res, room, "Chat access token regenerated successfully");
+    return ok(res, room, chatMessagesCodes.TOKEN_REGENERATED, TK);
   };
 
   // ── Messages ───────────────────────────────────────────────────────────────
@@ -123,21 +93,21 @@ export class ChatController {
       null,
       req.query,
     );
-    return ok(res, result);
+    return ok(res, result, chatMessagesCodes.MESSAGES_FETCHED, TK);
   };
 
   getMessagePage = async (req, res) => {
     const { messageId } = req.params;
     const { limit } = req.query;
     const result = await this.usecase.getMessagePage(messageId, limit);
-    return ok(res, result);
+    return ok(res, result, chatMessagesCodes.MESSAGES_FETCHED, TK);
   };
 
   getPinnedMessages = async (req, res) => {
     const userId = req.auth.id;
     const { roomId } = req.params;
     const messages = await this.usecase.getPinnedMessages(roomId, userId, null);
-    return ok(res, messages);
+    return ok(res, messages, chatMessagesCodes.PINNED_MESSAGES_FETCHED, TK);
   };
 
   markRoomRead = async (req, res) => {
@@ -149,14 +119,14 @@ export class ChatController {
     } else {
       await this.usecase.markRoomRead(roomId, userId, null);
     }
-    return ok(res, null, "Messages marked as read");
+    return ok(res, null, chatMessagesCodes.MESSAGES_MARKED_READ, TK);
   };
 
   markAllRead = async (req, res) => {
     const userId = req.auth.id;
     const { roomIds } = req.body;
     const result = await this.usecase.markAllRead(userId, roomIds);
-    return ok(res, null, result.message);
+    return ok(res, null, result.code, TK);
   };
 
   addReaction = async (req, res) => {
@@ -164,14 +134,14 @@ export class ChatController {
     const { messageId } = req.params;
     const { emoji } = req.body;
     const reaction = await this.usecase.addReaction(messageId, userId, emoji);
-    return ok(res, reaction);
+    return ok(res, reaction, chatMessagesCodes.REACTION_ADDED, TK);
   };
 
   removeReaction = async (req, res) => {
     const userId = req.auth.id;
     const { messageId, emoji } = req.params;
     await this.usecase.removeReaction(messageId, userId, emoji);
-    return ok(res, null, "Reaction removed");
+    return ok(res, null, chatMessagesCodes.REACTION_REMOVED, TK);
   };
 
   // ── Members ────────────────────────────────────────────────────────────────
@@ -179,8 +149,8 @@ export class ChatController {
   getMembers = async (req, res) => {
     const userId = req.auth.id;
     const { roomId } = req.params;
-    const members = await this.usecase.getMembers(roomId, userId, null);
-    return ok(res, members);
+    const result = await this.usecase.getMembers(roomId, userId, null);
+    return ok(res, result, chatMessagesCodes.MEMBERS_FETCHED, TK);
   };
 
   addMembers = async (req, res) => {
@@ -188,14 +158,14 @@ export class ChatController {
     const { roomId } = req.params;
     const { userIds } = req.body;
     const room = await this.usecase.addMembers(roomId, userId, userIds);
-    return ok(res, room, "Members added successfully");
+    return ok(res, room, chatMessagesCodes.MEMBERS_ADDED, TK);
   };
 
   removeMember = async (req, res) => {
     const userId = req.auth.id;
     const { roomId, memberId } = req.params;
     const result = await this.usecase.removeMember(roomId, userId, memberId);
-    return ok(res, null, result.message);
+    return ok(res, null, result.code, TK);
   };
 
   updateMemberRole = async (req, res) => {
@@ -208,7 +178,7 @@ export class ChatController {
       memberId,
       role,
     );
-    return ok(res, member);
+    return ok(res, member, chatMessagesCodes.MEMBER_ROLE_UPDATED, TK);
   };
 
   // ── Files ──────────────────────────────────────────────────────────────────
@@ -217,13 +187,13 @@ export class ChatController {
     const userId = req.auth.id;
     const { roomId } = req.params;
     const result = await this.usecase.getFiles(roomId, userId, null, req.query);
-    return ok(res, result);
+    return ok(res, result, chatMessagesCodes.FILES_FETCHED, TK);
   };
 
   getFileStats = async (req, res) => {
     const userId = req.auth.id;
     const { roomId } = req.params;
     const stats = await this.usecase.getFileStats(roomId, userId, null);
-    return ok(res, stats);
+    return ok(res, stats, chatMessagesCodes.FILE_STATS_FETCHED, TK);
   };
 }

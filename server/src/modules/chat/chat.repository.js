@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import prisma from "../../infra/prisma/prisma.js";
 import { AppError } from "../../shared/errors/AppError.js";
+import { chatMessagesCodes } from "@dms/shared";
 import { memberSelect, messageInclude, buildRoomInclude } from "./chat.dto.js";
 
 // ── File type filter ─────────────────────────────────────────────────────────
@@ -456,7 +457,7 @@ export class ChatRepository {
       where: { id: Number(messageId) },
       select: { createdAt: true, id: true, roomId: true },
     });
-    if (!message) throw new AppError("Message not found", 404);
+    if (!message) throw new AppError(chatMessagesCodes.MESSAGE_NOT_FOUND, 404);
 
     const index = await prisma.chatMessage.count({
       where: {

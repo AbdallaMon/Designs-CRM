@@ -58,6 +58,7 @@ chatRouter.put(
   "/rooms/:roomId",
   AuthMiddleware.requirePermissions([P.ROOM_EDIT]),
   validate(chatSchemas.roomIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
   validate(chatSchemas.updateRoom),
   asyncHandler(chatController.updateRoom),
 );
@@ -65,6 +66,7 @@ chatRouter.put(
   "/rooms/:roomId/update-room-settings",
   AuthMiddleware.requirePermissions([P.ROOM_EDIT]),
   validate(chatSchemas.roomIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
   validate(chatSchemas.updateRoom),
   asyncHandler(chatController.updateRoom),
 );
@@ -72,12 +74,14 @@ chatRouter.delete(
   "/rooms/:roomId",
   AuthMiddleware.requirePermissions([P.ROOM_DELETE]),
   validate(chatSchemas.roomIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
   asyncHandler(chatController.deleteRoom),
 );
 chatRouter.post(
   "/rooms/:roomId/manageClient",
   AuthMiddleware.requirePermissions([P.MEMBER_MANAGE]),
   validate(chatSchemas.roomIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
   validate(chatSchemas.manageClient),
   asyncHandler(chatController.manageClient),
 );
@@ -85,6 +89,7 @@ chatRouter.post(
   "/rooms/:roomId/regenerateToken",
   AuthMiddleware.requirePermissions([P.ROOM_EDIT]),
   validate(chatSchemas.roomIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
   asyncHandler(chatController.regenerateToken),
 );
 
@@ -93,6 +98,7 @@ chatRouter.get(
   "/rooms/:roomId/messages",
   AuthMiddleware.requirePermissions([P.MESSAGE_VIEW]),
   validate(chatSchemas.roomIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
   validate(chatSchemas.getMessages, "query"),
   asyncHandler(chatController.getMessages),
 );
@@ -100,6 +106,7 @@ chatRouter.get(
   "/rooms/:roomId/messages/:messageId/page",
   AuthMiddleware.requirePermissions([P.MESSAGE_VIEW]),
   validate(chatSchemas.messageIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
   validate(chatSchemas.getMessagePage, "query"),
   asyncHandler(chatController.getMessagePage),
 );
@@ -107,6 +114,7 @@ chatRouter.get(
   "/rooms/:roomId/pinned-messages",
   AuthMiddleware.requirePermissions([P.MESSAGE_VIEW]),
   validate(chatSchemas.roomIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
   asyncHandler(chatController.getPinnedMessages),
 );
 chatRouter.post(
@@ -119,6 +127,7 @@ chatRouter.post(
   "/rooms/:roomId/read",
   AuthMiddleware.requirePermissions([P.MESSAGE_SEND]),
   validate(chatSchemas.roomIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
   validate(chatSchemas.markRead),
   asyncHandler(chatController.markRoomRead),
 );
@@ -141,27 +150,29 @@ chatRouter.get(
   "/rooms/:roomId/members",
   AuthMiddleware.requirePermissions([P.MESSAGE_VIEW]),
   validate(chatSchemas.roomIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
   asyncHandler(chatController.getMembers),
 );
 chatRouter.post(
   "/rooms/:roomId/members",
   AuthMiddleware.requirePermissions([P.MEMBER_MANAGE]),
   validate(chatSchemas.roomIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
   validate(chatSchemas.addMembers),
   asyncHandler(chatController.addMembers),
 );
 chatRouter.delete(
   "/rooms/:roomId/members/:memberId",
   AuthMiddleware.requirePermissions([P.MEMBER_MANAGE]),
-  validate(chatSchemas.roomIdParams, "params"),
-  validate(chatSchemas.memberIdParams, "params"),
+  validate(chatSchemas.roomMemberParams, "params"),
+  AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
   asyncHandler(chatController.removeMember),
 );
 chatRouter.put(
   "/rooms/:roomId/members/:memberId",
   AuthMiddleware.requirePermissions([P.MEMBER_MANAGE]),
-  validate(chatSchemas.roomIdParams, "params"),
-  validate(chatSchemas.memberIdParams, "params"),
+  validate(chatSchemas.roomMemberParams, "params"),
+  AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
   validate(chatSchemas.updateMemberRole),
   asyncHandler(chatController.updateMemberRole),
 );
@@ -171,6 +182,7 @@ chatRouter.get(
   "/rooms/:roomId/files",
   AuthMiddleware.requirePermissions([P.MESSAGE_VIEW]),
   validate(chatSchemas.roomIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
   validate(chatSchemas.getFiles, "query"),
   asyncHandler(chatController.getFiles),
 );
@@ -178,6 +190,7 @@ chatRouter.get(
   "/rooms/:roomId/files/stats",
   AuthMiddleware.requirePermissions([P.MESSAGE_VIEW]),
   validate(chatSchemas.roomIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
   asyncHandler(chatController.getFileStats),
 );
 
