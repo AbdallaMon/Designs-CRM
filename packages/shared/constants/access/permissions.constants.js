@@ -409,6 +409,33 @@ export const UTILITY_MODEL_PROJECTIONS = Object.freeze({
   fixedData: { id: true, title: true },
 });
 
+// ── dashboard (read-only analytics aggregations behind the SHARED gate) ──────────
+// Legacy: `routes/shared/dashboard.js` mounted at `/shared/dashboard`, behind the
+// SHARED authentication middleware (VERIFIED: the "SHARED" gate admits every one of the
+// 9 authed roles; the isAdmin early-return fires only for the "ADMIN" gate PARAM). All 9
+// read-only GET aggregations (key-metrics, leads-status, monthly-performance, emirates-
+// analytics, leads-monthly-overview, week-performance, latest-leads, recent-activities,
+// designer-metrics) were served to EVERY authed role with no per-endpoint role split —
+// the only differentiation was the per-request data SCOPE (legacy keyed it off a client-
+// supplied `staffId`/`userId` query param). There is therefore a SINGLE view code,
+// granted to every authed role via SHARED_AUTHED; the data boundary is enforced per
+// endpoint in the usecase, NOT by a second code.
+//
+// SCOPE NOTE (the IDOR-class fix): legacy trusted `searchParams.staffId` (and, on
+// recent-activities, `searchParams.userId`) to select WHOSE metrics to read — so any
+// scoped role (sales/designer/executor) could pass `?staffId=<other>` and read another
+// user's performance, and the un-scoped endpoints returned GLOBAL totals to everyone.
+// v2 preserves the privileged behavior 1:1 for the admin-tier union (ADMIN/SUPER_ADMIN/
+// isSuperSales): they may still pass a `staffId` to scope to anyone, or omit it for the
+// global aggregate. For every OTHER role the scope identity is FORCED to req.auth.id —
+// a non-privileged caller can only ever see their OWN metrics (matching the FE, which
+// already sends the caller's own id for a self-view; the only thing closed is the
+// cross-user read). The role used for this branch comes from req.auth (the token), never
+// from a `?role=` query param.
+export const DASHBOARD_PERMISSIONS = {
+  VIEW: "dashboard.view", // GET all 9 dashboard read aggregations (scope enforced per request)
+};
+
 // ── nested aggregate (canonical reference for app code) ───────────────────────
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
@@ -428,6 +455,7 @@ export const PERMISSIONS = {
   CALENDAR: CALENDAR_PERMISSIONS,
   NOTIFICATION: NOTIFICATION_PERMISSIONS,
   UTILITY: UTILITY_PERMISSIONS,
+  DASHBOARD: DASHBOARD_PERMISSIONS,
 };
 
 /**

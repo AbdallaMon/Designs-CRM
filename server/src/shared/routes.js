@@ -17,6 +17,7 @@ import { calendarRouter } from "../modules/calendar/calendar.routes.js";
 import { clientCalendarRouter } from "../modules/calendar/client/client-calendar.route.js";
 import { notificationRouter } from "../modules/notifications/notification.route.js";
 import { utilityRouter } from "../modules/utilities/utility.route.js";
+import { dashboardRouter } from "../modules/dashboard/dashboard.route.js";
 
 import authRoutes from "../modules/auth/auth.routes.js";
 const router = Router();
@@ -93,5 +94,19 @@ router.use("/notifications", notificationRouter);
 // FROZEN) is NOT here — it belongs to the already-migrated upload module and stays on
 // legacy. Legacy routers stay mounted in parallel during the strangler window.
 router.use("/utilities", utilityRouter);
+
+// Dashboard — the read-only analytics surface (legacy `routes/shared/dashboard.js` behind
+// the SHARED gate = all 9 authed roles). Auth once at the router; every route is gated by
+// the single DASHBOARD.VIEW code (granted to every authed role). Legacy keyed each scoped
+// aggregation off a CLIENT-SUPPLIED `staffId` (and recent-activities also off a client
+// `userId`) → a scoped role could read another user's metrics/feed, and the un-scoped
+// endpoints returned GLOBAL totals to everyone. v2 derives the scope from req.auth: the
+// admin-tier union (ADMIN/SUPER_ADMIN/isSuperSales) may scope to any user or global
+// (preserved 1:1), every other role is FORCED to req.auth.id (the IDOR-class fix). The
+// role used for branching comes from the token, never from a `?role=` param. The legacy
+// `/staff/dashboard/latest-calls` endpoint is NOT migrated here (STAFF call-reminder data,
+// not a dashboard aggregation — stays on legacy). Legacy router stays mounted in parallel
+// during the strangler window.
+router.use("/dashboard", dashboardRouter);
 
 export default router;

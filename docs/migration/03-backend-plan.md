@@ -608,6 +608,24 @@ Workflow status changes are `POST .../:id/actions/<kebab>`, never PATCH-on-statu
 > above are fixed** and are what the frontend reconciliation reviewer checks. Endpoint-level granularity within a module
 > preserves the legacy request/response data shape unless flagged as a CONTRACT CHANGE here.
 
+### Dashboard module — contract deltas
+
+Per-endpoint deltas from the dashboard migration (security review). These are scoping/behavior
+changes the frontend must mirror; **metric payload shapes are unchanged** in every case.
+
+- **Non-admin scoping tightening** on `monthly-performance`, `emirates-analytics`,
+  `leads-monthly-overview`, `week-performance`, `designer-metrics`: legacy returned GLOBAL
+  totals to a non-admin who omitted `?staffId`; v2 forces the non-admin's own id (self-view).
+  Admin-tier (ADMIN / SUPER_ADMIN / isSuperSales) still honors a client `?staffId` or omits
+  it for the global aggregate (preserved 1:1). (`week-performance`'s `newLeads` count remains
+  a global aggregate — frozen legacy math.)
+- **`recent-activities`**: admin-tier now honors only `?staffId` (legacy also honored
+  `?userId`); non-admins are self-scoped to their own `userId`. Defense-in-depth: a non-admin
+  whose resolved self-scope id is not a finite number is REJECTED (403 `ACCESS_DENIED`) rather
+  than silently falling back to the global feed.
+- **`latest-leads`**: unchanged — global newest-5 NEW leads to all authed roles (preserved
+  legacy behavior).
+
 ---
 
 *End of backend migration plan.*

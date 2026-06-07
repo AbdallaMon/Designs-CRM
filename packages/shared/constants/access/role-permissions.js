@@ -84,6 +84,13 @@ const SHARED_AUTHED = [
   P.UTILITY.IMAGE_LIST,
   P.UTILITY.MODEL_READ,
   P.UTILITY.SEARCH,
+  // dashboard — legacy `/shared/dashboard/*` (9 read-only analytics aggregations) sat
+  // behind the SHARED authentication middleware (any logged-in role), so every authed
+  // role gets the single dashboard view code. There is NO per-endpoint role split in
+  // legacy; the per-request data SCOPE is what differs and is enforced in the v2 usecase
+  // (admin-tier may scope to any user / global; every other role is FORCED to req.auth.id
+  // — the IDOR-class fix). The code is the gate, auth-scope is the row-level guarantee.
+  P.DASHBOARD.VIEW,
 ];
 
 // Telegram management — ADMIN only today.
