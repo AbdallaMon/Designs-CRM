@@ -58,6 +58,42 @@ export const LEAD_PERMISSIONS = {
   COUNTRY_CHECK: "lead.country.check",
 };
 
+// Projects domain. Byte-matches the backend @dms/shared PROJECT/TASK/UPDATE/DELIVERY
+// _PERMISSIONS values (packages/shared/constants/access/permissions.constants.js). The
+// four sub-surfaces (project/task/update/delivery) form ONE coupled domain centered on
+// the Project/ClientLead entity and share a single scope checker. The backend ALSO emits
+// per-record capabilities.* — gate object-level actions on BOTH.
+export const PROJECT_PERMISSIONS = {
+  LIST: "project.list",
+  VIEW: "project.view",
+  EDIT: "project.edit",
+  MANAGE: "project.manage",
+};
+
+export const TASK_PERMISSIONS = {
+  LIST: "task.list",
+  VIEW: "task.view",
+  CREATE: "task.create",
+  EDIT: "task.edit",
+  DELETE: "task.delete",
+  NOTE_MANAGE: "task.note.manage",
+};
+
+export const UPDATE_PERMISSIONS = {
+  LIST: "update.list",
+  CREATE: "update.create",
+  AUTHORIZE: "update.authorize",
+  ARCHIVE: "update.archive",
+  MARK_DONE: "update.mark_done",
+};
+
+export const DELIVERY_PERMISSIONS = {
+  LIST: "delivery.list",
+  CREATE: "delivery.create",
+  LINK_MEETING: "delivery.link_meeting",
+  DELETE: "delivery.delete",
+};
+
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
   CHAT: CHAT_PERMISSIONS,
@@ -65,6 +101,10 @@ export const PERMISSIONS = {
   UPLOAD: UPLOAD_PERMISSIONS,
   SITE_UTILITY: SITE_UTILITY_PERMISSIONS,
   LEAD: LEAD_PERMISSIONS,
+  PROJECT: PROJECT_PERMISSIONS,
+  TASK: TASK_PERMISSIONS,
+  UPDATE: UPDATE_PERMISSIONS,
+  DELIVERY: DELIVERY_PERMISSIONS,
 };
 
 export function splitPermissionCode(code) {
