@@ -10,11 +10,12 @@
 
 ## 1. One-line status
 
-🎉 **BACKEND MIGRATION COMPLETE** (every legacy router group has a `/v2` equivalent, 549 tests / 34 files
-green). **FE migration phase IN PROGRESS:** chat + site-utility (Stage 4) and now **leads/sales (`110948d`)**
-done. Working tree clean. **NEXT FE feature: projects/tasks** (then accounting, calendar, contracts,
-image-sessions, dashboard, notifications, courses, questions/sales-stages/reviews, users/admin), then
-Phase 12 cutover.
+🎉 **BACKEND MIGRATION COMPLETE** (every legacy router group has a `/v2` equivalent). **FE migration phase
+IN PROGRESS:** done so far — chat + site-utility (Stage 4), **leads/sales `110948d`**, **projects/tasks/
+updates/delivery `3216f31`**, **accounting `ea088f9`** (+ a BE accounting error-contract hardening:
+legacy raw-Error→AppError codes). Suite now **571 tests / 34 files green**; working tree clean.
+**NEXT FE feature: calendar** (then contracts, image-sessions, dashboard, notifications, courses,
+questions/sales-stages/reviews, users/admin), then Phase 12 cutover.
 
 FE method (the proven loop): build via shared-frontend (study `ui/src/app/v2/features/{chat,leads}` as the
 pattern; reuse the foundation in `v2/{hooks,config,lib,shared,providers}`; mount a route shell under
@@ -59,7 +60,8 @@ calendar 174e8e1 → (docs db76261) → notifications+utilities 6cac14e →
 (docs d854be0) → dashboard bf5845b → (docs 6d474c2) → leaf-domains e3da3a8 →
 (docs 6a91bab) → contracts ef95b73 → (docs 96fd4b7) → image-sessions 4f2baf0 →
 (docs cf6fc9f) → admin-residual 9325e29 → (docs 3943c77) → client-portal e943739 →
-client-chat efefedc → (docs 063b101) → web/leads 110948d
+client-chat efefedc → (docs 063b101) → web/leads 110948d → (docs dd5749b) →
+web/projects 3216f31 → web/accounting ea088f9
 ```
 Baseline / rollback point: `9406978` ("merged").
 
@@ -197,7 +199,8 @@ telegram assign, settings). **FE for all BE-only modules is deferred** (per user
 > "Read `docs/migration/RESUME-CHECKPOINT.md`, `PROJECT_STATE.md`, `CLAUDE.md`, `docs/migration/
 > 04-frontend-plan.md`, and `docs/migration/MIGRATION-LOG.md`. Confirm the working tree is clean and
 > `npm test` is green (549/34). The BACKEND is fully migrated and the leads/sales FE feature is done
-> (`110948d`) — continue the **FE migration phase** with the **projects/tasks** feature next (then
-> accounting, calendar, …), using the FE loop in §1 (build via shared-frontend [pattern =
-> v2/features/{chat,leads}] → reconciliation review → rework → esbuild verify → commit). Point at
-> `/v2/*`, gate on usePermission × capabilities, apply §5c."
+> (leads/projects/accounting done; suite 571/34) — continue the **FE migration phase** with the
+> **calendar** feature next (then contracts, image-sessions, dashboard, notifications, courses,
+> questions/sales-stages/reviews, users/admin), using the FE loop in §1 (build via shared-frontend
+> [pattern = v2/features/{chat,leads,projects,accounting}] → reconciliation review → rework → esbuild
+> verify → commit). Point at `/v2/*`, gate on usePermission × capabilities, apply §5c."
