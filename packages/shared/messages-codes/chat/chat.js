@@ -7,12 +7,17 @@ export const chatMessagesCodes = {
   ROOMS_FETCHED: "ROOMS_FETCHED",
   ROOM_FETCHED: "ROOM_FETCHED",
   MESSAGES_FETCHED: "MESSAGES_FETCHED",
+  MESSAGE_PAGE_FETCHED: "MESSAGE_PAGE_FETCHED",
   PINNED_MESSAGES_FETCHED: "PINNED_MESSAGES_FETCHED",
   MEMBERS_FETCHED: "MEMBERS_FETCHED",
   FILES_FETCHED: "FILES_FETCHED",
   FILE_STATS_FETCHED: "FILE_STATS_FETCHED",
   REACTION_ADDED: "REACTION_ADDED",
   MEMBER_ROLE_UPDATED: "MEMBER_ROLE_UPDATED",
+
+  // ── public client (token-based) surface ───────────────────────────────────
+  ROOM_TOKEN_VALIDATED: "ROOM_TOKEN_VALIDATED",
+  INVALID_ROOM_TOKEN: "INVALID_ROOM_TOKEN", // token missing / does not resolve to a room
 
   // ── success / mutations ──────────────────────────────────────────────────
   ROOM_CREATED: "ROOM_CREATED",

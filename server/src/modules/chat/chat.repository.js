@@ -248,6 +248,23 @@ export class ChatRepository {
     return prisma.chatRoom.delete({ where: { id: Number(roomId) } });
   }
 
+  // Resolve a room from its per-room client access token (the public client-chat
+  // surface credential). Selects only what the public gate needs — the room id +
+  // the client member behind the token — never the token itself or secrets.
+  async findRoomByAccessToken(token) {
+    if (!token) return null;
+    const room = await prisma.chatRoom.findFirst({
+      where: { chatAccessToken: token },
+      select: { id: true, type: true },
+    });
+    if (!room) return null;
+    const chatMember = await prisma.chatMember.findFirst({
+      where: { roomId: room.id, clientId: { not: null }, isDeleted: false },
+      select: { id: true, clientId: true, roomId: true },
+    });
+    return { room, chatMember };
+  }
+
   async findRoomBasic(roomId) {
     return prisma.chatRoom.findUnique({
       where: { id: Number(roomId) },

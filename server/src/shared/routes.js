@@ -26,6 +26,7 @@ import { clientContractRouter } from "../modules/contracts/client/client-contrac
 import { adminImageSessionRouter } from "../modules/image-sessions/admin/admin-image-session.route.js";
 import { imageSessionRouter } from "../modules/image-sessions/session/image-session.route.js";
 import { clientImageSessionRouter } from "../modules/image-sessions/client/client-image-session.route.js";
+import { clientChatRouter } from "../modules/chat/client/client-chat.route.js";
 import { adminResidualRouter } from "../modules/admin-residual/admin-residual.routes.js";
 import { staffRouter } from "../modules/admin-residual/staff/staff.routes.js";
 import { publicLeadRouter } from "../modules/leads/client/public-lead/public-lead.routes.js";
@@ -51,6 +52,15 @@ router.use("/leads", leadRouter);
 router.use("/users", userRouter);
 router.use("/telegram", telegramRouter);
 router.use("/chat", chatRouter);
+// PUBLIC client chat surface (legacy routes/client/chat/{rooms,messages,members,files}.js,
+// mounted under `/client/chat` via routes/clients/clients.js, token-based, NO auth).
+// Mounted ungated, exactly like the booking funnel, `/files/client/*`, and the client
+// calendar/contracts/image-session surfaces — gating it would break the public client
+// chat (a client has no session). The room is derived FROM the per-room access token
+// (ChatRoom.chatAccessToken), and any `:roomId` that differs from the token's room is
+// rejected (the IDOR close vs legacy, which gated only on a client-supplied clientId).
+// Legacy routers stay mounted in parallel during the strangler window.
+router.use("/client/chat", clientChatRouter);
 router.use("/files", uploadRouter);
 router.use("/site-utilities", siteUtilityRouter);
 // Courses / LMS — admin management surface (legacy `/admin/courses`) and staff
