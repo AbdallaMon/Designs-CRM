@@ -585,6 +585,98 @@ export const IMAGE_SESSION_PERMISSIONS = {
   SESSION_MANAGE: "image_session.session.manage", // create/edit/regenerate/delete a lead's session (lead-scoped write)
 };
 
+// ── admin-residual (the LAST residual sweep of the legacy `/admin` ADMIN gate) ───
+// Legacy: `routes/admin/admin.js` mounted at `/admin`, guarded by
+// `verifyTokenAndHandleAuthorization(..., "ADMIN")`. VERIFIED: the "ADMIN" gate
+// admits the `isAdmin` UNION — role ADMIN/SUPER_ADMIN, OR `isSuperSales`, OR a
+// subRole of ADMIN/SUPER_ADMIN (identical to the legacy courses/users/image-session
+// admin gate). The endpoints covered here are the genuine residual NOT owned by an
+// earlier migrated module: lead/staff reports (🔒 pdfkit frozen — wrapped only),
+// admin lead import/create/update/delete + telegram, client field update, fixed-data
+// WRITES (GET fixed-data lives in the utilities module), commissions, the admin
+// projects aggregation + project-group create, and the generic model-archive.
+//
+// These codes are granted to ADMIN/SUPER_ADMIN base + `isSuperSales` (via
+// SUPER_SALES_EXTRA_PERMISSIONS) so the effective set matches the legacy `isAdmin`
+// union EXACTLY — without widening any other base role (mirrors COURSE_ADMIN /
+// USER_ADMIN / IMAGE_SESSION_ADMIN). A plain STAFF/sales/designer/accountant is 403'd.
+//
+// SCOPE NOTES (the IDOR-class hardening):
+//   - The LEAD-scoped writes (lead update, lead delete, telegram new + assign-users)
+//     run the leads-module object-scope checker (checkIfUserCanMutateLead) in the
+//     usecase on the parent lead. Admins have FULL lead scope via the keystone checker
+//     (so behavior is preserved 1:1), but a non-full-scope admin sub-role is bounded.
+//   - The client field update (PUT /client/update/:clientId) is keyed by a CLIENT id
+//     (a client may own multiple leads) — there is no single lead to scope to. Legacy
+//     applied NO object scope here; the ADMIN code is the gate (admins have full
+//     scope), preserved 1:1. Documented decision — not an IDOR regression vs legacy.
+//   - The generic model-archive (PATCH /model/archived/:id) is constrained by an
+//     ALLOW-LIST (ADMIN_ARCHIVE_MODEL_ALLOWLIST below) — legacy did an open
+//     `prisma[model].update()` (any client `model` value); v2 rejects non-whitelisted
+//     models. The whitelisted models are GLOBAL image-session reference data (no
+//     per-lead owner) so the admin code is the gate. Reads/writes split per convention.
+export const ADMIN_RESIDUAL_PERMISSIONS = {
+  // reports (🔒 pdfkit/excel generation frozen — the codes gate, the frozen fns own the body)
+  REPORT_GENERATE: "admin_residual.report.generate", // POST /reports/lead-report(/excel|/pdf), /reports/staff-report(/excel|/pdf)
+  // admin lead import/create/update/delete (lead-scoped writes use the leads checker)
+  LEAD_IMPORT: "admin_residual.lead.import", // POST /leads/excel (bulk import)
+  LEAD_CREATE: "admin_residual.lead.create", // POST /new-lead
+  LEAD_EDIT: "admin_residual.lead.edit", // POST /leads/update/:id
+  LEAD_DELETE: "admin_residual.lead.delete", // DELETE /client-leads/:id
+  CLIENT_EDIT: "admin_residual.client.edit", // PUT /client/update/:clientId (client-keyed)
+  TELEGRAM_MANAGE: "admin_residual.telegram.manage", // POST /client-leads/:leadId/telegram/new , /assign-users
+  // fixed-data writes (GET lives in the utilities module)
+  FIXED_DATA_MANAGE: "admin_residual.fixed_data.manage", // POST/PUT/DELETE /fixed-data
+  // commissions
+  COMMISSION_VIEW: "admin_residual.commission.view", // GET /commissions
+  COMMISSION_MANAGE: "admin_residual.commission.manage", // POST /commissions , PUT /commissions/:id
+  // admin projects aggregation
+  PROJECT_VIEW: "admin_residual.project.view", // GET /projects (leads-with-projects aggregation)
+  PROJECT_GROUP_CREATE: "admin_residual.project.group_create", // POST /projects/create-group
+  // generic model archive (allow-listed)
+  MODEL_ARCHIVE: "admin_residual.model.archive", // PATCH /model/archived/:id
+};
+
+// Allow-list of model names the generic model-archive (PATCH /model/archived/:id) may
+// touch. Legacy allowed ANY `prisma[model].update()` (open mass-mutation); these are the
+// GLOBAL image-session reference tables the FE actually archives through this surface
+// (cross-checked against the FE callers: style / color / material / space / designImage).
+//
+// CORRECTNESS: each VALUE is a REAL Prisma client delegate (camelCased model name). The
+// KEY is the case-insensitive name the FE may send (legacy passed `model=ColorPattern`
+// with a capital C straight into `prisma[model]` — which is NOT a valid delegate and
+// would 500; v2 maps it to the correct `colorPattern` delegate). Cross-checked against
+// `packages/db/prisma/schema.prisma` (all five models have an `isArchived` boolean):
+//   model Style        → style
+//   model ColorPattern → colorPattern   (FE sends "ColorPattern")
+//   model Material     → material
+//   model Space        → space
+//   model DesignImage  → designImage
+// A request for a model NOT in this map is rejected (the hardening). Lead/project/client-
+// scoped models are deliberately EXCLUDED — this surface archives global reference data only.
+export const ADMIN_ARCHIVE_MODEL_ALLOWLIST = Object.freeze({
+  style: "style",
+  colorpattern: "colorPattern",
+  material: "material",
+  space: "space",
+  designimage: "designImage",
+});
+
+// ── staff (the residual STAFF-gated endpoint NOT owned by the dashboard module) ──
+// Legacy: `routes/staff/staff.js` mounted at `/staff`, guarded by
+// `verifyTokenAndHandleAuthorization(..., "STAFF")`. VERIFIED against the gate: with
+// the role PARAM "STAFF", the `isAdmin` early-return does NOT fire (it fires only for
+// the "ADMIN" param), and the gate admits EXACTLY the base roles STAFF / THREE_D_DESIGNER
+// / TWO_D_DESIGNER / ACCOUNTANT / TWO_D_EXECUTOR (keyed off `decoded.role`). It does NOT
+// admit ADMIN / SUPER_ADMIN / SUPER_SALES / CONTACT_INITIATOR. To preserve that gate
+// 1:1, the code below is granted to exactly those five base roles (see STAFF_GATE in
+// role-permissions.js) — NOT to ADMIN/SUPER_ADMIN/SUPER_SALES/CONTACT_INITIATOR.
+// `/staff/dashboard/latest-calls` is a STAFF call-reminder list (deliberately excluded
+// from the dashboard module — it is not a dashboard aggregation).
+export const STAFF_PERMISSIONS = {
+  LATEST_CALLS_VIEW: "staff.latest_calls.view", // GET /dashboard/latest-calls
+};
+
 // ── nested aggregate (canonical reference for app code) ───────────────────────
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
@@ -610,6 +702,8 @@ export const PERMISSIONS = {
   REVIEW: REVIEW_PERMISSIONS,
   CONTRACT: CONTRACT_PERMISSIONS,
   IMAGE_SESSION: IMAGE_SESSION_PERMISSIONS,
+  ADMIN_RESIDUAL: ADMIN_RESIDUAL_PERMISSIONS,
+  STAFF: STAFF_PERMISSIONS,
 };
 
 /**

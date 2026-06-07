@@ -26,6 +26,8 @@ import { clientContractRouter } from "../modules/contracts/client/client-contrac
 import { adminImageSessionRouter } from "../modules/image-sessions/admin/admin-image-session.route.js";
 import { imageSessionRouter } from "../modules/image-sessions/session/image-session.route.js";
 import { clientImageSessionRouter } from "../modules/image-sessions/client/client-image-session.route.js";
+import { adminResidualRouter } from "../modules/admin-residual/admin-residual.routes.js";
+import { staffRouter } from "../modules/admin-residual/staff/staff.routes.js";
 
 import authRoutes from "../modules/auth/auth.routes.js";
 const router = Router();
@@ -202,5 +204,29 @@ router.use("/image-session", imageSessionRouter);
 //    language-neutral codes. 🔒 /generate-pdf wraps the FROZEN PDF orchestrator; signatureUrl
 //    is SSRF-locked to a safe relative upload path.
 router.use("/client/image-session", clientImageSessionRouter);
+
+// Admin/staff RESIDUAL — the LAST backend module: the authed admin/staff endpoints NOT
+// owned by an earlier migrated module (legacy `routes/admin/admin.js` at `/admin` ADMIN
+// gate, and `routes/staff/staff.js` at `/staff` STAFF gate). Legacy routers stay mounted in
+// parallel during the strangler window.
+//
+// 1. ADMIN-tier residual (lead/staff REPORTS 🔒 pdfkit frozen — wrapped only; admin lead
+//    import/create/update/delete + telegram; client field update; fixed-data WRITES;
+//    commissions; the admin leads-with-projects aggregation + project-group create; the
+//    allow-listed model-archive). Auth once at the aggregate; every route gated by an
+//    ADMIN_RESIDUAL.* code granted to ADMIN/SUPER_ADMIN base + isSuperSales (the legacy
+//    `isAdmin` union). LEAD-scoped writes (lead update/delete, telegram, project-group)
+//    ALSO run the leads-module keystone mutate checker (the IDOR-class guard legacy lacked —
+//    admins keep full scope, so behavior is preserved 1:1). The generic model-archive is
+//    constrained to a global-reference-data allow-list (the projects broad-delete lesson).
+//    The client field update is keyed by a CLIENT id (a client may own many leads) — no
+//    single lead to scope; the ADMIN code is the gate (documented, not an IDOR regression).
+router.use("/admin", adminResidualRouter);
+// 2. STAFF-tier residual — the `/staff/dashboard/latest-calls` call-reminder list (the one
+//    STAFF endpoint NOT owned by the dashboard module). SEPARATE gate from the admin
+//    aggregate: STAFF.LATEST_CALLS_VIEW is granted to EXACTLY the five base roles the legacy
+//    "STAFF" gate admits (STAFF / THREE_D_DESIGNER / TWO_D_DESIGNER / ACCOUNTANT /
+//    TWO_D_EXECUTOR) — NOT ADMIN/SUPER_ADMIN/SUPER_SALES/CONTACT_INITIATOR.
+router.use("/staff", staffRouter);
 
 export default router;

@@ -22,5 +22,6 @@ export const messagesNames = {
   reviewsMessages: "reviewsMessages",
   contractsMessages: "contractsMessages",
   imageSessionsMessages: "imageSessionsMessages",
+  adminResidualMessages: "adminResidualMessages",
   prismaKnowMessages: "prismaKnowMessages",
 };

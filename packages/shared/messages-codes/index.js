@@ -17,3 +17,4 @@ export * from "./sales-stages/index.js";
 export * from "./reviews/index.js";
 export * from "./contracts/index.js";
 export * from "./image-sessions/index.js";
+export * from "./admin-residual/index.js";

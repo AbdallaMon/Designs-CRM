@@ -114,6 +114,9 @@ describe("getEffectivePermissions", () => {
     //     designer-board status change were gated on the `isAdmin` union).
     //   - Image-sessions migration: IMAGE_SESSION.ADMIN_VIEW/ADMIN_MANAGE (legacy
     //     `/admin/image-session` "ADMIN" gate admits isSuperSales).
+    //   - Admin-residual migration: the ADMIN_RESIDUAL.* codes (legacy `/admin` "ADMIN"
+    //     gate admits isSuperSales — reports, lead import/create/update/delete + telegram,
+    //     client edit, fixed-data writes, commissions, admin projects, model-archive).
     const base = getEffectivePermissions({ role: USER_ROLES.STAFF });
     const elevated = getEffectivePermissions({
       role: USER_ROLES.STAFF,
@@ -142,6 +145,19 @@ describe("getEffectivePermissions", () => {
         PERMISSIONS.USER.MANAGE_STAFF_EXTRA,
         PERMISSIONS.IMAGE_SESSION.ADMIN_VIEW,
         PERMISSIONS.IMAGE_SESSION.ADMIN_MANAGE,
+        PERMISSIONS.ADMIN_RESIDUAL.REPORT_GENERATE,
+        PERMISSIONS.ADMIN_RESIDUAL.LEAD_IMPORT,
+        PERMISSIONS.ADMIN_RESIDUAL.LEAD_CREATE,
+        PERMISSIONS.ADMIN_RESIDUAL.LEAD_EDIT,
+        PERMISSIONS.ADMIN_RESIDUAL.LEAD_DELETE,
+        PERMISSIONS.ADMIN_RESIDUAL.CLIENT_EDIT,
+        PERMISSIONS.ADMIN_RESIDUAL.TELEGRAM_MANAGE,
+        PERMISSIONS.ADMIN_RESIDUAL.FIXED_DATA_MANAGE,
+        PERMISSIONS.ADMIN_RESIDUAL.COMMISSION_VIEW,
+        PERMISSIONS.ADMIN_RESIDUAL.COMMISSION_MANAGE,
+        PERMISSIONS.ADMIN_RESIDUAL.PROJECT_VIEW,
+        PERMISSIONS.ADMIN_RESIDUAL.PROJECT_GROUP_CREATE,
+        PERMISSIONS.ADMIN_RESIDUAL.MODEL_ARCHIVE,
       ].sort(),
     );
   });

@@ -317,6 +317,42 @@ const ACCOUNTING_ALL = [
   P.ACCOUNTING.SALARY_PAY,
 ];
 
+// ── admin-residual ────────────────────────────────────────────────────────────
+// Legacy `/admin` router gate "ADMIN" (`verifyTokenAndHandleAuthorization`) admits
+// the `isAdmin` union — role ADMIN/SUPER_ADMIN, OR `isSuperSales`, OR a subRole of
+// ADMIN/SUPER_ADMIN. The residual admin codes (reports, lead import/create/update/
+// delete + telegram, client edit, fixed-data writes, commissions, admin projects,
+// model-archive) are granted to ADMIN/SUPER_ADMIN base here; the `isSuperSales` slice
+// is layered via SUPER_SALES_EXTRA_PERMISSIONS below, and sub-roles are unioned
+// automatically by getEffectivePermissions — so the effective set matches the legacy
+// `isAdmin` union exactly without widening any other base role (mirrors COURSE_ADMIN /
+// USER_ADMIN / IMAGE_SESSION_ADMIN). NOT granted to plain STAFF/sales/designer/accountant.
+const ADMIN_RESIDUAL = [
+  P.ADMIN_RESIDUAL.REPORT_GENERATE,
+  P.ADMIN_RESIDUAL.LEAD_IMPORT,
+  P.ADMIN_RESIDUAL.LEAD_CREATE,
+  P.ADMIN_RESIDUAL.LEAD_EDIT,
+  P.ADMIN_RESIDUAL.LEAD_DELETE,
+  P.ADMIN_RESIDUAL.CLIENT_EDIT,
+  P.ADMIN_RESIDUAL.TELEGRAM_MANAGE,
+  P.ADMIN_RESIDUAL.FIXED_DATA_MANAGE,
+  P.ADMIN_RESIDUAL.COMMISSION_VIEW,
+  P.ADMIN_RESIDUAL.COMMISSION_MANAGE,
+  P.ADMIN_RESIDUAL.PROJECT_VIEW,
+  P.ADMIN_RESIDUAL.PROJECT_GROUP_CREATE,
+  P.ADMIN_RESIDUAL.MODEL_ARCHIVE,
+];
+
+// ── staff (the residual STAFF-gated latest-calls reminder list) ──────────────────
+// Legacy `/staff` router gate "STAFF" (`verifyTokenAndHandleAuthorization`) admits
+// EXACTLY the base roles STAFF / THREE_D_DESIGNER / TWO_D_DESIGNER / ACCOUNTANT /
+// TWO_D_EXECUTOR (keyed off `decoded.role`; the isAdmin early-return fires only for the
+// "ADMIN" param). It does NOT admit ADMIN/SUPER_ADMIN/SUPER_SALES/CONTACT_INITIATOR. To
+// preserve that gate 1:1 the code is granted to exactly those five base roles below —
+// and is deliberately ABSENT from SHARED_AUTHED and from the ADMIN/SUPER_ADMIN/SUPER_SALES/
+// CONTACT_INITIATOR role lists.
+const STAFF_GATE = [P.STAFF.LATEST_CALLS_VIEW];
+
 /**
  * Base role → permission codes. Every UserRole value is present (no role may be
  * unmapped — an unmapped role would silently get nothing). De-duplication of the
@@ -336,6 +372,7 @@ export const ROLE_PERMISSIONS = {
     ...PROJECT_AUTHED,
     ...PROJECT_ADMIN,
     ...IMAGE_SESSION_ADMIN,
+    ...ADMIN_RESIDUAL,
   ],
   [USER_ROLES.SUPER_ADMIN]: [
     ...SHARED_AUTHED,
@@ -348,17 +385,22 @@ export const ROLE_PERMISSIONS = {
     ...PROJECT_AUTHED,
     ...PROJECT_ADMIN,
     ...IMAGE_SESSION_ADMIN,
+    ...ADMIN_RESIDUAL,
   ],
 
   // All other roles currently have the shared authenticated surface (chat, authed
   // upload, auth self-service) but NOT telegram. They also held the full lead-
   // management surface (LEAD_AUTHED) — every authed role could reach `/shared/
   // client-leads`; object scope is what differs and is enforced by the checkers.
-  [USER_ROLES.STAFF]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
-  [USER_ROLES.THREE_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
-  [USER_ROLES.TWO_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
-  [USER_ROLES.TWO_D_EXECUTOR]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
-  [USER_ROLES.ACCOUNTANT]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...ACCOUNTING_ALL],
+  // The five base roles below are EXACTLY the set the legacy `/staff` "STAFF" gate
+  // admits, so each gets STAFF_GATE (the latest-calls reminder list). ADMIN/SUPER_ADMIN/
+  // SUPER_SALES/CONTACT_INITIATOR do NOT (the STAFF gate keys off the base role and does
+  // not admit them).
+  [USER_ROLES.STAFF]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE],
+  [USER_ROLES.THREE_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE],
+  [USER_ROLES.TWO_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE],
+  [USER_ROLES.TWO_D_EXECUTOR]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE],
+  [USER_ROLES.ACCOUNTANT]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...ACCOUNTING_ALL, ...STAFF_GATE],
   [USER_ROLES.SUPER_SALES]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
   [USER_ROLES.CONTACT_INITIATOR]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
 };
@@ -410,4 +452,22 @@ export const SUPER_SALES_EXTRA_PERMISSIONS = [
   // itself (mirrors COURSE_ADMIN / USER_ADMIN / PROJECT.MANAGE above).
   P.IMAGE_SESSION.ADMIN_VIEW,
   P.IMAGE_SESSION.ADMIN_MANAGE,
+  // Admin-residual: the legacy `/admin` gate "ADMIN" admits `isSuperSales`. Layer the
+  // full residual admin code set on for isSuperSales so the union matches legacy
+  // `isAdmin` exactly without granting the base SUPER_SALES role itself (mirrors
+  // COURSE_ADMIN / USER_ADMIN / IMAGE_SESSION_ADMIN above). The lead-scoped writes still
+  // pass the leads-module object-scope checker in the v2 usecase.
+  P.ADMIN_RESIDUAL.REPORT_GENERATE,
+  P.ADMIN_RESIDUAL.LEAD_IMPORT,
+  P.ADMIN_RESIDUAL.LEAD_CREATE,
+  P.ADMIN_RESIDUAL.LEAD_EDIT,
+  P.ADMIN_RESIDUAL.LEAD_DELETE,
+  P.ADMIN_RESIDUAL.CLIENT_EDIT,
+  P.ADMIN_RESIDUAL.TELEGRAM_MANAGE,
+  P.ADMIN_RESIDUAL.FIXED_DATA_MANAGE,
+  P.ADMIN_RESIDUAL.COMMISSION_VIEW,
+  P.ADMIN_RESIDUAL.COMMISSION_MANAGE,
+  P.ADMIN_RESIDUAL.PROJECT_VIEW,
+  P.ADMIN_RESIDUAL.PROJECT_GROUP_CREATE,
+  P.ADMIN_RESIDUAL.MODEL_ARCHIVE,
 ];
