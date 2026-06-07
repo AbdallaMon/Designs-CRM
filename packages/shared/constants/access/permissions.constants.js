@@ -233,6 +233,51 @@ export const DELIVERY_PERMISSIONS = {
   DELETE: "delivery.delete", // DELETE /:deliveryId
 };
 
+// ── accounting (payments / expenses / rents / salaries / outcome / summary) ─────
+// Legacy: `routes/accountant/accountant.js` mounted at `/accountant`, guarded by
+// `verifyTokenAndHandleAuthorization(..., "ACCOUNTANT")`. VERIFIED: that gate, with
+// the role param "ACCOUNTANT" (not "ADMIN"), falls through to the
+// `decoded.role !== role` branch — so ONLY a user whose base role is ACCOUNTANT
+// passes. The `isAdmin` early-return fires only when the gate's role param is
+// "ADMIN"; ADMIN / SUPER_ADMIN / isSuperSales do NOT pass the accountant gate today.
+// To PRESERVE observable behavior 1:1, these codes are granted to the ACCOUNTANT role
+// ONLY in ROLE_PERMISSIONS (no ADMIN/SUPER_ADMIN/isSuperSales grant — widening that
+// surface would be a behavior change requiring an explicit decision).
+//
+// These are GLOBAL financial records (the accountant operates on all payments /
+// salaries / rents / expenses), so there is no per-owner object scope in legacy; the
+// permission code IS the gate. The state-changing money operations (pay, mark-overdue,
+// change-level, monthly-salary pay) carry distinct write codes and strict Zod money
+// validation. Reads/writes split per convention.
+export const ACCOUNTING_PERMISSIONS = {
+  // payments
+  PAYMENT_LIST: "accounting.payment.list", // GET /payments , GET /payments/:id/invoices
+  PAYMENT_PROCESS: "accounting.payment.process", // POST /payments/:id/actions/pay
+  PAYMENT_MARK_OVERDUE: "accounting.payment.mark_overdue", // POST /payments/:id/actions/mark-overdue
+  PAYMENT_CHANGE_LEVEL: "accounting.payment.change_level", // POST /payments/:id/actions/change-status
+  // notes
+  NOTE_LIST: "accounting.note.list", // GET /notes
+  NOTE_CREATE: "accounting.note.create", // POST /notes
+  // operational expenses
+  EXPENSE_LIST: "accounting.expense.list", // GET /operational-expenses
+  EXPENSE_CREATE: "accounting.expense.create", // POST /operational-expenses
+  // rents
+  RENT_LIST: "accounting.rent.list", // GET /rents
+  RENT_CREATE: "accounting.rent.create", // POST /rents
+  RENT_RENEW: "accounting.rent.renew", // PUT /rents/:rentId (renew + outcome)
+  // outcome / summary
+  OUTCOME_LIST: "accounting.outcome.list", // GET /outcome
+  SUMMARY_VIEW: "accounting.summary.view", // GET /summary
+  // accountant-scoped user helper lists (for salaries)
+  USER_LIST: "accounting.user.list", // GET /users
+  USER_LAST_SEEN: "accounting.user.last_seen", // GET /users/:userId/last-seen
+  // salaries
+  SALARY_VIEW: "accounting.salary.view", // GET /salaries/data
+  SALARY_CREATE: "accounting.salary.create", // POST /salaries/:userId
+  SALARY_EDIT: "accounting.salary.edit", // PUT /salaries/:id
+  SALARY_PAY: "accounting.salary.pay", // POST /salaries/monthly/pay
+};
+
 // ── nested aggregate (canonical reference for app code) ───────────────────────
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
@@ -248,6 +293,7 @@ export const PERMISSIONS = {
   TASK: TASK_PERMISSIONS,
   UPDATE: UPDATE_PERMISSIONS,
   DELIVERY: DELIVERY_PERMISSIONS,
+  ACCOUNTING: ACCOUNTING_PERMISSIONS,
 };
 
 /**

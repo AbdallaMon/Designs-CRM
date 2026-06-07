@@ -181,6 +181,36 @@ const COURSE_ADMIN = [
   P.COURSE.ATTEMPT_MANAGE,
 ];
 
+// ── accounting ────────────────────────────────────────────────────────────────
+// Legacy `/accountant` router gate `verifyTokenAndHandleAuthorization(..., "ACCOUNTANT")`
+// admits ONLY a user whose base role is ACCOUNTANT (VERIFIED: the gate's `isAdmin`
+// early-return fires only when the role PARAM is "ADMIN"; with param "ACCOUNTANT" it
+// falls to `decoded.role !== role`, so ADMIN / SUPER_ADMIN / isSuperSales / sub-roles
+// are NOT admitted). To preserve observable behavior 1:1, the full accounting code set
+// is granted to the ACCOUNTANT role ONLY — no ADMIN/SUPER_ADMIN/isSuperSales grant.
+// Widening this surface would be a behavior change and needs an explicit decision.
+const ACCOUNTING_ALL = [
+  P.ACCOUNTING.PAYMENT_LIST,
+  P.ACCOUNTING.PAYMENT_PROCESS,
+  P.ACCOUNTING.PAYMENT_MARK_OVERDUE,
+  P.ACCOUNTING.PAYMENT_CHANGE_LEVEL,
+  P.ACCOUNTING.NOTE_LIST,
+  P.ACCOUNTING.NOTE_CREATE,
+  P.ACCOUNTING.EXPENSE_LIST,
+  P.ACCOUNTING.EXPENSE_CREATE,
+  P.ACCOUNTING.RENT_LIST,
+  P.ACCOUNTING.RENT_CREATE,
+  P.ACCOUNTING.RENT_RENEW,
+  P.ACCOUNTING.OUTCOME_LIST,
+  P.ACCOUNTING.SUMMARY_VIEW,
+  P.ACCOUNTING.USER_LIST,
+  P.ACCOUNTING.USER_LAST_SEEN,
+  P.ACCOUNTING.SALARY_VIEW,
+  P.ACCOUNTING.SALARY_CREATE,
+  P.ACCOUNTING.SALARY_EDIT,
+  P.ACCOUNTING.SALARY_PAY,
+];
+
 /**
  * Base role → permission codes. Every UserRole value is present (no role may be
  * unmapped — an unmapped role would silently get nothing). De-duplication of the
@@ -220,7 +250,7 @@ export const ROLE_PERMISSIONS = {
   [USER_ROLES.THREE_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
   [USER_ROLES.TWO_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
   [USER_ROLES.TWO_D_EXECUTOR]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
-  [USER_ROLES.ACCOUNTANT]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
+  [USER_ROLES.ACCOUNTANT]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...ACCOUNTING_ALL],
   [USER_ROLES.SUPER_SALES]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
   [USER_ROLES.CONTACT_INITIATOR]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
 };

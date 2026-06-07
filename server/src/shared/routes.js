@@ -12,6 +12,7 @@ import { projectRouter } from "../modules/projects/project/project.routes.js";
 import { taskRouter } from "../modules/projects/task/task.routes.js";
 import { updateRouter } from "../modules/projects/update/update.routes.js";
 import { deliveryRouter } from "../modules/projects/delivery/delivery.routes.js";
+import { accountingRouter } from "../modules/accounting/accounting.routes.js";
 
 import authRoutes from "../modules/auth/auth.routes.js";
 const router = Router();
@@ -46,5 +47,12 @@ router.use("/projects", projectRouter);
 router.use("/tasks", taskRouter);
 router.use("/updates", updateRouter);
 router.use("/delivery", deliveryRouter);
+
+// Accounting — the MONEY-sensitive accountant surface (legacy `/accountant/*`, kept
+// mounted in parallel during the strangler window). Auth once at the aggregate router;
+// every route is gated by an ACCOUNTING.* code granted to the ACCOUNTANT role only —
+// reproducing the legacy ACCOUNTANT-only gate exactly. Money workflow actions
+// (pay / mark-overdue / change-level) use `/:id/actions/*` with strict money validation.
+router.use("/accounting", accountingRouter);
 
 export default router;

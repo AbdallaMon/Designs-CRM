@@ -12,5 +12,6 @@ export const messagesNames = {
   leadsMessages: "leadsMessages",
   usersMessages: "usersMessages",
   projectsMessages: "projectsMessages",
+  accountingMessages: "accountingMessages",
   prismaKnowMessages: "prismaKnowMessages",
 };
