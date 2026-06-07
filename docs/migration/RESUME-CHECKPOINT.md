@@ -10,25 +10,24 @@
 
 ## 1. One-line status
 
-The **Accounting**, **Calendar**, **Notifications+Utilities**, **Dashboard**, **Leaf-domains**,
-**Contracts (🔒 frozen PDF)**, and **Image-sessions (🔒 frozen PDF + 🔒 upload-chunk)** backend modules
-are migrated, security-reviewed (+reworked), verified, and committed. **Admin/staff residual is the LAST
-BE module to migrate** (then the deferred clients public aggregator, then FE). Full suite:
-**479 tests / 29 files green**. Working tree clean.
+🎯 **ALL BACKEND DOMAIN MODULES ARE MIGRATED, security-reviewed (+reworked), verified, and committed.**
+The full suite is **516 tests / 31 files green**; the app boots; legacy + `/v2` coexist (strangler);
+working tree clean. **NEXT: the deferred `clients` public-aggregator sweep, then the FE migration phase,
+then Phase 12 cutover.**
 
 ---
 
 ## 2. Exactly where we stopped (last completed work)
 
-- **Image-sessions BE** — `server/src/modules/image-sessions/{admin,session,client}/`, mounted
-  `/v2/image-sessions/admin` (ADMIN), `/v2/image-session` (SHARED lead-scoped), public `/v2/client/image-session`.
-  Build → security review (verdict NO-COMMIT on one HIGH) → **rework** → verify → commit → logs. Commit
-  **`4f2baf0`**. Both frozen subsystems (PDF + upload-chunk) WRAPPED only (git diff empty over services/
-  routes/db); commented pdfQueue stays commented. Closed: public token IDOR, an **UNAUTH cross-session
-  DELETE-images IDOR** (now token+ownership scoped), SSRF on signatureUrl; admin role-parity enforced.
-  FE-repoint notes in §5c.
-- **Contracts BE** — `/v2/contracts` (authed) + public `/v2/client/contracts` (e-sign). Commit **`ef95b73`**.
-  PDF wrapped; IDOR + HIGH SSRF closed.
+- **Admin/staff residual BE (the LAST BE module)** — `server/src/modules/admin-residual/` (reports/,
+  admin-leads/, commissions/, fixed-data/, model-archive/, admin-projects/, staff/), mounted `/v2/admin`
+  (ADMIN-tier) + `/v2/staff`. Build → security review (verdict COMMIT-BLOCKED on one HIGH) → **rework** →
+  verify → commit → logs. Commit **`9325e29`**. pdfkit reports WRAPPED only. Closed: a destructive-DELETE
+  privilege widening (restored legacy base-role-ADMIN-only), staff latest-calls IDOR, field-update
+  mass-assignment. Skipped the already-migrated user-mgmt/courses/image-session admin routes.
+- **Image-sessions BE** — `/v2/image-sessions/admin` + `/v2/image-session` + public `/v2/client/image-session`.
+  Commit **`4f2baf0`**. Frozen PDF + upload-chunk wrapped; cross-session DELETE-images IDOR + SSRF closed.
+- **Contracts BE** — `/v2/contracts` + public `/v2/client/contracts`. Commit **`ef95b73`**. PDF wrapped; IDOR + HIGH SSRF closed.
 - **Leaf domains BE** — `/v2/{questions,sales-stages,reviews}`. Commit **`e3da3a8`**.
 - **Dashboard BE** — `/v2/dashboard`. Commit **`bf5845b`**.
 - **Notifications + Utilities BE** — `/v2/notifications` + `/v2/utilities/*`. Commit **`6cac14e`**.
@@ -44,36 +43,40 @@ leads c709d14 → users 5cf59ee → validation-fix 934ba69 → projects fe9957b 
 (docs ce7a3d9) → accounting d2bce49 → (docs edb204e) → (checkpoint 5465e09) →
 calendar 174e8e1 → (docs db76261) → notifications+utilities 6cac14e →
 (docs d854be0) → dashboard bf5845b → (docs 6d474c2) → leaf-domains e3da3a8 →
-(docs 6a91bab) → contracts ef95b73 → (docs 96fd4b7) → image-sessions 4f2baf0
+(docs 6a91bab) → contracts ef95b73 → (docs 96fd4b7) → image-sessions 4f2baf0 →
+(docs cf6fc9f) → admin-residual 9325e29
 ```
 Baseline / rollback point: `9406978` ("merged").
 
-## 4. Modules DONE (BE)
+## 4. Modules DONE (BE) — ALL DOMAINS
 
 Chat (+FE), site-utility (+FE), Courses/LMS, Leads/clientLead CORE (IDOR keystone),
 Users, Projects domain (project+task+update+delivery), **Accounting**, **Calendar**,
 **Notifications+Utilities**, **Dashboard**, **Leaf-domains (questions/sales-stages/reviews)**,
-**Contracts**, **Image-sessions**.
+**Contracts**, **Image-sessions**, **Admin/staff residual**. ← backend domain migration COMPLETE.
 
-## 5. NEXT: Admin/staff residual BE — the LAST BE module (task #8, in_progress)
+## 5. NEXT: the `clients` public aggregator sweep, then FE (no task open — pick up here)
 
-This is the residual sweep — whatever authed admin/staff endpoints are NOT yet covered by a migrated
-module. Before dispatching, scope precisely (a lot of `admin.js`/`staff.js` may already be covered):
-- Grep `server/routes/admin/admin.js` (mounted `/admin`, ADMIN gate) and `server/routes/staff/staff.js`
-  (mounted `/staff`, STAFF gate) for every endpoint, and CROSS OUT anything already migrated elsewhere
-  (user-mgmt → users module; courses → courses; image-session → image-sessions; accountant → accounting).
-  What's LEFT is the residual: likely **staff/lead reports (🔒 pdfkit — frozen, wrap only)**, the
-  **telegram assign-users** endpoint (`/client-leads/:leadId/telegram/assign-users` — left out of the users
-  module), **settings**, and any admin misc.
-- 🔒 The lead-report.pdf / staff-report.pdf use the **pdfkit** subsystem (`services/main/admin/adminServices.js`)
-  — LOGIC-FROZEN; wrap via lazy adapter, never modify (same rule as the pdf-lib subsystems just done).
-- Telegram assign-users: object-scope it (lead-scoped, reuse the keystone checker; it's a write → mutate-scope).
-- Preserve the ADMIN gate (admin-tier codes) and STAFF gate exactly; verify against `verifyTokenAndHandleAuthorization`.
-- Run the loop (§6).
+The backend domains are done. What remains before cutover:
 
-(After this: the deferred **clients** public aggregator — `routes/clients/clients.js` — is now UNBLOCKED
-since contracts + image-sessions are migrated; it mostly re-points to already-migrated client sub-flows.
-Then the FE migration phase. Then Phase 12 cutover.)
+**A. The deferred `clients` public aggregator — `routes/clients/clients.js` (mounted `/client`).**
+It wires together client-facing sub-routers, MOST of which are already migrated to `/v2`:
+- already migrated → re-point, don't re-migrate: `/client/calendar` (→ `/v2/client/calendar`),
+  `/client/image-session` (→ `/v2/client/image-session`), `/client/contracts` (→ `/v2/client/contracts`),
+  and the client chat routers (chat module).
+- NOT yet migrated → these standalone client sub-routers under `routes/client/` still need a `/v2/client`
+  home: `leads.js` (the PUBLIC booking funnel — note booking-lead is already partly migrated; check overlap),
+  `payments.js`, `uploads.js`, `notes.js`, `languages.js`, `telegram.js`. Scope each (PUBLIC vs token vs authed),
+  keep public ones ungated, and run the loop (§6). Several may be tiny.
+This was deferred until contracts + image-sessions landed (they now have); it's unblocked.
+
+**B. Then the FE migration phase** (`04-frontend-plan.md`) — build `web/features/*` for the BE-only modules,
+applying the FE-repoint contract changes catalogued in §5c. **C. Then Phase 12 cutover** — flip the FE fully
+to `/v2`, retire the legacy routers, rename `ui/ → web/`.
+
+Also outstanding: the **hardening backlog** (§5b — calendar availability-delete scope, OAuth state) and the
+**ported-quirk follow-ups** noted in the log (contracts/image-session e-sign replay guards; staff/dashboard
+scoping decisions) — raise these with the user.
 
 ---
 
@@ -168,6 +171,7 @@ telegram assign, settings). **FE for all BE-only modules is deferred** (per user
 
 > "Read `docs/migration/RESUME-CHECKPOINT.md`, `PROJECT_STATE.md`, `CLAUDE.md`, and
 > `docs/migration/MIGRATION-LOG.md`. Confirm the working tree is clean and `npm test` is green
-> (479/29), then continue the migration with the **admin/staff residual** module (the LAST BE module —
-> scope what's not already migrated; 🔒 reports pdfkit frozen → wrap only) using the established agent
-> loop (§6 of the checkpoint), backend only."
+> (516/31). All backend domains are migrated — continue with the **`clients` public-aggregator sweep**
+> (§5A: re-point the already-migrated client sub-flows and migrate the standalone `routes/client/*`
+> sub-routers — payments/uploads/notes/languages/telegram + the public booking leads) using the
+> established agent loop (§6), backend only; then begin the FE migration phase."
