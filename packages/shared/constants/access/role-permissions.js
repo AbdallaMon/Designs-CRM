@@ -91,6 +91,30 @@ const SHARED_AUTHED = [
   // (admin-tier may scope to any user / global; every other role is FORCED to req.auth.id
   // — the IDOR-class fix). The code is the gate, auth-scope is the row-level guarantee.
   P.DASHBOARD.VIEW,
+  // questions — legacy `/shared/questions/*` (SPIN session questions/answers + VERSA
+  // objection handling) sat behind the SHARED authentication middleware (any logged-in
+  // role), so every authed role gets the question codes. Global config reads (question
+  // types) are gated by the code alone; the lead-scoped reads/writes (session questions,
+  // answers, custom questions, VERSA) additionally pass through the leads-module
+  // object-scope checker in the v2 usecase (the IDOR fix the legacy routes were MISSING).
+  P.QUESTION.CONFIG_VIEW,
+  P.QUESTION.SESSION_VIEW,
+  P.QUESTION.ANSWER_SUBMIT,
+  P.QUESTION.CUSTOM_CREATE,
+  P.QUESTION.VERSA_MANAGE,
+  // sales-stages — legacy `/shared/sales-stages/*` sat behind the SHARED authentication
+  // middleware (any logged-in role), so every authed role gets the sales-stage codes.
+  // SalesStage rows are lead-scoped; the v2 module reuses the leads-module object-scope
+  // checker on the parent lead (the IDOR fix). The code is the gate, lead-scope is the
+  // row-level guarantee.
+  P.SALES_STAGE.VIEW,
+  P.SALES_STAGE.MANAGE,
+  // reviews — legacy `/shared/reviews/*` (a thin Google Business Profile OAuth review
+  // integration) sat behind the SHARED authentication middleware (any logged-in role),
+  // so every authed role gets the review codes. The OAuth token flow is behavior-frozen
+  // and owned by the legacy service; the v2 module never returns/logs tokens.
+  P.REVIEW.VIEW,
+  P.REVIEW.CONNECT,
 ];
 
 // Telegram management — ADMIN only today.

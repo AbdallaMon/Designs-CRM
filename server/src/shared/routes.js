@@ -18,6 +18,9 @@ import { clientCalendarRouter } from "../modules/calendar/client/client-calendar
 import { notificationRouter } from "../modules/notifications/notification.route.js";
 import { utilityRouter } from "../modules/utilities/utility.route.js";
 import { dashboardRouter } from "../modules/dashboard/dashboard.route.js";
+import { questionsRouter } from "../modules/questions/questions.route.js";
+import { salesStagesRouter } from "../modules/sales-stages/sales-stages.route.js";
+import { reviewsRouter } from "../modules/reviews/reviews.route.js";
 
 import authRoutes from "../modules/auth/auth.routes.js";
 const router = Router();
@@ -108,5 +111,37 @@ router.use("/utilities", utilityRouter);
 // not a dashboard aggregation — stays on legacy). Legacy router stays mounted in parallel
 // during the strangler window.
 router.use("/dashboard", dashboardRouter);
+
+// Leaf domains — three small SHARED-gated surfaces (legacy behind the SHARED router gate
+// = all 9 authed roles), kept mounted in parallel during the strangler window.
+//
+// Questions — the SPIN session-questions/answers + VERSA objection-handling surface
+// (legacy `routes/questions/questions.js` at `/shared/questions`). Auth once at the
+// router; every route gated by a QUESTION.* code granted to every authed role. Global
+// question-type config reads are gated by the code alone; the LEAD-SCOPED reads/writes
+// (session questions, answers, custom questions, VERSA) resolve the parent clientLead and
+// run the leads-module object-scope checker in the usecase (the IDOR fix the legacy routes
+// were MISSING — any authed role could read/mutate ANY lead's questions/answers/VERSA).
+// Mutating bodies are `.strict()` (mass-assignment hardening) and the acting user is
+// derived from req.auth, never the body.
+router.use("/questions", questionsRouter);
+
+// Sales-stages — the per-lead sales-pipeline stage progression surface (legacy
+// `routes/shared/sales-stages.js` at `/shared/sales-stages`). Auth once; gated by
+// SALES_STAGE.* codes granted to every authed role. SalesStage rows are LEAD-SCOPED; the
+// usecase resolves+checks the parent lead via the leads-module checker (the IDOR fix the
+// legacy route was MISSING). The stage change is a workflow action — RENAMED from the
+// legacy `POST /:clientLeadId` to `POST /:clientLeadId/actions/set-stage`. The acting user
+// comes from req.auth, never the body.
+router.use("/sales-stages", salesStagesRouter);
+
+// Reviews — the thin Google Business Profile OAuth review integration (legacy
+// `routes/shared/reviews.js` at `/shared/reviews`). Auth once; gated by REVIEW.* codes
+// granted to every authed role. A studio-wide integration owned by the frozen
+// `services/reviews.js` (single shared oauth2Client, no per-user state) → no object scope,
+// the code is the gate. The OAuth token flow is behavior-frozen and tokens are NEVER
+// returned or logged — the v2 callback CLOSES the legacy raw-token JSON exposure (returns
+// only a connected flag).
+router.use("/reviews", reviewsRouter);
 
 export default router;

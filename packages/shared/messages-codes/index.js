@@ -12,3 +12,6 @@ export * from "./calendar/index.js";
 export * from "./notifications/index.js";
 export * from "./utilities/index.js";
 export * from "./dashboard/index.js";
+export * from "./questions/index.js";
+export * from "./sales-stages/index.js";
+export * from "./reviews/index.js";

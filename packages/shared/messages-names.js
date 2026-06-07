@@ -17,5 +17,8 @@ export const messagesNames = {
   notificationsMessages: "notificationsMessages",
   utilitiesMessages: "utilitiesMessages",
   dashboardMessages: "dashboardMessages",
+  questionsMessages: "questionsMessages",
+  salesStagesMessages: "salesStagesMessages",
+  reviewsMessages: "reviewsMessages",
   prismaKnowMessages: "prismaKnowMessages",
 };

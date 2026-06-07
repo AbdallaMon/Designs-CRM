@@ -436,6 +436,69 @@ export const DASHBOARD_PERMISSIONS = {
   VIEW: "dashboard.view", // GET all 9 dashboard read aggregations (scope enforced per request)
 };
 
+// ── questions (SPIN session questions/answers + VERSA objection-handling) ─────────
+// Legacy: `routes/questions/questions.js` mounted at `/shared/questions`, behind the
+// SHARED authentication middleware (VERIFIED: the "SHARED" gate admits every one of
+// the 9 authed roles; the isAdmin early-return fires only for the "ADMIN" gate PARAM).
+// No per-route gate existed — the router-level SHARED gate was the only check. To
+// preserve that broad authed surface 1:1, every code below is granted to every authed
+// role via QUESTION_AUTHED in role-permissions.js. Reads/writes split per convention.
+//
+// SCOPE NOTE (the IDOR-class fix): two kinds of data live here.
+//   1. GLOBAL CONFIG — QuestionType / BaseQuestion / ObjectionCategory (and the
+//      idempotent default-seeding). No per-owner scope; the permission CODE is the gate
+//      (matching legacy). Covered by CONFIG_VIEW.
+//   2. LEAD-SCOPED — SessionQuestion / Answer / VersaModel rows are tied to a
+//      `clientLeadId` (and answers resolve to a parent lead via the session question).
+//      Legacy applied NO object scope: any authed role could read/mutate the session
+//      questions, answers, custom questions or VERSA of ANY lead by passing its id in
+//      the path/body → a textbook IDOR. The v2 module resolves the parent lead and
+//      reuses the leads-module object-scope checker (checkIfUserCanAccessLead) — the
+//      IDOR fix. The acting user is derived from req.auth.id, never the body.
+export const QUESTION_PERMISSIONS = {
+  CONFIG_VIEW: "question.config.view", // GET question-types (+ default seeding) — global config
+  SESSION_VIEW: "question.session.view", // GET session-questions / versa (lead-scoped reads)
+  ANSWER_SUBMIT: "question.answer.submit", // POST answer / answer/bulk (lead-scoped writes)
+  CUSTOM_CREATE: "question.custom.create", // POST custom-question (lead-scoped write)
+  VERSA_MANAGE: "question.versa.manage", // POST versa, PUT versa step (lead-scoped writes)
+};
+
+// ── sales-stages (sales pipeline stage progression per lead) ──────────────────────
+// Legacy: `routes/shared/sales-stages.js` mounted at `/shared/sales-stages`, behind the
+// SHARED authentication middleware (every one of the 9 authed roles). No per-route gate
+// existed. To preserve that broad authed surface 1:1, the codes are granted to every
+// authed role via SALES_STAGE_AUTHED in role-permissions.js. Reads/writes split.
+//
+// SCOPE NOTE (the IDOR-class fix): SalesStage rows are LEAD-SCOPED (`clientLeadId`).
+// Legacy applied NO object scope — any authed role could read or advance/roll-back the
+// sales stage of ANY lead by passing its id in the path. The v2 module reuses the
+// leads-module object-scope checker (checkIfUserCanAccessLead) on the parent lead — the
+// IDOR fix. The stage-change endpoint is a workflow action (`/:clientLeadId/actions/
+// set-stage`), and the acting user is derived from req.auth, never the body.
+export const SALES_STAGE_PERMISSIONS = {
+  VIEW: "sales_stage.view", // GET stages for a lead (lead-scoped read)
+  MANAGE: "sales_stage.manage", // advance / roll back a lead's sales stage (lead-scoped write)
+};
+
+// ── reviews (Google Business Profile OAuth review integration) ────────────────────
+// Legacy: `routes/shared/reviews.js` mounted at `/shared/reviews`, behind the SHARED
+// authentication middleware (every one of the 9 authed roles). A thin Google-OAuth
+// integration (generate auth URL, OAuth callback, list locations, list reviews) owned
+// by the frozen `services/reviews.js`. No per-route gate existed; to preserve that broad
+// authed surface 1:1, the codes are granted to every authed role via REVIEW_AUTHED in
+// role-permissions.js. Reads/writes split.
+//
+// SECURITY NOTE: the OAuth token flow is BEHAVIOR-FROZEN and owned by the legacy
+// service. The v2 module NEVER returns or logs access/refresh tokens or the client
+// secret. The legacy callback returned the raw `tokens` object in the JSON body — the
+// v2 module CLOSES that token-exposure (returns only a connected:true flag) — documented
+// as the one over-exposure fix. The OAuth flow itself (a single shared oauth2Client with
+// in-memory credentials, no per-user state) is preserved unchanged.
+export const REVIEW_PERMISSIONS = {
+  VIEW: "review.view", // GET locations / reviews (read Google Business data)
+  CONNECT: "review.connect", // GET auth-url / oauth callback (initiate / complete OAuth)
+};
+
 // ── nested aggregate (canonical reference for app code) ───────────────────────
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
@@ -456,6 +519,9 @@ export const PERMISSIONS = {
   NOTIFICATION: NOTIFICATION_PERMISSIONS,
   UTILITY: UTILITY_PERMISSIONS,
   DASHBOARD: DASHBOARD_PERMISSIONS,
+  QUESTION: QUESTION_PERMISSIONS,
+  SALES_STAGE: SALES_STAGE_PERMISSIONS,
+  REVIEW: REVIEW_PERMISSIONS,
 };
 
 /**
