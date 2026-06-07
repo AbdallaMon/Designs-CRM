@@ -6,6 +6,7 @@
 import { AppError } from "../../../shared/errors/AppError.js";
 import { accountingMessagesCodes as C } from "@dms/shared";
 import { rentRepository } from "./rent.repository.js";
+import { translateLegacyAccountingError } from "../accounting.legacy-errors.js";
 
 const legacyDefaults = {
   getRents: (a) =>
@@ -38,20 +39,25 @@ export class RentUsecase {
     return this.legacy.getRents({ limit: Number(limit), skip: Number(skip) });
   }
 
+  // Known legacy throw: "Fill all the fields please" (createARent also delegates to
+  // renewRentAndMakeOutCome, whose required-fields/"Rent not found" throws are covered too).
   create({ body }) {
-    return this.legacy.createARent(body);
+    return translateLegacyAccountingError(() => this.legacy.createARent(body));
   }
 
+  // Known legacy throws: "Fill all the fields please" / "Rent not found".
   renew({ rentId, body }) {
     const { amount, startDate, endDate, paymentDate, name } = body;
-    return this.legacy.renewRentAndMakeOutCome({
-      rentId: Number(rentId),
-      amount,
-      startDate,
-      endDate,
-      paymentDate,
-      name,
-    });
+    return translateLegacyAccountingError(() =>
+      this.legacy.renewRentAndMakeOutCome({
+        rentId: Number(rentId),
+        amount,
+        startDate,
+        endDate,
+        paymentDate,
+        name,
+      }),
+    );
   }
 }
 

@@ -8,6 +8,12 @@
 // The /users + /users/:userId/last-seen endpoints are the ACCOUNTANT-scoped helper lists
 // the legacy accountant router exposed for salaries; they are ported here (NOT coupled to
 // the users module) to keep behavior 1:1 with the legacy accountant versions.
+//
+// Known legacy domain throws (editBaseSalary "Please fill all fiels"; generateMonthlySalary
+// "Fill all the fileds please" / "Monthly salary ... already exists for this user") are
+// translated to AppError codes via translateLegacyAccountingError so the FE error map works;
+// unrecognized errors re-throw as-is (still 500). The frozen service is NOT modified.
+import { translateLegacyAccountingError } from "../accounting.legacy-errors.js";
 
 const legacyDefaults = {
   getSalaryData: (a) =>
@@ -58,11 +64,11 @@ export class SalaryUsecase {
 
   // Legacy route did: req.body.id = id; editBaseSalary(req.body).
   editBase({ id, body }) {
-    return this.legacy.editBaseSalary({ ...body, id });
+    return translateLegacyAccountingError(() => this.legacy.editBaseSalary({ ...body, id }));
   }
 
   payMonthly({ body }) {
-    return this.legacy.generateMonthlySalary(body);
+    return translateLegacyAccountingError(() => this.legacy.generateMonthlySalary(body));
   }
 }
 

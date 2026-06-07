@@ -94,6 +94,40 @@ export const DELIVERY_PERMISSIONS = {
   DELETE: "delivery.delete",
 };
 
+// Accounting module (ACCOUNTANT-only surface). Byte-matches the backend @dms/shared
+// ACCOUNTING_PERMISSIONS values (packages/shared/constants/access/permissions.constants.js).
+// The backend grants every one of these codes to the ACCOUNTANT role only; this whole FE
+// feature is gated on these codes. The backend ALSO emits per-record capabilities.* on
+// payment/rent rows — gate object-level actions on BOTH.
+export const ACCOUNTING_PERMISSIONS = {
+  // payments
+  PAYMENT_LIST: "accounting.payment.list",
+  PAYMENT_PROCESS: "accounting.payment.process",
+  PAYMENT_MARK_OVERDUE: "accounting.payment.mark_overdue",
+  PAYMENT_CHANGE_LEVEL: "accounting.payment.change_level",
+  // notes
+  NOTE_LIST: "accounting.note.list",
+  NOTE_CREATE: "accounting.note.create",
+  // operational expenses
+  EXPENSE_LIST: "accounting.expense.list",
+  EXPENSE_CREATE: "accounting.expense.create",
+  // rents
+  RENT_LIST: "accounting.rent.list",
+  RENT_CREATE: "accounting.rent.create",
+  RENT_RENEW: "accounting.rent.renew",
+  // outcome / summary
+  OUTCOME_LIST: "accounting.outcome.list",
+  SUMMARY_VIEW: "accounting.summary.view",
+  // accountant-scoped user helper lists (for salaries)
+  USER_LIST: "accounting.user.list",
+  USER_LAST_SEEN: "accounting.user.last_seen",
+  // salaries
+  SALARY_VIEW: "accounting.salary.view",
+  SALARY_CREATE: "accounting.salary.create",
+  SALARY_EDIT: "accounting.salary.edit",
+  SALARY_PAY: "accounting.salary.pay",
+};
+
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
   CHAT: CHAT_PERMISSIONS,
@@ -105,6 +139,7 @@ export const PERMISSIONS = {
   TASK: TASK_PERMISSIONS,
   UPDATE: UPDATE_PERMISSIONS,
   DELIVERY: DELIVERY_PERMISSIONS,
+  ACCOUNTING: ACCOUNTING_PERMISSIONS,
 };
 
 export function splitPermissionCode(code) {

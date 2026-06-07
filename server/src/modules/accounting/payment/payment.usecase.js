@@ -14,6 +14,7 @@
 import { AppError } from "../../../shared/errors/AppError.js";
 import { accountingMessagesCodes as C } from "@dms/shared";
 import { paymentRepository } from "./payment.repository.js";
+import { translateLegacyAccountingError } from "../accounting.legacy-errors.js";
 
 // Lazy adapters to the not-yet-migrated accountant service (behavior-preserving).
 const legacyDefaults = {
@@ -97,18 +98,24 @@ export class PaymentUsecase {
   // the service and are preserved; we map its known throws to language-neutral codes.
   async pay({ paymentId, body, authUser }) {
     const { amount, issuedDate, file } = body;
-    return this.legacy.processPayment(
-      Number(paymentId),
-      Number(amount),
-      new Date(issuedDate),
-      file,
-      authUser.id,
+    // Translate the legacy money-guard throws (not-found / already-paid / amount-exceeds /
+    // amount-invalid / date-required / required-fields) to AppError codes; unknown errors
+    // re-throw as-is. Arithmetic/rounding inside processPayment is untouched.
+    return translateLegacyAccountingError(() =>
+      this.legacy.processPayment(
+        Number(paymentId),
+        Number(amount),
+        new Date(issuedDate),
+        file,
+        authUser.id,
+      ),
     );
   }
 
   // POST /payments/:paymentId/actions/mark-overdue — legacy markPaymentAsOverdue.
+  // Known throws: "Payment not found" / "already fully paid" → AppError codes.
   async markOverdue({ paymentId }) {
-    return this.legacy.markPaymentAsOverdue(paymentId);
+    return translateLegacyAccountingError(() => this.legacy.markPaymentAsOverdue(paymentId));
   }
 
   // POST /payments/:paymentId/actions/change-status — legacy changePaymentLevel. The new
