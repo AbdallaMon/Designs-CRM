@@ -10,22 +10,26 @@
 
 ## 1. One-line status
 
-The **Accounting**, **Calendar**, **Notifications+Utilities**, **Dashboard**, and **Leaf-domains
-(questions/sales-stages/reviews)** backend modules are migrated, security-reviewed (+reworked),
-verified, and committed. **Contracts (🔒 frozen PDF) is the next to migrate.** Full suite:
-**398 tests / 27 files green**. Working tree clean.
+The **Accounting**, **Calendar**, **Notifications+Utilities**, **Dashboard**, **Leaf-domains
+(questions/sales-stages/reviews)**, and **Contracts (🔒 frozen PDF)** backend modules are migrated,
+security-reviewed (+reworked), verified, and committed. **Image-sessions (🔒 frozen PDF + 🔒 frozen
+upload-chunk — the largest module) is the next to migrate.** Full suite: **435 tests / 28 files green**.
+Working tree clean.
 
 ---
 
 ## 2. Exactly where we stopped (last completed work)
 
-- **Leaf domains BE** — `server/src/modules/{questions,sales-stages,reviews}/`, mounted `/v2/questions`,
-  `/v2/sales-stages`, `/v2/reviews`. Build → security review (verdict SAFE; one HIGH reworked) →
-  verify → commit → logs. Commit **`e3da3a8`**. Closed unscoped lead-data IDOR (reads access-scope,
-  writes mutate-scope via the leads keystone) + reviews OAuth token-leak. **`routes/clients/clients.js`
-  DEFERRED** (client-facing aggregator entangled with frozen contracts/image-session + already-migrated
-  chat/calendar — do after #6/#7). Renames in §5c.
-- **Dashboard BE** — `/v2/dashboard`. Commit **`bf5845b`**. Cross-user metric over-exposure closed.
+- **Contracts BE** — `server/src/modules/contracts/{contract,client}/`, mounted `/v2/contracts` (authed)
+  + public `/v2/client/contracts` (e-sign). Build → security review (verdict SAFE; one HIGH SSRF
+  reworked) → verify → commit → logs. Commit **`ef95b73`**. PDF **wrapped only** (lazy adapter, frozen
+  untouched). Closed: unscoped contract IDOR (`:contractId→lead`, reads access / writes mutate), public
+  e-sign body-override IDOR, and a **HIGH SSRF** on `signatureUrl` (locked to a safe relative upload path
+  in the v2 validation layer). Renames in §5c. Ported quirk left: public e-sign has no transition/replay
+  guard (follow-up).
+- **Leaf domains BE** — `/v2/{questions,sales-stages,reviews}`. Commit **`e3da3a8`**. `routes/clients/clients.js`
+  DEFERRED (do after image-sessions).
+- **Dashboard BE** — `/v2/dashboard`. Commit **`bf5845b`**.
 - **Notifications + Utilities BE** — `/v2/notifications` + `/v2/utilities/*`. Commit **`6cac14e`**.
 - **Calendar BE** — `/v2/calendar` + `/v2/calendar-management` + public `/v2/client/calendar`. Commit **`174e8e1`**.
 - **Accounting BE** — `/v2/accounting`. Commits **`d2bce49`** / docs **`edb204e`**.
@@ -38,7 +42,8 @@ foundation 3c84d5a → chat d980950 → site-utility 38f7bf0 → courses 1dbc181
 leads c709d14 → users 5cf59ee → validation-fix 934ba69 → projects fe9957b →
 (docs ce7a3d9) → accounting d2bce49 → (docs edb204e) → (checkpoint 5465e09) →
 calendar 174e8e1 → (docs db76261) → notifications+utilities 6cac14e →
-(docs d854be0) → dashboard bf5845b → (docs 6d474c2) → leaf-domains e3da3a8
+(docs d854be0) → dashboard bf5845b → (docs 6d474c2) → leaf-domains e3da3a8 →
+(docs 6a91bab) → contracts ef95b73
 ```
 Baseline / rollback point: `9406978` ("merged").
 
@@ -46,31 +51,35 @@ Baseline / rollback point: `9406978` ("merged").
 
 Chat (+FE), site-utility (+FE), Courses/LMS, Leads/clientLead CORE (IDOR keystone),
 Users, Projects domain (project+task+update+delivery), **Accounting**, **Calendar**,
-**Notifications+Utilities**, **Dashboard**, **Leaf-domains (questions/sales-stages/reviews)**.
+**Notifications+Utilities**, **Dashboard**, **Leaf-domains (questions/sales-stages/reviews)**,
+**Contracts**.
 
-## 5. NEXT: Contracts module BE — 🔒 FROZEN PDF (task #6, in_progress)
+## 5. NEXT: Image-sessions module BE — 🔒 FROZEN PDF + 🔒 FROZEN UPLOAD-CHUNK (task #7, in_progress)
 
-⚠️ **PDF GENERATION IS LOGIC-FROZEN** (CLAUDE.md §4). The v2 module may only restructure
-route→controller→usecase→repository and **wrap the EXISTING contract-PDF service functions via lazy
-adapters** — it must NOT change the PDF generation logic, the fragile `__dirname`-relative font loading,
-or the output bytes. If you cannot move/wire it without risking behavior change, STOP and report.
+⚠️ **THE LARGEST + MOST DELICATE MODULE.** Two frozen subsystems intersect here:
+- **PDF generation is LOGIC-FROZEN** (CLAUDE.md §4) — the image-session PDF (pdf-lib subsystem) may only
+  be WRAPPED via lazy adapters, never modified; fragile `__dirname` font loading must keep resolving.
+- **The UPLOAD CHUNK MECHANISM is FROZEN** (CLAUDE.md / decisions) — do NOT change `uploadAsChunk` or the
+  chunk flow. The image-session upload path must keep working byte-for-byte. Wrap, don't touch.
+Also note (from MIGRATION-LOG Stage 2b): the image-session pdf **enqueue** at `client-image-session.js:161`
+is COMMENTED — the inline SYNC pdf path is the live one. Preserve that (don't enable the queue).
 
 Before dispatching the build agent, scope it:
-- Legacy: `server/routes/contract/*` (incl. `client-contract.js`, mounted into `routes/clients/clients.js`
-  at `/client/contracts`, and any staff/admin contract routes — grep mounts). The PDF code lives in
-  `server/services/main/contract/*` (esp. `generateContractPdf.js`), `server/services/utilityServices.js`,
-  `server/services/main/client/clientServices.js`, fonts in `server/services/fonts/` — see
-  `01-current-audit.md` §3 for the full inventory. **Do NOT move the fonts or the PDF logic;** lazy-import
-  the existing service fns.
-- Identify PUBLIC client contract endpoints (signing flow) vs authed staff/admin endpoints — keep public
-  ones ungated (token-based, like the booking funnel).
-- Object scope: a contract belongs to a clientLead — reuse the leads keystone checker for authed routes;
-  reads access-scope, writes mutate-scope (the pattern just used in leaf-domains).
-- Verify gate: after wiring, generate a contract PDF and confirm it is byte-identical to the legacy output
-  (or at least that the SAME service fn produces it unchanged). Run the loop (§6).
+- Legacy routes: `server/routes/image-session/*` (incl. `client-image-session.js` — the public client flow,
+  mounted into `routes/clients/clients.js` at `/client/image-session`) and any authed/admin/staff image-session
+  routes (grep mounts in `routes/shared/index.js`, `admin.js`, `staff.js`). Resolve every mount + gate.
+- The client extras router `routes/client/image-session.js` is ALSO mounted at `/client/image-session`
+  (a second router on the same base) — map both.
+- PDF + heavy logic: `server/services/main/client/clientServices.js` (image-session PDF), plus the
+  image-session services — see `01-current-audit.md` §3. Lazy-wrap, never modify.
+- PUBLIC vs authed: the client image-session flow is public/token-based — keep ungated. Authed
+  staff/admin reads/writes → lead-scope via the leads keystone (reads access / writes mutate).
+- Object scope: image sessions belong to a clientLead — reuse the keystone checker; resolve
+  `:sessionId→clientLeadId` for child routes (the contracts pattern).
+- This module is big — consider splitting (authed session mgmt vs public client flow vs upload). Run the loop (§6).
 
-(After this: image-sessions #7 🔒PDF+🔒upload-chunk, admin/staff residual #8, then the deferred clients
-public surface, then FE.)
+(After this: admin/staff residual #8 [reports pdfkit frozen, telegram assign, settings], then the
+deferred **clients** public aggregator, then FE.)
 
 ---
 
@@ -157,6 +166,6 @@ telegram assign, settings). **FE for all BE-only modules is deferred** (per user
 
 > "Read `docs/migration/RESUME-CHECKPOINT.md`, `PROJECT_STATE.md`, `CLAUDE.md`, and
 > `docs/migration/MIGRATION-LOG.md`. Confirm the working tree is clean and `npm test` is green
-> (398/27), then continue the migration with the **Contracts** module (🔒 frozen PDF — wrap the
-> existing PDF service via lazy adapters, do NOT change PDF logic/fonts/output) using the
-> established agent loop (§6 of the checkpoint), backend only."
+> (435/28), then continue the migration with the **Image-sessions** module (🔒 frozen PDF + 🔒 frozen
+> upload-chunk — wrap both via lazy adapters, change NEITHER; keep the inline sync PDF path, don't
+> enable the commented queue) using the established agent loop (§6 of the checkpoint), backend only."
