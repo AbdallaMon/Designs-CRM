@@ -28,6 +28,11 @@ import { imageSessionRouter } from "../modules/image-sessions/session/image-sess
 import { clientImageSessionRouter } from "../modules/image-sessions/client/client-image-session.route.js";
 import { adminResidualRouter } from "../modules/admin-residual/admin-residual.routes.js";
 import { staffRouter } from "../modules/admin-residual/staff/staff.routes.js";
+import { publicLeadRouter } from "../modules/leads/client/public-lead/public-lead.routes.js";
+import { clientPaymentsRouter } from "../modules/client-portal/payments/payments.route.js";
+import { clientUploadsRouter } from "../modules/client-portal/uploads/uploads.route.js";
+import { clientNotesRouter } from "../modules/client-portal/notes/notes.route.js";
+import { clientLanguagesRouter } from "../modules/client-portal/languages/languages.route.js";
 
 import authRoutes from "../modules/auth/auth.routes.js";
 const router = Router();
@@ -228,5 +233,47 @@ router.use("/admin", adminResidualRouter);
 //    "STAFF" gate admits (STAFF / THREE_D_DESIGNER / TWO_D_DESIGNER / ACCOUNTANT /
 //    TWO_D_EXECUTOR) — NOT ADMIN/SUPER_ADMIN/SUPER_SALES/CONTACT_INITIATOR.
 router.use("/staff", staffRouter);
+
+// ── PUBLIC client-portal standalone surfaces ─────────────────────────────────────────────
+// The remaining client-facing sub-routers the legacy `routes/clients/clients.js` aggregated
+// PATHLESS under `/client` (so e.g. `/client/new-lead`, `/client/pay`, `/client/upload-chunk`).
+// Each is migrated under `/v2/client/*`, preserving the observable paths 1:1, and stays PUBLIC
+// (NO auth) exactly like the booking funnel, client calendar, client contracts and
+// `/files/client/*`. Legacy routers stay mounted in parallel during the strangler window.
+//
+// 1. The PUBLIC website lead funnel (legacy `routes/client/leads.js`): the category/item/price
+//    new-lead / register / complete-register / cooperation-request submissions. DISTINCT from
+//    `/v2/client/booking-leads` (the step-based booking draft) — different fields, different
+//    flow. Mounted PATHLESS so `/v2/client/new-lead`, `/v2/client/new-lead/register`,
+//    `/v2/client/new-lead/complete-register/:leadId`, `/v2/client/cooperation-requests`
+//    match legacy. All Arabic/English prose replaced with language-neutral codes; the rich
+//    form body is whitelisted-by-known-keys (mass-assignment hardening). Light per-IP rate
+//    limiting reuses the booking funnel limiters.
+router.use("/client", publicLeadRouter);
+// 2. The PUBLIC client Stripe checkout (legacy `routes/client/payments.js`): `/client/pay`,
+//    `/client/payment-status`, `/client/stripe/backfill`. 🔒 Stripe SDK calls relocated
+//    verbatim (no webhook/signature logic in this flow). payment-status now derives the target
+//    lead from the VERIFIED session metadata (IDOR close). Mounted PATHLESS to preserve paths.
+router.use("/client", clientPaymentsRouter);
+// 3. The PUBLIC client file uploads (legacy `routes/client/uploads.js`): `/client/upload-chunk`,
+//    `/client/api/upload`. 🔒 The chunk mechanism + the frozen `uploadAsChunk`/`uploadAsHttp`
+//    handlers are unchanged — only the multer wiring + invocation are relocated. (This is the
+//    FROZEN-handler surface; the separate `/v2/files/client/*` upload module is a different,
+//    re-implemented storage provider.) Mounted PATHLESS to preserve paths.
+router.use("/client", clientUploadsRouter);
+// 4. The PUBLIC client notes (legacy `routes/client/notes.js`): `/v2/client/notes`. The note
+//    author is forced to ADMIN by the frozen service; `idKey` is constrained to a lead-related
+//    allow-list (dynamic-key / mass-assignment hardening vs the legacy raw body/query
+//    pass-through). Bodies are `.strict()`. Prose replaced with codes.
+router.use("/client/notes", clientNotesRouter);
+// 5. The PUBLIC languages lookup (legacy `routes/client/languages.js`): `/v2/client/languages`.
+//    A read-only lookup the website consumes before any client identity exists.
+router.use("/client/languages", clientLanguagesRouter);
+//
+// NOTE: legacy `routes/client/telegram.js` is entirely COMMENTED OUT (0 live endpoints) and is
+// intentionally NOT migrated — there is nothing to mount. `routes/client/image-session.js`
+// (the extras) is already covered by `/v2/client/image-session`. The PUBLIC token-based client
+// chat routers (`routes/client/chat/*`) are NOT covered by the authed `/v2/chat` module and
+// remain on legacy for now (flagged in the migration report — separate follow-up).
 
 export default router;

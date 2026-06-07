@@ -53,4 +53,14 @@ export const leadsMessagesCodes = {
   NOTE_CONTENT_EMPTY: "NOTE_CONTENT_EMPTY",
   FILE_FIELDS_REQUIRED: "FILE_FIELDS_REQUIRED",
   BULK_CONVERT_FORBIDDEN: "BULK_CONVERT_FORBIDDEN",
+
+  // ── PUBLIC client lead funnel (legacy `routes/client/leads.js`, ungated) ───────
+  // The website new-lead / register / complete-register / cooperation-request flow.
+  // These REPLACE the legacy Arabic/English prose responses.
+  CLIENT_LEAD_CREATED: "CLIENT_LEAD_CREATED",
+  CLIENT_LEAD_REGISTERED: "CLIENT_LEAD_REGISTERED",
+  CLIENT_LEAD_REGISTER_COMPLETED: "CLIENT_LEAD_REGISTER_COMPLETED",
+  CLIENT_LEAD_ALREADY_TODAY: "CLIENT_LEAD_ALREADY_TODAY", // one lead per email per day
+  CLIENT_LEAD_ALREADY_COMPLETED: "CLIENT_LEAD_ALREADY_COMPLETED", // re-submit of complete-register
+  COOPERATION_REQUEST_SENT: "COOPERATION_REQUEST_SENT",
 };

@@ -23,5 +23,6 @@ export const messagesNames = {
   contractsMessages: "contractsMessages",
   imageSessionsMessages: "imageSessionsMessages",
   adminResidualMessages: "adminResidualMessages",
+  clientPortalMessages: "clientPortalMessages",
   prismaKnowMessages: "prismaKnowMessages",
 };

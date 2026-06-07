@@ -18,3 +18,4 @@ export * from "./reviews/index.js";
 export * from "./contracts/index.js";
 export * from "./image-sessions/index.js";
 export * from "./admin-residual/index.js";
+export * from "./client-portal/index.js";
