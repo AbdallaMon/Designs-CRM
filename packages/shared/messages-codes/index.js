@@ -9,3 +9,5 @@ export * from "./users/index.js";
 export * from "./projects/index.js";
 export * from "./accounting/index.js";
 export * from "./calendar/index.js";
+export * from "./notifications/index.js";
+export * from "./utilities/index.js";

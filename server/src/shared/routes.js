@@ -15,6 +15,8 @@ import { deliveryRouter } from "../modules/projects/delivery/delivery.routes.js"
 import { accountingRouter } from "../modules/accounting/accounting.routes.js";
 import { calendarRouter } from "../modules/calendar/calendar.routes.js";
 import { clientCalendarRouter } from "../modules/calendar/client/client-calendar.route.js";
+import { notificationRouter } from "../modules/notifications/notification.route.js";
+import { utilityRouter } from "../modules/utilities/utility.route.js";
 
 import authRoutes from "../modules/auth/auth.routes.js";
 const router = Router();
@@ -71,5 +73,25 @@ router.use("/calendar-management", calendarRouter);
 // ungated, exactly like the booking funnel and `/files/client/*` — gating it would break the
 // public client booking flow.
 router.use("/client/calendar", clientCalendarRouter);
+
+// Notifications — the SELF-SCOPED notification surface. Legacy `/utility/notification/*`
+// was UNAUTHENTICATED and filtered by a CLIENT-SUPPLIED userId (`/notification/unread`) /
+// trusted the `:userId` PATH param (`/notification/users/:userId`) → a textbook IDOR; the
+// paginated all-notifications read also lived behind the SHARED gate at
+// `/shared/utilities/notifications`. The v2 module authenticates once, gates on a
+// NOTIFICATION code (granted to every authed role), and derives the subject from
+// req.auth.id ONLY — no route accepts a target userId. Legacy routers stay mounted in
+// parallel during the strangler window. mark-read is a self-scoped workflow action at
+// `/v2/notifications/actions/mark-read`.
+router.use("/notifications", notificationRouter);
+
+// Utilities — the lookup/pick-list helper surface (legacy `/shared/utilities/*` behind the
+// SHARED gate = all authed roles, plus `/utility/search` authed via verifyTokenUsingReq).
+// Auth once at the aggregate; every route is gated by a UTILITY.* code granted to every
+// authed role (preserving the broad legacy surface). The generic-model reads (`/` and
+// `/ids`) ADD a model allow-list (mass-read hardening). Upload (`/utility/upload*`,
+// FROZEN) is NOT here — it belongs to the already-migrated upload module and stays on
+// legacy. Legacy routers stay mounted in parallel during the strangler window.
+router.use("/utilities", utilityRouter);
 
 export default router;

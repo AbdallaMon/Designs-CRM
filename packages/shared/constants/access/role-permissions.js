@@ -64,6 +64,26 @@ const SHARED_AUTHED = [
   P.CALENDAR.MANAGE,
   P.CALENDAR.GOOGLE_VIEW,
   P.CALENDAR.GOOGLE_MANAGE,
+  // notifications — legacy `/utility/notification/*` was UNAUTHENTICATED and
+  // `/shared/utilities/notifications` was behind SHARED auth (any authed role). Every
+  // authenticated user owns notifications, so every role gets the notification codes;
+  // the v2 module SELF-SCOPES every read/mark-read to req.auth.id (the IDOR fix) — the
+  // code is the gate, self-scope is the row-level guarantee.
+  P.NOTIFICATION.LIST,
+  P.NOTIFICATION.MARK_READ,
+  // utilities — legacy `/shared/utilities/*` (lookup/pick-list reads) sat behind the
+  // SHARED gate (every authed role) and `/utility/search` was authed via
+  // verifyTokenUsingReq (any logged-in user). To preserve that broad authed surface
+  // 1:1, every role gets the utility codes. (These overlap the admin-tier users module
+  // codes, but legacy served them to all authed roles — see permissions.constants.js.)
+  P.UTILITY.FIXED_DATA_LIST,
+  P.UTILITY.USER_LOG_VIEW,
+  P.UTILITY.USER_LOG_SUBMIT,
+  P.UTILITY.USER_ROLE_VIEW,
+  P.UTILITY.ADMIN_LIST,
+  P.UTILITY.IMAGE_LIST,
+  P.UTILITY.MODEL_READ,
+  P.UTILITY.SEARCH,
 ];
 
 // Telegram management — ADMIN only today.

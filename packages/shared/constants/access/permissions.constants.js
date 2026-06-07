@@ -314,6 +314,101 @@ export const CALENDAR_PERMISSIONS = {
   GOOGLE_MANAGE: "calendar.google.manage", // POST google/connect, POST google/disconnect
 };
 
+// ── notifications ──────────────────────────────────────────────────────────────
+// Legacy surfaces (verified against the mounts in `server/src/app.js` +
+// `verifyTokenAndHandleAuthorization`):
+//   1. `/utility/notification/unread` (GET) and `/utility/notification/users/:userId`
+//      (POST) — mounted at `/utility` with NO router-level auth → UNAUTHENTICATED today.
+//      Worse, the read filtered notifications by a CLIENT-SUPPLIED `userId` query param
+//      (`getNotifications` does `where.userId = Number(searchParams.userId)`), and the
+//      mark-read trusted the `:userId` PATH param → a textbook IDOR: any caller could
+//      read or mark-read ANY user's notifications. The v2 module GATES these with
+//      authentication + a NOTIFICATION code AND derives the target user from
+//      `req.auth.id` only (never from the query/body/param) — the IDOR fix.
+//   2. `/shared/utilities/notifications` (GET, paginated all-notifications) — behind the
+//      SHARED gate (every authed role).
+// Every authenticated user has their OWN notifications, so all the codes below are
+// granted to every authed role via NOTIFICATION_AUTHED; self-scope (not the code) is
+// what prevents cross-user access. Reads/writes split per convention.
+export const NOTIFICATION_PERMISSIONS = {
+  LIST: "notification.list", // GET own notifications (paginated, all + unread)
+  MARK_READ: "notification.mark_read", // POST mark own latest notifications as read
+};
+
+// ── utilities (lookup / helper reads behind the SHARED gate) ─────────────────────
+// Legacy: `routes/shared/utilities.js` mounted at `/shared/utilities`, behind the
+// SHARED authentication middleware (VERIFIED: the "SHARED" gate admits every one of the
+// 9 authed roles; the isAdmin early-return fires only for the "ADMIN" gate PARAM). These
+// are generic lookup/pick-list reads (fixed-data, user logs, admins/roles directory,
+// image lookups, generic model reads) the FE uses across many screens. Plus
+// `/utility/search` (mounted at `/utility`, authed via `verifyTokenUsingReq` → any
+// logged-in user). To preserve the broad authed surface 1:1, all codes are granted to
+// every authed role via UTILITY_AUTHED.
+//
+// OVERLAP NOTE: `user-logs`, `users/admins`, `users/role/:userId`, `roles` overlap the
+// users module — but the users module exposes its equivalents under ADMIN-TIER codes
+// (USER.VIEW_LOGS, USER.LIST), whereas legacy served these to EVERY authed role via the
+// SHARED gate. Reusing the users codes would NARROW the surface (a behavior change), so
+// these are migrated here under the broad UTILITY codes to preserve observable behavior.
+//
+// HARDENING NOTE: the generic-model reads (`getImageSesssionModel` for `/` and
+// `getModelIds` for `/ids`) did an OPEN `prisma[model].findMany()` with NO allow-list —
+// any client `model` query value could read any table. The v2 module adds a model
+// allow-list (UTILITY_MODEL_ALLOWLIST below) and rejects non-whitelisted models.
+export const UTILITY_PERMISSIONS = {
+  FIXED_DATA_LIST: "utility.fixed_data.list", // GET /fixed-data
+  USER_LOG_VIEW: "utility.user_log.view", // GET /user-logs
+  USER_LOG_SUBMIT: "utility.user_log.submit", // POST /user-logs
+  USER_ROLE_VIEW: "utility.user_role.view", // GET /users/role/:userId , GET /roles
+  ADMIN_LIST: "utility.admin.list", // GET /users/admins
+  IMAGE_LIST: "utility.image.list", // GET /images
+  MODEL_READ: "utility.model.read", // GET / (image-session model) , GET /ids (model ids)
+  SEARCH: "utility.search", // GET /utility/search → /v2/utilities/search
+};
+
+// Allow-list of model names the generic-model reads (`/` and `/ids`) may touch. Legacy
+// allowed ANY `prisma[model]` (open mass-read); these are the lookup/reference tables the
+// FE actually reads through this surface (image-session reference data + the pick-list
+// model-id helper). A request for a model NOT in this set is rejected (the hardening).
+//
+// CORRECTNESS (FIX 3): each entry MUST be a REAL Prisma client delegate (the client
+// lowercases the model's first letter, e.g. model `DesignImage` → `prisma.designImage`).
+// The previous list contained `image`, `pattern`, `color`, `imageSession` which are NOT
+// valid delegates — they would 500 on access. Cross-checked against
+// `packages/db/prisma/schema.prisma`:
+//   model DesignImage  → designImage   (was the bogus `image`)
+//   model ColorPattern → colorPattern  (was the bogus `pattern`/`color`)
+//   model Space        → space
+//   model Material     → material
+//   model Style        → style
+//   model FixedData    → fixedData
+// Client-scoped models (User, ClientLead, ClientImageSession, Payment, Contract, …) are
+// deliberately EXCLUDED — these reads serve generic pick-lists, not confidential data.
+export const UTILITY_MODEL_ALLOWLIST = Object.freeze([
+  "designImage",
+  "colorPattern",
+  "space",
+  "material",
+  "style",
+  "fixedData",
+]);
+
+// Per-model SAFE projection for the pick-list reads (FIX 2). The legacy `getModelIds`
+// spread client-supplied `where`/`select`/`include` straight into `findMany`, letting a
+// caller traverse relations or read arbitrary columns. v2 ignores all client projection
+// inputs and applies ONLY this fixed minimal `select` (id + the model's label field). For
+// the title-relation models (ColorPattern/Space/Material/Style) the label is the related
+// `TextShort` rows ({ id, text }); FixedData has a scalar `title`; DesignImage has no
+// title, so its label proxy is `imageUrl`. No `include`, no client columns, ever.
+export const UTILITY_MODEL_PROJECTIONS = Object.freeze({
+  designImage: { id: true, imageUrl: true },
+  colorPattern: { id: true, title: { select: { id: true, text: true } } },
+  space: { id: true, title: { select: { id: true, text: true } } },
+  material: { id: true, title: { select: { id: true, text: true } } },
+  style: { id: true, title: { select: { id: true, text: true } } },
+  fixedData: { id: true, title: true },
+});
+
 // ── nested aggregate (canonical reference for app code) ───────────────────────
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
@@ -331,6 +426,8 @@ export const PERMISSIONS = {
   DELIVERY: DELIVERY_PERMISSIONS,
   ACCOUNTING: ACCOUNTING_PERMISSIONS,
   CALENDAR: CALENDAR_PERMISSIONS,
+  NOTIFICATION: NOTIFICATION_PERMISSIONS,
+  UTILITY: UTILITY_PERMISSIONS,
 };
 
 /**
