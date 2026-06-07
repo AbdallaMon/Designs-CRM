@@ -10,51 +10,70 @@
 
 ## 1. One-line status
 
-The **Accounting** and **Calendar** backend modules are migrated, security-reviewed, verified,
-and committed. **Notifications + utilities is the next module to migrate.** Full suite:
-**230 tests / 19 files green**. Working tree clean.
+The **Accounting**, **Calendar**, and **Notifications+Utilities** backend modules are migrated,
+security-reviewed (+reworked), verified, and committed. **Dashboard is the next module to migrate.**
+Full suite: **270 tests / 21 files green**. Working tree clean.
 
 ---
 
 ## 2. Exactly where we stopped (last completed work)
 
+- **Notifications + Utilities BE** — `server/src/modules/notifications/` (`/v2/notifications` +
+  `POST /v2/notifications/actions/mark-read`) and `server/src/modules/utilities/` (`/v2/utilities/*`).
+  Build → security review (verdict DO-NOT-COMMIT) → **rework** → re-verify → commit → logs. Commit
+  code **`6cac14e`**. Closed an UNAUTH cross-user notification IDOR + a HIGH user-logs IDOR
+  (self-scoped) + locked an open `prisma[model]` read to fixed pick-list projections. `/utility/upload*`
+  left on legacy (frozen upload module owns it). **FE-repoint contract changes noted in §5c.**
 - **Calendar domain BE** — `server/src/modules/calendar/{availability,google,client}/`, mounted
-  `/v2/calendar` + `/v2/calendar-management` (double-mount mirrors legacy) + **public**
-  `/v2/client/calendar`. Build → security review (verdict SAFE, 0 introduced) → verify → commit → logs.
-  Commit code **`174e8e1`**. Dead `old-call.js` skipped (mounted nowhere, broken imports).
+  `/v2/calendar` + `/v2/calendar-management` + **public** `/v2/client/calendar`. Commit **`174e8e1`**.
 - **Accounting domain BE** — `server/src/modules/accounting/{payment,expense,note,rent,salary,report}/`,
-  mounted `/v2/accounting`. Full loop done. Commits code **`d2bce49`**, docs **`edb204e`**.
-- All details in `MIGRATION-LOG.md` (Stage 4 — Calendar / — Accounting).
+  mounted `/v2/accounting`. Commits **`d2bce49`** / docs **`edb204e`**.
+- All details in `MIGRATION-LOG.md` (Stage 4 entries).
 
 ## 3. Commit trail on `server-migration` (most recent last)
 
 ```
 foundation 3c84d5a → chat d980950 → site-utility 38f7bf0 → courses 1dbc181 →
 leads c709d14 → users 5cf59ee → validation-fix 934ba69 → projects fe9957b →
-(docs ce7a3d9) → accounting d2bce49 → (docs edb204e) →
-(checkpoint 5465e09) → calendar 174e8e1
+(docs ce7a3d9) → accounting d2bce49 → (docs edb204e) → (checkpoint 5465e09) →
+calendar 174e8e1 → (docs db76261) → notifications+utilities 6cac14e
 ```
 Baseline / rollback point: `9406978` ("merged").
 
 ## 4. Modules DONE (BE)
 
 Chat (+FE), site-utility (+FE), Courses/LMS, Leads/clientLead CORE (IDOR keystone),
-Users, Projects domain (project+task+update+delivery), **Accounting**, **Calendar**.
+Users, Projects domain (project+task+update+delivery), **Accounting**, **Calendar**,
+**Notifications+Utilities**.
 
-## 5. NEXT: Notifications + utilities module BE (task #3, in_progress)
+## 5. NEXT: Dashboard module BE (task #4, in_progress)
 
 Not yet scoped in detail. Before dispatching the build agent, scope it:
-- Grep `server/routes/` for notification + utility route files (e.g. `routes/utility/utility.js` is
-  mounted `/utility` in `server/src/app.js`; notifications may live under `routes/shared/` or a
-  notification service). Resolve every mount + the auth gate per file.
-- Notifications likely have **per-user object scope** (a user reads/marks THEIR OWN notifications)
-  → this needs a throwing object-scope checker (not just a permission code). Verify against legacy.
-- Watch for the realtime/socket emit side (notifications often emit over Socket.IO) — invoke the
-  EXISTING socket/notification service via a lazy adapter; do not duplicate.
+- Grep `server/routes/` for the dashboard route file(s) and resolve every mount + auth gate.
+  Dashboards are usually **read-only aggregations** that differ per role (admin sees all; sales sees
+  own pipeline; designer sees own projects; accountant sees finances).
+- The big risk: **role-scoped aggregation = IDOR surface** — each card/metric must be scoped to what
+  the caller may see (reuse the leads/projects scope helpers; do not return global totals to a
+  scoped role unless legacy did). Verify each aggregate against the legacy role branches.
+- Heavy aggregation queries → repository; invoke existing dashboard services via lazy adapters.
 - Then run the standard loop (§6).
 
-(After this: dashboard #4, leaf domains questions/sales-stages/reviews/clients #5, contracts #6
-🔒PDF, image-sessions #7 🔒PDF+🔒upload, admin/staff residual #8.)
+(After this: leaf domains questions/sales-stages/reviews/clients #5, contracts #6 🔒PDF,
+image-sessions #7 🔒PDF+🔒upload, admin/staff residual #8.)
+
+---
+
+## 5c. FE-REPOINT CONTRACT CHANGES (apply when the FE migrates onto these v2 modules)
+
+- **Utilities model pick-lists** (`/v2/utilities/` + `/ids`): the `model=` names CHANGED to real
+  Prisma delegates — `image→designImage`, `pattern`/`color→colorPattern`, `imageSession` REMOVED.
+  Relation-titled models (`colorPattern`/`space`/`material`/`style`) return `title` as a relation →
+  read `title[].text`. `designImage`→`{id,imageUrl}`, `fixedData`→`{id,title}` scalar. Client
+  `select`/`include`/`where` are NO LONGER honored (fixed projection only).
+- **Notifications**: lists normalized `{data,totalPages,total}`→`{items,total,page,pageSize}`;
+  mark-read is now `POST /v2/notifications/actions/mark-read` (no client `:userId`).
+- **User-logs** (`/v2/utilities/user-logs`): no longer accept a `userId` param (self-scoped to the
+  caller). Admin-on-behalf-of must go through the users module (`USER.VIEW_LOGS`) if needed.
 
 ---
 
@@ -127,5 +146,5 @@ telegram assign, settings). **FE for all BE-only modules is deferred** (per user
 
 > "Read `docs/migration/RESUME-CHECKPOINT.md`, `PROJECT_STATE.md`, `CLAUDE.md`, and
 > `docs/migration/MIGRATION-LOG.md`. Confirm the working tree is clean and `npm test` is green
-> (230/19), then continue the migration with the **Notifications + utilities** module using the
-> established agent loop (§6 of the checkpoint), backend only."
+> (270/21), then continue the migration with the **Dashboard** module using the established agent
+> loop (§6 of the checkpoint), backend only."
