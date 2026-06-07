@@ -72,7 +72,16 @@ Users, Projects domain (project+task+update+delivery), **Accounting**, **Calenda
 **Notifications+Utilities**, **Dashboard**, **Leaf-domains (questions/sales-stages/reviews)**,
 **Contracts**, **Image-sessions**, **Admin/staff residual**. ← backend domain migration COMPLETE.
 
-## 5. NEXT: the FE migration phase (then Phase 12 cutover)
+## 5. NEXT: the FE migration phase (then UX plan, then Phase 12 cutover)
+
+> **User decision (2026-06-08):** FINISH the FE migration FIRST (all remaining features), keeping the
+> 7 already-migrated v2 features as-is (no rework now). ONLY AFTER the FE is fully on `/v2` do the
+> UX/UX plan, then remove all legacy (cutover). Do NOT remove legacy or start the UX redesign before
+> the FE migration is complete — legacy still serves the un-migrated screens + the dashboard shell/nav.
+> FE done: chat, site-utility, leads, projects/tasks, accounting, calendar, contracts.
+> FE remaining: **image-sessions, dashboard, notifications, courses/LMS, questions/sales-stages/reviews,
+> users/admin (+ the app-shell/nav that collapses the @role-slot dashboard layout).**
+
 
 The backend is fully migrated. What remains:
 
