@@ -120,6 +120,7 @@ describe("getEffectivePermissions", () => {
         PERMISSIONS.COURSE.MANAGE,
         PERMISSIONS.COURSE.ACCESS_MANAGE,
         PERMISSIONS.COURSE.ATTEMPT_MANAGE,
+        PERMISSIONS.LEAD.ASSIGN_OTHER,
       ].sort(),
     );
   });

@@ -19,7 +19,7 @@
 //    unmigrated modules — they arrive with their own migration.
 //
 // Seeded modules (Stage 3): auth, chat, leads/booking-lead, telegram, upload,
-// site-utility.
+// site-utility, courses, leads/lead.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── auth ─────────────────────────────────────────────────────────────────────
@@ -84,6 +84,35 @@ export const SITE_UTILITY_PERMISSIONS = {
   PAYMENT_CONDITION_DELETE: "site_utility.payment_condition.delete", // DELETE /:id
 };
 
+// ── leads / lead (authenticated lead-management surface) ───────────────────────
+// Legacy: `routes/shared/client-leads.js` mounted at `/shared/client-leads`, behind
+// the SHARED authentication middleware only — i.e. ANY authenticated role could hit
+// every route. Object scope was enforced ad-hoc per-handler (sales saw only their
+// `userId`-assigned leads; ADMIN/SUPER_ADMIN/ACCOUNTANT/isSuperSales saw all) and the
+// `/:id/...` sub-resource routes (calls, meetings, price-offers, payments, files,
+// notes) had NO scope check at all → IDOR. The v2 module encodes the same who-can-do-
+// what as codes (granted to every role via LEAD_AUTHED below, preserving the "any
+// authed role" surface) and adds the missing object-scope checkers (the IDOR fix).
+// Privileged-only actions (assign-to-another-user, bulk-convert, convert, admin field
+// edit) are gated by an additional ADMIN-tier code (LEAD_ADMIN). Reads/writes split.
+export const LEAD_PERMISSIONS = {
+  LIST: "lead.list", // GET / , /deals , /columns , /calls , /meetings
+  VIEW: "lead.view", // GET /:id and its scoped sub-resource reads
+  ASSIGN_SELF: "lead.assign.self", // PUT / (a sales user claims a lead for themselves)
+  ASSIGN_OTHER: "lead.assign.other", // PUT / for another user, /bulk-convert (admin-tier)
+  CONVERT: "lead.convert", // PUT /convert (move to converted list)
+  EDIT: "lead.edit", // PUT /update/:id , /lead/update/:id (field edit)
+  CHANGE_STATUS: "lead.change_status", // POST /:id/actions/* (status / price)
+  CALL_MANAGE: "lead.call.manage", // create / update call reminders
+  MEETING_MANAGE: "lead.meeting.manage", // create / update meeting reminders
+  PRICE_OFFER_MANAGE: "lead.price_offer.manage", // create price offer, change its status
+  PAYMENT_MANAGE: "lead.payment.manage", // add payments / extra-service payments
+  FILE_MANAGE: "lead.file.manage", // upload a file to a lead
+  NOTE_MANAGE: "lead.note.manage", // add a note to a lead
+  REMINDER_SEND: "lead.reminder.send", // payment-reminder / complete-register triggers
+  COUNTRY_CHECK: "lead.country.check", // POST /:userId/countries (allowed-to-take check)
+};
+
 // ── courses / LMS — admin-course (management surface) ───────────────────────────
 // Legacy: `routes/courses/adminCourses.js` mounted at `/admin/courses`, guarded by
 // `verifyTokenAndHandleAuthorization(..., "ADMIN")` — i.e. ADMIN / SUPER_ADMIN (and
@@ -125,6 +154,7 @@ export const PERMISSIONS = {
   SITE_UTILITY: SITE_UTILITY_PERMISSIONS,
   COURSE: COURSE_PERMISSIONS,
   STAFF_COURSE: STAFF_COURSE_PERMISSIONS,
+  LEAD: LEAD_PERMISSIONS,
 };
 
 /**

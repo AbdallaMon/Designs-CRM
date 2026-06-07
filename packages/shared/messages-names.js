@@ -9,5 +9,6 @@ export const messagesNames = {
   chatMessages: "chatMessages",
   siteUtilityMessages: "siteUtilityMessages",
   coursesMessages: "coursesMessages",
+  leadsMessages: "leadsMessages",
   prismaKnowMessages: "prismaKnowMessages",
 };

@@ -49,6 +49,41 @@ const SHARED_AUTHED = [
 // Telegram management — ADMIN only today.
 const TELEGRAM_ADMIN = [P.TELEGRAM.MANAGE];
 
+// ── leads / lead ────────────────────────────────────────────────────────────────
+// Legacy `/shared/client-leads` sat behind SHARED authentication only — EVERY
+// authenticated role could call every route; object scope was enforced ad-hoc inside
+// the handlers (sales: their own `userId` leads; ADMIN/SUPER_ADMIN/ACCOUNTANT/
+// isSuperSales: all). To PRESERVE that "any authed role" surface, every role receives
+// the broad lead-management code set below; the v2 module's object-scope checkers
+// (checkIfUserCanAccessLead / checkIfUserCanMutateLead) supply the row-level gate that
+// the legacy `/:id/...` routes were MISSING (the IDOR fix). The single genuinely
+// admin-tier route in legacy was `/bulk-convert` (it threw for non-admin) and
+// assigning a lead to ANOTHER user (PUT / with isAdmin); both map to LEAD.ASSIGN_OTHER,
+// granted only to ADMIN/SUPER_ADMIN base + isSuperSales (see below) — matching legacy.
+const LEAD_AUTHED = [
+  P.LEAD.LIST,
+  P.LEAD.VIEW,
+  P.LEAD.ASSIGN_SELF,
+  P.LEAD.CONVERT,
+  P.LEAD.EDIT,
+  P.LEAD.CHANGE_STATUS,
+  P.LEAD.CALL_MANAGE,
+  P.LEAD.MEETING_MANAGE,
+  P.LEAD.PRICE_OFFER_MANAGE,
+  P.LEAD.PAYMENT_MANAGE,
+  P.LEAD.FILE_MANAGE,
+  P.LEAD.NOTE_MANAGE,
+  P.LEAD.REMINDER_SEND,
+  P.LEAD.COUNTRY_CHECK,
+];
+
+// Admin-tier lead actions — assign a lead to ANOTHER user and bulk-convert. Legacy
+// gated these on the `isAdmin` union (ADMIN / SUPER_ADMIN / isSuperSales). Granted to
+// ADMIN/SUPER_ADMIN base here; the isSuperSales slice is layered via
+// SUPER_SALES_EXTRA_PERMISSIONS below (matching legacy exactly, without widening any
+// base role).
+const LEAD_ADMIN = [P.LEAD.ASSIGN_OTHER];
+
 // Site-utility management — ADMIN + SUPER_ADMIN only. The legacy routes were only
 // behind SHARED authentication (any logged-in role could mutate them); the FE pages
 // are @admin / @super_admin, so the v2 module tightens this to a privileged-only
@@ -87,23 +122,29 @@ export const ROLE_PERMISSIONS = {
     ...TELEGRAM_ADMIN,
     ...SITE_UTILITY_ADMIN,
     ...COURSE_ADMIN,
+    ...LEAD_AUTHED,
+    ...LEAD_ADMIN,
   ],
   [USER_ROLES.SUPER_ADMIN]: [
     ...SHARED_AUTHED,
     ...TELEGRAM_ADMIN,
     ...SITE_UTILITY_ADMIN,
     ...COURSE_ADMIN,
+    ...LEAD_AUTHED,
+    ...LEAD_ADMIN,
   ],
 
   // All other roles currently have the shared authenticated surface (chat, authed
-  // upload, auth self-service) but NOT telegram.
-  [USER_ROLES.STAFF]: [...SHARED_AUTHED],
-  [USER_ROLES.THREE_D_DESIGNER]: [...SHARED_AUTHED],
-  [USER_ROLES.TWO_D_DESIGNER]: [...SHARED_AUTHED],
-  [USER_ROLES.TWO_D_EXECUTOR]: [...SHARED_AUTHED],
-  [USER_ROLES.ACCOUNTANT]: [...SHARED_AUTHED],
-  [USER_ROLES.SUPER_SALES]: [...SHARED_AUTHED],
-  [USER_ROLES.CONTACT_INITIATOR]: [...SHARED_AUTHED],
+  // upload, auth self-service) but NOT telegram. They also held the full lead-
+  // management surface (LEAD_AUTHED) — every authed role could reach `/shared/
+  // client-leads`; object scope is what differs and is enforced by the checkers.
+  [USER_ROLES.STAFF]: [...SHARED_AUTHED, ...LEAD_AUTHED],
+  [USER_ROLES.THREE_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED],
+  [USER_ROLES.TWO_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED],
+  [USER_ROLES.TWO_D_EXECUTOR]: [...SHARED_AUTHED, ...LEAD_AUTHED],
+  [USER_ROLES.ACCOUNTANT]: [...SHARED_AUTHED, ...LEAD_AUTHED],
+  [USER_ROLES.SUPER_SALES]: [...SHARED_AUTHED, ...LEAD_AUTHED],
+  [USER_ROLES.CONTACT_INITIATOR]: [...SHARED_AUTHED, ...LEAD_AUTHED],
 };
 
 /**
@@ -124,4 +165,8 @@ export const SUPER_SALES_EXTRA_PERMISSIONS = [
   P.COURSE.MANAGE,
   P.COURSE.ACCESS_MANAGE,
   P.COURSE.ATTEMPT_MANAGE,
+  // Lead admin-tier: legacy `isAdmin` (which admits isSuperSales) gated bulk-convert
+  // and assign-to-another-user. Layer the admin-tier lead code on for isSuperSales so
+  // the union matches legacy exactly without granting the base SUPER_SALES role itself.
+  P.LEAD.ASSIGN_OTHER,
 ];

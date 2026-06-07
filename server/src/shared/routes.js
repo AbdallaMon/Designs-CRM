@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { bookingLeadsRouter } from "../modules/leads/client/booking-lead/booking-leads.routes.js";
+import { leadRouter } from "../modules/leads/lead/lead.routes.js";
 import { telegramRouter } from "../modules/telegram/auth/telegram.routes.js";
 import { chatRouter } from "../modules/chat/chat.routes.js";
 import { uploadRouter } from "../modules/upload/upload.routes.js";
@@ -13,6 +14,9 @@ const router = Router();
 router.use("/auth", authRoutes);
 
 router.use("/client/booking-leads", bookingLeadsRouter);
+// Authenticated leads-management surface (legacy `/shared/client-leads`, kept mounted
+// in parallel during the strangler window). Object scope enforced per `/:id` route.
+router.use("/leads", leadRouter);
 router.use("/telegram", telegramRouter);
 router.use("/chat", chatRouter);
 router.use("/files", uploadRouter);
