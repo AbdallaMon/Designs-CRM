@@ -141,6 +141,31 @@ export const CALENDAR_PERMISSIONS = {
   GOOGLE_MANAGE: "calendar.google.manage", // POST google/connect, POST google/disconnect
 };
 
+// Contracts module (authed staff/admin CRUD surface — legacy SHARED gate = all 9 authed
+// roles, granted via CONTRACT_AUTHED). Byte-matches the backend @dms/shared
+// CONTRACT_PERMISSIONS values (packages/shared/constants/access/permissions.constants.js).
+// Contracts are LEAD-SCOPED: the BE resolves the parent clientLead and runs the leads-module
+// object-scope checker (access for reads, mutate for writes) before any read/write. The
+// contract dto does NOT emit per-record capabilities.* — gate authed actions on these CODES
+// only (the server enforces the lead scope). The PUBLIC client e-sign surface is UNGATED
+// (token-based) and has NO permission code.
+export const CONTRACT_PERMISSIONS = {
+  // reads
+  LIST: "contract.list", // GET /client-lead/:leadId (lead-scoped list)
+  VIEW: "contract.view", // GET /:contractId (lead-scoped detail)
+  PAYMENT_LIST: "contract.payment.list", // GET /payments/all (role-scoped grouped list)
+  // writes — contract lifecycle
+  CREATE: "contract.create", // POST /
+  EDIT: "contract.edit", // PUT /:contractId/basics
+  CANCEL: "contract.cancel", // POST /:contractId/actions/cancel (🔒 builds a cancelled PDF)
+  GENERATE_PDF_TOKEN: "contract.generate_pdf_token", // POST /:contractId/actions/generate-pdf-token
+  // writes — stages / payments / drawings / special-items (all lead-scoped via the contract)
+  STAGE_MANAGE: "contract.stage.manage",
+  PAYMENT_MANAGE: "contract.payment.manage",
+  DRAWING_MANAGE: "contract.drawing.manage",
+  SPECIAL_ITEM_MANAGE: "contract.special_item.manage",
+};
+
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
   CHAT: CHAT_PERMISSIONS,
@@ -154,6 +179,7 @@ export const PERMISSIONS = {
   DELIVERY: DELIVERY_PERMISSIONS,
   ACCOUNTING: ACCOUNTING_PERMISSIONS,
   CALENDAR: CALENDAR_PERMISSIONS,
+  CONTRACT: CONTRACT_PERMISSIONS,
 };
 
 export function splitPermissionCode(code) {
