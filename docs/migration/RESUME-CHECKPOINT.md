@@ -10,16 +10,23 @@
 
 ## 1. One-line status
 
-🎯 **ALL BACKEND DOMAIN MODULES ARE MIGRATED, security-reviewed (+reworked), verified, and committed.**
-The full suite is **516 tests / 31 files green**; the app boots; legacy + `/v2` coexist (strangler);
-working tree clean. **NEXT: the deferred `clients` public-aggregator sweep, then the FE migration phase,
+🎉 **THE ENTIRE BACKEND MIGRATION IS COMPLETE** — every legacy router group (all domain modules + every
+client-facing surface) now has a `/v2` equivalent, security-reviewed (+reworked), verified, and committed.
+The full suite is **549 tests / 34 files green**; the app boots; legacy + `/v2` coexist (strangler);
+working tree clean. **NEXT: the FE migration phase (build `web/features/*`, apply the §5c contract deltas),
 then Phase 12 cutover.**
 
 ---
 
 ## 2. Exactly where we stopped (last completed work)
 
-- **Admin/staff residual BE (the LAST BE module)** — `server/src/modules/admin-residual/` (reports/,
+- **Client-facing surface sweep (BE COMPLETE)** — `server/src/modules/leads/client/public-lead/` +
+  `server/src/modules/client-portal/{payments,uploads,notes,languages}/` (commit **`e943739`**) and
+  `server/src/modules/chat/client/` (commit **`efefedc`**), all mounted `/v2/client/*` (public/token-based).
+  Both security-reviewed SAFE. Closed a payment mark-paid IDOR, a notes dynamic-key IDOR, and a serious
+  client-chat broken-access IDOR (6/7 legacy endpoints required no token). `routes/client/telegram.js`
+  was dead (skipped). Ported public-surface quirks → §5b backlog. **This finished the backend.**
+- **Admin/staff residual BE (the last BE DOMAIN module)** — `server/src/modules/admin-residual/` (reports/,
   admin-leads/, commissions/, fixed-data/, model-archive/, admin-projects/, staff/), mounted `/v2/admin`
   (ADMIN-tier) + `/v2/staff`. Build → security review (verdict COMMIT-BLOCKED on one HIGH) → **rework** →
   verify → commit → logs. Commit **`9325e29`**. pdfkit reports WRAPPED only. Closed: a destructive-DELETE
@@ -44,7 +51,8 @@ leads c709d14 → users 5cf59ee → validation-fix 934ba69 → projects fe9957b 
 calendar 174e8e1 → (docs db76261) → notifications+utilities 6cac14e →
 (docs d854be0) → dashboard bf5845b → (docs 6d474c2) → leaf-domains e3da3a8 →
 (docs 6a91bab) → contracts ef95b73 → (docs 96fd4b7) → image-sessions 4f2baf0 →
-(docs cf6fc9f) → admin-residual 9325e29
+(docs cf6fc9f) → admin-residual 9325e29 → (docs 3943c77) → client-portal e943739 →
+client-chat efefedc
 ```
 Baseline / rollback point: `9406978` ("merged").
 
@@ -55,28 +63,38 @@ Users, Projects domain (project+task+update+delivery), **Accounting**, **Calenda
 **Notifications+Utilities**, **Dashboard**, **Leaf-domains (questions/sales-stages/reviews)**,
 **Contracts**, **Image-sessions**, **Admin/staff residual**. ← backend domain migration COMPLETE.
 
-## 5. NEXT: the `clients` public aggregator sweep, then FE (no task open — pick up here)
+## 5. NEXT: the FE migration phase (then Phase 12 cutover)
 
-The backend domains are done. What remains before cutover:
+The backend is fully migrated. What remains:
 
-**A. The deferred `clients` public aggregator — `routes/clients/clients.js` (mounted `/client`).**
-It wires together client-facing sub-routers, MOST of which are already migrated to `/v2`:
-- already migrated → re-point, don't re-migrate: `/client/calendar` (→ `/v2/client/calendar`),
-  `/client/image-session` (→ `/v2/client/image-session`), `/client/contracts` (→ `/v2/client/contracts`),
-  and the client chat routers (chat module).
-- NOT yet migrated → these standalone client sub-routers under `routes/client/` still need a `/v2/client`
-  home: `leads.js` (the PUBLIC booking funnel — note booking-lead is already partly migrated; check overlap),
-  `payments.js`, `uploads.js`, `notes.js`, `languages.js`, `telegram.js`. Scope each (PUBLIC vs token vs authed),
-  keep public ones ungated, and run the loop (§6). Several may be tiny.
-This was deferred until contracts + image-sessions landed (they now have); it's unblocked.
+**A. FE migration phase** (`04-frontend-plan.md`) — build `web/features/<x>` (+ `<x>Details`) for the
+BE-only modules, each with a `config/` folder: config-driven DataTable lists, `AppForm`+react-hook-form
+create/edit modals, the single `useRequest`/`ApiFetch` data layer pointed at `/v2/*`, `usePermission`
+gating (same predicate gates nav + page + action) using the `permissions[]`/`capabilities.*` the BE now
+emits. Single Arabic/RTL, message-code→Arabic resolution. **Apply the FE-repoint contract deltas in §5c**
+(workflow-action renames, `{items,total,page,pageSize}` lists, model pick-list name changes, user-logs
+self-scope, image-session DELETE needs `{token}`, contracts/image-session client envelope changes, etc.).
+Suggested order (trail each FE feature behind its already-done BE module, per 07 §5): auth/me wiring →
+leads/sales → projects/tasks → accounting → calendar → contracts → image-sessions → dashboard →
+notifications → courses → questions/sales-stages/reviews → users/admin → website-utilities. Chat +
+site-utility already have FE.
 
-**B. Then the FE migration phase** (`04-frontend-plan.md`) — build `web/features/*` for the BE-only modules,
-applying the FE-repoint contract changes catalogued in §5c. **C. Then Phase 12 cutover** — flip the FE fully
-to `/v2`, retire the legacy routers, rename `ui/ → web/`.
+**B. Phase 12 cutover** — flip the FE fully to `/v2`, remove the legacy routers + dual-cookie shim,
+rename `ui/ → web/`, wire workspaces.
 
-Also outstanding: the **hardening backlog** (§5b — calendar availability-delete scope, OAuth state) and the
-**ported-quirk follow-ups** noted in the log (contracts/image-session e-sign replay guards; staff/dashboard
-scoping decisions) — raise these with the user.
+## 5a. HARDENING BACKLOG — raise with the user before/with the FE phase (NOT yet applied)
+Verbatim-ported access-control quirks of intentionally-public surfaces + a couple of deferred items;
+each CHANGES observable behavior so needs sign-off:
+1. **Calendar** availability `DELETE /days/:id` + `/slots/:id` — no ownership/booked-slot guard (any
+   `calendar.manage` holder deletes any admin's availability; likely intended shared-studio behavior — confirm).
+2. **Calendar/Reviews OAuth `state`** is an unsigned id — sign/nonce it; prefer `req.auth.id` on callback.
+3. **Contracts + image-sessions public e-sign** — no transition/replay guard (a token holder can
+   re-finalize / move status within the enum).
+4. **Public lead funnel** `complete-register/:leadId` — no per-draft ownership token (any caller can
+   complete any draft lead); needs a product threat-model decision.
+5. **client-portal** — no multer size/MIME limit + no rate-limit on `/pay` & uploads (DoS); `/payment-status`
+   returns the full Stripe session (FE relies on it).
+6. **client-chat** — positional token→member binding (fine for single-client rooms; revisit if multi-client).
 
 ---
 
@@ -169,9 +187,8 @@ telegram assign, settings). **FE for all BE-only modules is deferred** (per user
 
 ## 9. How to resume in a new session
 
-> "Read `docs/migration/RESUME-CHECKPOINT.md`, `PROJECT_STATE.md`, `CLAUDE.md`, and
-> `docs/migration/MIGRATION-LOG.md`. Confirm the working tree is clean and `npm test` is green
-> (516/31). All backend domains are migrated — continue with the **`clients` public-aggregator sweep**
-> (§5A: re-point the already-migrated client sub-flows and migrate the standalone `routes/client/*`
-> sub-routers — payments/uploads/notes/languages/telegram + the public booking leads) using the
-> established agent loop (§6), backend only; then begin the FE migration phase."
+> "Read `docs/migration/RESUME-CHECKPOINT.md`, `PROJECT_STATE.md`, `CLAUDE.md`, `docs/migration/
+> 04-frontend-plan.md`, and `docs/migration/MIGRATION-LOG.md`. Confirm the working tree is clean and
+> `npm test` is green (549/34). The BACKEND is fully migrated — begin the **FE migration phase** (§5A):
+> build `web/features/*` for the BE-only modules pointed at `/v2/*`, applying the §5c contract deltas,
+> with `usePermission`/`capabilities.*` gating. Start with the auth/me wiring + the leads/sales feature."
