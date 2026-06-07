@@ -37,12 +37,34 @@ export const SITE_UTILITY_PERMISSIONS = {
   PAYMENT_CONDITION_DELETE: "site_utility.payment_condition.delete",
 };
 
+// Leads / sales module. Byte-matches the backend @dms/shared LEAD_PERMISSIONS values
+// (packages/shared/constants/access/permissions.constants.js). Reads/writes split; the
+// backend ALSO emits per-record capabilities.* — gate object-level actions on BOTH.
+export const LEAD_PERMISSIONS = {
+  LIST: "lead.list",
+  VIEW: "lead.view",
+  ASSIGN_SELF: "lead.assign.self",
+  ASSIGN_OTHER: "lead.assign.other",
+  CONVERT: "lead.convert",
+  EDIT: "lead.edit",
+  CHANGE_STATUS: "lead.change_status",
+  CALL_MANAGE: "lead.call.manage",
+  MEETING_MANAGE: "lead.meeting.manage",
+  PRICE_OFFER_MANAGE: "lead.price_offer.manage",
+  PAYMENT_MANAGE: "lead.payment.manage",
+  FILE_MANAGE: "lead.file.manage",
+  NOTE_MANAGE: "lead.note.manage",
+  REMINDER_SEND: "lead.reminder.send",
+  COUNTRY_CHECK: "lead.country.check",
+};
+
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
   CHAT: CHAT_PERMISSIONS,
   TELEGRAM: TELEGRAM_PERMISSIONS,
   UPLOAD: UPLOAD_PERMISSIONS,
   SITE_UTILITY: SITE_UTILITY_PERMISSIONS,
+  LEAD: LEAD_PERMISSIONS,
 };
 
 export function splitPermissionCode(code) {
