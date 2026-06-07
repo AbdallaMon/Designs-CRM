@@ -19,7 +19,8 @@
 //    unmigrated modules — they arrive with their own migration.
 //
 // Seeded modules (Stage 3): auth, chat, leads/booking-lead, telegram, upload,
-// site-utility, courses, leads/lead, users/user.
+// site-utility, courses, leads/lead, users/user, projects (project/task/update/
+// delivery).
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── auth ─────────────────────────────────────────────────────────────────────
@@ -185,6 +186,53 @@ export const USER_PERMISSIONS = {
   MANAGE_STAFF_EXTRA: "user.manage_staff_extra", // PATCH /:userId/staff-extra
 };
 
+// ── projects domain (project / task / update / delivery) ────────────────────────
+// Legacy: `routes/shared/{projects,tasks,updates,delivery}.js` mounted under
+// `/shared/{projects,tasks,updates,delivery}`, behind the SHARED authentication
+// middleware only — i.e. ANY of the 9 authed roles could hit every route. Object
+// scope was enforced ad-hoc per-handler (designers/executors/staff saw only projects
+// they were ASSIGNED to via `assignments.some.userId`; ADMIN/SUPER_ADMIN — and
+// ACCOUNTANT for the designer detail read — saw all). The object-scoped `/:id/...`
+// sub-resource routes (assign-designer, status, groups, task/update/delivery by id)
+// had NO consistent scope check → IDOR. The v2 module encodes the same who-can-do-what
+// as codes (granted to every authed role via PROJECT_AUTHED in ROLE_PERMISSIONS,
+// preserving the "any authed role" surface) and adds the missing object-scope checkers
+// (checkIfUserCanAccessProject / checkIfUserCanMutateProject — the IDOR fix). The
+// genuinely admin-tier management actions (assign/unassign a designer, change a
+// project's board status) are gated by an additional ADMIN-tier code (PROJECT_MANAGE),
+// granted to ADMIN/SUPER_ADMIN base + isSuperSales — matching legacy `isAdmin`.
+// Reads/writes split per convention.
+export const PROJECT_PERMISSIONS = {
+  LIST: "project.list", // GET / , /designers , /designers/columns , /archived , /user-profile/:userId , /:leadId/groups
+  VIEW: "project.view", // GET /:id , /designers/:id (object-scoped reads)
+  EDIT: "project.edit", // PUT /:id (plain field edit)
+  MANAGE: "project.manage", // assign-designer, change board status (admin-tier management)
+};
+
+export const TASK_PERMISSIONS = {
+  LIST: "task.list", // GET / , GET /notes
+  VIEW: "task.view", // GET /:id (object-scoped via parent project)
+  CREATE: "task.create", // POST / (task / modification)
+  EDIT: "task.edit", // PUT /:taskId
+  DELETE: "task.delete", // DELETE /:id (generic delete; task is project-scoped)
+  NOTE_MANAGE: "task.note.manage", // POST /notes
+};
+
+export const UPDATE_PERMISSIONS = {
+  LIST: "update.list", // GET /:clientLeadId , GET /shared-settings/:updateId
+  CREATE: "update.create", // POST /:clientLeadId
+  AUTHORIZE: "update.authorize", // authorize / unauthorize a department on an update
+  ARCHIVE: "update.archive", // archive / unarchive an update or shared update
+  MARK_DONE: "update.mark_done", // mark an update as done
+};
+
+export const DELIVERY_PERMISSIONS = {
+  LIST: "delivery.list", // GET /:projectId/schedules
+  CREATE: "delivery.create", // POST /
+  LINK_MEETING: "delivery.link_meeting", // link a delivery schedule to a meeting reminder
+  DELETE: "delivery.delete", // DELETE /:deliveryId
+};
+
 // ── nested aggregate (canonical reference for app code) ───────────────────────
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
@@ -196,6 +244,10 @@ export const PERMISSIONS = {
   STAFF_COURSE: STAFF_COURSE_PERMISSIONS,
   LEAD: LEAD_PERMISSIONS,
   USER: USER_PERMISSIONS,
+  PROJECT: PROJECT_PERMISSIONS,
+  TASK: TASK_PERMISSIONS,
+  UPDATE: UPDATE_PERMISSIONS,
+  DELIVERY: DELIVERY_PERMISSIONS,
 };
 
 /**

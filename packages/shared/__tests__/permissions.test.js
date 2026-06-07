@@ -110,6 +110,8 @@ describe("getEffectivePermissions", () => {
     //   - Users migration: the user-management codes (legacy `/admin/users*` "ADMIN"
     //     gate admits isSuperSales; legacy further limits it to STAFF — enforced in the
     //     user usecase, not the grant).
+    //   - Projects migration: PROJECT.MANAGE (legacy designer assign/unassign + the
+    //     designer-board status change were gated on the `isAdmin` union).
     const base = getEffectivePermissions({ role: USER_ROLES.STAFF });
     const elevated = getEffectivePermissions({
       role: USER_ROLES.STAFF,
@@ -125,6 +127,7 @@ describe("getEffectivePermissions", () => {
         PERMISSIONS.COURSE.ACCESS_MANAGE,
         PERMISSIONS.COURSE.ATTEMPT_MANAGE,
         PERMISSIONS.LEAD.ASSIGN_OTHER,
+        PERMISSIONS.PROJECT.MANAGE,
         PERMISSIONS.USER.LIST,
         PERMISSIONS.USER.VIEW_LOGS,
         PERMISSIONS.USER.VIEW_LAST_SEEN,

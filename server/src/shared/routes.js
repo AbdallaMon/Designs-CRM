@@ -8,6 +8,10 @@ import { uploadRouter } from "../modules/upload/upload.routes.js";
 import { siteUtilityRouter } from "../modules/site-utility/site-utility.routes.js";
 import { adminCourseRouter } from "../modules/courses/admin-course/admin-course.routes.js";
 import { staffCourseRouter } from "../modules/courses/staff-course/staff-course.routes.js";
+import { projectRouter } from "../modules/projects/project/project.routes.js";
+import { taskRouter } from "../modules/projects/task/task.routes.js";
+import { updateRouter } from "../modules/projects/update/update.routes.js";
+import { deliveryRouter } from "../modules/projects/delivery/delivery.routes.js";
 
 import authRoutes from "../modules/auth/auth.routes.js";
 const router = Router();
@@ -33,5 +37,14 @@ router.use("/site-utilities", siteUtilityRouter);
 // routers stay mounted in parallel (strangler) until cutover.
 router.use("/courses", adminCourseRouter);
 router.use("/staff-courses", staffCourseRouter);
+
+// Projects domain — four coupled surfaces centered on the Project/ClientLead entity
+// (legacy `/shared/{projects,tasks,updates,delivery}`, kept mounted in parallel during
+// the strangler window). A single shared project-scope checker enforces object access
+// (the IDOR fix); legacy `/:id/...` sub-resources had no consistent scope check.
+router.use("/projects", projectRouter);
+router.use("/tasks", taskRouter);
+router.use("/updates", updateRouter);
+router.use("/delivery", deliveryRouter);
 
 export default router;

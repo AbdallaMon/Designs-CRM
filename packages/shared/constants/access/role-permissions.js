@@ -129,6 +129,46 @@ const USER_ADMIN = [
   P.USER.MANAGE_STAFF_EXTRA,
 ];
 
+// ── projects domain (project / task / update / delivery) ──────────────────────────
+// Legacy `/shared/{projects,tasks,updates,delivery}` sat behind SHARED authentication
+// only — EVERY one of the 9 authed roles could call every route; object scope was
+// enforced ad-hoc inside the handlers (designers/executors/staff: only projects they
+// are ASSIGNED to; ADMIN/SUPER_ADMIN — and ACCOUNTANT for the designer detail read:
+// all). To PRESERVE that "any authed role" surface, every role receives the broad
+// project-domain code set below; the v2 module's object-scope checkers
+// (checkIfUserCanAccessProject / checkIfUserCanMutateProject) supply the row-level gate
+// the legacy `/:id/...` routes were MISSING (the IDOR fix). The genuinely admin-tier
+// management actions in legacy were assigning/unassigning a designer and changing the
+// designer-board project status (gated by the `isAdmin` union); both map to
+// PROJECT.MANAGE, granted only to ADMIN/SUPER_ADMIN base + isSuperSales (see below).
+const PROJECT_AUTHED = [
+  P.PROJECT.LIST,
+  P.PROJECT.VIEW,
+  P.PROJECT.EDIT,
+  P.TASK.LIST,
+  P.TASK.VIEW,
+  P.TASK.CREATE,
+  P.TASK.EDIT,
+  P.TASK.DELETE,
+  P.TASK.NOTE_MANAGE,
+  P.UPDATE.LIST,
+  P.UPDATE.CREATE,
+  P.UPDATE.AUTHORIZE,
+  P.UPDATE.ARCHIVE,
+  P.UPDATE.MARK_DONE,
+  P.DELIVERY.LIST,
+  P.DELIVERY.CREATE,
+  P.DELIVERY.LINK_MEETING,
+  P.DELIVERY.DELETE,
+];
+
+// Admin-tier project management — assign/unassign a designer and change the
+// designer-board project status. Legacy gated these on the `isAdmin` union (ADMIN /
+// SUPER_ADMIN / isSuperSales). Granted to ADMIN/SUPER_ADMIN base here; the isSuperSales
+// slice is layered via SUPER_SALES_EXTRA_PERMISSIONS below (matching legacy exactly,
+// without widening any base role).
+const PROJECT_ADMIN = [P.PROJECT.MANAGE];
+
 // Admin course management — ADMIN + SUPER_ADMIN (behavior-preserving 1:1 with the
 // legacy `/admin/courses` "ADMIN" gate, which admits ADMIN / SUPER_ADMIN, the
 // ADMIN/SUPER_ADMIN sub-roles, and `isSuperSales`). The `isSuperSales` slice is
@@ -157,6 +197,8 @@ export const ROLE_PERMISSIONS = {
     ...LEAD_AUTHED,
     ...LEAD_ADMIN,
     ...USER_ADMIN,
+    ...PROJECT_AUTHED,
+    ...PROJECT_ADMIN,
   ],
   [USER_ROLES.SUPER_ADMIN]: [
     ...SHARED_AUTHED,
@@ -166,19 +208,21 @@ export const ROLE_PERMISSIONS = {
     ...LEAD_AUTHED,
     ...LEAD_ADMIN,
     ...USER_ADMIN,
+    ...PROJECT_AUTHED,
+    ...PROJECT_ADMIN,
   ],
 
   // All other roles currently have the shared authenticated surface (chat, authed
   // upload, auth self-service) but NOT telegram. They also held the full lead-
   // management surface (LEAD_AUTHED) — every authed role could reach `/shared/
   // client-leads`; object scope is what differs and is enforced by the checkers.
-  [USER_ROLES.STAFF]: [...SHARED_AUTHED, ...LEAD_AUTHED],
-  [USER_ROLES.THREE_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED],
-  [USER_ROLES.TWO_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED],
-  [USER_ROLES.TWO_D_EXECUTOR]: [...SHARED_AUTHED, ...LEAD_AUTHED],
-  [USER_ROLES.ACCOUNTANT]: [...SHARED_AUTHED, ...LEAD_AUTHED],
-  [USER_ROLES.SUPER_SALES]: [...SHARED_AUTHED, ...LEAD_AUTHED],
-  [USER_ROLES.CONTACT_INITIATOR]: [...SHARED_AUTHED, ...LEAD_AUTHED],
+  [USER_ROLES.STAFF]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
+  [USER_ROLES.THREE_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
+  [USER_ROLES.TWO_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
+  [USER_ROLES.TWO_D_EXECUTOR]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
+  [USER_ROLES.ACCOUNTANT]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
+  [USER_ROLES.SUPER_SALES]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
+  [USER_ROLES.CONTACT_INITIATOR]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
 };
 
 /**
@@ -217,4 +261,9 @@ export const SUPER_SALES_EXTRA_PERMISSIONS = [
   P.USER.MANAGE_AUTO_ASSIGNMENTS,
   P.USER.SET_MAX_LEADS,
   P.USER.MANAGE_STAFF_EXTRA,
+  // Project admin-tier: legacy `isAdmin` (which admits isSuperSales) gated the designer
+  // assign/unassign and the designer-board status change. Layer the admin-tier project
+  // code on for isSuperSales so the union matches legacy exactly without granting the
+  // base SUPER_SALES role itself.
+  P.PROJECT.MANAGE,
 ];
