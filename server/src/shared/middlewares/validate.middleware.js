@@ -4,6 +4,7 @@
 // لو فشل: يرمي AppError بـ 422 + تفاصيل الحقول الغلط.
 
 import { AppError } from "../errors/AppError.js";
+import { generalMessagesCodes } from "@dms/shared";
 
 // src/shared/middlewares/validate.middleware.js
 
@@ -12,14 +13,14 @@ export function validate(schema, source = "body") {
     const result = schema.safeParse(req[source]);
 
     if (!result.success) {
+      // The envelope `message` must be a language-neutral CODE, never prose —
+      // the field-level Zod reasons go in `details` (not as the message, which
+      // would leak internals and break client code->string resolution).
       const details = result.error.issues.map((issue) => ({
         path: issue.path.join("."),
         message: issue.message,
       }));
-      // throw new AppError("Validation failed", 422, details);
-      const message = details.map((d) => `${d.path}: ${d.message}`).join("; ");
-      // throw new AppError("Validation failed", 422, details);
-      next(new AppError(message, 422, details));
+      next(new AppError(generalMessagesCodes.VALIDATION_ERROR, 422, details));
       return;
     }
 
