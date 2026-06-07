@@ -128,6 +128,19 @@ export const ACCOUNTING_PERMISSIONS = {
   SALARY_PAY: "accounting.salary.pay",
 };
 
+// Calendar module (authed staff availability + month-views + Google integration).
+// Byte-matches the backend @dms/shared CALENDAR_PERMISSIONS values
+// (packages/shared/constants/access/permissions.constants.js). Every authed role holds
+// these via CALENDAR_AUTHED (the legacy SHARED gate); the codes are the gate (availability
+// rows/month-views have NO per-owner object scope by design — see BE route notes). The
+// PUBLIC client booking surface is UNGATED (token-based) and has NO permission code.
+export const CALENDAR_PERMISSIONS = {
+  VIEW: "calendar.view", // GET available-days, slots, dates/month, dates/day
+  MANAGE: "calendar.manage", // POST available-days(/multiple), DELETE days/:id, slots/:id
+  GOOGLE_VIEW: "calendar.google.view", // GET google/connect (auth URL), google/status, google/callback
+  GOOGLE_MANAGE: "calendar.google.manage", // POST google/connect, POST google/disconnect
+};
+
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
   CHAT: CHAT_PERMISSIONS,
@@ -140,6 +153,7 @@ export const PERMISSIONS = {
   UPDATE: UPDATE_PERMISSIONS,
   DELIVERY: DELIVERY_PERMISSIONS,
   ACCOUNTING: ACCOUNTING_PERMISSIONS,
+  CALENDAR: CALENDAR_PERMISSIONS,
 };
 
 export function splitPermissionCode(code) {
