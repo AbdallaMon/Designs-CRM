@@ -44,6 +44,15 @@ const SHARED_AUTHED = [
   // checker, not by the code.
   P.STAFF_COURSE.VIEW,
   P.STAFF_COURSE.TAKE,
+  // users/user — directory pick-lists (legacy `/shared/all-chat-users`,
+  // `/shared/all-related-chat-users`) sat behind SHARED authentication (any logged-in
+  // role), so every role gets DIRECTORY. The chat module consumes this `/v2/users`
+  // directory. Self-profile read/edit were ALSO behind SHARED auth (any authed role);
+  // the codes stay broad but the v2 module's object-scope checkers (self OR admin-tier)
+  // supply the row-level gate the legacy profile routes were MISSING (the IDOR fix).
+  P.USER.DIRECTORY,
+  P.USER.PROFILE_VIEW,
+  P.USER.PROFILE_EDIT,
 ];
 
 // Telegram management — ADMIN only today.
@@ -97,6 +106,29 @@ const SITE_UTILITY_ADMIN = [
   P.SITE_UTILITY.PAYMENT_CONDITION_DELETE,
 ];
 
+// ── users / user — admin user-management ────────────────────────────────────────
+// Legacy `/admin` router gate "ADMIN" (`verifyTokenAndHandleAuthorization`) admits
+// role ADMIN/SUPER_ADMIN, OR `isSuperSales`, OR a subRole of ADMIN/SUPER_ADMIN. These
+// management codes are granted to ADMIN/SUPER_ADMIN base here; the `isSuperSales` slice
+// is layered via SUPER_SALES_EXTRA_PERMISSIONS below, and sub-roles are unioned
+// automatically by getEffectivePermissions — so the effective set matches the legacy
+// `isAdmin` union exactly without widening any other base role. (Legacy further
+// constrains isSuperSales: it may only create/edit STAFF users and may not set
+// ADMIN/SUPER_ADMIN roles — that finer rule is preserved in the v2 usecase, not the
+// grant.) Reads/writes split per convention.
+const USER_ADMIN = [
+  P.USER.LIST,
+  P.USER.VIEW_LOGS,
+  P.USER.VIEW_LAST_SEEN,
+  P.USER.CREATE,
+  P.USER.UPDATE,
+  P.USER.MANAGE_ROLES,
+  P.USER.MANAGE_RESTRICTED_COUNTRIES,
+  P.USER.MANAGE_AUTO_ASSIGNMENTS,
+  P.USER.SET_MAX_LEADS,
+  P.USER.MANAGE_STAFF_EXTRA,
+];
+
 // Admin course management — ADMIN + SUPER_ADMIN (behavior-preserving 1:1 with the
 // legacy `/admin/courses` "ADMIN" gate, which admits ADMIN / SUPER_ADMIN, the
 // ADMIN/SUPER_ADMIN sub-roles, and `isSuperSales`). The `isSuperSales` slice is
@@ -124,6 +156,7 @@ export const ROLE_PERMISSIONS = {
     ...COURSE_ADMIN,
     ...LEAD_AUTHED,
     ...LEAD_ADMIN,
+    ...USER_ADMIN,
   ],
   [USER_ROLES.SUPER_ADMIN]: [
     ...SHARED_AUTHED,
@@ -132,6 +165,7 @@ export const ROLE_PERMISSIONS = {
     ...COURSE_ADMIN,
     ...LEAD_AUTHED,
     ...LEAD_ADMIN,
+    ...USER_ADMIN,
   ],
 
   // All other roles currently have the shared authenticated surface (chat, authed
@@ -169,4 +203,18 @@ export const SUPER_SALES_EXTRA_PERMISSIONS = [
   // and assign-to-another-user. Layer the admin-tier lead code on for isSuperSales so
   // the union matches legacy exactly without granting the base SUPER_SALES role itself.
   P.LEAD.ASSIGN_OTHER,
+  // User admin-tier: the legacy `/admin` gate "ADMIN" admits `isSuperSales`. Layer the
+  // full user-management code set on for isSuperSales so the union matches legacy
+  // exactly without granting the base SUPER_SALES role itself. (The finer legacy rule —
+  // isSuperSales may only create/edit STAFF users — is enforced in the v2 usecase.)
+  P.USER.LIST,
+  P.USER.VIEW_LOGS,
+  P.USER.VIEW_LAST_SEEN,
+  P.USER.CREATE,
+  P.USER.UPDATE,
+  P.USER.MANAGE_ROLES,
+  P.USER.MANAGE_RESTRICTED_COUNTRIES,
+  P.USER.MANAGE_AUTO_ASSIGNMENTS,
+  P.USER.SET_MAX_LEADS,
+  P.USER.MANAGE_STAFF_EXTRA,
 ];

@@ -19,7 +19,7 @@
 //    unmigrated modules — they arrive with their own migration.
 //
 // Seeded modules (Stage 3): auth, chat, leads/booking-lead, telegram, upload,
-// site-utility, courses, leads/lead.
+// site-utility, courses, leads/lead, users/user.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── auth ─────────────────────────────────────────────────────────────────────
@@ -145,6 +145,46 @@ export const STAFF_COURSE_PERMISSIONS = {
   TAKE: "staff_course.take", // mark lesson complete, submit homework, create attempt, submit answer, end attempt
 };
 
+// ── users / user (directory + admin user-management + self-profile) ─────────────
+// Legacy surfaces (three different gates — verified against
+// `verifyTokenAndHandleAuthorization`):
+//   1. User MANAGEMENT (`routes/admin/admin.js`, mounted at `/admin`, gate "ADMIN"):
+//      admits role ADMIN/SUPER_ADMIN OR `isSuperSales` OR a subRole of ADMIN/
+//      SUPER_ADMIN. The management codes below are granted to ADMIN/SUPER_ADMIN base
+//      + `isSuperSales` (via SUPER_SALES_EXTRA_PERMISSIONS); sub-roles are unioned
+//      automatically by getEffectivePermissions — so the effective set matches the
+//      legacy `isAdmin` union exactly, without widening any other base role.
+//   2. DIRECTORY pick-lists (`/shared/all-chat-users`, `/shared/all-related-chat-users`,
+//      gate "SHARED"): ANY authenticated role. Encoded as DIRECTORY, granted to all
+//      authed roles (preserves the broad surface the chat module needs).
+//   3. Self PROFILE (`/shared/users/:userId/profile`, gate "SHARED"): ANY authed role,
+//      but legacy applied NO ownership check → an IDOR + privilege-escalation hole
+//      (any user could read another's full row incl. password hash, or PUT arbitrary
+//      fields — role/isActive/password — on any userId). v2 keeps the codes broad
+//      (PROFILE_VIEW/PROFILE_EDIT for all authed roles) but adds throwing object-scope
+//      checkers (self OR admin-tier) — the IDOR fix. Reads/writes split per convention.
+export const USER_PERMISSIONS = {
+  // directory — broad authed pick-list (chat / assignment dropdowns)
+  DIRECTORY: "user.directory", // GET /directory , /related-chat-directory
+
+  // self-profile (object-scope checked: self OR admin-tier)
+  PROFILE_VIEW: "user.profile.view", // GET /:userId/profile
+  PROFILE_EDIT: "user.profile.edit", // PUT /:userId/profile
+
+  // admin user-management (reads)
+  LIST: "user.list", // GET /users , /all-users , /:userId/profile (admin view)
+  VIEW_LOGS: "user.view_logs", // GET /:userId/logs (today notifications)
+  VIEW_LAST_SEEN: "user.view_last_seen", // GET /:userId/last-seen (monthly activity)
+  // admin user-management (writes)
+  CREATE: "user.create", // POST /users
+  UPDATE: "user.update", // PUT /:userId , PATCH /:userId (status), staff-extra
+  MANAGE_ROLES: "user.manage_roles", // PUT /:userId/roles
+  MANAGE_RESTRICTED_COUNTRIES: "user.manage_restricted_countries", // GET|POST /:userId/restricted-countries
+  MANAGE_AUTO_ASSIGNMENTS: "user.manage_auto_assignments", // GET|PUT /:userId/auto-assignments
+  SET_MAX_LEADS: "user.set_max_leads", // PUT /max-leads/:userId , /max-leads-per-day/:userId
+  MANAGE_STAFF_EXTRA: "user.manage_staff_extra", // PATCH /:userId/staff-extra
+};
+
 // ── nested aggregate (canonical reference for app code) ───────────────────────
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
@@ -155,6 +195,7 @@ export const PERMISSIONS = {
   COURSE: COURSE_PERMISSIONS,
   STAFF_COURSE: STAFF_COURSE_PERMISSIONS,
   LEAD: LEAD_PERMISSIONS,
+  USER: USER_PERMISSIONS,
 };
 
 /**

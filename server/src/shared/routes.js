@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { bookingLeadsRouter } from "../modules/leads/client/booking-lead/booking-leads.routes.js";
 import { leadRouter } from "../modules/leads/lead/lead.routes.js";
+import { userRouter } from "../modules/users/user/user.routes.js";
 import { telegramRouter } from "../modules/telegram/auth/telegram.routes.js";
 import { chatRouter } from "../modules/chat/chat.routes.js";
 import { uploadRouter } from "../modules/upload/upload.routes.js";
@@ -17,6 +18,12 @@ router.use("/client/booking-leads", bookingLeadsRouter);
 // Authenticated leads-management surface (legacy `/shared/client-leads`, kept mounted
 // in parallel during the strangler window). Object scope enforced per `/:id` route.
 router.use("/leads", leadRouter);
+// Users — three merged legacy surfaces: the authed directory pick-lists (legacy
+// `/shared/all-chat-users` etc. — the chat module consumes `/v2/users/directory`), the
+// admin user-management endpoints (legacy `/admin/users*`), and self-profile (legacy
+// `/shared/users/:userId/profile`, now object-scope checked — the IDOR fix). Legacy
+// routers stay mounted in parallel during the strangler window.
+router.use("/users", userRouter);
 router.use("/telegram", telegramRouter);
 router.use("/chat", chatRouter);
 router.use("/files", uploadRouter);

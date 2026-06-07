@@ -102,10 +102,14 @@ describe("getEffectivePermissions", () => {
     expect(unique.size).toBe(permissions.length);
   });
 
-  it("isSuperSales augments the base set with the admin-course codes (legacy isAdmin)", () => {
-    // The Courses/LMS migration populated SUPER_SALES_EXTRA_PERMISSIONS with the four
-    // COURSE.* codes so the `isSuperSales` flag reproduces the legacy `/admin/courses`
-    // `isAdmin` gate (which admits isSuperSales) WITHOUT widening any base role.
+  it("isSuperSales augments the base set with the admin-tier codes (legacy isAdmin)", () => {
+    // SUPER_SALES_EXTRA_PERMISSIONS reproduces the legacy `isAdmin` gate (which admits
+    // isSuperSales) WITHOUT widening any base role. Populated by:
+    //   - Courses/LMS migration: the four COURSE.* codes (legacy `/admin/courses`).
+    //   - Leads migration: LEAD.ASSIGN_OTHER (legacy bulk-convert / assign-to-other).
+    //   - Users migration: the user-management codes (legacy `/admin/users*` "ADMIN"
+    //     gate admits isSuperSales; legacy further limits it to STAFF — enforced in the
+    //     user usecase, not the grant).
     const base = getEffectivePermissions({ role: USER_ROLES.STAFF });
     const elevated = getEffectivePermissions({
       role: USER_ROLES.STAFF,
@@ -121,6 +125,16 @@ describe("getEffectivePermissions", () => {
         PERMISSIONS.COURSE.ACCESS_MANAGE,
         PERMISSIONS.COURSE.ATTEMPT_MANAGE,
         PERMISSIONS.LEAD.ASSIGN_OTHER,
+        PERMISSIONS.USER.LIST,
+        PERMISSIONS.USER.VIEW_LOGS,
+        PERMISSIONS.USER.VIEW_LAST_SEEN,
+        PERMISSIONS.USER.CREATE,
+        PERMISSIONS.USER.UPDATE,
+        PERMISSIONS.USER.MANAGE_ROLES,
+        PERMISSIONS.USER.MANAGE_RESTRICTED_COUNTRIES,
+        PERMISSIONS.USER.MANAGE_AUTO_ASSIGNMENTS,
+        PERMISSIONS.USER.SET_MAX_LEADS,
+        PERMISSIONS.USER.MANAGE_STAFF_EXTRA,
       ].sort(),
     );
   });
