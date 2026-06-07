@@ -20,5 +20,6 @@ export const messagesNames = {
   questionsMessages: "questionsMessages",
   salesStagesMessages: "salesStagesMessages",
   reviewsMessages: "reviewsMessages",
+  contractsMessages: "contractsMessages",
   prismaKnowMessages: "prismaKnowMessages",
 };

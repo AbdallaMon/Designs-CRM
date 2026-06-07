@@ -21,6 +21,8 @@ import { dashboardRouter } from "../modules/dashboard/dashboard.route.js";
 import { questionsRouter } from "../modules/questions/questions.route.js";
 import { salesStagesRouter } from "../modules/sales-stages/sales-stages.route.js";
 import { reviewsRouter } from "../modules/reviews/reviews.route.js";
+import { contractRouter } from "../modules/contracts/contract/contract.route.js";
+import { clientContractRouter } from "../modules/contracts/client/client-contract.route.js";
 
 import authRoutes from "../modules/auth/auth.routes.js";
 const router = Router();
@@ -143,5 +145,28 @@ router.use("/sales-stages", salesStagesRouter);
 // returned or logged — the v2 callback CLOSES the legacy raw-token JSON exposure (returns
 // only a connected flag).
 router.use("/reviews", reviewsRouter);
+
+// Contracts — TWO surfaces (legacy routers stay mounted in parallel during the strangler
+// window).
+//
+// 1. Authed staff/admin contract CRUD (legacy `routes/contract/contracts.js` at
+//    `/shared/contracts`, SHARED gate = all 9 authed roles). Auth once; every route gated
+//    by a CONTRACT.* code granted to every authed role via SHARED_AUTHED. Contracts are
+//    lead-scoped; the usecase resolves the parent clientLead (directly for :leadId, or via
+//    contract→clientLeadId for :contractId / child ids) and runs the leads-module
+//    object-scope checker (reads access-scope, writes mutate-scope) before any read/write —
+//    the IDOR fix the legacy routes were MISSING (no object scope at all). Lifecycle status
+//    changes are workflow actions (`/:id/actions/cancel`, `/:id/actions/generate-pdf-token`,
+//    payment `/actions/change-status` + `/actions/update-amounts`). The grouped payments
+//    list keeps its frozen-service internal role-scope. 🔒 PDF generation (cancel builds a
+//    cancelled PDF) is wrapped via a lazy adapter, never modified.
+router.use("/contracts", contractRouter);
+// 2. PUBLIC client e-sign surface (legacy `routes/contract/client-contract.js` at
+//    `/client/contracts`, token-based, NO auth). Mounted ungated, exactly like the booking
+//    funnel and `/files/client/*` — gating it would break the public signing flow. The
+//    session is derived FROM the per-session token, never a client-supplied id (the IDOR
+//    close vs legacy). All Arabic/English prose replaced with language-neutral codes. 🔒
+//    /generate-pdf wraps the FROZEN buildAndUploadContractPdf via a lazy adapter.
+router.use("/client/contracts", clientContractRouter);
 
 export default router;

@@ -115,6 +115,28 @@ const SHARED_AUTHED = [
   // and owned by the legacy service; the v2 module never returns/logs tokens.
   P.REVIEW.VIEW,
   P.REVIEW.CONNECT,
+  // contracts — legacy `/shared/contracts/*` (the authed staff/admin contract CRUD
+  // surface: contracts, stages, payments, drawings, special items + the role-scoped
+  // grouped payments list) sat behind the SHARED authentication middleware (any logged-in
+  // role), so every authed role gets the contract codes. Contracts are lead-scoped; the
+  // v2 module resolves the parent clientLead and runs the leads-module object-scope checker
+  // (reads access-scope, writes mutate-scope) before any read/write — the IDOR fix the
+  // legacy routes were MISSING. The code is the gate, lead-scope is the row-level guarantee.
+  // The grouped payments list keeps its frozen-service internal role-scope (admin-tier see
+  // all; others scoped to their own leads). The PUBLIC client e-sign surface
+  // (`/client/contracts`, token-based) is ungated and gets NO code. 🔒 PDF generation is
+  // wrapped, never modified.
+  P.CONTRACT.LIST,
+  P.CONTRACT.VIEW,
+  P.CONTRACT.PAYMENT_LIST,
+  P.CONTRACT.CREATE,
+  P.CONTRACT.EDIT,
+  P.CONTRACT.CANCEL,
+  P.CONTRACT.GENERATE_PDF_TOKEN,
+  P.CONTRACT.STAGE_MANAGE,
+  P.CONTRACT.PAYMENT_MANAGE,
+  P.CONTRACT.DRAWING_MANAGE,
+  P.CONTRACT.SPECIAL_ITEM_MANAGE,
 ];
 
 // Telegram management — ADMIN only today.

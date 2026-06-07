@@ -499,6 +499,49 @@ export const REVIEW_PERMISSIONS = {
   CONNECT: "review.connect", // GET auth-url / oauth callback (initiate / complete OAuth)
 };
 
+// ── contracts (authed staff/admin CRUD surface) ───────────────────────────────────
+// Legacy: `routes/contract/contracts.js` mounted at `/shared/contracts`, behind the
+// SHARED authentication middleware (VERIFIED: the "SHARED" gate admits every one of the
+// 9 authed roles; the isAdmin early-return fires only for the "ADMIN" gate PARAM). No
+// per-route gate existed — the router-level SHARED gate was the only check. To preserve
+// that broad authed surface 1:1, every code below is granted to every authed role via
+// CONTRACT_AUTHED in role-permissions.js. Reads/writes split per convention.
+//
+// SCOPE NOTE (the IDOR-class fix): Contract rows are LEAD-SCOPED (`clientLeadId`), as are
+// every child (stage / payment / drawing / special-item resolve to a parent contract →
+// its clientLead). Legacy applied NO object scope — any authed role could read or mutate
+// ANY lead's contract (and children) by passing the id in the path → a textbook IDOR. The
+// v2 module resolves the parent clientLead (directly for `:leadId` routes, or
+// contract→clientLeadId for `:contractId`/`:paymentId`/`:stageId`/… routes) and runs the
+// leads-module object-scope checker (checkIfUserCanAccessLead for READS,
+// checkIfUserCanMutateLead for WRITES) before any read/write. The acting user is derived
+// from req.auth, never the body.
+//
+// PAYMENTS-LIST EXCEPTION: GET /payments/all is a GLOBAL cross-lead grouped list whose
+// per-role scoping (ADMIN/SUPER_ADMIN/isSuperSales see all; everyone else is scoped to
+// their own `clientLead.userId`) lives INSIDE the frozen legacy service — preserved 1:1.
+// It carries its own LIST code; the code is the gate, the service supplies the scope.
+//
+// 🔒 PDF-FROZEN: the cancel action (POST /:contractId/actions/cancel) and the PUBLIC
+// generate-pdf flow trigger contract-PDF generation through the EXISTING frozen service
+// (`buildAndUploadContractPdf`), invoked via a lazy adapter — never re-implemented.
+export const CONTRACT_PERMISSIONS = {
+  // reads
+  LIST: "contract.list", // GET /client-lead/:leadId (lead-scoped list)
+  VIEW: "contract.view", // GET /:contractId (lead-scoped detail)
+  PAYMENT_LIST: "contract.payment.list", // GET /payments/all (role-scoped grouped list)
+  // writes — contract lifecycle
+  CREATE: "contract.create", // POST /
+  EDIT: "contract.edit", // PUT /:contractId/basics
+  CANCEL: "contract.cancel", // POST /:contractId/actions/cancel (🔒 builds a cancelled PDF)
+  GENERATE_PDF_TOKEN: "contract.generate_pdf_token", // POST /:contractId/actions/generate-pdf-token
+  // writes — stages / payments / drawings / special-items (all lead-scoped via the contract)
+  STAGE_MANAGE: "contract.stage.manage", // create / update / delete a contract stage
+  PAYMENT_MANAGE: "contract.payment.manage", // create / update / delete a payment, status + amounts
+  DRAWING_MANAGE: "contract.drawing.manage", // create / update / delete a drawing
+  SPECIAL_ITEM_MANAGE: "contract.special_item.manage", // create / update / delete a special item
+};
+
 // ── nested aggregate (canonical reference for app code) ───────────────────────
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
@@ -522,6 +565,7 @@ export const PERMISSIONS = {
   QUESTION: QUESTION_PERMISSIONS,
   SALES_STAGE: SALES_STAGE_PERMISSIONS,
   REVIEW: REVIEW_PERMISSIONS,
+  CONTRACT: CONTRACT_PERMISSIONS,
 };
 
 /**

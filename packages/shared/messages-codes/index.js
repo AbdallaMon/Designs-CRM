@@ -15,3 +15,4 @@ export * from "./dashboard/index.js";
 export * from "./questions/index.js";
 export * from "./sales-stages/index.js";
 export * from "./reviews/index.js";
+export * from "./contracts/index.js";
