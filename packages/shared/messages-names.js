@@ -13,5 +13,6 @@ export const messagesNames = {
   usersMessages: "usersMessages",
   projectsMessages: "projectsMessages",
   accountingMessages: "accountingMessages",
+  calendarMessages: "calendarMessages",
   prismaKnowMessages: "prismaKnowMessages",
 };

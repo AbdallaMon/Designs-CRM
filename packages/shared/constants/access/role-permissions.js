@@ -53,6 +53,17 @@ const SHARED_AUTHED = [
   P.USER.DIRECTORY,
   P.USER.PROFILE_VIEW,
   P.USER.PROFILE_EDIT,
+  // calendar — legacy `/shared/calendar` + `/shared/calendar-management` (the same
+  // router, double-mounted) sat behind the SHARED authentication middleware (any
+  // logged-in role), so every role gets the calendar codes. The Google sub-router
+  // inherited the same SHARED gate; its actions act on the caller's own user id only
+  // (self-scoped). Calendar availability rows have NO per-owner object scope in legacy
+  // (the code IS the gate), so no object-scope checker is wired. The PUBLIC client
+  // booking surface (`/client/calendar`, token-based) is ungated and gets NO code.
+  P.CALENDAR.VIEW,
+  P.CALENDAR.MANAGE,
+  P.CALENDAR.GOOGLE_VIEW,
+  P.CALENDAR.GOOGLE_MANAGE,
 ];
 
 // Telegram management — ADMIN only today.

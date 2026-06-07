@@ -8,3 +8,4 @@ export * from "./leads/index.js";
 export * from "./users/index.js";
 export * from "./projects/index.js";
 export * from "./accounting/index.js";
+export * from "./calendar/index.js";

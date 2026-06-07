@@ -278,6 +278,42 @@ export const ACCOUNTING_PERMISSIONS = {
   SALARY_PAY: "accounting.salary.pay", // POST /salaries/monthly/pay
 };
 
+// ── calendar (staff availability/slots + meeting/call month-views + Google sync) ──
+// Legacy: `routes/calendar/calendar.js` mounted TWICE in `routes/shared/index.js`
+// (`/shared/calendar` AND `/shared/calendar-management` — the SAME router) and behind
+// the SHARED router-level authentication middleware (any of the 9 authed roles). The
+// calendar.js routes themselves declared NO per-route gate; they call `getCurrentUser`
+// directly. The `google.js` OAuth router is a SUB-ROUTER of calendar.js at `/google`, so
+// it inherits the same SHARED gate. VERIFIED against `verifyTokenAndHandleAuthorization`:
+// the "SHARED" gate admits ADMIN/SUPER_ADMIN/STAFF/THREE_D_DESIGNER/TWO_D_DESIGNER/
+// ACCOUNTANT/TWO_D_EXECUTOR/SUPER_SALES/CONTACT_INITIATOR (i.e. every authed role) — the
+// isAdmin early-return fires only when the gate PARAM is "ADMIN", which it is not here. To
+// preserve observable behavior 1:1, these codes are granted to EVERY authed role via
+// CALENDAR_AUTHED in ROLE_PERMISSIONS.
+//
+// SCOPE NOTE: legacy calendar availability rows (AvailableDay/AvailableSlot) and the
+// meeting/call month-views have NO per-owner object scope — any authed user could read or
+// mutate any `adminId`'s availability by passing the id as a query param, and the
+// month-view applies a role-derived `userId` filter INSIDE the service (admins see all,
+// others see their own). There is therefore no per-record owner to scope-check; the
+// permission CODE is the gate (matching legacy exactly). Widening or NARROWING that surface
+// would be a behavior change. The Google-connect/disconnect/status actions act on the
+// CALLER's own user id (req.auth.id) only — they are inherently self-scoped. Reads/writes
+// split per convention.
+//
+// The PUBLIC client booking surface (`routes/calendar/client-calendar.js`, mounted at
+// `/client/calendar`) has NO auth/gate (token-based via a MeetingReminder.token) — it gets
+// NO permission code and stays PUBLIC, exactly like the booking funnel and `/files/client/*`.
+export const CALENDAR_PERMISSIONS = {
+  // availability + month-views (reads)
+  VIEW: "calendar.view", // GET available-days, slots, dates/month, dates/day
+  // availability (writes)
+  MANAGE: "calendar.manage", // POST available-days(/multiple), DELETE days/:id, slots/:id
+  // Google Calendar integration (self-scoped to the caller)
+  GOOGLE_VIEW: "calendar.google.view", // GET google/connect (auth URL), google/status
+  GOOGLE_MANAGE: "calendar.google.manage", // POST google/connect, POST google/disconnect
+};
+
 // ── nested aggregate (canonical reference for app code) ───────────────────────
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
@@ -294,6 +330,7 @@ export const PERMISSIONS = {
   UPDATE: UPDATE_PERMISSIONS,
   DELIVERY: DELIVERY_PERMISSIONS,
   ACCOUNTING: ACCOUNTING_PERMISSIONS,
+  CALENDAR: CALENDAR_PERMISSIONS,
 };
 
 /**

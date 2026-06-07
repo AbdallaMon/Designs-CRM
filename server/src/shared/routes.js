@@ -13,6 +13,8 @@ import { taskRouter } from "../modules/projects/task/task.routes.js";
 import { updateRouter } from "../modules/projects/update/update.routes.js";
 import { deliveryRouter } from "../modules/projects/delivery/delivery.routes.js";
 import { accountingRouter } from "../modules/accounting/accounting.routes.js";
+import { calendarRouter } from "../modules/calendar/calendar.routes.js";
+import { clientCalendarRouter } from "../modules/calendar/client/client-calendar.route.js";
 
 import authRoutes from "../modules/auth/auth.routes.js";
 const router = Router();
@@ -54,5 +56,20 @@ router.use("/delivery", deliveryRouter);
 // reproducing the legacy ACCOUNTANT-only gate exactly. Money workflow actions
 // (pay / mark-overdue / change-level) use `/:id/actions/*` with strict money validation.
 router.use("/accounting", accountingRouter);
+
+// Calendar — the authed staff availability/slots + meeting/call month-views + Google
+// Calendar OAuth surface (legacy `routes/calendar/calendar.js`, the SHARED router
+// DOUBLE-MOUNTED at `/shared/calendar` AND `/shared/calendar-management`). The v2 aggregate
+// is mounted twice to mirror that double-mount exactly; legacy routers stay live (strangler).
+// Auth once at the aggregate; every route is gated by a CALENDAR.* code granted to EVERY
+// authed role (CALENDAR_AUTHED) — reproducing the legacy SHARED gate. Availability rows have
+// no per-owner scope in legacy (the code is the gate); Google actions are self-scoped to the
+// caller. The Google OAuth sub-router lives at `/google` under each mount.
+router.use("/calendar", calendarRouter);
+router.use("/calendar-management", calendarRouter);
+// PUBLIC client booking surface (legacy `/client/calendar`, token-based, NO auth). Mounted
+// ungated, exactly like the booking funnel and `/files/client/*` — gating it would break the
+// public client booking flow.
+router.use("/client/calendar", clientCalendarRouter);
 
 export default router;
