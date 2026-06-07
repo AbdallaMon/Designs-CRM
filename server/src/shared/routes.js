@@ -23,6 +23,9 @@ import { salesStagesRouter } from "../modules/sales-stages/sales-stages.route.js
 import { reviewsRouter } from "../modules/reviews/reviews.route.js";
 import { contractRouter } from "../modules/contracts/contract/contract.route.js";
 import { clientContractRouter } from "../modules/contracts/client/client-contract.route.js";
+import { adminImageSessionRouter } from "../modules/image-sessions/admin/admin-image-session.route.js";
+import { imageSessionRouter } from "../modules/image-sessions/session/image-session.route.js";
+import { clientImageSessionRouter } from "../modules/image-sessions/client/client-image-session.route.js";
 
 import authRoutes from "../modules/auth/auth.routes.js";
 const router = Router();
@@ -168,5 +171,36 @@ router.use("/contracts", contractRouter);
 //    close vs legacy). All Arabic/English prose replaced with language-neutral codes. 🔒
 //    /generate-pdf wraps the FROZEN buildAndUploadContractPdf via a lazy adapter.
 router.use("/client/contracts", clientContractRouter);
+
+// Image-sessions — THREE surfaces (legacy routers stay mounted in parallel during the
+// strangler window). The LARGEST + MOST DELICATE module: two frozen subsystems intersect
+// here (🔒 the pdf-lib image-session PDF and 🔒 the upload-chunk mechanism). Both are only
+// WRAPPED via lazy adapters — never modified. The public generate-pdf preserves the INLINE
+// SYNC pdf path; the legacy commented `pdfQueue.add(...)` enqueue stays unused.
+//
+// 1. ADMIN reference-data CRUD (legacy `routes/image-session/admin-image-session.js` at
+//    `/admin/image-session`, "ADMIN" gate = the `isAdmin` union). Global studio reference
+//    data (spaces/templates/materials/styles/colors/design-images/page-info/pros-and-cons)
+//    — NO per-lead scope; the admin code is the gate (admins see all). Gated by
+//    IMAGE_SESSION.ADMIN_* granted to ADMIN/SUPER_ADMIN base + isSuperSales (matching the
+//    legacy `isAdmin` union exactly, like courses/users — a plain STAFF/sales role is 403'd).
+router.use("/image-sessions/admin", adminImageSessionRouter);
+// 2. SHARED session-management (legacy `routes/image-session/image-session.js` at
+//    `/shared/image-session`, SHARED gate = all 9 authed roles). Gated by IMAGE_SESSION.SESSION_*
+//    granted to every authed role via SHARED_AUTHED. ClientImageSession rows are lead-scoped;
+//    the usecase resolves the parent clientLead (directly for :clientLeadId, or via
+//    session→clientLeadId for :sessionId) and runs the leads-module object-scope checker
+//    (reads access-scope, writes mutate-scope) before any read/write — the IDOR fix the
+//    legacy routes were MISSING. The `/ids` generic-model read adds a model allow-list +
+//    guarded JSON.parse (mass-read hardening).
+router.use("/image-session", imageSessionRouter);
+// 3. PUBLIC client image-selection flow (legacy `routes/image-session/client-image-session.js`
+//    + `routes/client/image-session.js`, BOTH mounted at `/client/image-session`, token-based,
+//    NO auth). Combined cleanly here, preserving every reachable path. Mounted ungated, like
+//    the booking funnel and `/files/client/*`. The session is derived FROM the per-session
+//    token, never a client-supplied id (the IDOR close vs legacy). All prose replaced with
+//    language-neutral codes. 🔒 /generate-pdf wraps the FROZEN PDF orchestrator; signatureUrl
+//    is SSRF-locked to a safe relative upload path.
+router.use("/client/image-session", clientImageSessionRouter);
 
 export default router;

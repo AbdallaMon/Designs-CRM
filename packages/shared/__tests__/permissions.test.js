@@ -112,6 +112,8 @@ describe("getEffectivePermissions", () => {
     //     user usecase, not the grant).
     //   - Projects migration: PROJECT.MANAGE (legacy designer assign/unassign + the
     //     designer-board status change were gated on the `isAdmin` union).
+    //   - Image-sessions migration: IMAGE_SESSION.ADMIN_VIEW/ADMIN_MANAGE (legacy
+    //     `/admin/image-session` "ADMIN" gate admits isSuperSales).
     const base = getEffectivePermissions({ role: USER_ROLES.STAFF });
     const elevated = getEffectivePermissions({
       role: USER_ROLES.STAFF,
@@ -138,6 +140,8 @@ describe("getEffectivePermissions", () => {
         PERMISSIONS.USER.MANAGE_AUTO_ASSIGNMENTS,
         PERMISSIONS.USER.SET_MAX_LEADS,
         PERMISSIONS.USER.MANAGE_STAFF_EXTRA,
+        PERMISSIONS.IMAGE_SESSION.ADMIN_VIEW,
+        PERMISSIONS.IMAGE_SESSION.ADMIN_MANAGE,
       ].sort(),
     );
   });

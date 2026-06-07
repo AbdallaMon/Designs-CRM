@@ -542,6 +542,49 @@ export const CONTRACT_PERMISSIONS = {
   SPECIAL_ITEM_MANAGE: "contract.special_item.manage", // create / update / delete a special item
 };
 
+// ── image-sessions (admin reference-data + shared session-management) ─────────────
+// THREE legacy surfaces (verified against the mounts + `verifyTokenAndHandleAuthorization`):
+//
+//   1. ADMIN reference-data CRUD (`routes/image-session/admin-image-session.js`, mounted
+//      `/admin/image-session`, gate "ADMIN"). VERIFIED: the "ADMIN" gate admits role
+//      ADMIN/SUPER_ADMIN, OR `isSuperSales`, OR a subRole of ADMIN/SUPER_ADMIN (the
+//      `isAdmin` union — identical to the legacy courses/users admin gate). The
+//      reference-data here is GLOBAL studio config (spaces, templates, materials, styles,
+//      colors, design images, page-info, pros-and-cons) — there is no per-lead object to
+//      scope; the ADMIN code IS the gate (admins see all), matching legacy. The codes are
+//      granted to ADMIN/SUPER_ADMIN base + `isSuperSales` (via SUPER_SALES_EXTRA_PERMISSIONS)
+//      so the sub-role union matches the legacy `isAdmin` set EXACTLY — without widening any
+//      other base role (mirrors courses/users). NOT granted to plain STAFF/sales/etc.
+//
+//   2. SHARED session-management (`routes/image-session/image-session.js`, mounted
+//      `/shared/image-session`, gate "SHARED" = every one of the 9 authed roles). To
+//      preserve that broad authed surface 1:1, the codes are granted to every authed role
+//      via SHARED_AUTHED. SCOPE NOTE (the IDOR-class fix): ClientImageSession rows are
+//      LEAD-SCOPED (`clientLeadId`). Legacy applied NO object scope — any authed role could
+//      read/mutate ANY lead's sessions by passing the id in the path. The v2 module resolves
+//      the parent clientLead (directly for `:clientLeadId`, or session→clientLeadId for
+//      `:sessionId`) and runs the leads-module object-scope checker (access for reads, mutate
+//      for writes) before any read/write. The generic `/ids` model read is GLOBAL config; it
+//      carries its own list code and adds a model allow-list (mass-read hardening).
+//
+//   3. PUBLIC client flow (`routes/image-session/client-image-session.js` +
+//      `routes/client/image-session.js`, BOTH mounted `/client/image-session`, token-based,
+//      NO auth). It gets NO permission code and stays PUBLIC, exactly like the booking funnel
+//      and `/files/client/*` — gating it would break the public client image-selection flow.
+//
+// 🔒 PDF-FROZEN + 🔒 UPLOAD-CHUNK-FROZEN: the public generate-pdf flow triggers image-session
+// PDF generation through the EXISTING frozen service (`uploadPdfAndApproveSession` →
+// `generateImageSessionPdf`), invoked via a lazy adapter — never re-implemented. The inline
+// SYNC pdf path is preserved; the legacy commented `pdfQueue.add(...)` enqueue stays unused.
+export const IMAGE_SESSION_PERMISSIONS = {
+  // ADMIN reference-data management (the `isAdmin` union — admins see all global config)
+  ADMIN_VIEW: "image_session.admin.view", // GET space/templates/material/style/colors/images/page-info
+  ADMIN_MANAGE: "image_session.admin.manage", // create/update/delete/reorder reference data
+  // SHARED session-management (lead-scoped per record via the leads-module checker)
+  SESSION_VIEW: "image_session.session.view", // GET /:clientLeadId/sessions (lead-scoped read), GET /ids
+  SESSION_MANAGE: "image_session.session.manage", // create/edit/regenerate/delete a lead's session (lead-scoped write)
+};
+
 // ── nested aggregate (canonical reference for app code) ───────────────────────
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
@@ -566,6 +609,7 @@ export const PERMISSIONS = {
   SALES_STAGE: SALES_STAGE_PERMISSIONS,
   REVIEW: REVIEW_PERMISSIONS,
   CONTRACT: CONTRACT_PERMISSIONS,
+  IMAGE_SESSION: IMAGE_SESSION_PERMISSIONS,
 };
 
 /**

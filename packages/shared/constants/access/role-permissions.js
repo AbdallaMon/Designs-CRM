@@ -137,7 +137,29 @@ const SHARED_AUTHED = [
   P.CONTRACT.PAYMENT_MANAGE,
   P.CONTRACT.DRAWING_MANAGE,
   P.CONTRACT.SPECIAL_ITEM_MANAGE,
+  // image-sessions — the SHARED session-management surface (legacy
+  // `routes/image-session/image-session.js` at `/shared/image-session`) sat behind the
+  // SHARED authentication middleware (any logged-in role), so every authed role gets the
+  // image-session SESSION codes. ClientImageSession rows are lead-scoped; the v2 module
+  // resolves the parent clientLead (directly for `:clientLeadId`, or session→clientLeadId
+  // for `:sessionId`) and runs the leads-module object-scope checker (reads access-scope,
+  // writes mutate-scope) before any read/write — the IDOR fix the legacy route was MISSING.
+  // The `/ids` generic-model read is global config (its own VIEW code + a model allow-list).
+  // The ADMIN reference-data surface (`/admin/image-session`) is NOT granted here — it is an
+  // admin-tier surface layered onto ADMIN/SUPER_ADMIN + isSuperSales only (see below). The
+  // PUBLIC client flow (`/client/image-session`, token-based) is ungated and gets NO code.
+  P.IMAGE_SESSION.SESSION_VIEW,
+  P.IMAGE_SESSION.SESSION_MANAGE,
 ];
+
+// Image-session ADMIN reference-data management — ADMIN + SUPER_ADMIN (behavior-preserving
+// 1:1 with the legacy `/admin/image-session` "ADMIN" gate, which admits ADMIN / SUPER_ADMIN,
+// the ADMIN/SUPER_ADMIN sub-roles, and `isSuperSales`). The `isSuperSales` slice is granted
+// via SUPER_SALES_EXTRA_PERMISSIONS below so the union matches the legacy `isAdmin` set
+// exactly without widening any base role (mirrors COURSE_ADMIN / USER_ADMIN). This is GLOBAL
+// studio reference data (spaces/templates/materials/styles/colors/design-images/page-info/
+// pros-and-cons) — no per-lead object scope; the admin code IS the gate (admins see all).
+const IMAGE_SESSION_ADMIN = [P.IMAGE_SESSION.ADMIN_VIEW, P.IMAGE_SESSION.ADMIN_MANAGE];
 
 // Telegram management — ADMIN only today.
 const TELEGRAM_ADMIN = [P.TELEGRAM.MANAGE];
@@ -313,6 +335,7 @@ export const ROLE_PERMISSIONS = {
     ...USER_ADMIN,
     ...PROJECT_AUTHED,
     ...PROJECT_ADMIN,
+    ...IMAGE_SESSION_ADMIN,
   ],
   [USER_ROLES.SUPER_ADMIN]: [
     ...SHARED_AUTHED,
@@ -324,6 +347,7 @@ export const ROLE_PERMISSIONS = {
     ...USER_ADMIN,
     ...PROJECT_AUTHED,
     ...PROJECT_ADMIN,
+    ...IMAGE_SESSION_ADMIN,
   ],
 
   // All other roles currently have the shared authenticated surface (chat, authed
@@ -380,4 +404,10 @@ export const SUPER_SALES_EXTRA_PERMISSIONS = [
   // code on for isSuperSales so the union matches legacy exactly without granting the
   // base SUPER_SALES role itself.
   P.PROJECT.MANAGE,
+  // Image-session admin-tier: the legacy `/admin/image-session` gate "ADMIN" admits
+  // `isSuperSales`. Layer the admin reference-data management codes on for isSuperSales so
+  // the union matches legacy `isAdmin` exactly without granting the base SUPER_SALES role
+  // itself (mirrors COURSE_ADMIN / USER_ADMIN / PROJECT.MANAGE above).
+  P.IMAGE_SESSION.ADMIN_VIEW,
+  P.IMAGE_SESSION.ADMIN_MANAGE,
 ];
