@@ -10,24 +10,25 @@
 
 ## 1. One-line status
 
-The **Accounting**, **Calendar**, and **Notifications+Utilities** backend modules are migrated,
-security-reviewed (+reworked), verified, and committed. **Dashboard is the next module to migrate.**
-Full suite: **270 tests / 21 files green**. Working tree clean.
+The **Accounting**, **Calendar**, **Notifications+Utilities**, and **Dashboard** backend modules are
+migrated, security-reviewed (+reworked), verified, and committed. **Leaf domains (questions,
+sales-stages, reviews, clients) are the next to migrate.** Full suite: **360 tests / 23 files green**.
+Working tree clean.
 
 ---
 
 ## 2. Exactly where we stopped (last completed work)
 
-- **Notifications + Utilities BE** — `server/src/modules/notifications/` (`/v2/notifications` +
-  `POST /v2/notifications/actions/mark-read`) and `server/src/modules/utilities/` (`/v2/utilities/*`).
-  Build → security review (verdict DO-NOT-COMMIT) → **rework** → re-verify → commit → logs. Commit
-  code **`6cac14e`**. Closed an UNAUTH cross-user notification IDOR + a HIGH user-logs IDOR
-  (self-scoped) + locked an open `prisma[model]` read to fixed pick-list projections. `/utility/upload*`
-  left on legacy (frozen upload module owns it). **FE-repoint contract changes noted in §5c.**
-- **Calendar domain BE** — `server/src/modules/calendar/{availability,google,client}/`, mounted
-  `/v2/calendar` + `/v2/calendar-management` + **public** `/v2/client/calendar`. Commit **`174e8e1`**.
-- **Accounting domain BE** — `server/src/modules/accounting/{payment,expense,note,rent,salary,report}/`,
-  mounted `/v2/accounting`. Commits **`d2bce49`** / docs **`edb204e`**.
+- **Dashboard BE** — `server/src/modules/dashboard/`, mounted `/v2/dashboard` (9 read-only role-scoped
+  aggregations). Build → security review (verdict SAFE) → small hardening rework → verify → commit → logs.
+  Commit **`bf5845b`**. Closed a cross-user metric/activity over-exposure (non-admins forced to
+  `req.auth.id`; admin-tier preserved; + non-numeric-id 403 guard). Excluded `/staff/dashboard/latest-calls`
+  (leads/staff-residual). Contract deltas recorded in `03-backend-plan.md` §12.
+- **Notifications + Utilities BE** — `/v2/notifications` + `/v2/utilities/*`. Commit **`6cac14e`**.
+  Closed an UNAUTH cross-user notification IDOR + a HIGH user-logs IDOR + locked an open `prisma[model]`
+  read. `/utility/upload*` left on legacy. **FE-repoint contract changes in §5c.**
+- **Calendar BE** — `/v2/calendar` + `/v2/calendar-management` + **public** `/v2/client/calendar`. Commit **`174e8e1`**.
+- **Accounting BE** — `/v2/accounting`. Commits **`d2bce49`** / docs **`edb204e`**.
 - All details in `MIGRATION-LOG.md` (Stage 4 entries).
 
 ## 3. Commit trail on `server-migration` (most recent last)
@@ -36,7 +37,8 @@ Full suite: **270 tests / 21 files green**. Working tree clean.
 foundation 3c84d5a → chat d980950 → site-utility 38f7bf0 → courses 1dbc181 →
 leads c709d14 → users 5cf59ee → validation-fix 934ba69 → projects fe9957b →
 (docs ce7a3d9) → accounting d2bce49 → (docs edb204e) → (checkpoint 5465e09) →
-calendar 174e8e1 → (docs db76261) → notifications+utilities 6cac14e
+calendar 174e8e1 → (docs db76261) → notifications+utilities 6cac14e →
+(docs d854be0) → dashboard bf5845b
 ```
 Baseline / rollback point: `9406978` ("merged").
 
@@ -44,22 +46,25 @@ Baseline / rollback point: `9406978` ("merged").
 
 Chat (+FE), site-utility (+FE), Courses/LMS, Leads/clientLead CORE (IDOR keystone),
 Users, Projects domain (project+task+update+delivery), **Accounting**, **Calendar**,
-**Notifications+Utilities**.
+**Notifications+Utilities**, **Dashboard**.
 
-## 5. NEXT: Dashboard module BE (task #4, in_progress)
+## 5. NEXT: Leaf domains BE — questions, sales-stages, reviews, clients (task #5, in_progress)
 
-Not yet scoped in detail. Before dispatching the build agent, scope it:
-- Grep `server/routes/` for the dashboard route file(s) and resolve every mount + auth gate.
-  Dashboards are usually **read-only aggregations** that differ per role (admin sees all; sales sees
-  own pipeline; designer sees own projects; accountant sees finances).
-- The big risk: **role-scoped aggregation = IDOR surface** — each card/metric must be scoped to what
-  the caller may see (reuse the leads/projects scope helpers; do not return global totals to a
-  scoped role unless legacy did). Verify each aggregate against the legacy role branches.
-- Heavy aggregation queries → repository; invoke existing dashboard services via lazy adapters.
-- Then run the standard loop (§6).
+Not yet scoped in detail. Before dispatching the build agent(s), scope each:
+- Grep `server/routes/` for: `routes/questions/*` (mounted `/shared/questions` behind SHARED gate),
+  sales-stages, reviews (`routes/` — the reviews are a thin Google-OAuth review integration per
+  PROJECT_STATE), and `routes/clients/clients.js` (mounted `/client`). Resolve every mount + auth gate.
+- **Entanglement note (from PROJECT_STATE §3):** some leaf domains (questions, notes, sales-stages,
+  client-payments) are coupled to the `clientLead` keystone — most of clientLead is already migrated
+  (leads module), so these should now extract cleanly, but verify the shared service fns.
+- `routes/clients/*` is the CLIENT-FACING surface (mounted `/client`) — check which endpoints are
+  PUBLIC (client booking/contract/image-session flows) vs authed; keep public ones ungated.
+- Watch for the client-calendar sub-router already migrated under `/v2/client/calendar` — don't
+  re-migrate it; clients.js mounts it at `/client/calendar`.
+- These are small; you can run them as separate sequential module passes (BE agents are SEQUENTIAL —
+  they share the same shared files) OR one combined pass if they're tightly coupled. Run the loop (§6) per pass.
 
-(After this: leaf domains questions/sales-stages/reviews/clients #5, contracts #6 🔒PDF,
-image-sessions #7 🔒PDF+🔒upload, admin/staff residual #8.)
+(After this: contracts #6 🔒PDF, image-sessions #7 🔒PDF+🔒upload, admin/staff residual #8.)
 
 ---
 
@@ -146,5 +151,5 @@ telegram assign, settings). **FE for all BE-only modules is deferred** (per user
 
 > "Read `docs/migration/RESUME-CHECKPOINT.md`, `PROJECT_STATE.md`, `CLAUDE.md`, and
 > `docs/migration/MIGRATION-LOG.md`. Confirm the working tree is clean and `npm test` is green
-> (270/21), then continue the migration with the **Dashboard** module using the established agent
-> loop (§6 of the checkpoint), backend only."
+> (360/23), then continue the migration with the **leaf domains** (questions, sales-stages,
+> reviews, clients) using the established agent loop (§6 of the checkpoint), backend only."
