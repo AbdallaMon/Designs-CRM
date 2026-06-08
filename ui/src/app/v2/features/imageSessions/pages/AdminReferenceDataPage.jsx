@@ -1,34 +1,44 @@
 "use client";
 
-// SURFACE 1 — ADMIN reference-data CRUD page. Ported from the legacy AdminGallery dashboard
-// (UiComponents/DataViewer/image-session/admin/AdminGallery.jsx), Arabic-only, wired to the v2
-// image-sessions service. Tabbed by reference type (images / page-info / colors / spaces /
-// materials / styles), tab state in the URL (?tab=). GLOBAL studio config — gated on the
-// IMAGE_SESSION.ADMIN_* CODES (admins see all; no per-record object scope).
+// SURFACE 1 — ADMIN reference-data CRUD. Phase-0 primitives: PageHeader + UrlTabs (tab in the
+// URL ?tab=) over the reference types (images[paginated] / page-info / colors / spaces /
+// materials / styles), each a DataTablePage with a create/edit modal. Materials / styles /
+// page-info additionally own a ★ pros-&-cons reorder panel (up/down, optimistic + revert).
+// GLOBAL studio config — gated on the IMAGE_SESSION.ADMIN_* CODES (admins see all; NO per-record
+// object scope). Single-language Arabic / RTL.
 //
-// §5c #1: design-images is the only PAGINATED list and its array is nested under res.data.data
-// (read accordingly below); the scalar lists return the array at res.data.
-//
-// NOTE: the per-type CREATE/EDIT forms (the legacy nested title/description "creates/edits"
-// builders, the color-palette editor, the design-image uploader, the pros-&-cons drag-reorder)
-// are bespoke and are ported as dedicated components onto THIS service/config layer. This page
-// is the gated, URL-tabbed shell + the read/list surface they mount into.
+// §5c #1: design-images is the ONLY paginated list and its array is nested under res.data.data
+// ({ data, total, totalPages }); the scalar lists return the array at res.data.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Alert, Box, Grid, Paper, Tab, Tabs, Typography } from "@mui/material";
+import {
+  Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Tooltip,
+} from "@mui/material";
+import { MdAdd, MdEdit, MdListAlt } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import {
+  PageHeader, SectionCard, DataTablePage, UrlTabs, PartialPermissionState,
+} from "@/app/v2/shared/components";
 import imageSessionsService from "../imageSessions.service.js";
-import { ADMIN_REFERENCE_TYPES, readPickListLabel } from "../config/imageSessionsConstants.js";
+import { ADMIN_REFERENCE_TYPES } from "../config/imageSessionsConstants.js";
+import { imageSessionsMessages } from "../config/imageSessionsMessages.js";
+import { columnsFor } from "../config/adminReferenceColumns.js";
+import { ReferenceFormDialog } from "../components/ReferenceFormDialog.jsx";
+import { ProsConsReorder } from "../components/ProsConsReorder.jsx";
 
 const P = PERMISSIONS.IMAGE_SESSION;
 
-// Map a reference-type key → its service list call (all return the standard envelope).
-function listFor(key) {
+// type key → its list service call. Images carry pagination params.
+function listFor(key, { page, pageSize } = {}) {
   switch (key) {
     case "images":
-      return imageSessionsService.listImages({ notArchived: true });
+      return imageSessionsService.listImages({
+        notArchived: true,
+        page,
+        limit: pageSize,
+        skip: page && pageSize ? (page - 1) * pageSize : undefined,
+      });
     case "pageInfo":
       return imageSessionsService.listPageInfo({ notArchived: true });
     case "colors":
@@ -44,104 +54,168 @@ function listFor(key) {
   }
 }
 
-// Extract the array from the envelope. §5c #1: images are nested ({ data, total, totalPages }).
-function extractItems(key, res) {
-  if (key === "images") {
-    const payload = res?.data;
-    return Array.isArray(payload?.data) ? payload.data : [];
-  }
-  return Array.isArray(res?.data) ? res.data : [];
-}
+// Which reference types own a pros-&-cons list (the legacy admin attached them to these).
+const PROS_CONS_TYPES = { materials: "MATERIAL", styles: "STYLE", pageInfo: "PAGE_INFO" };
 
-function ReferenceList({ type }) {
-  const [items, setItems] = useState([]);
+function ReferenceTab({ type, canManage }) {
+  const paginated = Boolean(type.paginated);
+  const [rows, setRows] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [prosConsFor, setProsConsFor] = useState(null); // row owning the pros/cons dialog
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await listFor(type.key);
-      setItems(extractItems(type.key, res));
+      const res = await listFor(type.key, { page, pageSize });
+      if (type.key === "images") {
+        const payload = res?.data;
+        setRows(Array.isArray(payload?.data) ? payload.data : []);
+        setTotal(Number(payload?.total) || 0);
+      } else {
+        const arr = Array.isArray(res?.data) ? res.data : [];
+        setRows(arr);
+        setTotal(arr.length);
+      }
     } catch (e) {
       setError(e?.data?.message || e?.message || "FETCH_FAILED");
-      setItems([]);
+      setRows([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }
-  }, [type.key]);
+  }, [type.key, page, pageSize]);
 
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
 
-  if (loading) {
-    return <Typography color="text.secondary" sx={{ py: 3 }}>جاري التحميل...</Typography>;
-  }
-  if (error) {
-    return <Alert severity="error" sx={{ my: 2 }}>تعذر جلب البيانات</Alert>;
-  }
-  if (!items.length) {
-    return <Alert severity="info" sx={{ my: 2 }}>لا توجد بيانات لعرضها</Alert>;
+  const columns = useMemo(() => columnsFor(type.key, type.model), [type.key, type.model]);
+  const prosConsType = PROS_CONS_TYPES[type.key];
+  const editable = type.key !== "images"; // images use the bespoke uploader (out of scope here)
+
+  function renderRowActions(row) {
+    if (!canManage) return null;
+    return (
+      <>
+        {editable && (
+          <Tooltip title="تعديل">
+            <IconButton size="small" onClick={() => { setEditing(row); setFormOpen(true); }} aria-label="تعديل">
+              <MdEdit />
+            </IconButton>
+          </Tooltip>
+        )}
+        {prosConsType && (
+          <Tooltip title="المزايا والعيوب">
+            <IconButton size="small" onClick={() => setProsConsFor(row)} aria-label="المزايا والعيوب">
+              <MdListAlt />
+            </IconButton>
+          </Tooltip>
+        )}
+      </>
+    );
   }
 
   return (
-    <Grid container spacing={1.5}>
-      {items.map((item) => (
-        <Grid key={item.id} size={{ xs: 12, sm: 6, md: 4 }}>
-          <Paper variant="outlined" sx={{ p: 2, height: "100%" }}>
-            {type.key === "images" && item.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={item.imageUrl} alt={`#${item.id}`} style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 4 }} />
-            ) : (
-              <Typography variant="subtitle2">
-                {readPickListLabel(type.model, item) || `#${item.id}`}
-              </Typography>
-            )}
-            <Typography variant="caption" color="text.secondary">#{item.id}</Typography>
-          </Paper>
-        </Grid>
-      ))}
-    </Grid>
+    <Box>
+      <SectionCard
+        title={type.label}
+        actions={
+          canManage && editable ? (
+            <Button
+              variant="contained"
+              startIcon={<MdAdd />}
+              onClick={() => { setEditing(null); setFormOpen(true); }}
+            >
+              إضافة
+            </Button>
+          ) : null
+        }
+        noPadding
+      >
+        <Box sx={{ p: 2 }}>
+          <DataTablePage
+            columns={columns}
+            rows={rows}
+            total={total}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={paginated ? setPage : undefined}
+            onPageSizeChange={paginated ? setPageSize : undefined}
+            loading={loading}
+            error={error}
+            onRetry={fetchItems}
+            errorResolver={imageSessionsMessages}
+            renderRowActions={canManage ? renderRowActions : undefined}
+            empty={{ title: "لا توجد بيانات لعرضها" }}
+            rowsPerPageOptions={paginated ? [10, 25, 50] : [rows.length || 10]}
+          />
+        </Box>
+      </SectionCard>
+
+      {canManage && editable && (
+        <ReferenceFormDialog
+          open={formOpen}
+          type={type}
+          initial={editing}
+          onClose={() => setFormOpen(false)}
+          onSaved={fetchItems}
+        />
+      )}
+
+      {canManage && prosConsType && (
+        <Dialog open={Boolean(prosConsFor)} onClose={() => setProsConsFor(null)} fullWidth maxWidth="sm" dir="rtl">
+          <DialogTitle>المزايا والعيوب — {type.label}</DialogTitle>
+          <DialogContent dividers>
+            {prosConsFor && <ProsConsReorder type={prosConsType} id={prosConsFor.id} />}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setProsConsFor(null)}>إغلاق</Button>
+          </DialogActions>
+        </Dialog>
+      )}
+    </Box>
   );
 }
 
 export function AdminReferenceDataPage() {
   const { hasPermission } = usePermission();
   const canView = hasPermission(P.ADMIN_VIEW);
+  const canManage = hasPermission(P.ADMIN_MANAGE);
 
-  const router = useRouter();
-  const pathname = usePathname();
-  const sp = useSearchParams();
-
-  const tabKeys = useMemo(() => ADMIN_REFERENCE_TYPES.map((t) => t.key), []);
-  const activeKey = tabKeys.includes(sp.get("tab")) ? sp.get("tab") : tabKeys[0];
-  const activeType = ADMIN_REFERENCE_TYPES.find((t) => t.key === activeKey);
-
-  const onTab = (_e, key) => {
-    const params = new URLSearchParams(sp.toString());
-    params.set("tab", key);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  };
+  const tabs = useMemo(
+    () => ADMIN_REFERENCE_TYPES.map((t) => ({ key: t.key, label: t.label })),
+    [],
+  );
 
   if (!canView) {
     return (
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "50vh" }} dir="rtl">
-        <Typography color="text.secondary">لا تملك صلاحية عرض بيانات الجلسات</Typography>
+      <Box sx={{ px: { xs: 2, sm: 3 }, py: 3 }} dir="rtl">
+        <PartialPermissionState denied message="لا تملك صلاحية عرض بيانات جلسات الصور." />
       </Box>
     );
   }
 
   return (
-    <Box sx={{ px: { xs: 2, sm: 3 }, py: 3 }} dir="rtl">
-      <Typography variant="h5" sx={{ mb: 2 }}>إدارة معرض جلسات الصور</Typography>
-      <Tabs value={activeKey} onChange={onTab} variant="scrollable" scrollButtons="auto" sx={{ mb: 2 }}>
-        {ADMIN_REFERENCE_TYPES.map((t) => (
-          <Tab key={t.key} value={t.key} label={t.label} />
-        ))}
-      </Tabs>
-      {activeType && <ReferenceList type={activeType} />}
+    <Box dir="rtl">
+      <PageHeader
+        title="معرض جلسات الصور"
+        subtitle="إدارة البيانات المرجعية: الصور، الألوان، المساحات، الخامات، الطرز ومعلومات الصفحة."
+        breadcrumbs={[{ label: "الإنتاج" }, { label: "جلسات الصور" }]}
+      />
+      <UrlTabs tabs={tabs}>
+        {(activeKey) => {
+          const type = ADMIN_REFERENCE_TYPES.find((t) => t.key === activeKey);
+          return type ? <ReferenceTab key={type.key} type={type} canManage={canManage} /> : null;
+        }}
+      </UrlTabs>
     </Box>
   );
 }

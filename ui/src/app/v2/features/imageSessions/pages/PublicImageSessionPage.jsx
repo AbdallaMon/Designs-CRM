@@ -1,31 +1,41 @@
 "use client";
 
-// SURFACE 3 — PUBLIC client image-selection page (status state machine). Ported from the legacy
-// ClientImageSelection (UiComponents/DataViewer/image-session/client-session/), SINGLE-LANGUAGE
-// Arabic, wired to the v2 token-based public surface. UNGATED — the per-session token (query
-// param `token`) IS the auth (NO AuthProvider, apiFetch.public, _skipRefresh).
-//
-// Status flow (preserved 1:1 from helpers.sessionStatusFlow → SESSION_STATUS_FLOW): INITIAL →
-// PREVIEW/SELECTED color → material → style → images → SELECTED_IMAGES (signature) →
-// PDF_GENERATED/SUBMITTED. simpleHandleNext/Back advance/rewind via PUT /session/status with
-// body { token, sessionStatus } — §5c: token-keyed only, NO client id.
-//
-// §5c deltas relevant to this surface:
-//  • #2 the per-step image deletion sends the session token in the DELETE BODY
-//    (imageSessionsService.deleteImage(imageId, token)) — see the step components mounted here.
-//  • #1 the design-images list read here is nested under res.data.
-//
-// The deeply-bespoke per-step UI (color palette / materials / styles / image grid / signature
-// + frozen chunk-upload) are ported as dedicated step components onto THIS page's service +
-// status-machine layer. This page is the public, token-resolved shell that drives them.
+// SURFACE 3 — PUBLIC client image-selection WIZARD (status state machine). UNGATED: the
+// per-session token (query param `token`) IS the auth (NO AuthProvider, apiFetch.public,
+// _skipRefresh). A StageStepper-driven wizard following SESSION_STATUS_FLOW:
+//   الألوان → الخامات → الطرز → الصور لكل مساحة → معاينة → التوقيع → PDF
+// Each selection step renders its reference grid + a live "اختياراتك حتى الآن" summary and saves
+// token-authoritatively (the BE OVERRIDES session id/clientLeadId from the token). Confirmation
+// statuses (INITIAL / SELECTED_* / PREVIEW_IMAGES) are simple next/back hops via PUT
+// /session/status ({ token, sessionStatus } — §5c: token-keyed, NO client id). The final
+// signature → /generate-pdf shows a BLOCKING "جارٍ إنشاء الملف…" overlay (frozen synchronous
+// PDF), then a SuccessState with the download. Mirrors PublicContractSignPage. RTL.
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Alert, Box, Container, Typography } from "@mui/material";
+import { Box, Button, Container, Stack, Typography } from "@mui/material";
+import { MdArrowForward, MdArrowBack, MdFileDownload } from "react-icons/md";
+import {
+  PageHeader, SectionCard, StageStepper, LoadingState, ErrorState, SuccessState,
+} from "@/app/v2/shared/components";
 import { useClientSession } from "../hooks/useClientSession.js";
 import imageSessionsService from "../imageSessions.service.js";
 import { runImageSessionMutation } from "../imageSessions.mutations.js";
-import { SESSION_STATUS_FLOW } from "../config/imageSessionsConstants.js";
+import {
+  SESSION_STATUS_FLOW, SESSION_STATUS_LABELS, WIZARD_STEPS, wizardStepIndex,
+} from "../config/imageSessionsConstants.js";
+import { SelectionSummary } from "../components/public/SelectionSummary.jsx";
+import { ColorsStep, MaterialsStep, StylesStep, ImagesStep } from "../components/public/WizardSteps.jsx";
+import { SignatureStep } from "../components/public/SignatureStep.jsx";
+
+// Confirmation statuses → an info pane title (a simple next/back hop, no selection).
+const CONFIRM_TITLES = {
+  INITIAL: "مرحبًا بك في جلسة اختيار التصاميم",
+  SELECTED_COLOR_PATTERN: "تم حفظ اختيار الألوان",
+  SELECTED_MATERIAL: "تم حفظ اختيار الخامات",
+  SELECTED_STYLE: "تم حفظ اختيار الطراز",
+  PREVIEW_IMAGES: "تم حفظ اختيار الصور",
+};
 
 export function PublicImageSessionPage() {
   const sp = useSearchParams();
@@ -33,7 +43,9 @@ export function PublicImageSessionPage() {
   const { session, status, refetch } = useClientSession(token);
   const [busy, setBusy] = useState(false);
 
-  // Advance/rewind the session status (token-only — no client id). §5c.
+  const flow = SESSION_STATUS_FLOW[status] || { next: null, back: null };
+
+  // Advance/rewind via PUT /session/status (token-only — no client id). §5c.
   async function changeStatus(targetStatus) {
     if (!targetStatus) return;
     const res = await runImageSessionMutation(
@@ -43,77 +55,101 @@ export function PublicImageSessionPage() {
     if (res) await refetch();
   }
 
-  const flow = SESSION_STATUS_FLOW[status] || { next: null, back: null };
-
-  function renderStep() {
+  function renderBody() {
     switch (status) {
       case "LOADING":
+        return <LoadingState variant="detail" />;
+
+      case "ERROR":
         return (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <Typography color="text.secondary">جاري التحميل...</Typography>
-          </Box>
+          <ErrorState
+            title="رابط الجلسة غير صالح"
+            error="IMAGE_SESSION_TOKEN_INVALID"
+            resolver={undefined}
+          />
         );
+
+      // ── selection steps ───────────────────────────────────────────────────────────────
+      case "PREVIEW_COLOR_PATTERN":
+        return <ColorsStep session={session} nextStatus={flow.next} onBack={() => changeStatus(flow.back)} onUpdate={refetch} busy={busy} />;
+      case "PREVIEW_MATERIAL":
+        return <MaterialsStep session={session} nextStatus={flow.next} onBack={() => changeStatus(flow.back)} onUpdate={refetch} busy={busy} />;
+      case "PREVIEW_STYLE":
+        return <StylesStep session={session} nextStatus={flow.next} onBack={() => changeStatus(flow.back)} onUpdate={refetch} busy={busy} />;
+      case "SELECTED_STYLE":
+        // The image-pick grid (scoped to selected spaces + chosen style).
+        return <ImagesStep session={session} nextStatus={flow.next} onBack={() => changeStatus(flow.back)} onUpdate={refetch} busy={busy} />;
+
+      // ── signature + PDF ───────────────────────────────────────────────────────────────
+      case "SELECTED_IMAGES":
+        return <SignatureStep session={session} token={token} nextStatus={flow.next} onBack={() => changeStatus(flow.back)} onUpdate={refetch} disabled={busy} />;
+
+      // ── terminal ──────────────────────────────────────────────────────────────────────
       case "PDF_GENERATED":
       case "SUBMITTED":
         return (
-          <Box sx={{ px: 2, textAlign: "center", py: 6 }}>
-            <Typography variant="h5" sx={{ mb: 1 }}>تم إرسال اختياراتك بنجاح</Typography>
-            <Typography color="text.secondary" sx={{ mb: 2 }}>شكرًا لك. سيتواصل معك فريقنا قريبًا.</Typography>
-            {session?.pdfUrl && (
-              <Typography component="a" href={session.pdfUrl} target="_blank" color="primary">
-                تحميل الملف
-              </Typography>
-            )}
-          </Box>
+          <SuccessState
+            title="تم إرسال اختياراتك بنجاح"
+            message="شكرًا لك. سيتواصل معك فريقنا قريبًا."
+            primary={
+              session?.pdfUrl
+                ? { label: "تحميل الملف", href: session.pdfUrl, icon: <MdFileDownload /> }
+                : undefined
+            }
+          />
         );
-      case "ERROR":
-        return (
-          <Alert severity="error" sx={{ px: 2, textAlign: "center", py: 4 }}>
-            <Typography variant="h5" color="error">حدث خطأ ما</Typography>
-            <Typography variant="caption" color="warning.main">
-              يرجى التواصل مع خدمة العملاء لإنشاء رابط جديد
-            </Typography>
-          </Alert>
-        );
+
+      // ── confirmation hops (INITIAL / SELECTED_* / PREVIEW_IMAGES) ───────────────────────
       default:
-        // INITIAL / PREVIEW_* / SELECTED_* / SELECTED_IMAGES — the bespoke step components mount
-        // here, driven by `session`, `token`, `busy`, and the status-machine handlers below.
         return (
-          <Box sx={{ px: 2, py: 4 }}>
-            <Typography variant="h6" sx={{ mb: 1 }}>جلسة اختيار التصاميم</Typography>
-            <Typography color="text.secondary">
-              الخطوة الحالية: {status}
+          <SectionCard title={CONFIRM_TITLES[status] || SESSION_STATUS_LABELS[status] || "متابعة"}>
+            <Typography color="text.secondary" sx={{ mb: 2 }}>
+              {status === "INITIAL"
+                ? "اضغط «التالي» للبدء باختيار الألوان."
+                : "راجع اختياراتك بالأسفل ثم تابع إلى الخطوة التالية."}
             </Typography>
-            <Box sx={{ mt: 2, display: "flex", gap: 2 }}>
+            <Stack direction="row" spacing={1}>
               {flow.back && (
-                <Typography
-                  component="button"
-                  onClick={() => changeStatus(flow.back)}
-                  sx={{ cursor: "pointer", background: "none", border: 0, color: "text.secondary" }}
-                  disabled={busy}
-                >
+                <Button variant="outlined" startIcon={<MdArrowForward />} onClick={() => changeStatus(flow.back)} disabled={busy}>
                   السابق
-                </Typography>
+                </Button>
               )}
+              <Box sx={{ flexGrow: 1 }} />
               {flow.next && (
-                <Typography
-                  component="button"
-                  onClick={() => changeStatus(flow.next)}
-                  sx={{ cursor: "pointer", background: "none", border: 0, color: "primary.main" }}
-                  disabled={busy}
-                >
+                <Button variant="contained" endIcon={<MdArrowBack />} onClick={() => changeStatus(flow.next)} disabled={busy}>
                   التالي
-                </Typography>
+                </Button>
               )}
-            </Box>
-          </Box>
+            </Stack>
+          </SectionCard>
         );
     }
   }
 
+  const showShell = status !== "LOADING" && status !== "ERROR";
+  const stepIndex = wizardStepIndex(status);
+
   return (
-    <Container maxWidth="md" sx={{ py: 1, pb: 8, px: 0 }} dir="rtl">
-      {renderStep()}
+    <Container maxWidth="md" sx={{ py: 2, pb: 8 }} dir="rtl">
+      {showShell && (
+        <>
+          <PageHeader
+            title="اختيار التصاميم"
+            subtitle={`الخطوة ${Math.min(stepIndex + 1, WIZARD_STEPS.length)} من ${WIZARD_STEPS.length}`}
+            roleChip={false}
+          />
+          <Box sx={{ mb: 3, overflowX: "auto" }}>
+            <StageStepper stages={WIZARD_STEPS} current={stepIndex} />
+          </Box>
+        </>
+      )}
+
+      <Stack spacing={3}>
+        {renderBody()}
+        {showShell && status !== "PDF_GENERATED" && status !== "SUBMITTED" && (
+          <SelectionSummary session={session} />
+        )}
+      </Stack>
     </Container>
   );
 }

@@ -114,6 +114,59 @@ export const SESSION_STATUS_FLOW = Object.freeze({
   SUBMITTED: { next: null, back: "PDF_GENERATED" },
 });
 
+// ── Reference-data text language id. ⚠️ CONFLICT (reported): the admin reference create/edit
+// payload is the LEGACY bilingual builder shape — title/description are keyed by a `Language`
+// FK row id: { titles: { [langId]: { langId, text } }, descriptions: {...} }. The single-language
+// v2 app deliberately dropped the bilingual layer and exposes NO languages reader on the FIXED
+// imageSessions service, so the Arabic Language row id is not derivable client-side here. The
+// modal below submits the single Arabic entry under this id; confirm/override it with the real
+// seeded Arabic Language id (the BE create body is free-form `passthrough`, so the shape — not a
+// hard-coded id — is the contract). Until confirmed, create/edit is wired but parked behind this
+// documented assumption.
+export const REFERENCE_LANGUAGE_ID = 1;
+
+/** Build the legacy single-language text payload slice for a reference create/edit body. */
+export function buildReferenceText(field, text) {
+  if (text == null || text === "") return undefined;
+  return { [REFERENCE_LANGUAGE_ID]: { langId: REFERENCE_LANGUAGE_ID, text } };
+}
+
+// ── PUBLIC wizard step model — the ORDERED user-facing steps the StageStepper renders. Each
+// status in SESSION_STATUS_FLOW maps to ONE of these high-level steps (PREVIEW_* and SELECTED_*
+// of the same domain collapse to a single visible step). `key` is the wizard step id; `label`
+// is the Arabic stepper label; `statuses` are the SessionStatus values that resolve to it.
+export const WIZARD_STEPS = Object.freeze([
+  { key: "colors", label: "الألوان", statuses: ["INITIAL", "PREVIEW_COLOR_PATTERN", "SELECTED_COLOR_PATTERN"] },
+  { key: "materials", label: "الخامات", statuses: ["PREVIEW_MATERIAL", "SELECTED_MATERIAL"] },
+  { key: "styles", label: "الطرز", statuses: ["PREVIEW_STYLE", "SELECTED_STYLE"] },
+  { key: "images", label: "الصور", statuses: ["PREVIEW_IMAGES", "SELECTED_STYLE_DONE", "SELECTED_IMAGES_PICK"] },
+  { key: "preview", label: "المعاينة", statuses: ["SELECTED_IMAGES"] },
+  { key: "signature", label: "التوقيع", statuses: ["SIGNATURE"] },
+  { key: "done", label: "الملف", statuses: ["PDF_GENERATED", "SUBMITTED"] },
+]);
+
+// Map a raw SessionStatus → the index of its visible wizard step (for the StageStepper).
+// The selection flow has more granular statuses than visible steps; collapse them here.
+const STATUS_TO_STEP = Object.freeze({
+  INITIAL: 0,
+  PREVIEW_COLOR_PATTERN: 0,
+  SELECTED_COLOR_PATTERN: 0,
+  PREVIEW_MATERIAL: 1,
+  SELECTED_MATERIAL: 1,
+  PREVIEW_STYLE: 2,
+  SELECTED_STYLE: 3,
+  PREVIEW_IMAGES: 4,
+  SELECTED_IMAGES: 5,
+  PDF_GENERATED: 6,
+  SUBMITTED: 6,
+});
+
+/** Resolve a SessionStatus to its 0-based wizard-step index (clamped). */
+export function wizardStepIndex(status) {
+  const i = STATUS_TO_STEP[status];
+  return Number.isInteger(i) ? i : 0;
+}
+
 // ── Admin reference-data type registry (one entry per AdminGallery tab). `slug` is the URL
 // segment used by the service; `model` is the matching pick-list delegate; labels are Arabic.
 export const ADMIN_REFERENCE_TYPES = Object.freeze([
