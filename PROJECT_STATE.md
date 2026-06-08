@@ -3,7 +3,7 @@
 > **Open this file in any new chat.** It tells you what we are doing and where we have reached.
 > To resume: *"Read `PROJECT_STATE.md`, `CLAUDE.md`, and `docs/migration/`, then tell me where we are and what's next."*
 >
-> Last updated: **2026-06-07** · Branch: `server-migration`
+> Last updated: **2026-06-08** · Branch: `server-migration`
 
 ---
 
@@ -31,7 +31,19 @@ Full operating manual: [`CLAUDE.md`](CLAUDE.md).
 
 ## 3. Where we have reached — STATUS
 
-**Current phase: EXECUTION (modules). Foundation + infra + auth/permissions DONE & committed; modules in progress.**
+**Current phase: 🎉 MIGRATION COMPLETE (BE + FE). NEXT = UX/UI REDESIGN.** Backend fully migrated;
+frontend fully on `/v2` — 7 features have full screens (chat, site-utility, leads, projects/tasks,
+accounting, calendar, contracts); 10 more have the v2 FOUNDATION (data layer: service→/v2, config,
+permissions mirror, message resolver, route shell, wiring-proof page) with their real screens deferred
+to the redesign (image-sessions, dashboard, notifications, utilities, courses/LMS, questions,
+sales-stages, reviews, users, admin-residual). This is the user's **"Option A" (2026-06-08)**: build
+each complex screen ONCE — in the redesign — directly on the foundation, instead of a throwaway 1:1
+port of the bespoke legacy editors. FE foundation commits `5a44477` (image-sessions) → `127f414`
+(permission mirror) → `42d62f9` (9 feature foundations); reviewed by 2 reconciliation agents with
+**no blockers/should-fixes**. **Legacy removal is deferred to ride with the redesign** (per-screen, as
+each redesigned screen replaces its legacy screen — NOT a big pre-redesign cutover; legacy still serves
+the un-redesigned screens + the @role-slot dashboard shell). NEXT: shared-ui-ux-planner → redesign plan
+→ shared-frontend builds screens feature-by-feature → per-screen legacy removal.
 
 Commits on `server-migration`: foundation `3c84d5a` → chat `d980950` → site-utility `38f7bf0` → courses `1dbc181` → leads `c709d14` → users `5cf59ee` → validation-fix `934ba69` → projects `fe9957b` → accounting `d2bce49` → calendar `174e8e1` → notifications+utilities `6cac14e` → dashboard `bf5845b` → leaf-domains `e3da3a8` → contracts `ef95b73` → image-sessions `4f2baf0` → admin-residual `9325e29` → client-portal `e943739` → client-chat `efefedc` → web/leads `110948d` → web/projects `3216f31` → web/accounting `ea088f9`. App boots; legacy + `/v2` coexist (strangler). Full suite: **571 tests / 34 files green**. **🎉 BACKEND MIGRATION COMPLETE — every legacy router group now has a `/v2` equivalent (all domains + all client-facing surfaces). FE migration phase now IN PROGRESS — done: chat, site-utility, leads, projects/tasks, accounting; next: calendar.**
 

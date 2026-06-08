@@ -10,12 +10,21 @@
 
 ## 1. One-line status
 
-🎉 **BACKEND MIGRATION COMPLETE** (every legacy router group has a `/v2` equivalent). **FE migration phase
-IN PROGRESS:** done so far — chat + site-utility (Stage 4), **leads/sales `110948d`**, **projects/tasks/
-updates/delivery `3216f31`**, **accounting `ea088f9`** (+ a BE accounting error-contract hardening:
-legacy raw-Error→AppError codes). Suite now **571 tests / 34 files green**; working tree clean.
-**NEXT FE feature: calendar** (then contracts, image-sessions, dashboard, notifications, courses,
-questions/sales-stages/reviews, users/admin), then Phase 12 cutover.
+🎉 **BACKEND MIGRATION COMPLETE** + 🎉 **FE MIGRATION COMPLETE** (every feature now on `/v2`).
+**Full-feature FE (screens + data):** chat, site-utility, leads/sales, projects/tasks/updates/delivery,
+accounting, calendar, contracts. **FE FOUNDATION (data layer only — screens deferred to the redesign,
+per the user's "Option A" decision 2026-06-08):** image-sessions `5a44477`, + (commit `42d62f9`)
+dashboard, notifications, utilities, courses/LMS, questions, sales-stages, reviews, users, admin-residual;
+FE permission mirror completed `127f414`. Suite **571 tests / 34 files green**; working tree clean.
+Reconciliation review (2 agents) over the whole foundation: **no blockers, no should-fixes** — paths/
+params/permission-strings/§5c-deltas all correct, nothing frozen/shared touched.
+
+**NEXT PHASE: UX/UI REDESIGN.** Per the user (2026-06-08, "Option A"): the redesign BUILDS each real
+screen once, directly on the v2 foundation (no throwaway 1:1 port of the bespoke legacy editors).
+Order: (1) shared-ui-ux-planner → redesign plan (app shell/nav, role clarity, per-feature screens);
+(2) shared-frontend → implement screens feature-by-feature on the foundation; (3) remove legacy
+per-screen AS each redesigned screen replaces it (NOT before — legacy still serves the un-redesigned
+screens + the @role-slot dashboard shell). Commit before & after each step.
 
 FE method (the proven loop): build via shared-frontend (study `ui/src/app/v2/features/{chat,leads}` as the
 pattern; reuse the foundation in `v2/{hooks,config,lib,shared,providers}`; mount a route shell under
@@ -61,9 +70,13 @@ calendar 174e8e1 → (docs db76261) → notifications+utilities 6cac14e →
 (docs 6a91bab) → contracts ef95b73 → (docs 96fd4b7) → image-sessions 4f2baf0 →
 (docs cf6fc9f) → admin-residual 9325e29 → (docs 3943c77) → client-portal e943739 →
 client-chat efefedc → (docs 063b101) → web/leads 110948d → (docs dd5749b) →
-web/projects 3216f31 → web/accounting ea088f9
+web/projects 3216f31 → web/accounting ea088f9 → web/calendar 97f0138 →
+web/contracts 1fd3f16 → (docs 8ff3b12) → web/image-sessions(foundation) 5a44477 →
+web/permissions-mirror 127f414 → web/foundation(dashboard/notifications/utilities/courses/
+questions/sales-stages/reviews/users/admin-residual) 42d62f9
 ```
 Baseline / rollback point: `9406978` ("merged").
+✅ FE migration COMPLETE (full features + foundations). NEXT phase = UX/UI redesign.
 
 ## 4. Modules DONE (BE) — ALL DOMAINS
 
@@ -74,13 +87,14 @@ Users, Projects domain (project+task+update+delivery), **Accounting**, **Calenda
 
 ## 5. NEXT: the FE migration phase (then UX plan, then Phase 12 cutover)
 
-> **User decision (2026-06-08):** FINISH the FE migration FIRST (all remaining features), keeping the
-> 7 already-migrated v2 features as-is (no rework now). ONLY AFTER the FE is fully on `/v2` do the
-> UX/UX plan, then remove all legacy (cutover). Do NOT remove legacy or start the UX redesign before
-> the FE migration is complete — legacy still serves the un-migrated screens + the dashboard shell/nav.
-> FE done: chat, site-utility, leads, projects/tasks, accounting, calendar, contracts.
-> FE remaining: **image-sessions, dashboard, notifications, courses/LMS, questions/sales-stages/reviews,
-> users/admin (+ the app-shell/nav that collapses the @role-slot dashboard layout).**
+> **User decision (2026-06-08, REFINED to "Option A"):** Finish the FE migration first — DONE.
+> For the remaining heavy features, wire the v2 FOUNDATION now (service→/v2, config, permissions
+> mirror, message resolver, route shell, a permission-gated wiring-proof page) but DON'T re-port the
+> bespoke legacy screen internals (the ~12k-LOC image-session editors, etc.). The UX REDESIGN then
+> builds each NEW screen ONCE on that foundation, so complex screens are built once, not twice.
+> Legacy is removed per-screen AS the redesigned screen replaces it (NOT in a big pre-redesign cutover).
+> ✅ ALL FE foundations are now built + reviewed (commits `5a44477`, `127f414`, `42d62f9`).
+> **NEXT = the UX/UI redesign phase (planner → frontend build → per-screen legacy removal).**
 
 
 The backend is fully migrated. What remains:
