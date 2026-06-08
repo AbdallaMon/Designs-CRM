@@ -33,24 +33,38 @@ REDESIGN PROGRESS:
   PublicAppLayout}` (all 19 authed + 3 public feature layouts collapsed to one-liners), theme
   `palette.status.*` + accessible text token, root `<html lang=ar dir=rtl>`, `@mui/x-charts ^8` added.
 - ✅ **Phase 1 (Wave A)** — Notifications, Users (+ new `usersDetails` editor), Dashboard. Commit `6ae4cf4`.
-- ⏭️ **REMAINING redesign waves** (build on the Phase 0 primitives; same per-feature loop → esbuild verify → commit):
-  - **Wave B (Phase 4, parallel — independent dirs):** adminResidual (report builders [+ a blob-download
-    helper for the frozen excel/pdf — add a NEW helper module, don't edit ApiFetch], commissions,
-    admin-projects, bulk import, fixed-data/archive, telegram), reviews (READ-ONLY + "الربط مع Google غير
-    مُفعّل"), utilities (global search + daily user-log form).
-  - **Wave C (Phase 3, parallel — independent dirs):** image-sessions (admin reference CRUD w/ pros-&-cons
-    drag-reorder; lead-scoped session PANEL component [for Wave D]; PUBLIC client wizard via
-    SESSION_STATUS_FLOW → signature → frozen sync PDF, mirror PublicContractSignPage), courses/LMS (admin
-    authoring + question reorder + access editor + attempts admin; staff catalogue + ★ test-taker w/ timer
-    + autosave + resume).
-  - **Wave D (Phase 2, SEQUENTIAL — all edit `leadsDetails`):** integrate into the EXISTING lead detail as
-    tabs: sales-stages StageStepper (advance/rollback via `/actions/set-stage`), questions SPIN+VERSA,
-    image-sessions session panel. Build the panel COMPONENTS in their feature dirs first (Wave C), then
-    one sequential agent wires them into `leadsDetails` to avoid conflicts.
-  - **Then: per-screen legacy `@role`-slot removal** (task #13) as each redesigned route lands, then the
-    final cutover (retire legacy routers + dual-cookie shim, rename ui/→web/, wire workspaces).
-- Known consolidation follow-up: `StatusChip` has no `notification`/`user` domain (Wave A used local
-  labelled chips) — consider promoting to first-class domains in `v2/providers/statusTokens.js`.
+- ✅ **Phase 4 (Wave B)** — adminResidual (5 sub-routes + NEW feature-local blob-download helper),
+  Reviews (read-only + "غير مُفعّل"), Utilities (global search + user-log + fixed-data). Commit `3c04234`.
+- ✅ **Phase 3 (Wave C)** — image-sessions (admin reference CRUD + pros-&-cons reorder; LeadSessionsPanel;
+  PUBLIC wizard → signature → frozen PDF), courses/LMS (admin authoring `coursesDetails` + staff learner
+  `courses/learner` w/ resumable test-taker). Commit `f7c6a43`.
+- ✅ **Phase 2 (Wave D)** — lead-context tools wired into `leadsDetails`: sales-stage header strip,
+  SPIN/VERSA tabs, image-sessions session tab. Commit `b63ba3e`.
+
+🎉 **ALL REDESIGN FEATURE BUILDS COMPLETE (Phases 0–4).** Every screen rebuilt on the shell primitives.
+
+⚠️ **VERIFICATION GAP (do this BEFORE the destructive phase):** all redesign screens were verified with
+**esbuild parse+bundle only** — NOT run in a browser. Before removing legacy (the safety net), actually
+RUN the app (`cd ui && npm run dev`) and click through the v2 routes (login → shell nav → each feature,
+incl. the public wizard + report downloads). Legacy still serves everything, so nothing is broken yet.
+
+⏭️ **REMAINING — the destructive cutover phase (task #13), NOT yet started (needs runtime verification first):**
+  - Per-screen legacy `@role`-slot removal (`ui/src/app/(auth)/dashboard/(dashboard)/@*`) as each v2 route is
+    confirmed working in the browser; point the app entry at the v2 shell.
+  - Final cutover: retire the legacy Express routers + dual-cookie shim, rename `ui/ → web/`, wire workspaces.
+  - Verify boot + `npm test` (571/34) after each removal step.
+
+**FOLLOW-UPS surfaced during the build (carry into a polish pass):**
+  - `StatusChip` has no `notification`/`user`/`session` domain → Wave A/C used local labelled chips or
+    neutral color. Promote to first-class domains in `v2/providers/statusTokens.js` + `shared/config/statusLabels.js`.
+  - image-sessions admin reference create/edit submits the bilingual-builder shape under a PLACEHOLDER
+    `REFERENCE_LANGUAGE_ID = 1` (`imageSessionsConstants.js`) — confirm the real Arabic `Language` row id
+    (or expose a languages reader). Images-tab chunk-uploader left read-only (not ported).
+  - Dashboard admin `staffId` re-scope is a free-form numeric input (no shared staff pick-list in the
+    dashboard contract) — swap to a searchable picker when a shared staff list exists.
+  - Several feature responses (course dashboard fields, getStages/getVersaByCategory shapes, report export
+    payload nesting, reviews Google-native shape) are read DEFENSIVELY — re-verify field names against live
+    responses during runtime testing.
 
 FE method (the proven loop): build via shared-frontend (study `ui/src/app/v2/features/{chat,leads}` as the
 pattern; reuse the foundation in `v2/{hooks,config,lib,shared,providers}`; mount a route shell under
@@ -99,7 +113,10 @@ client-chat efefedc → (docs 063b101) → web/leads 110948d → (docs dd5749b) 
 web/projects 3216f31 → web/accounting ea088f9 → web/calendar 97f0138 →
 web/contracts 1fd3f16 → (docs 8ff3b12) → web/image-sessions(foundation) 5a44477 →
 web/permissions-mirror 127f414 → web/foundation(dashboard/notifications/utilities/courses/
-questions/sales-stages/reviews/users/admin-residual) 42d62f9
+questions/sales-stages/reviews/users/admin-residual) 42d62f9 → (docs 57a3c00) →
+(ux-plan 2ae94fc) → redesign-Phase0(shell+primitives) 07e3a5e → redesign-Wave A
+(notifications/users/dashboard) 6ae4cf4 → (docs 68b7666) → Wave B(adminResidual/reviews/
+utilities) 3c04234 → Wave C(image-sessions/courses) f7c6a43 → Wave D(lead-context tools) b63ba3e
 ```
 Baseline / rollback point: `9406978` ("merged").
 ✅ FE migration COMPLETE (full features + foundations). NEXT phase = UX/UI redesign.
