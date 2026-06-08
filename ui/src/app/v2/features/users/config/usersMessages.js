@@ -27,6 +27,7 @@ export const usersMessages = {
   AUTO_ASSIGNMENTS_UPDATED: "تم تحديث التعيينات التلقائية",
   USER_MAX_LEADS_UPDATED: "تم تحديث الحد الأقصى للعملاء",
   USER_MAX_LEADS_PER_DAY_UPDATED: "تم تحديث الحد الأقصى اليومي للعملاء",
+  USER_STAFF_EXTRA_FETCHED: "تم جلب بيانات الموظف",
 
   // ── users: errors / scope / guards ────────────────────────────────────────────────
   USER_NOT_FOUND: "المستخدم غير موجود",

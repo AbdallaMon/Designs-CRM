@@ -21,6 +21,9 @@ export const dashboardMessages = {
   FORBIDDEN: "لا تملك صلاحية تنفيذ هذا الإجراء",
   ACCESS_DENIED: "لا تملك صلاحية الوصول",
   VALIDATION_ERROR: "بيانات غير صحيحة",
+
+  // ── client-side widget fallbacks (no BE code) — shown by per-widget ErrorState ────
+  WIDGET_LOAD_FAILED: "تعذّر تحميل هذا القسم",
 };
 
 /**
