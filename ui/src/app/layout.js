@@ -78,8 +78,12 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  // Single-language Arabic / RTL app (legacy + v2). This is the nearest layout that controls
+  // <html>; the v2 (v2-features) routes render under it, so the document root direction is set
+  // here once for the whole app (UX plan §2 a11y — root lang/dir). The v2 feature layouts also
+  // set dir="rtl" on their Box for the emotion-RTL cache, which remains correct.
   return (
-    <html>
+    <html lang="ar" dir="rtl">
       <head>
         <link rel="icon" href="/favicon.ico" />
       </head>

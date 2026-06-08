@@ -1,33 +1,10 @@
 "use client";
 
-import createCache from "@emotion/cache";
-import { CacheProvider } from "@emotion/react";
-import rtlPlugin from "stylis-plugin-rtl";
-import { Box } from "@mui/material";
-import { MUIProvider } from "@/app/v2/providers/MUIProvider";
-import { ToastProvider } from "@/app/v2/providers/ToastProvider";
-import { AuthProvider } from "@/app/v2/providers/AuthProvider";
+// v2 authed feature route shell → delegates to the shared AuthedAppLayout (provider stack +
+// persistent AppShell). The previously duplicated per-feature provider stack now lives in ONE
+// place; this file is intentionally a one-liner. Arabic, RTL, single-language.
+import AuthedAppLayout from "@/app/v2/shared/layout/AuthedAppLayout";
 
-const rtlCache = createCache({ key: "muirtl", stylisPlugins: [rtlPlugin] });
-
-/**
- * Self-contained v2 calendar route shell (AUTHED staff surface). Composes the v2 provider
- * stack (RTL emotion cache + v2 theme + v2 Toast + v2 Auth) so the calendar feature runs on
- * the canonical v2 layer WITHOUT entangling the legacy dashboard providers/nav (strangler
- * isolation). Mirrors the accounting/leads layout exactly. Arabic, RTL, single-language.
- */
-export default function V2CalendarLayout({ children }) {
-  return (
-    <CacheProvider value={rtlCache}>
-      <MUIProvider>
-        <ToastProvider>
-          <AuthProvider>
-            <Box dir="rtl" sx={{ direction: "rtl", minHeight: "100vh" }}>
-              {children}
-            </Box>
-          </AuthProvider>
-        </ToastProvider>
-      </MUIProvider>
-    </CacheProvider>
-  );
+export default function Layout({ children }) {
+  return <AuthedAppLayout>{children}</AuthedAppLayout>;
 }

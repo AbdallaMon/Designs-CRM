@@ -58,6 +58,12 @@ const colors = {
   shadow: "rgba(42, 34, 26, 0.08)", // Softer, more natural shadows
   shadowDark: "rgba(42, 34, 26, 0.16)", // Deeper shadows with warmth
   shadowStrong: "rgba(42, 34, 26, 0.24)", // For elevated components
+
+  // Accessible on-light PRIMARY TEXT token. The brand caramel `primary` (#d4a574) on white
+  // is ≈1.8:1 — it FAILS WCAG 4.5:1 for text. Keep `primary` for fills/accents/borders, and
+  // use this darker caramel whenever the brand color must carry TEXT on a light surface
+  // (≈4.6:1 on #ffffff). Do NOT use `primary` for text. (UX plan §2 / §0 a11y gap.)
+  primaryTextOnLight: "#8a6224",
 };
 export const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 export const STATUS_COLORS = {

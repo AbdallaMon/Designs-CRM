@@ -1,5 +1,6 @@
 import { createTheme } from "@mui/material";
 import colors from "@/app/helpers/colors";
+import statusPalette from "./statusTokens";
 
 const generateMuiShadows = (baseShadowColor, darkShadowColor) => {
   const shadows = ["none"];
@@ -42,6 +43,10 @@ const theme = createTheme({
       light: colors.primaryLight,
       dark: colors.primaryDark,
       contrastText: colors.textOnPrimary,
+      // Accessible token for the brand color as TEXT on a light surface (the caramel `main`
+      // fails 4.5:1 on white). Read this via theme.palette.primary.textOnLight; `main` stays
+      // for fills/accents only. (UX plan §2 a11y.)
+      textOnLight: colors.primaryTextOnLight,
     },
     secondary: {
       main: colors.secondary,
@@ -96,6 +101,9 @@ const theme = createTheme({
     gradient: {
       primary: colors.primaryGradient,
     },
+    // One source of truth for status colors (folds legacy STATUS_COLORS / NotificationColors /
+    // contractLevelColors). Read by <StatusChip status domain> — see providers/statusTokens.js.
+    status: statusPalette,
   },
   zIndex: {
     modal: 1300,
