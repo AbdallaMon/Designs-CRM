@@ -166,6 +166,22 @@ export const CONTRACT_PERMISSIONS = {
   SPECIAL_ITEM_MANAGE: "contract.special_item.manage",
 };
 
+// Image-sessions module. Byte-matches the backend @dms/shared IMAGE_SESSION_PERMISSIONS
+// values (packages/shared/constants/access/permissions.constants.js). TWO authed surfaces:
+//   • ADMIN reference-data CRUD (global studio config — admins see all; the ADMIN_* code is
+//     the gate, NO per-record object scope by design).
+//   • SHARED lead-scoped session management (every authed role holds SESSION_* via the legacy
+//     SHARED gate; the BE enforces lead scope per record via the leads-module checker — the
+//     session dto emits NO capabilities.*, so gate authed actions on these CODES only).
+// The PUBLIC client image-selection surface is UNGATED (the per-session token IS the auth)
+// and has NO permission code.
+export const IMAGE_SESSION_PERMISSIONS = {
+  ADMIN_VIEW: "image_session.admin.view", // GET space/templates/material/style/colors/images/page-info(/ids)
+  ADMIN_MANAGE: "image_session.admin.manage", // create/update/delete/reorder reference data
+  SESSION_VIEW: "image_session.session.view", // GET /:clientLeadId/sessions (lead-scoped read), GET /ids
+  SESSION_MANAGE: "image_session.session.manage", // create/edit/regenerate/delete a lead's session (lead-scoped write)
+};
+
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
   CHAT: CHAT_PERMISSIONS,
@@ -180,6 +196,7 @@ export const PERMISSIONS = {
   ACCOUNTING: ACCOUNTING_PERMISSIONS,
   CALENDAR: CALENDAR_PERMISSIONS,
   CONTRACT: CONTRACT_PERMISSIONS,
+  IMAGE_SESSION: IMAGE_SESSION_PERMISSIONS,
 };
 
 export function splitPermissionCode(code) {

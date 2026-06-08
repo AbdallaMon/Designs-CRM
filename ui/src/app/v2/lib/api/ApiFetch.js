@@ -223,8 +223,15 @@ class ApiFetch {
           body: self._serializeBody(body),
           _skipRefresh: true,
         }),
-      delete: (path) =>
-        self._request(path, { method: "DELETE", _skipRefresh: true }),
+      delete: (path, body) =>
+        self._request(path, {
+          method: "DELETE",
+          // body is OPTIONAL — most public deletes carry none. The image-session public
+          // image delete (§5c) requires the session token in the DELETE body, so we forward
+          // a serialized body when provided (the BE .strict() schema reads { token }).
+          body: body === undefined ? undefined : self._serializeBody(body),
+          _skipRefresh: true,
+        }),
     };
   }
 }
