@@ -182,6 +182,109 @@ export const IMAGE_SESSION_PERMISSIONS = {
   SESSION_MANAGE: "image_session.session.manage", // create/edit/regenerate/delete a lead's session (lead-scoped write)
 };
 
+// ── Foundation-phase mirrors (Option A): the data-layer permission codes for the
+// remaining FE features. Screens land in the UX-redesign phase; these gate them when built.
+// All values byte-match the backend @dms/shared blocks of the same name.
+
+// Courses / LMS — admin authoring surface (COURSE_*) + staff learner surface (STAFF_COURSE_*).
+export const COURSE_PERMISSIONS = {
+  VIEW: "course.view", // list courses, dashboard, course detail reads
+  MANAGE: "course.manage", // create/edit course, lessons, videos, pdfs, links, tests, questions
+  ACCESS_MANAGE: "course.access.manage", // grant/revoke LessonAccess, view allowed users/roles
+  ATTEMPT_MANAGE: "course.attempt.manage", // increase/decrease attempts, approve answers, attempt summaries
+};
+
+export const STAFF_COURSE_PERMISSIONS = {
+  VIEW: "staff_course.view", // browse courses/lessons/tests, dashboard, progress, own attempts
+  TAKE: "staff_course.take", // mark lesson complete, submit homework, create attempt, submit answer, end attempt
+};
+
+// Users / admin user-management. DIRECTORY is a broad authed pick-list; the rest are
+// admin-tier. PROFILE_* are object-scope checked (self OR admin-tier) by the BE.
+export const USER_PERMISSIONS = {
+  DIRECTORY: "user.directory", // GET /directory , /related-chat-directory
+  PROFILE_VIEW: "user.profile.view", // GET /:userId/profile
+  PROFILE_EDIT: "user.profile.edit", // PUT /:userId/profile
+  LIST: "user.list", // GET /users , /all-users , /:userId/profile (admin view)
+  VIEW_LOGS: "user.view_logs", // GET /:userId/logs (today notifications)
+  VIEW_LAST_SEEN: "user.view_last_seen", // GET /:userId/last-seen (monthly activity)
+  CREATE: "user.create", // POST /users
+  UPDATE: "user.update", // PUT /:userId , PATCH /:userId (status), staff-extra
+  MANAGE_ROLES: "user.manage_roles", // PUT /:userId/roles
+  MANAGE_RESTRICTED_COUNTRIES: "user.manage_restricted_countries", // GET|POST /:userId/restricted-countries
+  MANAGE_AUTO_ASSIGNMENTS: "user.manage_auto_assignments", // GET|PUT /:userId/auto-assignments
+  SET_MAX_LEADS: "user.set_max_leads", // PUT /max-leads/:userId , /max-leads-per-day/:userId
+  MANAGE_STAFF_EXTRA: "user.manage_staff_extra", // PATCH /:userId/staff-extra
+};
+
+// Notifications — own notifications only (BE self-scopes to the caller).
+export const NOTIFICATION_PERMISSIONS = {
+  LIST: "notification.list", // GET own notifications (paginated, all + unread)
+  MARK_READ: "notification.mark_read", // POST /v2/notifications/actions/mark-read (own latest)
+};
+
+// Utilities — cross-cutting helper reads (fixed-data, user-logs, role/admin pick-lists,
+// image-session model pick-lists, global search). See §5c: model pick-list names changed.
+export const UTILITY_PERMISSIONS = {
+  FIXED_DATA_LIST: "utility.fixed_data.list", // GET /fixed-data
+  USER_LOG_VIEW: "utility.user_log.view", // GET /user-logs (self-scoped — no userId param)
+  USER_LOG_SUBMIT: "utility.user_log.submit", // POST /user-logs
+  USER_ROLE_VIEW: "utility.user_role.view", // GET /users/role/:userId , GET /roles
+  ADMIN_LIST: "utility.admin.list", // GET /users/admins
+  IMAGE_LIST: "utility.image.list", // GET /images
+  MODEL_READ: "utility.model.read", // GET / (image-session model) , GET /ids (model ids)
+  SEARCH: "utility.search", // GET /utilities/search
+};
+
+// Dashboard — a single read code; the BE scopes each of the 9 aggregations per request.
+export const DASHBOARD_PERMISSIONS = {
+  VIEW: "dashboard.view",
+};
+
+// Questions (lead-scoped session questions + global question-type config).
+export const QUESTION_PERMISSIONS = {
+  CONFIG_VIEW: "question.config.view", // GET question-types (+ default seeding) — global config
+  SESSION_VIEW: "question.session.view", // GET session-questions / versa (lead-scoped reads)
+  ANSWER_SUBMIT: "question.answer.submit", // POST answer / answer/bulk (lead-scoped writes)
+  CUSTOM_CREATE: "question.custom.create", // POST custom-question (lead-scoped write)
+  VERSA_MANAGE: "question.versa.manage", // POST versa, PUT versa step (lead-scoped writes)
+};
+
+// Sales-stages (lead-scoped stage advance/rollback).
+export const SALES_STAGE_PERMISSIONS = {
+  VIEW: "sales_stage.view", // GET stages for a lead (lead-scoped read)
+  MANAGE: "sales_stage.manage", // advance / roll back a lead's sales stage (lead-scoped write)
+};
+
+// Reviews (Google Business reviews read + OAuth connect).
+export const REVIEW_PERMISSIONS = {
+  VIEW: "review.view", // GET locations / reviews (read Google Business data)
+  CONNECT: "review.connect", // GET auth-url / oauth callback (initiate / complete OAuth)
+};
+
+// Admin/staff residual (the ADMIN-tier residual sweep: reports, admin leads, commissions,
+// fixed-data writes, admin-projects aggregation, model-archive). 🔒 pdfkit reports frozen.
+export const ADMIN_RESIDUAL_PERMISSIONS = {
+  REPORT_GENERATE: "admin_residual.report.generate", // POST /reports/lead-report(/excel|/pdf), /reports/staff-report(/excel|/pdf)
+  LEAD_IMPORT: "admin_residual.lead.import", // POST /leads/excel (bulk import)
+  LEAD_CREATE: "admin_residual.lead.create", // POST /new-lead
+  LEAD_EDIT: "admin_residual.lead.edit", // POST /leads/update/:id
+  LEAD_DELETE: "admin_residual.lead.delete", // DELETE /client-leads/:id (base-role ADMIN only — BE gate)
+  CLIENT_EDIT: "admin_residual.client.edit", // PUT /client/update/:clientId (client-keyed)
+  TELEGRAM_MANAGE: "admin_residual.telegram.manage", // POST /client-leads/:leadId/telegram/new , /assign-users
+  FIXED_DATA_MANAGE: "admin_residual.fixed_data.manage", // POST/PUT/DELETE /fixed-data
+  COMMISSION_VIEW: "admin_residual.commission.view", // GET /commissions
+  COMMISSION_MANAGE: "admin_residual.commission.manage", // POST /commissions , PUT /commissions/:id
+  PROJECT_VIEW: "admin_residual.project.view", // GET /projects (leads-with-projects aggregation)
+  PROJECT_GROUP_CREATE: "admin_residual.project.group_create", // POST /projects/create-group
+  MODEL_ARCHIVE: "admin_residual.model.archive", // PATCH /model/archived/:id
+};
+
+// Staff residual (the one staff-tier residual read).
+export const STAFF_PERMISSIONS = {
+  LATEST_CALLS_VIEW: "staff.latest_calls.view", // GET /dashboard/latest-calls
+};
+
 export const PERMISSIONS = {
   AUTH: AUTH_PERMISSIONS,
   CHAT: CHAT_PERMISSIONS,
@@ -197,6 +300,17 @@ export const PERMISSIONS = {
   CALENDAR: CALENDAR_PERMISSIONS,
   CONTRACT: CONTRACT_PERMISSIONS,
   IMAGE_SESSION: IMAGE_SESSION_PERMISSIONS,
+  COURSE: COURSE_PERMISSIONS,
+  STAFF_COURSE: STAFF_COURSE_PERMISSIONS,
+  USER: USER_PERMISSIONS,
+  NOTIFICATION: NOTIFICATION_PERMISSIONS,
+  UTILITY: UTILITY_PERMISSIONS,
+  DASHBOARD: DASHBOARD_PERMISSIONS,
+  QUESTION: QUESTION_PERMISSIONS,
+  SALES_STAGE: SALES_STAGE_PERMISSIONS,
+  REVIEW: REVIEW_PERMISSIONS,
+  ADMIN_RESIDUAL: ADMIN_RESIDUAL_PERMISSIONS,
+  STAFF: STAFF_PERMISSIONS,
 };
 
 export function splitPermissionCode(code) {
