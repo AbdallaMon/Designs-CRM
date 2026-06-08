@@ -1,234 +1,289 @@
-# Dream Studio — UX & Layout Improvement Plan
+# Dream Studio — UX/UI Redesign Master Plan
 
-> Forward-looking UX plan to ride alongside the architecture migration. Read-only analysis; no code changed.
-> Companion to `docs/migration/01-current-audit.md`. Date: 2026-06-06 · Branch: `server-migration`
-> Stack: Next.js 16 App Router · React 19 · MUI v7 · Emotion + `stylis-plugin-rtl` · Arabic-first RTL · custom `ApiFetch` (no axios), custom tables (no MUI X DataGrid).
+> Authoritative redesign plan (supersedes the 2026-06-06 forward-looking stub). Aligned with
+> `07-decisions-resolved.md`. Date: **2026-06-08** · Branch: `server-migration`.
+>
+> Stack verified in code: Next.js 16 App Router · React 19 · MUI v7 + Emotion +
+> `stylis-plugin-rtl` · single-language **Arabic / RTL** · custom `ApiFetch` (no axios) ·
+> MUI `<Table>` (no DataGrid).
+>
+> **Build philosophy (user "Option A", 2026-06-08):** the 11 foundation features have a
+> working, fixed data spine (`service → hook → permission gate → message resolver`) behind a
+> deliberate "wiring smoke-screen" UI. The redesign is **purely presentational** on top of a
+> fixed contract — no API/wiring/schema changes. Each redesigned screen, when it lands,
+> **retires its matching legacy `@<role>` slot** (per-screen legacy removal, not a big cutover).
 
-> **Decision note (added in synthesis):** The project has decided to **drop the bilingual i18n layer** and ship a **single Arabic (RTL)** UI. Where this plan says "i18n keys / `translate()` / next-intl", read it as **"a single-language Arabic string source (message-code map), no language toggle"**. The structural recommendations (role clarity, IA, states) are unaffected. See `04-frontend-plan.md` §5 for the i18n removal plan and `06-reconciliation.md`.
+## 0. Ground truth (what actually exists today)
 
-## Executive summary
+- **`usePermission()` is built and reads real codes** (`ui/src/app/v2/hooks/usePermission.js`):
+  `hasPermission`, `hasAnyPermission`, `hasAllPermissions`, `hasPermissionByModule`, off
+  `user.permissions[]` / `user.permissionsByModule{}`. **No role-fallback shim** (decision #4) —
+  gate on codes only.
+- **The FE permission mirror is complete** for all 23 modules
+  (`ui/src/app/v2/config/permissions.js`). Use `PERMISSIONS.<MODULE>.<CODE>`.
+- **Seven features have full redesigned-style screens** (the visual/interaction baseline to copy):
+  chat, siteUtility, leads (`LeadsPage.jsx` list + `leadsDetails/LeadDetailsPage.jsx` URL-tab
+  detail), projects/tasks, accounting (`AccountingPage.jsx` — `?view=` permission-gated tabs),
+  calendar (+ `PublicBookingPage.jsx`), contracts (`ContractDetailPage.jsx` +
+  `PublicContractSignPage.jsx`).
+- **Eleven foundation features have a proven data spine but only "wiring smoke-screen" UI**
+  (e.g. `DashboardPage.jsx` renders `JSON.stringify`, `UsersPage.jsx` is a bare table). Each has a
+  single-caller `*.service.js`, a `config/constant.js` documenting the exact endpoint contract, a
+  `config/*Messages.js` CODE→Arabic resolver, and a permission gate.
+- **No app shell exists yet**; v2 feature pages are standalone components **not yet wired into App
+  Router `page.jsx` files**. Wiring the shell + routes is net-new work.
+- **The legacy IA is 7 parallel `@<role>` route slots**
+  (`ui/src/app/(auth)/dashboard/(dashboard)/@admin|@staff|@super_admin|@super_sales|@accountant|@threeD|@twoD|@contact_initiator/...`)
+  with hardcoded English link arrays + a nested role ternary. This is what we collapse into ONE
+  permission-gated shell.
+- **Theme is solid** (`ui/src/app/v2/providers/theme.js` + `ui/src/app/helpers/colors.js`): caramel
+  palette, Noto Kufi Arabic type scale, generated shadows, custom `xxl` breakpoint, MUI overrides.
+  Gaps: no `theme.palette.status.*`; `primary #d4a574` on white ≈ 1.8:1 (fails text contrast —
+  accent/fill only).
 
-Dream Studio is a complex multi-role workflow system (admin, super-admin, super-sales, staff, 3D/2D designers, executor, accountant, contact-initiator, plus client-facing) where the dominant UX failure is **role and orientation ambiguity**: users land on a role-specific parallel route with no on-screen statement of who they are, where they are, or what to do next. Navigation is hardcoded per role in English labels inside an Arabic-first RTL app (`layout.jsx:34-288`), switched by a brittle nested ternary, with no permission/capability layer (`usePermission` does not exist yet). The token system is solid (caramel palette in `colors.js`, full MUI theme in `v2/providers/theme.js`) but status colors are fragmented across three maps, and the document root lacks `lang`/`dir`. This plan prioritizes (P0) a role-aware app shell with persistent identity, breadcrumbs, and a config-/permission-driven nav, plus standardized screen states; (P1) per-flow redesign of login, dashboards, leads, contracts, image-sessions, chat; (P2) polish and density. Every recommendation is compatible with the `features/<x>` + `usePermission` model and lands feature-by-feature, not big-bang.
-
----
-
-## 0. Current state — what exists and where it falls short
-
-**Reusable building blocks (keep and build on):**
-- Token system: `ui/src/app/helpers/colors.js` (caramel/cognac palette, status maps) + full MUI theme `ui/src/app/v2/providers/theme.js` (palette, typography scale, shadows, component overrides, custom `xxl` breakpoint).
-- v2 feature scaffold: `ui/src/app/v2/features/auth/*` (clean service/validation/constants/components/pages/hooks), `ui/src/app/v2/features/leads/*` (partial), `ui/src/app/v2/shared/form/{AuthForm,FormField}.jsx`, `ui/src/app/v2/hooks/{useRequest,useToast,useLoading,useOverlay,useUpload}.js`, feedback overlays in `ui/src/app/v2/shared/components/feedback/*`.
-- Providers: `ui/src/app/v2/providers/*` (Auth, Language, LanguageSwitcher with RTL Emotion cache, MUI, Socket, Toast, Uploading).
-- App shell: `ui/src/app/UiComponents/utility/Navbar.jsx` (top AppBar + overflow "More" menu + mobile drawer).
-
-**Where it falls short (cited):**
-- **No role/orientation signal.** `(auth)/dashboard/(dashboard)/layout.jsx:289-360` selects a parallel route by role via a deeply nested ternary, renders `Navbar` + content, but nothing tells the user their role, name, or current location. `if (!user || !user.activeRole) return null;` (line 303) renders a blank screen during auth validation — no loading state.
-- **Nav is hardcoded, English, role-coupled.** `layout.jsx:34-288` defines `adminLinks`, `staffLinks`, etc. as static English arrays ("Dashboard", "Work stages", "Quantity calcualtion department" [sic]) in an Arabic-first RTL app. Role→links and role→content are two separate ternaries that can drift.
-- **No permission layer on the FE.** Grep for `usePermission|hasPermission|capabilities` returns nothing. Visibility is role-string only — incompatible with the audit's permission-code target (§6) and impossible to gate per-action.
-- **Anchor-based nav** (`component="a"` / `href`) causes full reloads instead of client transitions; active state is `pathname.includes(link.active)` (fragile substring match) — `Navbar.jsx:99`.
-- **Overflow nav by pixel math.** `Navbar.jsx:59-77` estimates 140px/link to decide overflow — unreliable for variable-length Arabic labels.
-- **`console.log(user, "suer")` left in the layout** (`layout.jsx:302`).
-- **Client app is a redirect stub** — `ClientPage.jsx` just `window.location.href = "https://ahmadmobayed.com/"`; the client-facing booking/contract/image-session flows live elsewhere and need their own role-clarity treatment.
-- **Status color fragmentation:** `STATUS_COLORS`, `NotificationColors`, `contractLevelColors` are three separate hex maps in `colors.js` outside the theme, none tied to `theme.palette`.
-- **Root `<html>` lacks `lang`/`dir`** (audit §1) — RTL applied only at Emotion/MUI layer, hurting SSR/screen-reader correctness.
-
----
-
-## 1. Per-role journey maps & "what do I do now?" moments
-
-For every role, the shell must always answer: **Who am I? Where am I? What's my job here? What's next?** Below: each role's primary job, where they get lost today, and the target guided moment.
-
-### 1.1 Admin / Super-Admin
-- **Primary job:** oversee the pipeline — leads → deals → contracts → projects/work-stages → payments; manage users; read reports.
-- **Gets lost:** lands on a generic dashboard with no "what needs me now"; nav has ~9 top items + nested work-stage sublinks with near-identical icons (`FiBriefcase` repeated) and typo labels; no breadcrumb when deep in `deals/[id]` or `work-stages/study`.
-- **Target moment:** dashboard opens with an **"Needs your attention"** action queue (unassigned leads, contracts awaiting countersign, overdue payments, stalled projects), each row a one-click deep link. Persistent breadcrumb + section title on every inner page.
-
-### 1.2 Super-Sales / Staff (sales)
-- **Primary job:** work assigned leads through sales stages, log calls/notes, push toward contract.
-- **Gets lost:** "Leads" vs "Deals" vs "On hold" vs "All deals" distinction is unexplained; no indication which leads are *mine and due today*. Super-sales differs from staff only by an extra "Users" link (`superSalesLinks`, `layout.jsx:194-197`) — the elevated capability is invisible.
-- **Target moment:** dashboard = **"My day"**: leads needing a call today, leads with no activity in N days, next scheduled meetings. Each lead detail header states the **current sales stage** and the single next action ("Log call outcome" / "Send price offer").
-
-### 1.3 3D / 2D Designers & Executor
-- **Primary job:** progress assigned work-stages/tasks (study, 3D, modification, final plan, quantity) to the next status.
-- **Gets lost:** designer nav is a flat "Work stages" with sub-departments; no sense of *which task is blocking* or *what's assigned to me vs the team*. Status transitions aren't framed as "your next step."
-- **Target moment:** dashboard = **"My tasks"** grouped by status (To do / In progress / Blocked / Done) with the primary CTA being the status advance. Task detail shows a stage stepper so the designer sees where the project is in the pipeline.
-
-### 1.4 Accountant
-- **Primary job:** track payments (paid/overdue/3D-status), expenses, rents, salaries, monthly outcome.
-- **Gets lost:** landing route is `/dashboard` = "Payments" (`accountantLinks[0]`, `layout.jsx:266`) but the heading won't say so; overdue vs paid vs outcome are separate pages with no summary roll-up.
-- **Target moment:** dashboard = **financial summary cards** (overdue total, due this week, this month's outcome) each linking to its filtered list; clear "Record payment" primary action.
-
-### 1.5 Contact-Initiator
-- **Primary job:** the narrowest role — initiate first contact on new leads (single nav item, `contactInitiatorLinks`, `layout.jsx:191-193`).
-- **Gets lost:** with one screen and no framing, it's unclear this is a triage queue.
-- **Target moment:** a focused **"New leads to contact"** queue with one action per row; explicit empty state ("No new leads right now").
-
-### 1.6 Client (client-facing app)
-- **Primary job:** complete a booking, review/sign a contract, complete an image/design session.
-- **Gets lost:** currently a redirect stub; the real flows (booking lead, contract signing → PDF, image-session approval → PDF) need a guided, linear, RTL experience with explicit progress and a single CTA per step.
-- **Target moment:** a **stepper-driven wizard** ("Step 2 of 4 — Choose your style") with a persistent "what happens after I submit" line, signature/PDF confirmation, and a clear success screen ("Your contract is signed — a copy has been emailed to you").
-
-> **Cross-role principle:** every dashboard's hero is an **action queue / "needs you" list**, not a passive chart wall. Charts are secondary.
+### Decisions baked in (from `07`)
+- API base is permanent `/v2`; lists return `{ items, total, page, pageSize }`; scoped lists attach
+  per-record `capabilities.*`; **gate on permission code + capability, never role**. Display-only
+  `activeRole`/`isSuperSales` exist on `auth/me` for the role chip.
+- Client surfaces (booking, contracts, image-session) live **in this app under a `(public)` route
+  group**, token-based, ungated.
+- Collapse the `@<role>` slots into one permission-gated nav **during the shell/foundation step**.
 
 ---
 
-## 2. Information architecture & app shell
+## 1. Information architecture & app shell (P0 — unblocks everything)
 
-### 2.1 Target IA model: capability-driven, not role-coupled
-Replace the two role ternaries (`layout.jsx`) with **one declarative nav config** filtered by permission capabilities. Keep the existing parallel-route structure if desired, but drive *visibility* from capabilities so the model matches the backend permission migration (audit §6).
+### 1.1 One capability-driven nav, not seven role slots
 
-Proposed shape (lives in `v2/features/shell/nav.config.js` or per-feature `*.nav.js` merged at the shell):
-```
-{ key, labelKey, href, icon, capability, children?, group }
-```
-- `labelKey` → single-language Arabic string key (never a raw inline string), resolved via the message-code map.
-- `capability` → checked by a new `usePermission()` hook (see §8). If absent, item is hidden — same predicate that gates the page and the action button, so nav never offers something the user can't do.
-- `group` → section grouping in the side nav (e.g. "Sales", "Production", "Finance", "Admin").
+Single declarative config `ui/src/app/v2/features/shell/nav.config.js`:
+`{ key, labelKey, href, icon, permission|anyPermission[], group, children? }`
 
-### 2.2 App shell layout (P0)
-Move from a top-only AppBar to a **persistent side-nav + top context bar** shell — standard for dense multi-role tools and far better for an 9-item admin nav than horizontal overflow math.
+- `labelKey` resolves through the Arabic message map (no inline visible strings in logic).
+- An item renders **iff** `usePermission().hasPermission(permission)` (or `hasAnyPermission`) — the
+  **same predicate that gates the page and the action button**. Nav never offers a 403.
+- `group` buckets the side-nav into role-meaningful sections; each persona sees only their groups.
+
+**Proposed groups → items → gate** (codes verified in `permissions.js`):
+
+| Group (Arabic) | Item | Route | Gate |
+|---|---|---|---|
+| الرئيسية | لوحة التحكم | `/v2/dashboard` | `dashboard.view` |
+| | الإشعارات | `/v2/notifications` | `notification.list` |
+| | المحادثات | `/v2/chat` | `chat.room.list` |
+| المبيعات | العملاء المحتملون | `/v2/leads` | `lead.list` |
+| | المشاريع (إدارة) | `/v2/admin/projects` | `admin_residual.project.view` |
+| | العمولات | `/v2/admin/commissions` | `admin_residual.commission.view` |
+| الإنتاج | المشاريع | `/v2/projects` | `project.list` |
+| | المهام | `/v2/tasks` | `task.list` |
+| | جلسات الصور | lead tab + `/v2/image-sessions/admin` | `image_session.session.view` / `image_session.admin.view` |
+| المالية | المحاسبة | `/v2/accounting` | any `accounting.*` |
+| | العقود — الدفعات | `/v2/contracts/payments` | `contract.payment.list` |
+| التعلّم | دوراتي | `/v2/my-courses` | `staff_course.view` |
+| | إدارة الدورات | `/v2/courses` | `course.view` |
+| الإدارة | المستخدمون | `/v2/users` | `user.list` |
+| | إعدادات الموقع | `/v2/site-utilities` | `site_utility.pdf_config.view` |
+| | المراجعات | `/v2/reviews` | `review.view` |
+| | التقارير | `/v2/admin/reports` | `admin_residual.report.generate` |
+| | أدوات | `/v2/utilities` | any `utility.*` |
+
+Lead-scoped sub-tools (sales-stages, questions/SPIN/VERSA, image-sessions, contracts) are **not
+top-level nav** — they live as **tabs inside the lead/project detail** (matching how
+`LeadDetailsPage.jsx` already composes tabs). Biggest IA simplification: production/sales tools
+reach the user *in context of the record*, not as orphan menu items.
+
+### 1.2 Shell layout
+
+Persistent **side-nav (start side, RTL = right) + top context bar**, replacing the top-only AppBar
+overflow nav (`Navbar.jsx`).
 
 ```
 RTL (start = right):
-+----------------------------------------------------------+
-|  TopBar: [logo]      breadcrumb > section > item   [bell][role][profile]|
-+--------------+-------------------------------------------+
-| SideNav      |  Page header: H1 + role chip + primary CTA |
-| (grouped,    |-------------------------------------------|
-|  capability- |  Content (list / detail / wizard)          |
-|  filtered)   |                                            |
-|  - Sales     |                                            |
-|  - Production|                                            |
-|  - Finance   |                                            |
-+--------------+-------------------------------------------+
++------------------------------------------------------------------+
+| TopBar: [logo]   breadcrumb: قسم ‹ صفحة      [bell][roleChip][me] |
++----------------+-------------------------------------------------+
+| SideNav        | PageHeader: H1 + roleChip + [primary CTA]       |
+| (grouped,      |-------------------------------------------------|
+|  capability-   | Content (list / detail-tabs / wizard)           |
+|  filtered)     |                                                 |
++----------------+-------------------------------------------------+
 ```
-- **Side nav** is the primary IA; collapses to icon-rail on `md`, to a temporary drawer on `xs` (reuse the existing `Drawer` pattern from `Navbar.jsx:488`).
-- **TopBar** holds: logo (start), breadcrumb (center-start), and identity cluster (end): notifications (`NotificationIcon`), role switcher (`SignInWithDifferentUserRole`, currently hidden for ADMIN — `Navbar.jsx:480`), profile, logout.
-- Use Next `<Link>` (client transitions), not `component="a"` — fixes full reloads.
-- Active state from `usePathname()` + exact/segment match, not `.includes(substring)`.
 
-### 2.3 Persistent identity & orientation (the non-negotiable, P0)
-At all times the shell shows:
-1. **Role chip** in the page header (e.g. "محاسب" / "مدير") — derived from `user.activeRole`, with the active sub-role / `isSuperSales` reflected so elevated capability is visible.
-2. **Breadcrumb** in the TopBar reflecting section > subsection > item.
-3. **Page H1** naming the screen in plain Arabic.
-4. **Primary CTA** top-end of the header, one per screen, capability-gated.
+- Side-nav: full on `lg+`, icon-rail on `md`, temporary `Drawer` on `xs`.
+- TopBar identity cluster (end): `NotificationBell` (live unread from `notifications.service`),
+  **role chip** (`activeRole` + `isSuperSales`), profile/logout.
+- Next `<Link>` client transitions; active state from `usePathname()` exact/segment match.
+- `(public)` client surfaces get a **minimal logo-only header** (no nav, no auth).
 
----
+### 1.3 Persistent orientation (non-negotiable)
 
-## 3. Key screen redesign directions (structure, not pixels) + states
-
-Standardize **five states** for every data screen via shared components (`v2/shared/components/states/*`): `Loading`, `Empty`, `Error`, `PartialPermission`, `Success`. These replace the current `return null` blank screens.
-
-### 3.0 Standard state contract (reusable, P0)
-- **Loading:** skeletons matching final layout (table rows / card grid / form), never a blank or a bare spinner. Replace `layout.jsx:303 return null` with a shell skeleton.
-- **Empty:** icon + plain-Arabic explanation + the single primary action ("لا توجد عملاء محتملون بعد — أضف أول عميل"). Role-aware copy.
-- **Error:** what failed + a retry button; uses the `useRequest`/toast error path already present.
-- **Partial-permission:** show what the user *can* see; for blocked actions render a disabled control with a tooltip reason, or hide entirely (never a dead button). Drives off the same `usePermission` predicate.
-- **Success:** explicit confirmation + the next step ("تم التوقيع — أُرسلت نسخة إلى بريدك").
-
-### 3.1 Login / Auth (`v2/features/auth/*`) — mostly there, P1
-- Current `LoginForm.jsx` uses English `title="Login"` / `submitLabel="Login"` — switch to Arabic strings. Wrap in `AuthLayout` with the studio logo and a one-line value statement.
-- States: idle, submitting (disable + spinner on button), error (field + form-level message from the envelope `message`/`translationKey`, audit §api-contract), locked/too-many-attempts (rate-limited path exists in `auth.middleware`). After success → role-appropriate dashboard with a brief "Welcome, {name}" toast.
-
-### 3.2 Role dashboards (`UiComponents/DataViewer/dashbaord/Dashboard.jsx`, currently shared via `@admin/page.jsx`) — P1
-- Restructure to: **(1) "Needs your attention" action queue** (top, role-specific), **(2) summary KPI cards** (secondary), **(3) charts** (tertiary). Each queue item deep-links with the next action.
-- States: loading (card skeletons), empty ("All clear — nothing needs you right now"), partial-permission (only the cards the role's capabilities allow), error (retry).
-
-### 3.3 Leads / Booking flow — P1 (highest sales traffic)
-- **Staff list:** one config-driven table (custom table, since no MUI X DataGrid) with **status chips from a single token map** (§7), owner, last-activity age, and a row-level next-action. Filters: my leads / due today / stage. Reuse `v2/features/leads` constants (`bookingLeadFieldLabels.js`).
-- **Lead detail:** header = client name + **sales-stage stepper** + current-stage chip + single primary CTA ("سجّل نتيجة المكالمة" / "أرسل عرض السعر"); tabs for notes, calls, files, payments.
-- **Client booking wizard:** linear stepper, one decision per step, "Step X of Y" + "what happens next", explicit submit confirmation.
-- States: empty ("لا توجد عملاء محتملون"), partial-permission (staff sees only assigned leads; the unassigned bucket hidden unless capability), error, success (lead created → "تم — العميل أُسند إلى …").
-
-### 3.4 Contract + PDF flow — P1 (high stakes PDF)
-- **Contract detail:** a **stage progress header** (draft → sent → signed → countersigned) so both staff and client always see where the contract is. Payment schedule, drawings, special items in clearly separated sections. Primary CTA changes with status ("أرسل للعميل" → "بانتظار توقيع العميل" (disabled, informational) → "وقّع واعتمد").
-- **Client signing:** focused page — contract summary, scroll-to-sign affordance, signature pad, explicit "By signing you agree…" line; on submit show a **blocking progress state** ("جارٍ إنشاء العقد الموقّع…") because PDF generation is currently inline/synchronous (audit §3A) — the user must not think it hung.
-- States: generating-PDF (long-running, informative progress, not a frozen button), error ("Couldn't generate the document — retry"), success ("تم التوقيع — أُرسلت نسخة إلى بريدك") with download links, partial-permission (client sees sign action only when it's their turn).
-
-### 3.5 Image / Design sessions — P1
-- **Client session:** stepper across spaces (materials → style → color pattern → images per space), live "selections so far" summary, progress indicator. Final approval → signature → PDF, same long-running/success pattern as contracts.
-- **Admin/staff gallery** (`@admin/image-sessions`): filterable grid with session-status chips and a clear per-session next action.
-- States: loading (image-grid skeletons), empty per space ("لم تختر بعد"), error (image load fallback + retry), success (session approved → PDF), partial-permission.
-
-### 3.6 Chat — P1 (feature dir exists but empty: `v2/features/chat`)
-- Standard 3-pane RTL layout (rooms list · message thread · optional details), mirrored for RTL (list on the right). Empty state when no room selected ("اختر محادثة للبدء"). Clear unread/typing/presence affordances. Reuse `SocketProvider`.
-- States: connecting (socket), empty (no rooms / no messages), error (reconnecting banner — there is reconnect logic server-side per commit `5c05183`), success (sent/delivered/read ticks).
+Every authed screen answers **who am I / where am I / what now**: (1) role chip in PageHeader;
+(2) breadcrumb in TopBar; (3) page H1 in plain Arabic; (4) one primary CTA, header end-aligned,
+capability-gated.
 
 ---
 
-## 4. Role-clarity patterns (apply everywhere)
+## 2. Global patterns (build once in `v2/shared/components`, reuse everywhere)
 
-1. **Role chip + name** persistent in the page header; reflects `activeRole` and elevated flags (`isSuperSales`, active sub-role).
-2. **Breadcrumbs** on every inner route (section > subsection > item).
-3. **Status chips from one token map** (§7) — every workflow entity (lead, contract, project/task, payment, session) shows its status the same way everywhere.
-4. **One primary action per screen**, top-end of the header, plain-language, capability-gated; secondary actions de-emphasized (text/outlined).
-5. **Stage steppers** on lead, contract, project, and session detail so the user always sees *where the entity is* and *what comes next*.
-6. **Capability-aware affordances:** if `usePermission` says no, hide the item or disable-with-reason — never a button that errors. Same predicate gates nav, page, and button (single source of truth).
-7. **Role-aware empty states** that name the role's next action.
-8. **Next-step confirmations** in every success state.
-
----
-
-## 5. Layout, visual hierarchy & RTL density
-
-- **Hierarchy:** action-first dashboards (queue > KPIs > charts); detail pages lead with identity + status + next action, then secondary detail in tabs/sections.
-- **Spacing scale:** standardize on the MUI 8px spacing unit already in `theme.js`; page padding `p: 3` desktop / `p: 2` mobile; section gap `gap: 3`; card content `p: 2`. Tables: comfortable default row height; offer a compact density toggle for data-heavy accountant/admin lists.
-- **Logical properties for RTL:** use MUI logical `sx` (`ms`/`me`, `paddingInlineStart/End`, `textAlign: 'start'`) — not hardcoded `ml`/`mr`/`left`/`right` (the current `Navbar.jsx` uses `mr`, `ml`, and `anchor="left"`, which are LTR-biased even with the rtl plugin). Mirror directional icons (chevrons) for RTL.
-- **Typography:** keep `Noto Kufi Arabic`; honor the existing type scale in `theme.js`; ensure numerals/dates render consistently (dayjs already present) and currency via a shared `formatAED` helper.
-- **MUI alignment:** continue using theme component overrides; promote shared cards/sections/state components into `v2/shared/components` so features compose rather than re-style.
-
----
-
-## 6. Accessibility & RTL correctness (WCAG 2.2 AA)
-
-- **P0 — Document root:** set `<html lang="ar" dir="rtl">` in `layout.js` (audit §1 notes it's missing) so SSR, screen readers, and native form controls get direction right, not just Emotion.
-- **Contrast:** verify caramel-on-white and chip text. `primary #d4a574` on white is ~1.8:1 — **fails** for text/icons; only use it as a fill behind dark text or for large/decorative elements, and define a dedicated accessible "primary action text" token. Audit `textMuted #9a8e82` on light backgrounds (borderline). Status chips must meet 4.5:1 for their label.
-- **Focus:** visible focus ring on all interactive elements (the anchor-based nav and icon buttons need verification); logical focus order in RTL; trap focus in dialogs/wizard steps.
-- **Keyboard:** the hover-only submenu in `Navbar.jsx:103-127` is mouse-dependent — submenus must open/close and be navigable via keyboard. Move to `<Link>`-based, keyboard-operable disclosure.
-- **Target size:** 24×24 CSS px min (2.2 AA); ensure icon buttons in the top cluster and table row actions meet it.
-- **Forms:** every field labeled (not placeholder-only); errors announced via `aria-describedby`; tie to the envelope `translationKey`.
-- **Status not by color alone:** chips carry text labels (already true in `BookingLeadDetailsCard.jsx`), keep that everywhere.
-- **Live regions:** chat messages, toast, and long-running PDF progress announced politely.
+- `<PageHeader title roleChip primaryAction breadcrumbs />`
+- `<SectionCard title actions>` (theme `MuiCard`, radius 12)
+- `<DataTablePage>` — the leads-list pattern extracted (toolbar search + filter Selects,
+  `<Table size="small">`, `<TablePagination labelRowsPerPage="عدد الصفوف">`, capability-gated row
+  actions, the five states). **Canonical list pattern** — no parallel table.
+- `<UrlTabs>` — the `?tab=`/`?view=` pattern (tab set filtered by capability, active tab in the URL).
+- `<StatusChip status domain="lead|contract|payment|task|session" />` — one component reading a new
+  `theme.palette.status.*` map (folds scattered `STATUS_COLORS`). Always carries a text label.
+- `<StageStepper stages current />` — MUI `Stepper`, RTL-mirrored (lead sales-stages, contract
+  lifecycle, image-session steps).
+- **Five canonical states** (`v2/shared/components/states/*`): Loading (skeletons matching layout),
+  Empty (icon + plain-Arabic explanation + single next-action CTA, role-aware), Error (plain cause +
+  retry off `useRequest` error + the resolver), PartialPermission (show what the role can see; block
+  actions hidden/disabled-with-reason, never a 403 button), Success (explicit confirmation + next step).
+- **Create/edit modal**: `AppForm` + react-hook-form, opened via `useOverlay`, success → toast
+  (`useToast` + message-code resolver) → list `refetch()`. Mirror the leadsDetails dialogs.
+- **RTL**: logical props only (`ms`/`me`, `paddingInlineStart/End`, `textAlign:'start'`), mirror
+  directional icons, `Drawer anchor="right"`.
+- **Toast/feedback**: every mutation resolves its envelope `message` CODE → Arabic toast; long ops
+  (PDF) show a blocking progress state, not a frozen button.
+- **A11y (WCAG 2.2 AA)**: root `<html lang="ar" dir="rtl">`; target size ≥ 24×24px (2.5.8); visible
+  focus ring ≥ 3:1 (2.4.13); focus not obscured by sticky TopBar (2.4.11); status/toasts as live
+  regions (4.1.3); add an accessible on-light primary-text token (caramel fails 4.5:1).
 
 ---
 
-## 7. Design-system / token direction
+## 3. Per-feature screen inventory (foundation features)
 
-- **Single source of truth:** fold the scattered status maps into the theme. Add a `theme.palette.status.*` (lead statuses, contract statuses, payment statuses, task statuses) and a `theme.palette.contractLevel.*`, deriving from semantic tokens where possible instead of raw arbitrary hex (`STATUS_COLORS`/`NotificationColors` currently use generic Material hexes unrelated to the caramel brand). Provide one `<StatusChip status={…} domain="lead|contract|payment|task" />`.
-- **Spacing/radius/elevation:** already coherent in `theme.js` (radius 8, cards 12, shadow scale generated). Keep; document the scale; stop ad-hoc `boxShadow` strings in components (e.g. the literal shadows in `Navbar.jsx:255`) in favor of `theme.shadows`.
-- **Typography tokens:** the `theme.js` scale is good; enforce via variants, ban inline `fontSize` overrides in features.
-- **Component variants:** define canonical variants once — `PageHeader`, `SectionCard`, `StatusChip`, `ActionQueueItem`, `Stepper`, `EmptyState`, `DataTable` wrapper — in `v2/shared/components`, all theme-driven. Goal: rebuilt features add **zero** new one-off styles.
-- **Color-contrast remediation token:** add an accessible on-light primary text color so brand caramel can be used as accent without failing contrast.
+For each: screens, key states, gates (verified), service fns consumed, reusable pattern.
+**Bespoke flows flagged ★.**
+
+### 3.1 Dashboard — `/v2/dashboard`
+Service `dashboard.service.js` (9 reads, all `dashboard.view`; BE self-scopes; admin may pass `staffId`).
+Role-adaptive home, **action-queue-first**: "يحتاج انتباهك" queue (`getLatestLeads` +
+`getRecentActivities` + role rows, each a deep link to its next action); KPI cards (`getKeyMetrics`);
+leads status (`getLeadsStatus`); designer board (`getDesignerMetrics`); charts (monthly/week/emirates/
+overview) tertiary. Filter: date range + (admin) `staffId`. States: skeleton cards; "كل شيء على ما
+يرام" empty queue; partial-permission shows only returned scope; per-widget error+retry.
+
+### 3.2 Notifications — `/v2/notifications`
+Service `notifications.service.js` (`list`/`listUnread`/`markRead`; self-scoped; paginated).
+Dropdown panel (bell) + full list with All/Unread `UrlTabs`. "تحديد الكل كمقروء" (`markRead`, empty
+body) gated `notification.mark_read`; row deep-links to source. Unread emphasis; empty "لا توجد
+إشعارات"; skeleton rows.
+
+### 3.3 Image-sessions — 3 surfaces ★
+Service `imageSessions.service.js`.
+1. **Admin reference-data CRUD** `/v2/image-sessions/admin` — `image_session.admin.view/manage`.
+   `UrlTabs` (images[paginated]/page-info/colors/spaces/materials/styles), each = `DataTablePage` +
+   modal. **★ Pros-&-cons reorder** (drag → `reorderProsCons` `POST /pros-and-cons/order`, optimistic
+   + revert-on-error; delete carries `{itemType}`).
+2. **Lead-scoped session management** — tab inside lead detail (`?tab=sessions`),
+   `image_session.session.view/manage`. `listSessions`/`createSession`/edit/delete; **regenerate
+   token** with "نسخ الرابط" + old-link-dies warning. Gate on codes (no `capabilities.*`).
+3. **★ Public client image-selection** `(public)/image-session?token=` — UNGATED, token IS auth.
+   Stepper wizard via `SESSION_STATUS_FLOW` (`imageSessionsConstants.js`): الألوان → الخامات → الطرز
+   → الصور لكل مساحة → معاينة → التوقيع → PDF. Token-authoritative saves; final signature pad →
+   `generatePdf({sessionData,signatureUrl,sessionStatus})` with **blocking "جارٍ إنشاء الملف…"**
+   (synchronous frozen PDF) → success + download. Mirror `PublicContractSignPage.jsx`.
+
+### 3.4 Courses / LMS — admin authoring + staff learner ★
+**Admin** `/v2/courses` (`course.view/manage/access.manage/attempt.manage`): course list +
+LMS dashboard; **course editor** (`UrlTabs`: Lessons/Tests/Access; lesson nests videos/video-PDFs/
+PDFs/links). **★ Question reorder** (`reorderQuestions`). **★ Access editor** (allowed roles + per-
+lesson grant/revoke). **★ Attempts admin** (summaries, +1/−1 attempt, per-answer `approveAnswer`).
+**Staff** `/v2/my-courses` (`staff_course.view/take`): catalogue + progress; lesson player →
+`markLessonComplete`; homework submit; **★ test-taker** (`startAttempt` → paged `getTestQuestions`,
+per-answer `submitAnswer` autosave, optional timer, `endAttempt`, result/"بانتظار التصحيح"; resume
+in-progress via `getAttempt`; UI attempt-limit but trust server). Note: the BE preserves the legacy
+misspelling `attampts` on some staff/admin paths — the service already encodes it faithfully.
+
+### 3.5 Questions (SPIN + VERSA) — lead-detail tabs ★
+Service `questions.service.js` (lead-scoped). **★ SPIN** (`?tab=spin`): type selector
+(`getQuestionTypes`), per-type list (`getSessionQuestions`), inline answer (`submitAnswer`) or **bulk**
+(`submitBulkAnswers`); custom question (`createCustomQuestion`). **★ VERSA** (`?tab=versa`): category
+list (`getVersaCategories`) → steps (`getVersaByCategory`); create (`createVersa`); edit step
+(`updateVersaStep`) as an editable objection→response accordion.
+
+### 3.6 Sales-stages — lead-detail header ★
+Service `salesStages.service.js` (`sales_stage.view/manage`). **★ Stage stepper** in the lead-detail
+header using `SALES_STAGE_TYPES` (10 stages). `advanceStage({key})` = primary CTA "المرحلة التالية:
+…"; `rollBackStage({currentStageType})` = secondary "رجوع" (via `POST /:clientLeadId/actions/set-stage`).
+`NOT_INITIATED` = pre-first hop.
+
+### 3.7 Reviews — `/v2/reviews`
+Service `reviews.service.js` (`review.view/connect`). **Frozen quirk**: OAuth redirect URI is a stale
+dev placeholder with empty creds — connect is effectively non-functional. Present read-only: location
+picker (`getLocations`) → reviews cards (`getReviews`). Empty/error must explain "الربط مع Google غير
+مُفعّل" gracefully.
+
+### 3.8 Users / admin user-management — `/v2/users` ★
+Service `users.service.js`. **List** (`listUsers`, paginated, rows carry `capabilities.*`):
+`DataTablePage`, search/filter, status chip, capability-gated row actions. **Create** modal
+(`createUser`). **★ User editor** (tabs): Profile (`getProfile`/`updateProfile`, self-or-admin);
+Account (`updateUser`, `changeStatus`); **Roles editor** (`manageRoles`, added/removed diff);
+**★ Auto-assignments** (`get/updateAutoAssignments`, dual-list); Restricted countries
+(`updateRestrictedCountries`); Max-leads/per-day (`setMaxLeads`/`setMaxLeadsPerDay`); **staff-extra**
+(`setStaffExtra` — `isPrimary`/`isSuperSales` toggles); Logs (`getUserLogs` — `user.view_logs`) +
+Last-seen (`getUserLastSeen` — `user.view_last_seen`). Capability-driven states.
+
+### 3.9 Utilities — `/v2/utilities`
+Service `utilities.service.js`. **★ Global search** (`search()` cross-model) usable from the TopBar;
+fixed-data list (`listFixedData`); daily user-log submit (`submitUserLog`); model/pick-list readers
+(`getModel`/`getModelIds`/`readModelLabel`, consumed by other features). Build search + user-log
+form; the rest are helpers.
+
+### 3.10 Admin residual — `/v2/admin/*` ★
+Service `adminResidual.service.js` (`admin_residual.*`, admin-tier). **★ Report builders**
+`/v2/admin/reports` (lead/staff: filter form → `generate*Data` preview → `generate*Excel`/`*Pdf`;
+**needs a net-new blob-download helper** around the JSON-only `ApiFetch`; frozen generators
+untouched). Admin leads ops (bulk `importLeads` multipart w/ progress, `createNewLead`,
+`updateLead`/`updateClient` dynamic edits, admin-only delete — **don't widen**, Telegram create/
+assign). Commissions (`listCommissions` + create/edit). Admin projects (`listAdminProjects` + create
+project-group). Fixed-data writes + model archive. Reuse `DataTablePage` + `AppForm`.
 
 ---
 
-## 8. Phased rollout (rides the architecture migration) + compatibility
+## 4. Role-journey maps (where the old slot UI lost people)
 
-**Compatibility contract:** every item below is additive and feature-scoped. It uses the existing `features/<x>` folder shape, `useRequest`/`ApiFetch`, the providers, and the theme; it introduces `usePermission` to match the backend permission migration (audit §6) without removing the role model. No big-bang.
-
-### P0 — Shell & primitives (do first, unblocks every feature)
-1. `usePermission()` + `capabilities` hook in `v2/hooks` (reads capabilities from `auth/me`; falls back to role mapping during transition so nothing breaks before backend permission codes land).
-2. Capability-/config-driven `nav.config` + new **AppShell** (side-nav + TopBar) replacing the dual ternary in `layout.jsx`; persistent role chip + breadcrumbs; Next `<Link>` transitions; remove `console.log` and the `return null` blank.
-3. Shared **state components** (`Loading/Empty/Error/PartialPermission/Success`) + `PageHeader`, `StatusChip`, `EmptyState`, `SectionCard`.
-4. A11y root fix: `<html lang dir>`; contrast remediation tokens; theme `status.*` palette.
-
-### P1 — Feature-by-feature redesign (in migration order)
-For each feature as its backend module migrates, rebuild the screen on the new primitives, in this priority: **Leads/Booking → Contracts/PDF → Image-sessions → Dashboards (per role) → Chat**. Each delivers: role-clarity header, the five states, capability-gated actions, RTL logical layout.
-
-### P2 — Polish & density
-Density toggle for data-heavy lists; keyboard/focus pass per screen; motion/reduced-motion; consolidate remaining ad-hoc shadows/font-sizes; remove legacy `Navbar.jsx` once all roles are on AppShell.
-
-**Per-feature definition of done (UX):** (a) user can state their role and location from the screen alone; (b) one obvious primary action; (c) all five states implemented; (d) actions/nav/page gated by the same `usePermission` predicate; (e) RTL logical spacing + AA contrast; (f) zero raw visible strings (single Arabic string source).
+| Persona | Journey | Old pain | Redesign fix |
+|---|---|---|---|
+| **Staff / Super-sales** | Dashboard "يومي" → leads (mine/due) → lead detail: SPIN/VERSA, stage stepper, calls/notes/offers → contract → image-session link | "Leads vs Deals vs On-hold" unexplained; no next step; super-sales power invisible | Stage stepper names the next action; staff-extra → "مبيعات أول" chip; one self-scoped leads screen |
+| **Designer / Executor** | Dashboard "مهامي" (todo/in-progress/blocked/done from `getDesignerMetrics`) → task detail w/ project stepper → advance status | Flat "Work stages", dup icons/typos; no "which blocks"; status change not framed | Kanban-by-status; status advance = primary CTA; project stepper |
+| **Accountant** | Finance cards → accounting `?view=` (payments/overdue/paid/expenses/rents/salaries/outcome) → record payment | Landing unlabeled; overdue/paid/outcome scattered | Mostly solved in `AccountingPage.jsx`; add finance-summary cards deep-linking each view |
+| **Contact-initiator** | "عملاء بانتظار التواصل" queue → one action/row | One screen, no framing | Role-aware queue copy + one CTA/row |
+| **Admin** | Dashboard "يحتاج انتباهك" → grouped nav → reports/commissions/users | Generic dashboard, flat nav, no breadcrumb | Action queue + grouped capability nav + breadcrumb |
+| **Client (public)** | Booking / e-sign / image-selection — linear, token-based, RTL | Redirect stub; unframed | Stepper wizards ("الخطوة X من Y") + signature/PDF confirmation + success — pattern proven in `PublicContractSignPage.jsx` |
 
 ---
 
-## Open questions for the user
+## 5. Phased build order (dependencies first; each redesigned screen retires its legacy slot)
 
-1. **Side-nav vs keep top-nav?** Recommended: a persistent grouped side-nav for the dense admin/accountant roles; confirm you're open to changing the shell from the current top-only AppBar.
-2. **Permission model timing:** is a capabilities list expected on `auth/me` soon, or should `usePermission` ship with a role→capability fallback map until the backend permission codes land?
-3. **Client-facing app scope:** the client app is currently a redirect stub (`ClientPage.jsx`) — are the booking/contract/image-session client flows in this same `ui/` app (under different routes) or a separate frontend? This determines where the client wizards live.
-4. **i18n target:** RESOLVED — drop i18n, single Arabic string source (message-code map), no language toggle. (Originally an open question; decided in brainstorming.)
-5. **Charts:** keep the existing dashboard charts (which lib?) as secondary, or is the action-queue-first dashboard a full replacement?
-6. **Role labels:** confirm the canonical Arabic display names for each `UserRole` (incl. sub-roles and `isSuperSales`) for the role chip.
+**Phase 0 — Shell & primitives (P0, blocks everything).** `nav.config.js` + `AppShell` (side-nav +
+TopBar + role chip + breadcrumbs); wire v2 feature pages into App Router `page.jsx`; `<html lang dir>`;
+the five state components; `PageHeader`/`SectionCard`/`StatusChip`/`StageStepper`/`DataTablePage`/
+`UrlTabs`; `theme.palette.status.*` + accessible-primary-text token. *Removal trigger:* once a route
+renders in the new shell, delete the matching `@<role>` slot.
 
-Relevant files: `ui/src/app/(auth)/dashboard/(dashboard)/layout.jsx`, `ui/src/app/UiComponents/utility/Navbar.jsx`, `ui/src/app/helpers/colors.js`, `ui/src/app/v2/providers/theme.js`, `ui/src/app/v2/providers/AuthProvider.jsx`, `ui/src/app/v2/features/auth/components/LoginForm.jsx`, `ui/src/app/v2/features/leads/components/BookingLeadDetailsCard.jsx`, `ui/src/app/v2/lib/constant.js`, `ui/src/app/UiComponents/client-page/ClientPage.jsx`.
+**Phase 1 — High-traffic, mostly-data screens:** Notifications, Users, Dashboard (action-queue + cards).
+
+**Phase 2 — Lead-context tools** (compose into lead-detail tabs): Sales-stages stepper, Questions
+(SPIN + VERSA), lead-scoped Image-sessions tab.
+
+**Phase 3 — Bespoke client + LMS flows:** Image-session client wizard ★, LMS test-taker ★ + admin
+authoring/attempts ★. Reuse the public-contract signature/PDF pattern.
+
+**Phase 4 — Admin residual** ★: report builders (+ blob-download helper), bulk import, commissions,
+admin-projects, fixed-data/archive. Plus Reviews and Utilities/global-search.
+
+**Per-screen Definition of Done (UX):** (a) user can state role + location from the screen alone;
+(b) one obvious primary action; (c) all five states; (d) nav + page + action share one `usePermission`
+predicate; (e) RTL logical spacing + AA contrast + ≥24px targets; (f) zero raw visible strings (Arabic
+message map); (g) the matching legacy `@<role>` slot is deleted.
+
+---
+
+## 6. Open questions for the user
+
+1. **Charts library** for the dashboard secondary tier — keep the legacy one or standardize?
+2. **Canonical Arabic role-chip labels** for each `UserRole` + sub-roles + `isSuperSales`.
+3. **Global search** (`utilities.search` in the TopBar) — Phase 1 or Phase 4?
+4. **Reviews** — confirm read-only presentation + a graceful "Google link not configured" state
+   rather than redesigning the frozen, non-functional OAuth connect.
