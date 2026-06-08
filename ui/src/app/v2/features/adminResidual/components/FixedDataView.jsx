@@ -1,0 +1,227 @@
+"use client";
+
+// <FixedDataView /> — the fixed-data WRITES surface + the generic model-archive toggle (UX plan
+// §3.10). The GET read lives in the utilities module (utility.fixed_data.list) so we reuse the
+// utilities SERVICE for the read; the WRITES (create/update/delete) go through the adminResidual
+// service, gated on FIXED_DATA_MANAGE. A second card hosts the allow-listed model-archive toggle
+// (MODEL_ARCHIVE). Single-language Arabic / RTL.
+
+import { useCallback, useEffect, useState } from "react";
+import {
+  Box,
+  Button,
+  IconButton,
+  MenuItem,
+  Stack,
+  Switch,
+  TextField,
+  Tooltip,
+  FormControlLabel,
+} from "@mui/material";
+import { MdAdd, MdEdit, MdDelete, MdArchive } from "react-icons/md";
+import { usePermission } from "@/app/v2/hooks/usePermission";
+import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { DataTablePage, SectionCard } from "@/app/v2/shared/components";
+import { utilitiesService } from "@/app/v2/features/utilities/utilities.service.js";
+import { adminResidualService } from "../adminResidual.service.js";
+import { runAdminResidualMutation } from "../adminResidual.mutations.js";
+import { fixedDataColumns } from "../config/fixedDataColumns.js";
+import { adminResidualMessages } from "../config/adminResidualMessages.js";
+import { ARCHIVE_MODEL_OPTIONS } from "../config/adminResidualConstants.js";
+import { FixedDataDialog } from "./FixedDataDialog.jsx";
+
+const P = PERMISSIONS.ADMIN_RESIDUAL;
+
+export function FixedDataView() {
+  const { hasPermission } = usePermission();
+  const canManage = hasPermission(P.FIXED_DATA_MANAGE);
+  const canArchive = hasPermission(P.MODEL_ARCHIVE);
+
+  const [items, setItems] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [dialog, setDialog] = useState({ open: false, mode: "create", item: null });
+
+  const fetchList = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await utilitiesService.listFixedData();
+      const data = res?.data ?? {};
+      if (Array.isArray(data)) setItems(data);
+      else if (Array.isArray(data.items)) setItems(data.items);
+      else setItems([]);
+    } catch (e) {
+      setError(e?.data?.message || e?.message || "FETCH_FAILED");
+      setItems([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchList();
+  }, [fetchList]);
+
+  function openCreate() {
+    setDialog({ open: true, mode: "create", item: null });
+  }
+  function openEdit(row) {
+    setDialog({ open: true, mode: "edit", item: row });
+  }
+  function closeDialog() {
+    setDialog((d) => ({ ...d, open: false }));
+  }
+
+  async function onDelete(row) {
+    const res = await runAdminResidualMutation(
+      () => adminResidualService.deleteFixedData(row.id),
+      { loading: "جاري حذف البيان..." },
+    );
+    if (res) fetchList();
+  }
+
+  function renderRowActions(row) {
+    if (!canManage) return null;
+    return (
+      <>
+        <Tooltip title="تعديل">
+          <IconButton size="small" color="primary" onClick={() => openEdit(row)}>
+            <MdEdit />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="حذف">
+          <IconButton size="small" color="error" onClick={() => onDelete(row)}>
+            <MdDelete />
+          </IconButton>
+        </Tooltip>
+      </>
+    );
+  }
+
+  return (
+    <Stack spacing={3}>
+      <SectionCard
+        title="البيانات الثابتة"
+        actions={
+          canManage ? (
+            <Button variant="contained" color="primary" startIcon={<MdAdd />} onClick={openCreate}>
+              إضافة بيان
+            </Button>
+          ) : null
+        }
+        noPadding
+      >
+        <Box sx={{ p: 2 }}>
+          <DataTablePage
+            columns={fixedDataColumns}
+            rows={items}
+            total={items.length}
+            page={1}
+            pageSize={items.length || 10}
+            loading={isLoading}
+            error={error}
+            onRetry={fetchList}
+            errorResolver={adminResidualMessages}
+            getRowKey={(row) => row.id}
+            renderRowActions={canManage ? renderRowActions : undefined}
+            empty={{
+              title: "لا توجد بيانات ثابتة",
+              description: canManage ? "أضف أول بيان ثابت." : "لا توجد بيانات.",
+              action: canManage ? { label: "إضافة بيان", onClick: openCreate } : undefined,
+            }}
+          />
+        </Box>
+      </SectionCard>
+
+      {canArchive && <ModelArchiveCard />}
+
+      {canManage && (
+        <FixedDataDialog
+          open={dialog.open}
+          mode={dialog.mode}
+          item={dialog.item}
+          onClose={closeDialog}
+          onSaved={() => {
+            closeDialog();
+            fetchList();
+          }}
+        />
+      )}
+    </Stack>
+  );
+}
+
+// ── generic model-archive toggle (allow-listed `model` on the BE) ────────────────────────────
+function ModelArchiveCard() {
+  const [model, setModel] = useState(ARCHIVE_MODEL_OPTIONS[0].value);
+  const [id, setId] = useState("");
+  const [isArchived, setIsArchived] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function onSubmit(e) {
+    e.preventDefault();
+    const recordId = String(id ?? "").trim();
+    if (!recordId) return;
+    await runAdminResidualMutation(
+      () => adminResidualService.archiveModel(recordId, { model, isArchived }),
+      { loading: "جاري تحديث حالة الأرشفة...", setLoading: setSubmitting },
+    );
+  }
+
+  return (
+    <SectionCard
+      title="أرشفة نموذج"
+      subtitle="فعّل أو ألغِ أرشفة سجلّ من النماذج المسموح بها."
+    >
+      <Box component="form" onSubmit={onSubmit} noValidate>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          alignItems={{ xs: "stretch", sm: "center" }}
+          flexWrap="wrap"
+        >
+          <TextField
+            select
+            size="small"
+            label="النموذج"
+            value={model}
+            onChange={(e) => setModel(e.target.value)}
+            sx={{ minWidth: 200 }}
+          >
+            {ARCHIVE_MODEL_OPTIONS.map((o) => (
+              <MenuItem key={o.value} value={o.value}>
+                {o.label}
+              </MenuItem>
+            ))}
+          </TextField>
+          <TextField
+            size="small"
+            type="number"
+            label="معرّف السجل"
+            value={id}
+            onChange={(e) => setId(e.target.value)}
+            sx={{ minWidth: 160 }}
+          />
+          <FormControlLabel
+            control={
+              <Switch checked={isArchived} onChange={(e) => setIsArchived(e.target.checked)} />
+            }
+            label={isArchived ? "مؤرشَف" : "غير مؤرشَف"}
+          />
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            startIcon={<MdArchive />}
+            disabled={submitting}
+          >
+            تطبيق
+          </Button>
+        </Stack>
+      </Box>
+    </SectionCard>
+  );
+}
+
+export default FixedDataView;

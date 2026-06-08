@@ -21,6 +21,8 @@ export const utilitiesMessages = {
 
   // ── errors / domain rules ─────────────────────────────────────────────────────────
   MODEL_NOT_ALLOWED: "النموذج المطلوب غير مسموح به",
+  SEARCH_FAILED: "تعذّر تنفيذ البحث، حاول مرة أخرى",
+  USER_LOG_CHECK_FAILED: "تعذّر التحقق من سجل اليوم، حاول مرة أخرى",
 
   // ── generic envelope codes (shared) ──────────────────────────────────────────────
   OK: "تمت العملية بنجاح",
