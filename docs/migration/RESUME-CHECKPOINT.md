@@ -19,12 +19,38 @@ FE permission mirror completed `127f414`. Suite **571 tests / 34 files green**; 
 Reconciliation review (2 agents) over the whole foundation: **no blockers, no should-fixes** — paths/
 params/permission-strings/§5c-deltas all correct, nothing frozen/shared touched.
 
-**NEXT PHASE: UX/UI REDESIGN.** Per the user (2026-06-08, "Option A"): the redesign BUILDS each real
-screen once, directly on the v2 foundation (no throwaway 1:1 port of the bespoke legacy editors).
-Order: (1) shared-ui-ux-planner → redesign plan (app shell/nav, role clarity, per-feature screens);
-(2) shared-frontend → implement screens feature-by-feature on the foundation; (3) remove legacy
-per-screen AS each redesigned screen replaces it (NOT before — legacy still serves the un-redesigned
-screens + the @role-slot dashboard shell). Commit before & after each step.
+**CURRENT PHASE: UX/UI REDESIGN — IN PROGRESS.** Per the user (2026-06-08, "Option A" + "build straight
+through autonomously"): the redesign BUILDS each real screen once, directly on the v2 foundation.
+User answers (2026-06-08): charts standardized on **@mui/x-charts**; Reviews = **read-only + "not
+configured"** state; pacing = **build straight through, commit per feature**.
+
+REDESIGN PROGRESS:
+- ✅ Master plan: `docs/migration/05-ux-plan.md` (commit `2ae94fc`).
+- ✅ **Phase 0** (shell + nav + shared primitives + theme tokens) — commit `07e3a5e`. Built:
+  `v2/features/shell/` (nav.config.js capability-gated, AppShell = RTL side-nav + TopBar + role chip +
+  live NotificationBell), `v2/shared/components/` (PageHeader, SectionCard, DataTablePage, UrlTabs,
+  StatusChip, StageStepper, ChartCard, RoleChip + 5 states), `v2/shared/layout/{AuthedAppLayout,
+  PublicAppLayout}` (all 19 authed + 3 public feature layouts collapsed to one-liners), theme
+  `palette.status.*` + accessible text token, root `<html lang=ar dir=rtl>`, `@mui/x-charts ^8` added.
+- ✅ **Phase 1 (Wave A)** — Notifications, Users (+ new `usersDetails` editor), Dashboard. Commit `6ae4cf4`.
+- ⏭️ **REMAINING redesign waves** (build on the Phase 0 primitives; same per-feature loop → esbuild verify → commit):
+  - **Wave B (Phase 4, parallel — independent dirs):** adminResidual (report builders [+ a blob-download
+    helper for the frozen excel/pdf — add a NEW helper module, don't edit ApiFetch], commissions,
+    admin-projects, bulk import, fixed-data/archive, telegram), reviews (READ-ONLY + "الربط مع Google غير
+    مُفعّل"), utilities (global search + daily user-log form).
+  - **Wave C (Phase 3, parallel — independent dirs):** image-sessions (admin reference CRUD w/ pros-&-cons
+    drag-reorder; lead-scoped session PANEL component [for Wave D]; PUBLIC client wizard via
+    SESSION_STATUS_FLOW → signature → frozen sync PDF, mirror PublicContractSignPage), courses/LMS (admin
+    authoring + question reorder + access editor + attempts admin; staff catalogue + ★ test-taker w/ timer
+    + autosave + resume).
+  - **Wave D (Phase 2, SEQUENTIAL — all edit `leadsDetails`):** integrate into the EXISTING lead detail as
+    tabs: sales-stages StageStepper (advance/rollback via `/actions/set-stage`), questions SPIN+VERSA,
+    image-sessions session panel. Build the panel COMPONENTS in their feature dirs first (Wave C), then
+    one sequential agent wires them into `leadsDetails` to avoid conflicts.
+  - **Then: per-screen legacy `@role`-slot removal** (task #13) as each redesigned route lands, then the
+    final cutover (retire legacy routers + dual-cookie shim, rename ui/→web/, wire workspaces).
+- Known consolidation follow-up: `StatusChip` has no `notification`/`user` domain (Wave A used local
+  labelled chips) — consider promoting to first-class domains in `v2/providers/statusTokens.js`.
 
 FE method (the proven loop): build via shared-frontend (study `ui/src/app/v2/features/{chat,leads}` as the
 pattern; reuse the foundation in `v2/{hooks,config,lib,shared,providers}`; mount a route shell under
