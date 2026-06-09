@@ -115,11 +115,14 @@ export function validateLeadIdParam(leadIdParam) {
 
 export function validateCreateBookingLeadInput(payload) {
   const body = ensureObjectPayload(payload);
-
   return {
-    name: validateField("name", body.name, { required: true }),
-    phone: validateField("phone", body.phone, { required: true }),
+    name: body.name || "draft",
+    phone: body.phone || "+0123456789",
   };
+  // return {
+  //   name: validateField("name", body.name, { required: true }),
+  //   phone: validateField("phone", body.phone, { required: true }),
+  // };
 }
 
 export function validatePatchBookingLeadInput(payload) {

@@ -26,10 +26,10 @@ export async function convertALeadNotification(lead) {
   const user = await getUserDetailsWithSpecificFields(lead.userId);
   const notificationHtml = `<div>
     <a href="${userLink + user.id}">#${
-    user.name
-  }</a> has marked their lead <a href="${dealsLink + lead.id}">#${
-    lead.id
-  }</a> as overdue. It is now on hold for another user to take it.
+      user.name
+    }</a> has marked their lead <a href="${dealsLink + lead.id}">#${
+      lead.id
+    }</a> as overdue. It is now on hold for another user to take it.
 </div>`;
   await createNotification(
     null,
@@ -41,7 +41,7 @@ export async function convertALeadNotification(lead) {
     false,
     "HTML",
     null,
-    lead.userId
+    lead.userId,
   );
 }
 export async function overdueALeadNotification(convertedLead, newClientLead) {
@@ -67,21 +67,21 @@ Deal <a href="${dealsLink + convertedLead.id}" >#${
     false,
     "HTML",
     null,
-    newClientLead.userId
+    newClientLead.userId,
   );
 }
 export async function assignLeadNotification(
   clientLeadId,
   userId,
-  updatedClientLead
+  updatedClientLead,
 ) {
   const user = await getUserDetailsWithSpecificFields(userId);
   const notificationHtml = `<div>
     Lead <a href="${
       dealsLink + clientLeadId
     }" >#${clientLeadId}</a> assigned to user <a href="${userLink + userId}">#${
-    user.name
-  }</a> 
+      user.name
+    }</a> 
     </div>`;
 
   await createNotification(
@@ -94,7 +94,7 @@ export async function assignLeadNotification(
     false,
     "HTML",
     null,
-    Number(userId)
+    Number(userId),
   );
 }
 export async function assignMultipleLeadsNotification(leadIds, userId) {
@@ -117,22 +117,22 @@ export async function assignMultipleLeadsNotification(leadIds, userId) {
     true,
     "HTML",
     null,
-    Number(userId)
+    Number(userId),
   );
 }
 export async function assignWorkStageNotification(
   clientLeadId,
   userId,
   updatedClientLead,
-  type
+  type,
 ) {
   const user = await getUserDetailsWithSpecificFields(userId);
   const notificationHtml = `<div>
     Lead <a href="${
       dealsLink + clientLeadId
     }" >#${clientLeadId}</a> assigned to user <a href="${userLink + userId}">#${
-    user.name
-  }</a> 
+      user.name
+    }</a> 
     </div>`;
 
   await createNotification(
@@ -145,7 +145,7 @@ export async function assignWorkStageNotification(
     false,
     "HTML",
     null,
-    Number(userId)
+    Number(userId),
   );
 }
 export async function newNoteNotification(leadId, content, userId) {
@@ -166,7 +166,7 @@ export async function newNoteNotification(leadId, content, userId) {
     false,
     "HTML",
     null,
-    userId
+    userId,
   );
 }
 export async function newCallNotification(leadId, callReminder) {
@@ -191,7 +191,7 @@ export async function newCallNotification(leadId, callReminder) {
     false,
     "HTML",
     null,
-    callReminder.userId
+    callReminder.userId,
   );
 }
 export async function newMeetingNotification(leadId, meetingReminder) {
@@ -218,7 +218,7 @@ export async function newMeetingNotification(leadId, meetingReminder) {
     true,
     "HTML",
     null,
-    meetingReminder.userId
+    meetingReminder.userId,
   );
 }
 export async function newPriceOffer(leadId, priceOffer) {
@@ -240,7 +240,7 @@ export async function newPriceOffer(leadId, priceOffer) {
     false,
     "HTML",
     null,
-    priceOffer.user.id
+    priceOffer.user.id,
   );
 }
 export async function newFileUploaded(leadId, file, userId) {
@@ -267,7 +267,7 @@ export async function newFileUploaded(leadId, file, userId) {
     false,
     "HTML",
     null,
-    Number(userId)
+    Number(userId),
   );
 }
 export async function updateCallNotification(leadId, callReminder, userId) {
@@ -295,13 +295,13 @@ export async function updateCallNotification(leadId, callReminder, userId) {
     false,
     "HTML",
     null,
-    Number(userId)
+    Number(userId),
   );
 }
 export async function updateMettingNotification(
   leadId,
   meetingReminder,
-  userId
+  userId,
 ) {
   const notificationHtml = `<div>
        <strong>Meeting reminder</strong> updated in Lead <a href="${
@@ -327,7 +327,7 @@ export async function updateMettingNotification(
     false,
     "HTML",
     null,
-    Number(userId)
+    Number(userId),
   );
 }
 export async function updateLeadStatusNotification(
@@ -338,13 +338,13 @@ export async function updateLeadStatusNotification(
   userId,
   isAdmin,
   staffId,
-  sendToAdmin
+  sendToAdmin,
 ) {
   // if (!sendToAdmin && !userId) return;
   const notificationHtml = `<div>
        <strong>${heading}</strong> updated in Lead <a href="${
-    dealsLink + leadId
-  }" >#${leadId}</a> 
+         dealsLink + leadId
+       }" >#${leadId}</a> 
        <div class="sub-text">
   ${content}
 </div>
@@ -360,7 +360,7 @@ export async function updateLeadStatusNotification(
     sendToAdmin,
     "HTML",
     null,
-    staffId
+    staffId,
   );
 }
 export async function updateWorkStageStatusNotification(
@@ -371,18 +371,18 @@ export async function updateWorkStageStatusNotification(
   userId,
   isAdmin,
   staffId,
-  workType
+  workType,
 ) {
   if (!userId) return;
   const link = isAdmin
     ? workStagesLink
     : workType === "THREE_D"
-    ? threeDworkStageLink
-    : twoDworkStageLink;
+      ? threeDworkStageLink
+      : twoDworkStageLink;
   const notificationHtml = `<div>
        <strong>${heading}</strong> updated in Lead <a href="${
-    link + leadId
-  }" >#${leadId}</a> 
+         link + leadId
+       }" >#${leadId}</a> 
        <div class="sub-text">
   ${content}
 </div>
@@ -397,7 +397,7 @@ export async function updateWorkStageStatusNotification(
     true,
     "HTML",
     null,
-    staffId
+    staffId,
   );
 }
 export async function newLeadNotification(leadId, client, isAdmin) {
@@ -419,11 +419,12 @@ export async function newLeadNotification(leadId, client, isAdmin) {
     "New lead",
     false,
     "HTML",
-    leadId
+    leadId,
   );
 }
 export async function newClientLeadNotification(leadId, client, isAdmin) {
   const leadHref = `${dealsLink + leadId}`;
+  console.log(leadHref, "leadhref");
   const notificationHtml = `<div>
        <strong>New Client submit initial form</strong> <a href="${leadHref}" >#${leadId}</a> 
        <div class="sub-text">
@@ -441,7 +442,7 @@ export async function newClientLeadNotification(leadId, client, isAdmin) {
     "New lead",
     false,
     "HTML",
-    leadId
+    leadId,
   );
 }
 export async function newLeadCompletedNotification(leadId, client, isAdmin) {
@@ -463,7 +464,7 @@ export async function newLeadCompletedNotification(leadId, client, isAdmin) {
     "New lead",
     false,
     "HTML",
-    leadId
+    leadId,
   );
 }
 export async function leadPaymentSuccessed(leadId) {
@@ -485,7 +486,7 @@ export async function leadPaymentSuccessed(leadId) {
     "Payment process done successfully",
     false,
     "HTML",
-    leadId
+    leadId,
   );
 }
 
@@ -510,9 +511,9 @@ export async function finalizedLeadCreated(leadId, userId, type = "THREE_D") {
     type === "TWO_D"
       ? ["TWO_D_DESIGNER"]
       : type === "TWO_D_EXACUTER"
-      ? ["TWO_D_EXECUTOR"]
-      : ["THREE_D_DESIGNER", "ACCOUNTANT"],
-    true
+        ? ["TWO_D_EXECUTOR"]
+        : ["THREE_D_DESIGNER", "ACCOUNTANT"],
+    true,
   );
 }
 export async function newTaskCreatedNotification(
@@ -521,7 +522,7 @@ export async function newTaskCreatedNotification(
   projectId,
   title,
   isAdmin,
-  isModifcationTask
+  isModifcationTask,
 ) {
   const name = isModifcationTask ? "Modification" : "Task";
 
@@ -532,8 +533,8 @@ export async function newTaskCreatedNotification(
     : "";
   const notificationHtml = `<div>
        <strong>New ${name} created</strong><a href="${
-    taskLink + "/" + taskId
-  }" >#${taskId}</a> 
+         taskLink + "/" + taskId
+       }" >#${taskId}</a> 
        <div class="sub-text">
   A ${name} with title ${title} has been created with ${extra}
 </div>
@@ -550,7 +551,7 @@ export async function newTaskCreatedNotification(
     null,
     !isAdmin && userId ? userId : null,
     null,
-    false
+    false,
   );
 }
 
@@ -560,7 +561,7 @@ export async function updateTaskNotification(
   projectId,
   title,
   isAdmin,
-  isModifcationTask
+  isModifcationTask,
 ) {
   const name = isModifcationTask ? "Modification" : "Task";
 
@@ -571,8 +572,8 @@ export async function updateTaskNotification(
     : "";
   const notificationHtml = `<div>
      <strong>A ${name} has been updated</strong>${name} with id <a href="${
-    taskLink + "/" + taskId
-  }" >#${taskId}</a> 
+       taskLink + "/" + taskId
+     }" >#${taskId}</a> 
      <div class="sub-text">
 and with title ${title} has been updated ${extra}
 </div>
@@ -590,7 +591,7 @@ and with title ${title} has been updated ${extra}
     null,
     !isAdmin && userId ? userId : null,
     null,
-    false
+    false,
   );
 }
 
@@ -598,7 +599,7 @@ export async function updateProjectNotification(
   projectId,
   userId,
   content,
-  isAdmin
+  isAdmin,
 ) {
   const notificationHtml = `<div>
      <strong>A Project has been updated</strong> Project with id <a href="${
@@ -621,14 +622,14 @@ export async function updateProjectNotification(
     null,
     !isAdmin && userId ? userId : null,
     null,
-    false
+    false,
   );
 }
 
 export async function newProjectAssingmentNotification(
   projectId,
   userId,
-  content
+  content,
 ) {
   const notificationHtml = `<div>
      <strong>A Project has been assigned</strong> Project with id <a href="${
@@ -651,7 +652,7 @@ export async function newProjectAssingmentNotification(
     null,
     null,
     null,
-    false
+    false,
   );
 }
 
@@ -659,7 +660,7 @@ export async function sendPaymentSuccessEmail(
   clientEmail,
   clientName,
   leadId,
-  lng = "ar"
+  lng = "ar",
 ) {
   const completeRegistrationLink = `${process.env.ORIGIN}/register/complete?leadId=${leadId}&lng=${lng}`;
   const whatsappLink = "https://wa.me/+971585564778";
@@ -845,7 +846,7 @@ export async function sendPaymentSuccessEmail(
             <span>${step.description}</span>
             </div>
           </div>
-        `
+        `,
                )
                .join("")}
   
@@ -854,8 +855,8 @@ export async function sendPaymentSuccessEmail(
           
           <div style="text-align: center;">
             <a href="${completeRegistrationLink}" class="btn">${
-    langContent.buttonText
-  }</a>
+              langContent.buttonText
+            }</a>
           </div>
                     
           <p>${langContent.closing}</p>
@@ -887,7 +888,7 @@ export async function sendPaymentReminderEmail(
   clientEmail,
   clientName,
   sessionUrl,
-  lng = "ar" // Default to English if not specified
+  lng = "ar", // Default to English if not specified
 ) {
   // Generate payment link
   const paymentLink = sessionUrl;
@@ -1110,7 +1111,7 @@ export async function sendPaymentReminderEmailByStaff(
   clientEmail,
   clientName,
   sessionUrl,
-  lng = "ar" // Default to English if not specified
+  lng = "ar", // Default to English if not specified
 ) {
   // Generate payment link
   const paymentLink = sessionUrl;
@@ -1359,6 +1360,6 @@ export async function attemptFailedByUser({ testId, userId }) {
     true,
     "HTML",
     null,
-    userId
+    userId,
   );
 }

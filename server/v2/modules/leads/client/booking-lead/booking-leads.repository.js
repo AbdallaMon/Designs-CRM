@@ -116,6 +116,18 @@ export class BookingLeadsRepository {
       select: bookingLeadSelect,
     });
   }
+  async findByEmail(email) {
+    const normalizedEmail = normalizeForLookup(email);
+    if (!normalizedEmail) {
+      return null;
+    }
+    return prisma.clientLead.findFirst({
+      where: {
+        client: { email: normalizedEmail },
+      },
+      select: bookingLeadSelect,
+    });
+  }
 
   async updateStep({ leadId, clientId, leadData, clientData }) {
     return prisma.$transaction(async (tx) => {
