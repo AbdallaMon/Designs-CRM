@@ -27,7 +27,14 @@ export async function runContractMutation(
   try {
     const res = await fn();
     if (shouldAutoToast) {
-      toast.update(toastId, Success(resolveContractMessage(res?.message)));
+      toast.update(
+        toastId,
+        Success(
+          resolveContractMessage(res?.message, {
+            translationKey: res?.translationKey,
+          }),
+        ),
+      );
     }
     return res;
   } catch (e) {
@@ -35,7 +42,12 @@ export async function runContractMutation(
     if (shouldAutoToast) {
       toast.update(
         toastId,
-        Failed(resolveContractMessage(code, { fallback: "حدث خطأ، حاول مرة أخرى" })),
+        Failed(
+          resolveContractMessage(code, {
+            translationKey: e?.data?.translationKey,
+            fallback: "حدث خطأ، حاول مرة أخرى",
+          }),
+        ),
       );
     }
     return null;

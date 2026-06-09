@@ -19,18 +19,24 @@ export const SHARED_MESSAGES = {
   SERVER_ERROR: "حدث خطأ غير متوقع في الخادم",
 };
 
+import { resolveMessageCode } from "@/app/v2/data/resolveMessageCode.js";
+
 const DEFAULT_ERROR = "حدث خطأ ما، يرجى المحاولة مرة أخرى";
 
 /**
  * Resolve a backend message CODE (or a raw error string) to an Arabic display string.
+ * A feature `resolver` and the small SHARED_MESSAGES map win first (legacy behavior); any
+ * code they don't know delegates to the CENTRAL resolver — so cross-cutting core/auth/
+ * validation/prisma codes and other-module codes resolve to Arabic instead of leaking the
+ * raw code. `translationKey` (from the envelope) routes the central namespace lookup.
  * @param {string} code
- * @param {{ resolver?: Record<string,string>, fallback?: string }} [opts]
+ * @param {{ resolver?: Record<string,string>, fallback?: string, translationKey?: string }} [opts]
  *        resolver — a feature-specific CODE→Arabic map checked BEFORE the shared map.
  */
-export function resolveSharedMessage(code, { resolver, fallback } = {}) {
+export function resolveSharedMessage(code, { resolver, fallback, translationKey } = {}) {
   if (code && resolver && resolver[code]) return resolver[code];
   if (code && SHARED_MESSAGES[code]) return SHARED_MESSAGES[code];
-  // If the value is already human Arabic text (not an ALL_CAPS code), show it as-is.
-  if (code && !/^[A-Z0-9_]+$/.test(String(code))) return code;
-  return fallback ?? DEFAULT_ERROR;
+  // Central, comprehensive backstop (namespace-scoped then flat; handles human-text
+  // passthrough and never returns the raw code).
+  return resolveMessageCode(code, { translationKey, fallback: fallback ?? DEFAULT_ERROR });
 }

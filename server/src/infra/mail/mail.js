@@ -3,8 +3,8 @@ import { env } from "../../config/env.js";
 
 const transporter = nodemailer.createTransport({
   host: env.SMTP_HOST,
-  port: 587,
-  secure: false,
+  port: env.SMTP_PORT || 587,
+  secure: env.SMTP_SECURE || false, // true for 465, false for other ports
   auth: {
     user: env.EMAIL_USERNAME,
     pass: env.EMAIL_PASSWORD,

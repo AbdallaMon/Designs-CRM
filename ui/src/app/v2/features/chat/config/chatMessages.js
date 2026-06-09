@@ -27,13 +27,15 @@ export const chatMessages = {
   VALIDATION_ERROR: "بيانات غير صحيحة",
 };
 
+import { resolveMessageCode } from "@/app/v2/data/resolveMessageCode.js";
+
 /**
- * Resolve a backend message CODE to an Arabic display string. Falls back to a
- * sensible default rather than showing the raw code to end users.
+ * Resolve a backend message CODE to an Arabic display string. Feature Arabic wins first;
+ * unknown codes delegate to the CENTRAL resolver. `translationKey` routes the central lookup.
  * @param {string} code
- * @param {{ fallback?: string }} [opts]
+ * @param {{ fallback?: string, translationKey?: string }} [opts]
  */
-export function resolveChatMessage(code, { fallback } = {}) {
+export function resolveChatMessage(code, { fallback, translationKey } = {}) {
   if (code && chatMessages[code]) return chatMessages[code];
-  return fallback ?? "تمت العملية";
+  return resolveMessageCode(code, { translationKey, fallback });
 }

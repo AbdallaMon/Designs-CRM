@@ -65,12 +65,17 @@ export const leadsMessages = {
   VALIDATION_ERROR: "بيانات غير صحيحة",
 };
 
+import { resolveMessageCode } from "@/app/v2/data/resolveMessageCode.js";
+
 /**
- * Resolve a backend message CODE to an Arabic display string.
+ * Resolve a backend message CODE to an Arabic display string. Feature-specific Arabic wins
+ * first; anything unknown delegates to the CENTRAL resolver (so cross-cutting core/auth/
+ * validation/prisma codes — or another module's code — still render as Arabic instead of
+ * leaking the raw code). `translationKey` (from the envelope) routes the central lookup.
  * @param {string} code
- * @param {{ fallback?: string }} [opts]
+ * @param {{ fallback?: string, translationKey?: string }} [opts]
  */
-export function resolveLeadMessage(code, { fallback } = {}) {
+export function resolveLeadMessage(code, { fallback, translationKey } = {}) {
   if (code && leadsMessages[code]) return leadsMessages[code];
-  return fallback ?? "تمت العملية";
+  return resolveMessageCode(code, { translationKey, fallback });
 }

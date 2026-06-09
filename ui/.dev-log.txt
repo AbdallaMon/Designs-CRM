@@ -1,0 +1,684 @@
+
+> ui@0.1.0 dev
+> next dev --turbopack
+
+⚠ Port 3000 is in use by process 2636, using available port 3001 instead.
+▲ Next.js 16.2.7 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://8.8.8.105:3001
+- Environments: .env
+✓ Ready in 356ms
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\coding\design-managment-system\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\coding\design-managment-system\ui\package-lock.json
+
+
+ GET /v2/dashboard 200 in 2.2s (next.js: 1642ms, proxy.ts: 108ms, application-code: 471ms)
+ GET /v2/notifications 200 in 1182ms (next.js: 1046ms, proxy.ts: 4ms, application-code: 132ms)
+ GET /v2/users 200 in 957ms (next.js: 859ms, proxy.ts: 4ms, application-code: 93ms)
+ GET /v2/utilities 200 in 1034ms (next.js: 946ms, proxy.ts: 3ms, application-code: 85ms)
+ GET /v2/reviews 200 in 783ms (next.js: 715ms, proxy.ts: 3ms, application-code: 65ms)
+ GET /v2/courses 200 in 924ms (next.js: 828ms, proxy.ts: 3ms, application-code: 93ms)
+ GET /v2/my-courses 200 in 835ms (next.js: 758ms, proxy.ts: 3ms, application-code: 75ms)
+ GET /v2/image-sessions 200 in 958ms (next.js: 852ms, proxy.ts: 3ms, application-code: 103ms)
+ GET /v2/admin/reports 200 in 851ms (next.js: 752ms, proxy.ts: 4ms, application-code: 96ms)
+ GET /v2/admin/commissions 200 in 658ms (next.js: 592ms, proxy.ts: 3ms, application-code: 63ms)
+ GET /v2/client-image-session 200 in 897ms (next.js: 758ms, proxy.ts: 3ms, application-code: 137ms)
+ GET /v2/auth/me 404 in 403ms (next.js: 360ms, proxy.ts: 3ms, application-code: 40ms)
+  Reload env: .env
+✓ Compiled in 111ms
+ GET / 200 in 300ms (next.js: 51ms, proxy.ts: 41ms, application-code: 208ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.js">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="ar" dir="rtl">
+                          <head>
+                          <body
+                            className="noto_kufi_arabic_52de9839-module__6aZGyq__className"
+                            style={{backgroundColor:"#fcfaf7"}}
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+Image with src "/admin-background.jpg" is using quality "100" which is not configured in images.qualities [75]. Please update your config to [100, 75].
+Read more: https://nextjs.org/docs/messages/next-image-unconfigured-qualities
+Image with src "/admin-background.jpg" has legacy prop "layout". Did you forget to run the codemod?
+Read more: https://nextjs.org/docs/messages/next-image-upgrade-to-13
+Image with src "/admin-background.jpg" has legacy prop "objectFit". Did you forget to run the codemod?
+Read more: https://nextjs.org/docs/messages/next-image-upgrade-to-13
+ GET /login?redirect=%2Fdashboard 200 in 744ms (next.js: 644ms, proxy.ts: 3ms, application-code: 97ms)
+[browser] Image with src "/admin-background.jpg" is using quality "100" which is not configured in images.qualities [75]. Please update your config to [100, 75].
+Read more: https://nextjs.org/docs/messages/next-image-unconfigured-qualities
+[browser] Image with src "/admin-background.jpg" has legacy prop "layout". Did you forget to run the codemod?
+Read more: https://nextjs.org/docs/messages/next-image-upgrade-to-13
+[browser] Image with src "/admin-background.jpg" has legacy prop "objectFit". Did you forget to run the codemod?
+Read more: https://nextjs.org/docs/messages/next-image-upgrade-to-13
+ GET /reset 200 in 514ms (next.js: 457ms, proxy.ts: 7ms, application-code: 51ms)
+[browser] Image with src "/admin-background.jpg" is using quality "100" which is not configured in images.qualities [75]. Please update your config to [100, 75].
+Read more: https://nextjs.org/docs/messages/next-image-unconfigured-qualities
+[browser] Image with src "/admin-background.jpg" has legacy prop "layout". Did you forget to run the codemod?
+Read more: https://nextjs.org/docs/messages/next-image-upgrade-to-13
+[browser] Image with src "/admin-background.jpg" has legacy prop "objectFit". Did you forget to run the codemod?
+Read more: https://nextjs.org/docs/messages/next-image-upgrade-to-13
+ GET /reset?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzgwOTE2NjEyLCJleHAiOjE3ODA5MjAyMTJ9.NucMtBXvW3duMZBszdKp5JyYnmw1nrXFTVORZPXfsEc 200 in 66ms (next.js: 4ms, proxy.ts: 5ms, application-code: 58ms)
+[browser] Image with src "/admin-background.jpg" is using quality "100" which is not configured in images.qualities [75]. Please update your config to [100, 75].
+Read more: https://nextjs.org/docs/messages/next-image-unconfigured-qualities
+[browser] Image with src "/admin-background.jpg" has legacy prop "layout". Did you forget to run the codemod?
+Read more: https://nextjs.org/docs/messages/next-image-upgrade-to-13
+[browser] Image with src "/admin-background.jpg" has legacy prop "objectFit". Did you forget to run the codemod?
+Read more: https://nextjs.org/docs/messages/next-image-upgrade-to-13
+ GET /dashboard 200 in 99ms (next.js: 31ms, proxy.ts: 3ms, application-code: 66ms)
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 662ms (next.js: 4ms, proxy.ts: 3ms, application-code: 655ms)
+ GET /dashboard 200 in 13ms (next.js: 4ms, proxy.ts: 3ms, application-code: 7ms)
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 94ms (next.js: 5ms, proxy.ts: 4ms, application-code: 85ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/dashboard" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.js">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="ar" dir="rtl">
+                          <head>
+                          <body
+                            className="noto_kufi_arabic_52de9839-module__6aZGyq__className"
+                            style={{backgroundColor:"#fcfaf7"}}
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+ GET /dashboard 200 in 12ms (next.js: 4ms, proxy.ts: 2ms, application-code: 5ms)
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 103ms (next.js: 5ms, proxy.ts: 3ms, application-code: 95ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/dashboard" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.js">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="ar" dir="rtl">
+                          <head>
+                          <body
+                            className="noto_kufi_arabic_52de9839-module__6aZGyq__className"
+                            style={{backgroundColor:"#fcfaf7"}}
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+ GET /dashboard 200 in 14ms (next.js: 5ms, proxy.ts: 3ms, application-code: 6ms)
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 111ms (next.js: 8ms, proxy.ts: 3ms, application-code: 99ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/dashboard" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.js">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="ar" dir="rtl">
+                          <head>
+                          <body
+                            className="noto_kufi_arabic_52de9839-module__6aZGyq__className"
+                            style={{backgroundColor:"#fcfaf7"}}
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+ GET /dashboard 200 in 29ms (next.js: 9ms, proxy.ts: 12ms, application-code: 8ms)
+ GET /login?redirect=%2Fdashboard 200 in 64ms (next.js: 2ms, proxy.ts: 3ms, application-code: 59ms)
+[browser] Image with src "/admin-background.jpg" is using quality "100" which is not configured in images.qualities [75]. Please update your config to [100, 75].
+Read more: https://nextjs.org/docs/messages/next-image-unconfigured-qualities
+[browser] Image with src "/admin-background.jpg" has legacy prop "layout". Did you forget to run the codemod?
+Read more: https://nextjs.org/docs/messages/next-image-upgrade-to-13
+[browser] Image with src "/admin-background.jpg" has legacy prop "objectFit". Did you forget to run the codemod?
+Read more: https://nextjs.org/docs/messages/next-image-upgrade-to-13
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/login" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.js">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="ar" dir="rtl">
+                          <head>
+                          <body
+                            className="noto_kufi_arabic_52de9839-module__6aZGyq__className"
+                            style={{backgroundColor:"#fcfaf7"}}
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 84ms (next.js: 4ms, proxy.ts: 4ms, application-code: 75ms)
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/dashboard" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.js">
+                      <SegmentTrieNode>
+                      <link>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <RootLayout>
+                        <html lang="ar" dir="rtl">
+                          <head>
+                          <body
+                            className="noto_kufi_arabic_52de9839-module__6aZGyq__className"
+                            style={{backgroundColor:"#fcfaf7"}}
+-                           cz-shortcut-listen="true"
+                          >
+                  ...
+ 
+ GET /dashboard 200 in 64ms (next.js: 20ms, proxy.ts: 10ms, application-code: 33ms)
+ GET /dashboard 200 in 63ms (next.js: 30ms, proxy.ts: 10ms, application-code: 24ms)
+ GET /dashboard 200 in 63ms (next.js: 38ms, proxy.ts: 10ms, application-code: 16ms)
+[browser] Uncaught TypeError: Cannot read properties of undefined (reading 'length')
+    at NotificationsIcon (src/app/UiComponents/utility/NotificationIcon.jsx:219:24)
+    at Navbar (src/app/UiComponents/utility/Navbar.jsx:481:13)
+    at Layout (src/app/(auth)/dashboard/(dashboard)/layout.jsx:315:9)
+  217 |           )}
+  218 |         </List>
+> 219 |         {notifications.length > 0 && (
+      |                        ^
+  220 |           <Button
+  221 |             sx={{
+  222 |               display: "flex",
+[browser] Uncaught NotFoundError: Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.
+    at div (<anonymous>)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async useChatRooms.useCallback[fetchRooms] (src/app/UiComponents/DataViewer/chat/hooks/useChatRooms.js:62:24)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async useChatRooms.useCallback[fetchRooms] (src/app/UiComponents/DataViewer/chat/hooks/useChatRooms.js:62:24)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async fetchData (src/app/UiComponents/DataViewer/dashbaord/KeyMetricsCard.jsx:176:23)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async fetchData (src/app/UiComponents/DataViewer/dashbaord/LeadsMonthlyOverviewSingle.jsx:104:19)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async fetchData (src/app/UiComponents/DataViewer/dashbaord/LeadStatusChart.jsx:57:23)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async fetchActivities (src/app/UiComponents/DataViewer/dashbaord/RecenteActivity.jsx:19:34)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async fetchData (src/app/UiComponents/DataViewer/dashbaord/PerformanceMetrics.jsx:28:23)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async fetchData (src/app/UiComponents/DataViewer/dashbaord/NewLeadsList.jsx:13:27)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async fetchData (src/app/UiComponents/DataViewer/dashbaord/IncomeOverTimeChart.jsx:32:27)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async fetchData (src/app/UiComponents/DataViewer/dashbaord/EmiratesAnalytics.jsx:82:23)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async fetchData (src/app/UiComponents/DataViewer/dashbaord/KeyMetricsCard.jsx:176:23)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async fetchData (src/app/UiComponents/DataViewer/dashbaord/LeadsMonthlyOverviewSingle.jsx:104:19)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async fetchData (src/app/UiComponents/DataViewer/dashbaord/LeadStatusChart.jsx:57:23)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async fetchActivities (src/app/UiComponents/DataViewer/dashbaord/RecenteActivity.jsx:19:34)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async fetchData (src/app/UiComponents/DataViewer/dashbaord/PerformanceMetrics.jsx:28:23)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async fetchData (src/app/UiComponents/DataViewer/dashbaord/NewLeadsList.jsx:13:27)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async fetchData (src/app/UiComponents/DataViewer/dashbaord/IncomeOverTimeChart.jsx:32:27)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+[browser] [getData] Error: You have to login first
+    at ApiFetch._request (src/app/v2/lib/api/ApiFetch.js:139:21)
+    at async getData (src/app/v2/lib/api/getData.js:17:20)
+    at async getData (src/app/helpers/functions/getData.js:12:10)
+    at async fetchData (src/app/UiComponents/DataViewer/dashbaord/EmiratesAnalytics.jsx:82:23)
+  137 |
+  138 |     if (status >= 400) {
+> 139 |       const error = new Error(
+      |                     ^
+  140 |         result.message || response.statusText || "Request failed",
+  141 |       );
+  142 |       error.status = status; (src/app/v2/lib/api/getData.js:31:13)
+✓ Compiled in 186ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 893ms (next.js: 71ms, proxy.ts: 35ms, application-code: 786ms)
+ GET /dashboard 200 in 52ms (next.js: 15ms, proxy.ts: 7ms, application-code: 29ms)
+ GET /dashboard 200 in 52ms (next.js: 24ms, proxy.ts: 9ms, application-code: 19ms)
+ GET /dashboard 200 in 54ms (next.js: 36ms, proxy.ts: 8ms, application-code: 10ms)
+✓ Compiled in 108ms
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 1100ms (next.js: 41ms, proxy.ts: 286ms, application-code: 773ms)
+ GET /dashboard 200 in 47ms (next.js: 14ms, proxy.ts: 12ms, application-code: 22ms)
+ GET /dashboard 200 in 47ms (next.js: 21ms, proxy.ts: 13ms, application-code: 13ms)
+ GET /dashboard 200 in 46ms (next.js: 25ms, proxy.ts: 13ms, application-code: 7ms)
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+✓ Compiled in 136ms
+ GET /dashboard 200 in 1407ms (next.js: 105ms, proxy.ts: 6ms, application-code: 1296ms)
+✓ Compiled in 109ms
+ GET /dashboard 200 in 121ms (next.js: 59ms, proxy.ts: 41ms, application-code: 21ms)
+ GET /dashboard 200 in 128ms (next.js: 68ms, proxy.ts: 43ms, application-code: 17ms)
+ GET /dashboard 200 in 89ms (next.js: 75ms, proxy.ts: 7ms, application-code: 7ms)
+✓ Compiled in 111ms
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 1091ms (next.js: 46ms, proxy.ts: 240ms, application-code: 805ms)
+✓ Compiled in 103ms
+ GET /dashboard 200 in 129ms (next.js: 64ms, proxy.ts: 41ms, application-code: 24ms)
+ GET /dashboard 200 in 129ms (next.js: 74ms, proxy.ts: 41ms, application-code: 13ms)
+ GET /dashboard 200 in 128ms (next.js: 80ms, proxy.ts: 41ms, application-code: 7ms)
+✓ Compiled in 74ms
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 961ms (next.js: 43ms, proxy.ts: 171ms, application-code: 747ms)
+ GET /dashboard 200 in 47ms (next.js: 13ms, proxy.ts: 9ms, application-code: 26ms)
+ GET /dashboard 200 in 47ms (next.js: 20ms, proxy.ts: 9ms, application-code: 19ms)
+ GET /dashboard 200 in 46ms (next.js: 27ms, proxy.ts: 8ms, application-code: 11ms)
+✓ Compiled in 80ms
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 818ms (next.js: 41ms, proxy.ts: 35ms, application-code: 742ms)
+✓ Compiled in 126ms
+ GET /dashboard 200 in 139ms (next.js: 63ms, proxy.ts: 43ms, application-code: 33ms)
+ GET /dashboard 200 in 143ms (next.js: 74ms, proxy.ts: 45ms, application-code: 25ms)
+ GET /dashboard 200 in 144ms (next.js: 85ms, proxy.ts: 46ms, application-code: 14ms)
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 797ms (next.js: 42ms, proxy.ts: 32ms, application-code: 722ms)
+ GET /dashboard 200 in 34ms (next.js: 10ms, proxy.ts: 6ms, application-code: 18ms)
+ GET /dashboard 200 in 41ms (next.js: 16ms, proxy.ts: 6ms, application-code: 18ms)
+ GET /dashboard 200 in 40ms (next.js: 26ms, proxy.ts: 7ms, application-code: 6ms)
+✓ Compiled in 50ms
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 810ms (next.js: 69ms, proxy.ts: 32ms, application-code: 709ms)
+ GET /dashboard 200 in 37ms (next.js: 12ms, proxy.ts: 8ms, application-code: 17ms)
+ GET /dashboard 200 in 36ms (next.js: 15ms, proxy.ts: 8ms, application-code: 13ms)
+ GET /dashboard 200 in 35ms (next.js: 20ms, proxy.ts: 7ms, application-code: 7ms)
+✓ Compiled in 78ms
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 961ms (next.js: 45ms, proxy.ts: 37ms, application-code: 880ms)
+✓ Compiled in 88ms
+✓ Compiled in 59ms
+ GET /dashboard 200 in 220ms (next.js: 143ms, proxy.ts: 47ms, application-code: 30ms)
+ GET /dashboard 200 in 219ms (next.js: 153ms, proxy.ts: 48ms, application-code: 18ms)
+ GET /dashboard 200 in 218ms (next.js: 162ms, proxy.ts: 48ms, application-code: 8ms)
+✓ Compiled in 50ms
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 1339ms (next.js: 56ms, proxy.ts: 39ms, application-code: 1244ms)
+✓ Compiled in 78ms
+✓ Compiled in 80ms
+ GET /dashboard 200 in 174ms (next.js: 78ms, proxy.ts: 65ms, application-code: 32ms)
+ GET /dashboard 200 in 174ms (next.js: 91ms, proxy.ts: 65ms, application-code: 18ms)
+ GET /dashboard 200 in 174ms (next.js: 99ms, proxy.ts: 65ms, application-code: 9ms)
+✓ Compiled in 56ms
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 1370ms (next.js: 62ms, proxy.ts: 70ms, application-code: 1238ms)
+✓ Compiled in 51ms
+ GET /dashboard 200 in 109ms (next.js: 68ms, proxy.ts: 10ms, application-code: 31ms)
+ GET /dashboard 200 in 109ms (next.js: 83ms, proxy.ts: 11ms, application-code: 15ms)
+ GET /dashboard 200 in 109ms (next.js: 89ms, proxy.ts: 11ms, application-code: 8ms)
+✓ Compiled in 35ms
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 1217ms (next.js: 55ms, proxy.ts: 39ms, application-code: 1123ms)
+✓ Compiled in 43ms
+ GET /dashboard 200 in 171ms (next.js: 88ms, proxy.ts: 58ms, application-code: 24ms)
+ GET /dashboard 200 in 171ms (next.js: 99ms, proxy.ts: 59ms, application-code: 13ms)
+ GET /dashboard 200 in 170ms (next.js: 104ms, proxy.ts: 59ms, application-code: 7ms)
+✓ Compiled in 39ms
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 1157ms (next.js: 55ms, proxy.ts: 39ms, application-code: 1063ms)
+✓ Compiled in 78ms
+✓ Compiled in 54ms
+ GET /dashboard 200 in 169ms (next.js: 80ms, proxy.ts: 56ms, application-code: 33ms)
+ GET /dashboard 200 in 169ms (next.js: 96ms, proxy.ts: 57ms, application-code: 17ms)
+ GET /dashboard 200 in 169ms (next.js: 103ms, proxy.ts: 57ms, application-code: 9ms)
+✓ Compiled in 49ms
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 1283ms (next.js: 57ms, proxy.ts: 36ms, application-code: 1191ms)
+✓ Compiled in 92ms
+ GET /dashboard 200 in 286ms (next.js: 68ms, proxy.ts: 47ms, application-code: 171ms)
+ GET /dashboard 200 in 286ms (next.js: 126ms, proxy.ts: 47ms, application-code: 113ms)
+ GET /dashboard 200 in 75ms (next.js: 4ms, proxy.ts: 7ms, application-code: 64ms)
+ GET /dashboard 200 in 44ms (next.js: 13ms, proxy.ts: 8ms, application-code: 23ms)
+ GET /dashboard 200 in 44ms (next.js: 20ms, proxy.ts: 9ms, application-code: 15ms)
+ GET /dashboard 200 in 43ms (next.js: 25ms, proxy.ts: 9ms, application-code: 9ms)
+✓ Compiled in 66ms
+{ role: null, emailConfirmed: null, accountStatus: null } suer
+ GET /dashboard 200 in 1406ms (next.js: 78ms, proxy.ts: 55ms, application-code: 1273ms)
+ GET /dashboard 200 in 37ms (next.js: 12ms, proxy.ts: 9ms, application-code: 17ms)
+ GET /dashboard 200 in 37ms (next.js: 17ms, proxy.ts: 9ms, application-code: 11ms)
+ GET /dashboard 200 in 36ms (next.js: 22ms, proxy.ts: 9ms, application-code: 5ms)

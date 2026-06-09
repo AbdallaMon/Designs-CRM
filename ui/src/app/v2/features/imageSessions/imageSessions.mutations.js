@@ -26,7 +26,14 @@ export async function runImageSessionMutation(
   try {
     const res = await fn();
     if (shouldAutoToast) {
-      toast.update(toastId, Success(resolveImageSessionMessage(res?.message)));
+      toast.update(
+        toastId,
+        Success(
+          resolveImageSessionMessage(res?.message, {
+            translationKey: res?.translationKey,
+          }),
+        ),
+      );
     }
     return res;
   } catch (e) {
@@ -34,7 +41,12 @@ export async function runImageSessionMutation(
     if (shouldAutoToast) {
       toast.update(
         toastId,
-        Failed(resolveImageSessionMessage(code, { fallback: "حدث خطأ، حاول مرة أخرى" })),
+        Failed(
+          resolveImageSessionMessage(code, {
+            translationKey: e?.data?.translationKey,
+            fallback: "حدث خطأ، حاول مرة أخرى",
+          }),
+        ),
       );
     }
     return null;

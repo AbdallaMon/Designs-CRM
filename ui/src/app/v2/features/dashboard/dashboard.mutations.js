@@ -25,7 +25,14 @@ export async function runDashboardMutation(
   try {
     const res = await fn();
     if (shouldAutoToast) {
-      toast.update(toastId, Success(resolveDashboardMessage(res?.message)));
+      toast.update(
+        toastId,
+        Success(
+          resolveDashboardMessage(res?.message, {
+            translationKey: res?.translationKey,
+          }),
+        ),
+      );
     }
     return res;
   } catch (e) {
@@ -33,7 +40,12 @@ export async function runDashboardMutation(
     if (shouldAutoToast) {
       toast.update(
         toastId,
-        Failed(resolveDashboardMessage(code, { fallback: "حدث خطأ، حاول مرة أخرى" })),
+        Failed(
+          resolveDashboardMessage(code, {
+            translationKey: e?.data?.translationKey,
+            fallback: "حدث خطأ، حاول مرة أخرى",
+          }),
+        ),
       );
     }
     return null;

@@ -34,12 +34,15 @@ export const questionsMessages = {
   NOT_FOUND: "العنصر غير موجود",
 };
 
+import { resolveMessageCode } from "@/app/v2/data/resolveMessageCode.js";
+
 /**
- * Resolve a backend message CODE to an Arabic display string.
+ * Resolve a backend message CODE to an Arabic display string. Feature Arabic wins first;
+ * unknown codes delegate to the CENTRAL resolver. `translationKey` routes the central lookup.
  * @param {string} code
- * @param {{ fallback?: string }} [opts]
+ * @param {{ fallback?: string, translationKey?: string }} [opts]
  */
-export function resolveQuestionsMessage(code, { fallback } = {}) {
+export function resolveQuestionsMessage(code, { fallback, translationKey } = {}) {
   if (code && questionsMessages[code]) return questionsMessages[code];
-  return fallback ?? "تمت العملية";
+  return resolveMessageCode(code, { translationKey, fallback });
 }

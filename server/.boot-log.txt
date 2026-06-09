@@ -1,0 +1,33 @@
+✅ Redis client connected
+[33m[2026-06-08T13:55:16.163] [INFO] - [Running gramJS version 2.26.21][0m
+[33m[2026-06-08T13:55:16.165] [INFO] - [Connecting to 149.154.167.91:80/TCPFull...][0m
+✅ Socket subscriber listening on Redis channel "socket:emit"
+[33m[2026-06-08T13:55:17.531] [INFO] - [Connection to 149.154.167.91:80/TCPFull complete!][0m
+[33m[2026-06-08T13:55:17.531] [INFO] - [Using LAYER 198 for initial connect][0m
+Telegram error. Skipping Telegram connection. 
+Invalid `prisma.user.findMany()` invocation:
+
+
+The table `User` does not exist in the current database.
+⏭️  RUN_WORKERS=false — BullMQ workers disabled
+⏭️  RUN_CRON=false — cron schedulers disabled
+node:events:486
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: listen EADDRINUSE: address already in use :::4000
+    at Server.setupListenHandle [as _listen2] (node:net:1940:16)
+    at listenInCluster (node:net:1997:12)
+    at Server.listen (node:net:2102:7)
+    at file:///C:/coding/design-managment-system/server/src/server.js:45:14
+Emitted 'error' event on Server instance at:
+    at emitErrorNT (node:net:1976:8)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21) {
+  code: 'EADDRINUSE',
+  errno: -4091,
+  syscall: 'listen',
+  address: '::',
+  port: 4000
+}
+
+Node.js v24.13.0

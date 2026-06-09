@@ -26,12 +26,15 @@ export const dashboardMessages = {
   WIDGET_LOAD_FAILED: "تعذّر تحميل هذا القسم",
 };
 
+import { resolveMessageCode } from "@/app/v2/data/resolveMessageCode.js";
+
 /**
- * Resolve a backend message CODE to an Arabic display string.
+ * Resolve a backend message CODE to an Arabic display string. Feature Arabic wins first;
+ * unknown codes delegate to the CENTRAL resolver. `translationKey` routes the central lookup.
  * @param {string} code
- * @param {{ fallback?: string }} [opts]
+ * @param {{ fallback?: string, translationKey?: string }} [opts]
  */
-export function resolveDashboardMessage(code, { fallback } = {}) {
+export function resolveDashboardMessage(code, { fallback, translationKey } = {}) {
   if (code && dashboardMessages[code]) return dashboardMessages[code];
-  return fallback ?? "تمت العملية";
+  return resolveMessageCode(code, { translationKey, fallback });
 }

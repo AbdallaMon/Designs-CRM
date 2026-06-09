@@ -50,12 +50,16 @@ export const accountingMessages = {
   VALIDATION_ERROR: "بيانات غير صحيحة",
 };
 
+import { resolveMessageCode } from "@/app/v2/data/resolveMessageCode.js";
+
 /**
- * Resolve a backend message CODE to an Arabic display string.
+ * Resolve a backend message CODE to an Arabic display string. Feature Arabic wins first;
+ * unknown codes delegate to the CENTRAL resolver (cross-cutting/other-module codes still
+ * render as Arabic). `translationKey` (from the envelope) routes the central lookup.
  * @param {string} code
- * @param {{ fallback?: string }} [opts]
+ * @param {{ fallback?: string, translationKey?: string }} [opts]
  */
-export function resolveAccountingMessage(code, { fallback } = {}) {
+export function resolveAccountingMessage(code, { fallback, translationKey } = {}) {
   if (code && accountingMessages[code]) return accountingMessages[code];
-  return fallback ?? "تمت العملية";
+  return resolveMessageCode(code, { translationKey, fallback });
 }

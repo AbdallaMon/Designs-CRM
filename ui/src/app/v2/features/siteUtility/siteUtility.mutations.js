@@ -23,7 +23,14 @@ export async function runSiteUtilityMutation(
   try {
     const res = await fn();
     if (shouldAutoToast) {
-      toast.update(toastId, Success(resolveSiteUtilityMessage(res?.message)));
+      toast.update(
+        toastId,
+        Success(
+          resolveSiteUtilityMessage(res?.message, {
+            translationKey: res?.translationKey,
+          }),
+        ),
+      );
     }
     return res;
   } catch (e) {
@@ -33,6 +40,7 @@ export async function runSiteUtilityMutation(
         toastId,
         Failed(
           resolveSiteUtilityMessage(code, {
+            translationKey: e?.data?.translationKey,
             fallback: "حدث خطأ، حاول مرة أخرى",
           }),
         ),

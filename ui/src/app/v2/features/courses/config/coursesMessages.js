@@ -88,12 +88,15 @@ export const coursesMessages = {
   VALIDATION_ERROR: "بيانات غير صحيحة",
 };
 
+import { resolveMessageCode } from "@/app/v2/data/resolveMessageCode.js";
+
 /**
- * Resolve a backend message CODE to an Arabic display string.
+ * Resolve a backend message CODE to an Arabic display string. Feature Arabic wins first;
+ * unknown codes delegate to the CENTRAL resolver. `translationKey` routes the central lookup.
  * @param {string} code
- * @param {{ fallback?: string }} [opts]
+ * @param {{ fallback?: string, translationKey?: string }} [opts]
  */
-export function resolveCoursesMessage(code, { fallback } = {}) {
+export function resolveCoursesMessage(code, { fallback, translationKey } = {}) {
   if (code && coursesMessages[code]) return coursesMessages[code];
-  return fallback ?? "تمت العملية";
+  return resolveMessageCode(code, { translationKey, fallback });
 }

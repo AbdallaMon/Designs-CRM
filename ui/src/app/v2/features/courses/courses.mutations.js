@@ -25,7 +25,14 @@ export async function runCoursesMutation(
   try {
     const res = await fn();
     if (shouldAutoToast) {
-      toast.update(toastId, Success(resolveCoursesMessage(res?.message)));
+      toast.update(
+        toastId,
+        Success(
+          resolveCoursesMessage(res?.message, {
+            translationKey: res?.translationKey,
+          }),
+        ),
+      );
     }
     return res;
   } catch (e) {
@@ -33,7 +40,12 @@ export async function runCoursesMutation(
     if (shouldAutoToast) {
       toast.update(
         toastId,
-        Failed(resolveCoursesMessage(code, { fallback: "حدث خطأ، حاول مرة أخرى" })),
+        Failed(
+          resolveCoursesMessage(code, {
+            translationKey: e?.data?.translationKey,
+            fallback: "حدث خطأ، حاول مرة أخرى",
+          }),
+        ),
       );
     }
     return null;

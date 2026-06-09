@@ -23,7 +23,14 @@ export async function runChatMutation(
   try {
     const res = await fn();
     if (shouldAutoToast) {
-      toast.update(toastId, Success(resolveChatMessage(res?.message)));
+      toast.update(
+        toastId,
+        Success(
+          resolveChatMessage(res?.message, {
+            translationKey: res?.translationKey,
+          }),
+        ),
+      );
     }
     return res;
   } catch (e) {
@@ -31,7 +38,12 @@ export async function runChatMutation(
     if (shouldAutoToast) {
       toast.update(
         toastId,
-        Failed(resolveChatMessage(code, { fallback: "حدث خطأ، حاول مرة أخرى" })),
+        Failed(
+          resolveChatMessage(code, {
+            translationKey: e?.data?.translationKey,
+            fallback: "حدث خطأ، حاول مرة أخرى",
+          }),
+        ),
       );
     }
     return null;
