@@ -81,3 +81,66 @@ export function emirateOrCountryLabel({ emirate, country }) {
   if (!emirate || emirate === "OUTSIDE") return country || "-";
   return `${EMIRATE_LABEL[emirate] || emirate} — ${UAE_LABEL}`;
 }
+
+// ════════════════════════════════════════════════════════════════════════════
+//  Contract-payments overview (grouped) — copy + helpers
+// ════════════════════════════════════════════════════════════════════════════
+// Money formatter for the grouped contract-payments view. Kept VERBATIM from the legacy
+// ContractPaymentsPage (en-AE locale, 2 fraction digits) so the observable money output is
+// byte-identical — do NOT swap this for the page-wide ar-AE `formatAED` above (it uses 0
+// fraction digits). This screen is the only consumer.
+export function formatContractPaymentAED(value) {
+  try {
+    return new Intl.NumberFormat("en-AE", {
+      style: "currency",
+      currency: "AED",
+      minimumFractionDigits: 2,
+    }).format(Number(value || 0));
+  } catch {
+    return `AED ${Number(value || 0).toFixed(2)}`;
+  }
+}
+
+// Status filter options for the grouped view (DUE default). VALUES are the Prisma enum
+// keys; Arabic labels resolve via resolveStatusLabel("payment", value) at render time,
+// except ALL which is a synthetic filter value (no enum / no label entry).
+export const CONTRACT_PAYMENT_STATUS_FILTERS = ["DUE", "RECEIVED", "TRANSFERRED", "NOT_DUE", "ALL"];
+
+// The ONLY statuses a user may SET on a payment (legacy constraint: NOT_DUE/DUE are
+// system-managed and never user-selectable).
+export const CONTRACT_PAYMENT_SETTABLE_STATUSES = ["RECEIVED", "TRANSFERRED"];
+
+// Arabic copy constants for the grouped contract-payments overview (localized labels only —
+// the legacy was English-labeled; data + actions are unchanged).
+export const CONTRACT_PAYMENTS_COPY = {
+  pageTitle: "دفعات العقود",
+  pageSubtitle: "نظرة عامة على دفعات العقود حسب الحالة",
+  filterAll: "الكل",
+  filterLabel: "تصفية حسب الحالة",
+  refresh: "تحديث",
+  readonlyBanner: "لديك صلاحية العرض فقط",
+  emptyTitle: "لا توجد دفعات بهذه الحالة",
+  totalsReceived: "تم الاستلام",
+  totalsTransferred: "تم التحويل",
+  totalsDue: "مستحقة",
+  totalsNotDue: "غير مستحقة",
+  totalsGrand: "الإجمالي",
+  totalsGrandWithTax: "الإجمالي شامل الضريبة",
+  client: "العميل",
+  taxRate: "الضريبة",
+  amount: "المبلغ",
+  withTax: "شامل الضريبة",
+  amountLost: "المبلغ المفقود",
+  amountReceived: "المبلغ المستلم",
+  condition: "الشرط",
+  noPaymentsForFilter: "لا توجد دفعات لهذه التصفية",
+  setStatus: "تحديد الحالة",
+  editAmounts: "تعديل المبالغ والحالة",
+  statusGuard: "لا يمكن تغيير حالة الدفعات غير المستحقة",
+  amountsGuard: "لا يمكن تعديل مبالغ الدفعات غير المستحقة",
+  dialogTitle: "تعديل مبالغ الدفعة",
+  originalWithTax: "المبلغ الأصلي شامل الضريبة",
+  save: "حفظ",
+  cancel: "إلغاء",
+  lead: "العميل المحتمل",
+};
