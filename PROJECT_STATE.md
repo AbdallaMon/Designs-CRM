@@ -7,13 +7,17 @@
 >
 > **Current phase (2026-06-10):** BE + FE migration COMPLETE; UX/UI redesign feature builds (Phases 0–4)
 > COMPLETE; post-redesign FE message-resolver centralization (`73e7f9d`) reconciled + fixed (`6193984`).
-> **Runtime browser verification DONE (Playwright, all 22 v2 routes)** — 18 screens clean, **4 blockers
-> found** (dashboard useLoading refetch loop, projects board missing `?type=` → 500, broken
-> `/v2/contracts/payments` nav target, calendar google/status selects nonexistent
-> `User.googleCalendarConnected`). Master's week commit `fdefbbf` (client register) ported (`e04dabb`).
-> **Destructive cutover (task #13) stays gated until the 4 blockers are fixed.** For the authoritative
-> latest state + commit trail see **`docs/migration/RESUME-CHECKPOINT.md`** (this file's §3 commit
-> trail below is kept at the FE-features milestone and is not the latest).
+> **Runtime browser verification DONE (Playwright, all 22 v2 routes)** — 18 screens clean, 4 blockers
+> found. **✅ ALL 4 BLOCKERS NOW FIXED (2026-06-10)** — reviewed (no blockers/no token leak),
+> full suite **571/34 green**, guarded boot clean: (1) `useLoading` callbacks memoized → dashboard
+> refetch loop gone (`0cf427a`); (2) v2 projects board now sends per-type `?type=` + BE null-guards →
+> designers board stops 500ing for admins (`ed28386`); (3) built the v2 contract-payments page (legacy
+> parity on the redesign shell) → dead `/v2/contracts/payments` nav fixed (`2d55b84`); (4) calendar
+> google/status derives `connected` from token presence instead of the phantom `googleCalendarConnected`
+> column → 500 gone on both v2 and the still-live legacy route (`442d7b2`). Master's week commit
+> `fdefbbf` (client register) ported (`e04dabb`). **Destructive cutover (task #13) is now UNBLOCKED.**
+> For the authoritative latest state + commit trail see **`docs/migration/RESUME-CHECKPOINT.md`** (this
+> file's §3 commit trail below is kept at the FE-features milestone and is not the latest).
 
 ---
 

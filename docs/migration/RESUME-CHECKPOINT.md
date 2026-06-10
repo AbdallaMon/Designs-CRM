@@ -56,31 +56,48 @@ REDESIGN PROGRESS:
 ✅ **RUNTIME VERIFICATION DONE (2026-06-10, Playwright click-through of all 22 v2 routes as a fresh
 ADMIN):** shell/nav/RTL/breadcrumbs + 18 of the screens render and fetch `/v2/*` cleanly (notifications,
 chat, leads, tasks, image-sessions, accounting, courses ×2, users + detail, site-utilities, reviews,
-utilities, admin ×5, calendar). Unauth API → 401 `UNAUTHORIZED` envelope ✓. **4 BLOCKERS found — fix
-BEFORE the destructive phase (legacy removal):**
-  1. **Dashboard infinite refetch loop** — `useRequest`'s `fetchData` depends on `useLoading`'s
-     non-memoized `startLoading/stopLoading`, so the `autoFetch` effect refires after every render
-     ("Maximum update depth exceeded"; widgets stuck on skeletons forever). Fix in
-     `ui/src/app/v2/hooks/useLoading.js` (useCallback) — also hits `FixedDataList` + `AdminProjectsView`.
-  2. **Projects board 500 for admins** — v2 `ProjectsPage` calls `GET /v2/projects/designers` with NO
-     `type` param; legacy always sent `?type=` and the legacy service crashes without it
-     (`updatesWhere.OR.push` on undefined, `projectServices.js:705`). Page silently shows "لا توجد بيانات".
-  3. **`/v2/contracts/payments` nav link is broken** — no such route; it falls into
-     `contracts/[leadId]` with `leadId="payments"` → 422 + a "عقود العميل المحتمل #payments" page.
-     The contracts feature has NO payments list page; build it or repoint the nav item.
-  4. **Calendar google/status 500** — `google.usecase.js:66` selects nonexistent
-     `User.googleCalendarConnected` (schema has googleAccessToken/RefreshToken/TokenExpiresAt/
-     CalendarId/Email). FE degrades gracefully (shows "غير مرتبط") but the BE crashes every load.
-  Minor: unauth visit to a v2 route shows a permission-denied dead end instead of redirecting to
-  /login; login error toast shows the raw code `INVALID_CREDENTIALS` (resolver miss). NOT exercised:
-  public image-session wizard + report PDF downloads (no token/data in the fresh dev DB).
+utilities, admin ×5, calendar). Unauth API → 401 `UNAUTHORIZED` envelope ✓. 4 blockers were found —
+**✅ ALL 4 NOW FIXED (2026-06-10)** via 4 build agents + 1 reconciliation reviewer (verdict: safe to
+commit, no token leak, layering respected, behavior preserved) → suite **571/34 green**, BE
+`node --check` + FE esbuild parse clean, guarded boot clean:
+  1. ✅ **Dashboard infinite refetch loop** — `useRequest`'s `fetchData` depended on `useLoading`'s
+     non-memoized `startLoading/stopLoading`, so the `autoFetch` effect refired every render
+     ("Maximum update depth exceeded"). Fixed by wrapping both in `useCallback([])`
+     (`ui/src/app/v2/hooks/useLoading.js`); fixes `FixedDataList` + all autoFetch consumers
+     transitively. (`AdminProjectsView` was NOT actually on this chain — it uses a self-contained
+     hook.) Commit **`0cf427a`**.
+  2. ✅ **Projects board 500 for admins** — the legacy designers board was 5 per-`type` kanban boards,
+     each sending `?type=<dept>`; the v2 board sent none, crashing the legacy service
+     (`updatesWhere.OR.push` / `where.projects.some` on undefined, `projectServices.js`). Fixed by FE
+     parity (a department selector `PROJECT_TYPES`; `useProjectBoard` forwards `type` for the designers
+     board only) + behavior-neutral BE null-guards in `getLeadByPorjects` + `getLeadByPorjectsColumn`
+     (no-ops when `type` is present, so no role's rows change). Commit **`ed28386`**.
+  3. ✅ **`/v2/contracts/payments` dead nav** — the path fell into dynamic `contracts/[leadId]`
+     (`leadId="payments"` → 422). Built the v2 contract-payments page (legacy `ContractPaymentsPage`
+     parity — same data/audience/actions — on the redesign shell primitives); a new STATIC route shell
+     `(v2-features)/v2/contracts/payments/page.jsx` shadows the dynamic sibling. Endpoint + service +
+     codes already existed (data shape uses `limit`/`totalPages`, gated `CONTRACT.PAYMENT_LIST`, manage
+     controls gated `CONTRACT.PAYMENT_MANAGE`). Commit **`2d55b84`**.
+  4. ✅ **Calendar google/status 500** — repo selected nonexistent `User.googleCalendarConnected`.
+     Fixed by selecting the real `googleRefreshToken` and deriving `connected = Boolean(refreshToken)`
+     in the usecase (shape `{connected, calendarId, tokenExpired}` unchanged; token never leaves the
+     usecase / never logged). Also patched the still-live legacy `routes/calendar/google.js` (same bug
+     + it had NO `prisma` import → ReferenceError). Token-leak test updated to the real schema shape.
+     Commit **`442d7b2`**.
+  Minor (still open, low priority): unauth visit to a v2 route shows a permission-denied dead end
+  instead of redirecting to /login; login error toast shows the raw code `INVALID_CREDENTIALS`
+  (resolver miss). NOT exercised: public image-session wizard + report PDF downloads (no token/data in
+  the fresh dev DB). Two dormant code nits flagged by the reviewer (neither reachable today): a latent
+  `useRequest` loop if a caller ever passes a non-memoized `initialParams`; an unguarded
+  `staffId`-without-`type` deref in `projectServices.js`.
 
 ✅ **MASTER SYNC (2026-06-10, commit `e04dabb`):** master's only commit this week — `fdefbbf`
 "edit client register" — cherry-picked + ported onto the relocated modules (legacy funnel files as-is;
 `src/.../booking-lead` repo `findByEmail` + relaxed create validation; `src/.../public-lead` register
 draft-placeholder defaults + complete-register client name/phone fix-up). Live-probed end-to-end.
 
-⏭️ **REMAINING — the destructive cutover phase (task #13), NOT yet started (needs runtime verification first):**
+⏭️ **REMAINING — the destructive cutover phase (task #13). Runtime verification is DONE and all 4
+blockers are FIXED → this phase is now UNBLOCKED and ready to start:**
   - Per-screen legacy `@role`-slot removal (`ui/src/app/(auth)/dashboard/(dashboard)/@*`) as each v2 route is
     confirmed working in the browser; point the app entry at the v2 shell.
   - Final cutover: retire the legacy Express routers + dual-cookie shim, rename `ui/ → web/`, wire workspaces.
