@@ -702,6 +702,11 @@ export async function getLeadByPorjects({ searchParams, isAdmin }) {
     ];
   }
   if (isAdmin) {
+    // Guard: when no `type` was supplied the `searchParams.type` branch above never ran,
+    // so `updatesWhere.OR` is still undefined. Initialise it before pushing the ADMIN
+    // clause so a missing `type` can never 500. When `type` IS present `OR` is already an
+    // array and this `||=` is a no-op — the with-type behaviour is unchanged.
+    updatesWhere.OR ||= [];
     updatesWhere.OR.push({
       sharedSettings: {
         some: {
@@ -735,6 +740,13 @@ export async function getLeadByPorjects({ searchParams, isAdmin }) {
     };
   }
   if (searchParams.isAdmin && !searchParams.userId && !filters?.staffId) {
+    // Guard: `where.projects` is only initialised inside the `searchParams.type` branch
+    // (and, in the columns variant, the `searchParams.status` branch). Without either it
+    // is undefined and this admin narrowing would throw. Init the shape before mutating
+    // it. When `where.projects.some` already exists these `??=` are no-ops — the existing
+    // (with-type / with-status) behaviour is unchanged.
+    where.projects ??= { some: {} };
+    where.projects.some ??= {};
     where.projects.some.assignments = {
       some: {
         userId: {
@@ -957,6 +969,10 @@ export async function getLeadByPorjectsColumn({ searchParams, isAdmin }) {
     ];
   }
   if (isAdmin) {
+    // Guard: see getLeadByPorjects — when no `type` was supplied `updatesWhere.OR` is
+    // still undefined; initialise it so a missing `type` can never 500. No-op when `type`
+    // is present.
+    updatesWhere.OR ||= [];
     updatesWhere.OR.push({
       sharedSettings: {
         some: {
@@ -1001,6 +1017,13 @@ export async function getLeadByPorjectsColumn({ searchParams, isAdmin }) {
     };
   }
   if (searchParams.isAdmin && !searchParams.userId && !filters?.staffId) {
+    // Guard: `where.projects` is only initialised inside the `searchParams.type` branch
+    // (and, in the columns variant, the `searchParams.status` branch). Without either it
+    // is undefined and this admin narrowing would throw. Init the shape before mutating
+    // it. When `where.projects.some` already exists these `??=` are no-ops — the existing
+    // (with-type / with-status) behaviour is unchanged.
+    where.projects ??= { some: {} };
+    where.projects.some ??= {};
     where.projects.some.assignments = {
       some: {
         userId: {

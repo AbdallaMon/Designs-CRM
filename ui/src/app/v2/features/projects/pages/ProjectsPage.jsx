@@ -33,12 +33,19 @@ import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { useDebounce } from "@/app/v2/hooks/useDebounce";
 import { useProjectBoard } from "../hooks/useProjectBoard.js";
 import { LeadProjects } from "../components/LeadProjects.jsx";
+import { PROJECT_TYPES, PROJECT_TYPE_LABELS } from "../config/projectsConstants.js";
 
 export function ProjectsPage() {
   const { hasPermission } = usePermission();
   const canList = hasPermission(PERMISSIONS.PROJECT.LIST);
 
   const [mode, setMode] = useState("designers");
+  // The designers board is partitioned by project `type` (department). The legacy app had
+  // one kanban route per type and ALWAYS sent `?type=`; the v2 board keeps that contract
+  // via this selector (default = the first project type). The BE narrows rows by role/self
+  // WITHIN the selected type (admin sees all of that type, designers only their own), so
+  // each role sees the same rows it saw on the legacy per-type board.
+  const [boardType, setBoardType] = useState(PROJECT_TYPES[0]);
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebounce(searchInput, 400);
 
@@ -52,7 +59,7 @@ export function ProjectsPage() {
     setFilters,
     isLoading,
     refetch,
-  } = useProjectBoard({ mode, autoFetch: canList });
+  } = useProjectBoard({ mode, type: boardType, autoFetch: canList });
 
   // Parity with legacy: the board search is by lead id (the SearchComponent posted an `id`
   // filter). A non-numeric term matches nothing → no id filter.
@@ -88,6 +95,23 @@ export function ProjectsPage() {
             <ToggleButton value="designers">النشطة</ToggleButton>
             <ToggleButton value="archived">المؤرشفة</ToggleButton>
           </ToggleButtonGroup>
+          {mode === "designers" && (
+            <Select
+              size="small"
+              value={boardType}
+              onChange={(e) => {
+                setBoardType(e.target.value);
+                setPage(1);
+              }}
+              sx={{ minWidth: 200 }}
+            >
+              {PROJECT_TYPES.map((t) => (
+                <MenuItem key={t} value={t}>
+                  {PROJECT_TYPE_LABELS[t] ?? t}
+                </MenuItem>
+              ))}
+            </Select>
+          )}
           <TextField
             size="small"
             label="بحث برقم العميل"
