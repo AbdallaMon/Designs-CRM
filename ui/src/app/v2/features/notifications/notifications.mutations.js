@@ -30,6 +30,7 @@ export async function runNotificationsMutation(
         Success(
           resolveNotificationsMessage(res?.message, {
             translationKey: res?.translationKey,
+            fallback: "تمت العملية",
           }),
         ),
       );

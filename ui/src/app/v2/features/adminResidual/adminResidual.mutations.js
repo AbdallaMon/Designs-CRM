@@ -31,6 +31,7 @@ export async function runAdminResidualMutation(
         Success(
           resolveAdminResidualMessage(res?.message, {
             translationKey: res?.translationKey,
+            fallback: "تمت العملية",
           }),
         ),
       );

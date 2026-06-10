@@ -30,6 +30,7 @@ export async function runSalesStagesMutation(
         Success(
           resolveSalesStagesMessage(res?.message, {
             translationKey: res?.translationKey,
+            fallback: "تمت العملية",
           }),
         ),
       );

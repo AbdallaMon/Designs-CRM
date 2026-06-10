@@ -31,6 +31,7 @@ export async function runImageSessionMutation(
         Success(
           resolveImageSessionMessage(res?.message, {
             translationKey: res?.translationKey,
+            fallback: "تمت العملية",
           }),
         ),
       );

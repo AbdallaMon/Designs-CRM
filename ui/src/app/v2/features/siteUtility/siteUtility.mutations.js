@@ -28,6 +28,7 @@ export async function runSiteUtilityMutation(
         Success(
           resolveSiteUtilityMessage(res?.message, {
             translationKey: res?.translationKey,
+            fallback: "تمت العملية",
           }),
         ),
       );

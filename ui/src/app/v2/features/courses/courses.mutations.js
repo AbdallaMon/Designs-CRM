@@ -30,6 +30,7 @@ export async function runCoursesMutation(
         Success(
           resolveCoursesMessage(res?.message, {
             translationKey: res?.translationKey,
+            fallback: "تمت العملية",
           }),
         ),
       );

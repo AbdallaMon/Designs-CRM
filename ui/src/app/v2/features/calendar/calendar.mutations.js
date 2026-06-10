@@ -30,6 +30,7 @@ export async function runCalendarMutation(
         Success(
           resolveCalendarMessage(res?.message, {
             translationKey: res?.translationKey,
+            fallback: "تمت العملية",
           }),
         ),
       );

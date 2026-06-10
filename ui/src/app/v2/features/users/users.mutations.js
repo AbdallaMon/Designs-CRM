@@ -31,6 +31,7 @@ export async function runUsersMutation(
         Success(
           resolveUsersMessage(res?.message, {
             translationKey: res?.translationKey,
+            fallback: "تمت العملية",
           }),
         ),
       );

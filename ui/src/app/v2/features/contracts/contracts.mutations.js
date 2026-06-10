@@ -32,6 +32,7 @@ export async function runContractMutation(
         Success(
           resolveContractMessage(res?.message, {
             translationKey: res?.translationKey,
+            fallback: "تمت العملية",
           }),
         ),
       );

@@ -30,6 +30,7 @@ export async function runReviewsMutation(
         Success(
           resolveReviewsMessage(res?.message, {
             translationKey: res?.translationKey,
+            fallback: "تمت العملية",
           }),
         ),
       );

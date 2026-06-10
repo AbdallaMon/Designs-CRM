@@ -30,6 +30,7 @@ export async function runDashboardMutation(
         Success(
           resolveDashboardMessage(res?.message, {
             translationKey: res?.translationKey,
+            fallback: "تمت العملية",
           }),
         ),
       );

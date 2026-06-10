@@ -30,6 +30,7 @@ export async function runAccountingMutation(
         Success(
           resolveAccountingMessage(res?.message, {
             translationKey: res?.translationKey,
+            fallback: "تمت العملية",
           }),
         ),
       );

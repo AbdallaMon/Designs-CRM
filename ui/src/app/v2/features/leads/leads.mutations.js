@@ -30,6 +30,7 @@ export async function runLeadMutation(
         Success(
           resolveLeadMessage(res?.message, {
             translationKey: res?.translationKey,
+            fallback: "تمت العملية",
           }),
         ),
       );

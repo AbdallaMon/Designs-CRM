@@ -28,6 +28,7 @@ export async function runChatMutation(
         Success(
           resolveChatMessage(res?.message, {
             translationKey: res?.translationKey,
+            fallback: "تمت العملية",
           }),
         ),
       );
