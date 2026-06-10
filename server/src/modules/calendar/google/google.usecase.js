@@ -61,11 +61,16 @@ export class GoogleCalendarUsecase {
     return true;
   }
 
-  // GET /google/status — connection metadata only (no tokens). Mirrors the legacy shape.
+  // GET /google/status — connection metadata only. The frozen schema has no
+  // `googleCalendarConnected` flag, so `connected` is DERIVED from the presence of a stored
+  // refresh token (Boolean(googleRefreshToken)) — matching the legacy intent where a Google
+  // client is only usable once tokens exist. SECURITY: the refresh token is read here ONLY to
+  // compute the boolean; it is dropped immediately and NEVER returned or logged. Only
+  // { connected, calendarId, tokenExpired } leaves this method.
   async status({ authUser }) {
     const userData = await this.repo.findConnectionStatus({ userId: authUser.id });
     return {
-      connected: userData?.googleCalendarConnected ?? false,
+      connected: Boolean(userData?.googleRefreshToken),
       calendarId: userData?.googleCalendarId ?? null,
       tokenExpired: userData?.googleTokenExpiresAt
         ? new Date(userData.googleTokenExpiresAt) < new Date()

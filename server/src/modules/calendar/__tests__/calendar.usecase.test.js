@@ -229,7 +229,9 @@ describe("GoogleCalendarUsecase", () => {
 
   it("status exposes ONLY connection metadata, never tokens", async () => {
     const findConnectionStatus = vi.fn().mockResolvedValue({
-      googleCalendarConnected: true,
+      // Real schema fields — there is NO googleCalendarConnected column. `connected` is
+      // derived from the presence of a stored refresh token, which must NOT leak out.
+      googleRefreshToken: "1//refresh-secret",
       googleCalendarId: "primary@x",
       googleTokenExpiresAt: new Date(Date.now() + 3600_000),
     });

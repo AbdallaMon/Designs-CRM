@@ -4,21 +4,26 @@
 // service owns ALL token handling and is behavior-frozen. The ONLY direct Prisma here is the
 // connection-STATUS read that the legacy `/status` route performed inline.
 //
-// SECURITY: this select returns ONLY non-secret connection metadata
-// (googleCalendarConnected / googleCalendarId / googleTokenExpiresAt). It deliberately does
-// NOT select googleAccessToken / googleRefreshToken — tokens are NEVER read into or returned
-// from this surface, matching the legacy `/status` handler exactly.
+// SECURITY: this select reads googleRefreshToken SOLELY so the usecase can derive the
+// `connected` boolean (Boolean(refreshToken) — presence of a stored refresh token means an
+// established Google connection). The raw token NEVER escapes the usecase: the usecase maps
+// this row to { connected, calendarId, tokenExpired } and drops the token before it reaches
+// the response/dto. The token value is never returned from `/status` and never logged.
+// (googleCalendarId / googleTokenExpiresAt are non-secret connection metadata.)
+// Note: the frozen schema has NO `googleCalendarConnected` column — connection state is
+// derived from googleRefreshToken presence, not stored as a flag.
 import prisma from "../../../infra/prisma/prisma.js";
 
 class GoogleCalendarRepository {
   model = prisma.user;
 
-  // Legacy GET /google/status — connection metadata only (no tokens).
+  // Legacy GET /google/status — connection metadata + refresh-token presence (token used
+  // ONLY by the usecase to derive `connected`; never returned/logged).
   findConnectionStatus({ userId }) {
     return prisma.user.findUnique({
       where: { id: Number(userId) },
       select: {
-        googleCalendarConnected: true,
+        googleRefreshToken: true,
         googleCalendarId: true,
         googleTokenExpiresAt: true,
       },

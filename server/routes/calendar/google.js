@@ -7,6 +7,7 @@ import {
   resyncMeetingRemindersWithGoogleCalendar,
 } from "../../services/main/calendar/googleCalendar.js";
 import { getCurrentUser } from "../../services/main/utility/utility.js";
+import prisma from "../../prisma/prisma.js";
 
 const router = express.Router();
 
@@ -99,10 +100,12 @@ router.post("/disconnect", async (req, res) => {
 router.get("/status", async (req, res) => {
   try {
     const user = await getCurrentUser(req);
+    // SECURITY: googleRefreshToken is read ONLY to derive `connected` (the frozen schema has
+    // no googleCalendarConnected column). The token is never returned or logged.
     const userData = await prisma.user.findUnique({
       where: { id: user.id },
       select: {
-        googleCalendarConnected: true,
+        googleRefreshToken: true,
         googleCalendarId: true,
         googleTokenExpiresAt: true,
       },
@@ -110,9 +113,9 @@ router.get("/status", async (req, res) => {
 
     res.json({
       data: {
-        connected: userData.googleCalendarConnected,
-        calendarId: userData.googleCalendarId,
-        tokenExpired: userData.googleTokenExpiresAt
+        connected: Boolean(userData?.googleRefreshToken),
+        calendarId: userData?.googleCalendarId ?? null,
+        tokenExpired: userData?.googleTokenExpiresAt
           ? new Date(userData.googleTokenExpiresAt) < new Date()
           : null,
       },
