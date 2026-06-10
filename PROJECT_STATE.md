@@ -3,7 +3,13 @@
 > **Open this file in any new chat.** It tells you what we are doing and where we have reached.
 > To resume: *"Read `PROJECT_STATE.md`, `CLAUDE.md`, and `docs/migration/`, then tell me where we are and what's next."*
 >
-> Last updated: **2026-06-08** · Branch: `server-migration`
+> Last updated: **2026-06-10** · Branch: `server-migration`
+>
+> **Current phase (2026-06-10):** BE + FE migration COMPLETE; UX/UI redesign feature builds (Phases 0–4)
+> COMPLETE; post-redesign FE message-resolver centralization (`73e7f9d`) reconciled + fixed (`6193984`).
+> **Only the destructive cutover (task #13) remains — gated on a browser click-through.** For the
+> authoritative latest state + commit trail see **`docs/migration/RESUME-CHECKPOINT.md`** (this file's
+> §3 commit trail below is kept at the FE-features milestone and is not the latest).
 
 ---
 

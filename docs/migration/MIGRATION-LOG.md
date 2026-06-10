@@ -39,6 +39,30 @@
 
 ## Changelog (most recent first)
 
+### Stage 6b — Post-redesign FE reconciliation: centralized message resolver + fixes — ✅ 2026-06-10
+**Context.** After all redesign feature builds (Phases 0–4, commit `b63ba3e`), the user committed a
+large manual WIP as `73e7f9d` ("save", authored by Abdalla). This session reconciled and documented it.
+**What `73e7f9d` did:** (a) **centralized the FE Arabic message-code resolver** — new
+`ui/src/app/v2/data/messages/*.js` (one map per domain) + `data/messages/index.js` (exposes
+`MESSAGES_BY_NAMESPACE` + flat `ALL_MESSAGE_CODES`) + `data/resolveMessageCode.js` (namespace → flat →
+human-text passthrough → fallback; the raw CODE is never shown), and rewired every feature's
+`*.mutations.js` + `config/*Messages.js` to delegate unknown codes to the central resolver (feature
+Arabic still wins first). (b) **Prisma migration-history squash** — the old 3 migrations + 5 loose
+`.sql` files were consolidated into a single `20260608105742_init` baseline. **`schema.prisma` itself
+was NOT touched — the schema stays 🔒 frozen; only the migration history was reset.** ⚠️ Note: this new
+single-init baseline applies cleanly to a FRESH DB only; a DB that already had the old migration history
+will show a Prisma migrations mismatch (re-baseline with `migrate resolve` if deploying onto an existing DB).
+**Reconciliation review (shared-reviewer, read-only):** verdict **safe to keep, 100% BE↔FE code-parity**
+(every BE-emitted code maps on the FE; adminResidual correctly keyed by the `ADMIN_*` code strings, not the
+object keys), no blockers, no layering/i18n violations. **One should-fix found + FIXED this session
+(commit `6193984`):** every mutation runner's SUCCESS branch called the resolver with no `fallback`, so an
+empty/unmapped success `message` fell through to the resolver's ERROR default and rendered an error-worded
+string in a green success toast → added `fallback: "تمت العملية"` to the success branch of all 17 v2
+`*.mutations.js` (error branch unchanged); esbuild parse-verified. Also **untracked + gitignored** three
+accidentally-committed run/build logs (`server/.boot-log.txt`, `ui/.build-log.txt`, `ui/.dev-log.txt`).
+Suite still **571 tests / 34 files green** (FE-only change). ➡️ Cutover (task #13) still gated on the
+browser click-through — per the user, held while reconciling this commit first.
+
 ### Stage 5 — Client-facing surface sweep (client-portal + public-lead funnel + client-chat) — ✅ 2026-06-07 — 🎉 BACKEND MIGRATION COMPLETE
 **Backend-only (FE deferred).** Migrated the remaining client-facing standalone routers from `routes/client/*` (mounted pathless under `/client` via `routes/clients/clients.js`) into v2 (strangler — legacy stays live), completing the BE. **Overlap analysis first (no re-migration):** client calendar/image-session/contracts + the booking funnel (`/v2/client/booking-leads`) were already migrated — untouched. **Two commits:** **(a) client-portal `e943739`** — `server/src/modules/leads/client/public-lead/` (the website lead funnel: new-lead, register, complete-register, cooperation-requests — DISTINCT from the booking-leads draft model) + `server/src/modules/client-portal/{payments,uploads,notes,languages}/` → `/v2/client/*`. `routes/client/telegram.js` had 0 live endpoints (commented) → skipped. Closed a **payment mark-paid IDOR** (target lead now derived from the VERIFIED Stripe session metadata.clientLeadId, 403 on mismatch; amount server-fixed; backfill secret-gate preserved), a **notes dynamic-key IDOR/mass-assignment** (idKey → z.enum(clientLeadId|updateId) at validation+usecase, .strict() body, author forced server-side), and funnel mass-assignment (status server-forced NEW, code generated, unassigned). Uploads/Stripe relocated verbatim (chunk mechanism + Stripe SDK untouched; Stripe client made lazy). **(b) client-chat `efefedc`** — `server/src/modules/chat/client/` (7 PUBLIC token-based read endpoints) → `/v2/client/chat`, reusing the authed chat repo/helpers via lazy adapters + one added repo method `findRoomByAccessToken`. **Closed a serious legacy BROKEN-ACCESS IDOR:** 6 of 7 legacy endpoints required NO token (gated on a client-supplied clientId with no token link) → anyone could read any room's messages/members/files/pins by supplying any member clientId; and the message-page endpoint had no room check (cross-room probing). v2 derives the room FROM the per-room token (uuidv4, @unique) on every endpoint, 403s a mismatched :roomId, takes client scope from the token's member, verifies a messageId belongs to the token's room, and drops the legacy token-echo + full-client PII over-fetch. **Security reviews (shared-security): both verdict SAFE** (the public-funnel complete-register-ownership, upload size-limit, /pay rate-limit, and positional token→member binding are pre-existing ported quirks of intentionally-public surfaces — documented follow-ups, raised with the user, not blockers). **PORTED quirks/backlog (raise with user):** complete-register/:leadId has no per-draft ownership token (any caller can complete any draft lead — needs product threat-model sign-off); no multer size/MIME limit + no rate-limit on /pay & uploads (DoS); /payment-status returns the full Stripe session (FE relies on it); client-chat positional token→member binding (fine for single-client rooms). **Authorization:** all PUBLIC/token-based, kept ungated like the booking funnel. **Contract:** envelope + clientPortalMessages + new leads/chat codes (language-neutral, replaced Arabic/English prose); message history keeps cursor shape. git diff over services/routes/db EMPTY. **Verified:** root `npm test` green — **549 tests / 34 files** (+33 across both commits); `node --check` clean; guarded boot mounts all new `/v2/client/*` surfaces. No schema/PDF/upload-chunk/Stripe-signature change.
 **➡️ With this sweep, EVERY legacy router group now has a `/v2` equivalent — the backend strangler migration is functionally complete. Remaining: the FE migration phase (build `web/features/*`, apply the §5c contract deltas) and Phase 12 cutover (flip FE to `/v2`, retire legacy, rename `ui/→web/`).**

@@ -4,7 +4,7 @@
 > `CLAUDE.md`, and `docs/migration/MIGRATION-LOG.md`) in any new session to continue
 > the backend migration **exactly where it stopped**, with no re-discovery.
 >
-> Last updated: **2026-06-07** · Branch: `server-migration` · Working tree: **clean**
+> Last updated: **2026-06-10** · Branch: `server-migration` · Working tree: **clean**
 
 ---
 
@@ -42,6 +42,16 @@ REDESIGN PROGRESS:
   SPIN/VERSA tabs, image-sessions session tab. Commit `b63ba3e`.
 
 🎉 **ALL REDESIGN FEATURE BUILDS COMPLETE (Phases 0–4).** Every screen rebuilt on the shell primitives.
+
+- ✅ **Post-redesign FE polish** — the user manually committed a large WIP as `73e7f9d` ("save"):
+  **centralized the FE Arabic message resolver** (`v2/data/messages/*` + `data/resolveMessageCode.js`;
+  every feature's `*.mutations.js`/`config/*Messages.js` now delegates unknown codes to it) + a **Prisma
+  migration-history squash** into a single `20260608105742_init` baseline (⚠️ `schema.prisma` NOT touched —
+  schema still 🔒 frozen; only migration history reset → clean on a FRESH DB, re-baseline an existing one).
+  Reconciled this session: shared-reviewer verdict **safe, 100% BE↔FE code-parity, no blockers**. Fixed the
+  one should-fix (success toasts could render the error-default string) — added `fallback: "تمت العملية"`
+  to the success branch of all 17 mutation runners; untracked + gitignored 3 stray run/build logs.
+  Commit `6193984`. Suite still **571/34 green**.
 
 ⚠️ **VERIFICATION GAP (do this BEFORE the destructive phase):** all redesign screens were verified with
 **esbuild parse+bundle only** — NOT run in a browser. Before removing legacy (the safety net), actually
@@ -116,7 +126,9 @@ web/permissions-mirror 127f414 → web/foundation(dashboard/notifications/utilit
 questions/sales-stages/reviews/users/admin-residual) 42d62f9 → (docs 57a3c00) →
 (ux-plan 2ae94fc) → redesign-Phase0(shell+primitives) 07e3a5e → redesign-Wave A
 (notifications/users/dashboard) 6ae4cf4 → (docs 68b7666) → Wave B(adminResidual/reviews/
-utilities) 3c04234 → Wave C(image-sessions/courses) f7c6a43 → Wave D(lead-context tools) b63ba3e
+utilities) 3c04234 → Wave C(image-sessions/courses) f7c6a43 → Wave D(lead-context tools) b63ba3e →
+(checkpoint 84a1692) → save[user WIP: central msg-resolver + prisma squash] 73e7f9d →
+success-toast-fallback fix + untrack logs 6193984
 ```
 Baseline / rollback point: `9406978` ("merged").
 ✅ FE migration COMPLETE (full features + foundations). NEXT phase = UX/UI redesign.
