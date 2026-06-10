@@ -60,14 +60,14 @@ router.post("/pay", async (req, res) => {
       clientLead.client.email,
       clientLead.client.name,
       session.url,
-      req.body.lng
+      req.body.lng,
     );
 
     return res.json({ url: session.url });
   } catch (error) {
     console.error(
       "Error creating checkout:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     res.status(500).send("Internal Server Error");
   }
@@ -115,17 +115,17 @@ router.get("/payment-status", async (req, res) => {
         name: first(
           charge?.billing_details?.name,
           pm?.billing_details?.name,
-          session.customer_details?.name
+          session.customer_details?.name,
         ),
         email: first(
           charge?.billing_details?.email,
           pm?.billing_details?.email,
-          session.customer_details?.email
+          session.customer_details?.email,
         ),
         phone: first(
           charge?.billing_details?.phone,
           pm?.billing_details?.phone,
-          session.customer_details?.phone
+          session.customer_details?.phone,
         ),
         address:
           charge?.billing_details?.address ||
@@ -185,13 +185,16 @@ router.get("/payment-status", async (req, res) => {
         oldLead.client.email,
         oldLead.client.name,
         clientLeadId,
-        lng
+        lng,
       );
 
       return res.status(200).json({
         paymentStatus: "PAID",
         success: true,
-        message: "Payment verified",
+        message:
+          lng === "en"
+            ? "Payment completed successfully, our team will contact you soon"
+            : "تم اتمام الفدع بنجاح سيتواصل معك فريقنا قريبا",
         session,
         kv,
       });

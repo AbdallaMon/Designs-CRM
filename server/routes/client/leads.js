@@ -285,11 +285,17 @@ router.post("/new-lead/complete-register/:leadId", async (req, res) => {
     });
     await newLeadCompletedNotification(clientLead.id, client, true);
 
+    // const message =
+    //   body.lng === "ar"
+    //     ? "تم تسجيل بياناتك بنجاح وسنقوم بالتواصل معك في اقرب وقت"
+    //     : "Your information has been successfully recorded, and we will contact you as soon as possible.";
     const message =
       body.lng === "ar"
-        ? "تم تسجيل بياناتك بنجاح وسنقوم بالتواصل معك في اقرب وقت"
-        : "Your information has been successfully recorded, and we will contact you as soon as possible.";
-    res.status(200).json({ data: clientLead, message });
+        ? "تم تسجيل بياناتك سيتم اعادة توجيهك لاكمال الدفع"
+        : "Your information has been successfully recorded, you will be redirected to complete the payment";
+    res
+      .status(200)
+      .json({ data: { ...clientLead, leadId, clientId: client.id }, message });
   } catch (error) {
     console.error("Error fetching client form:", error);
     const message =
