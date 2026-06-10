@@ -51,13 +51,17 @@ class BookingLeadSchemas {
       .positive("leadId must be a positive integer"),
   });
 
-  createBookingLead = z.object({
-    name: z
-      .string({ error: "name must be a string" })
-      .trim()
-      .min(1, "name is required"),
-    phone: phoneSchema,
-  });
+  // name/phone are optional at registration (master fdefbbf "edit client register"):
+  // missing values fall back to the same draft placeholders the legacy funnel writes.
+  createBookingLead = z
+    .object({
+      name: z.string({ error: "name must be a string" }).trim().optional(),
+      phone: z.string({ error: "phone must be a string" }).trim().optional(),
+    })
+    .transform((body) => ({
+      name: body.name || "draft",
+      phone: body.phone || "+0123456789",
+    }));
 
   // PATCH accepts exactly one field at a time — validated imperatively in the usecase.
   // Here we just ensure the body is a plain object with at least one known key.

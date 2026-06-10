@@ -51,12 +51,14 @@ export const PublicLeadValidation = {
     })
     .strip(),
 
-  // POST /new-lead/register — same client-identity requirement, minimal lead.
+  // POST /new-lead/register — email identifies the client; name/phone are OPTIONAL
+  // (master fdefbbf): the usecase falls back to draft placeholders, and the
+  // complete-register step writes the real values later.
   registerLead: z
     .object({
       lng: trimmed.optional(),
-      name: trimmed.min(1),
-      phone: trimmed.min(1),
+      name: trimmed.min(1).optional(),
+      phone: trimmed.min(1).optional(),
       email: z.string().trim().email(),
       stateOfTheProject: trimmed.optional(),
     })

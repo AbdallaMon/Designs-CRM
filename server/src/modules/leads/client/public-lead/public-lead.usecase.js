@@ -146,7 +146,10 @@ export class PublicLeadUsecase {
 
   // POST /new-lead/register
   async registerLead(body) {
-    const client = await this.#resolveClientOrThrow(body);
+    // master fdefbbf: register tolerates a missing name/phone (draft placeholders).
+    const client = await this.#resolveClientOrThrow(body, {
+      registerDefaults: true,
+    });
 
     const data = {
       client: { connect: { id: client.id } },
@@ -192,6 +195,17 @@ export class PublicLeadUsecase {
     };
     applyOptionalLeadFields(data, body);
     if (body.discoverySource) data.discoverySource = body.discoverySource;
+    // master fdefbbf: completing the registration also fixes up the client's real
+    // name/phone (replacing the draft placeholders written at the register step).
+    if (body.phone)
+      data.client = { update: { phone: body.phone.replace(/\s+/g, "") } };
+    if (body.name)
+      data.client = {
+        update: {
+          name: body.name,
+          ...(data.client?.update && data.client.update),
+        },
+      };
 
     const clientLead = await this.repository.updateLead(leadId, data);
     if (body.url) await this.legacy.uploadFile(body, clientLead.id);
@@ -213,15 +227,25 @@ export class PublicLeadUsecase {
   }
 
   // Find-or-create the Client, and block a second submission on the same day (legacy).
-  async #resolveClientOrThrow(body) {
+  // `registerDefaults` (master fdefbbf): the register step may arrive without name/phone —
+  // create with draft placeholders, and only push a (space-stripped) phone update if given.
+  async #resolveClientOrThrow(body, { registerDefaults = false } = {}) {
     let client = await this.repository.findClientByEmail(body.email);
 
     if (!client) {
-      client = await this.repository.createClient({
-        name: body.name,
-        phone: body.phone,
-        email: body.email,
-      });
+      client = await this.repository.createClient(
+        registerDefaults
+          ? {
+              name: body.name || "draft",
+              phone: body.phone || "+0123456789",
+              email: body.email,
+            }
+          : {
+              name: body.name,
+              phone: body.phone,
+              email: body.email,
+            },
+      );
       return client;
     }
 
@@ -230,7 +254,10 @@ export class PublicLeadUsecase {
       throw new AppError(C.CLIENT_LEAD_ALREADY_TODAY, 422);
     }
 
-    await this.repository.updateClientPhone(client.id, body.phone);
+    await this.repository.updateClientPhone(
+      client.id,
+      registerDefaults ? body.phone?.replace(/\s+/g, "") : body.phone,
+    );
     return client;
   }
 }

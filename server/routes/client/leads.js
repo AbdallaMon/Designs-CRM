@@ -149,12 +149,14 @@ router.post("/new-lead/register", async (req, res) => {
       where: { email: body.email },
     });
     if (!client) {
+      const data = {
+        email: body.email,
+        name: body.name || "draft",
+        phone: body.phone ? body.phone.replace(/\s+/g, "") : "+0123456789",
+      };
+
       client = await prisma.client.create({
-        data: {
-          name: body.name,
-          phone: body.phone.replace(/\s+/g, ""),
-          email: body.email,
-        },
+        data,
       });
     } else {
       const todayStart = dayjs().startOf("day");
@@ -174,7 +176,7 @@ router.post("/new-lead/register", async (req, res) => {
       } else {
         await prisma.client.update({
           where: { id: client.id },
-          data: { phone: body.phone },
+          data: { phone: body.phone?.replace(/\s+/g, "") },
         });
       }
     }
@@ -262,7 +264,15 @@ router.post("/new-lead/complete-register/:leadId", async (req, res) => {
       data.priceWithOutDiscount = priceRangeValues[body.priceOption];
     }
     if (body.discoverySource) data.discoverySource = body.discoverySource;
-
+    if (body.phone)
+      data.client = { update: { phone: body.phone.replace(/\s+/g, "") } };
+    if (body.name)
+      data.client = {
+        update: {
+          name: body.name,
+          ...(data.client?.update && data.client.update),
+        },
+      };
     const clientLead = await prisma.clientLead.update({
       where: { id: Number(leadId) },
       data,
