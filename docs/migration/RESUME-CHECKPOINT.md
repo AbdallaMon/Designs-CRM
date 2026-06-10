@@ -53,10 +53,32 @@ REDESIGN PROGRESS:
   to the success branch of all 17 mutation runners; untracked + gitignored 3 stray run/build logs.
   Commit `6193984`. Suite still **571/34 green**.
 
-⚠️ **VERIFICATION GAP (do this BEFORE the destructive phase):** all redesign screens were verified with
-**esbuild parse+bundle only** — NOT run in a browser. Before removing legacy (the safety net), actually
-RUN the app (`cd ui && npm run dev`) and click through the v2 routes (login → shell nav → each feature,
-incl. the public wizard + report downloads). Legacy still serves everything, so nothing is broken yet.
+✅ **RUNTIME VERIFICATION DONE (2026-06-10, Playwright click-through of all 22 v2 routes as a fresh
+ADMIN):** shell/nav/RTL/breadcrumbs + 18 of the screens render and fetch `/v2/*` cleanly (notifications,
+chat, leads, tasks, image-sessions, accounting, courses ×2, users + detail, site-utilities, reviews,
+utilities, admin ×5, calendar). Unauth API → 401 `UNAUTHORIZED` envelope ✓. **4 BLOCKERS found — fix
+BEFORE the destructive phase (legacy removal):**
+  1. **Dashboard infinite refetch loop** — `useRequest`'s `fetchData` depends on `useLoading`'s
+     non-memoized `startLoading/stopLoading`, so the `autoFetch` effect refires after every render
+     ("Maximum update depth exceeded"; widgets stuck on skeletons forever). Fix in
+     `ui/src/app/v2/hooks/useLoading.js` (useCallback) — also hits `FixedDataList` + `AdminProjectsView`.
+  2. **Projects board 500 for admins** — v2 `ProjectsPage` calls `GET /v2/projects/designers` with NO
+     `type` param; legacy always sent `?type=` and the legacy service crashes without it
+     (`updatesWhere.OR.push` on undefined, `projectServices.js:705`). Page silently shows "لا توجد بيانات".
+  3. **`/v2/contracts/payments` nav link is broken** — no such route; it falls into
+     `contracts/[leadId]` with `leadId="payments"` → 422 + a "عقود العميل المحتمل #payments" page.
+     The contracts feature has NO payments list page; build it or repoint the nav item.
+  4. **Calendar google/status 500** — `google.usecase.js:66` selects nonexistent
+     `User.googleCalendarConnected` (schema has googleAccessToken/RefreshToken/TokenExpiresAt/
+     CalendarId/Email). FE degrades gracefully (shows "غير مرتبط") but the BE crashes every load.
+  Minor: unauth visit to a v2 route shows a permission-denied dead end instead of redirecting to
+  /login; login error toast shows the raw code `INVALID_CREDENTIALS` (resolver miss). NOT exercised:
+  public image-session wizard + report PDF downloads (no token/data in the fresh dev DB).
+
+✅ **MASTER SYNC (2026-06-10, commit `e04dabb`):** master's only commit this week — `fdefbbf`
+"edit client register" — cherry-picked + ported onto the relocated modules (legacy funnel files as-is;
+`src/.../booking-lead` repo `findByEmail` + relaxed create validation; `src/.../public-lead` register
+draft-placeholder defaults + complete-register client name/phone fix-up). Live-probed end-to-end.
 
 ⏭️ **REMAINING — the destructive cutover phase (task #13), NOT yet started (needs runtime verification first):**
   - Per-screen legacy `@role`-slot removal (`ui/src/app/(auth)/dashboard/(dashboard)/@*`) as each v2 route is
@@ -128,7 +150,8 @@ questions/sales-stages/reviews/users/admin-residual) 42d62f9 → (docs 57a3c00) 
 (notifications/users/dashboard) 6ae4cf4 → (docs 68b7666) → Wave B(adminResidual/reviews/
 utilities) 3c04234 → Wave C(image-sessions/courses) f7c6a43 → Wave D(lead-context tools) b63ba3e →
 (checkpoint 84a1692) → save[user WIP: central msg-resolver + prisma squash] 73e7f9d →
-success-toast-fallback fix + untrack logs 6193984
+success-toast-fallback fix + untrack logs 6193984 → (docs 11ce5ac) →
+master-sync[fdefbbf client-register → migrated funnel] e04dabb
 ```
 Baseline / rollback point: `9406978` ("merged").
 ✅ FE migration COMPLETE (full features + foundations). NEXT phase = UX/UI redesign.

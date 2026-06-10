@@ -7,9 +7,13 @@
 >
 > **Current phase (2026-06-10):** BE + FE migration COMPLETE; UX/UI redesign feature builds (Phases 0–4)
 > COMPLETE; post-redesign FE message-resolver centralization (`73e7f9d`) reconciled + fixed (`6193984`).
-> **Only the destructive cutover (task #13) remains — gated on a browser click-through.** For the
-> authoritative latest state + commit trail see **`docs/migration/RESUME-CHECKPOINT.md`** (this file's
-> §3 commit trail below is kept at the FE-features milestone and is not the latest).
+> **Runtime browser verification DONE (Playwright, all 22 v2 routes)** — 18 screens clean, **4 blockers
+> found** (dashboard useLoading refetch loop, projects board missing `?type=` → 500, broken
+> `/v2/contracts/payments` nav target, calendar google/status selects nonexistent
+> `User.googleCalendarConnected`). Master's week commit `fdefbbf` (client register) ported (`e04dabb`).
+> **Destructive cutover (task #13) stays gated until the 4 blockers are fixed.** For the authoritative
+> latest state + commit trail see **`docs/migration/RESUME-CHECKPOINT.md`** (this file's §3 commit
+> trail below is kept at the FE-features milestone and is not the latest).
 
 ---
 
