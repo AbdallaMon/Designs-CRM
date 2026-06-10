@@ -39,7 +39,7 @@ router.post("/pay", async (req, res) => {
                   ? "$39 - Fully deducted upon contract"
                   : "٣٩ دولار 💵 – تُخصم بالكامل عند التعاقد",
             },
-            unit_amount: 0,
+            unit_amount: parseInt(process.env.STRIPE_UNIT_AMOUNT), // Set to 0 for free checkout, adjust as needed
           },
           quantity: 1,
         },
