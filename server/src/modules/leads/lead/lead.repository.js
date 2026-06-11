@@ -424,6 +424,9 @@ function detailSelect(fileWhere) {
       select: { id: true, status: true, amount: true, amountPaid: true, amountLeft: true, paymentReason: true },
     },
     extraServices: { select: { id: true, price: true, note: true } },
+    // Additive: related-record totals for the FE hub rail (independent of the take:1
+    // IN_PROGRESS contracts select above — these are true counts of every relation).
+    _count: { select: { projects: true, contracts: true, imageSessions: true } },
   };
 }
 
@@ -446,6 +449,9 @@ const ADMIN_DETAIL_INCLUDE = {
     orderBy: { time: "desc" },
   },
   files: { include: { user: { select: { name: true } } } },
+  // Additive: related-record totals for the FE hub rail (independent of the take:1
+  // IN_PROGRESS contracts include above — these are true counts of every relation).
+  _count: { select: { projects: true, contracts: true, imageSessions: true } },
 };
 
 export const leadRepository = new LeadRepository();

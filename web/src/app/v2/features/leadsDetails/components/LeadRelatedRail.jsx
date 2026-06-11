@@ -28,18 +28,17 @@ import { locateSection } from "../config/leadHubTabs.js";
 // path yields undefined → no number, rendering "—"). `sectionKey` ties the card to a tab via
 // leadHubTabs.
 //
-// COUNT COVERAGE (lead detail payload — ADMIN_DETAIL_INCLUDE):
+// COUNT COVERAGE (lead detail payload):
 //   payments / callReminders / meetingReminders → full arrays  ✅ real length.
-//   contracts → the payload includes ONLY IN_PROGRESS contracts capped at take:1 (it drives the
-//     stage strip), so its length is NOT a reliable total → kept "—" (needs a _count dto).
-//   projects → NOT in the lead payload at all (self-loaded by LeadProjects) → "—".
-//   sessions (imageSessions) → NOT in the lead detail payload (LeadSessionsPanel self-loads) → "—".
-// A backend-additive `_count: { projects, contracts, imageSessions }` on the lead detail dto
-// would let the last three show real numbers — see the page report.
+//   projects / contracts / sessions (imageSessions) → the take:1 IN_PROGRESS `contracts`
+//     include is NOT a reliable total, and projects/imageSessions are not embedded as arrays.
+//     The backend now adds an additive `_count: { projects, contracts, imageSessions }` to the
+//     lead detail (both admin + staff paths) — read true totals from there. Fall back to "—"
+//     only when `_count` is genuinely absent (e.g. an older/cached payload).
 const RAIL_CARDS = [
-  { sectionKey: "projects", label: "المشاريع", icon: <MdWork />, count: () => undefined },
-  { sectionKey: "contracts", label: "العقود", icon: <MdDescription />, count: () => undefined },
-  { sectionKey: "sessions", label: "جلسات الصور", icon: <MdImage />, count: () => undefined },
+  { sectionKey: "projects", label: "المشاريع", icon: <MdWork />, count: (lead) => lead?._count?.projects },
+  { sectionKey: "contracts", label: "العقود", icon: <MdDescription />, count: (lead) => lead?._count?.contracts },
+  { sectionKey: "sessions", label: "جلسات الصور", icon: <MdImage />, count: (lead) => lead?._count?.imageSessions },
   { sectionKey: "payments", label: "الدفعات", icon: <MdPayments />, count: (lead) => lead?.payments?.length },
   { sectionKey: "calls", label: "المكالمات", icon: <MdCall />, count: (lead) => lead?.callReminders?.length },
   { sectionKey: "meetings", label: "الاجتماعات", icon: <MdGroups />, count: (lead) => lead?.meetingReminders?.length },
