@@ -72,7 +72,8 @@ export function LeadDetailsPage({ leadId }) {
 
   const { lead, isLoading, error, refetch } = useLeadDetail(leadId, { autoFetch: canView });
 
-  // Record this lead as recently-viewed (feeds the WorkspacePanel "آخر العملاء" block).
+  // Record this lead as recently-viewed (the recent-leads store; previously surfaced by the
+  // retired workspace panel — retained for any future "recently viewed" surface).
   useEffect(() => {
     if (lead?.id != null) pushRecentLead({ id: lead.id, name: lead.client?.name });
   }, [lead?.id, lead?.client?.name]);

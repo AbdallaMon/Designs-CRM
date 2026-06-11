@@ -12,8 +12,18 @@
 // Single-language Arabic / RTL.
 
 import { ThemeProvider } from "@mui/material";
+import { CssBaseline } from "@mui/material";
 import theme from "./theme";
 
 export function MUIProvider({ children }) {
-  return <ThemeProvider theme={theme}>{children}</ThemeProvider>;
+  // <CssBaseline /> applies MUI's normalize + (crucially) the theme's MuiCssBaseline overrides
+  // (e.g. the global prefers-reduced-motion reset). The reference mounts it inside ThemeProvider;
+  // ours was missing it, so those overrides never took effect. RtlCacheProvider / the emotion
+  // cache are untouched (owned by the root layout).
+  return (
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      {children}
+    </ThemeProvider>
+  );
 }

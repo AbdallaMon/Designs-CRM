@@ -1,29 +1,23 @@
 // Barrel for the app-shell feature (UX redesign Phase 0).
+//
+// The rejected workspace-rail/command-palette shell (AppShellV2 / WorkspaceRail / WorkspacePanel /
+// CommandBar / CommandPalette + the WORKSPACE-* helpers) has been removed in favor of the
+// sidebar+header shell at shared/layout/shell. What remains here is the permission-grouped nav
+// model, the Arabic label maps, the breadcrumb derivation, the notification bell, the role chips,
+// and the /v2 landing fan-out — all consumed by the new shell.
 
-export { AppShellV2 } from "./components/AppShellV2";
-export { WorkspaceRail } from "./components/WorkspaceRail";
-export { WorkspacePanel } from "./components/WorkspacePanel";
-export { CommandBar } from "./components/CommandBar";
-export { CommandPalette } from "./components/CommandPalette";
 export { NotificationBell } from "./components/NotificationBell";
 export { LandingRedirect } from "./components/LandingRedirect";
 export {
   NAV_ITEMS,
   NAV_GROUP_ORDER,
-  WORKSPACES,
-  WORKSPACE_ORDER,
   buildVisibleNav,
-  buildWorkspaceNav,
   navItemVisible,
 } from "./nav.config";
 export { buildBreadcrumbs, isPathActive, matchNavItem } from "./breadcrumbs";
 export {
   resolveNavGroup,
   resolveNavItem,
-  resolveNavItemCaption,
-  resolveWorkspaceLabel,
-  DEFAULT_WORKSPACE_BY_ROLE,
-  resolveDefaultWorkspace,
   DEFAULT_DESTINATION_BY_ROLE,
   resolveDefaultDestination,
 } from "./navLabels";

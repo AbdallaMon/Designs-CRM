@@ -29,76 +29,10 @@ export const NAV_ITEM_LABELS = {
   utilities: "الأدوات",
 };
 
-// One-line captions shown UNDER a destination row in the WorkspacePanel — a subtle hint of what
-// the destination is for, disambiguating look-alike entries (audit C2: leadsWorkspace vs leads).
-// Keyed by the nav item's labelKey. Not every item needs one; rows without a caption render the
-// label alone. Caption typography / text.secondary. Single-language Arabic / RTL.
-export const NAV_ITEM_CAPTIONS = {
-  leadsWorkspace: "مهامك اليومية",
-  leads: "البحث في كل العملاء",
-  dashboard: "نظرة عامة",
-};
-
 /** Resolve a nav group key to its Arabic label. */
 export const resolveNavGroup = (key) => NAV_GROUP_LABELS[key] ?? key;
 /** Resolve a nav item labelKey to its Arabic label. */
 export const resolveNavItem = (key) => NAV_ITEM_LABELS[key] ?? key;
-/** Resolve a nav item labelKey to its optional one-line caption (or null when none). */
-export const resolveNavItemCaption = (key) => NAV_ITEM_CAPTIONS[key] ?? null;
-
-// ─────────────────────────────────────────────────────────────────────────────
-// WORKSPACE labels (new app-shell rail). Distinct from NAV_GROUP_LABELS: the rail
-// frames the "home" zone as the user's personal space ("مساحتي"), while the older
-// side-nav group header reads "الرئيسية". Keys mirror WORKSPACES[].labelKey.
-// ─────────────────────────────────────────────────────────────────────────────
-export const WORKSPACE_LABELS = {
-  home: "مساحتي",
-  sales: "المبيعات",
-  production: "الإنتاج",
-  finance: "الشؤون المالية",
-  admin: "الإدارة",
-};
-
-/** Resolve a workspace labelKey to its Arabic label. */
-export const resolveWorkspaceLabel = (key) => WORKSPACE_LABELS[key] ?? key;
-
-// Display-only landing preference per role (which workspace the rail highlights / the logo
-// lands on by default when no path override applies). NEVER a gate — purely cosmetic
-// orientation. Keys are the Prisma UserRole enum values (auth/me display fields). The
-// resolver below falls back to "first accessible workspace" when there is no override or the
-// preferred workspace isn't accessible to this user.
-export const DEFAULT_WORKSPACE_BY_ROLE = {
-  STAFF: "home",
-  SUPER_SALES: "home",
-  THREE_D_DESIGNER: "production",
-  TWO_D_DESIGNER: "production",
-  TWO_D_EXECUTOR: "production",
-  ACCOUNTANT: "finance",
-  ADMIN: "home",
-  SUPER_ADMIN: "home",
-  CONTACT_INITIATOR: "sales",
-};
-
-/**
- * Resolve the default workspace for a user against the set of workspaces they can actually
- * reach (the built workspace-nav). Order of preference:
- *   1. the role override (activeRole / role; isSuperSales nudges to "home") — IF accessible,
- *   2. otherwise the first accessible workspace,
- *   3. otherwise null (no reachable workspace).
- *
- * @param {object} user              auth user (activeRole/role/isSuperSales display fields).
- * @param {Array}  accessibleWorkspaceKeys  keys of workspaces with ≥1 visible item.
- */
-export function resolveDefaultWorkspace(user, accessibleWorkspaceKeys = []) {
-  const accessible = new Set(accessibleWorkspaceKeys);
-  const role = user?.activeRole ?? user?.role;
-  let preferred = DEFAULT_WORKSPACE_BY_ROLE[role];
-  // Super-sales is a staff power-flag, not a base role — nudge it to the personal space.
-  if (user?.isSuperSales && !preferred) preferred = "home";
-
-  if (preferred && accessible.has(preferred)) return preferred;
-  return accessibleWorkspaceKeys[0] ?? null;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Explicit LANDING DESTINATION override per role (audit H1). Some personas should land on a

@@ -5,11 +5,12 @@
 // bare /v2 index, and THIS component sends each user on to THEIR default workspace's primary
 // destination.
 //
-// Resolution (mirrors AppShellV2's own landingHref logic so the rail highlight and the landing
+// Resolution (mirrors AppSidebarShell's own landingHref logic so the brand link and the landing
 // never drift):
-//   1. build the permission-filtered workspace nav (buildWorkspaceNav(usePermission)),
-//   2. pick the role's default workspace among the ACCESSIBLE ones (resolveDefaultWorkspace),
-//   3. take that workspace's FIRST visible destination href,
+//   1. build the permission-filtered grouped nav (buildVisibleNav(usePermission)),
+//   2. honor the role's EXPLICIT landing destination (sales personas → the daily cockpit) when
+//      reachable,
+//   3. otherwise take the FIRST visible destination href,
 //   4. fall back to /v2/dashboard when nothing resolves.
 //
 // We wait for auth validation to finish before resolving — otherwise usePermission sees the
@@ -23,10 +24,10 @@ import { Box } from "@mui/material";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
 import { usePermission } from "@/app/v2/hooks/usePermission";
-import { buildWorkspaceNav } from "../nav.config";
+import { buildVisibleNav } from "../nav.config";
 import {
+  resolveNavGroup,
   resolveNavItem,
-  resolveDefaultWorkspace,
   resolveDefaultDestination,
 } from "../navLabels";
 import { LoadingState } from "@/app/v2/shared/components/states/LoadingState";
@@ -46,22 +47,19 @@ export function LandingRedirect() {
   //   2. otherwise the role's default workspace's FIRST visible destination,
   //   3. otherwise the fallback (/v2/dashboard).
   const target = useMemo(() => {
-    const workspaceNav = buildWorkspaceNav(perm, resolveNavItem);
+    const groups = buildVisibleNav(perm, resolveNavGroup, resolveNavItem);
 
     // 1. explicit per-role override, gated by reachability (never send a user to a 403).
     const explicit = resolveDefaultDestination(user);
     if (explicit) {
-      const reachable = workspaceNav.some((w) =>
-        w.items.some((it) => it.href === explicit),
+      const reachable = groups.some((g) =>
+        g.items.some((it) => it.href === explicit),
       );
       if (reachable) return explicit;
     }
 
-    // 2. resolved-workspace first destination.
-    const accessibleKeys = workspaceNav.map((w) => w.workspace.key);
-    const defKey = resolveDefaultWorkspace(user, accessibleKeys);
-    const ws = workspaceNav.find((w) => w.workspace.key === defKey);
-    return ws?.items?.[0]?.href ?? FALLBACK_HREF;
+    // 2. first visible destination in the permission-filtered nav.
+    return groups[0]?.items?.[0]?.href ?? FALLBACK_HREF;
   }, [perm, user]);
 
   useEffect(() => {
