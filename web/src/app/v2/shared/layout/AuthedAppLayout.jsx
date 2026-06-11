@@ -5,32 +5,26 @@
 // shells (RTL emotion cache + MUIProvider + ToastProvider + AuthProvider). Every authed feature
 // layout.jsx is now a one-liner delegating here, so all authed v2 features render INSIDE the
 // shell (side-nav + TopBar + breadcrumbs). Strangler isolation from the legacy dashboard
-// providers/nav is preserved. Single-language Arabic / RTL.
+// providers/nav is preserved. RTL is owned by MUIProvider (one "muirtl" emotion cache for the
+// whole app); this layout no longer creates its own cache. Single-language Arabic / RTL.
 
-import createCache from "@emotion/cache";
-import { CacheProvider } from "@emotion/react";
-import rtlPlugin from "stylis-plugin-rtl";
 import { Box } from "@mui/material";
 import { MUIProvider } from "@/app/v2/providers/MUIProvider";
 import { ToastProvider } from "@/app/v2/providers/ToastProvider";
 import { AuthProvider } from "@/app/v2/providers/AuthProvider";
 import { AppShell } from "@/app/v2/features/shell/components/AppShell";
 
-const rtlCache = createCache({ key: "muirtl", stylisPlugins: [rtlPlugin] });
-
 export function AuthedAppLayout({ children }) {
   return (
-    <CacheProvider value={rtlCache}>
-      <MUIProvider>
-        <ToastProvider>
-          <AuthProvider>
-            <Box dir="rtl" sx={{ direction: "rtl", minHeight: "100vh" }}>
-              <AppShell>{children}</AppShell>
-            </Box>
-          </AuthProvider>
-        </ToastProvider>
-      </MUIProvider>
-    </CacheProvider>
+    <MUIProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <Box dir="rtl" sx={{ direction: "rtl", minHeight: "100vh" }}>
+            <AppShell>{children}</AppShell>
+          </Box>
+        </AuthProvider>
+      </ToastProvider>
+    </MUIProvider>
   );
 }
 

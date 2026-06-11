@@ -33,8 +33,10 @@ import { RolesTab } from "../components/tabs/RolesTab.jsx";
 import { AutoAssignmentsTab } from "../components/tabs/AutoAssignmentsTab.jsx";
 import { SettingsTab } from "../components/tabs/SettingsTab.jsx";
 import { ActivityTab } from "../components/tabs/ActivityTab.jsx";
+import { CommissionsView } from "@/app/v2/features/adminResidual/components/CommissionsView.jsx";
 
 const P = PERMISSIONS.USER;
+const RESIDUAL = PERMISSIONS.ADMIN_RESIDUAL;
 
 export function UserDetailPage({ userId }) {
   const { hasPermission, hasAnyPermission } = usePermission();
@@ -78,6 +80,8 @@ export function UserDetailPage({ userId }) {
       t.push({ key: "settings", label: "الإعدادات" });
     if (hasAnyPermission([P.VIEW_LOGS, P.VIEW_LAST_SEEN]))
       t.push({ key: "activity", label: "النشاط" });
+    if (hasPermission(RESIDUAL.COMMISSION_VIEW))
+      t.push({ key: "commissions", label: "العمولات" });
     return t;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -148,6 +152,7 @@ export function UserDetailPage({ userId }) {
                 />
               )}
               {active === "activity" && <ActivityTab userId={userId} />}
+              {active === "commissions" && <CommissionsView userId={userId} />}
             </Box>
           )}
         </UrlTabs>

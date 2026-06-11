@@ -1,10 +1,13 @@
 "use client";
 
 // <CommissionsView /> — the commissions surface (UX plan §3.10). GET /v2/admin/commissions
-// REQUIRES a userId, so the screen ALWAYS picks a user FIRST (an explicit empty state until one
-// is chosen), then lists that user's commissions in DataTablePage. Create/edit go through
-// CommissionDialog. View is gated on COMMISSION_VIEW (the page renders this), the create CTA +
-// row-edit on COMMISSION_MANAGE. Single-language Arabic / RTL.
+// REQUIRES a userId. Two modes:
+//   • STANDALONE (no `userId` prop) — the /v2/admin/commissions page: the screen picks a user
+//     FIRST via a manual id input (an explicit empty state until one is chosen).
+//   • EMBEDDED (`userId` prop provided) — e.g. the user-detail "العمولات" tab: the user is fixed,
+//     so the picker is skipped and that user's commissions load directly.
+// Create/edit go through CommissionDialog. View is gated on COMMISSION_VIEW (the caller renders
+// this), the create CTA + row-edit on COMMISSION_MANAGE. Single-language Arabic / RTL.
 
 import { useState } from "react";
 import { Box, Button, IconButton, Stack, TextField, Tooltip } from "@mui/material";
@@ -19,20 +22,26 @@ import { CommissionDialog } from "./CommissionDialog.jsx";
 
 const P = PERMISSIONS.ADMIN_RESIDUAL;
 
-export function CommissionsView() {
+export function CommissionsView({ userId: fixedUserId } = {}) {
   const { hasPermission } = usePermission();
   const canManage = hasPermission(P.COMMISSION_MANAGE);
 
+  // EMBEDDED mode: a userId prop fixes the subject and skips the picker. STANDALONE mode: the
+  // user is chosen via the manual id input below.
+  const embedded = fixedUserId != null && String(fixedUserId).trim() !== "";
+
   const [userIdInput, setUserIdInput] = useState("");
-  const [userId, setUserId] = useState(null);
+  const [pickedUserId, setPickedUserId] = useState(null);
   const [dialog, setDialog] = useState({ open: false, mode: "create", commission: null });
+
+  const userId = embedded ? String(fixedUserId) : pickedUserId;
 
   const { items, isLoading, error, refetch } = useCommissionsList({ userId });
 
   function pickUser(e) {
     e?.preventDefault?.();
     const id = String(userIdInput ?? "").trim();
-    setUserId(/^\d+$/.test(id) ? id : null);
+    setPickedUserId(/^\d+$/.test(id) ? id : null);
   }
 
   function openCreate() {
@@ -58,33 +67,43 @@ export function CommissionsView() {
 
   return (
     <Stack spacing={3}>
-      <SectionCard
-        title="اختر الموظف"
-        subtitle="تُعرض العمولات لموظف واحد في كل مرة — أدخل معرّف الموظف ثم اعرض عمولاته."
-        actions={
-          canManage && userId ? (
-            <Button variant="contained" color="primary" startIcon={<MdAdd />} onClick={openCreate}>
-              إضافة عمولة
-            </Button>
-          ) : null
-        }
-      >
-        <Box component="form" onSubmit={pickUser}>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <TextField
-              size="small"
-              type="number"
-              label="معرّف الموظف"
-              value={userIdInput}
-              onChange={(e) => setUserIdInput(e.target.value)}
-              sx={{ minWidth: 220 }}
-            />
-            <Button type="submit" variant="outlined" startIcon={<MdSearch />}>
-              عرض العمولات
-            </Button>
-          </Stack>
+      {!embedded && (
+        <SectionCard
+          title="اختر الموظف"
+          subtitle="تُعرض العمولات لموظف واحد في كل مرة — أدخل معرّف الموظف ثم اعرض عمولاته."
+          actions={
+            canManage && userId ? (
+              <Button variant="contained" color="primary" startIcon={<MdAdd />} onClick={openCreate}>
+                إضافة عمولة
+              </Button>
+            ) : null
+          }
+        >
+          <Box component="form" onSubmit={pickUser}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <TextField
+                size="small"
+                type="number"
+                label="معرّف الموظف"
+                value={userIdInput}
+                onChange={(e) => setUserIdInput(e.target.value)}
+                sx={{ minWidth: 220 }}
+              />
+              <Button type="submit" variant="outlined" startIcon={<MdSearch />}>
+                عرض العمولات
+              </Button>
+            </Stack>
+          </Box>
+        </SectionCard>
+      )}
+
+      {embedded && canManage && (
+        <Box sx={{ display: "flex", justifyContent: "flex-start" }}>
+          <Button variant="contained" color="primary" startIcon={<MdAdd />} onClick={openCreate}>
+            إضافة عمولة
+          </Button>
         </Box>
-      </SectionCard>
+      )}
 
       {!userId ? (
         <EmptyState

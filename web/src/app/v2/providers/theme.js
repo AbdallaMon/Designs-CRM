@@ -37,6 +37,7 @@ const generateMuiShadows = (baseShadowColor, darkShadowColor) => {
 };
 
 const theme = createTheme({
+  direction: "rtl",
   palette: {
     primary: {
       main: colors.primary,

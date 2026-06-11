@@ -100,7 +100,8 @@ export function ActionQueue({ query, enabled }) {
                 key={`act-${act.id}`}
                 href={act.link || undefined}
                 icon={<MdNotificationsActive />}
-                primary={act.content || "نشاط"}
+                primary={<ActivityContent act={act} />}
+                primaryIsNode
                 when={formatWhen(act.createdAt)}
                 actionLabel={act.link ? QUEUE_COPY.recentActivities.actionLabel : undefined}
               />
@@ -125,7 +126,30 @@ function GroupLabel({ text }) {
   );
 }
 
-function QueueRow({ href, icon, primary, when, actionLabel, chip }) {
+// Renders a notification's `content`. When it's HTML (contentType === "HTML" or it contains a
+// "<" tag), inject it safely via a div so the embedded markup/links render instead of showing
+// escaped tags; otherwise render the plain text. (Same safe-HTML render as the notification bell.)
+function ActivityContent({ act }) {
+  const content = act?.content ?? "";
+  const isHtml = act?.contentType === "HTML" || /</.test(content);
+  if (isHtml) {
+    return (
+      <Typography
+        component="div"
+        variant="body2"
+        sx={{ textAlign: "start", "& a": { color: "primary.main" } }}
+        dangerouslySetInnerHTML={{ __html: content }}
+      />
+    );
+  }
+  return (
+    <Typography component="div" variant="body2" noWrap sx={{ textAlign: "start" }}>
+      {content || "نشاط"}
+    </Typography>
+  );
+}
+
+function QueueRow({ href, icon, primary, primaryIsNode, when, actionLabel, chip }) {
   const interactive = Boolean(href);
   return (
     <ListItemButton
@@ -136,7 +160,9 @@ function QueueRow({ href, icon, primary, when, actionLabel, chip }) {
       <ListItemText
         primary={primary}
         secondary={when}
-        primaryTypographyProps={{ noWrap: true, sx: { textAlign: "start" } }}
+        primaryTypographyProps={
+          primaryIsNode ? { component: "div" } : { noWrap: true, sx: { textAlign: "start" } }
+        }
         secondaryTypographyProps={{ sx: { textAlign: "start" } }}
       />
       <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
