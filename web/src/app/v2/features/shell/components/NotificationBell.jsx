@@ -24,11 +24,16 @@ import {
   CircularProgress,
 } from "@mui/material";
 import NextLink from "next/link";
+import { useRouter } from "next/navigation";
 import { MdNotifications } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { useLoading } from "@/app/v2/hooks/useLoading";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { notificationsService } from "@/app/v2/features/notifications/notifications.service";
+import {
+  notificationTargetHref,
+  normalizeToRelativePath,
+} from "@/app/v2/features/notifications/config/notificationTarget";
 
 // Poll interval for the unread badge (ms). Conservative — the socket layer can supersede later.
 const POLL_MS = 60_000;
@@ -175,11 +180,16 @@ export function NotificationBell() {
 }
 
 // One dropdown row. Content may be HTML (contentType === "HTML" or contains "<") — render it
-// safely via a div; otherwise render plain text. Clicking navigates to the notification's link.
+// safely via a div; otherwise render plain text. The WHOLE row is a link to the notification's
+// target: we derive ONE relative path (prefer notification.link; else the first <a href> inside
+// the HTML), so absolute legacy URLs (http://localhost:3000/dashboard/deals/48) navigate via
+// Next to /dashboard/deals/48 → the redirect shell forwards to /v2/leads/48. Inner HTML anchors
+// would otherwise do a dead/hard nav, so we intercept their clicks and route through Next too.
 function NotificationRow({ notification, onNavigate }) {
+  const router = useRouter();
   const content = notification?.content ?? "";
-  const href = notification?.link || notification?.href || undefined;
   const isHtml = notification?.contentType === "HTML" || /</.test(content);
+  const targetHref = notificationTargetHref(notification);
 
   const primary = isHtml ? (
     <Typography
@@ -194,11 +204,31 @@ function NotificationRow({ notification, onNavigate }) {
     </Typography>
   );
 
-  const interactive = Boolean(href);
+  // Clicks on an inner <a> inside the HTML content must not do a raw browser navigation (it's
+  // swallowed by the button / blocked). Intercept them, normalize the anchor's href to a
+  // relative path, close the panel, and push via the Next router.
+  const handleClick = (e) => {
+    const anchor = e.target?.closest?.("a");
+    if (anchor && anchor.getAttribute("href")) {
+      const rel = normalizeToRelativePath(anchor.getAttribute("href"));
+      if (rel) {
+        e.preventDefault();
+        e.stopPropagation();
+        onNavigate?.();
+        router.push(rel);
+        return;
+      }
+    }
+    // Plain row click — the outer NextLink (when present) handles navigation; just close.
+    if (targetHref) onNavigate?.();
+  };
+
+  const interactive = Boolean(targetHref);
   return (
     <ListItemButton
+      onClick={handleClick}
       {...(interactive
-        ? { component: NextLink, href, scroll: false, onClick: onNavigate }
+        ? { component: NextLink, href: targetHref, scroll: false }
         : { disableRipple: true })}
       sx={{ alignItems: "flex-start", py: 1 }}
     >

@@ -293,6 +293,23 @@ const theme = createTheme({
         },
       },
     },
+    // Scrollable Tabs scroll arrows (lead-detail tabs, UrlTabs, accounting tabs). MUI's default
+    // disabled scroll button keeps `opacity: 0` but STILL occupies its 40px and stays in the DOM.
+    // Under RTL that invisible phantom sits at the inline-start (visual right) and silently swallows
+    // clicks/space — making the strip feel like "the arrow does nothing". Collapsing the disabled
+    // button to display:none removes the dead hit-area and lets the live arrow (and the tabs behind
+    // the phantom) take the click. Direction-agnostic and safe — only affects the already-invisible
+    // disabled state. RTL scroll-delta itself is handled correctly by MUI via the theme's
+    // direction:"rtl" (useRtl()), which this file sets.
+    MuiTabScrollButton: {
+      styleOverrides: {
+        root: {
+          "&.Mui-disabled": {
+            display: "none",
+          },
+        },
+      },
+    },
   },
 });
 

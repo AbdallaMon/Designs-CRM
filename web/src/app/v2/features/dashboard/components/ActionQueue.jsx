@@ -14,6 +14,7 @@
 // Single-language Arabic / RTL; logical spacing; ≥24px targets via list-item rows.
 
 import NextLink from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Box,
   List,
@@ -26,6 +27,10 @@ import {
 } from "@mui/material";
 import { MdPersonAddAlt1, MdNotificationsActive, MdChevronLeft } from "react-icons/md";
 import { SectionCard, StatusChip } from "@/app/v2/shared/components";
+import {
+  notificationTargetHref,
+  normalizeToRelativePath,
+} from "@/app/v2/features/notifications/config/notificationTarget";
 import { WidgetBoundary } from "./WidgetBoundary.jsx";
 import { useDashboardWidget } from "../hooks/useDashboardWidget.js";
 import { LATEST_LEADS_URL, RECENT_ACTIVITIES_URL } from "../config/constant.js";
@@ -95,17 +100,22 @@ export function ActionQueue({ query, enabled }) {
             {activityRows.length > 0 && (
               <GroupLabel text={QUEUE_COPY.recentActivities.groupTitle} />
             )}
-            {activityRows.map((act) => (
-              <QueueRow
-                key={`act-${act.id}`}
-                href={act.link || undefined}
-                icon={<MdNotificationsActive />}
-                primary={<ActivityContent act={act} />}
-                primaryIsNode
-                when={formatWhen(act.createdAt)}
-                actionLabel={act.link ? QUEUE_COPY.recentActivities.actionLabel : undefined}
-              />
-            ))}
+            {activityRows.map((act) => {
+              // Derive ONE relative target (prefer act.link; else the first <a href> in the HTML
+              // content). Absolute legacy URLs are stripped to a path so Next routes them.
+              const target = notificationTargetHref(act);
+              return (
+                <QueueRow
+                  key={`act-${act.id}`}
+                  href={target || undefined}
+                  icon={<MdNotificationsActive />}
+                  primary={<ActivityContent act={act} />}
+                  primaryIsNode
+                  when={formatWhen(act.createdAt)}
+                  actionLabel={target ? QUEUE_COPY.recentActivities.actionLabel : undefined}
+                />
+              );
+            })}
           </List>
         </WidgetBoundary>
       </Box>
@@ -150,9 +160,27 @@ function ActivityContent({ act }) {
 }
 
 function QueueRow({ href, icon, primary, primaryIsNode, when, actionLabel, chip }) {
+  const router = useRouter();
   const interactive = Boolean(href);
+
+  // The primary content may be HTML with its own <a>. A raw click on that anchor would do a
+  // dead/hard navigation, so intercept it and route through Next instead (normalized to a
+  // relative path). Plain row clicks fall through to the outer NextLink.
+  const handleClick = (e) => {
+    const anchor = e.target?.closest?.("a");
+    if (anchor && anchor.getAttribute("href")) {
+      const rel = normalizeToRelativePath(anchor.getAttribute("href"));
+      if (rel) {
+        e.preventDefault();
+        e.stopPropagation();
+        router.push(rel);
+      }
+    }
+  };
+
   return (
     <ListItemButton
+      onClick={handleClick}
       {...(interactive ? { component: NextLink, href, scroll: false } : { disableRipple: true })}
       sx={{ borderRadius: 2, py: 1, alignItems: "center", minHeight: 48 }}
     >

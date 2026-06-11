@@ -17,7 +17,7 @@
 
 import { useMemo, useState } from "react";
 import { Box, Button, Stack, Typography } from "@mui/material";
-import { MdArrowForward, MdUndo } from "react-icons/md";
+import { MdArrowBack, MdUndo } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { useRequest } from "@/app/v2/hooks/useRequest";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
@@ -189,7 +189,9 @@ export function SalesStagePanel({ leadId, variant = "strip", onChanged }) {
                   <Button
                     size="small"
                     variant="contained"
-                    endIcon={<MdArrowForward />}
+                    // RTL: "next/forward" points to the inline-end = LEFT, so use MdArrowBack
+                    // (matches the WizardSteps RTL convention). MdArrowForward (→) reads as "back".
+                    endIcon={<MdArrowBack />}
                     onClick={advance}
                     disabled={busy}
                   >
