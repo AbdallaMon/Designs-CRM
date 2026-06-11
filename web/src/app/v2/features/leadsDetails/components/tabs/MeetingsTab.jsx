@@ -8,6 +8,7 @@ import { Stack, Typography } from "@mui/material";
 import { MdGroups } from "react-icons/md";
 import dayjs from "dayjs";
 import { StatusChip } from "@/app/v2/shared/components";
+import { useT } from "@/app/v2/lib/i18n";
 import { LeadRecordList } from "../LeadRecordList.jsx";
 import {
   NewCallMeetingDialog,
@@ -15,12 +16,13 @@ import {
 } from "../dialogs/CallMeetingDialogs.jsx";
 
 export function MeetingsTab({ lead, onChanged }) {
+  const { t } = useT();
   const caps = lead?.capabilities ?? {};
   const meetings = Array.isArray(lead?.meetingReminders) ? lead.meetingReminders : [];
 
   return (
     <LeadRecordList
-      title="الاجتماعات"
+      title={t("leadsDetails.meetings.title")}
       icon={<MdGroups />}
       items={meetings}
       headerAction={
@@ -59,11 +61,11 @@ export function MeetingsTab({ lead, onChanged }) {
           onUpdated={onChanged}
         />
       )}
-      emptyTitle="لا توجد اجتماعات"
+      emptyTitle={t("leadsDetails.meetings.empty.title")}
       emptyDescription={
         caps.canAddMeeting
-          ? "جدول اجتماعاً مع هذا العميل المحتمل."
-          : "لم تتم جدولة أي اجتماع لهذا العميل بعد."
+          ? t("leadsDetails.meetings.empty.canAdd")
+          : t("leadsDetails.meetings.empty.readonly")
       }
     />
   );

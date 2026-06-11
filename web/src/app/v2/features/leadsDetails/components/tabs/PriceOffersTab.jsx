@@ -13,18 +13,19 @@ import { Typography } from "@mui/material";
 import { MdRequestQuote } from "react-icons/md";
 import dayjs from "dayjs";
 import { StatusChip } from "@/app/v2/shared/components";
+import { useT } from "@/app/v2/lib/i18n";
 import { LeadRecordList } from "../LeadRecordList.jsx";
 import {
   NewPriceOfferDialog,
   PriceOfferStatusActions,
 } from "../dialogs/PriceOfferDialog.jsx";
 
-// isAccepted → { status (drives the semantic color), label (Arabic verdict) }.
+// isAccepted → { status (drives the semantic color), labelKey (resolved to the Arabic verdict) }.
 // true → success "مقبول" · false → error "مرفوض" · null/undefined → neutral "قيد المراجعة".
 const OFFER_VERDICT = {
-  true: { status: "FULLY_PAID", label: "مقبول" },
-  false: { status: "OVERDUE", label: "مرفوض" },
-  null: { status: "__REVIEW__", label: "قيد المراجعة" },
+  true: { status: "FULLY_PAID", labelKey: "leadsDetails.priceOffers.verdict.accepted" },
+  false: { status: "OVERDUE", labelKey: "leadsDetails.priceOffers.verdict.rejected" },
+  null: { status: "__REVIEW__", labelKey: "leadsDetails.priceOffers.verdict.review" },
 };
 
 function offerVerdict(isAccepted) {
@@ -47,12 +48,13 @@ function formatPrice(value) {
 }
 
 export function PriceOffersTab({ lead, onChanged }) {
+  const { t } = useT();
   const caps = lead?.capabilities ?? {};
   const offers = Array.isArray(lead?.priceOffers) ? lead.priceOffers : [];
 
   return (
     <LeadRecordList
-      title="عروض الأسعار"
+      title={t("leadsDetails.priceOffers.title")}
       icon={<MdRequestQuote />}
       items={offers}
       headerAction={
@@ -71,7 +73,7 @@ export function PriceOffersTab({ lead, onChanged }) {
       )}
       renderStatus={(o) => {
         const v = offerVerdict(o.isAccepted);
-        return <StatusChip domain="payment" status={v.status} label={v.label} />;
+        return <StatusChip domain="payment" status={v.status} label={t(v.labelKey)} />;
       }}
       renderRowAction={(o) => (
         <PriceOfferStatusActions
@@ -80,11 +82,11 @@ export function PriceOffersTab({ lead, onChanged }) {
           onChanged={onChanged}
         />
       )}
-      emptyTitle="لا توجد عروض أسعار"
+      emptyTitle={t("leadsDetails.priceOffers.empty.title")}
       emptyDescription={
         caps.canAddPriceOffer
-          ? "أنشئ عرض سعر لمشاركته مع هذا العميل."
-          : "لم يُنشأ أي عرض سعر لهذا العميل بعد."
+          ? t("leadsDetails.priceOffers.empty.canAdd")
+          : t("leadsDetails.priceOffers.empty.readonly")
       }
     />
   );

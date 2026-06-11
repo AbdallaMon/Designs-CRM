@@ -23,6 +23,7 @@ import {
   MdGroups,
   MdLock,
 } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { locateSection } from "../config/leadHubTabs.js";
 
 // The rail's cards, in order. `count` is read off the lead payload (a function, so a missing
@@ -37,23 +38,25 @@ import { locateSection } from "../config/leadHubTabs.js";
 //     lead detail (both admin + staff paths) — read true totals from there. Fall back to "—"
 //     only when `_count` is genuinely absent (e.g. an older/cached payload).
 const RAIL_CARDS = [
-  { sectionKey: "projects", label: "المشاريع", icon: <MdWork />, count: (lead) => lead?._count?.projects },
-  { sectionKey: "contracts", label: "العقود", icon: <MdDescription />, count: (lead) => lead?._count?.contracts },
-  { sectionKey: "sessions", label: "جلسات الصور", icon: <MdImage />, count: (lead) => lead?._count?.imageSessions },
-  { sectionKey: "payments", label: "الدفعات", icon: <MdPayments />, count: (lead) => lead?.payments?.length },
-  { sectionKey: "calls", label: "المكالمات", icon: <MdCall />, count: (lead) => lead?.callReminders?.length },
-  { sectionKey: "meetings", label: "الاجتماعات", icon: <MdGroups />, count: (lead) => lead?.meetingReminders?.length },
+  { sectionKey: "projects", labelKey: "leadsDetails.rail.projects", icon: <MdWork />, count: (lead) => lead?._count?.projects },
+  { sectionKey: "contracts", labelKey: "leadsDetails.rail.contracts", icon: <MdDescription />, count: (lead) => lead?._count?.contracts },
+  { sectionKey: "sessions", labelKey: "leadsDetails.rail.sessions", icon: <MdImage />, count: (lead) => lead?._count?.imageSessions },
+  { sectionKey: "payments", labelKey: "leadsDetails.rail.payments", icon: <MdPayments />, count: (lead) => lead?.payments?.length },
+  { sectionKey: "calls", labelKey: "leadsDetails.rail.calls", icon: <MdCall />, count: (lead) => lead?.callReminders?.length },
+  { sectionKey: "meetings", labelKey: "leadsDetails.rail.meetings", icon: <MdGroups />, count: (lead) => lead?.meetingReminders?.length },
 ];
 
 function RailCard({ card, lead, allowed, onNavigate }) {
+  const { t } = useT();
   const loc = locateSection(card.sectionKey);
   const count = card.count(lead);
   const hasCount = typeof count === "number";
+  const label = t(card.labelKey);
 
   // Partial-permission: render a disabled, explained chip — do NOT hide it.
   if (!allowed) {
     return (
-      <Tooltip title="لا تملك صلاحية العرض">
+      <Tooltip title={t("leadsDetails.rail.denied.tooltip")}>
         <Card
           aria-disabled="true"
           sx={{
@@ -65,8 +68,8 @@ function RailCard({ card, lead, allowed, onNavigate }) {
           }}
         >
           <Box sx={{ p: 1.5 }}>
-            <CardInner icon={<MdLock />} label={card.label} valueNode={
-              <Typography variant="caption" sx={{ color: "text.disabled" }}>محظور</Typography>
+            <CardInner icon={<MdLock />} label={label} valueNode={
+              <Typography variant="caption" sx={{ color: "text.disabled" }}>{t("leadsDetails.rail.denied.label")}</Typography>
             } muted />
           </Box>
         </Card>
@@ -82,7 +85,7 @@ function RailCard({ card, lead, allowed, onNavigate }) {
       >
         <CardInner
           icon={card.icon}
-          label={card.label}
+          label={label}
           valueNode={
             hasCount ? (
               // A real count from the payload. Zero renders as a MUTED numeral "0" (M2) — a
@@ -101,7 +104,7 @@ function RailCard({ card, lead, allowed, onNavigate }) {
             ) : (
               // Count genuinely unknown (e.g. an older/cached payload missing `_count`): show a
               // muted em-dash with a "غير متاح" tooltip so the user knows it's unavailable, not zero.
-              <Tooltip title="غير متاح">
+              <Tooltip title={t("leadsDetails.rail.unavailable")}>
                 <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2, color: "text.disabled" }}>
                   —
                 </Typography>
@@ -131,11 +134,12 @@ function CardInner({ icon, label, valueNode, muted = false }) {
 }
 
 export function LeadRelatedRail({ lead, gates, onNavigate }) {
+  const { t } = useT();
   if (!lead) return null;
   return (
     <Box
       role="navigation"
-      aria-label="السجلات المرتبطة"
+      aria-label={t("leadsDetails.rail.navAria")}
       sx={{
         display: "flex",
         gap: 1.5,

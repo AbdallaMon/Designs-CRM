@@ -13,6 +13,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Autocomplete, CircularProgress, TextField, Typography, Box } from "@mui/material";
+import { useT } from "@/app/v2/lib/i18n";
 import { utilitiesService } from "@/app/v2/features/utilities/utilities.service.js";
 import {
   SEARCH_MODELS,
@@ -22,10 +23,9 @@ import {
 const MIN_CHARS = 2;
 const DEBOUNCE_MS = 300;
 
-export function LeadSearchAutocomplete({
-  onSelect,
-  label = "ابحث عن عميل بالاسم أو الهاتف أو البريد",
-}) {
+export function LeadSearchAutocomplete({ onSelect, label }) {
+  const { t } = useT();
+  const resolvedLabel = label ?? t("leads.search.label");
   const def = useMemo(() => getSearchModelDef(SEARCH_MODELS.CLIENT_LEAD), []);
 
   const [inputValue, setInputValue] = useState("");
@@ -69,9 +69,11 @@ export function LeadSearchAutocomplete({
       filterOptions={(x) => x} // server-side search; don't re-filter client-side
       options={options}
       loading={loading}
-      loadingText="جاري البحث..."
+      loadingText={t("leads.search.loading")}
       noOptionsText={
-        inputValue.trim().length < MIN_CHARS ? "اكتب حرفين على الأقل" : "لا توجد نتائج"
+        inputValue.trim().length < MIN_CHARS
+          ? t("leads.search.minChars")
+          : t("leads.search.noResults")
       }
       getOptionLabel={(opt) => (typeof opt === "string" ? opt : def.primary(opt) || "")}
       isOptionEqualToValue={(opt, val) => opt?.id === val?.id}
@@ -100,7 +102,7 @@ export function LeadSearchAutocomplete({
       renderInput={(params) => (
         <TextField
           {...params}
-          label={label}
+          label={resolvedLabel}
           slotProps={{
             input: {
               ...params.InputProps,

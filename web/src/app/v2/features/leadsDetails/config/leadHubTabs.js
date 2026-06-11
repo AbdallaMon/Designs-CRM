@@ -24,48 +24,52 @@ export const GATE = {
 };
 
 // 5 groups. `sub` order is also the sub-tab order; the first VISIBLE sub is a group's default.
+//
+// i18n: each group/sub carries a `labelKey` (resolved via t("leadsDetails.<key>") at RENDER time
+// in LeadDetailsPage) instead of a hardcoded Arabic `label`, so this static module export holds no
+// language strings. Navigation/visibility logic keys off `key`/`gateKey`, never the label.
 export const LEAD_HUB_GROUPS = [
   {
     key: "overview",
-    label: "نظرة عامة",
-    sub: [{ key: "overview", label: "التفاصيل", gateKey: GATE.ALWAYS }],
+    labelKey: "leadsDetails.group.overview",
+    sub: [{ key: "overview", labelKey: "leadsDetails.sub.overview", gateKey: GATE.ALWAYS }],
   },
   {
     key: "record",
-    label: "السجل",
+    labelKey: "leadsDetails.group.record",
     sub: [
-      { key: "calls", label: "المكالمات", gateKey: GATE.ALWAYS },
-      { key: "meetings", label: "الاجتماعات", gateKey: GATE.ALWAYS },
-      { key: "notes", label: "الملاحظات", gateKey: GATE.ALWAYS },
-      { key: "files", label: "المرفقات", gateKey: GATE.ALWAYS },
-      { key: "chats", label: "المحادثات", gateKey: GATE.CHAT },
+      { key: "calls", labelKey: "leadsDetails.sub.calls", gateKey: GATE.ALWAYS },
+      { key: "meetings", labelKey: "leadsDetails.sub.meetings", gateKey: GATE.ALWAYS },
+      { key: "notes", labelKey: "leadsDetails.sub.notes", gateKey: GATE.ALWAYS },
+      { key: "files", labelKey: "leadsDetails.sub.files", gateKey: GATE.ALWAYS },
+      { key: "chats", labelKey: "leadsDetails.sub.chats", gateKey: GATE.CHAT },
     ],
   },
   {
     key: "production",
-    label: "الأعمال",
+    labelKey: "leadsDetails.group.production",
     sub: [
-      { key: "projects", label: "المشاريع", gateKey: GATE.PROJECTS },
-      { key: "sessions", label: "جلسات الصور", gateKey: GATE.SESSIONS },
-      { key: "updates", label: "التحديثات", gateKey: GATE.UPDATES },
+      { key: "projects", labelKey: "leadsDetails.sub.projects", gateKey: GATE.PROJECTS },
+      { key: "sessions", labelKey: "leadsDetails.sub.sessions", gateKey: GATE.SESSIONS },
+      { key: "updates", labelKey: "leadsDetails.sub.updates", gateKey: GATE.UPDATES },
     ],
   },
   {
     key: "finance",
-    label: "المالية",
+    labelKey: "leadsDetails.group.finance",
     sub: [
-      { key: "contracts", label: "العقود", gateKey: GATE.CONTRACTS },
-      { key: "payments", label: "الدفعات", gateKey: GATE.PAYMENT },
-      { key: "priceOffers", label: "عروض الأسعار", gateKey: GATE.PRICE_OFFER },
+      { key: "contracts", labelKey: "leadsDetails.sub.contracts", gateKey: GATE.CONTRACTS },
+      { key: "payments", labelKey: "leadsDetails.sub.payments", gateKey: GATE.PAYMENT },
+      { key: "priceOffers", labelKey: "leadsDetails.sub.priceOffers", gateKey: GATE.PRICE_OFFER },
     ],
   },
   {
     key: "sales",
-    label: "أدوات المبيعات",
+    labelKey: "leadsDetails.group.sales",
     sub: [
-      { key: "salesStage", label: "مرحلة البيع", gateKey: GATE.STAGE },
-      { key: "spin", label: "أسئلة SPIN", gateKey: GATE.SPIN },
-      { key: "versa", label: "معالجة الاعتراضات", gateKey: GATE.VERSA },
+      { key: "salesStage", labelKey: "leadsDetails.sub.salesStage", gateKey: GATE.STAGE },
+      { key: "spin", labelKey: "leadsDetails.sub.spin", gateKey: GATE.SPIN },
+      { key: "versa", labelKey: "leadsDetails.sub.versa", gateKey: GATE.VERSA },
     ],
   },
 ];

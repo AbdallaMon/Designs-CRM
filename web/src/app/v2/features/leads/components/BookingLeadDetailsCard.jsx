@@ -8,6 +8,7 @@ import {
   Typography,
 } from "@mui/material";
 import dayjs from "dayjs";
+import { useT } from "@/app/v2/lib/i18n";
 import {
   BOOKING_LEAD_FIELD_LABELS,
   BOOKING_LEAD_FIELDS,
@@ -33,6 +34,7 @@ function formatValue(fieldKey, value) {
 }
 
 export default function BookingLeadDetailsCard({ lead }) {
+  const { t } = useT();
   if (!lead) {
     return null;
   }
@@ -51,7 +53,7 @@ export default function BookingLeadDetailsCard({ lead }) {
           justifyContent="space-between"
           spacing={2}
         >
-          <Typography variant="h6">تفاصيل الحجز</Typography>
+          <Typography variant="h6">{t("leads.booking.title")}</Typography>
           <Chip
             size="small"
             color={

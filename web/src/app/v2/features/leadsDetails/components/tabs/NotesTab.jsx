@@ -7,16 +7,18 @@
 import { Typography } from "@mui/material";
 import { MdNotes } from "react-icons/md";
 import dayjs from "dayjs";
+import { useT } from "@/app/v2/lib/i18n";
 import { LeadRecordList } from "../LeadRecordList.jsx";
 import { NewNoteDialog } from "../dialogs/NoteDialog.jsx";
 
 export function NotesTab({ lead, onChanged, autoOpenAction, onAutoOpenConsumed }) {
+  const { t } = useT();
   const caps = lead?.capabilities ?? {};
   const notes = Array.isArray(lead?.notes) ? lead.notes : [];
 
   return (
     <LeadRecordList
-      title="الملاحظات"
+      title={t("leadsDetails.notes.title")}
       icon={<MdNotes />}
       items={notes}
       headerAction={
@@ -48,11 +50,11 @@ export function NotesTab({ lead, onChanged, autoOpenAction, onAutoOpenConsumed }
           {n.createdAt ? dayjs(n.createdAt).format("YYYY-MM-DD HH:mm") : ""}
         </Typography>
       )}
-      emptyTitle="لا توجد ملاحظات بعد"
+      emptyTitle={t("leadsDetails.notes.empty.title")}
       emptyDescription={
         caps.canAddNote
-          ? "أضف ملاحظة لتوثيق تفاصيل التواصل مع هذا العميل."
-          : "لم تُضف أي ملاحظة لهذا العميل بعد."
+          ? t("leadsDetails.notes.empty.canAdd")
+          : t("leadsDetails.notes.empty.readonly")
       }
     />
   );

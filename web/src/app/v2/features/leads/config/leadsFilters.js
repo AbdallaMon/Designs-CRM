@@ -9,12 +9,17 @@
 
 import { LEAD_STATUS_LABELS } from "./leadsConstants.js";
 
-export const leadsFilters = [
-  {
-    key: "status",
-    type: "enum",
-    label: "الحالة",
-    allLabel: "كل الحالات",
-    options: LEAD_STATUS_LABELS,
-  },
-];
+// i18n: filter labels are bilingual, so this is a FACTORY — buildLeadsFilters(t) is called
+// inside the page (where useT is available). NEVER call a hook at module scope. The `options`
+// are the enum value labels (Prisma enum keys → Arabic), resolved elsewhere, left as-is.
+export function buildLeadsFilters(t) {
+  return [
+    {
+      key: "status",
+      type: "enum",
+      label: t("leads.filters.status.label"),
+      allLabel: t("leads.filters.status.all"),
+      options: LEAD_STATUS_LABELS,
+    },
+  ];
+}

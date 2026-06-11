@@ -20,6 +20,7 @@ import { Container, Grid, Stack, Box, Card, Typography } from "@mui/material";
 import { MdCall, MdEventNote, MdPersonAddAlt, MdPauseCircleOutline } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { useT } from "@/app/v2/lib/i18n";
 import { PageHeader, PartialPermissionState } from "@/app/v2/shared/components";
 import { leadsService } from "../leads.service.js";
 import { useWorkspaceSection, PREVIEW_LIMIT } from "../hooks/useWorkspaceSection.js";
@@ -29,6 +30,7 @@ import { WorkspaceLeadRow } from "../components/WorkspaceLeadRow.jsx";
 
 export function LeadsWorkspacePage() {
   const { hasPermission } = usePermission();
+  const { t } = useT();
   const canList = hasPermission(PERMISSIONS.LEAD.LIST);
   const canManageCalls = hasPermission(PERMISSIONS.LEAD.CALL_MANAGE);
   const canManageMeetings = hasPermission(PERMISSIONS.LEAD.MEETING_MANAGE);
@@ -58,11 +60,11 @@ export function LeadsWorkspacePage() {
 
   const summaryCards = useMemo(
     () => [
-      { key: "calls", label: "مكالمات اليوم", value: calls.total, icon: <MdCall />, loading: calls.isLoading },
-      { key: "meetings", label: "اجتماعات اليوم", value: meetings.total, icon: <MdEventNote />, loading: meetings.isLoading },
-      { key: "newLeads", label: "عملاء جدد", value: newLeads.total, icon: <MdPersonAddAlt />, loading: newLeads.isLoading },
+      { key: "calls", label: t("leads.workspace.summary.calls"), value: calls.total, icon: <MdCall />, loading: calls.isLoading },
+      { key: "meetings", label: t("leads.workspace.summary.meetings"), value: meetings.total, icon: <MdEventNote />, loading: meetings.isLoading },
+      { key: "newLeads", label: t("leads.workspace.summary.newLeads"), value: newLeads.total, icon: <MdPersonAddAlt />, loading: newLeads.isLoading },
     ],
-    [calls.total, calls.isLoading, meetings.total, meetings.isLoading, newLeads.total, newLeads.isLoading],
+    [t, calls.total, calls.isLoading, meetings.total, meetings.isLoading, newLeads.total, newLeads.isLoading],
   );
 
   if (!canList) {
@@ -70,8 +72,8 @@ export function LeadsWorkspacePage() {
       <Container maxWidth="xl" sx={{ py: 4 }}>
         <PartialPermissionState
           denied
-          title="مساحة العمل غير متاحة لصلاحياتك"
-          message="لا تملك صلاحية الوصول إلى قائمة العملاء. تواصل مع المسؤول إن كنت تظن أنه ينبغي أن تصل إليها."
+          title={t("leads.workspace.denied.title")}
+          message={t("leads.workspace.denied.message")}
         />
       </Container>
     );
@@ -80,8 +82,8 @@ export function LeadsWorkspacePage() {
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <PageHeader
-        title="مساحة عملي"
-        subtitle="متابعتك اليومية: المكالمات والاجتماعات القادمة والعملاء الجدد والصفقات المعلّقة."
+        title={t("leads.workspace.title")}
+        subtitle={t("leads.workspace.subtitle")}
       />
 
       {/* ── count strip ────────────────────────────────────────────────────── */}
@@ -101,14 +103,14 @@ export function LeadsWorkspacePage() {
                 /v2/leads lands on the leads pool (not a calls view) — that would be a dead/
                 misleading link. Each ReminderRow already deep-links to its lead hub. */}
             <WorkspaceSectionCard
-              title="المكالمات القادمة"
+              title={t("leads.workspace.calls.title")}
               count={calls.total}
               loading={calls.isLoading}
               error={calls.error}
               forbidden={calls.forbidden}
               onRetry={calls.refetch}
               isEmpty={calls.items.length === 0}
-              empty={{ title: "لا مكالمات اليوم", description: "لا توجد مكالمات قادمة بانتظارك الآن — عمل رائع!" }}
+              empty={{ title: t("leads.workspace.calls.empty.title"), description: t("leads.workspace.calls.empty.description") }}
             >
               {calls.items.map((r) => (
                 <ReminderRow
@@ -124,14 +126,14 @@ export function LeadsWorkspacePage() {
             {/* No section-level "view all": no dedicated meetings-list route exists; rows
                 deep-link to their lead hub instead. */}
             <WorkspaceSectionCard
-              title="الاجتماعات القادمة"
+              title={t("leads.workspace.meetings.title")}
               count={meetings.total}
               loading={meetings.isLoading}
               error={meetings.error}
               forbidden={meetings.forbidden}
               onRetry={meetings.refetch}
               isEmpty={meetings.items.length === 0}
-              empty={{ title: "لا اجتماعات اليوم", description: "لا توجد اجتماعات قادمة مجدولة حالياً." }}
+              empty={{ title: t("leads.workspace.meetings.empty.title"), description: t("leads.workspace.meetings.empty.description") }}
             >
               {meetings.items.map((r) => (
                 <ReminderRow
@@ -149,15 +151,15 @@ export function LeadsWorkspacePage() {
         <Grid size={{ xs: 12, md: 4 }}>
           <Stack spacing={2}>
             <WorkspaceSectionCard
-              title="العملاء الجدد"
+              title={t("leads.workspace.newLeads.title")}
               count={newLeads.total}
-              viewAll={{ label: "كل العملاء", href: "/v2/leads" }}
+              viewAll={{ label: t("leads.workspace.newLeads.viewAll"), href: "/v2/leads" }}
               loading={newLeads.isLoading}
               error={newLeads.error}
               forbidden={newLeads.forbidden}
               onRetry={newLeads.refetch}
               isEmpty={newLeads.items.length === 0}
-              empty={{ title: "لا عملاء جدد", description: "لا يوجد عملاء جدد بانتظار الاستلام الآن." }}
+              empty={{ title: t("leads.workspace.newLeads.empty.title"), description: t("leads.workspace.newLeads.empty.description") }}
             >
               {newLeads.items.map((lead) => (
                 <WorkspaceLeadRow key={lead.id} lead={lead} onChanged={newLeads.refetch} />
@@ -165,15 +167,15 @@ export function LeadsWorkspacePage() {
             </WorkspaceSectionCard>
 
             <WorkspaceSectionCard
-              title="صفقات معلّقة"
+              title={t("leads.workspace.onHold.title")}
               count={onHold.total}
-              viewAll={{ label: "كل الصفقات", href: "/v2/leads" }}
+              viewAll={{ label: t("leads.workspace.onHold.viewAll"), href: "/v2/leads" }}
               loading={onHold.isLoading}
               error={onHold.error}
               forbidden={onHold.forbidden}
               onRetry={onHold.refetch}
               isEmpty={onHold.items.length === 0}
-              empty={{ title: "لا صفقات معلّقة", description: "لا توجد صفقات معلّقة تحتاج متابعة." }}
+              empty={{ title: t("leads.workspace.onHold.empty.title"), description: t("leads.workspace.onHold.empty.description") }}
             >
               {onHold.items.map((lead) => (
                 <WorkspaceLeadRow key={lead.id} lead={lead} onChanged={onHold.refetch} />

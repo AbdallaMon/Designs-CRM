@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { GoPlus } from "react-icons/go";
 import { useToastContext } from "@/app/v2/providers/ToastProvider";
+import { useT } from "@/app/v2/lib/i18n";
 import { leadsService } from "@/app/v2/features/leads/leads.service.js";
 import { runLeadMutation } from "@/app/v2/features/leads/leads.mutations.js";
 
@@ -23,6 +24,7 @@ export function NewNoteDialog({ lead, canAdd, onCreated, autoOpen = false, onAut
   const [open, setOpen] = useState(false);
   const [content, setContent] = useState("");
   const { setLoading } = useToastContext();
+  const { t } = useT();
 
   // One-click daily verbs (item 4): open once when a deep-link asks, then clear the URL flag.
   const consumedRef = useRef(false);
@@ -40,7 +42,7 @@ export function NewNoteDialog({ lead, canAdd, onCreated, autoOpen = false, onAut
     if (!content.trim()) return;
     const res = await runLeadMutation(
       () => leadsService.createNote(lead.id, { content }),
-      { setLoading, loading: "جاري الإنشاء..." },
+      { setLoading, loading: t("leadsDetails.note.loading") },
     );
     if (res) {
       onCreated?.(res.data);
@@ -57,31 +59,31 @@ export function NewNoteDialog({ lead, canAdd, onCreated, autoOpen = false, onAut
         variant="contained"
         sx={{ width: "fit-content" }}
       >
-        إضافة ملاحظة
+        {t("leadsDetails.note.add")}
       </Button>
       {open && (
         <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth dir="rtl">
-          <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>إضافة ملاحظة</DialogTitle>
+          <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>{t("leadsDetails.note.title")}</DialogTitle>
           <DialogContent>
             <Stack sx={{ mt: 2 }}>
               <TextField
-                label="اكتب ملاحظتك"
+                label={t("leadsDetails.note.label")}
                 variant="outlined"
                 fullWidth
                 multiline
                 rows={3}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="اكتب الملاحظة هنا..."
+                placeholder={t("leadsDetails.note.placeholder")}
               />
             </Stack>
           </DialogContent>
           <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
             <Button onClick={() => setOpen(false)} variant="outlined">
-              إلغاء
+              {t("leadsDetails.note.cancel")}
             </Button>
             <Button onClick={handleAdd} variant="contained" color="primary" disabled={!content.trim()}>
-              إضافة
+              {t("leadsDetails.note.confirm")}
             </Button>
           </DialogActions>
         </Dialog>

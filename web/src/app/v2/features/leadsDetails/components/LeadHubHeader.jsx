@@ -19,6 +19,7 @@ import {
   MdPerson,
   MdAdd,
 } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { SectionCard } from "@/app/v2/shared/components/SectionCard.jsx";
 import { StatusChip } from "@/app/v2/shared/components/StatusChip.jsx";
 import { LeadStatusMenu } from "./LeadStatusMenu.jsx";
@@ -34,11 +35,12 @@ import { SalesStagePanel } from "@/app/v2/features/salesStages";
 // lead.capabilities.* and, instead of duplicating the dialog here, deep-links to the sub-tab that
 // already owns it with an ?action=add flag the tab reads on mount to auto-open its dialog once.
 function QuickActions({ caps, onNavigate }) {
+  const { t } = useT();
   if (!onNavigate) return null;
   const verbs = [
-    caps.canAddCall && { label: "تسجيل مكالمة", group: "record", sub: "calls" },
-    caps.canAddNote && { label: "ملاحظة", group: "record", sub: "notes" },
-    caps.canAddPayment && { label: "دفعة", group: "finance", sub: "payments" },
+    caps.canAddCall && { label: t("leadsDetails.header.quick.logCall"), group: "record", sub: "calls" },
+    caps.canAddNote && { label: t("leadsDetails.header.quick.note"), group: "record", sub: "notes" },
+    caps.canAddPayment && { label: t("leadsDetails.header.quick.payment"), group: "finance", sub: "payments" },
   ].filter(Boolean);
 
   if (verbs.length === 0) return null;
@@ -82,6 +84,7 @@ export function LeadHubHeader({
   onChanged,
   onNavigate,
 }) {
+  const { t } = useT();
   if (!lead) return null;
 
   const caps = lead.capabilities ?? {};
@@ -154,7 +157,7 @@ export function LeadHubHeader({
                 {ownerName.trim().charAt(0) || <MdPerson />}
               </Avatar>
               <Typography variant="body2" sx={{ color: "text.secondary" }}>
-                مُسند إلى
+                {t("leadsDetails.header.assignedTo")}
               </Typography>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
                 {ownerName}

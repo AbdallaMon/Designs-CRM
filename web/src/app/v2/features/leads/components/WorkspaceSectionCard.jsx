@@ -27,6 +27,7 @@ import {
   EmptyState,
   PartialPermissionState,
 } from "@/app/v2/shared/components";
+import { useT } from "@/app/v2/lib/i18n";
 import { leadsMessages } from "../config/leadsMessages.js";
 
 export function WorkspaceSectionCard({
@@ -41,6 +42,7 @@ export function WorkspaceSectionCard({
   empty = {},
   children,
 }) {
+  const { t } = useT();
   const headerActions = (
     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
       {typeof count === "number" && !loading && !error && !forbidden && (
@@ -67,8 +69,8 @@ export function WorkspaceSectionCard({
 
         {!loading && forbidden && (
           <PartialPermissionState
-            title="هذا القسم غير متاح لصلاحياتك"
-            message="لا تملك صلاحية عرض هذا القسم. تواصل مع المسؤول إن كنت تظن أنه ينبغي أن تصل إليه."
+            title={t("leads.section.denied.title")}
+            message={t("leads.section.denied.message")}
           />
         )}
 
@@ -78,7 +80,7 @@ export function WorkspaceSectionCard({
 
         {!loading && !forbidden && !error && isEmpty && (
           <EmptyState
-            title={empty.title ?? "لا توجد بيانات"}
+            title={empty.title ?? t("leads.section.empty.title")}
             description={empty.description}
             icon={empty.icon}
           />

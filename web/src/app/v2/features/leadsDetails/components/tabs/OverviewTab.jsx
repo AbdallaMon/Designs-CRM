@@ -10,6 +10,7 @@ import { Box, Divider, Grid, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import { BookingLeadDetailsCard } from "@/app/v2/features/leads";
 import { SectionCard } from "@/app/v2/shared/components";
+import { useT } from "@/app/v2/lib/i18n";
 import {
   categoryLabel,
 } from "@/app/v2/features/leads/config/leadsConstants.js";
@@ -28,42 +29,43 @@ function Field({ label, value }) {
 }
 
 export function OverviewTab({ lead }) {
+  const { t } = useT();
   if (!lead) return null;
   return (
     <Stack spacing={3}>
-      <SectionCard title="معلومات الاتصال">
+      <SectionCard title={t("leadsDetails.overview.contact")}>
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, md: 6 }}>
-            <Field label="الهاتف" value={lead?.client?.phone} />
+            <Field label={t("leadsDetails.overview.phone")} value={lead?.client?.phone} />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
-            <Field label="البريد" value={lead?.client?.email} />
+            <Field label={t("leadsDetails.overview.email")} value={lead?.client?.email} />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
-            <Field label="الموقع" value={lead.country} />
+            <Field label={t("leadsDetails.overview.location")} value={lead.country} />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
-            <Field label="الإمارة" value={lead.emirate} />
+            <Field label={t("leadsDetails.overview.emirate")} value={lead.emirate} />
           </Grid>
         </Grid>
       </SectionCard>
 
-      <SectionCard title="تفاصيل الطلب">
+      <SectionCard title={t("leadsDetails.overview.request")}>
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, md: 6 }}>
-            <Field label="التصنيف" value={categoryLabel(lead.selectedCategory)} />
+            <Field label={t("leadsDetails.overview.category")} value={categoryLabel(lead.selectedCategory)} />
           </Grid>
           {lead.assignedTo && (
             <Grid size={{ xs: 12, md: 6 }}>
               <Field
-                label="مُسند إلى"
+                label={t("leadsDetails.overview.assignedTo")}
                 value={`${lead.assignedTo.name}${lead.assignedAt ? ` — ${dayjs(lead.assignedAt).format("YYYY-MM-DD")}` : ""}`}
               />
             </Grid>
           )}
           {lead.description && (
             <Grid size={{ xs: 12 }}>
-              <Field label="الوصف" value={lead.description} />
+              <Field label={t("leadsDetails.overview.description")} value={lead.description} />
             </Grid>
           )}
         </Grid>

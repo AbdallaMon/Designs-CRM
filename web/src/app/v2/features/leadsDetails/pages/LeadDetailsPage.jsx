@@ -21,6 +21,7 @@ import { Box, Container, Tab, Tabs } from "@mui/material";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { useT } from "@/app/v2/lib/i18n";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
 import {
   LoadingState,
@@ -54,6 +55,7 @@ const PRIVILEGED_ROLES = ["ADMIN", "SUPER_ADMIN", "ACCOUNTANT"];
 
 export function LeadDetailsPage({ leadId }) {
   const { hasPermission } = usePermission();
+  const { t } = useT();
   const { user } = useAuth();
   const canView = hasPermission(PERMISSIONS.LEAD.VIEW);
 
@@ -200,8 +202,8 @@ export function LeadDetailsPage({ leadId }) {
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <PartialPermissionState
           denied
-          title="لا تملك صلاحية الوصول إلى هذا العميل"
-          message="لا تملك صلاحية الوصول إلى بيانات هذا العميل المحتمل. إن كنت تظن أنه ينبغي أن تصل إليها، تواصل مع المسؤول."
+          title={t("leadsDetails.denied.title")}
+          message={t("leadsDetails.denied.message")}
         />
       </Container>
     );
@@ -257,7 +259,7 @@ export function LeadDetailsPage({ leadId }) {
       {/* Group tabs */}
       <Tabs value={activeGroup} onChange={onGroupChange} variant="scrollable" scrollButtons="auto" sx={{ mb: 1 }}>
         {visibleGroups.map((g) => (
-          <Tab key={g.key} value={g.key} label={g.label} />
+          <Tab key={g.key} value={g.key} label={t(g.labelKey)} />
         ))}
       </Tabs>
 
@@ -273,7 +275,7 @@ export function LeadDetailsPage({ leadId }) {
           sx={{ mb: 2, minHeight: 40, "& .MuiTab-root": { minHeight: 40 } }}
         >
           {currentGroup.visibleSub.map((s) => (
-            <Tab key={s.key} value={s.key} label={s.label} />
+            <Tab key={s.key} value={s.key} label={t(s.labelKey)} />
           ))}
         </Tabs>
       )}

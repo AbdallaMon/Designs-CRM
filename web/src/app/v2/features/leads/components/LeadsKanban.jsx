@@ -34,6 +34,7 @@ import { MdOpenInNew, MdRefresh, MdLock } from "react-icons/md";
 import { useTheme } from "@mui/material/styles";
 import { StatusChip, ErrorState, EmptyState } from "@/app/v2/shared/components";
 import { useToastContext } from "@/app/v2/providers/ToastProvider";
+import { useT } from "@/app/v2/lib/i18n";
 import { LEAD_STATUS_LABELS, statusLabel } from "../config/leadsConstants.js";
 import { leadsService } from "../leads.service.js";
 import { runLeadMutation } from "../leads.mutations.js";
@@ -60,6 +61,7 @@ const BOARD_COLUMNS = [
 
 // ── single lead card ────────────────────────────────────────────────────────────
 function LeadCard({ lead, columnReadonly }) {
+  const { t } = useT();
   // A card is draggable only when the lead is in an active (non-readonly) column AND the
   // backend granted mutate scope (capabilities.canChangeStatus / canMutate). UI gating is
   // cosmetic — the server re-checks on the action endpoint.
@@ -77,7 +79,7 @@ function LeadCard({ lead, columnReadonly }) {
     [lead.id, lead.status, canDrag],
   );
 
-  const clientName = lead?.client?.name ?? `عميل #${lead?.id}`;
+  const clientName = lead?.client?.name ?? `${t("leads.kanban.cardFallback")} #${lead?.id}`;
   const owner = lead?.assignedTo?.name;
 
   return (
@@ -98,7 +100,7 @@ function LeadCard({ lead, columnReadonly }) {
           <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
             {clientName}
           </Typography>
-          <Tooltip title="فتح ملف العميل">
+          <Tooltip title={t("leads.kanban.openClient")}>
             <IconButton
               component={Link}
               href={`/v2/leads/${lead.id}`}
@@ -121,7 +123,7 @@ function LeadCard({ lead, columnReadonly }) {
 
         {owner && (
           <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
-            المسؤول: {owner}
+            {t("leads.kanban.owner").replace("{name}", owner)}
           </Typography>
         )}
       </Stack>
@@ -132,6 +134,7 @@ function LeadCard({ lead, columnReadonly }) {
 // ── one board column (own fetch + drop target) ───────────────────────────────────
 function KanbanColumn({ status, readonly, refreshToken, onDropCard, registerRefetch }) {
   const theme = useTheme();
+  const { t } = useT();
   const [leads, setLeads] = useState([]);
   const [count, setCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -215,7 +218,7 @@ function KanbanColumn({ status, readonly, refreshToken, onDropCard, registerRefe
             {LEAD_STATUS_LABELS[status] ?? statusLabel(status)}
           </Typography>
           {readonly && (
-            <Tooltip title="قائمة للقراءة فقط — لا يمكن النقل إليها">
+            <Tooltip title={t("leads.kanban.readonlyTooltip")}>
               <Box sx={{ display: "flex", color: "text.disabled" }}>
                 <MdLock fontSize="0.9rem" />
               </Box>
@@ -224,8 +227,12 @@ function KanbanColumn({ status, readonly, refreshToken, onDropCard, registerRefe
         </Stack>
         <Stack direction="row" alignItems="center" spacing={0.5}>
           <Chip size="small" label={count} sx={{ fontWeight: 700 }} />
-          <Tooltip title="تحديث القائمة">
-            <IconButton size="small" onClick={fetchColumn} aria-label={`تحديث ${statusLabel(status)}`}>
+          <Tooltip title={t("leads.kanban.refreshColumn")}>
+            <IconButton
+              size="small"
+              onClick={fetchColumn}
+              aria-label={t("leads.kanban.refreshColumnAria").replace("{status}", statusLabel(status))}
+            >
               <MdRefresh fontSize="0.95rem" />
             </IconButton>
           </Tooltip>
@@ -238,7 +245,7 @@ function KanbanColumn({ status, readonly, refreshToken, onDropCard, registerRefe
             <CircularProgress size={24} />
           </Stack>
         ) : error ? (
-          <ErrorState error={error} onRetry={fetchColumn} resolver={leadsMessages} title="تعذّر تحميل القائمة" />
+          <ErrorState error={error} onRetry={fetchColumn} resolver={leadsMessages} title={t("leads.kanban.columnError")} />
         ) : leads.length === 0 ? (
           <Box sx={{ py: 3 }}>
             <Typography
@@ -246,7 +253,7 @@ function KanbanColumn({ status, readonly, refreshToken, onDropCard, registerRefe
               color="text.disabled"
               sx={{ display: "block", textAlign: "center" }}
             >
-              لا يوجد عملاء في هذه القائمة
+              {t("leads.kanban.columnEmpty")}
             </Typography>
           </Box>
         ) : (
@@ -264,6 +271,7 @@ function KanbanColumn({ status, readonly, refreshToken, onDropCard, registerRefe
 // ── board ─────────────────────────────────────────────────────────────────────────
 export function LeadsKanban() {
   const { setLoading } = useToastContext();
+  const { t } = useT();
   // Bumping this forces every column to refetch (the global refresh button).
   const [refreshToken, setRefreshToken] = useState(0);
   // Per-column handles { setLeads, refetch } so we can optimistically move a card.
@@ -297,7 +305,7 @@ export function LeadsKanban() {
 
       const res = await runLeadMutation(
         () => leadsService.changeStatus(id, { status: toStatus }),
-        { setLoading, loading: "جاري تغيير الحالة..." },
+        { setLoading, loading: t("leads.kanban.changeStatus.loading") },
       );
 
       if (res) {
@@ -310,7 +318,7 @@ export function LeadsKanban() {
         toCol?.refetch?.();
       }
     },
-    [setLoading],
+    [setLoading, t],
   );
 
   return (
@@ -318,10 +326,10 @@ export function LeadsKanban() {
       <Stack spacing={2}>
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Typography variant="body2" color="text.secondary">
-            اسحب بطاقة العميل إلى قائمة أخرى لتغيير حالتها.
+            {t("leads.kanban.hint")}
           </Typography>
-          <Tooltip title="تحديث اللوحة كاملة">
-            <IconButton onClick={() => setRefreshToken((n) => n + 1)} aria-label="تحديث اللوحة">
+          <Tooltip title={t("leads.kanban.refreshBoard")}>
+            <IconButton onClick={() => setRefreshToken((n) => n + 1)} aria-label={t("leads.kanban.refreshBoardAria")}>
               <MdRefresh />
             </IconButton>
           </Tooltip>

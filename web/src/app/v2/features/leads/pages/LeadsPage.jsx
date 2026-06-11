@@ -38,14 +38,15 @@ import { MdOpenInNew, MdRefresh, MdGroupAdd, MdViewList, MdViewKanban } from "re
 import Link from "next/link";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { useT } from "@/app/v2/lib/i18n";
 import {
   PageHeader,
   DataTablePage,
   PartialPermissionState,
 } from "@/app/v2/shared/components";
 import { useLeadsList } from "../hooks/useLeadsList.js";
-import { leadsColumns } from "../config/leadsColumns.js";
-import { leadsFilters } from "../config/leadsFilters.js";
+import { buildLeadsColumns } from "../config/leadsColumns.js";
+import { buildLeadsFilters } from "../config/leadsFilters.js";
 import { leadsMessages } from "../config/leadsMessages.js";
 import { LeadAssignActions } from "../components/LeadAssignActions.jsx";
 import { LeadSearchAutocomplete } from "../components/LeadSearchAutocomplete.jsx";
@@ -73,6 +74,7 @@ const SEGMENTS = {
 
 export function LeadsPage() {
   const { hasPermission, hasAnyPermission } = usePermission();
+  const { t } = useT();
   const router = useRouter();
   const canList = hasPermission(P.LIST);
   const canBulkConvert = hasPermission(P.ASSIGN_OTHER);
@@ -168,7 +170,8 @@ export function LeadsPage() {
   // prepend a selection column whose accessor renders a controlled checkbox — selection is
   // inherently page state, so only the affordance (not the data columns) is composed here.
   const columns = useMemo(() => {
-    if (!canBulkConvert) return leadsColumns;
+    const baseColumns = buildLeadsColumns(t);
+    if (!canBulkConvert) return baseColumns;
     const selectCol = {
       field: "__select",
       headerName: "",
@@ -179,40 +182,40 @@ export function LeadsPage() {
           checked={selected.includes(row.id)}
           onClick={(e) => e.stopPropagation()}
           onChange={() => toggleSelect(row.id)}
-          inputProps={{ "aria-label": `تحديد العميل ${row.id}` }}
+          inputProps={{ "aria-label": t("leads.row.selectAria").replace("{id}", row.id) }}
         />
       ),
     };
-    return [selectCol, ...leadsColumns];
+    return [selectCol, ...baseColumns];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canBulkConvert, selected]);
+  }, [canBulkConvert, selected, t]);
 
   // Distinct empty state per segment so the precedence is legible (UX fix). A status filter
   // narrows whichever pool is active; surface that in the copy.
   const empty = useMemo(() => {
     if (statusActive) {
       return {
-        title: "لا توجد نتائج مطابقة للحالة المحددة",
-        description: "غيّر الحالة من شريط التصفية أو أعد التعيين لعرض القائمة كاملة.",
+        title: t("leads.empty.status.title"),
+        description: t("leads.empty.status.description"),
       };
     }
     if (segment === SEGMENTS.NEW) {
       return {
-        title: "لا يوجد عملاء جدد بانتظار الاستلام",
-        description: "ستظهر هنا العملاء الجدد فور وصولهم. لا حاجة لإجراء الآن.",
+        title: t("leads.empty.new.title"),
+        description: t("leads.empty.new.description"),
       };
     }
     return {
-      title: "لا توجد صفقات مطابقة",
-      description: "لا توجد صفقات في هذا القسم حالياً.",
+      title: t("leads.empty.deals.title"),
+      description: t("leads.empty.deals.description"),
     };
-  }, [segment, statusActive]);
+  }, [segment, statusActive, t]);
 
   function renderRowActions(row) {
     return (
       <>
         <LeadAssignActions lead={row} onChanged={refetch} />
-        <Tooltip title="فتح التفاصيل">
+        <Tooltip title={t("leads.action.openDetails")}>
           {/* Real anchor → middle-click / ctrl+click / open-in-new-tab all work. */}
           <IconButton
             component={Link}
@@ -232,8 +235,8 @@ export function LeadsPage() {
       <Container maxWidth="md" sx={{ py: 6 }}>
         <PartialPermissionState
           denied
-          title="قائمة العملاء غير متاحة لصلاحياتك"
-          message="لا تملك صلاحية الوصول إلى قائمة العملاء المحتملين. تواصل مع المسؤول إن كنت تظن أنه ينبغي أن تصل إليها."
+          title={t("leads.denied.title")}
+          message={t("leads.denied.message")}
         />
       </Container>
     );
@@ -252,24 +255,28 @@ export function LeadsPage() {
       />
 
       <PageHeader
-        title="العملاء المحتملون"
-        subtitle={isKanban ? "لوحة الصفقات" : `الإجمالي: ${total}`}
-        breadcrumbs={[{ label: "المبيعات" }, { label: "العملاء المحتملون" }]}
+        title={t("leads.page.title")}
+        subtitle={
+          isKanban
+            ? t("leads.page.subtitle.kanban")
+            : t("leads.page.subtitle.total").replace("{total}", total)
+        }
+        breadcrumbs={[{ label: t("leads.page.breadcrumb.sales") }, { label: t("leads.page.title") }]}
       >
         <ToggleButtonGroup
           value={view}
           exclusive
           onChange={onViewChange}
           size="small"
-          aria-label="طريقة العرض"
+          aria-label={t("leads.view.aria")}
         >
-          <ToggleButton value={VIEWS.LIST} aria-label="عرض قائمة">
+          <ToggleButton value={VIEWS.LIST} aria-label={t("leads.view.list.aria")}>
             <MdViewList style={{ marginInlineEnd: 6 }} />
-            قائمة
+            {t("leads.view.list")}
           </ToggleButton>
-          <ToggleButton value={VIEWS.KANBAN} aria-label="عرض لوحة">
+          <ToggleButton value={VIEWS.KANBAN} aria-label={t("leads.view.kanban.aria")}>
             <MdViewKanban style={{ marginInlineEnd: 6 }} />
-            لوحة
+            {t("leads.view.kanban")}
           </ToggleButton>
         </ToggleButtonGroup>
         <LeadSearchAutocomplete
@@ -278,7 +285,7 @@ export function LeadsPage() {
           }}
         />
         {!isKanban && canBulkConvert && (
-          <Tooltip title="تحويل العملاء المحددين تحويلاً جماعياً">
+          <Tooltip title={t("leads.action.bulkConvert.tooltip")}>
             <span>
               <Button
                 variant="outlined"
@@ -287,13 +294,13 @@ export function LeadsPage() {
                 disabled={selected.length === 0}
                 onClick={() => setBulkOpen(true)}
               >
-                تحويل جماعي ({selected.length})
+                {t("leads.action.bulkConvert.label").replace("{count}", selected.length)}
               </Button>
             </span>
           </Tooltip>
         )}
         {!isKanban && (
-          <Tooltip title="تحديث">
+          <Tooltip title={t("leads.action.refresh")}>
             <IconButton onClick={refetch}>
               <MdRefresh />
             </IconButton>
@@ -320,15 +327,15 @@ export function LeadsPage() {
           onChange={onSegmentChange}
           sx={{ opacity: statusActive ? 0.5 : 1 }}
         >
-          <Tab value={SEGMENTS.NEW} label="العملاء الجدد" disabled={statusActive} />
-          <Tab value={SEGMENTS.DEALS} label="الصفقات" disabled={statusActive} />
+          <Tab value={SEGMENTS.NEW} label={t("leads.segment.new")} disabled={statusActive} />
+          <Tab value={SEGMENTS.DEALS} label={t("leads.segment.deals")} disabled={statusActive} />
         </Tabs>
         {statusActive && (
           <Chip
             size="small"
             color="info"
             variant="outlined"
-            label="مفلتر حسب الحالة"
+            label={t("leads.segment.filteredChip")}
             onDelete={() => setFilterValues({ status: "ALL" })}
           />
         )}
@@ -337,7 +344,7 @@ export function LeadsPage() {
       <Box>
         <DataTablePage
           columns={columns}
-          filters={leadsFilters}
+          filters={buildLeadsFilters(t)}
           rows={items}
           total={total}
           page={page}

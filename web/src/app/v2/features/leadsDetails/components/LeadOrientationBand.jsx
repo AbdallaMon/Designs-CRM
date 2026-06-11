@@ -14,6 +14,7 @@
 import { Box, Breadcrumbs, Button, Chip, Link as MuiLink, Stack, Typography } from "@mui/material";
 import NextLink from "next/link";
 import { MdTrendingUp, MdPayments, MdWork, MdCall, MdNoteAdd } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { LeadStatusMenu } from "./LeadStatusMenu.jsx";
 
 const DESIGNER_ROLES = ["THREE_D_DESIGNER", "TWO_D_DESIGNER", "TWO_D_EXECUTOR"];
@@ -26,7 +27,7 @@ const DESIGNER_ROLES = ["THREE_D_DESIGNER", "TWO_D_DESIGNER", "TWO_D_EXECUTOR"];
 // caller then shows a muted "view-only" hint. `caps` is lead.capabilities; `gates` is the page's
 // resolved section-gate map; `onNavigate(group, sub)` deep-links to a section; `lead` is read for
 // count-guards so we never surface an action that dead-ends.
-function resolvePrimaryAction({ user, lead, caps, gates, onNavigate }) {
+function resolvePrimaryAction({ user, lead, caps, gates, onNavigate, t }) {
   const role = user?.role;
   const isSuperSales = Boolean(user?.isSuperSales) || role === "SUPER_SALES";
 
@@ -34,7 +35,7 @@ function resolvePrimaryAction({ user, lead, caps, gates, onNavigate }) {
   // visible (PERMISSIONS.SALES_STAGE.VIEW). The panel there owns the real advance mutation.
   if ((role === "STAFF" || isSuperSales) && gates?.stage) {
     return {
-      label: "متابعة مرحلة البيع",
+      label: t("leadsDetails.orientation.advanceStage"),
       icon: <MdTrendingUp />,
       onClick: () => onNavigate("sales", "salesStage"),
     };
@@ -44,7 +45,7 @@ function resolvePrimaryAction({ user, lead, caps, gates, onNavigate }) {
   // Navigates to the payments section where AddPaymentDialog lives, auto-opening the dialog.
   if (role === "ACCOUNTANT" && caps?.canAddPayment) {
     return {
-      label: "إضافة دفعة",
+      label: t("leadsDetails.orientation.addPayment"),
       icon: <MdPayments />,
       onClick: () => onNavigate("finance", "payments", "add"),
     };
@@ -56,7 +57,7 @@ function resolvePrimaryAction({ user, lead, caps, gates, onNavigate }) {
   // the universal safe step below instead.
   if (DESIGNER_ROLES.includes(role) && gates?.projects && (lead?._count?.projects ?? 0) > 0) {
     return {
-      label: "فتح المشروع",
+      label: t("leadsDetails.orientation.openProject"),
       icon: <MdWork />,
       onClick: () => onNavigate("production", "projects"),
     };
@@ -67,14 +68,14 @@ function resolvePrimaryAction({ user, lead, caps, gates, onNavigate }) {
   // otherwise adding a note. Both deep-link to the record group with an auto-open flag (item 4).
   if (caps?.canAddCall) {
     return {
-      label: "تسجيل مكالمة",
+      label: t("leadsDetails.orientation.logCall"),
       icon: <MdCall />,
       onClick: () => onNavigate("record", "calls", "add"),
     };
   }
   if (caps?.canAddNote) {
     return {
-      label: "إضافة ملاحظة",
+      label: t("leadsDetails.orientation.addNote"),
       icon: <MdNoteAdd />,
       onClick: () => onNavigate("record", "notes", "add"),
     };
@@ -93,10 +94,11 @@ export function LeadOrientationBand({
   onNavigate,
   onChanged,
 }) {
+  const { t } = useT();
   if (!lead) return null;
   const caps = lead.capabilities ?? {};
   const clientName = lead.client?.name ?? `#${lead.id}`;
-  const primary = resolvePrimaryAction({ user, lead, caps, gates, onNavigate });
+  const primary = resolvePrimaryAction({ user, lead, caps, gates, onNavigate, t });
 
   return (
     <Stack
@@ -106,7 +108,7 @@ export function LeadOrientationBand({
       spacing={1}
       sx={{ mb: 1.5 }}
     >
-      <Breadcrumbs aria-label="مسار التنقل" sx={{ minWidth: 0 }}>
+      <Breadcrumbs aria-label={t("leadsDetails.orientation.breadcrumbAria")} sx={{ minWidth: 0 }}>
         <MuiLink
           component={NextLink}
           href="/v2/leads"
@@ -114,7 +116,7 @@ export function LeadOrientationBand({
           color="text.secondary"
           variant="body2"
         >
-          العملاء المحتملون
+          {t("leadsDetails.orientation.leadsRoot")}
         </MuiLink>
         <Typography color="text.primary" variant="body2" noWrap sx={{ maxWidth: 280 }}>
           {clientName}
@@ -143,7 +145,7 @@ export function LeadOrientationBand({
         ) : (
           // Genuinely read-only: don't pretend there is an action — show an explicit muted hint
           // so the breadcrumb-only band reads as intentional, not broken.
-          <Chip label="وضع العرض فقط" size="small" variant="outlined" color="default" />
+          <Chip label={t("leadsDetails.orientation.viewOnly")} size="small" variant="outlined" color="default" />
         )}
       </Box>
     </Stack>

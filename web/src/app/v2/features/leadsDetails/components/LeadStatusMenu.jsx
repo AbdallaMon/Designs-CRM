@@ -14,6 +14,7 @@ import { useMemo, useState } from "react";
 import { Button, ListItemIcon, ListItemText, Menu, MenuItem } from "@mui/material";
 import { MdArrowDropDown, MdCheck } from "react-icons/md";
 import { useToastContext } from "@/app/v2/providers/ToastProvider";
+import { useT } from "@/app/v2/lib/i18n";
 import { leadsService } from "@/app/v2/features/leads/leads.service.js";
 import { runLeadMutation } from "@/app/v2/features/leads/leads.mutations.js";
 import {
@@ -25,6 +26,7 @@ import {
 export function LeadStatusMenu({ lead, canChangeStatus, beginner = false, onChanged }) {
   const [anchorEl, setAnchorEl] = useState(null);
   const { setLoading } = useToastContext();
+  const { t } = useT();
 
   // §5/M6 — error prevention: build the offered list in real pipeline order and ALWAYS include
   // the lead's current status (so the user sees where they are), even when it isn't in the
@@ -49,7 +51,7 @@ export function LeadStatusMenu({ lead, canChangeStatus, beginner = false, onChan
     // §5c: send ONLY the target status — the server derives oldStatus.
     const res = await runLeadMutation(
       () => leadsService.changeStatus(lead.id, { status }),
-      { setLoading, loading: "جاري تغيير الحالة..." },
+      { setLoading, loading: t("leadsDetails.statusMenu.loading") },
     );
     if (res) onChanged?.(status);
   }
@@ -61,7 +63,7 @@ export function LeadStatusMenu({ lead, canChangeStatus, beginner = false, onChan
         endIcon={<MdArrowDropDown />}
         onClick={(e) => setAnchorEl(e.currentTarget)}
       >
-        تغيير الحالة
+        {t("leadsDetails.statusMenu.button")}
       </Button>
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
         {ordered.map((s) => {

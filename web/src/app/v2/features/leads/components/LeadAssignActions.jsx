@@ -24,11 +24,13 @@ import {
   Stack,
 } from "@mui/material";
 import { useToastContext } from "@/app/v2/providers/ToastProvider";
+import { useT } from "@/app/v2/lib/i18n";
 import { leadsService } from "../leads.service.js";
 import { runLeadMutation } from "../leads.mutations.js";
 
 export function LeadAssignActions({ lead, onChanged, size = "small" }) {
   const { setLoading } = useToastContext();
+  const { t } = useT();
   const [busy, setBusy] = useState(false);
   // Which confirm dialog is open: null | "claim" | "convert".
   const [confirm, setConfirm] = useState(null);
@@ -39,7 +41,7 @@ export function LeadAssignActions({ lead, onChanged, size = "small" }) {
     setBusy(true);
     const res = await runLeadMutation(() => leadsService.assignLead({ id: lead.id }), {
       setLoading,
-      loading: "جاري الإسناد...",
+      loading: t("leads.assign.claim.loading"),
     });
     setBusy(false);
     setConfirm(null);
@@ -50,7 +52,7 @@ export function LeadAssignActions({ lead, onChanged, size = "small" }) {
     setBusy(true);
     const res = await runLeadMutation(() => leadsService.convertLead({ id: lead.id }), {
       setLoading,
-      loading: "جاري التحويل...",
+      loading: t("leads.assign.convert.loading"),
     });
     setBusy(false);
     setConfirm(null);
@@ -62,16 +64,16 @@ export function LeadAssignActions({ lead, onChanged, size = "small" }) {
   const dialog =
     confirm === "claim"
       ? {
-          title: "تأكيد استلام العميل؟",
-          body: `سيتم إسناد العميل "${clientName}" إليك.`,
-          confirmLabel: "استلام",
+          title: t("leads.assign.claim.confirmTitle"),
+          body: t("leads.assign.claim.confirmBody").replace("{name}", clientName),
+          confirmLabel: t("leads.assign.claim.confirmLabel"),
           onConfirm: runClaim,
         }
       : confirm === "convert"
         ? {
-            title: "تأكيد التحويل إلى صفقة؟",
-            body: `سيتم تحويل العميل "${clientName}" إلى صفقة.`,
-            confirmLabel: "تحويل",
+            title: t("leads.assign.convert.confirmTitle"),
+            body: t("leads.assign.convert.confirmBody").replace("{name}", clientName),
+            confirmLabel: t("leads.assign.convert.confirmLabel"),
             onConfirm: runConvert,
           }
         : null;
@@ -86,7 +88,7 @@ export function LeadAssignActions({ lead, onChanged, size = "small" }) {
             disabled={busy}
             onClick={() => setConfirm("claim")}
           >
-            استلام العميل
+            {t("leads.assign.claim")}
           </Button>
         )}
         {caps.canConvert && (
@@ -96,7 +98,7 @@ export function LeadAssignActions({ lead, onChanged, size = "small" }) {
             disabled={busy}
             onClick={() => setConfirm("convert")}
           >
-            تحويل إلى صفقة
+            {t("leads.assign.convert")}
           </Button>
         )}
       </Stack>
@@ -108,7 +110,7 @@ export function LeadAssignActions({ lead, onChanged, size = "small" }) {
         </DialogContent>
         <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
           <Button onClick={() => setConfirm(null)} variant="outlined" disabled={busy}>
-            إلغاء
+            {t("leads.assign.cancel")}
           </Button>
           <Button onClick={() => dialog?.onConfirm?.()} variant="contained" disabled={busy}>
             {dialog?.confirmLabel}

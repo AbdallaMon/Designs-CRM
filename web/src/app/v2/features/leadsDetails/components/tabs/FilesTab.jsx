@@ -9,6 +9,7 @@
 import { Stack, Link as MuiLink, Typography } from "@mui/material";
 import { MdInsertDriveFile, MdImage, MdPictureAsPdf, MdAttachFile, MdPerson } from "react-icons/md";
 import dayjs from "dayjs";
+import { useT } from "@/app/v2/lib/i18n";
 import { LeadRecordList } from "../LeadRecordList.jsx";
 import { AddFileDialog } from "../dialogs/AddFileDialog.jsx";
 
@@ -55,6 +56,7 @@ function renderSecondary(f) {
 }
 
 export function FilesTab({ lead, onChanged }) {
+  const { t } = useT();
   const caps = lead?.capabilities ?? {};
   const files = Array.isArray(lead?.files) ? lead.files : [];
 
@@ -64,7 +66,7 @@ export function FilesTab({ lead, onChanged }) {
   return (
     <Stack spacing={3}>
       <LeadRecordList
-        title={`ملفات النظام (${systemFiles.length})`}
+        title={t("leadsDetails.files.system.title").replace("{count}", systemFiles.length)}
         icon={<MdAttachFile />}
         items={systemFiles}
         headerAction={
@@ -72,22 +74,22 @@ export function FilesTab({ lead, onChanged }) {
         }
         renderPrimary={renderPrimary}
         renderSecondary={renderSecondary}
-        emptyTitle="لا توجد ملفات نظام"
+        emptyTitle={t("leadsDetails.files.system.empty.title")}
         emptyDescription={
           caps.canAddFile
-            ? "أرفق ملفاً (صورة، PDF، مستند) متعلقاً بهذا العميل."
-            : "لم يُرفق أي ملف من قبل الفريق بعد."
+            ? t("leadsDetails.files.system.empty.canAdd")
+            : t("leadsDetails.files.system.empty.readonly")
         }
       />
 
       <LeadRecordList
-        title={`ملفات العميل (${clientFiles.length})`}
+        title={t("leadsDetails.files.client.title").replace("{count}", clientFiles.length)}
         icon={<MdPerson />}
         items={clientFiles}
         renderPrimary={renderPrimary}
         renderSecondary={renderSecondary}
-        emptyTitle="لا توجد ملفات من العميل"
-        emptyDescription="لم يرفع العميل أي ملف بعد."
+        emptyTitle={t("leadsDetails.files.client.empty.title")}
+        emptyDescription={t("leadsDetails.files.client.empty.description")}
       />
     </Stack>
   );

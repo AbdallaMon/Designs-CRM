@@ -25,12 +25,14 @@ import {
 import { MdChat, MdOpenInNew } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { useT } from "@/app/v2/lib/i18n";
 import { useChatRooms } from "@/app/v2/features/chat";
 import { getRoomLabel } from "@/app/v2/features/chat/chat.utils.js";
 import { SectionCard } from "@/app/v2/shared/components/SectionCard.jsx";
 
 export function LeadChatLauncher({ leadId, lead }) {
   const { hasPermission } = usePermission();
+  const { t } = useT();
   const canList = hasPermission(PERMISSIONS.CHAT.ROOM_LIST);
 
   // Lead-scoped rooms only. The hook self-fetches when clientLeadId changes.
@@ -41,7 +43,7 @@ export function LeadChatLauncher({ leadId, lead }) {
     return (
       <SectionCard>
         <Box sx={{ p: 3, textAlign: "center" }}>
-          <Typography color="text.secondary">لا تملك صلاحية الوصول إلى المحادثات</Typography>
+          <Typography color="text.secondary">{t("leadsDetails.chat.denied")}</Typography>
         </Box>
       </SectionCard>
     );
@@ -56,7 +58,7 @@ export function LeadChatLauncher({ leadId, lead }) {
               <MdChat />
             </Box>
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              المحادثات
+              {t("leadsDetails.chat.title")}
             </Typography>
           </Stack>
           <Button
@@ -66,19 +68,19 @@ export function LeadChatLauncher({ leadId, lead }) {
             size="small"
             startIcon={<MdOpenInNew />}
           >
-            فتح المحادثات
+            {t("leadsDetails.chat.open")}
           </Button>
         </Stack>
 
         {initialLoading ? (
-          <Typography color="text.secondary">جاري التحميل...</Typography>
+          <Typography color="text.secondary">{t("leadsDetails.chat.loading")}</Typography>
         ) : leadRooms.length === 0 ? (
           <Box sx={{ p: 3, textAlign: "center" }}>
             <Typography variant="body1" color="text.secondary" sx={{ mb: 0.5 }}>
-              لا توجد محادثات مرتبطة بهذا العميل بعد
+              {t("leadsDetails.chat.empty.title")}
             </Typography>
             <Typography variant="body2" color="text.disabled">
-              افتح شاشة المحادثات لإنشاء محادثة جديدة.
+              {t("leadsDetails.chat.empty.description")}
             </Typography>
           </Box>
         ) : (
@@ -97,7 +99,11 @@ export function LeadChatLauncher({ leadId, lead }) {
                 </ListItemAvatar>
                 <ListItemText
                   primary={getRoomLabel(room)}
-                  secondary={lead?.client?.name ? `محادثة العميل · ${lead.client.name}` : "محادثة العميل"}
+                  secondary={
+                    lead?.client?.name
+                      ? t("leadsDetails.chat.roomSecondary").replace("{name}", lead.client.name)
+                      : t("leadsDetails.chat.roomSecondaryFallback")
+                  }
                   slotProps={{ primary: { sx: { fontWeight: 600 } } }}
                 />
                 <Box sx={{ display: "flex", color: "text.disabled", fontSize: 18 }}>

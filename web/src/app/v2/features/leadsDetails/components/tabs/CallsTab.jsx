@@ -9,6 +9,7 @@ import { Stack, Typography } from "@mui/material";
 import { MdCall } from "react-icons/md";
 import dayjs from "dayjs";
 import { StatusChip } from "@/app/v2/shared/components";
+import { useT } from "@/app/v2/lib/i18n";
 import { LeadRecordList } from "../LeadRecordList.jsx";
 import {
   NewCallMeetingDialog,
@@ -16,12 +17,13 @@ import {
 } from "../dialogs/CallMeetingDialogs.jsx";
 
 export function CallsTab({ lead, onChanged, autoOpenAction, onAutoOpenConsumed }) {
+  const { t } = useT();
   const caps = lead?.capabilities ?? {};
   const calls = Array.isArray(lead?.callReminders) ? lead.callReminders : [];
 
   return (
     <LeadRecordList
-      title="المكالمات"
+      title={t("leadsDetails.calls.title")}
       icon={<MdCall />}
       items={calls}
       headerAction={
@@ -62,11 +64,11 @@ export function CallsTab({ lead, onChanged, autoOpenAction, onAutoOpenConsumed }
           onUpdated={onChanged}
         />
       )}
-      emptyTitle="لا توجد مكالمات مجدولة"
+      emptyTitle={t("leadsDetails.calls.empty.title")}
       emptyDescription={
         caps.canAddCall
-          ? "جدول مكالمة لمتابعة هذا العميل المحتمل."
-          : "لم تتم جدولة أي مكالمة لهذا العميل بعد."
+          ? t("leadsDetails.calls.empty.canAdd")
+          : t("leadsDetails.calls.empty.readonly")
       }
     />
   );

@@ -10,6 +10,7 @@ import { Box, Stack, Typography } from "@mui/material";
 import { MdPayments } from "react-icons/md";
 import dayjs from "dayjs";
 import { StatusChip } from "@/app/v2/shared/components";
+import { useT } from "@/app/v2/lib/i18n";
 import { LeadRecordList } from "../LeadRecordList.jsx";
 import { AddPaymentDialog } from "../dialogs/PaymentDialog.jsx";
 import { ReminderButtons } from "../ReminderButtons.jsx";
@@ -45,6 +46,7 @@ function sumField(payments, field) {
 }
 
 export function PaymentsTab({ lead, onChanged, autoOpenAction, onAutoOpenConsumed }) {
+  const { t } = useT();
   const caps = lead?.capabilities ?? {};
   const payments = Array.isArray(lead?.payments) ? lead.payments : [];
 
@@ -57,12 +59,14 @@ export function PaymentsTab({ lead, onChanged, autoOpenAction, onAutoOpenConsume
       {hasSummary && (
         <Box>
           <Typography variant="body2" color="text.secondary">
-            المدفوع: {formatAmount(paid ?? 0)} · المتبقي: {formatAmount(remaining ?? 0)}
+            {t("leadsDetails.payments.summary")
+              .replace("{paid}", formatAmount(paid ?? 0))
+              .replace("{remaining}", formatAmount(remaining ?? 0))}
           </Typography>
         </Box>
       )}
       <LeadRecordList
-        title="الدفعات"
+        title={t("leadsDetails.payments.title")}
         icon={<MdPayments />}
         items={payments}
         headerAction={
@@ -91,11 +95,11 @@ export function PaymentsTab({ lead, onChanged, autoOpenAction, onAutoOpenConsume
         renderStatus={(p) =>
           p.status ? <StatusChip domain="payment" status={p.status} /> : null
         }
-        emptyTitle="لا توجد دفعات مسجلة"
+        emptyTitle={t("leadsDetails.payments.empty.title")}
         emptyDescription={
           caps.canAddPayment
-            ? "سجّل دفعة لمتابعة المبالغ المستحقة والمدفوعة لهذا العميل."
-            : "لم تُسجّل أي دفعة لهذا العميل بعد."
+            ? t("leadsDetails.payments.empty.canAdd")
+            : t("leadsDetails.payments.empty.readonly")
         }
       />
     </Stack>

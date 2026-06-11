@@ -44,6 +44,7 @@ import {
   EmptyState,
   ErrorState,
 } from "@/app/v2/shared/components";
+import { useT } from "@/app/v2/lib/i18n";
 
 export function LeadRecordList({
   title,
@@ -54,7 +55,7 @@ export function LeadRecordList({
   renderSecondary,
   renderStatus,
   renderRowAction,
-  emptyTitle = "لا توجد بيانات",
+  emptyTitle,
   emptyDescription,
   emptyAction,
   loading = false,
@@ -62,7 +63,9 @@ export function LeadRecordList({
   onRetry,
   maxVisible = 5,
 }) {
+  const { t } = useT();
   const [expanded, setExpanded] = useState(false);
+  const resolvedEmptyTitle = emptyTitle ?? t("leadsDetails.recordList.empty");
   const list = Array.isArray(items) ? items : [];
   const collapsible = list.length > maxVisible;
   const visible = expanded || !collapsible ? list : list.slice(0, maxVisible);
@@ -83,7 +86,7 @@ export function LeadRecordList({
       ) : error ? (
         <ErrorState error={error} onRetry={onRetry} />
       ) : list.length === 0 ? (
-        <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />
+        <EmptyState title={resolvedEmptyTitle} description={emptyDescription} action={emptyAction} />
       ) : (
         <>
           <List disablePadding>
@@ -133,7 +136,9 @@ export function LeadRecordList({
                 onClick={() => setExpanded((v) => !v)}
                 startIcon={expanded ? <MdExpandLess /> : <MdExpandMore />}
               >
-                {expanded ? "عرض أقل" : `عرض الكل (${list.length})`}
+                {expanded
+                  ? t("leadsDetails.recordList.showLess")
+                  : t("leadsDetails.recordList.showAll").replace("{count}", list.length)}
               </Button>
             </Box>
           )}
