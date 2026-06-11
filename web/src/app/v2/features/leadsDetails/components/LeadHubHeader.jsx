@@ -10,13 +10,14 @@
 // (canChangeStatus from caps, beginner) and the action components self-gate on
 // lead.capabilities.* — this component only LAYS OUT what the page allows. Single Arabic / RTL.
 
-import { Avatar, Box, Divider, Stack, Typography } from "@mui/material";
+import { Avatar, Box, Button, Divider, Stack, Typography } from "@mui/material";
 import {
   MdPhone,
   MdEmail,
   MdLocationOn,
   MdCategory,
   MdPerson,
+  MdAdd,
 } from "react-icons/md";
 import { SectionCard } from "@/app/v2/shared/components/SectionCard.jsx";
 import { StatusChip } from "@/app/v2/shared/components/StatusChip.jsx";
@@ -27,6 +28,36 @@ import {
   categoryLabel,
 } from "@/app/v2/features/leads/config/leadsConstants.js";
 import { SalesStagePanel } from "@/app/v2/features/salesStages";
+
+// The compact one-click "daily verbs" row (H2 / item 4). Each verb is capability-gated via
+// lead.capabilities.* and, instead of duplicating the dialog here, deep-links to the sub-tab that
+// already owns it with an ?action=add flag the tab reads on mount to auto-open its dialog once.
+function QuickActions({ caps, onNavigate }) {
+  if (!onNavigate) return null;
+  const verbs = [
+    caps.canAddCall && { label: "تسجيل مكالمة", group: "record", sub: "calls" },
+    caps.canAddNote && { label: "ملاحظة", group: "record", sub: "notes" },
+    caps.canAddPayment && { label: "دفعة", group: "finance", sub: "payments" },
+  ].filter(Boolean);
+
+  if (verbs.length === 0) return null;
+
+  return (
+    <Stack direction="row" spacing={1} flexWrap="wrap" rowGap={1}>
+      {verbs.map((v) => (
+        <Button
+          key={v.sub}
+          size="small"
+          variant="outlined"
+          startIcon={<MdAdd />}
+          onClick={() => onNavigate(v.group, v.sub, "add")}
+        >
+          {v.label}
+        </Button>
+      ))}
+    </Stack>
+  );
+}
 
 // One contact chip: icon + value. Renders nothing when the value is absent.
 function ContactItem({ icon, value }) {
@@ -48,6 +79,7 @@ export function LeadHubHeader({
   beginner,
   canViewStage,
   onChanged,
+  onNavigate,
 }) {
   if (!lead) return null;
 
@@ -107,6 +139,9 @@ export function LeadHubHeader({
           <ContactItem icon={<MdLocationOn />} value={emirate} />
           <ContactItem icon={<MdCategory />} value={category} />
         </Stack>
+
+        {/* One-click daily verbs (H2) — compact, capability-gated, deep-link + auto-open. */}
+        <QuickActions caps={caps} onNavigate={onNavigate} />
 
         {/* Owner / assigned-to */}
         {ownerName && (

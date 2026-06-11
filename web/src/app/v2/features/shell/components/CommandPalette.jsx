@@ -23,6 +23,7 @@ import {
   Divider,
   useMediaQuery,
 } from "@mui/material";
+import { MdBolt } from "react-icons/md";
 import { useRouter } from "next/navigation";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
@@ -66,6 +67,38 @@ export function CommandPalette({ open, onClose }) {
     );
   }, [destinations, query]);
 
+  // Top global ACTIONS (audit H5) — the palette now does more than navigate-by-name: it offers a
+  // small, honest set of real commands that route straight to the relevant screen. Each is
+  // permission-gated and only routes to a genuinely-working destination (no dead create flags).
+  const commands = useMemo(() => {
+    const list = [];
+    if (perm.hasPermission(PERMISSIONS.LEAD.LIST)) {
+      list.push({
+        key: "cmd-cockpit",
+        label: "مساحة عملي",
+        hint: "مهامك اليومية",
+        href: "/v2/leads/workspace",
+      });
+      list.push({
+        key: "cmd-leads",
+        label: "قائمة العملاء",
+        hint: "البحث في كل العملاء",
+        href: "/v2/leads",
+      });
+    }
+    return list;
+  }, [perm]);
+
+  const filteredCommands = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return commands;
+    return commands.filter(
+      (c) =>
+        c.label.toLowerCase().includes(q) ||
+        (c.hint || "").toLowerCase().includes(q),
+    );
+  }, [commands, query]);
+
   // Reset the query each time the palette opens.
   useEffect(() => {
     if (open) setQuery("");
@@ -108,6 +141,39 @@ export function CommandPalette({ open, onClose }) {
         )}
 
         {canSearchLeads && <Divider sx={{ my: 1.5 }} />}
+
+        {/* أوامر — top global actions (audit H5). Honest, permission-gated, route to a real
+            screen. Hidden when filtered out by the query. */}
+        {filteredCommands.length > 0 && (
+          <Box sx={{ mb: 1.5 }}>
+            <Typography
+              variant="overline"
+              sx={{ display: "block", mb: 0.5, color: "text.secondary" }}
+            >
+              أوامر
+            </Typography>
+            <List dense disablePadding>
+              {filteredCommands.map((c) => (
+                <ListItemButton
+                  key={c.key}
+                  onClick={() => goToDestination(c.href)}
+                  sx={{ borderRadius: 2, minHeight: 44 }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36, justifyContent: "center" }}>
+                    <MdBolt size={18} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={c.label}
+                    secondary={c.hint}
+                    primaryTypographyProps={{ variant: "body2" }}
+                    secondaryTypographyProps={{ variant: "caption" }}
+                  />
+                </ListItemButton>
+              ))}
+            </List>
+            <Divider sx={{ mt: 1.5 }} />
+          </Box>
+        )}
 
         <Typography
           variant="overline"

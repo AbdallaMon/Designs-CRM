@@ -24,7 +24,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { buildWorkspaceNav } from "../nav.config";
-import { resolveNavItem, resolveDefaultWorkspace } from "../navLabels";
+import {
+  resolveNavItem,
+  resolveDefaultWorkspace,
+  resolveDefaultDestination,
+} from "../navLabels";
 import { LoadingState } from "@/app/v2/shared/components/states/LoadingState";
 
 const FALLBACK_HREF = "/v2/dashboard";
@@ -36,9 +40,24 @@ export function LandingRedirect() {
   const perm = usePermission();
   const [redirected, setRedirected] = useState(false);
 
-  // Default workspace's first VISIBLE destination href (or the fallback).
+  // Landing target (audit H1). Order of preference:
+  //   1. the role's EXPLICIT landing destination (sales personas → the daily cockpit) — but only
+  //      when that href is actually reachable in the user's permission-filtered nav,
+  //   2. otherwise the role's default workspace's FIRST visible destination,
+  //   3. otherwise the fallback (/v2/dashboard).
   const target = useMemo(() => {
     const workspaceNav = buildWorkspaceNav(perm, resolveNavItem);
+
+    // 1. explicit per-role override, gated by reachability (never send a user to a 403).
+    const explicit = resolveDefaultDestination(user);
+    if (explicit) {
+      const reachable = workspaceNav.some((w) =>
+        w.items.some((it) => it.href === explicit),
+      );
+      if (reachable) return explicit;
+    }
+
+    // 2. resolved-workspace first destination.
     const accessibleKeys = workspaceNav.map((w) => w.workspace.key);
     const defKey = resolveDefaultWorkspace(user, accessibleKeys);
     const ws = workspaceNav.find((w) => w.workspace.key === defKey);

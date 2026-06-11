@@ -44,7 +44,7 @@ function sumField(payments, field) {
   return seen ? total : null;
 }
 
-export function PaymentsTab({ lead, onChanged }) {
+export function PaymentsTab({ lead, onChanged, autoOpenAction, onAutoOpenConsumed }) {
   const caps = lead?.capabilities ?? {};
   const payments = Array.isArray(lead?.payments) ? lead.payments : [];
 
@@ -67,7 +67,13 @@ export function PaymentsTab({ lead, onChanged }) {
         items={payments}
         headerAction={
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" rowGap={1}>
-            <AddPaymentDialog lead={lead} canAdd={caps.canAddPayment} onCreated={onChanged} />
+            <AddPaymentDialog
+              lead={lead}
+              canAdd={caps.canAddPayment}
+              onCreated={onChanged}
+              autoOpen={autoOpenAction === "add"}
+              onAutoOpenConsumed={onAutoOpenConsumed}
+            />
             <ReminderButtons lead={lead} canSend={caps.canSendReminder} />
           </Stack>
         }

@@ -47,6 +47,8 @@ import { SalesStagePanel } from "@/app/v2/features/salesStages";
 import { SpinPanel, VersaPanel } from "@/app/v2/features/questions";
 import { LeadSessionsPanel } from "@/app/v2/features/imageSessions";
 import { LeadProjects } from "@/app/v2/features/projects/components/LeadProjects.jsx";
+import { UpdatesList } from "@/app/v2/features/projects";
+import { LeadChatLauncher } from "../components/LeadChatLauncher.jsx";
 
 const PRIVILEGED_ROLES = ["ADMIN", "SUPER_ADMIN", "ACCOUNTANT"];
 
@@ -65,6 +67,8 @@ export function LeadDetailsPage({ leadId }) {
   const canViewSessions = hasPermission(PERMISSIONS.IMAGE_SESSION.SESSION_VIEW);
   const canViewProjects = hasPermission(PERMISSIONS.PROJECT.LIST);
   const canViewContracts = hasPermission(PERMISSIONS.CONTRACT.LIST);
+  const canViewChat = hasPermission(PERMISSIONS.CHAT.ROOM_LIST);
+  const canViewUpdates = hasPermission(PERMISSIONS.UPDATE.LIST);
 
   const { lead, isLoading, error, refetch } = useLeadDetail(leadId, { autoFetch: canView });
 
@@ -97,6 +101,8 @@ export function LeadDetailsPage({ leadId }) {
       [GATE.STAGE]: canViewStage,
       [GATE.SPIN]: canViewSpin,
       [GATE.VERSA]: canViewVersa,
+      [GATE.CHAT]: canViewChat,
+      [GATE.UPDATES]: canViewUpdates,
     }),
     [
       caps.canAddPriceOffer,
@@ -108,6 +114,8 @@ export function LeadDetailsPage({ leadId }) {
       canViewStage,
       canViewSpin,
       canViewVersa,
+      canViewChat,
+      canViewUpdates,
     ],
   );
 
@@ -150,16 +158,31 @@ export function LeadDetailsPage({ leadId }) {
     return subs[0]?.key;
   }, [sp, currentGroup, entry, activeGroup]);
 
+  // navigate(group, sub, action?) — action is the optional one-click flag (?action=add) the
+  // record/finance sub-tabs read on mount to auto-open their existing dialog (item 4). When
+  // omitted we strip any stale action so it never re-triggers on a plain tab switch.
   const navigate = useCallback(
-    (groupKey, subKey) => {
+    (groupKey, subKey, action) => {
       const params = new URLSearchParams(sp.toString());
       params.set("tab", groupKey);
       if (subKey) params.set("sub", subKey);
       else params.delete("sub");
+      if (action) params.set("action", action);
+      else params.delete("action");
       router.push(`${pathname}?${params.toString()}`, { scroll: false });
     },
     [sp, pathname, router],
   );
+
+  // The pending one-click action from the URL (?action=add), and a consumer that clears it once
+  // the target dialog has opened — so a refresh / back-forward won't reopen the dialog.
+  const pendingAction = sp.get("action");
+  const consumeAction = useCallback(() => {
+    const params = new URLSearchParams(sp.toString());
+    if (!params.has("action")) return;
+    params.delete("action");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [sp, pathname, router]);
 
   const onGroupChange = useCallback(
     (_e, groupKey) => {
@@ -225,6 +248,7 @@ export function LeadDetailsPage({ leadId }) {
         beginner={beginner}
         canViewStage={canViewStage}
         onChanged={refetch}
+        onNavigate={navigate}
       />
 
       <LeadRelatedRail lead={lead} gates={gates} onNavigate={navigate} />
@@ -254,7 +278,11 @@ export function LeadDetailsPage({ leadId }) {
       )}
 
       <Box sx={{ minHeight: 320, mt: currentGroup?.visibleSub.length > 1 ? 0 : 2 }}>
-        {renderSection(activeSub, lead, refetch)}
+        {renderSection(activeSub, lead, refetch, {
+          user,
+          autoOpenAction: pendingAction,
+          onAutoOpenConsumed: consumeAction,
+        })}
       </Box>
     </Container>
   );
@@ -262,16 +290,23 @@ export function LeadDetailsPage({ leadId }) {
 
 // Render the active sub-section's existing CONTENT component (unchanged — just remounted under
 // the new grouping). The section keys are the leadHubTabs sub keys.
-function renderSection(sub, lead, refetch) {
+function renderSection(sub, lead, refetch, extras = {}) {
+  const { user, autoOpenAction, onAutoOpenConsumed } = extras;
+  // The one-click auto-open flag is only meaningful for the sub-tab named in the URL — pass it
+  // through only to that tab so a different tab never consumes another's action.
+  const autoProps = {
+    autoOpenAction,
+    onAutoOpenConsumed,
+  };
   switch (sub) {
     case "overview":
       return <OverviewTab lead={lead} />;
     case "calls":
-      return <CallsTab lead={lead} onChanged={refetch} />;
+      return <CallsTab lead={lead} onChanged={refetch} {...autoProps} />;
     case "meetings":
       return <MeetingsTab lead={lead} onChanged={refetch} />;
     case "notes":
-      return <NotesTab lead={lead} onChanged={refetch} />;
+      return <NotesTab lead={lead} onChanged={refetch} {...autoProps} />;
     case "files":
       return <FilesTab lead={lead} onChanged={refetch} />;
     case "projects":
@@ -279,10 +314,15 @@ function renderSection(sub, lead, refetch) {
       return <LeadProjects clientLeadId={lead.id} />;
     case "sessions":
       return <LeadSessionsPanel clientLeadId={lead.id} />;
+    case "updates":
+      // Lead-scoped updates feed (item 6). Self-loads GET /v2/updates/:clientLeadId and self-gates
+      // on PERMISSIONS.UPDATE.LIST; the department hint mirrors the projects usage (role → dept,
+      // else STAFF — the BE narrows by role regardless).
+      return <UpdatesList clientLeadId={lead.id} currentUserDepartment={departmentHint(user)} />;
     case "contracts":
       return <LeadContractsPage leadId={lead.id} lead={lead} />;
     case "payments":
-      return <PaymentsTab lead={lead} onChanged={refetch} />;
+      return <PaymentsTab lead={lead} onChanged={refetch} {...autoProps} />;
     case "priceOffers":
       return <PriceOffersTab lead={lead} onChanged={refetch} />;
     case "salesStage":
@@ -291,9 +331,27 @@ function renderSection(sub, lead, refetch) {
       return <SpinPanel clientLeadId={lead.id} />;
     case "versa":
       return <VersaPanel clientLeadId={lead.id} />;
+    case "chats":
+      // Lead-scoped chat (item 6). The page-mode ChatContainer can't be embedded cleanly here
+      // (it owns the ?roomId URL param and a full-height two-pane layout that collides with the
+      // hub's ?tab/?sub state), so we mount a compact launcher that lists THIS lead's rooms
+      // (useChatRooms({ clientLeadId })) and opens the real chat page focused on the chosen room.
+      return <LeadChatLauncher leadId={lead.id} lead={lead} />;
     default:
       return null;
   }
+}
+
+// Best-effort department label for the updates feed. The DEPARTMENTS values are project-board
+// departments; staff/sales/admin roles have no 1:1 mapping, so we fall back to "STAFF" (the
+// UpdatesList default) — the backend narrows the rows by the authed user's role regardless.
+const DEPARTMENT_BY_ROLE = {
+  THREE_D_DESIGNER: "3D_Designer",
+  TWO_D_DESIGNER: "2D_Study",
+  TWO_D_EXECUTOR: "2D_Final_Plans",
+};
+function departmentHint(user) {
+  return DEPARTMENT_BY_ROLE[user?.role] ?? "STAFF";
 }
 
 export default LeadDetailsPage;

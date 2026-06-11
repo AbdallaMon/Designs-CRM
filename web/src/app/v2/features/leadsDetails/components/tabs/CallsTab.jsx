@@ -15,7 +15,7 @@ import {
   CallMeetingResultDialog,
 } from "../dialogs/CallMeetingDialogs.jsx";
 
-export function CallsTab({ lead, onChanged }) {
+export function CallsTab({ lead, onChanged, autoOpenAction, onAutoOpenConsumed }) {
   const caps = lead?.capabilities ?? {};
   const calls = Array.isArray(lead?.callReminders) ? lead.callReminders : [];
 
@@ -30,6 +30,8 @@ export function CallsTab({ lead, onChanged }) {
           reminderType="CALL"
           canAdd={caps.canAddCall}
           onCreated={onChanged}
+          autoOpen={autoOpenAction === "add"}
+          onAutoOpenConsumed={onAutoOpenConsumed}
         />
       }
       renderPrimary={(c) => (

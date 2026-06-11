@@ -10,7 +10,7 @@ import dayjs from "dayjs";
 import { LeadRecordList } from "../LeadRecordList.jsx";
 import { NewNoteDialog } from "../dialogs/NoteDialog.jsx";
 
-export function NotesTab({ lead, onChanged }) {
+export function NotesTab({ lead, onChanged, autoOpenAction, onAutoOpenConsumed }) {
   const caps = lead?.capabilities ?? {};
   const notes = Array.isArray(lead?.notes) ? lead.notes : [];
 
@@ -20,7 +20,13 @@ export function NotesTab({ lead, onChanged }) {
       icon={<MdNotes />}
       items={notes}
       headerAction={
-        <NewNoteDialog lead={lead} canAdd={caps.canAddNote} onCreated={onChanged} />
+        <NewNoteDialog
+          lead={lead}
+          canAdd={caps.canAddNote}
+          onCreated={onChanged}
+          autoOpen={autoOpenAction === "add"}
+          onAutoOpenConsumed={onAutoOpenConsumed}
+        />
       }
       renderPrimary={(n) => (
         <Typography

@@ -92,7 +92,15 @@ export function WorkspacePanel({
               )}
               <ListItemText
                 primary={item.label}
+                // Optional one-line caption under the label — a subtle hint of what the
+                // destination is for, disambiguating look-alike entries (audit C2). Caption
+                // typography, text.secondary; rows without a caption render the label alone.
+                secondary={item.caption || undefined}
                 primaryTypographyProps={{ variant: "body2" }}
+                secondaryTypographyProps={{
+                  variant: "caption",
+                  sx: { color: "text.secondary" },
+                }}
               />
             </ListItemButton>
           );

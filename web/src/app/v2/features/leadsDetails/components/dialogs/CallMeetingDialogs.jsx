@@ -8,7 +8,7 @@
 // Capability gating (§5c): the "schedule" button renders only when the matching
 // capability is true (canAddCall / canAddMeeting). The parent passes it down.
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Button,
   Dialog,
@@ -32,12 +32,31 @@ dayjs.extend(utc);
 
 const LABEL = { CALL: "مكالمة", MEETING: "اجتماع" };
 
-export function NewCallMeetingDialog({ lead, reminderType = "CALL", canAdd, onCreated }) {
+export function NewCallMeetingDialog({
+  lead,
+  reminderType = "CALL",
+  canAdd,
+  onCreated,
+  autoOpen = false,
+  onAutoOpenConsumed,
+}) {
   const [open, setOpen] = useState(false);
   const [time, setTime] = useState("");
   const [reminderReason, setReminderReason] = useState("");
   const { setLoading } = useToastContext();
   const name = LABEL[reminderType];
+
+  // One-click daily verbs (item 4): a deep-link can request this dialog auto-open once on mount.
+  // We open exactly once per autoOpen=true and immediately tell the parent to clear the URL flag
+  // (so a refresh / back-forward doesn't reopen it). Honored only when the user can actually add.
+  const consumedRef = useRef(false);
+  useEffect(() => {
+    if (autoOpen && canAdd && !consumedRef.current) {
+      consumedRef.current = true;
+      setOpen(true);
+      onAutoOpenConsumed?.();
+    }
+  }, [autoOpen, canAdd, onAutoOpenConsumed]);
 
   if (!canAdd) return null;
 

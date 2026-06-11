@@ -6,6 +6,14 @@
 // the per-record capabilities.* the v2 API returns, NOT by role slot. Same observable
 // list per role, one code path.
 //
+// Migrated onto the canonical <DataTablePage> (was a hand-rolled Table/Toolbar/Pagination +
+// a raw native bulk-convert <button> + bare loading/empty strings). Now: config-driven
+// columns (config/leadsColumns.js) with PII gating, the status enum routed through the
+// DataTablePage filter config, the FIVE shared states (loading/error/empty/partial/data),
+// a themed MUI bulk-convert Button, and rows that are real links (rowHref + an open-in-new-tab
+// IconButton). All data-fetching params (page/limit/filters/search/sort + the segment extra)
+// and capability gates are preserved exactly.
+//
 // §5c deltas applied: data via the leads service against /v2/leads (list shape
 // { items, total, page, pageSize }); each row's actions gated on row.capabilities.*;
 // bulk-convert (admin-tier) gated on PERMISSIONS.LEAD.ASSIGN_OTHER.
@@ -14,37 +22,34 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box,
+  Button,
   Checkbox,
+  Chip,
   Container,
   IconButton,
-  Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TablePagination,
-  TableRow,
   Tab,
   Tabs,
-  Toolbar,
   Tooltip,
-  Typography,
-  MenuItem,
-  Select,
-  Link as MuiLink,
 } from "@mui/material";
-import { MdOpenInNew, MdRefresh } from "react-icons/md";
+import { MdOpenInNew, MdRefresh, MdGroupAdd } from "react-icons/md";
 import Link from "next/link";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import {
+  PageHeader,
+  DataTablePage,
+  PartialPermissionState,
+} from "@/app/v2/shared/components";
 import { useLeadsList } from "../hooks/useLeadsList.js";
 import { leadsColumns } from "../config/leadsColumns.js";
-import { LEAD_STATUS_LABELS } from "../config/leadsConstants.js";
+import { leadsFilters } from "../config/leadsFilters.js";
+import { leadsMessages } from "../config/leadsMessages.js";
 import { LeadAssignActions } from "../components/LeadAssignActions.jsx";
 import { LeadSearchAutocomplete } from "../components/LeadSearchAutocomplete.jsx";
 import { BulkConvertModal } from "../components/BulkConvertModal.jsx";
+
+const P = PERMISSIONS.LEAD;
 
 // Top-level segment: "new" surfaces the un-consulted raw-lead pool. The BE list ALWAYS
 // forces `initialConsult: true` (lead.usecase.js #buildListWhere sets checkConsult:true
@@ -62,12 +67,13 @@ const SEGMENTS = {
 export function LeadsPage() {
   const { hasPermission, hasAnyPermission } = usePermission();
   const router = useRouter();
-  const canList = hasPermission(PERMISSIONS.LEAD.LIST);
-  const canBulkConvert = hasPermission(PERMISSIONS.LEAD.ASSIGN_OTHER);
+  const canList = hasPermission(P.LIST);
+  const canBulkConvert = hasPermission(P.ASSIGN_OTHER);
 
   // Default to the "new" segment so freshly-created client leads (status NEW) are visible.
   const [segment, setSegment] = useState(SEGMENTS.NEW);
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  // Controlled DataTablePage filter values; only `status` is wired (enum). "ALL" = no filter.
+  const [filterValues, setFilterValues] = useState({ status: "ALL" });
   const [selected, setSelected] = useState([]);
   const [bulkOpen, setBulkOpen] = useState(false);
 
@@ -80,52 +86,133 @@ export function LeadsPage() {
     setPageSize,
     setExtra,
     isLoading,
+    error,
     refetch,
   } = useLeadsList({ autoFetch: canList });
 
-  // Free-text lead lookup now goes through LeadSearchAutocomplete (utilities search across
-  // name/phone/email/code) and navigates straight to the picked lead — so the page no longer
-  // maintains an id-only filter. `filters` stays empty here.
+  const statusFilter = filterValues.status;
+  // An explicit status pick is active when it is not the "ALL" sentinel.
+  const statusActive = Boolean(statusFilter && statusFilter !== "ALL");
 
-  // `noConsulted` (new segment) and `status` (explicit dropdown selection) are TOP-LEVEL query
-  // params the BE list reads directly off searchParams (lead.usecase.js #buildListWhere), NOT from
-  // the JSON `filters`, so they are routed through the hook's `extra`. An explicit status selection
-  // wins over the segment default; otherwise the "new" segment sends `noConsulted=true` (the only
+  // Free-text lead lookup goes through LeadSearchAutocomplete (utilities search across
+  // name/phone/email/code) and navigates straight to the picked lead — so the page keeps no
+  // id-only list filter; `filters` stays empty.
+  //
+  // `noConsulted` (new segment) and `status` (explicit dropdown) are TOP-LEVEL query params the
+  // BE list reads directly off searchParams (lead.usecase.js #buildListWhere), NOT from the JSON
+  // `filters`, so they are routed through the hook's `extra`. An explicit status selection wins
+  // over the segment default; otherwise the "new" segment sends `noConsulted=true` (the only
   // param that surfaces un-consulted raw leads past the BE's forced initialConsult:true) and
   // "deals" sends nothing (BE applies its default status notIn [NEW, CONVERTED, ON_HOLD]).
-  // NOTE: the BE's noConsulted branch RESETS the where to `{ initialConsult:false }`, so an explicit
-  // status pick (which is meaningful only for the consulted/deals pool) takes precedence here.
+  // NOTE: the BE's noConsulted branch RESETS the where to `{ initialConsult:false }`, so an
+  // explicit status pick (meaningful only for the consulted/deals pool) takes precedence here.
   useEffect(() => {
     const next = {};
-    if (statusFilter && statusFilter !== "ALL") {
+    if (statusActive) {
       next.status = statusFilter;
     } else if (segment === SEGMENTS.NEW) {
       next.noConsulted = "true";
     }
     setExtra(next);
-    // setExtra is a stable callback from the list hook.
+    // setExtra is a stable callback from the list hook (resets to page 1).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [segment, statusFilter]);
 
-  // Which columns to show: privileged-only columns (client PII) hidden unless the user
-  // can see them. We approximate the legacy gate with VIEW permission presence (the BE
-  // already redacts the payload for non-privileged roles, so this is cosmetic parity).
-  const visibleColumns = useMemo(() => {
-    const privileged = hasAnyPermission([
-      PERMISSIONS.LEAD.ASSIGN_OTHER,
-      PERMISSIONS.LEAD.CONVERT,
-    ]);
-    return leadsColumns.filter((c) => !c.privileged || privileged);
-  }, [hasAnyPermission]);
+  function onFilterChange(key, value) {
+    setFilterValues((prev) => ({ ...prev, [key]: value }));
+  }
 
-  if (!canList) {
-    return (
-      <CenteredNotice text="لا تملك صلاحية الوصول إلى قائمة العملاء" />
-    );
+  function onSegmentChange(_e, value) {
+    setSegment(value);
+    setFilterValues({ status: "ALL" });
+    setSelected([]);
   }
 
   function toggleSelect(id) {
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  }
+
+  // PII columns (client name / phone) are revealed only to privileged roles. The BE already
+  // redacts the payload for non-privileged roles, so this is cosmetic parity (legacy behavior).
+  const showPrivileged = useMemo(
+    () => hasAnyPermission([P.ASSIGN_OTHER, P.CONVERT]),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [hasAnyPermission],
+  );
+
+  // Columns are config-driven (config/leadsColumns.js). When the user can bulk-convert we
+  // prepend a selection column whose accessor renders a controlled checkbox — selection is
+  // inherently page state, so only the affordance (not the data columns) is composed here.
+  const columns = useMemo(() => {
+    if (!canBulkConvert) return leadsColumns;
+    const selectCol = {
+      field: "__select",
+      headerName: "",
+      width: 48,
+      accessor: (row) => (
+        <Checkbox
+          size="small"
+          checked={selected.includes(row.id)}
+          onClick={(e) => e.stopPropagation()}
+          onChange={() => toggleSelect(row.id)}
+          inputProps={{ "aria-label": `تحديد العميل ${row.id}` }}
+        />
+      ),
+    };
+    return [selectCol, ...leadsColumns];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canBulkConvert, selected]);
+
+  // Distinct empty state per segment so the precedence is legible (UX fix). A status filter
+  // narrows whichever pool is active; surface that in the copy.
+  const empty = useMemo(() => {
+    if (statusActive) {
+      return {
+        title: "لا توجد نتائج مطابقة للحالة المحددة",
+        description: "غيّر الحالة من شريط التصفية أو أعد التعيين لعرض القائمة كاملة.",
+      };
+    }
+    if (segment === SEGMENTS.NEW) {
+      return {
+        title: "لا يوجد عملاء جدد بانتظار الاستلام",
+        description: "ستظهر هنا العملاء الجدد فور وصولهم. لا حاجة لإجراء الآن.",
+      };
+    }
+    return {
+      title: "لا توجد صفقات مطابقة",
+      description: "لا توجد صفقات في هذا القسم حالياً.",
+    };
+  }, [segment, statusActive]);
+
+  function renderRowActions(row) {
+    return (
+      <>
+        <LeadAssignActions lead={row} onChanged={refetch} />
+        <Tooltip title="فتح التفاصيل">
+          {/* Real anchor → middle-click / ctrl+click / open-in-new-tab all work. */}
+          <IconButton
+            component={Link}
+            href={`/v2/leads/${row.id}`}
+            size="small"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <MdOpenInNew />
+          </IconButton>
+        </Tooltip>
+      </>
+    );
+  }
+
+  if (!canList) {
+    return (
+      <Container maxWidth="md" sx={{ py: 6 }}>
+        <PartialPermissionState
+          denied
+          title="قائمة العملاء غير متاحة لصلاحياتك"
+          message="لا تملك صلاحية الوصول إلى قائمة العملاء المحتملين. تواصل مع المسؤول إن كنت تظن أنه ينبغي أن تصل إليها."
+        />
+      </Container>
+    );
   }
 
   return (
@@ -140,162 +227,92 @@ export function LeadsPage() {
         }}
       />
 
-      <Typography variant="h5" sx={{ mb: 2 }}>
-        العملاء المحتملون
-      </Typography>
-
-      <Tabs
-        value={segment}
-        onChange={(_e, v) => {
-          setSegment(v);
-          setStatusFilter("ALL");
-          setSelected([]);
-        }}
-        sx={{ mb: 2 }}
+      <PageHeader
+        title="العملاء المحتملون"
+        subtitle={`الإجمالي: ${total}`}
+        breadcrumbs={[{ label: "المبيعات" }, { label: "العملاء المحتملون" }]}
       >
-        <Tab value={SEGMENTS.NEW} label="العملاء الجدد" />
-        <Tab value={SEGMENTS.DEALS} label="الصفقات" />
-      </Tabs>
-
-      <Paper variant="outlined" sx={{ mb: 2 }}>
-        <Toolbar sx={{ gap: 2, flexWrap: "wrap", py: 2 }}>
-          <LeadSearchAutocomplete
-            onSelect={(lead) => {
-              if (lead?.id != null) router.push(`/v2/leads/${lead.id}`);
-            }}
-          />
-          <Select
-            size="small"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            sx={{ minWidth: 160 }}
-          >
-            <MenuItem value="ALL">كل الحالات</MenuItem>
-            {Object.entries(LEAD_STATUS_LABELS).map(([k, label]) => (
-              <MenuItem key={k} value={k}>
-                {label}
-              </MenuItem>
-            ))}
-          </Select>
-          <Box sx={{ flex: 1 }} />
-          {canBulkConvert && (
-            <Tooltip title="تحويل جماعي للعملاء المحددين">
-              <span>
-                <button
-                  type="button"
-                  disabled={selected.length === 0}
-                  onClick={() => setBulkOpen(true)}
-                  style={{ padding: "8px 16px", cursor: selected.length ? "pointer" : "not-allowed" }}
-                >
-                  تحويل جماعي ({selected.length})
-                </button>
-              </span>
-            </Tooltip>
-          )}
-          <Tooltip title="تحديث">
-            <IconButton onClick={refetch}>
-              <MdRefresh />
-            </IconButton>
-          </Tooltip>
-        </Toolbar>
-      </Paper>
-
-      <TableContainer component={Paper} variant="outlined">
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              {canBulkConvert && <TableCell padding="checkbox" />}
-              {visibleColumns.map((c) => (
-                <TableCell key={c.field}>{c.headerName}</TableCell>
-              ))}
-              <TableCell align="right">إجراءات</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {isLoading && (
-              <TableRow>
-                <TableCell colSpan={visibleColumns.length + 2} align="center">
-                  جاري التحميل...
-                </TableCell>
-              </TableRow>
-            )}
-            {!isLoading && items.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={visibleColumns.length + 2} align="center">
-                  لا توجد بيانات
-                </TableCell>
-              </TableRow>
-            )}
-            {!isLoading &&
-              items.map((row) => (
-                <TableRow key={row.id} hover>
-                  {canBulkConvert && (
-                    <TableCell padding="checkbox">
-                      <Checkbox
-                        checked={selected.includes(row.id)}
-                        onChange={() => toggleSelect(row.id)}
-                      />
-                    </TableCell>
-                  )}
-                  {visibleColumns.map((c) => (
-                    // Each data cell is a real anchor (NextLink) to the lead detail so the row
-                    // is genuinely link-navigable: plain click navigates, ctrl/cmd-click and
-                    // "open in new tab" work, middle-click works — no JS onClick/router.push.
-                    <TableCell key={c.field} sx={{ p: 0 }}>
-                      <MuiLink
-                        component={Link}
-                        href={`/v2/leads/${row.id}`}
-                        underline="none"
-                        color="inherit"
-                        sx={{
-                          display: "block",
-                          px: 2,
-                          py: 1,
-                          height: "100%",
-                          "&:hover": { textDecoration: "underline" },
-                        }}
-                      >
-                        {c.accessor(row)}
-                      </MuiLink>
-                    </TableCell>
-                  ))}
-                  <TableCell align="right">
-                    <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
-                      <LeadAssignActions lead={row} onChanged={refetch} />
-                      <Tooltip title="فتح التفاصيل">
-                        <IconButton component={Link} href={`/v2/leads/${row.id}`} size="small">
-                          <MdOpenInNew />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))}
-          </TableBody>
-        </Table>
-        <TablePagination
-          component="div"
-          count={total}
-          page={page - 1}
-          onPageChange={(_e, p) => setPage(p + 1)}
-          rowsPerPage={pageSize}
-          onRowsPerPageChange={(e) => {
-            setPageSize(parseInt(e.target.value, 10));
-            setPage(1);
+        <LeadSearchAutocomplete
+          onSelect={(lead) => {
+            if (lead?.id != null) router.push(`/v2/leads/${lead.id}`);
           }}
-          rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage="عدد الصفوف"
         />
-      </TableContainer>
-    </Container>
-  );
-}
+        {canBulkConvert && (
+          <Tooltip title="تحويل العملاء المحددين تحويلاً جماعياً">
+            <span>
+              <Button
+                variant="outlined"
+                color="primary"
+                startIcon={<MdGroupAdd />}
+                disabled={selected.length === 0}
+                onClick={() => setBulkOpen(true)}
+              >
+                تحويل جماعي ({selected.length})
+              </Button>
+            </span>
+          </Tooltip>
+        )}
+        <Tooltip title="تحديث">
+          <IconButton onClick={refetch}>
+            <MdRefresh />
+          </IconButton>
+        </Tooltip>
+      </PageHeader>
 
-function CenteredNotice({ text }) {
-  return (
-    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-      <Typography color="textSecondary">{text}</Typography>
-    </Box>
+      {/* Segment selector. When an explicit status filter is active it takes precedence over the
+          segment default (the BE status param overrides the noConsulted branch), so the tabs are
+          visually deactivated and a "مفلتر حسب الحالة" chip explains why — making the precedence
+          legible instead of silently ignoring the segment. */}
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={2}
+        sx={{ mb: 2, flexWrap: "wrap" }}
+      >
+        <Tabs
+          value={segment}
+          onChange={onSegmentChange}
+          sx={{ opacity: statusActive ? 0.5 : 1 }}
+        >
+          <Tab value={SEGMENTS.NEW} label="العملاء الجدد" disabled={statusActive} />
+          <Tab value={SEGMENTS.DEALS} label="الصفقات" disabled={statusActive} />
+        </Tabs>
+        {statusActive && (
+          <Chip
+            size="small"
+            color="info"
+            variant="outlined"
+            label="مفلتر حسب الحالة"
+            onDelete={() => setFilterValues({ status: "ALL" })}
+          />
+        )}
+      </Stack>
+
+      <Box>
+        <DataTablePage
+          columns={columns}
+          filters={leadsFilters}
+          rows={items}
+          total={total}
+          page={page}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+          filterValues={filterValues}
+          onFilterChange={onFilterChange}
+          loading={isLoading}
+          error={error}
+          onRetry={refetch}
+          errorResolver={leadsMessages}
+          getRowKey={(row) => row.id}
+          renderRowActions={renderRowActions}
+          onRowClick={(row) => router.push(`/v2/leads/${row.id}`)}
+          rowHref={(row) => `/v2/leads/${row.id}`}
+          showPrivileged={showPrivileged}
+          empty={empty}
+        />
+      </Box>
+    </Container>
   );
 }
 

@@ -19,6 +19,8 @@ export const GATE = {
   STAGE: "stage", // PERMISSIONS.SALES_STAGE.VIEW
   SPIN: "spin", // PERMISSIONS.QUESTION.CONFIG_VIEW || SESSION_VIEW
   VERSA: "versa", // PERMISSIONS.QUESTION.SESSION_VIEW
+  CHAT: "chat", // PERMISSIONS.CHAT.ROOM_LIST
+  UPDATES: "updates", // PERMISSIONS.UPDATE.LIST
 };
 
 // 5 groups. `sub` order is also the sub-tab order; the first VISIBLE sub is a group's default.
@@ -36,6 +38,7 @@ export const LEAD_HUB_GROUPS = [
       { key: "meetings", label: "الاجتماعات", gateKey: GATE.ALWAYS },
       { key: "notes", label: "الملاحظات", gateKey: GATE.ALWAYS },
       { key: "files", label: "المرفقات", gateKey: GATE.ALWAYS },
+      { key: "chats", label: "المحادثات", gateKey: GATE.CHAT },
     ],
   },
   {
@@ -44,6 +47,7 @@ export const LEAD_HUB_GROUPS = [
     sub: [
       { key: "projects", label: "المشاريع", gateKey: GATE.PROJECTS },
       { key: "sessions", label: "جلسات الصور", gateKey: GATE.SESSIONS },
+      { key: "updates", label: "التحديثات", gateKey: GATE.UPDATES },
     ],
   },
   {

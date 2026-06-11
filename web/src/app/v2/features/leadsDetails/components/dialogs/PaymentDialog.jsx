@@ -6,7 +6,7 @@
 // single-payment form (the legacy dialog let you queue several rows; here one row per
 // submit, which posts the same { payments: [...] } array shape the BE expects).
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Button,
   Dialog,
@@ -32,12 +32,22 @@ const PAYMENT_LEVELS = [
   { value: "LEVEL_5", label: "الدفعة الخامسة" },
 ];
 
-export function AddPaymentDialog({ lead, canAdd, onCreated }) {
+export function AddPaymentDialog({ lead, canAdd, onCreated, autoOpen = false, onAutoOpenConsumed }) {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [paymentReason, setPaymentReason] = useState("LEVEL_1");
   const [note, setNote] = useState("");
   const { setLoading } = useToastContext();
+
+  // One-click daily verbs (item 4): open once when a deep-link asks, then clear the URL flag.
+  const consumedRef = useRef(false);
+  useEffect(() => {
+    if (autoOpen && canAdd && !consumedRef.current) {
+      consumedRef.current = true;
+      setOpen(true);
+      onAutoOpenConsumed?.();
+    }
+  }, [autoOpen, canAdd, onAutoOpenConsumed]);
 
   if (!canAdd) return null;
 

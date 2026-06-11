@@ -9,8 +9,9 @@
 // in the payload renders WITHOUT a number (label + icon, still navigates). See the page report
 // for the payload↔count coverage. Gating: a card the user CANNOT view is NOT hidden — it
 // renders as a DISABLED chip with a "لا تملك صلاحية العرض" tooltip (partial-permission state),
-// so the user knows the data exists. A visible card the user can open shows "0 / لا يوجد"
-// when its count is zero. Single Arabic / RTL; theme tokens only.
+// so the user knows the data exists. A visible card the user can open shows a muted numeral "0"
+// when its count is zero, and a muted "—" with a "غير متاح" tooltip when the count is unknown
+// (payload missing). Single Arabic / RTL; theme tokens only.
 
 import { Box, Card, CardActionArea, Stack, Tooltip, Typography } from "@mui/material";
 import {
@@ -83,9 +84,29 @@ function RailCard({ card, lead, allowed, onNavigate }) {
           icon={card.icon}
           label={card.label}
           valueNode={
-            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
-              {hasCount ? (count > 0 ? count : "لا يوجد") : "—"}
-            </Typography>
+            hasCount ? (
+              // A real count from the payload. Zero renders as a MUTED numeral "0" (M2) — a
+              // crisp, scannable figure rather than the prose "لا يوجد", which read as noise in a
+              // row of numbers.
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 700,
+                  lineHeight: 1.2,
+                  color: count > 0 ? "text.primary" : "text.disabled",
+                }}
+              >
+                {count}
+              </Typography>
+            ) : (
+              // Count genuinely unknown (e.g. an older/cached payload missing `_count`): show a
+              // muted em-dash with a "غير متاح" tooltip so the user knows it's unavailable, not zero.
+              <Tooltip title="غير متاح">
+                <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2, color: "text.disabled" }}>
+                  —
+                </Typography>
+              </Tooltip>
+            )
           }
         />
       </CardActionArea>

@@ -253,8 +253,14 @@ export function buildVisibleNav(perm, resolveGroup, resolveItem) {
  *
  * @param {object} perm          usePermission() return value.
  * @param {(labelKey:string)=>string} [resolveItem]  optional label resolver for item.label.
+ * @param {(labelKey:string)=>(string|null)} [resolveCaption]  optional one-line caption resolver
+ *   for item.caption (a subtle hint shown under the destination row). Defaults to none.
  */
-export function buildWorkspaceNav(perm, resolveItem = (k) => k) {
+export function buildWorkspaceNav(
+  perm,
+  resolveItem = (k) => k,
+  resolveCaption = () => null,
+) {
   return WORKSPACE_ORDER.map((wsKey) => {
     const workspace = WORKSPACES.find((w) => w.key === wsKey);
     const items = NAV_ITEMS.filter(
@@ -262,6 +268,7 @@ export function buildWorkspaceNav(perm, resolveItem = (k) => k) {
     ).map((it) => ({
       key: it.key,
       label: resolveItem(it.labelKey),
+      caption: resolveCaption(it.labelKey),
       href: it.href,
       icon: it.icon,
       workspace: it.workspace,

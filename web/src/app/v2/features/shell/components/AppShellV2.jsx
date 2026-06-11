@@ -26,7 +26,12 @@ import { WorkspacePanel } from "./WorkspacePanel";
 import { CommandBar } from "./CommandBar";
 import { CommandPalette } from "./CommandPalette";
 import { buildWorkspaceNav, matchNavItem } from "../index";
-import { resolveNavItem, resolveWorkspaceLabel, resolveDefaultWorkspace } from "../navLabels";
+import {
+  resolveNavItem,
+  resolveNavItemCaption,
+  resolveWorkspaceLabel,
+  resolveDefaultWorkspace,
+} from "../navLabels";
 import { isPathActive } from "../breadcrumbs";
 
 export function AppShellV2({ children }) {
@@ -41,7 +46,7 @@ export function AppShellV2({ children }) {
 
   // Permission-filtered workspace nav model: [{ workspace: {key,label,icon}, items:[...] }].
   const workspaceNav = useMemo(() => {
-    const nav = buildWorkspaceNav(perm, resolveNavItem);
+    const nav = buildWorkspaceNav(perm, resolveNavItem, resolveNavItemCaption);
     // Attach the Arabic workspace label onto each workspace object for the rail/panel.
     return nav.map((w) => ({
       ...w,
@@ -144,6 +149,10 @@ export function AppShellV2({ children }) {
           onMenuToggle={() => setMobilePanelOpen((o) => !o)}
           // Only offer the panel-drawer toggle on xs AND when there's a multi-item panel to show.
           showMenuButton={!mdUp && !panelCollapsed}
+          // Persistent "where am I" (audit M1): when the contextual panel is collapsed the only
+          // orientation cue is the rail tooltip — surface the active-workspace label inline instead.
+          activeWorkspaceLabel={activeWorkspace?.workspace?.label ?? null}
+          panelCollapsed={panelCollapsed}
         />
         <Box component="main" sx={{ flexGrow: 1, minWidth: 0, p: { xs: 2, md: 3 } }}>
           {children}

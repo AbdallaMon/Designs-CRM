@@ -11,18 +11,22 @@
 // capability-backed action applies, we fall back to the existing LeadStatusMenu so the band is
 // never an empty dead-end. Single Arabic / RTL; theme tokens only.
 
-import { Box, Breadcrumbs, Button, Link as MuiLink, Stack, Typography } from "@mui/material";
+import { Box, Breadcrumbs, Button, Chip, Link as MuiLink, Stack, Typography } from "@mui/material";
 import NextLink from "next/link";
-import { MdTrendingUp, MdPayments, MdWork } from "react-icons/md";
+import { MdTrendingUp, MdPayments, MdWork, MdCall, MdNoteAdd } from "react-icons/md";
 import { LeadStatusMenu } from "./LeadStatusMenu.jsx";
 
 const DESIGNER_ROLES = ["THREE_D_DESIGNER", "TWO_D_DESIGNER", "TWO_D_EXECUTOR"];
 
-// Resolve the single role-adaptive primary action as { label, icon, onClick } — or null when no
-// capability-backed action applies (caller then renders the status menu fallback). `caps` is
-// lead.capabilities; `gates` is the page's resolved section-gate map; `onNavigate(group, sub)`
-// deep-links to a section.
-function resolvePrimaryAction({ user, caps, gates, onNavigate }) {
+// Resolve the single role-adaptive primary action as { label, icon, onClick }. This is the
+// orientation band's "what do I do now?" element and it must NEVER be null when the user can act
+// on the lead at all (audit C3): a role-specific action is preferred, but when none resolves we
+// fall back to a universally-safe next step (log a call, else add a note) so the band is never an
+// empty dead-end. Only a genuinely read-only lead (no actionable capability) returns null, and the
+// caller then shows a muted "view-only" hint. `caps` is lead.capabilities; `gates` is the page's
+// resolved section-gate map; `onNavigate(group, sub)` deep-links to a section; `lead` is read for
+// count-guards so we never surface an action that dead-ends.
+function resolvePrimaryAction({ user, lead, caps, gates, onNavigate }) {
   const role = user?.role;
   const isSuperSales = Boolean(user?.isSuperSales) || role === "SUPER_SALES";
 
@@ -36,19 +40,21 @@ function resolvePrimaryAction({ user, caps, gates, onNavigate }) {
     };
   }
 
-  // accountant → add a payment, iff the capability is present. Navigates to the payments
-  // section where AddPaymentDialog lives.
+  // accountant → add a payment, iff the capability is present (M5: never surface a dead-end).
+  // Navigates to the payments section where AddPaymentDialog lives, auto-opening the dialog.
   if (role === "ACCOUNTANT" && caps?.canAddPayment) {
     return {
       label: "إضافة دفعة",
       icon: <MdPayments />,
-      onClick: () => onNavigate("finance", "payments"),
+      onClick: () => onNavigate("finance", "payments", "add"),
     };
   }
 
-  // 3D / 2D designer + executor → open the project, iff the projects section is visible (we
-  // cannot know a concrete project exists from the lead payload, so we gate on section access).
-  if (DESIGNER_ROLES.includes(role) && gates?.projects) {
+  // 3D / 2D designer + executor → open the project, iff the projects section is visible AND a
+  // concrete project actually exists (M5 count-guard: lead._count.projects > 0 — the payload
+  // carries it). Without a project this would dead-end on an empty board, so we fall through to
+  // the universal safe step below instead.
+  if (DESIGNER_ROLES.includes(role) && gates?.projects && (lead?._count?.projects ?? 0) > 0) {
     return {
       label: "فتح المشروع",
       icon: <MdWork />,
@@ -56,6 +62,25 @@ function resolvePrimaryAction({ user, caps, gates, onNavigate }) {
     };
   }
 
+  // Universal safe fallback (C3): when no role-specific action resolved, still answer "what do I
+  // do now?". Prefer logging a call (the most common daily verb) when the capability is present;
+  // otherwise adding a note. Both deep-link to the record group with an auto-open flag (item 4).
+  if (caps?.canAddCall) {
+    return {
+      label: "تسجيل مكالمة",
+      icon: <MdCall />,
+      onClick: () => onNavigate("record", "calls", "add"),
+    };
+  }
+  if (caps?.canAddNote) {
+    return {
+      label: "إضافة ملاحظة",
+      icon: <MdNoteAdd />,
+      onClick: () => onNavigate("record", "notes", "add"),
+    };
+  }
+
+  // Genuinely read-only for this user — no actionable capability at all.
   return null;
 }
 
@@ -71,7 +96,7 @@ export function LeadOrientationBand({
   if (!lead) return null;
   const caps = lead.capabilities ?? {};
   const clientName = lead.client?.name ?? `#${lead.id}`;
-  const primary = resolvePrimaryAction({ user, caps, gates, onNavigate });
+  const primary = resolvePrimaryAction({ user, lead, caps, gates, onNavigate });
 
   return (
     <Stack
@@ -98,6 +123,7 @@ export function LeadOrientationBand({
 
       <Box sx={{ flexShrink: 0 }}>
         {primary ? (
+          // Guaranteed next step (C3): a role-specific action, or the universal call/note fallback.
           <Button
             variant="contained"
             color="primary"
@@ -106,15 +132,18 @@ export function LeadOrientationBand({
           >
             {primary.label}
           </Button>
-        ) : (
-          // Fallback: the existing status menu (self-gates on canChangeStatus — renders nothing
-          // when the user cannot change status, leaving the band breadcrumb-only).
+        ) : canChangeStatus ? (
+          // No capability-backed verb, but the user can still drive the workflow → status menu.
           <LeadStatusMenu
             lead={lead}
             canChangeStatus={canChangeStatus}
             beginner={beginner}
             onChanged={onChanged}
           />
+        ) : (
+          // Genuinely read-only: don't pretend there is an action — show an explicit muted hint
+          // so the breadcrumb-only band reads as intentional, not broken.
+          <Chip label="وضع العرض فقط" size="small" variant="outlined" color="default" />
         )}
       </Box>
     </Stack>

@@ -8,7 +8,7 @@
 // breadcrumb (the rail + panel own orientation). The NotificationBell / RoleChip / profile menu
 // are LIFTED from the legacy TopBar (same imports/logic). Single-language Arabic / RTL.
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Box,
   IconButton,
@@ -28,9 +28,28 @@ import { RoleChip } from "@/app/v2/shared/components/RoleChip";
 
 const BAR_HEIGHT = 64;
 
-export function CommandBar({ onOpenPalette, onMenuToggle, showMenuButton = false }) {
+export function CommandBar({
+  onOpenPalette,
+  onMenuToggle,
+  showMenuButton = false,
+  activeWorkspaceLabel = null,
+  panelCollapsed = false,
+}) {
   const { user, logout } = useAuth();
   const [anchor, setAnchor] = useState(null);
+
+  // Platform-aware ⌘K / Ctrl K hint (audit L1): the kbd glyph is Mac-centric. Show "Ctrl K" on
+  // non-Mac, "⌘K" on Mac. navigator.platform is deprecated but still the most reliable sync
+  // signal here; guarded for SSR (renders the Mac glyph until hydration, then corrects).
+  const isMac = useMemo(() => {
+    if (typeof navigator === "undefined") return true;
+    const p = navigator.platform || navigator.userAgent || "";
+    return /Mac|iPhone|iPad|iPod/i.test(p);
+  }, []);
+  const kbdHint = isMac ? "⌘K" : "Ctrl K";
+
+  // "Where am I" inline title — only when the contextual panel is collapsed (audit M1).
+  const showWorkspaceTitle = panelCollapsed && Boolean(activeWorkspaceLabel);
 
   return (
     <Box
@@ -62,10 +81,29 @@ export function CommandBar({ onOpenPalette, onMenuToggle, showMenuButton = false
         </IconButton>
       )}
 
+      {/* Persistent "where am I" title (audit M1) — shown at the inline-start, next to the
+          menu/search trigger, ONLY while the contextual panel is collapsed (otherwise the panel
+          header already states the workspace). Subtle, static, RTL. */}
+      {showWorkspaceTitle && (
+        <Typography
+          component="h1"
+          variant="subtitle2"
+          noWrap
+          sx={{
+            color: "text.primary",
+            fontWeight: 600,
+            display: { xs: "none", sm: "block" },
+            maxWidth: 180,
+          }}
+        >
+          {activeWorkspaceLabel}
+        </Typography>
+      )}
+
       {/* Command palette trigger — prominent, at the inline-start. */}
       <ButtonBase
         onClick={onOpenPalette}
-        aria-label="افتح لوحة الأوامر"
+        aria-label="ابحث عن عميل أو صفحة أو أمر"
         sx={{
           display: "flex",
           alignItems: "center",
@@ -95,7 +133,7 @@ export function CommandBar({ onOpenPalette, onMenuToggle, showMenuButton = false
           sx={{ flex: 1, textAlign: "start", color: "inherit" }}
           noWrap
         >
-          ابحث أو نفّذ أمراً…
+          ابحث عن عميل أو صفحة أو أمر…
         </Typography>
         <Box
           component="kbd"
@@ -111,9 +149,10 @@ export function CommandBar({ onOpenPalette, onMenuToggle, showMenuButton = false
             fontSize: "0.7rem",
             fontFamily: "monospace",
             color: "text.secondary",
+            whiteSpace: "nowrap",
           }}
         >
-          ⌘K
+          {kbdHint}
         </Box>
       </ButtonBase>
 

@@ -20,8 +20,11 @@ export { buildBreadcrumbs, isPathActive, matchNavItem } from "./breadcrumbs";
 export {
   resolveNavGroup,
   resolveNavItem,
+  resolveNavItemCaption,
   resolveWorkspaceLabel,
   DEFAULT_WORKSPACE_BY_ROLE,
   resolveDefaultWorkspace,
+  DEFAULT_DESTINATION_BY_ROLE,
+  resolveDefaultDestination,
 } from "./navLabels";
 export { buildRoleChips, resolveRoleLabel } from "./roleLabels";
