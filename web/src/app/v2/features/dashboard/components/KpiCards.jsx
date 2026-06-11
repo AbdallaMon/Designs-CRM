@@ -1,12 +1,15 @@
 "use client";
 
-// <KpiCards> — the KPI stat-card grid over getKeyMetrics() (UX plan §3.1). A SectionCard grid
-// of compact stat cards; the data layer is FIXED, so this is pure projection of the envelope
-// fields declared in KPI_CARDS. Self-scoped by the BE token (admin-tier may re-scope via the
-// filter bar's staffId). Per-widget loading skeleton + error+retry via WidgetBoundary.
-// Single-language Arabic / RTL.
+// <KpiCards> — the KPI stat-card grid over getKeyMetrics() (UX plan §3.1). A 4-up grid of MODERN
+// stat cards: large numeral + small label + a semantic accent rail/icon. The data layer is FIXED
+// (the BE returns ABSOLUTE values only — no per-period delta is in the payload, so we do NOT
+// fabricate up/down numbers), so the "direction" we surface is the card's intrinsic semantic
+// `accent` (positive | warning | neutral) rendered through the theme's success/warning tokens.
+// Self-scoped by the BE token (admin-tier may re-scope via the filter bar's staffId). Per-widget
+// loading skeleton + error+retry via WidgetBoundary. Single-language Arabic / RTL.
 
 import { Box, Grid, Card, CardContent, Typography, Stack } from "@mui/material";
+import { MdTrendingUp, MdTrendingFlat, MdPriorityHigh } from "react-icons/md";
 import { LoadingState } from "@/app/v2/shared/components";
 import { WidgetBoundary } from "./WidgetBoundary.jsx";
 import { useDashboardWidget } from "../hooks/useDashboardWidget.js";
@@ -15,8 +18,15 @@ import {
   KPI_CARDS,
   DASHBOARD_SECTIONS,
   formatMetric,
-  ACCENT_COLOR,
 } from "../config/dashboardConstants.js";
+
+// Semantic accent → { color path, icon }. NOTE: this is the card's intrinsic meaning, NOT a
+// computed delta — the BE payload carries no previous-period value to compare against.
+const ACCENT = {
+  positive: { color: "success.main", soft: "success.light", Icon: MdTrendingUp },
+  warning: { color: "warning.main", soft: "warning.light", Icon: MdPriorityHigh },
+  neutral: { color: "text.primary", soft: "action.hover", Icon: MdTrendingFlat },
+};
 
 export function KpiCards({ query, enabled }) {
   const { data, isLoading, error, refetch } = useDashboardWidget({
@@ -29,7 +39,7 @@ export function KpiCards({ query, enabled }) {
   const isEmpty = !metrics;
 
   return (
-    <Box sx={{ mb: 3 }}>
+    <Box>
       <Typography variant="h6" component="h2" sx={{ mb: 1.5 }}>
         {DASHBOARD_SECTIONS.kpis}
       </Typography>
@@ -39,7 +49,7 @@ export function KpiCards({ query, enabled }) {
         onRetry={refetch}
         isEmpty={isEmpty}
         empty={{ title: "لا توجد مؤشرات لعرضها" }}
-        skeleton={<LoadingState variant="cards" count={4} columns={4} height={104} />}
+        skeleton={<LoadingState variant="cards" count={4} columns={4} height={120} />}
       >
         <Grid container spacing={2}>
           {KPI_CARDS.map((kpi) => (
@@ -58,19 +68,55 @@ export function KpiCards({ query, enabled }) {
 }
 
 function KpiCard({ label, value, accent }) {
+  const a = ACCENT[accent] ?? ACCENT.neutral;
+  const { Icon } = a;
   return (
-    <Card sx={{ borderRadius: 3, height: "100%" }}>
-      <CardContent sx={{ p: 2 }}>
-        <Stack spacing={0.5}>
-          <Typography variant="body2" color="text.secondary" sx={{ textAlign: "start" }} noWrap>
-            {label}
-          </Typography>
-          <Typography
-            variant="h5"
-            sx={{ fontWeight: 700, color: ACCENT_COLOR[accent] ?? "text.primary", textAlign: "start" }}
+    <Card
+      sx={{
+        borderRadius: 3,
+        height: "100%",
+        position: "relative",
+        overflow: "hidden",
+        // A semantic accent rail at the inline-start edge (RTL-aware) — the "status.*" color cue.
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          insetInlineStart: 0,
+          top: 0,
+          bottom: 0,
+          width: 4,
+          bgcolor: a.color,
+        },
+      }}
+    >
+      <CardContent sx={{ p: 2.5 }}>
+        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+          <Stack spacing={0.75} sx={{ minWidth: 0 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: "start" }} noWrap>
+              {label}
+            </Typography>
+            <Typography
+              variant="h4"
+              sx={{ fontWeight: 800, lineHeight: 1.1, color: a.color, textAlign: "start" }}
+            >
+              {value}
+            </Typography>
+          </Stack>
+          <Box
+            sx={{
+              flexShrink: 0,
+              width: 36,
+              height: 36,
+              borderRadius: 2,
+              display: "grid",
+              placeItems: "center",
+              bgcolor: a.soft,
+              color: a.color,
+              fontSize: 20,
+            }}
           >
-            {value}
-          </Typography>
+            <Icon />
+          </Box>
         </Stack>
       </CardContent>
     </Card>

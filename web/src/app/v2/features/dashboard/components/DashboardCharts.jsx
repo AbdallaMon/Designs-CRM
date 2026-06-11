@@ -1,10 +1,12 @@
 "use client";
 
 // <DashboardCharts> — the SECONDARY analytics tier (UX plan §3.1: charts BELOW the action queue
-// + KPIs). Four @mui/x-charts widgets via the shared ChartCard wrapper: monthly performance,
-// week performance, emirates analytics, leads monthly overview. Each chart owns its own read +
-// WidgetBoundary so a single failed aggregation doesn't blank the tier. Self-scoped by the
-// token; admin-tier re-scopes via the filter staffId. Single-language Arabic / RTL.
+// + KPIs). x-charts widgets via the shared ChartCard wrapper. The two NAMED charts lead:
+// monthly-performance + leads-monthly-overview; week-performance trails (kept so every read stays
+// represented). Emirates analytics now lives in row 3 beside the leads-status breakdown — see
+// <EmiratesAnalytics>. Each chart owns its own read + WidgetBoundary so a single failed
+// aggregation doesn't blank the tier. Self-scoped by the token; admin-tier re-scopes via the
+// filter staffId. Single-language Arabic / RTL.
 //
 // The data layer is FIXED — these components only PROJECT the envelope fields into x-charts
 // series; the BE math is untouched.
@@ -16,14 +18,13 @@ import { useDashboardWidget } from "../hooks/useDashboardWidget.js";
 import {
   MONTHLY_PERFORMANCE_URL,
   WEEK_PERFORMANCE_URL,
-  EMIRATES_ANALYTICS_URL,
   LEADS_MONTHLY_OVERVIEW_URL,
 } from "../config/constant.js";
 import { DASHBOARD_SECTIONS } from "../config/dashboardConstants.js";
 
 export function DashboardCharts({ query, enabled }) {
   return (
-    <Box sx={{ mb: 2 }}>
+    <Box>
       <Typography variant="h6" component="h2" sx={{ mb: 1.5 }}>
         {DASHBOARD_SECTIONS.charts}
       </Typography>
@@ -32,13 +33,10 @@ export function DashboardCharts({ query, enabled }) {
           <MonthlyPerformanceChart query={query} enabled={enabled} />
         </Grid>
         <Grid size={{ xs: 12, lg: 6 }}>
-          <WeekPerformanceChart query={query} enabled={enabled} />
-        </Grid>
-        <Grid size={{ xs: 12, lg: 6 }}>
-          <EmiratesChart query={query} enabled={enabled} />
-        </Grid>
-        <Grid size={{ xs: 12, lg: 6 }}>
           <LeadsOverviewChart query={query} enabled={enabled} />
+        </Grid>
+        <Grid size={{ xs: 12, lg: 6 }}>
+          <WeekPerformanceChart query={query} enabled={enabled} />
         </Grid>
       </Grid>
     </Box>
@@ -110,34 +108,6 @@ function WeekPerformanceChart({ query, enabled }) {
   );
 }
 
-function EmiratesChart({ query, enabled }) {
-  const { data, isLoading, error, refetch } = useDashboardWidget({
-    base: EMIRATES_ANALYTICS_URL,
-    query,
-    enabled,
-  });
-  const analytics = Array.isArray(data?.analytics) ? data.analytics : [];
-  const hasData = analytics.some((a) => (a.leads ?? 0) > 0);
-  const isEmpty = analytics.length === 0 || !hasData;
-
-  if (isLoading) return <ChartCard title={DASHBOARD_SECTIONS.emiratesAnalytics} loading height={260} />;
-  if (error || isEmpty) {
-    return (
-      <BoundaryCard title={DASHBOARD_SECTIONS.emiratesAnalytics} error={error} onRetry={refetch} isEmpty={isEmpty} />
-    );
-  }
-
-  return (
-    <ChartCard
-      title={DASHBOARD_SECTIONS.emiratesAnalytics}
-      type="bar"
-      height={260}
-      xAxis={[{ scaleType: "band", data: analytics.map((a) => EMIRATE_LABELS[a.emirate] ?? a.emirate) }]}
-      series={[{ label: "عملاء", data: analytics.map((a) => a.leads ?? 0) }]}
-    />
-  );
-}
-
 function LeadsOverviewChart({ query, enabled }) {
   const { data, isLoading, error, refetch } = useDashboardWidget({
     base: LEADS_MONTHLY_OVERVIEW_URL,
@@ -194,15 +164,5 @@ function BoundaryCard({ title, error, onRetry, isEmpty }) {
     </SectionCard>
   );
 }
-
-const EMIRATE_LABELS = {
-  DUBAI: "دبي",
-  ABU_DHABI: "أبوظبي",
-  SHARJAH: "الشارقة",
-  AJMAN: "عجمان",
-  UMM_AL_QUWAIN: "أم القيوين",
-  RAS_AL_KHAIMAH: "رأس الخيمة",
-  FUJAIRAH: "الفجيرة",
-};
 
 export default DashboardCharts;

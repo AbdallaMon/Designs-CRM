@@ -18,12 +18,19 @@ export const DASHBOARD_SECTIONS = {
   actionQueue: "يحتاج انتباهك",
   kpis: "المؤشرات الرئيسية",
   leadsStatus: "حالة العملاء المحتملين",
+  latestLeads: "أحدث العملاء المحتملين",
   designerBoard: "لوحة الإنتاج",
   charts: "تحليلات الأداء",
   monthlyPerformance: "الأداء الشهري",
   weekPerformance: "أداء الأسبوع",
   emiratesAnalytics: "تحليلات الإمارات",
   leadsMonthlyOverview: "نظرة شهرية على العملاء",
+};
+
+// Latest-leads compact list (row 5) — each row deep-links to the lead hub /v2/leads/{id}.
+export const LATEST_LEADS_COPY = {
+  empty: "لا يوجد عملاء محتملون حديثون",
+  actionLabel: "فتح الملف",
 };
 
 // ── Filter bar copy ────────────────────────────────────────────────────────────────────
