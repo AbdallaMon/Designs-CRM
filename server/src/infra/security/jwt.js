@@ -5,11 +5,9 @@ import {
   AUTH_REFRESH_TOKEN_COOKIE_NAME,
 } from "@dms/shared";
 
-// Unified JWT scheme (Stage 3): we ISSUE exactly one access/refresh pair, always
-// signed/verified with the dedicated access/refresh secrets. The legacy
-// `SECRET_KEY` 4h `"token"` scheme and the `currentMainTokenName`/`LEGACY` bridge
-// are retired. A transitional READ-shim that still accepts the legacy cookie lives
-// in the auth middleware (it does not change how tokens are signed).
+// Unified JWT scheme: we ISSUE and VERIFY exactly one access/refresh pair, always
+// signed with the dedicated access/refresh secrets. The legacy `SECRET_KEY` 4h
+// `"token"` scheme is fully retired (the read-shim was removed at cutover).
 class JwtService {
   static #baseOptions = {
     httpOnly: true,
@@ -54,16 +52,6 @@ class JwtService {
   /** Verifies an access token. Throws jwt error on failure. */
   static verifyAccess(token) {
     return jwt.verify(token, env.JWT_ACCESS_SECRET);
-  }
-
-  /**
-   * Transitional READ-shim: verifies a legacy `"token"` cookie that was signed
-   * with the retired `SECRET_KEY` 4h scheme. We never SIGN with this anymore — it
-   * exists only so already-issued legacy sessions keep working during the cutover
-   * window. Remove together with the shim in the auth middleware.
-   */
-  static verifyLegacyAccess(token) {
-    return jwt.verify(token, env.SECRET_KEY);
   }
 
   /** Verifies a refresh token. Throws jwt error on failure. */

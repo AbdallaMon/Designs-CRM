@@ -6,9 +6,6 @@ import {
   notFoundHandler,
   errorHandler,
 } from "./shared/errors/error-handler.js";
-import clientsRoutes from "../routes/clients/clients.js";
-import authRoutes from "../routes/auth/auth.js";
-import sharedRoutes from "../routes/shared/index.js";
 import v2Routes from "./shared/routes.js";
 import { env } from "./config/env.js";
 
@@ -43,11 +40,9 @@ if (env.ISLOCAL) {
 }
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
-// Cutover: the /utility, /staff, /admin and /accountant legacy routers were unmounted
-// (their @role dashboard frontend is gone). The files remain on disk (reversible).
-// /shared and /client stay mounted until legacy client-chat is migrated to v2.
-app.use("/shared", sharedRoutes);
-app.use("/client", clientsRoutes);
+// Cutover complete: ALL legacy routers retired. The migrated app is the only surface,
+// mounted under /v2 (route→controller→usecase→repository modules in src/modules/**,
+// which lazy-import the frozen logic still living under server/services/**).
 app.use("/v2", v2Routes);
 
 // ─── Global error handler ─────────────────────────────────────────────────────

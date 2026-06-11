@@ -2,7 +2,6 @@ import { AppError } from "../errors/AppError.js";
 import { JwtService } from "../../infra/security/jwt.js";
 import {
   AUTH_COOKIE_NAME,
-  LEGACY_AUTH_COOKIE_NAME,
   authMessagesCodes,
   getEffectivePermissions,
 } from "@dms/shared";
@@ -13,26 +12,19 @@ import {
 class AuthMiddleware {
   /**
    * Verify the session and attach `req.auth` with flattened effective
-   * permissions. Unified JWT: we issue only the `access_token` cookie, but a
-   * transitional READ-shim still accepts the legacy `"token"` cookie (signed with
-   * the retired SECRET_KEY) so existing sessions are not logged out.
+   * permissions. Single unified JWT scheme: only the `access_token` cookie is
+   * accepted (the legacy `"token"` read-shim was removed at cutover).
    */
   static requireAuth(req, res, next) {
     const accessToken = req.cookies?.[AUTH_COOKIE_NAME];
-    const legacyToken = req.cookies?.[LEGACY_AUTH_COOKIE_NAME];
 
-    if (!accessToken && !legacyToken) {
+    if (!accessToken) {
       return next(new AppError(authMessagesCodes.UNAUTHORIZED, 401));
     }
 
     let payload;
     try {
-      if (accessToken) {
-        payload = JwtService.verifyAccess(accessToken);
-      } else {
-        // transitional read-shim — accept the legacy cookie only.
-        payload = JwtService.verifyLegacyAccess(legacyToken);
-      }
+      payload = JwtService.verifyAccess(accessToken);
     } catch {
       return next(new AppError(authMessagesCodes.INVALID_TOKEN, 401));
     }
