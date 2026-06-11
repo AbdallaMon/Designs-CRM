@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { PageHeader } from "@/app/v2/shared/components";
 import { useContractDetail } from "../hooks/useContractDetail.js";
 import contractsService from "../contracts.service.js";
 import { runContractMutation } from "../contracts.mutations.js";
@@ -156,15 +157,29 @@ export function ContractDetailPage({ contractId }) {
     }
   }
 
+  // Parent-lead breadcrumb so the contract is no longer a dead-end: the lead crumb links back
+  // to the lead hub. clientLead.client.name is already in the payload (used in OverviewSection).
+  const leadId = contract?.clientLeadId;
+  const leadName = contract?.clientLead?.client?.name;
+  const breadcrumbs = [
+    { label: "المبيعات" },
+    { label: "الصفقات", href: "/v2/leads" },
+    ...(leadId != null
+      ? [{ label: `${leadName || "العميل"} #${leadId}`, href: `/v2/leads/${leadId}` }]
+      : []),
+    { label: `العقد #${contractId}` },
+  ];
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }} dir="rtl">
-      <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1} sx={{ mb: 2 }}>
-        <Typography variant="h5">العقد #{contractId}</Typography>
-        <Stack direction="row" spacing={1}>
-          {canGenerateToken && !isCancelled && <Button variant="outlined" onClick={doGenerateToken}>إنشاء رابط التوقيع</Button>}
-          {canCancel && !isCancelled && <Button variant="outlined" color="error" onClick={() => setConfirmCancel(true)}>إلغاء العقد</Button>}
-        </Stack>
-      </Stack>
+      <PageHeader
+        title={`العقد #${contractId}`}
+        roleChip={false}
+        breadcrumbs={breadcrumbs}
+      >
+        {canGenerateToken && !isCancelled && <Button variant="outlined" onClick={doGenerateToken}>إنشاء رابط التوقيع</Button>}
+        {canCancel && !isCancelled && <Button variant="outlined" color="error" onClick={() => setConfirmCancel(true)}>إلغاء العقد</Button>}
+      </PageHeader>
 
       <Tabs value={active} onChange={(_e, v) => selectTab(v)} variant="scrollable" scrollButtons="auto" sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}>
         {TABS.map((t) => <Tab key={t.key} value={t.key} label={t.label} />)}

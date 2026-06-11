@@ -18,25 +18,54 @@ import {
   MenuItem,
   Avatar,
   Divider,
+  Dialog,
+  DialogContent,
   ListItemIcon,
+  Tooltip,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import { usePathname } from "next/navigation";
-import { MdMenu, MdLogout, MdPerson } from "react-icons/md";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  MdMenu,
+  MdLogout,
+  MdPerson,
+  MdSearch,
+  MdMenuOpen,
+} from "react-icons/md";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
+import { usePermission } from "@/app/v2/hooks/usePermission";
+import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { LeadSearchAutocomplete } from "@/app/v2/features/leads/components/LeadSearchAutocomplete";
 import { buildBreadcrumbs } from "../breadcrumbs";
 import { NotificationBell } from "./NotificationBell";
 import { RoleChip } from "@/app/v2/shared/components/RoleChip";
 
-export function TopBar({ onMenuToggle, drawerWidth }) {
+export function TopBar({
+  onMenuToggle,
+  drawerWidth,
+  showCollapseToggle = false,
+  collapsed = false,
+  onToggleCollapse,
+}) {
   const theme = useTheme();
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout } = useAuth();
+  const { hasPermission } = usePermission();
   const lgUp = useMediaQuery(theme.breakpoints.up("lg"));
 
   const crumbs = buildBreadcrumbs(pathname);
   const [anchor, setAnchor] = useState(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const canSearchLeads = hasPermission(PERMISSIONS.LEAD.LIST);
+
+  const goToLead = (lead) => {
+    if (lead?.id == null) return;
+    setSearchOpen(false);
+    router.push(`/v2/leads/${lead.id}`);
+  };
 
   return (
     <AppBar
@@ -54,6 +83,20 @@ export function TopBar({ onMenuToggle, drawerWidth }) {
           <IconButton edge="start" onClick={onMenuToggle} aria-label="فتح القائمة">
             <MdMenu />
           </IconButton>
+        )}
+
+        {/* Rail collapse toggle (lg only): switches the side-nav between full and rail. */}
+        {showCollapseToggle && (
+          <Tooltip title={collapsed ? "توسيع القائمة" : "طي القائمة"}>
+            <IconButton
+              edge="start"
+              onClick={onToggleCollapse}
+              aria-label={collapsed ? "توسيع القائمة الجانبية" : "طي القائمة الجانبية"}
+              aria-pressed={collapsed}
+            >
+              {collapsed ? <MdMenu /> : <MdMenuOpen />}
+            </IconButton>
+          </Tooltip>
         )}
 
         <Typography
@@ -83,6 +126,42 @@ export function TopBar({ onMenuToggle, drawerWidth }) {
 
         <Box sx={{ flex: 1 }} />
 
+        {/* Global lead search — the backbone of hub navigation (UX plan §1). On md+ it sits
+            inline (~300-320px) between the breadcrumb and the identity cluster; on xs it
+            collapses to a search IconButton that opens a Dialog with the same autocomplete.
+            Gated on LEAD.LIST. RTL-correct (logical inline placement). */}
+        {canSearchLeads && (
+          <>
+            <Box
+              sx={{
+                display: { xs: "none", md: "block" },
+                width: 320,
+                mx: 1,
+              }}
+            >
+              <LeadSearchAutocomplete onSelect={goToLead} />
+            </Box>
+            <IconButton
+              sx={{ display: { xs: "inline-flex", md: "none" } }}
+              onClick={() => setSearchOpen(true)}
+              aria-label="بحث عن عميل"
+            >
+              <MdSearch />
+            </IconButton>
+            <Dialog
+              open={searchOpen}
+              onClose={() => setSearchOpen(false)}
+              fullWidth
+              maxWidth="sm"
+              dir="rtl"
+            >
+              <DialogContent sx={{ pt: 3 }}>
+                <LeadSearchAutocomplete onSelect={goToLead} />
+              </DialogContent>
+            </Dialog>
+          </>
+        )}
+
         {/* Identity cluster (inline-END). */}
         <NotificationBell />
         <Box sx={{ display: { xs: "none", md: "block" } }}>
@@ -105,8 +184,11 @@ export function TopBar({ onMenuToggle, drawerWidth }) {
           anchorEl={anchor}
           open={Boolean(anchor)}
           onClose={() => setAnchor(null)}
-          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-          transformOrigin={{ vertical: "top", horizontal: "left" }}
+          // RTL: the profile button sits at the inline-END (left edge in RTL). Anchoring the
+          // menu to the button's inline-START (its RIGHT side) keeps it on-screen; "left"
+          // would push it off the viewport. Open downward, aligned to the right edge.
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
         >
           <Box sx={{ px: 2, py: 1 }}>
             <Typography variant="body2" noWrap>

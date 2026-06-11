@@ -13,11 +13,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Alert, Box, Button, CircularProgress, Container, Link as MuiLink, Tab, Tabs } from "@mui/material";
-import { MdArrowForward } from "react-icons/md";
+import { Alert, Box, Button, CircularProgress, Container, Tab, Tabs } from "@mui/material";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { PageHeader } from "@/app/v2/shared/components";
 import { projectsService } from "../../projects/projects.service.js";
+import { PROJECT_TYPE_LABELS } from "../../projects/config/projectsConstants.js";
 import { ProjectDetails } from "../../projects/components/ProjectDetails.jsx";
 import { UpdatesList } from "../../projects/components/updates/UpdatesList.jsx";
 
@@ -91,27 +92,28 @@ export function ProjectDetailsPage({ projectId }) {
     );
   }
 
+  // Parent-lead breadcrumb (الإنتاج ‹ المشاريع ‹ {lead client} #leadId (link) ‹ {project} #id).
+  // clientLeadId is always in the project payload; the client name is shown when present. The
+  // lead crumb links back to the lead hub so the project is never a dead-end. No extra fetch.
+  const leadId = project.clientLeadId;
+  const leadName = project.clientLead?.client?.name;
+  const projectLabel = PROJECT_TYPE_LABELS[project.type] || "المشروع";
+  const breadcrumbs = [
+    { label: "الإنتاج" },
+    { label: "المشاريع", href: "/v2/projects" },
+    ...(leadId != null
+      ? [{ label: `${leadName || "العميل"} #${leadId}`, href: `/v2/leads/${leadId}` }]
+      : []),
+    { label: `${projectLabel} #${project.id}` },
+  ];
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      {/* Back-link to the parent lead. clientLeadId is always in the project payload; the
-          client name is shown when the payload carries it, else just the id. No extra fetch. */}
-      {project.clientLeadId != null && (
-        <Box sx={{ mb: 2 }}>
-          <MuiLink
-            component={Link}
-            href={`/v2/leads/${project.clientLeadId}`}
-            underline="hover"
-            sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
-          >
-            <MdArrowForward />
-            <span>
-              {project.clientLead?.client?.name
-                ? `${project.clientLead.client.name} #${project.clientLeadId}`
-                : `العميل #${project.clientLeadId}`}
-            </span>
-          </MuiLink>
-        </Box>
-      )}
+      <PageHeader
+        title={`${projectLabel} #${project.id}`}
+        roleChip={false}
+        breadcrumbs={breadcrumbs}
+      />
 
       <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
         <Tabs value={active}>

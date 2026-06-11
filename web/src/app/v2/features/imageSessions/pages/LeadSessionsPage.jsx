@@ -19,7 +19,10 @@ export function LeadSessionsPage({ clientLeadId }) {
         subtitle={`العميل المحتمل #${clientLeadId}`}
         breadcrumbs={[
           { label: "المبيعات" },
-          { label: "العملاء المحتملون", href: "/v2/leads" },
+          { label: "الصفقات", href: "/v2/leads" },
+          // Parent-lead crumb links back to the lead hub so the session page isn't a dead-end.
+          // clientLeadId is the parent lead id (this page is /v2/image-sessions/lead/[leadId]).
+          { label: `العميل #${clientLeadId}`, href: `/v2/leads/${clientLeadId}` },
           { label: "جلسات الصور" },
         ]}
       />

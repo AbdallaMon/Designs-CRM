@@ -47,7 +47,7 @@ export function SideNav({ variant = "full", onNavigate }) {
                   sx={{
                     bgcolor: "transparent",
                     color: "text.secondary",
-                    fontWeight: 700,
+                    typography: "overline",
                     lineHeight: "32px",
                   }}
                 >
@@ -72,8 +72,13 @@ export function SideNav({ variant = "full", onNavigate }) {
                     my: 0.25,
                     justifyContent: rail ? "center" : "flex-start",
                     minHeight: 44, // ≥24px target (a11y 2.5.8)
+                    // Logical inline-START accent on the active item (RTL = right edge), the
+                    // app's active-state motif. Transparent by default so layout never shifts.
+                    borderInlineStart: "3px solid",
+                    borderColor: "transparent",
                     "&.Mui-selected": {
                       bgcolor: "action.selected",
+                      borderColor: "primary.main",
                       "& .MuiListItemIcon-root svg": { color: "primary.main" },
                     },
                   }}
