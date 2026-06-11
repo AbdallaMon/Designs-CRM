@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { buildForwardedQuery } from "@/app/v2/lib/forwardQuery";
 
 // Cutover Step C — redirect shell. Legacy `/dashboard` is retired in favor of the v2 shell
 // at /v2/dashboard. Live backend services still emit `${OLDORIGIN}/dashboard?...` — notably
@@ -7,11 +8,6 @@ import { redirect } from "next/navigation";
 // NOTE: the v2 dashboard does not yet surface the googleAuth* toast / auto-open profile;
 // the landing is preserved, the toast wiring is a follow-up.
 export default async function Page({ searchParams }) {
-  const sp = (await searchParams) ?? {};
-  const qs = new URLSearchParams(
-    Object.entries(sp).flatMap(([k, v]) =>
-      Array.isArray(v) ? v.map((x) => [k, x]) : v != null ? [[k, v]] : [],
-    ),
-  ).toString();
-  redirect(`/v2/dashboard${qs ? `?${qs}` : ""}`);
+  const qs = buildForwardedQuery(await searchParams);
+  redirect(`/v2/dashboard${qs}`);
 }

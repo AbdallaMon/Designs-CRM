@@ -6,6 +6,7 @@ import {
   resetPassword as resetPasswordService,
   loginUser,
 } from "@/app/v2/features/auth/auth.service";
+import { safeRedirect } from "@/app/v2/lib/safeRedirect";
 
 export function useAuthHooks() {
   const { setAuthUser } = useAuth();
@@ -17,7 +18,9 @@ export function useAuthHooks() {
     if (response.status === 200) {
       setAuthUser(response.user);
       const searchParams = new URLSearchParams(window.location.search);
-      const redirectTo = searchParams.get("redirect") || "/v2/dashboard";
+      // `redirect` is attacker-controllable on the public /login page; only honor
+      // same-origin relative paths to avoid an open-redirect / phishing vector.
+      const redirectTo = safeRedirect(searchParams.get("redirect"));
       window.location.href = redirectTo;
     }
 
