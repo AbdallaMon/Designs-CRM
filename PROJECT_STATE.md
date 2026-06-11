@@ -20,12 +20,14 @@
 > `6d45f0b`/`189f75b`/`d09ca57` + fixes `9d2bd07`/`3a5a82d`; **runtime-verified** (real boot: 15/15 redirect
 > routes, admin login OK ADMIN/123-perms, public v2 surfaces un-gated, npm test 571/34, next build clean).
 > Caught+fixed a Step-A regression (the server-side `ui/src/proxy.js` middleware gated `/v2` public surfaces).
-> **Step D backend DONE** (`28ab93b`): unmounted 4 dead legacy routers (kept `/shared`+`/client`+`/v2`),
-> CORS base-domain+subdomain (`ALLOWED_DOMAINS`), shared cookie `domain` (`COOKIE_DOMAIN`), backfill
-> decoupled to fail-closed `BACKFILL_SECRET`; verified (npm 571/34, boot, admin login). **Deferred (documented,
-> with reasons): live client-chat migration** (`/chats` → v2 client-chat; `/shared`+`/client` stay until then;
-> the v2 chat still calls legacy `/shared/all-related-chat-users`) and **Step E `ui→web` rename** (true-final,
-> per decision #9; disrupts the live env). See `docs/migration/RESUME-CHECKPOINT.md` for the authoritative state.
+> **CUTOVER COMPLETE (2026-06-11).** `ui→web` rename done (`a849f58`); ALL legacy removed (`b107dda`→`4499332`):
+> legacy FE (`UiComponents/helpers/providers/fonts`, ~342 files), ALL legacy backend routers (`server/routes/**`,
+> 59 files) + the JWT legacy read-shim, and the dead `legacyApiFetch`. Public client-chat migrated to v2
+> (`/v2/client-chat`; `/chats` redirects); v2 chat makes zero legacy calls. Verified: npm 571/34, web build 54
+> routes, boot + admin login 200, `/v2/users/chat-directory` 200, legacy `/shared`+`/client` → 404. KEPT (not
+> legacy): `server/services/**` frozen logic (lazy-imported by modules) + `SECRET_KEY`. The "v2" label is now a
+> namespace only (no duality); dropping the literal `/v2` URL/folder is a separate optional cosmetic rename
+> (frozen-service redirect bridges + prod API base end in `/v2`). See `docs/migration/RESUME-CHECKPOINT.md`.
 > For the authoritative latest state + commit trail see **`docs/migration/RESUME-CHECKPOINT.md`** (this
 > file's §3 commit trail below is kept at the FE-features milestone and is not the latest).
 

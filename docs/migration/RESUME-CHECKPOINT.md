@@ -122,24 +122,34 @@ D scoped (partly blocked), E needs a user checkpoint.**
     inert when unset). Cookie `domain` from `env.COOKIE_DOMAIN` (undefined on ISLOCAL/when unset). `SECRET_KEY`
     kept for the JWT legacy read-shim. Verified: npm test 571/34, boot OK, admin login 200 (no Domain cookie
     locally), `/admin/*`→404, `/shared`→401. **For prod:** set `ALLOWED_DOMAINS`, `COOKIE_DOMAIN`, `BACKFILL_SECRET`.
-  - ⛔ **Step D (router removal) + chat — DEFERRED (documented, NOT done): live client-chat migration project.**
-    Chat map (Explore, verified): `/v2/chat` already fully covers staff chat (legacy staff chat UI is dead —
-    it lived in the deleted dashboard). BUT legacy **`/chats`** is the LIVE public client-chat entry (token
-    links `/chats?roomId&token` are shared into the wild via `ChatAccessLinkBox`), and the v2 client-chat
-    **backend exists** (`/v2/client/chat`, 1:1) **but has NO v2 FE page**. Also the v2 chat service still calls
-    legacy **`/shared/all-related-chat-users`** (`ui/.../v2/features/chat/chat.service.js`). So `/shared` +
-    `/client` stay until: (1) build a v2 public client-chat FE page on `/v2/client/chat`; (2) convert `/chats`
-    to a redirect shell preserving `?roomId&token` (keeps in-the-wild links alive); (3) repoint
-    `ChatAccessLinkBox` to the v2 path; (4) migrate the `all-related-chat-users` directory call to v2; then
-    unmount `/shared`+`/client`. NOT done blind because it is live + client-facing and a real room token can't
-    be minted to verify a new page end-to-end in a sandbox. Then the now-orphaned legacy
-    `UiComponents/DataViewer/chat/*` + the dead legacy `server/routes/**` files can be deleted.
-  - 🛑 **Step E — `ui/ → web/` rename + workspaces.** The TRUE-final step (decision #9 ties it to FULL legacy
-    retirement, which the chat dependency above still blocks). Deferred: it disrupts the running dev env
-    (node_modules/.next/running servers) for a cosmetic rename while legacy isn't fully gone. Low code-impact
-    (`@/*` is workspace-local; only root `package.json` workspaces+scripts + the dir move).
-  - **Frozen services under `server/services/**` are lazy-imported by v2 and MUST NOT be deleted** (separate
-    from the legacy `server/routes/**` routers).
+  - ✅ **Step E — `ui/ → web/` rename — DONE** (`a849f58`): `git mv ui web`, root package.json workspaces +
+    scripts, web/package.json name; npm install relinked. `@/*` is workspace-local so imports unchanged. Build
+    + tests green.
+  - ✅ **FULL LEGACY TEARDOWN — DONE** (`b107dda`→`4499332`): the user directed "remove ALL legacy, no v2/legacy
+    duality." Done in verified stages:
+      1. Relocated the 4 v2-imported legacy helpers into `web/src/app/v2/lib` + rewired `layout.js` to v2
+         providers (`b107dda`); added `GET /v2/users/chat-directory` (replaces legacy `/shared/all-related-chat-users`
+         + `/admin/all-users`).
+      2. Migrated public client-chat to v2 (`391a194`): new `(v2-features)/v2/client-chat` (public, token-auth)
+         reusing the shared v2 `ChatWindow` via a `clientContext`; `chat.service` directory call -> `/v2/users/chat-directory`;
+         `/chats` -> redirect shell to `/v2/client-chat` (preserves in-the-wild `?roomId&token` links). v2 chat now
+         makes ZERO legacy calls.
+      3. Deleted the entire legacy FE (`d0fab34`): `web/src/app/{UiComponents,helpers,providers,fonts}` + orphaned
+         legacy reset page (~342 files).
+      4. Deleted ALL legacy backend (`d11a487`): unmounted `/shared`+`/client`, removed `server/routes/**` (59
+         files), removed the JWT legacy read-shim (`verifyLegacyAccess` + `LEGACY_AUTH_COOKIE_NAME` + the
+         `auth.middleware` legacy branch). Single-cookie now.
+      5. Removed the dead `legacyApiFetch` from the FE data layer (`4499332`).
+  - **VERIFIED after teardown:** `npm test` 571/34; `next build` (web) 54 routes clean; guarded boot OK; admin
+    login 200; `/v2/auth/me` 200 (ADMIN); `/v2/users/chat-directory` 200; legacy `/shared` + `/client` -> 404.
+  - **KEPT (NOT legacy):** `server/services/**` (frozen business logic the modules lazy-import) + `SECRET_KEY`
+    in env (frozen reset-token/util flows + the decoupled payments backfill use it; it signs/verifies no session).
+  - **The "v2" LABEL remains a namespace only (no duality):** code lives under `web/src/app/v2/**` + routes
+    `(v2-features)/v2/**` (URL `/v2/*`) and the API mounts at `/v2`. Dropping the literal `/v2` URL prefix +
+    folder label is a SEPARATE, purely-cosmetic mechanical rename — NOT done because: (a) the FROZEN PDF/email
+    services hardcode `/contracts`,`/image-session`,`/dashboard/*` legacy paths whose redirect shells point at
+    `/v2/*` targets; (b) `NEXT_PUBLIC_API` + the prod API base end in `/v2`; (c) the edge proxy + login redirects
+    key off `/v2`. It's high-churn/zero functional gain and best done deliberately later.
 
 **FOLLOW-UPS surfaced during the build (carry into a polish pass):**
   - `StatusChip` has no `notification`/`user`/`session` domain → Wave A/C used local labelled chips or
