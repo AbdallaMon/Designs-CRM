@@ -9,19 +9,15 @@
 
 import { useEffect, useState } from "react";
 import {
-  Avatar,
   Box,
-  Card,
-  CardContent,
-  CardHeader,
   Chip,
-  CircularProgress,
   Divider,
   Tab,
   Tabs,
   Typography,
 } from "@mui/material";
 import { MdFolder } from "react-icons/md";
+import { SectionCard, EmptyState, LoadingState } from "@/app/v2/shared/components";
 import { projectsService } from "../projects.service.js";
 import { ProjectDetails } from "./ProjectDetails.jsx";
 
@@ -72,39 +68,28 @@ export function LeadProjects({ clientLeadId, initialProjects, noInitialLoad = fa
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="300px">
-        <CircularProgress />
-      </Box>
+      <SectionCard title="المشاريع">
+        <LoadingState variant="cards" count={3} columns={3} height={200} />
+      </SectionCard>
     );
   }
 
   if (groupedProjects.length === 0) {
     return (
-      <Card variant="outlined">
-        <CardContent>
-          <Box display="flex" flexDirection="column" alignItems="center" py={6}>
-            <Avatar sx={{ width: 64, height: 64, mb: 2, bgcolor: "primary.light" }}>
-              <MdFolder size={32} />
-            </Avatar>
-            <Typography variant="h6">لا توجد مشاريع</Typography>
-          </Box>
-        </CardContent>
-      </Card>
+      <SectionCard title="المشاريع">
+        <EmptyState
+          icon={<MdFolder />}
+          title="لا توجد مشاريع"
+          description="لم يتم إنشاء أي مشروع لهذا العميل بعد."
+        />
+      </SectionCard>
     );
   }
 
   const currentGroup = groupedProjects[activeGroupTab] || {};
 
   return (
-    <Card variant="outlined">
-      <CardHeader
-        title={
-          <Typography variant="h6" fontWeight={500}>
-            {currentGroup.groupTitle || "المشاريع"} — العميل #{clientLeadId}
-          </Typography>
-        }
-      />
-      <Divider />
+    <SectionCard title="المشاريع" noPadding>
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tabs
           value={activeGroupTab}
@@ -132,7 +117,7 @@ export function LeadProjects({ clientLeadId, initialProjects, noInitialLoad = fa
           ))}
         </Tabs>
       </Box>
-      <CardContent>
+      <Box sx={{ p: 2.5 }}>
         <Box display="flex" gap={1.5} flexWrap="wrap" mb={3}>
           {currentGroup.projects?.map((project) => (
             <Chip
@@ -163,8 +148,8 @@ export function LeadProjects({ clientLeadId, initialProjects, noInitialLoad = fa
             </Typography>
           </Box>
         )}
-      </CardContent>
-    </Card>
+      </Box>
+    </SectionCard>
   );
 }
 

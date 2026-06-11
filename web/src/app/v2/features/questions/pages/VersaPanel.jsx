@@ -15,7 +15,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  Accordion, AccordionDetails, AccordionSummary, Box, Button, CircularProgress, Stack,
+  Accordion, AccordionDetails, AccordionSummary, Box, Button, Stack,
   TextField, Typography,
 } from "@mui/material";
 import { MdExpandMore, MdAdd } from "react-icons/md";
@@ -140,9 +140,7 @@ function CategoryAccordion({ clientLeadId, category, canManage, expanded, onTogg
       </AccordionSummary>
       <AccordionDetails>
         {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
-            <CircularProgress size={22} />
-          </Box>
+          <LoadingState variant="form" fields={3} />
         ) : error ? (
           <ErrorState error={error} onRetry={load} resolver={questionsMessages} />
         ) : !steps?.length ? (

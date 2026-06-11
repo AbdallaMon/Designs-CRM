@@ -13,8 +13,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Stack,
-  TextField, ToggleButton, ToggleButtonGroup, Typography,
+  Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, IconButton,
+  Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
 } from "@mui/material";
 import { MdAdd, MdSave } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
@@ -273,17 +273,22 @@ export function SpinPanel({ clientLeadId }) {
                       disabled={!canAnswer || busy}
                     />
                     {canAnswer && (
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => saveOne(q)}
-                        disabled={
-                          busy || (draftFor(q) ?? "") === (questionAnswer(q) ?? "")
-                        }
-                        sx={{ minWidth: 72, mt: 0.25 }}
-                      >
-                        حفظ
-                      </Button>
+                      <Tooltip title="حفظ الإجابة">
+                        <span>
+                          <IconButton
+                            size="small"
+                            color="primary"
+                            onClick={() => saveOne(q)}
+                            disabled={
+                              busy || (draftFor(q) ?? "") === (questionAnswer(q) ?? "")
+                            }
+                            aria-label="حفظ الإجابة"
+                            sx={{ mt: 0.25 }}
+                          >
+                            <MdSave />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
                     )}
                   </Stack>
                 </Box>
