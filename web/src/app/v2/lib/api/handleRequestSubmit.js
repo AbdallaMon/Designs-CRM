@@ -25,16 +25,19 @@ export async function handleRequestSubmit({
     );
 
     if (response.status === 200) {
-      toast.update(toastId, Success(response.message));
+      toast.update(toastId, Success(response.message, response.translationKey));
       if (setRedirect) setRedirect((prev) => !prev);
     } else {
-      toast.update(toastId, Failed(response.message));
+      toast.update(toastId, Failed(response.message, response.translationKey));
     }
 
     return response;
   } catch (err) {
-    toast.update(toastId, Failed("Error, " + err.message));
-    return { status: 500, message: "Error, " + err.message };
+    // err.message / err.data.message is the language-neutral CODE thrown by ApiFetch;
+    // pass the BARE code (no "Error, " prefix) so the toast layer resolves it to Arabic.
+    const code = err?.data?.message || err?.message || "UNKNOWN_ERROR";
+    toast.update(toastId, Failed(code, err?.data?.translationKey));
+    return { status: 500, message: code };
   } finally {
     setLoading(false);
   }
