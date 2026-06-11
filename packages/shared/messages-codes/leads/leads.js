@@ -53,6 +53,7 @@ export const leadsMessagesCodes = {
   NOTE_CONTENT_EMPTY: "NOTE_CONTENT_EMPTY",
   FILE_FIELDS_REQUIRED: "FILE_FIELDS_REQUIRED",
   BULK_CONVERT_FORBIDDEN: "BULK_CONVERT_FORBIDDEN",
+  LEAD_CONVERT_REQUIRES_OWNER: "LEAD_CONVERT_REQUIRES_OWNER", // convert needs an assigned owner
 
   // ── PUBLIC client lead funnel (legacy `routes/client/leads.js`, ungated) ───────
   // The website new-lead / register / complete-register / cooperation-request flow.

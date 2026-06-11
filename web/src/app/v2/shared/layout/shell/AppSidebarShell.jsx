@@ -23,11 +23,7 @@ import {
   resolveNavItem,
   resolveDefaultDestination,
 } from "@/app/v2/features/shell/navLabels";
-import {
-  AppSidebar,
-  SIDEBAR_WIDTH_COLLAPSED,
-  SIDEBAR_WIDTH_EXPANDED,
-} from "./AppSidebar";
+import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
 
 const STORAGE_KEY = "v2.sidebarCollapsed";
@@ -81,8 +77,6 @@ export function AppSidebarShell({ children }) {
     return groups[0]?.items?.[0]?.href ?? FALLBACK_HREF;
   }, [perm, user]);
 
-  const collapsedWidth = collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED;
-
   return (
     <Box sx={{ display: "flex", flexDirection: "row", minHeight: "100vh", bgcolor: "background.default" }}>
       <AppSidebar
@@ -93,8 +87,12 @@ export function AppSidebarShell({ children }) {
         landingHref={landingHref}
       />
 
-      {/* Desktop spacer — reserves the permanent drawer's footprint so content clears it. */}
-      {!isMobile && <Box sx={{ width: collapsedWidth, flexShrink: 0 }} />}
+      {/*
+        No desktop spacer Box here. <AppSidebar>'s permanent <Drawer> already reserves its own
+        footprint in this flex row — its Drawer root carries `width` + `flexShrink: 0` (the standard
+        MUI permanent-drawer layout). Adding a separate spacer would double-count the width and push
+        content an extra 264px. The width is reserved exactly ONCE by the Drawer root.
+      */}
 
       <Box
         component="main"

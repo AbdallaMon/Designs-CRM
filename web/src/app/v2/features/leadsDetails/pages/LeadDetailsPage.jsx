@@ -278,7 +278,18 @@ export function LeadDetailsPage({ leadId }) {
         </Tabs>
       )}
 
-      <Box sx={{ minHeight: 320, mt: currentGroup?.visibleSub.length > 1 ? 0 : 2 }}>
+      {/*
+        key={activeSub} forces React to UNMOUNT the previous sub-tab's tree and MOUNT the next one
+        fresh, instead of reconciling two structurally different panels in the same position. Several
+        panels render Portal/Transition children (MUI Tooltip/Menu/Dialog, tables); morphing one such
+        tree into another in place is the classic trigger of "Failed to execute 'removeChild' on
+        'Node'" — which is exactly what the المحادثات (chats) tab hit. A stable per-tab key makes
+        every tab swap a clean remount.
+      */}
+      <Box
+        key={activeSub}
+        sx={{ minHeight: 320, mt: currentGroup?.visibleSub.length > 1 ? 0 : 2 }}
+      >
         {renderSection(activeSub, lead, refetch, {
           user,
           autoOpenAction: pendingAction,

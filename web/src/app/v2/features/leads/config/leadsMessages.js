@@ -54,6 +54,7 @@ export const leadsMessages = {
   NOTE_CONTENT_EMPTY: "محتوى الملاحظة فارغ",
   FILE_FIELDS_REQUIRED: "حقول الملف مطلوبة",
   BULK_CONVERT_FORBIDDEN: "لا تملك صلاحية التحويل الجماعي",
+  LEAD_CONVERT_REQUIRES_OWNER: "لا يمكن التحويل إلى صفقة قبل إسناد العميل لموظف",
 
   // ── generic envelope codes (shared) ────────────────────────────────────────────
   OK: "تمت العملية بنجاح",

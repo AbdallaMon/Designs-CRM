@@ -281,9 +281,16 @@ export class LeadUsecase {
   // ════════════════════════════════════════════════════════════════════════════
   async assign({ body, authUser }) {
     const isAdmin = this.isAdminUser(authUser);
-    const targetUserId = isAdmin ? body.userId : Number(authUser.id);
+    // The PUT / endpoint is overloaded: "claim to self" vs admin "assign to other".
+    // Self-claim (the FE "استلام" button) sends ONLY { id } — no userId. An admin
+    // claiming a lead to themselves previously fell through to `body.userId`
+    // (undefined → NaN → prisma.user.findUnique missing-id 500). Distinguish on the
+    // PRESENCE of an explicit userId, not on admin status: assign-to-other only when
+    // an admin-tier caller actually supplies a target user; otherwise claim to self.
+    const wantsAssignToOther = isAdmin && body.userId != null;
+    const targetUserId = wantsAssignToOther ? Number(body.userId) : Number(authUser.id);
     const result = await this.legacy.assignLeadToAUser(Number(body.id), targetUserId, isAdmin);
-    return { data: result, assignedToOther: isAdmin };
+    return { data: result, assignedToOther: wantsAssignToOther };
   }
 
   async bulkConvert({ body, authUser }) {
@@ -293,6 +300,14 @@ export class LeadUsecase {
   }
 
   async convert({ body }) {
+    // "تحويل إلى صفقة" moves the lead to ON_HOLD (the legacy "owner gave up the lead,
+    // free it for another user" path). markClientLeadAsConverted → convertALeadNotification
+    // dereferences the CURRENT owner (lead.userId) to notify them; on an UNASSIGNED lead
+    // that is null → `null.id` 500. Convert is only meaningful for an assigned lead, so
+    // reject the unassigned case with a clean domain error instead of crashing.
+    const lead = await this.repo.findLeadOwner({ id: Number(body.id) });
+    if (!lead) throw new AppError(C.LEAD_NOT_FOUND, 404);
+    if (lead.userId == null) throw new AppError(C.LEAD_CONVERT_REQUIRES_OWNER, 409);
     return this.legacy.markClientLeadAsConverted(Number(body.id), body.reasonToConvert, "ON_HOLD");
   }
 

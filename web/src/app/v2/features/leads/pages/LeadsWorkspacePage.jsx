@@ -97,10 +97,12 @@ export function LeadsWorkspacePage() {
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 8 }}>
           <Stack spacing={2}>
+            {/* No section-level "view all": there is no dedicated calls-list route, and
+                /v2/leads lands on the leads pool (not a calls view) — that would be a dead/
+                misleading link. Each ReminderRow already deep-links to its lead hub. */}
             <WorkspaceSectionCard
               title="المكالمات القادمة"
               count={calls.total}
-              viewAll={{ label: "كل المكالمات", href: "/v2/leads" }}
               loading={calls.isLoading}
               error={calls.error}
               forbidden={calls.forbidden}
@@ -119,10 +121,11 @@ export function LeadsWorkspacePage() {
               ))}
             </WorkspaceSectionCard>
 
+            {/* No section-level "view all": no dedicated meetings-list route exists; rows
+                deep-link to their lead hub instead. */}
             <WorkspaceSectionCard
               title="الاجتماعات القادمة"
               count={meetings.total}
-              viewAll={{ label: "كل الاجتماعات", href: "/v2/leads" }}
               loading={meetings.isLoading}
               error={meetings.error}
               forbidden={meetings.forbidden}

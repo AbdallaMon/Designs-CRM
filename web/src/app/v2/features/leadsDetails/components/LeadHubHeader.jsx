@@ -23,6 +23,7 @@ import { SectionCard } from "@/app/v2/shared/components/SectionCard.jsx";
 import { StatusChip } from "@/app/v2/shared/components/StatusChip.jsx";
 import { LeadStatusMenu } from "./LeadStatusMenu.jsx";
 import { LeadAssignActions } from "@/app/v2/features/leads/components/LeadAssignActions.jsx";
+import { LeadAdminAssignAction } from "@/app/v2/features/leads/components/LeadAdminAssignAction.jsx";
 import {
   paymentStatusLabel,
   categoryLabel,
@@ -123,6 +124,7 @@ export function LeadHubHeader({
 
           <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
             <LeadAssignActions lead={lead} size="medium" onChanged={onChanged} />
+            <LeadAdminAssignAction lead={lead} size="medium" onChanged={onChanged} />
             <LeadStatusMenu
               lead={lead}
               canChangeStatus={canChangeStatus}

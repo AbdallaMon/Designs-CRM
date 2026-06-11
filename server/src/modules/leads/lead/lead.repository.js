@@ -69,6 +69,14 @@ class LeadRepository {
     });
   }
 
+  // Current owner (for the convert guard — convert is only valid on an assigned lead).
+  findLeadOwner({ id }) {
+    return prisma.clientLead.findUnique({
+      where: { id: Number(id) },
+      select: { id: true, userId: true, status: true },
+    });
+  }
+
   // Server-authoritative current status (used to override any client-supplied
   // oldStatus in changeStatus — workflow-guard bypass fix).
   findLeadStatus({ id }) {

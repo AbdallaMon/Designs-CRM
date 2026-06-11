@@ -38,7 +38,9 @@ export function computeLeadCapabilities(record, authUser) {
         hasPermission(permissions, P.CHANGE_STATUS) &&
         mutable &&
         (admin || !LOCKED_FROM_STATUSES_FOR_NON_ADMIN.includes(record?.status)),
-      canConvert: () => hasPermission(permissions, P.CONVERT) && mutable,
+      // Convert ("تحويل إلى صفقة") frees an ASSIGNED lead back to the ON_HOLD pool; it
+      // is meaningless (and crashes the legacy owner-notification) on an unassigned lead.
+      canConvert: () => hasPermission(permissions, P.CONVERT) && mutable && record?.userId != null,
       canAssignToOther: () => hasPermission(permissions, P.ASSIGN_OTHER),
       canAssignSelf: () =>
         hasPermission(permissions, P.ASSIGN_SELF) &&
