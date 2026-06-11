@@ -12,7 +12,7 @@
 // always renders the Arabic label too (UX plan §2). Domain enum VALUES are the Prisma enum
 // keys (the data contract); Arabic labels live in statusLabels.js.
 
-import colors from "@/app/helpers/colors";
+import colors from "@/app/v2/lib/theme/colors";
 
 // Five semantic buckets. Each carries a strong `main` (for dots/borders) and a soft tinted
 // pair (`bg`/`fg`) for the chip surface. Greens/reds/blues are taken from the existing palette

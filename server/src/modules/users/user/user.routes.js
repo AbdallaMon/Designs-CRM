@@ -41,6 +41,16 @@ router.get(
   AuthMiddleware.requirePermissions([P.DIRECTORY]),
   asyncHandler(userController.relatedChatDirectory),
 );
+// Consolidated chat member-picker directory — replaces the chat FE's TWO legacy calls
+// (`/admin/all-users` for admins, `/shared/all-related-chat-users?projectId=` for staff).
+// The server branches on req.auth (admin-tier vs not) instead of an FE flag. Same broad
+// gate (P.DIRECTORY → every authed role) — preserves the legacy "SHARED"/"ADMIN" gates
+// without widening (admins already pass; the scope split happens in the usecase).
+router.get(
+  "/chat-directory",
+  AuthMiddleware.requirePermissions([P.DIRECTORY]),
+  asyncHandler(userController.chatDirectory),
+);
 
 // ── admin management lists (literal before /:userId) ─────────────────────────────
 router.get(

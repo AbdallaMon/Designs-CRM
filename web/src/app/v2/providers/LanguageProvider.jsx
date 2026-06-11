@@ -7,7 +7,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { dictionary } from "@/app/helpers/constants.js";
+import { dictionary } from "@/app/v2/lib/i18n/dictionary";
 import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import rtlPlugin from "stylis-plugin-rtl";

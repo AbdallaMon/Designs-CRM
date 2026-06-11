@@ -1,14 +1,14 @@
 import "./globals.css";
-import ToastProvider from "@/app/providers/ToastLoadingProvider";
-import AuthProvider from "@/app/providers/AuthProvider";
-import MUIContextProvider from "@/app/providers/MUIContext";
-import DotsLoader from "@/app/UiComponents/feedback/loaders/DotsLoading";
-import MuiAlertProvider from "@/app/providers/MuiAlert.jsx";
-import colors from "@/app/helpers/colors.js";
+import { ToastProvider } from "@/app/v2/providers/ToastProvider";
+import { AuthProvider } from "@/app/v2/providers/AuthProvider";
+import { MUIProvider } from "@/app/v2/providers/MUIProvider";
+import DotsLoader from "@/app/v2/shared/components/feedback/DotsLoading";
+import { AlertProvider } from "@/app/v2/providers/MuiAlertProvider";
+import colors from "@/app/v2/lib/theme/colors";
 import { Noto_Kufi_Arabic } from "next/font/google";
-import UploadingProvider from "./providers/UploadingProgressProvider";
+import { UploadingProvider } from "@/app/v2/providers/UploadingProvider";
 
-import ServiceWorkerRegister from "./UiComponents/DataViewer/utility/RegisterServiceWorker";
+import ServiceWorkerRegister from "@/app/v2/shared/components/RegisterServiceWorker";
 
 const noto = Noto_Kufi_Arabic({
   weight: ["400", "500", "700"],
@@ -91,8 +91,8 @@ export default function RootLayout({ children }) {
         className={noto.className}
         style={{ backgroundColor: colors.bgSecondary }}
       >
-        <MuiAlertProvider>
-          <MUIContextProvider>
+        <AlertProvider>
+          <MUIProvider>
             <UploadingProvider>
               <ToastProvider>
                 <AuthProvider>
@@ -102,8 +102,8 @@ export default function RootLayout({ children }) {
                 <ServiceWorkerRegister />
               </ToastProvider>
             </UploadingProvider>
-          </MUIContextProvider>
-        </MuiAlertProvider>
+          </MUIProvider>
+        </AlertProvider>
       </body>
     </html>
   );

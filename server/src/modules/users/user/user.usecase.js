@@ -165,6 +165,26 @@ export class UserUsecase {
     return { items: items.map((u) => ({ ...u, capabilities: computeUserCapabilities(u, authUser) })) };
   }
 
+  // ── chat member-picker directory (single consolidated surface) ────────────────
+  // Mirrors the legacy FE branch in chat.service.js (listDirectoryUsers): admins hit
+  // `/admin/all-users` → getAllUsers(sp, currentUser) (no chat flags); non-admins hit
+  // `/shared/all-related-chat-users?projectId=...` → getAllUsers(sp, user, false, true)
+  // (only users already in a STAFF_TO_STAFF room with me). The server now decides which
+  // shape to return FROM req.auth (admin-tier vs not) instead of trusting an FE flag — so
+  // the picker can run entirely on `/v2`. Returns a BARE user array (legacy `data: users`
+  // shape — getAllUsers carries no `capabilities`), so the repointed FE's `response.data`
+  // (an array) keeps working 1:1. `projectId` mirrors the legacy query param: getAllUsers
+  // never read it (the related-chat scope is derived from the membership join, not the
+  // project), so it is accepted-but-unused exactly as before.
+  async chatDirectory({ query, authUser }) {
+    const relatedOnly = !isAdminTier(authUser);
+    return this.repo.findDirectory({
+      searchParams: { ...query },
+      currentUser: authUser,
+      checkIfHasRelatedChat: relatedOnly,
+    });
+  }
+
   // ════════════════════════════════════════════════════════════════════════════
   //  PROFILE (read / edit) — scope already enforced by the checker
   // ════════════════════════════════════════════════════════════════════════════

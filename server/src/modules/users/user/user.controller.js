@@ -53,6 +53,14 @@ export class UserController {
     return ok(res, data, C.ALL_USERS_FETCHED, TK);
   };
 
+  // chat member-picker — one endpoint; the usecase branches on req.auth (admin-tier →
+  // admin-wide list; non-admin → related-by-project). Returns the legacy bare user array
+  // under `data` (the chat FE reads response.data directly).
+  chatDirectory = async (req, res) => {
+    const data = await this.usecase.chatDirectory({ query: req.query, authUser: req.auth });
+    return ok(res, data, C.USERS_DIRECTORY_FETCHED, TK);
+  };
+
   // ── profile (self OR admin via scope checker) ────────────────────────────────
   getProfile = async (req, res) => {
     const data = await this.usecase.getProfile({ userId: req.params.userId, authUser: req.auth });

@@ -1,5 +1,5 @@
 import { createTheme } from "@mui/material";
-import colors from "@/app/helpers/colors";
+import colors from "@/app/v2/lib/theme/colors";
 import statusPalette from "./statusTokens";
 
 const generateMuiShadows = (baseShadowColor, darkShadowColor) => {
