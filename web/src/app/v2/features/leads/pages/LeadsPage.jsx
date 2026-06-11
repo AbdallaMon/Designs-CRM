@@ -33,6 +33,7 @@ import {
   Typography,
   MenuItem,
   Select,
+  Link as MuiLink,
 } from "@mui/material";
 import { MdOpenInNew, MdRefresh } from "react-icons/md";
 import Link from "next/link";
@@ -45,10 +46,14 @@ import { LeadAssignActions } from "../components/LeadAssignActions.jsx";
 import { LeadSearchAutocomplete } from "../components/LeadSearchAutocomplete.jsx";
 import { BulkConvertModal } from "../components/BulkConvertModal.jsx";
 
-// Top-level segment: "new" surfaces NEW client leads (extra.isNew → BE status NEW), which the
-// default ("deals") branch hides via the BE's `status notIn [NEW, CONVERTED, ON_HOLD]` default.
-// Defaulting to "new" guarantees freshly-created client leads are visible (legacy parity:
-// the leads landing defaulted to isNew=true).
+// Top-level segment: "new" surfaces the un-consulted raw-lead pool. The BE list ALWAYS
+// forces `initialConsult: true` (lead.usecase.js #buildListWhere sets checkConsult:true
+// unconditionally), so the only way to see freshly-created leads — which are created with
+// `initialConsult: false` — is the BE's `noConsulted=true` escape, which resets the where to
+// `{ initialConsult: false }`. Sending `isNew=true` instead would AND `status:NEW` with
+// `initialConsult:true` and return ZERO rows (verified: 23 NEW leads, all initialConsult=false).
+// The default ("deals") branch is the consulted pool (BE `status notIn [NEW, CONVERTED, ON_HOLD]`
+// + initialConsult:true). Default to "new" so the raw-lead pool is visible on landing.
 const SEGMENTS = {
   NEW: "new",
   DEALS: "deals",
@@ -82,17 +87,20 @@ export function LeadsPage() {
   // name/phone/email/code) and navigates straight to the picked lead — so the page no longer
   // maintains an id-only filter. `filters` stays empty here.
 
-  // `isNew` (new segment) and `status` (explicit dropdown selection) are TOP-LEVEL query params
-  // the BE list reads directly off searchParams (lead.usecase.js #buildListWhere), NOT from the
-  // JSON `filters`, so they are routed through the hook's `extra`. An explicit status selection
-  // wins over the segment default; otherwise the "new" segment sends isNew:true and "deals"
-  // sends nothing (BE applies its default status notIn [NEW, CONVERTED, ON_HOLD]).
+  // `noConsulted` (new segment) and `status` (explicit dropdown selection) are TOP-LEVEL query
+  // params the BE list reads directly off searchParams (lead.usecase.js #buildListWhere), NOT from
+  // the JSON `filters`, so they are routed through the hook's `extra`. An explicit status selection
+  // wins over the segment default; otherwise the "new" segment sends `noConsulted=true` (the only
+  // param that surfaces un-consulted raw leads past the BE's forced initialConsult:true) and
+  // "deals" sends nothing (BE applies its default status notIn [NEW, CONVERTED, ON_HOLD]).
+  // NOTE: the BE's noConsulted branch RESETS the where to `{ initialConsult:false }`, so an explicit
+  // status pick (which is meaningful only for the consulted/deals pool) takes precedence here.
   useEffect(() => {
     const next = {};
     if (statusFilter && statusFilter !== "ALL") {
       next.status = statusFilter;
     } else if (segment === SEGMENTS.NEW) {
-      next.isNew = true;
+      next.noConsulted = "true";
     }
     setExtra(next);
     // setExtra is a stable callback from the list hook.
@@ -230,7 +238,26 @@ export function LeadsPage() {
                     </TableCell>
                   )}
                   {visibleColumns.map((c) => (
-                    <TableCell key={c.field}>{c.accessor(row)}</TableCell>
+                    // Each data cell is a real anchor (NextLink) to the lead detail so the row
+                    // is genuinely link-navigable: plain click navigates, ctrl/cmd-click and
+                    // "open in new tab" work, middle-click works — no JS onClick/router.push.
+                    <TableCell key={c.field} sx={{ p: 0 }}>
+                      <MuiLink
+                        component={Link}
+                        href={`/v2/leads/${row.id}`}
+                        underline="none"
+                        color="inherit"
+                        sx={{
+                          display: "block",
+                          px: 2,
+                          py: 1,
+                          height: "100%",
+                          "&:hover": { textDecoration: "underline" },
+                        }}
+                      >
+                        {c.accessor(row)}
+                      </MuiLink>
+                    </TableCell>
                   ))}
                   <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">

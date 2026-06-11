@@ -37,7 +37,13 @@ const generateMuiShadows = (baseShadowColor, darkShadowColor) => {
 };
 
 const theme = createTheme({
-  direction: "rtl",
+  // RTL is produced by the emotion cache's stylis rtl plugin (see RtlCacheProvider),
+  // NOT by the theme. Mirrored from the working reference project, the theme direction
+  // is deliberately kept "ltr" so MUI does not flip its own logical properties a second
+  // time on top of the stylis transform (which would cancel out to LTR). The <html dir>
+  // is "rtl" (root layout) and the visual result is RTL. Looks counter-intuitive but is
+  // exactly how the reference's working RTL is wired.
+  direction: "ltr",
   palette: {
     primary: {
       main: colors.primary,
@@ -299,8 +305,8 @@ const theme = createTheme({
     // clicks/space — making the strip feel like "the arrow does nothing". Collapsing the disabled
     // button to display:none removes the dead hit-area and lets the live arrow (and the tabs behind
     // the phantom) take the click. Direction-agnostic and safe — only affects the already-invisible
-    // disabled state. RTL scroll-delta itself is handled correctly by MUI via the theme's
-    // direction:"rtl" (useRtl()), which this file sets.
+    // disabled state. RTL scroll-delta is handled by the emotion rtl stylis plugin + <html dir="rtl">
+    // (the theme direction itself is kept "ltr" to avoid a double-flip — see the note at theme top).
     MuiTabScrollButton: {
       styleOverrides: {
         root: {

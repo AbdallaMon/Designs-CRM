@@ -95,7 +95,9 @@ export default function RootLayout({ children }) {
         {/* SSR-aware RTL emotion cache (MUI's official App Router integration). Applies the
             stylis-plugin-rtl transform during the server render so RTL is correct on FIRST
             paint for EVERY route (login, dashboard, lead detail) with no LTR-flash / hydration
-            mismatch. Pairs with theme.direction:"rtl" and <html dir="rtl">. Implemented as a
+            mismatch. The flip is done by the stylis rtl plugin in the emotion cache + this
+            <html dir="rtl">; the MUI theme direction is kept "ltr" to avoid a double-flip
+            (mirrors the working reference project's wiring). Implemented as a
             Client Component because the rtl stylis plugin is a function and can't be passed as
             a prop from this Server Component layout. */}
         <RtlCacheProvider>
