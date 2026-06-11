@@ -96,12 +96,35 @@ commit, no token leak, layering respected, behavior preserved) → suite **571/3
 `src/.../booking-lead` repo `findByEmail` + relaxed create validation; `src/.../public-lead` register
 draft-placeholder defaults + complete-register client name/phone fix-up). Live-probed end-to-end.
 
-⏭️ **REMAINING — the destructive cutover phase (task #13). Runtime verification is DONE and all 4
-blockers are FIXED → this phase is now UNBLOCKED and ready to start:**
-  - Per-screen legacy `@role`-slot removal (`ui/src/app/(auth)/dashboard/(dashboard)/@*`) as each v2 route is
-    confirmed working in the browser; point the app entry at the v2 shell.
-  - Final cutover: retire the legacy Express routers + dual-cookie shim, rename `ui/ → web/`, wire workspaces.
-  - Verify boot + `npm test` (571/34) after each removal step.
+⏭️ **CUTOVER PHASE (task #13) — IN PROGRESS (2026-06-11). Gated steps A–E; A–C DONE + runtime-verified,
+D scoped (partly blocked), E needs a user checkpoint.**
+  - ✅ **Step A — entry flip** (`6d45f0b`) + proxy public-exemption fix (`3a5a82d`): `/` + post-login →
+    `/v2/dashboard`; `PROTECTED_PREFIXES` += `/v2`. **Caught+fixed a regression:** the server-side Next
+    middleware `ui/src/proxy.js` (named proxy.js, not middleware.js) gates `PROTECTED_PREFIXES` at the edge,
+    so adding `/v2` bounced the PUBLIC token surfaces to /login. Added `PUBLIC_V2_PREFIXES`
+    (`/v2/booking`, `/v2/contracts-sign`, `/v2/client-image-session`) exempted in proxy.js + constant.js.
+  - ✅ **Step B — legacy @role-slot removal** (`189f75b`): deleted `ui/src/app/(auth)/dashboard/` (105 files).
+    Kept `(auth)/(auth-group)/login` + `reset`.
+  - ✅ **Step C — redirect shells** (`d09ca57` + completion `9d2bd07`): FROZEN services hardcode legacy FE
+    PATHS via `OLDORIGIN` (OLDORIGIN/ORIGIN are SEPARATE origins, to be unified later under a base-domain
+    model — user decision 2026-06-11). So legacy paths are kept as thin server redirects → v2 (query/token
+    preserved), NOT deleted: `/contracts`,`/image-session`,`/booking`,`/dashboard`,`/dashboard/{deals,leads,
+    users,tasks,projects,notifications,work-stages/*}`. Work-stages id is a LEAD id → `/v2/leads/{id}`. Added
+    `v2/lib/forwardQuery.js` + `v2/lib/safeRedirect.js` (closed a login open-redirect found in review). Kept
+    `/chats` (legacy public client-chat — NO v2 equivalent yet).
+  - **RUNTIME-VERIFIED (shared-tester, real boot, Redis up):** 15/15 redirect routes correct; public v2
+    surfaces 200 (no login bounce) while authed-only → /login; admin login OK (role ADMIN, **123 perms /
+    23 modules**), `{items,total,page,pageSize}` shape confirmed. `npm test` 571/34, `next build` clean.
+  - ⏳ **Step D — legacy routers + single-cookie + CORS/cookie-domain.** SCOPED (Explore). **BLOCKED for full
+    router removal:** legacy `/chats` FE still calls legacy `/shared/chat/*` AND `/client/chat/*` via
+    `legacyApiFetch`; public client-chat has NO v2 equivalent → `/shared` + `/client` MUST stay until chat is
+    migrated. Unpinned + removable: `/utility`,`/staff`,`/admin`,`/accountant`. Single-cookie: keep the
+    legacy read-shim ≥4h window; **decouple `payments.usecase` backfill off `SECRET_KEY` → `BACKFILL_SECRET`
+    BEFORE dropping SECRET_KEY (else fail-open).** CORS: allow base-domain + any subdomain
+    (`ALLOWED_DOMAINS`); cookie `domain` from `COOKIE_DOMAIN` (no-op when ISLOCAL). Needs prod domain values.
+  - 🛑 **Step E — `ui/ → web/` rename + workspaces.** CHECKPOINT WITH USER before doing this.
+  - **Frozen services under `server/services/**` are lazy-imported by v2 and MUST NOT be deleted** (separate
+    from the legacy `server/routes/**` routers).
 
 **FOLLOW-UPS surfaced during the build (carry into a polish pass):**
   - `StatusChip` has no `notification`/`user`/`session` domain → Wave A/C used local labelled chips or
