@@ -30,6 +30,8 @@ import {
 } from "@/app/v2/shared/components";
 import { useLeadDetail } from "../hooks/useLeadDetail.js";
 import { LEAD_HUB_GROUPS, GATE } from "../config/leadHubTabs.js";
+import { resolveLeadEntry } from "../config/resolveLeadEntry.js";
+import { LeadOrientationBand } from "../components/LeadOrientationBand.jsx";
 import { LeadHubHeader } from "../components/LeadHubHeader.jsx";
 import { LeadRelatedRail } from "../components/LeadRelatedRail.jsx";
 import { OverviewTab } from "../components/tabs/OverviewTab.jsx";
@@ -111,11 +113,20 @@ export function LeadDetailsPage({ leadId }) {
     })).filter((group) => group.visibleSub.length > 0);
   }, [gates]);
 
+  // ── Role/status-adaptive DEFAULT landing — applied ONLY when the URL carries no ?tab/?sub
+  // (deep links + the rail must still win). Always validated against gates/visibleGroups inside
+  // the resolver, so a user can never be defaulted onto a tab they cannot see.
+  const entry = useMemo(
+    () => resolveLeadEntry(user, lead, gates, visibleGroups),
+    [user, lead, gates, visibleGroups],
+  );
+
   // ── URL state: ?tab=<group>&sub=<section>, both validated against the visible set.
   const activeGroup = useMemo(() => {
     const t = sp.get("tab");
-    return visibleGroups.some((g) => g.key === t) ? t : visibleGroups[0]?.key;
-  }, [sp, visibleGroups]);
+    if (visibleGroups.some((g) => g.key === t)) return t;
+    return entry.defaultGroup ?? visibleGroups[0]?.key;
+  }, [sp, visibleGroups, entry]);
 
   const currentGroup = useMemo(
     () => visibleGroups.find((g) => g.key === activeGroup),
@@ -125,8 +136,13 @@ export function LeadDetailsPage({ leadId }) {
   const activeSub = useMemo(() => {
     const s = sp.get("sub");
     const subs = currentGroup?.visibleSub ?? [];
-    return subs.some((x) => x.key === s) ? s : subs[0]?.key;
-  }, [sp, currentGroup]);
+    if (subs.some((x) => x.key === s)) return s;
+    // Use the role-adaptive default sub only when it belongs to the active group; else first sub.
+    if (entry.defaultGroup === activeGroup && subs.some((x) => x.key === entry.defaultSub)) {
+      return entry.defaultSub;
+    }
+    return subs[0]?.key;
+  }, [sp, currentGroup, entry, activeGroup]);
 
   const navigate = useCallback(
     (groupKey, subKey) => {
@@ -186,6 +202,16 @@ export function LeadDetailsPage({ leadId }) {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
+      <LeadOrientationBand
+        lead={lead}
+        canChangeStatus={caps.canChangeStatus}
+        beginner={beginner}
+        gates={gates}
+        user={user}
+        onNavigate={navigate}
+        onChanged={refetch}
+      />
+
       <LeadHubHeader
         lead={lead}
         leadId={leadId}

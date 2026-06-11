@@ -41,6 +41,12 @@ export const STATUS_LABELS = {
     DONE: "منجزة",
     CANCELLED: "ملغاة",
   },
+  // reminder: CallReminderStatus (call + meeting reminders).
+  reminder: {
+    IN_PROGRESS: "مجدول",
+    DONE: "تم",
+    MISSED: "فائت",
+  },
   session: {
     INITIAL: "مبدئية",
     PREVIEW_COLOR_PATTERN: "معاينة الألوان",

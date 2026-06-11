@@ -95,6 +95,13 @@ export const STATUS_DOMAINS = {
     DONE: "success",
     CANCELLED: "error",
   },
+  // reminder: CallReminderStatus (shared by call + meeting reminders). Enum values are
+  // IN_PROGRESS (scheduled / awaiting its result) · DONE · MISSED.
+  reminder: {
+    IN_PROGRESS: "warning",
+    DONE: "success",
+    MISSED: "error",
+  },
   session: {
     INITIAL: "neutral",
     PREVIEW_COLOR_PATTERN: "info",

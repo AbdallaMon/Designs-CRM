@@ -25,7 +25,17 @@ import {
 import { locateSection } from "../config/leadHubTabs.js";
 
 // The rail's cards, in order. `count` is read off the lead payload (a function, so a missing
-// path yields undefined → no number). `sectionKey` ties the card to a tab via leadHubTabs.
+// path yields undefined → no number, rendering "—"). `sectionKey` ties the card to a tab via
+// leadHubTabs.
+//
+// COUNT COVERAGE (lead detail payload — ADMIN_DETAIL_INCLUDE):
+//   payments / callReminders / meetingReminders → full arrays  ✅ real length.
+//   contracts → the payload includes ONLY IN_PROGRESS contracts capped at take:1 (it drives the
+//     stage strip), so its length is NOT a reliable total → kept "—" (needs a _count dto).
+//   projects → NOT in the lead payload at all (self-loaded by LeadProjects) → "—".
+//   sessions (imageSessions) → NOT in the lead detail payload (LeadSessionsPanel self-loads) → "—".
+// A backend-additive `_count: { projects, contracts, imageSessions }` on the lead detail dto
+// would let the last three show real numbers — see the page report.
 const RAIL_CARDS = [
   { sectionKey: "projects", label: "المشاريع", icon: <MdWork />, count: () => undefined },
   { sectionKey: "contracts", label: "العقود", icon: <MdDescription />, count: () => undefined },
