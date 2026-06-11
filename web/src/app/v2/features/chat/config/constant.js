@@ -38,3 +38,27 @@ export const chatMemberUrl = (roomId, memberId) =>
 export const chatFilesUrl = (roomId) => `${CHAT_BASE}/rooms/${roomId}/files`;
 export const chatFilesStatsUrl = (roomId) =>
   `${CHAT_BASE}/rooms/${roomId}/files/stats`;
+
+// ── Public client surface (token-based) ────────────────────────────────────────
+// The public client chat resolves to /v2/client/chat/* (apiFetch base is /v2). Every
+// read is authenticated by the per-room ?token=. Paths mirror the staff routes under a
+// `client/chat` prefix (server/src/modules/chat/client/client-chat.route.js).
+export const CLIENT_CHAT_BASE = "client/chat";
+export const clientValidateTokenUrl = () => `${CLIENT_CHAT_BASE}/rooms/validate-token`;
+export const clientRoomUrl = (roomId) => `${CLIENT_CHAT_BASE}/rooms/${roomId}`;
+export const clientMembersUrl = (roomId) =>
+  `${CLIENT_CHAT_BASE}/rooms/${roomId}/members`;
+export const clientFilesUrl = (roomId) => `${CLIENT_CHAT_BASE}/rooms/${roomId}/files`;
+export const clientMessagesUrl = (roomId) =>
+  `${CLIENT_CHAT_BASE}/${roomId}/messages`;
+export const clientMessagePageUrl = (roomId, messageId) =>
+  `${CLIENT_CHAT_BASE}/${roomId}/messages/${messageId}/page`;
+export const clientPinnedMessagesUrl = (roomId) =>
+  `${CLIENT_CHAT_BASE}/${roomId}/pinned-messages`;
+
+// ── User directory (add-members) ───────────────────────────────────────────────
+// v2 users module. GET /v2/users/chat-directory — admin → all users, non-admin →
+// related users. Returns { success, data:[...users] }. Optional ?projectId is
+// accepted-but-unused server-side (mirrors legacy). Replaces the legacy
+// /admin/all-users + /shared/all-related-chat-users pair.
+export const CHAT_DIRECTORY_URL = "users/chat-directory";

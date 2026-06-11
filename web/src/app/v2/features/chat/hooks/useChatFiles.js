@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import chatService from "../chat.service.js";
+import chatService, { clientChatService } from "../chat.service.js";
 import { useScroll } from "@/app/v2/hooks/useScroll";
 import { CHAT_LIMITS } from "../config/chatConstants.js";
 
@@ -17,7 +17,11 @@ function readFiles(res) {
 
 /** Chat room files with infinite scroll + type filter. Target list contract is
  *  { items, total, page, pageSize } (also reads the legacy { files, uniqueMonths }). */
-export function useChatFiles(roomId, { limit = CHAT_LIMITS.FILES, fileType = [] } = {}) {
+export function useChatFiles(
+  roomId,
+  { limit = CHAT_LIMITS.FILES, fileType = [], clientCtx = null } = {},
+) {
+  const token = clientCtx?.token ?? null;
   const [files, setFiles] = useState([]);
   const [uniqueMonths, setUniqueMonths] = useState({});
   const [loading, setLoading] = useState(false);
@@ -44,12 +48,15 @@ export function useChatFiles(roomId, { limit = CHAT_LIMITS.FILES, fileType = [] 
 
     setError(null);
     try {
-      const res = await chatService.listFiles(roomId, {
+      const params = {
         page: currentPage,
         limit: LIMIT,
         sort: "newest",
         ...(fileType?.length ? { type: fileType } : {}),
-      });
+      };
+      const res = token
+        ? await clientChatService.listFiles(roomId, token, params)
+        : await chatService.listFiles(roomId, params);
       const env = readFiles(res);
       setFiles((prev) => (append ? [...prev, ...env.items] : env.items));
       setUniqueMonths((prev) => ({ ...prev, ...env.uniqueMonths }));
@@ -63,7 +70,7 @@ export function useChatFiles(roomId, { limit = CHAT_LIMITS.FILES, fileType = [] 
       setLoadingMore(false);
       setInitialLoading(false);
     }
-  }, [roomId, limit, fileType, loading, loadingMore]);
+  }, [roomId, limit, fileType, loading, loadingMore, token]);
 
   const resetAll = useCallback(() => {
     setFiles([]);

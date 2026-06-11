@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import chatService from "../chat.service.js";
+import chatService, { clientChatService } from "../chat.service.js";
 import { chatEmit } from "../chat.socket.js";
 import { useSocket } from "@/app/v2/providers/SocketProvider";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
@@ -24,7 +24,7 @@ function readMessages(res) {
  * Migrated from the legacy useChatMessages; reads/writes go through chatService and
  * chatEmit (v2 socket) instead of legacy getData/socketIO.
  */
-export function useChatMessages(roomId, initialPage = 0) {
+export function useChatMessages(roomId, initialPage = 0, clientCtx = null) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(initialPage);
@@ -37,8 +37,12 @@ export function useChatMessages(roomId, initialPage = 0) {
   const [replayLoadingMessageId, setReplayLoadingMessageId] = useState(null);
   const [newMessagesCount, setNewMessagesCount] = useState(0);
 
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
   const { socket } = useSocket();
+  // In the public client surface there is no authed user — `clientCtx.actor` is the
+  // client-shaped identity (with .id) we emit as. The token drives the client REST reads.
+  const token = clientCtx?.token ?? null;
+  const actor = clientCtx?.actor ?? authUser;
   const scrollContainerRef = useRef(null);
   const pageRef = useRef(page);
   const messagesEndRef = useRef(null);
@@ -64,10 +68,10 @@ export function useChatMessages(roomId, initialPage = 0) {
       const setBusy = isLoadMore ? setLoadingMore : setLoading;
       setBusy(true);
       try {
-        const res = await chatService.listMessages(roomId, {
-          page: pageNum,
-          limit: forceLimit || LIMIT,
-        });
+        const params = { page: pageNum, limit: forceLimit || LIMIT };
+        const res = token
+          ? await clientChatService.listMessages(roomId, token, params)
+          : await chatService.listMessages(roomId, params);
         const { items: newMessages, total } = readMessages(res);
 
         if (pageNum === 0) setMessages(newMessages);
@@ -89,7 +93,7 @@ export function useChatMessages(roomId, initialPage = 0) {
         setBusy(false);
       }
     },
-    [roomId, LIMIT], // eslint-disable-line react-hooks/exhaustive-deps
+    [roomId, LIMIT, token], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   useEffect(() => { pageRef.current = page; }, [page]);
@@ -136,7 +140,9 @@ export function useChatMessages(roomId, initialPage = 0) {
     setLoadingJumpToMessage(true);
     try {
       if (checkIfMessageExistsAndJump(messageId)) return;
-      const req = await chatService.getMessagePage(roomId, messageId, { limit: LIMIT });
+      const req = token
+        ? await clientChatService.getMessagePage(roomId, messageId, token, { limit: LIMIT })
+        : await chatService.getMessagePage(roomId, messageId, { limit: LIMIT });
       let lastReq;
       const messagePage = req?.data?.page ?? req?.page;
       if (messagePage != null) {
@@ -158,16 +164,16 @@ export function useChatMessages(roomId, initialPage = 0) {
   const sendMessage = async (messageData) => {
     if (!roomId) return null;
     chatEmit.sendMessage(socket, {
-      data: { ...messageData, roomId, user, userId: user.id },
+      data: { ...messageData, roomId, user: actor, userId: actor?.id },
     });
     return null;
   };
   const editMessage = async (messageId, content) => {
-    chatEmit.editMessage(socket, { roomId, messageId, content, userId: user.id });
+    chatEmit.editMessage(socket, { roomId, messageId, content, userId: actor?.id });
     return null;
   };
   const deleteMessage = async (messageId) => {
-    chatEmit.deleteMessage(socket, { messageId, roomId, userId: user.id });
+    chatEmit.deleteMessage(socket, { messageId, roomId, userId: actor?.id });
     return null;
   };
   const deleteSelectedMessages = async (selectedMessages) => {

@@ -24,7 +24,7 @@ const FILE_TYPE_CATEGORIES = [
   { label: "مستندات", value: "document" },
 ];
 
-export function ChatFilesTab({ roomId, currentTab, setCurrentTab }) {
+export function ChatFilesTab({ roomId, currentTab, setCurrentTab, clientCtx = null }) {
   const [selectedType, setSelectedType] = useState([]);
   const {
     loading,
@@ -35,7 +35,7 @@ export function ChatFilesTab({ roomId, currentTab, setCurrentTab }) {
     scrollContainerRef,
     filesEndRef,
     files,
-  } = useChatFiles(roomId, { fileType: selectedType });
+  } = useChatFiles(roomId, { fileType: selectedType, clientCtx });
 
   const canLoadMore = hasMore && !loadingMore && !initialLoading && !loading;
 

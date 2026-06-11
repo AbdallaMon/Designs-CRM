@@ -22,7 +22,7 @@ import { ChatWindowHeader } from "./ChatWindowHeader.jsx";
 import { PinnedMessages } from "./PinnedMessages.jsx";
 import { useChatMessages, useChatMembers, useChatRoom } from "../../hooks";
 import { useChatSocket, chatEmit } from "../../chat.socket.js";
-import chatService from "../../chat.service.js";
+import chatService, { clientChatService } from "../../chat.service.js";
 import { runChatMutation } from "../../chat.mutations.js";
 import { isAdminRole } from "../../chat.utils.js";
 
@@ -33,10 +33,22 @@ export function ChatWindow({
   isMobile = false,
   onRoomActivity = () => {},
   reFetchRooms = () => {},
+  // Public client surface: `{ token, clientId, client }`. When present the window runs
+  // in client mode — reads go through /v2/client/chat (token-based) and the acting
+  // identity is the client member instead of the authed user.
+  clientContext = null,
 }) {
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
   const { socket } = useSocket();
   const { hasPermission } = usePermission();
+
+  const isClient = Boolean(clientContext?.token);
+  // The actor is whoever the socket/UI acts as. Staff → authed user; client → the
+  // client member (shaped like a user, carries .id) resolved from the token.
+  const user = isClient ? clientContext.client : authUser;
+  const clientCtx = isClient
+    ? { token: clientContext.token, actor: clientContext.client }
+    : null;
 
   const [showAddMembers, setShowAddMembers] = useState(false);
   const [availableUsers, setAvailableUsers] = useState([]);
@@ -56,7 +68,7 @@ export function ChatWindow({
   const [selectedMessages, setSelectedMessages] = useState([]);
   const [openForwardDialog, setOpenForwardDialog] = useState(false);
 
-  const { room, loading: loadingRoom, fetchChatRoom, error } = useChatRoom(roomId);
+  const { room, loading: loadingRoom, fetchChatRoom, error } = useChatRoom(roomId, clientCtx);
 
   // ── Confirm dialog plumbing ──
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -102,9 +114,9 @@ export function ChatWindow({
     setNewMessagesCount,
     loadMore,
     deleteSelectedMessages,
-  } = useChatMessages(roomId, 0);
+  } = useChatMessages(roomId, 0, clientCtx);
 
-  const { members, fetchMembers } = useChatMembers(roomId, showAddMembers);
+  const { members, fetchMembers } = useChatMembers(roomId, showAddMembers, clientCtx);
   const cantLoad = !hasMore || loadingMore || initialLoading || loading;
   const currentUserMember = members?.find((m) => m.userId === user?.id);
   const currentUserRole = currentUserMember?.role || "MEMBER";
@@ -113,26 +125,36 @@ export function ChatWindow({
     if (!roomId) return;
     setLoadingPinnedMessages(true);
     try {
-      const res = await chatService.listPinnedMessages(roomId);
+      const res = isClient
+        ? await clientChatService.listPinnedMessages(roomId, clientCtx.token)
+        : await chatService.listPinnedMessages(roomId);
       setPinnedMessages(res?.data ?? []);
     } finally {
       setLoadingPinnedMessages(false);
     }
-  }, [roomId]);
+  }, [roomId, isClient]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (roomId) fetchPinnedMessages();
   }, [roomId, fetchPinnedMessages]);
 
-  // join room on socket
+  // join room on socket — clients join via the client-scoped event (clientId), staff
+  // via the user event (matching the legacy client/staff socket join split).
   useEffect(() => {
-    if (roomId && user && socket?.connected) chatEmit.joinRoom(socket, roomId, user);
-  }, [roomId, user, socket, socket?.connected]);
+    if (!roomId || !socket?.connected) return;
+    if (isClient) {
+      if (clientContext?.clientId)
+        chatEmit.joinRoomAsClient(socket, roomId, clientContext.clientId);
+    } else if (user) {
+      chatEmit.joinRoom(socket, roomId, user);
+    }
+  }, [roomId, user, socket, socket?.connected, isClient]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // mark room read on open (POST /rooms/:id/read) — gated by MESSAGE_SEND.
+  // mark room read on open (POST /rooms/:id/read) — gated by MESSAGE_SEND. Skipped in
+  // client mode (no auth; clients have no read-receipt endpoint over REST).
   // BE derives the user from auth; no body is needed (it ignores userId).
   useEffect(() => {
-    if (roomId && hasPermission(PERMISSIONS.CHAT.MESSAGE_SEND)) {
+    if (!isClient && roomId && hasPermission(PERMISSIONS.CHAT.MESSAGE_SEND)) {
       chatService.readRoom(roomId, {}).catch(() => {});
     }
   }, [roomId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -161,7 +183,7 @@ export function ChatWindow({
       if (data.roomId === roomId) {
         setMessages((prev) => [...prev, data]);
         onRoomActivity?.(data);
-        chatEmit.markMessageRead(socket, roomId, data.id, user.id);
+        chatEmit.markMessageRead(socket, roomId, data.id, user?.id);
         setNewMessagesCount((p) => p + 1);
         inputRef.current?.focus();
         window.setTimeout(() => scrollToBottom(), 100);
@@ -178,7 +200,7 @@ export function ChatWindow({
         setMessages((prev) => prev.map((m) => (m.id === data.messageId ? { ...m, isDeleted: true } : m)));
     },
     onTyping: (data) => {
-      if (data.roomId === roomId && data.userId !== user.id) {
+      if (data.roomId === roomId && data.userId !== user?.id) {
         const key = `${data.userId}:${data.roomId}`;
         setTypingUsers((prev) => {
           const map = new Map(prev.map((u) => [`${u.userId}:${u.roomId}`, u]));
@@ -197,7 +219,7 @@ export function ChatWindow({
       }
     },
     onMemberRoleUpdated: (data) => {
-      if (data.userId === user.id && data.roomId === roomId) {
+      if (data.userId === user?.id && data.roomId === roomId) {
         fetchMembers();
         fetchChatRoom();
       }
@@ -215,8 +237,13 @@ export function ChatWindow({
     hasPermission(PERMISSIONS.CHAT.MEMBER_MANAGE) &&
     Boolean(room?.capabilities?.canManageMembers) &&
     isNotDirectChat;
-  const isCurrentUserAdmin = isAdminRole(user) || room?.createdBy?.id === user.id;
-  const isMember = members?.some((m) => m.userId === user.id);
+  const isCurrentUserAdmin =
+    !isClient && (isAdminRole(user) || room?.createdBy?.id === user?.id);
+  // Clients are members of the room by virtue of holding a valid room token; staff
+  // membership is matched on the user id.
+  const isMember = isClient
+    ? true
+    : members?.some((m) => m.userId === user?.id);
 
   const handleSendMessage = async (content, fileData) => {
     const messageData = {
@@ -287,19 +314,15 @@ export function ChatWindow({
     [roomId, user?.id, socket],
   );
 
-  // available users for add-members. The users module is not migrated to /v2, so the
-  // directory is served by the LEGACY base via chatService.listDirectoryUsers
-  // (admin/all-users for admins, shared/all-related-chat-users for normal users).
-  // Legacy returns the user array directly under response.data.
-  // TODO: switch to /v2/users when users module migrates.
+  // available users for add-members. Served by the v2 users module via
+  // chatService.listDirectoryUsers → GET /v2/users/chat-directory. The server scopes
+  // by the authed caller's role (admin → all users, non-admin → related), returning
+  // the user array under response.data.
   const loadAvailableUsers = useCallback(async () => {
     if (!isNotDirectChat || !canManageMembers) return;
     setLoadingUsers(true);
     try {
-      const res = await chatService.listDirectoryUsers({
-        isAdmin: isAdminRole(user),
-        projectId,
-      });
+      const res = await chatService.listDirectoryUsers({ projectId });
       const list = Array.isArray(res?.data) ? res.data : (res?.data?.items ?? []);
       const alreadyMembers = members.filter((m) => m.userId).map((m) => m.userId);
       setAvailableUsers(list.filter((u) => !alreadyMembers.includes(u.id)));
@@ -390,7 +413,7 @@ export function ChatWindow({
               <ChatMessage
                 key={msg.id}
                 message={msg}
-                currentUserId={user.id}
+                currentUserId={user?.id}
                 isCurrentUserAdmin={isCurrentUserAdmin}
                 currentUserRole={currentUserRole}
                 pinnedMessages={pinnedMessages}
@@ -426,15 +449,17 @@ export function ChatWindow({
           room={room}
           inputRef={inputRef}
           disabled={
-            !hasPermission(PERMISSIONS.CHAT.MESSAGE_SEND) ||
-            (!isMember && !isCurrentUserAdmin) ||
-            (!isCurrentUserAdmin && !room.isChatEnabled)
+            isClient
+              ? room?.isChatEnabled === false
+              : !hasPermission(PERMISSIONS.CHAT.MESSAGE_SEND) ||
+                (!isMember && !isCurrentUserAdmin) ||
+                (!isCurrentUserAdmin && !room.isChatEnabled)
           }
           onTyping={emitTyping}
         />
       </Box>
 
-      <ChatFilesTab roomId={roomId} currentTab={currentTab} setCurrentTab={setCurrentTab} />
+      <ChatFilesTab roomId={roomId} currentTab={currentTab} setCurrentTab={setCurrentTab} clientCtx={clientCtx} />
 
       <MultiActions
         selectedMessages={selectedMessages}

@@ -1,23 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import chatService from "../chat.service.js";
+import chatService, { clientChatService } from "../chat.service.js";
 
-export function useChatMembers(roomId, refetchKey) {
+export function useChatMembers(roomId, refetchKey, clientCtx = null) {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const token = clientCtx?.token ?? null;
 
   const fetchMembers = useCallback(async () => {
     if (!roomId) return;
     setLoading(true);
     try {
-      const res = await chatService.listMembers(roomId);
+      const res = token
+        ? await clientChatService.listMembers(roomId, token)
+        : await chatService.listMembers(roomId);
       const data = res?.data;
       setMembers(Array.isArray(data) ? data : (data?.items ?? []));
     } finally {
       setLoading(false);
     }
-  }, [roomId]);
+  }, [roomId, token]);
 
   useEffect(() => {
     if (roomId) fetchMembers();
