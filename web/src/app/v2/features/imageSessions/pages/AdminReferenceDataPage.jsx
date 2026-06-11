@@ -26,6 +26,7 @@ import { imageSessionsMessages } from "../config/imageSessionsMessages.js";
 import { columnsFor } from "../config/adminReferenceColumns.js";
 import { ReferenceFormDialog } from "../components/ReferenceFormDialog.jsx";
 import { ProsConsReorder } from "../components/ProsConsReorder.jsx";
+import { UploadImageDialog } from "../components/UploadImageDialog.jsx";
 
 const P = PERMISSIONS.IMAGE_SESSION;
 
@@ -69,6 +70,7 @@ function ReferenceTab({ type, canManage }) {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [prosConsFor, setProsConsFor] = useState(null); // row owning the pros/cons dialog
+  const [uploadMode, setUploadMode] = useState(null); // "single" | "bulk" | null (images tab)
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -99,7 +101,8 @@ function ReferenceTab({ type, canManage }) {
 
   const columns = useMemo(() => columnsFor(type.key, type.model), [type.key, type.model]);
   const prosConsType = PROS_CONS_TYPES[type.key];
-  const editable = type.key !== "images"; // images use the bespoke uploader (out of scope here)
+  const isImages = type.key === "images";
+  const editable = !isImages; // images use the bespoke uploader (UploadImageDialog), not the form
 
   function renderRowActions(row) {
     if (!canManage) return null;
@@ -128,7 +131,16 @@ function ReferenceTab({ type, canManage }) {
       <SectionCard
         title={type.label}
         actions={
-          canManage && editable ? (
+          canManage && isImages ? (
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <Button variant="contained" startIcon={<MdAdd />} onClick={() => setUploadMode("single")}>
+                إضافة صورة
+              </Button>
+              <Button variant="outlined" startIcon={<MdAdd />} onClick={() => setUploadMode("bulk")}>
+                إضافة صور (متعددة)
+              </Button>
+            </Box>
+          ) : canManage && editable ? (
             <Button
               variant="contained"
               startIcon={<MdAdd />}
@@ -166,6 +178,15 @@ function ReferenceTab({ type, canManage }) {
           type={type}
           initial={editing}
           onClose={() => setFormOpen(false)}
+          onSaved={fetchItems}
+        />
+      )}
+
+      {canManage && isImages && (
+        <UploadImageDialog
+          open={Boolean(uploadMode)}
+          mode={uploadMode || "single"}
+          onClose={() => setUploadMode(null)}
           onSaved={fetchItems}
         />
       )}

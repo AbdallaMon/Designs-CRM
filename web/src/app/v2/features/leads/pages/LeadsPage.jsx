@@ -30,9 +30,11 @@ import {
   Stack,
   Tab,
   Tabs,
+  ToggleButton,
+  ToggleButtonGroup,
   Tooltip,
 } from "@mui/material";
-import { MdOpenInNew, MdRefresh, MdGroupAdd } from "react-icons/md";
+import { MdOpenInNew, MdRefresh, MdGroupAdd, MdViewList, MdViewKanban } from "react-icons/md";
 import Link from "next/link";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
@@ -48,8 +50,13 @@ import { leadsMessages } from "../config/leadsMessages.js";
 import { LeadAssignActions } from "../components/LeadAssignActions.jsx";
 import { LeadSearchAutocomplete } from "../components/LeadSearchAutocomplete.jsx";
 import { BulkConvertModal } from "../components/BulkConvertModal.jsx";
+import { LeadsKanban } from "../components/LeadsKanban.jsx";
 
 const P = PERMISSIONS.LEAD;
+
+// List vs Kanban view — persisted across sessions so a user lands on their preferred view.
+const VIEW_STORAGE_KEY = "v2.leads.view";
+const VIEWS = { LIST: "list", KANBAN: "kanban" };
 
 // Top-level segment: "new" surfaces the un-consulted raw-lead pool. The BE list ALWAYS
 // forces `initialConsult: true` (lead.usecase.js #buildListWhere sets checkConsult:true
@@ -69,6 +76,23 @@ export function LeadsPage() {
   const router = useRouter();
   const canList = hasPermission(P.LIST);
   const canBulkConvert = hasPermission(P.ASSIGN_OTHER);
+
+  // List vs Kanban view. Persisted to localStorage; read lazily on mount (SSR-safe — the
+  // initial render is "list", then we hydrate the stored choice in an effect to avoid a
+  // server/client mismatch).
+  const [view, setView] = useState(VIEWS.LIST);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
+    if (stored === VIEWS.LIST || stored === VIEWS.KANBAN) setView(stored);
+  }, []);
+  function onViewChange(_e, value) {
+    // ToggleButtonGroup fires null when the active button is re-clicked; ignore that.
+    if (!value) return;
+    setView(value);
+    if (typeof window !== "undefined") window.localStorage.setItem(VIEW_STORAGE_KEY, value);
+  }
+  const isKanban = view === VIEWS.KANBAN;
 
   // Default to the "new" segment so freshly-created client leads (status NEW) are visible.
   const [segment, setSegment] = useState(SEGMENTS.NEW);
@@ -229,15 +253,31 @@ export function LeadsPage() {
 
       <PageHeader
         title="العملاء المحتملون"
-        subtitle={`الإجمالي: ${total}`}
+        subtitle={isKanban ? "لوحة الصفقات" : `الإجمالي: ${total}`}
         breadcrumbs={[{ label: "المبيعات" }, { label: "العملاء المحتملون" }]}
       >
+        <ToggleButtonGroup
+          value={view}
+          exclusive
+          onChange={onViewChange}
+          size="small"
+          aria-label="طريقة العرض"
+        >
+          <ToggleButton value={VIEWS.LIST} aria-label="عرض قائمة">
+            <MdViewList style={{ marginInlineEnd: 6 }} />
+            قائمة
+          </ToggleButton>
+          <ToggleButton value={VIEWS.KANBAN} aria-label="عرض لوحة">
+            <MdViewKanban style={{ marginInlineEnd: 6 }} />
+            لوحة
+          </ToggleButton>
+        </ToggleButtonGroup>
         <LeadSearchAutocomplete
           onSelect={(lead) => {
             if (lead?.id != null) router.push(`/v2/leads/${lead.id}`);
           }}
         />
-        {canBulkConvert && (
+        {!isKanban && canBulkConvert && (
           <Tooltip title="تحويل العملاء المحددين تحويلاً جماعياً">
             <span>
               <Button
@@ -252,13 +292,19 @@ export function LeadsPage() {
             </span>
           </Tooltip>
         )}
-        <Tooltip title="تحديث">
-          <IconButton onClick={refetch}>
-            <MdRefresh />
-          </IconButton>
-        </Tooltip>
+        {!isKanban && (
+          <Tooltip title="تحديث">
+            <IconButton onClick={refetch}>
+              <MdRefresh />
+            </IconButton>
+          </Tooltip>
+        )}
       </PageHeader>
 
+      {isKanban ? (
+        <LeadsKanban />
+      ) : (
+        <>
       {/* Segment selector. When an explicit status filter is active it takes precedence over the
           segment default (the BE status param overrides the noConsulted branch), so the tabs are
           visually deactivated and a "مفلتر حسب الحالة" chip explains why — making the precedence
@@ -312,6 +358,8 @@ export function LeadsPage() {
           empty={empty}
         />
       </Box>
+        </>
+      )}
     </Container>
   );
 }

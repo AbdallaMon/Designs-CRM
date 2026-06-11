@@ -7,6 +7,7 @@
 import apiFetch from "@/app/v2/lib/api/ApiFetch";
 import {
   LEADS_URL,
+  LEADS_COLUMNS_URL,
   LEADS_CALLS_URL,
   LEADS_MEETINGS_URL,
   LEADS_ASSIGN_URL,
@@ -49,6 +50,22 @@ export const leadsService = {
   listLeads: (opts = {}) => apiFetch.get(buildListQuery(LEADS_URL, opts)),
   listCalls: (opts = {}) => apiFetch.get(buildListQuery(LEADS_CALLS_URL, opts)),
   listMeetings: (opts = {}) => apiFetch.get(buildListQuery(LEADS_MEETINGS_URL, opts)),
+
+  // ── kanban / board ───────────────────────────────────────────────────────────
+  // GET /columns is a PER-STATUS aggregator: it returns the leads for a SINGLE column
+  // (the legacy KanbanLeadsStatus board fetched one request per status). The BE reads
+  // `status` off the top level and `filters` as a JSON string. Envelope shape:
+  //   data: { data: [...leads(+capabilities.*)], totalValue, totalLeads }.
+  // The Kanban board fires one call per visible column.
+  listColumns: ({ status, filters = {}, search = "", extra = {} } = {}) =>
+    apiFetch.get(
+      buildListQuery(LEADS_COLUMNS_URL, {
+        // columns endpoint has no page/limit; only status + filters + extra are read.
+        filters,
+        search,
+        extra: { status, ...extra },
+      }),
+    ),
 
   // ── detail ──────────────────────────────────────────────────────────────────────
   getLead: (id) => apiFetch.get(leadUrl(id)),

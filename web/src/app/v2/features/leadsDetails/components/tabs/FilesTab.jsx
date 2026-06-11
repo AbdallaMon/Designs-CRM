@@ -1,11 +1,13 @@
 "use client";
 
-// Files tab — lists the lead's files and exposes the Add-file dialog (header add-button; chunk
-// upload + POST /:id/files). Gated on canAddFile (unchanged). Body = shared LeadRecordList; the
-// filename is a MuiLink opening in a new tab; the icon adapts to the file type.
+// Files tab — splits the lead's files into two sections like legacy: "ملفات النظام"
+// (staff/system uploads, file.isUserFile !== false) and "ملفات العميل" (client uploads,
+// file.isUserFile === false), each its own LeadRecordList with a count. The Add-file dialog
+// (gated on canAddFile) lives on the system section. The filename is a MuiLink opening in a
+// new tab; the icon adapts to the file type. Graceful when isUserFile is missing (→ system).
 
-import { Link as MuiLink, Typography } from "@mui/material";
-import { MdInsertDriveFile, MdImage, MdPictureAsPdf, MdAttachFile } from "react-icons/md";
+import { Stack, Link as MuiLink, Typography } from "@mui/material";
+import { MdInsertDriveFile, MdImage, MdPictureAsPdf, MdAttachFile, MdPerson } from "react-icons/md";
 import dayjs from "dayjs";
 import { LeadRecordList } from "../LeadRecordList.jsx";
 import { AddFileDialog } from "../dialogs/AddFileDialog.jsx";
@@ -19,49 +21,74 @@ function fileIconFor(file) {
   return <MdAttachFile />;
 }
 
+// A file is a "client" file only when isUserFile is explicitly false. Missing/undefined →
+// treat as a system file (graceful default, matches legacy where staff files are the norm).
+const isClientFile = (f) => f?.isUserFile === false;
+
+function renderPrimary(f) {
+  const label = f.name || f.url || "—";
+  return f.url ? (
+    <MuiLink
+      href={f.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      underline="hover"
+      sx={{ fontWeight: 500, display: "inline-flex", alignItems: "center", gap: 0.5 }}
+    >
+      <span style={{ display: "inline-flex", fontSize: 18 }}>{fileIconFor(f)}</span>
+      {label}
+    </MuiLink>
+  ) : (
+    <Typography variant="body1" sx={{ fontWeight: 500 }}>
+      {label}
+    </Typography>
+  );
+}
+
+function renderSecondary(f) {
+  return (
+    <Typography variant="body2" color="text.secondary" component="span">
+      {f.description ? `${f.description} · ` : ""}
+      {f.createdAt ? dayjs(f.createdAt).format("YYYY-MM-DD") : ""}
+    </Typography>
+  );
+}
+
 export function FilesTab({ lead, onChanged }) {
   const caps = lead?.capabilities ?? {};
   const files = Array.isArray(lead?.files) ? lead.files : [];
 
+  const clientFiles = files.filter(isClientFile);
+  const systemFiles = files.filter((f) => !isClientFile(f));
+
   return (
-    <LeadRecordList
-      title="المرفقات"
-      icon={<MdAttachFile />}
-      items={files}
-      headerAction={
-        <AddFileDialog lead={lead} canAdd={caps.canAddFile} onCreated={onChanged} />
-      }
-      renderPrimary={(f) => {
-        const label = f.name || f.url || "—";
-        return f.url ? (
-          <MuiLink
-            href={f.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            underline="hover"
-            sx={{ fontWeight: 500, display: "inline-flex", alignItems: "center", gap: 0.5 }}
-          >
-            <span style={{ display: "inline-flex", fontSize: 18 }}>{fileIconFor(f)}</span>
-            {label}
-          </MuiLink>
-        ) : (
-          <Typography variant="body1" sx={{ fontWeight: 500 }}>
-            {label}
-          </Typography>
-        );
-      }}
-      renderSecondary={(f) => (
-        <Typography variant="body2" color="text.secondary" component="span">
-          {f.description ? `${f.description} · ` : ""}
-          {f.createdAt ? dayjs(f.createdAt).format("YYYY-MM-DD") : ""}
-        </Typography>
-      )}
-      emptyTitle="لا توجد مرفقات"
-      emptyDescription={
-        caps.canAddFile
-          ? "أرفق ملفاً (صورة، PDF، مستند) متعلقاً بهذا العميل."
-          : "لم يُرفق أي ملف لهذا العميل بعد."
-      }
-    />
+    <Stack spacing={3}>
+      <LeadRecordList
+        title={`ملفات النظام (${systemFiles.length})`}
+        icon={<MdAttachFile />}
+        items={systemFiles}
+        headerAction={
+          <AddFileDialog lead={lead} canAdd={caps.canAddFile} onCreated={onChanged} />
+        }
+        renderPrimary={renderPrimary}
+        renderSecondary={renderSecondary}
+        emptyTitle="لا توجد ملفات نظام"
+        emptyDescription={
+          caps.canAddFile
+            ? "أرفق ملفاً (صورة، PDF، مستند) متعلقاً بهذا العميل."
+            : "لم يُرفق أي ملف من قبل الفريق بعد."
+        }
+      />
+
+      <LeadRecordList
+        title={`ملفات العميل (${clientFiles.length})`}
+        icon={<MdPerson />}
+        items={clientFiles}
+        renderPrimary={renderPrimary}
+        renderSecondary={renderSecondary}
+        emptyTitle="لا توجد ملفات من العميل"
+        emptyDescription="لم يرفع العميل أي ملف بعد."
+      />
+    </Stack>
   );
 }
