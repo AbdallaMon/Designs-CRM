@@ -24,7 +24,7 @@ export function SocketProvider({ children, clientId }) {
       ? { userId: user.id, type: "user" }
       : { clientId, type: "client" };
 
-    const newSocket = initSocket(config.legacyApiUrl, { query });
+    const newSocket = initSocket(config.socketUrl, { query });
     socketRef.current = newSocket;
     setSocket(newSocket);
 

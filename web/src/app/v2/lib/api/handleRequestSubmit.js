@@ -1,6 +1,6 @@
 import { toast } from "react-toastify";
 import { Failed, Success } from "@/app/v2/lib/toast/toastUtils";
-import apiFetch, { legacyApiFetch } from "./ApiFetch";
+import apiFetch from "./ApiFetch";
 
 export async function handleRequestSubmit({
   data,
@@ -11,13 +11,12 @@ export async function handleRequestSubmit({
   setRedirect,
   method = "POST",
   header,
-  legacy = false,
 }) {
   const toastId = toast.loading(toastMessage);
   setLoading(true);
 
   try {
-    const response = await (legacy ? legacyApiFetch : apiFetch).submit(
+    const response = await apiFetch.submit(
       method,
       path,
       data,
