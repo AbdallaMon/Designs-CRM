@@ -191,6 +191,20 @@ const theme = createTheme({
   },
   shadows: generateMuiShadows(colors.shadow, colors.shadowDark),
   components: {
+    // Respect the OS "reduce motion" preference globally — kills our hover transitions (and any
+    // MUI transitions) for users who ask for it. Light, no layout-shifting animation anywhere.
+    MuiCssBaseline: {
+      styleOverrides: {
+        "@media (prefers-reduced-motion: reduce)": {
+          "*, *::before, *::after": {
+            transitionDuration: "0.01ms !important",
+            animationDuration: "0.01ms !important",
+            animationIterationCount: "1 !important",
+            scrollBehavior: "auto !important",
+          },
+        },
+      },
+    },
     MuiContainer: {
       defaultProps: {
         maxWidth: "xxl",
@@ -198,6 +212,11 @@ const theme = createTheme({
     },
     MuiPaper: {
       styleOverrides: {
+        // Softer modern radius — `rounded` (not `root`) so square/0-radius Paper variants and the
+        // AppBar/Drawer surfaces are unaffected; SectionCard/ChartCard (Paper-based) inherit it.
+        rounded: {
+          borderRadius: 16,
+        },
         root: {
           backgroundColor: colors.paperBg,
           backgroundImage: "none",
@@ -211,8 +230,32 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: colors.paperBg,
-          borderRadius: 12,
+          borderRadius: 16,
           boxShadow: `0 2px 8px ${colors.shadow}`,
+        },
+      },
+    },
+    MuiButtonBase: {
+      styleOverrides: {
+        // Subtle hover feedback for every clickable base (buttons, list items, tabs). No
+        // layout-shift — only color/background/shadow ease. Self-guarded with a media query so it
+        // respects "reduce motion" even if MuiCssBaseline isn't mounted (it currently isn't).
+        root: {
+          transition:
+            "background-color 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease",
+          "@media (prefers-reduced-motion: reduce)": {
+            transition: "none",
+          },
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          transition: "background-color 160ms ease, color 160ms ease, border-color 160ms ease",
+          "@media (prefers-reduced-motion: reduce)": {
+            transition: "none",
+          },
         },
       },
     },

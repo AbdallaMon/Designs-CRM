@@ -16,7 +16,7 @@
 // STILL DEFERRED (reported): Tasks/Modifications, Lead updates, Chats — other not-yet-migrated
 // FE modules, out of scope.
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { Box, Container, Tab, Tabs } from "@mui/material";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { usePermission } from "@/app/v2/hooks/usePermission";
@@ -29,6 +29,7 @@ import {
   SectionCard,
 } from "@/app/v2/shared/components";
 import { useLeadDetail } from "../hooks/useLeadDetail.js";
+import { pushRecentLead } from "@/app/v2/features/shell/hooks/useRecentLeads.js";
 import { LEAD_HUB_GROUPS, GATE } from "../config/leadHubTabs.js";
 import { resolveLeadEntry } from "../config/resolveLeadEntry.js";
 import { LeadOrientationBand } from "../components/LeadOrientationBand.jsx";
@@ -66,6 +67,11 @@ export function LeadDetailsPage({ leadId }) {
   const canViewContracts = hasPermission(PERMISSIONS.CONTRACT.LIST);
 
   const { lead, isLoading, error, refetch } = useLeadDetail(leadId, { autoFetch: canView });
+
+  // Record this lead as recently-viewed (feeds the WorkspacePanel "آخر العملاء" block).
+  useEffect(() => {
+    if (lead?.id != null) pushRecentLead({ id: lead.id, name: lead.client?.name });
+  }, [lead?.id, lead?.client?.name]);
 
   const router = useRouter();
   const pathname = usePathname();

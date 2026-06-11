@@ -25,7 +25,7 @@ export function SectionCard({
 }) {
   const hasHeader = Boolean(title || actions);
   return (
-    <Card sx={{ borderRadius: 3, ...sx }}>
+    <Card sx={{ borderRadius: 2, ...sx }}>
       {hasHeader && (
         <>
           <Stack

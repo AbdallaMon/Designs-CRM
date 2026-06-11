@@ -11,12 +11,14 @@
 import NextLink from "next/link";
 import {
   Box,
+  Divider,
   List,
   ListItemButton,
-  ListItemIcon,
   ListItemText,
+  ListItemIcon,
   Typography,
 } from "@mui/material";
+import { useRecentLeads } from "../hooks/useRecentLeads.js";
 
 const PANEL_WIDTH = 240;
 
@@ -26,7 +28,12 @@ export function WorkspacePanel({
   isActiveHref, // (href) => boolean
   onNavigate, // optional — close the mobile drawer on select
 }) {
+  const recentLeads = useRecentLeads();
+
   if (!workspace || !items || items.length === 0) return null;
+
+  // Recent-leads block only makes sense inside the sales workspace; elsewhere it'd be noise.
+  const showRecent = workspace.key === "sales" && recentLeads.length > 0;
 
   return (
     <Box
@@ -92,12 +99,56 @@ export function WorkspacePanel({
         })}
       </List>
 
-      {/* Placeholder for a future "pinned / recent" block (UX plan). Intentionally not
-          wired to a data fetch yet — kept here so the slot is reserved in the layout.
-      <Divider sx={{ my: 2 }} />
-      <Typography variant="overline" sx={{ px: 2.5 }}>المثبّتة / الأخيرة</Typography>
-      <PinnedRecentList />
-      */}
+      {/* Recent leads — populated from localStorage by the lead-detail page (useRecentLeads /
+          pushRecentLead). Sales workspace only; renders nothing when there's nothing to show. */}
+      {showRecent && (
+        <Box component="section" aria-label="آخر العملاء">
+          <Divider sx={{ my: 1.5, mx: 1 }} />
+          <Typography
+            variant="overline"
+            component="h3"
+            sx={{ px: 2.5, display: "block", color: "text.secondary" }}
+          >
+            آخر العملاء
+          </Typography>
+          <List dense disablePadding sx={{ mt: 0.5, px: 1 }}>
+            {recentLeads.map((lead) => {
+              const href = `/v2/leads/${lead.id}`;
+              const active = isActiveHref(href);
+              return (
+                <ListItemButton
+                  key={lead.id}
+                  component={NextLink}
+                  href={href}
+                  selected={active}
+                  onClick={onNavigate}
+                  aria-current={active ? "page" : undefined}
+                  sx={{
+                    borderRadius: 2,
+                    my: 0.25,
+                    minHeight: 40,
+                    borderInlineStart: "3px solid",
+                    borderColor: "transparent",
+                    "&.Mui-selected": {
+                      bgcolor: "action.selected",
+                      borderColor: "primary.main",
+                    },
+                  }}
+                >
+                  <ListItemText
+                    primary={lead.name || `عميل #${lead.id}`}
+                    primaryTypographyProps={{
+                      variant: "body2",
+                      noWrap: true,
+                      sx: { color: "text.secondary" },
+                    }}
+                  />
+                </ListItemButton>
+              );
+            })}
+          </List>
+        </Box>
+      )}
     </Box>
   );
 }
