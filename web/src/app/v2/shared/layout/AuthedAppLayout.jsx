@@ -13,14 +13,23 @@ import { MUIProvider } from "@/app/v2/providers/MUIProvider";
 import { ToastProvider } from "@/app/v2/providers/ToastProvider";
 import { AuthProvider } from "@/app/v2/providers/AuthProvider";
 import { AppShell } from "@/app/v2/features/shell/components/AppShell";
+import { AppShellV2 } from "@/app/v2/features/shell/components/AppShellV2";
+
+// Frame swap: AppShellV2 (workspace icon-rail + contextual panel + glass command-bar with a ⌘K
+// command palette) is the ACTIVE shell by default. The legacy left-drawer + topbar AppShell is
+// kept reachable behind a flag for instant rollback — set NEXT_PUBLIC_LEGACY_SHELL=1 to restore
+// it. Both shells render the SAME page children with the SAME provider stack; only the chrome
+// differs, so every existing /v2 route works unchanged in either.
+const USE_LEGACY_SHELL = process.env.NEXT_PUBLIC_LEGACY_SHELL === "1";
 
 export function AuthedAppLayout({ children }) {
+  const Shell = USE_LEGACY_SHELL ? AppShell : AppShellV2;
   return (
     <MUIProvider>
       <ToastProvider>
         <AuthProvider>
           <Box dir="rtl" sx={{ direction: "rtl", minHeight: "100vh" }}>
-            <AppShell>{children}</AppShell>
+            <Shell>{children}</Shell>
           </Box>
         </AuthProvider>
       </ToastProvider>

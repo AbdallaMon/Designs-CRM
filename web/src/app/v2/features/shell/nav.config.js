@@ -45,6 +45,26 @@ export const NAV_GROUP_ORDER = [
   "admin",
 ];
 
+// ─────────────────────────────────────────────────────────────────────────────
+// WORKSPACES (new app-shell model) — additive over the existing `group` buckets.
+// A "workspace" is the top-level destination zone the icon-rail switches between.
+// We map 1:1 onto the existing NAV groups so EVERY href / permission gate / icon
+// stays exactly as it is — the rail just re-presents the same gated nav model.
+// No "courses/learning" workspace (the learning module was removed).
+// ─────────────────────────────────────────────────────────────────────────────
+export const WORKSPACES = [
+  { key: "home", labelKey: "home", icon: MdSpaceDashboard, order: 0 },
+  { key: "sales", labelKey: "sales", icon: MdPeople, order: 1 },
+  { key: "production", labelKey: "production", icon: MdWorkOutline, order: 2 },
+  { key: "finance", labelKey: "finance", icon: MdAccountBalanceWallet, order: 3 },
+  { key: "admin", labelKey: "admin", icon: MdSettings, order: 4 },
+];
+
+// Render order for the rail (mirrors NAV_GROUP_ORDER; derived so the two never drift).
+export const WORKSPACE_ORDER = [...WORKSPACES]
+  .sort((a, b) => a.order - b.order)
+  .map((w) => w.key);
+
 export const NAV_ITEMS = [
   // ── الرئيسية ─────────────────────────────────────────────────────────────
   {
@@ -189,6 +209,13 @@ export const NAV_ITEMS = [
   },
 ];
 
+// Attach a `workspace` to each NAV_ITEM by mapping its existing `group` (home/sales/
+// production/finance/admin map 1:1). Done here (not hand-written per item) so the workspace
+// of an item can never drift from its group. hrefs/permissions/icons are untouched.
+for (const item of NAV_ITEMS) {
+  item.workspace = item.group;
+}
+
 /**
  * Does a user (via the usePermission helpers) pass a nav item's gate?
  * @param {object} item              a NAV_ITEMS entry.
@@ -216,4 +243,29 @@ export function buildVisibleNav(perm, resolveGroup, resolveItem) {
     }));
     return { key: groupKey, label: resolveGroup(groupKey), items };
   }).filter((g) => g.items.length > 0);
+}
+
+/**
+ * Build the permission-filtered WORKSPACE nav model for the new app-shell rail/panel:
+ *   [{ workspace: { key, labelKey, icon, order }, items: [{ key, label, href, icon, ... }] }]
+ * Mirrors buildVisibleNav (SAME `navItemVisible` predicate) but groups by `workspace`.
+ * Workspaces with zero visible items are dropped — the rail only offers reachable zones.
+ *
+ * @param {object} perm          usePermission() return value.
+ * @param {(labelKey:string)=>string} [resolveItem]  optional label resolver for item.label.
+ */
+export function buildWorkspaceNav(perm, resolveItem = (k) => k) {
+  return WORKSPACE_ORDER.map((wsKey) => {
+    const workspace = WORKSPACES.find((w) => w.key === wsKey);
+    const items = NAV_ITEMS.filter(
+      (it) => it.workspace === wsKey && navItemVisible(it, perm),
+    ).map((it) => ({
+      key: it.key,
+      label: resolveItem(it.labelKey),
+      href: it.href,
+      icon: it.icon,
+      workspace: it.workspace,
+    }));
+    return { workspace, items };
+  }).filter((w) => w.items.length > 0);
 }
