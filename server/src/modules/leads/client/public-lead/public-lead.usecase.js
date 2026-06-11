@@ -237,7 +237,8 @@ export class PublicLeadUsecase {
         registerDefaults
           ? {
               name: body.name || "draft",
-              phone: body.phone || "+0123456789",
+              // master fdefbbf: space-strip the real phone, else draft placeholder.
+              phone: body.phone ? body.phone.replace(/\s+/g, "") : "+0123456789",
               email: body.email,
             }
           : {

@@ -33,6 +33,7 @@ export const env = {
   IMAGEDOMAIN: process.env.IMAGEDOMAIN,
   DREAMSTUDIIO_DOMAIN: process.env.DREAMSTUDIIO_DOMAIN,
   AHMED_DOMAIN: process.env.AHMED_DOMAIN,
+  PORTFOLIO_DOMAIN: process.env.PORTFOLIOORIGIN,
   COURSES_DOMAIN: process.env.COURSES_DOMAIN,
   ALLOW_ORIGIN: process.env.ALLOW_ORIGIN,
   UPLOADS_PATH: process.env.UPLOADS_PATH || "uploads",
