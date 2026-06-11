@@ -12,15 +12,24 @@
  */
 
 import { resolveMessageCode } from "@/app/v2/data/resolveMessageCode";
+import { getCurrentLang } from "@/app/v2/lib/i18n/langRuntime";
 
-const SUCCESS_FALLBACK = "تمت العملية بنجاح";
-const ERROR_FALLBACK = "حدث خطأ، حاول مرة أخرى";
+// BILINGUAL (Phase 1): the toast layer runs OUTSIDE the React tree, so it can't call useT(). It
+// reads the current language from the module-level langRuntime holder (kept in sync by the
+// I18nProvider). Default is "ar" until the provider mounts, so ar toasts are byte-identical to
+// before. The fallbacks are chosen per language too.
+const SUCCESS_FALLBACK_AR = "تمت العملية بنجاح";
+const SUCCESS_FALLBACK_EN = "Done successfully";
+const ERROR_FALLBACK_AR = "حدث خطأ، حاول مرة أخرى";
+const ERROR_FALLBACK_EN = "Something went wrong, please try again";
 
 export function Success(message, translationKey) {
+  const lang = getCurrentLang();
   return {
     render: resolveMessageCode(message, {
       translationKey,
-      fallback: SUCCESS_FALLBACK,
+      lang,
+      fallback: lang === "en" ? SUCCESS_FALLBACK_EN : SUCCESS_FALLBACK_AR,
     }),
     type: "success",
     isLoading: false,
@@ -29,10 +38,12 @@ export function Success(message, translationKey) {
 }
 
 export function Failed(error, translationKey) {
+  const lang = getCurrentLang();
   return {
     render: resolveMessageCode(error, {
       translationKey,
-      fallback: ERROR_FALLBACK,
+      lang,
+      fallback: lang === "en" ? ERROR_FALLBACK_EN : ERROR_FALLBACK_AR,
     }),
     type: "error",
     isLoading: false,

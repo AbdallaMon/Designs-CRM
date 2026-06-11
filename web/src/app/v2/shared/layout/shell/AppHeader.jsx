@@ -38,23 +38,26 @@ import { useAuth } from "@/app/v2/providers/AuthProvider";
 import { NotificationBell } from "@/app/v2/features/shell/components/NotificationBell";
 import { RoleChip } from "@/app/v2/shared/components/RoleChip";
 import { buildBreadcrumbs } from "@/app/v2/features/shell/breadcrumbs";
+import { useT } from "@/app/v2/lib/i18n/I18nProvider";
+import { LanguageSwitcher } from "@/app/v2/shared/components/LanguageSwitcher";
 
 export function AppHeader({ collapsed = false, isMobile = false, mobileOpen = false, onToggle }) {
   const theme = useTheme();
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { t, lang } = useT();
   const [anchor, setAnchor] = useState(null);
 
   // On mobile the same button shows a menu icon; on desktop a collapse/expand icon.
   const tooltip = isMobile
     ? mobileOpen
-      ? "إغلاق القائمة"
-      : "فتح القائمة"
+      ? t("shell.menu.close", "إغلاق القائمة")
+      : t("shell.menu.open", "فتح القائمة")
     : collapsed
-      ? "توسيع القائمة"
-      : "طيّ القائمة";
+      ? t("shell.rail.expand", "توسيع القائمة")
+      : t("shell.rail.collapse", "طيّ القائمة");
 
-  const crumbs = buildBreadcrumbs(pathname);
+  const crumbs = buildBreadcrumbs(pathname, lang);
 
   return (
     <Box
@@ -104,7 +107,7 @@ export function AppHeader({ collapsed = false, isMobile = false, mobileOpen = fa
         {crumbs.length > 0 && (
           <Breadcrumbs
             separator={<MdNavigateNext size={16} style={{ transform: "scaleX(-1)" }} />}
-            aria-label="مسار التنقل"
+            aria-label={t("shell.breadcrumb.aria", "مسار التنقل")}
             sx={{ "& .MuiBreadcrumbs-ol": { flexWrap: "nowrap" } }}
           >
             {crumbs.map((crumb, i) => {
@@ -141,8 +144,10 @@ export function AppHeader({ collapsed = false, isMobile = false, mobileOpen = fa
         )}
       </Box>
 
-      {/* Identity cluster (inline-END) — lifted from the retired CommandBar. */}
+      {/* Identity cluster (inline-END) — lifted from the retired CommandBar, plus the bilingual
+          language switcher (ع / EN). */}
       <Stack direction="row" alignItems="center" spacing={1}>
+        <LanguageSwitcher />
         <NotificationBell />
         <Box sx={{ display: { xs: "none", md: "block" } }}>
           <RoleChip />
@@ -150,7 +155,7 @@ export function AppHeader({ collapsed = false, isMobile = false, mobileOpen = fa
         <IconButton
           onClick={(e) => setAnchor(e.currentTarget)}
           size="small"
-          aria-label="حساب المستخدم"
+          aria-label={t("shell.account.aria", "حساب المستخدم")}
           aria-haspopup="true"
         >
           <Avatar src={user?.profilePicture ?? undefined} sx={{ width: 32, height: 32 }}>
@@ -182,7 +187,7 @@ export function AppHeader({ collapsed = false, isMobile = false, mobileOpen = fa
             <ListItemIcon>
               <MdLogout />
             </ListItemIcon>
-            تسجيل الخروج
+            {t("shell.logout", "تسجيل الخروج")}
           </MenuItem>
         </Menu>
       </Stack>

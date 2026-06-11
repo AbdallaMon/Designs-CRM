@@ -1,38 +1,20 @@
-// Arabic message map for the app-shell nav (groups + items). Keeps visible strings OUT of the
-// nav.config logic (labelKey → Arabic here). Single source for the side-nav copy. The user may
-// refine wording; change it in ONE place. Single-language Arabic / RTL.
+// Message map for the app-shell nav (groups + items). Keeps visible strings OUT of the
+// nav.config logic (labelKey → label here). Single source for the side-nav copy.
+//
+// BILINGUAL (Phase 1): the labels now live in the bilingual uiDictionary under "nav.group.*" /
+// "nav.item.*". The resolvers take an optional `lang` (DEFAULT "ar") and translate via the
+// dictionary, so an unqualified call resolves to the SAME Arabic label as before (the dictionary's
+// ar side is copied verbatim from the old maps). Callers that know the current language
+// (AppSidebar/breadcrumbs via useT) pass it to get the English labels.
 
-export const NAV_GROUP_LABELS = {
-  home: "الرئيسية",
-  sales: "المبيعات",
-  production: "الإنتاج",
-  finance: "الشؤون المالية",
-  admin: "الإدارة",
-};
+import { translate } from "@/app/v2/lib/i18n/uiDictionary";
 
-export const NAV_ITEM_LABELS = {
-  dashboard: "لوحة التحكم",
-  leadsWorkspace: "مساحة عملي",
-  notifications: "الإشعارات",
-  chat: "المحادثات",
-  leads: "قائمة العملاء",
-  adminProjects: "إدارة المشاريع",
-  commissions: "العمولات",
-  projects: "المشاريع",
-  tasks: "المهام",
-  imageSessions: "جلسات التصميم",
-  accounting: "المحاسبة",
-  contractPayments: "دفعات العقود",
-  users: "المستخدمون",
-  siteUtilities: "إعدادات الموقع",
-  reports: "التقارير",
-  utilities: "الأدوات",
-};
-
-/** Resolve a nav group key to its Arabic label. */
-export const resolveNavGroup = (key) => NAV_GROUP_LABELS[key] ?? key;
-/** Resolve a nav item labelKey to its Arabic label. */
-export const resolveNavItem = (key) => NAV_ITEM_LABELS[key] ?? key;
+/** Resolve a nav group key to its label in `lang` (default "ar"). */
+export const resolveNavGroup = (key, lang = "ar") =>
+  translate(lang, `nav.group.${key}`, key);
+/** Resolve a nav item labelKey to its label in `lang` (default "ar"). */
+export const resolveNavItem = (key, lang = "ar") =>
+  translate(lang, `nav.item.${key}`, key);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Explicit LANDING DESTINATION override per role (audit H1). Some personas should land on a

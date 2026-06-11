@@ -13,9 +13,13 @@
 
 import { ThemeProvider } from "@mui/material";
 import { CssBaseline } from "@mui/material";
-import theme from "./theme";
+import { createAppTheme } from "./theme";
 
-export function MUIProvider({ children }) {
+// BILINGUAL (Phase 1): accepts the server-resolved `lng` and builds the theme via the factory.
+// The theme direction is "ltr" for both languages (the ar RTL flip is the emotion cache's job),
+// so ar rendering is unchanged; `lng` is threaded through for symmetry with the cache provider.
+export function MUIProvider({ children, lng = "ar" }) {
+  const theme = createAppTheme(lng);
   // <CssBaseline /> applies MUI's normalize + (crucially) the theme's MuiCssBaseline overrides
   // (e.g. the global prefers-reduced-motion reset). The reference mounts it inside ThemeProvider;
   // ours was missing it, so those overrides never took effect. RtlCacheProvider / the emotion

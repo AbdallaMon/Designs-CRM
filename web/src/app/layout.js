@@ -8,6 +8,14 @@ import { AlertProvider } from "@/app/v2/providers/MuiAlertProvider";
 import colors from "@/app/v2/lib/theme/colors";
 import { Noto_Kufi_Arabic } from "next/font/google";
 import { UploadingProvider } from "@/app/v2/providers/UploadingProvider";
+import { cookies } from "next/headers";
+import {
+  cookieName,
+  fallbackLng,
+  getDirection,
+  normalizeLang,
+} from "@/app/v2/lib/i18n/settings";
+import { I18nProvider } from "@/app/v2/lib/i18n/I18nProvider";
 
 import ServiceWorkerRegister from "@/app/v2/shared/components/RegisterServiceWorker";
 
@@ -78,13 +86,23 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }) {
-  // Single-language Arabic / RTL app (legacy + v2). This is the nearest layout that controls
-  // <html>; the v2 (v2-features) routes render under it, so the document root direction is set
-  // here once for the whole app (UX plan §2 a11y — root lang/dir). The v2 feature layouts also
-  // set dir="rtl" on their Box for the emotion-RTL cache, which remains correct.
+export default async function RootLayout({ children }) {
+  // BILINGUAL (Phase 1). The DOCUMENT language/direction is resolved on the SERVER from the `lang`
+  // cookie (default "ar"), modeled on the working reference's cookie read. ar → rtl, en → ltr.
+  //
+  // LANGUAGE SOURCE: cookie `lang` here (SSR) + `?lang` as a client override (the I18nProvider
+  // reads searchParams on mount and persists it to the cookie). The LanguageSwitcher writes the
+  // cookie and calls router.refresh(), so this server read re-runs with the new value and the
+  // emotion cache (muirtl ↔ mui) + <html dir> flip cleanly.
+  //
+  // CRITICAL: with no cookie the value is "ar" and EVERYTHING below is byte-identical to the
+  // previous single-language app (key "muirtl", stylis rtl plugin, <html dir="rtl">).
+  const cookieStore = await cookies();
+  const lng = normalizeLang(cookieStore.get(cookieName)?.value || fallbackLng);
+  const dir = getDirection(lng);
+
   return (
-    <html lang="ar" dir="rtl">
+    <html lang={lng} dir={dir}>
       <head>
         <link rel="icon" href="/favicon.ico" />
       </head>
@@ -92,28 +110,29 @@ export default function RootLayout({ children }) {
         className={noto.className}
         style={{ backgroundColor: colors.bgSecondary }}
       >
-        {/* SSR-aware RTL emotion cache (MUI's official App Router integration). Applies the
-            stylis-plugin-rtl transform during the server render so RTL is correct on FIRST
-            paint for EVERY route (login, dashboard, lead detail) with no LTR-flash / hydration
-            mismatch. The flip is done by the stylis rtl plugin in the emotion cache + this
-            <html dir="rtl">; the MUI theme direction is kept "ltr" to avoid a double-flip
-            (mirrors the working reference project's wiring). Implemented as a
-            Client Component because the rtl stylis plugin is a function and can't be passed as
-            a prop from this Server Component layout. */}
-        <RtlCacheProvider>
-          <AlertProvider>
-            <MUIProvider>
-              <UploadingProvider>
-                <ToastProvider>
-                  <AuthProvider>
-                    <DotsLoader />
-                    {children}
-                  </AuthProvider>
-                  <ServiceWorkerRegister />
-                </ToastProvider>
-              </UploadingProvider>
-            </MUIProvider>
-          </AlertProvider>
+        {/* SSR-aware emotion cache (MUI's official App Router integration). For ar it applies the
+            stylis-plugin-rtl transform during the server render so RTL is correct on FIRST paint
+            for EVERY route with no LTR-flash / hydration mismatch (key "muirtl"); for en it uses a
+            plain LTR cache (key "mui"). The flip is done by the stylis rtl plugin + <html dir>; the
+            theme direction is kept "ltr" to avoid a double-flip (mirrors the working reference).
+            Client Component because the rtl stylis plugin is a function and can't cross the
+            Server→Client prop boundary; the resolved `lng` selects the options inside it. */}
+        <RtlCacheProvider lng={lng}>
+          <I18nProvider initialLng={lng}>
+            <AlertProvider>
+              <MUIProvider lng={lng}>
+                <UploadingProvider>
+                  <ToastProvider>
+                    <AuthProvider>
+                      <DotsLoader />
+                      {children}
+                    </AuthProvider>
+                    <ServiceWorkerRegister />
+                  </ToastProvider>
+                </UploadingProvider>
+              </MUIProvider>
+            </AlertProvider>
+          </I18nProvider>
         </RtlCacheProvider>
       </body>
     </html>

@@ -362,4 +362,14 @@ const theme = createTheme({
   },
 });
 
+// BILINGUAL (Phase 1): theme factory. `direction` stays "ltr" for BOTH languages — exactly as the
+// single-language app had it (and as the working reference does): for ar the visual RTL flip is
+// produced by the emotion stylis-plugin-rtl in the cache, NOT the theme, so keeping the theme
+// "ltr" avoids a double-flip; for en there is no rtl plugin and "ltr" is the genuine direction.
+// The factory exists so callers can pass the server language symmetrically with the cache; the
+// returned theme is identical for now (the per-language branch is here for future divergence).
+export function createAppTheme(/* lng = "ar" */) {
+  return theme;
+}
+
 export default theme;

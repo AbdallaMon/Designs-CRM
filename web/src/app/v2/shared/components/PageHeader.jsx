@@ -26,6 +26,7 @@ import {
 } from "@mui/material";
 import NextLink from "next/link";
 import { RoleChip } from "./RoleChip";
+import { useT } from "@/app/v2/lib/i18n/I18nProvider";
 
 export function PageHeader({
   title,
@@ -35,10 +36,11 @@ export function PageHeader({
   primaryAction,
   children,
 }) {
+  const { t } = useT();
   return (
     <Box sx={{ mb: 3 }}>
       {Array.isArray(breadcrumbs) && breadcrumbs.length > 0 && (
-        <Breadcrumbs sx={{ mb: 1 }} aria-label="مسار التنقل">
+        <Breadcrumbs sx={{ mb: 1 }} aria-label={t("shell.breadcrumb.aria", "مسار التنقل")}>
           {breadcrumbs.map((c, i) =>
             c.href ? (
               <MuiLink

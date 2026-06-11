@@ -34,6 +34,7 @@ import { useAuth } from "@/app/v2/providers/AuthProvider";
 import { buildVisibleNav } from "@/app/v2/features/shell";
 import { resolveNavGroup, resolveNavItem } from "@/app/v2/features/shell/navLabels";
 import { isPathActive } from "@/app/v2/features/shell/breadcrumbs";
+import { useT } from "@/app/v2/lib/i18n/I18nProvider";
 
 export const SIDEBAR_WIDTH_EXPANDED = 264;
 export const SIDEBAR_WIDTH_COLLAPSED = 72;
@@ -62,12 +63,13 @@ function SidebarNavSkeleton({ collapsed }) {
 
 // Brand block at the top — "Dream Studio" wordmark (DS glyph when collapsed) linking to the landing.
 function SidebarBrand({ collapsed, landingHref, onNavigate }) {
+  const { t } = useT();
   return (
     <Box
       component={NextLink}
       href={landingHref}
       onClick={onNavigate}
-      aria-label="Dream Studio"
+      aria-label={t("shell.brand", "Dream Studio")}
       sx={{
         display: "flex",
         alignItems: "center",
@@ -117,14 +119,20 @@ function SidebarContent({ collapsed, landingHref, onNavigate }) {
   const pathname = usePathname();
   const perm = usePermission();
   const { user, validatingAuth } = useAuth();
+  const { t, lang } = useT();
 
-  const groups = buildVisibleNav(perm, resolveNavGroup, resolveNavItem);
+  // Bind the nav-label resolvers to the current language so the grouped nav renders ar OR en.
+  const groups = buildVisibleNav(
+    perm,
+    (key) => resolveNavGroup(key, lang),
+    (key) => resolveNavItem(key, lang),
+  );
   const loading = validatingAuth && !user;
 
   return (
     <Box
       role="navigation"
-      aria-label="القائمة الرئيسية"
+      aria-label={t("shell.nav.aria", "القائمة الرئيسية")}
       sx={{ display: "flex", flexDirection: "column", height: "100%", overflowX: "hidden" }}
     >
       <SidebarBrand collapsed={collapsed} landingHref={landingHref} onNavigate={onNavigate} />

@@ -14,8 +14,11 @@
 import { Box, Stack, Typography, Button } from "@mui/material";
 import NextLink from "next/link";
 import { MdInbox } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n/I18nProvider";
 
-export function EmptyState({ icon, title = "لا توجد بيانات", description, action }) {
+export function EmptyState({ icon, title, description, action }) {
+  const { t } = useT();
+  const resolvedTitle = title ?? t("state.empty.title", "لا توجد بيانات");
   return (
     <Stack
       alignItems="center"
@@ -27,7 +30,7 @@ export function EmptyState({ icon, title = "لا توجد بيانات", descrip
         {icon ?? <MdInbox />}
       </Box>
       <Typography variant="h6" component="p">
-        {title}
+        {resolvedTitle}
       </Typography>
       {description && (
         <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420 }}>

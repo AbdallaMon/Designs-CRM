@@ -18,17 +18,28 @@
 //
 // Client Component: `stylisPlugins` contains FUNCTIONS, which cannot be serialized
 // as props across the Server→Client boundary (the root layout is a Server Component).
-// Single-language Arabic / RTL.
+//
+// BILINGUAL (Phase 1): the cache is now LANGUAGE-AWARE. The server reads the `lang` cookie and
+// passes `lng`:
+//   • ar (DEFAULT) → { key: "muirtl", stylisPlugins: [prefixer, rtlPlugin] }  ← UNCHANGED, the
+//     exact options used before this layer existed, so Arabic RTL is byte-identical.
+//   • en           → { key: "mui",   stylisPlugins: [prefixer] }              ← no rtl flip → LTR.
+// The cache `key` differs per language so emotion never mixes RTL- and LTR-flipped class hashes.
+// Because the cache key is decided HERE (server-driven from the cookie), the RTL/LTR choice is
+// correct on the FIRST server render for every route — no flash, no hydration mismatch.
 
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v16-appRouter";
 import { prefixer } from "stylis";
 import rtlPlugin from "@mui/stylis-plugin-rtl";
 
-export function RtlCacheProvider({ children }) {
+export function RtlCacheProvider({ children, lng = "ar" }) {
+  const options =
+    lng === "ar"
+      ? { key: "muirtl", stylisPlugins: [prefixer, rtlPlugin] }
+      : { key: "mui", stylisPlugins: [prefixer] };
+
   return (
-    <AppRouterCacheProvider
-      options={{ key: "muirtl", stylisPlugins: [prefixer, rtlPlugin] }}
-    >
+    <AppRouterCacheProvider options={options}>
       {children}
     </AppRouterCacheProvider>
   );

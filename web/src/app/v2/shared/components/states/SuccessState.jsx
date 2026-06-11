@@ -14,13 +14,16 @@
 import { Stack, Typography, Button, Box } from "@mui/material";
 import NextLink from "next/link";
 import { MdCheckCircleOutline } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n/I18nProvider";
 
 export function SuccessState({
-  title = "تمت العملية بنجاح",
+  title,
   message,
   primary,
   secondary,
 }) {
+  const { t } = useT();
+  const resolvedTitle = title ?? t("state.success.title", "تمت العملية بنجاح");
   return (
     <Stack
       role="status"
@@ -34,7 +37,7 @@ export function SuccessState({
         <MdCheckCircleOutline />
       </Box>
       <Typography variant="h6" component="p">
-        {title}
+        {resolvedTitle}
       </Typography>
       {message && (
         <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 440 }}>

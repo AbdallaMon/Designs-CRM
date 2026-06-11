@@ -12,6 +12,7 @@
 //        fields (form), height (cards), label (optional sr-only/visible loading text).
 
 import { Box, Skeleton, Stack, Grid } from "@mui/material";
+import { useT } from "@/app/v2/lib/i18n/I18nProvider";
 
 export function LoadingState({
   variant = "table",
@@ -20,12 +21,14 @@ export function LoadingState({
   columns = 5,
   fields = 4,
   height = 140,
-  label = "جاري التحميل…",
+  label,
 }) {
+  const { t } = useT();
+  const resolvedLabel = label ?? t("state.loading.label", "جاري التحميل…");
   return (
     <Box role="status" aria-busy="true" aria-live="polite" sx={{ width: "100%" }}>
       <Box sx={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)" }}>
-        {label}
+        {resolvedLabel}
       </Box>
       {variant === "table" && <TableSkeleton rows={rows} columns={columns} />}
       {variant === "cards" && <CardsSkeleton count={count} columns={columns} height={height} />}

@@ -27,14 +27,15 @@ export function matchNavItem(pathname) {
 /**
  * Build breadcrumb crumbs [{ label, href? }] for the current path.
  * group (no link) ‹ page (link to item href) ‹ record (no link, when a deeper segment exists).
+ * `lang` (default "ar") localizes the group/page labels via the bilingual nav resolvers.
  */
-export function buildBreadcrumbs(pathname) {
+export function buildBreadcrumbs(pathname, lang = "ar") {
   const item = matchNavItem(pathname);
   if (!item) return [];
 
   const crumbs = [
-    { label: resolveNavGroup(item.group) },
-    { label: resolveNavItem(item.labelKey), href: item.href },
+    { label: resolveNavGroup(item.group, lang) },
+    { label: resolveNavItem(item.labelKey, lang), href: item.href },
   ];
 
   // A record-level crumb when the path goes deeper than the item href (e.g. /v2/leads/123).

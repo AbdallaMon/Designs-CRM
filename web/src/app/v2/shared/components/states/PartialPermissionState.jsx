@@ -19,6 +19,7 @@
 
 import { Box, Stack, Typography, Alert, AlertTitle, Chip } from "@mui/material";
 import { MdLockOutline } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n/I18nProvider";
 
 export function PartialPermissionState({
   denied = false,
@@ -27,6 +28,7 @@ export function PartialPermissionState({
   allowed,
   children,
 }) {
+  const { t } = useT();
   if (denied) {
     return (
       <Stack
@@ -39,11 +41,14 @@ export function PartialPermissionState({
           <MdLockOutline />
         </Box>
         <Typography variant="h6" component="p">
-          {title ?? "هذا القسم غير متاح لصلاحياتك"}
+          {title ?? t("state.partial.deniedTitle", "هذا القسم غير متاح لصلاحياتك")}
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 440 }}>
           {message ??
-            "لا تملك صلاحية الوصول إلى هذا القسم. إن كنت تظن أنه ينبغي أن تصل إليه، تواصل مع المسؤول."}
+            t(
+              "state.partial.deniedMessage",
+              "لا تملك صلاحية الوصول إلى هذا القسم. إن كنت تظن أنه ينبغي أن تصل إليه، تواصل مع المسؤول.",
+            )}
         </Typography>
         {Array.isArray(allowed) && allowed.length > 0 && (
           <AllowedHints allowed={allowed} />
@@ -56,8 +61,8 @@ export function PartialPermissionState({
   return (
     <Box>
       <Alert severity="info" icon={<MdLockOutline />} sx={{ mb: 2 }}>
-        <AlertTitle>{title ?? "عرض محدود حسب صلاحياتك"}</AlertTitle>
-        {message ?? "بعض الأقسام مخفية لأنها خارج نطاق صلاحياتك."}
+        <AlertTitle>{title ?? t("state.partial.bannerTitle", "عرض محدود حسب صلاحياتك")}</AlertTitle>
+        {message ?? t("state.partial.bannerMessage", "بعض الأقسام مخفية لأنها خارج نطاق صلاحياتك.")}
         {Array.isArray(allowed) && allowed.length > 0 && (
           <Box sx={{ mt: 1 }}>
             <AllowedHints allowed={allowed} />

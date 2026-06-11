@@ -14,10 +14,13 @@
 import { Stack, Typography, Button, Box } from "@mui/material";
 import { MdErrorOutline, MdRefresh } from "react-icons/md";
 import { resolveSharedMessage } from "../../config/sharedMessages";
+import { useT } from "@/app/v2/lib/i18n/I18nProvider";
 
-export function ErrorState({ error, onRetry, resolver, title = "تعذّر تحميل البيانات" }) {
+export function ErrorState({ error, onRetry, resolver, title }) {
+  const { t, lang } = useT();
   const code = typeof error === "string" ? error : error?.message;
-  const detail = resolveSharedMessage(code, { resolver });
+  const detail = resolveSharedMessage(code, { resolver, lang });
+  const resolvedTitle = title ?? t("state.error.title", "تعذّر تحميل البيانات");
 
   return (
     <Stack
@@ -31,7 +34,7 @@ export function ErrorState({ error, onRetry, resolver, title = "تعذّر تح�
         <MdErrorOutline />
       </Box>
       <Typography variant="h6" component="p">
-        {title}
+        {resolvedTitle}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420 }}>
         {detail}
@@ -44,7 +47,7 @@ export function ErrorState({ error, onRetry, resolver, title = "تعذّر تح�
           startIcon={<MdRefresh />}
           sx={{ mt: 1 }}
         >
-          إعادة المحاولة
+          {t("common.retry", "إعادة المحاولة")}
         </Button>
       )}
     </Stack>
