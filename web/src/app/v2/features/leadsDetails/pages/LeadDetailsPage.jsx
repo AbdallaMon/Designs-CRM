@@ -1,35 +1,45 @@
 "use client";
 
-// Lead detail page — collapses the legacy PreviewLeadDialog / deals/[id] detail into one
-// permission-gated, URL-tabbed feature. Tab state lives in ?tab=; the tab SET is filtered
-// by the record's capabilities.* (e.g. price-offers/payments tabs only when the user can
-// act on them) — the same predicate gates the tab's action buttons. Header actions
-// (change-status, claim, convert) are each capability-gated (§5c).
+// Lead detail HUB (approved UX replan). Replaces the flat ~11-tab strip with:
+//   1) LeadHubHeader  — identity band (name + #id, status + payment chips, contact line,
+//      owner, sales-stage strip, capability-gated actions).
+//   2) LeadRelatedRail — compact count-cards (projects/contracts/sessions/payments/calls/
+//      meetings) that deep-link to the owning group/sub.
+//   3) Five GROUP tabs (نظرة عامة · السجل · الأعمال · المالية · أدوات المبيعات), each with an
+//      inner sub-tab strip. Group AND sub-section live in the URL (?tab=<group>&sub=<section>)
+//      so the rail/header can deep-link a specific section.
 //
-// INTEGRATED cross-feature lead tools: the sales-stage stepper now lives in the header (always
-// visible — "what's my next step"); SPIN + VERSA (questions feature) and the image-sessions
-// session panel are mounted as capability/permission-gated tabs below.
-// STILL DEFERRED (reported): Projects, Tasks/Modifications, Lead updates, Chats — they belong to
-// OTHER not-yet-migrated FE modules (/v2/projects, /v2/tasks, /v2/chat) and are out of scope here.
+// Authorization is UNCHANGED: the same caps.* × hasPermission(...) predicates that gated the
+// legacy flat tabs now compose into per-section gates (buildSectionGates); a GROUP shows iff
+// ≥1 of its sub-sections is visible. The server still enforces every action.
+//
+// STILL DEFERRED (reported): Tasks/Modifications, Lead updates, Chats — other not-yet-migrated
+// FE modules, out of scope.
 
-import { useMemo } from "react";
-import { Box, Container, Stack, Tab, Tabs, Typography } from "@mui/material";
+import { useCallback, useMemo } from "react";
+import { Box, Container, Tab, Tabs } from "@mui/material";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
-import LoadingOverlay from "@/app/v2/shared/components/feedback/LoadingOverlay.jsx";
+import {
+  LoadingState,
+  ErrorState,
+  PartialPermissionState,
+  SectionCard,
+} from "@/app/v2/shared/components";
 import { useLeadDetail } from "../hooks/useLeadDetail.js";
+import { LEAD_HUB_GROUPS, GATE } from "../config/leadHubTabs.js";
+import { LeadHubHeader } from "../components/LeadHubHeader.jsx";
+import { LeadRelatedRail } from "../components/LeadRelatedRail.jsx";
 import { OverviewTab } from "../components/tabs/OverviewTab.jsx";
 import { CallsTab } from "../components/tabs/CallsTab.jsx";
 import { MeetingsTab } from "../components/tabs/MeetingsTab.jsx";
 import { NotesTab } from "../components/tabs/NotesTab.jsx";
-import { PriceOffersTab } from "../components/tabs/PriceOffersTab.jsx";
 import { FilesTab } from "../components/tabs/FilesTab.jsx";
+import { PriceOffersTab } from "../components/tabs/PriceOffersTab.jsx";
 import { PaymentsTab } from "../components/tabs/PaymentsTab.jsx";
-import { LeadStatusMenu } from "../components/LeadStatusMenu.jsx";
-import { LeadAssignActions } from "@/app/v2/features/leads/components/LeadAssignActions.jsx";
-import { statusLabel } from "@/app/v2/features/leads/config/leadsConstants.js";
+import { LeadContractsPage } from "@/app/v2/features/contracts";
 import { SalesStagePanel } from "@/app/v2/features/salesStages";
 import { SpinPanel, VersaPanel } from "@/app/v2/features/questions";
 import { LeadSessionsPanel } from "@/app/v2/features/imageSessions";
@@ -51,129 +61,207 @@ export function LeadDetailsPage({ leadId }) {
   const canViewVersa = hasPermission(PERMISSIONS.QUESTION.SESSION_VIEW);
   const canViewSessions = hasPermission(PERMISSIONS.IMAGE_SESSION.SESSION_VIEW);
   const canViewProjects = hasPermission(PERMISSIONS.PROJECT.LIST);
+  const canViewContracts = hasPermission(PERMISSIONS.CONTRACT.LIST);
 
-  const { lead, isLoading, refetch } = useLeadDetail(leadId, { autoFetch: canView });
+  const { lead, isLoading, error, refetch } = useLeadDetail(leadId, { autoFetch: canView });
 
   const router = useRouter();
   const pathname = usePathname();
   const sp = useSearchParams();
 
-  // The status menu offers the beginner set for a non-primary, non-privileged staff user
-  // (mirrors the legacy KanbanBeginerLeadsStatus branch). The server still enforces.
+  // Beginner status set (mirrors the legacy KanbanBeginerLeadsStatus branch). Server enforces.
   const beginner = useMemo(() => {
     const privileged = PRIVILEGED_ROLES.includes(user?.role) || user?.isSuperSales;
     return user?.role === "STAFF" && !user?.isPrimary && !privileged;
   }, [user]);
 
-  // Capability-gated tab set. Overview/calls/meetings/notes/files always available to a
-  // viewer; price-offers + payments only when the user can act on them (capability hint).
+  // ── Section gates: resolve each leadHubTabs GATE key to a runtime boolean. This is the ONE
+  // place caps.* × permission codes are composed — identical predicates to the legacy flat tabs.
   const caps = lead?.capabilities ?? {};
-  const sections = useMemo(() => {
-    const s = [
-      { key: "overview", label: "التفاصيل" },
-      { key: "calls", label: "المكالمات" },
-      { key: "meetings", label: "الاجتماعات" },
-      { key: "notes", label: "الملاحظات" },
-      { key: "files", label: "المرفقات" },
-    ];
-    if (caps.canAddPriceOffer) s.push({ key: "priceOffers", label: "عروض الأسعار" });
-    if (caps.canAddPayment || caps.canSendReminder) s.push({ key: "payments", label: "الدفعات" });
-    // Cross-feature lead tools (permission-gated; lead-scope enforced server-side).
-    if (canViewProjects) s.push({ key: "projects", label: "المشاريع" });
-    if (canViewSpin) s.push({ key: "spin", label: "أسئلة SPIN" });
-    if (canViewVersa) s.push({ key: "versa", label: "معالجة الاعتراضات" });
-    if (canViewSessions) s.push({ key: "sessions", label: "جلسات الصور" });
-    return s;
-  }, [
-    caps.canAddPriceOffer,
-    caps.canAddPayment,
-    caps.canSendReminder,
-    canViewProjects,
-    canViewSpin,
-    canViewVersa,
-    canViewSessions,
-  ]);
+  const gates = useMemo(
+    () => ({
+      [GATE.ALWAYS]: true,
+      [GATE.PRICE_OFFER]: Boolean(caps.canAddPriceOffer),
+      [GATE.PAYMENT]: Boolean(caps.canAddPayment || caps.canSendReminder),
+      [GATE.CONTRACTS]: canViewContracts,
+      [GATE.PROJECTS]: canViewProjects,
+      [GATE.SESSIONS]: canViewSessions,
+      [GATE.STAGE]: canViewStage,
+      [GATE.SPIN]: canViewSpin,
+      [GATE.VERSA]: canViewVersa,
+    }),
+    [
+      caps.canAddPriceOffer,
+      caps.canAddPayment,
+      caps.canSendReminder,
+      canViewContracts,
+      canViewProjects,
+      canViewSessions,
+      canViewStage,
+      canViewSpin,
+      canViewVersa,
+    ],
+  );
 
-  const active = useMemo(() => {
+  // Visible groups = groups with ≥1 visible sub-section; each carries its visible sub list.
+  const visibleGroups = useMemo(() => {
+    return LEAD_HUB_GROUPS.map((group) => ({
+      ...group,
+      visibleSub: group.sub.filter((s) => gates[s.gateKey]),
+    })).filter((group) => group.visibleSub.length > 0);
+  }, [gates]);
+
+  // ── URL state: ?tab=<group>&sub=<section>, both validated against the visible set.
+  const activeGroup = useMemo(() => {
     const t = sp.get("tab");
-    return sections.some((x) => x.key === t) ? t : "overview";
-  }, [sp, sections]);
+    return visibleGroups.some((g) => g.key === t) ? t : visibleGroups[0]?.key;
+  }, [sp, visibleGroups]);
 
-  function onChange(_e, key) {
-    const params = new URLSearchParams(sp.toString());
-    params.set("tab", key);
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
-  }
+  const currentGroup = useMemo(
+    () => visibleGroups.find((g) => g.key === activeGroup),
+    [visibleGroups, activeGroup],
+  );
 
+  const activeSub = useMemo(() => {
+    const s = sp.get("sub");
+    const subs = currentGroup?.visibleSub ?? [];
+    return subs.some((x) => x.key === s) ? s : subs[0]?.key;
+  }, [sp, currentGroup]);
+
+  const navigate = useCallback(
+    (groupKey, subKey) => {
+      const params = new URLSearchParams(sp.toString());
+      params.set("tab", groupKey);
+      if (subKey) params.set("sub", subKey);
+      else params.delete("sub");
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [sp, pathname, router],
+  );
+
+  const onGroupChange = useCallback(
+    (_e, groupKey) => {
+      const group = visibleGroups.find((g) => g.key === groupKey);
+      navigate(groupKey, group?.visibleSub[0]?.key);
+    },
+    [visibleGroups, navigate],
+  );
+
+  // ── 5 screen states ─────────────────────────────────────────────────────────────
+  // No-access-to-lead.
   if (!canView) {
     return (
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-        <Typography color="textSecondary">لا تملك صلاحية الوصول إلى هذا العميل</Typography>
-      </Box>
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <PartialPermissionState
+          denied
+          title="لا تملك صلاحية الوصول إلى هذا العميل"
+          message="لا تملك صلاحية الوصول إلى بيانات هذا العميل المحتمل. إن كنت تظن أنه ينبغي أن تصل إليها، تواصل مع المسؤول."
+        />
+      </Container>
     );
   }
 
+  // Error (with retry).
+  if (error && !isLoading) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <ErrorState error={error} onRetry={refetch} />
+      </Container>
+    );
+  }
+
+  // Loading → skeleton hub header + skeleton rail cards.
+  if (isLoading && !lead) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 4 }}>
+        <SectionCard sx={{ mb: 2 }}>
+          <LoadingState variant="detail" />
+        </SectionCard>
+        <LoadingState variant="cards" count={6} columns={6} height={96} />
+      </Container>
+    );
+  }
+
+  if (!lead) return null;
+
   return (
-    <Container maxWidth="lg" sx={{ position: "relative", py: 4 }}>
-      <LoadingOverlay isLoading={isLoading} />
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <LeadHubHeader
+        lead={lead}
+        leadId={leadId}
+        canChangeStatus={caps.canChangeStatus}
+        beginner={beginner}
+        canViewStage={canViewStage}
+        onChanged={refetch}
+      />
 
-      {lead && (
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          justifyContent="space-between"
-          alignItems={{ md: "center" }}
-          spacing={2}
-          sx={{ mb: 2 }}
-        >
-          <Box>
-            <Typography variant="h5">
-              {lead?.client?.name ?? "—"} · #{String(lead.id).padStart(7, "0")}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              الحالة: {statusLabel(lead.status)}
-            </Typography>
-          </Box>
-          <Stack direction="row" spacing={1} flexWrap="wrap">
-            <LeadAssignActions lead={lead} size="medium" onChanged={refetch} />
-            <LeadStatusMenu
-              lead={lead}
-              canChangeStatus={caps.canChangeStatus}
-              beginner={beginner}
-              onChanged={refetch}
-            />
-          </Stack>
-        </Stack>
-      )}
+      <LeadRelatedRail lead={lead} gates={gates} onNavigate={navigate} />
 
-      {/* Sales-stage stepper strip — always visible in the header so the next step is obvious. */}
-      {lead && canViewStage && (
-        <Box sx={{ mb: 2 }}>
-          <SalesStagePanel leadId={leadId} variant="strip" onChanged={refetch} />
-        </Box>
-      )}
-
-      <Tabs value={active} onChange={onChange} variant="scrollable" scrollButtons="auto" sx={{ mb: 2 }}>
-        {sections.map((tab) => (
-          <Tab key={tab.key} value={tab.key} label={tab.label} />
+      {/* Group tabs */}
+      <Tabs value={activeGroup} onChange={onGroupChange} variant="scrollable" scrollButtons="auto" sx={{ mb: 1 }}>
+        {visibleGroups.map((g) => (
+          <Tab key={g.key} value={g.key} label={g.label} />
         ))}
       </Tabs>
 
-      <Box sx={{ minHeight: 320 }}>
-        {lead && active === "overview" && <OverviewTab lead={lead} />}
-        {lead && active === "calls" && <CallsTab lead={lead} onChanged={refetch} />}
-        {lead && active === "meetings" && <MeetingsTab lead={lead} onChanged={refetch} />}
-        {lead && active === "notes" && <NotesTab lead={lead} onChanged={refetch} />}
-        {lead && active === "files" && <FilesTab lead={lead} onChanged={refetch} />}
-        {lead && active === "priceOffers" && <PriceOffersTab lead={lead} onChanged={refetch} />}
-        {lead && active === "payments" && <PaymentsTab lead={lead} onChanged={refetch} />}
-        {/* Self-loads grouped projects via GET /v2/projects?clientLeadId=; only mounts on this tab. */}
-        {lead && active === "projects" && <LeadProjects clientLeadId={lead.id} />}
-        {lead && active === "spin" && <SpinPanel clientLeadId={lead.id} />}
-        {lead && active === "versa" && <VersaPanel clientLeadId={lead.id} />}
-        {lead && active === "sessions" && <LeadSessionsPanel clientLeadId={lead.id} />}
+      {/* Inner sub-tab strip (only when the group has >1 visible section) */}
+      {currentGroup && currentGroup.visibleSub.length > 1 && (
+        <Tabs
+          value={activeSub}
+          onChange={(_e, subKey) => navigate(activeGroup, subKey)}
+          variant="scrollable"
+          scrollButtons="auto"
+          textColor="secondary"
+          indicatorColor="secondary"
+          sx={{ mb: 2, minHeight: 40, "& .MuiTab-root": { minHeight: 40 } }}
+        >
+          {currentGroup.visibleSub.map((s) => (
+            <Tab key={s.key} value={s.key} label={s.label} />
+          ))}
+        </Tabs>
+      )}
+
+      <Box sx={{ minHeight: 320, mt: currentGroup?.visibleSub.length > 1 ? 0 : 2 }}>
+        {renderSection(activeSub, lead, refetch)}
       </Box>
     </Container>
   );
+}
+
+// Render the active sub-section's existing CONTENT component (unchanged — just remounted under
+// the new grouping). The section keys are the leadHubTabs sub keys.
+function renderSection(sub, lead, refetch) {
+  switch (sub) {
+    case "overview":
+      return <OverviewTab lead={lead} />;
+    case "calls":
+      return <CallsTab lead={lead} onChanged={refetch} />;
+    case "meetings":
+      return <MeetingsTab lead={lead} onChanged={refetch} />;
+    case "notes":
+      return <NotesTab lead={lead} onChanged={refetch} />;
+    case "files":
+      return <FilesTab lead={lead} onChanged={refetch} />;
+    case "projects":
+      // Self-loads grouped projects via GET /v2/projects?clientLeadId=.
+      return <LeadProjects clientLeadId={lead.id} />;
+    case "sessions":
+      return <LeadSessionsPanel clientLeadId={lead.id} />;
+    case "contracts":
+      return <LeadContractsPage leadId={lead.id} lead={lead} />;
+    case "payments":
+      return <PaymentsTab lead={lead} onChanged={refetch} />;
+    case "priceOffers":
+      return <PriceOffersTab lead={lead} onChanged={refetch} />;
+    case "salesStage":
+      return <SalesStagePanel leadId={lead.id} variant="panel" onChanged={refetch} />;
+    case "spin":
+      return <SpinPanel clientLeadId={lead.id} />;
+    case "versa":
+      return <VersaPanel clientLeadId={lead.id} />;
+    default:
+      return null;
+  }
 }
 
 export default LeadDetailsPage;
