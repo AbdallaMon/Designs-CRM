@@ -14,6 +14,7 @@ export const NAV_ITEM_LABELS = {
   dashboard: "لوحة التحكم",
   notifications: "الإشعارات",
   chat: "المحادثات",
+  leadsWorkspace: "مساحة عملي",
   leads: "الصفقات",
   adminProjects: "المشاريع (إدارة)",
   commissions: "العمولات",

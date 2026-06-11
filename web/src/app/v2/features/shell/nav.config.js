@@ -19,6 +19,7 @@ import {
   MdNotifications,
   MdChat,
   MdPeople,
+  MdSpaceDashboard,
   MdFolderSpecial,
   MdPayments,
   MdWorkOutline,
@@ -73,6 +74,14 @@ export const NAV_ITEMS = [
   },
 
   // ── المبيعات ─────────────────────────────────────────────────────────────
+  {
+    key: "leadsWorkspace",
+    labelKey: "leadsWorkspace",
+    href: "/v2/leads/workspace",
+    icon: MdSpaceDashboard,
+    group: "sales",
+    permission: P.LEAD.LIST,
+  },
   {
     key: "leads",
     labelKey: "leads",
