@@ -6,7 +6,7 @@ export const NAV_GROUP_LABELS = {
   home: "الرئيسية",
   sales: "المبيعات",
   production: "الإنتاج",
-  finance: "المالية",
+  finance: "الشؤون المالية",
   admin: "الإدارة",
 };
 
@@ -15,7 +15,7 @@ export const NAV_ITEM_LABELS = {
   leadsWorkspace: "مساحة العمل",
   notifications: "الإشعارات",
   chat: "المحادثات",
-  leads: "الصفقات",
+  leads: "العملاء المحتملون",
   adminProjects: "إدارة المشاريع",
   commissions: "العمولات",
   projects: "المشاريع",
