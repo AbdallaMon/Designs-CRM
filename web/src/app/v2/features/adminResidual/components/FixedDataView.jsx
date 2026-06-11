@@ -17,8 +17,19 @@ import {
   TextField,
   Tooltip,
   FormControlLabel,
+  Alert,
+  Typography,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from "@mui/material";
-import { MdAdd, MdEdit, MdDelete, MdArchive } from "react-icons/md";
+import {
+  MdAdd,
+  MdEdit,
+  MdDelete,
+  MdArchive,
+  MdExpandMore,
+} from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { DataTablePage, SectionCard } from "@/app/v2/shared/components";
@@ -103,6 +114,7 @@ export function FixedDataView() {
     <Stack spacing={3}>
       <SectionCard
         title="البيانات الثابتة"
+        subtitle="القيم الثابتة المستخدمة في النماذج عبر النظام."
         actions={
           canManage ? (
             <Button variant="contained" color="primary" startIcon={<MdAdd />} onClick={openCreate}>
@@ -134,7 +146,21 @@ export function FixedDataView() {
         </Box>
       </SectionCard>
 
-      {canArchive && <ModelArchiveCard />}
+      {canArchive && (
+        <Accordion disableGutters sx={{ borderRadius: 3, "&:before": { display: "none" } }}>
+          <AccordionSummary expandIcon={<MdExpandMore />}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <MdArchive />
+              <Typography variant="subtitle1" component="h2">
+                أداة متقدمة: أرشفة سجل
+              </Typography>
+            </Stack>
+          </AccordionSummary>
+          <AccordionDetails>
+            <ModelArchiveCard />
+          </AccordionDetails>
+        </Accordion>
+      )}
 
       {canManage && (
         <FixedDataDialog
@@ -170,10 +196,13 @@ function ModelArchiveCard() {
   }
 
   return (
-    <SectionCard
-      title="أرشفة نموذج"
-      subtitle="فعّل أو ألغِ أرشفة سجلّ من النماذج المسموح بها."
-    >
+    <Box>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+        فعّل أو ألغِ أرشفة سجلّ من النماذج المسموح بها.
+      </Typography>
+      <Alert severity="warning" sx={{ mb: 2 }}>
+        تعمل هذه الأداة على أي سجل حسب معرّفه — تأكّد من النموذج والمعرّف قبل التطبيق.
+      </Alert>
       <Box component="form" onSubmit={onSubmit} noValidate>
         <Stack
           direction={{ xs: "column", sm: "row" }}
@@ -220,7 +249,7 @@ function ModelArchiveCard() {
           </Button>
         </Stack>
       </Box>
-    </SectionCard>
+    </Box>
   );
 }
 

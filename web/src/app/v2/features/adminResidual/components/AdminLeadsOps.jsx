@@ -21,6 +21,10 @@ import {
   Stack,
   TextField,
   Alert,
+  Typography,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from "@mui/material";
 import {
   MdPersonAdd,
@@ -28,6 +32,9 @@ import {
   MdDeleteForever,
   MdSend,
   MdGroupAdd,
+  MdExpandMore,
+  MdBuild,
+  MdWarning,
 } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
@@ -59,15 +66,63 @@ export function AdminLeadsOps() {
     );
   }
 
+  const showAddGroup = canImport || canCreate;
+  const showAdvanced = canEditLead || canEditClient || canTelegram;
+
   return (
     <Stack spacing={3}>
-      {canImport && <BulkImportCard />}
-      {canCreate && <CreateLeadCard />}
-      {(canEditLead || canEditClient) && (
-        <FieldEditCard canEditLead={canEditLead} canEditClient={canEditClient} />
+      <Typography variant="body2" color="text.secondary">
+        أدوات إدارية لإنشاء وتعديل العملاء المحتملين.
+      </Typography>
+
+      {/* ── primary intent: add leads (bulk import + single create) ───────────────────── */}
+      {showAddGroup && (
+        <Stack spacing={2}>
+          <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 700 }}>
+            إضافة عملاء
+          </Typography>
+          {canImport && <BulkImportCard />}
+          {canCreate && <CreateLeadCard />}
+        </Stack>
       )}
-      {canTelegram && <TelegramCard />}
-      {canDelete && <DeleteLeadCard />}
+
+      {/* ── power-user internals, collapsed by default ────────────────────────────────── */}
+      {showAdvanced && (
+        <Accordion disableGutters sx={{ borderRadius: 3, "&:before": { display: "none" } }}>
+          <AccordionSummary expandIcon={<MdExpandMore />}>
+            <Stack direction="row" spacing={1} alignItems="center">
+              <MdBuild />
+              <Typography variant="subtitle1" component="h2">
+                أدوات متقدمة (للمسؤولين التقنيين)
+              </Typography>
+            </Stack>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Stack spacing={3}>
+              {(canEditLead || canEditClient) && (
+                <FieldEditCard canEditLead={canEditLead} canEditClient={canEditClient} />
+              )}
+              {canTelegram && <TelegramCard />}
+            </Stack>
+          </AccordionDetails>
+        </Accordion>
+      )}
+
+      {/* ── danger zone: destructive delete, isolated at the bottom ───────────────────── */}
+      {canDelete && (
+        <SectionCard
+          title="منطقة الحذف"
+          subtitle="عمليات نهائية لا يمكن التراجع عنها."
+          sx={{ borderColor: "error.main", borderWidth: 1, borderStyle: "solid" }}
+        >
+          <Stack spacing={2}>
+            <Alert severity="warning" icon={<MdWarning />}>
+              العمليات في هذه المنطقة تؤثر على البيانات بشكل دائم. تأكّد قبل التنفيذ.
+            </Alert>
+            <DeleteLeadCard />
+          </Stack>
+        </SectionCard>
+      )}
     </Stack>
   );
 }
@@ -374,7 +429,10 @@ function DeleteLeadCard() {
   }
 
   return (
-    <SectionCard title="حذف عميل محتمل">
+    <Box>
+      <Typography variant="subtitle1" component="h3" sx={{ mb: 1.5 }}>
+        حذف عميل محتمل
+      </Typography>
       <Alert severity="error" sx={{ mb: 2 }}>
         الحذف نهائي ولا يمكن التراجع عنه. هذه العملية متاحة للمسؤول فقط.
       </Alert>
@@ -407,7 +465,7 @@ function DeleteLeadCard() {
           </Button>
         </Stack>
       </Box>
-    </SectionCard>
+    </Box>
   );
 }
 
