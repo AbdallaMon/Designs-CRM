@@ -83,6 +83,14 @@ export const SITE_UTILITY_PERMISSIONS = {
   PAYMENT_CONDITION_CREATE: "site_utility.payment_condition.create", // POST
   PAYMENT_CONDITION_EDIT: "site_utility.payment_condition.edit", // PUT /:id
   PAYMENT_CONDITION_DELETE: "site_utility.payment_condition.delete", // DELETE /:id
+
+  // Contract utility (the studio's contract boilerplate editor — obligations +
+  // stage/special/level clause templates). Legacy `routes/site-utilities/contract-utilities.js`
+  // was behind SHARED auth only; v2 folds it into the privileged site-utility surface
+  // (ADMIN / SUPER_ADMIN), matching the @admin FE page (deliberate tightening, like the
+  // sibling site-utility codes above — not a behavior-preserving 1:1 grant).
+  CONTRACT_UTILITY_VIEW: "site_utility.contract_utility.view", // GET /details, /obligations, /*-clauses
+  CONTRACT_UTILITY_EDIT: "site_utility.contract_utility.edit", // POST/PUT/DELETE obligations + clauses
 };
 
 // ── leads / lead (authenticated lead-management surface) ───────────────────────

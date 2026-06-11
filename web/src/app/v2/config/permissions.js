@@ -35,6 +35,9 @@ export const SITE_UTILITY_PERMISSIONS = {
   PAYMENT_CONDITION_CREATE: "site_utility.payment_condition.create",
   PAYMENT_CONDITION_EDIT: "site_utility.payment_condition.edit",
   PAYMENT_CONDITION_DELETE: "site_utility.payment_condition.delete",
+  // Contract utility editor (obligations + stage/special/level clause templates).
+  CONTRACT_UTILITY_VIEW: "site_utility.contract_utility.view",
+  CONTRACT_UTILITY_EDIT: "site_utility.contract_utility.edit",
 };
 
 // Leads / sales module. Byte-matches the backend @dms/shared LEAD_PERMISSIONS values

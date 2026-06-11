@@ -21,4 +21,25 @@ export const siteUtilityMessages = {
   PAYMENT_CONDITION_NOT_FOUND: "شرط الدفع غير موجود",
   PAYMENT_CONDITION_RESERVED_VALUE: "لا يمكن إنشاء هذا الشرط المحجوز",
   PAYMENT_CONDITION_IN_USE: "لا يمكن حذف شرط دفع مرتبط بدفعات عقود",
+
+  // ── contract utility (obligations + stage/special/level clause templates) ─────
+  CONTRACT_UTILITY_FETCHED: "تم جلب إعدادات عقد التصميم",
+  OBLIGATIONS_FETCHED: "تم جلب التزامات الفريقين",
+  OBLIGATIONS_SAVED: "تم حفظ التزامات الفريقين",
+  STAGE_CLAUSES_FETCHED: "تم جلب بنود المراحل",
+  STAGE_CLAUSE_CREATED: "تم إنشاء بند المرحلة",
+  STAGE_CLAUSE_UPDATED: "تم تحديث بند المرحلة",
+  STAGE_CLAUSE_DELETED: "تم حذف بند المرحلة",
+  SPECIAL_CLAUSES_FETCHED: "تم جلب البنود الخاصة",
+  SPECIAL_CLAUSE_CREATED: "تم إنشاء البند الخاص",
+  SPECIAL_CLAUSE_UPDATED: "تم تحديث البند الخاص",
+  SPECIAL_CLAUSE_DELETED: "تم حذف البند الخاص",
+  LEVEL_CLAUSES_FETCHED: "تم جلب بنود المستويات",
+  LEVEL_CLAUSE_CREATED: "تم إنشاء بند المستوى",
+  LEVEL_CLAUSE_UPDATED: "تم تحديث بند المستوى",
+  LEVEL_CLAUSE_DELETED: "تم حذف بند المستوى",
+  CONTRACT_UTILITY_NOT_FOUND:
+    "لم يتم تهيئة إعدادات عقد التصميم بعد — احفظ الالتزامات أولاً",
+  CLAUSE_NOT_FOUND: "البند غير موجود",
+  INVALID_LEVEL: "مستوى غير صالح",
 };

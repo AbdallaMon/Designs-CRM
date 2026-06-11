@@ -5,6 +5,7 @@ import { validate } from "../../shared/middlewares/validate.middleware.js";
 import { PERMISSIONS } from "@dms/shared";
 import { siteUtilityController } from "./site-utility.controller.js";
 import { SiteUtilityValidation } from "./site-utility.validation.js";
+import { contractUtilityRouter } from "./contract-utility/contract-utility.routes.js";
 
 const P = PERMISSIONS.SITE_UTILITY;
 
@@ -55,5 +56,10 @@ siteUtilityRouter.delete(
   validate(SiteUtilityValidation.idParams, "params"),
   asyncHandler(siteUtilityController.deletePaymentCondition),
 );
+
+// ── Contract utility editor (obligations + stage/special/level clause templates) ──
+// Legacy `routes/site-utilities/contract-utilities.js`, folded into the privileged
+// site-utility surface at `/v2/site-utilities/contract-utility`.
+siteUtilityRouter.use("/contract-utility", contractUtilityRouter);
 
 export { siteUtilityRouter };
