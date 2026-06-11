@@ -1,14 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/app/providers/AuthProvider";
-import { Box, Paper, Typography, useTheme, useMediaQuery } from "@mui/material";
+import { Box } from "@mui/material";
 import Image from "next/image";
 
 export default function HandleAuth({ children }) {
-  // const { isLoggedIn } = useAuth();
-  // const router = useRouter();
 
   // useEffect(() => {
   //   function handleRedirect() {
