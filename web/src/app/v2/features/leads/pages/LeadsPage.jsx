@@ -11,6 +11,7 @@
 // bulk-convert (admin-tier) gated on PERMISSIONS.LEAD.ASSIGN_OTHER.
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Checkbox,
@@ -25,7 +26,8 @@ import {
   TableHead,
   TablePagination,
   TableRow,
-  TextField,
+  Tab,
+  Tabs,
   Toolbar,
   Tooltip,
   Typography,
@@ -36,19 +38,30 @@ import { MdOpenInNew, MdRefresh } from "react-icons/md";
 import Link from "next/link";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
-import { useDebounce } from "@/app/v2/hooks/useDebounce";
 import { useLeadsList } from "../hooks/useLeadsList.js";
 import { leadsColumns } from "../config/leadsColumns.js";
 import { LEAD_STATUS_LABELS } from "../config/leadsConstants.js";
 import { LeadAssignActions } from "../components/LeadAssignActions.jsx";
+import { LeadSearchAutocomplete } from "../components/LeadSearchAutocomplete.jsx";
 import { BulkConvertModal } from "../components/BulkConvertModal.jsx";
+
+// Top-level segment: "new" surfaces NEW client leads (extra.isNew → BE status NEW), which the
+// default ("deals") branch hides via the BE's `status notIn [NEW, CONVERTED, ON_HOLD]` default.
+// Defaulting to "new" guarantees freshly-created client leads are visible (legacy parity:
+// the leads landing defaulted to isNew=true).
+const SEGMENTS = {
+  NEW: "new",
+  DEALS: "deals",
+};
 
 export function LeadsPage() {
   const { hasPermission, hasAnyPermission } = usePermission();
+  const router = useRouter();
   const canList = hasPermission(PERMISSIONS.LEAD.LIST);
   const canBulkConvert = hasPermission(PERMISSIONS.LEAD.ASSIGN_OTHER);
 
-  const [searchInput, setSearchInput] = useState("");
+  // Default to the "new" segment so freshly-created client leads (status NEW) are visible.
+  const [segment, setSegment] = useState(SEGMENTS.NEW);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [selected, setSelected] = useState([]);
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -60,41 +73,31 @@ export function LeadsPage() {
     setPage,
     pageSize,
     setPageSize,
-    setFilters,
     setExtra,
     isLoading,
     refetch,
   } = useLeadsList({ autoFetch: canList });
 
-  // Debounce the raw search term, then push it into the list hook's filter state.
-  // Parity: the legacy leads list (services/main/shared/leadServices.js getClientLeads)
-  // only ever supported searching by lead id (via filters.id) — it never honored a
-  // name/phone free-text search. So the search box is scoped to the numeric lead id; a
-  // non-numeric term matches nothing and is treated as no id filter.
-  const debouncedSearch = useDebounce(searchInput, 400);
+  // Free-text lead lookup now goes through LeadSearchAutocomplete (utilities search across
+  // name/phone/email/code) and navigates straight to the picked lead — so the page no longer
+  // maintains an id-only filter. `filters` stays empty here.
 
+  // `isNew` (new segment) and `status` (explicit dropdown selection) are TOP-LEVEL query params
+  // the BE list reads directly off searchParams (lead.usecase.js #buildListWhere), NOT from the
+  // JSON `filters`, so they are routed through the hook's `extra`. An explicit status selection
+  // wins over the segment default; otherwise the "new" segment sends isNew:true and "deals"
+  // sends nothing (BE applies its default status notIn [NEW, CONVERTED, ON_HOLD]).
   useEffect(() => {
-    const term = debouncedSearch.trim();
-    const id = /^\d+$/.test(term) ? term : null;
-    setFilters(buildFilters(id));
-    // setFilters is a stable callback from the list hook.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch]);
-
-  // Status is a TOP-LEVEL query param the BE list reads directly (lead.usecase.js
-  // #buildListWhere reads `status` off searchParams, NOT from the JSON `filters`), so it
-  // is routed through the hook's `extra` (top-level params), not buildFilters.
-  useEffect(() => {
-    setExtra(statusFilter && statusFilter !== "ALL" ? { status: statusFilter } : {});
+    const next = {};
+    if (statusFilter && statusFilter !== "ALL") {
+      next.status = statusFilter;
+    } else if (segment === SEGMENTS.NEW) {
+      next.isNew = true;
+    }
+    setExtra(next);
     // setExtra is a stable callback from the list hook.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter]);
-
-  function buildFilters(id) {
-    const f = {};
-    if (id) f.id = id;
-    return f;
-  }
+  }, [segment, statusFilter]);
 
   // Which columns to show: privileged-only columns (client PII) hidden unless the user
   // can see them. We approximate the legacy gate with VIEW permission presence (the BE
@@ -133,14 +136,25 @@ export function LeadsPage() {
         العملاء المحتملون
       </Typography>
 
+      <Tabs
+        value={segment}
+        onChange={(_e, v) => {
+          setSegment(v);
+          setStatusFilter("ALL");
+          setSelected([]);
+        }}
+        sx={{ mb: 2 }}
+      >
+        <Tab value={SEGMENTS.NEW} label="العملاء الجدد" />
+        <Tab value={SEGMENTS.DEALS} label="الصفقات" />
+      </Tabs>
+
       <Paper variant="outlined" sx={{ mb: 2 }}>
         <Toolbar sx={{ gap: 2, flexWrap: "wrap", py: 2 }}>
-          <TextField
-            size="small"
-            label="بحث برقم العميل"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            sx={{ minWidth: 260 }}
+          <LeadSearchAutocomplete
+            onSelect={(lead) => {
+              if (lead?.id != null) router.push(`/v2/leads/${lead.id}`);
+            }}
           />
           <Select
             size="small"

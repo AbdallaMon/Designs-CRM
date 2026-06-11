@@ -33,6 +33,7 @@ import { statusLabel } from "@/app/v2/features/leads/config/leadsConstants.js";
 import { SalesStagePanel } from "@/app/v2/features/salesStages";
 import { SpinPanel, VersaPanel } from "@/app/v2/features/questions";
 import { LeadSessionsPanel } from "@/app/v2/features/imageSessions";
+import { LeadProjects } from "@/app/v2/features/projects/components/LeadProjects.jsx";
 
 const PRIVILEGED_ROLES = ["ADMIN", "SUPER_ADMIN", "ACCOUNTANT"];
 
@@ -49,6 +50,7 @@ export function LeadDetailsPage({ leadId }) {
     hasPermission(PERMISSIONS.QUESTION.SESSION_VIEW);
   const canViewVersa = hasPermission(PERMISSIONS.QUESTION.SESSION_VIEW);
   const canViewSessions = hasPermission(PERMISSIONS.IMAGE_SESSION.SESSION_VIEW);
+  const canViewProjects = hasPermission(PERMISSIONS.PROJECT.LIST);
 
   const { lead, isLoading, refetch } = useLeadDetail(leadId, { autoFetch: canView });
 
@@ -77,6 +79,7 @@ export function LeadDetailsPage({ leadId }) {
     if (caps.canAddPriceOffer) s.push({ key: "priceOffers", label: "عروض الأسعار" });
     if (caps.canAddPayment || caps.canSendReminder) s.push({ key: "payments", label: "الدفعات" });
     // Cross-feature lead tools (permission-gated; lead-scope enforced server-side).
+    if (canViewProjects) s.push({ key: "projects", label: "المشاريع" });
     if (canViewSpin) s.push({ key: "spin", label: "أسئلة SPIN" });
     if (canViewVersa) s.push({ key: "versa", label: "معالجة الاعتراضات" });
     if (canViewSessions) s.push({ key: "sessions", label: "جلسات الصور" });
@@ -85,6 +88,7 @@ export function LeadDetailsPage({ leadId }) {
     caps.canAddPriceOffer,
     caps.canAddPayment,
     caps.canSendReminder,
+    canViewProjects,
     canViewSpin,
     canViewVersa,
     canViewSessions,
@@ -162,6 +166,8 @@ export function LeadDetailsPage({ leadId }) {
         {lead && active === "files" && <FilesTab lead={lead} onChanged={refetch} />}
         {lead && active === "priceOffers" && <PriceOffersTab lead={lead} onChanged={refetch} />}
         {lead && active === "payments" && <PaymentsTab lead={lead} onChanged={refetch} />}
+        {/* Self-loads grouped projects via GET /v2/projects?clientLeadId=; only mounts on this tab. */}
+        {lead && active === "projects" && <LeadProjects clientLeadId={lead.id} />}
         {lead && active === "spin" && <SpinPanel clientLeadId={lead.id} />}
         {lead && active === "versa" && <VersaPanel clientLeadId={lead.id} />}
         {lead && active === "sessions" && <LeadSessionsPanel clientLeadId={lead.id} />}
