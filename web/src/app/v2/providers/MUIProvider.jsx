@@ -1,24 +1,19 @@
 "use client";
 
-// MUIProvider — owns the ENTIRE MUI + RTL setup for v2, ONCE. It wraps the app in a module-level
-// emotion cache keyed "muirtl" (stylis-plugin-rtl, prepend) so EVERY page that renders under the
-// root layout — including non-AppLayout pages (login, reset, redirect shells) — gets RTL flipping,
-// not just AuthedAppLayout/PublicAppLayout. The theme itself carries direction: "rtl".
+// MUIProvider — provides the v2 MUI theme (direction: "rtl") to the whole tree.
+//
+// The RTL emotion cache (key "muirtl" + stylis-plugin-rtl, prepend) now lives in the ROOT
+// layout via <AppRouterCacheProvider> (@mui/material-nextjs), which is the official Next.js
+// App Router integration: it inserts emotion's SSR styles through useServerInsertedHTML, so
+// the RTL flip is applied during the server render and the FIRST paint is already RTL — for
+// every route, including non-AppLayout pages (login, reset, redirect shells). A client-only
+// @emotion/cache (the previous setup here) does NOT participate in SSR, which is why the app
+// "looked LTR" on initial load. Keeping a second cache here would double-cache, so it's gone.
 // Single-language Arabic / RTL.
 
-import createCache from "@emotion/cache";
-import { CacheProvider } from "@emotion/react";
 import { ThemeProvider } from "@mui/material";
-import rtlPlugin from "stylis-plugin-rtl";
 import theme from "./theme";
 
-// Module-level so the cache is created once and shared across the tree (no per-render churn).
-const cache = createCache({ key: "muirtl", prepend: true, stylisPlugins: [rtlPlugin] });
-
 export function MUIProvider({ children }) {
-  return (
-    <CacheProvider value={cache}>
-      <ThemeProvider theme={theme}>{children}</ThemeProvider>
-    </CacheProvider>
-  );
+  return <ThemeProvider theme={theme}>{children}</ThemeProvider>;
 }

@@ -1,4 +1,5 @@
 import "./globals.css";
+import { RtlCacheProvider } from "@/app/v2/providers/RtlCacheProvider";
 import { ToastProvider } from "@/app/v2/providers/ToastProvider";
 import { AuthProvider } from "@/app/v2/providers/AuthProvider";
 import { MUIProvider } from "@/app/v2/providers/MUIProvider";
@@ -91,19 +92,27 @@ export default function RootLayout({ children }) {
         className={noto.className}
         style={{ backgroundColor: colors.bgSecondary }}
       >
-        <AlertProvider>
-          <MUIProvider>
-            <UploadingProvider>
-              <ToastProvider>
-                <AuthProvider>
-                  <DotsLoader />
-                  {children}
-                </AuthProvider>
-                <ServiceWorkerRegister />
-              </ToastProvider>
-            </UploadingProvider>
-          </MUIProvider>
-        </AlertProvider>
+        {/* SSR-aware RTL emotion cache (MUI's official App Router integration). Applies the
+            stylis-plugin-rtl transform during the server render so RTL is correct on FIRST
+            paint for EVERY route (login, dashboard, lead detail) with no LTR-flash / hydration
+            mismatch. Pairs with theme.direction:"rtl" and <html dir="rtl">. Implemented as a
+            Client Component because the rtl stylis plugin is a function and can't be passed as
+            a prop from this Server Component layout. */}
+        <RtlCacheProvider>
+          <AlertProvider>
+            <MUIProvider>
+              <UploadingProvider>
+                <ToastProvider>
+                  <AuthProvider>
+                    <DotsLoader />
+                    {children}
+                  </AuthProvider>
+                  <ServiceWorkerRegister />
+                </ToastProvider>
+              </UploadingProvider>
+            </MUIProvider>
+          </AlertProvider>
+        </RtlCacheProvider>
       </body>
     </html>
   );

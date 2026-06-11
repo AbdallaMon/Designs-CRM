@@ -1,13 +1,16 @@
 "use client";
 
 // <AppShell /> — the persistent app chrome (UX plan §1.2): a sticky <TopBar> + a side-nav that
-// sits at the inline-START (RTL = right). Responsive:
+// sits on the LEFT. Responsive:
 //   lg+ : permanent full side-nav (labels + icons).
 //   md  : permanent icon-RAIL (tooltips).
-//   xs/sm: temporary Drawer (anchor="right") toggled from the TopBar menu button.
-// The content area pads for the TopBar height and the permanent nav width so nothing is
-// obscured (a11y 2.4.11). All authed v2 features render INSIDE this via AuthedAppLayout.
-// Single-language Arabic / RTL.
+//   xs/sm: temporary Drawer (anchor="left") toggled from the TopBar menu button.
+// The nav Drawer and the main content are siblings in a flex row (nav first, content second),
+// so the LEFT-anchored permanent Drawer reserves its width on the left and the main content
+// flows to its right automatically — no manual margin/padding flips needed. The content area
+// also pads for the TopBar height so nothing is obscured (a11y 2.4.11). All authed v2 features
+// render INSIDE this via AuthedAppLayout.
+// Single-language Arabic / RTL document, with the navigation drawer on the left.
 
 import { useEffect, useState } from "react";
 import {
@@ -72,7 +75,7 @@ export function AppShell({ children }) {
       {permanent && (
         <Drawer
           variant="permanent"
-          anchor="right"
+          anchor="left"
           sx={{
             width: navWidth,
             flexShrink: 0,
@@ -93,7 +96,7 @@ export function AppShell({ children }) {
       {!permanent && (
         <Drawer
           variant="temporary"
-          anchor="right"
+          anchor="left"
           open={mobileOpen}
           onClose={() => setMobileOpen(false)}
           ModalProps={{ keepMounted: true }}

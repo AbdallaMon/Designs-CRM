@@ -6,7 +6,9 @@
 // exact/segment usePathname() match (NOT `.includes`). Two render modes:
 //   variant="full" — labels + icons (lg+ and the xs Drawer).
 //   variant="rail" — icon-only rail with tooltips (md).
-// RTL: the nav sits at the inline-START (right) via the Drawer anchor in <AppShell>.
+// The nav sits on the LEFT via the Drawer anchor in <AppShell>; rail tooltips point right
+// (toward the content) so they never overlap the nav. The active-item accent uses the logical
+// borderInlineStart (RTL = right edge of each item, i.e. the edge nearest the content).
 // Single-language Arabic / RTL.
 
 import { usePathname } from "next/navigation";
@@ -92,7 +94,7 @@ export function SideNav({ variant = "full", onNavigate }) {
                 </ListItemButton>
               );
               return rail ? (
-                <Tooltip key={item.key} title={item.label} placement="left">
+                <Tooltip key={item.key} title={item.label} placement="right">
                   {button}
                 </Tooltip>
               ) : (
