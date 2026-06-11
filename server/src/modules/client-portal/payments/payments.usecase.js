@@ -16,6 +16,7 @@
 // caller could mark an arbitrary lead paid using an unrelated paid session. v2 derives the
 // target lead from the VERIFIED session's `metadata.clientLeadId` and rejects a mismatch.
 import { AppError } from "../../../shared/errors/AppError.js";
+import { env } from "../../../config/env.js";
 import { clientPortalMessagesCodes } from "@dms/shared";
 import {
   createCheckoutSession,
@@ -122,7 +123,9 @@ export class PaymentsUsecase {
   // GET /stripe/backfill — legacy guarded on a secret then early-returned null (the backfill
   // body was unreachable). Preserve the secret gate + the no-op exactly.
   backfill({ pass }) {
-    if (pass !== process.env.SECRET_KEY) {
+    // Fail CLOSED: if the dedicated secret is unset, deny rather than open the gate
+    // (the old `pass !== SECRET_KEY` opened when both sides were undefined).
+    if (!env.BACKFILL_SECRET || pass !== env.BACKFILL_SECRET) {
       throw new AppError(C.PAYMENT_NOT_ALLOWED, 403);
     }
     return { ok: true };

@@ -16,6 +16,9 @@ class JwtService {
     secure: !env.ISLOCAL,
     sameSite: env.ISLOCAL ? "lax" : "none",
     path: "/",
+    // Shared across subdomains only when explicitly configured in prod (e.g. ".domain.com").
+    // undefined on localhost and when COOKIE_DOMAIN is unset → today's exact behavior.
+    domain: env.ISLOCAL ? undefined : env.COOKIE_DOMAIN || undefined,
   };
 
   static cookies = {

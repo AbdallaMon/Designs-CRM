@@ -4,6 +4,28 @@ const allowedOrigins = env.ALLOW_ORIGIN
   ? env.ALLOW_ORIGIN.split(",").map((o) => o.trim())
   : allowedOriginsTemplate.map((o) => o.trim());
 
+// Optional: bare base domains (CSV) whose any subdomain is allowed, e.g. "domain.com,domain2.com".
+// No-op when unset — the exact-match allowedOrigins list above stays the sole gate.
+const allowedDomains = env.ALLOWED_DOMAINS
+  ? env.ALLOWED_DOMAINS.split(",")
+      .map((d) => d.trim())
+      .filter(Boolean)
+  : [];
+
+// True if `origin`'s hostname equals a configured base domain or is a subdomain of one.
+function matchesAllowedDomain(origin) {
+  if (allowedDomains.length === 0) return false;
+  let hostname;
+  try {
+    hostname = new URL(origin).hostname;
+  } catch {
+    return false;
+  }
+  return allowedDomains.some(
+    (d) => hostname === d || hostname.endsWith(`.${d}`),
+  );
+}
+
 export const corsOptions = {
   origin(origin, callback) {
     if (!origin) return callback(null, true);
@@ -18,7 +40,7 @@ export const corsOptions = {
       origin = origin.slice(0, -1);
     }
 
-    if (allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes(origin) || matchesAllowedDomain(origin)) {
       callback(null, true);
     } else {
       callback(new Error(`Not allowed by CORS: ${origin}`));

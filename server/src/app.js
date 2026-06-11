@@ -9,10 +9,6 @@ import {
 import clientsRoutes from "../routes/clients/clients.js";
 import authRoutes from "../routes/auth/auth.js";
 import sharedRoutes from "../routes/shared/index.js";
-import utilityRoutes from "../routes/utility/utility.js";
-import staffRoutes from "../routes/staff/staff.js";
-import adminRoutes from "../routes/admin/admin.js";
-import accountantRoutes from "../routes/accountant/accountant.js";
 import v2Routes from "./shared/routes.js";
 import { env } from "./config/env.js";
 
@@ -47,11 +43,10 @@ if (env.ISLOCAL) {
 }
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
+// Cutover: the /utility, /staff, /admin and /accountant legacy routers were unmounted
+// (their @role dashboard frontend is gone). The files remain on disk (reversible).
+// /shared and /client stay mounted until legacy client-chat is migrated to v2.
 app.use("/shared", sharedRoutes);
-app.use("/utility", utilityRoutes);
-app.use("/staff", staffRoutes);
-app.use("/admin", adminRoutes);
-app.use("/accountant", accountantRoutes);
 app.use("/client", clientsRoutes);
 app.use("/v2", v2Routes);
 
