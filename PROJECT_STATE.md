@@ -20,9 +20,12 @@
 > `6d45f0b`/`189f75b`/`d09ca57` + fixes `9d2bd07`/`3a5a82d`; **runtime-verified** (real boot: 15/15 redirect
 > routes, admin login OK ADMIN/123-perms, public v2 surfaces un-gated, npm test 571/34, next build clean).
 > Caught+fixed a Step-A regression (the server-side `ui/src/proxy.js` middleware gated `/v2` public surfaces).
-> **Step D** (legacy routers + single-cookie + CORS/cookie-domain) scoped — full router removal BLOCKED on
-> migrating legacy `/chats` (uses legacy `/shared/chat` + `/client/chat`, no v2 public client-chat). **Step E**
-> (`ui→web` rename) needs a user checkpoint. See `docs/migration/RESUME-CHECKPOINT.md` for the authoritative state.
+> **Step D backend DONE** (`28ab93b`): unmounted 4 dead legacy routers (kept `/shared`+`/client`+`/v2`),
+> CORS base-domain+subdomain (`ALLOWED_DOMAINS`), shared cookie `domain` (`COOKIE_DOMAIN`), backfill
+> decoupled to fail-closed `BACKFILL_SECRET`; verified (npm 571/34, boot, admin login). **Deferred (documented,
+> with reasons): live client-chat migration** (`/chats` → v2 client-chat; `/shared`+`/client` stay until then;
+> the v2 chat still calls legacy `/shared/all-related-chat-users`) and **Step E `ui→web` rename** (true-final,
+> per decision #9; disrupts the live env). See `docs/migration/RESUME-CHECKPOINT.md` for the authoritative state.
 > For the authoritative latest state + commit trail see **`docs/migration/RESUME-CHECKPOINT.md`** (this
 > file's §3 commit trail below is kept at the FE-features milestone and is not the latest).
 

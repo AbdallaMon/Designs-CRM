@@ -115,14 +115,29 @@ D scoped (partly blocked), E needs a user checkpoint.**
   - **RUNTIME-VERIFIED (shared-tester, real boot, Redis up):** 15/15 redirect routes correct; public v2
     surfaces 200 (no login bounce) while authed-only → /login; admin login OK (role ADMIN, **123 perms /
     23 modules**), `{items,total,page,pageSize}` shape confirmed. `npm test` 571/34, `next build` clean.
-  - ⏳ **Step D — legacy routers + single-cookie + CORS/cookie-domain.** SCOPED (Explore). **BLOCKED for full
-    router removal:** legacy `/chats` FE still calls legacy `/shared/chat/*` AND `/client/chat/*` via
-    `legacyApiFetch`; public client-chat has NO v2 equivalent → `/shared` + `/client` MUST stay until chat is
-    migrated. Unpinned + removable: `/utility`,`/staff`,`/admin`,`/accountant`. Single-cookie: keep the
-    legacy read-shim ≥4h window; **decouple `payments.usecase` backfill off `SECRET_KEY` → `BACKFILL_SECRET`
-    BEFORE dropping SECRET_KEY (else fail-open).** CORS: allow base-domain + any subdomain
-    (`ALLOWED_DOMAINS`); cookie `domain` from `COOKIE_DOMAIN` (no-op when ISLOCAL). Needs prod domain values.
-  - 🛑 **Step E — `ui/ → web/` rename + workspaces.** CHECKPOINT WITH USER before doing this.
+  - ✅ **Step D (backend half) — DONE** (`28ab93b`): unmounted the 4 provably-dead legacy routers
+    (`/utility`,`/staff`,`/admin`,`/accountant`) from `app.js` (files left on disk, reversible); **kept
+    `/shared`+`/client`+`/v2`**. Decoupled `payments.usecase` backfill off `SECRET_KEY` → fail-closed
+    `env.BACKFILL_SECRET`. CORS now allows base-domain + any subdomain via `env.ALLOWED_DOMAINS` (additive,
+    inert when unset). Cookie `domain` from `env.COOKIE_DOMAIN` (undefined on ISLOCAL/when unset). `SECRET_KEY`
+    kept for the JWT legacy read-shim. Verified: npm test 571/34, boot OK, admin login 200 (no Domain cookie
+    locally), `/admin/*`→404, `/shared`→401. **For prod:** set `ALLOWED_DOMAINS`, `COOKIE_DOMAIN`, `BACKFILL_SECRET`.
+  - ⛔ **Step D (router removal) + chat — DEFERRED (documented, NOT done): live client-chat migration project.**
+    Chat map (Explore, verified): `/v2/chat` already fully covers staff chat (legacy staff chat UI is dead —
+    it lived in the deleted dashboard). BUT legacy **`/chats`** is the LIVE public client-chat entry (token
+    links `/chats?roomId&token` are shared into the wild via `ChatAccessLinkBox`), and the v2 client-chat
+    **backend exists** (`/v2/client/chat`, 1:1) **but has NO v2 FE page**. Also the v2 chat service still calls
+    legacy **`/shared/all-related-chat-users`** (`ui/.../v2/features/chat/chat.service.js`). So `/shared` +
+    `/client` stay until: (1) build a v2 public client-chat FE page on `/v2/client/chat`; (2) convert `/chats`
+    to a redirect shell preserving `?roomId&token` (keeps in-the-wild links alive); (3) repoint
+    `ChatAccessLinkBox` to the v2 path; (4) migrate the `all-related-chat-users` directory call to v2; then
+    unmount `/shared`+`/client`. NOT done blind because it is live + client-facing and a real room token can't
+    be minted to verify a new page end-to-end in a sandbox. Then the now-orphaned legacy
+    `UiComponents/DataViewer/chat/*` + the dead legacy `server/routes/**` files can be deleted.
+  - 🛑 **Step E — `ui/ → web/` rename + workspaces.** The TRUE-final step (decision #9 ties it to FULL legacy
+    retirement, which the chat dependency above still blocks). Deferred: it disrupts the running dev env
+    (node_modules/.next/running servers) for a cosmetic rename while legacy isn't fully gone. Low code-impact
+    (`@/*` is workspace-local; only root `package.json` workspaces+scripts + the dir move).
   - **Frozen services under `server/services/**` are lazy-imported by v2 and MUST NOT be deleted** (separate
     from the legacy `server/routes/**` routers).
 
