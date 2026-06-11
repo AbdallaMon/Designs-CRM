@@ -12,22 +12,21 @@ export const NAV_GROUP_LABELS = {
 
 export const NAV_ITEM_LABELS = {
   dashboard: "لوحة التحكم",
+  leadsWorkspace: "مساحة العمل",
   notifications: "الإشعارات",
   chat: "المحادثات",
-  leadsWorkspace: "مساحة عملي",
   leads: "الصفقات",
-  adminProjects: "المشاريع (إدارة)",
+  adminProjects: "إدارة المشاريع",
   commissions: "العمولات",
   projects: "المشاريع",
   tasks: "المهام",
-  imageSessions: "جلسات الصور",
+  imageSessions: "جلسات التصميم",
   accounting: "المحاسبة",
-  contractPayments: "العقود — الدفعات",
+  contractPayments: "دفعات العقود",
   users: "المستخدمون",
   siteUtilities: "إعدادات الموقع",
-  reviews: "المراجعات",
   reports: "التقارير",
-  utilities: "أدوات",
+  utilities: "الأدوات",
 };
 
 /** Resolve a nav group key to its Arabic label. */

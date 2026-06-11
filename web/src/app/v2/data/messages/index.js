@@ -33,7 +33,6 @@ import { utilitiesMessages } from "./utilities.js";
 import { dashboardMessages } from "./dashboard.js";
 import { questionsMessages } from "./questions.js";
 import { salesStagesMessages } from "./salesStages.js";
-import { reviewsMessages } from "./reviews.js";
 import { contractsMessages } from "./contracts.js";
 import { imageSessionsMessages } from "./imageSessions.js";
 import { adminResidualMessages } from "./adminResidual.js";
@@ -57,7 +56,6 @@ export const MESSAGES_BY_NAMESPACE = {
   dashboardMessages,
   questionsMessages,
   salesStagesMessages,
-  reviewsMessages,
   contractsMessages,
   imageSessionsMessages,
   adminResidualMessages,
@@ -76,7 +74,6 @@ export const ALL_MESSAGE_CODES = {
   ...adminResidualMessages,
   ...clientPortalMessages,
   ...salesStagesMessages,
-  ...reviewsMessages,
   ...questionsMessages,
   ...dashboardMessages,
   ...notificationsMessages,

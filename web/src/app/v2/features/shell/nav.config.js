@@ -29,7 +29,6 @@ import {
   MdReceiptLong,
   MdManageAccounts,
   MdSettings,
-  MdStar,
   MdAssessment,
   MdBuild,
 } from "react-icons/md";
@@ -57,6 +56,15 @@ export const NAV_ITEMS = [
     permission: P.DASHBOARD.VIEW,
   },
   {
+    // The daily cockpit — front-and-center as the SECOND top-level item, right after Dashboard.
+    key: "leadsWorkspace",
+    labelKey: "leadsWorkspace",
+    href: "/v2/leads/workspace",
+    icon: MdSpaceDashboard,
+    group: "home",
+    permission: P.LEAD.LIST,
+  },
+  {
     key: "notifications",
     labelKey: "notifications",
     href: "/v2/notifications",
@@ -74,14 +82,6 @@ export const NAV_ITEMS = [
   },
 
   // ── المبيعات ─────────────────────────────────────────────────────────────
-  {
-    key: "leadsWorkspace",
-    labelKey: "leadsWorkspace",
-    href: "/v2/leads/workspace",
-    icon: MdSpaceDashboard,
-    group: "sales",
-    permission: P.LEAD.LIST,
-  },
   {
     key: "leads",
     labelKey: "leads",
@@ -169,14 +169,6 @@ export const NAV_ITEMS = [
     icon: MdSettings,
     group: "admin",
     permission: P.SITE_UTILITY.PDF_CONFIG_VIEW,
-  },
-  {
-    key: "reviews",
-    labelKey: "reviews",
-    href: "/v2/reviews",
-    icon: MdStar,
-    group: "admin",
-    permission: P.REVIEW.VIEW,
   },
   {
     key: "reports",

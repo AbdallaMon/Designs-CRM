@@ -243,12 +243,6 @@ export const SALES_STAGE_PERMISSIONS = {
   MANAGE: "sales_stage.manage", // advance / roll back a lead's sales stage (lead-scoped write)
 };
 
-// Reviews (Google Business reviews read + OAuth connect).
-export const REVIEW_PERMISSIONS = {
-  VIEW: "review.view", // GET locations / reviews (read Google Business data)
-  CONNECT: "review.connect", // GET auth-url / oauth callback (initiate / complete OAuth)
-};
-
 // Admin/staff residual (the ADMIN-tier residual sweep: reports, admin leads, commissions,
 // fixed-data writes, admin-projects aggregation, model-archive). 🔒 pdfkit reports frozen.
 export const ADMIN_RESIDUAL_PERMISSIONS = {
@@ -293,7 +287,6 @@ export const PERMISSIONS = {
   DASHBOARD: DASHBOARD_PERMISSIONS,
   QUESTION: QUESTION_PERMISSIONS,
   SALES_STAGE: SALES_STAGE_PERMISSIONS,
-  REVIEW: REVIEW_PERMISSIONS,
   ADMIN_RESIDUAL: ADMIN_RESIDUAL_PERMISSIONS,
   STAFF: STAFF_PERMISSIONS,
 };
