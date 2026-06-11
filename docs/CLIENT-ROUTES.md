@@ -12,9 +12,10 @@ pages**.
   router-level auth** — each client endpoint authenticates by its own means (an email/phone in
   the body, or a per-resource **token**: booking-fee Stripe session, meeting token, contract
   e-sign token, image-session token, chat-room token).
-- In the migrated app these become layered modules mounted under **`/api/v1/v2/client/*`** (the
-  v2 aggregate router is mounted at `/v2` inside the API base). **Paths are preserved 1:1** under
-  the new prefix — e.g. legacy `/client/pay` → `/v2/client/pay`.
+- In the migrated app these become layered modules mounted under **`/v2/client/*`** (the v2
+  aggregate router is mounted at `/v2` in `server/src/app.js` via `app.use("/v2", v2Routes)`;
+  there is **no `/api/v1`** — decision #1 locked the API base permanently as `/v2`). **Paths are
+  preserved 1:1** under the new prefix — e.g. legacy `/client/pay` → `/v2/client/pay`.
 - **Public by design.** Every surface below stays **public (no `requireAuth` /
   `requirePermissions` / permission code)** — a prospective client has no session. Several v2
   modules add an **IDOR close**: the target resource is derived from the **verified token /
