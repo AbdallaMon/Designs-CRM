@@ -13,8 +13,16 @@
 //
 // This is intentionally a separate file from the legacy public-funnel `dictionary.js` (which is a
 // flat English-key → Arabic map for the marketing site). Different layer, different lifecycle.
+//
+// COMPOSITION (added): the per-feature dictionaries under ./dictionaries/ are DEEP-MERGED on top of
+// the core keys below. A feature agent fills ./dictionaries/<feature>.js (ar+en) and its keys are
+// picked up here automatically — NO edit to this file or the barrel. The core keys below stay the
+// authoritative source for the shell/nav/common/state chrome; the merged feature maps are additive,
+// so with empty stubs the resolved dictionary is byte-identical to before.
 
-export const uiDictionary = {
+import { featureDictionaries, deepMerge } from "./dictionaries/index.js";
+
+const coreDictionary = {
   ar: {
     // ── nav: group headers ──────────────────────────────────────────────────────
     "nav.group.home": "الرئيسية",
@@ -134,6 +142,13 @@ export const uiDictionary = {
     // ── common: misc ────────────────────────────────────────────────────────────
     "common.dash": "—",
   },
+};
+
+// The exported dictionary = core keys with the per-feature dictionaries deep-merged on top.
+// Built once at module load. With empty stubs this equals coreDictionary exactly (ar unchanged).
+export const uiDictionary = {
+  ar: deepMerge(deepMerge({}, coreDictionary.ar), featureDictionaries.ar),
+  en: deepMerge(deepMerge({}, coreDictionary.en), featureDictionaries.en),
 };
 
 /**
