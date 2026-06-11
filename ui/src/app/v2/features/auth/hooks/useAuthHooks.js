@@ -17,7 +17,7 @@ export function useAuthHooks() {
     if (response.status === 200) {
       setAuthUser(response.user);
       const searchParams = new URLSearchParams(window.location.search);
-      const redirectTo = searchParams.get("redirect") || "/dashboard";
+      const redirectTo = searchParams.get("redirect") || "/v2/dashboard";
       window.location.href = redirectTo;
     }
 
