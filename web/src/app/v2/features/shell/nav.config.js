@@ -26,8 +26,6 @@ import {
   MdImage,
   MdAccountBalanceWallet,
   MdReceiptLong,
-  MdSchool,
-  MdLibraryBooks,
   MdManageAccounts,
   MdSettings,
   MdStar,
@@ -44,7 +42,6 @@ export const NAV_GROUP_ORDER = [
   "sales",
   "production",
   "finance",
-  "learning",
   "admin",
 ];
 
@@ -145,24 +142,6 @@ export const NAV_ITEMS = [
     icon: MdReceiptLong,
     group: "finance",
     permission: P.CONTRACT.PAYMENT_LIST,
-  },
-
-  // ── التعلّم ──────────────────────────────────────────────────────────────
-  {
-    key: "myCourses",
-    labelKey: "myCourses",
-    href: "/v2/my-courses",
-    icon: MdSchool,
-    group: "learning",
-    permission: P.STAFF_COURSE.VIEW,
-  },
-  {
-    key: "courses",
-    labelKey: "courses",
-    href: "/v2/courses",
-    icon: MdLibraryBooks,
-    group: "learning",
-    permission: P.COURSE.VIEW,
   },
 
   // ── الإدارة ──────────────────────────────────────────────────────────────

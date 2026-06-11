@@ -23,7 +23,6 @@ import { generalMessages } from "./general.js";
 import { authMessages } from "./auth.js";
 import { chatMessages } from "./chat.js";
 import { siteUtilityMessages } from "./siteUtility.js";
-import { coursesMessages } from "./courses.js";
 import { leadsMessages } from "./leads.js";
 import { usersMessages } from "./users.js";
 import { projectsMessages } from "./projects.js";
@@ -48,7 +47,6 @@ export const MESSAGES_BY_NAMESPACE = {
   authMessages,
   chatMessages,
   siteUtilityMessages,
-  coursesMessages,
   leadsMessages,
   usersMessages,
   projectsMessages,
@@ -85,7 +83,6 @@ export const ALL_MESSAGE_CODES = {
   ...calendarMessages,
   ...imageSessionsMessages,
   ...contractsMessages,
-  ...coursesMessages,
   ...accountingMessages,
   ...projectsMessages,
   ...usersMessages,

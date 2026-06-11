@@ -7,7 +7,6 @@ export const NAV_GROUP_LABELS = {
   sales: "المبيعات",
   production: "الإنتاج",
   finance: "المالية",
-  learning: "التعلّم",
   admin: "الإدارة",
 };
 
@@ -15,7 +14,7 @@ export const NAV_ITEM_LABELS = {
   dashboard: "لوحة التحكم",
   notifications: "الإشعارات",
   chat: "المحادثات",
-  leads: "العملاء المحتملون",
+  leads: "الصفقات",
   adminProjects: "المشاريع (إدارة)",
   commissions: "العمولات",
   projects: "المشاريع",
@@ -23,8 +22,6 @@ export const NAV_ITEM_LABELS = {
   imageSessions: "جلسات الصور",
   accounting: "المحاسبة",
   contractPayments: "العقود — الدفعات",
-  myCourses: "دوراتي",
-  courses: "إدارة الدورات",
   users: "المستخدمون",
   siteUtilities: "إعدادات الموقع",
   reviews: "المراجعات",

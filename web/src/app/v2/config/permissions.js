@@ -186,19 +186,6 @@ export const IMAGE_SESSION_PERMISSIONS = {
 // remaining FE features. Screens land in the UX-redesign phase; these gate them when built.
 // All values byte-match the backend @dms/shared blocks of the same name.
 
-// Courses / LMS — admin authoring surface (COURSE_*) + staff learner surface (STAFF_COURSE_*).
-export const COURSE_PERMISSIONS = {
-  VIEW: "course.view", // list courses, dashboard, course detail reads
-  MANAGE: "course.manage", // create/edit course, lessons, videos, pdfs, links, tests, questions
-  ACCESS_MANAGE: "course.access.manage", // grant/revoke LessonAccess, view allowed users/roles
-  ATTEMPT_MANAGE: "course.attempt.manage", // increase/decrease attempts, approve answers, attempt summaries
-};
-
-export const STAFF_COURSE_PERMISSIONS = {
-  VIEW: "staff_course.view", // browse courses/lessons/tests, dashboard, progress, own attempts
-  TAKE: "staff_course.take", // mark lesson complete, submit homework, create attempt, submit answer, end attempt
-};
-
 // Users / admin user-management. DIRECTORY is a broad authed pick-list; the rest are
 // admin-tier. PROFILE_* are object-scope checked (self OR admin-tier) by the BE.
 export const USER_PERMISSIONS = {
@@ -300,8 +287,6 @@ export const PERMISSIONS = {
   CALENDAR: CALENDAR_PERMISSIONS,
   CONTRACT: CONTRACT_PERMISSIONS,
   IMAGE_SESSION: IMAGE_SESSION_PERMISSIONS,
-  COURSE: COURSE_PERMISSIONS,
-  STAFF_COURSE: STAFF_COURSE_PERMISSIONS,
   USER: USER_PERMISSIONS,
   NOTIFICATION: NOTIFICATION_PERMISSIONS,
   UTILITY: UTILITY_PERMISSIONS,
