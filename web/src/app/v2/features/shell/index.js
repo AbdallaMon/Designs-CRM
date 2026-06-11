@@ -1,14 +1,12 @@
 // Barrel for the app-shell feature (UX redesign Phase 0).
 
-export { AppShell } from "./components/AppShell";
 export { AppShellV2 } from "./components/AppShellV2";
 export { WorkspaceRail } from "./components/WorkspaceRail";
 export { WorkspacePanel } from "./components/WorkspacePanel";
 export { CommandBar } from "./components/CommandBar";
 export { CommandPalette } from "./components/CommandPalette";
-export { SideNav } from "./components/SideNav";
-export { TopBar } from "./components/TopBar";
 export { NotificationBell } from "./components/NotificationBell";
+export { LandingRedirect } from "./components/LandingRedirect";
 export {
   NAV_ITEMS,
   NAV_GROUP_ORDER,

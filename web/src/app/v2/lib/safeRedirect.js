@@ -6,9 +6,9 @@
 // `//`) to turn our trusted login URL into a phishing/open-redirect primitive.
 //
 // Only honor SAME-ORIGIN, RELATIVE paths. Anything absolute, scheme-relative (`//`), or
-// backslash-prefixed (`/\`) falls back to the dashboard. Must run client-side (uses
-// window.location.origin).
-export function safeRedirect(raw, fallback = "/v2/dashboard") {
+// backslash-prefixed (`/\`) falls back to the /v2 landing fan-out (which then sends each role
+// to its default workspace). Must run client-side (uses window.location.origin).
+export function safeRedirect(raw, fallback = "/v2") {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/\\")) {
     return fallback;
   }

@@ -28,8 +28,9 @@ export function proxy(request) {
   }
 
   if (isAuthRoute && isAuthenticated) {
-    // Cutover: send already-logged-in users to the v2 shell, not the retired legacy /dashboard.
-    return NextResponse.redirect(new URL("/v2/dashboard", request.url));
+    // Cutover: send already-logged-in users to the /v2 landing fan-out (which routes each role
+    // on to its default workspace), not the retired legacy /dashboard.
+    return NextResponse.redirect(new URL("/v2", request.url));
   }
   return NextResponse.next();
 }
