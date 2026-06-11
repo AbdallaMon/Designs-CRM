@@ -1,15 +1,15 @@
-import { Suspense } from "react";
-import ClientImageSelection from "../UiComponents/DataViewer/image-session/client-session/ClientImageSelection";
-import LanguageSwitcherProvider from "../providers/LanguageSwitcherProvider";
+import { redirect } from "next/navigation";
 
-export default async function page({ params, searchParams }) {
-  const awaitedSearchParams = await searchParams;
-  const token = awaitedSearchParams.token;
-  return (
-    <Suspense>
-      <LanguageSwitcherProvider initialLng={awaitedSearchParams.lng}>
-        <ClientImageSelection token={token} />
-      </LanguageSwitcherProvider>
-    </Suspense>
-  );
+// Cutover Step C — redirect shell (legacy path kept alive for FROZEN-service links).
+// server/services/main/image-session/imageSessionSevices.js + email/emailTemplates.js
+// (FROZEN) email clients `${OLDORIGIN}/image-session?token=...`, so this path must resolve
+// indefinitely. Forward all query (token, lng) to the v2 public image-selection page.
+export default async function Page({ searchParams }) {
+  const sp = (await searchParams) ?? {};
+  const qs = new URLSearchParams(
+    Object.entries(sp).flatMap(([k, v]) =>
+      Array.isArray(v) ? v.map((x) => [k, x]) : v != null ? [[k, v]] : [],
+    ),
+  ).toString();
+  redirect(`/v2/client-image-session${qs ? `?${qs}` : ""}`);
 }
