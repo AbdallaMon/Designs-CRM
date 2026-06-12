@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from "react";
 import { Box, Container, Tab, Tabs, Typography } from "@mui/material";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { UploadingProvider } from "@/app/v2/providers/UploadingProvider";
@@ -23,20 +24,21 @@ import ContractUtility from "../components/ContractUtility.jsx";
  * SITE_UTILITY.CONTRACT_UTILITY_VIEW; per-action gating lives in the child component.
  */
 const TABS = [
-  { key: "pdf", label: "إعدادات الـ PDF", view: PERMISSIONS.SITE_UTILITY.PDF_CONFIG_VIEW },
+  { key: "pdf", labelKey: "siteUtility.tab.pdf", view: PERMISSIONS.SITE_UTILITY.PDF_CONFIG_VIEW },
   {
     key: "conditions",
-    label: "شروط دفع العقود",
+    labelKey: "siteUtility.tab.conditions",
     view: PERMISSIONS.SITE_UTILITY.PAYMENT_CONDITION_LIST,
   },
   {
     key: "contract",
-    label: "إعدادات عقد التصميم",
+    labelKey: "siteUtility.tab.contract",
     view: PERMISSIONS.SITE_UTILITY.CONTRACT_UTILITY_VIEW,
   },
 ];
 
 export function SiteUtilityPage() {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   // The page is reachable with any one of the site-utility view codes; each tab is
   // individually gated below so a user only sees the surfaces they can read.
@@ -77,7 +79,7 @@ export function SiteUtilityPage() {
         }}
       >
         <Typography color="textSecondary">
-          لا تملك صلاحية الوصول إلى هذه الصفحة
+          {t("siteUtility.page.denied")}
         </Typography>
       </Box>
     );
@@ -88,7 +90,7 @@ export function SiteUtilityPage() {
       <Container maxWidth="xl" sx={{ position: "relative", py: 4 }}>
         <Tabs value={active} onChange={onChange} centered>
           {visibleTabs.map((tab) => (
-            <Tab key={tab.key} value={tab.key} label={tab.label} />
+            <Tab key={tab.key} value={tab.key} label={t(tab.labelKey)} />
           ))}
         </Tabs>
 

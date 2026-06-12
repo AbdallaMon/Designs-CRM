@@ -24,6 +24,7 @@ import { MdDoneAll } from "react-icons/md";
 
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { useT } from "@/app/v2/lib/i18n";
 import {
   PageHeader,
   SectionCard,
@@ -36,7 +37,7 @@ import { notificationsService } from "../notifications.service.js";
 import { runNotificationsMutation } from "../notifications.mutations.js";
 import { useNotifications } from "../hooks/useNotifications.js";
 import { notificationsMessages } from "../config/notificationsMessages.js";
-import { notificationsColumns } from "../config/notificationsColumns.js";
+import { buildNotificationsColumns } from "../config/notificationsColumns.js";
 
 const P = PERMISSIONS.NOTIFICATION;
 
@@ -45,6 +46,7 @@ const TAB_UNREAD = "unread";
 
 export function NotificationsPage() {
   const { hasPermission } = usePermission();
+  const { t } = useT();
   const canList = hasPermission(P.LIST);
   const canMarkRead = hasPermission(P.MARK_READ);
 
@@ -76,12 +78,14 @@ export function NotificationsPage() {
     refetch,
   } = useNotifications(listFn, { autoFetch: canList });
 
+  const columns = useMemo(() => buildNotificationsColumns(t), [t]);
+
   const tabs = useMemo(
     () => [
-      { key: TAB_ALL, label: "الكل" },
-      { key: TAB_UNREAD, label: "غير المقروءة" },
+      { key: TAB_ALL, label: t("notifications.tab.all") },
+      { key: TAB_UNREAD, label: t("notifications.tab.unread") },
     ],
-    [],
+    [t],
   );
 
   // Switching tab resets to page 1; UrlTabs already syncs ?tab= in the URL.
@@ -113,8 +117,8 @@ export function NotificationsPage() {
       <Container maxWidth="md" sx={{ py: 4 }}>
         <PartialPermissionState
           denied
-          title="الإشعارات غير متاحة لصلاحياتك"
-          message="لا تملك صلاحية عرض الإشعارات. إن كنت تظن أنه ينبغي أن تصل إليها، تواصل مع المسؤول."
+          title={t("notifications.denied.title")}
+          message={t("notifications.denied.message")}
         />
       </Container>
     );
@@ -125,20 +129,23 @@ export function NotificationsPage() {
   const noneToMark = !isLoading && !error && items.length === 0;
   const primaryAction = canMarkRead
     ? {
-        label: "تحديد الكل كمقروء",
+        label: t("notifications.markAllRead"),
         icon: <MdDoneAll />,
         onClick: handleMarkAllRead,
         disabled: marking || noneToMark,
-        reason: noneToMark ? "لا توجد إشعارات لتحديدها" : undefined,
+        reason: noneToMark ? t("notifications.markAllRead.noneReason") : undefined,
       }
     : undefined;
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <PageHeader
-        title="الإشعارات"
-        subtitle="إشعاراتك الخاصة — اضغط على إشعار للانتقال إلى مصدره."
-        breadcrumbs={[{ label: "الرئيسية", href: "/v2/dashboard" }, { label: "الإشعارات" }]}
+        title={t("notifications.title")}
+        subtitle={t("notifications.subtitle")}
+        breadcrumbs={[
+          { label: t("notifications.breadcrumbs.home"), href: "/v2/dashboard" },
+          { label: t("notifications.breadcrumbs.notifications") },
+        ]}
         primaryAction={primaryAction}
       />
 
@@ -148,7 +155,7 @@ export function NotificationsPage() {
         </Box>
         <Box sx={{ p: 2.5, pt: 1 }}>
           <DataTablePage
-            columns={notificationsColumns}
+            columns={columns}
             rows={items}
             total={total}
             page={page}
@@ -162,11 +169,11 @@ export function NotificationsPage() {
             onRowClick={handleRowClick}
             rowsPerPageOptions={[9, 25, 50]}
             empty={{
-              title: "لا توجد إشعارات",
+              title: t("notifications.empty.title"),
               description:
                 activeTab === TAB_UNREAD
-                  ? "لا توجد إشعارات غير مقروءة — أنت على اطّلاع بكل جديد."
-                  : "ستظهر هنا إشعاراتك عند وصول أي تحديث يخصّك.",
+                  ? t("notifications.empty.unread")
+                  : t("notifications.empty.all"),
             }}
           />
         </Box>

@@ -19,6 +19,7 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
+import { useT } from "@/app/v2/lib/i18n";
 import { usersService } from "../users.service.js";
 import { runUsersMutation } from "../users.mutations.js";
 import { USER_ROLE_OPTIONS } from "../config/usersConstants.js";
@@ -28,6 +29,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const DEFAULTS = { name: "", email: "", password: "", role: "", telegramUsername: "" };
 
 export function CreateUserModal({ open, onClose, onCreated }) {
+  const { t } = useT();
   const [submitting, setSubmitting] = useState(false);
   const { control, handleSubmit, reset } = useForm({ defaultValues: DEFAULTS });
 
@@ -48,7 +50,7 @@ export function CreateUserModal({ open, onClose, onCreated }) {
     if (tg) body.telegramUsername = tg;
 
     const res = await runUsersMutation(() => usersService.createUser(body), {
-      loading: "جاري إنشاء المستخدم...",
+      loading: t("users.create.loading"),
       setLoading: setSubmitting,
     });
     if (res) {
@@ -60,18 +62,18 @@ export function CreateUserModal({ open, onClose, onCreated }) {
 
   return (
     <Dialog open={open} onClose={close} maxWidth="sm" fullWidth dir="rtl">
-      <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>إنشاء مستخدم</DialogTitle>
+      <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>{t("users.create.title")}</DialogTitle>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <DialogContent>
           <Stack spacing={2.5} sx={{ mt: 1 }}>
             <Controller
               name="name"
               control={control}
-              rules={{ required: "الاسم مطلوب" }}
+              rules={{ required: t("users.create.validation.nameRequired") }}
               render={({ field, fieldState }) => (
                 <TextField
                   {...field}
-                  label="الاسم"
+                  label={t("users.create.field.name")}
                   fullWidth
                   error={Boolean(fieldState.error)}
                   helperText={fieldState.error?.message}
@@ -82,14 +84,14 @@ export function CreateUserModal({ open, onClose, onCreated }) {
               name="email"
               control={control}
               rules={{
-                required: "البريد الإلكتروني مطلوب",
-                pattern: { value: EMAIL_RE, message: "صيغة البريد الإلكتروني غير صحيحة" },
+                required: t("users.create.validation.emailRequired"),
+                pattern: { value: EMAIL_RE, message: t("users.create.validation.emailInvalid") },
               }}
               render={({ field, fieldState }) => (
                 <TextField
                   {...field}
                   type="email"
-                  label="البريد الإلكتروني"
+                  label={t("users.create.field.email")}
                   fullWidth
                   error={Boolean(fieldState.error)}
                   helperText={fieldState.error?.message}
@@ -100,14 +102,14 @@ export function CreateUserModal({ open, onClose, onCreated }) {
               name="password"
               control={control}
               rules={{
-                required: "كلمة المرور مطلوبة",
-                minLength: { value: 6, message: "كلمة المرور 6 أحرف على الأقل" },
+                required: t("users.create.validation.passwordRequired"),
+                minLength: { value: 6, message: t("users.create.validation.passwordMin") },
               }}
               render={({ field, fieldState }) => (
                 <TextField
                   {...field}
                   type="password"
-                  label="كلمة المرور"
+                  label={t("users.create.field.password")}
                   fullWidth
                   error={Boolean(fieldState.error)}
                   helperText={fieldState.error?.message}
@@ -117,12 +119,12 @@ export function CreateUserModal({ open, onClose, onCreated }) {
             <Controller
               name="role"
               control={control}
-              rules={{ required: "الدور مطلوب" }}
+              rules={{ required: t("users.create.validation.roleRequired") }}
               render={({ field, fieldState }) => (
                 <TextField
                   {...field}
                   select
-                  label="الدور"
+                  label={t("users.create.field.role")}
                   fullWidth
                   error={Boolean(fieldState.error)}
                   helperText={fieldState.error?.message}
@@ -141,7 +143,7 @@ export function CreateUserModal({ open, onClose, onCreated }) {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="معرّف تيليجرام (اختياري)"
+                  label={t("users.create.field.telegram")}
                   fullWidth
                   placeholder="@username"
                 />
@@ -151,10 +153,10 @@ export function CreateUserModal({ open, onClose, onCreated }) {
         </DialogContent>
         <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
           <Button onClick={close} variant="outlined" disabled={submitting}>
-            إلغاء
+            {t("users.create.cancel")}
           </Button>
           <Button type="submit" variant="contained" color="primary" disabled={submitting}>
-            إنشاء
+            {t("users.create.submit")}
           </Button>
         </DialogActions>
       </form>

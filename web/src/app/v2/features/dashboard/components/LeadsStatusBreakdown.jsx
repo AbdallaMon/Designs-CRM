@@ -9,10 +9,11 @@
 import { Box, Stack, Typography } from "@mui/material";
 import { LoadingState, StatusChip } from "@/app/v2/shared/components";
 import { SectionCard } from "@/app/v2/shared/components";
+import { useT } from "@/app/v2/lib/i18n";
 import { WidgetBoundary } from "./WidgetBoundary.jsx";
 import { useDashboardWidget } from "../hooks/useDashboardWidget.js";
 import { LEADS_STATUS_URL } from "../config/constant.js";
-import { DASHBOARD_SECTIONS } from "../config/dashboardConstants.js";
+import { DASHBOARD_SECTION_KEYS } from "../config/dashboardConstants.js";
 
 // "NEW LEAD" → "NEW_LEAD" so it matches the Prisma enum keys StatusChip/statusLabels expect.
 function toEnum(status) {
@@ -20,6 +21,7 @@ function toEnum(status) {
 }
 
 export function LeadsStatusBreakdown({ query, enabled }) {
+  const { t } = useT();
   const { data, isLoading, error, refetch } = useDashboardWidget({
     base: LEADS_STATUS_URL,
     query,
@@ -30,13 +32,13 @@ export function LeadsStatusBreakdown({ query, enabled }) {
   const isEmpty = rows.length === 0;
 
   return (
-    <SectionCard title={DASHBOARD_SECTIONS.leadsStatus} sx={{ height: "100%" }}>
+    <SectionCard title={t(DASHBOARD_SECTION_KEYS.leadsStatus)} sx={{ height: "100%" }}>
       <WidgetBoundary
         loading={isLoading}
         error={error}
         onRetry={refetch}
         isEmpty={isEmpty}
-        empty={{ title: "لا توجد عملاء في أي حالة" }}
+        empty={{ title: t("dashboard.leadsStatus.empty") }}
         skeleton={<LoadingState variant="cards" count={1} columns={1} height={120} />}
       >
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>

@@ -16,6 +16,7 @@
 //   children  node             — the widget body when data is present.
 
 import { LoadingState, ErrorState, EmptyState } from "@/app/v2/shared/components";
+import { useT } from "@/app/v2/lib/i18n";
 import { dashboardMessages } from "../config/dashboardMessages.js";
 
 export function WidgetBoundary({
@@ -27,6 +28,7 @@ export function WidgetBoundary({
   skeleton,
   children,
 }) {
+  const { t } = useT();
   if (loading) {
     return skeleton ?? <LoadingState variant="cards" count={3} columns={3} height={110} />;
   }
@@ -43,7 +45,7 @@ export function WidgetBoundary({
   if (isEmpty) {
     return (
       <EmptyState
-        title={empty.title ?? "لا توجد بيانات"}
+        title={empty.title ?? t("dashboard.widget.emptyDefault")}
         description={empty.description}
         icon={empty.icon}
         action={empty.action}

@@ -3,6 +3,7 @@
 import { Grid, IconButton, Paper, Typography } from "@mui/material";
 import { FaShare, FaTrash } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 
 export function MultiActions({
   selectedMessages,
@@ -11,6 +12,7 @@ export function MultiActions({
   openForwardDialog,
   setOpenForwardDialog,
 }) {
+  const { t } = useT();
   if (selectedMessages.length === 0) return null;
   return (
     <Paper
@@ -39,7 +41,7 @@ export function MultiActions({
           >
             <MdClose size={16} />
           </IconButton>
-          <Typography variant="body1">{selectedMessages.length} محددة</Typography>
+          <Typography variant="body1">{t("chat.multi.selected", "{count} محددة").replace("{count}", selectedMessages.length)}</Typography>
         </Grid>
         <Grid size={6} sx={{ display: "flex", gap: 2, alignItems: "center", justifyContent: "flex-end" }}>
           <IconButton

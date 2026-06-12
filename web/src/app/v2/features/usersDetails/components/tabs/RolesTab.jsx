@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { useT } from "@/app/v2/lib/i18n";
 import { SectionCard, PartialPermissionState } from "@/app/v2/shared/components";
 import { usersService } from "@/app/v2/features/users/users.service.js";
 import { runUsersMutation } from "@/app/v2/features/users/users.mutations.js";
@@ -31,6 +32,7 @@ function currentSubRoles(profile) {
 
 export function RolesTab({ profile, capabilities, onUpdated }) {
   const { hasPermission } = usePermission();
+  const { t } = useT();
   const canManage =
     hasPermission(PERMISSIONS.USER.MANAGE_ROLES) && Boolean(capabilities?.canChangeRoles);
 
@@ -51,7 +53,7 @@ export function RolesTab({ profile, capabilities, onUpdated }) {
   async function save() {
     const res = await runUsersMutation(
       () => usersService.manageRoles(profile.id, { added, removed }),
-      { loading: "جاري تحديث الأدوار...", setLoading: setSubmitting },
+      { loading: t("usersDetails.roles.loading"), setLoading: setSubmitting },
     );
     if (res) onUpdated?.(res.data);
   }
@@ -60,19 +62,19 @@ export function RolesTab({ profile, capabilities, onUpdated }) {
     return (
       <PartialPermissionState
         denied
-        title="إدارة الأدوار غير متاحة لصلاحياتك"
-        message="لا تملك صلاحية تعديل أدوار هذا المستخدم."
+        title={t("usersDetails.roles.deniedTitle")}
+        message={t("usersDetails.roles.deniedMessage")}
       />
     );
   }
 
   return (
     <SectionCard
-      title="الأدوار الإضافية"
-      subtitle="حدّد الأدوار الفرعية الممنوحة لهذا المستخدم."
+      title={t("usersDetails.roles.title")}
+      subtitle={t("usersDetails.roles.subtitle")}
       actions={
         <Button variant="contained" onClick={save} disabled={!dirty || submitting}>
-          حفظ التغييرات
+          {t("usersDetails.roles.saveChanges")}
         </Button>
       }
     >
@@ -92,12 +94,12 @@ export function RolesTab({ profile, capabilities, onUpdated }) {
           <Stack direction="row" spacing={2} flexWrap="wrap">
             {added.length > 0 && (
               <Typography variant="body2" color="success.main">
-                إضافة: {added.length}
+                {t("usersDetails.roles.added")} {added.length}
               </Typography>
             )}
             {removed.length > 0 && (
               <Typography variant="body2" color="error.main">
-                إزالة: {removed.length}
+                {t("usersDetails.roles.removed")} {removed.length}
               </Typography>
             )}
           </Stack>

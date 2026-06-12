@@ -27,6 +27,7 @@ import {
 } from "@mui/material";
 import { MdPersonAddAlt1, MdNotificationsActive, MdChevronLeft } from "react-icons/md";
 import { SectionCard, StatusChip } from "@/app/v2/shared/components";
+import { useT } from "@/app/v2/lib/i18n";
 import {
   notificationTargetHref,
   normalizeToRelativePath,
@@ -34,7 +35,11 @@ import {
 import { WidgetBoundary } from "./WidgetBoundary.jsx";
 import { useDashboardWidget } from "../hooks/useDashboardWidget.js";
 import { LATEST_LEADS_URL, RECENT_ACTIVITIES_URL } from "../config/constant.js";
-import { DASHBOARD_SECTIONS, DASHBOARD_COPY, QUEUE_COPY } from "../config/dashboardConstants.js";
+import {
+  DASHBOARD_SECTION_KEYS,
+  DASHBOARD_COPY_KEYS,
+  QUEUE_COPY_KEYS,
+} from "../config/dashboardConstants.js";
 
 function formatWhen(value) {
   if (!value) return "";
@@ -51,6 +56,7 @@ function formatWhen(value) {
 }
 
 export function ActionQueue({ query, enabled }) {
+  const { t } = useT();
   const leads = useDashboardWidget({ base: LATEST_LEADS_URL, query, enabled, scoped: false });
   const activities = useDashboardWidget({ base: RECENT_ACTIVITIES_URL, query, enabled });
 
@@ -67,7 +73,7 @@ export function ActionQueue({ query, enabled }) {
   const isEmpty = leadRows.length === 0 && activityRows.length === 0;
 
   return (
-    <SectionCard title={DASHBOARD_SECTIONS.actionQueue} noPadding sx={{ mb: 3 }}>
+    <SectionCard title={t(DASHBOARD_SECTION_KEYS.actionQueue)} noPadding sx={{ mb: 3 }}>
       <Box sx={{ px: 1, py: isEmpty || loading || error ? 1 : 0 }}>
         <WidgetBoundary
           loading={loading}
@@ -75,22 +81,22 @@ export function ActionQueue({ query, enabled }) {
           onRetry={onRetry}
           isEmpty={isEmpty}
           empty={{
-            title: DASHBOARD_COPY.queueAllGoodTitle,
-            description: DASHBOARD_COPY.queueAllGoodDescription,
+            title: t(DASHBOARD_COPY_KEYS.queueAllGoodTitle),
+            description: t(DASHBOARD_COPY_KEYS.queueAllGoodDescription),
           }}
         >
           <List disablePadding>
             {leadRows.length > 0 && (
-              <GroupLabel text={QUEUE_COPY.latestLeads.groupTitle} />
+              <GroupLabel text={t(QUEUE_COPY_KEYS.latestLeads.groupTitle)} />
             )}
             {leadRows.map((lead) => (
               <QueueRow
                 key={`lead-${lead.id}`}
                 href={`/v2/leads/${lead.id}`}
                 icon={<MdPersonAddAlt1 />}
-                primary={lead?.client?.name || `عميل #${lead.id}`}
+                primary={lead?.client?.name || `${t("dashboard.queue.leadFallback")}${lead.id}`}
                 when={formatWhen(lead.createdAt)}
-                actionLabel={QUEUE_COPY.latestLeads.actionLabel}
+                actionLabel={t(QUEUE_COPY_KEYS.latestLeads.actionLabel)}
                 chip={lead.status ? <StatusChip status={lead.status} domain="lead" /> : null}
               />
             ))}
@@ -98,7 +104,7 @@ export function ActionQueue({ query, enabled }) {
             {leadRows.length > 0 && activityRows.length > 0 && <Divider component="li" />}
 
             {activityRows.length > 0 && (
-              <GroupLabel text={QUEUE_COPY.recentActivities.groupTitle} />
+              <GroupLabel text={t(QUEUE_COPY_KEYS.recentActivities.groupTitle)} />
             )}
             {activityRows.map((act) => {
               // Derive ONE relative target (prefer act.link; else the first <a href> in the HTML
@@ -112,7 +118,7 @@ export function ActionQueue({ query, enabled }) {
                   primary={<ActivityContent act={act} />}
                   primaryIsNode
                   when={formatWhen(act.createdAt)}
-                  actionLabel={target ? QUEUE_COPY.recentActivities.actionLabel : undefined}
+                  actionLabel={target ? t(QUEUE_COPY_KEYS.recentActivities.actionLabel) : undefined}
                 />
               );
             })}
@@ -140,6 +146,7 @@ function GroupLabel({ text }) {
 // "<" tag), inject it safely via a div so the embedded markup/links render instead of showing
 // escaped tags; otherwise render the plain text. (Same safe-HTML render as the notification bell.)
 function ActivityContent({ act }) {
+  const { t } = useT();
   const content = act?.content ?? "";
   const isHtml = act?.contentType === "HTML" || /</.test(content);
   if (isHtml) {
@@ -154,7 +161,7 @@ function ActivityContent({ act }) {
   }
   return (
     <Typography component="div" variant="body2" noWrap sx={{ textAlign: "start" }}>
-      {content || "نشاط"}
+      {content || t("dashboard.queue.activityFallback")}
     </Typography>
   );
 }

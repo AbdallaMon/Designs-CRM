@@ -8,22 +8,24 @@
 // capabilities.*). Single-language Arabic / RTL.
 
 import { Box } from "@mui/material";
+import { useT } from "@/app/v2/lib/i18n";
 import { PageHeader } from "@/app/v2/shared/components";
 import { LeadSessionsPanel } from "../components/LeadSessionsPanel.jsx";
 
 export function LeadSessionsPage({ clientLeadId }) {
+  const { t } = useT();
   return (
     <Box dir="rtl">
       <PageHeader
-        title="جلسات الصور للعميل المحتمل"
-        subtitle={`العميل المحتمل #${clientLeadId}`}
+        title={t("imageSessions.lead.pageTitle", "جلسات الصور للعميل المحتمل")}
+        subtitle={t("imageSessions.lead.pageSubtitle", "العميل المحتمل #{id}").replace("{id}", clientLeadId)}
         breadcrumbs={[
-          { label: "المبيعات" },
-          { label: "الصفقات", href: "/v2/leads" },
+          { label: t("imageSessions.lead.breadcrumb.sales", "المبيعات") },
+          { label: t("imageSessions.lead.breadcrumb.leads", "الصفقات"), href: "/v2/leads" },
           // Parent-lead crumb links back to the lead hub so the session page isn't a dead-end.
           // clientLeadId is the parent lead id (this page is /v2/image-sessions/lead/[leadId]).
-          { label: `العميل #${clientLeadId}`, href: `/v2/leads/${clientLeadId}` },
-          { label: "جلسات الصور" },
+          { label: t("imageSessions.lead.breadcrumb.lead", "العميل #{id}").replace("{id}", clientLeadId), href: `/v2/leads/${clientLeadId}` },
+          { label: t("imageSessions.lead.breadcrumb.sessions", "جلسات الصور") },
         ]}
       />
       <LeadSessionsPanel clientLeadId={clientLeadId} />

@@ -12,6 +12,7 @@
 import { useMemo } from "react";
 import { Box, Container } from "@mui/material";
 import { usePermission } from "@/app/v2/hooks/usePermission";
+import { useT } from "@/app/v2/lib/i18n";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import {
   PageHeader,
@@ -27,27 +28,33 @@ const P = PERMISSIONS.UTILITY;
 
 export function UtilitiesPage() {
   const { hasPermission } = usePermission();
+  const { t } = useT();
 
   const canSubmitLog = hasPermission(P.USER_LOG_SUBMIT);
 
   // Filter the tab set by the surface gate (same predicate that gates the panel content).
   const tabs = useMemo(
     () =>
-      UTILITIES_TAB_DEFS.filter((t) => hasPermission(t.permission)).map((t) => ({
-        key: t.key,
-        label: t.label,
+      UTILITIES_TAB_DEFS.filter((def) => hasPermission(def.permission)).map((def) => ({
+        key: def.key,
+        label: t(def.labelKey),
       })),
-    [hasPermission],
+    [hasPermission, t],
   );
+
+  const breadcrumbs = [
+    { label: t("utilities.page.breadcrumb.admin") },
+    { label: t("utilities.page.breadcrumb.tools") },
+  ];
 
   if (tabs.length === 0) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <PageHeader title="الأدوات المساعدة" breadcrumbs={[{ label: "الإدارة" }, { label: "أدوات" }]} />
+        <PageHeader title={t("utilities.page.title")} breadcrumbs={breadcrumbs} />
         <PartialPermissionState
           denied
-          title="الأدوات المساعدة غير متاحة لصلاحياتك"
-          message="لا تملك صلاحية الوصول إلى أيٍّ من أدوات النظام المساعدة. تواصل مع المسؤول إن كنت تظن أنه ينبغي أن تصل إليها."
+          title={t("utilities.page.denied.title")}
+          message={t("utilities.page.denied.message")}
         />
       </Container>
     );
@@ -56,9 +63,9 @@ export function UtilitiesPage() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <PageHeader
-        title="الأدوات المساعدة"
-        subtitle="بحث شامل، سجل العمل اليومي، والبيانات الثابتة."
-        breadcrumbs={[{ label: "الإدارة" }, { label: "أدوات" }]}
+        title={t("utilities.page.title")}
+        subtitle={t("utilities.page.subtitle")}
+        breadcrumbs={breadcrumbs}
       />
 
       <UrlTabs tabs={tabs} param="tab">

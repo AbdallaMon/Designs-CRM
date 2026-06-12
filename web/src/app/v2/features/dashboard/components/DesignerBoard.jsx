@@ -12,17 +12,19 @@
 
 import { Box, Grid, Card, CardContent, Typography, Stack, Divider } from "@mui/material";
 import { LoadingState, SectionCard, StatusChip } from "@/app/v2/shared/components";
+import { useT } from "@/app/v2/lib/i18n";
 import { WidgetBoundary } from "./WidgetBoundary.jsx";
 import { useDashboardWidget } from "../hooks/useDashboardWidget.js";
 import { DESIGNER_METRICS_URL } from "../config/constant.js";
 import {
   DESIGNER_CARDS,
   DESIGNER_META,
-  DASHBOARD_SECTIONS,
+  DASHBOARD_SECTION_KEYS,
   formatMetric,
 } from "../config/dashboardConstants.js";
 
 export function DesignerBoard({ query, enabled }) {
+  const { t } = useT();
   const { data, isLoading, error, refetch } = useDashboardWidget({
     base: DESIGNER_METRICS_URL,
     query,
@@ -35,15 +37,15 @@ export function DesignerBoard({ query, enabled }) {
   const isEmpty = !metrics || !hasProjects;
 
   return (
-    <SectionCard title={DASHBOARD_SECTIONS.designerBoard} sx={{ mb: 3 }}>
+    <SectionCard title={t(DASHBOARD_SECTION_KEYS.designerBoard)} sx={{ mb: 3 }}>
       <WidgetBoundary
         loading={isLoading}
         error={error}
         onRetry={refetch}
         isEmpty={isEmpty}
         empty={{
-          title: "لا توجد مشاريع إنتاج",
-          description: "لم تُسند إليك مشاريع بعد، أو لا توجد مشاريع ضمن النطاق المحدد.",
+          title: t("dashboard.designer.empty.title"),
+          description: t("dashboard.designer.empty.description"),
         }}
         skeleton={<LoadingState variant="cards" count={4} columns={4} height={96} />}
       >
@@ -53,7 +55,7 @@ export function DesignerBoard({ query, enabled }) {
               <Card variant="outlined" sx={{ borderRadius: 3, height: "100%" }}>
                 <CardContent sx={{ p: 2 }}>
                   <Stack spacing={1} alignItems="flex-start">
-                    <StatusChip status={card.status} domain={card.domain} label={card.label} />
+                    <StatusChip status={card.status} domain={card.domain} label={t(card.labelKey)} />
                     <Typography variant="h4" sx={{ fontWeight: 700 }}>
                       {formatMetric(metrics?.[card.field], "number")}
                     </Typography>
@@ -70,7 +72,7 @@ export function DesignerBoard({ query, enabled }) {
           {DESIGNER_META.map((m) => (
             <Box key={m.key} sx={{ minWidth: 120 }}>
               <Typography variant="body2" color="text.secondary" sx={{ textAlign: "start" }}>
-                {m.label}
+                {t(m.labelKey)}
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 700, textAlign: "start" }}>
                 {formatMetric(metrics?.[m.field], m.format)}

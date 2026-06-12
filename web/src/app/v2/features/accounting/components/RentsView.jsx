@@ -30,6 +30,7 @@ import {
 } from "@mui/material";
 import { MdAdd, MdAutorenew } from "react-icons/md";
 import dayjs from "dayjs";
+import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { usePaginatedList } from "../hooks/usePaginatedList.js";
@@ -42,6 +43,7 @@ const P = PERMISSIONS.ACCOUNTING;
 const today = () => dayjs().format("YYYY-MM-DD");
 
 export function RentsView() {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canList = hasPermission(P.RENT_LIST);
   const canCreate = hasPermission(P.RENT_CREATE);
@@ -90,7 +92,7 @@ export function RentsView() {
           endDate: values.endDate,
           paymentDate: values.paymentDate,
         }),
-      { loading: "جاري إضافة الإيجار...", setLoading: setSubmitting },
+      { loading: t("accounting.rents.createLoading"), setLoading: setSubmitting },
     );
     if (res) {
       closeCreate();
@@ -108,7 +110,7 @@ export function RentsView() {
           endDate: values.endDate,
           paymentDate: values.paymentDate,
         }),
-      { loading: "جاري تجديد الإيجار...", setLoading: setSubmitting },
+      { loading: t("accounting.rents.renewLoading"), setLoading: setSubmitting },
     );
     if (res) {
       setRenewTarget(null);
@@ -119,7 +121,7 @@ export function RentsView() {
   if (!canList) {
     return (
       <Typography color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
-        لا تملك صلاحية الوصول إلى الإيجارات
+        {t("accounting.rents.denied")}
       </Typography>
     );
   }
@@ -129,7 +131,7 @@ export function RentsView() {
       {canCreate && (
         <Box sx={{ mb: 2 }}>
           <Button variant="outlined" startIcon={<MdAdd />} onClick={() => setCreateOpen(true)}>
-            إضافة إيجار
+            {t("accounting.rents.addButton")}
           </Button>
         </Box>
       )}
@@ -138,26 +140,26 @@ export function RentsView() {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>الاسم</TableCell>
-              <TableCell>الوصف</TableCell>
-              <TableCell>تاريخ البداية</TableCell>
-              <TableCell>تاريخ النهاية</TableCell>
-              <TableCell>المبلغ</TableCell>
-              <TableCell align="right">إجراءات</TableCell>
+              <TableCell>{t("accounting.rents.col.name")}</TableCell>
+              <TableCell>{t("accounting.rents.col.description")}</TableCell>
+              <TableCell>{t("accounting.rents.col.startDate")}</TableCell>
+              <TableCell>{t("accounting.rents.col.endDate")}</TableCell>
+              <TableCell>{t("accounting.rents.col.amount")}</TableCell>
+              <TableCell align="right">{t("accounting.action.actions")}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {isLoading && (
               <TableRow>
                 <TableCell colSpan={6} align="center">
-                  جاري التحميل...
+                  {t("accounting.state.loading")}
                 </TableCell>
               </TableRow>
             )}
             {!isLoading && items.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} align="center">
-                  لا توجد بيانات
+                  {t("accounting.state.empty")}
                 </TableCell>
               </TableRow>
             )}
@@ -181,10 +183,10 @@ export function RentsView() {
                             startIcon={<MdAutorenew />}
                             onClick={() => openRenew(row)}
                           >
-                            تجديد
+                            {t("accounting.rents.renewButton")}
                           </Button>
                         )}
-                        <NotesDialog idKey="rentId" id={row.id} buttonLabel="ملاحظات" />
+                        <NotesDialog idKey="rentId" id={row.id} buttonLabel={t("accounting.action.notes")} />
                       </Stack>
                     </TableCell>
                   </TableRow>
@@ -203,24 +205,24 @@ export function RentsView() {
             setPage(1);
           }}
           rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage="عدد الصفوف"
+          labelRowsPerPage={t("accounting.table.rowsPerPage")}
         />
       </TableContainer>
 
       {/* Create */}
       <Dialog open={createOpen} onClose={closeCreate} fullWidth maxWidth="sm">
-        <DialogTitle>إيجار جديد</DialogTitle>
+        <DialogTitle>{t("accounting.rents.createTitle")}</DialogTitle>
         <form onSubmit={createForm.handleSubmit(onCreate)} noValidate>
           <DialogContent dividers>
             <Stack spacing={2}>
               <Controller
                 name="name"
                 control={createForm.control}
-                rules={{ required: "الاسم مطلوب" }}
+                rules={{ required: t("accounting.validation.nameRequired") }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
-                    label="اسم الخدمة"
+                    label={t("accounting.rents.field.name")}
                     fullWidth
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}
@@ -230,15 +232,15 @@ export function RentsView() {
               <Controller
                 name="description"
                 control={createForm.control}
-                render={({ field }) => <TextField {...field} label="الوصف" fullWidth multiline minRows={2} />}
+                render={({ field }) => <TextField {...field} label={t("accounting.rents.field.description")} fullWidth multiline minRows={2} />}
               />
               <RentMoneyAndDates control={createForm.control} />
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={closeCreate}>إلغاء</Button>
+            <Button onClick={closeCreate}>{t("accounting.action.cancel")}</Button>
             <Button type="submit" variant="contained" disabled={submitting}>
-              إضافة
+              {t("accounting.action.add")}
             </Button>
           </DialogActions>
         </form>
@@ -246,7 +248,7 @@ export function RentsView() {
 
       {/* Renew */}
       <Dialog open={Boolean(renewTarget)} onClose={() => setRenewTarget(null)} fullWidth maxWidth="sm">
-        <DialogTitle>تجديد إيجار {renewTarget?.name}</DialogTitle>
+        <DialogTitle>{t("accounting.rents.renewTitle").replace("{name}", renewTarget?.name ?? "")}</DialogTitle>
         <form onSubmit={renewForm.handleSubmit(onRenew)} noValidate>
           <DialogContent dividers>
             <Stack spacing={2}>
@@ -254,9 +256,9 @@ export function RentsView() {
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setRenewTarget(null)}>إلغاء</Button>
+            <Button onClick={() => setRenewTarget(null)}>{t("accounting.action.cancel")}</Button>
             <Button type="submit" variant="contained" disabled={submitting}>
-              تجديد
+              {t("accounting.rents.renewButton")}
             </Button>
           </DialogActions>
         </form>
@@ -266,23 +268,24 @@ export function RentsView() {
 }
 
 function RentMoneyAndDates({ control }) {
+  const { t } = useT();
   return (
     <>
       <Controller
         name="amount"
         control={control}
         rules={{
-          required: "المبلغ مطلوب",
+          required: t("accounting.validation.amountRequired"),
           validate: (v) => {
             const n = Number(v);
-            return (Number.isFinite(n) && n > 0) || "يجب أن يكون المبلغ رقماً موجباً";
+            return (Number.isFinite(n) && n > 0) || t("accounting.validation.amountPositive");
           },
         }}
         render={({ field, fieldState }) => (
           <TextField
             {...field}
             type="number"
-            label="المبلغ"
+            label={t("accounting.rents.field.amount")}
             fullWidth
             error={Boolean(fieldState.error)}
             helperText={fieldState.error?.message}
@@ -292,12 +295,12 @@ function RentMoneyAndDates({ control }) {
       <Controller
         name="startDate"
         control={control}
-        rules={{ required: "تاريخ البداية مطلوب" }}
+        rules={{ required: t("accounting.validation.startDateRequired") }}
         render={({ field, fieldState }) => (
           <TextField
             {...field}
             type="date"
-            label="تاريخ البداية"
+            label={t("accounting.rents.field.startDate")}
             fullWidth
             InputLabelProps={{ shrink: true }}
             error={Boolean(fieldState.error)}
@@ -308,12 +311,12 @@ function RentMoneyAndDates({ control }) {
       <Controller
         name="endDate"
         control={control}
-        rules={{ required: "تاريخ النهاية مطلوب" }}
+        rules={{ required: t("accounting.validation.endDateRequired") }}
         render={({ field, fieldState }) => (
           <TextField
             {...field}
             type="date"
-            label="تاريخ النهاية"
+            label={t("accounting.rents.field.endDate")}
             fullWidth
             InputLabelProps={{ shrink: true }}
             error={Boolean(fieldState.error)}
@@ -324,12 +327,12 @@ function RentMoneyAndDates({ control }) {
       <Controller
         name="paymentDate"
         control={control}
-        rules={{ required: "تاريخ الدفع مطلوب" }}
+        rules={{ required: t("accounting.validation.paymentDateRequired") }}
         render={({ field, fieldState }) => (
           <TextField
             {...field}
             type="date"
-            label="تاريخ الدفع"
+            label={t("accounting.rents.field.paymentDate")}
             fullWidth
             InputLabelProps={{ shrink: true }}
             error={Boolean(fieldState.error)}

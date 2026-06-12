@@ -11,12 +11,13 @@
 import { Box, Grid, Card, CardContent, Typography, Stack } from "@mui/material";
 import { MdTrendingUp, MdTrendingFlat, MdPriorityHigh } from "react-icons/md";
 import { LoadingState } from "@/app/v2/shared/components";
+import { useT } from "@/app/v2/lib/i18n";
 import { WidgetBoundary } from "./WidgetBoundary.jsx";
 import { useDashboardWidget } from "../hooks/useDashboardWidget.js";
 import { KEY_METRICS_URL } from "../config/constant.js";
 import {
   KPI_CARDS,
-  DASHBOARD_SECTIONS,
+  DASHBOARD_SECTION_KEYS,
   formatMetric,
 } from "../config/dashboardConstants.js";
 
@@ -29,6 +30,7 @@ const ACCENT = {
 };
 
 export function KpiCards({ query, enabled }) {
+  const { t } = useT();
   const { data, isLoading, error, refetch } = useDashboardWidget({
     base: KEY_METRICS_URL,
     query,
@@ -41,21 +43,21 @@ export function KpiCards({ query, enabled }) {
   return (
     <Box>
       <Typography variant="h6" component="h2" sx={{ mb: 1.5 }}>
-        {DASHBOARD_SECTIONS.kpis}
+        {t(DASHBOARD_SECTION_KEYS.kpis)}
       </Typography>
       <WidgetBoundary
         loading={isLoading}
         error={error}
         onRetry={refetch}
         isEmpty={isEmpty}
-        empty={{ title: "لا توجد مؤشرات لعرضها" }}
+        empty={{ title: t("dashboard.kpi.empty") }}
         skeleton={<LoadingState variant="cards" count={4} columns={4} height={120} />}
       >
         <Grid container spacing={2}>
           {KPI_CARDS.map((kpi) => (
             <Grid key={kpi.key} size={{ xs: 6, sm: 4, md: 3 }}>
               <KpiCard
-                label={kpi.label}
+                label={t(kpi.labelKey)}
                 value={formatMetric(metrics?.[kpi.field], kpi.format)}
                 accent={kpi.accent}
               />

@@ -14,6 +14,7 @@ import {
   RadioGroup, Stack, Typography,
 } from "@mui/material";
 import SignatureCanvas from "react-signature-canvas";
+import { useT } from "@/app/v2/lib/i18n";
 import { useUpload } from "@/app/v2/hooks/useUpload";
 import { SectionCard } from "@/app/v2/shared/components";
 import imageSessionsService from "../../imageSessions.service.js";
@@ -57,6 +58,7 @@ const cropToAspect = (img, outW, outH) => {
 };
 
 export function SignatureStep({ session, token, nextStatus, onBack, onUpdate, disabled }) {
+  const { t } = useT();
   const sigCanvas = useRef({});
   const { uploadAsChunk } = useUpload({ isClient: true });
 
@@ -74,7 +76,7 @@ export function SignatureStep({ session, token, nextStatus, onBack, onUpdate, di
   // Submit the resolved upload path to /generate-pdf (token-authoritative, FROZEN builder).
   async function finalize(signatureUrl) {
     if (!signatureUrl) {
-      setError("فشل رفع التوقيع.");
+      setError(t("imageSessions.public.signature.uploadFailed", "فشل رفع التوقيع."));
       return;
     }
     setGenerating(true);
@@ -85,7 +87,7 @@ export function SignatureStep({ session, token, nextStatus, onBack, onUpdate, di
           signatureUrl,
           sessionStatus: nextStatus,
         }),
-      { loading: "جارٍ إنشاء الملف…", setLoading: setGenerating },
+      { loading: t("imageSessions.public.signature.generatingLoading", "جارٍ إنشاء الملف…"), setLoading: setGenerating },
     );
     if (res) await onUpdate?.();
   }
@@ -101,7 +103,7 @@ export function SignatureStep({ session, token, nextStatus, onBack, onUpdate, di
   const handleOnlineSave = async () => {
     setError("");
     if (sigCanvas.current?.isEmpty?.()) {
-      setError("يرجى التوقيع قبل الحفظ.");
+      setError(t("imageSessions.public.signature.signBeforeSave", "يرجى التوقيع قبل الحفظ."));
       return;
     }
     setSubmitting(true);
@@ -126,14 +128,14 @@ export function SignatureStep({ session, token, nextStatus, onBack, onUpdate, di
       setProcessedBlob(blob);
       setProcessedPreview(URL.createObjectURL(blob));
     } catch {
-      setError("خطأ أثناء معالجة الصورة. جرّب صورة أخرى أو قصّها بشكل أوضح.");
+      setError(t("imageSessions.public.signature.processError", "خطأ أثناء معالجة الصورة. جرّب صورة أخرى أو قصّها بشكل أوضح."));
     }
   };
 
   const handleImageConfirmUpload = async () => {
     setError("");
     if (!processedBlob) {
-      setError("لا توجد معاينة جاهزة.");
+      setError(t("imageSessions.public.signature.noPreviewReady", "لا توجد معاينة جاهزة."));
       return;
     }
     setSubmitting(true);
@@ -144,16 +146,16 @@ export function SignatureStep({ session, token, nextStatus, onBack, onUpdate, di
   };
 
   return (
-    <SectionCard title="التوقيع واعتماد الاختيارات">
-      <Backdrop open={generating} sx={{ zIndex: (t) => t.zIndex.modal + 1, color: "#fff", flexDirection: "column", gap: 2 }}>
+    <SectionCard title={t("imageSessions.public.signature.title", "التوقيع واعتماد الاختيارات")}>
+      <Backdrop open={generating} sx={{ zIndex: (theme) => theme.zIndex.modal + 1, color: "#fff", flexDirection: "column", gap: 2 }}>
         <CircularProgress color="inherit" />
-        <Typography>جارٍ إنشاء الملف…</Typography>
+        <Typography>{t("imageSessions.public.signature.generating", "جارٍ إنشاء الملف…")}</Typography>
       </Backdrop>
 
-      <Typography variant="subtitle1" sx={{ mb: 1 }}>اختر طريقة التوقيع</Typography>
+      <Typography variant="subtitle1" sx={{ mb: 1 }}>{t("imageSessions.public.signature.chooseMethod", "اختر طريقة التوقيع")}</Typography>
       <RadioGroup row value={method} onChange={(e) => setMethod(e.target.value)} name="signature-method">
-        <FormControlLabel value="online" control={<Radio />} label="توقيع إلكتروني" />
-        <FormControlLabel value="image" control={<Radio />} label="رفع صورة توقيع" />
+        <FormControlLabel value="online" control={<Radio />} label={t("imageSessions.public.signature.online", "توقيع إلكتروني")} />
+        <FormControlLabel value="image" control={<Radio />} label={t("imageSessions.public.signature.uploadImage", "رفع صورة توقيع")} />
       </RadioGroup>
       <Divider sx={{ my: 1 }} />
 
@@ -161,7 +163,7 @@ export function SignatureStep({ session, token, nextStatus, onBack, onUpdate, di
 
       {method === "online" ? (
         <Paper variant="outlined" sx={{ p: 2, mt: 1 }}>
-          <Typography sx={{ mb: 1 }} variant="h6">ارسم توقيعك</Typography>
+          <Typography sx={{ mb: 1 }} variant="h6">{t("imageSessions.public.signature.drawTitle", "ارسم توقيعك")}</Typography>
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
             <SignatureCanvas
               penColor="black"
@@ -174,37 +176,37 @@ export function SignatureStep({ session, token, nextStatus, onBack, onUpdate, di
               clearOnResize={false}
             />
             <Stack direction="row" spacing={1} sx={{ mt: 2, width: "100%" }}>
-              <Button variant="outlined" onClick={onBack} disabled={busy}>رجوع</Button>
+              <Button variant="outlined" onClick={onBack} disabled={busy}>{t("imageSessions.public.signature.back", "رجوع")}</Button>
               <Box sx={{ flexGrow: 1 }} />
-              <Button variant="outlined" onClick={() => sigCanvas.current?.clear?.()} disabled={busy}>مسح</Button>
-              <Button variant="contained" onClick={handleOnlineSave} disabled={busy}>اعتماد</Button>
+              <Button variant="outlined" onClick={() => sigCanvas.current?.clear?.()} disabled={busy}>{t("imageSessions.public.signature.clear", "مسح")}</Button>
+              <Button variant="contained" onClick={handleOnlineSave} disabled={busy}>{t("imageSessions.public.signature.approve", "اعتماد")}</Button>
             </Stack>
           </Box>
         </Paper>
       ) : (
         <Paper variant="outlined" sx={{ p: 2, mt: 1 }}>
-          <Typography variant="h6" sx={{ mb: 1 }}>رفع صورة التوقيع</Typography>
+          <Typography variant="h6" sx={{ mb: 1 }}>{t("imageSessions.public.signature.uploadTitle", "رفع صورة التوقيع")}</Typography>
           <Typography variant="body2" sx={{ mb: 2 }}>
-            رجاءً قص الصورة بحيث تحتوي على التوقيع فقط. ستظهر المعاينة تلقائيًا بعد اختيار الصورة.
+            {t("imageSessions.public.signature.uploadHint", "رجاءً قص الصورة بحيث تحتوي على التوقيع فقط. ستظهر المعاينة تلقائيًا بعد اختيار الصورة.")}
           </Typography>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center">
             <Button variant="outlined" component="label" disabled={busy}>
-              اختر صورة
+              {t("imageSessions.public.signature.pickImage", "اختر صورة")}
               <input type="file" hidden accept="image/*" onChange={(e) => setFileAndAutoPreview(e.target.files?.[0] || null)} />
             </Button>
             <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
-              {sigImageFile ? sigImageFile.name : "لم يتم اختيار صورة"}
+              {sigImageFile ? sigImageFile.name : t("imageSessions.public.signature.noImagePicked", "لم يتم اختيار صورة")}
             </Typography>
-            <Button variant="contained" disabled={!processedBlob || busy} onClick={handleImageConfirmUpload}>اعتماد</Button>
+            <Button variant="contained" disabled={!processedBlob || busy} onClick={handleImageConfirmUpload}>{t("imageSessions.public.signature.approve", "اعتماد")}</Button>
           </Stack>
           {processedPreview && (
             <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle2">المعاينة</Typography>
+              <Typography variant="subtitle2">{t("imageSessions.public.signature.preview", "المعاينة")}</Typography>
               <Box component="img" src={processedPreview} alt="signature preview" sx={{ mt: 1, width: "100%", maxWidth: 400, borderRadius: 1, border: "1px solid", borderColor: "divider" }} />
             </Box>
           )}
           <Stack direction="row" sx={{ mt: 2 }}>
-            <Button variant="outlined" onClick={onBack} disabled={busy}>رجوع</Button>
+            <Button variant="outlined" onClick={onBack} disabled={busy}>{t("imageSessions.public.signature.back", "رجوع")}</Button>
           </Stack>
         </Paper>
       )}

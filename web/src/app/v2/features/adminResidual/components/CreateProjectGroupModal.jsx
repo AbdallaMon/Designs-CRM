@@ -16,12 +16,14 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
+import { useT } from "@/app/v2/lib/i18n";
 import { adminResidualService } from "../adminResidual.service.js";
 import { runAdminResidualMutation } from "../adminResidual.mutations.js";
 
 const DEFAULTS = { clientLeadId: "", title: "" };
 
 export function CreateProjectGroupModal({ open, defaultLeadId, onClose, onCreated }) {
+  const { t } = useT();
   const [submitting, setSubmitting] = useState(false);
   const { control, handleSubmit, reset } = useForm({
     defaultValues: { ...DEFAULTS, clientLeadId: defaultLeadId ? String(defaultLeadId) : "" },
@@ -39,7 +41,7 @@ export function CreateProjectGroupModal({ open, defaultLeadId, onClose, onCreate
           clientLeadId: Number(values.clientLeadId),
           title: values.title.trim(),
         }),
-      { loading: "جاري إنشاء مجموعة المشاريع...", setLoading: setSubmitting },
+      { loading: t("adminResidual.projects.dialog.loading", "جاري إنشاء مجموعة المشاريع..."), setLoading: setSubmitting },
     );
     if (res) {
       close();
@@ -49,19 +51,21 @@ export function CreateProjectGroupModal({ open, defaultLeadId, onClose, onCreate
 
   return (
     <Dialog open={open} onClose={close} maxWidth="sm" fullWidth dir="rtl">
-      <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>إنشاء مجموعة مشاريع</DialogTitle>
+      <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>
+        {t("adminResidual.projects.dialog.title", "إنشاء مجموعة مشاريع")}
+      </DialogTitle>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <DialogContent>
           <Stack spacing={2.5} sx={{ mt: 1 }}>
             <Controller
               name="clientLeadId"
               control={control}
-              rules={{ required: "معرّف العميل المحتمل مطلوب" }}
+              rules={{ required: t("adminResidual.projects.dialog.field.leadId.required", "معرّف العميل المحتمل مطلوب") }}
               render={({ field, fieldState }) => (
                 <TextField
                   {...field}
                   type="number"
-                  label="معرّف العميل المحتمل"
+                  label={t("adminResidual.projects.dialog.field.leadId", "معرّف العميل المحتمل")}
                   fullWidth
                   error={Boolean(fieldState.error)}
                   helperText={fieldState.error?.message}
@@ -71,11 +75,11 @@ export function CreateProjectGroupModal({ open, defaultLeadId, onClose, onCreate
             <Controller
               name="title"
               control={control}
-              rules={{ required: "عنوان المجموعة مطلوب" }}
+              rules={{ required: t("adminResidual.projects.dialog.field.title.required", "عنوان المجموعة مطلوب") }}
               render={({ field, fieldState }) => (
                 <TextField
                   {...field}
-                  label="عنوان المجموعة"
+                  label={t("adminResidual.projects.dialog.field.title", "عنوان المجموعة")}
                   fullWidth
                   error={Boolean(fieldState.error)}
                   helperText={fieldState.error?.message}
@@ -86,10 +90,10 @@ export function CreateProjectGroupModal({ open, defaultLeadId, onClose, onCreate
         </DialogContent>
         <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
           <Button onClick={close} variant="outlined" disabled={submitting}>
-            إلغاء
+            {t("adminResidual.projects.dialog.cancel", "إلغاء")}
           </Button>
           <Button type="submit" variant="contained" color="primary" disabled={submitting}>
-            إنشاء
+            {t("adminResidual.projects.dialog.submit", "إنشاء")}
           </Button>
         </DialogActions>
       </form>

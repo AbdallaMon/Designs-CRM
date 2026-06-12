@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Stack, TextField, Button, Box } from "@mui/material";
 import { MdCheckCircle } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { SectionCard } from "@/app/v2/shared/components";
 import { LoadingState } from "@/app/v2/shared/components";
 import { ErrorState } from "@/app/v2/shared/components";
@@ -45,6 +46,7 @@ function logExists(data) {
 }
 
 export function UserLogForm({ canSubmit = false }) {
+  const { t } = useT();
   const [checking, setChecking] = useState(true);
   const [checkError, setCheckError] = useState(null);
   const [existing, setExisting] = useState(false); // today's log already submitted?
@@ -84,7 +86,7 @@ export function UserLogForm({ canSubmit = false }) {
     if (minutes !== "") body.totalMinutes = Number(minutes);
 
     const res = await runUtilitiesMutation(() => utilitiesService.submitUserLog(body), {
-      loading: "جاري تسجيل سجل العمل...",
+      loading: t("utilities.userLog.loadingToast"),
       setLoading: setSubmitting,
     });
     if (res) {
@@ -96,7 +98,7 @@ export function UserLogForm({ canSubmit = false }) {
 
   if (checking) {
     return (
-      <SectionCard title="سجل العمل اليومي">
+      <SectionCard title={t("utilities.userLog.title")}>
         <LoadingState variant="form" fields={3} />
       </SectionCard>
     );
@@ -104,7 +106,7 @@ export function UserLogForm({ canSubmit = false }) {
 
   if (checkError) {
     return (
-      <SectionCard title="سجل العمل اليومي">
+      <SectionCard title={t("utilities.userLog.title")}>
         <ErrorState error={checkError} onRetry={check} resolver={utilitiesMessages} />
       </SectionCard>
     );
@@ -113,23 +115,23 @@ export function UserLogForm({ canSubmit = false }) {
   if (justSubmitted) {
     return (
       <SuccessState
-        title="تم تسجيل سجل اليوم"
-        message="تم حفظ سجل عملك لهذا اليوم بنجاح."
+        title={t("utilities.userLog.success.title")}
+        message={t("utilities.userLog.success.message")}
       />
     );
   }
 
   if (existing) {
     return (
-      <SectionCard title="سجل العمل اليومي">
+      <SectionCard title={t("utilities.userLog.title")}>
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ py: 1 }}>
           <Box sx={{ color: "success.main", display: "flex", fontSize: 28 }}>
             <MdCheckCircle />
           </Box>
           <Box>
-            <Box sx={{ fontWeight: 600 }}>تم تسجيل سجل اليوم</Box>
+            <Box sx={{ fontWeight: 600 }}>{t("utilities.userLog.existing.title")}</Box>
             <Box sx={{ color: "text.secondary", fontSize: 14 }}>
-              لقد سجّلت عملك لهذا اليوم بالفعل. يمكنك العودة غداً لتسجيل يوم جديد.
+              {t("utilities.userLog.existing.message")}
             </Box>
           </Box>
         </Stack>
@@ -141,10 +143,10 @@ export function UserLogForm({ canSubmit = false }) {
   // today's state but cannot SUBMIT).
   if (!canSubmit) {
     return (
-      <SectionCard title="سجل العمل اليومي">
+      <SectionCard title={t("utilities.userLog.title")}>
         <PartialPermissionState
-          title="لا يوجد سجل لهذا اليوم"
-          message="لم تُسجّل عملك لهذا اليوم بعد، ولا تملك صلاحية تسجيل سجل العمل. تواصل مع المسؤول إن كنت تظن أنه ينبغي أن تملكها."
+          title={t("utilities.userLog.partial.title")}
+          message={t("utilities.userLog.partial.message")}
         />
       </SectionCard>
     );
@@ -152,20 +154,20 @@ export function UserLogForm({ canSubmit = false }) {
 
   return (
     <SectionCard
-      title="سجل العمل اليومي"
-      subtitle="لم تُسجّل عملك لهذا اليوم بعد — أدخل التفاصيل ثم احفظ."
+      title={t("utilities.userLog.title")}
+      subtitle={t("utilities.userLog.subtitle")}
     >
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Stack spacing={2.5}>
           <Controller
             name="date"
             control={control}
-            rules={{ required: "التاريخ مطلوب" }}
+            rules={{ required: t("utilities.userLog.field.date.required") }}
             render={({ field, fieldState }) => (
               <TextField
                 {...field}
                 type="date"
-                label="التاريخ"
+                label={t("utilities.userLog.field.date")}
                 fullWidth
                 error={Boolean(fieldState.error)}
                 helperText={fieldState.error?.message}
@@ -176,12 +178,12 @@ export function UserLogForm({ canSubmit = false }) {
           <Controller
             name="description"
             control={control}
-            rules={{ required: "وصف العمل مطلوب" }}
+            rules={{ required: t("utilities.userLog.field.description.required") }}
             render={({ field, fieldState }) => (
               <TextField
                 {...field}
-                label="وصف العمل"
-                placeholder="اكتب ما أنجزته اليوم"
+                label={t("utilities.userLog.field.description")}
+                placeholder={t("utilities.userLog.field.description.placeholder")}
                 fullWidth
                 multiline
                 minRows={3}
@@ -198,14 +200,17 @@ export function UserLogForm({ canSubmit = false }) {
                 const s = String(v ?? "").trim();
                 if (s === "") return true;
                 const n = Number(s);
-                return (Number.isInteger(n) && n >= 0) || "أدخل عدد دقائق صحيح (0 أو أكثر)";
+                return (
+                  (Number.isInteger(n) && n >= 0) ||
+                  t("utilities.userLog.field.minutes.invalid")
+                );
               },
             }}
             render={({ field, fieldState }) => (
               <TextField
                 {...field}
                 type="number"
-                label="إجمالي الدقائق (اختياري)"
+                label={t("utilities.userLog.field.minutes")}
                 fullWidth
                 error={Boolean(fieldState.error)}
                 helperText={fieldState.error?.message}
@@ -215,7 +220,7 @@ export function UserLogForm({ canSubmit = false }) {
           />
           <Box>
             <Button type="submit" variant="contained" color="primary" disabled={submitting}>
-              حفظ سجل اليوم
+              {t("utilities.userLog.submit")}
             </Button>
           </Box>
         </Stack>

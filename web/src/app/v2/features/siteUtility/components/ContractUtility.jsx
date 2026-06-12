@@ -33,6 +33,7 @@ import {
   FiSave,
   FiTrash2,
 } from "react-icons/fi";
+import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { useContractUtility } from "../hooks/useContractUtility.js";
@@ -59,6 +60,7 @@ function SectionCard({ title, action, children }) {
 
 // ── Obligations (ContractUtility singleton) ─────────────────────────────────────
 function ObligationsSection({ obligations, canEdit, onSave }) {
+  const { t } = useT();
   const [form, setForm] = useState({
     obligationsPartyOneAr: "",
     obligationsPartyOneEn: "",
@@ -86,7 +88,7 @@ function ObligationsSection({ obligations, canEdit, onSave }) {
 
   return (
     <SectionCard
-      title="التزامات الفريقين"
+      title={t("siteUtility.contract.obligations.title")}
       action={
         canEdit && (
           <Button
@@ -95,7 +97,7 @@ function ObligationsSection({ obligations, canEdit, onSave }) {
             onClick={save}
             disabled={saving}
           >
-            حفظ
+            {t("siteUtility.action.save")}
           </Button>
         )
       }
@@ -103,11 +105,11 @@ function ObligationsSection({ obligations, canEdit, onSave }) {
       <Stack spacing={3}>
         <Box>
           <Typography variant="subtitle2" mb={1}>
-            الفريق الأول
+            {t("siteUtility.contract.obligations.partyOne")}
           </Typography>
           <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
             <TextField
-              label="عربي"
+              label={t("siteUtility.contract.field.ar")}
               fullWidth
               multiline
               minRows={4}
@@ -116,7 +118,7 @@ function ObligationsSection({ obligations, canEdit, onSave }) {
               disabled={!canEdit}
             />
             <TextField
-              label="English"
+              label={t("siteUtility.contract.field.en")}
               fullWidth
               multiline
               minRows={4}
@@ -129,11 +131,11 @@ function ObligationsSection({ obligations, canEdit, onSave }) {
         <Divider />
         <Box>
           <Typography variant="subtitle2" mb={1}>
-            الفريق الثاني
+            {t("siteUtility.contract.obligations.partyTwo")}
           </Typography>
           <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
             <TextField
-              label="عربي"
+              label={t("siteUtility.contract.field.ar")}
               fullWidth
               multiline
               minRows={4}
@@ -142,7 +144,7 @@ function ObligationsSection({ obligations, canEdit, onSave }) {
               disabled={!canEdit}
             />
             <TextField
-              label="English"
+              label={t("siteUtility.contract.field.en")}
               fullWidth
               multiline
               minRows={4}
@@ -159,6 +161,7 @@ function ObligationsSection({ obligations, canEdit, onSave }) {
 
 // ── Generic clause dialog (drives stage / special / level forms) ────────────────
 function ClauseDialog({ open, kind, initial, onClose, onSubmit }) {
+  const { t } = useT();
   const isEdit = !!initial?.id;
   const [form, setForm] = useState({});
   const [saving, setSaving] = useState(false);
@@ -213,9 +216,15 @@ function ClauseDialog({ open, kind, initial, onClose, onSubmit }) {
   };
 
   const titles = {
-    stage: isEdit ? "تعديل بند مرحلة" : "إضافة بند مرحلة",
-    special: isEdit ? "تعديل بند خاص" : "إضافة بند خاص",
-    level: isEdit ? "تعديل بند مستوى" : "إضافة بند مستوى",
+    stage: isEdit
+      ? t("siteUtility.contract.dialog.stage.edit")
+      : t("siteUtility.contract.dialog.stage.add"),
+    special: isEdit
+      ? t("siteUtility.contract.dialog.special.edit")
+      : t("siteUtility.contract.dialog.special.add"),
+    level: isEdit
+      ? t("siteUtility.contract.dialog.level.edit")
+      : t("siteUtility.contract.dialog.level.add"),
   };
 
   return (
@@ -232,13 +241,13 @@ function ClauseDialog({ open, kind, initial, onClose, onSubmit }) {
             <>
               <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                 <TextField
-                  label="العنوان (عربي)"
+                  label={t("siteUtility.contract.field.headingAr")}
                   fullWidth
                   value={form.headingAr || ""}
                   onChange={set("headingAr")}
                 />
                 <TextField
-                  label="Heading (EN)"
+                  label={t("siteUtility.contract.field.headingEn")}
                   fullWidth
                   value={form.headingEn || ""}
                   onChange={set("headingEn")}
@@ -246,13 +255,13 @@ function ClauseDialog({ open, kind, initial, onClose, onSubmit }) {
               </Stack>
               <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                 <TextField
-                  label="الاسم (عربي)"
+                  label={t("siteUtility.contract.field.titleAr")}
                   fullWidth
                   value={form.titleAr || ""}
                   onChange={set("titleAr")}
                 />
                 <TextField
-                  label="Title (EN)"
+                  label={t("siteUtility.contract.field.titleEn")}
                   fullWidth
                   value={form.titleEn || ""}
                   onChange={set("titleEn")}
@@ -260,7 +269,7 @@ function ClauseDialog({ open, kind, initial, onClose, onSubmit }) {
               </Stack>
               <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                 <TextField
-                  label="الوصف (عربي)"
+                  label={t("siteUtility.contract.field.descriptionAr")}
                   fullWidth
                   multiline
                   minRows={3}
@@ -268,7 +277,7 @@ function ClauseDialog({ open, kind, initial, onClose, onSubmit }) {
                   onChange={set("descriptionAr")}
                 />
                 <TextField
-                  label="Description (EN)"
+                  label={t("siteUtility.contract.field.descriptionEn")}
                   fullWidth
                   multiline
                   minRows={3}
@@ -281,10 +290,12 @@ function ClauseDialog({ open, kind, initial, onClose, onSubmit }) {
 
           {kind === "level" && (
             <FormControl fullWidth>
-              <InputLabel id="level-label">المستوى</InputLabel>
+              <InputLabel id="level-label">
+                {t("siteUtility.contract.field.level")}
+              </InputLabel>
               <Select
                 labelId="level-label"
-                label="المستوى"
+                label={t("siteUtility.contract.field.level")}
                 value={form.level || CONTRACT_LEVELS[0]}
                 onChange={set("level")}
               >
@@ -300,7 +311,7 @@ function ClauseDialog({ open, kind, initial, onClose, onSubmit }) {
           {(kind === "special" || kind === "level") && (
             <>
               <TextField
-                label="النص (عربي)"
+                label={t("siteUtility.contract.field.textAr")}
                 fullWidth
                 multiline
                 minRows={3}
@@ -308,7 +319,7 @@ function ClauseDialog({ open, kind, initial, onClose, onSubmit }) {
                 onChange={set("textAr")}
               />
               <TextField
-                label="Text (EN)"
+                label={t("siteUtility.contract.field.textEn")}
                 fullWidth
                 multiline
                 minRows={3}
@@ -320,7 +331,7 @@ function ClauseDialog({ open, kind, initial, onClose, onSubmit }) {
 
           <Stack direction="row" spacing={2} alignItems="center">
             <TextField
-              label="الترتيب"
+              label={t("siteUtility.contract.field.order")}
               type="number"
               sx={{ width: 140 }}
               value={form.order ?? 0}
@@ -334,7 +345,7 @@ function ClauseDialog({ open, kind, initial, onClose, onSubmit }) {
                     onChange={setBool("isActive")}
                   />
                 }
-                label="مُفعّل"
+                label={t("siteUtility.contract.field.active")}
               />
             )}
           </Stack>
@@ -342,14 +353,20 @@ function ClauseDialog({ open, kind, initial, onClose, onSubmit }) {
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={saving}>
-          إلغاء
+          {t("siteUtility.action.cancel")}
         </Button>
         <Button
           onClick={submit}
           variant="contained"
           disabled={!canSave || saving}
         >
-          {saving ? <CircularProgress size={18} /> : isEdit ? "حفظ" : "إنشاء"}
+          {saving ? (
+            <CircularProgress size={18} />
+          ) : isEdit ? (
+            t("siteUtility.action.save")
+          ) : (
+            t("siteUtility.action.create")
+          )}
         </Button>
       </DialogActions>
     </Dialog>
@@ -357,6 +374,7 @@ function ClauseDialog({ open, kind, initial, onClose, onSubmit }) {
 }
 
 function DeleteDialog({ open, label, onClose, onConfirm }) {
+  const { t } = useT();
   const [deleting, setDeleting] = useState(false);
   const confirm = async () => {
     setDeleting(true);
@@ -366,18 +384,18 @@ function DeleteDialog({ open, label, onClose, onConfirm }) {
   };
   return (
     <Dialog open={open} onClose={deleting ? undefined : onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>حذف البند</DialogTitle>
+      <DialogTitle>{t("siteUtility.contract.delete.title")}</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          هل أنت متأكد من حذف &quot;{label}&quot;؟
+          {t("siteUtility.contract.delete.confirm").replace("{label}", label ?? "")}
         </DialogContentText>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={deleting}>
-          إلغاء
+          {t("siteUtility.action.cancel")}
         </Button>
         <Button onClick={confirm} color="error" variant="contained" disabled={deleting}>
-          {deleting ? <CircularProgress size={18} /> : "حذف"}
+          {deleting ? <CircularProgress size={18} /> : t("siteUtility.action.delete")}
         </Button>
       </DialogActions>
     </Dialog>
@@ -396,6 +414,7 @@ function ClauseSection({
   onUpdate,
   onDelete,
 }) {
+  const { t } = useT();
   const [dialog, setDialog] = useState({ open: false, initial: null });
   const [del, setDel] = useState(null);
 
@@ -409,7 +428,7 @@ function ClauseSection({
             startIcon={<FiPlus />}
             onClick={() => setDialog({ open: true, initial: null })}
           >
-            جديد
+            {t("siteUtility.action.new")}
           </Button>
         )
       }
@@ -436,12 +455,23 @@ function ClauseSection({
                   )}
                 </Box>
                 <Stack direction="row" spacing={1} alignItems="center">
-                  <Chip size="small" variant="outlined" label={`ترتيب: ${c.order ?? 0}`} />
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    label={t("siteUtility.contract.clause.order").replace(
+                      "{order}",
+                      String(c.order ?? 0),
+                    )}
+                  />
                   {"isActive" in c && (
                     <Chip
                       size="small"
                       color={c.isActive ? "success" : "default"}
-                      label={c.isActive ? "مُفعّل" : "غير مُفعّل"}
+                      label={
+                        c.isActive
+                          ? t("siteUtility.contract.clause.active")
+                          : t("siteUtility.contract.clause.inactive")
+                      }
                     />
                   )}
                 </Stack>
@@ -466,7 +496,7 @@ function ClauseSection({
                       variant="outlined"
                       onClick={() => setDialog({ open: true, initial: c })}
                     >
-                      تعديل
+                      {t("siteUtility.action.edit")}
                     </Button>
                     <Button
                       size="small"
@@ -475,7 +505,7 @@ function ClauseSection({
                       startIcon={<FiTrash2 />}
                       onClick={() => setDel(c)}
                     >
-                      حذف
+                      {t("siteUtility.action.delete")}
                     </Button>
                   </Stack>
                 )}
@@ -484,7 +514,9 @@ function ClauseSection({
           </Accordion>
         ))
       ) : (
-        <Typography color="text.secondary">لا توجد بنود بعد.</Typography>
+        <Typography color="text.secondary">
+          {t("siteUtility.contract.clause.empty")}
+        </Typography>
       )}
 
       <ClauseDialog
@@ -513,6 +545,7 @@ function ClauseSection({
  * Arabic RTL.
  */
 export default function ContractUtility() {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canView = hasPermission(PERMISSIONS.SITE_UTILITY.CONTRACT_UTILITY_VIEW);
   const canEditCode = hasPermission(PERMISSIONS.SITE_UTILITY.CONTRACT_UTILITY_EDIT);
@@ -524,7 +557,7 @@ export default function ContractUtility() {
     return (
       <Box sx={{ py: 2 }}>
         <Typography color="text.secondary">
-          لا تملك صلاحية عرض إعدادات عقد التصميم.
+          {t("siteUtility.contract.denied")}
         </Typography>
       </Box>
     );
@@ -534,7 +567,7 @@ export default function ContractUtility() {
     return (
       <Stack direction="row" alignItems="center" spacing={1} sx={{ py: 4 }}>
         <CircularProgress size={20} />
-        <Typography>جاري التحميل...</Typography>
+        <Typography>{t("siteUtility.state.loading")}</Typography>
       </Stack>
     );
   }
@@ -547,22 +580,21 @@ export default function ContractUtility() {
         alignItems="center"
         mb={2}
       >
-        <Typography variant="h5">إعدادات عقد التصميم</Typography>
+        <Typography variant="h5">{t("siteUtility.contract.title")}</Typography>
         <Button
           variant="outlined"
           startIcon={<FiRefreshCw />}
           onClick={cu.refetch}
           disabled={cu.loading}
         >
-          تحديث
+          {t("siteUtility.action.refresh")}
         </Button>
       </Stack>
 
       {!cu.obligations && (
         <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: "warning.light" }}>
           <Typography variant="body2">
-            لم يتم تهيئة إعدادات عقد التصميم بعد. احفظ الالتزامات أولاً لإنشاء السجل، ثم
-            يمكنك إضافة البنود.
+            {t("siteUtility.contract.notInitialized")}
           </Typography>
         </Paper>
       )}
@@ -574,7 +606,7 @@ export default function ContractUtility() {
       />
 
       <ClauseSection
-        title="بنود المراحل"
+        title={t("siteUtility.contract.section.stages")}
         kind="stage"
         clauses={cu.stageClauses}
         canEdit={canEdit}
@@ -586,7 +618,7 @@ export default function ContractUtility() {
       />
 
       <ClauseSection
-        title="البنود الخاصة"
+        title={t("siteUtility.contract.section.special")}
         kind="special"
         clauses={cu.specialClauses}
         canEdit={canEdit}
@@ -597,7 +629,7 @@ export default function ContractUtility() {
       />
 
       <ClauseSection
-        title="بنود المستويات"
+        title={t("siteUtility.contract.section.levels")}
         kind="level"
         clauses={cu.levelClauses}
         canEdit={canEdit}

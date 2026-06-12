@@ -1,90 +1,94 @@
-// Dashboard presentational constants — Arabic UI copy + widget metadata for the role-adaptive
-// home (UX plan §3.1: ACTION-QUEUE-FIRST). NO hard-coded prose lives in component logic; every
-// visible string is sourced here (or, for backend message CODES, through dashboardMessages.js).
-// Single-language Arabic / RTL. Pure data — no React, no side effects.
+// Dashboard presentational constants — UI copy KEYS + widget metadata for the role-adaptive home
+// (UX plan §3.1: ACTION-QUEUE-FIRST). NO hard-coded prose lives in component logic; every visible
+// string is resolved at render time via t("dashboard.*") (or, for backend message CODES, through
+// dashboardMessages.js). Pure data — no React, no hooks at module scope.
+//
+// i18n: this module exposes language-neutral KEYS (labelKey / *.copyKey). Components hold useT and
+// resolve them; the value formatters below are presentation logic and stay as-is.
 
-// ── Page-level copy ────────────────────────────────────────────────────────────────────
-export const DASHBOARD_COPY = {
-  title: "لوحة التحكم",
-  subtitle: "نظرة سريعة على ما يحتاج انتباهك اليوم",
-  denied: "لا تملك صلاحية الوصول إلى لوحة التحكم",
+// ── Page-level copy KEYS ────────────────────────────────────────────────────────────────
+export const DASHBOARD_COPY_KEYS = {
+  title: "dashboard.title",
+  subtitle: "dashboard.subtitle",
+  denied: "dashboard.denied",
   // The action-queue "all good" empty state (role-aware default).
-  queueAllGoodTitle: "كل شيء على ما يرام",
-  queueAllGoodDescription: "لا يوجد ما يحتاج انتباهك الآن.",
+  queueAllGoodTitle: "dashboard.queue.allGood.title",
+  queueAllGoodDescription: "dashboard.queue.allGood.description",
 };
 
-// ── Section headings ───────────────────────────────────────────────────────────────────
-export const DASHBOARD_SECTIONS = {
-  actionQueue: "يحتاج انتباهك",
-  kpis: "المؤشرات الرئيسية",
-  leadsStatus: "حالة العملاء المحتملين",
-  latestLeads: "أحدث العملاء المحتملين",
-  designerBoard: "لوحة الإنتاج",
-  charts: "تحليلات الأداء",
-  monthlyPerformance: "الأداء الشهري",
-  weekPerformance: "أداء الأسبوع",
-  emiratesAnalytics: "تحليلات الإمارات",
-  leadsMonthlyOverview: "نظرة شهرية على العملاء",
+// ── Section heading KEYS ────────────────────────────────────────────────────────────────
+export const DASHBOARD_SECTION_KEYS = {
+  actionQueue: "dashboard.section.actionQueue",
+  kpis: "dashboard.section.kpis",
+  leadsStatus: "dashboard.section.leadsStatus",
+  latestLeads: "dashboard.section.latestLeads",
+  designerBoard: "dashboard.section.designerBoard",
+  charts: "dashboard.section.charts",
+  monthlyPerformance: "dashboard.section.monthlyPerformance",
+  weekPerformance: "dashboard.section.weekPerformance",
+  emiratesAnalytics: "dashboard.section.emiratesAnalytics",
+  leadsMonthlyOverview: "dashboard.section.leadsMonthlyOverview",
 };
 
 // Latest-leads compact list (row 5) — each row deep-links to the lead hub /v2/leads/{id}.
-export const LATEST_LEADS_COPY = {
-  empty: "لا يوجد عملاء محتملون حديثون",
-  actionLabel: "فتح الملف",
+export const LATEST_LEADS_COPY_KEYS = {
+  empty: "dashboard.latestLeads.empty",
+  actionLabel: "dashboard.latestLeads.actionLabel",
 };
 
-// ── Filter bar copy ────────────────────────────────────────────────────────────────────
-export const FILTER_COPY = {
-  startDate: "من تاريخ",
-  endDate: "إلى تاريخ",
-  staffId: "معرّف الموظف (الإدارة فقط)",
-  staffHelper: "اتركه فارغاً لعرض الكل",
-  apply: "تطبيق",
-  reset: "إعادة الضبط",
+// ── Filter bar copy KEYS ────────────────────────────────────────────────────────────────
+export const FILTER_COPY_KEYS = {
+  startDate: "dashboard.filter.startDate",
+  endDate: "dashboard.filter.endDate",
+  staffId: "dashboard.filter.staffId",
+  staffHelper: "dashboard.filter.staffHelper",
+  apply: "dashboard.filter.apply",
+  reset: "dashboard.filter.reset",
 };
 
-// ── Action-queue copy (each queue source deep-links to its next action) ────────────────
-export const QUEUE_COPY = {
+// ── Action-queue copy KEYS (each queue source deep-links to its next action) ────────────
+export const QUEUE_COPY_KEYS = {
   // latest-leads pool — newest unassigned NEW leads waiting for first contact.
   latestLeads: {
-    groupTitle: "عملاء جدد بانتظار التواصل",
-    actionLabel: "تواصل الآن",
-    emptyHint: "لا يوجد عملاء جدد بانتظار التواصل.",
+    groupTitle: "dashboard.queue.latestLeads.groupTitle",
+    actionLabel: "dashboard.queue.latestLeads.actionLabel",
+    emptyHint: "dashboard.queue.latestLeads.emptyHint",
   },
   // recent-activities feed — the caller's latest notifications, each linking to its source.
   recentActivities: {
-    groupTitle: "آخر الأنشطة",
-    actionLabel: "عرض",
-    emptyHint: "لا توجد أنشطة حديثة.",
+    groupTitle: "dashboard.queue.recentActivities.groupTitle",
+    actionLabel: "dashboard.queue.recentActivities.actionLabel",
+    emptyHint: "dashboard.queue.recentActivities.emptyHint",
   },
 };
 
 // ── KPI cards — metadata over getKeyMetrics(). `field` maps to the envelope key; `format`
-//    selects the value formatter; `accent` is a semantic hint (neutral|positive|warning). ──
+//    selects the value formatter; `accent` is a semantic hint (neutral|positive|warning);
+//    `labelKey` resolves to the visible label via t() at render time. ──
 export const KPI_CARDS = [
-  { key: "totalRevenue", label: "إجمالي الإيرادات", field: "totalRevenue", format: "currency", accent: "positive" },
-  { key: "averageProjectValue", label: "متوسط قيمة المشروع", field: "averageProjectValue", format: "currency", accent: "neutral" },
-  { key: "successRate", label: "نسبة النجاح", field: "successRate", format: "percent", accent: "positive" },
-  { key: "leadsCounts", label: "إجمالي العملاء", field: "leadsCounts", format: "number", accent: "neutral" },
-  { key: "interactedLeads", label: "تفاعلات اليوم", field: "interactedLeads", format: "number", accent: "neutral" },
-  { key: "newLeadCounts", label: "عملاء جدد", field: "newLeadCounts", format: "number", accent: "warning" },
-  { key: "totalCommission", label: "إجمالي العمولات", field: "totalCommission", format: "currency", accent: "neutral" },
-  { key: "successLeadsCount", label: "صفقات ناجحة", field: "successLeadsCount", format: "number", accent: "positive" },
+  { key: "totalRevenue", labelKey: "dashboard.kpi.totalRevenue", field: "totalRevenue", format: "currency", accent: "positive" },
+  { key: "averageProjectValue", labelKey: "dashboard.kpi.averageProjectValue", field: "averageProjectValue", format: "currency", accent: "neutral" },
+  { key: "successRate", labelKey: "dashboard.kpi.successRate", field: "successRate", format: "percent", accent: "positive" },
+  { key: "leadsCounts", labelKey: "dashboard.kpi.leadsCounts", field: "leadsCounts", format: "number", accent: "neutral" },
+  { key: "interactedLeads", labelKey: "dashboard.kpi.interactedLeads", field: "interactedLeads", format: "number", accent: "neutral" },
+  { key: "newLeadCounts", labelKey: "dashboard.kpi.newLeadCounts", field: "newLeadCounts", format: "number", accent: "warning" },
+  { key: "totalCommission", labelKey: "dashboard.kpi.totalCommission", field: "totalCommission", format: "currency", accent: "neutral" },
+  { key: "successLeadsCount", labelKey: "dashboard.kpi.successLeadsCount", field: "successLeadsCount", format: "number", accent: "positive" },
 ];
 
 // ── Designer / production board — metadata over getDesignerMetrics(). ──────────────────
 export const DESIGNER_CARDS = [
-  { key: "notStartedProject", label: "لم تبدأ", field: "notStartedProject", domain: "task", status: "TODO" },
-  { key: "inProgressProject", label: "قيد التنفيذ", field: "inProgressProject", domain: "task", status: "IN_PROGRESS" },
-  { key: "holdProjects", label: "معلّقة", field: "holdProjects", domain: "task", status: "CANCELLED" },
-  { key: "completedProjects", label: "مكتملة", field: "completedProjects", domain: "task", status: "DONE" },
+  { key: "notStartedProject", labelKey: "dashboard.designer.notStarted", field: "notStartedProject", domain: "task", status: "TODO" },
+  { key: "inProgressProject", labelKey: "dashboard.designer.inProgress", field: "inProgressProject", domain: "task", status: "IN_PROGRESS" },
+  { key: "holdProjects", labelKey: "dashboard.designer.hold", field: "holdProjects", domain: "task", status: "CANCELLED" },
+  { key: "completedProjects", labelKey: "dashboard.designer.completed", field: "completedProjects", domain: "task", status: "DONE" },
 ];
 
 export const DESIGNER_META = [
-  { key: "totalProjects", label: "إجمالي المشاريع", field: "totalProjects", format: "number" },
-  { key: "totalArea", label: "إجمالي المساحة", field: "totalArea", format: "area" },
-  { key: "currentMonthArea", label: "مساحة هذا الشهر", field: "currentMonthArea", format: "area" },
-  { key: "totalTimeSpent", label: "ساعات العمل", field: "totalTimeSpent", format: "hours" },
+  { key: "totalProjects", labelKey: "dashboard.designer.totalProjects", field: "totalProjects", format: "number" },
+  { key: "totalArea", labelKey: "dashboard.designer.totalArea", field: "totalArea", format: "area" },
+  { key: "currentMonthArea", labelKey: "dashboard.designer.currentMonthArea", field: "currentMonthArea", format: "area" },
+  { key: "totalTimeSpent", labelKey: "dashboard.designer.totalTimeSpent", field: "totalTimeSpent", format: "hours" },
 ];
 
 // ── Value formatters (presentation only; the data layer is fixed). ─────────────────────

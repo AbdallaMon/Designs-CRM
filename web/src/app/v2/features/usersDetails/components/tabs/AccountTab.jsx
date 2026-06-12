@@ -12,6 +12,7 @@ import { Controller, useForm } from "react-hook-form";
 import { Box, Button, MenuItem, Stack, TextField, Typography } from "@mui/material";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { useT } from "@/app/v2/lib/i18n";
 import { SectionCard } from "@/app/v2/shared/components";
 import { usersService } from "@/app/v2/features/users/users.service.js";
 import { runUsersMutation } from "@/app/v2/features/users/users.mutations.js";
@@ -22,6 +23,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function AccountTab({ user, capabilities, onUpdated }) {
   const { hasPermission } = usePermission();
+  const { t } = useT();
   const caps = capabilities ?? {};
   const canEdit = hasPermission(PERMISSIONS.USER.UPDATE) && Boolean(caps.canEditUser);
   const canToggle = hasPermission(PERMISSIONS.USER.UPDATE) && Boolean(caps.canToggleStatus);
@@ -61,7 +63,7 @@ export function AccountTab({ user, capabilities, onUpdated }) {
 
     if (Object.keys(body).length === 0) return;
     const res = await runUsersMutation(() => usersService.updateUser(user.id, body), {
-      loading: "جاري حفظ الحساب...",
+      loading: t("usersDetails.account.saveLoading"),
       setLoading: setSubmitting,
     });
     if (res) onUpdated?.(res.data);
@@ -71,14 +73,19 @@ export function AccountTab({ user, capabilities, onUpdated }) {
   async function toggleStatus() {
     const res = await runUsersMutation(
       () => usersService.changeStatus(user.id, user.isActive),
-      { loading: user.isActive ? "جاري الإيقاف..." : "جاري التفعيل...", setLoading: setToggling },
+      {
+        loading: user.isActive
+          ? t("usersDetails.account.banLoading")
+          : t("usersDetails.account.activateLoading"),
+        setLoading: setToggling,
+      },
     );
     if (res) onUpdated?.(res.data);
   }
 
   return (
     <Stack spacing={2}>
-      <SectionCard title="حالة الحساب">
+      <SectionCard title={t("usersDetails.account.statusTitle")}>
         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
           <UserStatusChip isActive={Boolean(user?.isActive)} size="medium" />
           {canToggle ? (
@@ -88,28 +95,28 @@ export function AccountTab({ user, capabilities, onUpdated }) {
               onClick={toggleStatus}
               disabled={toggling}
             >
-              {user?.isActive ? "إيقاف المستخدم" : "تفعيل المستخدم"}
+              {user?.isActive ? t("usersDetails.account.ban") : t("usersDetails.account.activate")}
             </Button>
           ) : (
             <Typography variant="body2" color="text.secondary">
-              لا يمكنك تغيير حالة هذا الحساب.
+              {t("usersDetails.account.cannotToggle")}
             </Typography>
           )}
         </Stack>
       </SectionCard>
 
-      <SectionCard title="بيانات الحساب">
+      <SectionCard title={t("usersDetails.account.dataTitle")}>
         {canEdit ? (
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             <Stack spacing={2.5}>
               <Controller
                 name="name"
                 control={control}
-                rules={{ required: "الاسم مطلوب" }}
+                rules={{ required: t("usersDetails.account.validation.nameRequired") }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
-                    label="الاسم"
+                    label={t("usersDetails.account.field.name")}
                     fullWidth
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}
@@ -119,12 +126,12 @@ export function AccountTab({ user, capabilities, onUpdated }) {
               <Controller
                 name="email"
                 control={control}
-                rules={{ pattern: { value: EMAIL_RE, message: "صيغة البريد الإلكتروني غير صحيحة" } }}
+                rules={{ pattern: { value: EMAIL_RE, message: t("usersDetails.account.validation.emailInvalid") } }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
                     type="email"
-                    label="البريد الإلكتروني"
+                    label={t("usersDetails.account.field.email")}
                     fullWidth
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}
@@ -135,7 +142,7 @@ export function AccountTab({ user, capabilities, onUpdated }) {
                 name="role"
                 control={control}
                 render={({ field }) => (
-                  <TextField {...field} select label="الدور" fullWidth>
+                  <TextField {...field} select label={t("usersDetails.account.field.role")} fullWidth>
                     {USER_ROLE_OPTIONS.map((opt) => (
                       <MenuItem key={opt.value} value={opt.value}>
                         {opt.label}
@@ -148,20 +155,20 @@ export function AccountTab({ user, capabilities, onUpdated }) {
                 name="telegramUsername"
                 control={control}
                 render={({ field }) => (
-                  <TextField {...field} label="معرّف تيليجرام (اختياري)" fullWidth placeholder="@username" />
+                  <TextField {...field} label={t("usersDetails.account.field.telegram")} fullWidth placeholder="@username" />
                 )}
               />
               <Controller
                 name="password"
                 control={control}
                 rules={{
-                  validate: (v) => !v || v.length >= 6 || "كلمة المرور 6 أحرف على الأقل",
+                  validate: (v) => !v || v.length >= 6 || t("usersDetails.account.validation.passwordMin"),
                 }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
                     type="password"
-                    label="كلمة مرور جديدة (اتركها فارغة لعدم التغيير)"
+                    label={t("usersDetails.account.field.newPassword")}
                     fullWidth
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}
@@ -170,14 +177,14 @@ export function AccountTab({ user, capabilities, onUpdated }) {
               />
               <Box>
                 <Button type="submit" variant="contained" color="primary" disabled={submitting}>
-                  حفظ
+                  {t("usersDetails.account.save")}
                 </Button>
               </Box>
             </Stack>
           </form>
         ) : (
           <Typography variant="body2" color="text.secondary">
-            لا تملك صلاحية تعديل هذا الحساب.
+            {t("usersDetails.account.cannotEdit")}
           </Typography>
         )}
       </SectionCard>

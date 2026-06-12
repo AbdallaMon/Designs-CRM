@@ -24,12 +24,23 @@ export const CHAT_MEMBER_ROLES = {
   MEMBER: "MEMBER",
 };
 
+// Arabic labels kept for backward-compat (non-i18n callers / fallback). Prefer
+// CHAT_ROOM_TYPE_LABEL_KEYS + t() at render so the label localizes.
 export const CHAT_ROOM_TYPE_LABELS = {
   STAFF_TO_STAFF: "محادثة مباشرة",
   PROJECT_GROUP: "مجموعة مشروع",
   CLIENT_TO_STAFF: "عميل محتمل",
   MULTI_PROJECT: "متعدد المشاريع",
   GROUP: "مجموعة",
+};
+
+// i18n key per room type. Resolve with t(CHAT_ROOM_TYPE_LABEL_KEYS[type], CHAT_ROOM_TYPE_LABELS[type]).
+export const CHAT_ROOM_TYPE_LABEL_KEYS = {
+  STAFF_TO_STAFF: "chat.roomType.STAFF_TO_STAFF",
+  PROJECT_GROUP: "chat.roomType.PROJECT_GROUP",
+  CLIENT_TO_STAFF: "chat.roomType.CLIENT_TO_STAFF",
+  MULTI_PROJECT: "chat.roomType.MULTI_PROJECT",
+  GROUP: "chat.roomType.GROUP",
 };
 
 // all types allowed
@@ -67,21 +78,22 @@ export const CHAT_LIMITS = {
   rooms: 10,
 };
 
-// Room-list filter chips (legacy ChatChips), single-language Arabic.
+// Room-list filter chips (ChatChips). `value` is the language-neutral logic key; `label`
+// is the Arabic fallback and `labelKey` resolves the localized label via t() at render.
 export const CHAT_FILTER_CHIPS = [
-  { label: "الكل", value: "ALL" },
-  { label: "غير مقروء", value: "UNREAD" },
-  { label: "مؤرشف", value: "ARCHIVED" },
-  { label: "مباشر", value: "DIRECT" },
-  { label: "مجموعة", value: "GROUP" },
-  { label: "مشروع", value: "PROJECT" },
-  { label: "عملاء محتملون", value: "CLIENT_LEADS" },
+  { label: "الكل", value: "ALL", labelKey: "chat.filter.ALL" },
+  { label: "غير مقروء", value: "UNREAD", labelKey: "chat.filter.UNREAD" },
+  { label: "مؤرشف", value: "ARCHIVED", labelKey: "chat.filter.ARCHIVED" },
+  { label: "مباشر", value: "DIRECT", labelKey: "chat.filter.DIRECT" },
+  { label: "مجموعة", value: "GROUP", labelKey: "chat.filter.GROUP" },
+  { label: "مشروع", value: "PROJECT", labelKey: "chat.filter.PROJECT" },
+  { label: "عملاء محتملون", value: "CLIENT_LEADS", labelKey: "chat.filter.CLIENT_LEADS" },
 ];
 
 export const CHAT_FILTER_CHIPS_TAB = [
-  { label: "الكل", value: "ALL" },
-  { label: "غير مقروء", value: "UNREAD" },
-  { label: "مشروع", value: "PROJECT" },
-  { label: "عملاء محتملون", value: "CLIENT_LEADS" },
-  { label: "مؤرشف", value: "ARCHIVED" },
+  { label: "الكل", value: "ALL", labelKey: "chat.filter.ALL" },
+  { label: "غير مقروء", value: "UNREAD", labelKey: "chat.filter.UNREAD" },
+  { label: "مشروع", value: "PROJECT", labelKey: "chat.filter.PROJECT" },
+  { label: "عملاء محتملون", value: "CLIENT_LEADS", labelKey: "chat.filter.CLIENT_LEADS" },
+  { label: "مؤرشف", value: "ARCHIVED", labelKey: "chat.filter.ARCHIVED" },
 ];

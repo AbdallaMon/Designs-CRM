@@ -15,10 +15,11 @@ export function resolveBrowserTimezone() {
 // Tab keys for the authed calendar surface. Mirrors the legacy admin/staff tab set
 // (preserved appearance): admins see [own booking, meetings & calls]; staff/super-sales
 // additionally get an [admin booking] tab to manage another admin's availability.
-export const CALENDAR_TABS = {
-  ownBooking: "تقويم الحجوزات الخاص بك",
-  adminBooking: "تقويم حجوزات المسؤول",
-  meetings: "المواعيد والمكالمات",
+// Labels are i18n keys resolved at render time via t() (see CalendarPage).
+export const CALENDAR_TAB_LABEL_KEYS = {
+  ownBooking: "calendar.tabs.ownBooking",
+  adminBooking: "calendar.tabs.adminBooking",
+  meetings: "calendar.tabs.meetings",
 };
 
 // Slot-generation defaults (legacy TimeSlotManager initial values).
@@ -29,5 +30,17 @@ export const SLOT_DEFAULTS = {
   breakDuration: 15,
 };
 
-// Public booking wizard step labels (Arabic). Behavior preserved from ClientBooking.
-export const BOOKING_STEPS = ["اختر التاريخ", "اختر الوقت", "تأكيد", "تم"];
+// Public booking wizard step labels. Behavior preserved from ClientBooking. The labels are
+// i18n keys; resolve at render time with buildBookingSteps(t).
+export const BOOKING_STEP_KEYS = [
+  "calendar.public.steps.pickDate",
+  "calendar.public.steps.pickTime",
+  "calendar.public.steps.confirm",
+  "calendar.public.steps.done",
+];
+
+// Resolve the wizard step labels to localized strings. Call inside a component (needs t()).
+export function buildBookingSteps(t) {
+  const fallbacks = ["اختر التاريخ", "اختر الوقت", "تأكيد", "تم"];
+  return BOOKING_STEP_KEYS.map((key, i) => t(key, fallbacks[i]));
+}

@@ -15,6 +15,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
 import { MdArrowForward, MdArrowBack, MdFileDownload } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import {
   PageHeader, SectionCard, StageStepper, LoadingState, ErrorState, SuccessState,
 } from "@/app/v2/shared/components";
@@ -22,26 +23,32 @@ import { useClientSession } from "../hooks/useClientSession.js";
 import imageSessionsService from "../imageSessions.service.js";
 import { runImageSessionMutation } from "../imageSessions.mutations.js";
 import {
-  SESSION_STATUS_FLOW, SESSION_STATUS_LABELS, WIZARD_STEPS, wizardStepIndex,
+  SESSION_STATUS_FLOW, sessionStatusLabel, WIZARD_STEPS, buildWizardSteps, wizardStepIndex,
 } from "../config/imageSessionsConstants.js";
 import { SelectionSummary } from "../components/public/SelectionSummary.jsx";
 import { ColorsStep, MaterialsStep, StylesStep, ImagesStep } from "../components/public/WizardSteps.jsx";
 import { SignatureStep } from "../components/public/SignatureStep.jsx";
 
 // Confirmation statuses → an info pane title (a simple next/back hop, no selection).
+// { i18n key, Arabic fallback } resolved with t() inside the component.
 const CONFIRM_TITLES = {
-  INITIAL: "مرحبًا بك في جلسة اختيار التصاميم",
-  SELECTED_COLOR_PATTERN: "تم حفظ اختيار الألوان",
-  SELECTED_MATERIAL: "تم حفظ اختيار الخامات",
-  SELECTED_STYLE: "تم حفظ اختيار الطراز",
-  PREVIEW_IMAGES: "تم حفظ اختيار الصور",
+  INITIAL: ["imageSessions.public.confirm.INITIAL", "مرحبًا بك في جلسة اختيار التصاميم"],
+  SELECTED_COLOR_PATTERN: ["imageSessions.public.confirm.SELECTED_COLOR_PATTERN", "تم حفظ اختيار الألوان"],
+  SELECTED_MATERIAL: ["imageSessions.public.confirm.SELECTED_MATERIAL", "تم حفظ اختيار الخامات"],
+  SELECTED_STYLE: ["imageSessions.public.confirm.SELECTED_STYLE", "تم حفظ اختيار الطراز"],
+  PREVIEW_IMAGES: ["imageSessions.public.confirm.PREVIEW_IMAGES", "تم حفظ اختيار الصور"],
 };
 
 export function PublicImageSessionPage() {
+  const { t } = useT();
   const sp = useSearchParams();
   const token = sp.get("token");
   const { session, status, refetch } = useClientSession(token);
   const [busy, setBusy] = useState(false);
+  const confirmTitle = (s) => {
+    const entry = CONFIRM_TITLES[s];
+    return entry ? t(entry[0], entry[1]) : null;
+  };
 
   const flow = SESSION_STATUS_FLOW[status] || { next: null, back: null };
 
@@ -50,7 +57,7 @@ export function PublicImageSessionPage() {
     if (!targetStatus) return;
     const res = await runImageSessionMutation(
       () => imageSessionsService.changeStatus({ token, sessionStatus: targetStatus }),
-      { loading: "جاري الحفظ...", setLoading: setBusy },
+      { loading: t("imageSessions.public.savingLoading", "جاري الحفظ..."), setLoading: setBusy },
     );
     if (res) await refetch();
   }
@@ -63,7 +70,7 @@ export function PublicImageSessionPage() {
       case "ERROR":
         return (
           <ErrorState
-            title="رابط الجلسة غير صالح"
+            title={t("imageSessions.public.invalidLinkTitle", "رابط الجلسة غير صالح")}
             error="IMAGE_SESSION_TOKEN_INVALID"
             resolver={undefined}
           />
@@ -89,11 +96,11 @@ export function PublicImageSessionPage() {
       case "SUBMITTED":
         return (
           <SuccessState
-            title="تم إرسال اختياراتك بنجاح"
-            message="شكرًا لك. سيتواصل معك فريقنا قريبًا."
+            title={t("imageSessions.public.successTitle", "تم إرسال اختياراتك بنجاح")}
+            message={t("imageSessions.public.successMessage", "شكرًا لك. سيتواصل معك فريقنا قريبًا.")}
             primary={
               session?.pdfUrl
-                ? { label: "تحميل الملف", href: session.pdfUrl, icon: <MdFileDownload /> }
+                ? { label: t("imageSessions.public.downloadFile", "تحميل الملف"), href: session.pdfUrl, icon: <MdFileDownload /> }
                 : undefined
             }
           />
@@ -102,22 +109,22 @@ export function PublicImageSessionPage() {
       // ── confirmation hops (INITIAL / SELECTED_* / PREVIEW_IMAGES) ───────────────────────
       default:
         return (
-          <SectionCard title={CONFIRM_TITLES[status] || SESSION_STATUS_LABELS[status] || "متابعة"}>
+          <SectionCard title={confirmTitle(status) || sessionStatusLabel(status, t) || t("imageSessions.public.continue", "متابعة")}>
             <Typography color="text.secondary" sx={{ mb: 2 }}>
               {status === "INITIAL"
-                ? "اضغط «التالي» للبدء باختيار الألوان."
-                : "راجع اختياراتك بالأسفل ثم تابع إلى الخطوة التالية."}
+                ? t("imageSessions.public.startHint", "اضغط «التالي» للبدء باختيار الألوان.")
+                : t("imageSessions.public.reviewHint", "راجع اختياراتك بالأسفل ثم تابع إلى الخطوة التالية.")}
             </Typography>
             <Stack direction="row" spacing={1}>
               {flow.back && (
                 <Button variant="outlined" startIcon={<MdArrowForward />} onClick={() => changeStatus(flow.back)} disabled={busy}>
-                  السابق
+                  {t("imageSessions.public.previous", "السابق")}
                 </Button>
               )}
               <Box sx={{ flexGrow: 1 }} />
               {flow.next && (
                 <Button variant="contained" endIcon={<MdArrowBack />} onClick={() => changeStatus(flow.next)} disabled={busy}>
-                  التالي
+                  {t("imageSessions.public.next", "التالي")}
                 </Button>
               )}
             </Stack>
@@ -134,12 +141,14 @@ export function PublicImageSessionPage() {
       {showShell && (
         <>
           <PageHeader
-            title="اختيار التصاميم"
-            subtitle={`الخطوة ${Math.min(stepIndex + 1, WIZARD_STEPS.length)} من ${WIZARD_STEPS.length}`}
+            title={t("imageSessions.public.headerTitle", "اختيار التصاميم")}
+            subtitle={t("imageSessions.public.headerSubtitle", "الخطوة {current} من {total}")
+              .replace("{current}", Math.min(stepIndex + 1, WIZARD_STEPS.length))
+              .replace("{total}", WIZARD_STEPS.length)}
             roleChip={false}
           />
           <Box sx={{ mb: 3, overflowX: "auto" }}>
-            <StageStepper stages={WIZARD_STEPS} current={stepIndex} />
+            <StageStepper stages={buildWizardSteps(t)} current={stepIndex} />
           </Box>
         </>
       )}

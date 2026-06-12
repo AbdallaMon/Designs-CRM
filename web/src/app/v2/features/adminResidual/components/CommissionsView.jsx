@@ -12,19 +12,22 @@
 import { useState } from "react";
 import { Box, Button, IconButton, Stack, TextField, Tooltip } from "@mui/material";
 import { MdAdd, MdEdit, MdSearch } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { DataTablePage, SectionCard, EmptyState } from "@/app/v2/shared/components";
 import { useCommissionsList } from "../hooks/useCommissionsList.js";
-import { commissionsColumns } from "../config/commissionsColumns.js";
+import { buildCommissionsColumns } from "../config/commissionsColumns.js";
 import { adminResidualMessages } from "../config/adminResidualMessages.js";
 import { CommissionDialog } from "./CommissionDialog.jsx";
 
 const P = PERMISSIONS.ADMIN_RESIDUAL;
 
 export function CommissionsView({ userId: fixedUserId } = {}) {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canManage = hasPermission(P.COMMISSION_MANAGE);
+  const commissionsColumns = buildCommissionsColumns(t);
 
   // EMBEDDED mode: a userId prop fixes the subject and skips the picker. STANDALONE mode: the
   // user is chosen via the manual id input below.
@@ -57,7 +60,7 @@ export function CommissionsView({ userId: fixedUserId } = {}) {
   function renderRowActions(row) {
     if (!canManage) return null;
     return (
-      <Tooltip title="تعديل القيمة">
+      <Tooltip title={t("adminResidual.commissions.editTooltip", "تعديل القيمة")}>
         <IconButton size="small" color="primary" onClick={() => openEdit(row)}>
           <MdEdit />
         </IconButton>
@@ -69,12 +72,15 @@ export function CommissionsView({ userId: fixedUserId } = {}) {
     <Stack spacing={3}>
       {!embedded && (
         <SectionCard
-          title="اختر الموظف"
-          subtitle="تُعرض العمولات لموظف واحد في كل مرة — أدخل معرّف الموظف ثم اعرض عمولاته."
+          title={t("adminResidual.commissions.picker.title", "اختر الموظف")}
+          subtitle={t(
+            "adminResidual.commissions.picker.subtitle",
+            "تُعرض العمولات لموظف واحد في كل مرة — أدخل معرّف الموظف ثم اعرض عمولاته.",
+          )}
           actions={
             canManage && userId ? (
               <Button variant="contained" color="primary" startIcon={<MdAdd />} onClick={openCreate}>
-                إضافة عمولة
+                {t("adminResidual.commissions.add", "إضافة عمولة")}
               </Button>
             ) : null
           }
@@ -84,13 +90,13 @@ export function CommissionsView({ userId: fixedUserId } = {}) {
               <TextField
                 size="small"
                 type="number"
-                label="معرّف الموظف"
+                label={t("adminResidual.commissions.field.userId", "معرّف الموظف")}
                 value={userIdInput}
                 onChange={(e) => setUserIdInput(e.target.value)}
                 sx={{ minWidth: 220 }}
               />
               <Button type="submit" variant="outlined" startIcon={<MdSearch />}>
-                عرض العمولات
+                {t("adminResidual.commissions.view", "عرض العمولات")}
               </Button>
             </Stack>
           </Box>
@@ -100,15 +106,15 @@ export function CommissionsView({ userId: fixedUserId } = {}) {
       {embedded && canManage && (
         <Box sx={{ display: "flex", justifyContent: "flex-start" }}>
           <Button variant="contained" color="primary" startIcon={<MdAdd />} onClick={openCreate}>
-            إضافة عمولة
+            {t("adminResidual.commissions.add", "إضافة عمولة")}
           </Button>
         </Box>
       )}
 
       {!userId ? (
         <EmptyState
-          title="لم يتم اختيار موظف"
-          description="أدخل معرّف الموظف أعلاه لعرض عمولاته."
+          title={t("adminResidual.commissions.noUser.title", "لم يتم اختيار موظف")}
+          description={t("adminResidual.commissions.noUser.description", "أدخل معرّف الموظف أعلاه لعرض عمولاته.")}
         />
       ) : (
         <DataTablePage
@@ -125,11 +131,16 @@ export function CommissionsView({ userId: fixedUserId } = {}) {
           getRowKey={(row) => row.id}
           renderRowActions={canManage ? renderRowActions : undefined}
           empty={{
-            title: "لا توجد عمولات",
+            title: t("adminResidual.commissions.empty.title", "لا توجد عمولات"),
             description: canManage
-              ? "لا توجد عمولات لهذا الموظف بعد. أضف أول عمولة."
-              : "لا توجد عمولات لهذا الموظف.",
-            action: canManage ? { label: "إضافة عمولة", onClick: openCreate } : undefined,
+              ? t(
+                  "adminResidual.commissions.empty.description.manage",
+                  "لا توجد عمولات لهذا الموظف بعد. أضف أول عمولة.",
+                )
+              : t("adminResidual.commissions.empty.description.readonly", "لا توجد عمولات لهذا الموظف."),
+            action: canManage
+              ? { label: t("adminResidual.commissions.add", "إضافة عمولة"), onClick: openCreate }
+              : undefined,
           }}
         />
       )}

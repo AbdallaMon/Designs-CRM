@@ -19,6 +19,7 @@ import {
 import { MdAdd, MdSave } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { useRequest } from "@/app/v2/hooks/useRequest";
+import { useT } from "@/app/v2/lib/i18n";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import {
   SectionCard, LoadingState, EmptyState, ErrorState,
@@ -37,33 +38,36 @@ const questionLabel = (q) => q?.title ?? q?.question ?? q?.text ?? q?.key ?? `#$
 const questionAnswer = (q) => q?.response ?? q?.answer ?? q?.value ?? "";
 
 function CustomQuestionDialog({ open, onClose, onSave, busy }) {
+  const { t } = useT();
   const [title, setTitle] = useState("");
   useEffect(() => {
     if (open) setTitle("");
   }, [open]);
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs" dir="rtl">
-      <DialogTitle>سؤال مخصص</DialogTitle>
+      <DialogTitle>{t("questions.spin.dialog.title", "سؤال مخصص")}</DialogTitle>
       <DialogContent dividers>
         <TextField
           autoFocus
           fullWidth
           multiline
           minRows={2}
-          label="نص السؤال"
+          label={t("questions.spin.dialog.questionLabel", "نص السؤال")}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           sx={{ mt: 1 }}
         />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={busy}>إلغاء</Button>
+        <Button onClick={onClose} disabled={busy}>
+          {t("questions.spin.dialog.cancel", "إلغاء")}
+        </Button>
         <Button
           variant="contained"
           onClick={() => onSave(title.trim())}
           disabled={busy || title.trim().length === 0}
         >
-          إضافة
+          {t("questions.spin.dialog.add", "إضافة")}
         </Button>
       </DialogActions>
     </Dialog>
@@ -71,6 +75,7 @@ function CustomQuestionDialog({ open, onClose, onSave, busy }) {
 }
 
 export function SpinPanel({ clientLeadId }) {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canViewConfig = hasPermission(P.CONFIG_VIEW);
   const canViewSession = hasPermission(P.SESSION_VIEW);
@@ -142,7 +147,7 @@ export function SpinPanel({ clientLeadId }) {
   async function saveOne(q) {
     const res = await runQuestionsMutation(
       () => questionsService.submitAnswer(q.id, { response: draftFor(q) }),
-      { loading: "جاري حفظ الإجابة...", setLoading: setBusy },
+      { loading: t("questions.spin.savingAnswer", "جاري حفظ الإجابة..."), setLoading: setBusy },
     );
     if (res) refetchQuestions();
   }
@@ -151,7 +156,7 @@ export function SpinPanel({ clientLeadId }) {
     if (!dirtyAnswers.length) return;
     const res = await runQuestionsMutation(
       () => questionsService.submitBulkAnswers(dirtyAnswers),
-      { loading: "جاري حفظ الإجابات...", setLoading: setBusy },
+      { loading: t("questions.spin.savingAnswers", "جاري حفظ الإجابات..."), setLoading: setBusy },
     );
     if (res) refetchQuestions();
   }
@@ -164,7 +169,7 @@ export function SpinPanel({ clientLeadId }) {
           questionTypeId: activeTypeId,
           title,
         }),
-      { loading: "جاري إضافة السؤال...", setLoading: setBusy },
+      { loading: t("questions.spin.addingQuestion", "جاري إضافة السؤال..."), setLoading: setBusy },
     );
     if (res) {
       setCustomOpen(false);
@@ -174,10 +179,13 @@ export function SpinPanel({ clientLeadId }) {
 
   if (!canViewConfig && !canViewSession) {
     return (
-      <SectionCard title="أسئلة SPIN">
+      <SectionCard title={t("questions.spin.title", "أسئلة SPIN")}>
         <EmptyState
-          title="لا تملك صلاحية عرض أسئلة العميل"
-          description="تواصل مع المسؤول لمنحك صلاحية الاطلاع على أسئلة SPIN لهذا العميل."
+          title={t("questions.noViewPermission", "لا تملك صلاحية عرض أسئلة العميل")}
+          description={t(
+            "questions.spin.noViewPermissionDescription",
+            "تواصل مع المسؤول لمنحك صلاحية الاطلاع على أسئلة SPIN لهذا العميل.",
+          )}
         />
       </SectionCard>
     );
@@ -185,8 +193,8 @@ export function SpinPanel({ clientLeadId }) {
 
   return (
     <SectionCard
-      title="أسئلة SPIN"
-      subtitle="اختر نوع السؤال ثم سجّل إجابات العميل."
+      title={t("questions.spin.title", "أسئلة SPIN")}
+      subtitle={t("questions.spin.subtitle", "اختر نوع السؤال ثم سجّل إجابات العميل.")}
       actions={
         canAnswer ? (
           <Button
@@ -196,7 +204,12 @@ export function SpinPanel({ clientLeadId }) {
             onClick={saveAll}
             disabled={busy || dirtyAnswers.length === 0}
           >
-            {dirtyAnswers.length ? `حفظ الكل (${dirtyAnswers.length})` : "حفظ الكل"}
+            {dirtyAnswers.length
+              ? t("questions.spin.saveAllCount", "حفظ الكل ({count})").replace(
+                  "{count}",
+                  dirtyAnswers.length,
+                )
+              : t("questions.spin.saveAll", "حفظ الكل")}
           </Button>
         ) : null
       }
@@ -216,7 +229,10 @@ export function SpinPanel({ clientLeadId }) {
       ) : typesError ? (
         <ErrorState error={typesError} onRetry={refetchTypes} resolver={questionsMessages} />
       ) : types.length === 0 ? (
-        <EmptyState title="لا توجد أنواع أسئلة" description="لم تُعرّف أنواع أسئلة SPIN بعد." />
+        <EmptyState
+          title={t("questions.spin.noTypesTitle", "لا توجد أنواع أسئلة")}
+          description={t("questions.spin.noTypesDescription", "لم تُعرّف أنواع أسئلة SPIN بعد.")}
+        />
       ) : (
         <Stack spacing={2}>
           <ToggleButtonGroup
@@ -244,13 +260,19 @@ export function SpinPanel({ clientLeadId }) {
             <ErrorState error={qError} onRetry={refetchQuestions} resolver={questionsMessages} />
           ) : questions.length === 0 ? (
             <EmptyState
-              title="لا توجد أسئلة لهذا النوع"
+              title={t("questions.spin.noQuestionsTitle", "لا توجد أسئلة لهذا النوع")}
               description={
-                canCreateCustom ? "أضف سؤالاً مخصصاً للبدء." : "لم تُضَف أسئلة لهذا النوع بعد."
+                canCreateCustom
+                  ? t("questions.spin.noQuestionsAddHint", "أضف سؤالاً مخصصاً للبدء.")
+                  : t("questions.spin.noQuestionsDescription", "لم تُضَف أسئلة لهذا النوع بعد.")
               }
               action={
                 canCreateCustom
-                  ? { label: "سؤال مخصص", onClick: () => setCustomOpen(true), icon: <MdAdd /> }
+                  ? {
+                      label: t("questions.spin.customQuestion", "سؤال مخصص"),
+                      onClick: () => setCustomOpen(true),
+                      icon: <MdAdd />,
+                    }
                   : undefined
               }
             />
@@ -267,13 +289,13 @@ export function SpinPanel({ clientLeadId }) {
                       multiline
                       minRows={1}
                       size="small"
-                      placeholder="إجابة العميل"
+                      placeholder={t("questions.spin.answerPlaceholder", "إجابة العميل")}
                       value={draftFor(q)}
                       onChange={(e) => setDraft(q.id, e.target.value)}
                       disabled={!canAnswer || busy}
                     />
                     {canAnswer && (
-                      <Tooltip title="حفظ الإجابة">
+                      <Tooltip title={t("questions.spin.saveAnswer", "حفظ الإجابة")}>
                         <span>
                           <IconButton
                             size="small"
@@ -282,7 +304,7 @@ export function SpinPanel({ clientLeadId }) {
                             disabled={
                               busy || (draftFor(q) ?? "") === (questionAnswer(q) ?? "")
                             }
-                            aria-label="حفظ الإجابة"
+                            aria-label={t("questions.spin.saveAnswer", "حفظ الإجابة")}
                             sx={{ mt: 0.25 }}
                           >
                             <MdSave />
@@ -302,7 +324,7 @@ export function SpinPanel({ clientLeadId }) {
                     onClick={() => setCustomOpen(true)}
                     disabled={busy}
                   >
-                    سؤال مخصص
+                    {t("questions.spin.customQuestion", "سؤال مخصص")}
                   </Button>
                 </Box>
               )}

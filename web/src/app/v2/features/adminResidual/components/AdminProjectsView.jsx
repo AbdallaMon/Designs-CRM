@@ -8,20 +8,23 @@
 import { useEffect, useState } from "react";
 import { Box, Button, Stack } from "@mui/material";
 import { MdAdd } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { useDebounce } from "@/app/v2/hooks/useDebounce";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { DataTablePage } from "@/app/v2/shared/components";
 import { useAdminProjectsList } from "../hooks/useAdminProjectsList.js";
-import { adminProjectsColumns } from "../config/adminProjectsColumns.js";
+import { buildAdminProjectsColumns } from "../config/adminProjectsColumns.js";
 import { adminResidualMessages } from "../config/adminResidualMessages.js";
 import { CreateProjectGroupModal } from "./CreateProjectGroupModal.jsx";
 
 const P = PERMISSIONS.ADMIN_RESIDUAL;
 
 export function AdminProjectsView() {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canCreateGroup = hasPermission(P.PROJECT_GROUP_CREATE);
+  const adminProjectsColumns = buildAdminProjectsColumns(t);
 
   const [filterValues, setFilterValues] = useState({ search: "" });
   const [createOpen, setCreateOpen] = useState(false);
@@ -47,7 +50,12 @@ export function AdminProjectsView() {
   }, [debouncedSearch]);
 
   const filters = [
-    { key: "search", type: "search", label: "بحث", placeholder: "اسم العميل" },
+    {
+      key: "search",
+      type: "search",
+      label: t("adminResidual.projects.filter.search.label", "بحث"),
+      placeholder: t("adminResidual.projects.filter.search.placeholder", "اسم العميل"),
+    },
   ];
 
   return (
@@ -60,7 +68,7 @@ export function AdminProjectsView() {
             startIcon={<MdAdd />}
             onClick={() => setCreateOpen(true)}
           >
-            إنشاء مجموعة مشاريع
+            {t("adminResidual.projects.createGroup", "إنشاء مجموعة مشاريع")}
           </Button>
         </Stack>
       )}
@@ -82,12 +90,18 @@ export function AdminProjectsView() {
         errorResolver={adminResidualMessages}
         getRowKey={(row) => row.id}
         empty={{
-          title: "لا توجد مشاريع",
+          title: t("adminResidual.projects.empty.title", "لا توجد مشاريع"),
           description: canCreateGroup
-            ? "لا توجد سجلات مطابقة. يمكنك إنشاء مجموعة مشاريع لعميل محتمل."
-            : "لا توجد سجلات مطابقة للتصفية الحالية.",
+            ? t(
+                "adminResidual.projects.empty.description.create",
+                "لا توجد سجلات مطابقة. يمكنك إنشاء مجموعة مشاريع لعميل محتمل.",
+              )
+            : t("adminResidual.projects.empty.description.readonly", "لا توجد سجلات مطابقة للتصفية الحالية."),
           action: canCreateGroup
-            ? { label: "إنشاء مجموعة مشاريع", onClick: () => setCreateOpen(true) }
+            ? {
+                label: t("adminResidual.projects.createGroup", "إنشاء مجموعة مشاريع"),
+                onClick: () => setCreateOpen(true),
+              }
             : undefined,
         }}
         />

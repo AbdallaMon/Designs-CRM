@@ -18,11 +18,13 @@ import {
   Chip,
 } from "@mui/material";
 import { MdUploadFile, MdDescription } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { SectionCard, SuccessState } from "@/app/v2/shared/components";
 import { adminResidualService } from "../adminResidual.service.js";
 import { runAdminResidualMutation } from "../adminResidual.mutations.js";
 
 export function BulkImportCard() {
+  const { t } = useT();
   const inputRef = useRef(null);
   const [file, setFile] = useState(null);
   const [importing, setImporting] = useState(false);
@@ -38,7 +40,7 @@ export function BulkImportCard() {
     if (!file) return;
     setSummary(null);
     const res = await runAdminResidualMutation(() => adminResidualService.importLeads(file), {
-      loading: "جارٍ استيراد الملف...",
+      loading: t("adminResidual.import.loading", "جارٍ استيراد الملف..."),
       setLoading: setImporting,
     });
     if (res) {
@@ -58,8 +60,8 @@ export function BulkImportCard() {
 
   return (
     <SectionCard
-      title="استيراد العملاء المحتملين"
-      subtitle="ارفع ملف Excel (.xlsx) لاستيراد دفعة من العملاء المحتملين."
+      title={t("adminResidual.import.title", "استيراد العملاء المحتملين")}
+      subtitle={t("adminResidual.import.subtitle", "ارفع ملف Excel (.xlsx) لاستيراد دفعة من العملاء المحتملين.")}
     >
       <Stack spacing={2}>
         <Box>
@@ -79,7 +81,7 @@ export function BulkImportCard() {
               startIcon={<MdDescription />}
               disabled={importing}
             >
-              اختيار ملف
+              {t("adminResidual.import.pickFile", "اختيار ملف")}
             </Button>
             {file && (
               <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-all" }}>
@@ -94,7 +96,7 @@ export function BulkImportCard() {
               onClick={onImport}
               disabled={!file || importing}
             >
-              استيراد
+              {t("adminResidual.import.submit", "استيراد")}
             </Button>
           </Stack>
         </Box>
@@ -103,7 +105,7 @@ export function BulkImportCard() {
           <Box>
             <LinearProgress />
             <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-              جارٍ معالجة الملف، قد تستغرق العملية بعض الوقت…
+              {t("adminResidual.import.processing", "جارٍ معالجة الملف، قد تستغرق العملية بعض الوقت…")}
             </Typography>
           </Box>
         )}
@@ -111,24 +113,42 @@ export function BulkImportCard() {
         {summary && (
           <Box>
             <SuccessState
-              title="تم استيراد الملف"
-              message="فيما يلي ملخّص نتيجة الاستيراد."
+              title={t("adminResidual.import.success.title", "تم استيراد الملف")}
+              message={t("adminResidual.import.success.message", "فيما يلي ملخّص نتيجة الاستيراد.")}
             />
             <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 1 }}>
               {summary.imported != null && (
-                <Chip color="success" label={`تم الاستيراد: ${summary.imported}`} />
+                <Chip
+                  color="success"
+                  label={t("adminResidual.import.chip.imported", "تم الاستيراد: {x}").replace(
+                    "{x}",
+                    summary.imported,
+                  )}
+                />
               )}
               {summary.skipped != null && (
-                <Chip color="warning" label={`تم التخطّي: ${summary.skipped}`} />
+                <Chip
+                  color="warning"
+                  label={t("adminResidual.import.chip.skipped", "تم التخطّي: {x}").replace(
+                    "{x}",
+                    summary.skipped,
+                  )}
+                />
               )}
               {summary.errors.length > 0 && (
-                <Chip color="error" label={`أخطاء: ${summary.errors.length}`} />
+                <Chip
+                  color="error"
+                  label={t("adminResidual.import.chip.errors", "أخطاء: {x}").replace(
+                    "{x}",
+                    summary.errors.length,
+                  )}
+                />
               )}
             </Stack>
             {summary.errors.length > 0 && (
               <Alert severity="warning" sx={{ mt: 2 }}>
                 <Typography variant="body2" sx={{ fontWeight: 700, mb: 0.5 }}>
-                  صفوف بها أخطاء:
+                  {t("adminResidual.import.errors.title", "صفوف بها أخطاء:")}
                 </Typography>
                 <Box component="ul" sx={{ m: 0, ps: 2.5 }}>
                   {summary.errors.slice(0, 20).map((err, i) => (

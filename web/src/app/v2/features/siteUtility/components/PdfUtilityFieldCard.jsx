@@ -20,6 +20,7 @@ import {
   Typography,
 } from "@mui/material";
 import { FaEdit, FaLink, FaSave, FaTimes } from "react-icons/fa";
+import { useT } from "@/app/v2/lib/i18n";
 import { useUpload } from "@/app/v2/hooks/useUpload";
 import { useUploadContext } from "@/app/v2/providers/UploadingProvider";
 import SiteFileInput from "./SiteFileInput.jsx";
@@ -35,12 +36,15 @@ function isImageUrl(u) {
 }
 
 function ImgOrLink({ label, url }) {
+  const { t } = useT();
   if (!url) {
     return (
       <Stack spacing={1} alignItems="flex-start">
-        <Typography color="text.secondary">لا يوجد {label}</Typography>
+        <Typography color="text.secondary">
+          {t("siteUtility.pdf.field.noValue").replace("{label}", label ?? "")}
+        </Typography>
         <Typography variant="caption" color="text.secondary">
-          اضغط تعديل للإضافة.
+          {t("siteUtility.pdf.field.addHint")}
         </Typography>
       </Stack>
     );
@@ -96,6 +100,7 @@ export default function PdfUtilityFieldCard({
   disabled,
   onSave,
 }) {
+  const { t } = useT();
   const [hover, setHover] = useState(false);
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState(value || "");
@@ -158,7 +163,7 @@ export default function PdfUtilityFieldCard({
               opacity: hover ? 1 : 0.8,
             }}
           >
-            <Tooltip title={`تعديل ${title}`}>
+            <Tooltip title={t("siteUtility.pdf.field.editTooltip").replace("{title}", title ?? "")}>
               <span>
                 <IconButton onClick={handleOpen} size="small" color="primary">
                   <FaEdit />
@@ -170,13 +175,17 @@ export default function PdfUtilityFieldCard({
       </Card>
 
       <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-        <DialogTitle>{value ? `تعديل ${title}` : `إضافة ${title}`}</DialogTitle>
+        <DialogTitle>
+          {value
+            ? t("siteUtility.pdf.field.editTitle").replace("{title}", title ?? "")
+            : t("siteUtility.pdf.field.addTitle").replace("{title}", title ?? "")}
+        </DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Grid container spacing={2}>
               <Grid size={{ sm: 6 }}>
                 <TextField
-                  label="الرابط"
+                  label={t("siteUtility.pdf.field.url")}
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   fullWidth
@@ -185,7 +194,7 @@ export default function PdfUtilityFieldCard({
               </Grid>
               <Grid size={{ sm: 6 }}>
                 <SiteFileInput
-                  label="ملف"
+                  label={t("siteUtility.pdf.field.file")}
                   id={`file-${itemKey}`}
                   accept="image/*"
                   onPick={handleUploadFile}
@@ -194,8 +203,12 @@ export default function PdfUtilityFieldCard({
             </Grid>
             {url && (
               <Typography variant="caption" color="text.secondary">
-                سيتم استخدام {isImageUrl(url) ? "الصورة المرفوعة" : "الرابط"} عند
-                الحفظ.
+                {t("siteUtility.pdf.field.useImageHint").replace(
+                  "{what}",
+                  isImageUrl(url)
+                    ? t("siteUtility.pdf.field.useImage")
+                    : t("siteUtility.pdf.field.useLink"),
+                )}
               </Typography>
             )}
           </Stack>
@@ -207,7 +220,7 @@ export default function PdfUtilityFieldCard({
             disabled={saving}
             color="inherit"
           >
-            إغلاق
+            {t("siteUtility.action.close")}
           </Button>
           <Button
             startIcon={<FaSave />}
@@ -215,7 +228,7 @@ export default function PdfUtilityFieldCard({
             disabled={!canSave || saving}
             variant="contained"
           >
-            حفظ
+            {t("siteUtility.action.save")}
           </Button>
         </DialogActions>
       </Dialog>

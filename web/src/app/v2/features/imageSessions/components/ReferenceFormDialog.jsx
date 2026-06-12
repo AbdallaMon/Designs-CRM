@@ -19,6 +19,7 @@ import { useEffect, useState } from "react";
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, Stack, TextField, Typography,
 } from "@mui/material";
+import { useT } from "@/app/v2/lib/i18n";
 import imageSessionsService from "../imageSessions.service.js";
 import { runImageSessionMutation } from "../imageSessions.mutations.js";
 import { buildReferenceText, readPickListLabel } from "../config/imageSessionsConstants.js";
@@ -55,8 +56,11 @@ const HANDLERS = {
 };
 
 export function ReferenceFormDialog({ open, type, initial, onClose, onSaved }) {
+  const { t } = useT();
   const cfg = HANDLERS[type?.key];
   const isEdit = Boolean(initial?.id);
+  // Localized type label (Arabic verbatim fallback via labelKey).
+  const typeLabel = type ? t(type.labelKey, type.label) : "";
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -89,7 +93,7 @@ export function ReferenceFormDialog({ open, type, initial, onClose, onSaved }) {
     const body = buildBody();
     const res = await runImageSessionMutation(
       () => (isEdit ? cfg.update(initial.id, body) : cfg.create(body)),
-      { loading: isEdit ? "جاري الحفظ..." : "جاري الإضافة...", setLoading: setBusy },
+      { loading: isEdit ? t("imageSessions.lead.savingLoading", "جاري الحفظ...") : t("imageSessions.form.addingLoading", "جاري الإضافة..."), setLoading: setBusy },
     );
     if (res) {
       onSaved?.();
@@ -100,12 +104,14 @@ export function ReferenceFormDialog({ open, type, initial, onClose, onSaved }) {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" dir="rtl">
       <DialogTitle>
-        {isEdit ? `تعديل ${type.label}` : `إضافة ${type.label}`}
+        {isEdit
+          ? t("imageSessions.form.editTitle", "تعديل {label}").replace("{label}", typeLabel)
+          : t("imageSessions.form.addTitle", "إضافة {label}").replace("{label}", typeLabel)}
       </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <TextField
-            label="الاسم"
+            label={t("imageSessions.form.name", "الاسم")}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             fullWidth
@@ -113,7 +119,7 @@ export function ReferenceFormDialog({ open, type, initial, onClose, onSaved }) {
           />
           {cfg.hasDescription && (
             <TextField
-              label="الوصف"
+              label={t("imageSessions.form.description", "الوصف")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               fullWidth
@@ -123,7 +129,7 @@ export function ReferenceFormDialog({ open, type, initial, onClose, onSaved }) {
           )}
           {cfg.hasBackground && (
             <TextField
-              label="لون الخلفية"
+              label={t("imageSessions.form.background", "لون الخلفية")}
               value={background}
               onChange={(e) => setBackground(e.target.value)}
               placeholder="#000000"
@@ -132,21 +138,21 @@ export function ReferenceFormDialog({ open, type, initial, onClose, onSaved }) {
           )}
           {cfg.hasType && (
             <TextField
-              label="نوع الصفحة"
+              label={t("imageSessions.form.pageType", "نوع الصفحة")}
               value={pageType}
               onChange={(e) => setPageType(e.target.value)}
               fullWidth
             />
           )}
           <Typography variant="caption" color="text.secondary">
-            يتم الحفظ باللغة العربية.
+            {t("imageSessions.form.savedInArabic", "يتم الحفظ باللغة العربية.")}
           </Typography>
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={busy}>إلغاء</Button>
+        <Button onClick={onClose} disabled={busy}>{t("imageSessions.form.cancel", "إلغاء")}</Button>
         <Button variant="contained" onClick={submit} disabled={busy || !title.trim()}>
-          {isEdit ? "حفظ" : "إضافة"}
+          {isEdit ? t("imageSessions.form.save", "حفظ") : t("imageSessions.form.add", "إضافة")}
         </Button>
       </DialogActions>
     </Dialog>

@@ -31,6 +31,7 @@ import {
   Typography,
 } from "@mui/material";
 import { MdUploadFile } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { useToastContext } from "@/app/v2/providers/ToastProvider";
 import { useUpload } from "@/app/v2/hooks/useUpload.js";
 import { UploadOverlay } from "@/app/v2/shared/components/feedback/UploadOverlay.jsx";
@@ -40,6 +41,7 @@ import { PICK_LIST_MODELS, readPickListLabel } from "../config/imageSessionsCons
 
 export function UploadImageDialog({ open, mode = "single", onClose, onSaved }) {
   const bulk = mode === "bulk";
+  const { t } = useT();
   const { setLoading } = useToastContext();
 
   const [styleId, setStyleId] = useState("");
@@ -143,7 +145,7 @@ export function UploadImageDialog({ open, mode = "single", onClose, onSaved }) {
                 styleId: numericStyleId,
                 spaceIds: numericSpaceIds,
               }),
-        { setLoading, loading: "جاري حفظ الصور..." },
+        { setLoading, loading: t("imageSessions.upload.savingLoading", "جاري حفظ الصور...") },
       );
 
       if (res) {
@@ -166,15 +168,17 @@ export function UploadImageDialog({ open, mode = "single", onClose, onSaved }) {
       />
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth dir="rtl">
         <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>
-          {bulk ? "إضافة صور (متعددة)" : "إضافة صورة"}
+          {bulk
+            ? t("imageSessions.upload.titleBulk", "إضافة صور (متعددة)")
+            : t("imageSessions.upload.titleSingle", "إضافة صورة")}
         </DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 2 }}>
             <FormControl fullWidth disabled={optionsLoading}>
-              <InputLabel id="design-image-style-label">الطراز</InputLabel>
+              <InputLabel id="design-image-style-label">{t("imageSessions.upload.style", "الطراز")}</InputLabel>
               <Select
                 labelId="design-image-style-label"
-                label="الطراز"
+                label={t("imageSessions.upload.style", "الطراز")}
                 value={styleId}
                 onChange={(e) => setStyleId(e.target.value)}
               >
@@ -187,13 +191,13 @@ export function UploadImageDialog({ open, mode = "single", onClose, onSaved }) {
             </FormControl>
 
             <FormControl fullWidth disabled={optionsLoading}>
-              <InputLabel id="design-image-spaces-label">المساحات</InputLabel>
+              <InputLabel id="design-image-spaces-label">{t("imageSessions.upload.spaces", "المساحات")}</InputLabel>
               <Select
                 labelId="design-image-spaces-label"
                 multiple
                 value={spaceIds}
                 onChange={(e) => setSpaceIds(e.target.value)}
-                input={<OutlinedInput label="المساحات" />}
+                input={<OutlinedInput label={t("imageSessions.upload.spaces", "المساحات")} />}
                 renderValue={(selected) => (
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                     {selected.map((id) => (
@@ -213,11 +217,11 @@ export function UploadImageDialog({ open, mode = "single", onClose, onSaved }) {
             <Button component="label" variant="outlined" startIcon={<MdUploadFile />}>
               {files.length > 0
                 ? bulk
-                  ? `${files.length} ملف محدد`
+                  ? t("imageSessions.upload.filesSelected", "{count} ملف محدد").replace("{count}", files.length)
                   : files[0].name
                 : bulk
-                  ? "اختر صوراً"
-                  : "اختر صورة"}
+                  ? t("imageSessions.upload.pickImages", "اختر صوراً")
+                  : t("imageSessions.upload.pickImage", "اختر صورة")}
               <input
                 type="file"
                 hidden
@@ -236,10 +240,10 @@ export function UploadImageDialog({ open, mode = "single", onClose, onSaved }) {
         </DialogContent>
         <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
           <Button onClick={handleClose} variant="outlined" disabled={saving || isUploading}>
-            إلغاء
+            {t("imageSessions.upload.cancel", "إلغاء")}
           </Button>
           <Button onClick={handleSave} variant="contained" color="primary" disabled={!canSubmit}>
-            حفظ
+            {t("imageSessions.upload.save", "حفظ")}
           </Button>
         </DialogActions>
       </Dialog>

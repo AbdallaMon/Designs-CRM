@@ -32,6 +32,7 @@ import { RoomActions } from "./RoomActions.jsx";
 import { LoadMoreButton } from "../indicators/LoadMoreButton.jsx";
 import { getRoomAvatar, getRoomLabel } from "../../chat.utils.js";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
+import { useT } from "@/app/v2/lib/i18n";
 
 dayjs.extend(relativeTime);
 
@@ -62,6 +63,7 @@ export function ChatRoomsList({
   onSelectForwardRoom,
   canCreate = true,
 }) {
+  const { t } = useT();
   const [searchQuery, setSearchQuery] = useState("");
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [menuRoomId, setMenuRoomId] = useState(null);
@@ -113,14 +115,14 @@ export function ChatRoomsList({
       if (count > 0) {
         return (
           <Typography variant="caption" sx={{ fontStyle: "italic", color: "primary.main", fontWeight: 500 }}>
-            {count} {count === 1 ? "شخص يكتب" : "أشخاص يكتبون"}...
+            {count} {count === 1 ? t("chat.rooms.typingOne", "شخص يكتب") : t("chat.rooms.typingMany", "أشخاص يكتبون")}...
           </Typography>
         );
       }
     }
     const last = room.lastMessage;
-    if (!last) return "لا توجد رسائل بعد";
-    if (last.type === "FILE") return last.fileName || "ملف";
+    if (!last) return t("chat.rooms.noMessages", "لا توجد رسائل بعد");
+    if (last.type === "FILE") return last.fileName || t("chat.rooms.file", "ملف");
     const text = last.content || "";
     return text.length > 60 ? `${text.slice(0, 60)}…` : text;
   };
@@ -132,7 +134,7 @@ export function ChatRoomsList({
       {!isForward && !isWidget && canCreate && (
         <Box sx={{ p: 2, borderBottom: "1px solid", borderColor: "divider", display: "flex", justifyContent: "flex-end" }}>
           <Button color="primary" onClick={onCreateNewRoom} size="small" variant="outlined" startIcon={<FaPlus />}>
-            {isTab ? "محادثة جماعية" : "مجموعة"}
+            {isTab ? t("chat.rooms.createTab", "محادثة جماعية") : t("chat.rooms.createGroup", "مجموعة")}
           </Button>
         </Box>
       )}
@@ -140,7 +142,7 @@ export function ChatRoomsList({
         <TextField
           fullWidth
           size="small"
-          placeholder="ابحث في المحادثات..."
+          placeholder={t("chat.rooms.searchPlaceholder", "ابحث في المحادثات...")}
           value={searchQuery}
           onChange={(e) => {
             const v = e.target.value;
@@ -173,7 +175,7 @@ export function ChatRoomsList({
         <ScrollButton containerRef={scrollContainerRef} direction="up" threshold={300} position={{ top: 8, right: 8 }} />
         {rooms?.length === 0 ? (
           <Box sx={{ display: "flex", justifyContent: "center", pt: 3 }}>
-            <Typography color="textSecondary">لا توجد محادثات</Typography>
+            <Typography color="textSecondary">{t("chat.rooms.empty", "لا توجد محادثات")}</Typography>
           </Box>
         ) : (
           rooms?.map((room) => {
@@ -181,7 +183,7 @@ export function ChatRoomsList({
             const isMuted = member?.isMuted;
             const isArchived = member?.isArchived;
             const unReadCount = getUnreadCount(room);
-            const roomLabel = getRoomLabel(room);
+            const roomLabel = getRoomLabel(room, t);
             const isSelected = selectedForwardRooms?.find((r) => r.id === room.id);
             return (
               <ListItem
@@ -200,7 +202,7 @@ export function ChatRoomsList({
                 secondaryAction={
                   <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                     {!isForward && (
-                      <Tooltip title="فتح في نافذة جديدة">
+                      <Tooltip title={t("chat.rooms.openInNewWindow", "فتح في نافذة جديدة")}>
                         <IconButton
                           edge="start"
                           size="small"
@@ -307,23 +309,25 @@ export function ChatRoomsList({
         open={deleteConfirm}
         onClose={() => setDeleteConfirm(false)}
         onConfirm={handleDeleteRoom}
-        title="حذف المحادثة؟"
-        description="لا يمكن التراجع عن هذا الإجراء. سيتم حذف جميع الرسائل."
-        confirmLabel="حذف"
+        title={t("chat.rooms.deleteTitle", "حذف المحادثة؟")}
+        description={t("chat.rooms.deleteDescription", "لا يمكن التراجع عن هذا الإجراء. سيتم حذف جميع الرسائل.")}
+        confirmLabel={t("chat.rooms.deleteConfirm", "حذف")}
+        cancelLabel={t("chat.rooms.cancel", "إلغاء")}
       />
       <ConfirmRoomDialog
         open={leaveConfirm}
         onClose={() => setLeaveConfirm(false)}
         onConfirm={handleLeaveRoom}
-        title="مغادرة المحادثة؟"
-        description="لن تتلقى رسائل من هذه المحادثة بعد المغادرة."
-        confirmLabel="مغادرة"
+        title={t("chat.rooms.leaveTitle", "مغادرة المحادثة؟")}
+        description={t("chat.rooms.leaveDescription", "لن تتلقى رسائل من هذه المحادثة بعد المغادرة.")}
+        confirmLabel={t("chat.rooms.leaveConfirm", "مغادرة")}
+        cancelLabel={t("chat.rooms.cancel", "إلغاء")}
       />
     </Box>
   );
 }
 
-function ConfirmRoomDialog({ open, onClose, onConfirm, title, description, confirmLabel }) {
+function ConfirmRoomDialog({ open, onClose, onConfirm, title, description, confirmLabel, cancelLabel }) {
   return (
     <Dialog open={open} onClose={onClose} sx={{ zIndex: 1304 }}>
       <DialogTitle>{title}</DialogTitle>
@@ -331,7 +335,7 @@ function ConfirmRoomDialog({ open, onClose, onConfirm, title, description, confi
         <Typography>{description}</Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>إلغاء</Button>
+        <Button onClick={onClose}>{cancelLabel}</Button>
         <Button onClick={onConfirm} variant="contained" color="error">
           {confirmLabel}
         </Button>

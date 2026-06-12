@@ -14,14 +14,15 @@ import Link from "next/link";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { useDebounce } from "@/app/v2/hooks/useDebounce";
+import { useT } from "@/app/v2/lib/i18n";
 import {
   PageHeader,
   DataTablePage,
   PartialPermissionState,
 } from "@/app/v2/shared/components";
 import { useUsersList } from "../hooks/useUsersList.js";
-import { usersColumns } from "../config/usersColumns.js";
-import { usersFilters } from "../config/usersFilters.js";
+import { buildUsersColumns } from "../config/usersColumns.js";
+import { buildUsersFilters } from "../config/usersFilters.js";
 import { usersMessages } from "../config/usersMessages.js";
 import { usersService } from "../users.service.js";
 import { runUsersMutation } from "../users.mutations.js";
@@ -34,6 +35,7 @@ const STATUS_TO_BE = { ACTIVE: "active", BANNED: "banned" };
 
 export function UsersPage() {
   const { hasPermission } = usePermission();
+  const { t } = useT();
   const canList = hasPermission(P.LIST);
   const canCreate = hasPermission(P.CREATE);
   const canUpdate = hasPermission(P.UPDATE);
@@ -80,7 +82,7 @@ export function UsersPage() {
   async function toggleStatus(row) {
     const res = await runUsersMutation(
       () => usersService.changeStatus(row.id, row.isActive),
-      { loading: row.isActive ? "جاري الإيقاف..." : "جاري التفعيل..." },
+      { loading: row.isActive ? t("users.toast.banning") : t("users.toast.activating") },
     );
     if (res) refetch();
   }
@@ -91,7 +93,7 @@ export function UsersPage() {
     return (
       <>
         {canToggle && (
-          <Tooltip title={row.isActive ? "إيقاف المستخدم" : "تفعيل المستخدم"}>
+          <Tooltip title={row.isActive ? t("users.actions.ban") : t("users.actions.unban")}>
             <IconButton
               size="small"
               color={row.isActive ? "error" : "success"}
@@ -101,7 +103,7 @@ export function UsersPage() {
             </IconButton>
           </Tooltip>
         )}
-        <Tooltip title="فتح ملف المستخدم">
+        <Tooltip title={t("users.actions.openUserFile")}>
           <IconButton size="small" component={Link} href={`/v2/users/${row.id}`}>
             <MdOpenInNew />
           </IconButton>
@@ -110,17 +112,20 @@ export function UsersPage() {
     );
   }
 
+  const columns = useMemo(() => buildUsersColumns(t), [t]);
+  const filters = useMemo(() => buildUsersFilters(t), [t]);
+
   const empty = useMemo(
     () => ({
-      title: "لا يوجد مستخدمون",
+      title: t("users.empty.title"),
       description: canCreate
-        ? "ابدأ بإنشاء أول مستخدم لإدارة الفريق."
-        : "لا توجد سجلات مطابقة للتصفية الحالية.",
+        ? t("users.empty.descriptionCanCreate")
+        : t("users.empty.descriptionNoMatch"),
       action: canCreate
-        ? { label: "إنشاء مستخدم", onClick: () => setCreateOpen(true) }
+        ? { label: t("users.actions.create"), onClick: () => setCreateOpen(true) }
         : undefined,
     }),
-    [canCreate],
+    [canCreate, t],
   );
 
   if (!canList) {
@@ -128,8 +133,8 @@ export function UsersPage() {
       <Container maxWidth="md" sx={{ py: 6 }}>
         <PartialPermissionState
           denied
-          title="إدارة المستخدمين غير متاحة لصلاحياتك"
-          message="لا تملك صلاحية عرض قائمة المستخدمين. تواصل مع المسؤول إن كنت تظن أنه ينبغي أن تصل إليها."
+          title={t("users.denied.title")}
+          message={t("users.denied.message")}
         />
       </Container>
     );
@@ -138,20 +143,23 @@ export function UsersPage() {
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <PageHeader
-        title="المستخدمون"
-        subtitle={`الإجمالي: ${total}`}
-        breadcrumbs={[{ label: "الإدارة" }, { label: "المستخدمون" }]}
+        title={t("users.title")}
+        subtitle={`${t("users.totalPrefix")} ${total}`}
+        breadcrumbs={[
+          { label: t("users.breadcrumbs.admin") },
+          { label: t("users.breadcrumbs.users") },
+        ]}
         primaryAction={
           canCreate
-            ? { label: "إنشاء مستخدم", onClick: () => setCreateOpen(true) }
+            ? { label: t("users.actions.create"), onClick: () => setCreateOpen(true) }
             : undefined
         }
       />
 
       <Box>
         <DataTablePage
-          columns={usersColumns}
-          filters={usersFilters}
+          columns={columns}
+          filters={filters}
           rows={items}
           total={total}
           page={page}

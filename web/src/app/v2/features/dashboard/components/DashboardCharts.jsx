@@ -13,6 +13,7 @@
 
 import { Grid, Box, Typography } from "@mui/material";
 import { ChartCard, SectionCard } from "@/app/v2/shared/components";
+import { useT } from "@/app/v2/lib/i18n";
 import { WidgetBoundary } from "./WidgetBoundary.jsx";
 import { useDashboardWidget } from "../hooks/useDashboardWidget.js";
 import {
@@ -20,13 +21,14 @@ import {
   WEEK_PERFORMANCE_URL,
   LEADS_MONTHLY_OVERVIEW_URL,
 } from "../config/constant.js";
-import { DASHBOARD_SECTIONS } from "../config/dashboardConstants.js";
+import { DASHBOARD_SECTION_KEYS } from "../config/dashboardConstants.js";
 
 export function DashboardCharts({ query, enabled }) {
+  const { t } = useT();
   return (
     <Box>
       <Typography variant="h6" component="h2" sx={{ mb: 1.5 }}>
-        {DASHBOARD_SECTIONS.charts}
+        {t(DASHBOARD_SECTION_KEYS.charts)}
       </Typography>
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, lg: 6 }}>
@@ -44,6 +46,7 @@ export function DashboardCharts({ query, enabled }) {
 }
 
 function MonthlyPerformanceChart({ query, enabled }) {
+  const { t } = useT();
   const { data, isLoading, error, refetch } = useDashboardWidget({
     base: MONTHLY_PERFORMANCE_URL,
     query,
@@ -51,29 +54,29 @@ function MonthlyPerformanceChart({ query, enabled }) {
   });
   const rows = Array.isArray(data) ? data : [];
   const isEmpty = rows.length === 0;
+  const title = t(DASHBOARD_SECTION_KEYS.monthlyPerformance);
 
-  if (isLoading) return <ChartCard title={DASHBOARD_SECTIONS.monthlyPerformance} loading height={260} />;
+  if (isLoading) return <ChartCard title={title} loading height={260} />;
   if (error || isEmpty) {
-    return (
-      <BoundaryCard title={DASHBOARD_SECTIONS.monthlyPerformance} error={error} onRetry={refetch} isEmpty={isEmpty} />
-    );
+    return <BoundaryCard title={title} error={error} onRetry={refetch} isEmpty={isEmpty} />;
   }
 
   return (
     <ChartCard
-      title={DASHBOARD_SECTIONS.monthlyPerformance}
+      title={title}
       type="line"
       height={260}
       xAxis={[{ scaleType: "point", data: rows.map((r) => r.month) }]}
       series={[
-        { label: "العملاء", data: rows.map((r) => r.leads ?? 0) },
-        { label: "المنتهية", data: rows.map((r) => r.finalized ?? 0) },
+        { label: t("dashboard.chart.leads"), data: rows.map((r) => r.leads ?? 0) },
+        { label: t("dashboard.chart.finalized"), data: rows.map((r) => r.finalized ?? 0) },
       ]}
     />
   );
 }
 
 function WeekPerformanceChart({ query, enabled }) {
+  const { t } = useT();
   const { data, isLoading, error, refetch } = useDashboardWidget({
     base: WEEK_PERFORMANCE_URL,
     query,
@@ -81,15 +84,19 @@ function WeekPerformanceChart({ query, enabled }) {
   });
   const weekly = data?.weekly;
   const isEmpty = !weekly;
+  const title = t(DASHBOARD_SECTION_KEYS.weekPerformance);
 
-  if (isLoading) return <ChartCard title={DASHBOARD_SECTIONS.weekPerformance} loading height={260} />;
+  if (isLoading) return <ChartCard title={title} loading height={260} />;
   if (error || isEmpty) {
-    return (
-      <BoundaryCard title={DASHBOARD_SECTIONS.weekPerformance} error={error} onRetry={refetch} isEmpty={isEmpty} />
-    );
+    return <BoundaryCard title={title} error={error} onRetry={refetch} isEmpty={isEmpty} />;
   }
 
-  const labels = ["عملاء جدد", "نجاحات", "متابعات", "اجتماعات"];
+  const labels = [
+    t("dashboard.chart.week.newLeads"),
+    t("dashboard.chart.week.success"),
+    t("dashboard.chart.week.followUps"),
+    t("dashboard.chart.week.meetings"),
+  ];
   const values = [
     weekly.newLeads ?? 0,
     weekly.success ?? 0,
@@ -99,16 +106,17 @@ function WeekPerformanceChart({ query, enabled }) {
 
   return (
     <ChartCard
-      title={DASHBOARD_SECTIONS.weekPerformance}
+      title={title}
       type="bar"
       height={260}
       xAxis={[{ scaleType: "band", data: labels }]}
-      series={[{ label: data?.currentWeek || "هذا الأسبوع", data: values }]}
+      series={[{ label: data?.currentWeek || t("dashboard.chart.thisWeek"), data: values }]}
     />
   );
 }
 
 function LeadsOverviewChart({ query, enabled }) {
+  const { t } = useT();
   const { data, isLoading, error, refetch } = useDashboardWidget({
     base: LEADS_MONTHLY_OVERVIEW_URL,
     query,
@@ -116,23 +124,32 @@ function LeadsOverviewChart({ query, enabled }) {
   });
   const totals = data?.totals;
   const isEmpty = !totals || (totals.totalThisPeriod ?? 0) === 0;
+  const title = t(DASHBOARD_SECTION_KEYS.leadsMonthlyOverview);
 
-  if (isLoading) return <ChartCard title={DASHBOARD_SECTIONS.leadsMonthlyOverview} loading height={260} />;
+  if (isLoading) return <ChartCard title={title} loading height={260} />;
   if (error || isEmpty) {
-    return (
-      <BoundaryCard title={DASHBOARD_SECTIONS.leadsMonthlyOverview} error={error} onRetry={refetch} isEmpty={isEmpty} />
-    );
+    return <BoundaryCard title={title} error={error} onRetry={refetch} isEmpty={isEmpty} />;
   }
 
   return (
     <ChartCard
-      title={DASHBOARD_SECTIONS.leadsMonthlyOverview}
+      title={title}
       type="bar"
       height={260}
-      xAxis={[{ scaleType: "band", data: ["داخل الدولة", "خارج الدولة", "غير مكتمل", "منتهية"] }]}
+      xAxis={[
+        {
+          scaleType: "band",
+          data: [
+            t("dashboard.chart.overview.inside"),
+            t("dashboard.chart.overview.outside"),
+            t("dashboard.chart.overview.incomplete"),
+            t("dashboard.chart.overview.finalized"),
+          ],
+        },
+      ]}
       series={[
         {
-          label: "عملاء",
+          label: t("dashboard.chart.leadsSeries"),
           data: [
             totals.insideCount ?? 0,
             totals.outsideCount ?? 0,
@@ -148,6 +165,7 @@ function LeadsOverviewChart({ query, enabled }) {
 // A chart slot that, instead of a chart, shows the per-widget error+retry or empty state inside
 // the SAME SectionCard chrome ChartCard uses (so the tier degrades without parallel styling).
 function BoundaryCard({ title, error, onRetry, isEmpty }) {
+  const { t } = useT();
   return (
     <SectionCard title={title}>
       <Box sx={{ minHeight: 220, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -156,7 +174,7 @@ function BoundaryCard({ title, error, onRetry, isEmpty }) {
           error={error}
           onRetry={onRetry}
           isEmpty={isEmpty}
-          empty={{ title: "لا توجد بيانات كافية لعرض الرسم" }}
+          empty={{ title: t("dashboard.chart.empty") }}
         >
           {null}
         </WidgetBoundary>

@@ -7,7 +7,7 @@
 // loading (skeleton), error (+retry), empty (no matches), and results. Single-language Arabic /
 // RTL.
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import NextLink from "next/link";
 import {
   Box,
@@ -31,11 +31,14 @@ import { SectionCard } from "@/app/v2/shared/components";
 import { LoadingState } from "@/app/v2/shared/components";
 import { ErrorState } from "@/app/v2/shared/components";
 import { EmptyState } from "@/app/v2/shared/components";
+import { useT } from "@/app/v2/lib/i18n";
 import { utilitiesService } from "../utilities.service.js";
 import { utilitiesMessages } from "../config/utilitiesMessages.js";
-import { SEARCH_MODEL_DEFS, getSearchModelDef, SEARCH_MODELS } from "../config/utilitiesSurfaces.js";
+import { buildSearchModelDefs, SEARCH_MODELS } from "../config/utilitiesSurfaces.js";
 
 export function GlobalSearchPanel() {
+  const { t } = useT();
+  const modelDefs = useMemo(() => buildSearchModelDefs(t), [t]);
   const [model, setModel] = useState(SEARCH_MODELS.CLIENT_LEAD);
   const [term, setTerm] = useState("");
   const [results, setResults] = useState(null); // null = idle (never searched yet)
@@ -44,7 +47,7 @@ export function GlobalSearchPanel() {
   // The query whose results are currently shown — so the result header can echo it.
   const lastQueryRef = useRef("");
 
-  const def = getSearchModelDef(model);
+  const def = modelDefs.find((m) => m.key === model) ?? modelDefs[0];
 
   const runSearch = useCallback(
     async (e) => {
@@ -70,16 +73,16 @@ export function GlobalSearchPanel() {
   return (
     <Stack spacing={3}>
       <SectionCard
-        title="البحث الشامل"
-        subtitle="ابحث عبر العملاء المحتملين والعملاء والمستخدمين، وانتقل مباشرة إلى السجل."
+        title={t("utilities.search.title")}
+        subtitle={t("utilities.search.subtitle")}
       >
         <form onSubmit={runSearch} noValidate>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="stretch">
             <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel id="search-model-label">نوع السجل</InputLabel>
+              <InputLabel id="search-model-label">{t("utilities.search.modelLabel")}</InputLabel>
               <Select
                 labelId="search-model-label"
-                label="نوع السجل"
+                label={t("utilities.search.modelLabel")}
                 value={model}
                 onChange={(ev) => {
                   setModel(ev.target.value);
@@ -87,7 +90,7 @@ export function GlobalSearchPanel() {
                   setError(null);
                 }}
               >
-                {SEARCH_MODEL_DEFS.map((m) => (
+                {modelDefs.map((m) => (
                   <MenuItem key={m.key} value={m.key}>
                     {m.label}
                   </MenuItem>
@@ -98,7 +101,7 @@ export function GlobalSearchPanel() {
             <TextField
               size="small"
               fullWidth
-              label="كلمة البحث"
+              label={t("utilities.search.termLabel")}
               placeholder={def.placeholder}
               value={term}
               onChange={(ev) => setTerm(ev.target.value)}
@@ -121,7 +124,7 @@ export function GlobalSearchPanel() {
               startIcon={<MdSearch />}
               sx={{ whiteSpace: "nowrap" }}
             >
-              بحث
+              {t("utilities.search.submit")}
             </Button>
           </Stack>
         </form>
@@ -140,16 +143,17 @@ export function GlobalSearchPanel() {
 }
 
 function ResultsArea({ loading, error, results, def, query, onRetry }) {
+  const { t } = useT();
   if (loading) {
     return (
-      <SectionCard title="النتائج">
+      <SectionCard title={t("utilities.search.results.title")}>
         <LoadingState variant="table" rows={5} columns={2} />
       </SectionCard>
     );
   }
   if (error) {
     return (
-      <SectionCard title="النتائج">
+      <SectionCard title={t("utilities.search.results.title")}>
         <ErrorState error={error} onRetry={onRetry} resolver={utilitiesMessages} />
       </SectionCard>
     );
@@ -158,24 +162,31 @@ function ResultsArea({ loading, error, results, def, query, onRetry }) {
     // Idle — never searched yet.
     return (
       <EmptyState
-        title="ابدأ البحث"
-        description="اختر نوع السجل واكتب كلمة البحث ثم اضغط «بحث» لعرض النتائج المطابقة."
+        title={t("utilities.search.idle.title")}
+        description={t("utilities.search.idle.description")}
       />
     );
   }
   if (results.length === 0) {
     return (
       <EmptyState
-        title="لا توجد نتائج"
-        description={`لم يُعثر على أي «${def.label}» مطابق لكلمة البحث «${query}». جرّب كلمة أخرى.`}
+        title={t("utilities.search.empty.title")}
+        description={t("utilities.search.empty.description")
+          .replace("{label}", def.label)
+          .replace("{query}", query)}
       />
     );
   }
 
   return (
     <SectionCard
-      title="النتائج"
-      actions={<Chip size="small" label={`${results.length} نتيجة`} variant="outlined" />}
+      title={t("utilities.search.results.title")}
+      actions={
+        <Chip
+          size="small"
+          label={t("utilities.search.results.count").replace("{count}", results.length)}
+          variant="outlined"
+        />}
       noPadding
     >
       <List disablePadding>

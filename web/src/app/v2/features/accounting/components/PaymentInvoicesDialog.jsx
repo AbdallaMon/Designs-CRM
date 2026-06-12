@@ -21,10 +21,12 @@ import {
 } from "@mui/material";
 import { MdReceipt, MdCalendarToday, MdAttachMoney } from "react-icons/md";
 import dayjs from "dayjs";
+import { useT } from "@/app/v2/lib/i18n";
 import { accountingService } from "../accounting.service.js";
 import { formatCurrency } from "../config/accountingConstants.js";
 
 export function PaymentInvoicesDialog({ paymentId }) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -52,10 +54,10 @@ export function PaymentInvoicesDialog({ paymentId }) {
   return (
     <>
       <Button variant="contained" size="small" startIcon={<MdReceipt />} onClick={() => setOpen(true)}>
-        سجل الفواتير
+        {t("accounting.invoices.button")}
       </Button>
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>سجل الفواتير</DialogTitle>
+        <DialogTitle>{t("accounting.invoices.title")}</DialogTitle>
         <DialogContent dividers>
           {loading ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
@@ -63,7 +65,7 @@ export function PaymentInvoicesDialog({ paymentId }) {
             </Box>
           ) : invoices.length === 0 ? (
             <Typography color="text.secondary" sx={{ py: 2, textAlign: "center" }}>
-              لا يوجد سجل فواتير
+              {t("accounting.invoices.empty")}
             </Typography>
           ) : (
             <List>
@@ -74,11 +76,14 @@ export function PaymentInvoicesDialog({ paymentId }) {
                       sx={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}
                     >
                       <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                        فاتورة #{invoice.invoiceNumber}
+                        {t("accounting.invoices.number").replace(
+                          "{number}",
+                          String(invoice.invoiceNumber),
+                        )}
                       </Typography>
                       {invoice.notes?.[0]?.attachment && (
                         <MuiLink href={invoice.notes[0].attachment} target="_blank" rel="noreferrer">
-                          عرض المرفق
+                          {t("accounting.invoices.viewAttachment")}
                         </MuiLink>
                       )}
                     </Box>

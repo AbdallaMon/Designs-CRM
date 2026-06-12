@@ -23,6 +23,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
+import { useT } from "@/app/v2/lib/i18n";
 import { DEPARTMENTS } from "../../config/projectsConstants.js";
 import { projectsService } from "../../projects.service.js";
 import { UpdateCard } from "./UpdateCard.jsx";
@@ -37,6 +38,7 @@ function isAdminUser(user) {
 export function UpdatesList({ clientLeadId, currentUserDepartment = "STAFF" }) {
   const { user } = useAuth();
   const { hasPermission } = usePermission();
+  const { t } = useT();
   const isAdmin = isAdminUser(user);
   const canList = hasPermission(PERMISSIONS.UPDATE.LIST);
   const canCreate = hasPermission(PERMISSIONS.UPDATE.CREATE);
@@ -79,7 +81,7 @@ export function UpdatesList({ clientLeadId, currentUserDepartment = "STAFF" }) {
   if (!canList) {
     return (
       <Box sx={{ p: 3, textAlign: "center" }}>
-        <Typography color="text.secondary">لا تملك صلاحية الوصول إلى التحديثات</Typography>
+        <Typography color="text.secondary">{t("projects.updates.denied")}</Typography>
       </Box>
     );
   }
@@ -88,7 +90,7 @@ export function UpdatesList({ clientLeadId, currentUserDepartment = "STAFF" }) {
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
         <Typography variant="h5" fontWeight="bold">
-          التحديثات
+          {t("projects.updates.title")}
         </Typography>
         {canCreate && (
           <CreateUpdateModal
@@ -103,9 +105,9 @@ export function UpdatesList({ clientLeadId, currentUserDepartment = "STAFF" }) {
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center">
           <Stack direction="row" spacing={1}>
             {[
-              { value: "all", label: "الكل" },
-              { value: "notArchived", label: "نشطة" },
-              { value: "archived", label: "مؤرشفة" },
+              { value: "all", label: t("projects.updates.filter.all") },
+              { value: "notArchived", label: t("projects.updates.filter.active") },
+              { value: "archived", label: t("projects.updates.filter.archived") },
             ].map((opt) => (
               <Button
                 key={opt.value}
@@ -119,13 +121,13 @@ export function UpdatesList({ clientLeadId, currentUserDepartment = "STAFF" }) {
           </Stack>
           {isAdmin && (
             <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel>تصفية حسب القسم</InputLabel>
+              <InputLabel>{t("projects.updates.filterByDepartment")}</InputLabel>
               <Select
                 value={departmentFilter}
                 onChange={(e) => setDepartmentFilter(e.target.value)}
-                label="تصفية حسب القسم"
+                label={t("projects.updates.filterByDepartment")}
               >
-                <MenuItem value="">كل الأقسام</MenuItem>
+                <MenuItem value="">{t("projects.updates.allDepartments")}</MenuItem>
                 {DEPARTMENTS.map((d) => (
                   <MenuItem key={d.value} value={d.value}>
                     {d.label}
@@ -138,11 +140,11 @@ export function UpdatesList({ clientLeadId, currentUserDepartment = "STAFF" }) {
       </Paper>
 
       {loading ? (
-        <Typography>جاري التحميل...</Typography>
+        <Typography>{t("projects.updates.loading")}</Typography>
       ) : visible.length === 0 ? (
         <Paper variant="outlined" sx={{ p: 4, textAlign: "center", borderRadius: 2 }}>
           <Typography variant="h6" color="text.secondary">
-            لا توجد تحديثات
+            {t("projects.updates.empty")}
           </Typography>
         </Paper>
       ) : (

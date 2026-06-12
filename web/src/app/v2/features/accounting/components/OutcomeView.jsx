@@ -22,6 +22,7 @@ import {
   Typography,
 } from "@mui/material";
 import dayjs from "dayjs";
+import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { usePaginatedList } from "../hooks/usePaginatedList.js";
@@ -31,6 +32,7 @@ import { IncomeOutcomeSummary } from "./IncomeOutcomeSummary.jsx";
 const P = PERMISSIONS.ACCOUNTING;
 
 export function OutcomeView() {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canList = hasPermission(P.OUTCOME_LIST);
 
@@ -50,7 +52,7 @@ export function OutcomeView() {
   if (!canList) {
     return (
       <Typography color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
-        لا تملك صلاحية الوصول إلى المصروفات
+        {t("accounting.outcome.denied")}
       </Typography>
     );
   }
@@ -64,7 +66,7 @@ export function OutcomeView() {
           <TextField
             type="date"
             size="small"
-            label="من"
+            label={t("accounting.date.from")}
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             InputLabelProps={{ shrink: true }}
@@ -72,13 +74,13 @@ export function OutcomeView() {
           <TextField
             type="date"
             size="small"
-            label="إلى"
+            label={t("accounting.date.to")}
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
             InputLabelProps={{ shrink: true }}
           />
           <Button variant="outlined" onClick={applyRange}>
-            تطبيق
+            {t("accounting.action.apply")}
           </Button>
         </Stack>
       </Paper>
@@ -87,24 +89,24 @@ export function OutcomeView() {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>المبلغ</TableCell>
-              <TableCell>النوع</TableCell>
-              <TableCell>الوصف</TableCell>
-              <TableCell>تاريخ الدفع</TableCell>
+              <TableCell>{t("accounting.outcome.col.amount")}</TableCell>
+              <TableCell>{t("accounting.outcome.col.type")}</TableCell>
+              <TableCell>{t("accounting.outcome.col.description")}</TableCell>
+              <TableCell>{t("accounting.outcome.col.paymentDate")}</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {isLoading && (
               <TableRow>
                 <TableCell colSpan={4} align="center">
-                  جاري التحميل...
+                  {t("accounting.state.loading")}
                 </TableCell>
               </TableRow>
             )}
             {!isLoading && items.length === 0 && (
               <TableRow>
                 <TableCell colSpan={4} align="center">
-                  لا توجد بيانات
+                  {t("accounting.state.empty")}
                 </TableCell>
               </TableRow>
             )}
@@ -130,7 +132,7 @@ export function OutcomeView() {
             setPage(1);
           }}
           rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage="عدد الصفوف"
+          labelRowsPerPage={t("accounting.table.rowsPerPage")}
         />
       </TableContainer>
     </Box>

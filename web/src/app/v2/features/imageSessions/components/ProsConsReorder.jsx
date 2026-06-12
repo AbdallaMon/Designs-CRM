@@ -24,17 +24,20 @@ import {
   Box, Stack, Typography, IconButton, TextField, Button, Divider, Tooltip,
 } from "@mui/material";
 import { MdArrowUpward, MdArrowDownward, MdDelete, MdAdd, MdSave } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { SectionCard } from "@/app/v2/shared/components";
 import { LoadingState, EmptyState, ErrorState } from "@/app/v2/shared/components";
 import imageSessionsService from "../imageSessions.service.js";
 import { runImageSessionMutation } from "../imageSessions.mutations.js";
 
+// `title` is the Arabic fallback; `titleKey` resolves the localized section title via t().
 const KINDS = [
-  { itemType: "PRO", title: "المزايا" },
-  { itemType: "CON", title: "العيوب" },
+  { itemType: "PRO", title: "المزايا", titleKey: "imageSessions.prosCons.pros" },
+  { itemType: "CON", title: "العيوب", titleKey: "imageSessions.prosCons.cons" },
 ];
 
 export function ProsConsReorder({ type, id }) {
+  const { t } = useT();
   const [pros, setPros] = useState([]);
   const [cons, setCons] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -75,7 +78,7 @@ export function ProsConsReorder({ type, id }) {
     setListFor(itemType, next); // optimistic
     const res = await runImageSessionMutation(
       () => imageSessionsService.reorderProsCons({ itemType, data: next }),
-      { loading: "جاري حفظ الترتيب..." },
+      { loading: t("imageSessions.prosCons.reorderLoading", "جاري حفظ الترتيب...") },
     );
     if (!res) setListFor(itemType, prev); // revert on error
   }
@@ -84,7 +87,7 @@ export function ProsConsReorder({ type, id }) {
     if (!text?.trim()) return;
     const res = await runImageSessionMutation(
       () => imageSessionsService.createProCon({ type, id, item: text.trim(), itemType }),
-      { loading: "جاري الإضافة..." },
+      { loading: t("imageSessions.form.addingLoading", "جاري الإضافة...") },
     );
     if (res) await load();
   }
@@ -92,7 +95,7 @@ export function ProsConsReorder({ type, id }) {
   async function save(itemType, rowId, text) {
     const res = await runImageSessionMutation(
       () => imageSessionsService.updateProCon(rowId, { id: rowId, item: text, itemType }),
-      { loading: "جاري الحفظ..." },
+      { loading: t("imageSessions.lead.savingLoading", "جاري الحفظ...") },
     );
     if (res) await load();
   }
@@ -100,7 +103,7 @@ export function ProsConsReorder({ type, id }) {
   async function remove(itemType, rowId) {
     const res = await runImageSessionMutation(
       () => imageSessionsService.deleteProCon(rowId, { itemType }),
-      { loading: "جاري الحذف..." },
+      { loading: t("imageSessions.prosCons.deleteLoading", "جاري الحذف...") },
     );
     if (res) await load();
   }
@@ -110,8 +113,8 @@ export function ProsConsReorder({ type, id }) {
 
   return (
     <Stack spacing={2}>
-      {KINDS.map(({ itemType, title }) => (
-        <SectionCard key={itemType} title={title}>
+      {KINDS.map(({ itemType, title, titleKey }) => (
+        <SectionCard key={itemType} title={t(titleKey, title)}>
           <ProsConsColumn
             itemType={itemType}
             items={listFor(itemType)}
@@ -127,11 +130,12 @@ export function ProsConsReorder({ type, id }) {
 }
 
 function ProsConsColumn({ itemType, items, onMove, onAdd, onSave, onDelete }) {
+  const { t } = useT();
   const [draft, setDraft] = useState("");
   return (
     <Box>
       {items.length === 0 ? (
-        <EmptyState title="لا توجد عناصر" description="أضف أول عنصر من الحقل بالأسفل." />
+        <EmptyState title={t("imageSessions.prosCons.empty", "لا توجد عناصر")} description={t("imageSessions.prosCons.emptyDescription", "أضف أول عنصر من الحقل بالأسفل.")} />
       ) : (
         <Stack divider={<Divider flexItem />} spacing={1}>
           {items.map((row, i) => (
@@ -152,7 +156,7 @@ function ProsConsColumn({ itemType, items, onMove, onAdd, onSave, onDelete }) {
         <TextField
           size="small"
           fullWidth
-          placeholder="عنصر جديد"
+          placeholder={t("imageSessions.prosCons.newItemPlaceholder", "عنصر جديد")}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
         />
@@ -165,7 +169,7 @@ function ProsConsColumn({ itemType, items, onMove, onAdd, onSave, onDelete }) {
             setDraft("");
           }}
         >
-          إضافة
+          {t("imageSessions.prosCons.add", "إضافة")}
         </Button>
       </Stack>
     </Box>
@@ -173,36 +177,37 @@ function ProsConsColumn({ itemType, items, onMove, onAdd, onSave, onDelete }) {
 }
 
 function ProsConsRow({ row, isFirst, isLast, onUp, onDown, onSave, onDelete }) {
+  const { t } = useT();
   const [text, setText] = useState(row.item ?? "");
   const dirty = text !== (row.item ?? "");
   return (
     <Stack direction="row" spacing={1} alignItems="center">
       <Stack>
-        <Tooltip title="تحريك لأعلى">
+        <Tooltip title={t("imageSessions.prosCons.moveUp", "تحريك لأعلى")}>
           <span>
-            <IconButton size="small" onClick={onUp} disabled={isFirst} aria-label="تحريك لأعلى">
+            <IconButton size="small" onClick={onUp} disabled={isFirst} aria-label={t("imageSessions.prosCons.moveUp", "تحريك لأعلى")}>
               <MdArrowUpward />
             </IconButton>
           </span>
         </Tooltip>
-        <Tooltip title="تحريك لأسفل">
+        <Tooltip title={t("imageSessions.prosCons.moveDown", "تحريك لأسفل")}>
           <span>
-            <IconButton size="small" onClick={onDown} disabled={isLast} aria-label="تحريك لأسفل">
+            <IconButton size="small" onClick={onDown} disabled={isLast} aria-label={t("imageSessions.prosCons.moveDown", "تحريك لأسفل")}>
               <MdArrowDownward />
             </IconButton>
           </span>
         </Tooltip>
       </Stack>
       <TextField size="small" fullWidth value={text} onChange={(e) => setText(e.target.value)} />
-      <Tooltip title="حفظ التعديل">
+      <Tooltip title={t("imageSessions.prosCons.saveEdit", "حفظ التعديل")}>
         <span>
-          <IconButton size="small" color="primary" onClick={() => onSave(text)} disabled={!dirty} aria-label="حفظ">
+          <IconButton size="small" color="primary" onClick={() => onSave(text)} disabled={!dirty} aria-label={t("imageSessions.prosCons.save", "حفظ")}>
             <MdSave />
           </IconButton>
         </span>
       </Tooltip>
-      <Tooltip title="حذف">
-        <IconButton size="small" color="error" onClick={onDelete} aria-label="حذف">
+      <Tooltip title={t("imageSessions.prosCons.delete", "حذف")}>
+        <IconButton size="small" color="error" onClick={onDelete} aria-label={t("imageSessions.prosCons.delete", "حذف")}>
           <MdDelete />
         </IconButton>
       </Tooltip>

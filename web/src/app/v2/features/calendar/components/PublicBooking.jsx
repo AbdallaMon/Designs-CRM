@@ -52,10 +52,11 @@ import timezone from "dayjs/plugin/timezone";
 import customParseFormat from "dayjs/plugin/customParseFormat";
 
 import LoadingOverlay from "@/app/v2/shared/components/feedback/LoadingOverlay";
+import { useT } from "@/app/v2/lib/i18n";
 import AvailabilityCalendar from "./AvailabilityCalendar.jsx";
 import { calendarService } from "../calendar.service.js";
 import { runCalendarMutation } from "../calendar.mutations.js";
-import { BOOKING_STEPS, resolveBrowserTimezone } from "../config/calendarConstants.js";
+import { buildBookingSteps, resolveBrowserTimezone } from "../config/calendarConstants.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -63,6 +64,8 @@ dayjs.extend(customParseFormat);
 dayjs.locale("en");
 
 export function PublicBooking() {
+  const { t } = useT();
+  const BOOKING_STEPS = buildBookingSteps(t);
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const [activeStep, setActiveStep] = useState(0);
@@ -160,7 +163,9 @@ export function PublicBooking() {
       setSessionData((prev) => ({ ...prev, selectedSlot: res?.data }));
     } catch (e) {
       setError(
-        e?.data?.message || e?.message || "تعذر جلب تفاصيل الموعد. حاول مرة أخرى.",
+        e?.data?.message ||
+          e?.message ||
+          t("calendar.public.slotDetailsError", "تعذر جلب تفاصيل الموعد. حاول مرة أخرى."),
       );
       setSessionData((prev) => ({ ...prev, selectedSlot: null, selectedDate: null }));
       setActiveStep(0);
@@ -181,7 +186,7 @@ export function PublicBooking() {
           selectedSlot: sessionData.selectedSlot,
           selectedTimezone: sessionData.selectedTimezone,
         }),
-      { loading: "جاري الحجز..." },
+      { loading: t("calendar.public.booking", "جاري الحجز...") },
     );
     if (res) setActiveStep((prev) => prev + 1);
   };
@@ -193,7 +198,7 @@ export function PublicBooking() {
           <Box>
             <Box mb={2}>
               <Typography variant="h6" gutterBottom color="primary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <MdLocationOn /> غيّر منطقتك الزمنية
+                <MdLocationOn /> {t("calendar.public.changeTimezone", "غيّر منطقتك الزمنية")}
               </Typography>
               <FormControl fullWidth>
                 <Autocomplete
@@ -206,7 +211,7 @@ export function PublicBooking() {
                     setSessionData((prev) => ({ ...prev, selectedTimezone: newValue?.value || "" }))
                   }
                   renderInput={(params) => (
-                    <TextField {...params} placeholder="اختر منطقتك الزمنية" size="medium" sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
+                    <TextField {...params} placeholder={t("calendar.public.timezonePlaceholder", "اختر منطقتك الزمنية")} size="medium" sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }} />
                   )}
                   fullWidth
                   disableClearable
@@ -231,10 +236,10 @@ export function PublicBooking() {
             <Box position="relative">
               {loading && <LoadingOverlay isLoading />}
               <Typography variant="h6" gutterBottom>
-                المواعيد المتاحة
+                {t("calendar.public.availableSlots", "المواعيد المتاحة")}
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                المنطقة الزمنية: {sessionData.selectedTimezone}
+                {t("calendar.public.timezoneLabel", "المنطقة الزمنية: {tz}").replace("{tz}", sessionData.selectedTimezone)}
               </Typography>
               <Stack spacing={1} mt={2}>
                 {availableSlots.map((slot) => (
@@ -260,10 +265,10 @@ export function PublicBooking() {
           <Fade in timeout={500}>
             <Box>
               <Typography variant="h6" gutterBottom>
-                تأكيد الحجز
+                {t("calendar.public.confirmBooking", "تأكيد الحجز")}
               </Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom mb={3}>
-                يرجى مراجعة تفاصيل الحجز أدناه
+                {t("calendar.public.reviewDetails", "يرجى مراجعة تفاصيل الحجز أدناه")}
               </Typography>
               <Card variant="outlined" sx={{ borderRadius: 3, border: "2px solid", borderColor: "primary.main", bgcolor: "primary.50", position: "relative" }}>
                 <CardContent sx={{ p: 3 }}>
@@ -275,12 +280,12 @@ export function PublicBooking() {
                       </Avatar>
                       <Box>
                         <Typography variant="body1" gutterBottom>
-                          <strong>التاريخ:</strong>{" "}
+                          <strong>{t("calendar.public.date", "التاريخ:")}</strong>{" "}
                           {sessionData.selectedSlot &&
                             dayjs(sessionData.selectedSlot.startTime)?.tz(sessionData.selectedTimezone).format("dddd, MMMM D, YYYY")}
                         </Typography>
                         <Typography variant="body1" gutterBottom>
-                          <strong>الوقت:</strong>{" "}
+                          <strong>{t("calendar.public.time", "الوقت:")}</strong>{" "}
                           {sessionData.selectedSlot &&
                             `${dayjs(sessionData.selectedSlot.startTime).tz(sessionData.selectedTimezone).format("h:mm A")} - ${dayjs(
                               sessionData.selectedSlot.endTime,
@@ -309,28 +314,28 @@ export function PublicBooking() {
                   <MdCheckCircle size={40} />
                 </Avatar>
                 <Typography variant="h5" gutterBottom color="success.main">
-                  تم تأكيد الحجز! 🎉
+                  {t("calendar.public.bookingConfirmed", "تم تأكيد الحجز! 🎉")}
                 </Typography>
                 <Typography variant="body1" color="text.secondary" mb={3}>
-                  شكراً لحجزك معنا. تم جدولة موعدك بنجاح.
+                  {t("calendar.public.thanksMessage", "شكراً لحجزك معنا. تم جدولة موعدك بنجاح.")}
                 </Typography>
               </Box>
               <Card variant="outlined" sx={{ borderRadius: 3, border: "2px solid", borderColor: "success.main", bgcolor: "success.50", mb: 3 }}>
                 <CardContent sx={{ p: 3 }}>
                   <Typography variant="h6" gutterBottom color="success.dark">
-                    تفاصيل الموعد
+                    {t("calendar.public.appointmentDetails", "تفاصيل الموعد")}
                   </Typography>
                   <Stack spacing={2} alignItems="center">
                     <Box display="flex" alignItems="center" gap={2}>
                       <MdSchedule color="success.main" />
                       <Box textAlign="left">
                         <Typography variant="body1">
-                          <strong>التاريخ:</strong>{" "}
+                          <strong>{t("calendar.public.date", "التاريخ:")}</strong>{" "}
                           {sessionData.selectedSlot &&
                             dayjs(sessionData.selectedSlot.startTime).tz(sessionData.selectedTimezone).format("dddd, MMMM D, YYYY")}
                         </Typography>
                         <Typography variant="body1">
-                          <strong>الوقت:</strong>{" "}
+                          <strong>{t("calendar.public.time", "الوقت:")}</strong>{" "}
                           {sessionData.selectedSlot
                             ? `${dayjs(sessionData.selectedSlot.startTime).tz(sessionData.selectedTimezone).format("h:mm A")} - ${dayjs(
                                 sessionData.selectedSlot.endTime,
@@ -351,13 +356,13 @@ export function PublicBooking() {
               </Card>
               <Box sx={{ bgcolor: "grey.50", p: 3, borderRadius: 2, border: "1px solid", borderColor: "grey.200" }}>
                 <Typography variant="body2" color="text.secondary" mb={2}>
-                  📧 تم إرسال بريد تأكيد.
+                  {t("calendar.public.confirmationEmailSent", "📧 تم إرسال بريد تأكيد.")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" mb={2}>
-                  📅 يرجى إضافة هذا الموعد إلى تقويمك
+                  {t("calendar.public.addToCalendar", "📅 يرجى إضافة هذا الموعد إلى تقويمك")}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  ❓ إذا احتجت لإعادة الجدولة أو الإلغاء، يرجى التواصل معنا
+                  {t("calendar.public.rescheduleContact", "❓ إذا احتجت لإعادة الجدولة أو الإلغاء، يرجى التواصل معنا")}
                 </Typography>
               </Box>
             </Box>
@@ -377,7 +382,7 @@ export function PublicBooking() {
               <MdError size={40} color="white" />
             </Avatar>
             <Typography variant="h4" component="h1" gutterBottom fontWeight="bold">
-              حدث خطأ ما
+              {t("calendar.public.errorTitle", "حدث خطأ ما")}
             </Typography>
             <Alert severity="error" sx={{ mb: 4, textAlign: "left" }}>
               <Typography variant="body1" fontWeight="medium">
@@ -393,11 +398,11 @@ export function PublicBooking() {
                 onClick={() => window.location.reload()}
                 sx={{ py: 1.5, borderRadius: 2 }}
               >
-                تحديث الصفحة
+                {t("calendar.public.refreshPage", "تحديث الصفحة")}
               </Button>
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 3, fontStyle: "italic" }}>
-              إذا استمرت المشكلة، يرجى التواصل مع الدعم أو المحاولة لاحقاً.
+              {t("calendar.public.errorHint", "إذا استمرت المشكلة، يرجى التواصل مع الدعم أو المحاولة لاحقاً.")}
             </Typography>
           </Paper>
         </Container>
@@ -408,14 +413,17 @@ export function PublicBooking() {
   return (
     <Container maxWidth="md" sx={{ px: { xs: 1 }, py: 4 }}>
       <Typography variant="h4" gutterBottom align="center">
-        احجز موعداً
+        {t("calendar.public.bookAppointment", "احجز موعداً")}
       </Typography>
 
       {isMobile ? (
         <Box>
           <Box mb={2}>
             <Typography variant="h6" gutterBottom>
-              الخطوة {activeStep + 1} من {BOOKING_STEPS.length}: {BOOKING_STEPS[activeStep]}
+              {t("calendar.public.stepProgress", "الخطوة {current} من {total}: {label}")
+                .replace("{current}", activeStep + 1)
+                .replace("{total}", BOOKING_STEPS.length)
+                .replace("{label}", BOOKING_STEPS[activeStep])}
             </Typography>
             <Box sx={{ width: "100%", height: 4, bgcolor: "grey.300", borderRadius: 2, overflow: "hidden" }}>
               <Box
@@ -437,11 +445,11 @@ export function PublicBooking() {
           {activeStep !== BOOKING_STEPS.length - 1 && (
             <Box display="flex" justifyContent="space-between" gap={2} mt={1.5}>
               <Button onClick={handleBack} disabled={activeStep === 0} variant="outlined" startIcon={<MdArrowBack />} fullWidth>
-                السابق
+                {t("calendar.public.previous", "السابق")}
               </Button>
               {activeStep === BOOKING_STEPS.length - 2 ? (
                 <Button onClick={handleBooking} variant="contained" startIcon={<MdCheckCircle />} fullWidth>
-                  تأكيد الحجز
+                  {t("calendar.public.confirmBooking", "تأكيد الحجز")}
                 </Button>
               ) : (
                 <Button
@@ -451,7 +459,7 @@ export function PublicBooking() {
                   endIcon={<MdArrowForward />}
                   fullWidth
                 >
-                  التالي
+                  {t("calendar.public.next", "التالي")}
                 </Button>
               )}
             </Box>
@@ -468,11 +476,11 @@ export function PublicBooking() {
                   {activeStep !== BOOKING_STEPS.length - 1 && (
                     <Box display="flex" gap={1}>
                       <Button disabled={index === 0} onClick={handleBack} variant="outlined">
-                        السابق
+                        {t("calendar.public.previous", "السابق")}
                       </Button>
                       {index === BOOKING_STEPS.length - 2 ? (
                         <Button variant="contained" onClick={handleBooking} startIcon={<MdCheckCircle />}>
-                          تأكيد الحجز
+                          {t("calendar.public.confirmBooking", "تأكيد الحجز")}
                         </Button>
                       ) : (
                         <Button
@@ -480,7 +488,7 @@ export function PublicBooking() {
                           onClick={handleNext}
                           disabled={(index === 0 && !sessionData.selectedDate) || (index === 1 && !sessionData.selectedSlot)}
                         >
-                          متابعة
+                          {t("calendar.public.continue", "متابعة")}
                         </Button>
                       )}
                     </Box>

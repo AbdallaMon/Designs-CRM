@@ -21,6 +21,7 @@ import dayjs from "dayjs";
 import { MdDelete, MdTask } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { useT } from "@/app/v2/lib/i18n";
 import { projectsService } from "../projects.service.js";
 import { runProjectMutation } from "../projects.mutations.js";
 import { TaskActions } from "./TaskActions.jsx";
@@ -29,6 +30,7 @@ import { CreateTaskModal } from "./CreateTaskModal.jsx";
 export function ProjectTasksPanel({ project, type = "PROJECT", name = "مهمة" }) {
   const projectId = project?.id;
   const { hasPermission } = usePermission();
+  const { t } = useT();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
@@ -63,7 +65,7 @@ export function ProjectTasksPanel({ project, type = "PROJECT", name = "مهمة"
 
   const handleDelete = async (task) => {
     const res = await runProjectMutation(() => projectsService.deleteTask(task.id), {
-      loading: "جاري الحذف...",
+      loading: t("projects.tasks.loading.delete"),
     });
     if (res) load();
   };
@@ -71,11 +73,11 @@ export function ProjectTasksPanel({ project, type = "PROJECT", name = "مهمة"
   return (
     <Card sx={{ mt: 3, borderRadius: 3 }}>
       <CardHeader
-        title={<Typography variant="h6" fontWeight={600}>{type === "MODIFICATION" ? "التعديلات" : "مهام المشروع"}</Typography>}
+        title={<Typography variant="h6" fontWeight={600}>{type === "MODIFICATION" ? t("projects.tasks.modificationsTitle") : t("projects.tasks.projectTasksTitle")}</Typography>}
         action={
           canCreate && (
             <Button variant="contained" startIcon={<MdTask />} onClick={() => setCreateOpen(true)}>
-              {`إنشاء ${name}`}
+              {t("projects.tasks.create").replace("{name}", name)}
             </Button>
           )
         }
@@ -87,7 +89,7 @@ export function ProjectTasksPanel({ project, type = "PROJECT", name = "مهمة"
         ) : tasks.length === 0 ? (
           <Box textAlign="center" py={4}>
             <Typography variant="body1" color="textSecondary">
-              لا توجد مهام.
+              {t("projects.tasks.empty")}
             </Typography>
           </Box>
         ) : (
@@ -99,16 +101,19 @@ export function ProjectTasksPanel({ project, type = "PROJECT", name = "مهمة"
                   <Card variant="outlined" sx={{ height: "100%" }}>
                     <CardHeader
                       title={<Typography variant="subtitle1" fontWeight={600}>{task.title}</Typography>}
-                      subheader={`النوع: ${task.type}`}
+                      subheader={t("projects.tasks.type").replace("{type}", task.type)}
                       action={<TaskActions task={task} onChanged={load} />}
                     />
                     <CardContent sx={{ pt: 0 }}>
                       <Typography variant="body2" color="textSecondary">
-                        الاستحقاق: {task.dueDate ? dayjs(task.dueDate).format("DD/MM/YYYY") : "غير محدد"}
+                        {t("projects.tasks.due").replace(
+                          "{value}",
+                          task.dueDate ? dayjs(task.dueDate).format("DD/MM/YYYY") : t("projects.tasks.dueUnset"),
+                        )}
                       </Typography>
                       {task.user && (
                         <Typography variant="body2" color="textSecondary">
-                          معيّنة إلى: {task.user.name}
+                          {t("projects.tasks.assignedTo").replace("{name}", task.user.name)}
                         </Typography>
                       )}
                       {task.description && (
@@ -124,7 +129,7 @@ export function ProjectTasksPanel({ project, type = "PROJECT", name = "مهمة"
                       {canDelete && (
                         <Box sx={{ mt: 2, textAlign: "end" }}>
                           <Button size="small" color="error" startIcon={<MdDelete />} onClick={() => handleDelete(task)}>
-                            حذف
+                            {t("projects.tasks.delete")}
                           </Button>
                         </Box>
                       )}

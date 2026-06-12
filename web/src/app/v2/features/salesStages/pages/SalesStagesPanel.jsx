@@ -13,12 +13,14 @@
 import { Box, Container, Typography, CircularProgress, Alert } from "@mui/material";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { useRequest } from "@/app/v2/hooks/useRequest";
+import { useT } from "@/app/v2/lib/i18n";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { salesStagesUrl } from "../config/constant.js";
 
 const P = PERMISSIONS.SALES_STAGE;
 
 export function SalesStagesPanel({ leadId }) {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canView = hasPermission(P.VIEW);
 
@@ -32,7 +34,7 @@ export function SalesStagesPanel({ leadId }) {
   if (!canView) {
     return (
       <Container maxWidth="md" sx={{ py: 4 }}>
-        <Alert severity="warning">لا تملك صلاحية عرض مراحل البيع</Alert>
+        <Alert severity="warning">{t("salesStages.denied", "لا تملك صلاحية عرض مراحل البيع")}</Alert>
       </Container>
     );
   }
@@ -42,11 +44,13 @@ export function SalesStagesPanel({ leadId }) {
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Typography variant="h5" sx={{ mb: 2 }}>
-        مراحل البيع
+        {t("salesStages.title", "مراحل البيع")}
       </Typography>
 
       {!hasLead && (
-        <Alert severity="info">حدد عميلاً (leadId) لعرض مراحل البيع الخاصة به.</Alert>
+        <Alert severity="info">
+          {t("salesStages.selectLeadHint", "حدد عميلاً (leadId) لعرض مراحل البيع الخاصة به.")}
+        </Alert>
       )}
 
       {hasLead && isLoading && (
@@ -56,16 +60,18 @@ export function SalesStagesPanel({ leadId }) {
       )}
 
       {hasLead && !isLoading && error && (
-        <Alert severity="error">تعذر جلب مراحل البيع.</Alert>
+        <Alert severity="error">{t("salesStages.fetchError", "تعذر جلب مراحل البيع.")}</Alert>
       )}
 
       {hasLead && !isLoading && !error && (
         <Box>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            المراحل ({stages.length})
+            {t("salesStages.stagesCount", "المراحل ({count})").replace("{count}", stages.length)}
           </Typography>
           {stages.length === 0 ? (
-            <Typography color="text.secondary">لم تبدأ أي مرحلة بعد.</Typography>
+            <Typography color="text.secondary">
+              {t("salesStages.noStageStarted", "لم تبدأ أي مرحلة بعد.")}
+            </Typography>
           ) : (
             stages.map((s, i) => (
               <Box

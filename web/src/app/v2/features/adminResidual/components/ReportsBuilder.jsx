@@ -27,6 +27,7 @@ import {
   Typography,
 } from "@mui/material";
 import { MdInsertChart, MdGridOn, MdPictureAsPdf } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { SectionCard, EmptyState, LoadingState } from "@/app/v2/shared/components";
 import { adminResidualService } from "../adminResidual.service.js";
 import { runAdminResidualMutation } from "../adminResidual.mutations.js";
@@ -64,6 +65,7 @@ function parseIdList(raw) {
 }
 
 export function ReportsBuilder() {
+  const { t } = useT();
   const [reportType, setReportType] = useState("lead"); // "lead" | "staff"
   const [previewData, setPreviewData] = useState(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
@@ -94,7 +96,7 @@ export function ReportsBuilder() {
         ? () => adminResidualService.generateLeadReportData(payload)
         : () => adminResidualService.generateStaffReportData(payload);
     const res = await runAdminResidualMutation(dataFn, {
-      loading: "جارٍ إعداد المعاينة...",
+      loading: t("adminResidual.reports.preview.loading", "جارٍ إعداد المعاينة..."),
       setLoading: setLoadingPreview,
     });
     // Keep BOTH the filter payload and the prepared data: the export endpoints read `data`.
@@ -114,17 +116,21 @@ export function ReportsBuilder() {
           : STAFF_REPORT_PDF_URL;
     const ext = kind === "excel" ? "xlsx" : "pdf";
     const fallbackFilename = `${reportType}-report.${ext}`;
-    const toastId = toast.loading("جارٍ تجهيز الملف...");
+    const toastId = toast.loading(t("adminResidual.reports.export.loading", "جارٍ تجهيز الملف..."));
     setExporting(true);
     try {
       // The frozen generator reads a prepared `data` object (data.leads/summary/staffStats).
       await downloadFileFromPost(url, { data: previewData.data }, { fallbackFilename });
-      toast.update(toastId, Success("تم تجهيز الملف"));
+      toast.update(toastId, Success(t("adminResidual.reports.export.success", "تم تجهيز الملف")));
     } catch (e) {
       const code = e?.data?.message || e?.message;
       toast.update(
         toastId,
-        Failed(resolveAdminResidualMessage(code, { fallback: "تعذّر تجهيز الملف، حاول مرة أخرى" })),
+        Failed(
+          resolveAdminResidualMessage(code, {
+            fallback: t("adminResidual.reports.export.error", "تعذّر تجهيز الملف، حاول مرة أخرى"),
+          }),
+        ),
       );
     } finally {
       setExporting(false);
@@ -133,7 +139,7 @@ export function ReportsBuilder() {
 
   return (
     <Stack spacing={3}>
-      <SectionCard title="نوع التقرير">
+      <SectionCard title={t("adminResidual.reports.type.title", "نوع التقرير")}>
         <ToggleButtonGroup
           exclusive
           color="primary"
@@ -145,15 +151,15 @@ export function ReportsBuilder() {
             }
           }}
         >
-          {Object.entries(REPORT_TYPES).map(([value, label]) => (
+          {Object.entries(REPORT_TYPES).map(([value, def]) => (
             <ToggleButton key={value} value={value} sx={{ px: 3 }}>
-              {label}
+              {t(def.labelKey, def.labelFallback)}
             </ToggleButton>
           ))}
         </ToggleButtonGroup>
       </SectionCard>
 
-      <SectionCard title="عوامل التصفية">
+      <SectionCard title={t("adminResidual.reports.filters.title", "عوامل التصفية")}>
         <form onSubmit={handleSubmit(onPreview)} noValidate>
           <Grid container spacing={2.5}>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -164,7 +170,7 @@ export function ReportsBuilder() {
                   <TextField
                     {...field}
                     type="date"
-                    label="من تاريخ"
+                    label={t("adminResidual.reports.filters.startDate", "من تاريخ")}
                     fullWidth
                     InputLabelProps={{ shrink: true }}
                   />
@@ -179,7 +185,7 @@ export function ReportsBuilder() {
                   <TextField
                     {...field}
                     type="date"
-                    label="إلى تاريخ"
+                    label={t("adminResidual.reports.filters.endDate", "إلى تاريخ")}
                     fullWidth
                     InputLabelProps={{ shrink: true }}
                   />
@@ -198,12 +204,12 @@ export function ReportsBuilder() {
                         {...field}
                         select
                         SelectProps={{ multiple: true }}
-                        label="الإمارات"
+                        label={t("adminResidual.reports.filters.emirates", "الإمارات")}
                         fullWidth
                       >
                         {EMIRATES_OPTIONS.map((o) => (
                           <MenuItem key={o.value} value={o.value}>
-                            {o.label}
+                            {t(o.labelKey, o.labelFallback)}
                           </MenuItem>
                         ))}
                       </TextField>

@@ -32,6 +32,7 @@ import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 
 import LoadingOverlay from "@/app/v2/shared/components/feedback/LoadingOverlay";
+import { useT } from "@/app/v2/lib/i18n";
 import { calendarService } from "../calendar.service.js";
 import { DEFAULT_TIMEZONE } from "../config/calendarConstants.js";
 
@@ -58,6 +59,7 @@ export function AvailabilityCalendar({
   adminId,
   type,
 }) {
+  const { t } = useT();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -317,7 +319,7 @@ export function AvailabilityCalendar({
                 borderColor="success.main"
               />
               <Typography variant="caption" fontWeight="500">
-                متاح
+                {t("calendar.legend.available", "متاح")}
               </Typography>
             </Box>
           </Grid>
@@ -325,7 +327,7 @@ export function AvailabilityCalendar({
             <Box display="flex" alignItems="center" gap={1}>
               <Box width={12} height={12} bgcolor="error.main" borderRadius={1} />
               <Typography variant="caption" fontWeight="500">
-                غير متاح
+                {t("calendar.legend.unavailable", "غير متاح")}
               </Typography>
             </Box>
           </Grid>
@@ -333,7 +335,7 @@ export function AvailabilityCalendar({
             <Box display="flex" alignItems="center" gap={1}>
               <Box width={12} height={12} bgcolor="primary.main" borderRadius={1} />
               <Typography variant="caption" fontWeight="500">
-                محدد
+                {t("calendar.legend.selected", "محدد")}
               </Typography>
             </Box>
           </Grid>

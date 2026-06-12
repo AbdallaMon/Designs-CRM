@@ -17,12 +17,14 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
+import { useT } from "@/app/v2/lib/i18n";
 import { adminResidualService } from "../adminResidual.service.js";
 import { runAdminResidualMutation } from "../adminResidual.mutations.js";
 
 const CREATE_DEFAULTS = { userId: "", leadId: "", amount: "", commissionReason: "" };
 
 export function CommissionDialog({ open, mode = "create", userId, commission, onClose, onSaved }) {
+  const { t } = useT();
   const isEdit = mode === "edit";
   const [submitting, setSubmitting] = useState(false);
   const { control, handleSubmit, reset } = useForm({ defaultValues: CREATE_DEFAULTS });
@@ -62,7 +64,9 @@ export function CommissionDialog({ open, mode = "create", userId, commission, on
         });
     }
     const res = await runAdminResidualMutation(fn, {
-      loading: isEdit ? "جاري تحديث العمولة..." : "جاري إضافة العمولة...",
+      loading: isEdit
+        ? t("adminResidual.commissions.dialog.updateLoading", "جاري تحديث العمولة...")
+        : t("adminResidual.commissions.dialog.createLoading", "جاري إضافة العمولة..."),
       setLoading: setSubmitting,
     });
     if (res) {
@@ -74,7 +78,9 @@ export function CommissionDialog({ open, mode = "create", userId, commission, on
   return (
     <Dialog open={open} onClose={close} maxWidth="sm" fullWidth dir="rtl">
       <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>
-        {isEdit ? "تعديل العمولة" : "إضافة عمولة"}
+        {isEdit
+          ? t("adminResidual.commissions.dialog.editTitle", "تعديل العمولة")
+          : t("adminResidual.commissions.dialog.createTitle", "إضافة عمولة")}
       </DialogTitle>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <DialogContent>
@@ -84,12 +90,12 @@ export function CommissionDialog({ open, mode = "create", userId, commission, on
                 <Controller
                   name="userId"
                   control={control}
-                  rules={{ required: "معرّف الموظف مطلوب" }}
+                  rules={{ required: t("adminResidual.commissions.dialog.field.userId.required", "معرّف الموظف مطلوب") }}
                   render={({ field, fieldState }) => (
                     <TextField
                       {...field}
                       type="number"
-                      label="معرّف الموظف"
+                      label={t("adminResidual.commissions.dialog.field.userId", "معرّف الموظف")}
                       fullWidth
                       error={Boolean(fieldState.error)}
                       helperText={fieldState.error?.message}
@@ -99,12 +105,12 @@ export function CommissionDialog({ open, mode = "create", userId, commission, on
                 <Controller
                   name="leadId"
                   control={control}
-                  rules={{ required: "معرّف العميل المحتمل مطلوب" }}
+                  rules={{ required: t("adminResidual.commissions.dialog.field.leadId.required", "معرّف العميل المحتمل مطلوب") }}
                   render={({ field, fieldState }) => (
                     <TextField
                       {...field}
                       type="number"
-                      label="معرّف العميل المحتمل"
+                      label={t("adminResidual.commissions.dialog.field.leadId", "معرّف العميل المحتمل")}
                       fullWidth
                       error={Boolean(fieldState.error)}
                       helperText={fieldState.error?.message}
@@ -114,11 +120,11 @@ export function CommissionDialog({ open, mode = "create", userId, commission, on
                 <Controller
                   name="commissionReason"
                   control={control}
-                  rules={{ required: "سبب العمولة مطلوب" }}
+                  rules={{ required: t("adminResidual.commissions.dialog.field.reason.required", "سبب العمولة مطلوب") }}
                   render={({ field, fieldState }) => (
                     <TextField
                       {...field}
-                      label="سبب العمولة"
+                      label={t("adminResidual.commissions.dialog.field.reason", "سبب العمولة")}
                       fullWidth
                       multiline
                       minRows={2}
@@ -133,14 +139,15 @@ export function CommissionDialog({ open, mode = "create", userId, commission, on
               name="amount"
               control={control}
               rules={{
-                required: "قيمة العمولة مطلوبة",
-                validate: (v) => Number(v) > 0 || "قيمة العمولة غير صحيحة",
+                required: t("adminResidual.commissions.dialog.field.amount.required", "قيمة العمولة مطلوبة"),
+                validate: (v) =>
+                  Number(v) > 0 || t("adminResidual.commissions.dialog.field.amount.invalid", "قيمة العمولة غير صحيحة"),
               }}
               render={({ field, fieldState }) => (
                 <TextField
                   {...field}
                   type="number"
-                  label="القيمة"
+                  label={t("adminResidual.commissions.dialog.field.amount", "القيمة")}
                   fullWidth
                   error={Boolean(fieldState.error)}
                   helperText={fieldState.error?.message}
@@ -151,10 +158,12 @@ export function CommissionDialog({ open, mode = "create", userId, commission, on
         </DialogContent>
         <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
           <Button onClick={close} variant="outlined" disabled={submitting}>
-            إلغاء
+            {t("adminResidual.commissions.dialog.cancel", "إلغاء")}
           </Button>
           <Button type="submit" variant="contained" color="primary" disabled={submitting}>
-            {isEdit ? "حفظ" : "إضافة"}
+            {isEdit
+              ? t("adminResidual.commissions.dialog.save", "حفظ")
+              : t("adminResidual.commissions.dialog.add", "إضافة")}
           </Button>
         </DialogActions>
       </form>

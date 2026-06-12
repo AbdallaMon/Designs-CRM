@@ -31,12 +31,14 @@ import { MdRefresh } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { useDebounce } from "@/app/v2/hooks/useDebounce";
+import { useT } from "@/app/v2/lib/i18n";
 import { useProjectBoard } from "../hooks/useProjectBoard.js";
 import { LeadProjects } from "../components/LeadProjects.jsx";
 import { PROJECT_TYPES, PROJECT_TYPE_LABELS } from "../config/projectsConstants.js";
 
 export function ProjectsPage() {
   const { hasPermission } = usePermission();
+  const { t } = useT();
   const canList = hasPermission(PERMISSIONS.PROJECT.LIST);
 
   const [mode, setMode] = useState("designers");
@@ -73,7 +75,7 @@ export function ProjectsPage() {
   if (!canList) {
     return (
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-        <Typography color="textSecondary">لا تملك صلاحية الوصول إلى المشاريع</Typography>
+        <Typography color="textSecondary">{t("projects.page.denied")}</Typography>
       </Box>
     );
   }
@@ -81,7 +83,7 @@ export function ProjectsPage() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h5" sx={{ mb: 2 }}>
-        المشاريع
+        {t("projects.page.title")}
       </Typography>
 
       <Paper variant="outlined" sx={{ mb: 2 }}>
@@ -92,8 +94,8 @@ export function ProjectsPage() {
             value={mode}
             onChange={(_e, v) => v && setMode(v)}
           >
-            <ToggleButton value="designers">النشطة</ToggleButton>
-            <ToggleButton value="archived">المؤرشفة</ToggleButton>
+            <ToggleButton value="designers">{t("projects.mode.active")}</ToggleButton>
+            <ToggleButton value="archived">{t("projects.mode.archived")}</ToggleButton>
           </ToggleButtonGroup>
           {mode === "designers" && (
             <Select
@@ -114,13 +116,13 @@ export function ProjectsPage() {
           )}
           <TextField
             size="small"
-            label="بحث برقم العميل"
+            label={t("projects.search.byClientId")}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             sx={{ minWidth: 240 }}
           />
           <Box sx={{ flex: 1 }} />
-          <Tooltip title="تحديث">
+          <Tooltip title={t("projects.action.refresh")}>
             <IconButton onClick={refetch}>
               <MdRefresh />
             </IconButton>
@@ -130,11 +132,11 @@ export function ProjectsPage() {
 
       {isLoading ? (
         <Typography sx={{ py: 4, textAlign: "center" }} color="text.secondary">
-          جاري التحميل...
+          {t("projects.state.loading")}
         </Typography>
       ) : items.length === 0 ? (
         <Typography sx={{ py: 4, textAlign: "center" }} color="text.secondary">
-          لا توجد بيانات
+          {t("projects.state.empty")}
         </Typography>
       ) : (
         items.map((lead) => (
@@ -160,7 +162,7 @@ export function ProjectsPage() {
             setPage(1);
           }}
           rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage="عدد الصفوف"
+          labelRowsPerPage={t("projects.pagination.rows")}
         />
       )}
     </Container>

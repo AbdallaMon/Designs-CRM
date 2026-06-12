@@ -36,6 +36,7 @@ import {
 } from "@mui/material";
 import dayjs from "dayjs";
 import { MdEdit } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { accountingService } from "../accounting.service.js";
@@ -47,6 +48,7 @@ import { NotesDialog } from "./NotesDialog.jsx";
 const P = PERMISSIONS.ACCOUNTING;
 
 export function SalaryDialog({ userId }) {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canView = hasPermission(P.SALARY_VIEW);
   const canEdit = hasPermission(P.SALARY_EDIT);
@@ -96,7 +98,7 @@ export function SalaryDialog({ userId }) {
           baseWorkHours: Number(values.baseWorkHours),
           taxAmount: Number(values.taxAmount),
         }),
-      { loading: "جاري تحديث الراتب الأساسي...", setLoading: setSubmitting },
+      { loading: t("accounting.salaryDetail.editLoading"), setLoading: setSubmitting },
     );
     if (res) {
       setEditOpen(false);

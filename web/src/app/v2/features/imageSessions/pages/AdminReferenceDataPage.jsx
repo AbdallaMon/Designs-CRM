@@ -15,6 +15,7 @@ import {
   Box, Button, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Tooltip,
 } from "@mui/material";
 import { MdAdd, MdEdit, MdListAlt } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import {
@@ -59,6 +60,7 @@ function listFor(key, { page, pageSize } = {}) {
 const PROS_CONS_TYPES = { materials: "MATERIAL", styles: "STYLE", pageInfo: "PAGE_INFO" };
 
 function ReferenceTab({ type, canManage }) {
+  const { t } = useT();
   const paginated = Boolean(type.paginated);
   const [rows, setRows] = useState([]);
   const [total, setTotal] = useState(0);
@@ -99,25 +101,27 @@ function ReferenceTab({ type, canManage }) {
     fetchItems();
   }, [fetchItems]);
 
-  const columns = useMemo(() => columnsFor(type.key, type.model), [type.key, type.model]);
+  const columns = useMemo(() => columnsFor(type.key, type.model, t), [type.key, type.model, t]);
   const prosConsType = PROS_CONS_TYPES[type.key];
   const isImages = type.key === "images";
   const editable = !isImages; // images use the bespoke uploader (UploadImageDialog), not the form
+  // Localized tab/type label (Arabic verbatim fallback via labelKey).
+  const typeLabel = t(type.labelKey, type.label);
 
   function renderRowActions(row) {
     if (!canManage) return null;
     return (
       <>
         {editable && (
-          <Tooltip title="تعديل">
-            <IconButton size="small" onClick={() => { setEditing(row); setFormOpen(true); }} aria-label="تعديل">
+          <Tooltip title={t("imageSessions.admin.edit", "تعديل")}>
+            <IconButton size="small" onClick={() => { setEditing(row); setFormOpen(true); }} aria-label={t("imageSessions.admin.edit", "تعديل")}>
               <MdEdit />
             </IconButton>
           </Tooltip>
         )}
         {prosConsType && (
-          <Tooltip title="المزايا والعيوب">
-            <IconButton size="small" onClick={() => setProsConsFor(row)} aria-label="المزايا والعيوب">
+          <Tooltip title={t("imageSessions.admin.prosCons", "المزايا والعيوب")}>
+            <IconButton size="small" onClick={() => setProsConsFor(row)} aria-label={t("imageSessions.admin.prosCons", "المزايا والعيوب")}>
               <MdListAlt />
             </IconButton>
           </Tooltip>
@@ -129,15 +133,15 @@ function ReferenceTab({ type, canManage }) {
   return (
     <Box>
       <SectionCard
-        title={type.label}
+        title={typeLabel}
         actions={
           canManage && isImages ? (
             <Box sx={{ display: "flex", gap: 1 }}>
               <Button variant="contained" startIcon={<MdAdd />} onClick={() => setUploadMode("single")}>
-                إضافة صورة
+                {t("imageSessions.admin.addImage", "إضافة صورة")}
               </Button>
               <Button variant="outlined" startIcon={<MdAdd />} onClick={() => setUploadMode("bulk")}>
-                إضافة صور (متعددة)
+                {t("imageSessions.admin.addImagesBulk", "إضافة صور (متعددة)")}
               </Button>
             </Box>
           ) : canManage && editable ? (
@@ -146,7 +150,7 @@ function ReferenceTab({ type, canManage }) {
               startIcon={<MdAdd />}
               onClick={() => { setEditing(null); setFormOpen(true); }}
             >
-              إضافة
+              {t("imageSessions.admin.add", "إضافة")}
             </Button>
           ) : null
         }
@@ -166,7 +170,7 @@ function ReferenceTab({ type, canManage }) {
             onRetry={fetchItems}
             errorResolver={imageSessionsMessages}
             renderRowActions={canManage ? renderRowActions : undefined}
-            empty={{ title: "لا توجد بيانات لعرضها" }}
+            empty={{ title: t("imageSessions.admin.emptyData", "لا توجد بيانات لعرضها") }}
             rowsPerPageOptions={paginated ? [10, 25, 50] : [rows.length || 10]}
           />
         </Box>
@@ -193,12 +197,12 @@ function ReferenceTab({ type, canManage }) {
 
       {canManage && prosConsType && (
         <Dialog open={Boolean(prosConsFor)} onClose={() => setProsConsFor(null)} fullWidth maxWidth="sm" dir="rtl">
-          <DialogTitle>المزايا والعيوب — {type.label}</DialogTitle>
+          <DialogTitle>{t("imageSessions.admin.prosConsTitle", "المزايا والعيوب — {label}").replace("{label}", typeLabel)}</DialogTitle>
           <DialogContent dividers>
             {prosConsFor && <ProsConsReorder type={prosConsType} id={prosConsFor.id} />}
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setProsConsFor(null)}>إغلاق</Button>
+            <Button onClick={() => setProsConsFor(null)}>{t("imageSessions.admin.close", "إغلاق")}</Button>
           </DialogActions>
         </Dialog>
       )}
@@ -207,19 +211,20 @@ function ReferenceTab({ type, canManage }) {
 }
 
 export function AdminReferenceDataPage() {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canView = hasPermission(P.ADMIN_VIEW);
   const canManage = hasPermission(P.ADMIN_MANAGE);
 
   const tabs = useMemo(
-    () => ADMIN_REFERENCE_TYPES.map((t) => ({ key: t.key, label: t.label })),
-    [],
+    () => ADMIN_REFERENCE_TYPES.map((type) => ({ key: type.key, label: t(type.labelKey, type.label) })),
+    [t],
   );
 
   if (!canView) {
     return (
       <Box sx={{ px: { xs: 2, sm: 3 }, py: 3 }} dir="rtl">
-        <PartialPermissionState denied message="لا تملك صلاحية عرض بيانات جلسات الصور." />
+        <PartialPermissionState denied message={t("imageSessions.admin.noViewPermission", "لا تملك صلاحية عرض بيانات جلسات الصور.")} />
       </Box>
     );
   }
@@ -227,9 +232,9 @@ export function AdminReferenceDataPage() {
   return (
     <Box dir="rtl">
       <PageHeader
-        title="معرض جلسات الصور"
-        subtitle="إدارة البيانات المرجعية: الصور، الألوان، المساحات، الخامات، الطرز ومعلومات الصفحة."
-        breadcrumbs={[{ label: "الإنتاج" }, { label: "جلسات الصور" }]}
+        title={t("imageSessions.admin.pageTitle", "معرض جلسات الصور")}
+        subtitle={t("imageSessions.admin.pageSubtitle", "إدارة البيانات المرجعية: الصور، الألوان، المساحات، الخامات، الطرز ومعلومات الصفحة.")}
+        breadcrumbs={[{ label: t("imageSessions.admin.breadcrumb.production", "الإنتاج") }, { label: t("imageSessions.admin.breadcrumb.imageSessions", "جلسات الصور") }]}
       />
       <UrlTabs tabs={tabs}>
         {(activeKey) => {

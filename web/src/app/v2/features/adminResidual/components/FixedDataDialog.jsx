@@ -16,12 +16,14 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
+import { useT } from "@/app/v2/lib/i18n";
 import { adminResidualService } from "../adminResidual.service.js";
 import { runAdminResidualMutation } from "../adminResidual.mutations.js";
 
 const DEFAULTS = { title: "", description: "" };
 
 export function FixedDataDialog({ open, mode = "create", item, onClose, onSaved }) {
+  const { t } = useT();
   const isEdit = mode === "edit";
   const [submitting, setSubmitting] = useState(false);
   const { control, handleSubmit, reset } = useForm({ defaultValues: DEFAULTS });
@@ -48,7 +50,9 @@ export function FixedDataDialog({ open, mode = "create", item, onClose, onSaved 
       ? () => adminResidualService.updateFixedData(item.id, body)
       : () => adminResidualService.createFixedData(body);
     const res = await runAdminResidualMutation(fn, {
-      loading: isEdit ? "جاري تحديث البيان..." : "جاري إضافة البيان...",
+      loading: isEdit
+        ? t("adminResidual.fixedData.dialog.updateLoading", "جاري تحديث البيان...")
+        : t("adminResidual.fixedData.dialog.createLoading", "جاري إضافة البيان..."),
       setLoading: setSubmitting,
     });
     if (res) {
@@ -60,7 +64,9 @@ export function FixedDataDialog({ open, mode = "create", item, onClose, onSaved 
   return (
     <Dialog open={open} onClose={close} maxWidth="sm" fullWidth dir="rtl">
       <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>
-        {isEdit ? "تعديل بيان ثابت" : "إضافة بيان ثابت"}
+        {isEdit
+          ? t("adminResidual.fixedData.dialog.editTitle", "تعديل بيان ثابت")
+          : t("adminResidual.fixedData.dialog.createTitle", "إضافة بيان ثابت")}
       </DialogTitle>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <DialogContent>
@@ -68,11 +74,11 @@ export function FixedDataDialog({ open, mode = "create", item, onClose, onSaved 
             <Controller
               name="title"
               control={control}
-              rules={{ required: "العنوان مطلوب" }}
+              rules={{ required: t("adminResidual.fixedData.dialog.field.title.required", "العنوان مطلوب") }}
               render={({ field, fieldState }) => (
                 <TextField
                   {...field}
-                  label="العنوان"
+                  label={t("adminResidual.fixedData.dialog.field.title", "العنوان")}
                   fullWidth
                   error={Boolean(fieldState.error)}
                   helperText={fieldState.error?.message}
@@ -83,17 +89,25 @@ export function FixedDataDialog({ open, mode = "create", item, onClose, onSaved 
               name="description"
               control={control}
               render={({ field }) => (
-                <TextField {...field} label="الوصف (اختياري)" fullWidth multiline minRows={2} />
+                <TextField
+                  {...field}
+                  label={t("adminResidual.fixedData.dialog.field.description", "الوصف (اختياري)")}
+                  fullWidth
+                  multiline
+                  minRows={2}
+                />
               )}
             />
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
           <Button onClick={close} variant="outlined" disabled={submitting}>
-            إلغاء
+            {t("adminResidual.fixedData.dialog.cancel", "إلغاء")}
           </Button>
           <Button type="submit" variant="contained" color="primary" disabled={submitting}>
-            {isEdit ? "حفظ" : "إضافة"}
+            {isEdit
+              ? t("adminResidual.fixedData.dialog.save", "حفظ")
+              : t("adminResidual.fixedData.dialog.add", "إضافة")}
           </Button>
         </DialogActions>
       </form>

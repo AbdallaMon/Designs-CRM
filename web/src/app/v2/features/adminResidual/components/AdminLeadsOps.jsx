@@ -36,6 +36,7 @@ import {
   MdBuild,
   MdWarning,
 } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { SectionCard, EmptyState } from "@/app/v2/shared/components";
@@ -46,6 +47,7 @@ import { BulkImportCard } from "./BulkImportCard.jsx";
 const P = PERMISSIONS.ADMIN_RESIDUAL;
 
 export function AdminLeadsOps() {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canImport = hasPermission(P.LEAD_IMPORT);
   const canCreate = hasPermission(P.LEAD_CREATE);
@@ -60,8 +62,8 @@ export function AdminLeadsOps() {
   if (!anything) {
     return (
       <EmptyState
-        title="لا توجد أدوات متاحة"
-        description="لا تملك صلاحية أي من عمليات العملاء المحتملين."
+        title={t("adminResidual.leads.noTools.title", "لا توجد أدوات متاحة")}
+        description={t("adminResidual.leads.noTools.description", "لا تملك صلاحية أي من عمليات العملاء المحتملين.")}
       />
     );
   }
@@ -72,14 +74,14 @@ export function AdminLeadsOps() {
   return (
     <Stack spacing={3}>
       <Typography variant="body2" color="text.secondary">
-        أدوات إدارية لإنشاء وتعديل العملاء المحتملين.
+        {t("adminResidual.leads.intro", "أدوات إدارية لإنشاء وتعديل العملاء المحتملين.")}
       </Typography>
 
       {/* ── primary intent: add leads (bulk import + single create) ───────────────────── */}
       {showAddGroup && (
         <Stack spacing={2}>
           <Typography variant="subtitle2" color="text.secondary" sx={{ fontWeight: 700 }}>
-            إضافة عملاء
+            {t("adminResidual.leads.addGroup.title", "إضافة عملاء")}
           </Typography>
           {canImport && <BulkImportCard />}
           {canCreate && <CreateLeadCard />}
@@ -93,7 +95,7 @@ export function AdminLeadsOps() {
             <Stack direction="row" spacing={1} alignItems="center">
               <MdBuild />
               <Typography variant="subtitle1" component="h2">
-                أدوات متقدمة (للمسؤولين التقنيين)
+                {t("adminResidual.leads.advanced.title", "أدوات متقدمة (للمسؤولين التقنيين)")}
               </Typography>
             </Stack>
           </AccordionSummary>
@@ -111,13 +113,16 @@ export function AdminLeadsOps() {
       {/* ── danger zone: destructive delete, isolated at the bottom ───────────────────── */}
       {canDelete && (
         <SectionCard
-          title="منطقة الحذف"
-          subtitle="عمليات نهائية لا يمكن التراجع عنها."
+          title={t("adminResidual.leads.dangerZone.title", "منطقة الحذف")}
+          subtitle={t("adminResidual.leads.dangerZone.subtitle", "عمليات نهائية لا يمكن التراجع عنها.")}
           sx={{ borderColor: "error.main", borderWidth: 1, borderStyle: "solid" }}
         >
           <Stack spacing={2}>
             <Alert severity="warning" icon={<MdWarning />}>
-              العمليات في هذه المنطقة تؤثر على البيانات بشكل دائم. تأكّد قبل التنفيذ.
+              {t(
+                "adminResidual.leads.dangerZone.warning",
+                "العمليات في هذه المنطقة تؤثر على البيانات بشكل دائم. تأكّد قبل التنفيذ.",
+              )}
             </Alert>
             <DeleteLeadCard />
           </Stack>
@@ -131,6 +136,7 @@ export function AdminLeadsOps() {
 const CREATE_LEAD_DEFAULTS = { name: "", phone: "", email: "", emirate: "", description: "" };
 
 function CreateLeadCard() {
+  const { t } = useT();
   const [submitting, setSubmitting] = useState(false);
   const { control, handleSubmit, reset } = useForm({ defaultValues: CREATE_LEAD_DEFAULTS });
 
@@ -138,29 +144,29 @@ function CreateLeadCard() {
     // The BE reads this rich client form via .passthrough(); we forward the filled keys only.
     const body = {};
     Object.entries(values).forEach(([k, v]) => {
-      const t = typeof v === "string" ? v.trim() : v;
-      if (t !== "" && t != null) body[k] = t;
+      const trimmed = typeof v === "string" ? v.trim() : v;
+      if (trimmed !== "" && trimmed != null) body[k] = trimmed;
     });
     const res = await runAdminResidualMutation(() => adminResidualService.createNewLead(body), {
-      loading: "جاري إنشاء العميل المحتمل...",
+      loading: t("adminResidual.leads.create.loading", "جاري إنشاء العميل المحتمل..."),
       setLoading: setSubmitting,
     });
     if (res) reset(CREATE_LEAD_DEFAULTS);
   }
 
   return (
-    <SectionCard title="إنشاء عميل محتمل">
+    <SectionCard title={t("adminResidual.leads.create.title", "إنشاء عميل محتمل")}>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Grid container spacing={2.5}>
           <Grid size={{ xs: 12, sm: 6 }}>
             <Controller
               name="name"
               control={control}
-              rules={{ required: "الاسم مطلوب" }}
+              rules={{ required: t("adminResidual.leads.create.field.name.required", "الاسم مطلوب") }}
               render={({ field, fieldState }) => (
                 <TextField
                   {...field}
-                  label="الاسم"
+                  label={t("adminResidual.leads.create.field.name", "الاسم")}
                   fullWidth
                   error={Boolean(fieldState.error)}
                   helperText={fieldState.error?.message}
@@ -172,11 +178,11 @@ function CreateLeadCard() {
             <Controller
               name="phone"
               control={control}
-              rules={{ required: "رقم الهاتف مطلوب" }}
+              rules={{ required: t("adminResidual.leads.create.field.phone.required", "رقم الهاتف مطلوب") }}
               render={({ field, fieldState }) => (
                 <TextField
                   {...field}
-                  label="رقم الهاتف"
+                  label={t("adminResidual.leads.create.field.phone", "رقم الهاتف")}
                   fullWidth
                   error={Boolean(fieldState.error)}
                   helperText={fieldState.error?.message}
@@ -188,14 +194,16 @@ function CreateLeadCard() {
             <Controller
               name="email"
               control={control}
-              render={({ field }) => <TextField {...field} type="email" label="البريد الإلكتروني" fullWidth />}
+              render={({ field }) => (
+                <TextField {...field} type="email" label={t("adminResidual.leads.create.field.email", "البريد الإلكتروني")} fullWidth />
+              )}
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
             <Controller
               name="emirate"
               control={control}
-              render={({ field }) => <TextField {...field} label="الإمارة" fullWidth />}
+              render={({ field }) => <TextField {...field} label={t("adminResidual.leads.create.field.emirate", "الإمارة")} fullWidth />}
             />
           </Grid>
           <Grid size={{ xs: 12 }}>
@@ -203,7 +211,7 @@ function CreateLeadCard() {
               name="description"
               control={control}
               render={({ field }) => (
-                <TextField {...field} label="ملاحظات" fullWidth multiline minRows={2} />
+                <TextField {...field} label={t("adminResidual.leads.create.field.description", "ملاحظات")} fullWidth multiline minRows={2} />
               )}
             />
           </Grid>
@@ -215,7 +223,7 @@ function CreateLeadCard() {
               startIcon={<MdPersonAdd />}
               disabled={submitting}
             >
-              إنشاء
+              {t("adminResidual.leads.create.submit", "إنشاء")}
             </Button>
           </Grid>
         </Grid>
@@ -226,10 +234,19 @@ function CreateLeadCard() {
 
 // ── dynamic field edit (lead-keyed OR client-keyed single-field update) ──────────────────────
 function FieldEditCard({ canEditLead, canEditClient }) {
+  const { t } = useT();
   const [submitting, setSubmitting] = useState(false);
   const targets = [];
-  if (canEditLead) targets.push({ value: "lead", label: "حقل عميل محتمل (حسب معرّف العميل المحتمل)" });
-  if (canEditClient) targets.push({ value: "client", label: "حقل عميل (حسب معرّف العميل)" });
+  if (canEditLead)
+    targets.push({
+      value: "lead",
+      label: t("adminResidual.leads.fieldEdit.target.lead", "حقل عميل محتمل (حسب معرّف العميل المحتمل)"),
+    });
+  if (canEditClient)
+    targets.push({
+      value: "client",
+      label: t("adminResidual.leads.fieldEdit.target.client", "حقل عميل (حسب معرّف العميل)"),
+    });
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: { target: targets[0]?.value ?? "lead", id: "", field: "", value: "" },
@@ -246,7 +263,7 @@ function FieldEditCard({ canEditLead, canEditClient }) {
         ? () => adminResidualService.updateClient(id, body)
         : () => adminResidualService.updateLead(id, body);
     const res = await runAdminResidualMutation(fn, {
-      loading: "جاري تحديث الحقل...",
+      loading: t("adminResidual.leads.fieldEdit.loading", "جاري تحديث الحقل..."),
       setLoading: setSubmitting,
     });
     if (res) reset((prev) => ({ ...prev, value: "" }));
@@ -254,8 +271,8 @@ function FieldEditCard({ canEditLead, canEditClient }) {
 
   return (
     <SectionCard
-      title="تعديل حقل ديناميكي"
-      subtitle="حدّث حقلًا واحدًا لعميل محتمل أو لعميل حسب المعرّف."
+      title={t("adminResidual.leads.fieldEdit.title", "تعديل حقل ديناميكي")}
+      subtitle={t("adminResidual.leads.fieldEdit.subtitle", "حدّث حقلًا واحدًا لعميل محتمل أو لعميل حسب المعرّف.")}
     >
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Grid container spacing={2.5}>
@@ -264,10 +281,10 @@ function FieldEditCard({ canEditLead, canEditClient }) {
               name="target"
               control={control}
               render={({ field }) => (
-                <TextField {...field} select label="النوع" fullWidth>
-                  {targets.map((t) => (
-                    <MenuItem key={t.value} value={t.value}>
-                      {t.label}
+                <TextField {...field} select label={t("adminResidual.leads.fieldEdit.field.target", "النوع")} fullWidth>
+                  {targets.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -278,12 +295,12 @@ function FieldEditCard({ canEditLead, canEditClient }) {
             <Controller
               name="id"
               control={control}
-              rules={{ required: "المعرّف مطلوب" }}
+              rules={{ required: t("adminResidual.leads.fieldEdit.field.id.required", "المعرّف مطلوب") }}
               render={({ field, fieldState }) => (
                 <TextField
                   {...field}
                   type="number"
-                  label="المعرّف"
+                  label={t("adminResidual.leads.fieldEdit.field.id", "المعرّف")}
                   fullWidth
                   error={Boolean(fieldState.error)}
                   helperText={fieldState.error?.message}
@@ -295,12 +312,12 @@ function FieldEditCard({ canEditLead, canEditClient }) {
             <Controller
               name="field"
               control={control}
-              rules={{ required: "اسم الحقل مطلوب" }}
+              rules={{ required: t("adminResidual.leads.fieldEdit.field.fieldName.required", "اسم الحقل مطلوب") }}
               render={({ field, fieldState }) => (
                 <TextField
                   {...field}
-                  label="اسم الحقل"
-                  placeholder="مثال: name"
+                  label={t("adminResidual.leads.fieldEdit.field.fieldName", "اسم الحقل")}
+                  placeholder={t("adminResidual.leads.fieldEdit.field.fieldName.placeholder", "مثال: name")}
                   fullWidth
                   error={Boolean(fieldState.error)}
                   helperText={fieldState.error?.message}
@@ -312,7 +329,7 @@ function FieldEditCard({ canEditLead, canEditClient }) {
             <Controller
               name="value"
               control={control}
-              render={({ field }) => <TextField {...field} label="القيمة الجديدة" fullWidth />}
+              render={({ field }) => <TextField {...field} label={t("adminResidual.leads.fieldEdit.field.value", "القيمة الجديدة")} fullWidth />}
             />
           </Grid>
           <Grid size={{ xs: 12 }}>
@@ -323,7 +340,7 @@ function FieldEditCard({ canEditLead, canEditClient }) {
               startIcon={<MdEdit />}
               disabled={submitting}
             >
-              تحديث الحقل
+              {t("adminResidual.leads.fieldEdit.submit", "تحديث الحقل")}
             </Button>
           </Grid>
         </Grid>
@@ -334,6 +351,7 @@ function FieldEditCard({ canEditLead, canEditClient }) {
 
 // ── telegram (lead-scoped: create channel + assign users) ────────────────────────────────────
 function TelegramCard() {
+  const { t } = useT();
   const [submitting, setSubmitting] = useState(false);
   const { control, handleSubmit } = useForm({ defaultValues: { leadId: "", userIds: "" } });
 
@@ -342,7 +360,7 @@ function TelegramCard() {
     if (!leadId) return;
     await runAdminResidualMutation(
       () => adminResidualService.createTelegramChannel(leadId, {}),
-      { loading: "جاري إنشاء القناة...", setLoading: setSubmitting },
+      { loading: t("adminResidual.leads.telegram.createLoading", "جاري إنشاء القناة..."), setLoading: setSubmitting },
     );
   }
 
@@ -356,19 +374,19 @@ function TelegramCard() {
     if (!leadId || userIds.length === 0) return;
     await runAdminResidualMutation(
       () => adminResidualService.assignTelegramUsers(leadId, { userIds }),
-      { loading: "جاري جدولة الإضافة...", setLoading: setSubmitting },
+      { loading: t("adminResidual.leads.telegram.assignLoading", "جاري جدولة الإضافة..."), setLoading: setSubmitting },
     );
   }
 
   return (
-    <SectionCard title="تيليجرام (حسب العميل المحتمل)">
+    <SectionCard title={t("adminResidual.leads.telegram.title", "تيليجرام (حسب العميل المحتمل)")}>
       <Grid container spacing={2.5}>
         <Grid size={{ xs: 12, sm: 6 }}>
           <Controller
             name="leadId"
             control={control}
             render={({ field }) => (
-              <TextField {...field} type="number" label="معرّف العميل المحتمل" fullWidth />
+              <TextField {...field} type="number" label={t("adminResidual.leads.telegram.field.leadId", "معرّف العميل المحتمل")} fullWidth />
             )}
           />
         </Grid>
@@ -379,8 +397,8 @@ function TelegramCard() {
             render={({ field }) => (
               <TextField
                 {...field}
-                label="معرّفات المستخدمين (مفصولة بفواصل)"
-                placeholder="مثال: 1, 2, 3"
+                label={t("adminResidual.leads.telegram.field.userIds", "معرّفات المستخدمين (مفصولة بفواصل)")}
+                placeholder={t("adminResidual.leads.telegram.field.userIds.placeholder", "مثال: 1, 2, 3")}
                 fullWidth
               />
             )}
@@ -395,7 +413,7 @@ function TelegramCard() {
               onClick={handleSubmit(createChannel)}
               disabled={submitting}
             >
-              إنشاء قناة
+              {t("adminResidual.leads.telegram.createChannel", "إنشاء قناة")}
             </Button>
             <Button
               variant="outlined"
@@ -404,7 +422,7 @@ function TelegramCard() {
               onClick={handleSubmit(assignUsers)}
               disabled={submitting}
             >
-              إضافة مستخدمين
+              {t("adminResidual.leads.telegram.assignUsers", "إضافة مستخدمين")}
             </Button>
           </Stack>
         </Grid>
@@ -415,6 +433,7 @@ function TelegramCard() {
 
 // ── delete lead (admin-only — gate NOT widened) ──────────────────────────────────────────────
 function DeleteLeadCard() {
+  const { t } = useT();
   const [submitting, setSubmitting] = useState(false);
   const { control, handleSubmit, reset } = useForm({ defaultValues: { id: "" } });
 
@@ -422,7 +441,7 @@ function DeleteLeadCard() {
     const id = String(values.id ?? "").trim();
     if (!id) return;
     const res = await runAdminResidualMutation(() => adminResidualService.deleteLead(id), {
-      loading: "جاري حذف العميل المحتمل...",
+      loading: t("adminResidual.leads.delete.loading", "جاري حذف العميل المحتمل..."),
       setLoading: setSubmitting,
     });
     if (res) reset({ id: "" });
@@ -431,23 +450,26 @@ function DeleteLeadCard() {
   return (
     <Box>
       <Typography variant="subtitle1" component="h3" sx={{ mb: 1.5 }}>
-        حذف عميل محتمل
+        {t("adminResidual.leads.delete.title", "حذف عميل محتمل")}
       </Typography>
       <Alert severity="error" sx={{ mb: 2 }}>
-        الحذف نهائي ولا يمكن التراجع عنه. هذه العملية متاحة للمسؤول فقط.
+        {t(
+          "adminResidual.leads.delete.warning",
+          "الحذف نهائي ولا يمكن التراجع عنه. هذه العملية متاحة للمسؤول فقط.",
+        )}
       </Alert>
       <Box component="form" onSubmit={handleSubmit(onDelete)} noValidate>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="flex-start">
           <Controller
             name="id"
             control={control}
-            rules={{ required: "المعرّف مطلوب" }}
+            rules={{ required: t("adminResidual.leads.delete.field.id.required", "المعرّف مطلوب") }}
             render={({ field, fieldState }) => (
               <TextField
                 {...field}
                 type="number"
                 size="small"
-                label="معرّف العميل المحتمل"
+                label={t("adminResidual.leads.delete.field.id", "معرّف العميل المحتمل")}
                 error={Boolean(fieldState.error)}
                 helperText={fieldState.error?.message}
                 sx={{ minWidth: 220 }}
@@ -461,7 +483,7 @@ function DeleteLeadCard() {
             startIcon={<MdDeleteForever />}
             disabled={submitting}
           >
-            حذف
+            {t("adminResidual.leads.delete.submit", "حذف")}
           </Button>
         </Stack>
       </Box>

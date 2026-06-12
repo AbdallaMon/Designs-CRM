@@ -13,11 +13,12 @@ import {
   Grid,
 } from "@mui/material";
 import { CHAT_ROOM_TYPES } from "../../config/chatConstants.js";
+import { useT } from "@/app/v2/lib/i18n";
 
-const GROUP_TYPE_OPTIONS = [
-  { value: CHAT_ROOM_TYPES.GROUP, label: "مجموعة" },
-  { value: CHAT_ROOM_TYPES.PROJECT_GROUP, label: "مجموعة مشروع" },
-  { value: CHAT_ROOM_TYPES.MULTI_PROJECT, label: "متعدد المشاريع" },
+const buildGroupTypeOptions = (t) => [
+  { value: CHAT_ROOM_TYPES.GROUP, label: t("chat.roomType.GROUP", "مجموعة") },
+  { value: CHAT_ROOM_TYPES.PROJECT_GROUP, label: t("chat.roomType.PROJECT_GROUP", "مجموعة مشروع") },
+  { value: CHAT_ROOM_TYPES.MULTI_PROJECT, label: t("chat.roomType.MULTI_PROJECT", "متعدد المشاريع") },
 ];
 
 /**
@@ -25,6 +26,8 @@ const GROUP_TYPE_OPTIONS = [
  * (which posts /chat/rooms and toasts). Gated upstream by ROOM_CREATE.
  */
 export function CreateGroupDialog({ open, onClose, createRoom, onCreated }) {
+  const { t } = useT();
+  const groupTypeOptions = buildGroupTypeOptions(t);
   const { control, handleSubmit, reset } = useForm({
     defaultValues: { name: "", type: CHAT_ROOM_TYPES.GROUP },
   });
@@ -46,7 +49,7 @@ export function CreateGroupDialog({ open, onClose, createRoom, onCreated }) {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth sx={{ zIndex: 1302 }}>
-      <DialogTitle>إنشاء مجموعة جديدة</DialogTitle>
+      <DialogTitle>{t("chat.create.title", "إنشاء مجموعة جديدة")}</DialogTitle>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <DialogContent dividers>
           <Grid container spacing={2}>
@@ -54,11 +57,11 @@ export function CreateGroupDialog({ open, onClose, createRoom, onCreated }) {
               <Controller
                 name="name"
                 control={control}
-                rules={{ required: "الاسم مطلوب" }}
+                rules={{ required: t("chat.create.nameRequired", "الاسم مطلوب") }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
-                    label="اسم المجموعة"
+                    label={t("chat.create.nameLabel", "اسم المجموعة")}
                     fullWidth
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}
@@ -71,8 +74,8 @@ export function CreateGroupDialog({ open, onClose, createRoom, onCreated }) {
                 name="type"
                 control={control}
                 render={({ field }) => (
-                  <TextField {...field} select label="النوع" fullWidth>
-                    {GROUP_TYPE_OPTIONS.map((o) => (
+                  <TextField {...field} select label={t("chat.create.typeLabel", "النوع")} fullWidth>
+                    {groupTypeOptions.map((o) => (
                       <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>
                     ))}
                   </TextField>
@@ -82,8 +85,8 @@ export function CreateGroupDialog({ open, onClose, createRoom, onCreated }) {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={onClose} disabled={submitting}>إلغاء</Button>
-          <Button type="submit" variant="contained" disabled={submitting}>إنشاء</Button>
+          <Button onClick={onClose} disabled={submitting}>{t("chat.create.cancel", "إلغاء")}</Button>
+          <Button type="submit" variant="contained" disabled={submitting}>{t("chat.create.submit", "إنشاء")}</Button>
         </DialogActions>
       </form>
     </Dialog>

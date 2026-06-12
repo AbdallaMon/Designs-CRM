@@ -9,14 +9,16 @@
 // Props: isActive (boolean), size ("small" | "medium").
 
 import { Chip } from "@mui/material";
+import { useT } from "@/app/v2/lib/i18n";
 import { userStatusOf } from "../config/usersConstants.js";
 
 export function UserStatusChip({ isActive, size = "small" }) {
+  const { t } = useT();
   const status = userStatusOf(isActive);
   return (
     <Chip
       size={size}
-      label={status.label}
+      label={t(status.labelKey)}
       color={status.color}
       variant={isActive ? "filled" : "outlined"}
       sx={{ fontWeight: 600, borderRadius: 1 }}

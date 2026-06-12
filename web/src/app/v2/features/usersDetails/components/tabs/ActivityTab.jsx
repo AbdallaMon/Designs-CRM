@@ -17,6 +17,7 @@ import {
 } from "@mui/material";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { useT } from "@/app/v2/lib/i18n";
 import {
   SectionCard,
   LoadingState,
@@ -32,6 +33,7 @@ const P = PERMISSIONS.USER;
 
 export function ActivityTab({ userId }) {
   const { hasPermission } = usePermission();
+  const { t } = useT();
   const canLogs = hasPermission(P.VIEW_LOGS);
   const canLastSeen = hasPermission(P.VIEW_LAST_SEEN);
 
@@ -39,8 +41,8 @@ export function ActivityTab({ userId }) {
     return (
       <PartialPermissionState
         denied
-        title="سجل النشاط غير متاح لصلاحياتك"
-        message="لا تملك صلاحية عرض سجلّات هذا المستخدم."
+        title={t("usersDetails.activity.deniedTitle")}
+        message={t("usersDetails.activity.deniedMessage")}
       />
     );
   }
@@ -49,18 +51,18 @@ export function ActivityTab({ userId }) {
     <Stack spacing={2}>
       {canLogs && (
         <LazyBlock
-          title="سجلّات اليوم"
+          title={t("usersDetails.activity.logsTitle")}
           fetcher={() => usersService.getUserLogs(userId)}
           userId={userId}
-          emptyTitle="لا توجد سجلّات اليوم"
+          emptyTitle={t("usersDetails.activity.logsEmpty")}
         />
       )}
       {canLastSeen && (
         <LazyBlock
-          title="آخر نشاط (شهري)"
+          title={t("usersDetails.activity.lastSeenTitle")}
           fetcher={() => usersService.getUserLastSeen(userId)}
           userId={userId}
-          emptyTitle="لا يوجد نشاط مسجّل"
+          emptyTitle={t("usersDetails.activity.lastSeenEmpty")}
         />
       )}
     </Stack>
@@ -68,6 +70,7 @@ export function ActivityTab({ userId }) {
 }
 
 function LazyBlock({ title, fetcher, userId, emptyTitle }) {
+  const { t } = useT();
   const { data, isLoading, error, refetch } = useLazyResource(fetcher, { deps: [userId] });
 
   let body;
@@ -84,7 +87,7 @@ function LazyBlock({ title, fetcher, userId, emptyTitle }) {
           {data.map((entry, i) => (
             <ListItem key={i} divider>
               <ListItemText
-                primary={entry?.title ?? entry?.message ?? entry?.content ?? `سجل #${i + 1}`}
+                primary={entry?.title ?? entry?.message ?? entry?.content ?? `${t("usersDetails.activity.recordPrefix")}${i + 1}`}
                 secondary={entry?.createdAt ?? entry?.date ?? undefined}
               />
             </ListItem>

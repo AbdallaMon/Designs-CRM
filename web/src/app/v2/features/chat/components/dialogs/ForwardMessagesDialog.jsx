@@ -7,8 +7,10 @@ import { useChatRooms } from "../../hooks";
 import { useSocket } from "@/app/v2/providers/SocketProvider";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
 import { chatEmit } from "../../chat.socket.js";
+import { useT } from "@/app/v2/lib/i18n";
 
 export function ForwardMessagesDialog({ open, onClose, selectedMessages }) {
+  const { t } = useT();
   const [selectedRooms, setSelectedRooms] = useState([]);
   const { socket } = useSocket();
   const { user } = useAuth();
@@ -46,11 +48,11 @@ export function ForwardMessagesDialog({ open, onClose, selectedMessages }) {
       <DialogTitle>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
           <Typography variant="h6" gutterBottom>
-            إعادة توجيه {selectedMessages.length} رسالة
+            {t("chat.forward.title", "إعادة توجيه {count} رسالة").replace("{count}", selectedMessages.length)}
           </Typography>
           {selectedRooms.length > 0 && (
             <Button variant="contained" onClick={handleForwardMessages}>
-              إعادة توجيه
+              {t("chat.forward.action", "إعادة توجيه")}
             </Button>
           )}
         </Box>

@@ -20,6 +20,7 @@ import { Box, Button, Stack, Typography } from "@mui/material";
 import { MdArrowBack, MdUndo } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { useRequest } from "@/app/v2/hooks/useRequest";
+import { useT } from "@/app/v2/lib/i18n";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import {
   SectionCard,
@@ -35,8 +36,10 @@ import { salesStagesMessages } from "../config/salesStagesMessages.js";
 
 const P = PERMISSIONS.SALES_STAGE;
 
-// Arabic labels for the 10 SalesStageType stages (UI-only; the wire value stays the enum key).
-const STAGE_LABELS = {
+// Arabic fallbacks for the 10 SalesStageType stages (UI-only; the wire value stays the enum key).
+// Resolved through t() at render time via buildStageLabel(t) — keep this map ONLY as the verbatim
+// Arabic fallback so an empty dictionary still renders the original wording.
+const STAGE_LABEL_FALLBACKS = {
   INITIAL_CONTACT: "أول تواصل",
   SOCIAL_MEDIA_CHECK: "مراجعة وسائل التواصل",
   WHATSAPP_QA: "أسئلة واتساب",
@@ -49,7 +52,11 @@ const STAGE_LABELS = {
   AFTER_SALES_FOLLOWUP: "متابعة ما بعد البيع",
 };
 
-const stageLabel = (type) => STAGE_LABELS[type] ?? type;
+// Factory: returns a stageLabel(type) bound to the active translator. Call inside the component.
+const buildStageLabel = (t) => (type) =>
+  STAGE_LABEL_FALLBACKS[type]
+    ? t(`salesStages.stage.${type}`, STAGE_LABEL_FALLBACKS[type])
+    : type;
 
 // Tolerant extraction of the CURRENT stage type out of the lead's sales-stages payload.
 // The BE shape is not capability-bearing; accept the common envelopes (single object, array of
@@ -76,6 +83,8 @@ function currentStageTypeFrom(data) {
 }
 
 export function SalesStagePanel({ leadId, variant = "strip", onChanged }) {
+  const { t } = useT();
+  const stageLabel = useMemo(() => buildStageLabel(t), [t]);
   const { hasPermission } = usePermission();
   const canView = hasPermission(P.VIEW);
   const canManage = hasPermission(P.MANAGE);
@@ -106,15 +115,18 @@ export function SalesStagePanel({ leadId, variant = "strip", onChanged }) {
   const completedUpTo = currentIndex < 0 ? 0 : currentIndex + 1;
 
   const stages = useMemo(
-    () => SALES_STAGE_TYPES.map((t) => ({ key: t, label: stageLabel(t) })),
-    [],
+    () => SALES_STAGE_TYPES.map((type) => ({ key: type, label: stageLabel(type) })),
+    [stageLabel],
   );
 
   async function advance() {
     if (!nextType) return;
     const res = await runSalesStagesMutation(
       () => salesStagesService.advanceStage(leadId, { key: nextType }),
-      { loading: "جاري الانتقال للمرحلة التالية...", setLoading: setBusy },
+      {
+        loading: t("salesStages.advancing", "جاري الانتقال للمرحلة التالية..."),
+        setLoading: setBusy,
+      },
     );
     if (res) {
       refetch();
@@ -125,7 +137,10 @@ export function SalesStagePanel({ leadId, variant = "strip", onChanged }) {
   async function rollBack() {
     const res = await runSalesStagesMutation(
       () => salesStagesService.rollBackStage(leadId, { currentStageType: currentType }),
-      { loading: "جاري الرجوع للمرحلة السابقة...", setLoading: setBusy },
+      {
+        loading: t("salesStages.rollingBack", "جاري الرجوع للمرحلة السابقة..."),
+        setLoading: setBusy,
+      },
     );
     if (res) {
       refetch();
@@ -136,10 +151,13 @@ export function SalesStagePanel({ leadId, variant = "strip", onChanged }) {
   if (!canView) {
     // In strip mode stay silent (the header shouldn't show a denial banner); in panel mode explain.
     return variant === "panel" ? (
-      <SectionCard title="مرحلة البيع">
+      <SectionCard title={t("salesStages.panelTitle", "مرحلة البيع")}>
         <EmptyState
-          title="لا تملك صلاحية عرض مراحل البيع"
-          description="تواصل مع المسؤول لمنحك صلاحية الاطلاع على مراحل البيع لهذا العميل."
+          title={t("salesStages.denied", "لا تملك صلاحية عرض مراحل البيع")}
+          description={t(
+            "salesStages.deniedDescription",
+            "تواصل مع المسؤول لمنحك صلاحية الاطلاع على مراحل البيع لهذا العميل.",
+          )}
         />
       </SectionCard>
     ) : null;
@@ -166,10 +184,13 @@ export function SalesStagePanel({ leadId, variant = "strip", onChanged }) {
           >
             <Typography variant="body2" color="text.secondary">
               {currentIndex < 0
-                ? "لم تبدأ مراحل البيع بعد."
+                ? t("salesStages.notStarted", "لم تبدأ مراحل البيع بعد.")
                 : isComplete
-                  ? "اكتملت جميع مراحل البيع."
-                  : `المرحلة الحالية: ${stageLabel(currentType)}`}
+                  ? t("salesStages.allComplete", "اكتملت جميع مراحل البيع.")
+                  : t("salesStages.currentStage", "المرحلة الحالية: {stage}").replace(
+                      "{stage}",
+                      stageLabel(currentType),
+                    )}
             </Typography>
             {canManage && (
               <Stack direction="row" spacing={1} flexWrap="wrap">
@@ -182,7 +203,7 @@ export function SalesStagePanel({ leadId, variant = "strip", onChanged }) {
                     onClick={rollBack}
                     disabled={busy}
                   >
-                    رجوع
+                    {t("salesStages.rollBack", "رجوع")}
                   </Button>
                 )}
                 {nextType && (
@@ -195,7 +216,10 @@ export function SalesStagePanel({ leadId, variant = "strip", onChanged }) {
                     onClick={advance}
                     disabled={busy}
                   >
-                    {`المرحلة التالية: ${stageLabel(nextType)}`}
+                    {t("salesStages.nextStage", "المرحلة التالية: {stage}").replace(
+                      "{stage}",
+                      stageLabel(nextType),
+                    )}
                   </Button>
                 )}
               </Stack>
@@ -209,8 +233,11 @@ export function SalesStagePanel({ leadId, variant = "strip", onChanged }) {
   if (variant === "panel") {
     return (
       <SectionCard
-        title="مرحلة البيع"
-        subtitle="تقدّم العميل عبر مراحل خط أنابيب المبيعات العشرة."
+        title={t("salesStages.panelTitle", "مرحلة البيع")}
+        subtitle={t(
+          "salesStages.panelSubtitle",
+          "تقدّم العميل عبر مراحل خط أنابيب المبيعات العشرة.",
+        )}
       >
         {body}
       </SectionCard>

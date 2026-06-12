@@ -17,6 +17,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Box, Button, Stack } from "@mui/material";
 import { MdArrowForward, MdArrowBack } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { LoadingState, EmptyState, ErrorState } from "@/app/v2/shared/components";
 import imageSessionsService from "../../imageSessions.service.js";
 import { runImageSessionMutation } from "../../imageSessions.mutations.js";
@@ -24,18 +25,20 @@ import { PICK_LIST_MODELS } from "../../config/imageSessionsConstants.js";
 import { SelectionGrid } from "./SelectionGrid.jsx";
 
 // Shared wizard footer: back (secondary) + next/save (primary). RTL: primary sits inline-end.
-function WizardNav({ onBack, onNext, nextLabel = "التالي", nextDisabled, busy, backDisabled }) {
+function WizardNav({ onBack, onNext, nextLabel, nextDisabled, busy, backDisabled }) {
+  const { t } = useT();
+  const resolvedNext = nextLabel ?? t("imageSessions.public.nav.next", "التالي");
   return (
     <Stack direction="row" spacing={1} sx={{ mt: 3 }}>
       {onBack && (
         <Button variant="outlined" startIcon={<MdArrowForward />} onClick={onBack} disabled={busy || backDisabled}>
-          السابق
+          {t("imageSessions.public.nav.previous", "السابق")}
         </Button>
       )}
       <Box sx={{ flexGrow: 1 }} />
       {onNext && (
         <Button variant="contained" endIcon={<MdArrowBack />} onClick={onNext} disabled={busy || nextDisabled}>
-          {nextLabel}
+          {resolvedNext}
         </Button>
       )}
     </Stack>
@@ -72,6 +75,7 @@ function useReferenceList(fetcher) {
 }
 
 export function ColorsStep({ session, nextStatus, onBack, onUpdate, busy }) {
+  const { t } = useT();
   const { items, loading, error, reload } = useReferenceList(
     useCallback(() => imageSessionsService.getColors({ lng: "ar" }), []),
   );
@@ -88,14 +92,14 @@ export function ColorsStep({ session, nextStatus, onBack, onUpdate, busy }) {
           customColors: selected.colors,
           status: nextStatus,
         }),
-      { loading: "جاري حفظ اختيارك...", setLoading: setSaving },
+      { loading: t("imageSessions.public.saveSelectionLoading", "جاري حفظ اختيارك..."), setLoading: setSaving },
     );
     if (res) await onUpdate?.();
   }
 
   if (loading) return <LoadingState variant="cards" count={6} columns={3} height={180} />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
-  if (!items.length) return <EmptyState title="لا توجد ألوان متاحة" />;
+  if (!items.length) return <EmptyState title={t("imageSessions.public.noColors", "لا توجد ألوان متاحة")} />;
 
   return (
     <Box>
@@ -106,6 +110,7 @@ export function ColorsStep({ session, nextStatus, onBack, onUpdate, busy }) {
 }
 
 export function MaterialsStep({ session, nextStatus, onBack, onUpdate, busy }) {
+  const { t } = useT();
   const { items, loading, error, reload } = useReferenceList(
     useCallback(() => imageSessionsService.getMaterials({ lng: "ar" }), []),
   );
@@ -119,14 +124,14 @@ export function MaterialsStep({ session, nextStatus, onBack, onUpdate, busy }) {
     if (!selected.length) return;
     const res = await runImageSessionMutation(
       () => imageSessionsService.saveMaterials({ session, selectedMaterials: selected, status: nextStatus }),
-      { loading: "جاري حفظ اختيارك...", setLoading: setSaving },
+      { loading: t("imageSessions.public.saveSelectionLoading", "جاري حفظ اختيارك..."), setLoading: setSaving },
     );
     if (res) await onUpdate?.();
   }
 
   if (loading) return <LoadingState variant="cards" count={6} columns={3} height={180} />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
-  if (!items.length) return <EmptyState title="لا توجد خامات متاحة" />;
+  if (!items.length) return <EmptyState title={t("imageSessions.public.noMaterials", "لا توجد خامات متاحة")} />;
 
   return (
     <Box>
@@ -137,6 +142,7 @@ export function MaterialsStep({ session, nextStatus, onBack, onUpdate, busy }) {
 }
 
 export function StylesStep({ session, nextStatus, onBack, onUpdate, busy }) {
+  const { t } = useT();
   const { items, loading, error, reload } = useReferenceList(
     useCallback(() => imageSessionsService.getStyles({ lng: "ar" }), []),
   );
@@ -147,14 +153,14 @@ export function StylesStep({ session, nextStatus, onBack, onUpdate, busy }) {
     if (!selected) return;
     const res = await runImageSessionMutation(
       () => imageSessionsService.saveStyle({ session, selectedStyle: selected, status: nextStatus }),
-      { loading: "جاري حفظ اختيارك...", setLoading: setSaving },
+      { loading: t("imageSessions.public.saveSelectionLoading", "جاري حفظ اختيارك..."), setLoading: setSaving },
     );
     if (res) await onUpdate?.();
   }
 
   if (loading) return <LoadingState variant="cards" count={6} columns={3} height={180} />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
-  if (!items.length) return <EmptyState title="لا توجد طرز متاحة" />;
+  if (!items.length) return <EmptyState title={t("imageSessions.public.noStyles", "لا توجد طرز متاحة")} />;
 
   return (
     <Box>
@@ -171,6 +177,7 @@ function spaceIdsOf(session) {
 }
 
 export function ImagesStep({ session, nextStatus, onBack, onUpdate, busy }) {
+  const { t } = useT();
   const spaceIds = spaceIdsOf(session);
   const styleId = session?.styleId;
   const { items, loading, error, reload } = useReferenceList(
@@ -189,19 +196,19 @@ export function ImagesStep({ session, nextStatus, onBack, onUpdate, busy }) {
     if (!selected.length) return;
     const res = await runImageSessionMutation(
       () => imageSessionsService.saveImages({ session, selectedImages: selected, status: nextStatus }),
-      { loading: "جاري حفظ اختيارك...", setLoading: setSaving },
+      { loading: t("imageSessions.public.saveSelectionLoading", "جاري حفظ اختيارك..."), setLoading: setSaving },
     );
     if (res) await onUpdate?.();
   }
 
   if (loading) return <LoadingState variant="cards" count={6} columns={3} height={180} />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
-  if (!items.length) return <EmptyState title="لا توجد صور متاحة" description="لم نعثر على صور للمساحات والطراز المختار." />;
+  if (!items.length) return <EmptyState title={t("imageSessions.public.noImages", "لا توجد صور متاحة")} description={t("imageSessions.public.noImagesDescription", "لم نعثر على صور للمساحات والطراز المختار.")} />;
 
   return (
     <Box>
       <SelectionGrid items={items} model={PICK_LIST_MODELS.DESIGN_IMAGE} multi selected={selected} onToggle={toggle} />
-      <WizardNav onBack={onBack} onNext={save} nextLabel="حفظ والمتابعة" nextDisabled={!selected.length} busy={busy || saving} />
+      <WizardNav onBack={onBack} onNext={save} nextLabel={t("imageSessions.public.nav.saveAndContinue", "حفظ والمتابعة")} nextDisabled={!selected.length} busy={busy || saving} />
     </Box>
   );
 }

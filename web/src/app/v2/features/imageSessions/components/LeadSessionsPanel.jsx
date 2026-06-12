@@ -18,6 +18,7 @@ import {
 import {
   MdAdd, MdContentCopy, MdOpenInNew, MdAutorenew, MdDelete, MdEdit, MdCheck,
 } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import {
@@ -27,7 +28,7 @@ import { useLeadSessions } from "../hooks/useLeadSessions.js";
 import imageSessionsService from "../imageSessions.service.js";
 import { runImageSessionMutation } from "../imageSessions.mutations.js";
 import {
-  SESSION_STATUS_LABELS, WIZARD_STEPS, wizardStepIndex, readPickListLabel, PICK_LIST_MODELS,
+  sessionStatusLabel, buildWizardSteps, wizardStepIndex, readPickListLabel, PICK_LIST_MODELS,
 } from "../config/imageSessionsConstants.js";
 
 const P = PERMISSIONS.IMAGE_SESSION;
@@ -39,16 +40,17 @@ function clientUrlFor(token) {
 }
 
 function NewSessionDialog({ open, onClose, spaces, onCreate, busy }) {
+  const { t } = useT();
   const [selected, setSelected] = useState([]);
   const toggle = (id) =>
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" dir="rtl">
-      <DialogTitle>إنشاء جلسة جديدة</DialogTitle>
+      <DialogTitle>{t("imageSessions.lead.newSessionTitle", "إنشاء جلسة جديدة")}</DialogTitle>
       <DialogContent dividers>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          اختر المساحات المطلوبة لهذه الجلسة (مساحة واحدة على الأقل).
+          {t("imageSessions.lead.newSessionHint", "اختر المساحات المطلوبة لهذه الجلسة (مساحة واحدة على الأقل).")}
         </Typography>
         {spaces?.length ? (
           <Grid container>
@@ -62,13 +64,13 @@ function NewSessionDialog({ open, onClose, spaces, onCreate, busy }) {
             ))}
           </Grid>
         ) : (
-          <Alert severity="info">لا توجد مساحات متاحة</Alert>
+          <Alert severity="info">{t("imageSessions.lead.noSpaces", "لا توجد مساحات متاحة")}</Alert>
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={busy}>إلغاء</Button>
+        <Button onClick={onClose} disabled={busy}>{t("imageSessions.lead.cancel", "إلغاء")}</Button>
         <Button variant="contained" disabled={busy || selected.length === 0} onClick={() => onCreate(selected)}>
-          إنشاء
+          {t("imageSessions.lead.create", "إنشاء")}
         </Button>
       </DialogActions>
     </Dialog>
@@ -76,42 +78,45 @@ function NewSessionDialog({ open, onClose, spaces, onCreate, busy }) {
 }
 
 function EditNameDialog({ open, onClose, initialName, onSave, busy }) {
+  const { t } = useT();
   const [name, setName] = useState(initialName ?? "");
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs" dir="rtl">
-      <DialogTitle>تعديل اسم الجلسة</DialogTitle>
+      <DialogTitle>{t("imageSessions.lead.editNameTitle", "تعديل اسم الجلسة")}</DialogTitle>
       <DialogContent dividers>
-        <TextField autoFocus fullWidth label="اسم الجلسة" value={name} onChange={(e) => setName(e.target.value)} sx={{ mt: 1 }} />
+        <TextField autoFocus fullWidth label={t("imageSessions.lead.sessionName", "اسم الجلسة")} value={name} onChange={(e) => setName(e.target.value)} sx={{ mt: 1 }} />
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={busy}>إلغاء</Button>
-        <Button variant="contained" onClick={() => onSave(name)} disabled={busy}>حفظ</Button>
+        <Button onClick={onClose} disabled={busy}>{t("imageSessions.lead.cancel", "إلغاء")}</Button>
+        <Button variant="contained" onClick={() => onSave(name)} disabled={busy}>{t("imageSessions.lead.save", "حفظ")}</Button>
       </DialogActions>
     </Dialog>
   );
 }
 
 function RegenerateDialog({ open, onClose, onConfirm, busy }) {
+  const { t } = useT();
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs" dir="rtl">
-      <DialogTitle>إعادة إنشاء الرابط</DialogTitle>
+      <DialogTitle>{t("imageSessions.lead.regenerateTitle", "إعادة إنشاء الرابط")}</DialogTitle>
       <DialogContent dividers>
         <Alert severity="warning" sx={{ mb: 1 }}>
-          سيتوقف الرابط القديم عن العمل فورًا. أي رابط شاركته سابقًا مع العميل لن يعمل بعد الآن.
+          {t("imageSessions.lead.regenerateWarning", "سيتوقف الرابط القديم عن العمل فورًا. أي رابط شاركته سابقًا مع العميل لن يعمل بعد الآن.")}
         </Alert>
         <Typography variant="body2" color="text.secondary">
-          هل تريد المتابعة وإنشاء رابط جديد؟
+          {t("imageSessions.lead.regenerateConfirm", "هل تريد المتابعة وإنشاء رابط جديد؟")}
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={busy}>إلغاء</Button>
-        <Button variant="contained" color="warning" onClick={onConfirm} disabled={busy}>إعادة الإنشاء</Button>
+        <Button onClick={onClose} disabled={busy}>{t("imageSessions.lead.cancel", "إلغاء")}</Button>
+        <Button variant="contained" color="warning" onClick={onConfirm} disabled={busy}>{t("imageSessions.lead.regenerate", "إعادة الإنشاء")}</Button>
       </DialogActions>
     </Dialog>
   );
 }
 
 function SessionCard({ session, clientLeadId, canManage, onChanged }) {
+  const { t } = useT();
   const [copied, setCopied] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [regenOpen, setRegenOpen] = useState(false);
@@ -129,7 +134,7 @@ function SessionCard({ session, clientLeadId, canManage, onChanged }) {
   async function regenerate() {
     const res = await runImageSessionMutation(
       () => imageSessionsService.regenerateToken(clientLeadId, session.id),
-      { loading: "جاري إعادة إنشاء الرابط...", setLoading: setBusy },
+      { loading: t("imageSessions.lead.regenerateLoading", "جاري إعادة إنشاء الرابط..."), setLoading: setBusy },
     );
     setRegenOpen(false);
     if (res) onChanged?.();
@@ -137,7 +142,7 @@ function SessionCard({ session, clientLeadId, canManage, onChanged }) {
   async function saveName(name) {
     const res = await runImageSessionMutation(
       () => imageSessionsService.editSession(clientLeadId, session.id, { name }),
-      { loading: "جاري الحفظ...", setLoading: setBusy },
+      { loading: t("imageSessions.lead.savingLoading", "جاري الحفظ..."), setLoading: setBusy },
     );
     setEditOpen(false);
     if (res) onChanged?.();
@@ -145,7 +150,7 @@ function SessionCard({ session, clientLeadId, canManage, onChanged }) {
   async function remove() {
     const res = await runImageSessionMutation(
       () => imageSessionsService.deleteSession(clientLeadId, session.id),
-      { loading: "جاري حذف الجلسة...", setLoading: setBusy },
+      { loading: t("imageSessions.lead.deleteLoading", "جاري حذف الجلسة..."), setLoading: setBusy },
     );
     if (res) onChanged?.();
   }
@@ -155,47 +160,47 @@ function SessionCard({ session, clientLeadId, canManage, onChanged }) {
       <CardContent>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1.5 }} spacing={1}>
           <Typography variant="subtitle1" sx={{ minWidth: 0 }} noWrap>
-            {session.name || `جلسة #${session.id}`}
+            {session.name || t("imageSessions.lead.sessionFallbackName", "جلسة #{id}").replace("{id}", session.id)}
           </Typography>
           <StatusChip
             domain="session"
             status={session.sessionStatus}
-            label={SESSION_STATUS_LABELS[session.sessionStatus] || session.sessionStatus}
+            label={sessionStatusLabel(session.sessionStatus, t)}
           />
         </Stack>
 
         <Box sx={{ mb: 1.5, overflowX: "auto" }}>
-          <StageStepper stages={WIZARD_STEPS} current={wizardStepIndex(session.sessionStatus)} />
+          <StageStepper stages={buildWizardSteps(t)} current={wizardStepIndex(session.sessionStatus)} />
         </Box>
 
         <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap">
-          <Tooltip title={copied ? "تم النسخ" : "نسخ الرابط"}>
-            <IconButton size="small" onClick={copy} color={copied ? "success" : "default"} aria-label="نسخ الرابط">
+          <Tooltip title={copied ? t("imageSessions.lead.copied", "تم النسخ") : t("imageSessions.lead.copyLink", "نسخ الرابط")}>
+            <IconButton size="small" onClick={copy} color={copied ? "success" : "default"} aria-label={t("imageSessions.lead.copyLink", "نسخ الرابط")}>
               {copied ? <MdCheck /> : <MdContentCopy />}
             </IconButton>
           </Tooltip>
-          <Tooltip title="فتح رابط العميل">
-            <IconButton size="small" component="a" href={url} target="_blank" rel="noreferrer" aria-label="فتح الرابط">
+          <Tooltip title={t("imageSessions.lead.openClientLink", "فتح رابط العميل")}>
+            <IconButton size="small" component="a" href={url} target="_blank" rel="noreferrer" aria-label={t("imageSessions.lead.openLink", "فتح الرابط")}>
               <MdOpenInNew />
             </IconButton>
           </Tooltip>
           {session.pdfUrl && (
-            <Button size="small" variant="text" href={session.pdfUrl} target="_blank">تحميل الملف</Button>
+            <Button size="small" variant="text" href={session.pdfUrl} target="_blank">{t("imageSessions.lead.downloadFile", "تحميل الملف")}</Button>
           )}
           {canManage && (
             <>
-              <Tooltip title="تعديل الاسم">
-                <IconButton size="small" onClick={() => setEditOpen(true)} disabled={busy} aria-label="تعديل">
+              <Tooltip title={t("imageSessions.lead.editName", "تعديل الاسم")}>
+                <IconButton size="small" onClick={() => setEditOpen(true)} disabled={busy} aria-label={t("imageSessions.lead.edit", "تعديل")}>
                   <MdEdit />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="إعادة إنشاء الرابط">
-                <IconButton size="small" onClick={() => setRegenOpen(true)} disabled={busy} aria-label="إعادة إنشاء الرابط">
+              <Tooltip title={t("imageSessions.lead.regenerateTitle", "إعادة إنشاء الرابط")}>
+                <IconButton size="small" onClick={() => setRegenOpen(true)} disabled={busy} aria-label={t("imageSessions.lead.regenerateTitle", "إعادة إنشاء الرابط")}>
                   <MdAutorenew />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="حذف الجلسة">
-                <IconButton size="small" color="error" onClick={remove} disabled={busy} aria-label="حذف">
+              <Tooltip title={t("imageSessions.lead.deleteSession", "حذف الجلسة")}>
+                <IconButton size="small" color="error" onClick={remove} disabled={busy} aria-label={t("imageSessions.lead.delete", "حذف")}>
                   <MdDelete />
                 </IconButton>
               </Tooltip>
@@ -215,6 +220,7 @@ function SessionCard({ session, clientLeadId, canManage, onChanged }) {
 }
 
 export function LeadSessionsPanel({ clientLeadId }) {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canView = hasPermission(P.SESSION_VIEW);
   const canManage = hasPermission(P.SESSION_MANAGE);
@@ -226,7 +232,7 @@ export function LeadSessionsPanel({ clientLeadId }) {
   async function createSession(selectedSpaces) {
     const res = await runImageSessionMutation(
       () => imageSessionsService.createSession(clientLeadId, { spaces: selectedSpaces }),
-      { loading: "جاري إنشاء الجلسة...", setLoading: setBusy },
+      { loading: t("imageSessions.lead.createLoading", "جاري إنشاء الجلسة..."), setLoading: setBusy },
     );
     if (res) {
       setCreateOpen(false);
@@ -235,17 +241,17 @@ export function LeadSessionsPanel({ clientLeadId }) {
   }
 
   if (!canView) {
-    return <Alert severity="info">لا تملك صلاحية عرض جلسات الصور.</Alert>;
+    return <Alert severity="info">{t("imageSessions.lead.noViewPermission", "لا تملك صلاحية عرض جلسات الصور.")}</Alert>;
   }
 
   return (
     <SectionCard
-      title="جلسات الصور"
-      subtitle="روابط اختيار التصاميم التي تشاركها مع العميل المحتمل."
+      title={t("imageSessions.lead.cardTitle", "جلسات الصور")}
+      subtitle={t("imageSessions.lead.cardSubtitle", "روابط اختيار التصاميم التي تشاركها مع العميل المحتمل.")}
       actions={
         canManage ? (
           <Button variant="contained" startIcon={<MdAdd />} onClick={() => setCreateOpen(true)}>
-            جلسة جديدة
+            {t("imageSessions.lead.newSession", "جلسة جديدة")}
           </Button>
         ) : null
       }
@@ -266,13 +272,13 @@ export function LeadSessionsPanel({ clientLeadId }) {
         <ErrorState error={error} onRetry={refetch} />
       ) : !sessions?.length ? (
         <EmptyState
-          title="لا توجد جلسات بعد"
+          title={t("imageSessions.lead.emptyTitle", "لا توجد جلسات بعد")}
           description={
             canManage
-              ? "أنشئ جلسة جديدة لمشاركة رابط اختيار التصاميم مع العميل."
-              : "لم يتم إنشاء أي جلسة لهذا العميل بعد."
+              ? t("imageSessions.lead.emptyManage", "أنشئ جلسة جديدة لمشاركة رابط اختيار التصاميم مع العميل.")
+              : t("imageSessions.lead.emptyView", "لم يتم إنشاء أي جلسة لهذا العميل بعد.")
           }
-          action={canManage ? { label: "جلسة جديدة", onClick: () => setCreateOpen(true) } : undefined}
+          action={canManage ? { label: t("imageSessions.lead.newSession", "جلسة جديدة"), onClick: () => setCreateOpen(true) } : undefined}
         />
       ) : (
         <Grid container spacing={2}>

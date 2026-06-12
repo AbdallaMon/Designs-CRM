@@ -13,9 +13,11 @@
 import { Box, Stack, TextField, Button } from "@mui/material";
 import { MdFilterAltOff, MdCheck } from "react-icons/md";
 import { SectionCard } from "@/app/v2/shared/components";
-import { FILTER_COPY } from "../config/dashboardConstants.js";
+import { useT } from "@/app/v2/lib/i18n";
+import { FILTER_COPY_KEYS } from "../config/dashboardConstants.js";
 
 export function DashboardFilters({ adminTier, draft, setField, apply, reset, isDirty, hasFilters }) {
+  const { t } = useT();
   return (
     <SectionCard sx={{ mb: 3 }}>
       <Stack
@@ -26,7 +28,7 @@ export function DashboardFilters({ adminTier, draft, setField, apply, reset, isD
         <TextField
           type="date"
           size="small"
-          label={FILTER_COPY.startDate}
+          label={t(FILTER_COPY_KEYS.startDate)}
           value={draft.startDate}
           onChange={(e) => setField("startDate", e.target.value)}
           InputLabelProps={{ shrink: true }}
@@ -35,7 +37,7 @@ export function DashboardFilters({ adminTier, draft, setField, apply, reset, isD
         <TextField
           type="date"
           size="small"
-          label={FILTER_COPY.endDate}
+          label={t(FILTER_COPY_KEYS.endDate)}
           value={draft.endDate}
           onChange={(e) => setField("endDate", e.target.value)}
           InputLabelProps={{ shrink: true }}
@@ -46,8 +48,8 @@ export function DashboardFilters({ adminTier, draft, setField, apply, reset, isD
           <TextField
             type="number"
             size="small"
-            label={FILTER_COPY.staffId}
-            helperText={FILTER_COPY.staffHelper}
+            label={t(FILTER_COPY_KEYS.staffId)}
+            helperText={t(FILTER_COPY_KEYS.staffHelper)}
             value={draft.staffId}
             onChange={(e) => setField("staffId", e.target.value)}
             inputProps={{ min: 1, inputMode: "numeric" }}
@@ -63,7 +65,7 @@ export function DashboardFilters({ adminTier, draft, setField, apply, reset, isD
             disabled={!isDirty}
             startIcon={<MdCheck />}
           >
-            {FILTER_COPY.apply}
+            {t(FILTER_COPY_KEYS.apply)}
           </Button>
           <Button
             variant="text"
@@ -72,7 +74,7 @@ export function DashboardFilters({ adminTier, draft, setField, apply, reset, isD
             disabled={!hasFilters && !isDirty}
             startIcon={<MdFilterAltOff />}
           >
-            {FILTER_COPY.reset}
+            {t(FILTER_COPY_KEYS.reset)}
           </Button>
         </Box>
       </Stack>

@@ -16,15 +16,18 @@ import { FaTimes } from "react-icons/fa";
 import { useChatFiles } from "../../hooks";
 import { LoadMoreButton } from "../indicators/LoadMoreButton.jsx";
 import { ChatAttachments } from "./ChatAttachments.jsx";
+import { useT } from "@/app/v2/lib/i18n";
 
-const FILE_TYPE_CATEGORIES = [
-  { label: "صور", value: "image" },
-  { label: "فيديو", value: "video" },
-  { label: "صوت", value: "audio" },
-  { label: "مستندات", value: "document" },
+const buildFileTypeCategories = (t) => [
+  { label: t("chat.files.category.image", "صور"), value: "image" },
+  { label: t("chat.files.category.video", "فيديو"), value: "video" },
+  { label: t("chat.files.category.audio", "صوت"), value: "audio" },
+  { label: t("chat.files.category.document", "مستندات"), value: "document" },
 ];
 
 export function ChatFilesTab({ roomId, currentTab, setCurrentTab, clientCtx = null }) {
+  const { t } = useT();
+  const fileTypeCategories = buildFileTypeCategories(t);
   const [selectedType, setSelectedType] = useState([]);
   const {
     loading,
@@ -49,7 +52,7 @@ export function ChatFilesTab({ roomId, currentTab, setCurrentTab, clientCtx = nu
     >
       <DialogTitle>
         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Typography>ملفات المحادثة</Typography>
+          <Typography>{t("chat.files.title", "ملفات المحادثة")}</Typography>
           <IconButton onClick={() => setCurrentTab(0)}>
             <FaTimes />
           </IconButton>
@@ -64,7 +67,7 @@ export function ChatFilesTab({ roomId, currentTab, setCurrentTab, clientCtx = nu
             exclusive
             sx={{ flexWrap: "wrap", gap: 1 }}
           >
-            {FILE_TYPE_CATEGORIES.map((c) => (
+            {fileTypeCategories.map((c) => (
               <ToggleButton key={c.value} value={c.value}>
                 {c.label}
               </ToggleButton>
@@ -78,7 +81,7 @@ export function ChatFilesTab({ roomId, currentTab, setCurrentTab, clientCtx = nu
             </Box>
           ) : files.length === 0 ? (
             <Typography color="textSecondary" align="center" sx={{ py: 4 }}>
-              لا توجد ملفات
+              {t("chat.files.empty", "لا توجد ملفات")}
             </Typography>
           ) : (
             <ChatAttachments attachments={files} />

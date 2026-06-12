@@ -12,6 +12,7 @@ import { Controller, useForm } from "react-hook-form";
 import { Box, Button, Grid, Stack, TextField, Typography } from "@mui/material";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { useT } from "@/app/v2/lib/i18n";
 import { SectionCard } from "@/app/v2/shared/components";
 import { usersService } from "@/app/v2/features/users/users.service.js";
 import { runUsersMutation } from "@/app/v2/features/users/users.mutations.js";
@@ -19,6 +20,7 @@ import { resolveRoleLabel } from "@/app/v2/features/users/config/usersConstants.
 
 export function ProfileTab({ profile, onUpdated }) {
   const { hasPermission } = usePermission();
+  const { t } = useT();
   const canEdit =
     hasPermission(PERMISSIONS.USER.PROFILE_EDIT) && Boolean(profile?.capabilities?.canEditProfile);
 
@@ -37,7 +39,7 @@ export function ProfileTab({ profile, onUpdated }) {
     const tg = values.telegramUsername?.trim();
     if (tg) body.telegramUsername = tg;
     const res = await runUsersMutation(() => usersService.updateProfile(profile.id, body), {
-      loading: "جاري حفظ الملف الشخصي...",
+      loading: t("usersDetails.profile.loading"),
       setLoading: setSubmitting,
     });
     if (res) onUpdated?.(res.data);
@@ -45,27 +47,27 @@ export function ProfileTab({ profile, onUpdated }) {
 
   return (
     <Stack spacing={2}>
-      <SectionCard title="بيانات الملف الشخصي">
+      <SectionCard title={t("usersDetails.profile.viewTitle")}>
         <Grid container spacing={2}>
-          <ReadField label="الاسم" value={profile?.name} />
-          <ReadField label="البريد الإلكتروني" value={profile?.email} />
-          <ReadField label="الدور" value={resolveRoleLabel(profile?.role)} />
-          <ReadField label="معرّف تيليجرام" value={profile?.telegramUsername} />
+          <ReadField label={t("usersDetails.profile.field.name")} value={profile?.name} />
+          <ReadField label={t("usersDetails.profile.field.email")} value={profile?.email} />
+          <ReadField label={t("usersDetails.profile.field.role")} value={resolveRoleLabel(profile?.role)} />
+          <ReadField label={t("usersDetails.profile.field.telegram")} value={profile?.telegramUsername} />
         </Grid>
       </SectionCard>
 
       {canEdit && (
-        <SectionCard title="تعديل الملف الشخصي">
+        <SectionCard title={t("usersDetails.profile.editTitle")}>
           <form onSubmit={handleSubmit(onSubmit)} noValidate>
             <Stack spacing={2.5}>
               <Controller
                 name="name"
                 control={control}
-                rules={{ required: "الاسم مطلوب" }}
+                rules={{ required: t("usersDetails.profile.validation.nameRequired") }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
-                    label="الاسم"
+                    label={t("usersDetails.profile.field.name")}
                     fullWidth
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}
@@ -76,12 +78,12 @@ export function ProfileTab({ profile, onUpdated }) {
                 name="telegramUsername"
                 control={control}
                 render={({ field }) => (
-                  <TextField {...field} label="معرّف تيليجرام (اختياري)" fullWidth placeholder="@username" />
+                  <TextField {...field} label={t("usersDetails.profile.field.telegramOptional")} fullWidth placeholder="@username" />
                 )}
               />
               <Box>
                 <Button type="submit" variant="contained" color="primary" disabled={submitting}>
-                  حفظ
+                  {t("usersDetails.profile.save")}
                 </Button>
               </Box>
             </Stack>

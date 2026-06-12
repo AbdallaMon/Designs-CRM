@@ -9,12 +9,17 @@
 
 import { useMemo, useState } from "react";
 import { useRequest } from "@/app/v2/hooks/useRequest";
+import { useT } from "@/app/v2/lib/i18n";
 import { DataTablePage } from "@/app/v2/shared/components";
 import { FIXED_DATA_URL } from "../config/constant.js";
 import { utilitiesMessages } from "../config/utilitiesMessages.js";
-import { FIXED_DATA_COLUMNS, FIXED_DATA_FILTERS } from "../config/utilitiesSurfaces.js";
+import { buildFixedDataColumns, buildFixedDataFilters } from "../config/utilitiesSurfaces.js";
 
 export function FixedDataList() {
+  const { t } = useT();
+  const columns = useMemo(() => buildFixedDataColumns(t), [t]);
+  const filters = useMemo(() => buildFixedDataFilters(t), [t]);
+
   const { data, isLoading, error, refetch } = useRequest({
     url: FIXED_DATA_URL,
     method: "get",
@@ -43,8 +48,8 @@ export function FixedDataList() {
 
   return (
     <DataTablePage
-      columns={FIXED_DATA_COLUMNS}
-      filters={FIXED_DATA_FILTERS}
+      columns={columns}
+      filters={filters}
       rows={rows}
       total={total}
       page={page}
@@ -62,8 +67,8 @@ export function FixedDataList() {
       errorResolver={utilitiesMessages}
       getRowKey={(row) => row?.id}
       empty={{
-        title: "لا توجد بيانات ثابتة",
-        description: "لم تُضَف أي بيانات ثابتة بعد.",
+        title: t("utilities.fixedData.empty.title"),
+        description: t("utilities.fixedData.empty.description"),
       }}
     />
   );

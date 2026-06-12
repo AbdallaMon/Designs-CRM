@@ -2,6 +2,7 @@
 
 import { Box, IconButton, Link, Stack, Typography } from "@mui/material";
 import { FaDownload, FaFile } from "react-icons/fa";
+import { useT } from "@/app/v2/lib/i18n";
 
 /**
  * Lightweight v2 attachment renderer (replaces the legacy MediaRender/RenderListOfFiles).
@@ -14,6 +15,7 @@ function isVideo(mime) { return mime?.startsWith("video/"); }
 function isAudio(mime) { return mime?.startsWith("audio/"); }
 
 function AttachmentItem({ attachment }) {
+  const { t } = useT();
   const { fileUrl, fileName, fileMimeType, thumbnailUrl } = attachment || {};
   if (!fileUrl) return null;
 
@@ -50,7 +52,7 @@ function AttachmentItem({ attachment }) {
     >
       <FaFile />
       <Link href={fileUrl} target="_blank" rel="noopener noreferrer" sx={{ flex: 1, minWidth: 0 }} noWrap>
-        {fileName || "ملف"}
+        {fileName || t("chat.attachment.file", "ملف")}
       </Link>
       <IconButton size="small" component="a" href={fileUrl} download>
         <FaDownload size={14} />

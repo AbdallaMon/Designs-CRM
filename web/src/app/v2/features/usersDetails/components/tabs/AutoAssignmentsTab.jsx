@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { Box, Button, Checkbox, FormControlLabel, FormGroup, Stack, Typography } from "@mui/material";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { useT } from "@/app/v2/lib/i18n";
 import {
   SectionCard,
   LoadingState,
@@ -19,11 +20,13 @@ import {
 import { usersService } from "@/app/v2/features/users/users.service.js";
 import { runUsersMutation } from "@/app/v2/features/users/users.mutations.js";
 import { usersMessages } from "@/app/v2/features/users/config/usersMessages.js";
-import { AUTO_ASSIGNMENT_TYPES } from "@/app/v2/features/users/config/usersConstants.js";
+import { buildAutoAssignmentTypes } from "@/app/v2/features/users/config/usersConstants.js";
 import { useLazyResource } from "../../hooks/useLazyResource.js";
 
 export function AutoAssignmentsTab({ userId, capabilities }) {
   const { hasPermission } = usePermission();
+  const { t } = useT();
+  const assignmentTypes = buildAutoAssignmentTypes(t);
   const canManage =
     hasPermission(PERMISSIONS.USER.MANAGE_AUTO_ASSIGNMENTS) &&
     Boolean(capabilities?.canManageAutoAssignments);
@@ -55,7 +58,7 @@ export function AutoAssignmentsTab({ userId, capabilities }) {
   async function save() {
     const res = await runUsersMutation(
       () => usersService.updateAutoAssignments(userId, { added, removed }),
-      { loading: "جاري تحديث التعيينات...", setLoading: setSubmitting },
+      { loading: t("usersDetails.assignments.loading"), setLoading: setSubmitting },
     );
     if (res) refetch();
   }
@@ -64,8 +67,8 @@ export function AutoAssignmentsTab({ userId, capabilities }) {
     return (
       <PartialPermissionState
         denied
-        title="إدارة التعيينات التلقائية غير متاحة لصلاحياتك"
-        message="لا تملك صلاحية تعديل التعيينات التلقائية لهذا المستخدم."
+        title={t("usersDetails.assignments.deniedTitle")}
+        message={t("usersDetails.assignments.deniedMessage")}
       />
     );
   }
@@ -74,16 +77,16 @@ export function AutoAssignmentsTab({ userId, capabilities }) {
 
   return (
     <SectionCard
-      title="التعيينات التلقائية"
-      subtitle="أنواع المشاريع التي تُسنَد تلقائياً إلى هذا المستخدم."
+      title={t("usersDetails.assignments.title")}
+      subtitle={t("usersDetails.assignments.subtitle")}
       actions={
         <Button variant="contained" onClick={save} disabled={!dirty || submitting}>
-          حفظ التغييرات
+          {t("usersDetails.assignments.saveChanges")}
         </Button>
       }
     >
       <FormGroup>
-        {AUTO_ASSIGNMENT_TYPES.map((opt) => (
+        {assignmentTypes.map((opt) => (
           <FormControlLabel
             key={opt.value}
             control={
@@ -98,12 +101,12 @@ export function AutoAssignmentsTab({ userId, capabilities }) {
           <Stack direction="row" spacing={2} flexWrap="wrap">
             {added.length > 0 && (
               <Typography variant="body2" color="success.main">
-                إضافة: {added.length}
+                {t("usersDetails.assignments.added")} {added.length}
               </Typography>
             )}
             {removed.length > 0 && (
               <Typography variant="body2" color="error.main">
-                إزالة: {removed.length}
+                {t("usersDetails.assignments.removed")} {removed.length}
               </Typography>
             )}
           </Stack>

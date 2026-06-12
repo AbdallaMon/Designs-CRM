@@ -18,10 +18,12 @@ import {
 } from "@mui/material";
 import { MdFolder } from "react-icons/md";
 import { SectionCard, EmptyState, LoadingState } from "@/app/v2/shared/components";
+import { useT } from "@/app/v2/lib/i18n";
 import { projectsService } from "../projects.service.js";
 import { ProjectDetails } from "./ProjectDetails.jsx";
 
 export function LeadProjects({ clientLeadId, initialProjects, noInitialLoad = false }) {
+  const { t } = useT();
   const [groupedProjects, setGroupedProjects] = useState(initialProjects || []);
   const [loading, setLoading] = useState(!noInitialLoad);
   const [activeProject, setActiveProject] = useState(null);
@@ -68,7 +70,7 @@ export function LeadProjects({ clientLeadId, initialProjects, noInitialLoad = fa
 
   if (loading) {
     return (
-      <SectionCard title="المشاريع">
+      <SectionCard title={t("projects.group.sectionTitle")}>
         <LoadingState variant="cards" count={3} columns={3} height={200} />
       </SectionCard>
     );
@@ -76,11 +78,11 @@ export function LeadProjects({ clientLeadId, initialProjects, noInitialLoad = fa
 
   if (groupedProjects.length === 0) {
     return (
-      <SectionCard title="المشاريع">
+      <SectionCard title={t("projects.group.sectionTitle")}>
         <EmptyState
           icon={<MdFolder />}
-          title="لا توجد مشاريع"
-          description="لم يتم إنشاء أي مشروع لهذا العميل بعد."
+          title={t("projects.group.empty.title")}
+          description={t("projects.group.empty.description")}
         />
       </SectionCard>
     );
@@ -89,7 +91,7 @@ export function LeadProjects({ clientLeadId, initialProjects, noInitialLoad = fa
   const currentGroup = groupedProjects[activeGroupTab] || {};
 
   return (
-    <SectionCard title="المشاريع" noPadding>
+    <SectionCard title={t("projects.group.sectionTitle")} noPadding>
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tabs
           value={activeGroupTab}
@@ -131,7 +133,7 @@ export function LeadProjects({ clientLeadId, initialProjects, noInitialLoad = fa
           ))}
           {(!currentGroup.projects || currentGroup.projects.length === 0) && (
             <Typography variant="body2" color="text.secondary">
-              لا توجد مشاريع في هذه المجموعة
+              {t("projects.group.emptyInGroup")}
             </Typography>
           )}
         </Box>
@@ -144,7 +146,7 @@ export function LeadProjects({ clientLeadId, initialProjects, noInitialLoad = fa
         ) : (
           <Box display="flex" flexDirection="column" alignItems="center" py={6}>
             <Typography variant="h6" color="text.secondary">
-              لم يتم اختيار مشروع
+              {t("projects.group.noneSelected")}
             </Typography>
           </Box>
         )}

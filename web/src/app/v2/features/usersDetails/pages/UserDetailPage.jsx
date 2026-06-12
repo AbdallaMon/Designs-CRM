@@ -18,6 +18,7 @@ import { Box, Container } from "@mui/material";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
+import { useT } from "@/app/v2/lib/i18n";
 import {
   PageHeader,
   UrlTabs,
@@ -41,6 +42,7 @@ const RESIDUAL = PERMISSIONS.ADMIN_RESIDUAL;
 export function UserDetailPage({ userId }) {
   const { hasPermission, hasAnyPermission } = usePermission();
   const { user: authUser } = useAuth();
+  const { t } = useT();
 
   // The page is reachable for anyone who can view a profile (self) OR manage users (admin).
   const canViewProfile = hasPermission(P.PROFILE_VIEW);
@@ -69,22 +71,22 @@ export function UserDetailPage({ userId }) {
 
   // Permission-filtered tab set (same predicate gates the tab's content).
   const tabs = useMemo(() => {
-    const t = [{ key: "profile", label: "الملف الشخصي" }];
-    if (hasPermission(P.UPDATE)) t.push({ key: "account", label: "الحساب" });
-    if (hasPermission(P.MANAGE_ROLES)) t.push({ key: "roles", label: "الأدوار" });
+    const list = [{ key: "profile", label: t("usersDetails.tab.profile") }];
+    if (hasPermission(P.UPDATE)) list.push({ key: "account", label: t("usersDetails.tab.account") });
+    if (hasPermission(P.MANAGE_ROLES)) list.push({ key: "roles", label: t("usersDetails.tab.roles") });
     if (hasPermission(P.MANAGE_AUTO_ASSIGNMENTS))
-      t.push({ key: "assignments", label: "التعيينات التلقائية" });
+      list.push({ key: "assignments", label: t("usersDetails.tab.assignments") });
     if (
       hasAnyPermission([P.MANAGE_RESTRICTED_COUNTRIES, P.SET_MAX_LEADS, P.MANAGE_STAFF_EXTRA])
     )
-      t.push({ key: "settings", label: "الإعدادات" });
+      list.push({ key: "settings", label: t("usersDetails.tab.settings") });
     if (hasAnyPermission([P.VIEW_LOGS, P.VIEW_LAST_SEEN]))
-      t.push({ key: "activity", label: "النشاط" });
+      list.push({ key: "activity", label: t("usersDetails.tab.activity") });
     if (hasPermission(RESIDUAL.COMMISSION_VIEW))
-      t.push({ key: "commissions", label: "العمولات" });
-    return t;
+      list.push({ key: "commissions", label: t("usersDetails.tab.commissions") });
+    return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [t]);
 
   // A self-only viewer (no admin codes) sees just Profile — surface that as the partial-perm
   // experience (a calm single-tab profile, never a 403).
@@ -94,14 +96,14 @@ export function UserDetailPage({ userId }) {
     return (
       <Container maxWidth="md" sx={{ py: 6 }}>
         <EmptyState
-          title="هذا المستخدم غير متاح لصلاحياتك"
-          description="لا تملك صلاحية عرض هذا الملف."
+          title={t("usersDetails.enter.deniedTitle")}
+          description={t("usersDetails.enter.deniedDescription")}
         />
       </Container>
     );
   }
 
-  const headerTitle = profile?.name ? `${profile.name}` : "ملف المستخدم";
+  const headerTitle = profile?.name ? `${profile.name}` : t("usersDetails.header.fallback");
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -111,11 +113,11 @@ export function UserDetailPage({ userId }) {
         breadcrumbs={
           canList
             ? [
-                { label: "الإدارة" },
-                { label: "المستخدمون", href: "/v2/users" },
+                { label: t("usersDetails.breadcrumbs.admin") },
+                { label: t("usersDetails.breadcrumbs.users"), href: "/v2/users" },
                 { label: headerTitle },
               ]
-            : [{ label: "الملف الشخصي" }]
+            : [{ label: t("usersDetails.breadcrumbs.profile") }]
         }
       />
 
@@ -124,7 +126,7 @@ export function UserDetailPage({ userId }) {
       ) : isLoading && !profile ? (
         <LoadingState variant="detail" />
       ) : !profile ? (
-        <EmptyState title="الملف غير موجود" />
+        <EmptyState title={t("usersDetails.profileNotFound")} />
       ) : profileOnly ? (
         <Box>
           <ProfileTab profile={profile} onUpdated={refetch} />

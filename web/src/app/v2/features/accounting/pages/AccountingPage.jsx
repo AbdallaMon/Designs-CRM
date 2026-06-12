@@ -10,6 +10,7 @@
 import { useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Box, Container, Tab, Tabs, Typography } from "@mui/material";
+import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { ACCOUNTING_VIEWS } from "../config/accountingConstants.js";
@@ -36,6 +37,7 @@ const VIEW_PERMS = {
 };
 
 export function AccountingPage() {
+  const { t } = useT();
   const { hasPermission, hasAnyPermission } = usePermission();
   const router = useRouter();
   const pathname = usePathname();
@@ -61,7 +63,7 @@ export function AccountingPage() {
   if (!canAccess) {
     return (
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-        <Typography color="text.secondary">لا تملك صلاحية الوصول إلى قسم المحاسبة</Typography>
+        <Typography color="text.secondary">{t("accounting.page.denied")}</Typography>
       </Box>
     );
   }
@@ -92,7 +94,7 @@ export function AccountingPage() {
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Typography variant="h5" sx={{ mb: 2 }}>
-        المحاسبة
+        {t("accounting.page.title")}
       </Typography>
 
       <Tabs
@@ -103,7 +105,7 @@ export function AccountingPage() {
         sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}
       >
         {views.map((key) => (
-          <Tab key={key} value={key} label={ACCOUNTING_VIEWS[key]} />
+          <Tab key={key} value={key} label={t(`accounting.view.${key}`)} />
         ))}
       </Tabs>
 

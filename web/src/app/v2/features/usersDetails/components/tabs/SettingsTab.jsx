@@ -24,6 +24,7 @@ import {
 } from "@mui/material";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { useT } from "@/app/v2/lib/i18n";
 import {
   SectionCard,
   LoadingState,
@@ -39,6 +40,7 @@ const P = PERMISSIONS.USER;
 
 export function SettingsTab({ profile, capabilities, userId, onUpdated }) {
   const { hasPermission } = usePermission();
+  const { t } = useT();
   const caps = capabilities ?? {};
   const canCountries =
     hasPermission(P.MANAGE_RESTRICTED_COUNTRIES) && Boolean(caps.canManageRestrictedCountries);
@@ -50,8 +52,8 @@ export function SettingsTab({ profile, capabilities, userId, onUpdated }) {
     return (
       <PartialPermissionState
         denied
-        title="إعدادات المستخدم غير متاحة لصلاحياتك"
-        message="لا تملك صلاحية تعديل إعدادات هذا المستخدم."
+        title={t("usersDetails.settings.deniedTitle")}
+        message={t("usersDetails.settings.deniedMessage")}
       />
     );
   }
@@ -69,6 +71,7 @@ export function SettingsTab({ profile, capabilities, userId, onUpdated }) {
 
 // ── Restricted countries (lazy read) ────────────────────────────────────────────────
 function RestrictedCountriesBlock({ userId }) {
+  const { t } = useT();
   const { data, isLoading, error, refetch } = useLazyResource(
     () => usersService.getRestrictedCountries(userId),
     { deps: [userId] },
@@ -83,18 +86,18 @@ function RestrictedCountriesBlock({ userId }) {
   async function save() {
     const res = await runUsersMutation(
       () => usersService.updateRestrictedCountries(userId, { countries }),
-      { loading: "جاري حفظ الدول المقيدة...", setLoading: setSubmitting },
+      { loading: t("usersDetails.settings.countries.loading"), setLoading: setSubmitting },
     );
     if (res) refetch();
   }
 
   return (
     <SectionCard
-      title="الدول المقيّدة"
-      subtitle="الدول التي لا تُسنَد منها عملاء لهذا المستخدم."
+      title={t("usersDetails.settings.countries.title")}
+      subtitle={t("usersDetails.settings.countries.subtitle")}
       actions={
         <Button variant="contained" onClick={save} disabled={submitting || isLoading}>
-          حفظ
+          {t("usersDetails.settings.countries.save")}
         </Button>
       }
     >
@@ -115,7 +118,11 @@ function RestrictedCountriesBlock({ userId }) {
             ))
           }
           renderInput={(params) => (
-            <TextField {...params} label="الدول" placeholder="أضف دولة ثم اضغط Enter" />
+            <TextField
+              {...params}
+              label={t("usersDetails.settings.countries.field")}
+              placeholder={t("usersDetails.settings.countries.placeholder")}
+            />
           )}
         />
       )}
@@ -125,6 +132,7 @@ function RestrictedCountriesBlock({ userId }) {
 
 // ── Max leads / per-day ─────────────────────────────────────────────────────────────
 function MaxLeadsBlock({ profile, userId, onUpdated }) {
+  const { t } = useT();
   const [submitting, setSubmitting] = useState(false);
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
@@ -146,14 +154,14 @@ function MaxLeadsBlock({ profile, userId, onUpdated }) {
     if (String(values.maxLeadsCounts) !== String(profile?.maxLeadsCounts ?? "")) {
       const r = await runUsersMutation(
         () => usersService.setMaxLeads(userId, Number(values.maxLeadsCounts)),
-        { loading: "جاري تحديث الحد الأقصى...", setLoading: setSubmitting },
+        { loading: t("usersDetails.settings.maxLeads.loading"), setLoading: setSubmitting },
       );
       ok = ok || Boolean(r);
     }
     if (String(values.maxLeadCountPerDay) !== String(profile?.maxLeadCountPerDay ?? "")) {
       const r = await runUsersMutation(
         () => usersService.setMaxLeadsPerDay(userId, Number(values.maxLeadCountPerDay)),
-        { loading: "جاري تحديث الحد اليومي...", setLoading: setSubmitting },
+        { loading: t("usersDetails.settings.maxLeadsPerDay.loading"), setLoading: setSubmitting },
       );
       ok = ok || Boolean(r);
     }
@@ -161,18 +169,18 @@ function MaxLeadsBlock({ profile, userId, onUpdated }) {
   }
 
   return (
-    <SectionCard title="حدود العملاء">
+    <SectionCard title={t("usersDetails.settings.maxLeads.title")}>
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Stack spacing={2.5}>
           <Controller
             name="maxLeadsCounts"
             control={control}
-            rules={{ validate: (v) => v === "" || Number(v) >= 0 || "رقم غير سالب" }}
+            rules={{ validate: (v) => v === "" || Number(v) >= 0 || t("usersDetails.settings.maxLeads.validation.nonNegative") }}
             render={({ field, fieldState }) => (
               <TextField
                 {...field}
                 type="number"
-                label="الحد الأقصى للعملاء"
+                label={t("usersDetails.settings.maxLeads.field.max")}
                 fullWidth
                 error={Boolean(fieldState.error)}
                 helperText={fieldState.error?.message}
@@ -182,12 +190,12 @@ function MaxLeadsBlock({ profile, userId, onUpdated }) {
           <Controller
             name="maxLeadCountPerDay"
             control={control}
-            rules={{ validate: (v) => v === "" || Number(v) >= 0 || "رقم غير سالب" }}
+            rules={{ validate: (v) => v === "" || Number(v) >= 0 || t("usersDetails.settings.maxLeads.validation.nonNegative") }}
             render={({ field, fieldState }) => (
               <TextField
                 {...field}
                 type="number"
-                label="الحد الأقصى اليومي للعملاء"
+                label={t("usersDetails.settings.maxLeads.field.perDay")}
                 fullWidth
                 error={Boolean(fieldState.error)}
                 helperText={fieldState.error?.message}
@@ -196,7 +204,7 @@ function MaxLeadsBlock({ profile, userId, onUpdated }) {
           />
           <Box>
             <Button type="submit" variant="contained" disabled={submitting}>
-              حفظ
+              {t("usersDetails.settings.maxLeads.save")}
             </Button>
           </Box>
         </Stack>
@@ -207,6 +215,7 @@ function MaxLeadsBlock({ profile, userId, onUpdated }) {
 
 // ── Staff-extra flags (BE .strict(): only the two flags) ─────────────────────────────
 function StaffExtraBlock({ profile, userId, onUpdated }) {
+  const { t } = useT();
   const [isPrimary, setIsPrimary] = useState(Boolean(profile?.isPrimary));
   const [isSuperSales, setIsSuperSales] = useState(Boolean(profile?.isSuperSales));
   const [submitting, setSubmitting] = useState(false);
@@ -225,7 +234,7 @@ function StaffExtraBlock({ profile, userId, onUpdated }) {
     if (isPrimary !== Boolean(profile?.isPrimary)) flags.isPrimary = isPrimary;
     if (isSuperSales !== Boolean(profile?.isSuperSales)) flags.isSuperSales = isSuperSales;
     const res = await runUsersMutation(() => usersService.setStaffExtra(userId, flags), {
-      loading: "جاري تحديث بيانات الموظف...",
+      loading: t("usersDetails.settings.staffExtra.loading"),
       setLoading: setSubmitting,
     });
     if (res) onUpdated?.();
@@ -233,27 +242,27 @@ function StaffExtraBlock({ profile, userId, onUpdated }) {
 
   return (
     <SectionCard
-      title="إعدادات الموظف"
-      subtitle="صلاحيات إضافية لموظفي المبيعات."
+      title={t("usersDetails.settings.staffExtra.title")}
+      subtitle={t("usersDetails.settings.staffExtra.subtitle")}
       actions={
         <Button variant="contained" onClick={save} disabled={!dirty || submitting}>
-          حفظ
+          {t("usersDetails.settings.staffExtra.save")}
         </Button>
       }
     >
       <Stack>
         <FormControlLabel
           control={<Switch checked={isPrimary} onChange={(e) => setIsPrimary(e.target.checked)} />}
-          label="موظف أساسي"
+          label={t("usersDetails.settings.staffExtra.isPrimary")}
         />
         <FormControlLabel
           control={
             <Switch checked={isSuperSales} onChange={(e) => setIsSuperSales(e.target.checked)} />
           }
-          label="مبيعات أول"
+          label={t("usersDetails.settings.staffExtra.isSuperSales")}
         />
         <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
-          تُطبَّق هذه الإعدادات على موظفي المبيعات فقط؛ يتحقق الخادم من ذلك.
+          {t("usersDetails.settings.staffExtra.note")}
         </Typography>
       </Stack>
     </SectionCard>

@@ -14,6 +14,7 @@
 //   leads       → AdminLeadsOps       (LEAD_* / CLIENT_EDIT / TELEGRAM_MANAGE)
 //   fixed-data  → FixedDataView       (FIXED_DATA_MANAGE / MODEL_ARCHIVE)
 
+import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PartialPermissionState } from "@/app/v2/shared/components";
 import { Container } from "@mui/material";
@@ -25,16 +26,17 @@ import { AdminLeadsOps } from "../components/AdminLeadsOps.jsx";
 import { FixedDataView } from "../components/FixedDataView.jsx";
 import { ADMIN_SURFACES } from "../config/adminResidualConstants.js";
 
-// surface → { permission, title, render }.
+// surface → { titleKey, titleFallback, render }. The title is resolved with t() at render time.
 const SURFACE_CONFIG = {
-  projects: { title: "المشاريع (إدارة)", render: () => <AdminProjectsView /> },
-  commissions: { title: "العمولات", render: () => <CommissionsView /> },
-  reports: { title: "التقارير", render: () => <ReportsBuilder /> },
-  leads: { title: "عمليات العملاء المحتملين", render: () => <AdminLeadsOps /> },
-  "fixed-data": { title: "البيانات الثابتة", render: () => <FixedDataView /> },
+  projects: { titleKey: "adminResidual.surface.projects.title", titleFallback: "المشاريع (إدارة)", render: () => <AdminProjectsView /> },
+  commissions: { titleKey: "adminResidual.surface.commissions.title", titleFallback: "العمولات", render: () => <CommissionsView /> },
+  reports: { titleKey: "adminResidual.surface.reports.title", titleFallback: "التقارير", render: () => <ReportsBuilder /> },
+  leads: { titleKey: "adminResidual.surface.leads.title", titleFallback: "عمليات العملاء المحتملين", render: () => <AdminLeadsOps /> },
+  "fixed-data": { titleKey: "adminResidual.surface.fixedData.title", titleFallback: "البيانات الثابتة", render: () => <FixedDataView /> },
 };
 
 export function AdminResidualPage({ surface = "projects" }) {
+  const { t } = useT();
   const { hasPermission } = usePermission();
 
   const def = ADMIN_SURFACES.find((s) => s.key === surface);
@@ -47,20 +49,23 @@ export function AdminResidualPage({ surface = "projects" }) {
   if (!def || !cfg) {
     return (
       <Container maxWidth="md" sx={{ py: 6 }}>
-        <PartialPermissionState denied title="هذا القسم غير موجود" />
+        <PartialPermissionState denied title={t("adminResidual.page.notFound.title", "هذا القسم غير موجود")} />
       </Container>
     );
   }
 
   return (
-    <AdminShell active={surface} title={cfg.title}>
+    <AdminShell active={surface} title={t(cfg.titleKey, cfg.titleFallback)}>
       {allowed ? (
         cfg.render()
       ) : (
         <PartialPermissionState
           denied
-          title="هذا القسم غير متاح لصلاحياتك"
-          message="لا تملك صلاحية الوصول إلى هذا القسم من الإدارة. تواصل مع المسؤول إن كنت تظن أنه ينبغي أن تصل إليه."
+          title={t("adminResidual.page.denied.title", "هذا القسم غير متاح لصلاحياتك")}
+          message={t(
+            "adminResidual.page.denied.message",
+            "لا تملك صلاحية الوصول إلى هذا القسم من الإدارة. تواصل مع المسؤول إن كنت تظن أنه ينبغي أن تصل إليه.",
+          )}
         />
       )}
     </AdminShell>

@@ -21,6 +21,7 @@ import {
 import { MdExpandMore, MdAdd } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { useRequest } from "@/app/v2/hooks/useRequest";
+import { useT } from "@/app/v2/lib/i18n";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import {
   SectionCard, LoadingState, EmptyState, ErrorState,
@@ -37,6 +38,7 @@ const categoryLabel = (c) => c?.title ?? c?.name ?? c?.label ?? c?.key ?? `#${c?
 // A VERSA step's objection (question) + response (answer/clientResponse). The BE allows editing
 // label / question / answer / clientResponse; we surface objection (question) + response (answer).
 function StepEditor({ step, canManage, busy, onSave }) {
+  const { t } = useT();
   const [question, setQuestion] = useState(step.question ?? step.label ?? "");
   const [answer, setAnswer] = useState(step.answer ?? step.clientResponse ?? "");
 
@@ -55,7 +57,7 @@ function StepEditor({ step, canManage, busy, onSave }) {
         <TextField
           fullWidth
           size="small"
-          label="الاعتراض"
+          label={t("questions.versa.objectionLabel", "الاعتراض")}
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
           disabled={!canManage || busy}
@@ -65,7 +67,7 @@ function StepEditor({ step, canManage, busy, onSave }) {
           multiline
           minRows={2}
           size="small"
-          label="الرد"
+          label={t("questions.versa.responseLabel", "الرد")}
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
           disabled={!canManage || busy}
@@ -78,7 +80,7 @@ function StepEditor({ step, canManage, busy, onSave }) {
               onClick={() => onSave({ question, answer })}
               disabled={busy || !dirty}
             >
-              حفظ
+              {t("questions.versa.save", "حفظ")}
             </Button>
           </Box>
         )}
@@ -88,6 +90,7 @@ function StepEditor({ step, canManage, busy, onSave }) {
 }
 
 function CategoryAccordion({ clientLeadId, category, canManage, expanded, onToggle }) {
+  const { t } = useT();
   const [steps, setSteps] = useState(null); // null = not loaded yet
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -120,7 +123,10 @@ function CategoryAccordion({ clientLeadId, category, canManage, expanded, onTogg
   async function createVersa() {
     const res = await runQuestionsMutation(
       () => questionsService.createVersa(clientLeadId, category.id),
-      { loading: "جاري إنشاء معالجة الاعتراضات...", setLoading: setBusy },
+      {
+        loading: t("questions.versa.creatingVersa", "جاري إنشاء معالجة الاعتراضات..."),
+        setLoading: setBusy,
+      },
     );
     if (res) load();
   }
@@ -128,7 +134,7 @@ function CategoryAccordion({ clientLeadId, category, canManage, expanded, onTogg
   async function saveStep(stepId, { question, answer }) {
     const res = await runQuestionsMutation(
       () => questionsService.updateVersaStep(stepId, { question, answer }),
-      { loading: "جاري حفظ الخطوة...", setLoading: setBusy },
+      { loading: t("questions.versa.savingStep", "جاري حفظ الخطوة..."), setLoading: setBusy },
     );
     if (res) load();
   }
@@ -145,15 +151,22 @@ function CategoryAccordion({ clientLeadId, category, canManage, expanded, onTogg
           <ErrorState error={error} onRetry={load} resolver={questionsMessages} />
         ) : !steps?.length ? (
           <EmptyState
-            title="لا توجد خطوات معالجة"
+            title={t("questions.versa.noStepsTitle", "لا توجد خطوات معالجة")}
             description={
               canManage
-                ? "أنشئ معالجة الاعتراضات لهذه الفئة."
-                : "لم تُنشأ معالجة اعتراضات لهذه الفئة بعد."
+                ? t("questions.versa.noStepsManageDescription", "أنشئ معالجة الاعتراضات لهذه الفئة.")
+                : t(
+                    "questions.versa.noStepsDescription",
+                    "لم تُنشأ معالجة اعتراضات لهذه الفئة بعد.",
+                  )
             }
             action={
               canManage
-                ? { label: "إنشاء معالجة", onClick: createVersa, icon: <MdAdd /> }
+                ? {
+                    label: t("questions.versa.createVersa", "إنشاء معالجة"),
+                    onClick: createVersa,
+                    icon: <MdAdd />,
+                  }
                 : undefined
             }
           />
@@ -176,6 +189,7 @@ function CategoryAccordion({ clientLeadId, category, canManage, expanded, onTogg
 }
 
 export function VersaPanel({ clientLeadId }) {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canView = hasPermission(P.SESSION_VIEW);
   const canManage = hasPermission(P.VERSA_MANAGE);
@@ -195,10 +209,16 @@ export function VersaPanel({ clientLeadId }) {
 
   if (!canView) {
     return (
-      <SectionCard title="معالجة الاعتراضات (VERSA)">
+      <SectionCard title={t("questions.versa.title", "معالجة الاعتراضات (VERSA)")}>
         <EmptyState
-          title="لا تملك صلاحية عرض معالجة الاعتراضات"
-          description="تواصل مع المسؤول لمنحك صلاحية الاطلاع على VERSA لهذا العميل."
+          title={t(
+            "questions.versa.noViewPermissionTitle",
+            "لا تملك صلاحية عرض معالجة الاعتراضات",
+          )}
+          description={t(
+            "questions.versa.noViewPermissionDescription",
+            "تواصل مع المسؤول لمنحك صلاحية الاطلاع على VERSA لهذا العميل.",
+          )}
         />
       </SectionCard>
     );
@@ -206,15 +226,21 @@ export function VersaPanel({ clientLeadId }) {
 
   return (
     <SectionCard
-      title="معالجة الاعتراضات (VERSA)"
-      subtitle="اختر فئة لعرض الاعتراضات وردودها وتحريرها."
+      title={t("questions.versa.title", "معالجة الاعتراضات (VERSA)")}
+      subtitle={t("questions.versa.subtitle", "اختر فئة لعرض الاعتراضات وردودها وتحريرها.")}
     >
       {isLoading ? (
         <LoadingState variant="form" fields={3} />
       ) : error ? (
         <ErrorState error={error} onRetry={refetch} resolver={questionsMessages} />
       ) : categories.length === 0 ? (
-        <EmptyState title="لا توجد فئات" description="لم تُعرّف فئات معالجة الاعتراضات بعد." />
+        <EmptyState
+          title={t("questions.versa.noCategoriesTitle", "لا توجد فئات")}
+          description={t(
+            "questions.versa.noCategoriesDescription",
+            "لم تُعرّف فئات معالجة الاعتراضات بعد.",
+          )}
+        />
       ) : (
         <Box>
           {categories.map((c) => (

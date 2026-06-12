@@ -1,14 +1,482 @@
-// Per-feature UI dictionary stub: admin residual (reports, commissions, admin leads)
-//
-// COMPOSITION MODEL: one file per feature/area. Fill BOTH `ar` and `en` with the SAME keys,
-// namespaced under "adminResidual.*" (e.g. "adminResidual.title", "adminResidual.actions.create"). The barrel
-// (./index.js) deep-merges every stub's `ar` into one ar map and `en` into one en map, then
-// uiDictionary merges those on top of its core keys. You do NOT edit the barrel or uiDictionary —
-// just fill this file and call t("adminResidual.<key>") in the feature's components.
-//
-// CONTRACT: ar is the existing/authoritative wording; en is the additive translation. Keep keys
-// identical across ar and en. Arabic stays the default — an empty stub changes nothing.
+// Per-feature UI dictionary: admin residual (reports, commissions, admin leads, fixed-data,
+// admin projects). Keys namespaced under "adminResidual.*". The barrel (./index.js) deep-merges
+// every stub's `ar` into one ar map and `en` into one en map. ar = the existing/authoritative
+// Arabic wording (verbatim); en = the additive English translation. Same keys in both.
 
-export const ar = {};
+export const ar = {
+  // ── shell / surfaces (AdminShell, AdminResidualPage, adminResidualConstants) ────────────────
+  "adminResidual.group.label": "الإدارة",
+  "adminResidual.shell.noAccess.title": "قسم الإدارة غير متاح لصلاحياتك",
+  "adminResidual.shell.noAccess.message":
+    "لا تملك صلاحية الوصول إلى أي من أقسام الإدارة. تواصل مع المسؤول إن كنت تظن أنه ينبغي أن تصل إليها.",
 
-export const en = {};
+  "adminResidual.surface.projects.tab": "المشاريع",
+  "adminResidual.surface.commissions.tab": "العمولات",
+  "adminResidual.surface.reports.tab": "التقارير",
+  "adminResidual.surface.leads.tab": "عمليات العملاء",
+  "adminResidual.surface.fixedData.tab": "البيانات الثابتة",
+
+  "adminResidual.surface.projects.title": "المشاريع (إدارة)",
+  "adminResidual.surface.commissions.title": "العمولات",
+  "adminResidual.surface.reports.title": "التقارير",
+  "adminResidual.surface.leads.title": "عمليات العملاء المحتملين",
+  "adminResidual.surface.fixedData.title": "البيانات الثابتة",
+
+  "adminResidual.page.notFound.title": "هذا القسم غير موجود",
+  "adminResidual.page.denied.title": "هذا القسم غير متاح لصلاحياتك",
+  "adminResidual.page.denied.message":
+    "لا تملك صلاحية الوصول إلى هذا القسم من الإدارة. تواصل مع المسؤول إن كنت تظن أنه ينبغي أن تصل إليه.",
+
+  // ── admin leads ops (AdminLeadsOps) ────────────────────────────────────────────────────────
+  "adminResidual.leads.noTools.title": "لا توجد أدوات متاحة",
+  "adminResidual.leads.noTools.description": "لا تملك صلاحية أي من عمليات العملاء المحتملين.",
+  "adminResidual.leads.intro": "أدوات إدارية لإنشاء وتعديل العملاء المحتملين.",
+  "adminResidual.leads.addGroup.title": "إضافة عملاء",
+  "adminResidual.leads.advanced.title": "أدوات متقدمة (للمسؤولين التقنيين)",
+  "adminResidual.leads.dangerZone.title": "منطقة الحذف",
+  "adminResidual.leads.dangerZone.subtitle": "عمليات نهائية لا يمكن التراجع عنها.",
+  "adminResidual.leads.dangerZone.warning":
+    "العمليات في هذه المنطقة تؤثر على البيانات بشكل دائم. تأكّد قبل التنفيذ.",
+
+  // create lead card
+  "adminResidual.leads.create.title": "إنشاء عميل محتمل",
+  "adminResidual.leads.create.loading": "جاري إنشاء العميل المحتمل...",
+  "adminResidual.leads.create.field.name": "الاسم",
+  "adminResidual.leads.create.field.name.required": "الاسم مطلوب",
+  "adminResidual.leads.create.field.phone": "رقم الهاتف",
+  "adminResidual.leads.create.field.phone.required": "رقم الهاتف مطلوب",
+  "adminResidual.leads.create.field.email": "البريد الإلكتروني",
+  "adminResidual.leads.create.field.emirate": "الإمارة",
+  "adminResidual.leads.create.field.description": "ملاحظات",
+  "adminResidual.leads.create.submit": "إنشاء",
+
+  // field edit card
+  "adminResidual.leads.fieldEdit.title": "تعديل حقل ديناميكي",
+  "adminResidual.leads.fieldEdit.subtitle": "حدّث حقلًا واحدًا لعميل محتمل أو لعميل حسب المعرّف.",
+  "adminResidual.leads.fieldEdit.loading": "جاري تحديث الحقل...",
+  "adminResidual.leads.fieldEdit.target.lead": "حقل عميل محتمل (حسب معرّف العميل المحتمل)",
+  "adminResidual.leads.fieldEdit.target.client": "حقل عميل (حسب معرّف العميل)",
+  "adminResidual.leads.fieldEdit.field.target": "النوع",
+  "adminResidual.leads.fieldEdit.field.id": "المعرّف",
+  "adminResidual.leads.fieldEdit.field.id.required": "المعرّف مطلوب",
+  "adminResidual.leads.fieldEdit.field.fieldName": "اسم الحقل",
+  "adminResidual.leads.fieldEdit.field.fieldName.required": "اسم الحقل مطلوب",
+  "adminResidual.leads.fieldEdit.field.fieldName.placeholder": "مثال: name",
+  "adminResidual.leads.fieldEdit.field.value": "القيمة الجديدة",
+  "adminResidual.leads.fieldEdit.submit": "تحديث الحقل",
+
+  // telegram card
+  "adminResidual.leads.telegram.title": "تيليجرام (حسب العميل المحتمل)",
+  "adminResidual.leads.telegram.createLoading": "جاري إنشاء القناة...",
+  "adminResidual.leads.telegram.assignLoading": "جاري جدولة الإضافة...",
+  "adminResidual.leads.telegram.field.leadId": "معرّف العميل المحتمل",
+  "adminResidual.leads.telegram.field.userIds": "معرّفات المستخدمين (مفصولة بفواصل)",
+  "adminResidual.leads.telegram.field.userIds.placeholder": "مثال: 1, 2, 3",
+  "adminResidual.leads.telegram.createChannel": "إنشاء قناة",
+  "adminResidual.leads.telegram.assignUsers": "إضافة مستخدمين",
+
+  // delete lead card
+  "adminResidual.leads.delete.title": "حذف عميل محتمل",
+  "adminResidual.leads.delete.loading": "جاري حذف العميل المحتمل...",
+  "adminResidual.leads.delete.warning":
+    "الحذف نهائي ولا يمكن التراجع عنه. هذه العملية متاحة للمسؤول فقط.",
+  "adminResidual.leads.delete.field.id": "معرّف العميل المحتمل",
+  "adminResidual.leads.delete.field.id.required": "المعرّف مطلوب",
+  "adminResidual.leads.delete.submit": "حذف",
+
+  // ── bulk import (BulkImportCard) ───────────────────────────────────────────────────────────
+  "adminResidual.import.title": "استيراد العملاء المحتملين",
+  "adminResidual.import.subtitle":
+    "ارفع ملف Excel (.xlsx) لاستيراد دفعة من العملاء المحتملين.",
+  "adminResidual.import.loading": "جارٍ استيراد الملف...",
+  "adminResidual.import.pickFile": "اختيار ملف",
+  "adminResidual.import.submit": "استيراد",
+  "adminResidual.import.processing": "جارٍ معالجة الملف، قد تستغرق العملية بعض الوقت…",
+  "adminResidual.import.success.title": "تم استيراد الملف",
+  "adminResidual.import.success.message": "فيما يلي ملخّص نتيجة الاستيراد.",
+  "adminResidual.import.chip.imported": "تم الاستيراد: {x}",
+  "adminResidual.import.chip.skipped": "تم التخطّي: {x}",
+  "adminResidual.import.chip.errors": "أخطاء: {x}",
+  "adminResidual.import.errors.title": "صفوف بها أخطاء:",
+
+  // ── commissions (CommissionsView, CommissionDialog, commissionsColumns) ─────────────────────
+  "adminResidual.commissions.picker.title": "اختر الموظف",
+  "adminResidual.commissions.picker.subtitle":
+    "تُعرض العمولات لموظف واحد في كل مرة — أدخل معرّف الموظف ثم اعرض عمولاته.",
+  "adminResidual.commissions.field.userId": "معرّف الموظف",
+  "adminResidual.commissions.view": "عرض العمولات",
+  "adminResidual.commissions.add": "إضافة عمولة",
+  "adminResidual.commissions.editTooltip": "تعديل القيمة",
+  "adminResidual.commissions.noUser.title": "لم يتم اختيار موظف",
+  "adminResidual.commissions.noUser.description": "أدخل معرّف الموظف أعلاه لعرض عمولاته.",
+  "adminResidual.commissions.empty.title": "لا توجد عمولات",
+  "adminResidual.commissions.empty.description.manage":
+    "لا توجد عمولات لهذا الموظف بعد. أضف أول عمولة.",
+  "adminResidual.commissions.empty.description.readonly": "لا توجد عمولات لهذا الموظف.",
+  "adminResidual.commissions.column.id": "المعرّف",
+  "adminResidual.commissions.column.leadId": "العميل المحتمل",
+  "adminResidual.commissions.column.amount": "القيمة",
+  "adminResidual.commissions.column.reason": "السبب",
+  "adminResidual.commissions.column.createdAt": "التاريخ",
+  // dialog
+  "adminResidual.commissions.dialog.editTitle": "تعديل العمولة",
+  "adminResidual.commissions.dialog.createTitle": "إضافة عمولة",
+  "adminResidual.commissions.dialog.updateLoading": "جاري تحديث العمولة...",
+  "adminResidual.commissions.dialog.createLoading": "جاري إضافة العمولة...",
+  "adminResidual.commissions.dialog.field.userId": "معرّف الموظف",
+  "adminResidual.commissions.dialog.field.userId.required": "معرّف الموظف مطلوب",
+  "adminResidual.commissions.dialog.field.leadId": "معرّف العميل المحتمل",
+  "adminResidual.commissions.dialog.field.leadId.required": "معرّف العميل المحتمل مطلوب",
+  "adminResidual.commissions.dialog.field.reason": "سبب العمولة",
+  "adminResidual.commissions.dialog.field.reason.required": "سبب العمولة مطلوب",
+  "adminResidual.commissions.dialog.field.amount": "القيمة",
+  "adminResidual.commissions.dialog.field.amount.required": "قيمة العمولة مطلوبة",
+  "adminResidual.commissions.dialog.field.amount.invalid": "قيمة العمولة غير صحيحة",
+  "adminResidual.commissions.dialog.cancel": "إلغاء",
+  "adminResidual.commissions.dialog.save": "حفظ",
+  "adminResidual.commissions.dialog.add": "إضافة",
+
+  // ── admin projects (AdminProjectsView, CreateProjectGroupModal, adminProjectsColumns) ───────
+  "adminResidual.projects.createGroup": "إنشاء مجموعة مشاريع",
+  "adminResidual.projects.filter.search.label": "بحث",
+  "adminResidual.projects.filter.search.placeholder": "اسم العميل",
+  "adminResidual.projects.empty.title": "لا توجد مشاريع",
+  "adminResidual.projects.empty.description.create":
+    "لا توجد سجلات مطابقة. يمكنك إنشاء مجموعة مشاريع لعميل محتمل.",
+  "adminResidual.projects.empty.description.readonly":
+    "لا توجد سجلات مطابقة للتصفية الحالية.",
+  "adminResidual.projects.column.id": "المعرّف",
+  "adminResidual.projects.column.client": "العميل",
+  "adminResidual.projects.column.status": "الحالة",
+  "adminResidual.projects.column.projectsCount": "عدد المشاريع",
+  "adminResidual.projects.column.createdAt": "تاريخ الإنشاء",
+  // create group modal
+  "adminResidual.projects.dialog.title": "إنشاء مجموعة مشاريع",
+  "adminResidual.projects.dialog.loading": "جاري إنشاء مجموعة المشاريع...",
+  "adminResidual.projects.dialog.field.leadId": "معرّف العميل المحتمل",
+  "adminResidual.projects.dialog.field.leadId.required": "معرّف العميل المحتمل مطلوب",
+  "adminResidual.projects.dialog.field.title": "عنوان المجموعة",
+  "adminResidual.projects.dialog.field.title.required": "عنوان المجموعة مطلوب",
+  "adminResidual.projects.dialog.cancel": "إلغاء",
+  "adminResidual.projects.dialog.submit": "إنشاء",
+
+  // ── fixed data (FixedDataView, FixedDataDialog, fixedDataColumns) ───────────────────────────
+  "adminResidual.fixedData.title": "البيانات الثابتة",
+  "adminResidual.fixedData.subtitle": "القيم الثابتة المستخدمة في النماذج عبر النظام.",
+  "adminResidual.fixedData.add": "إضافة بيان",
+  "adminResidual.fixedData.delete.loading": "جاري حذف البيان...",
+  "adminResidual.fixedData.action.edit": "تعديل",
+  "adminResidual.fixedData.action.delete": "حذف",
+  "adminResidual.fixedData.empty.title": "لا توجد بيانات ثابتة",
+  "adminResidual.fixedData.empty.description.manage": "أضف أول بيان ثابت.",
+  "adminResidual.fixedData.empty.description.readonly": "لا توجد بيانات.",
+  "adminResidual.fixedData.column.id": "المعرّف",
+  "adminResidual.fixedData.column.title": "العنوان",
+  "adminResidual.fixedData.column.description": "الوصف",
+  // model archive card
+  "adminResidual.fixedData.archive.accordion.title": "أداة متقدمة: أرشفة سجل",
+  "adminResidual.fixedData.archive.intro": "فعّل أو ألغِ أرشفة سجلّ من النماذج المسموح بها.",
+  "adminResidual.fixedData.archive.warning":
+    "تعمل هذه الأداة على أي سجل حسب معرّفه — تأكّد من النموذج والمعرّف قبل التطبيق.",
+  "adminResidual.fixedData.archive.loading": "جاري تحديث حالة الأرشفة...",
+  "adminResidual.fixedData.archive.field.model": "النموذج",
+  "adminResidual.fixedData.archive.field.recordId": "معرّف السجل",
+  "adminResidual.fixedData.archive.archived": "مؤرشَف",
+  "adminResidual.fixedData.archive.notArchived": "غير مؤرشَف",
+  "adminResidual.fixedData.archive.submit": "تطبيق",
+  // dialog
+  "adminResidual.fixedData.dialog.editTitle": "تعديل بيان ثابت",
+  "adminResidual.fixedData.dialog.createTitle": "إضافة بيان ثابت",
+  "adminResidual.fixedData.dialog.updateLoading": "جاري تحديث البيان...",
+  "adminResidual.fixedData.dialog.createLoading": "جاري إضافة البيان...",
+  "adminResidual.fixedData.dialog.field.title": "العنوان",
+  "adminResidual.fixedData.dialog.field.title.required": "العنوان مطلوب",
+  "adminResidual.fixedData.dialog.field.description": "الوصف (اختياري)",
+  "adminResidual.fixedData.dialog.cancel": "إلغاء",
+  "adminResidual.fixedData.dialog.save": "حفظ",
+  "adminResidual.fixedData.dialog.add": "إضافة",
+
+  // ── reports (ReportsBuilder, report constants) ─────────────────────────────────────────────
+  "adminResidual.reports.type.title": "نوع التقرير",
+  "adminResidual.reports.type.lead": "تقرير العملاء المحتملين",
+  "adminResidual.reports.type.staff": "تقرير الموظفين",
+  "adminResidual.reports.filters.title": "عوامل التصفية",
+  "adminResidual.reports.filters.startDate": "من تاريخ",
+  "adminResidual.reports.filters.endDate": "إلى تاريخ",
+  "adminResidual.reports.filters.emirates": "الإمارات",
+  "adminResidual.reports.filters.statuses": "الحالات",
+  "adminResidual.reports.filters.clientIds": "معرّفات العملاء (مفصولة بفواصل)",
+  "adminResidual.reports.filters.clientIds.placeholder": "مثال: 12, 34, 56",
+  "adminResidual.reports.filters.userIds": "معرّفات الموظفين (مفصولة بفواصل)",
+  "adminResidual.reports.filters.userIds.placeholder": "مثال: 1, 2, 3",
+  "adminResidual.reports.preview.submit": "معاينة",
+  "adminResidual.reports.preview.loading": "جارٍ إعداد المعاينة...",
+  "adminResidual.reports.preview.title": "المعاينة",
+  "adminResidual.reports.export.excel": "تصدير Excel",
+  "adminResidual.reports.export.pdf": "تصدير PDF",
+  "adminResidual.reports.export.loading": "جارٍ تجهيز الملف...",
+  "adminResidual.reports.export.success": "تم تجهيز الملف",
+  "adminResidual.reports.export.error": "تعذّر تجهيز الملف، حاول مرة أخرى",
+  "adminResidual.reports.preview.empty.title": "لا توجد معاينة بعد",
+  "adminResidual.reports.preview.empty.description":
+    "اضبط عوامل التصفية ثم اضغط «معاينة» لعرض بيانات التقرير قبل التصدير.",
+  "adminResidual.reports.preview.note":
+    "تُصدَّر الملفات من بيانات المعاينة المعروضة أعلاه دون تعديل.",
+
+  // ── shared report enum labels (emirates / lead statuses / archive models) ───────────────────
+  "adminResidual.emirate.DUBAI": "دبي",
+  "adminResidual.emirate.ABU_DHABI": "أبوظبي",
+  "adminResidual.emirate.SHARJAH": "الشارقة",
+  "adminResidual.emirate.AJMAN": "عجمان",
+  "adminResidual.emirate.UMM_AL_QUWAIN": "أم القيوين",
+  "adminResidual.emirate.RAS_AL_KHAIMAH": "رأس الخيمة",
+  "adminResidual.emirate.FUJAIRAH": "الفجيرة",
+
+  "adminResidual.leadStatus.NEW": "جديد",
+  "adminResidual.leadStatus.IN_PROGRESS": "قيد العمل",
+  "adminResidual.leadStatus.INTERESTED": "مهتم",
+  "adminResidual.leadStatus.NEEDS_IDENTIFIED": "تم تحديد الاحتياج",
+  "adminResidual.leadStatus.NEGOTIATING": "تفاوض",
+  "adminResidual.leadStatus.FINALIZED": "مكتمل",
+  "adminResidual.leadStatus.REJECTED": "مرفوض",
+  "adminResidual.leadStatus.ON_HOLD": "معلّق",
+  "adminResidual.leadStatus.CONVERTED": "تم التحويل",
+
+  "adminResidual.archiveModel.clientLead": "عميل محتمل",
+  "adminResidual.archiveModel.client": "عميل",
+  "adminResidual.archiveModel.project": "مشروع",
+};
+
+export const en = {
+  // ── shell / surfaces ───────────────────────────────────────────────────────────────────────
+  "adminResidual.group.label": "Administration",
+  "adminResidual.shell.noAccess.title": "The administration area is not available for your permissions",
+  "adminResidual.shell.noAccess.message":
+    "You don't have permission to access any of the administration sections. Contact the administrator if you think you should have access.",
+
+  "adminResidual.surface.projects.tab": "Projects",
+  "adminResidual.surface.commissions.tab": "Commissions",
+  "adminResidual.surface.reports.tab": "Reports",
+  "adminResidual.surface.leads.tab": "Client operations",
+  "adminResidual.surface.fixedData.tab": "Fixed data",
+
+  "adminResidual.surface.projects.title": "Projects (admin)",
+  "adminResidual.surface.commissions.title": "Commissions",
+  "adminResidual.surface.reports.title": "Reports",
+  "adminResidual.surface.leads.title": "Lead operations",
+  "adminResidual.surface.fixedData.title": "Fixed data",
+
+  "adminResidual.page.notFound.title": "This section does not exist",
+  "adminResidual.page.denied.title": "This section is not available for your permissions",
+  "adminResidual.page.denied.message":
+    "You don't have permission to access this administration section. Contact the administrator if you think you should have access.",
+
+  // ── admin leads ops ────────────────────────────────────────────────────────────────────────
+  "adminResidual.leads.noTools.title": "No tools available",
+  "adminResidual.leads.noTools.description": "You don't have permission for any lead operations.",
+  "adminResidual.leads.intro": "Administrative tools to create and edit leads.",
+  "adminResidual.leads.addGroup.title": "Add leads",
+  "adminResidual.leads.advanced.title": "Advanced tools (for technical admins)",
+  "adminResidual.leads.dangerZone.title": "Danger zone",
+  "adminResidual.leads.dangerZone.subtitle": "Final operations that cannot be undone.",
+  "adminResidual.leads.dangerZone.warning":
+    "Operations in this zone affect data permanently. Confirm before executing.",
+
+  "adminResidual.leads.create.title": "Create lead",
+  "adminResidual.leads.create.loading": "Creating lead...",
+  "adminResidual.leads.create.field.name": "Name",
+  "adminResidual.leads.create.field.name.required": "Name is required",
+  "adminResidual.leads.create.field.phone": "Phone number",
+  "adminResidual.leads.create.field.phone.required": "Phone number is required",
+  "adminResidual.leads.create.field.email": "Email",
+  "adminResidual.leads.create.field.emirate": "Emirate",
+  "adminResidual.leads.create.field.description": "Notes",
+  "adminResidual.leads.create.submit": "Create",
+
+  "adminResidual.leads.fieldEdit.title": "Edit dynamic field",
+  "adminResidual.leads.fieldEdit.subtitle": "Update a single field for a lead or a client by id.",
+  "adminResidual.leads.fieldEdit.loading": "Updating field...",
+  "adminResidual.leads.fieldEdit.target.lead": "Lead field (by lead id)",
+  "adminResidual.leads.fieldEdit.target.client": "Client field (by client id)",
+  "adminResidual.leads.fieldEdit.field.target": "Type",
+  "adminResidual.leads.fieldEdit.field.id": "Id",
+  "adminResidual.leads.fieldEdit.field.id.required": "Id is required",
+  "adminResidual.leads.fieldEdit.field.fieldName": "Field name",
+  "adminResidual.leads.fieldEdit.field.fieldName.required": "Field name is required",
+  "adminResidual.leads.fieldEdit.field.fieldName.placeholder": "e.g. name",
+  "adminResidual.leads.fieldEdit.field.value": "New value",
+  "adminResidual.leads.fieldEdit.submit": "Update field",
+
+  "adminResidual.leads.telegram.title": "Telegram (by lead)",
+  "adminResidual.leads.telegram.createLoading": "Creating channel...",
+  "adminResidual.leads.telegram.assignLoading": "Scheduling addition...",
+  "adminResidual.leads.telegram.field.leadId": "Lead id",
+  "adminResidual.leads.telegram.field.userIds": "User ids (comma separated)",
+  "adminResidual.leads.telegram.field.userIds.placeholder": "e.g. 1, 2, 3",
+  "adminResidual.leads.telegram.createChannel": "Create channel",
+  "adminResidual.leads.telegram.assignUsers": "Add users",
+
+  "adminResidual.leads.delete.title": "Delete lead",
+  "adminResidual.leads.delete.loading": "Deleting lead...",
+  "adminResidual.leads.delete.warning":
+    "Deletion is final and cannot be undone. This operation is available to the administrator only.",
+  "adminResidual.leads.delete.field.id": "Lead id",
+  "adminResidual.leads.delete.field.id.required": "Id is required",
+  "adminResidual.leads.delete.submit": "Delete",
+
+  // ── bulk import ────────────────────────────────────────────────────────────────────────────
+  "adminResidual.import.title": "Import leads",
+  "adminResidual.import.subtitle": "Upload an Excel file (.xlsx) to import a batch of leads.",
+  "adminResidual.import.loading": "Importing file...",
+  "adminResidual.import.pickFile": "Choose file",
+  "adminResidual.import.submit": "Import",
+  "adminResidual.import.processing": "Processing the file, this may take a while…",
+  "adminResidual.import.success.title": "File imported",
+  "adminResidual.import.success.message": "Below is a summary of the import result.",
+  "adminResidual.import.chip.imported": "Imported: {x}",
+  "adminResidual.import.chip.skipped": "Skipped: {x}",
+  "adminResidual.import.chip.errors": "Errors: {x}",
+  "adminResidual.import.errors.title": "Rows with errors:",
+
+  // ── commissions ────────────────────────────────────────────────────────────────────────────
+  "adminResidual.commissions.picker.title": "Choose employee",
+  "adminResidual.commissions.picker.subtitle":
+    "Commissions are shown for one employee at a time — enter the employee id then view their commissions.",
+  "adminResidual.commissions.field.userId": "Employee id",
+  "adminResidual.commissions.view": "View commissions",
+  "adminResidual.commissions.add": "Add commission",
+  "adminResidual.commissions.editTooltip": "Edit amount",
+  "adminResidual.commissions.noUser.title": "No employee selected",
+  "adminResidual.commissions.noUser.description": "Enter the employee id above to view their commissions.",
+  "adminResidual.commissions.empty.title": "No commissions",
+  "adminResidual.commissions.empty.description.manage":
+    "No commissions for this employee yet. Add the first commission.",
+  "adminResidual.commissions.empty.description.readonly": "No commissions for this employee.",
+  "adminResidual.commissions.column.id": "Id",
+  "adminResidual.commissions.column.leadId": "Lead",
+  "adminResidual.commissions.column.amount": "Amount",
+  "adminResidual.commissions.column.reason": "Reason",
+  "adminResidual.commissions.column.createdAt": "Date",
+  "adminResidual.commissions.dialog.editTitle": "Edit commission",
+  "adminResidual.commissions.dialog.createTitle": "Add commission",
+  "adminResidual.commissions.dialog.updateLoading": "Updating commission...",
+  "adminResidual.commissions.dialog.createLoading": "Adding commission...",
+  "adminResidual.commissions.dialog.field.userId": "Employee id",
+  "adminResidual.commissions.dialog.field.userId.required": "Employee id is required",
+  "adminResidual.commissions.dialog.field.leadId": "Lead id",
+  "adminResidual.commissions.dialog.field.leadId.required": "Lead id is required",
+  "adminResidual.commissions.dialog.field.reason": "Commission reason",
+  "adminResidual.commissions.dialog.field.reason.required": "Commission reason is required",
+  "adminResidual.commissions.dialog.field.amount": "Amount",
+  "adminResidual.commissions.dialog.field.amount.required": "Commission amount is required",
+  "adminResidual.commissions.dialog.field.amount.invalid": "Commission amount is invalid",
+  "adminResidual.commissions.dialog.cancel": "Cancel",
+  "adminResidual.commissions.dialog.save": "Save",
+  "adminResidual.commissions.dialog.add": "Add",
+
+  // ── admin projects ─────────────────────────────────────────────────────────────────────────
+  "adminResidual.projects.createGroup": "Create project group",
+  "adminResidual.projects.filter.search.label": "Search",
+  "adminResidual.projects.filter.search.placeholder": "Client name",
+  "adminResidual.projects.empty.title": "No projects",
+  "adminResidual.projects.empty.description.create":
+    "No matching records. You can create a project group for a lead.",
+  "adminResidual.projects.empty.description.readonly": "No records match the current filter.",
+  "adminResidual.projects.column.id": "Id",
+  "adminResidual.projects.column.client": "Client",
+  "adminResidual.projects.column.status": "Status",
+  "adminResidual.projects.column.projectsCount": "Project count",
+  "adminResidual.projects.column.createdAt": "Created at",
+  "adminResidual.projects.dialog.title": "Create project group",
+  "adminResidual.projects.dialog.loading": "Creating project group...",
+  "adminResidual.projects.dialog.field.leadId": "Lead id",
+  "adminResidual.projects.dialog.field.leadId.required": "Lead id is required",
+  "adminResidual.projects.dialog.field.title": "Group title",
+  "adminResidual.projects.dialog.field.title.required": "Group title is required",
+  "adminResidual.projects.dialog.cancel": "Cancel",
+  "adminResidual.projects.dialog.submit": "Create",
+
+  // ── fixed data ─────────────────────────────────────────────────────────────────────────────
+  "adminResidual.fixedData.title": "Fixed data",
+  "adminResidual.fixedData.subtitle": "Fixed values used across the system's forms.",
+  "adminResidual.fixedData.add": "Add item",
+  "adminResidual.fixedData.delete.loading": "Deleting item...",
+  "adminResidual.fixedData.action.edit": "Edit",
+  "adminResidual.fixedData.action.delete": "Delete",
+  "adminResidual.fixedData.empty.title": "No fixed data",
+  "adminResidual.fixedData.empty.description.manage": "Add the first fixed item.",
+  "adminResidual.fixedData.empty.description.readonly": "No data.",
+  "adminResidual.fixedData.column.id": "Id",
+  "adminResidual.fixedData.column.title": "Title",
+  "adminResidual.fixedData.column.description": "Description",
+  "adminResidual.fixedData.archive.accordion.title": "Advanced tool: archive a record",
+  "adminResidual.fixedData.archive.intro": "Archive or unarchive a record from the allowed models.",
+  "adminResidual.fixedData.archive.warning":
+    "This tool acts on any record by its id — confirm the model and id before applying.",
+  "adminResidual.fixedData.archive.loading": "Updating archive status...",
+  "adminResidual.fixedData.archive.field.model": "Model",
+  "adminResidual.fixedData.archive.field.recordId": "Record id",
+  "adminResidual.fixedData.archive.archived": "Archived",
+  "adminResidual.fixedData.archive.notArchived": "Not archived",
+  "adminResidual.fixedData.archive.submit": "Apply",
+  "adminResidual.fixedData.dialog.editTitle": "Edit fixed item",
+  "adminResidual.fixedData.dialog.createTitle": "Add fixed item",
+  "adminResidual.fixedData.dialog.updateLoading": "Updating item...",
+  "adminResidual.fixedData.dialog.createLoading": "Adding item...",
+  "adminResidual.fixedData.dialog.field.title": "Title",
+  "adminResidual.fixedData.dialog.field.title.required": "Title is required",
+  "adminResidual.fixedData.dialog.field.description": "Description (optional)",
+  "adminResidual.fixedData.dialog.cancel": "Cancel",
+  "adminResidual.fixedData.dialog.save": "Save",
+  "adminResidual.fixedData.dialog.add": "Add",
+
+  // ── reports ────────────────────────────────────────────────────────────────────────────────
+  "adminResidual.reports.type.title": "Report type",
+  "adminResidual.reports.type.lead": "Leads report",
+  "adminResidual.reports.type.staff": "Staff report",
+  "adminResidual.reports.filters.title": "Filters",
+  "adminResidual.reports.filters.startDate": "From date",
+  "adminResidual.reports.filters.endDate": "To date",
+  "adminResidual.reports.filters.emirates": "Emirates",
+  "adminResidual.reports.filters.statuses": "Statuses",
+  "adminResidual.reports.filters.clientIds": "Client ids (comma separated)",
+  "adminResidual.reports.filters.clientIds.placeholder": "e.g. 12, 34, 56",
+  "adminResidual.reports.filters.userIds": "Employee ids (comma separated)",
+  "adminResidual.reports.filters.userIds.placeholder": "e.g. 1, 2, 3",
+  "adminResidual.reports.preview.submit": "Preview",
+  "adminResidual.reports.preview.loading": "Preparing preview...",
+  "adminResidual.reports.preview.title": "Preview",
+  "adminResidual.reports.export.excel": "Export Excel",
+  "adminResidual.reports.export.pdf": "Export PDF",
+  "adminResidual.reports.export.loading": "Preparing file...",
+  "adminResidual.reports.export.success": "File ready",
+  "adminResidual.reports.export.error": "Could not prepare the file, try again",
+  "adminResidual.reports.preview.empty.title": "No preview yet",
+  "adminResidual.reports.preview.empty.description":
+    "Set the filters then press «Preview» to view the report data before exporting.",
+  "adminResidual.reports.preview.note":
+    "Files are exported from the preview data shown above without modification.",
+
+  // ── shared report enum labels ──────────────────────────────────────────────────────────────
+  "adminResidual.emirate.DUBAI": "Dubai",
+  "adminResidual.emirate.ABU_DHABI": "Abu Dhabi",
+  "adminResidual.emirate.SHARJAH": "Sharjah",
+  "adminResidual.emirate.AJMAN": "Ajman",
+  "adminResidual.emirate.UMM_AL_QUWAIN": "Umm Al Quwain",
+  "adminResidual.emirate.RAS_AL_KHAIMAH": "Ras Al Khaimah",
+  "adminResidual.emirate.FUJAIRAH": "Fujairah",
+
+  "adminResidual.leadStatus.NEW": "New",
+  "adminResidual.leadStatus.IN_PROGRESS": "In progress",
+  "adminResidual.leadStatus.INTERESTED": "Interested",
+  "adminResidual.leadStatus.NEEDS_IDENTIFIED": "Needs identified",
+  "adminResidual.leadStatus.NEGOTIATING": "Negotiating",
+  "adminResidual.leadStatus.FINALIZED": "Finalized",
+  "adminResidual.leadStatus.REJECTED": "Rejected",
+  "adminResidual.leadStatus.ON_HOLD": "On hold",
+  "adminResidual.leadStatus.CONVERTED": "Converted",
+
+  "adminResidual.archiveModel.clientLead": "Lead",
+  "adminResidual.archiveModel.client": "Client",
+  "adminResidual.archiveModel.project": "Project",
+};

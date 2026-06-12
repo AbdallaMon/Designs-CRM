@@ -18,11 +18,13 @@ import {
   TextField,
 } from "@mui/material";
 import { MdSwapVert } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { accountingService } from "../accounting.service.js";
 import { runAccountingMutation } from "../accounting.mutations.js";
 import { PAYMENT_LEVELS } from "../config/accountingConstants.js";
 
 export function ChangePaymentLevelDialog({ payment, onChanged }) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [level, setLevel] = useState(payment.paymentLevel ?? "LEVEL_1");
   const [submitting, setSubmitting] = useState(false);
@@ -30,7 +32,7 @@ export function ChangePaymentLevelDialog({ payment, onChanged }) {
   async function handleSubmit() {
     const res = await runAccountingMutation(
       () => accountingService.changeStatus(payment.id, { newPaymentLevel: level }),
-      { loading: "جاري تغيير المستوى...", setLoading: setSubmitting },
+      { loading: t("accounting.changeLevel.loading"), setLoading: setSubmitting },
     );
     if (res) {
       onChanged?.(res.data);
@@ -41,15 +43,17 @@ export function ChangePaymentLevelDialog({ payment, onChanged }) {
   return (
     <>
       <Button variant="outlined" size="small" startIcon={<MdSwapVert />} onClick={() => setOpen(true)}>
-        تغيير المستوى
+        {t("accounting.changeLevel.button")}
       </Button>
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>تغيير مستوى الدفعة #{payment.id}</DialogTitle>
+        <DialogTitle>
+          {t("accounting.changeLevel.title").replace("{id}", String(payment.id))}
+        </DialogTitle>
         <DialogContent dividers>
           <TextField
             select
             fullWidth
-            label="مستوى الدفعة"
+            label={t("accounting.changeLevel.field")}
             value={level}
             onChange={(e) => setLevel(e.target.value)}
             sx={{ mt: 1 }}
@@ -62,9 +66,9 @@ export function ChangePaymentLevelDialog({ payment, onChanged }) {
           </TextField>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)}>إلغاء</Button>
+          <Button onClick={() => setOpen(false)}>{t("accounting.action.cancel")}</Button>
           <Button variant="contained" disabled={submitting} onClick={handleSubmit}>
-            حفظ
+            {t("accounting.action.save")}
           </Button>
         </DialogActions>
       </Dialog>

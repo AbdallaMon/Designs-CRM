@@ -16,6 +16,7 @@ import Link from "next/link";
 import { Alert, Box, Button, CircularProgress, Container, Tab, Tabs } from "@mui/material";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { useT } from "@/app/v2/lib/i18n";
 import { PageHeader } from "@/app/v2/shared/components";
 import { projectsService } from "../../projects/projects.service.js";
 import { PROJECT_TYPE_LABELS } from "../../projects/config/projectsConstants.js";
@@ -24,6 +25,7 @@ import { UpdatesList } from "../../projects/components/updates/UpdatesList.jsx";
 
 export function ProjectDetailsPage({ projectId }) {
   const { hasPermission } = usePermission();
+  const { t } = useT();
   const canView = hasPermission(PERMISSIONS.PROJECT.VIEW);
   const canViewUpdates = hasPermission(PERMISSIONS.UPDATE.LIST);
 
@@ -81,11 +83,11 @@ export function ProjectDetailsPage({ projectId }) {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="info" sx={{ mb: 2 }}>
-          هذا المشروع غير متاح أو لا تملك صلاحية عرضه.
+          {t("projectsDetails.notFound")}
         </Alert>
         <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
           <Button variant="outlined" onClick={() => window.history.back()}>
-            رجوع
+            {t("projectsDetails.back")}
           </Button>
         </Box>
       </Box>
@@ -97,12 +99,12 @@ export function ProjectDetailsPage({ projectId }) {
   // lead crumb links back to the lead hub so the project is never a dead-end. No extra fetch.
   const leadId = project.clientLeadId;
   const leadName = project.clientLead?.client?.name;
-  const projectLabel = PROJECT_TYPE_LABELS[project.type] || "المشروع";
+  const projectLabel = PROJECT_TYPE_LABELS[project.type] || t("projectsDetails.label.project");
   const breadcrumbs = [
-    { label: "الإنتاج" },
-    { label: "المشاريع", href: "/v2/projects" },
+    { label: t("projectsDetails.label.production") },
+    { label: t("projectsDetails.label.projects"), href: "/v2/projects" },
     ...(leadId != null
-      ? [{ label: `${leadName || "العميل"} #${leadId}`, href: `/v2/leads/${leadId}` }]
+      ? [{ label: `${leadName || t("projectsDetails.label.client")} #${leadId}`, href: `/v2/leads/${leadId}` }]
       : []),
     { label: `${projectLabel} #${project.id}` },
   ];
@@ -117,9 +119,9 @@ export function ProjectDetailsPage({ projectId }) {
 
       <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
         <Tabs value={active}>
-          <Tab value="overview" label="نظرة عامة" component={Link} href={hrefForTab("overview")} scroll={false} />
+          <Tab value="overview" label={t("projectsDetails.tab.overview")} component={Link} href={hrefForTab("overview")} scroll={false} />
           {canViewUpdates && (
-            <Tab value="updates" label="التحديثات" component={Link} href={hrefForTab("updates")} scroll={false} />
+            <Tab value="updates" label={t("projectsDetails.tab.updates")} component={Link} href={hrefForTab("updates")} scroll={false} />
           )}
         </Tabs>
       </Box>

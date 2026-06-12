@@ -6,6 +6,7 @@
 // the token-resolved `session`. Single-language Arabic / RTL.
 
 import { Box, Chip, Stack, Typography } from "@mui/material";
+import { useT } from "@/app/v2/lib/i18n";
 import { SectionCard } from "@/app/v2/shared/components";
 import { readPickListLabel, PICK_LIST_MODELS } from "../../config/imageSessionsConstants.js";
 
@@ -14,6 +15,7 @@ function labelOf(model, row) {
 }
 
 export function SelectionSummary({ session }) {
+  const { t } = useT();
   if (!session) return null;
 
   const colorLabel = session.colorPattern
@@ -28,35 +30,35 @@ export function SelectionSummary({ session }) {
   if (!hasAny) return null;
 
   return (
-    <SectionCard title="اختياراتك حتى الآن">
+    <SectionCard title={t("imageSessions.public.summary.title", "اختياراتك حتى الآن")}>
       <Stack spacing={1.5}>
         {spaces.length > 0 && (
-          <Row title="المساحات">
+          <Row title={t("imageSessions.public.summary.spaces", "المساحات")}>
             {spaces.map((s, i) => (
               <Chip key={i} size="small" label={labelOf(PICK_LIST_MODELS.SPACE, s.space || s)} />
             ))}
           </Row>
         )}
         {colorLabel && (
-          <Row title="الألوان">
+          <Row title={t("imageSessions.public.summary.colors", "الألوان")}>
             <Chip size="small" color="primary" label={colorLabel} />
           </Row>
         )}
         {materials.length > 0 && (
-          <Row title="الخامات">
+          <Row title={t("imageSessions.public.summary.materials", "الخامات")}>
             {materials.map((m, i) => (
               <Chip key={i} size="small" label={labelOf(PICK_LIST_MODELS.MATERIAL, m.material || m)} />
             ))}
           </Row>
         )}
         {styleLabel && (
-          <Row title="الطراز">
+          <Row title={t("imageSessions.public.summary.style", "الطراز")}>
             <Chip size="small" color="primary" label={styleLabel} />
           </Row>
         )}
         {imagesCount > 0 && (
-          <Row title="الصور">
-            <Chip size="small" label={`${imagesCount} صورة مختارة`} />
+          <Row title={t("imageSessions.public.summary.images", "الصور")}>
+            <Chip size="small" label={t("imageSessions.public.summary.imagesCount", "{count} صورة مختارة").replace("{count}", imagesCount)} />
           </Row>
         )}
       </Stack>

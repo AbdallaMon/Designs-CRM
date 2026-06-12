@@ -24,10 +24,12 @@ import dayjs from "dayjs";
 import { useOverlay } from "@/app/v2/hooks/useOverlay";
 import { useUpload } from "@/app/v2/hooks/useUpload";
 import { UploadOverlay } from "@/app/v2/shared/components/feedback/UploadOverlay";
+import { useT } from "@/app/v2/lib/i18n";
 import { accountingService } from "../accounting.service.js";
 import { runAccountingMutation } from "../accounting.mutations.js";
 
 export function PayPaymentDialog({ payment, onPaid }) {
+  const { t } = useT();
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -61,7 +63,7 @@ export function PayPaymentDialog({ payment, onPaid }) {
           issuedDate: values.issuedDate,
           file: fileUrl,
         }),
-      { loading: "جاري تسجيل الدفعة...", setLoading: setSubmitting },
+      { loading: t("accounting.pay.loading"), setLoading: setSubmitting },
     );
     if (res) {
       onPaid?.(res.data);
@@ -72,7 +74,7 @@ export function PayPaymentDialog({ payment, onPaid }) {
   return (
     <>
       <Button variant="outlined" size="small" startIcon={<MdPayments />} onClick={() => setOpen(true)}>
-        دفع
+        {t("accounting.pay.button")}
       </Button>
 
       <UploadOverlay
@@ -84,7 +86,7 @@ export function PayPaymentDialog({ payment, onPaid }) {
       />
 
       <Dialog open={open} onClose={close} fullWidth maxWidth="xs">
-        <DialogTitle>دفعة رقم #{payment.id}</DialogTitle>
+        <DialogTitle>{t("accounting.pay.title").replace("{id}", String(payment.id))}</DialogTitle>
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <DialogContent dividers>
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -92,17 +94,17 @@ export function PayPaymentDialog({ payment, onPaid }) {
                 name="amount"
                 control={control}
                 rules={{
-                  required: "المبلغ مطلوب",
+                  required: t("accounting.validation.amountRequired"),
                   validate: (v) => {
                     const n = Number(v);
-                    return (Number.isFinite(n) && n > 0) || "يجب أن يكون المبلغ رقماً موجباً";
+                    return (Number.isFinite(n) && n > 0) || t("accounting.validation.amountPositive");
                   },
                 }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
                     type="number"
-                    label="المبلغ المراد دفعه"
+                    label={t("accounting.pay.amount")}
                     fullWidth
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}
@@ -112,12 +114,12 @@ export function PayPaymentDialog({ payment, onPaid }) {
               <Controller
                 name="issuedDate"
                 control={control}
-                rules={{ required: "تاريخ الدفع مطلوب" }}
+                rules={{ required: t("accounting.validation.paymentDateRequired") }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
                     type="date"
-                    label="تاريخ الدفع"
+                    label={t("accounting.pay.date")}
                     fullWidth
                     InputLabelProps={{ shrink: true }}
                     error={Boolean(fieldState.error)}
@@ -126,18 +128,21 @@ export function PayPaymentDialog({ payment, onPaid }) {
                 )}
               />
               <Button component="label" variant="text" size="small" startIcon={<MdAttachFile />}>
-                {file ? file.name : "إرفاق إيصال (اختياري)"}
+                {file ? file.name : t("accounting.pay.attach")}
                 <input type="file" hidden onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
               </Button>
               <Typography variant="caption" color="text.secondary">
-                المبلغ المتبقي: {payment.amountLeft ?? payment.amount}
+                {t("accounting.pay.remaining").replace(
+                  "{amount}",
+                  String(payment.amountLeft ?? payment.amount),
+                )}
               </Typography>
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={close}>إلغاء</Button>
+            <Button onClick={close}>{t("accounting.action.cancel")}</Button>
             <Button type="submit" variant="contained" disabled={submitting}>
-              دفع
+              {t("accounting.pay.button")}
             </Button>
           </DialogActions>
         </form>

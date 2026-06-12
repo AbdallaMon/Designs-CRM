@@ -43,6 +43,7 @@ import { FiCalendar, FiClock, FiLink, FiPlus, FiTrash2, FiUser } from "react-ico
 import apiFetch from "@/app/v2/lib/api/ApiFetch";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
+import { useT } from "@/app/v2/lib/i18n";
 import { projectsService } from "../projects.service.js";
 import { runProjectMutation } from "../projects.mutations.js";
 
@@ -57,6 +58,7 @@ export function toMiddayUTC(value, tz = DUBAI_TZ) {
 }
 
 function CreateDeliveryDialog({ projectId, open, onClose, onCreated }) {
+  const { t } = useT();
   const [name, setName] = useState("");
   const [days, setDays] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -74,7 +76,7 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreated }) {
     const deliveryAtUtc = toMiddayUTC(value, DUBAI_TZ);
     const res = await runProjectMutation(
       () => projectsService.createDelivery({ projectId, deliveryAt: deliveryAtUtc, name }),
-      { loading: "جاري الإضافة...", setLoading: setSubmitting },
+      { loading: t("projects.delivery.loading.add"), setLoading: setSubmitting },
     );
     if (res) {
       onClose();
@@ -87,20 +89,20 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreated }) {
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={1}>
           <FiCalendar />
-          <span>موعد تسليم جديد</span>
+          <span>{t("projects.delivery.newTitle")}</span>
         </Stack>
       </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2} sx={{ pt: 1 }}>
           <TextField
-            label="الاسم"
+            label={t("projects.delivery.name")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             fullWidth
             size="small"
           />
           <TextField
-            label="عدد الأيام من اليوم"
+            label={t("projects.delivery.daysFromToday")}
             type="number"
             value={days}
             onChange={(e) => setDays(e.target.value)}
@@ -109,16 +111,19 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreated }) {
             slotProps={{ htmlInput: { min: 0, step: 1 } }}
           />
           <Typography variant="body2" color="text.secondary">
-            موعد التسليم: {dayjs().add(Number(days) || 0, "day").format("YYYY-MM-DD")}
+            {t("projects.delivery.deliveryDate").replace(
+              "{value}",
+              dayjs().add(Number(days) || 0, "day").format("YYYY-MM-DD"),
+            )}
           </Typography>
         </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={submitting}>
-          إلغاء
+          {t("projects.delivery.cancel")}
         </Button>
         <Button onClick={handleSubmit} disabled={submitting} variant="contained">
-          {submitting ? "جاري الحفظ..." : "حفظ"}
+          {submitting ? t("projects.delivery.saving") : t("projects.delivery.save")}
         </Button>
       </DialogActions>
     </Dialog>
@@ -126,6 +131,7 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreated }) {
 }
 
 function LinkMeetingDialog({ open, onClose, clientLeadId, deliveryId, onLinked }) {
+  const { t } = useT();
   const [loading, setLoading] = useState(false);
   const [meetings, setMeetings] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -155,7 +161,7 @@ function LinkMeetingDialog({ open, onClose, clientLeadId, deliveryId, onLinked }
     if (!selectedId) return;
     const res = await runProjectMutation(
       () => projectsService.linkDeliveryMeeting(deliveryId, { meetingReminderId: selectedId }),
-      { loading: "جاري ربط الاجتماع...", setLoading: setSubmitting },
+      { loading: t("projects.delivery.loading.link"), setLoading: setSubmitting },
     );
     if (res) {
       onClose();
@@ -168,7 +174,7 @@ function LinkMeetingDialog({ open, onClose, clientLeadId, deliveryId, onLinked }
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={1}>
           <FiLink />
-          <span>ربط التسليم باجتماع</span>
+          <span>{t("projects.delivery.linkTitle")}</span>
         </Stack>
       </DialogTitle>
       <DialogContent dividers>
@@ -177,7 +183,7 @@ function LinkMeetingDialog({ open, onClose, clientLeadId, deliveryId, onLinked }
             <CircularProgress />
           </Stack>
         ) : meetings.length === 0 ? (
-          <Typography color="text.secondary">لا توجد اجتماعات لهذا العميل.</Typography>
+          <Typography color="text.secondary">{t("projects.delivery.noMeetings")}</Typography>
         ) : (
           <RadioGroup
             value={selectedId || ""}
@@ -198,10 +204,10 @@ function LinkMeetingDialog({ open, onClose, clientLeadId, deliveryId, onLinked }
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={submitting}>
-          إلغاء
+          {t("projects.delivery.cancel")}
         </Button>
         <Button disabled={!selectedId || submitting} onClick={handleConfirm} variant="contained">
-          ربط
+          {t("projects.delivery.link")}
         </Button>
       </DialogActions>
     </Dialog>
@@ -212,6 +218,7 @@ export default function DeliverySchedulesPanel({ project }) {
   const projectId = project?.id;
   const clientLeadId = project?.clientLeadId;
   const { hasPermission } = usePermission();
+  const { t } = useT();
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState([]);
   const [openCreate, setOpenCreate] = useState(false);
@@ -239,7 +246,7 @@ export default function DeliverySchedulesPanel({ project }) {
 
   const handleDelete = async (row) => {
     const res = await runProjectMutation(() => projectsService.deleteDelivery(row.id), {
-      loading: "جاري الحذف...",
+      loading: t("projects.delivery.loading.delete"),
     });
     if (res) await reload();
   };
@@ -249,11 +256,11 @@ export default function DeliverySchedulesPanel({ project }) {
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1.5}>
         <Stack direction="row" spacing={1} alignItems="center">
           <FiClock />
-          <Typography variant="h6">مواعيد التسليم</Typography>
+          <Typography variant="h6">{t("projects.delivery.sectionTitle")}</Typography>
         </Stack>
         {canCreate && (
           <Button variant="contained" startIcon={<FiPlus />} onClick={() => setOpenCreate(true)}>
-            موعد جديد
+            {t("projects.delivery.newButton")}
           </Button>
         )}
       </Stack>
@@ -265,7 +272,7 @@ export default function DeliverySchedulesPanel({ project }) {
           <CircularProgress />
         </Stack>
       ) : rows.length === 0 ? (
-        <Typography color="text.secondary">لا توجد مواعيد تسليم بعد.</Typography>
+        <Typography color="text.secondary">{t("projects.delivery.empty")}</Typography>
       ) : (
         <List sx={{ bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2 }}>
           {rows.map((row) => {
@@ -278,10 +285,10 @@ export default function DeliverySchedulesPanel({ project }) {
                   secondaryAction={
                     <Stack direction="row" spacing={1}>
                       {row.meetingReminderId ? (
-                        <Chip size="small" color="primary" label={`اجتماع #${row.meetingReminderId}`} />
+                        <Chip size="small" color="primary" label={t("projects.delivery.meetingChip").replace("{id}", row.meetingReminderId)} />
                       ) : (
                         canLink && (
-                          <Tooltip title="ربط باجتماع">
+                          <Tooltip title={t("projects.delivery.linkTooltip")}>
                             <IconButton
                               color="primary"
                               onClick={() => setLinkDialog({ open: true, deliveryId: row.id })}
@@ -292,7 +299,7 @@ export default function DeliverySchedulesPanel({ project }) {
                         )
                       )}
                       {canDelete && (
-                        <Tooltip title="حذف موعد التسليم">
+                        <Tooltip title={t("projects.delivery.deleteTooltip")}>
                           <IconButton color="error" onClick={() => handleDelete(row)}>
                             <FiTrash2 />
                           </IconButton>
@@ -322,7 +329,7 @@ export default function DeliverySchedulesPanel({ project }) {
                       <Stack direction="row" spacing={0.7} alignItems="center">
                         <FiUser />
                         <Typography variant="body2">
-                          أنشأه: <b>{row.createdBy?.name}</b>
+                          {t("projects.delivery.createdBy")} <b>{row.createdBy?.name}</b>
                         </Typography>
                       </Stack>
                     }

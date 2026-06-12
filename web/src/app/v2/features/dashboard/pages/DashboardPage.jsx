@@ -30,7 +30,8 @@ import { usePermission } from "@/app/v2/hooks/usePermission";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { PageHeader, PartialPermissionState } from "@/app/v2/shared/components";
-import { DASHBOARD_COPY } from "../config/dashboardConstants.js";
+import { useT } from "@/app/v2/lib/i18n";
+import { DASHBOARD_COPY_KEYS } from "../config/dashboardConstants.js";
 import { useDashboardScope } from "../hooks/useDashboardScope.js";
 import { DashboardFilters } from "../components/DashboardFilters.jsx";
 import { ActionQueue } from "../components/ActionQueue.jsx";
@@ -56,6 +57,7 @@ function roleView(user) {
 export function DashboardPage() {
   const { hasPermission } = usePermission();
   const { user } = useAuth();
+  const { t } = useT();
   const canView = hasPermission(P.VIEW);
 
   const scope = useDashboardScope();
@@ -66,7 +68,7 @@ export function DashboardPage() {
     // Calm full-screen notice instead of a bare 403 (UX plan §2).
     return (
       <Container maxWidth="xl" sx={{ py: 6 }}>
-        <PartialPermissionState denied title={DASHBOARD_COPY.denied} />
+        <PartialPermissionState denied title={t(DASHBOARD_COPY_KEYS.denied)} />
       </Container>
     );
   }
@@ -75,7 +77,7 @@ export function DashboardPage() {
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      <PageHeader title={DASHBOARD_COPY.title} subtitle={DASHBOARD_COPY.subtitle} />
+      <PageHeader title={t(DASHBOARD_COPY_KEYS.title)} subtitle={t(DASHBOARD_COPY_KEYS.subtitle)} />
 
       <DashboardFilters
         adminTier={scope.adminTier}

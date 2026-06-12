@@ -16,11 +16,17 @@
 
 import { Container, Box, Tabs, Tab } from "@mui/material";
 import NextLink from "next/link";
+import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PageHeader, PartialPermissionState } from "@/app/v2/shared/components";
-import { ADMIN_SURFACES, ADMIN_GROUP_LABEL } from "../config/adminResidualConstants.js";
+import {
+  ADMIN_SURFACES,
+  ADMIN_GROUP_LABEL_KEY,
+  ADMIN_GROUP_LABEL_FALLBACK,
+} from "../config/adminResidualConstants.js";
 
 export function AdminShell({ active, title, subtitle, primaryAction, children }) {
+  const { t } = useT();
   const { hasPermission } = usePermission();
 
   // The surfaces this user may see, in display order — same gate as the page + the side-nav.
@@ -32,8 +38,11 @@ export function AdminShell({ active, title, subtitle, primaryAction, children })
       <Container maxWidth="md" sx={{ py: 6 }}>
         <PartialPermissionState
           denied
-          title="قسم الإدارة غير متاح لصلاحياتك"
-          message="لا تملك صلاحية الوصول إلى أي من أقسام الإدارة. تواصل مع المسؤول إن كنت تظن أنه ينبغي أن تصل إليها."
+          title={t("adminResidual.shell.noAccess.title", "قسم الإدارة غير متاح لصلاحياتك")}
+          message={t(
+            "adminResidual.shell.noAccess.message",
+            "لا تملك صلاحية الوصول إلى أي من أقسام الإدارة. تواصل مع المسؤول إن كنت تظن أنه ينبغي أن تصل إليها.",
+          )}
         />
       </Container>
     );
@@ -46,9 +55,12 @@ export function AdminShell({ active, title, subtitle, primaryAction, children })
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <PageHeader
-        title={title ?? activeSurface?.label}
+        title={title ?? (activeSurface ? t(activeSurface.labelKey, activeSurface.labelFallback) : undefined)}
         subtitle={subtitle}
-        breadcrumbs={[{ label: ADMIN_GROUP_LABEL }, { label: activeSurface?.label }]}
+        breadcrumbs={[
+          { label: t(ADMIN_GROUP_LABEL_KEY, ADMIN_GROUP_LABEL_FALLBACK) },
+          { label: activeSurface ? t(activeSurface.labelKey, activeSurface.labelFallback) : undefined },
+        ]}
         primaryAction={primaryAction}
       />
 
@@ -63,7 +75,7 @@ export function AdminShell({ active, title, subtitle, primaryAction, children })
           <Tab
             key={s.key}
             value={s.key}
-            label={s.label}
+            label={t(s.labelKey, s.labelFallback)}
             component={NextLink}
             href={s.href}
             scroll={false}

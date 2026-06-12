@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import { Box, Grid, Paper, Typography } from "@mui/material";
 import { MdAttachMoney, MdMoney, MdTrendingDown, MdTrendingUp } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { accountingService } from "../accounting.service.js";
@@ -47,6 +48,7 @@ function StatCard({ title, value, description, icon, color }) {
 }
 
 export function IncomeOutcomeSummary() {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canView = hasPermission(P.SUMMARY_VIEW);
   const [data, setData] = useState(null);
@@ -73,30 +75,30 @@ export function IncomeOutcomeSummary() {
     <Box sx={{ mb: 4 }}>
       <Grid container spacing={3}>
         <StatCard
-          title="دخل الشهر الحالي"
+          title={t("accounting.summary.currentMonthIncome")}
           value={data?.currentMonthIncome}
-          description={`إجمالي الدخل لـ ${period}`}
+          description={t("accounting.summary.currentMonthIncomeDesc").replace("{period}", period)}
           icon={<MdTrendingUp size={26} color="#2e7d32" />}
           color={{ bg: "#e8f5e9", border: "#2e7d32", text: "#2e7d32", value: "#1b5e20" }}
         />
         <StatCard
-          title="إجمالي الدخل التراكمي"
+          title={t("accounting.summary.totalIncome")}
           value={data?.totalIncome}
-          description="إجمالي الدخل لكل الفترات"
+          description={t("accounting.summary.totalIncomeDesc")}
           icon={<MdAttachMoney size={26} color="#388e3c" />}
           color={{ bg: "#f1f8e9", border: "#388e3c", text: "#388e3c", value: "#1b5e20" }}
         />
         <StatCard
-          title="مصروفات الشهر الحالي"
+          title={t("accounting.summary.currentMonthOutcome")}
           value={data?.currentMonthOutcome}
-          description={`إجمالي المصروفات لـ ${period}`}
+          description={t("accounting.summary.currentMonthOutcomeDesc").replace("{period}", period)}
           icon={<MdTrendingDown size={26} color="#d32f2f" />}
           color={{ bg: "#ffebee", border: "#d32f2f", text: "#d32f2f", value: "#b71c1c" }}
         />
         <StatCard
-          title="إجمالي المصروفات التراكمي"
+          title={t("accounting.summary.totalOutcome")}
           value={data?.totalOutcome}
-          description="إجمالي المصروفات لكل الفترات"
+          description={t("accounting.summary.totalOutcomeDesc")}
           icon={<MdMoney size={26} color="#c62828" />}
           color={{ bg: "#fbe9e7", border: "#c62828", text: "#c62828", value: "#b71c1c" }}
         />

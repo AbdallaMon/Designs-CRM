@@ -30,13 +30,14 @@ import {
   MdArchive,
   MdExpandMore,
 } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { DataTablePage, SectionCard } from "@/app/v2/shared/components";
 import { utilitiesService } from "@/app/v2/features/utilities/utilities.service.js";
 import { adminResidualService } from "../adminResidual.service.js";
 import { runAdminResidualMutation } from "../adminResidual.mutations.js";
-import { fixedDataColumns } from "../config/fixedDataColumns.js";
+import { buildFixedDataColumns } from "../config/fixedDataColumns.js";
 import { adminResidualMessages } from "../config/adminResidualMessages.js";
 import { ARCHIVE_MODEL_OPTIONS } from "../config/adminResidualConstants.js";
 import { FixedDataDialog } from "./FixedDataDialog.jsx";
@@ -44,9 +45,11 @@ import { FixedDataDialog } from "./FixedDataDialog.jsx";
 const P = PERMISSIONS.ADMIN_RESIDUAL;
 
 export function FixedDataView() {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canManage = hasPermission(P.FIXED_DATA_MANAGE);
   const canArchive = hasPermission(P.MODEL_ARCHIVE);
+  const fixedDataColumns = buildFixedDataColumns(t);
 
   const [items, setItems] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -87,7 +90,7 @@ export function FixedDataView() {
   async function onDelete(row) {
     const res = await runAdminResidualMutation(
       () => adminResidualService.deleteFixedData(row.id),
-      { loading: "جاري حذف البيان..." },
+      { loading: t("adminResidual.fixedData.delete.loading", "جاري حذف البيان...") },
     );
     if (res) fetchList();
   }
@@ -96,12 +99,12 @@ export function FixedDataView() {
     if (!canManage) return null;
     return (
       <>
-        <Tooltip title="تعديل">
+        <Tooltip title={t("adminResidual.fixedData.action.edit", "تعديل")}>
           <IconButton size="small" color="primary" onClick={() => openEdit(row)}>
             <MdEdit />
           </IconButton>
         </Tooltip>
-        <Tooltip title="حذف">
+        <Tooltip title={t("adminResidual.fixedData.action.delete", "حذف")}>
           <IconButton size="small" color="error" onClick={() => onDelete(row)}>
             <MdDelete />
           </IconButton>
@@ -113,12 +116,12 @@ export function FixedDataView() {
   return (
     <Stack spacing={3}>
       <SectionCard
-        title="البيانات الثابتة"
-        subtitle="القيم الثابتة المستخدمة في النماذج عبر النظام."
+        title={t("adminResidual.fixedData.title", "البيانات الثابتة")}
+        subtitle={t("adminResidual.fixedData.subtitle", "القيم الثابتة المستخدمة في النماذج عبر النظام.")}
         actions={
           canManage ? (
             <Button variant="contained" color="primary" startIcon={<MdAdd />} onClick={openCreate}>
-              إضافة بيان
+              {t("adminResidual.fixedData.add", "إضافة بيان")}
             </Button>
           ) : null
         }
@@ -138,9 +141,13 @@ export function FixedDataView() {
             getRowKey={(row) => row.id}
             renderRowActions={canManage ? renderRowActions : undefined}
             empty={{
-              title: "لا توجد بيانات ثابتة",
-              description: canManage ? "أضف أول بيان ثابت." : "لا توجد بيانات.",
-              action: canManage ? { label: "إضافة بيان", onClick: openCreate } : undefined,
+              title: t("adminResidual.fixedData.empty.title", "لا توجد بيانات ثابتة"),
+              description: canManage
+                ? t("adminResidual.fixedData.empty.description.manage", "أضف أول بيان ثابت.")
+                : t("adminResidual.fixedData.empty.description.readonly", "لا توجد بيانات."),
+              action: canManage
+                ? { label: t("adminResidual.fixedData.add", "إضافة بيان"), onClick: openCreate }
+                : undefined,
             }}
           />
         </Box>
@@ -152,7 +159,7 @@ export function FixedDataView() {
             <Stack direction="row" spacing={1} alignItems="center">
               <MdArchive />
               <Typography variant="subtitle1" component="h2">
-                أداة متقدمة: أرشفة سجل
+                {t("adminResidual.fixedData.archive.accordion.title", "أداة متقدمة: أرشفة سجل")}
               </Typography>
             </Stack>
           </AccordionSummary>
@@ -180,6 +187,7 @@ export function FixedDataView() {
 
 // ── generic model-archive toggle (allow-listed `model` on the BE) ────────────────────────────
 function ModelArchiveCard() {
+  const { t } = useT();
   const [model, setModel] = useState(ARCHIVE_MODEL_OPTIONS[0].value);
   const [id, setId] = useState("");
   const [isArchived, setIsArchived] = useState(true);
@@ -191,17 +199,20 @@ function ModelArchiveCard() {
     if (!recordId) return;
     await runAdminResidualMutation(
       () => adminResidualService.archiveModel(recordId, { model, isArchived }),
-      { loading: "جاري تحديث حالة الأرشفة...", setLoading: setSubmitting },
+      { loading: t("adminResidual.fixedData.archive.loading", "جاري تحديث حالة الأرشفة..."), setLoading: setSubmitting },
     );
   }
 
   return (
     <Box>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-        فعّل أو ألغِ أرشفة سجلّ من النماذج المسموح بها.
+        {t("adminResidual.fixedData.archive.intro", "فعّل أو ألغِ أرشفة سجلّ من النماذج المسموح بها.")}
       </Typography>
       <Alert severity="warning" sx={{ mb: 2 }}>
-        تعمل هذه الأداة على أي سجل حسب معرّفه — تأكّد من النموذج والمعرّف قبل التطبيق.
+        {t(
+          "adminResidual.fixedData.archive.warning",
+          "تعمل هذه الأداة على أي سجل حسب معرّفه — تأكّد من النموذج والمعرّف قبل التطبيق.",
+        )}
       </Alert>
       <Box component="form" onSubmit={onSubmit} noValidate>
         <Stack
@@ -213,21 +224,21 @@ function ModelArchiveCard() {
           <TextField
             select
             size="small"
-            label="النموذج"
+            label={t("adminResidual.fixedData.archive.field.model", "النموذج")}
             value={model}
             onChange={(e) => setModel(e.target.value)}
             sx={{ minWidth: 200 }}
           >
             {ARCHIVE_MODEL_OPTIONS.map((o) => (
               <MenuItem key={o.value} value={o.value}>
-                {o.label}
+                {t(o.labelKey, o.labelFallback)}
               </MenuItem>
             ))}
           </TextField>
           <TextField
             size="small"
             type="number"
-            label="معرّف السجل"
+            label={t("adminResidual.fixedData.archive.field.recordId", "معرّف السجل")}
             value={id}
             onChange={(e) => setId(e.target.value)}
             sx={{ minWidth: 160 }}
@@ -236,7 +247,11 @@ function ModelArchiveCard() {
             control={
               <Switch checked={isArchived} onChange={(e) => setIsArchived(e.target.checked)} />
             }
-            label={isArchived ? "مؤرشَف" : "غير مؤرشَف"}
+            label={
+              isArchived
+                ? t("adminResidual.fixedData.archive.archived", "مؤرشَف")
+                : t("adminResidual.fixedData.archive.notArchived", "غير مؤرشَف")
+            }
           />
           <Button
             type="submit"
@@ -245,7 +260,7 @@ function ModelArchiveCard() {
             startIcon={<MdArchive />}
             disabled={submitting}
           >
-            تطبيق
+            {t("adminResidual.fixedData.archive.submit", "تطبيق")}
           </Button>
         </Stack>
       </Box>

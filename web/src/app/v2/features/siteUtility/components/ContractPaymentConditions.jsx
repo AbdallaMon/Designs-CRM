@@ -28,6 +28,7 @@ import {
   Typography,
 } from "@mui/material";
 import { FiEdit2, FiPlus, FiRefreshCw, FiTrash2 } from "react-icons/fi";
+import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { useContractPaymentConditions } from "../hooks/useContractPaymentConditions.js";
@@ -35,6 +36,7 @@ import { CONDITION_TYPE_OPTIONS } from "../config/siteUtilityConstants.js";
 
 // ── Create / edit dialog ───────────────────────────────────────────────────
 function ConditionFormDialog({ open, onClose, initialData, onSubmit }) {
+  const { t } = useT();
   const isEdit = !!initialData?.id;
   const [conditionType, setConditionType] = useState("");
   const [condition, setCondition] = useState("");
@@ -80,14 +82,20 @@ function ConditionFormDialog({ open, onClose, initialData, onSubmit }) {
 
   return (
     <Dialog open={open} onClose={saving ? undefined : onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{isEdit ? "تعديل شرط الدفع" : "إنشاء شرط دفع"}</DialogTitle>
+      <DialogTitle>
+        {isEdit
+          ? t("siteUtility.conditions.dialog.editTitle")
+          : t("siteUtility.conditions.dialog.createTitle")}
+      </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
           <FormControl fullWidth>
-            <InputLabel id="condition-type-label">النوع</InputLabel>
+            <InputLabel id="condition-type-label">
+              {t("siteUtility.conditions.field.type")}
+            </InputLabel>
             <Select
               labelId="condition-type-label"
-              label="النوع"
+              label={t("siteUtility.conditions.field.type")}
               value={conditionType}
               disabled={isEdit}
               onChange={(e) => {
@@ -104,10 +112,12 @@ function ConditionFormDialog({ open, onClose, initialData, onSubmit }) {
           </FormControl>
 
           <FormControl fullWidth disabled={!conditionType || isEdit}>
-            <InputLabel id="condition-label">الشرط</InputLabel>
+            <InputLabel id="condition-label">
+              {t("siteUtility.conditions.field.condition")}
+            </InputLabel>
             <Select
               labelId="condition-label"
-              label="الشرط"
+              label={t("siteUtility.conditions.field.condition")}
               value={condition}
               disabled={isEdit}
               onChange={(e) => setCondition(e.target.value)}
@@ -121,29 +131,35 @@ function ConditionFormDialog({ open, onClose, initialData, onSubmit }) {
           </FormControl>
 
           <TextField
-            label="الاسم (عربي)"
+            label={t("siteUtility.conditions.field.labelAr")}
             value={labelAr}
             onChange={(e) => setLabelAr(e.target.value)}
             fullWidth
           />
           <TextField
-            label="الاسم (إنجليزي)"
+            label={t("siteUtility.conditions.field.labelEn")}
             value={labelEn}
             onChange={(e) => setLabelEn(e.target.value)}
             fullWidth
           />
 
           <Typography variant="caption" color="text.secondary">
-            ملاحظة: (النوع، الشرط، الاسم العربي، الاسم الإنجليزي) يجب أن تكون فريدة معًا.
+            {t("siteUtility.conditions.uniqueNote")}
           </Typography>
         </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={saving}>
-          إلغاء
+          {t("siteUtility.action.cancel")}
         </Button>
         <Button onClick={submit} disabled={!canSave || saving} variant="contained">
-          {saving ? <CircularProgress size={18} /> : isEdit ? "حفظ" : "إنشاء"}
+          {saving ? (
+            <CircularProgress size={18} />
+          ) : isEdit ? (
+            t("siteUtility.action.save")
+          ) : (
+            t("siteUtility.action.create")
+          )}
         </Button>
       </DialogActions>
     </Dialog>
@@ -152,6 +168,7 @@ function ConditionFormDialog({ open, onClose, initialData, onSubmit }) {
 
 // ── Delete confirm dialog ──────────────────────────────────────────────────
 function DeleteConfirmDialog({ open, row, onClose, onConfirm }) {
+  const { t } = useT();
   const [deleting, setDeleting] = useState(false);
   const confirm = async () => {
     setDeleting(true);
@@ -161,18 +178,21 @@ function DeleteConfirmDialog({ open, row, onClose, onConfirm }) {
   };
   return (
     <Dialog open={open} onClose={deleting ? undefined : onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>حذف شرط الدفع</DialogTitle>
+      <DialogTitle>{t("siteUtility.conditions.delete.title")}</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          هل أنت متأكد من حذف &quot;{row?.labelAr}&quot;؟
+          {t("siteUtility.conditions.delete.confirm").replace(
+            "{label}",
+            row?.labelAr ?? "",
+          )}
         </DialogContentText>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={deleting}>
-          إلغاء
+          {t("siteUtility.action.cancel")}
         </Button>
         <Button onClick={confirm} color="error" variant="contained" disabled={deleting}>
-          {deleting ? <CircularProgress size={18} /> : "حذف"}
+          {deleting ? <CircularProgress size={18} /> : t("siteUtility.action.delete")}
         </Button>
       </DialogActions>
     </Dialog>
@@ -188,6 +208,7 @@ function DeleteConfirmDialog({ open, row, onClose, onConfirm }) {
  * that would 409. Single-language Arabic RTL.
  */
 export default function ContractPaymentConditions() {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canList = hasPermission(PERMISSIONS.SITE_UTILITY.PAYMENT_CONDITION_LIST);
   const canCreate = hasPermission(PERMISSIONS.SITE_UTILITY.PAYMENT_CONDITION_CREATE);
@@ -217,7 +238,7 @@ export default function ContractPaymentConditions() {
     return (
       <Box sx={{ py: 2 }}>
         <Typography color="text.secondary">
-          لا تملك صلاحية عرض شروط دفع العقود.
+          {t("siteUtility.conditions.denied")}
         </Typography>
       </Box>
     );
@@ -231,7 +252,7 @@ export default function ContractPaymentConditions() {
         alignItems="center"
         mb={2}
       >
-        <Typography variant="h6">شروط دفع العقود</Typography>
+        <Typography variant="h6">{t("siteUtility.conditions.title")}</Typography>
         <Stack direction="row" spacing={1}>
           <Button
             variant="outlined"
@@ -239,11 +260,11 @@ export default function ContractPaymentConditions() {
             onClick={refetch}
             disabled={loading}
           >
-            تحديث
+            {t("siteUtility.action.refresh")}
           </Button>
           {canCreate && (
             <Button variant="contained" startIcon={<FiPlus />} onClick={onCreateClick}>
-              جديد
+              {t("siteUtility.action.new")}
             </Button>
           )}
         </Stack>
@@ -255,12 +276,12 @@ export default function ContractPaymentConditions() {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell width={180}>النوع</TableCell>
-              <TableCell width={220}>الشرط</TableCell>
-              <TableCell>الاسم (عربي)</TableCell>
-              <TableCell>الاسم (إنجليزي)</TableCell>
+              <TableCell width={180}>{t("siteUtility.conditions.col.type")}</TableCell>
+              <TableCell width={220}>{t("siteUtility.conditions.col.condition")}</TableCell>
+              <TableCell>{t("siteUtility.conditions.col.labelAr")}</TableCell>
+              <TableCell>{t("siteUtility.conditions.col.labelEn")}</TableCell>
               <TableCell width={120} align="right">
-                الإجراءات
+                {t("siteUtility.conditions.col.actions")}
               </TableCell>
             </TableRow>
           </TableHead>
@@ -270,7 +291,7 @@ export default function ContractPaymentConditions() {
                 <TableCell colSpan={5}>
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <CircularProgress size={18} />
-                    <Typography>جاري التحميل...</Typography>
+                    <Typography>{t("siteUtility.state.loading")}</Typography>
                   </Stack>
                 </TableCell>
               </TableRow>
@@ -286,7 +307,7 @@ export default function ContractPaymentConditions() {
                   <TableCell align="right">
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
                       {canEdit && row.capabilities?.canEdit && (
-                        <Tooltip title="تعديل">
+                        <Tooltip title={t("siteUtility.conditions.tooltip.edit")}>
                           <IconButton size="small" onClick={() => onEditClick(row)}>
                             <FiEdit2 />
                           </IconButton>
@@ -294,7 +315,7 @@ export default function ContractPaymentConditions() {
                       )}
                       {canDelete &&
                         (row.capabilities?.canDelete ? (
-                          <Tooltip title="حذف">
+                          <Tooltip title={t("siteUtility.conditions.tooltip.delete")}>
                             <IconButton
                               size="small"
                               color="error"
@@ -307,8 +328,8 @@ export default function ContractPaymentConditions() {
                           <Tooltip
                             title={
                               row.capabilities?.inUse
-                                ? "قيد الاستخدام — لا يمكن الحذف"
-                                : "لا يمكن الحذف"
+                                ? t("siteUtility.conditions.tooltip.inUse")
+                                : t("siteUtility.conditions.tooltip.cannotDelete")
                             }
                           >
                             <span>
@@ -326,7 +347,7 @@ export default function ContractPaymentConditions() {
               <TableRow>
                 <TableCell colSpan={5}>
                   <Typography color="text.secondary">
-                    لا توجد شروط دفع بعد.
+                    {t("siteUtility.conditions.empty")}
                   </Typography>
                 </TableCell>
               </TableRow>

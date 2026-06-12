@@ -28,6 +28,7 @@ import {
   Typography,
 } from "@mui/material";
 import apiFetch from "@/app/v2/lib/api/ApiFetch";
+import { useT } from "@/app/v2/lib/i18n";
 import { projectsService } from "../projects.service.js";
 import { runProjectMutation } from "../projects.mutations.js";
 
@@ -39,6 +40,7 @@ export function AssignDesignerModal({
   assignmentId,
   deleteDesigner,
 }) {
+  const { t } = useT();
   const [designerId, setDesignerId] = useState("");
   const [users, setUsers] = useState([]);
   const [addToModification, setAddToModification] = useState(true);
@@ -87,7 +89,7 @@ export function AssignDesignerModal({
       }),
     };
     const res = await runProjectMutation(() => projectsService.assignDesigner(project.id, body), {
-      loading: deleteDesigner ? "جاري إزالة المصمم..." : "جاري تعيين المصمم...",
+      loading: deleteDesigner ? t("projects.assign.loading.remove") : t("projects.assign.loading.assign"),
       setLoading: setSubmitting,
     });
     if (res) {
@@ -112,12 +114,12 @@ export function AssignDesignerModal({
       onClose={() => setOpen(false)}
       slotProps={{ paper: { sx: { width: "400px", maxWidth: "100%" } } }}
     >
-      <DialogTitle>{deleteDesigner ? "إزالة المصمم" : "تعيين مصمم"}</DialogTitle>
+      <DialogTitle>{deleteDesigner ? t("projects.assign.removeTitle") : t("projects.assign.assignTitle")}</DialogTitle>
       <DialogContent>
         {deleteDesigner ? (
           <>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              هل أنت متأكد من إزالة المصمم من هذا المشروع؟
+              {t("projects.assign.confirmRemove")}
             </Typography>
             {isThreeDDesigner && (
               <FormControlLabel
@@ -128,18 +130,18 @@ export function AssignDesignerModal({
                     color="primary"
                   />
                 }
-                label="إزالة المستخدم من جزء التعديل أيضاً"
+                label={t("projects.assign.removeFromModification")}
               />
             )}
           </>
         ) : (
           <>
             <FormControl fullWidth sx={{ mt: 1, mb: isThreeDDesigner ? 2 : 0 }}>
-              <InputLabel id="designer-label">اختر مصمماً</InputLabel>
+              <InputLabel id="designer-label">{t("projects.assign.selectDesigner")}</InputLabel>
               <Select
                 labelId="designer-label"
                 value={designerId}
-                label="اختر مصمماً"
+                label={t("projects.assign.selectDesigner")}
                 onChange={(e) => setDesignerId(e.target.value)}
               >
                 {users.map((u) => (
@@ -158,7 +160,7 @@ export function AssignDesignerModal({
                     color="primary"
                   />
                 }
-                label="إضافة المستخدم إلى جزء التعديل"
+                label={t("projects.assign.addToModification")}
               />
             )}
           </>
@@ -166,7 +168,7 @@ export function AssignDesignerModal({
       </DialogContent>
       <DialogActions>
         <Button onClick={() => setOpen(false)} disabled={submitting}>
-          إلغاء
+          {t("projects.assign.cancel")}
         </Button>
         <Button
           onClick={handleSubmit}
@@ -174,7 +176,7 @@ export function AssignDesignerModal({
           color={deleteDesigner ? "error" : "primary"}
           disabled={submitting || (!deleteDesigner && !designerId)}
         >
-          {deleteDesigner ? "إزالة" : "تعيين"}
+          {deleteDesigner ? t("projects.assign.remove") : t("projects.assign.assign")}
         </Button>
       </DialogActions>
     </Dialog>

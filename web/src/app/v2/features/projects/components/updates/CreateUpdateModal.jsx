@@ -27,6 +27,7 @@ import {
 } from "@mui/material";
 import { MdAdd } from "react-icons/md";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
+import { useT } from "@/app/v2/lib/i18n";
 import { DEPARTMENTS } from "../../config/projectsConstants.js";
 import { projectsService } from "../../projects.service.js";
 import { runProjectMutation } from "../../projects.mutations.js";
@@ -37,6 +38,7 @@ function isAdminUser(user) {
 
 export function CreateUpdateModal({ clientLeadId, onCreated, currentUserDepartment = "STAFF" }) {
   const { user } = useAuth();
+  const { t } = useT();
   const isAdmin = isAdminUser(user);
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -63,13 +65,13 @@ export function CreateUpdateModal({ clientLeadId, onCreated, currentUserDepartme
       setSharedDepartments((prev) => {
         if (prev.includes("ADMIN")) return prev.filter((d) => d !== "ADMIN");
         const mainDept = department || currentUserDepartment;
-        setError("عند اختيار الإدارة لا يمكن المشاركة مع أي قسم آخر");
+        setError(t("projects.createUpdate.adminExclusive"));
         return mainDept ? ["ADMIN", mainDept] : ["ADMIN"];
       });
       return;
     }
     if (sharedDepartments.includes("ADMIN")) {
-      setError("يجب إلغاء اختيار الإدارة للمشاركة مع أقسام أخرى");
+      setError(t("projects.createUpdate.unselectAdmin"));
       return;
     }
     setSharedDepartments((prev) =>
@@ -84,11 +86,11 @@ export function CreateUpdateModal({ clientLeadId, onCreated, currentUserDepartme
 
   const handleSubmit = async () => {
     if (!title.trim()) {
-      setError("العنوان مطلوب");
+      setError(t("projects.createUpdate.titleRequired"));
       return;
     }
     if (sharedDepartments.length === 0) {
-      setError("يجب اختيار قسم واحد على الأقل");
+      setError(t("projects.createUpdate.deptRequired"));
       return;
     }
     const res = await runProjectMutation(
@@ -98,7 +100,7 @@ export function CreateUpdateModal({ clientLeadId, onCreated, currentUserDepartme
           { title, description, sharedDepartments },
           { department },
         ),
-      { loading: "جاري الإنشاء...", setLoading: setSubmitting },
+      { loading: t("projects.createUpdate.loading.create"), setLoading: setSubmitting },
     );
     if (res) {
       onCreated?.(res.data);
@@ -109,15 +111,15 @@ export function CreateUpdateModal({ clientLeadId, onCreated, currentUserDepartme
   return (
     <>
       <Button variant="contained" startIcon={<MdAdd />} onClick={() => setOpen(true)} sx={{ borderRadius: 2 }}>
-        إنشاء تحديث
+        {t("projects.createUpdate.openButton")}
       </Button>
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>تحديث جديد</DialogTitle>
+        <DialogTitle>{t("projects.createUpdate.dialogTitle")}</DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 1 }}>
-            <TextField label="العنوان" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth required />
+            <TextField label={t("projects.createUpdate.titleField")} value={title} onChange={(e) => setTitle(e.target.value)} fullWidth required />
             <TextField
-              label="الوصف"
+              label={t("projects.createUpdate.description")}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               multiline
@@ -128,11 +130,11 @@ export function CreateUpdateModal({ clientLeadId, onCreated, currentUserDepartme
             {isAdmin && (
               <>
                 <FormControl fullWidth>
-                  <InputLabel>القسم الرئيسي</InputLabel>
+                  <InputLabel>{t("projects.createUpdate.mainDepartment")}</InputLabel>
                   <Select
                     value={department || ""}
                     onChange={(e) => handleMainDepartmentChange(e.target.value)}
-                    label="القسم الرئيسي"
+                    label={t("projects.createUpdate.mainDepartment")}
                   >
                     {DEPARTMENTS.filter((d) => !(d.value === "ADMIN" && isAdmin)).map((dept) => (
                       <MenuItem key={dept.value} value={dept.value}>
@@ -147,7 +149,7 @@ export function CreateUpdateModal({ clientLeadId, onCreated, currentUserDepartme
 
             <Box>
               <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
-                الأقسام المشاركة
+                {t("projects.createUpdate.sharedDepartments")}
               </Typography>
               {error && (
                 <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>
@@ -179,10 +181,10 @@ export function CreateUpdateModal({ clientLeadId, onCreated, currentUserDepartme
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
           <Button onClick={() => setOpen(false)} disabled={submitting}>
-            إلغاء
+            {t("projects.createUpdate.cancel")}
           </Button>
           <Button onClick={handleSubmit} variant="contained" disabled={submitting}>
-            إنشاء التحديث
+            {t("projects.createUpdate.submit")}
           </Button>
         </DialogActions>
       </Dialog>
