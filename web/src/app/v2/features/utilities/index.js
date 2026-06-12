@@ -1,7 +1,6 @@
 // Utilities feature barrel.
 export { UtilitiesPage, default as UtilitiesPageDefault } from "./pages/UtilitiesPage.jsx";
 export { GlobalSearchPanel } from "./components/GlobalSearchPanel.jsx";
-export { UserLogForm } from "./components/UserLogForm.jsx";
 export { FixedDataList } from "./components/FixedDataList.jsx";
 export { utilitiesService, readModelLabel } from "./utilities.service.js";
 export { runUtilitiesMutation } from "./utilities.mutations.js";

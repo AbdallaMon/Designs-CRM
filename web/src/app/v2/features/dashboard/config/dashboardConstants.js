@@ -72,7 +72,9 @@ export const KPI_CARDS = [
   { key: "leadsCounts", labelKey: "dashboard.kpi.leadsCounts", field: "leadsCounts", format: "number", accent: "neutral" },
   { key: "interactedLeads", labelKey: "dashboard.kpi.interactedLeads", field: "interactedLeads", format: "number", accent: "neutral" },
   { key: "newLeadCounts", labelKey: "dashboard.kpi.newLeadCounts", field: "newLeadCounts", format: "number", accent: "warning" },
-  { key: "totalCommission", labelKey: "dashboard.kpi.totalCommission", field: "totalCommission", format: "currency", accent: "neutral" },
+  // NOTE: the totalCommission KPI card was intentionally removed from the dashboard — commissions
+  // are now reached per-employee via the user-detail commissions quick action / tab. The backend
+  // key-metrics endpoint may still return `totalCommission`; we simply no longer surface a card.
   { key: "successLeadsCount", labelKey: "dashboard.kpi.successLeadsCount", field: "successLeadsCount", format: "number", accent: "positive" },
 ];
 

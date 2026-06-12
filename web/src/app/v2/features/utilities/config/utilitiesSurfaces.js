@@ -17,9 +17,10 @@ import { PERMISSIONS } from "@/app/v2/config/permissions";
 const P = PERMISSIONS.UTILITY;
 
 // ── URL-tab keys (synced into ?tab= by <UrlTabs>) ───────────────────────────────────────────
+// NOTE: the daily work-log (USER_LOG) tab was intentionally removed from the UI. The backend
+// user-log API + data are untouched — only the surface is gone.
 export const UTILITIES_TABS = Object.freeze({
   SEARCH: "search",
-  USER_LOG: "user-log",
   FIXED_DATA: "fixed-data",
 });
 
@@ -28,7 +29,6 @@ export const UTILITIES_TABS = Object.freeze({
 // `labelKey` is resolved with t() at render time (the page maps it to a label).
 export const UTILITIES_TAB_DEFS = Object.freeze([
   { key: UTILITIES_TABS.SEARCH, labelKey: "utilities.tab.search", permission: P.SEARCH },
-  { key: UTILITIES_TABS.USER_LOG, labelKey: "utilities.tab.userLog", permission: P.USER_LOG_VIEW },
   { key: UTILITIES_TABS.FIXED_DATA, labelKey: "utilities.tab.fixedData", permission: P.FIXED_DATA_LIST },
 ]);
 

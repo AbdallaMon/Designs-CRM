@@ -21,7 +21,6 @@ import {
 } from "@/app/v2/shared/components";
 import { UTILITIES_TABS, UTILITIES_TAB_DEFS } from "../config/utilitiesSurfaces.js";
 import { GlobalSearchPanel } from "../components/GlobalSearchPanel.jsx";
-import { UserLogForm } from "../components/UserLogForm.jsx";
 import { FixedDataList } from "../components/FixedDataList.jsx";
 
 const P = PERMISSIONS.UTILITY;
@@ -29,8 +28,6 @@ const P = PERMISSIONS.UTILITY;
 export function UtilitiesPage() {
   const { hasPermission } = usePermission();
   const { t } = useT();
-
-  const canSubmitLog = hasPermission(P.USER_LOG_SUBMIT);
 
   // Filter the tab set by the surface gate (same predicate that gates the panel content).
   const tabs = useMemo(
@@ -72,7 +69,6 @@ export function UtilitiesPage() {
         {(activeKey) => (
           <Box sx={{ mt: 1 }}>
             {activeKey === UTILITIES_TABS.SEARCH && <GlobalSearchPanel />}
-            {activeKey === UTILITIES_TABS.USER_LOG && <UserLogForm canSubmit={canSubmitLog} />}
             {activeKey === UTILITIES_TABS.FIXED_DATA && <FixedDataList />}
           </Box>
         )}

@@ -1,40 +1,37 @@
 "use client";
 
-// Leads pool list page. Collapses the legacy per-role-slot leads screens
-// (@admin|@staff|@super_admin|@super_sales|@accountant|@threeD /leads) into ONE
-// permission-gated feature: visibility + per-row actions are driven by usePermission +
-// the per-record capabilities.* the v2 API returns, NOT by role slot. Same observable
-// list per role, one code path.
+// Leads pool page. Collapses the legacy per-role-slot leads screens (@admin|@staff|… /leads)
+// into ONE permission-gated feature: visibility + per-row actions are driven by usePermission +
+// the per-record capabilities.* the v2 API returns, NOT by role slot.
 //
-// Migrated onto the canonical <DataTablePage> (was a hand-rolled Table/Toolbar/Pagination +
-// a raw native bulk-convert <button> + bare loading/empty strings). Now: config-driven
-// columns (config/leadsColumns.js) with PII gating, the status enum routed through the
-// DataTablePage filter config, the FIVE shared states (loading/error/empty/partial/data),
-// a themed MUI bulk-convert Button, and rows that are real links (rowHref + an open-in-new-tab
-// IconButton). All data-fetching params (page/limit/filters/search/sort + the segment extra)
-// and capability gates are preserved exactly.
+// TWO segments, each with the ONE view master used for it (no dead toggle):
+//   • "new"  (العملاء المحتملون) — the un-consulted raw-lead pool, rendered as a LIST/table.
+//     The BE list ALWAYS forces `initialConsult: true` (lead.usecase.js list() sets
+//     checkConsult:true), and freshly-created leads are `initialConsult:false`, so the list
+//     sends `noConsulted=true` (the only param that surfaces them) — exactly master's NewLeadsPage.
+//   • "deals" (الصفقات الحالية) — the active pipeline, rendered as the KANBAN BOARD. Master's
+//     deals view was ALWAYS the board (getClientLeadsColumnStatus, one fetch per status); it never
+//     had a working deals LIST. The board does NOT filter on initialConsult, which is why it shows
+//     the deals the consult-forced list could not. Board-only here = master-faithful AND removes the
+//     empty-deals-list defect at the root.
 //
-// §5c deltas applied: data via the leads service against /v2/leads (list shape
-// { items, total, page, pageSize }); each row's actions gated on row.capabilities.*;
-// bulk-convert (admin-tier) gated on PERMISSIONS.LEAD.ASSIGN_OTHER.
+// The segment is seeded from the URL (?segment=new|deals) so the two top-level nav links land
+// directly on the right pool, and segment switches are reflected back into the URL.
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   Box,
   Button,
   Checkbox,
-  Chip,
   Container,
   IconButton,
   Stack,
   Tab,
   Tabs,
-  ToggleButton,
-  ToggleButtonGroup,
   Tooltip,
 } from "@mui/material";
-import { MdOpenInNew, MdRefresh, MdGroupAdd, MdViewList, MdViewKanban } from "react-icons/md";
+import { MdOpenInNew, MdRefresh, MdGroupAdd } from "react-icons/md";
 import Link from "next/link";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
@@ -55,49 +52,37 @@ import { LeadsKanban } from "../components/LeadsKanban.jsx";
 
 const P = PERMISSIONS.LEAD;
 
-// List vs Kanban view — persisted across sessions so a user lands on their preferred view.
-const VIEW_STORAGE_KEY = "v2.leads.view";
-const VIEWS = { LIST: "list", KANBAN: "kanban" };
-
-// Top-level segment: "new" surfaces the un-consulted raw-lead pool. The BE list ALWAYS
-// forces `initialConsult: true` (lead.usecase.js #buildListWhere sets checkConsult:true
-// unconditionally), so the only way to see freshly-created leads — which are created with
-// `initialConsult: false` — is the BE's `noConsulted=true` escape, which resets the where to
-// `{ initialConsult: false }`. Sending `isNew=true` instead would AND `status:NEW` with
-// `initialConsult:true` and return ZERO rows (verified: 23 NEW leads, all initialConsult=false).
-// The default ("deals") branch is the consulted pool (BE `status notIn [NEW, CONVERTED, ON_HOLD]`
-// + initialConsult:true). Default to "new" so the raw-lead pool is visible on landing.
+// Top-level segment. "new" = the un-consulted raw-lead pool (LIST). "deals" = the active
+// pipeline (BOARD). The view is implied by the segment — there is no separate view toggle.
 const SEGMENTS = {
   NEW: "new",
   DEALS: "deals",
 };
 
+// Normalize an arbitrary ?segment= value to a known segment (default: new).
+function normalizeSegment(value) {
+  return value === SEGMENTS.DEALS ? SEGMENTS.DEALS : SEGMENTS.NEW;
+}
+
 export function LeadsPage() {
   const { hasPermission, hasAnyPermission } = usePermission();
   const { t } = useT();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const canList = hasPermission(P.LIST);
   const canBulkConvert = hasPermission(P.ASSIGN_OTHER);
 
-  // List vs Kanban view. Persisted to localStorage; read lazily on mount (SSR-safe — the
-  // initial render is "list", then we hydrate the stored choice in an effect to avoid a
-  // server/client mismatch).
-  const [view, setView] = useState(VIEWS.LIST);
+  // Segment is seeded from the URL (?segment=) so the split nav links land on the right pool.
+  const urlSegment = normalizeSegment(searchParams.get("segment"));
+  const [segment, setSegment] = useState(urlSegment);
+  // Keep local state in sync if the URL segment changes (e.g. nav link click while mounted).
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
-    if (stored === VIEWS.LIST || stored === VIEWS.KANBAN) setView(stored);
-  }, []);
-  function onViewChange(_e, value) {
-    // ToggleButtonGroup fires null when the active button is re-clicked; ignore that.
-    if (!value) return;
-    setView(value);
-    if (typeof window !== "undefined") window.localStorage.setItem(VIEW_STORAGE_KEY, value);
-  }
-  const isKanban = view === VIEWS.KANBAN;
+    setSegment(urlSegment);
+  }, [urlSegment]);
 
-  // Default to the "new" segment so freshly-created client leads (status NEW) are visible.
-  const [segment, setSegment] = useState(SEGMENTS.NEW);
+  const isDeals = segment === SEGMENTS.DEALS;
+
   // Controlled DataTablePage filter values; only `status` is wired (enum). "ALL" = no filter.
   const [filterValues, setFilterValues] = useState({ status: "ALL" });
   const [selected, setSelected] = useState([]);
@@ -114,44 +99,38 @@ export function LeadsPage() {
     isLoading,
     error,
     refetch,
-  } = useLeadsList({ autoFetch: canList });
+  } = useLeadsList({ autoFetch: canList && !isDeals });
 
   const statusFilter = filterValues.status;
   // An explicit status pick is active when it is not the "ALL" sentinel.
   const statusActive = Boolean(statusFilter && statusFilter !== "ALL");
 
-  // Free-text lead lookup goes through LeadSearchAutocomplete (utilities search across
-  // name/phone/email/code) and navigates straight to the picked lead — so the page keeps no
-  // id-only list filter; `filters` stays empty.
-  //
-  // `noConsulted` (new segment) and `status` (explicit dropdown) are TOP-LEVEL query params the
-  // BE list reads directly off searchParams (lead.usecase.js #buildListWhere), NOT from the JSON
-  // `filters`, so they are routed through the hook's `extra`. An explicit status selection wins
-  // over the segment default; otherwise the "new" segment sends `noConsulted=true` (the only
-  // param that surfaces un-consulted raw leads past the BE's forced initialConsult:true) and
-  // "deals" sends nothing (BE applies its default status notIn [NEW, CONVERTED, ON_HOLD]).
-  // NOTE: the BE's noConsulted branch RESETS the where to `{ initialConsult:false }`, so an
-  // explicit status pick (meaningful only for the consulted/deals pool) takes precedence here.
+  // The NEW segment is the only one using the LIST. It sends `noConsulted=true` (the only param
+  // that surfaces un-consulted raw leads past the BE's forced initialConsult:true). An explicit
+  // status pick narrows that pool. The DEALS segment uses the board and never touches the list.
   useEffect(() => {
+    if (isDeals) return;
     const next = {};
-    if (statusActive) {
-      next.status = statusFilter;
-    } else if (segment === SEGMENTS.NEW) {
-      next.noConsulted = "true";
-    }
+    if (statusActive) next.status = statusFilter;
+    else next.noConsulted = "true";
     setExtra(next);
     // setExtra is a stable callback from the list hook (resets to page 1).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [segment, statusFilter]);
+  }, [isDeals, statusFilter]);
 
   function onFilterChange(key, value) {
     setFilterValues((prev) => ({ ...prev, [key]: value }));
   }
 
+  // Switch segment AND reflect it into the URL so deep-links / nav stay consistent.
   function onSegmentChange(_e, value) {
-    setSegment(value);
+    const next = normalizeSegment(value);
+    setSegment(next);
     setFilterValues({ status: "ALL" });
     setSelected([]);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("segment", next);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   function toggleSelect(id) {
@@ -190,8 +169,7 @@ export function LeadsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canBulkConvert, selected, t]);
 
-  // Distinct empty state per segment so the precedence is legible (UX fix). A status filter
-  // narrows whichever pool is active; surface that in the copy.
+  // Empty state for the NEW-leads list. A status filter narrows the pool; surface that in copy.
   const empty = useMemo(() => {
     if (statusActive) {
       return {
@@ -199,17 +177,11 @@ export function LeadsPage() {
         description: t("leads.empty.status.description"),
       };
     }
-    if (segment === SEGMENTS.NEW) {
-      return {
-        title: t("leads.empty.new.title"),
-        description: t("leads.empty.new.description"),
-      };
-    }
     return {
-      title: t("leads.empty.deals.title"),
-      description: t("leads.empty.deals.description"),
+      title: t("leads.empty.new.title"),
+      description: t("leads.empty.new.description"),
     };
-  }, [segment, statusActive, t]);
+  }, [statusActive, t]);
 
   function renderRowActions(row) {
     return (
@@ -257,34 +229,21 @@ export function LeadsPage() {
       <PageHeader
         title={t("leads.page.title")}
         subtitle={
-          isKanban
-            ? t("leads.page.subtitle.kanban")
+          isDeals
+            ? t("leads.page.subtitle.deals")
             : t("leads.page.subtitle.total").replace("{total}", total)
         }
-        breadcrumbs={[{ label: t("leads.page.breadcrumb.sales") }, { label: t("leads.page.title") }]}
+        breadcrumbs={[
+          { label: t("leads.page.breadcrumb.sales") },
+          { label: isDeals ? t("leads.segment.deals") : t("leads.segment.new") },
+        ]}
       >
-        <ToggleButtonGroup
-          value={view}
-          exclusive
-          onChange={onViewChange}
-          size="small"
-          aria-label={t("leads.view.aria")}
-        >
-          <ToggleButton value={VIEWS.LIST} aria-label={t("leads.view.list.aria")}>
-            <MdViewList style={{ marginInlineEnd: 6 }} />
-            {t("leads.view.list")}
-          </ToggleButton>
-          <ToggleButton value={VIEWS.KANBAN} aria-label={t("leads.view.kanban.aria")}>
-            <MdViewKanban style={{ marginInlineEnd: 6 }} />
-            {t("leads.view.kanban")}
-          </ToggleButton>
-        </ToggleButtonGroup>
         <LeadSearchAutocomplete
           onSelect={(lead) => {
             if (lead?.id != null) router.push(`/v2/leads/${lead.id}`);
           }}
         />
-        {!isKanban && canBulkConvert && (
+        {!isDeals && canBulkConvert && (
           <Tooltip title={t("leads.action.bulkConvert.tooltip")}>
             <span>
               <Button
@@ -299,7 +258,7 @@ export function LeadsPage() {
             </span>
           </Tooltip>
         )}
-        {!isKanban && (
+        {!isDeals && (
           <Tooltip title={t("leads.action.refresh")}>
             <IconButton onClick={refetch}>
               <MdRefresh />
@@ -308,64 +267,42 @@ export function LeadsPage() {
         )}
       </PageHeader>
 
-      {isKanban ? (
-        <LeadsKanban />
-      ) : (
-        <>
-      {/* Segment selector. When an explicit status filter is active it takes precedence over the
-          segment default (the BE status param overrides the noConsulted branch), so the tabs are
-          visually deactivated and a "مفلتر حسب الحالة" chip explains why — making the precedence
-          legible instead of silently ignoring the segment. */}
-      <Stack
-        direction="row"
-        alignItems="center"
-        spacing={2}
-        sx={{ mb: 2, flexWrap: "wrap" }}
-      >
-        <Tabs
-          value={segment}
-          onChange={onSegmentChange}
-          sx={{ opacity: statusActive ? 0.5 : 1 }}
-        >
-          <Tab value={SEGMENTS.NEW} label={t("leads.segment.new")} disabled={statusActive} />
-          <Tab value={SEGMENTS.DEALS} label={t("leads.segment.deals")} disabled={statusActive} />
+      {/* Segment selector — switches the pool (and the view it implies). */}
+      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2, flexWrap: "wrap" }}>
+        <Tabs value={segment} onChange={onSegmentChange}>
+          <Tab value={SEGMENTS.NEW} label={t("leads.segment.new")} />
+          <Tab value={SEGMENTS.DEALS} label={t("leads.segment.deals")} />
         </Tabs>
-        {statusActive && (
-          <Chip
-            size="small"
-            color="info"
-            variant="outlined"
-            label={t("leads.segment.filteredChip")}
-            onDelete={() => setFilterValues({ status: "ALL" })}
-          />
-        )}
       </Stack>
 
-      <Box>
-        <DataTablePage
-          columns={columns}
-          filters={buildLeadsFilters(t)}
-          rows={items}
-          total={total}
-          page={page}
-          pageSize={pageSize}
-          onPageChange={setPage}
-          onPageSizeChange={setPageSize}
-          filterValues={filterValues}
-          onFilterChange={onFilterChange}
-          loading={isLoading}
-          error={error}
-          onRetry={refetch}
-          errorResolver={leadsMessages}
-          getRowKey={(row) => row.id}
-          renderRowActions={renderRowActions}
-          onRowClick={(row) => router.push(`/v2/leads/${row.id}`)}
-          rowHref={(row) => `/v2/leads/${row.id}`}
-          showPrivileged={showPrivileged}
-          empty={empty}
-        />
-      </Box>
-        </>
+      {isDeals ? (
+        // Deals = the Kanban board (master-faithful; never an empty list).
+        <LeadsKanban />
+      ) : (
+        <Box>
+          <DataTablePage
+            columns={columns}
+            filters={buildLeadsFilters(t)}
+            rows={items}
+            total={total}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            filterValues={filterValues}
+            onFilterChange={onFilterChange}
+            loading={isLoading}
+            error={error}
+            onRetry={refetch}
+            errorResolver={leadsMessages}
+            getRowKey={(row) => row.id}
+            renderRowActions={renderRowActions}
+            onRowClick={(row) => router.push(`/v2/leads/${row.id}`)}
+            rowHref={(row) => `/v2/leads/${row.id}`}
+            showPrivileged={showPrivileged}
+            empty={empty}
+          />
+        </Box>
       )}
     </Container>
   );

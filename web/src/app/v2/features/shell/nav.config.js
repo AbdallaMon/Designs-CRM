@@ -83,10 +83,20 @@ export const NAV_ITEMS = [
 
   // ── المبيعات ─────────────────────────────────────────────────────────────
   {
-    key: "leads",
-    labelKey: "leads",
-    href: "/v2/leads",
+    // Split into two pools (UX: each segment lands on its own master-faithful view —
+    // potential clients = the new-leads LIST; current deals = the pipeline BOARD).
+    key: "leadsNew",
+    labelKey: "leadsNew",
+    href: "/v2/leads?segment=new",
     icon: MdPeople,
+    group: "sales",
+    permission: P.LEAD.LIST,
+  },
+  {
+    key: "leadsDeals",
+    labelKey: "leadsDeals",
+    href: "/v2/leads?segment=deals",
+    icon: MdSpaceDashboard,
     group: "sales",
     permission: P.LEAD.LIST,
   },

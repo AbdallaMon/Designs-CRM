@@ -23,6 +23,7 @@ import { useT } from "@/app/v2/lib/i18n";
 import { SectionCard } from "@/app/v2/shared/components/SectionCard.jsx";
 import { StatusChip } from "@/app/v2/shared/components/StatusChip.jsx";
 import { LeadStatusMenu } from "./LeadStatusMenu.jsx";
+import { LeadDeleteAction } from "./LeadDeleteAction.jsx";
 import { LeadAssignActions } from "@/app/v2/features/leads/components/LeadAssignActions.jsx";
 import { LeadAdminAssignAction } from "@/app/v2/features/leads/components/LeadAdminAssignAction.jsx";
 import {
@@ -134,6 +135,9 @@ export function LeadHubHeader({
               beginner={beginner}
               onChanged={onChanged}
             />
+            {/* Destructive delete — self-gates on ADMIN_RESIDUAL.LEAD_DELETE; replaces the old
+                standalone delete-by-id page. Navigates back to the leads list on success. */}
+            <LeadDeleteAction lead={lead} size="medium" />
           </Stack>
         </Stack>
 

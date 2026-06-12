@@ -55,7 +55,6 @@ export const ar = {
   "dashboard.kpi.leadsCounts": "إجمالي العملاء",
   "dashboard.kpi.interactedLeads": "تفاعلات اليوم",
   "dashboard.kpi.newLeadCounts": "عملاء جدد",
-  "dashboard.kpi.totalCommission": "إجمالي العمولات",
   "dashboard.kpi.successLeadsCount": "صفقات ناجحة",
   "dashboard.kpi.empty": "لا توجد مؤشرات لعرضها",
 
@@ -95,6 +94,12 @@ export const ar = {
   "dashboard.emirate.UMM_AL_QUWAIN": "أم القيوين",
   "dashboard.emirate.RAS_AL_KHAIMAH": "رأس الخيمة",
   "dashboard.emirate.FUJAIRAH": "الفجيرة",
+
+  // ── fixed-data reference card (read-only) ────────────────────────────────────
+  "dashboard.fixedData.title": "البيانات الثابتة",
+  "dashboard.fixedData.subtitle": "بيانات مرجعية ثابتة للاطّلاع فقط.",
+  "dashboard.fixedData.empty.title": "لا توجد بيانات ثابتة",
+  "dashboard.fixedData.empty.description": "لم تُضَف أي بيانات ثابتة بعد.",
 
   // ── widget empty / error states ──────────────────────────────────────────────
   "dashboard.leadsStatus.empty": "لا توجد عملاء في أي حالة",
@@ -150,7 +155,6 @@ export const en = {
   "dashboard.kpi.leadsCounts": "Total leads",
   "dashboard.kpi.interactedLeads": "Today's interactions",
   "dashboard.kpi.newLeadCounts": "New leads",
-  "dashboard.kpi.totalCommission": "Total commissions",
   "dashboard.kpi.successLeadsCount": "Successful deals",
   "dashboard.kpi.empty": "No metrics to display",
 
@@ -190,6 +194,12 @@ export const en = {
   "dashboard.emirate.UMM_AL_QUWAIN": "Umm Al Quwain",
   "dashboard.emirate.RAS_AL_KHAIMAH": "Ras Al Khaimah",
   "dashboard.emirate.FUJAIRAH": "Fujairah",
+
+  // ── fixed-data reference card (read-only) ────────────────────────────────────
+  "dashboard.fixedData.title": "Fixed data",
+  "dashboard.fixedData.subtitle": "Read-only reference data.",
+  "dashboard.fixedData.empty.title": "No fixed data",
+  "dashboard.fixedData.empty.description": "No fixed data has been added yet.",
 
   // ── widget empty / error states ──────────────────────────────────────────────
   "dashboard.leadsStatus.empty": "No leads in any status",

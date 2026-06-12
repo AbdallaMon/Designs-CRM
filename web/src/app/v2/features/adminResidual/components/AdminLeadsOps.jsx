@@ -14,13 +14,11 @@
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-  Box,
   Button,
   Grid,
   MenuItem,
   Stack,
   TextField,
-  Alert,
   Typography,
   Accordion,
   AccordionSummary,
@@ -29,12 +27,10 @@ import {
 import {
   MdPersonAdd,
   MdEdit,
-  MdDeleteForever,
   MdSend,
   MdGroupAdd,
   MdExpandMore,
   MdBuild,
-  MdWarning,
 } from "react-icons/md";
 import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
@@ -42,6 +38,12 @@ import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { SectionCard, EmptyState } from "@/app/v2/shared/components";
 import { adminResidualService } from "../adminResidual.service.js";
 import { runAdminResidualMutation } from "../adminResidual.mutations.js";
+import { EMIRATES_OPTIONS } from "../config/adminResidualConstants.js";
+import {
+  LEAD_CREATE_CATEGORY_OPTIONS,
+  LEAD_ITEM_OPTIONS_BY_CATEGORY,
+  LEAD_LOCATION_OPTIONS,
+} from "@/app/v2/features/leads/config/leadsConstants.js";
 import { BulkImportCard } from "./BulkImportCard.jsx";
 
 const P = PERMISSIONS.ADMIN_RESIDUAL;
@@ -53,11 +55,11 @@ export function AdminLeadsOps() {
   const canCreate = hasPermission(P.LEAD_CREATE);
   const canEditLead = hasPermission(P.LEAD_EDIT);
   const canEditClient = hasPermission(P.CLIENT_EDIT);
-  const canDelete = hasPermission(P.LEAD_DELETE);
   const canTelegram = hasPermission(P.TELEGRAM_MANAGE);
 
-  const anything =
-    canImport || canCreate || canEditLead || canEditClient || canDelete || canTelegram;
+  // NOTE: lead DELETE moved to the lead-detail header (LeadDeleteAction). It is no longer a
+  // standalone delete-by-id card here, so LEAD_DELETE no longer gates this ops surface.
+  const anything = canImport || canCreate || canEditLead || canEditClient || canTelegram;
 
   if (!anything) {
     return (
@@ -110,43 +112,52 @@ export function AdminLeadsOps() {
         </Accordion>
       )}
 
-      {/* ── danger zone: destructive delete, isolated at the bottom ───────────────────── */}
-      {canDelete && (
-        <SectionCard
-          title={t("adminResidual.leads.dangerZone.title", "منطقة الحذف")}
-          subtitle={t("adminResidual.leads.dangerZone.subtitle", "عمليات نهائية لا يمكن التراجع عنها.")}
-          sx={{ borderColor: "error.main", borderWidth: 1, borderStyle: "solid" }}
-        >
-          <Stack spacing={2}>
-            <Alert severity="warning" icon={<MdWarning />}>
-              {t(
-                "adminResidual.leads.dangerZone.warning",
-                "العمليات في هذه المنطقة تؤثر على البيانات بشكل دائم. تأكّد قبل التنفيذ.",
-              )}
-            </Alert>
-            <DeleteLeadCard />
-          </Stack>
-        </SectionCard>
-      )}
+      {/* Lead delete moved to the lead-detail header (LeadDeleteAction) — no longer a
+          standalone delete-by-id card here. */}
     </Stack>
   );
 }
 
 // ── admin create-lead (BE .passthrough → forwarded verbatim) ─────────────────────────────────
-const CREATE_LEAD_DEFAULTS = { name: "", phone: "", email: "", emirate: "", description: "" };
+// The BE `createNewLead` validation REQUIRES email/name/phone + category (LeadCategory) + item
+// (LeadType). Master's add-lead form drove these via Select dropdowns (location → design type →
+// FinalSelectionForm); the v2 form had regressed to a free-text emirate with NO category/item, so
+// every submit failed BE validation. Restored: category + item + location + emirate as Selects.
+const CREATE_LEAD_DEFAULTS = {
+  name: "",
+  phone: "",
+  email: "",
+  category: "",
+  item: "",
+  location: "",
+  emirate: "",
+  description: "",
+};
 
 function CreateLeadCard() {
   const { t } = useT();
   const [submitting, setSubmitting] = useState(false);
-  const { control, handleSubmit, reset } = useForm({ defaultValues: CREATE_LEAD_DEFAULTS });
+  const { control, handleSubmit, reset, watch, setValue } = useForm({
+    defaultValues: CREATE_LEAD_DEFAULTS,
+  });
+
+  // `item` options depend on the chosen category (CONSULTATION vs DESIGN). When the category
+  // changes, the old item is no longer valid → clear it so the user re-picks from the new set.
+  const category = watch("category");
+  const location = watch("location");
+  const itemOptions = LEAD_ITEM_OPTIONS_BY_CATEGORY[category] ?? [];
+  // Emirate is only meaningful for an INSIDE_UAE design lead (the BE maps OUTSIDE_UAE → "OUTSIDE").
+  const showEmirate = category === "DESIGN" && location !== "OUTSIDE_UAE";
 
   async function onSubmit(values) {
-    // The BE reads this rich client form via .passthrough(); we forward the filled keys only.
+    // The BE reads this rich client form via .passthrough(); forward the filled keys only.
     const body = {};
     Object.entries(values).forEach(([k, v]) => {
       const trimmed = typeof v === "string" ? v.trim() : v;
       if (trimmed !== "" && trimmed != null) body[k] = trimmed;
     });
+    // Emirate is irrelevant unless an inside-UAE design lead; don't forward a stale value.
+    if (!showEmirate) delete body.emirate;
     const res = await runAdminResidualMutation(() => adminResidualService.createNewLead(body), {
       loading: t("adminResidual.leads.create.loading", "جاري إنشاء العميل المحتمل..."),
       setLoading: setSubmitting,
@@ -194,18 +205,122 @@ function CreateLeadCard() {
             <Controller
               name="email"
               control={control}
-              render={({ field }) => (
-                <TextField {...field} type="email" label={t("adminResidual.leads.create.field.email", "البريد الإلكتروني")} fullWidth />
+              rules={{ required: t("adminResidual.leads.create.field.email.required", "البريد الإلكتروني مطلوب") }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  type="email"
+                  label={t("adminResidual.leads.create.field.email", "البريد الإلكتروني")}
+                  fullWidth
+                  error={Boolean(fieldState.error)}
+                  helperText={fieldState.error?.message}
+                />
               )}
             />
           </Grid>
+          {/* category (LeadCategory) — required Select; drives the item options */}
           <Grid size={{ xs: 12, sm: 6 }}>
             <Controller
-              name="emirate"
+              name="category"
               control={control}
-              render={({ field }) => <TextField {...field} label={t("adminResidual.leads.create.field.emirate", "الإمارة")} fullWidth />}
+              rules={{ required: t("adminResidual.leads.create.field.category.required", "التصنيف مطلوب") }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  select
+                  label={t("adminResidual.leads.create.field.category", "التصنيف")}
+                  fullWidth
+                  error={Boolean(fieldState.error)}
+                  helperText={fieldState.error?.message}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    // Reset the dependent item whenever the category changes.
+                    setValue("item", "");
+                  }}
+                >
+                  {LEAD_CREATE_CATEGORY_OPTIONS.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {t(opt.labelKey, opt.value)}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
             />
           </Grid>
+          {/* item (LeadType) — required Select; options depend on category */}
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Controller
+              name="item"
+              control={control}
+              rules={{ required: t("adminResidual.leads.create.field.item.required", "النوع مطلوب") }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  select
+                  disabled={!category}
+                  label={t("adminResidual.leads.create.field.item", "النوع")}
+                  fullWidth
+                  error={Boolean(fieldState.error)}
+                  helperText={
+                    fieldState.error?.message ||
+                    (!category
+                      ? t("adminResidual.leads.create.field.item.hint", "اختر التصنيف أولاً")
+                      : undefined)
+                  }
+                >
+                  {itemOptions.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {t(opt.labelKey, opt.value)}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          </Grid>
+          {/* location (inside / outside UAE) — Select */}
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Controller
+              name="location"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label={t("adminResidual.leads.create.field.location", "الموقع")}
+                  fullWidth
+                >
+                  {LEAD_LOCATION_OPTIONS.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {t(opt.labelKey, opt.value)}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          </Grid>
+          {/* emirate — Select (only for an inside-UAE design lead) */}
+          {showEmirate && (
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Controller
+                name="emirate"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    select
+                    label={t("adminResidual.leads.create.field.emirate", "الإمارة")}
+                    fullWidth
+                  >
+                    {EMIRATES_OPTIONS.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {t(opt.labelKey, opt.labelFallback)}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+            </Grid>
+          )}
           <Grid size={{ xs: 12 }}>
             <Controller
               name="description"
@@ -428,66 +543,6 @@ function TelegramCard() {
         </Grid>
       </Grid>
     </SectionCard>
-  );
-}
-
-// ── delete lead (admin-only — gate NOT widened) ──────────────────────────────────────────────
-function DeleteLeadCard() {
-  const { t } = useT();
-  const [submitting, setSubmitting] = useState(false);
-  const { control, handleSubmit, reset } = useForm({ defaultValues: { id: "" } });
-
-  async function onDelete(values) {
-    const id = String(values.id ?? "").trim();
-    if (!id) return;
-    const res = await runAdminResidualMutation(() => adminResidualService.deleteLead(id), {
-      loading: t("adminResidual.leads.delete.loading", "جاري حذف العميل المحتمل..."),
-      setLoading: setSubmitting,
-    });
-    if (res) reset({ id: "" });
-  }
-
-  return (
-    <Box>
-      <Typography variant="subtitle1" component="h3" sx={{ mb: 1.5 }}>
-        {t("adminResidual.leads.delete.title", "حذف عميل محتمل")}
-      </Typography>
-      <Alert severity="error" sx={{ mb: 2 }}>
-        {t(
-          "adminResidual.leads.delete.warning",
-          "الحذف نهائي ولا يمكن التراجع عنه. هذه العملية متاحة للمسؤول فقط.",
-        )}
-      </Alert>
-      <Box component="form" onSubmit={handleSubmit(onDelete)} noValidate>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="flex-start">
-          <Controller
-            name="id"
-            control={control}
-            rules={{ required: t("adminResidual.leads.delete.field.id.required", "المعرّف مطلوب") }}
-            render={({ field, fieldState }) => (
-              <TextField
-                {...field}
-                type="number"
-                size="small"
-                label={t("adminResidual.leads.delete.field.id", "معرّف العميل المحتمل")}
-                error={Boolean(fieldState.error)}
-                helperText={fieldState.error?.message}
-                sx={{ minWidth: 220 }}
-              />
-            )}
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            color="error"
-            startIcon={<MdDeleteForever />}
-            disabled={submitting}
-          >
-            {t("adminResidual.leads.delete.submit", "حذف")}
-          </Button>
-        </Stack>
-      </Box>
-    </Box>
   );
 }
 

@@ -38,8 +38,24 @@ export function RtlCacheProvider({ children, lng = "ar" }) {
       ? { key: "muirtl", stylisPlugins: [prefixer, rtlPlugin] }
       : { key: "mui", stylisPlugins: [prefixer] };
 
+  // REMOUNT ON LANGUAGE CHANGE (the drawer-side / RTL-flip bug fix).
+  // AppRouterCacheProvider builds its emotion cache ONCE, in a `useState(() => createCache(...))`
+  // lazy initializer — it is NOT recreated when the `options` prop changes. When the user toggles
+  // ar↔en, I18nProvider.changeLanguage() flips <html dir> and calls router.refresh(), which re-runs
+  // the server root layout so this component receives the new `lng` (and the new `options`) — but
+  // because the provider is a Client Component that is NOT unmounted by refresh(), its cached
+  // emotion instance keeps the OLD key + stylisPlugins. So after ar→en the already-injected
+  // RTL-flipped rules (e.g. the Drawer paper's `right:0; border-left`) stay attached while the DOM
+  // is now dir="ltr": the drawer stays pinned to the right while the flex content offset moves
+  // left — the exact "drawer doesn't switch sides" symptom.
+  //
+  // Keying the provider on `lng` forces React to UNMOUNT the old subtree and MOUNT a fresh one, so
+  // the `useState` initializer re-runs with the correct key + plugins (en → "mui", no rtl flip;
+  // ar → "muirtl" + rtlPlugin). The components get fresh class names from the new cache and the
+  // stale flipped rules no longer match anything. The Arabic-default path is untouched: with no
+  // toggle the key is constant ("ar") so nothing remounts and the first paint is byte-identical.
   return (
-    <AppRouterCacheProvider options={options}>
+    <AppRouterCacheProvider key={lng} options={options}>
       {children}
     </AppRouterCacheProvider>
   );

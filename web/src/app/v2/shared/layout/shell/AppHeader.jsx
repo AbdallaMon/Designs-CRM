@@ -30,7 +30,7 @@ import {
   useTheme,
 } from "@mui/material";
 import NextLink from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { HiOutlineMenuAlt3 } from "react-icons/hi";
 import { LuPanelLeftClose, LuPanelLeftOpen } from "react-icons/lu";
 import { MdLogout, MdPerson, MdNavigateNext } from "react-icons/md";
@@ -44,6 +44,8 @@ import { LanguageSwitcher } from "@/app/v2/shared/components/LanguageSwitcher";
 export function AppHeader({ collapsed = false, isMobile = false, mobileOpen = false, onToggle }) {
   const theme = useTheme();
   const pathname = usePathname();
+  // Search params disambiguate the split leads links (?segment=) for the page crumb.
+  const searchParams = useSearchParams();
   const { user, logout } = useAuth();
   const { t, lang } = useT();
   const [anchor, setAnchor] = useState(null);
@@ -57,7 +59,7 @@ export function AppHeader({ collapsed = false, isMobile = false, mobileOpen = fa
       ? t("shell.rail.expand", "توسيع القائمة")
       : t("shell.rail.collapse", "طيّ القائمة");
 
-  const crumbs = buildBreadcrumbs(pathname, lang);
+  const crumbs = buildBreadcrumbs(pathname, lang, searchParams);
 
   return (
     <Box

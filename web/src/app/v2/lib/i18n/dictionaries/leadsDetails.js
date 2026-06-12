@@ -70,6 +70,14 @@ export const ar = {
   "leadsDetails.statusMenu.button": "تغيير الحالة",
   "leadsDetails.statusMenu.loading": "جاري تغيير الحالة...",
 
+  // ── delete action (header) ──────────────────────────────────────────────────
+  "leadsDetails.delete.button": "حذف العميل",
+  "leadsDetails.delete.loading": "جاري حذف العميل المحتمل...",
+  "leadsDetails.delete.confirmTitle": "تأكيد حذف العميل المحتمل؟",
+  "leadsDetails.delete.confirmBody": 'سيتم حذف العميل "{name}" نهائياً ولا يمكن التراجع عن هذه العملية.',
+  "leadsDetails.delete.confirmLabel": "حذف",
+  "leadsDetails.delete.cancel": "إلغاء",
+
   // ── record list primitive ───────────────────────────────────────────────────
   "leadsDetails.recordList.empty": "لا توجد بيانات",
   "leadsDetails.recordList.showLess": "عرض أقل",
@@ -271,6 +279,14 @@ export const en = {
   // ── status menu ─────────────────────────────────────────────────────────────
   "leadsDetails.statusMenu.button": "Change status",
   "leadsDetails.statusMenu.loading": "Changing status...",
+
+  // ── delete action (header) ──────────────────────────────────────────────────
+  "leadsDetails.delete.button": "Delete lead",
+  "leadsDetails.delete.loading": "Deleting lead...",
+  "leadsDetails.delete.confirmTitle": "Confirm deleting the lead?",
+  "leadsDetails.delete.confirmBody": 'The lead "{name}" will be permanently deleted. This action cannot be undone.',
+  "leadsDetails.delete.confirmLabel": "Delete",
+  "leadsDetails.delete.cancel": "Cancel",
 
   // ── record list primitive ───────────────────────────────────────────────────
   "leadsDetails.recordList.empty": "No data",

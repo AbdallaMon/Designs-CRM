@@ -42,14 +42,18 @@ export function LeadAdminAssignAction({ lead, onChanged, size = "medium" }) {
   const [selected, setSelected] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  // Load the staff/sales directory once the dialog opens (admin → all sales staff).
+  // Load the SALES directory once the dialog opens. Leads may only be assigned to SALES
+  // agents (role === "STAFF"); designers/executors must NOT appear. We pass `exactRole`
+  // so the backend matches the PRIMARY role column only — without it the default
+  // OR(role, subRole) match leaks THREE_D_DESIGNER / TWO_D_DESIGNER / TWO_D_EXECUTOR users
+  // who happen to carry a `STAFF` subRole into the picker.
   useEffect(() => {
     if (!open) return;
     let alive = true;
     setLoadingStaff(true);
     (async () => {
       try {
-        const res = await usersService.getAllUsers({ role: "STAFF" });
+        const res = await usersService.getAllUsers({ role: "STAFF", exactRole: true });
         if (!alive) return;
         const items = Array.isArray(res?.data) ? res.data : res?.data?.items ?? [];
         setStaff(items);

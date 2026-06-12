@@ -14,6 +14,7 @@ export const ar = {
   "leads.page.title": "العملاء المحتملون",
   "leads.page.breadcrumb.sales": "المبيعات",
   "leads.page.subtitle.kanban": "لوحة الصفقات",
+  "leads.page.subtitle.deals": "لوحة الصفقات الحالية — اسحب البطاقات بين القوائم لتغيير الحالة.",
   "leads.page.subtitle.total": "الإجمالي: {total}",
   "leads.view.aria": "طريقة العرض",
   "leads.view.list": "قائمة",
@@ -147,6 +148,20 @@ export const ar = {
 
   // ── booking lead details card ───────────────────────────────────────────────
   "leads.booking.title": "تفاصيل الحجز",
+
+  // ── create-lead form option labels (category / item / location) ──────────────
+  "leads.create.category.CONSULTATION": "استشارة",
+  "leads.create.category.DESIGN": "تصميم",
+  "leads.create.item.ROOM": "غرفة",
+  "leads.create.item.BLUEPRINT": "مخطط",
+  "leads.create.item.CITY_VISIT": "زيارة ميدانية",
+  "leads.create.item.APARTMENT": "شقة",
+  "leads.create.item.CONSTRUCTION_VILLA": "فيلا (إنشاء)",
+  "leads.create.item.UNDER_CONSTRUCTION_VILLA": "فيلا تحت الإنشاء",
+  "leads.create.item.PART_OF_HOME": "جزء من المنزل",
+  "leads.create.item.COMMERCIAL": "تجاري",
+  "leads.create.location.INSIDE_UAE": "داخل الإمارات",
+  "leads.create.location.OUTSIDE_UAE": "خارج الإمارات",
 };
 
 export const en = {
@@ -154,6 +169,7 @@ export const en = {
   "leads.page.title": "Leads",
   "leads.page.breadcrumb.sales": "Sales",
   "leads.page.subtitle.kanban": "Deals board",
+  "leads.page.subtitle.deals": "Current deals board — drag cards between lists to change status.",
   "leads.page.subtitle.total": "Total: {total}",
   "leads.view.aria": "View mode",
   "leads.view.list": "List",
@@ -287,4 +303,18 @@ export const en = {
 
   // ── booking lead details card ───────────────────────────────────────────────
   "leads.booking.title": "Booking details",
+
+  // ── create-lead form option labels (category / item / location) ──────────────
+  "leads.create.category.CONSULTATION": "Consultation",
+  "leads.create.category.DESIGN": "Design",
+  "leads.create.item.ROOM": "Room",
+  "leads.create.item.BLUEPRINT": "Blueprint",
+  "leads.create.item.CITY_VISIT": "City visit",
+  "leads.create.item.APARTMENT": "Apartment",
+  "leads.create.item.CONSTRUCTION_VILLA": "Villa (construction)",
+  "leads.create.item.UNDER_CONSTRUCTION_VILLA": "Villa under construction",
+  "leads.create.item.PART_OF_HOME": "Part of home",
+  "leads.create.item.COMMERCIAL": "Commercial",
+  "leads.create.location.INSIDE_UAE": "Inside UAE",
+  "leads.create.location.OUTSIDE_UAE": "Outside UAE",
 };

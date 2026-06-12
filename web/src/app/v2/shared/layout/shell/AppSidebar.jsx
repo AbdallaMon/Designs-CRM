@@ -28,7 +28,7 @@ import {
   alpha,
 } from "@mui/material";
 import NextLink from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
 import { buildVisibleNav } from "@/app/v2/features/shell";
@@ -117,6 +117,8 @@ function SidebarBrand({ collapsed, landingHref, onNavigate }) {
 
 function SidebarContent({ collapsed, landingHref, onNavigate }) {
   const pathname = usePathname();
+  // Current search params disambiguate the two split leads links (?segment=new|deals).
+  const searchParams = useSearchParams();
   const perm = usePermission();
   const { user, validatingAuth } = useAuth();
   const { t, lang } = useT();
@@ -170,7 +172,7 @@ function SidebarContent({ collapsed, landingHref, onNavigate }) {
                 }
               >
                 {group.items.map((item) => {
-                  const active = isPathActive(pathname, item.href);
+                  const active = isPathActive(pathname, item.href, searchParams);
                   return (
                     <ListItem
                       key={item.key}

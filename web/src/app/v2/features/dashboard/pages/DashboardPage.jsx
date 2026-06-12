@@ -41,6 +41,7 @@ import { EmiratesAnalytics } from "../components/EmiratesAnalytics.jsx";
 import { LatestLeads } from "../components/LatestLeads.jsx";
 import { DesignerBoard } from "../components/DesignerBoard.jsx";
 import { DashboardCharts } from "../components/DashboardCharts.jsx";
+import { FixedDataCard } from "../components/FixedDataCard.jsx";
 
 const P = PERMISSIONS.DASHBOARD;
 
@@ -63,6 +64,9 @@ export function DashboardPage() {
   const scope = useDashboardScope();
   const view = roleView(user);
   const enabled = canView;
+  // Read-only fixed-data reference card — gated on the SAME code the BE enforces (the card
+  // self-fetches GET /v2/utilities/fixed-data). Visible to employees on either board.
+  const canViewFixedData = hasPermission(PERMISSIONS.UTILITY.FIXED_DATA_LIST);
 
   if (!canView) {
     // Calm full-screen notice instead of a bare 403 (UX plan §2).
@@ -73,7 +77,7 @@ export function DashboardPage() {
     );
   }
 
-  const widgetProps = { query: scope.query, enabled };
+  const widgetProps = { query: scope.query, enabled, showFixedData: canViewFixedData };
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -101,7 +105,7 @@ export function DashboardPage() {
 }
 
 // ── SALES / SUPER-SALES / ADMIN — the pipeline-first board ───────────────────────────────────
-function SalesBoard({ query, enabled }) {
+function SalesBoard({ query, enabled, showFixedData }) {
   return (
     <>
       {/* row 1 — the action queue ("يحتاج انتباهك"), full width, first. */}
@@ -125,12 +129,15 @@ function SalesBoard({ query, enabled }) {
 
       {/* row 5 — latest leads (each row → the lead hub). */}
       <LatestLeads query={query} enabled={enabled} />
+
+      {/* row 6 — read-only fixed-data reference card (gated on utility.fixed_data.list). */}
+      {showFixedData && <FixedDataCard enabled={enabled} />}
     </>
   );
 }
 
 // ── PRODUCTION (designers / executors) — the work-first board ────────────────────────────────
-function ProductionBoard({ query, enabled }) {
+function ProductionBoard({ query, enabled, showFixedData }) {
   return (
     <>
       {/* row 1 — the production board is PRIMARY. */}
@@ -146,6 +153,9 @@ function ProductionBoard({ query, enabled }) {
 
       {/* row 4 — analytics tier last. */}
       <DashboardCharts query={query} enabled={enabled} />
+
+      {/* row 5 — read-only fixed-data reference card (gated on utility.fixed_data.list). */}
+      {showFixedData && <FixedDataCard enabled={enabled} />}
     </>
   );
 }

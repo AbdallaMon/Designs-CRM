@@ -15,6 +15,7 @@
 
 import { useMemo, useState } from "react";
 import { Box, Container } from "@mui/material";
+import { MdPayments } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
@@ -69,6 +70,12 @@ export function UserDetailPage({ userId }) {
     [isSelf],
   );
 
+  // Per-employee commissions quick action — mirrors the lead-hub "daily verbs" deep-link pattern:
+  // it does NOT duplicate the commissions surface, it deep-links to the commissions tab (which
+  // already lazily renders <CommissionsView userId>, whose own "إضافة عمولة" CTA self-gates on
+  // COMMISSION_MANAGE). Shown only to holders of COMMISSION_VIEW — the same gate as the tab.
+  const canViewCommissions = hasPermission(RESIDUAL.COMMISSION_VIEW);
+
   // Permission-filtered tab set (same predicate gates the tab's content).
   const tabs = useMemo(() => {
     const list = [{ key: "profile", label: t("usersDetails.tab.profile") }];
@@ -110,6 +117,15 @@ export function UserDetailPage({ userId }) {
       <PageHeader
         title={headerTitle}
         subtitle={profile?.email}
+        primaryAction={
+          canViewCommissions
+            ? {
+                label: t("usersDetails.header.quick.commissions"),
+                href: `/v2/users/${userId}?tab=commissions`,
+                icon: <MdPayments />,
+              }
+            : undefined
+        }
         breadcrumbs={
           canList
             ? [
