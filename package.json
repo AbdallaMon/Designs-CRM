@@ -19,6 +19,7 @@
     "dev:server": "npm run dev -w server",
     "dev:web": "npm run dev -w web",
     "build:web": "npm run build -w web",
+    "build:server": "prisma generate --schema packages/db/prisma/schema.prisma && prisma migrate deploy --schema packages/db/prisma/schema.prisma",
     "start:web": "npm run start -w web",
     "start:server": "npm run start -w server",
     "db:generate": "prisma generate --schema packages/db/prisma/schema.prisma",
