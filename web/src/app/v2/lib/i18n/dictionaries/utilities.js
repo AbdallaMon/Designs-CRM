@@ -21,7 +21,6 @@ export const ar = {
 
   // ── tabs ────────────────────────────────────────────────────────────────────
   "utilities.tab.search": "بحث",
-  "utilities.tab.userLog": "سجل اليوم",
   "utilities.tab.fixedData": "البيانات الثابتة",
 
   // ── global search panel ─────────────────────────────────────────────────────
@@ -50,27 +49,6 @@ export const ar = {
   "utilities.search.model.user.label": "المستخدمون",
   "utilities.search.model.user.placeholder": "ابحث بالاسم أو البريد",
 
-  // ── user-log form ───────────────────────────────────────────────────────────
-  "utilities.userLog.title": "سجل العمل اليومي",
-  "utilities.userLog.subtitle": "لم تُسجّل عملك لهذا اليوم بعد — أدخل التفاصيل ثم احفظ.",
-  "utilities.userLog.loadingToast": "جاري تسجيل سجل العمل...",
-  "utilities.userLog.success.title": "تم تسجيل سجل اليوم",
-  "utilities.userLog.success.message": "تم حفظ سجل عملك لهذا اليوم بنجاح.",
-  "utilities.userLog.existing.title": "تم تسجيل سجل اليوم",
-  "utilities.userLog.existing.message":
-    "لقد سجّلت عملك لهذا اليوم بالفعل. يمكنك العودة غداً لتسجيل يوم جديد.",
-  "utilities.userLog.partial.title": "لا يوجد سجل لهذا اليوم",
-  "utilities.userLog.partial.message":
-    "لم تُسجّل عملك لهذا اليوم بعد، ولا تملك صلاحية تسجيل سجل العمل. تواصل مع المسؤول إن كنت تظن أنه ينبغي أن تملكها.",
-  "utilities.userLog.field.date": "التاريخ",
-  "utilities.userLog.field.date.required": "التاريخ مطلوب",
-  "utilities.userLog.field.description": "وصف العمل",
-  "utilities.userLog.field.description.placeholder": "اكتب ما أنجزته اليوم",
-  "utilities.userLog.field.description.required": "وصف العمل مطلوب",
-  "utilities.userLog.field.minutes": "إجمالي الدقائق (اختياري)",
-  "utilities.userLog.field.minutes.invalid": "أدخل عدد دقائق صحيح (0 أو أكثر)",
-  "utilities.userLog.submit": "حفظ سجل اليوم",
-
   // ── fixed-data list ─────────────────────────────────────────────────────────
   "utilities.fixedData.empty.title": "لا توجد بيانات ثابتة",
   "utilities.fixedData.empty.description": "لم تُضَف أي بيانات ثابتة بعد.",
@@ -92,7 +70,6 @@ export const en = {
 
   // ── tabs ────────────────────────────────────────────────────────────────────
   "utilities.tab.search": "Search",
-  "utilities.tab.userLog": "Today's Log",
   "utilities.tab.fixedData": "Fixed Data",
 
   // ── global search panel ─────────────────────────────────────────────────────
@@ -119,27 +96,6 @@ export const en = {
   "utilities.search.model.client.placeholder": "Search by name, email, or phone",
   "utilities.search.model.user.label": "Users",
   "utilities.search.model.user.placeholder": "Search by name or email",
-
-  // ── user-log form ───────────────────────────────────────────────────────────
-  "utilities.userLog.title": "Daily Work Log",
-  "utilities.userLog.subtitle": "You haven't logged your work for today yet — enter the details and save.",
-  "utilities.userLog.loadingToast": "Saving work log...",
-  "utilities.userLog.success.title": "Today's log saved",
-  "utilities.userLog.success.message": "Your work log for today has been saved successfully.",
-  "utilities.userLog.existing.title": "Today's log saved",
-  "utilities.userLog.existing.message":
-    "You have already logged your work for today. You can come back tomorrow to log a new day.",
-  "utilities.userLog.partial.title": "No log for today",
-  "utilities.userLog.partial.message":
-    "You haven't logged your work for today yet, and you don't have permission to submit a work log. Contact the administrator if you think you should.",
-  "utilities.userLog.field.date": "Date",
-  "utilities.userLog.field.date.required": "Date is required",
-  "utilities.userLog.field.description": "Work description",
-  "utilities.userLog.field.description.placeholder": "Write what you accomplished today",
-  "utilities.userLog.field.description.required": "Work description is required",
-  "utilities.userLog.field.minutes": "Total minutes (optional)",
-  "utilities.userLog.field.minutes.invalid": "Enter a valid number of minutes (0 or more)",
-  "utilities.userLog.submit": "Save today's log",
 
   // ── fixed-data list ─────────────────────────────────────────────────────────
   "utilities.fixedData.empty.title": "No fixed data",
