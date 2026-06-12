@@ -39,6 +39,7 @@ import {
 import NextLink from "next/link";
 import { MdRefresh, MdEdit, MdOpenInNew } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
+import { useT } from "@/app/v2/lib/i18n";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { resolveStatusLabel } from "@/app/v2/shared/config/statusLabels";
 import {
@@ -58,19 +59,19 @@ import {
   formatContractPaymentAED as fmt,
   CONTRACT_PAYMENT_STATUS_FILTERS,
   CONTRACT_PAYMENT_SETTABLE_STATUSES,
-  CONTRACT_PAYMENTS_COPY as COPY,
+  buildContractPaymentsCopy,
 } from "../config/contractConstants.js";
 
 const P = PERMISSIONS.CONTRACT;
 
 // Resolve a status filter VALUE to its Arabic label. "ALL" is a synthetic filter with no
 // enum entry, so it gets its own copy string; everything else resolves via the payment domain.
-function filterLabel(value) {
-  return value === "ALL" ? COPY.filterAll : resolveStatusLabel("payment", value);
+function filterLabel(value, copy) {
+  return value === "ALL" ? copy.filterAll : resolveStatusLabel("payment", value);
 }
 
 // A row of totals chips for a contract node (defensive — totals may be partially absent).
-function TotalsChips({ totals = {} }) {
+function TotalsChips({ totals = {}, copy: COPY }) {
   const items = [
     { label: COPY.totalsReceived, value: totals.received },
     { label: COPY.totalsTransferred, value: totals.transferred },
@@ -94,7 +95,7 @@ function TotalsChips({ totals = {} }) {
 
 // Set-status inline select (RECEIVED / TRANSFERRED only — the legacy constraint). Hidden
 // entirely for NOT_DUE rows (system-managed).
-function SetStatusSelect({ payment, onChangeStatus }) {
+function SetStatusSelect({ payment, onChangeStatus, copy: COPY }) {
   return (
     <FormControl size="small" fullWidth>
       <InputLabel id={`set-status-${payment.id}`}>{COPY.setStatus}</InputLabel>
@@ -115,7 +116,7 @@ function SetStatusSelect({ payment, onChangeStatus }) {
 }
 
 // One payment row. `canManage` toggles the action controls (read-only otherwise).
-function PaymentRow({ payment, canManage, onChangeStatus, onEditAmounts }) {
+function PaymentRow({ payment, canManage, onChangeStatus, onEditAmounts, copy: COPY }) {
   const isNotDue = payment.status === "NOT_DUE";
   return (
     <Grid container spacing={1.5} alignItems="center" sx={{ py: 1.5 }}>
@@ -153,7 +154,7 @@ function PaymentRow({ payment, canManage, onChangeStatus, onEditAmounts }) {
             </Typography>
           ) : (
             <Stack spacing={1}>
-              <SetStatusSelect payment={payment} onChangeStatus={onChangeStatus} />
+              <SetStatusSelect payment={payment} onChangeStatus={onChangeStatus} copy={COPY} />
               <Button
                 size="small"
                 variant="outlined"
@@ -171,7 +172,7 @@ function PaymentRow({ payment, canManage, onChangeStatus, onEditAmounts }) {
 }
 
 // One contract group = one SectionCard.
-function ContractNodeCard({ node, canManage, onChangeStatus, onEditAmounts }) {
+function ContractNodeCard({ node, canManage, onChangeStatus, onEditAmounts, copy: COPY }) {
   const c = node?.contract ?? {};
   const lead = c.clientLead ?? {};
   const leadLabel = lead.code != null ? `#${lead.code}` : lead.id != null ? `#${lead.id}` : "—";
@@ -205,7 +206,7 @@ function ContractNodeCard({ node, canManage, onChangeStatus, onEditAmounts }) {
   return (
     <SectionCard title={title} subtitle={subtitle} sx={{ mb: 2 }}>
       <Box sx={{ mb: 1.5 }}>
-        <TotalsChips totals={node?.totals} />
+        <TotalsChips totals={node?.totals} copy={COPY} />
       </Box>
       <Divider sx={{ my: 1 }} />
       {payments.length === 0 ? (
@@ -220,6 +221,7 @@ function ContractNodeCard({ node, canManage, onChangeStatus, onEditAmounts }) {
               canManage={canManage}
               onChangeStatus={onChangeStatus}
               onEditAmounts={onEditAmounts}
+              copy={COPY}
             />
             <Divider />
           </Box>
@@ -232,7 +234,8 @@ function ContractNodeCard({ node, canManage, onChangeStatus, onEditAmounts }) {
 // Edit-amounts dialog — mirrors PayPaymentDialog styling. Submits amountLost / amountReceived
 // + an optional new status (RECEIVED / TRANSFERRED only) via updatePaymentAmounts. NOT_DUE
 // rows never reach here (the trigger is hidden), but we keep the guard for safety.
-function PaymentAmountsDialog({ payment, onClose, onSaved }) {
+function PaymentAmountsDialog({ payment, onClose, onSaved, copy: COPY }) {
+  const { t } = useT();
   const open = Boolean(payment);
   const isNotDue = payment?.status === "NOT_DUE";
   const [amountLost, setAmountLost] = useState("0");
@@ -259,7 +262,7 @@ function PaymentAmountsDialog({ payment, onClose, onSaved }) {
           amountReceived: Number(amountReceived || 0),
           ...(status ? { status } : {}),
         }),
-      { loading: "جاري تحديث المبالغ...", setLoading: setSubmitting },
+      { loading: t("contracts.payments.updatingAmounts"), setLoading: setSubmitting },
     );
     if (res) onSaved();
   }
@@ -326,6 +329,8 @@ function PaymentAmountsDialog({ payment, onClose, onSaved }) {
 }
 
 export function ContractPaymentsPage() {
+  const { t } = useT();
+  const COPY = buildContractPaymentsCopy(t);
   const { hasPermission } = usePermission();
   const canList = hasPermission(P.PAYMENT_LIST);
   const canManage = hasPermission(P.PAYMENT_MANAGE);
@@ -351,7 +356,7 @@ export function ContractPaymentsPage() {
     if (!CONTRACT_PAYMENT_SETTABLE_STATUSES.includes(newStatus)) return;
     const res = await runContractMutation(
       () => contractsService.changePaymentStatusBare(paymentId, newStatus),
-      { loading: "جاري تحديث الحالة..." },
+      { loading: t("contracts.payments.updatingStatus") },
     );
     if (res) refetch();
   }
@@ -378,7 +383,7 @@ export function ContractPaymentsPage() {
         >
           {CONTRACT_PAYMENT_STATUS_FILTERS.map((s) => (
             <MenuItem key={s} value={s}>
-              {filterLabel(s)}
+              {filterLabel(s, COPY)}
             </MenuItem>
           ))}
         </Select>
@@ -406,6 +411,7 @@ export function ContractPaymentsPage() {
             canManage={canManage}
             onChangeStatus={handleChangeStatus}
             onEditAmounts={setEditPayment}
+            copy={COPY}
           />
         ))}
         <TablePagination
@@ -419,7 +425,7 @@ export function ContractPaymentsPage() {
             setPage(1);
           }}
           rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage="عدد الصفوف"
+          labelRowsPerPage={COPY.rowsPerPage}
         />
       </>
     );
@@ -444,6 +450,7 @@ export function ContractPaymentsPage() {
         payment={editPayment}
         onClose={() => setEditPayment(null)}
         onSaved={handleSavedAmounts}
+        copy={COPY}
       />
     </Container>
   );

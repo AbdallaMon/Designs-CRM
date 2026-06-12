@@ -7,9 +7,11 @@
 
 import { useEffect, useState } from "react";
 import { Autocomplete, Box, TextField, LinearProgress } from "@mui/material";
+import { useT } from "@/app/v2/lib/i18n";
 import contractsService from "../../../contracts.service.js";
 
 export default function PaymentConditionSelect({ initialCondition, onConditionChange, disabled }) {
+  const { t } = useT();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(initialCondition || null);
@@ -54,7 +56,7 @@ export default function PaymentConditionSelect({ initialCondition, onConditionCh
           onConditionChange(newValue);
         }}
         disabled={disabled || loading}
-        renderInput={(params) => <TextField {...params} size="small" label="اختر شرط الدفع" />}
+        renderInput={(params) => <TextField {...params} size="small" label={t("contracts.editors.condition.select")} />}
       />
     </Box>
   );

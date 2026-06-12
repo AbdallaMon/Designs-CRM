@@ -5,8 +5,11 @@
 
 import { useState } from "react";
 import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from "@mui/material";
+import { useT } from "@/app/v2/lib/i18n";
 
-export default function ConfirmActionDialog({ open, onClose, onConfirm, title, description, confirmLabel = "تأكيد", color = "error" }) {
+export default function ConfirmActionDialog({ open, onClose, onConfirm, title, description, confirmLabel, color = "error" }) {
+  const { t } = useT();
+  const resolvedConfirmLabel = confirmLabel ?? t("contracts.common.confirm");
   const [busy, setBusy] = useState(false);
   const handleConfirm = async () => {
     setBusy(true);
@@ -24,8 +27,8 @@ export default function ConfirmActionDialog({ open, onClose, onConfirm, title, d
         <DialogContentText>{description}</DialogContentText>
       </DialogContent>
       <DialogActions sx={{ gap: 1, p: 2 }}>
-        <Button onClick={onClose} disabled={busy}>إلغاء</Button>
-        <Button onClick={handleConfirm} color={color} variant="contained" disabled={busy}>{confirmLabel}</Button>
+        <Button onClick={onClose} disabled={busy}>{t("contracts.common.cancel")}</Button>
+        <Button onClick={handleConfirm} color={color} variant="contained" disabled={busy}>{resolvedConfirmLabel}</Button>
       </DialogActions>
     </Dialog>
   );

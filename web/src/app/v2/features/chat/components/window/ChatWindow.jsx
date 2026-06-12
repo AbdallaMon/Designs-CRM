@@ -25,6 +25,7 @@ import { useChatSocket, chatEmit } from "../../chat.socket.js";
 import chatService, { clientChatService } from "../../chat.service.js";
 import { runChatMutation } from "../../chat.mutations.js";
 import { isAdminRole } from "../../chat.utils.js";
+import { useT } from "@/app/v2/lib/i18n";
 
 export function ChatWindow({
   roomId,
@@ -41,6 +42,7 @@ export function ChatWindow({
   const { user: authUser } = useAuth();
   const { socket } = useSocket();
   const { hasPermission } = usePermission();
+  const { t } = useT();
 
   const isClient = Boolean(clientContext?.token);
   // The actor is whoever the socket/UI acts as. Staff → authed user; client → the
@@ -72,15 +74,15 @@ export function ChatWindow({
 
   // ── Confirm dialog plumbing ──
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTitle, setConfirmTitle] = useState("تأكيد");
+  const [confirmTitle, setConfirmTitle] = useState(t("chat.window.confirm", "تأكيد"));
   const [confirmDescription, setConfirmDescription] = useState("");
   const confirmActionRef = useRef(null);
   const openConfirm = useCallback((title, description, onConfirm) => {
-    setConfirmTitle(title || "تأكيد");
+    setConfirmTitle(title || t("chat.window.confirm", "تأكيد"));
     setConfirmDescription(description || "");
     confirmActionRef.current = onConfirm;
     setConfirmOpen(true);
-  }, []);
+  }, [t]);
   const closeConfirm = useCallback(() => {
     setConfirmOpen(false);
     confirmActionRef.current = null;
@@ -259,7 +261,7 @@ export function ChatWindow({
   const handleAddMembers = async () => {
     const res = await runChatMutation(
       () => chatService.addMembers(roomId, { userIds: selectedUsers.map((u) => u.id) }),
-      { loading: "جاري إضافة الأعضاء..." },
+      { loading: t("chat.window.addingMembers", "جاري إضافة الأعضاء...") },
     );
     if (res) {
       fetchMembers();
@@ -270,7 +272,7 @@ export function ChatWindow({
   const handleRemoveMember = async (memberId) => {
     const res = await runChatMutation(
       () => chatService.removeMember(roomId, memberId),
-      { loading: "جاري إزالة العضو..." },
+      { loading: t("chat.window.removingMember", "جاري إزالة العضو...") },
     );
     if (res) fetchMembers();
   };
@@ -283,27 +285,39 @@ export function ChatWindow({
 
   const confirmRemoveMember = useCallback(
     (member) => {
-      const name = member?.user?.name || member?.client?.name || "هذا العضو";
-      openConfirm("إزالة العضو؟", `هل تريد إزالة ${name} من المحادثة؟`, () => handleRemoveMember(member.id));
+      const name = member?.user?.name || member?.client?.name || t("chat.window.defaultMember", "هذا العضو");
+      openConfirm(
+        t("chat.window.removeMemberTitle", "إزالة العضو؟"),
+        t("chat.window.removeMemberDescription", "هل تريد إزالة {name} من المحادثة؟").replace("{name}", name),
+        () => handleRemoveMember(member.id),
+      );
     },
-    [openConfirm], // eslint-disable-line react-hooks/exhaustive-deps
+    [openConfirm, t], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const confirmDeleteMessage = useCallback(
     (payload) => {
       const msgId = typeof payload === "object" && payload?.id ? payload.id : payload;
       if (!msgId) return;
-      openConfirm("حذف الرسالة؟", "سيتم حذف الرسالة للجميع في المحادثة.", () => deleteMessage(msgId));
+      openConfirm(
+        t("chat.window.deleteMessageTitle", "حذف الرسالة؟"),
+        t("chat.window.deleteMessageDescription", "سيتم حذف الرسالة للجميع في المحادثة."),
+        () => deleteMessage(msgId),
+      );
     },
-    [openConfirm, deleteMessage],
+    [openConfirm, deleteMessage, t],
   );
 
   const confirmDeleteSelectedMessages = useCallback(() => {
-    openConfirm("حذف الرسائل؟", "سيتم حذف الرسائل للجميع في المحادثة.", async () => {
-      await deleteSelectedMessages(selectedMessages);
-      setSelectedMessages([]);
-    });
-  }, [openConfirm, deleteSelectedMessages, selectedMessages]);
+    openConfirm(
+      t("chat.window.deleteMessagesTitle", "حذف الرسائل؟"),
+      t("chat.window.deleteMessagesDescription", "سيتم حذف الرسائل للجميع في المحادثة."),
+      async () => {
+        await deleteSelectedMessages(selectedMessages);
+        setSelectedMessages([]);
+      },
+    );
+  }, [openConfirm, deleteSelectedMessages, selectedMessages, t]);
 
   const handlePinMessage = useCallback(
     (message) => chatEmit.pinMessage(socket, { messageId: message.id, roomId, userId: user?.id }),
@@ -344,7 +358,7 @@ export function ChatWindow({
   if (!room) {
     return (
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: { xs: "calc(100vh - 62px)", md: "calc(100vh - 105px)" }, color: "textSecondary" }}>
-        <Typography>اختر محادثة لبدء المراسلة</Typography>
+        <Typography>{t("chat.window.pickToStart", "اختر محادثة لبدء المراسلة")}</Typography>
       </Box>
     );
   }
@@ -398,14 +412,14 @@ export function ChatWindow({
           </Box>
         ) : messages.length === 0 ? (
           <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, color: "textSecondary" }}>
-            <Typography>لا توجد رسائل بعد. ابدأ المحادثة!</Typography>
+            <Typography>{t("chat.window.noMessagesYet", "لا توجد رسائل بعد. ابدأ المحادثة!")}</Typography>
           </Box>
         ) : (
           <>
             <div ref={messagesStartRef} />
             {!hasMore && (
               <Typography variant="caption" sx={{ display: "block", textAlign: "center", color: "textSecondary", mb: 1 }}>
-                لا مزيد من الرسائل
+                {t("chat.window.noMoreMessages", "لا مزيد من الرسائل")}
               </Typography>
             )}
             {loadingMore && <CircularProgress />}
@@ -497,7 +511,7 @@ export function ChatWindow({
         description={confirmDescription}
         onConfirm={handleConfirm}
         onCancel={closeConfirm}
-        confirmButtonText="حذف"
+        confirmButtonText={t("chat.confirm.delete", "حذف")}
         confirmButtonColor="error"
       />
     </Paper>

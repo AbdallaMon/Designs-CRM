@@ -23,6 +23,11 @@ export const ar = {
   "tasks.delete": "حذف",
   "tasks.loading.delete": "جاري الحذف...",
   "tasks.modal.name": "مهمة",
+  // ── task details page ───────────────────────────────────────────────────────
+  "tasks.details.unavailable": "هذه المهمة غير متاحة أو لا تملك صلاحية عرضها.",
+  "tasks.details.back": "رجوع",
+  "tasks.details.finishedAt": "أُنجزت: {value}",
+  "tasks.details.deleteTask": "حذف المهمة",
 };
 
 export const en = {
@@ -39,4 +44,9 @@ export const en = {
   "tasks.delete": "Delete",
   "tasks.loading.delete": "Deleting...",
   "tasks.modal.name": "task",
+  // ── task details page ───────────────────────────────────────────────────────
+  "tasks.details.unavailable": "This task is unavailable or you don't have permission to view it.",
+  "tasks.details.back": "Back",
+  "tasks.details.finishedAt": "Finished: {value}",
+  "tasks.details.deleteTask": "Delete task",
 };

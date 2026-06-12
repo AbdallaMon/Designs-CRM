@@ -14,8 +14,10 @@ import { Alert, Box, CircularProgress, Container } from "@mui/material";
 import { ChatWindow } from "../components/window/ChatWindow.jsx";
 import { clientChatService } from "../chat.service.js";
 import { ClientChatProviders } from "./ClientChatProviders.jsx";
+import { useT } from "@/app/v2/lib/i18n";
 
 export function ClientChatPage() {
+  const { t } = useT();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const roomIdParam = searchParams.get("roomId");
@@ -29,7 +31,7 @@ export function ClientChatPage() {
     async function validate() {
       if (!token) {
         setLoading(false);
-        setError("رابط غير صالح: لا يوجد رمز وصول.");
+        setError(t("chat.client.invalidLink", "رابط غير صالح: لا يوجد رمز وصول."));
         return;
       }
       setLoading(true);
@@ -38,7 +40,7 @@ export function ClientChatPage() {
         const res = await clientChatService.validateToken(token);
         if (active) setTokenData(res?.data ?? null);
       } catch (e) {
-        if (active) setError(e?.message || "تعذر التحقق من رمز الوصول.");
+        if (active) setError(e?.message || t("chat.client.validateFailed", "تعذر التحقق من رمز الوصول."));
       } finally {
         if (active) setLoading(false);
       }
@@ -47,7 +49,7 @@ export function ClientChatPage() {
     return () => {
       active = false;
     };
-  }, [token]);
+  }, [token, t]);
 
   if (loading) {
     return (
@@ -60,7 +62,7 @@ export function ClientChatPage() {
   if (error || !tokenData || !tokenData.isValid) {
     return (
       <Container maxWidth="sm" sx={{ py: 4 }}>
-        <Alert severity="error">{error || "رمز الوصول غير صالح أو منتهي الصلاحية."}</Alert>
+        <Alert severity="error">{error || t("chat.client.invalidToken", "رمز الوصول غير صالح أو منتهي الصلاحية.")}</Alert>
       </Container>
     );
   }

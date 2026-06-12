@@ -225,12 +225,12 @@ export function ReportsBuilder() {
                         {...field}
                         select
                         SelectProps={{ multiple: true }}
-                        label="الحالات"
+                        label={t("adminResidual.reports.filters.statuses", "الحالات")}
                         fullWidth
                       >
                         {LEAD_STATUS_OPTIONS.map((o) => (
                           <MenuItem key={o.value} value={o.value}>
-                            {o.label}
+                            {t(o.labelKey, o.labelFallback)}
                           </MenuItem>
                         ))}
                       </TextField>
@@ -244,8 +244,8 @@ export function ReportsBuilder() {
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        label="معرّفات العملاء (مفصولة بفواصل)"
-                        placeholder="مثال: 12, 34, 56"
+                        label={t("adminResidual.reports.filters.clientIds", "معرّفات العملاء (مفصولة بفواصل)")}
+                        placeholder={t("adminResidual.reports.filters.clientIds.placeholder", "مثال: 12, 34, 56")}
                         fullWidth
                       />
                     )}
@@ -261,8 +261,8 @@ export function ReportsBuilder() {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="معرّفات الموظفين (مفصولة بفواصل)"
-                    placeholder="مثال: 1, 2, 3"
+                    label={t("adminResidual.reports.filters.userIds", "معرّفات الموظفين (مفصولة بفواصل)")}
+                    placeholder={t("adminResidual.reports.filters.userIds.placeholder", "مثال: 1, 2, 3")}
                     fullWidth
                   />
                 )}
@@ -277,7 +277,7 @@ export function ReportsBuilder() {
                 startIcon={<MdInsertChart />}
                 disabled={loadingPreview}
               >
-                معاينة
+                {t("adminResidual.reports.preview.submit", "معاينة")}
               </Button>
             </Grid>
           </Grid>
@@ -285,7 +285,7 @@ export function ReportsBuilder() {
       </SectionCard>
 
       <SectionCard
-        title="المعاينة"
+        title={t("adminResidual.reports.preview.title", "المعاينة")}
         actions={
           previewData ? (
             <Stack direction="row" spacing={1}>
@@ -296,7 +296,7 @@ export function ReportsBuilder() {
                 onClick={() => onExport("excel")}
                 disabled={exporting}
               >
-                تصدير Excel
+                {t("adminResidual.reports.export.excel", "تصدير Excel")}
               </Button>
               <Button
                 variant="outlined"
@@ -305,7 +305,7 @@ export function ReportsBuilder() {
                 onClick={() => onExport("pdf")}
                 disabled={exporting}
               >
-                تصدير PDF
+                {t("adminResidual.reports.export.pdf", "تصدير PDF")}
               </Button>
             </Stack>
           ) : null
@@ -315,8 +315,11 @@ export function ReportsBuilder() {
           <LoadingState variant="detail" />
         ) : !previewData ? (
           <EmptyState
-            title="لا توجد معاينة بعد"
-            description="اضبط عوامل التصفية ثم اضغط «معاينة» لعرض بيانات التقرير قبل التصدير."
+            title={t("adminResidual.reports.preview.empty.title", "لا توجد معاينة بعد")}
+            description={t(
+              "adminResidual.reports.preview.empty.description",
+              "اضبط عوامل التصفية ثم اضغط «معاينة» لعرض بيانات التقرير قبل التصدير.",
+            )}
           />
         ) : (
           <Box
@@ -340,7 +343,10 @@ export function ReportsBuilder() {
         )}
         {previewData && (
           <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
-            تُصدَّر الملفات من بيانات المعاينة المعروضة أعلاه دون تعديل.
+            {t(
+              "adminResidual.reports.preview.note",
+              "تُصدَّر الملفات من بيانات المعاينة المعروضة أعلاه دون تعديل.",
+            )}
           </Typography>
         )}
       </SectionCard>

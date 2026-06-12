@@ -32,13 +32,14 @@ import {
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { FaCheckCircle, FaInfoCircle, FaCheck, FaMinusCircle } from "react-icons/fa";
+import { useT } from "@/app/v2/lib/i18n";
 import {
   CONTRACT_LEVELSENUM,
   STAGE_STATUS_LABEL,
   formatAED,
   emirateOrCountryLabel,
 } from "../../config/contractConstants.js";
-import { FIXED_TEXT, PAYMENT_ORDINAL, defaultStageLabels } from "../../config/writtenBlocksData.js";
+import { buildFixedText, paymentOrdinal, defaultStageLabel } from "../../config/writtenBlocksData.js";
 
 const extractStageNumber = (title, fallbackOrder) => {
   if (!title) return fallbackOrder ?? 0;
@@ -51,16 +52,17 @@ const numList = (arr) => arr.filter((v) => v != null && v !== "").join(", ");
 
 const getToday = () => dayjs().locale("ar").format("YYYY/MM/DD");
 
-function buildPaymentLine({ payment, index, taxRate }) {
-  const ordinal = PAYMENT_ORDINAL[index] || `دفعة ${index}`;
+function buildPaymentLine({ t, payment, index, taxRate }) {
+  const ordinal =
+    paymentOrdinal(t, index) || t("contracts.session.payment.ordinalFallback").replace("{n}", index);
   const baseAmountNum = Number(payment.amount || 0);
   const rate = taxRate > 1 ? taxRate / 100 : taxRate; // expects 0.05, but handles 5 too
   const amountWithTaxNum = baseAmountNum * (1 + (rate || 0));
   const amtWithTax = formatAED(amountWithTaxNum);
-  const taxNote = `${amtWithTax} (شامل الضريبة)`;
+  const taxNote = `${amtWithTax} ${t("contracts.session.payment.withTaxNote")}`;
   const primary = payment.conditionItem?.labelAr;
 
-  if (index === 1) return `• ${ordinal} عند توقيع العقد بقيمه: ${taxNote}`;
+  if (index === 1) return `• ${ordinal} ${t("contracts.session.payment.onSignature")} ${taxNote}`;
   return `• ${ordinal} ${primary || ""} : ${taxNote}`;
 }
 
@@ -148,6 +150,8 @@ function RenderStageBullets({ details }) {
 }
 
 function ClientSection({ session }) {
+  const { t } = useT();
+  const fixedText = buildFixedText(t);
   const client = session?.clientLead?.client || {};
   const lead = session?.clientLead || {};
   const stagesNums = useMemo(() => {
@@ -157,24 +161,24 @@ function ClientSection({ session }) {
   const today = useMemo(() => getToday(), []);
   const name = client?.arName || client?.name;
   return (
-    <SectionCard title={FIXED_TEXT.titles.partyOne}>
+    <SectionCard title={fixedText.titles.partyOne}>
       <Grid container spacing={2}>
-        <Grid size={{ md: 6 }}><KeyValue label="اسم المالك" value={name} /></Grid>
+        <Grid size={{ md: 6 }}><KeyValue label={t("contracts.session.client.ownerName")} value={name} /></Grid>
         <Grid size={{ md: 6 }}>
-          <KeyValue label="العنوان" value={emirateOrCountryLabel({ emirate: lead?.emirate, country: lead?.country })} />
+          <KeyValue label={t("contracts.session.client.address")} value={emirateOrCountryLabel({ emirate: lead?.emirate, country: lead?.country })} />
         </Grid>
-        <Grid size={{ md: 6 }}><KeyValue label="رقم الهاتف" value={client?.phone} /></Grid>
-        <Grid size={{ md: 6 }}><KeyValue label="البريد الإلكتروني" value={client?.email} /></Grid>
-        <Grid size={{ md: 6 }}><KeyValue label="نوع المشروع" value={session?.title} /></Grid>
-        <Grid size={{ md: 6 }}><KeyValue label="كود المشروع" value={lead?.code || lead?.id} /></Grid>
+        <Grid size={{ md: 6 }}><KeyValue label={t("contracts.session.client.phone")} value={client?.phone} /></Grid>
+        <Grid size={{ md: 6 }}><KeyValue label={t("contracts.session.client.email")} value={client?.email} /></Grid>
+        <Grid size={{ md: 6 }}><KeyValue label={t("contracts.session.client.projectType")} value={session?.title} /></Grid>
+        <Grid size={{ md: 6 }}><KeyValue label={t("contracts.session.client.projectCode")} value={lead?.code || lead?.id} /></Grid>
         <Grid size={{ md: 6 }}>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-            <Typography variant="body2" sx={{ fontWeight: 700 }}>{FIXED_TEXT.titles.includesStages}:</Typography>
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>{fixedText.titles.includesStages}:</Typography>
             <Typography variant="body2">{numList(stagesNums)}</Typography>
           </Stack>
         </Grid>
         <Grid size={{ md: 6 }}>
-          <Chip icon={<FaInfoCircle />} label={FIXED_TEXT.todayWritten(today)} variant="outlined" />
+          <Chip icon={<FaInfoCircle />} label={fixedText.todayWritten(today)} variant="outlined" />
         </Grid>
       </Grid>
     </SectionCard>
@@ -182,17 +186,19 @@ function ClientSection({ session }) {
 }
 
 function AmountParagraph({ session }) {
+  const { t } = useT();
+  const fixedText = buildFixedText(t);
   const amount = Number(session?.amount ?? 0);
   const vatRate = Number(session?.taxRate ?? 0);
   const total = session?.totalAmount ?? amount * (1 + vatRate / 100);
   return (
-    <SectionCard title={FIXED_TEXT.titles.amounts} dense>
+    <SectionCard title={fixedText.titles.amounts} dense>
       <Stack spacing={1.25}>
         <Typography variant="body2" sx={{ whiteSpace: "pre-line" }}>
-          اتفق الفريقان على أن تكون تكلفة التصميم الداخلي للمشروع هي: <b>{formatAED(amount)}</b>
+          {t("contracts.session.amount.designCost")} <b>{formatAED(amount)}</b>
         </Typography>
         <Typography variant="body2" sx={{ whiteSpace: "pre-line" }}>
-          مع ضريبة <b>{vatRate}%</b> تصبح تكلفة التصميم <b>{formatAED(total)}</b>
+          {t("contracts.session.amount.withTaxPrefix")} <b>{vatRate}%</b> {t("contracts.session.amount.withTaxSuffix")} <b>{formatAED(total)}</b>
         </Typography>
       </Stack>
     </SectionCard>
@@ -200,10 +206,11 @@ function AmountParagraph({ session }) {
 }
 
 function DbSpecialItems({ session }) {
+  const { t } = useT();
   const items = (session?.specialItems || []).map((it) => it.labelAr).filter(Boolean);
   if (!items.length) return null;
   return (
-    <SectionCard title="بنود خاصة" dense>
+    <SectionCard title={t("contracts.session.specialItems")} dense>
       <List dense>
         {items.map((t, i) => (
           <ListItem key={i} disableGutters sx={{ py: 0.25 }}>
@@ -216,19 +223,20 @@ function DbSpecialItems({ session }) {
 }
 
 function PartyOneWithPayments({ session, contractUtility }) {
+  const { t } = useT();
   const payments = session?.payments || session?.paymentsNew || [];
   return (
-    <SectionCard title="التزامات الفريق الأول" dense>
+    <SectionCard title={t("contracts.session.partyOneObligations")} dense>
       <Stack spacing={1.25}>
         <BulletText text={contractUtility?.obligationsPartyOneAr} />
         {!!payments.length && (
           <Fragment>
-            <Typography variant="body2" sx={{ mt: 1, fontWeight: 700 }}>دفعات العقد:</Typography>
+            <Typography variant="body2" sx={{ mt: 1, fontWeight: 700 }}>{t("contracts.session.contractPayments")}</Typography>
             <List dense>
               {payments.map((p, i) => (
                 <ListItem key={p.id || i} disableGutters sx={{ py: 0.25 }}>
                   <ListItemText
-                    primary={buildPaymentLine({ payment: p, index: i + 1, taxRate: session?.taxRate })}
+                    primary={buildPaymentLine({ t, payment: p, index: i + 1, taxRate: session?.taxRate })}
                     slotProps={{ primary: { variant: "body2" } }}
                   />
                 </ListItem>
@@ -242,8 +250,10 @@ function PartyOneWithPayments({ session, contractUtility }) {
 }
 
 function StagesTable({ session, levelClauses = [] }) {
+  const { t } = useT();
+  const fixedText = buildFixedText(t);
   const theme = useTheme();
-  const isSmall = useMediaQuery((t) => t.breakpoints.down("sm"));
+  const isSmall = useMediaQuery((th) => th.breakpoints.down("sm"));
   const baseStages = CONTRACT_LEVELSENUM.slice(0, 6).map((s, i) => ({ key: s.enum, order: i + 1, label: s.label }));
   const stagesMap = new Map();
   (session?.stages || []).forEach((st) => {
@@ -262,7 +272,7 @@ function StagesTable({ session, levelClauses = [] }) {
         <Stack direction="row" spacing={1} alignItems="center" sx={{ width: "100%", justifyContent: "space-between" }}>
           <Stack direction="row" spacing={1} alignItems="center">
             <Typography variant="body2" sx={{ fontWeight: 700 }}>{s.order}.</Typography>
-            <Typography variant="body2" sx={{ fontWeight: 700 }}>{s.label || defaultStageLabels[s.order]}</Typography>
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>{s.label || defaultStageLabel(t, s.order)}</Typography>
           </Stack>
           <Chip
             size="small"
@@ -278,10 +288,12 @@ function StagesTable({ session, levelClauses = [] }) {
               size="small"
               color={included ? "success" : "default"}
               icon={included ? <FaCheckCircle /> : <FaMinusCircle />}
-              label={included ? "يشمل العقد" : "لا يشمل"}
+              label={included ? t("contracts.session.stage.includes") : t("contracts.session.stage.excludes")}
             />
             <Typography variant="body2">
-              {included && deliveryDays != null ? `أيام التسليم: ${deliveryDays} يوم` : "—"}
+              {included && deliveryDays != null
+                ? `${t("contracts.session.stage.deliveryDaysPrefix")} ${deliveryDays} ${t("contracts.session.stage.deliveryDaysSuffix")}`
+                : "—"}
             </Typography>
           </Stack>
           <RenderStageBullets details={currentLevel?.textAr} />
@@ -294,7 +306,7 @@ function StagesTable({ session, levelClauses = [] }) {
   };
 
   return (
-    <SectionCard title={FIXED_TEXT.titles.allStagesMatrix}>
+    <SectionCard title={fixedText.titles.allStagesMatrix}>
       <Box sx={{ display: "grid", gridTemplateColumns: isSmall ? "1fr" : "repeat(auto-fill, minmax(240px, 1fr))", gap: 1.5 }}>
         {baseStages.map((s) => (
           <StageCard key={s.key} s={s} />
@@ -305,10 +317,11 @@ function StagesTable({ session, levelClauses = [] }) {
 }
 
 function ReadableStageClauses({ stageClauses }) {
+  const { t } = useT();
   const theme = useTheme();
   if (!stageClauses || !stageClauses.length) return null;
   return (
-    <SectionCard title="بنود المراحل">
+    <SectionCard title={t("contracts.session.stageClauses")}>
       <Stack spacing={2.5}>
         {stageClauses.map((clause, i) => (
           <Box key={i}>
@@ -322,18 +335,20 @@ function ReadableStageClauses({ stageClauses }) {
 }
 
 function PartyTwoObligations({ contractUtility }) {
+  const { t } = useT();
   return (
-    <SectionCard title="التزامات الفريق الثاني" dense>
+    <SectionCard title={t("contracts.session.partyTwoObligations")} dense>
       <BulletText text={contractUtility?.obligationsPartyTwoAr} />
     </SectionCard>
   );
 }
 
 function SpecialClauses({ items = [] }) {
+  const { t } = useT();
   const theme = useTheme();
   if (!items.length) return null;
   return (
-    <SectionCard title="بنود خاصة" dense>
+    <SectionCard title={t("contracts.session.specialItems")} dense>
       <Stack spacing={1}>
         {items.map((t, i) => (
           <Box key={i} sx={{ borderRight: `3px solid ${theme.palette.primary.main}`, pr: 1.5, py: 1, backgroundColor: alpha(theme.palette.primary.main, 0.03), borderRadius: 1 }}>
@@ -346,15 +361,17 @@ function SpecialClauses({ items = [] }) {
 }
 
 function DrawingsSection({ session }) {
+  const { t } = useT();
+  const fixedText = buildFixedText(t);
   const drawings = session?.drawings || [];
   if (!drawings.length) return null;
   return (
-    <SectionCard title={FIXED_TEXT.titles.drawings} dense>
+    <SectionCard title={fixedText.titles.drawings} dense>
       <Grid container spacing={2}>
         {drawings.map((d, i) => (
           <Grid key={d.id || i} size={{ md: 4 }}>
             <Card variant="outlined">
-              <CardHeader title={d.fileName || "مخطط"} />
+              <CardHeader title={d.fileName || t("contracts.session.drawing.fallbackName")} />
               <CardContent>
                 <Box component="img" src={d.url} alt={d.fileName || "drawing"} sx={{ width: "100%", borderRadius: 1 }} />
               </CardContent>
@@ -367,6 +384,8 @@ function DrawingsSection({ session }) {
 }
 
 export default function ContractSessionView({ session, contractUtility, onSubmit }) {
+  const { t } = useT();
+  const fixedText = buildFixedText(t);
   const [confirmed, setConfirmed] = useState(false);
 
   const stageClauses = useMemo(() => contractUtility?.stageClauses, [contractUtility]);
@@ -389,16 +408,16 @@ export default function ContractSessionView({ session, contractUtility, onSubmit
         <SpecialClauses items={handwritten} />
         <DrawingsSection session={session} />
 
-        <SectionCard title={FIXED_TEXT.titles.confirmation} dense>
+        <SectionCard title={fixedText.titles.confirmation} dense>
           <FormControlLabel
             control={
               <Checkbox
                 checked={confirmed}
                 onChange={(e) => setConfirmed(e.target.checked)}
-                inputProps={{ "aria-label": FIXED_TEXT.confirmationLabel }}
+                inputProps={{ "aria-label": fixedText.confirmationLabel }}
               />
             }
-            label={FIXED_TEXT.confirmationLabel}
+            label={fixedText.confirmationLabel}
           />
         </SectionCard>
 
@@ -412,7 +431,7 @@ export default function ContractSessionView({ session, contractUtility, onSubmit
               onSubmit?.();
             }}
           >
-            تأكيد والانتقال للتوقيع
+            {t("contracts.session.submit")}
           </Button>
         </Stack>
       </Stack>

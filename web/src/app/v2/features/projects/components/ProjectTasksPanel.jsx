@@ -27,10 +27,11 @@ import { runProjectMutation } from "../projects.mutations.js";
 import { TaskActions } from "./TaskActions.jsx";
 import { CreateTaskModal } from "./CreateTaskModal.jsx";
 
-export function ProjectTasksPanel({ project, type = "PROJECT", name = "مهمة" }) {
+export function ProjectTasksPanel({ project, type = "PROJECT", name }) {
   const projectId = project?.id;
   const { hasPermission } = usePermission();
   const { t } = useT();
+  const displayName = name ?? t("projects.tasks.defaultName");
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
@@ -77,7 +78,7 @@ export function ProjectTasksPanel({ project, type = "PROJECT", name = "مهمة"
         action={
           canCreate && (
             <Button variant="contained" startIcon={<MdTask />} onClick={() => setCreateOpen(true)}>
-              {t("projects.tasks.create").replace("{name}", name)}
+              {t("projects.tasks.create").replace("{name}", displayName)}
             </Button>
           )
         }

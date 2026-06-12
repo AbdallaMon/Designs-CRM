@@ -23,6 +23,7 @@ import { MdExpandMore } from "react-icons/md";
 import { IoMdEye } from "react-icons/io";
 import { FaLink, FaBan } from "react-icons/fa";
 import { usePermission } from "@/app/v2/hooks/usePermission";
+import { useT } from "@/app/v2/lib/i18n";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { SectionCard, StatusChip, EmptyState, LoadingState } from "@/app/v2/shared/components";
 import { useLeadContracts } from "../hooks/useLeadContracts.js";
@@ -43,6 +44,7 @@ function LevelChip({ level }) {
 }
 
 function ContractStageCard({ stage }) {
+  const { t } = useT();
   const theme = useTheme();
   const levelConf = CONTRACT_LEVEL[stage.title] || CONTRACT_LEVEL.null;
   const statusConf = STAGE_STATUS[stage.stageStatus] || STAGE_STATUS.NOT_STARTED;
@@ -57,7 +59,7 @@ function ContractStageCard({ stage }) {
             <Chip size="small" color={statusConf.color} label={statusConf.name} />
             {isCurrent && (
               <Box sx={{ mt: 0.5, px: 1.5, py: 0.75, backgroundColor: theme.palette.action.hover, borderRadius: 1, borderRight: `3px solid ${theme.palette.success.main}` }}>
-                <Typography variant="caption" sx={{ color: theme.palette.success.main, fontWeight: 600 }}>● المرحلة الحالية</Typography>
+                <Typography variant="caption" sx={{ color: theme.palette.success.main, fontWeight: 600 }}>{t("contracts.list.currentStage")}</Typography>
               </Box>
             )}
           </Stack>
@@ -68,37 +70,38 @@ function ContractStageCard({ stage }) {
 }
 
 function ContractActions({ contract, canCancel, canGenerateToken, onChanged }) {
+  const { t } = useT();
   const router = useRouter();
   const theme = useTheme();
   const [confirmCancel, setConfirmCancel] = useState(false);
   const isCancelled = contract?.status === "CANCELLED";
 
   async function doCancel() {
-    const res = await runContractMutation(() => contractsService.cancel(contract.id), { loading: "جاري إلغاء العقد..." });
+    const res = await runContractMutation(() => contractsService.cancel(contract.id), { loading: t("contracts.mutation.cancelling") });
     if (res) onChanged?.();
   }
   async function doGenerateToken() {
-    const res = await runContractMutation(() => contractsService.generatePdfToken(contract.id), { loading: "جاري إنشاء رابط التوقيع..." });
+    const res = await runContractMutation(() => contractsService.generatePdfToken(contract.id), { loading: t("contracts.mutation.generatingToken") });
     if (res) onChanged?.();
   }
 
   return (
     <Stack direction="row" spacing={1} alignItems="center">
-      <Tooltip title="عرض تفاصيل العقد">
+      <Tooltip title={t("contracts.list.action.view")}>
         <IconButton onClick={() => router.push(`/v2/contracts/detail/${contract.id}`)} size="small" sx={{ color: theme.palette.primary.main }}>
           <IoMdEye size={18} />
         </IconButton>
       </Tooltip>
       {canGenerateToken && !isCancelled && (
-        <Tooltip title="إنشاء رابط التوقيع">
+        <Tooltip title={t("contracts.list.action.generateToken")}>
           <IconButton onClick={doGenerateToken} size="small"><FaLink /></IconButton>
         </Tooltip>
       )}
       {isCancelled ? (
-        <Chip size="small" label="ملغي" color="error" />
+        <Chip size="small" label={t("contracts.list.cancelledChip")} color="error" />
       ) : (
         canCancel && (
-          <Tooltip title="إلغاء العقد">
+          <Tooltip title={t("contracts.list.action.cancel")}>
             <IconButton onClick={() => setConfirmCancel(true)} size="small" color="error"><FaBan /></IconButton>
           </Tooltip>
         )
@@ -107,9 +110,9 @@ function ContractActions({ contract, canCancel, canGenerateToken, onChanged }) {
         open={confirmCancel}
         onClose={() => setConfirmCancel(false)}
         onConfirm={doCancel}
-        title="إلغاء هذا العقد؟"
-        description="سيتم وضع علامة على العقد كملغي وإنشاء نسخة PDF ملغاة. لا يمكن التراجع عن هذا الإجراء."
-        confirmLabel="إلغاء العقد"
+        title={t("contracts.list.cancelConfirm.title")}
+        description={t("contracts.list.cancelConfirm.description")}
+        confirmLabel={t("contracts.list.cancelConfirm.confirmLabel")}
       />
     </Stack>
   );
@@ -143,6 +146,7 @@ function ContractAccordion({ contract, index, canCancel, canGenerateToken, onCha
 }
 
 export function LeadContractsPage({ leadId, lead }) {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canList = hasPermission(P.LIST);
   const canCreate = hasPermission(P.CREATE);
@@ -155,7 +159,7 @@ export function LeadContractsPage({ leadId, lead }) {
   if (!canList) {
     return (
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "50vh" }}>
-        <Typography color="text.secondary">لا تملك صلاحية عرض العقود</Typography>
+        <Typography color="text.secondary">{t("contracts.list.noAccess")}</Typography>
       </Box>
     );
   }
@@ -165,10 +169,10 @@ export function LeadContractsPage({ leadId, lead }) {
   return (
     <Box position="relative" sx={{ pb: 3, px: { xs: 2, sm: 3 }, py: 3 }} dir="rtl">
       <SectionCard
-        title="العقود"
+        title={t("contracts.list.title")}
         actions={
           canCreate && (
-            <Button variant="contained" onClick={() => setCreateOpen(true)}>إنشاء عقد</Button>
+            <Button variant="contained" onClick={() => setCreateOpen(true)}>{t("contracts.list.create")}</Button>
           )
         }
       >
@@ -184,11 +188,11 @@ export function LeadContractsPage({ leadId, lead }) {
           <LoadingState variant="cards" count={3} columns={1} height={96} />
         ) : !hasContracts ? (
           <EmptyState
-            title="لا توجد عقود"
-            description={canCreate ? "أنشئ عقدًا للبدء." : "لم يُنشأ أي عقد لهذا العميل بعد."}
+            title={t("contracts.list.empty.title")}
+            description={canCreate ? t("contracts.list.empty.descCanCreate") : t("contracts.list.empty.descReadonly")}
             action={
               canCreate
-                ? { label: "إنشاء عقد", onClick: () => setCreateOpen(true) }
+                ? { label: t("contracts.list.create"), onClick: () => setCreateOpen(true) }
                 : undefined
             }
           />

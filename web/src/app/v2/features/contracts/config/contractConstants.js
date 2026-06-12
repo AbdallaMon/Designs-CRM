@@ -110,37 +110,42 @@ export const CONTRACT_PAYMENT_STATUS_FILTERS = ["DUE", "RECEIVED", "TRANSFERRED"
 // system-managed and never user-selectable).
 export const CONTRACT_PAYMENT_SETTABLE_STATUSES = ["RECEIVED", "TRANSFERRED"];
 
-// Arabic copy constants for the grouped contract-payments overview (localized labels only —
-// the legacy was English-labeled; data + actions are unchanged).
-export const CONTRACT_PAYMENTS_COPY = {
-  pageTitle: "دفعات العقود",
-  pageSubtitle: "نظرة عامة على دفعات العقود حسب الحالة",
-  filterAll: "الكل",
-  filterLabel: "تصفية حسب الحالة",
-  refresh: "تحديث",
-  readonlyBanner: "لديك صلاحية العرض فقط",
-  emptyTitle: "لا توجد دفعات بهذه الحالة",
-  totalsReceived: "تم الاستلام",
-  totalsTransferred: "تم التحويل",
-  totalsDue: "مستحقة",
-  totalsNotDue: "غير مستحقة",
-  totalsGrand: "الإجمالي",
-  totalsGrandWithTax: "الإجمالي شامل الضريبة",
-  client: "العميل",
-  taxRate: "الضريبة",
-  amount: "المبلغ",
-  withTax: "شامل الضريبة",
-  amountLost: "المبلغ المفقود",
-  amountReceived: "المبلغ المستلم",
-  condition: "الشرط",
-  noPaymentsForFilter: "لا توجد دفعات لهذه التصفية",
-  setStatus: "تحديد الحالة",
-  editAmounts: "تعديل المبالغ والحالة",
-  statusGuard: "لا يمكن تغيير حالة الدفعات غير المستحقة",
-  amountsGuard: "لا يمكن تعديل مبالغ الدفعات غير المستحقة",
-  dialogTitle: "تعديل مبالغ الدفعة",
-  originalWithTax: "المبلغ الأصلي شامل الضريبة",
-  save: "حفظ",
-  cancel: "إلغاء",
-  lead: "العميل المحتمل",
-};
+// Copy factory for the grouped contract-payments overview. NOT a module-scope object — it takes
+// the i18n translator `t` (resolved inside the component via useT) and returns the localized copy
+// map (en/ar). Call buildContractPaymentsCopy(t) inside the page render. Localized labels only —
+// the legacy was English-labeled; data + actions are unchanged.
+export function buildContractPaymentsCopy(t) {
+  return {
+    pageTitle: t("contracts.payments.pageTitle"),
+    pageSubtitle: t("contracts.payments.pageSubtitle"),
+    filterAll: t("contracts.payments.filterAll"),
+    filterLabel: t("contracts.payments.filterLabel"),
+    refresh: t("contracts.payments.refresh"),
+    readonlyBanner: t("contracts.payments.readonlyBanner"),
+    emptyTitle: t("contracts.payments.emptyTitle"),
+    totalsReceived: t("contracts.payments.totalsReceived"),
+    totalsTransferred: t("contracts.payments.totalsTransferred"),
+    totalsDue: t("contracts.payments.totalsDue"),
+    totalsNotDue: t("contracts.payments.totalsNotDue"),
+    totalsGrand: t("contracts.payments.totalsGrand"),
+    totalsGrandWithTax: t("contracts.payments.totalsGrandWithTax"),
+    client: t("contracts.payments.client"),
+    taxRate: t("contracts.payments.taxRate"),
+    amount: t("contracts.payments.amount"),
+    withTax: t("contracts.payments.withTax"),
+    amountLost: t("contracts.payments.amountLost"),
+    amountReceived: t("contracts.payments.amountReceived"),
+    condition: t("contracts.payments.condition"),
+    noPaymentsForFilter: t("contracts.payments.noPaymentsForFilter"),
+    setStatus: t("contracts.payments.setStatus"),
+    editAmounts: t("contracts.payments.editAmounts"),
+    statusGuard: t("contracts.payments.statusGuard"),
+    amountsGuard: t("contracts.payments.amountsGuard"),
+    dialogTitle: t("contracts.payments.dialogTitle"),
+    originalWithTax: t("contracts.payments.originalWithTax"),
+    save: t("contracts.payments.save"),
+    cancel: t("contracts.payments.cancel"),
+    lead: t("contracts.payments.lead"),
+    rowsPerPage: t("contracts.payments.rowsPerPage"),
+  };
+}

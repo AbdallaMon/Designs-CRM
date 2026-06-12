@@ -8,9 +8,11 @@
 import React from "react";
 import { Stack, Typography, Chip, Divider, Card, CardHeader, CardContent, Avatar, TextField, Grid, alpha, useTheme } from "@mui/material";
 import { FaClipboardList, FaCheckCircle } from "react-icons/fa";
+import { useT } from "@/app/v2/lib/i18n";
 import { CONTRACT_LEVELSENUM, CONTRACT_LEVEL } from "../../../config/contractConstants.js";
 
 export default function StagesSelector({ selected, onChange, perStageMeta, setPerStageMeta }) {
+  const { t } = useT();
   const theme = useTheme();
 
   const toggleStage = (stg) => {
@@ -29,7 +31,7 @@ export default function StagesSelector({ selected, onChange, perStageMeta, setPe
     <Stack spacing={2}>
       <Stack direction="row" alignItems="center" spacing={1}>
         <FaClipboardList style={{ color: theme.palette.primary.main, fontSize: 20 }} />
-        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>اختر المراحل</Typography>
+        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{t("contracts.editors.stages.choose")}</Typography>
       </Stack>
       <Stack direction="row" spacing={1} flexWrap="wrap">
         {CONTRACT_LEVELSENUM.map((item) => {
@@ -50,7 +52,7 @@ export default function StagesSelector({ selected, onChange, perStageMeta, setPe
       {selected.length > 0 && (
         <Stack spacing={2} sx={{ mt: 2 }}>
           <Divider />
-          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>تفاصيل المراحل</Typography>
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{t("contracts.editors.stages.details")}</Typography>
           <Grid container spacing={2}>
             {selected.map((s, idx) => (
               <Grid key={s.enum} size={{ xs: 12, md: 6 }}>
@@ -67,7 +69,7 @@ export default function StagesSelector({ selected, onChange, perStageMeta, setPe
                       <Grid size={{ xs: 12, sm: 6 }}>
                         <TextField
                           type="number"
-                          label="أيام التسليم *"
+                          label={t("contracts.editors.stages.deliveryDaysRequired")}
                           value={perStageMeta?.[s.enum]?.deliveryDays ?? ""}
                           onChange={(e) => setPerStageMeta({ ...perStageMeta, [s.enum]: { ...perStageMeta?.[s.enum], deliveryDays: e.target.value } })}
                           fullWidth
@@ -78,7 +80,7 @@ export default function StagesSelector({ selected, onChange, perStageMeta, setPe
                       <Grid size={{ xs: 12, sm: 6 }}>
                         <TextField
                           type="number"
-                          label="أيام القسم *"
+                          label={t("contracts.editors.stages.deptDaysRequired")}
                           value={perStageMeta?.[s.enum]?.deptDeliveryDays ?? ""}
                           onChange={(e) => setPerStageMeta({ ...perStageMeta, [s.enum]: { ...perStageMeta?.[s.enum], deptDeliveryDays: e.target.value } })}
                           fullWidth

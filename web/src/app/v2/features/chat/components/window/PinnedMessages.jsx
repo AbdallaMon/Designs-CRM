@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { MdPushPin, MdClose, MdKeyboardArrowUp, MdKeyboardArrowDown } from "react-icons/md";
 import { FaFileAlt, FaFileImage, FaFilePdf, FaFileVideo, FaFileAudio } from "react-icons/fa";
+import { useT } from "@/app/v2/lib/i18n";
 
 const MAX_PINNED = 20;
 
@@ -26,6 +27,7 @@ export function PinnedMessages({
   pinnedMessages,
   loadingPinnedMessages,
 }) {
+  const { t } = useT();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isNavigating, setIsNavigating] = useState(false);
@@ -66,7 +68,7 @@ export function PinnedMessages({
           <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
             {renderFileIcon(msg.fileMimeType)}
             <Typography variant="caption" sx={{ fontStyle: "italic", color: "text.secondary" }}>
-              {msg.fileName || "ملف"}
+              {msg.fileName || t("chat.pinned.file", "ملف")}
             </Typography>
           </Box>
           <Typography variant="body2" sx={{ color: "text.primary" }}>{msg.content}</Typography>
@@ -77,12 +79,12 @@ export function PinnedMessages({
       return (
         <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
           {renderFileIcon(msg.fileMimeType)}
-          <Typography variant="body2" sx={{ fontStyle: "italic" }}>{msg.fileName || "ملف"}</Typography>
+          <Typography variant="body2" sx={{ fontStyle: "italic" }}>{msg.fileName || t("chat.pinned.file", "ملف")}</Typography>
         </Box>
       );
     }
     if (hasContent) return <Typography variant="body2" sx={{ color: "text.primary" }}>{msg.content}</Typography>;
-    return <Typography variant="body2" sx={{ fontStyle: "italic", color: "text.secondary" }}>رسالة</Typography>;
+    return <Typography variant="body2" sx={{ fontStyle: "italic", color: "text.secondary" }}>{t("chat.pinned.message", "رسالة")}</Typography>;
   };
 
   const navigateToMessage = async (index, options = {}) => {
@@ -182,7 +184,7 @@ export function PinnedMessages({
           sx={{ flex: 1, cursor: "pointer", minWidth: 0, "&:hover": { opacity: 0.85 } }}
         >
           <Typography variant="caption" sx={{ color: "primary.main", fontWeight: "bold", display: "block" }}>
-            {currentMessage?.sender?.name || "مستخدم غير معروف"}
+            {currentMessage?.sender?.name || t("chat.pinned.unknownUser", "مستخدم غير معروف")}
           </Typography>
           <Box sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {renderMessagePreview(currentMessage)}
@@ -214,7 +216,7 @@ export function PinnedMessages({
           <Box sx={{ p: 2, bgcolor: "primary.main", color: "primary.contrastText", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <MdPushPin size={24} />
-              <Typography variant="h6" fontWeight="bold">الرسائل المثبتة</Typography>
+              <Typography variant="h6" fontWeight="bold">{t("chat.pinned.title", "الرسائل المثبتة")}</Typography>
             </Box>
             <IconButton onClick={toggleDrawer} sx={{ color: "inherit" }}>
               <MdClose size={24} />
@@ -244,7 +246,7 @@ export function PinnedMessages({
                         </Avatar>
                         <Box sx={{ flex: 1, minWidth: 0 }}>
                           <Typography variant="subtitle2" fontWeight="bold" color="text.primary">
-                            {msg.sender?.name || "مستخدم غير معروف"}
+                            {msg.sender?.name || t("chat.pinned.unknownUser", "مستخدم غير معروف")}
                           </Typography>
                           <Box sx={{ mt: 0.5, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical" }}>
                             {renderMessagePreview(msg)}

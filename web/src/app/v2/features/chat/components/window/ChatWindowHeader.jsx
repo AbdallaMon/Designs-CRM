@@ -79,14 +79,14 @@ export function ChatWindowHeader({
       </Box>
 
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-        <Tooltip title="مكالمة صوتية" arrow>
+        <Tooltip title={t("chat.header.voiceCall", "مكالمة صوتية")} arrow>
           <IconButton size="small"><FaPhone size={18} /></IconButton>
         </Tooltip>
-        <Tooltip title="مكالمة فيديو" arrow>
+        <Tooltip title={t("chat.header.videoCall", "مكالمة فيديو")} arrow>
           <IconButton size="small"><FaVideo size={18} /></IconButton>
         </Tooltip>
         {isNotDirectChat && (
-          <Tooltip title="الأعضاء" arrow>
+          <Tooltip title={t("chat.header.members", "الأعضاء")} arrow>
             <IconButton size="small" onClick={onShowAddMembers}><FaUsers size={18} /></IconButton>
           </Tooltip>
         )}

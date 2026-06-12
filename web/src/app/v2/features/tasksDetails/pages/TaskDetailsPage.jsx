@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { Alert, Box, Button, Card, CardContent, CardHeader, CircularProgress, Container, Divider, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import { MdDelete } from "react-icons/md";
+import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { projectsService } from "../../projects/projects.service.js";
@@ -16,6 +17,7 @@ import { runProjectMutation } from "../../projects/projects.mutations.js";
 import { TaskActions } from "../../projects/components/TaskActions.jsx";
 
 export function TaskDetailsPage({ taskId }) {
+  const { t } = useT();
   const { hasPermission } = usePermission();
   const canView = hasPermission(PERMISSIONS.TASK.VIEW);
   const [task, setTask] = useState(null);
@@ -50,10 +52,10 @@ export function TaskDetailsPage({ taskId }) {
   if (!task) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert severity="info">هذه المهمة غير متاحة أو لا تملك صلاحية عرضها.</Alert>
+        <Alert severity="info">{t("tasks.details.unavailable")}</Alert>
         <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
           <Button variant="outlined" onClick={() => window.history.back()}>
-            رجوع
+            {t("tasks.details.back")}
           </Button>
         </Box>
       </Box>
@@ -64,7 +66,7 @@ export function TaskDetailsPage({ taskId }) {
 
   const handleDelete = async () => {
     const res = await runProjectMutation(() => projectsService.deleteTask(task.id), {
-      loading: "جاري الحذف...",
+      loading: t("tasks.loading.delete"),
     });
     if (res) window.history.back();
   };
@@ -74,23 +76,23 @@ export function TaskDetailsPage({ taskId }) {
       <Card>
         <CardHeader
           title={<Typography variant="h6" fontWeight={600}>{task.title}</Typography>}
-          subheader={`النوع: ${task.type}`}
+          subheader={t("tasks.type").replace("{type}", task.type)}
           action={<TaskActions task={task} onChanged={load} />}
         />
         <Divider />
         <CardContent>
           <Stack spacing={1.2}>
             <Typography variant="body2" color="textSecondary">
-              الاستحقاق: {task.dueDate ? dayjs(task.dueDate).format("DD/MM/YYYY") : "غير محدد"}
+              {t("tasks.due").replace("{value}", task.dueDate ? dayjs(task.dueDate).format("DD/MM/YYYY") : t("tasks.dueUnset"))}
             </Typography>
             {task.user && (
               <Typography variant="body2" color="textSecondary">
-                معيّنة إلى: {task.user.name}
+                {t("tasks.assignedTo").replace("{name}", task.user.name)}
               </Typography>
             )}
             {task.finishedAt && (
               <Typography variant="body2" color="success.main">
-                أُنجزت: {dayjs(task.finishedAt).format("DD/MM/YYYY")}
+                {t("tasks.details.finishedAt").replace("{value}", dayjs(task.finishedAt).format("DD/MM/YYYY"))}
               </Typography>
             )}
             {task.description && (
@@ -104,7 +106,7 @@ export function TaskDetailsPage({ taskId }) {
             {canDelete && (
               <Box sx={{ mt: 2, textAlign: "end" }}>
                 <Button color="error" startIcon={<MdDelete />} onClick={handleDelete}>
-                  حذف المهمة
+                  {t("tasks.details.deleteTask")}
                 </Button>
               </Box>
             )}

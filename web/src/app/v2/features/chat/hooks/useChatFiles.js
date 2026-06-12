@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import chatService, { clientChatService } from "../chat.service.js";
 import { useScroll } from "@/app/v2/hooks/useScroll";
 import { CHAT_LIMITS } from "../config/chatConstants.js";
+import { useT } from "@/app/v2/lib/i18n";
 
 function readFiles(res) {
   const data = res?.data ?? {};
@@ -21,6 +22,7 @@ export function useChatFiles(
   roomId,
   { limit = CHAT_LIMITS.FILES, fileType = [], clientCtx = null } = {},
 ) {
+  const { t } = useT();
   const token = clientCtx?.token ?? null;
   const [files, setFiles] = useState([]);
   const [uniqueMonths, setUniqueMonths] = useState({});
@@ -64,13 +66,13 @@ export function useChatFiles(
       setTotal(env.total);
       setHasMore((currentPageState + 1) * LIMIT < env.total);
     } catch (err) {
-      setError(err?.message || "فشل تحميل الملفات");
+      setError(err?.message || t("chat.error.loadFiles", "فشل تحميل الملفات"));
     } finally {
       setLoading(false);
       setLoadingMore(false);
       setInitialLoading(false);
     }
-  }, [roomId, limit, fileType, loading, loadingMore, token]);
+  }, [roomId, limit, fileType, loading, loadingMore, token, t]);
 
   const resetAll = useCallback(() => {
     setFiles([]);

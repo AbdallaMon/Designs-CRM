@@ -9,8 +9,10 @@ import { Stack, Typography, Box, Button, Card, CardHeader, CardContent, Avatar, 
 import { FaPlus, FaTrash, FaRegImages } from "react-icons/fa";
 import { useUpload } from "@/app/v2/hooks/useUpload";
 import { useOverlay } from "@/app/v2/hooks/useOverlay";
+import { useT } from "@/app/v2/lib/i18n";
 
 export default function DrawingsEditor({ drawings, setDrawings }) {
+  const { t } = useT();
   const theme = useTheme();
   const overlay = useOverlay();
   const { uploadAsChunk } = useUpload({
@@ -50,16 +52,16 @@ export default function DrawingsEditor({ drawings, setDrawings }) {
     <Stack spacing={2}>
       <Stack direction="row" alignItems="center" spacing={1}>
         <FaRegImages style={{ color: theme.palette.info.main, fontSize: 20 }} />
-        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>المخططات (اختياري)</Typography>
+        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>{t("contracts.editors.drawings.title")}</Typography>
         <Box flex={1} />
-        <Button startIcon={<FaPlus />} onClick={addRow} variant="contained" size="small">إضافة</Button>
+        <Button startIcon={<FaPlus />} onClick={addRow} variant="contained" size="small">{t("contracts.editors.drawings.add")}</Button>
       </Stack>
       <Grid container spacing={2}>
         {drawings.map((d, idx) => (
           <Grid key={idx} size={{ xs: 12 }}>
             <Card variant="outlined" sx={{ border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`, borderRadius: 2 }}>
               <CardHeader
-                title={`مخطط #${idx + 1}`}
+                title={`${t("contracts.editors.drawings.cardTitle")}${idx + 1}`}
                 avatar={<Avatar sx={{ bgcolor: "info.main" }}>{idx + 1}</Avatar>}
                 slotProps={{ title: { fontWeight: 600 } }}
               />
@@ -68,19 +70,19 @@ export default function DrawingsEditor({ drawings, setDrawings }) {
                 <Stack spacing={2}>
                   <Grid container spacing={2}>
                     <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField label="الرابط" value={d.url} onChange={(e) => updateRow(idx, "url", e.target.value)} fullWidth size="small" />
+                      <TextField label={t("contracts.editors.drawings.url")} value={d.url} onChange={(e) => updateRow(idx, "url", e.target.value)} fullWidth size="small" />
                     </Grid>
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <Button variant="outlined" component="label" disabled={uploadingIdx === idx} fullWidth>
-                        {uploadingIdx === idx ? "جاري الرفع..." : "اختر ملف"}
+                        {uploadingIdx === idx ? t("contracts.editors.drawings.uploading") : t("contracts.editors.drawings.chooseFile")}
                         <input type="file" hidden accept="image/*" onChange={(e) => handleUploadFile(e.target.files?.[0] || null, idx)} />
                       </Button>
                     </Grid>
                   </Grid>
-                  <TextField label="اسم الملف (اختياري)" value={d.fileName || ""} onChange={(e) => updateRow(idx, "fileName", e.target.value)} fullWidth size="small" />
-                  {d.url && <Typography variant="caption" color="text.secondary">سيتم استخدام هذا الرابط عند الحفظ.</Typography>}
+                  <TextField label={t("contracts.editors.drawings.fileNameOptional")} value={d.fileName || ""} onChange={(e) => updateRow(idx, "fileName", e.target.value)} fullWidth size="small" />
+                  {d.url && <Typography variant="caption" color="text.secondary">{t("contracts.editors.drawings.urlWillBeUsed")}</Typography>}
                   <Stack direction="row" justifyContent="flex-end">
-                    <Tooltip title="حذف">
+                    <Tooltip title={t("contracts.editors.drawings.delete")}>
                       <span>
                         <IconButton color="error" onClick={() => removeRow(idx)} size="small"><FaTrash /></IconButton>
                       </span>

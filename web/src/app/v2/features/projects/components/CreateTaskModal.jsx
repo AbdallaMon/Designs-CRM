@@ -28,9 +28,10 @@ export function CreateTaskModal({
   projectId = null,
   clientLeadId = null,
   type = "NORMAL",
-  name = "مهمة",
+  name,
 }) {
   const { t } = useT();
+  const displayName = name ?? t("projects.createTask.defaultName");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -65,7 +66,7 @@ export function CreateTaskModal({
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{t("projects.createTask.title").replace("{name}", name)}</DialogTitle>
+      <DialogTitle>{t("projects.createTask.title").replace("{name}", displayName)}</DialogTitle>
       <DialogContent>
         <Box sx={{ pt: 2 }}>
           <Box mb={2}>
