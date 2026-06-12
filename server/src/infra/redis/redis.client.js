@@ -6,7 +6,8 @@ const redisClient = createClient({
     host: redisConfig.host,
     port: redisConfig.port,
   },
-  password: redisConfig.password,
+  ...(redisConfig.username ? { username: redisConfig.username } : {}),
+  ...(redisConfig.password ? { password: redisConfig.password } : {}),
 });
 
 redisClient.on("error", (error) => {

@@ -14,12 +14,13 @@ import { env } from "../../config/env.js";
 
 /**
  * Plain ioredis connection options, derived from the central env config.
- * @returns {{ host: string, port: number, password?: string }}
+ * @returns {{ host: string, port: number, username?: string, password?: string }}
  */
 export function getIoredisOptions() {
   return {
     host: env.REDIS_HOST,
     port: env.REDIS_PORT,
+    ...(env.REDIS_USERNAME ? { username: env.REDIS_USERNAME } : {}),
     ...(env.REDIS_PASSWORD ? { password: env.REDIS_PASSWORD } : {}),
   };
 }

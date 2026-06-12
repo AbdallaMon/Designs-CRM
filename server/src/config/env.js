@@ -41,6 +41,7 @@ export const env = {
   JWT_RESET_EXPIRES_IN: process.env.JWT_RESET_EXPIRES_IN || "1h",
   REDIS_HOST: process.env.REDIS_HOST || "127.0.0.1",
   REDIS_PORT: Number(process.env.REDIS_PORT) || 6379,
+  REDIS_USERNAME: process.env.REDIS_USERNAME || undefined,
   REDIS_PASSWORD: process.env.REDIS_PASSWORD || undefined,
   UPLOAD_DIR: process.env.UPLOAD_DIR,
   TEMP_UPLOAD_DIR: process.env.TEMP_UPLOAD_DIR,
