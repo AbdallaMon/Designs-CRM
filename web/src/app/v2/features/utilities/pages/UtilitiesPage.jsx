@@ -1,107 +1,121 @@
 "use client";
 
-// Utilities FOUNDATION page — a wiring smoke-screen, NOT a redesigned screen (these are
-// cross-cutting lookup helpers consumed by OTHER features, not a standalone end-user screen).
-// It proves the v2 data layer is wired end-to-end: permission-gated on utility.fixed_data.list,
-// it fetches fixed-data through useRequest → the utilities.service (the SOLE API caller, pointed
-// at /v2/utilities). It also proves the §5c model pick-list contract: when utility.model.read is
-// granted it reads a `colorPattern` pick-list and renders the label via readModelLabel(), which
-// handles the new fixed projections (relation title[0].text vs scalar title vs imageUrl). The
-// real consumers wire these helpers into their own screens later. Single-language Arabic/RTL.
+// Utilities admin page — a real, tabbed admin surface for the studio's cross-cutting helper
+// data. Tab state lives in the URL (?tab=) for back/forward + deep-link parity (mirrors
+// features/siteUtility/pages/SiteUtilityPage.jsx). Each tab is permission-gated and only
+// rendered in the tab strip if the caller can access it, so the visible tab set matches the
+// caller's permissions. Per-action gating lives inside each tab component.
+//
+// Tabs (and the BE requirePermissions codes that gate them):
+//   • البيانات الثابتة (Fixed Data) — CRUD. List: UTILITY.FIXED_DATA_LIST; writes:
+//       ADMIN_RESIDUAL.FIXED_DATA_MANAGE (the writes are a separate admin-residual module).
+//   • سجل العمل (User Logs) — self work-log check + submit. UTILITY.USER_LOG_VIEW /
+//       USER_LOG_SUBMIT (the utilities surface is self-scoped; not an admin viewer).
+//   • الأدوار (Roles) — read-only list of the caller's roles. UTILITY.USER_ROLE_VIEW.
+//
+// Single-language Arabic RTL.
 
-import { useCallback, useEffect, useState } from "react";
-import { Box, Container, List, ListItem, ListItemText, Paper, Typography } from "@mui/material";
+import { useCallback, useMemo } from "react";
+import { Box, Container, Tab, Tabs, Typography } from "@mui/material";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
-import { useRequest } from "@/app/v2/hooks/useRequest";
-import { FIXED_DATA_URL, UTILITY_MODELS } from "../config/constant.js";
-import { utilitiesService, readModelLabel } from "../utilities.service.js";
+import FixedDataManager from "../components/FixedDataManager.jsx";
+import UserLogTab from "../components/UserLogTab.jsx";
+import RolesTab from "../components/RolesTab.jsx";
 
 const P = PERMISSIONS.UTILITY;
 
 export function UtilitiesPage() {
-  const { hasPermission } = usePermission();
-  const canFixedData = hasPermission(P.FIXED_DATA_LIST);
-  const canModelRead = hasPermission(P.MODEL_READ);
+  const { hasPermission, hasAnyPermission } = usePermission();
 
-  // Primary read proves the wiring (fixed-data is the simplest authed lookup).
-  const { data: fixedData, isLoading, error } = useRequest({
-    url: FIXED_DATA_URL,
-    method: "get",
-    autoFetch: canFixedData,
-  });
+  // Build the visible tab set from permissions. A tab appears only if the caller can access
+  // it; `show` is evaluated against the auth user's effective permissions.
+  const tabs = useMemo(() => {
+    const all = [
+      {
+        key: "fixed-data",
+        label: "البيانات الثابتة",
+        show: hasPermission(P.FIXED_DATA_LIST),
+        render: () => <FixedDataManager />,
+      },
+      {
+        key: "user-logs",
+        label: "سجل العمل",
+        show: hasAnyPermission([P.USER_LOG_VIEW, P.USER_LOG_SUBMIT]),
+        render: () => <UserLogTab />,
+      },
+      {
+        key: "roles",
+        label: "الأدوار",
+        show: hasPermission(P.USER_ROLE_VIEW),
+        render: () => <RolesTab />,
+      },
+    ];
+    return all.filter((t) => t.show);
+  }, [hasPermission, hasAnyPermission]);
 
-  // Secondary read proves the §5c model pick-list projection + readModelLabel().
-  const [picks, setPicks] = useState([]);
-  const loadPicks = useCallback(async () => {
-    if (!canModelRead) return;
-    const res = await utilitiesService.getModel(UTILITY_MODELS.COLOR_PATTERN);
-    setPicks(Array.isArray(res?.data) ? res.data : []);
-  }, [canModelRead]);
-  useEffect(() => {
-    loadPicks();
-  }, [loadPicks]);
+  const router = useRouter();
+  const pathname = usePathname();
+  const sp = useSearchParams();
 
-  if (!canFixedData && !canModelRead) {
+  const active = useMemo(() => {
+    const t = sp.get("tab");
+    if (tabs.some((x) => x.key === t)) return t;
+    return tabs[0]?.key ?? null;
+  }, [sp, tabs]);
+
+  const onChange = useCallback(
+    (_e, key) => {
+      const params = new URLSearchParams(sp.toString());
+      params.set("tab", key);
+      router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [router, pathname, sp],
+  );
+
+  if (tabs.length === 0) {
     return (
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-        <Typography color="text.secondary">لا تملك صلاحية الوصول إلى الأدوات المساعدة</Typography>
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "60vh",
+        }}
+      >
+        <Typography color="textSecondary">
+          لا تملك صلاحية الوصول إلى الأدوات المساعدة
+        </Typography>
       </Box>
     );
   }
 
-  const fixedItems = Array.isArray(fixedData) ? fixedData : [];
+  const activeTab = tabs.find((t) => t.key === active) ?? tabs[0];
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container maxWidth="xl" sx={{ py: 4 }}>
       <Typography variant="h5" sx={{ mb: 2 }}>
         الأدوات المساعدة
       </Typography>
-      <Typography color="text.secondary" sx={{ mb: 3 }}>
-        أساس البيانات جاهز — تستهلكه الميزات الأخرى لاحقاً في مرحلة إعادة التصميم.
-      </Typography>
 
-      {canFixedData && (
-        <Paper variant="outlined" sx={{ mb: 3 }}>
-          <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
-            <Typography variant="subtitle1">البيانات الثابتة</Typography>
-          </Box>
-          {isLoading && <Box sx={{ p: 2 }}><Typography color="text.secondary">جاري التحميل...</Typography></Box>}
-          {error && <Box sx={{ p: 2 }}><Typography color="error">تعذّر جلب البيانات</Typography></Box>}
-          {!isLoading && !error && (
-            <List disablePadding>
-              {fixedItems.length === 0 && (
-                <ListItem><ListItemText primary="لا توجد بيانات" /></ListItem>
-              )}
-              {fixedItems.map((it, i) => (
-                <ListItem key={it?.id ?? i} divider>
-                  <ListItemText primary={it?.title || `#${it?.id ?? i}`} />
-                </ListItem>
-              ))}
-            </List>
-          )}
-        </Paper>
-      )}
+      <Tabs
+        value={activeTab.key}
+        onChange={onChange}
+        variant="scrollable"
+        scrollButtons="auto"
+        sx={{ mb: 1, borderBottom: 1, borderColor: "divider" }}
+      >
+        {tabs.map((tab) => (
+          <Tab key={tab.key} value={tab.key} label={tab.label} />
+        ))}
+      </Tabs>
 
-      {canModelRead && (
-        <Paper variant="outlined">
-          <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
-            <Typography variant="subtitle1">قائمة الألوان (نموذج pick-list)</Typography>
-          </Box>
-          <List disablePadding>
-            {picks.length === 0 && (
-              <ListItem><ListItemText primary="لا توجد عناصر" /></ListItem>
-            )}
-            {picks.map((row, i) => (
-              <ListItem key={row?.id ?? i} divider>
-                <ListItemText
-                  primary={readModelLabel(UTILITY_MODELS.COLOR_PATTERN, row) || `#${row?.id ?? i}`}
-                />
-              </ListItem>
-            ))}
-          </List>
-        </Paper>
-      )}
+      {tabs.map((tab) => (
+        <Box key={tab.key} hidden={tab.key !== activeTab.key} role="tabpanel">
+          {tab.key === activeTab.key && tab.render()}
+        </Box>
+      ))}
     </Container>
   );
 }

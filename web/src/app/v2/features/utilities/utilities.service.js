@@ -22,6 +22,8 @@ import {
   SEARCH_URL,
   MODEL_IDS_URL,
   MODEL_URL,
+  ADMIN_FIXED_DATA_URL,
+  adminFixedDataUrl,
   UTILITY_TITLE_RELATION_MODELS,
 } from "./config/constant.js";
 
@@ -49,7 +51,17 @@ export const utilitiesService = {
   // GET /fixed-data                                                       [utility.fixed_data.list]
   listFixedData: () => apiFetch.get(FIXED_DATA_URL),
 
+  // ── Fixed-data WRITES (admin-residual module, /v2/admin/fixed-data) ──── [admin_residual.fixed_data.manage]
+  // The READ above is on the utilities module; the writes are a separate module/permission.
+  // Bodies are picked to the .strict() server schemas (title + optional description).
+  createFixedData: (body) =>
+    apiFetch.post(ADMIN_FIXED_DATA_URL, pick(body, ["title", "description"])),
+  updateFixedData: (id, body) =>
+    apiFetch.put(adminFixedDataUrl(id), pick(body, ["title", "description"])),
+  deleteFixedData: (id) => apiFetch.delete(adminFixedDataUrl(id)),
+
   // GET /user-logs ?startTime=&endTime= — SELF-SCOPED (no userId)         [utility.user_log.view]
+  // Returns a BOOLEAN: does the authenticated user have a log in [startTime, endTime]?
   checkUserLog: ({ startTime, endTime } = {}) =>
     apiFetch.get(buildQuery(USER_LOGS_URL, { startTime, endTime })),
   // POST /user-logs — SELF-SCOPED (no userId); body matches the .strict() schema [utility.user_log.submit]

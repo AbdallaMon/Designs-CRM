@@ -18,6 +18,11 @@ export const utilitiesMessages = {
 
   // ── writes ─────────────────────────────────────────────────────────────────────
   USER_LOG_SUBMITTED: "تم تسجيل سجل العمل",
+  // Fixed-data writes are served by the admin-residual module (translationKey
+  // `adminResidualMessages`); the resolver keys on the CODE string, so we mirror them here.
+  FIXED_DATA_CREATED: "تمت إضافة البيانات الثابتة",
+  FIXED_DATA_UPDATED: "تم تحديث البيانات الثابتة",
+  FIXED_DATA_DELETED: "تم حذف البيانات الثابتة",
 
   // ── errors / domain rules ─────────────────────────────────────────────────────────
   MODEL_NOT_ALLOWED: "النموذج المطلوب غير مسموح به",

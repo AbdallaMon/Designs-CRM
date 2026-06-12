@@ -66,3 +66,16 @@ export const IMAGES_URL = `${UTILITIES_BASE}/images`;
 export const SEARCH_URL = `${UTILITIES_BASE}/search`;
 export const MODEL_IDS_URL = `${UTILITIES_BASE}/ids`; // ?model=
 export const MODEL_URL = UTILITIES_BASE; // GET / — ?model=
+
+// ── Fixed-data WRITES live in the admin-residual module, NOT the utilities module ─────────
+// The GET read is `/v2/utilities/fixed-data` (UTILITY.FIXED_DATA_LIST), but the legacy admin
+// WRITES were migrated to `/v2/admin/fixed-data*` under admin-residual (gated by
+// ADMIN_RESIDUAL.FIXED_DATA_MANAGE — ADMIN/SUPER_ADMIN + isSuperSales). Reconciled against
+// server/src/modules/admin-residual/fixed-data/fixed-data.routes.js + .validation.js:
+//   POST   /v2/admin/fixed-data        body { title, description? }   → create
+//   PUT    /v2/admin/fixed-data/:id     body { title?, description? }   → update (≥1 field)
+//   DELETE /v2/admin/fixed-data/:id                                     → delete
+// The full row read returns { id, title, description, createdAt } (no per-record capabilities).
+export const ADMIN_FIXED_DATA_BASE = "admin/fixed-data";
+export const ADMIN_FIXED_DATA_URL = ADMIN_FIXED_DATA_BASE;
+export const adminFixedDataUrl = (id) => `${ADMIN_FIXED_DATA_BASE}/${id}`;
