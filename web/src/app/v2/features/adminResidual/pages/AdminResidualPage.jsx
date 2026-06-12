@@ -1,45 +1,57 @@
 "use client";
 
-// admin-residual foundation route-shell page — a WIRING SMOKE-SCREEN, not a redesigned UI.
-// Its only job in the Option-A foundation phase is to PROVE the v2 data layer is wired end to
-// end: permission-gate on an ADMIN_RESIDUAL.* code, fetch a read aggregation through the SOLE
-// service (adminResidualService → /v2/admin/projects) via useRequest, and render the envelope
-// shape. The real admin screens (reports builder, import wizard, commissions/fixed-data CRUD,
-// the admin-projects board) land in the later UX-redesign phase, reusing this exact data layer.
-// Single-language Arabic, RTL.
+// admin-residual — قسم الإدارة. A tabbed admin screen over the SAFE, high-value residual
+// surfaces of /v2/admin/*: Reports (🔒 frozen lead/staff report generators — we only call +
+// download), Commissions (per-user list + manage), and Archive/Restore (per-id toggle over the
+// allow-listed image-session reference models). Tab state lives in the URL (?tab=); the tab set
+// is permission-gated per the backend's requirePermissions (usePermission). Deliberately OMITTED
+// here: Fixed-Data CRUD (owned by the utilities feature), lead/client mutation workflows (owned
+// by the leads feature), and Telegram (sensitive — no write UI). Single-language Arabic, RTL.
 
 import { useMemo } from "react";
-import { Box, Container, CircularProgress, Typography } from "@mui/material";
-import { useRequest } from "@/app/v2/hooks/useRequest";
+import {
+  Box,
+  Container,
+  Tab,
+  Tabs,
+  Typography,
+} from "@mui/material";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
-import { ADMIN_PROJECTS_URL } from "../config/constant.js";
+import ReportsTab from "../components/ReportsTab.jsx";
+import CommissionsTab from "../components/CommissionsTab.jsx";
+import ArchiveRestoreTab from "../components/ArchiveRestoreTab.jsx";
 
 const P = PERMISSIONS.ADMIN_RESIDUAL;
 
 export function AdminResidualPage() {
-  const { hasPermission, hasAnyPermission } = usePermission();
+  const { hasPermission } = usePermission();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  // Whole surface is admin-tier: gate access on holding ANY admin-residual code.
-  const canAccess = hasAnyPermission(Object.values(P));
-  // The smoke-screen read is the admin leads-with-projects aggregation (GET /v2/admin/projects).
-  const canViewProjects = hasPermission(P.PROJECT_VIEW);
+  // Permission-gated tab set — each tab maps 1:1 to its backend permission code.
+  const tabs = useMemo(() => {
+    const list = [];
+    if (hasPermission(P.REPORT_GENERATE)) list.push({ key: "reports", label: "التقارير" });
+    if (hasPermission(P.COMMISSION_VIEW)) list.push({ key: "commissions", label: "العمولات" });
+    if (hasPermission(P.MODEL_ARCHIVE)) list.push({ key: "archive", label: "الأرشيف" });
+    return list;
+  }, [hasPermission]);
 
-  // useRequest (v2): autoFetch only when the user holds the read code; the BE enforces too.
-  const { data, isLoading, error } = useRequest({
-    url: ADMIN_PROJECTS_URL,
-    method: "get",
-    autoFetch: canViewProjects,
-  });
+  const canManageCommissions = hasPermission(P.COMMISSION_MANAGE);
 
-  // The aggregation returns either an array or a paginated { items, total, ... } envelope.
-  const rows = useMemo(() => {
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data?.items)) return data.items;
-    return [];
-  }, [data]);
+  const requested = searchParams.get("tab");
+  const active = tabs.some((t) => t.key === requested) ? requested : tabs[0]?.key;
 
-  if (!canAccess) {
+  function goToTab(key) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", key);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  if (tabs.length === 0) {
     return (
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
         <Typography color="text.secondary">لا تملك صلاحية الوصول إلى قسم الإدارة</Typography>
@@ -49,24 +61,30 @@ export function AdminResidualPage() {
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Typography variant="h5" sx={{ mb: 1 }}>
+      <Typography variant="h5" sx={{ mb: 0.5 }}>
         قسم الإدارة
       </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        أساس البنية — يتم بناء الشاشات لاحقًا. (تحقق من اتصال طبقة البيانات)
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+        التقارير والعمولات وإدارة الأرشيف.
       </Typography>
 
-      {!canViewProjects ? (
-        <Typography color="text.secondary">لا تملك صلاحية عرض المشاريع</Typography>
-      ) : isLoading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-          <CircularProgress />
-        </Box>
-      ) : error ? (
-        <Typography color="error">تعذر جلب البيانات</Typography>
-      ) : (
-        <Typography color="text.secondary">عدد السجلات: {rows.length}</Typography>
-      )}
+      <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
+        <Tabs
+          value={active}
+          onChange={(_e, key) => goToTab(key)}
+          variant="scrollable"
+          scrollButtons="auto"
+        >
+          {tabs.map((t) => (
+            <Tab key={t.key} value={t.key} label={t.label} />
+          ))}
+        </Tabs>
+      </Box>
+
+      {/* Lazy: only the active tab's component mounts (and only it fetches). */}
+      {active === "reports" && <ReportsTab />}
+      {active === "commissions" && <CommissionsTab canManage={canManageCommissions} />}
+      {active === "archive" && <ArchiveRestoreTab />}
     </Container>
   );
 }

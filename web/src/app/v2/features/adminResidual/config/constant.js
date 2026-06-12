@@ -90,3 +90,20 @@ export const ADMIN_PROJECTS_CREATE_GROUP_URL = `${ADMIN_BASE}/projects/create-gr
 
 // ── model archive (allow-listed) ─────────────────────────────────────────────────────────────
 export const modelArchiveUrl = (id) => `${ADMIN_BASE}/model/archived/${id}`;
+
+// The allow-listed `model` query values the BE accepts (ADMIN_ARCHIVE_MODEL_ALLOWLIST):
+// GLOBAL image-session reference data, each with an `isArchived` column. There is NO list
+// endpoint — only the per-id PATCH toggle — so the archive UI is a restore-by-id control.
+// Keys are the lowercase values the BE validation expects (it resolves to the camelCase
+// Prisma delegate); labels are Arabic for the picker.
+export const ARCHIVE_MODELS = [
+  { value: "style", labelAr: "الأنماط" },
+  { value: "colorpattern", labelAr: "أنماط الألوان" },
+  { value: "material", labelAr: "الخامات" },
+  { value: "space", labelAr: "المساحات" },
+  { value: "designimage", labelAr: "صور التصميم" },
+];
+
+// ── staff users pick-list (reused from the users surface for the report/commission pickers) ──
+// GET /users/all-users → role-grouped pick list (gated by user.list). Relative to /v2.
+export const USERS_ALL_URL = "users/all-users";

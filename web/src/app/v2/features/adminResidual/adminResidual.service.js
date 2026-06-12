@@ -12,13 +12,15 @@
 //  • Mutating bodies are picked to match the BE .strict() schemas exactly (no extra keys),
 //    EXCEPT the dynamic field-update + new-lead + report payloads, which the BE reads via
 //    .passthrough() and the frozen logic consumes verbatim — those are forwarded as-is.
-//  • 🔒 Reports: the excel/pdf generators are FROZEN and return a FILE (not the JSON envelope).
-//    The current v2 ApiFetch parses JSON only, so binary download wiring is a UX-phase concern.
-//    These foundation fns POST the payload exactly; the *data* variants return the envelope.
+//  • 🔒 Reports: the excel/pdf generators are FROZEN and STREAM a FILE (not the JSON envelope).
+//    apiFetch parses JSON only, so the binary read is confined to the dedicated download
+//    helpers below (postForPdfBlob → Blob → save). We only CALL the frozen endpoint and save
+//    its bytes — no PDF logic is touched. The *data* variants still return the JSON envelope.
 //  • The bulk import is multipart ("file"); we hand the FormData straight to apiFetch.post with
 //    isMultipart=true so it is NOT JSON-serialized and the browser sets the boundary header.
 
 import apiFetch from "@/app/v2/lib/api/ApiFetch";
+import config from "@/app/v2/lib/config";
 import {
   // reports
   LEAD_REPORT_URL,
@@ -46,6 +48,8 @@ import {
   ADMIN_PROJECTS_CREATE_GROUP_URL,
   // model archive
   modelArchiveUrl,
+  // staff users pick-list (reused from the users surface for report/commission pickers)
+  USERS_ALL_URL,
 } from "./config/constant.js";
 
 // Build a query string with top-level params (skips empty/null/undefined).
@@ -68,22 +72,86 @@ function pick(obj, keys) {
   return out;
 }
 
+// ── binary (PDF) download helper ──────────────────────────────────────────────────────────
+// 🔒 The report PDF generators are LOGIC-FROZEN: they stream `application/pdf` (Content-
+// Disposition: attachment) and OWN the response body. We NEVER touch that logic — we only
+// CALL the endpoint and save the bytes it returns. The canonical apiFetch parses JSON only
+// and cannot yield a Blob, so the binary read is confined HERE in the data-access layer
+// (components still never fetch directly). We POST the prepared `{ data }` payload exactly
+// as the frozen generator expects, then turn the streamed PDF into a Blob the browser saves.
+function buildAbsoluteUrl(path) {
+  return `${config.apiUrl}/${String(path).replace(/^\//, "")}`;
+}
+
+async function postForPdfBlob(path, body, filename) {
+  const response = await fetch(buildAbsoluteUrl(path), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(body ?? {}),
+  });
+  if (!response.ok) {
+    // The frozen generator may emit a JSON error on failure; surface its CODE so the
+    // mutation runner can resolve it to Arabic (mirrors the apiFetch error shape).
+    let data = null;
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+    const err = new Error(data?.message || response.statusText || "PDF_GENERATION_FAILED");
+    err.status = response.status;
+    err.data = data || { message: "PDF_GENERATION_FAILED" };
+    throw err;
+  }
+  const blob = await response.blob();
+  triggerBlobDownload(blob, filename);
+  return { success: true, message: "OK", data: { downloaded: true } };
+}
+
+// Save a Blob to the user's machine via a transient object URL (no DOM library needed).
+function triggerBlobDownload(blob, filename) {
+  if (typeof window === "undefined") return;
+  const objectUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = objectUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(objectUrl);
+}
+
 export const adminResidualService = {
   // ── reports (🔒 FROZEN generators; permission: admin_residual.report.generate) ───────
-  // The *data* variants return the JSON envelope; the *excel*/*pdf* variants return a FILE
-  // (binary) — see the service-header note. Bodies are forwarded verbatim (BE .passthrough).
-  // POST /reports/lead-report
+  // The *data* variants return the JSON envelope (filters → { leads, summary } /
+  // { staffStats, summary, dateRange }); the *excel*/*pdf* variants STREAM a FILE — read as
+  // a Blob and saved by the helper. Bodies are forwarded verbatim (BE .passthrough); the PDF/
+  // excel generators read a prepared `{ data }` object built from the matching *data* call.
+  // POST /reports/lead-report  → { leads, summary }
   generateLeadReportData: (body = {}) => apiFetch.post(LEAD_REPORT_URL, body),
-  // POST /reports/lead-report/excel
-  generateLeadReportExcel: (body = {}) => apiFetch.post(LEAD_REPORT_EXCEL_URL, body),
-  // POST /reports/lead-report/pdf
-  generateLeadReportPdf: (body = {}) => apiFetch.post(LEAD_REPORT_PDF_URL, body),
-  // POST /reports/staff-report
+  // POST /reports/lead-report/pdf  → streams lead-report.pdf (body: { data: { leads, summary } })
+  downloadLeadReportPdf: (data) =>
+    postForPdfBlob(LEAD_REPORT_PDF_URL, { data }, "lead-report.pdf"),
+  // POST /reports/lead-report/excel → streams lead-report.xlsx (body: { data })
+  downloadLeadReportExcel: (data) =>
+    postForPdfBlob(LEAD_REPORT_EXCEL_URL, { data }, "lead-report.xlsx"),
+  // POST /reports/staff-report  → { staffStats, summary, dateRange }
   generateStaffReportData: (body = {}) => apiFetch.post(STAFF_REPORT_URL, body),
-  // POST /reports/staff-report/excel
-  generateStaffReportExcel: (body = {}) => apiFetch.post(STAFF_REPORT_EXCEL_URL, body),
-  // POST /reports/staff-report/pdf
-  generateStaffReportPdf: (body = {}) => apiFetch.post(STAFF_REPORT_PDF_URL, body),
+  // POST /reports/staff-report/pdf  → streams staff-report.pdf (body: { data })
+  downloadStaffReportPdf: (data) =>
+    postForPdfBlob(STAFF_REPORT_PDF_URL, { data }, "staff-report.pdf"),
+  // POST /reports/staff-report/excel → streams staff-report.xlsx (body: { data })
+  downloadStaffReportExcel: (data) =>
+    postForPdfBlob(STAFF_REPORT_EXCEL_URL, { data }, "staff-report.xlsx"),
+
+  // ── staff users pick-list (reused read for the report/commission user pickers) ───────
+  // GET /users/all-users?role=STAFF&exactRole=true → { items: [{ id, name, email, ... }] }
+  // (gated by user.list on the BE). exactRole=true narrows to PRIMARY-role STAFF agents
+  // only (the sales staff who earn lead commissions), excluding designers/executors who
+  // merely carry a STAFF subRole.
+  getStaffUsers: () =>
+    apiFetch.get(buildQuery(USERS_ALL_URL, { role: "STAFF", exactRole: "true" })),
 
   // ── admin leads (permission per fn — see config header) ──────────────────────────────
   // POST /leads/excel — multipart "file" bulk import (admin_residual.lead.import)
