@@ -1,4 +1,4 @@
-import apiFetch from "./ApiFetch";
+import apiFetch, { legacyApiFetch } from "./ApiFetch";
 
 export async function getData({
   url = "",
@@ -9,11 +9,12 @@ export async function getData({
   search,
   sort,
   others,
+  legacy = false,
 }) {
   try {
     setLoading(true);
 
-    const result = await apiFetch.getPaginated(
+    const result = await (legacy ? legacyApiFetch : apiFetch).getPaginated(
       url,
       {
         page,

@@ -1,23 +1,21 @@
 "use client";
 
 // Overview / details tab — read-only lead facts + the migrated booking-lead detail card
-// (reused from features/leads). The hub header above already shows the lead name + status +
-// payment chips, so this tab no longer repeats them — it leads with the FACTS, grouped into
-// two labelled sub-sections inside SectionCards: "معلومات الاتصال" and "تفاصيل الطلب".
-// No mutations here. Single Arabic / RTL.
+// (reused from features/leads). Mirrors the legacy "Details" tab's LeadInfo/Contact panels
+// at a structural level (single Arabic). No mutations here.
 
-import { Box, Divider, Grid, Stack, Typography } from "@mui/material";
+import { Box, Chip, Divider, Grid, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import { BookingLeadDetailsCard } from "@/app/v2/features/leads";
-import { SectionCard } from "@/app/v2/shared/components";
-import { useT } from "@/app/v2/lib/i18n";
 import {
+  statusLabel,
+  paymentStatusLabel,
   categoryLabel,
 } from "@/app/v2/features/leads/config/leadsConstants.js";
 
 function Field({ label, value }) {
   return (
-    <Box sx={{ p: 2, backgroundColor: "action.hover", borderRadius: 1 }}>
+    <Box sx={{ p: 2, backgroundColor: "grey.50", borderRadius: 1 }}>
       <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
         {label}
       </Typography>
@@ -29,52 +27,45 @@ function Field({ label, value }) {
 }
 
 export function OverviewTab({ lead }) {
-  const { t } = useT();
   if (!lead) return null;
   return (
     <Stack spacing={3}>
-      <SectionCard title={t("leadsDetails.overview.contact")}>
+      <Box>
+        <Stack direction="row" spacing={1} sx={{ mb: 2 }} alignItems="center" flexWrap="wrap">
+          <Typography variant="h6">{lead?.client?.name ?? "—"}</Typography>
+          <Chip size="small" label={`الحالة: ${statusLabel(lead.status)}`} color="secondary" variant="outlined" />
+          <Chip size="small" label={`الدفع: ${paymentStatusLabel(lead.paymentStatus)}`} color="primary" variant="outlined" />
+        </Stack>
         <Grid container spacing={2}>
           <Grid size={{ xs: 12, md: 6 }}>
-            <Field label={t("leadsDetails.overview.phone")} value={lead?.client?.phone} />
+            <Field label="التصنيف" value={categoryLabel(lead.selectedCategory)} />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
-            <Field label={t("leadsDetails.overview.email")} value={lead?.client?.email} />
+            <Field label="الموقع" value={lead.country || lead.emirate} />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
-            <Field label={t("leadsDetails.overview.location")} value={lead.country} />
+            <Field label="الهاتف" value={lead?.client?.phone} />
           </Grid>
           <Grid size={{ xs: 12, md: 6 }}>
-            <Field label={t("leadsDetails.overview.emirate")} value={lead.emirate} />
-          </Grid>
-        </Grid>
-      </SectionCard>
-
-      <SectionCard title={t("leadsDetails.overview.request")}>
-        <Grid container spacing={2}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Field label={t("leadsDetails.overview.category")} value={categoryLabel(lead.selectedCategory)} />
+            <Field label="البريد" value={lead?.client?.email} />
           </Grid>
           {lead.assignedTo && (
             <Grid size={{ xs: 12, md: 6 }}>
               <Field
-                label={t("leadsDetails.overview.assignedTo")}
+                label="مُسند إلى"
                 value={`${lead.assignedTo.name}${lead.assignedAt ? ` — ${dayjs(lead.assignedAt).format("YYYY-MM-DD")}` : ""}`}
               />
             </Grid>
           )}
           {lead.description && (
             <Grid size={{ xs: 12 }}>
-              <Field label={t("leadsDetails.overview.description")} value={lead.description} />
+              <Field label="الوصف" value={lead.description} />
             </Grid>
           )}
         </Grid>
-      </SectionCard>
-
+      </Box>
       <Divider />
       <BookingLeadDetailsCard lead={lead} />
     </Stack>
   );
 }
-
-export default OverviewTab;

@@ -21,17 +21,14 @@ import dayjs from "dayjs";
 import { MdDelete, MdTask } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
-import { useT } from "@/app/v2/lib/i18n";
 import { projectsService } from "../projects.service.js";
 import { runProjectMutation } from "../projects.mutations.js";
 import { TaskActions } from "./TaskActions.jsx";
 import { CreateTaskModal } from "./CreateTaskModal.jsx";
 
-export function ProjectTasksPanel({ project, type = "PROJECT", name }) {
+export function ProjectTasksPanel({ project, type = "PROJECT", name = "مهمة" }) {
   const projectId = project?.id;
   const { hasPermission } = usePermission();
-  const { t } = useT();
-  const displayName = name ?? t("projects.tasks.defaultName");
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
@@ -66,7 +63,7 @@ export function ProjectTasksPanel({ project, type = "PROJECT", name }) {
 
   const handleDelete = async (task) => {
     const res = await runProjectMutation(() => projectsService.deleteTask(task.id), {
-      loading: t("projects.tasks.loading.delete"),
+      loading: "جاري الحذف...",
     });
     if (res) load();
   };
@@ -74,11 +71,11 @@ export function ProjectTasksPanel({ project, type = "PROJECT", name }) {
   return (
     <Card sx={{ mt: 3, borderRadius: 3 }}>
       <CardHeader
-        title={<Typography variant="h6" fontWeight={600}>{type === "MODIFICATION" ? t("projects.tasks.modificationsTitle") : t("projects.tasks.projectTasksTitle")}</Typography>}
+        title={<Typography variant="h6" fontWeight={600}>{type === "MODIFICATION" ? "التعديلات" : "مهام المشروع"}</Typography>}
         action={
           canCreate && (
             <Button variant="contained" startIcon={<MdTask />} onClick={() => setCreateOpen(true)}>
-              {t("projects.tasks.create").replace("{name}", displayName)}
+              {`إنشاء ${name}`}
             </Button>
           )
         }
@@ -90,7 +87,7 @@ export function ProjectTasksPanel({ project, type = "PROJECT", name }) {
         ) : tasks.length === 0 ? (
           <Box textAlign="center" py={4}>
             <Typography variant="body1" color="textSecondary">
-              {t("projects.tasks.empty")}
+              لا توجد مهام.
             </Typography>
           </Box>
         ) : (
@@ -102,19 +99,16 @@ export function ProjectTasksPanel({ project, type = "PROJECT", name }) {
                   <Card variant="outlined" sx={{ height: "100%" }}>
                     <CardHeader
                       title={<Typography variant="subtitle1" fontWeight={600}>{task.title}</Typography>}
-                      subheader={t("projects.tasks.type").replace("{type}", task.type)}
+                      subheader={`النوع: ${task.type}`}
                       action={<TaskActions task={task} onChanged={load} />}
                     />
                     <CardContent sx={{ pt: 0 }}>
                       <Typography variant="body2" color="textSecondary">
-                        {t("projects.tasks.due").replace(
-                          "{value}",
-                          task.dueDate ? dayjs(task.dueDate).format("DD/MM/YYYY") : t("projects.tasks.dueUnset"),
-                        )}
+                        الاستحقاق: {task.dueDate ? dayjs(task.dueDate).format("DD/MM/YYYY") : "غير محدد"}
                       </Typography>
                       {task.user && (
                         <Typography variant="body2" color="textSecondary">
-                          {t("projects.tasks.assignedTo").replace("{name}", task.user.name)}
+                          معيّنة إلى: {task.user.name}
                         </Typography>
                       )}
                       {task.description && (
@@ -130,7 +124,7 @@ export function ProjectTasksPanel({ project, type = "PROJECT", name }) {
                       {canDelete && (
                         <Box sx={{ mt: 2, textAlign: "end" }}>
                           <Button size="small" color="error" startIcon={<MdDelete />} onClick={() => handleDelete(task)}>
-                            {t("projects.tasks.delete")}
+                            حذف
                           </Button>
                         </Box>
                       )}

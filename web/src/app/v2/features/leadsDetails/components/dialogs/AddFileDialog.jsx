@@ -17,7 +17,6 @@ import {
 } from "@mui/material";
 import { BsPlus } from "react-icons/bs";
 import { useToastContext } from "@/app/v2/providers/ToastProvider";
-import { useT } from "@/app/v2/lib/i18n";
 import { useUpload } from "@/app/v2/hooks/useUpload.js";
 import { UploadOverlay } from "@/app/v2/shared/components/feedback/UploadOverlay.jsx";
 import { leadsService } from "@/app/v2/features/leads/leads.service.js";
@@ -30,7 +29,6 @@ export function AddFileDialog({ lead, canAdd, onCreated }) {
   const [description, setDescription] = useState("");
   const [file, setFile] = useState(null);
   const { setLoading } = useToastContext();
-  const { t } = useT();
   const { uploadAsChunk, progress, fileName, uploadSpeed, isUploading } = useUpload({
     onUploadStart: () => setShowOverlay(true),
     onUploadEnd: () => setShowOverlay(false),
@@ -61,7 +59,7 @@ export function AddFileDialog({ lead, canAdd, onCreated }) {
           name,
           description: description || undefined,
         }),
-      { setLoading, loading: t("leadsDetails.file.loading") },
+      { setLoading, loading: "جاري الحفظ..." },
     );
     if (res) {
       onCreated?.(res.data);
@@ -84,22 +82,22 @@ export function AddFileDialog({ lead, canAdd, onCreated }) {
         startIcon={<BsPlus size={20} />}
         sx={{ alignSelf: "flex-start" }}
       >
-        {t("leadsDetails.file.add")}
+        إضافة ملف
       </Button>
       {open && (
         <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth dir="rtl">
-          <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>{t("leadsDetails.file.title")}</DialogTitle>
+          <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>ملف جديد</DialogTitle>
           <DialogContent>
             <Stack spacing={3} sx={{ mt: 2 }}>
               <TextField
-                label={t("leadsDetails.file.nameLabel")}
+                label="اسم الملف"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 fullWidth
                 slotProps={{ inputLabel: { shrink: true } }}
               />
               <TextField
-                label={t("leadsDetails.file.descriptionLabel")}
+                label="الوصف"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 fullWidth
@@ -108,14 +106,14 @@ export function AddFileDialog({ lead, canAdd, onCreated }) {
                 slotProps={{ inputLabel: { shrink: true } }}
               />
               <Button component="label" variant="outlined">
-                {file ? file.name : t("leadsDetails.file.pick")}
+                {file ? file.name : "اختر ملفاً"}
                 <input type="file" hidden onChange={onPick} />
               </Button>
             </Stack>
           </DialogContent>
           <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
             <Button onClick={() => setOpen(false)} variant="outlined">
-              {t("leadsDetails.file.cancel")}
+              إلغاء
             </Button>
             <Button
               onClick={handleSave}
@@ -123,7 +121,7 @@ export function AddFileDialog({ lead, canAdd, onCreated }) {
               color="primary"
               disabled={!file || !name || isUploading}
             >
-              {t("leadsDetails.file.save")}
+              حفظ
             </Button>
           </DialogActions>
         </Dialog>

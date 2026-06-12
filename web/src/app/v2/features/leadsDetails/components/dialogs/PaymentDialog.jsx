@@ -6,7 +6,7 @@
 // single-payment form (the legacy dialog let you queue several rows; here one row per
 // submit, which posts the same { payments: [...] } array shape the BE expects).
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   Button,
   Dialog,
@@ -21,36 +21,23 @@ import {
 } from "@mui/material";
 import { BsPlus } from "react-icons/bs";
 import { useToastContext } from "@/app/v2/providers/ToastProvider";
-import { useT } from "@/app/v2/lib/i18n";
 import { leadsService } from "@/app/v2/features/leads/leads.service.js";
 import { runLeadMutation } from "@/app/v2/features/leads/leads.mutations.js";
 
-// Payment-level options: `value` is the API enum, `labelKey` is resolved via t() at render.
 const PAYMENT_LEVELS = [
-  { value: "LEVEL_1", labelKey: "leadsDetails.payment.level1" },
-  { value: "LEVEL_2", labelKey: "leadsDetails.payment.level2" },
-  { value: "LEVEL_3", labelKey: "leadsDetails.payment.level3" },
-  { value: "LEVEL_4", labelKey: "leadsDetails.payment.level4" },
-  { value: "LEVEL_5", labelKey: "leadsDetails.payment.level5" },
+  { value: "LEVEL_1", label: "الدفعة الأولى" },
+  { value: "LEVEL_2", label: "الدفعة الثانية" },
+  { value: "LEVEL_3", label: "الدفعة الثالثة" },
+  { value: "LEVEL_4", label: "الدفعة الرابعة" },
+  { value: "LEVEL_5", label: "الدفعة الخامسة" },
 ];
 
-export function AddPaymentDialog({ lead, canAdd, onCreated, autoOpen = false, onAutoOpenConsumed }) {
+export function AddPaymentDialog({ lead, canAdd, onCreated }) {
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [paymentReason, setPaymentReason] = useState("LEVEL_1");
   const [note, setNote] = useState("");
   const { setLoading } = useToastContext();
-  const { t } = useT();
-
-  // One-click daily verbs (item 4): open once when a deep-link asks, then clear the URL flag.
-  const consumedRef = useRef(false);
-  useEffect(() => {
-    if (autoOpen && canAdd && !consumedRef.current) {
-      consumedRef.current = true;
-      setOpen(true);
-      onAutoOpenConsumed?.();
-    }
-  }, [autoOpen, canAdd, onAutoOpenConsumed]);
 
   if (!canAdd) return null;
 
@@ -62,7 +49,7 @@ export function AddPaymentDialog({ lead, canAdd, onCreated, autoOpen = false, on
           payments: [{ amount: Number(amount), paymentReason }],
           note: note || undefined,
         }),
-      { setLoading, loading: t("leadsDetails.payment.loading") },
+      { setLoading, loading: "جاري الإضافة..." },
     );
     if (res) {
       onCreated?.(res.data);
@@ -80,15 +67,15 @@ export function AddPaymentDialog({ lead, canAdd, onCreated, autoOpen = false, on
         startIcon={<BsPlus size={20} />}
         sx={{ alignSelf: "flex-start" }}
       >
-        {t("leadsDetails.payment.add")}
+        إضافة دفعة
       </Button>
       {open && (
         <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth dir="rtl">
-          <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>{t("leadsDetails.payment.title")}</DialogTitle>
+          <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>إضافة دفعة</DialogTitle>
           <DialogContent>
             <Stack spacing={3} sx={{ mt: 2 }}>
               <TextField
-                label={t("leadsDetails.payment.amount")}
+                label="المبلغ"
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
@@ -96,25 +83,25 @@ export function AddPaymentDialog({ lead, canAdd, onCreated, autoOpen = false, on
               />
               <Stack spacing={0.5}>
                 <Typography variant="caption" color="text.secondary">
-                  {t("leadsDetails.payment.levelLabel")}
+                  مستوى الدفعة
                 </Typography>
                 <Select value={paymentReason} onChange={(e) => setPaymentReason(e.target.value)}>
                   {PAYMENT_LEVELS.map((l) => (
                     <MenuItem key={l.value} value={l.value}>
-                      {t(l.labelKey)}
+                      {l.label}
                     </MenuItem>
                   ))}
                 </Select>
               </Stack>
-              <TextField label={t("leadsDetails.payment.note")} value={note} onChange={(e) => setNote(e.target.value)} fullWidth multiline rows={2} />
+              <TextField label="ملاحظة" value={note} onChange={(e) => setNote(e.target.value)} fullWidth multiline rows={2} />
             </Stack>
           </DialogContent>
           <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
             <Button onClick={() => setOpen(false)} variant="outlined">
-              {t("leadsDetails.payment.cancel")}
+              إلغاء
             </Button>
             <Button onClick={handleAdd} variant="contained" color="primary" disabled={!amount}>
-              {t("leadsDetails.payment.confirm")}
+              إضافة
             </Button>
           </DialogActions>
         </Dialog>

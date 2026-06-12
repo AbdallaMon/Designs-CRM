@@ -1,4 +1,4 @@
-import colors from "@/app/v2/lib/theme/colors";
+import colors from "@/app/helpers/colors";
 import {
   Box,
   Typography,

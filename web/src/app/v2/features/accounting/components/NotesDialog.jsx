@@ -30,15 +30,12 @@ import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { useOverlay } from "@/app/v2/hooks/useOverlay";
 import { useUpload } from "@/app/v2/hooks/useUpload";
 import { UploadOverlay } from "@/app/v2/shared/components/feedback/UploadOverlay";
-import { useT } from "@/app/v2/lib/i18n";
 import { accountingService } from "../accounting.service.js";
 import { runAccountingMutation } from "../accounting.mutations.js";
 
 const P = PERMISSIONS.ACCOUNTING;
 
-export function NotesDialog({ idKey, id, buttonLabel }) {
-  const { t } = useT();
-  const resolvedButtonLabel = buttonLabel ?? t("accounting.notes.defaultButton");
+export function NotesDialog({ idKey, id, buttonLabel = "الملاحظات والمرفقات" }) {
   const { hasPermission } = usePermission();
   const canList = hasPermission(P.NOTE_LIST);
   const canCreate = hasPermission(P.NOTE_CREATE);
@@ -82,7 +79,7 @@ export function NotesDialog({ idKey, id, buttonLabel }) {
     }
     const res = await runAccountingMutation(
       () => accountingService.addNote({ content, attachment, idKey, id }),
-      { loading: t("accounting.notes.loading"), setLoading: setSubmitting },
+      { loading: "جاري إضافة الملاحظة...", setLoading: setSubmitting },
     );
     if (res) {
       setContent("");
@@ -96,7 +93,7 @@ export function NotesDialog({ idKey, id, buttonLabel }) {
   return (
     <>
       <Button variant="outlined" size="small" startIcon={<MdNoteAlt />} onClick={() => setOpen(true)}>
-        {resolvedButtonLabel}
+        {buttonLabel}
       </Button>
 
       <UploadOverlay
@@ -108,7 +105,7 @@ export function NotesDialog({ idKey, id, buttonLabel }) {
       />
 
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle>{t("accounting.notes.title")}</DialogTitle>
+        <DialogTitle>الملاحظات والمرفقات</DialogTitle>
         <DialogContent dividers>
           {canCreate && (
             <Box sx={{ mb: 2 }}>
@@ -116,13 +113,13 @@ export function NotesDialog({ idKey, id, buttonLabel }) {
                 fullWidth
                 multiline
                 minRows={3}
-                label={t("accounting.notes.field")}
+                label="ملاحظة"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
               />
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 1 }}>
                 <Button component="label" variant="text" size="small" startIcon={<MdAttachFile />}>
-                  {file ? file.name : t("accounting.notes.attach")}
+                  {file ? file.name : "إرفاق ملف"}
                   <input
                     type="file"
                     hidden
@@ -136,7 +133,7 @@ export function NotesDialog({ idKey, id, buttonLabel }) {
                   disabled={submitting || (!content && !file)}
                   onClick={handleAdd}
                 >
-                  {t("accounting.action.add")}
+                  إضافة
                 </Button>
               </Box>
               <Divider sx={{ mt: 2 }} />
@@ -149,7 +146,7 @@ export function NotesDialog({ idKey, id, buttonLabel }) {
             </Box>
           ) : notes.length === 0 ? (
             <Typography color="text.secondary" sx={{ py: 2, textAlign: "center" }}>
-              {t("accounting.notes.empty")}
+              لا توجد ملاحظات
             </Typography>
           ) : (
             <List>
@@ -165,7 +162,7 @@ export function NotesDialog({ idKey, id, buttonLabel }) {
                         <span>{note.user?.name}</span>
                         {note.attachment && (
                           <MuiLink href={note.attachment} target="_blank" rel="noreferrer">
-                            {t("accounting.notes.viewAttachment")}
+                            عرض المرفق
                           </MuiLink>
                         )}
                       </Box>
@@ -178,7 +175,7 @@ export function NotesDialog({ idKey, id, buttonLabel }) {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)}>{t("accounting.action.close")}</Button>
+          <Button onClick={() => setOpen(false)}>إغلاق</Button>
         </DialogActions>
       </Dialog>
     </>

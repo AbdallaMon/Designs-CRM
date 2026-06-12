@@ -13,20 +13,18 @@
 import { useState } from "react";
 import { Box, Button, Card, CardContent, Chip, Stack, Typography } from "@mui/material";
 import { MdLink, MdLinkOff, MdEvent } from "react-icons/md";
-import { useT } from "@/app/v2/lib/i18n";
 import { calendarService } from "../calendar.service.js";
 import { runCalendarMutation } from "../calendar.mutations.js";
 import { useGoogleStatus } from "../hooks/useGoogleStatus.js";
 
 export function GoogleConnectCard({ canManageGoogle = false }) {
-  const { t } = useT();
   const { isConnected, isLoading, refetch } = useGoogleStatus();
   const [busy, setBusy] = useState(false);
 
   const handleConnect = async () => {
     setBusy(true);
     const res = await runCalendarMutation(() => calendarService.connectGoogle(), {
-      loading: t("calendar.google.connecting", "جاري إنشاء رابط الربط..."),
+      loading: "جاري إنشاء رابط الربط...",
     });
     setBusy(false);
     const url = res?.data?.redirectUrl || res?.data?.authUrl;
@@ -38,7 +36,7 @@ export function GoogleConnectCard({ canManageGoogle = false }) {
   const handleDisconnect = async () => {
     setBusy(true);
     const res = await runCalendarMutation(() => calendarService.disconnectGoogle(), {
-      loading: t("calendar.google.disconnecting", "جاري إلغاء الربط..."),
+      loading: "جاري إلغاء الربط...",
     });
     setBusy(false);
     if (res) refetch();
@@ -57,10 +55,10 @@ export function GoogleConnectCard({ canManageGoogle = false }) {
             <MdEvent size={24} />
             <Box>
               <Typography variant="subtitle1" fontWeight={700}>
-                {t("calendar.google.title", "تقويم جوجل")}
+                تقويم جوجل
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {t("calendar.google.subtitle", "اربط حسابك لمزامنة المواعيد تلقائياً")}
+                اربط حسابك لمزامنة المواعيد تلقائياً
               </Typography>
             </Box>
           </Box>
@@ -68,13 +66,7 @@ export function GoogleConnectCard({ canManageGoogle = false }) {
           <Stack direction="row" spacing={1.5} alignItems="center">
             <Chip
               size="small"
-              label={
-                isLoading
-                  ? "..."
-                  : isConnected
-                    ? t("calendar.google.connected", "مرتبط")
-                    : t("calendar.google.disconnected", "غير مرتبط")
-              }
+              label={isLoading ? "..." : isConnected ? "مرتبط" : "غير مرتبط"}
               color={isConnected ? "success" : "default"}
               variant={isConnected ? "filled" : "outlined"}
             />
@@ -88,7 +80,7 @@ export function GoogleConnectCard({ canManageGoogle = false }) {
                   disabled={busy || isLoading}
                   sx={{ borderRadius: 2 }}
                 >
-                  {t("calendar.google.disconnect", "إلغاء الربط")}
+                  إلغاء الربط
                 </Button>
               ) : (
                 <Button
@@ -98,7 +90,7 @@ export function GoogleConnectCard({ canManageGoogle = false }) {
                   disabled={busy || isLoading}
                   sx={{ borderRadius: 2 }}
                 >
-                  {t("calendar.google.connect", "ربط الحساب")}
+                  ربط الحساب
                 </Button>
               ))}
           </Stack>

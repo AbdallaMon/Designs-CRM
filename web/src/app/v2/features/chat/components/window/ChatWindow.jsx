@@ -22,10 +22,9 @@ import { ChatWindowHeader } from "./ChatWindowHeader.jsx";
 import { PinnedMessages } from "./PinnedMessages.jsx";
 import { useChatMessages, useChatMembers, useChatRoom } from "../../hooks";
 import { useChatSocket, chatEmit } from "../../chat.socket.js";
-import chatService, { clientChatService } from "../../chat.service.js";
+import chatService from "../../chat.service.js";
 import { runChatMutation } from "../../chat.mutations.js";
 import { isAdminRole } from "../../chat.utils.js";
-import { useT } from "@/app/v2/lib/i18n";
 
 export function ChatWindow({
   roomId,
@@ -34,23 +33,10 @@ export function ChatWindow({
   isMobile = false,
   onRoomActivity = () => {},
   reFetchRooms = () => {},
-  // Public client surface: `{ token, clientId, client }`. When present the window runs
-  // in client mode — reads go through /v2/client/chat (token-based) and the acting
-  // identity is the client member instead of the authed user.
-  clientContext = null,
 }) {
-  const { user: authUser } = useAuth();
+  const { user } = useAuth();
   const { socket } = useSocket();
   const { hasPermission } = usePermission();
-  const { t } = useT();
-
-  const isClient = Boolean(clientContext?.token);
-  // The actor is whoever the socket/UI acts as. Staff → authed user; client → the
-  // client member (shaped like a user, carries .id) resolved from the token.
-  const user = isClient ? clientContext.client : authUser;
-  const clientCtx = isClient
-    ? { token: clientContext.token, actor: clientContext.client }
-    : null;
 
   const [showAddMembers, setShowAddMembers] = useState(false);
   const [availableUsers, setAvailableUsers] = useState([]);
@@ -70,19 +56,19 @@ export function ChatWindow({
   const [selectedMessages, setSelectedMessages] = useState([]);
   const [openForwardDialog, setOpenForwardDialog] = useState(false);
 
-  const { room, loading: loadingRoom, fetchChatRoom, error } = useChatRoom(roomId, clientCtx);
+  const { room, loading: loadingRoom, fetchChatRoom, error } = useChatRoom(roomId);
 
   // ── Confirm dialog plumbing ──
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTitle, setConfirmTitle] = useState(t("chat.window.confirm", "تأكيد"));
+  const [confirmTitle, setConfirmTitle] = useState("تأكيد");
   const [confirmDescription, setConfirmDescription] = useState("");
   const confirmActionRef = useRef(null);
   const openConfirm = useCallback((title, description, onConfirm) => {
-    setConfirmTitle(title || t("chat.window.confirm", "تأكيد"));
+    setConfirmTitle(title || "تأكيد");
     setConfirmDescription(description || "");
     confirmActionRef.current = onConfirm;
     setConfirmOpen(true);
-  }, [t]);
+  }, []);
   const closeConfirm = useCallback(() => {
     setConfirmOpen(false);
     confirmActionRef.current = null;
@@ -116,9 +102,9 @@ export function ChatWindow({
     setNewMessagesCount,
     loadMore,
     deleteSelectedMessages,
-  } = useChatMessages(roomId, 0, clientCtx);
+  } = useChatMessages(roomId, 0);
 
-  const { members, fetchMembers } = useChatMembers(roomId, showAddMembers, clientCtx);
+  const { members, fetchMembers } = useChatMembers(roomId, showAddMembers);
   const cantLoad = !hasMore || loadingMore || initialLoading || loading;
   const currentUserMember = members?.find((m) => m.userId === user?.id);
   const currentUserRole = currentUserMember?.role || "MEMBER";
@@ -127,36 +113,26 @@ export function ChatWindow({
     if (!roomId) return;
     setLoadingPinnedMessages(true);
     try {
-      const res = isClient
-        ? await clientChatService.listPinnedMessages(roomId, clientCtx.token)
-        : await chatService.listPinnedMessages(roomId);
+      const res = await chatService.listPinnedMessages(roomId);
       setPinnedMessages(res?.data ?? []);
     } finally {
       setLoadingPinnedMessages(false);
     }
-  }, [roomId, isClient]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [roomId]);
 
   useEffect(() => {
     if (roomId) fetchPinnedMessages();
   }, [roomId, fetchPinnedMessages]);
 
-  // join room on socket — clients join via the client-scoped event (clientId), staff
-  // via the user event (matching the legacy client/staff socket join split).
+  // join room on socket
   useEffect(() => {
-    if (!roomId || !socket?.connected) return;
-    if (isClient) {
-      if (clientContext?.clientId)
-        chatEmit.joinRoomAsClient(socket, roomId, clientContext.clientId);
-    } else if (user) {
-      chatEmit.joinRoom(socket, roomId, user);
-    }
-  }, [roomId, user, socket, socket?.connected, isClient]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (roomId && user && socket?.connected) chatEmit.joinRoom(socket, roomId, user);
+  }, [roomId, user, socket, socket?.connected]);
 
-  // mark room read on open (POST /rooms/:id/read) — gated by MESSAGE_SEND. Skipped in
-  // client mode (no auth; clients have no read-receipt endpoint over REST).
+  // mark room read on open (POST /rooms/:id/read) — gated by MESSAGE_SEND.
   // BE derives the user from auth; no body is needed (it ignores userId).
   useEffect(() => {
-    if (!isClient && roomId && hasPermission(PERMISSIONS.CHAT.MESSAGE_SEND)) {
+    if (roomId && hasPermission(PERMISSIONS.CHAT.MESSAGE_SEND)) {
       chatService.readRoom(roomId, {}).catch(() => {});
     }
   }, [roomId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -185,7 +161,7 @@ export function ChatWindow({
       if (data.roomId === roomId) {
         setMessages((prev) => [...prev, data]);
         onRoomActivity?.(data);
-        chatEmit.markMessageRead(socket, roomId, data.id, user?.id);
+        chatEmit.markMessageRead(socket, roomId, data.id, user.id);
         setNewMessagesCount((p) => p + 1);
         inputRef.current?.focus();
         window.setTimeout(() => scrollToBottom(), 100);
@@ -202,7 +178,7 @@ export function ChatWindow({
         setMessages((prev) => prev.map((m) => (m.id === data.messageId ? { ...m, isDeleted: true } : m)));
     },
     onTyping: (data) => {
-      if (data.roomId === roomId && data.userId !== user?.id) {
+      if (data.roomId === roomId && data.userId !== user.id) {
         const key = `${data.userId}:${data.roomId}`;
         setTypingUsers((prev) => {
           const map = new Map(prev.map((u) => [`${u.userId}:${u.roomId}`, u]));
@@ -221,7 +197,7 @@ export function ChatWindow({
       }
     },
     onMemberRoleUpdated: (data) => {
-      if (data.userId === user?.id && data.roomId === roomId) {
+      if (data.userId === user.id && data.roomId === roomId) {
         fetchMembers();
         fetchChatRoom();
       }
@@ -239,13 +215,8 @@ export function ChatWindow({
     hasPermission(PERMISSIONS.CHAT.MEMBER_MANAGE) &&
     Boolean(room?.capabilities?.canManageMembers) &&
     isNotDirectChat;
-  const isCurrentUserAdmin =
-    !isClient && (isAdminRole(user) || room?.createdBy?.id === user?.id);
-  // Clients are members of the room by virtue of holding a valid room token; staff
-  // membership is matched on the user id.
-  const isMember = isClient
-    ? true
-    : members?.some((m) => m.userId === user?.id);
+  const isCurrentUserAdmin = isAdminRole(user) || room?.createdBy?.id === user.id;
+  const isMember = members?.some((m) => m.userId === user.id);
 
   const handleSendMessage = async (content, fileData) => {
     const messageData = {
@@ -261,7 +232,7 @@ export function ChatWindow({
   const handleAddMembers = async () => {
     const res = await runChatMutation(
       () => chatService.addMembers(roomId, { userIds: selectedUsers.map((u) => u.id) }),
-      { loading: t("chat.window.addingMembers", "جاري إضافة الأعضاء...") },
+      { loading: "جاري إضافة الأعضاء..." },
     );
     if (res) {
       fetchMembers();
@@ -272,7 +243,7 @@ export function ChatWindow({
   const handleRemoveMember = async (memberId) => {
     const res = await runChatMutation(
       () => chatService.removeMember(roomId, memberId),
-      { loading: t("chat.window.removingMember", "جاري إزالة العضو...") },
+      { loading: "جاري إزالة العضو..." },
     );
     if (res) fetchMembers();
   };
@@ -285,39 +256,27 @@ export function ChatWindow({
 
   const confirmRemoveMember = useCallback(
     (member) => {
-      const name = member?.user?.name || member?.client?.name || t("chat.window.defaultMember", "هذا العضو");
-      openConfirm(
-        t("chat.window.removeMemberTitle", "إزالة العضو؟"),
-        t("chat.window.removeMemberDescription", "هل تريد إزالة {name} من المحادثة؟").replace("{name}", name),
-        () => handleRemoveMember(member.id),
-      );
+      const name = member?.user?.name || member?.client?.name || "هذا العضو";
+      openConfirm("إزالة العضو؟", `هل تريد إزالة ${name} من المحادثة؟`, () => handleRemoveMember(member.id));
     },
-    [openConfirm, t], // eslint-disable-line react-hooks/exhaustive-deps
+    [openConfirm], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
   const confirmDeleteMessage = useCallback(
     (payload) => {
       const msgId = typeof payload === "object" && payload?.id ? payload.id : payload;
       if (!msgId) return;
-      openConfirm(
-        t("chat.window.deleteMessageTitle", "حذف الرسالة؟"),
-        t("chat.window.deleteMessageDescription", "سيتم حذف الرسالة للجميع في المحادثة."),
-        () => deleteMessage(msgId),
-      );
+      openConfirm("حذف الرسالة؟", "سيتم حذف الرسالة للجميع في المحادثة.", () => deleteMessage(msgId));
     },
-    [openConfirm, deleteMessage, t],
+    [openConfirm, deleteMessage],
   );
 
   const confirmDeleteSelectedMessages = useCallback(() => {
-    openConfirm(
-      t("chat.window.deleteMessagesTitle", "حذف الرسائل؟"),
-      t("chat.window.deleteMessagesDescription", "سيتم حذف الرسائل للجميع في المحادثة."),
-      async () => {
-        await deleteSelectedMessages(selectedMessages);
-        setSelectedMessages([]);
-      },
-    );
-  }, [openConfirm, deleteSelectedMessages, selectedMessages, t]);
+    openConfirm("حذف الرسائل؟", "سيتم حذف الرسائل للجميع في المحادثة.", async () => {
+      await deleteSelectedMessages(selectedMessages);
+      setSelectedMessages([]);
+    });
+  }, [openConfirm, deleteSelectedMessages, selectedMessages]);
 
   const handlePinMessage = useCallback(
     (message) => chatEmit.pinMessage(socket, { messageId: message.id, roomId, userId: user?.id }),
@@ -328,15 +287,19 @@ export function ChatWindow({
     [roomId, user?.id, socket],
   );
 
-  // available users for add-members. Served by the v2 users module via
-  // chatService.listDirectoryUsers → GET /v2/users/chat-directory. The server scopes
-  // by the authed caller's role (admin → all users, non-admin → related), returning
-  // the user array under response.data.
+  // available users for add-members. The users module is not migrated to /v2, so the
+  // directory is served by the LEGACY base via chatService.listDirectoryUsers
+  // (admin/all-users for admins, shared/all-related-chat-users for normal users).
+  // Legacy returns the user array directly under response.data.
+  // TODO: switch to /v2/users when users module migrates.
   const loadAvailableUsers = useCallback(async () => {
     if (!isNotDirectChat || !canManageMembers) return;
     setLoadingUsers(true);
     try {
-      const res = await chatService.listDirectoryUsers({ projectId });
+      const res = await chatService.listDirectoryUsers({
+        isAdmin: isAdminRole(user),
+        projectId,
+      });
       const list = Array.isArray(res?.data) ? res.data : (res?.data?.items ?? []);
       const alreadyMembers = members.filter((m) => m.userId).map((m) => m.userId);
       setAvailableUsers(list.filter((u) => !alreadyMembers.includes(u.id)));
@@ -358,7 +321,7 @@ export function ChatWindow({
   if (!room) {
     return (
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: { xs: "calc(100vh - 62px)", md: "calc(100vh - 105px)" }, color: "textSecondary" }}>
-        <Typography>{t("chat.window.pickToStart", "اختر محادثة لبدء المراسلة")}</Typography>
+        <Typography>اختر محادثة لبدء المراسلة</Typography>
       </Box>
     );
   }
@@ -412,14 +375,14 @@ export function ChatWindow({
           </Box>
         ) : messages.length === 0 ? (
           <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, color: "textSecondary" }}>
-            <Typography>{t("chat.window.noMessagesYet", "لا توجد رسائل بعد. ابدأ المحادثة!")}</Typography>
+            <Typography>لا توجد رسائل بعد. ابدأ المحادثة!</Typography>
           </Box>
         ) : (
           <>
             <div ref={messagesStartRef} />
             {!hasMore && (
               <Typography variant="caption" sx={{ display: "block", textAlign: "center", color: "textSecondary", mb: 1 }}>
-                {t("chat.window.noMoreMessages", "لا مزيد من الرسائل")}
+                لا مزيد من الرسائل
               </Typography>
             )}
             {loadingMore && <CircularProgress />}
@@ -427,7 +390,7 @@ export function ChatWindow({
               <ChatMessage
                 key={msg.id}
                 message={msg}
-                currentUserId={user?.id}
+                currentUserId={user.id}
                 isCurrentUserAdmin={isCurrentUserAdmin}
                 currentUserRole={currentUserRole}
                 pinnedMessages={pinnedMessages}
@@ -463,17 +426,15 @@ export function ChatWindow({
           room={room}
           inputRef={inputRef}
           disabled={
-            isClient
-              ? room?.isChatEnabled === false
-              : !hasPermission(PERMISSIONS.CHAT.MESSAGE_SEND) ||
-                (!isMember && !isCurrentUserAdmin) ||
-                (!isCurrentUserAdmin && !room.isChatEnabled)
+            !hasPermission(PERMISSIONS.CHAT.MESSAGE_SEND) ||
+            (!isMember && !isCurrentUserAdmin) ||
+            (!isCurrentUserAdmin && !room.isChatEnabled)
           }
           onTyping={emitTyping}
         />
       </Box>
 
-      <ChatFilesTab roomId={roomId} currentTab={currentTab} setCurrentTab={setCurrentTab} clientCtx={clientCtx} />
+      <ChatFilesTab roomId={roomId} currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
       <MultiActions
         selectedMessages={selectedMessages}
@@ -511,7 +472,7 @@ export function ChatWindow({
         description={confirmDescription}
         onConfirm={handleConfirm}
         onCancel={closeConfirm}
-        confirmButtonText={t("chat.confirm.delete", "حذف")}
+        confirmButtonText="حذف"
         confirmButtonColor="error"
       />
     </Paper>

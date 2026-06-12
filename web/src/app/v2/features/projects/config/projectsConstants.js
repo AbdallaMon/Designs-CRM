@@ -21,30 +21,6 @@ export const DEPARTMENTS = [
   { value: "ADMIN", label: "Admin only", color: "#E74C3C" },
 ];
 
-// The five project `type`s the designer board is partitioned by — ported verbatim from
-// the legacy app/helpers/constants.js PROJECT_TYPES / PROJECT_TYPES_ENUM. The legacy app
-// had ONE kanban route per type (@admin/@super_admin had all five; @threeD had the two 3D
-// types; @twoD had the three 2D types) and ALWAYS sent `?type=<value>`. The v2 board
-// collapses those routes into one screen with a type selector but MUST still send a
-// `type`, because the backend designer query (getLeadByPorjects) keys its `where`/updates
-// filters off it and only narrows rows by role/self WITHIN a type.
-export const PROJECT_TYPES = [
-  "3D_Designer",
-  "3D_Modification",
-  "2D_Study",
-  "2D_Final_Plans",
-  "2D_Quantity_Calculation",
-];
-
-// Arabic labels for the board type selector (single-language UI, RTL).
-export const PROJECT_TYPE_LABELS = {
-  "3D_Designer": "تصميم ثلاثي الأبعاد",
-  "3D_Modification": "تعديلات ثلاثية الأبعاد",
-  "2D_Study": "الدراسة",
-  "2D_Final_Plans": "المخططات النهائية",
-  "2D_Quantity_Calculation": "حساب الكميات",
-};
-
 export const PRIORITY = ["VERY_LOW", "LOW", "MEDIUM", "HIGH", "VERY_HIGH"];
 export const TASKSTATUS = ["TODO", "IN_PROGRESS", "DONE"];
 

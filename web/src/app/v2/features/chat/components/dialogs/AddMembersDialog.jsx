@@ -21,19 +21,12 @@ import { LastSeenAt, OnlineStatus } from "../members/LastSeenAt.jsx";
 import { ConfirmDialog } from "./ConfirmDialog.jsx";
 import chatService from "../../chat.service.js";
 import { runChatMutation } from "../../chat.mutations.js";
-import { useT } from "@/app/v2/lib/i18n";
 
 const getAvatarSrc = (e) =>
   e?.profilePicture || e?.avatar || e?.user?.profilePicture || e?.user?.avatar || null;
 
-const roleLabel = (m, t) =>
-  m.role === "ADMIN"
-    ? t("chat.role.admin", "مشرف")
-    : m.role === "MODERATOR"
-      ? t("chat.role.moderator", "مدير")
-      : m.client
-        ? t("chat.role.client", "عميل")
-        : t("chat.role.member", "عضو");
+const roleLabel = (m) =>
+  m.role === "ADMIN" ? "مشرف" : m.role === "MODERATOR" ? "مدير" : m.client ? "عميل" : "عضو";
 const roleColor = (m) =>
   m.role === "ADMIN" ? "primary" : m.role === "MODERATOR" ? "secondary" : m.client ? "info" : "default";
 
@@ -56,16 +49,15 @@ export function AddMembersDialog({
   onRemoveMember,
   reFetchMembers,
 }) {
-  const { t } = useT();
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth sx={{ zIndex: 1302 }}>
-      <DialogTitle>{t("chat.members.dialogTitle", "أعضاء المحادثة")}</DialogTitle>
+      <DialogTitle>أعضاء المحادثة</DialogTitle>
       <DialogContent sx={{ pt: 2 }}>
         <Stack spacing={2}>
           {members.length > 0 && (
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                {t("chat.members.current", "الأعضاء الحاليون ({count})").replace("{count}", members.length)}
+                الأعضاء الحاليون ({members.length})
               </Typography>
               <Stack spacing={1.5}>
                 {members.map((m) => (
@@ -84,7 +76,7 @@ export function AddMembersDialog({
                     </Box>
                     <Box sx={{ flex: 1 }}>
                       <Typography fontWeight={600} noWrap>
-                        {m.user?.name || m.client?.name || t("chat.members.unknown", "غير معروف")}
+                        {m.user?.name || m.client?.name || "غير معروف"}
                       </Typography>
                       <Typography variant="caption" color="text.secondary" noWrap>
                         {m.user?.email || m.client?.email || ""}
@@ -99,7 +91,7 @@ export function AddMembersDialog({
                         <MdDelete />
                       </IconButton>
                     )}
-                    <Chip label={roleLabel(m, t)} color={roleColor(m)} size="small" />
+                    <Chip label={roleLabel(m)} color={roleColor(m)} size="small" />
                   </Stack>
                 ))}
               </Stack>
@@ -109,7 +101,7 @@ export function AddMembersDialog({
           {canManageMembers && (
             <>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mt: 2 }}>
-                {t("chat.members.addNew", "إضافة أعضاء جدد")}
+                إضافة أعضاء جدد
               </Typography>
               {loadingUsers ? (
                 <Box sx={{ display: "flex", justifyContent: "center", p: 2 }}>
@@ -117,7 +109,7 @@ export function AddMembersDialog({
                 </Box>
               ) : availableUsers.length === 0 ? (
                 <Typography color="textSecondary" sx={{ p: 2 }}>
-                  {t("chat.members.noneToAdd", "لا يوجد أعضاء متاحون للإضافة")}
+                  لا يوجد أعضاء متاحون للإضافة
                 </Typography>
               ) : (
                 <Box sx={{ maxHeight: 360, overflow: "auto", pr: 1 }}>
@@ -142,11 +134,11 @@ export function AddMembersDialog({
                         >
                           <Avatar src={getAvatarSrc(u)}>{(u.name || "?").charAt(0)}</Avatar>
                           <Box sx={{ flex: 1, minWidth: 0 }}>
-                            <Typography fontWeight={600} noWrap>{u.name || t("chat.members.unknown", "غير معروف")}</Typography>
+                            <Typography fontWeight={600} noWrap>{u.name || "غير معروف"}</Typography>
                             <Typography variant="caption" color="text.secondary" noWrap>{u.email || ""}</Typography>
                           </Box>
                           <Chip
-                            label={isSelected ? t("chat.members.selected", "محدد") : t("chat.members.select", "تحديد")}
+                            label={isSelected ? "محدد" : "تحديد"}
                             color={isSelected ? "primary" : "default"}
                             size="small"
                             variant={isSelected ? "filled" : "outlined"}
@@ -160,7 +152,7 @@ export function AddMembersDialog({
               {selectedUsers.length > 0 && (
                 <Box>
                   <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                    {t("chat.members.selectedForAdd", "محددون للإضافة ({count})").replace("{count}", selectedUsers.length)}
+                    محددون للإضافة ({selectedUsers.length})
                   </Typography>
                   <Stack direction="row" flexWrap="wrap" gap={1}>
                     {selectedUsers.map((u) => (
@@ -179,10 +171,10 @@ export function AddMembersDialog({
         </Stack>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>{t("chat.members.close", "إغلاق")}</Button>
+        <Button onClick={onClose}>إغلاق</Button>
         {canManageMembers && (
           <Button onClick={onAddMembers} variant="contained" disabled={selectedUsers.length === 0 || loadingUsers}>
-            {t("chat.members.addAction", "إضافة الأعضاء ({count})").replace("{count}", selectedUsers.length)}
+            إضافة الأعضاء ({selectedUsers.length})
           </Button>
         )}
       </DialogActions>
@@ -191,17 +183,14 @@ export function AddMembersDialog({
 }
 
 function MarkAsModerator({ member, onMark, roomId }) {
-  const { t } = useT();
   const [openConfirm, setConfirmOpen] = useState(false);
-  const targetRole =
-    member.role === "MODERATOR" ? t("chat.role.member", "عضو") : t("chat.role.moderator", "مدير");
   async function handleConfirm() {
     const res = await runChatMutation(
       () =>
         chatService.updateMember(roomId, member.id, {
           role: member.role === "MODERATOR" ? "MEMBER" : "MODERATOR",
         }),
-      { loading: t("chat.members.updatingRole", "تحديث الدور...") },
+      { loading: "تحديث الدور..." },
     );
     if (res) {
       onMark?.();
@@ -211,17 +200,15 @@ function MarkAsModerator({ member, onMark, roomId }) {
   return (
     <>
       <Button variant="outlined" onClick={() => setConfirmOpen(true)}>
-        {t("chat.members.markAs", "تعيين كـ {role}").replace("{role}", targetRole)}
+        تعيين كـ {member.role === "MODERATOR" ? "عضو" : "مدير"}
       </Button>
       <ConfirmDialog
-        title={t("chat.members.markConfirmTitle", "تعيين {name} كـ {role}")
-          .replace("{name}", member.user?.name || t("chat.members.defaultUser", "المستخدم"))
-          .replace("{role}", targetRole)}
-        description={t("chat.members.markConfirmDescription", "هل أنت متأكد من تغيير دور هذا العضو؟")}
+        title={`تعيين ${member.user?.name || "المستخدم"} كـ ${member.role === "MODERATOR" ? "عضو" : "مدير"}`}
+        description="هل أنت متأكد من تغيير دور هذا العضو؟"
         open={openConfirm}
         onConfirm={handleConfirm}
         onCancel={() => setConfirmOpen(false)}
-        confirmButtonText={t("chat.members.confirmYes", "نعم، تأكيد")}
+        confirmButtonText="نعم، تأكيد"
         confirmButtonColor="primary"
       />
     </>

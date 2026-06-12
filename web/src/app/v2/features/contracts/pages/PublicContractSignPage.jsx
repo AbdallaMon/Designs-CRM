@@ -14,7 +14,6 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Alert, Box, Container, Typography } from "@mui/material";
-import { useT } from "@/app/v2/lib/i18n";
 import { useContractSession } from "../hooks/useContractSession.js";
 import contractsService from "../contracts.service.js";
 import { runContractMutation } from "../contracts.mutations.js";
@@ -30,7 +29,6 @@ const STATUS_FLOW = {
 };
 
 export function PublicContractSignPage() {
-  const { t } = useT();
   const sp = useSearchParams();
   const token = sp.get("token");
   const { session, contractUtility, status, refetch } = useContractSession(token);
@@ -41,7 +39,7 @@ export function PublicContractSignPage() {
     if (!targetStatus) return;
     const res = await runContractMutation(
       () => contractsService.changeSessionStatus({ token, sessionStatus: targetStatus }),
-      { loading: t("contracts.sign.saving"), setLoading: setBusy },
+      { loading: "جاري الحفظ...", setLoading: setBusy },
     );
     if (res) await refetch();
   }
@@ -51,7 +49,7 @@ export function PublicContractSignPage() {
       case "LOADING":
         return (
           <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
-            <Typography color="text.secondary">{t("contracts.common.loading")}</Typography>
+            <Typography color="text.secondary">جاري التحميل...</Typography>
           </Box>
         );
       case "INITIAL":
@@ -83,9 +81,9 @@ export function PublicContractSignPage() {
       default:
         return (
           <Alert severity="error" sx={{ px: 2, textAlign: "center", py: 4 }}>
-            <Typography variant="h5" color="error">{t("contracts.sign.error.title")}</Typography>
+            <Typography variant="h5" color="error">حدث خطأ ما</Typography>
             <Typography variant="caption" color="warning.main">
-              {t("contracts.sign.error.contactSupport")}
+              يرجى التواصل مع خدمة العملاء لإنشاء رابط جديد
             </Typography>
           </Alert>
         );

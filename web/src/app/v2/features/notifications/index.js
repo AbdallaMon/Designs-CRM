@@ -7,8 +7,3 @@ export {
   resolveNotificationsMessage,
   notificationsMessages,
 } from "./config/notificationsMessages.js";
-export { buildNotificationsColumns } from "./config/notificationsColumns.js";
-export {
-  resolveNotificationChip,
-  NOTIFICATION_TYPE_META,
-} from "./config/notificationTypes.js";

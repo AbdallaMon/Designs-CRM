@@ -8,14 +8,6 @@ import {
   PDF_UTILITY_URL,
   CONTRACT_PAYMENT_CONDITIONS_URL,
   contractPaymentConditionUrl,
-  CONTRACT_UTILITY_DETAILS_URL,
-  CONTRACT_UTILITY_OBLIGATIONS_URL,
-  CONTRACT_UTILITY_STAGE_CLAUSES_URL,
-  contractUtilityStageClauseUrl,
-  CONTRACT_UTILITY_SPECIAL_CLAUSES_URL,
-  contractUtilitySpecialClauseUrl,
-  CONTRACT_UTILITY_LEVEL_CLAUSES_URL,
-  contractUtilityLevelClauseUrl,
 } from "./config/constant.js";
 
 function withQuery(base, params = {}) {
@@ -43,37 +35,6 @@ export const siteUtilityService = {
     apiFetch.put(contractPaymentConditionUrl(id), body),
   deleteContractPaymentCondition: (id) =>
     apiFetch.delete(contractPaymentConditionUrl(id)),
-
-  // ── Contract utility editor (obligations + stage/special/level clauses) ────
-  getContractUtilityDetails: () => apiFetch.get(CONTRACT_UTILITY_DETAILS_URL),
-
-  // Obligations (ContractUtility singleton). The backend upserts on PUT.
-  saveContractObligations: (body) =>
-    apiFetch.put(CONTRACT_UTILITY_OBLIGATIONS_URL, body),
-
-  // Stage clauses
-  createStageClause: (body) =>
-    apiFetch.post(CONTRACT_UTILITY_STAGE_CLAUSES_URL, body),
-  updateStageClause: (id, body) =>
-    apiFetch.put(contractUtilityStageClauseUrl(id), body),
-  deleteStageClause: (id) =>
-    apiFetch.delete(contractUtilityStageClauseUrl(id)),
-
-  // Special clauses
-  createSpecialClause: (body) =>
-    apiFetch.post(CONTRACT_UTILITY_SPECIAL_CLAUSES_URL, body),
-  updateSpecialClause: (id, body) =>
-    apiFetch.put(contractUtilitySpecialClauseUrl(id), body),
-  deleteSpecialClause: (id) =>
-    apiFetch.delete(contractUtilitySpecialClauseUrl(id)),
-
-  // Level clauses
-  createLevelClause: (body) =>
-    apiFetch.post(CONTRACT_UTILITY_LEVEL_CLAUSES_URL, body),
-  updateLevelClause: (id, body) =>
-    apiFetch.put(contractUtilityLevelClauseUrl(id), body),
-  deleteLevelClause: (id) =>
-    apiFetch.delete(contractUtilityLevelClauseUrl(id)),
 };
 
 export default siteUtilityService;

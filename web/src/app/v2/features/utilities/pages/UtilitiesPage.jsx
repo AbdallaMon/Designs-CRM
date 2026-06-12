@@ -1,81 +1,107 @@
 "use client";
 
-// Utilities REDESIGNED screen (UX plan §3.9) — the cross-cutting helper surfaces presented as
-// permission-gated URL tabs (بحث / البيانات الثابتة) on the Phase-0 primitives:
-// PageHeader + UrlTabs + SectionCard + the five state components. The model/pick-list readers
-// (getModel/getModelIds/readModelLabel) stay exported helpers for OTHER features — no screen.
-//
-// NOTE: the daily work-log (USER_LOG) tab was intentionally removed from the UI. The backend
-// user-log API + data are untouched — only the surface is gone.
-//
-// Gating: every tab is filtered by the SAME usePermission predicate that gates its content, so
-// the tab strip never offers a 403 surface. If the user holds NO utility.* surface code, a calm
-// "denied" state shows instead of a crash. Single-language Arabic / RTL.
+// Utilities FOUNDATION page — a wiring smoke-screen, NOT a redesigned screen (these are
+// cross-cutting lookup helpers consumed by OTHER features, not a standalone end-user screen).
+// It proves the v2 data layer is wired end-to-end: permission-gated on utility.fixed_data.list,
+// it fetches fixed-data through useRequest → the utilities.service (the SOLE API caller, pointed
+// at /v2/utilities). It also proves the §5c model pick-list contract: when utility.model.read is
+// granted it reads a `colorPattern` pick-list and renders the label via readModelLabel(), which
+// handles the new fixed projections (relation title[0].text vs scalar title vs imageUrl). The
+// real consumers wire these helpers into their own screens later. Single-language Arabic/RTL.
 
-import { useMemo } from "react";
-import { Box, Container } from "@mui/material";
+import { useCallback, useEffect, useState } from "react";
+import { Box, Container, List, ListItem, ListItemText, Paper, Typography } from "@mui/material";
 import { usePermission } from "@/app/v2/hooks/usePermission";
-import { useT } from "@/app/v2/lib/i18n";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
-import {
-  PageHeader,
-  UrlTabs,
-  PartialPermissionState,
-} from "@/app/v2/shared/components";
-import { UTILITIES_TABS, UTILITIES_TAB_DEFS } from "../config/utilitiesSurfaces.js";
-import { GlobalSearchPanel } from "../components/GlobalSearchPanel.jsx";
-import { FixedDataList } from "../components/FixedDataList.jsx";
+import { useRequest } from "@/app/v2/hooks/useRequest";
+import { FIXED_DATA_URL, UTILITY_MODELS } from "../config/constant.js";
+import { utilitiesService, readModelLabel } from "../utilities.service.js";
 
 const P = PERMISSIONS.UTILITY;
 
 export function UtilitiesPage() {
   const { hasPermission } = usePermission();
-  const { t } = useT();
+  const canFixedData = hasPermission(P.FIXED_DATA_LIST);
+  const canModelRead = hasPermission(P.MODEL_READ);
 
-  // Filter the tab set by the surface gate (same predicate that gates the panel content).
-  const tabs = useMemo(
-    () =>
-      UTILITIES_TAB_DEFS.filter((def) => hasPermission(def.permission)).map((def) => ({
-        key: def.key,
-        label: t(def.labelKey),
-      })),
-    [hasPermission, t],
-  );
+  // Primary read proves the wiring (fixed-data is the simplest authed lookup).
+  const { data: fixedData, isLoading, error } = useRequest({
+    url: FIXED_DATA_URL,
+    method: "get",
+    autoFetch: canFixedData,
+  });
 
-  const breadcrumbs = [
-    { label: t("utilities.page.breadcrumb.admin") },
-    { label: t("utilities.page.breadcrumb.tools") },
-  ];
+  // Secondary read proves the §5c model pick-list projection + readModelLabel().
+  const [picks, setPicks] = useState([]);
+  const loadPicks = useCallback(async () => {
+    if (!canModelRead) return;
+    const res = await utilitiesService.getModel(UTILITY_MODELS.COLOR_PATTERN);
+    setPicks(Array.isArray(res?.data) ? res.data : []);
+  }, [canModelRead]);
+  useEffect(() => {
+    loadPicks();
+  }, [loadPicks]);
 
-  if (tabs.length === 0) {
+  if (!canFixedData && !canModelRead) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <PageHeader title={t("utilities.page.title")} breadcrumbs={breadcrumbs} />
-        <PartialPermissionState
-          denied
-          title={t("utilities.page.denied.title")}
-          message={t("utilities.page.denied.message")}
-        />
-      </Container>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
+        <Typography color="text.secondary">لا تملك صلاحية الوصول إلى الأدوات المساعدة</Typography>
+      </Box>
     );
   }
 
-  return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
-      <PageHeader
-        title={t("utilities.page.title")}
-        subtitle={t("utilities.page.subtitle")}
-        breadcrumbs={breadcrumbs}
-      />
+  const fixedItems = Array.isArray(fixedData) ? fixedData : [];
 
-      <UrlTabs tabs={tabs} param="tab">
-        {(activeKey) => (
-          <Box sx={{ mt: 1 }}>
-            {activeKey === UTILITIES_TABS.SEARCH && <GlobalSearchPanel />}
-            {activeKey === UTILITIES_TABS.FIXED_DATA && <FixedDataList />}
+  return (
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Typography variant="h5" sx={{ mb: 2 }}>
+        الأدوات المساعدة
+      </Typography>
+      <Typography color="text.secondary" sx={{ mb: 3 }}>
+        أساس البيانات جاهز — تستهلكه الميزات الأخرى لاحقاً في مرحلة إعادة التصميم.
+      </Typography>
+
+      {canFixedData && (
+        <Paper variant="outlined" sx={{ mb: 3 }}>
+          <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+            <Typography variant="subtitle1">البيانات الثابتة</Typography>
           </Box>
-        )}
-      </UrlTabs>
+          {isLoading && <Box sx={{ p: 2 }}><Typography color="text.secondary">جاري التحميل...</Typography></Box>}
+          {error && <Box sx={{ p: 2 }}><Typography color="error">تعذّر جلب البيانات</Typography></Box>}
+          {!isLoading && !error && (
+            <List disablePadding>
+              {fixedItems.length === 0 && (
+                <ListItem><ListItemText primary="لا توجد بيانات" /></ListItem>
+              )}
+              {fixedItems.map((it, i) => (
+                <ListItem key={it?.id ?? i} divider>
+                  <ListItemText primary={it?.title || `#${it?.id ?? i}`} />
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </Paper>
+      )}
+
+      {canModelRead && (
+        <Paper variant="outlined">
+          <Box sx={{ p: 2, borderBottom: 1, borderColor: "divider" }}>
+            <Typography variant="subtitle1">قائمة الألوان (نموذج pick-list)</Typography>
+          </Box>
+          <List disablePadding>
+            {picks.length === 0 && (
+              <ListItem><ListItemText primary="لا توجد عناصر" /></ListItem>
+            )}
+            {picks.map((row, i) => (
+              <ListItem key={row?.id ?? i} divider>
+                <ListItemText
+                  primary={readModelLabel(UTILITY_MODELS.COLOR_PATTERN, row) || `#${row?.id ?? i}`}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Paper>
+      )}
     </Container>
   );
 }

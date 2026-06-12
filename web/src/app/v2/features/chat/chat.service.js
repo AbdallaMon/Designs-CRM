@@ -3,7 +3,7 @@
 // fetch/apiFetch directly. All responses share the { success, message, data,
 // translationKey } envelope; helpers return the parsed envelope.
 
-import apiFetch from "@/app/v2/lib/api/ApiFetch";
+import apiFetch, { legacyApiFetch } from "@/app/v2/lib/api/ApiFetch";
 import {
   CHAT_ROOMS_URL,
   chatRoomUrl,
@@ -23,14 +23,6 @@ import {
   chatMemberUrl,
   chatFilesUrl,
   chatFilesStatsUrl,
-  CHAT_DIRECTORY_URL,
-  clientValidateTokenUrl,
-  clientRoomUrl,
-  clientMembersUrl,
-  clientFilesUrl,
-  clientMessagesUrl,
-  clientMessagePageUrl,
-  clientPinnedMessagesUrl,
 } from "./config/constant.js";
 
 function withQuery(base, params = {}) {
@@ -87,39 +79,17 @@ export const chatService = {
   filesStats: (roomId) => apiFetch.get(chatFilesStatsUrl(roomId)),
 
   // ── User directory (add-members) ─────────────────────────────────────────────
-  // v2 endpoint GET /v2/users/chat-directory: admin → all users, non-admin → related
-  // users. Returns { success, data:[...users] }. projectId is forwarded as a query
-  // param (accepted-but-unused server-side, mirrors legacy). The server scopes by the
-  // authed caller's role, so no isAdmin flag is needed on the request.
-  listDirectoryUsers: ({ projectId = null } = {}) =>
-    apiFetch.get(withQuery(CHAT_DIRECTORY_URL, { projectId })),
-};
-
-// ── Public client chat service ───────────────────────────────────────────────────
-// Token-based reads against /v2/client/chat/* via apiFetch.public (no auth/refresh).
-// Every call carries ?token=. The BE resolves the room FROM the token and rejects any
-// :roomId that differs (IDOR close), so the token is the only credential that matters.
-// Sends/edits/deletes go over the shared v2 socket (chat.socket), not HTTP — identical
-// to the staff flow; the client surface is read-only over REST.
-export const clientChatService = {
-  validateToken: (token) =>
-    apiFetch.public.get(withQuery(clientValidateTokenUrl(), { token })),
-  getRoom: (roomId, token, params = {}) =>
-    apiFetch.public.get(withQuery(clientRoomUrl(roomId), { token, ...params })),
-  listMembers: (roomId, token, params = {}) =>
-    apiFetch.public.get(withQuery(clientMembersUrl(roomId), { token, ...params })),
-  listFiles: (roomId, token, params = {}) =>
-    apiFetch.public.get(withQuery(clientFilesUrl(roomId), { token, ...params })),
-  listMessages: (roomId, token, params = {}) =>
-    apiFetch.public.get(withQuery(clientMessagesUrl(roomId), { token, ...params })),
-  getMessagePage: (roomId, messageId, token, params = {}) =>
-    apiFetch.public.get(
-      withQuery(clientMessagePageUrl(roomId, messageId), { token, ...params }),
-    ),
-  listPinnedMessages: (roomId, token, params = {}) =>
-    apiFetch.public.get(
-      withQuery(clientPinnedMessagesUrl(roomId), { token, ...params }),
-    ),
+  // The users module is not migrated to /v2 yet, so the add-members directory still
+  // hits the LEGACY base (config.legacyApiUrl): /admin/all-users for admins and
+  // /shared/all-related-chat-users (with projectId) for normal users. Legacy returns
+  // the user array directly under response.data.
+  // TODO: switch to /v2/users when users module migrates.
+  listDirectoryUsers: ({ isAdmin = false, projectId = null } = {}) => {
+    const base = isAdmin ? "admin/all-users" : "shared/all-related-chat-users";
+    return legacyApiFetch.get(
+      withQuery(base, isAdmin ? {} : { projectId }),
+    );
+  },
 };
 
 export default chatService;

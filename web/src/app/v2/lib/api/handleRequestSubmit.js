@@ -1,6 +1,6 @@
 import { toast } from "react-toastify";
 import { Failed, Success } from "@/app/v2/lib/toast/toastUtils";
-import apiFetch from "./ApiFetch";
+import apiFetch, { legacyApiFetch } from "./ApiFetch";
 
 export async function handleRequestSubmit({
   data,
@@ -11,12 +11,13 @@ export async function handleRequestSubmit({
   setRedirect,
   method = "POST",
   header,
+  legacy = false,
 }) {
   const toastId = toast.loading(toastMessage);
   setLoading(true);
 
   try {
-    const response = await apiFetch.submit(
+    const response = await (legacy ? legacyApiFetch : apiFetch).submit(
       method,
       path,
       data,
@@ -25,19 +26,16 @@ export async function handleRequestSubmit({
     );
 
     if (response.status === 200) {
-      toast.update(toastId, Success(response.message, response.translationKey));
+      toast.update(toastId, Success(response.message));
       if (setRedirect) setRedirect((prev) => !prev);
     } else {
-      toast.update(toastId, Failed(response.message, response.translationKey));
+      toast.update(toastId, Failed(response.message));
     }
 
     return response;
   } catch (err) {
-    // err.message / err.data.message is the language-neutral CODE thrown by ApiFetch;
-    // pass the BARE code (no "Error, " prefix) so the toast layer resolves it to Arabic.
-    const code = err?.data?.message || err?.message || "UNKNOWN_ERROR";
-    toast.update(toastId, Failed(code, err?.data?.translationKey));
-    return { status: 500, message: code };
+    toast.update(toastId, Failed("Error, " + err.message));
+    return { status: 500, message: "Error, " + err.message };
   } finally {
     setLoading(false);
   }

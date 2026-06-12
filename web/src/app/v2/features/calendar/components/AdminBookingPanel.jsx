@@ -21,7 +21,6 @@ import {
 } from "@mui/material";
 import dayjs from "dayjs";
 
-import { useT } from "@/app/v2/lib/i18n";
 import AvailabilityCalendar from "./AvailabilityCalendar.jsx";
 import TimeSlotManager from "./TimeSlotManager.jsx";
 import { resolveBrowserTimezone } from "../config/calendarConstants.js";
@@ -31,10 +30,8 @@ export function AdminBookingPanel({
   adminId,
   type = "ADMIN",
   canManage = false,
-  title,
+  title = "إدارة التوفر",
 }) {
-  const { t } = useT();
-  const panelTitle = title ?? t("calendar.manageAvailability", "إدارة التوفر");
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedDates, setSelectedDates] = useState([]);
   const [multiSelectMode, setMultiSelectMode] = useState(false);
@@ -79,7 +76,7 @@ export function AdminBookingPanel({
         gap={2}
       >
         <Typography variant="h5" gutterBottom fontWeight="700">
-          {panelTitle}
+          {title}
         </Typography>
         {canManage && (
           <FormControlLabel
@@ -92,7 +89,7 @@ export function AdminBookingPanel({
                 }}
               />
             }
-            label={t("calendar.multiSelectDays", "تحديد أيام متعددة")}
+            label="تحديد أيام متعددة"
           />
         )}
       </Box>
@@ -117,7 +114,7 @@ export function AdminBookingPanel({
               sx={{ mt: 2, p: 3, borderRadius: 3, border: "1px solid", borderColor: "divider" }}
             >
               <Typography variant="h6" gutterBottom fontWeight="600">
-                {t("calendar.selectedDays", "الأيام المحددة ({count})").replace("{count}", selectedDates.length)}
+                الأيام المحددة ({selectedDates.length})
               </Typography>
               <Box display="flex" flexWrap="wrap" gap={1} mb={2}>
                 {selectedDates.map((date, index) => (
@@ -140,10 +137,10 @@ export function AdminBookingPanel({
                   fullWidth={isMobile}
                   sx={{ borderRadius: 2 }}
                 >
-                  {t("calendar.setupSelectedDays", "إعداد الأيام المحددة")}
+                  إعداد الأيام المحددة
                 </Button>
                 <Button variant="outlined" onClick={clearSelection} sx={{ borderRadius: 2 }}>
-                  {t("calendar.clearSelection", "مسح التحديد")}
+                  مسح التحديد
                 </Button>
               </Stack>
             </Paper>

@@ -237,4 +237,6 @@ class ApiFetch {
 }
 
 const apiFetch = new ApiFetch(config.apiUrl);
+const legacyApiFetch = new ApiFetch(config.legacyApiUrl);
 export default apiFetch;
+export { legacyApiFetch };

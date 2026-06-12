@@ -12,7 +12,6 @@ import {
   Typography, Stepper, Step, StepLabel, alpha, Divider, Alert, IconButton, useTheme,
 } from "@mui/material";
 import { MdClose } from "react-icons/md";
-import { useT } from "@/app/v2/lib/i18n";
 import contractsService from "../../contracts.service.js";
 import { runContractMutation } from "../../contracts.mutations.js";
 import ProjectGroupSelect from "./editors/ProjectGroupSelect.jsx";
@@ -27,9 +26,8 @@ const isPositiveFinite = (v) => {
 };
 
 export default function CreateContractDialog({ open, onClose, clientLeadId, lead, onSuccess }) {
-  const { t } = useT();
   const theme = useTheme();
-  const steps = [t("contracts.create.step.basics"), t("contracts.create.step.itemsDrawings")];
+  const steps = ["الأساسيات", "البنود والمخططات"];
   const [activeStep, setActiveStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
 
@@ -53,21 +51,21 @@ export default function CreateContractDialog({ open, onClose, clientLeadId, lead
 
   const validateStep0 = () => {
     const errs = [];
-    if (!title.trim()) errs.push(t("contracts.create.err.contractTypeAr"));
-    if (!enTitle.trim()) errs.push(t("contracts.create.err.contractTypeEn"));
-    if (!arClientName.trim()) errs.push(t("contracts.create.err.clientNameAr"));
-    if (!enClientName.trim()) errs.push(t("contracts.create.err.clientNameEn"));
-    if (!projectGroup) errs.push(t("contracts.create.err.projectGroup"));
-    if (selectedStages.length === 0) errs.push(t("contracts.create.err.atLeastOneStage"));
+    if (!title.trim()) errs.push("نوع العقد بالعربية مطلوب");
+    if (!enTitle.trim()) errs.push("نوع العقد بالإنجليزية مطلوب");
+    if (!arClientName.trim()) errs.push("اسم العميل بالعربية مطلوب");
+    if (!enClientName.trim()) errs.push("اسم العميل بالإنجليزية مطلوب");
+    if (!projectGroup) errs.push("يجب اختيار مجموعة المشروع");
+    if (selectedStages.length === 0) errs.push("يجب اختيار مرحلة واحدة على الأقل");
     for (const s of selectedStages) {
       const dd = perStageMeta?.[s.enum]?.deliveryDays;
       const deptDd = perStageMeta?.[s.enum]?.deptDeliveryDays;
-      if (!isPositiveFinite(dd)) errs.push(t("contracts.create.err.stageDeliveryDays").replace("{stage}", s.enum));
-      if (!isPositiveFinite(deptDd)) errs.push(t("contracts.create.err.stageDeptDays").replace("{stage}", s.enum));
+      if (!isPositiveFinite(dd)) errs.push(`المرحلة ${s.enum}: أيام التسليم يجب أن تكون أكبر من 0`);
+      if (!isPositiveFinite(deptDd)) errs.push(`المرحلة ${s.enum}: أيام القسم يجب أن تكون أكبر من 0`);
     }
-    if (payments.length === 0) errs.push(t("contracts.create.err.atLeastOnePayment"));
-    if (payments.some((p) => !isPositiveFinite(p.amount))) errs.push(t("contracts.create.err.paymentsAmount"));
-    if (payments.some((p) => !p.condition)) errs.push(t("contracts.create.err.paymentsCondition"));
+    if (payments.length === 0) errs.push("يجب إضافة دفعة واحدة على الأقل");
+    if (payments.some((p) => !isPositiveFinite(p.amount))) errs.push("كل الدفعات يجب أن يكون مبلغها أكبر من 0");
+    if (payments.some((p) => !p.condition)) errs.push("كل دفعة يجب أن تحتوي على شرط دفع");
     return errs;
   };
 
@@ -107,7 +105,7 @@ export default function CreateContractDialog({ open, onClose, clientLeadId, lead
 
     const res = await runContractMutation(
       () => contractsService.create(payload),
-      { loading: t("contracts.create.creating"), setLoading: setSubmitting },
+      { loading: "جاري إنشاء العقد...", setLoading: setSubmitting },
     );
     if (res) {
       onSuccess?.(res);
@@ -118,14 +116,14 @@ export default function CreateContractDialog({ open, onClose, clientLeadId, lead
   return (
     <Dialog open={open} onClose={resetAndClose} fullWidth maxWidth="md" dir="rtl">
       <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: alpha(theme.palette.primary.main, 0.06), fontWeight: 700 }}>
-        {t("contracts.create.title")}
+        إنشاء عقد جديد
         <IconButton onClick={resetAndClose} size="small"><MdClose /></IconButton>
       </DialogTitle>
       <DialogContent dividers sx={{ p: 3 }}>
         <Stack spacing={3}>
           {errors.length > 0 && (
             <Alert severity="error" onClose={() => setErrors([])}>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{t("contracts.create.errorsTitle")}</Typography>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>يرجى تصحيح الأخطاء التالية:</Typography>
               {errors.map((e, i) => (
                 <Typography key={i} variant="body2" sx={{ mr: 1 }}>• {e}</Typography>
               ))}
@@ -141,15 +139,15 @@ export default function CreateContractDialog({ open, onClose, clientLeadId, lead
 
           {activeStep === 0 && (
             <Stack spacing={3}>
-              <TextField label={t("contracts.create.field.contractTypeAr")} value={title} onChange={(e) => setTitle(e.target.value)} fullWidth size="small" />
-              <TextField label={t("contracts.create.field.contractTypeEn")} value={enTitle} onChange={(e) => setEnTitle(e.target.value)} fullWidth size="small" />
+              <TextField label="نوع العقد (عربي)" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth size="small" />
+              <TextField label="نوع العقد (إنجليزي)" value={enTitle} onChange={(e) => setEnTitle(e.target.value)} fullWidth size="small" />
               {lead?.client?.name && (
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>{t("contracts.create.leadClientName")}{lead.client.name}</Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>اسم عميل العميل المحتمل: {lead.client.name}</Typography>
               )}
-              <TextField label={t("contracts.create.field.clientNameAr")} value={arClientName} onChange={(e) => setArClientName(e.target.value)} fullWidth size="small" />
-              <TextField label={t("contracts.create.field.clientNameEn")} value={enClientName} onChange={(e) => setEnClientName(e.target.value)} fullWidth size="small" />
+              <TextField label="اسم العميل (عربي)" value={arClientName} onChange={(e) => setArClientName(e.target.value)} fullWidth size="small" />
+              <TextField label="اسم العميل (إنجليزي)" value={enClientName} onChange={(e) => setEnClientName(e.target.value)} fullWidth size="small" />
               <Box>
-                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>{t("contracts.create.projectGroup")}</Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>مجموعة المشروع</Typography>
                 <ProjectGroupSelect value={projectGroup} onChange={setProjectGroup} clientLeadId={clientLeadId} />
               </Box>
               <Divider />
@@ -169,12 +167,12 @@ export default function CreateContractDialog({ open, onClose, clientLeadId, lead
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: 2.5, gap: 1 }}>
-        <Button onClick={resetAndClose} sx={{ fontWeight: 600 }}>{t("contracts.common.cancel")}</Button>
-        {activeStep > 0 && <Button onClick={back} variant="outlined" sx={{ fontWeight: 600 }}>{t("contracts.common.back")}</Button>}
-        {activeStep < steps.length - 1 && <Button onClick={next} variant="contained" sx={{ fontWeight: 600 }}>{t("contracts.common.next")}</Button>}
+        <Button onClick={resetAndClose} sx={{ fontWeight: 600 }}>إلغاء</Button>
+        {activeStep > 0 && <Button onClick={back} variant="outlined" sx={{ fontWeight: 600 }}>رجوع</Button>}
+        {activeStep < steps.length - 1 && <Button onClick={next} variant="contained" sx={{ fontWeight: 600 }}>التالي</Button>}
         {activeStep === steps.length - 1 && (
           <Button onClick={handleSubmit} variant="contained" color="success" disabled={submitting} sx={{ fontWeight: 600 }}>
-            {t("contracts.create.submit")}
+            إنشاء العقد
           </Button>
         )}
       </DialogActions>

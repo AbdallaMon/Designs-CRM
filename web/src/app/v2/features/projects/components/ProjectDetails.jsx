@@ -51,7 +51,6 @@ import {
 } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
-import { useT } from "@/app/v2/lib/i18n";
 import {
   PROJECT_STATUSES,
   statusColors,
@@ -78,7 +77,7 @@ function getPriorityColor(priority) {
   }
 }
 
-function ProjectProgressTracker({ project, t }) {
+function ProjectProgressTracker({ project }) {
   const statuses = PROJECT_STATUSES[project.type] || [];
   const completionStatuses = statuses.filter((s) => s !== "Hold" && s !== "Rejected");
   const currentStatusIndex = completionStatuses.indexOf(project.status);
@@ -107,14 +106,14 @@ function ProjectProgressTracker({ project, t }) {
           >
             {isOnHold ? <MdPause size={22} /> : <MdError size={22} />}
             <Typography variant="body1" sx={{ ml: 1.5, fontWeight: 500 }}>
-              {isOnHold ? t("projects.detail.onHold") : t("projects.detail.rejected")}
+              {isOnHold ? "هذا المشروع معلّق حالياً." : "تم رفض هذا المشروع."}
             </Typography>
           </Paper>
         ) : (
           <Box>
             <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, alignItems: "center" }}>
               <Typography variant="h6" fontWeight="medium">
-                {t("projects.detail.progressTitle")}
+                تقدّم المشروع
               </Typography>
               <Chip label={`${percentageComplete}%`} color="primary" size="small" sx={{ fontWeight: "bold" }} />
             </Box>
@@ -150,7 +149,6 @@ function ProjectProgressTracker({ project, t }) {
 
 export function ProjectDetails({ project, onUpdate, renderTasks = true }) {
   const { hasPermission } = usePermission();
-  const { t } = useT();
   const caps = project?.capabilities ?? {};
 
   const canEdit = hasPermission(PERMISSIONS.PROJECT.EDIT) && caps.canEdit;
@@ -172,7 +170,7 @@ export function ProjectDetails({ project, onUpdate, renderTasks = true }) {
   const handleStatusSelect = async (value) => {
     const res = await runProjectMutation(
       () => projectsService.changeStatus(project.clientLeadId, { id: project.id, status: value }),
-      { loading: t("projects.loading.changeStatus") },
+      { loading: "جاري تحديث الحالة..." },
     );
     setAnchorEl(null);
     if (res) onUpdate?.({ ...project, status: value });
@@ -183,7 +181,7 @@ export function ProjectDetails({ project, onUpdate, renderTasks = true }) {
     e.preventDefault();
     const body = pickProjectFields(editedProject);
     const res = await runProjectMutation(() => projectsService.updateProject(project.id, body), {
-      loading: t("projects.loading.save"),
+      loading: "جاري الحفظ...",
     });
     if (res) {
       onUpdate?.(res.data ?? { ...project, ...body });
@@ -193,17 +191,17 @@ export function ProjectDetails({ project, onUpdate, renderTasks = true }) {
 
   const renderEditForm = () => (
     <Card sx={{ p: 2, mt: 3, borderRadius: 3 }}>
-      <CardHeader title={t("projects.detail.editTitle")} />
+      <CardHeader title="تعديل تفاصيل المشروع" />
       <CardContent>
         <form onSubmit={handleSaveEdit}>
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, md: 6 }}>
               <FormControl fullWidth>
-                <InputLabel id="status-label">{t("projects.detail.field.status")}</InputLabel>
+                <InputLabel id="status-label">حالة المشروع</InputLabel>
                 <Select
                   labelId="status-label"
                   value={editedProject.status || ""}
-                  label={t("projects.detail.field.status")}
+                  label="حالة المشروع"
                   onChange={(e) => setEditedProject((p) => ({ ...p, status: e.target.value }))}
                 >
                   {(PROJECT_STATUSES[project.type] || []).map((status) => (
@@ -216,25 +214,25 @@ export function ProjectDetails({ project, onUpdate, renderTasks = true }) {
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <FormControl fullWidth>
-                <InputLabel id="priority-label">{t("projects.detail.field.priority")}</InputLabel>
+                <InputLabel id="priority-label">الأولوية</InputLabel>
                 <Select
                   labelId="priority-label"
                   value={editedProject.priority || ""}
-                  label={t("projects.detail.field.priority")}
+                  label="الأولوية"
                   onChange={(e) => setEditedProject((p) => ({ ...p, priority: e.target.value }))}
                 >
-                  <MenuItem value="VERY_LOW">{t("projects.priority.veryLow")}</MenuItem>
-                  <MenuItem value="LOW">{t("projects.priority.low")}</MenuItem>
-                  <MenuItem value="MEDIUM">{t("projects.priority.medium")}</MenuItem>
-                  <MenuItem value="HIGH">{t("projects.priority.high")}</MenuItem>
-                  <MenuItem value="VERY_HIGH">{t("projects.priority.veryHigh")}</MenuItem>
+                  <MenuItem value="VERY_LOW">منخفضة جداً</MenuItem>
+                  <MenuItem value="LOW">منخفضة</MenuItem>
+                  <MenuItem value="MEDIUM">متوسطة</MenuItem>
+                  <MenuItem value="HIGH">عالية</MenuItem>
+                  <MenuItem value="VERY_HIGH">عالية جداً</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
-                label={t("projects.detail.field.area")}
+                label="المساحة (م²)"
                 type="number"
                 value={editedProject.area || ""}
                 onChange={(e) =>
@@ -249,10 +247,10 @@ export function ProjectDetails({ project, onUpdate, renderTasks = true }) {
             <Grid size={12}>
               <Box display="flex" justifyContent="flex-end" gap={2} mt={2}>
                 <Button variant="outlined" color="secondary" startIcon={<MdCancel />} onClick={() => setIsEditing(false)}>
-                  {t("projects.detail.cancel")}
+                  إلغاء
                 </Button>
                 <Button type="submit" variant="contained" color="primary" startIcon={<MdSave />}>
-                  {t("projects.detail.saveChanges")}
+                  حفظ التغييرات
                 </Button>
               </Box>
             </Grid>
@@ -264,7 +262,7 @@ export function ProjectDetails({ project, onUpdate, renderTasks = true }) {
 
   return (
     <>
-      <ProjectProgressTracker project={project} t={t} />
+      <ProjectProgressTracker project={project} />
 
       {isEditing ? (
         renderEditForm()
@@ -273,7 +271,7 @@ export function ProjectDetails({ project, onUpdate, renderTasks = true }) {
           <CardContent sx={{ p: 3 }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Chip icon={<MdGroup />} label={t("projects.detail.groupChip").replace("{value}", project.groupTitle || "-")} />
+                <Chip icon={<MdGroup />} label={`المجموعة: ${project.groupTitle || "-"}`} />
                 <Button
                   variant="contained"
                   onClick={(e) => canChangeStatus && setAnchorEl(e.currentTarget)}
@@ -325,7 +323,7 @@ export function ProjectDetails({ project, onUpdate, renderTasks = true }) {
                     setEditedProject({ ...project });
                   }}
                 >
-                  {t("projects.detail.editDetails")}
+                  تعديل التفاصيل
                 </Button>
               )}
             </Box>
@@ -336,23 +334,21 @@ export function ProjectDetails({ project, onUpdate, renderTasks = true }) {
                 <Grid size={{ xs: 12, md: 3 }}>
                   <Paper variant="outlined" sx={{ p: 2 }}>
                     <Typography variant="body2" color="text.secondary">
-                      {t("projects.detail.areaTitle")}
+                      مساحة المشروع
                     </Typography>
                     <Typography variant="subtitle1" fontWeight="600">
-                      {project.area
-                        ? t("projects.detail.areaValue").replace("{value}", project.area)
-                        : t("projects.detail.areaUnset")}
+                      {project.area ? `${project.area} م²` : "غير محددة"}
                     </Typography>
                     <Divider sx={{ my: 1.5 }} />
                     <Typography variant="body2" color="text.secondary">
-                      {t("projects.detail.timelineTitle")}
+                      المدة الزمنية
                     </Typography>
                     <Typography variant="subtitle1" fontWeight="600">
-                      {project.startedAt ? dayjs(project.startedAt).format("DD MMM, YY") : t("projects.detail.timelineNotStarted")}
+                      {project.startedAt ? dayjs(project.startedAt).format("DD MMM, YY") : "لم يبدأ"}
                       {project.endedAt
                         ? ` - ${dayjs(project.endedAt).format("DD MMM, YY")}`
                         : project.startedAt
-                          ? ` - ${t("projects.detail.timelineOngoing")}`
+                          ? " - جارٍ"
                           : ""}
                     </Typography>
                   </Paper>
@@ -371,7 +367,7 @@ export function ProjectDetails({ project, onUpdate, renderTasks = true }) {
                     <Box sx={{ display: "flex", alignItems: "center" }}>
                       <MdAssignmentInd size={22} />
                       <Typography variant="h6" sx={{ ml: 1.5, fontWeight: 600 }}>
-                        {t("projects.detail.designersTitle")}
+                        مصممو المشروع
                       </Typography>
                     </Box>
                   }
@@ -388,7 +384,7 @@ export function ProjectDetails({ project, onUpdate, renderTasks = true }) {
                           setAssignOpen(true);
                         }}
                       >
-                        {t("projects.detail.assignNew")}
+                        تعيين مصمم جديد
                       </Button>
                     )
                   }
@@ -436,7 +432,7 @@ export function ProjectDetails({ project, onUpdate, renderTasks = true }) {
                               setAssignOpen(true);
                             }}
                           >
-                            {t("projects.detail.remove")}
+                            إزالة
                           </Button>
                         )}
                       </Box>
@@ -444,7 +440,7 @@ export function ProjectDetails({ project, onUpdate, renderTasks = true }) {
                   ) : (
                     <Box sx={{ p: 3, textAlign: "center" }}>
                       <Typography variant="body1" color="text.secondary">
-                        {t("projects.detail.noDesigners")}
+                        لا يوجد مصممون معيّنون لهذا المشروع بعد
                       </Typography>
                     </Box>
                   )}

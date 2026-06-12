@@ -29,14 +29,12 @@ import { MdArchive, MdCheckCircle, MdUnarchive, MdVerified } from "react-icons/m
 import dayjs from "dayjs";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
-import { useT } from "@/app/v2/lib/i18n";
 import { DEPARTMENTS } from "../../config/projectsConstants.js";
 import { projectsService } from "../../projects.service.js";
 import { runProjectMutation } from "../../projects.mutations.js";
 
 export function UpdateCard({ update, clientLeadId, currentUserDepartment, onChanged }) {
   const { hasPermission } = usePermission();
-  const { t } = useT();
   const caps = update.capabilities ?? {};
   const canAuthorize = hasPermission(PERMISSIONS.UPDATE.AUTHORIZE) && caps.canAuthorize;
   const canArchive = hasPermission(PERMISSIONS.UPDATE.ARCHIVE) && caps.canArchive;
@@ -52,14 +50,14 @@ export function UpdateCard({ update, clientLeadId, currentUserDepartment, onChan
     const call = shared
       ? () => projectsService.authorizeSharedUpdate(update.id, { type: authType })
       : () => projectsService.authorizeUpdate(update.id, { type: authType });
-    const res = await runProjectMutation(call, { loading: t("projects.updateCard.loading.update") });
+    const res = await runProjectMutation(call, { loading: "جاري التحديث..." });
     if (res) onChanged?.();
   };
 
   const handleArchiveToggle = async () => {
     const res = await runProjectMutation(
       () => projectsService.archiveUpdate(update.id, { isArchived: !isArchived }),
-      { loading: t("projects.updateCard.loading.archive") },
+      { loading: "جاري تحديث الأرشفة..." },
     );
     if (res) onChanged?.();
   };
@@ -67,7 +65,7 @@ export function UpdateCard({ update, clientLeadId, currentUserDepartment, onChan
   const handleMarkDone = async () => {
     const res = await runProjectMutation(
       () => projectsService.markUpdateDone(update.id, { clientLeadId: Number(clientLeadId) }),
-      { loading: t("projects.updateCard.loading.markDone") },
+      { loading: "جاري وضع علامة منجز..." },
     );
     if (res) onChanged?.();
   };
@@ -87,8 +85,8 @@ export function UpdateCard({ update, clientLeadId, currentUserDepartment, onChan
             )}
             <Stack direction="row" spacing={1} sx={{ mt: 1 }} flexWrap="wrap">
               <Chip size="small" label={update.department} />
-              {update.isDone && <Chip size="small" color="success" label={t("projects.updateCard.done")} />}
-              {isArchived && <Chip size="small" color="default" label={t("projects.updateCard.archived")} />}
+              {update.isDone && <Chip size="small" color="success" label="منجز" />}
+              {isArchived && <Chip size="small" color="default" label="مؤرشف" />}
               <Typography variant="caption" color="text.secondary" sx={{ alignSelf: "center" }}>
                 {update.createdAt ? dayjs(update.createdAt).fromNow() : ""}
               </Typography>
@@ -103,8 +101,8 @@ export function UpdateCard({ update, clientLeadId, currentUserDepartment, onChan
               {canAuthorize && (
                 <>
                   <FormControl size="small" sx={{ minWidth: 160 }}>
-                    <InputLabel>{t("projects.updateCard.department")}</InputLabel>
-                    <Select value={authType} label={t("projects.updateCard.department")} onChange={(e) => setAuthType(e.target.value)}>
+                    <InputLabel>القسم</InputLabel>
+                    <Select value={authType} label="القسم" onChange={(e) => setAuthType(e.target.value)}>
                       {DEPARTMENTS.map((d) => (
                         <MenuItem key={d.value} value={d.value}>
                           {d.label}
@@ -113,10 +111,10 @@ export function UpdateCard({ update, clientLeadId, currentUserDepartment, onChan
                     </Select>
                   </FormControl>
                   <Button size="small" variant="outlined" startIcon={<MdVerified />} onClick={() => handleAuthorize(false)}>
-                    {t("projects.updateCard.authorize")}
+                    اعتماد
                   </Button>
                   <Button size="small" variant="outlined" color="warning" onClick={() => handleAuthorize(true)}>
-                    {t("projects.updateCard.unauthorize")}
+                    إلغاء الاعتماد
                   </Button>
                 </>
               )}
@@ -127,12 +125,12 @@ export function UpdateCard({ update, clientLeadId, currentUserDepartment, onChan
                   startIcon={isArchived ? <MdUnarchive /> : <MdArchive />}
                   onClick={handleArchiveToggle}
                 >
-                  {isArchived ? t("projects.updateCard.unarchive") : t("projects.updateCard.archive")}
+                  {isArchived ? "إلغاء الأرشفة" : "أرشفة"}
                 </Button>
               )}
               {canMarkDone && (
                 <Button size="small" variant="contained" color="success" startIcon={<MdCheckCircle />} onClick={handleMarkDone}>
-                  {t("projects.updateCard.markDone")}
+                  وضع علامة منجز
                 </Button>
               )}
             </Stack>

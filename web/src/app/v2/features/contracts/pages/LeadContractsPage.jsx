@@ -6,45 +6,39 @@
 // per-contract lifecycle actions (view detail, cancel, generate signing token). Every action is
 // gated on a CONTRACT.* permission code; object scope is enforced server-side (lead-scope) —
 // the contract dto emits NO capabilities.*.
-//
-// Phase 3 restyle (behavior-frozen): the body lives in a shared <SectionCard> ("العقود"), status
-// reads via the shared <StatusChip domain="contract" />, surface tints use theme tokens
-// (action.hover / divider / background.default) instead of alpha(primary,…), and the empty /
-// loading states use the shared <EmptyState> / <LoadingState>. The accordion + stage cards
-// structure and ALL actions/data are unchanged. PDF generation is untouched.
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Accordion, AccordionDetails, AccordionSummary, Box, Button, Card, CardContent, Chip,
-  Grid, IconButton, Stack, Tooltip, Typography, useTheme,
+  Grid, IconButton, Paper, Stack, Tooltip, Typography, alpha, useTheme,
 } from "@mui/material";
 import { MdExpandMore } from "react-icons/md";
 import { IoMdEye } from "react-icons/io";
 import { FaLink, FaBan } from "react-icons/fa";
 import { usePermission } from "@/app/v2/hooks/usePermission";
-import { useT } from "@/app/v2/lib/i18n";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
-import { SectionCard, StatusChip, EmptyState, LoadingState } from "@/app/v2/shared/components";
 import { useLeadContracts } from "../hooks/useLeadContracts.js";
 import contractsService from "../contracts.service.js";
 import { runContractMutation } from "../contracts.mutations.js";
-import { CONTRACT_LEVEL, STAGE_STATUS } from "../config/contractConstants.js";
+import { CONTRACT_STATUS, CONTRACT_LEVEL, STAGE_STATUS } from "../config/contractConstants.js";
 import CreateContractDialog from "../components/authed/CreateContractDialog.jsx";
 import ConfirmActionDialog from "../components/authed/ConfirmActionDialog.jsx";
 
 const P = PERMISSIONS.CONTRACT;
 
-// Level is NOT a contract STATUS (no entry in the contract token map), so we drive the shared
-// chip's visible Arabic text via an explicit `label` (the level name) and let the semantic
-// fall back to neutral — keeping the displayed level text identical to the legacy LevelChip.
+function StatusChip({ status }) {
+  const conf = CONTRACT_STATUS[status];
+  if (!conf) return null;
+  return <Chip size="small" color={conf.color} label={conf.name} />;
+}
+
 function LevelChip({ level }) {
   const conf = CONTRACT_LEVEL[level] || CONTRACT_LEVEL.null;
-  return <StatusChip domain="contract" status={level ?? "null"} label={conf.name} />;
+  return <Chip size="small" variant="outlined" color={conf.color} label={conf.name} />;
 }
 
 function ContractStageCard({ stage }) {
-  const { t } = useT();
   const theme = useTheme();
   const levelConf = CONTRACT_LEVEL[stage.title] || CONTRACT_LEVEL.null;
   const statusConf = STAGE_STATUS[stage.stageStatus] || STAGE_STATUS.NOT_STARTED;
@@ -58,8 +52,8 @@ function ContractStageCard({ stage }) {
             <Typography variant="caption" color="text.secondary">{stage.title}</Typography>
             <Chip size="small" color={statusConf.color} label={statusConf.name} />
             {isCurrent && (
-              <Box sx={{ mt: 0.5, px: 1.5, py: 0.75, backgroundColor: theme.palette.action.hover, borderRadius: 1, borderRight: `3px solid ${theme.palette.success.main}` }}>
-                <Typography variant="caption" sx={{ color: theme.palette.success.main, fontWeight: 600 }}>{t("contracts.list.currentStage")}</Typography>
+              <Box sx={{ mt: 0.5, px: 1.5, py: 0.75, backgroundColor: alpha(theme.palette.success.main, 0.1), borderRadius: 1, borderRight: `3px solid ${theme.palette.success.main}` }}>
+                <Typography variant="caption" sx={{ color: theme.palette.success.main, fontWeight: 600 }}>● المرحلة الحالية</Typography>
               </Box>
             )}
           </Stack>
@@ -70,38 +64,37 @@ function ContractStageCard({ stage }) {
 }
 
 function ContractActions({ contract, canCancel, canGenerateToken, onChanged }) {
-  const { t } = useT();
   const router = useRouter();
   const theme = useTheme();
   const [confirmCancel, setConfirmCancel] = useState(false);
   const isCancelled = contract?.status === "CANCELLED";
 
   async function doCancel() {
-    const res = await runContractMutation(() => contractsService.cancel(contract.id), { loading: t("contracts.mutation.cancelling") });
+    const res = await runContractMutation(() => contractsService.cancel(contract.id), { loading: "جاري إلغاء العقد..." });
     if (res) onChanged?.();
   }
   async function doGenerateToken() {
-    const res = await runContractMutation(() => contractsService.generatePdfToken(contract.id), { loading: t("contracts.mutation.generatingToken") });
+    const res = await runContractMutation(() => contractsService.generatePdfToken(contract.id), { loading: "جاري إنشاء رابط التوقيع..." });
     if (res) onChanged?.();
   }
 
   return (
     <Stack direction="row" spacing={1} alignItems="center">
-      <Tooltip title={t("contracts.list.action.view")}>
+      <Tooltip title="عرض تفاصيل العقد">
         <IconButton onClick={() => router.push(`/v2/contracts/detail/${contract.id}`)} size="small" sx={{ color: theme.palette.primary.main }}>
           <IoMdEye size={18} />
         </IconButton>
       </Tooltip>
       {canGenerateToken && !isCancelled && (
-        <Tooltip title={t("contracts.list.action.generateToken")}>
+        <Tooltip title="إنشاء رابط التوقيع">
           <IconButton onClick={doGenerateToken} size="small"><FaLink /></IconButton>
         </Tooltip>
       )}
       {isCancelled ? (
-        <Chip size="small" label={t("contracts.list.cancelledChip")} color="error" />
+        <Chip size="small" label="ملغي" color="error" />
       ) : (
         canCancel && (
-          <Tooltip title={t("contracts.list.action.cancel")}>
+          <Tooltip title="إلغاء العقد">
             <IconButton onClick={() => setConfirmCancel(true)} size="small" color="error"><FaBan /></IconButton>
           </Tooltip>
         )
@@ -110,9 +103,9 @@ function ContractActions({ contract, canCancel, canGenerateToken, onChanged }) {
         open={confirmCancel}
         onClose={() => setConfirmCancel(false)}
         onConfirm={doCancel}
-        title={t("contracts.list.cancelConfirm.title")}
-        description={t("contracts.list.cancelConfirm.description")}
-        confirmLabel={t("contracts.list.cancelConfirm.confirmLabel")}
+        title="إلغاء هذا العقد؟"
+        description="سيتم وضع علامة على العقد كملغي وإنشاء نسخة PDF ملغاة. لا يمكن التراجع عن هذا الإجراء."
+        confirmLabel="إلغاء العقد"
       />
     </Stack>
   );
@@ -122,19 +115,19 @@ function ContractAccordion({ contract, index, canCancel, canGenerateToken, onCha
   const theme = useTheme();
   return (
     <Accordion defaultExpanded={index === 0} sx={{ border: `1px solid ${theme.palette.divider}`, borderRadius: 2, overflow: "hidden" }}>
-      <AccordionSummary expandIcon={<MdExpandMore />} sx={{ py: 1.5, px: 2, background: theme.palette.action.hover }}>
+      <AccordionSummary expandIcon={<MdExpandMore />} sx={{ py: 1.5, px: 2, background: alpha(theme.palette.primary.main, 0.02) }}>
         <Box sx={{ display: "flex", gap: 2, alignItems: "center", width: "100%", justifyContent: "space-between" }}>
           <Box sx={{ display: "flex", gap: 2, alignItems: "center", flex: 1 }}>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, minWidth: 160 }}>{contract.title}</Typography>
             <Box sx={{ display: "flex", gap: 1 }}>
-              <StatusChip domain="contract" status={contract.status} />
+              <StatusChip status={contract.status} />
               <LevelChip level={contract.level} />
             </Box>
           </Box>
           <ContractActions contract={contract} canCancel={canCancel} canGenerateToken={canGenerateToken} onChanged={onChanged} />
         </Box>
       </AccordionSummary>
-      <AccordionDetails sx={{ p: 2, background: theme.palette.background.default }}>
+      <AccordionDetails sx={{ p: 2, background: alpha(theme.palette.primary.main, 0.01) }}>
         <Grid container spacing={2}>
           {(contract.stages || []).map((stage) => (
             <ContractStageCard stage={stage} key={stage.id} />
@@ -146,7 +139,7 @@ function ContractAccordion({ contract, index, canCancel, canGenerateToken, onCha
 }
 
 export function LeadContractsPage({ leadId, lead }) {
-  const { t } = useT();
+  const theme = useTheme();
   const { hasPermission } = usePermission();
   const canList = hasPermission(P.LIST);
   const canCreate = hasPermission(P.CREATE);
@@ -159,46 +152,31 @@ export function LeadContractsPage({ leadId, lead }) {
   if (!canList) {
     return (
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "50vh" }}>
-        <Typography color="text.secondary">{t("contracts.list.noAccess")}</Typography>
+        <Typography color="text.secondary">لا تملك صلاحية عرض العقود</Typography>
       </Box>
     );
   }
 
-  const hasContracts = contracts?.length > 0;
-
   return (
     <Box position="relative" sx={{ pb: 3, px: { xs: 2, sm: 3 }, py: 3 }} dir="rtl">
-      <SectionCard
-        title={t("contracts.list.title")}
-        actions={
-          canCreate && (
-            <Button variant="contained" onClick={() => setCreateOpen(true)}>{t("contracts.list.create")}</Button>
-          )
-        }
-      >
-        <CreateContractDialog
-          open={createOpen}
-          onClose={() => setCreateOpen(false)}
-          clientLeadId={leadId}
-          lead={lead}
-          onSuccess={refetch}
-        />
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
+        <Typography variant="h5">عقود العميل المحتمل #{leadId}</Typography>
+        {canCreate && (
+          <Button variant="contained" onClick={() => setCreateOpen(true)}>إنشاء عقد جديد</Button>
+        )}
+      </Stack>
 
-        {loading ? (
-          <LoadingState variant="cards" count={3} columns={1} height={96} />
-        ) : !hasContracts ? (
-          <EmptyState
-            title={t("contracts.list.empty.title")}
-            description={canCreate ? t("contracts.list.empty.descCanCreate") : t("contracts.list.empty.descReadonly")}
-            action={
-              canCreate
-                ? { label: t("contracts.list.create"), onClick: () => setCreateOpen(true) }
-                : undefined
-            }
-          />
-        ) : (
-          <Stack spacing={2}>
-            {contracts.map((contract, index) => (
+      <CreateContractDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        clientLeadId={leadId}
+        lead={lead}
+        onSuccess={refetch}
+      />
+
+      <Stack spacing={2}>
+        {contracts?.length > 0
+          ? contracts.map((contract, index) => (
               <ContractAccordion
                 key={contract.id}
                 contract={contract}
@@ -207,10 +185,16 @@ export function LeadContractsPage({ leadId, lead }) {
                 canGenerateToken={canGenerateToken}
                 onChanged={refetch}
               />
-            ))}
-          </Stack>
+            ))
+          : !loading && (
+              <Paper sx={{ p: 4, textAlign: "center", backgroundColor: alpha(theme.palette.primary.main, 0.05), border: `1px dashed ${theme.palette.divider}`, borderRadius: 2 }}>
+                <Typography color="text.secondary">لا توجد عقود. أنشئ عقدًا للبدء.</Typography>
+              </Paper>
+            )}
+        {loading && (
+          <Typography color="text.secondary" sx={{ textAlign: "center", py: 2 }}>جاري التحميل...</Typography>
         )}
-      </SectionCard>
+      </Stack>
     </Box>
   );
 }

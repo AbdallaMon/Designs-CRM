@@ -13,14 +13,12 @@ import { useAuth } from "@/app/v2/providers/AuthProvider";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { CHAT_ROOM_TYPES } from "../../config/chatConstants.js";
-import { useT } from "@/app/v2/lib/i18n";
 
 /**
  * Page-mode chat container. Realtime room-list updates, URL-driven room selection
  * (?roomId=), and gated create. Mirrors the legacy ChatContainer (page type) behavior.
  */
 export function ChatContainer() {
-  const { t } = useT();
   const { user } = useAuth();
   const { hasPermission } = usePermission();
   const canCreate = hasPermission(PERMISSIONS.CHAT.ROOM_CREATE);
@@ -187,7 +185,7 @@ export function ChatContainer() {
   ) : (
     <Paper elevation={0} sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", bgcolor: "grey.50", borderRadius: 3 }}>
       <Typography color="textSecondary" variant="body1">
-        {t("chat.emptyPickOrCreate", "اختر محادثة أو أنشئ واحدة جديدة لبدء المراسلة")}
+        اختر محادثة أو أنشئ واحدة جديدة لبدء المراسلة
       </Typography>
     </Paper>
   );

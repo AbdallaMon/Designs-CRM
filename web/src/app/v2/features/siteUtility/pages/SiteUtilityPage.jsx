@@ -3,13 +3,11 @@
 import { useCallback, useMemo } from "react";
 import { Box, Container, Tab, Tabs, Typography } from "@mui/material";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { UploadingProvider } from "@/app/v2/providers/UploadingProvider";
 import PdfUtility from "../components/PdfUtility.jsx";
 import ContractPaymentConditions from "../components/ContractPaymentConditions.jsx";
-import ContractUtility from "../components/ContractUtility.jsx";
 
 /**
  * Site-utility admin page. Two tabs (PDF utility + contract payment conditions) migrated
@@ -18,35 +16,18 @@ import ContractUtility from "../components/ContractUtility.jsx";
  * child components. Wrapped in UploadingProvider for the PDF field-card chunked upload
  * overlay. Single-language Arabic RTL.
  *
- * The "إعدادات عقد التصميم" (Contract utility) tab restores the legacy contract-boilerplate
- * editor (obligations + stage/special/level clause templates), now backed by the v2
- * /v2/site-utilities/contract-utility module. The tab is gated on
- * SITE_UTILITY.CONTRACT_UTILITY_VIEW; per-action gating lives in the child component.
+ * Note: the legacy manager had a third "Contract utility" tab sourced from a separate,
+ * unrelated feature (contracts/ContractUtilityPage) — out of scope for the site-utility
+ * module migration and intentionally not included here.
  */
 const TABS = [
-  { key: "pdf", labelKey: "siteUtility.tab.pdf", view: PERMISSIONS.SITE_UTILITY.PDF_CONFIG_VIEW },
-  {
-    key: "conditions",
-    labelKey: "siteUtility.tab.conditions",
-    view: PERMISSIONS.SITE_UTILITY.PAYMENT_CONDITION_LIST,
-  },
-  {
-    key: "contract",
-    labelKey: "siteUtility.tab.contract",
-    view: PERMISSIONS.SITE_UTILITY.CONTRACT_UTILITY_VIEW,
-  },
+  { key: "pdf", label: "إعدادات الـ PDF" },
+  { key: "conditions", label: "شروط دفع العقود" },
 ];
 
 export function SiteUtilityPage() {
-  const { t } = useT();
   const { hasPermission } = usePermission();
-  // The page is reachable with any one of the site-utility view codes; each tab is
-  // individually gated below so a user only sees the surfaces they can read.
-  const visibleTabs = useMemo(
-    () => TABS.filter((t) => hasPermission(t.view)),
-    [hasPermission],
-  );
-  const canView = visibleTabs.length > 0;
+  const canView = hasPermission(PERMISSIONS.SITE_UTILITY.PDF_CONFIG_VIEW);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -54,10 +35,8 @@ export function SiteUtilityPage() {
 
   const active = useMemo(() => {
     const t = sp.get("tab");
-    return visibleTabs.some((x) => x.key === t)
-      ? t
-      : (visibleTabs[0]?.key ?? TABS[0].key);
-  }, [sp, visibleTabs]);
+    return TABS.some((x) => x.key === t) ? t : TABS[0].key;
+  }, [sp]);
 
   const onChange = useCallback(
     (_e, key) => {
@@ -79,7 +58,7 @@ export function SiteUtilityPage() {
         }}
       >
         <Typography color="textSecondary">
-          {t("siteUtility.page.denied")}
+          لا تملك صلاحية الوصول إلى هذه الصفحة
         </Typography>
       </Box>
     );
@@ -89,8 +68,8 @@ export function SiteUtilityPage() {
     <UploadingProvider>
       <Container maxWidth="xl" sx={{ position: "relative", py: 4 }}>
         <Tabs value={active} onChange={onChange} centered>
-          {visibleTabs.map((tab) => (
-            <Tab key={tab.key} value={tab.key} label={t(tab.labelKey)} />
+          {TABS.map((tab) => (
+            <Tab key={tab.key} value={tab.key} label={tab.label} />
           ))}
         </Tabs>
 
@@ -99,9 +78,6 @@ export function SiteUtilityPage() {
         </Box>
         <Box hidden={active !== "conditions"} role="tabpanel">
           {active === "conditions" && <ContractPaymentConditions />}
-        </Box>
-        <Box hidden={active !== "contract"} role="tabpanel">
-          {active === "contract" && <ContractUtility />}
         </Box>
       </Container>
     </UploadingProvider>

@@ -2,10 +2,9 @@
 
 import { Box, IconButton, Avatar, Typography, Tooltip, CircularProgress } from "@mui/material";
 import { FaArrowLeft, FaPhone, FaVideo, FaUsers } from "react-icons/fa";
-import { CHAT_ROOM_TYPE_LABELS, CHAT_ROOM_TYPE_LABEL_KEYS } from "../../config/chatConstants.js";
+import { CHAT_ROOM_TYPE_LABELS } from "../../config/chatConstants.js";
 import { ChatSettings } from "./ChatSettings.jsx";
 import { getRoomAvatar, getRoomLabel } from "../../chat.utils.js";
-import { useT } from "@/app/v2/lib/i18n";
 
 export function ChatWindowHeader({
   onClose,
@@ -19,8 +18,7 @@ export function ChatWindowHeader({
   loading,
   fetchChatRoom,
 }) {
-  const { t } = useT();
-  const roomLabel = getRoomLabel(room, t);
+  const roomLabel = getRoomLabel(room);
   const roomAvatar = getRoomAvatar(room);
 
   return (
@@ -71,7 +69,7 @@ export function ChatWindowHeader({
             <Typography variant="h6" sx={{ fontWeight: 600 }}>{roomLabel}</Typography>
             {room && (
               <Typography variant="caption" color="textSecondary">
-                {t(CHAT_ROOM_TYPE_LABEL_KEYS[room.type], CHAT_ROOM_TYPE_LABELS[room.type]) || room.type}
+                {CHAT_ROOM_TYPE_LABELS[room.type] || room.type}
               </Typography>
             )}
           </Box>
@@ -79,14 +77,14 @@ export function ChatWindowHeader({
       </Box>
 
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-        <Tooltip title={t("chat.header.voiceCall", "مكالمة صوتية")} arrow>
+        <Tooltip title="مكالمة صوتية" arrow>
           <IconButton size="small"><FaPhone size={18} /></IconButton>
         </Tooltip>
-        <Tooltip title={t("chat.header.videoCall", "مكالمة فيديو")} arrow>
+        <Tooltip title="مكالمة فيديو" arrow>
           <IconButton size="small"><FaVideo size={18} /></IconButton>
         </Tooltip>
         {isNotDirectChat && (
-          <Tooltip title={t("chat.header.members", "الأعضاء")} arrow>
+          <Tooltip title="الأعضاء" arrow>
             <IconButton size="small" onClick={onShowAddMembers}><FaUsers size={18} /></IconButton>
           </Tooltip>
         )}

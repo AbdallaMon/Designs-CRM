@@ -27,7 +27,6 @@ export const usersMessages = {
   AUTO_ASSIGNMENTS_UPDATED: "تم تحديث التعيينات التلقائية",
   USER_MAX_LEADS_UPDATED: "تم تحديث الحد الأقصى للعملاء",
   USER_MAX_LEADS_PER_DAY_UPDATED: "تم تحديث الحد الأقصى اليومي للعملاء",
-  USER_STAFF_EXTRA_FETCHED: "تم جلب بيانات الموظف",
 
   // ── users: errors / scope / guards ────────────────────────────────────────────────
   USER_NOT_FOUND: "المستخدم غير موجود",
@@ -55,15 +54,12 @@ export const usersMessages = {
   UNEXPECTED_ERROR: "حدث خطأ غير متوقع",
 };
 
-import { resolveMessageCode } from "@/app/v2/data/resolveMessageCode.js";
-
 /**
- * Resolve a backend message CODE to an Arabic display string. Feature Arabic wins first;
- * unknown codes delegate to the CENTRAL resolver. `translationKey` routes the central lookup.
+ * Resolve a backend message CODE to an Arabic display string.
  * @param {string} code
- * @param {{ fallback?: string, translationKey?: string }} [opts]
+ * @param {{ fallback?: string }} [opts]
  */
-export function resolveUsersMessage(code, { fallback, translationKey } = {}) {
+export function resolveUsersMessage(code, { fallback } = {}) {
   if (code && usersMessages[code]) return usersMessages[code];
-  return resolveMessageCode(code, { translationKey, fallback });
+  return fallback ?? "تمت العملية";
 }

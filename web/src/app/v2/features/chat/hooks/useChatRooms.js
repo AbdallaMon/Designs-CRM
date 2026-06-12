@@ -7,7 +7,6 @@ import { useChatSocket, chatEmit } from "../chat.socket.js";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
 import { useScroll } from "@/app/v2/hooks/useScroll";
 import { CHAT_LIMITS } from "../config/chatConstants.js";
-import { useT } from "@/app/v2/lib/i18n";
 
 /** Read the rooms envelope. BE returns the array directly under res.data (or an
  *  {items,total} shape); derive totalPages from total/limit since the BE does not emit it. */
@@ -39,7 +38,6 @@ export function useChatRooms({
   const [unreadCounts, setUnreadCounts] = useState({});
   const [totalUnread, setTotalUnread] = useState(0);
 
-  const { t } = useT();
   const { user } = useAuth();
   const { socket } = useChatSocket();
   const scrollContainerRef = useRef(null);
@@ -79,13 +77,13 @@ export function useChatRooms({
       setTotalUnread(env.totalUnread);
       setHasMore(currentPageState + 1 < env.totalPages);
     } catch (err) {
-      setError(err?.message || t("chat.error.loadRooms", "فشل تحميل المحادثات"));
+      setError(err?.message || "فشل تحميل المحادثات");
     } finally {
       setLoading(false);
       setLoadingMore(false);
       setInitialLoading(false);
     }
-  }, [category, clientLeadId, limit, searchKey, chatType, loading, loadingMore, t]);
+  }, [category, clientLeadId, limit, searchKey, chatType, loading, loadingMore]);
 
   const refreshRooms = useCallback(() => setRefetchToggle((p) => !p), []);
 
@@ -132,38 +130,38 @@ export function useChatRooms({
   // ── mutations (via chatService + toast) ─────────────────────────────────────
   const createRoom = useCallback(async (roomData) => {
     const res = await runChatMutation(() => chatService.createRoom(roomData), {
-      loading: t("chat.toast.creatingRoom", "جاري إنشاء المحادثة..."),
+      loading: "جاري إنشاء المحادثة...",
     });
     if (res) refreshRooms();
     return res?.data ?? null;
-  }, [refreshRooms, t]);
+  }, [refreshRooms]);
 
   const createLeadRoom = useCallback(async (roomData, onClose) => {
     const res = await runChatMutation(() => chatService.createLeadRoom(roomData), {
-      loading: t("chat.toast.creatingRoom", "جاري إنشاء المحادثة..."),
+      loading: "جاري إنشاء المحادثة...",
     });
     if (res) {
       refreshRooms();
       onClose?.();
     }
     return res;
-  }, [refreshRooms, t]);
+  }, [refreshRooms]);
 
   const updateRoom = useCallback(async (roomId, updates) => {
     const res = await runChatMutation(() => chatService.updateRoom(roomId, updates), {
-      loading: t("chat.toast.updatingRoom", "جاري تحديث المحادثة..."),
+      loading: "جاري تحديث المحادثة...",
     });
     if (res) refreshRooms();
     return res?.data ?? null;
-  }, [refreshRooms, t]);
+  }, [refreshRooms]);
 
   const deleteRoom = useCallback(async (roomId) => {
     const res = await runChatMutation(() => chatService.deleteRoom(roomId), {
-      loading: t("chat.toast.deletingRoom", "جاري حذف المحادثة..."),
+      loading: "جاري حذف المحادثة...",
     });
     if (res) refreshRooms();
     return Boolean(res);
-  }, [refreshRooms, t]);
+  }, [refreshRooms]);
 
   const leaveRoom = useCallback(async (roomId, selfMemberId = null) => {
     // Leave = remove self via DELETE /rooms/:roomId/members/:memberId. The BE coerces
@@ -182,11 +180,11 @@ export function useChatRooms({
     if (memberId == null) return false;
     const res = await runChatMutation(
       () => chatService.removeMember(roomId, memberId),
-      { loading: t("chat.toast.leavingRoom", "جاري مغادرة المحادثة...") },
+      { loading: "جاري مغادرة المحادثة..." },
     );
     if (res) refreshRooms();
     return Boolean(res);
-  }, [refreshRooms, t]);
+  }, [refreshRooms]);
 
   return {
     rooms,

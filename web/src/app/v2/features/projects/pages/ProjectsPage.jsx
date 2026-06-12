@@ -31,23 +31,14 @@ import { MdRefresh } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { useDebounce } from "@/app/v2/hooks/useDebounce";
-import { useT } from "@/app/v2/lib/i18n";
 import { useProjectBoard } from "../hooks/useProjectBoard.js";
 import { LeadProjects } from "../components/LeadProjects.jsx";
-import { PROJECT_TYPES, PROJECT_TYPE_LABELS } from "../config/projectsConstants.js";
 
 export function ProjectsPage() {
   const { hasPermission } = usePermission();
-  const { t } = useT();
   const canList = hasPermission(PERMISSIONS.PROJECT.LIST);
 
   const [mode, setMode] = useState("designers");
-  // The designers board is partitioned by project `type` (department). The legacy app had
-  // one kanban route per type and ALWAYS sent `?type=`; the v2 board keeps that contract
-  // via this selector (default = the first project type). The BE narrows rows by role/self
-  // WITHIN the selected type (admin sees all of that type, designers only their own), so
-  // each role sees the same rows it saw on the legacy per-type board.
-  const [boardType, setBoardType] = useState(PROJECT_TYPES[0]);
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebounce(searchInput, 400);
 
@@ -61,7 +52,7 @@ export function ProjectsPage() {
     setFilters,
     isLoading,
     refetch,
-  } = useProjectBoard({ mode, type: boardType, autoFetch: canList });
+  } = useProjectBoard({ mode, autoFetch: canList });
 
   // Parity with legacy: the board search is by lead id (the SearchComponent posted an `id`
   // filter). A non-numeric term matches nothing → no id filter.
@@ -75,7 +66,7 @@ export function ProjectsPage() {
   if (!canList) {
     return (
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-        <Typography color="textSecondary">{t("projects.page.denied")}</Typography>
+        <Typography color="textSecondary">لا تملك صلاحية الوصول إلى المشاريع</Typography>
       </Box>
     );
   }
@@ -83,7 +74,7 @@ export function ProjectsPage() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h5" sx={{ mb: 2 }}>
-        {t("projects.page.title")}
+        المشاريع
       </Typography>
 
       <Paper variant="outlined" sx={{ mb: 2 }}>
@@ -94,35 +85,18 @@ export function ProjectsPage() {
             value={mode}
             onChange={(_e, v) => v && setMode(v)}
           >
-            <ToggleButton value="designers">{t("projects.mode.active")}</ToggleButton>
-            <ToggleButton value="archived">{t("projects.mode.archived")}</ToggleButton>
+            <ToggleButton value="designers">النشطة</ToggleButton>
+            <ToggleButton value="archived">المؤرشفة</ToggleButton>
           </ToggleButtonGroup>
-          {mode === "designers" && (
-            <Select
-              size="small"
-              value={boardType}
-              onChange={(e) => {
-                setBoardType(e.target.value);
-                setPage(1);
-              }}
-              sx={{ minWidth: 200 }}
-            >
-              {PROJECT_TYPES.map((t) => (
-                <MenuItem key={t} value={t}>
-                  {PROJECT_TYPE_LABELS[t] ?? t}
-                </MenuItem>
-              ))}
-            </Select>
-          )}
           <TextField
             size="small"
-            label={t("projects.search.byClientId")}
+            label="بحث برقم العميل"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             sx={{ minWidth: 240 }}
           />
           <Box sx={{ flex: 1 }} />
-          <Tooltip title={t("projects.action.refresh")}>
+          <Tooltip title="تحديث">
             <IconButton onClick={refetch}>
               <MdRefresh />
             </IconButton>
@@ -132,11 +106,11 @@ export function ProjectsPage() {
 
       {isLoading ? (
         <Typography sx={{ py: 4, textAlign: "center" }} color="text.secondary">
-          {t("projects.state.loading")}
+          جاري التحميل...
         </Typography>
       ) : items.length === 0 ? (
         <Typography sx={{ py: 4, textAlign: "center" }} color="text.secondary">
-          {t("projects.state.empty")}
+          لا توجد بيانات
         </Typography>
       ) : (
         items.map((lead) => (
@@ -162,7 +136,7 @@ export function ProjectsPage() {
             setPage(1);
           }}
           rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage={t("projects.pagination.rows")}
+          labelRowsPerPage="عدد الصفوف"
         />
       )}
     </Container>

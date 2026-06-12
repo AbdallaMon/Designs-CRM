@@ -4,7 +4,7 @@
 // service + capability gating + Arabic. Gated on capabilities.canAddNote (× lead.note.manage,
 // already folded into the capability by the backend dto).
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   Button,
   Dialog,
@@ -16,25 +16,13 @@ import {
 } from "@mui/material";
 import { GoPlus } from "react-icons/go";
 import { useToastContext } from "@/app/v2/providers/ToastProvider";
-import { useT } from "@/app/v2/lib/i18n";
 import { leadsService } from "@/app/v2/features/leads/leads.service.js";
 import { runLeadMutation } from "@/app/v2/features/leads/leads.mutations.js";
 
-export function NewNoteDialog({ lead, canAdd, onCreated, autoOpen = false, onAutoOpenConsumed }) {
+export function NewNoteDialog({ lead, canAdd, onCreated }) {
   const [open, setOpen] = useState(false);
   const [content, setContent] = useState("");
   const { setLoading } = useToastContext();
-  const { t } = useT();
-
-  // One-click daily verbs (item 4): open once when a deep-link asks, then clear the URL flag.
-  const consumedRef = useRef(false);
-  useEffect(() => {
-    if (autoOpen && canAdd && !consumedRef.current) {
-      consumedRef.current = true;
-      setOpen(true);
-      onAutoOpenConsumed?.();
-    }
-  }, [autoOpen, canAdd, onAutoOpenConsumed]);
 
   if (!canAdd) return null;
 
@@ -42,7 +30,7 @@ export function NewNoteDialog({ lead, canAdd, onCreated, autoOpen = false, onAut
     if (!content.trim()) return;
     const res = await runLeadMutation(
       () => leadsService.createNote(lead.id, { content }),
-      { setLoading, loading: t("leadsDetails.note.loading") },
+      { setLoading, loading: "جاري الإنشاء..." },
     );
     if (res) {
       onCreated?.(res.data);
@@ -59,31 +47,31 @@ export function NewNoteDialog({ lead, canAdd, onCreated, autoOpen = false, onAut
         variant="contained"
         sx={{ width: "fit-content" }}
       >
-        {t("leadsDetails.note.add")}
+        إضافة ملاحظة
       </Button>
       {open && (
         <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth dir="rtl">
-          <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>{t("leadsDetails.note.title")}</DialogTitle>
+          <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>إضافة ملاحظة</DialogTitle>
           <DialogContent>
             <Stack sx={{ mt: 2 }}>
               <TextField
-                label={t("leadsDetails.note.label")}
+                label="اكتب ملاحظتك"
                 variant="outlined"
                 fullWidth
                 multiline
                 rows={3}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder={t("leadsDetails.note.placeholder")}
+                placeholder="اكتب الملاحظة هنا..."
               />
             </Stack>
           </DialogContent>
           <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
             <Button onClick={() => setOpen(false)} variant="outlined">
-              {t("leadsDetails.note.cancel")}
+              إلغاء
             </Button>
             <Button onClick={handleAdd} variant="contained" color="primary" disabled={!content.trim()}>
-              {t("leadsDetails.note.confirm")}
+              إضافة
             </Button>
           </DialogActions>
         </Dialog>

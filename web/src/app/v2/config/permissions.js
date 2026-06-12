@@ -35,9 +35,6 @@ export const SITE_UTILITY_PERMISSIONS = {
   PAYMENT_CONDITION_CREATE: "site_utility.payment_condition.create",
   PAYMENT_CONDITION_EDIT: "site_utility.payment_condition.edit",
   PAYMENT_CONDITION_DELETE: "site_utility.payment_condition.delete",
-  // Contract utility editor (obligations + stage/special/level clause templates).
-  CONTRACT_UTILITY_VIEW: "site_utility.contract_utility.view",
-  CONTRACT_UTILITY_EDIT: "site_utility.contract_utility.edit",
 };
 
 // Leads / sales module. Byte-matches the backend @dms/shared LEAD_PERMISSIONS values
@@ -189,6 +186,19 @@ export const IMAGE_SESSION_PERMISSIONS = {
 // remaining FE features. Screens land in the UX-redesign phase; these gate them when built.
 // All values byte-match the backend @dms/shared blocks of the same name.
 
+// Courses / LMS — admin authoring surface (COURSE_*) + staff learner surface (STAFF_COURSE_*).
+export const COURSE_PERMISSIONS = {
+  VIEW: "course.view", // list courses, dashboard, course detail reads
+  MANAGE: "course.manage", // create/edit course, lessons, videos, pdfs, links, tests, questions
+  ACCESS_MANAGE: "course.access.manage", // grant/revoke LessonAccess, view allowed users/roles
+  ATTEMPT_MANAGE: "course.attempt.manage", // increase/decrease attempts, approve answers, attempt summaries
+};
+
+export const STAFF_COURSE_PERMISSIONS = {
+  VIEW: "staff_course.view", // browse courses/lessons/tests, dashboard, progress, own attempts
+  TAKE: "staff_course.take", // mark lesson complete, submit homework, create attempt, submit answer, end attempt
+};
+
 // Users / admin user-management. DIRECTORY is a broad authed pick-list; the rest are
 // admin-tier. PROFILE_* are object-scope checked (self OR admin-tier) by the BE.
 export const USER_PERMISSIONS = {
@@ -246,6 +256,12 @@ export const SALES_STAGE_PERMISSIONS = {
   MANAGE: "sales_stage.manage", // advance / roll back a lead's sales stage (lead-scoped write)
 };
 
+// Reviews (Google Business reviews read + OAuth connect).
+export const REVIEW_PERMISSIONS = {
+  VIEW: "review.view", // GET locations / reviews (read Google Business data)
+  CONNECT: "review.connect", // GET auth-url / oauth callback (initiate / complete OAuth)
+};
+
 // Admin/staff residual (the ADMIN-tier residual sweep: reports, admin leads, commissions,
 // fixed-data writes, admin-projects aggregation, model-archive). 🔒 pdfkit reports frozen.
 export const ADMIN_RESIDUAL_PERMISSIONS = {
@@ -284,12 +300,15 @@ export const PERMISSIONS = {
   CALENDAR: CALENDAR_PERMISSIONS,
   CONTRACT: CONTRACT_PERMISSIONS,
   IMAGE_SESSION: IMAGE_SESSION_PERMISSIONS,
+  COURSE: COURSE_PERMISSIONS,
+  STAFF_COURSE: STAFF_COURSE_PERMISSIONS,
   USER: USER_PERMISSIONS,
   NOTIFICATION: NOTIFICATION_PERMISSIONS,
   UTILITY: UTILITY_PERMISSIONS,
   DASHBOARD: DASHBOARD_PERMISSIONS,
   QUESTION: QUESTION_PERMISSIONS,
   SALES_STAGE: SALES_STAGE_PERMISSIONS,
+  REVIEW: REVIEW_PERMISSIONS,
   ADMIN_RESIDUAL: ADMIN_RESIDUAL_PERMISSIONS,
   STAFF: STAFF_PERMISSIONS,
 };

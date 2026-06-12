@@ -21,20 +21,14 @@ export const dashboardMessages = {
   FORBIDDEN: "لا تملك صلاحية تنفيذ هذا الإجراء",
   ACCESS_DENIED: "لا تملك صلاحية الوصول",
   VALIDATION_ERROR: "بيانات غير صحيحة",
-
-  // ── client-side widget fallbacks (no BE code) — shown by per-widget ErrorState ────
-  WIDGET_LOAD_FAILED: "تعذّر تحميل هذا القسم",
 };
 
-import { resolveMessageCode } from "@/app/v2/data/resolveMessageCode.js";
-
 /**
- * Resolve a backend message CODE to an Arabic display string. Feature Arabic wins first;
- * unknown codes delegate to the CENTRAL resolver. `translationKey` routes the central lookup.
+ * Resolve a backend message CODE to an Arabic display string.
  * @param {string} code
- * @param {{ fallback?: string, translationKey?: string }} [opts]
+ * @param {{ fallback?: string }} [opts]
  */
-export function resolveDashboardMessage(code, { fallback, translationKey } = {}) {
+export function resolveDashboardMessage(code, { fallback } = {}) {
   if (code && dashboardMessages[code]) return dashboardMessages[code];
-  return resolveMessageCode(code, { translationKey, fallback });
+  return fallback ?? "تمت العملية";
 }

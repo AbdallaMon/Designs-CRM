@@ -1,7 +1,4 @@
-// Questions feature barrel. SpinPanel/VersaPanel are the lead-scoped SPIN + VERSA surfaces;
-// QuestionsPanel is the older thin wiring smoke-screen (kept for back-compat).
-export { SpinPanel } from "./pages/SpinPanel.jsx";
-export { VersaPanel } from "./pages/VersaPanel.jsx";
+// Questions feature barrel (foundation phase — data layer + a thin lead-scoped wiring panel).
 export { QuestionsPanel, default as QuestionsPanelDefault } from "./pages/QuestionsPanel.jsx";
 export { questionsService } from "./questions.service.js";
 export { runQuestionsMutation } from "./questions.mutations.js";

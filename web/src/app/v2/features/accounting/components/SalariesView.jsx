@@ -30,7 +30,6 @@ import {
   Typography,
 } from "@mui/material";
 import { MdAdd } from "react-icons/md";
-import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { usePaginatedList } from "../hooks/usePaginatedList.js";
@@ -42,7 +41,6 @@ import { SalaryDialog } from "./SalaryDialog.jsx";
 const P = PERMISSIONS.ACCOUNTING;
 
 export function SalariesView() {
-  const { t } = useT();
   const { hasPermission } = usePermission();
   const canList = hasPermission(P.SALARY_VIEW);
   const canCreate = hasPermission(P.SALARY_CREATE);
@@ -75,7 +73,7 @@ export function SalariesView() {
     if (values.taxAmount !== "" && values.taxAmount != null) body.taxAmount = Number(values.taxAmount);
     const res = await runAccountingMutation(
       () => accountingService.createBaseSalary(createTarget.id, body),
-      { loading: t("accounting.salaries.createLoading"), setLoading: setSubmitting },
+      { loading: "جاري إنشاء الراتب...", setLoading: setSubmitting },
     );
     if (res) {
       setCreateTarget(null);
@@ -86,7 +84,7 @@ export function SalariesView() {
   if (!canList) {
     return (
       <Typography color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
-        {t("accounting.salaries.denied")}
+        لا تملك صلاحية الوصول إلى الرواتب
       </Typography>
     );
   }
@@ -97,25 +95,25 @@ export function SalariesView() {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>{t("accounting.salaries.col.name")}</TableCell>
-              <TableCell>{t("accounting.salaries.col.email")}</TableCell>
-              <TableCell>{t("accounting.salaries.col.role")}</TableCell>
-              <TableCell>{t("accounting.salaries.col.status")}</TableCell>
-              <TableCell align="right">{t("accounting.action.actions")}</TableCell>
+              <TableCell>اسم المستخدم</TableCell>
+              <TableCell>البريد الإلكتروني</TableCell>
+              <TableCell>الدور</TableCell>
+              <TableCell>حالة الحساب</TableCell>
+              <TableCell align="right">إجراءات</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {isLoading && (
               <TableRow>
                 <TableCell colSpan={5} align="center">
-                  {t("accounting.state.loading")}
+                  جاري التحميل...
                 </TableCell>
               </TableRow>
             )}
             {!isLoading && items.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} align="center">
-                  {t("accounting.state.empty")}
+                  لا توجد بيانات
                 </TableCell>
               </TableRow>
             )}
@@ -144,7 +142,7 @@ export function SalariesView() {
                             startIcon={<MdAdd />}
                             onClick={() => openCreate(user)}
                           >
-                            {t("accounting.salaries.createButton")}
+                            إنشاء راتب
                           </Button>
                         )
                       )}
@@ -165,24 +163,24 @@ export function SalariesView() {
             setPage(1);
           }}
           rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage={t("accounting.table.rowsPerPage")}
+          labelRowsPerPage="عدد الصفوف"
         />
       </TableContainer>
 
       <Dialog open={Boolean(createTarget)} onClose={() => setCreateTarget(null)} fullWidth maxWidth="xs">
-        <DialogTitle>{t("accounting.salaries.createTitle").replace("{name}", createTarget?.name ?? "")}</DialogTitle>
+        <DialogTitle>راتب جديد لـ {createTarget?.name}</DialogTitle>
         <form onSubmit={form.handleSubmit(onCreate)} noValidate>
           <DialogContent dividers>
             <Stack spacing={2}>
               <Controller
                 name="baseSalary"
                 control={form.control}
-                rules={{ required: t("accounting.validation.required"), validate: (v) => Number(v) > 0 || t("accounting.validation.positive") }}
+                rules={{ required: "مطلوب", validate: (v) => Number(v) > 0 || "يجب أن يكون رقماً موجباً" }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
                     type="number"
-                    label={t("accounting.salaries.field.baseSalary")}
+                    label="الراتب الأساسي"
                     fullWidth
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}
@@ -192,12 +190,12 @@ export function SalariesView() {
               <Controller
                 name="baseWorkHours"
                 control={form.control}
-                rules={{ required: t("accounting.validation.required"), validate: (v) => Number(v) > 0 || t("accounting.validation.positive") }}
+                rules={{ required: "مطلوب", validate: (v) => Number(v) > 0 || "يجب أن يكون رقماً موجباً" }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
                     type="number"
-                    label={t("accounting.salaries.field.baseWorkHours")}
+                    label="ساعات العمل الأساسية"
                     fullWidth
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}
@@ -208,13 +206,13 @@ export function SalariesView() {
                 name="taxAmount"
                 control={form.control}
                 rules={{
-                  validate: (v) => v === "" || v == null || Number(v) >= 0 || t("accounting.validation.nonNegative"),
+                  validate: (v) => v === "" || v == null || Number(v) >= 0 || "يجب أن يكون رقماً غير سالب",
                 }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
                     type="number"
-                    label={t("accounting.salaries.field.taxOptional")}
+                    label="مبلغ الضريبة (اختياري)"
                     fullWidth
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}
@@ -224,9 +222,9 @@ export function SalariesView() {
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setCreateTarget(null)}>{t("accounting.action.cancel")}</Button>
+            <Button onClick={() => setCreateTarget(null)}>إلغاء</Button>
             <Button type="submit" variant="contained" disabled={submitting}>
-              {t("accounting.action.create")}
+              إنشاء
             </Button>
           </DialogActions>
         </form>

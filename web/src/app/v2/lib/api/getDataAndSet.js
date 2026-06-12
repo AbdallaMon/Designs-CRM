@@ -1,4 +1,4 @@
-import apiFetch from "./ApiFetch";
+import apiFetch, { legacyApiFetch } from "./ApiFetch";
 
 export async function getDataAndSet({
   url = "",
@@ -11,11 +11,12 @@ export async function getDataAndSet({
   search,
   sort,
   others,
+  legacy = false,
 }) {
   try {
     setLoading(true);
 
-    const result = await apiFetch.getPaginated(
+    const result = await (legacy ? legacyApiFetch : apiFetch).getPaginated(
       url,
       {
         page,

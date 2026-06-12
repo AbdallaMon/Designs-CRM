@@ -1,10 +1,8 @@
 "use client";
 
 import { Box, Typography } from "@mui/material";
-import { useT } from "@/app/v2/lib/i18n";
 
 export function ChatTypingIndicator({ typingUsers }) {
-  const { t } = useT();
   if (!typingUsers || typingUsers.length === 0) return null;
 
   return (
@@ -20,8 +18,8 @@ export function ChatTypingIndicator({ typingUsers }) {
     >
       <Typography variant="caption" sx={{ fontStyle: "italic", color: "text.secondary" }}>
         {typingUsers.length === 1
-          ? `${typingUsers[0]?.message || t("chat.typing.default", "يكتب الآن")}`
-          : t("chat.typing.many", "{count} أشخاص يكتبون").replace("{count}", typingUsers.length)}
+          ? `${typingUsers[0]?.message || "يكتب الآن"}`
+          : `${typingUsers.length} أشخاص يكتبون`}
       </Typography>
       <Box sx={{ display: "flex", gap: 0.5 }}>
         {[0, 1, 2].map((i) => (

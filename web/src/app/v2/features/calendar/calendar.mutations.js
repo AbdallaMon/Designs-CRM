@@ -25,15 +25,7 @@ export async function runCalendarMutation(
   try {
     const res = await fn();
     if (shouldAutoToast) {
-      toast.update(
-        toastId,
-        Success(
-          resolveCalendarMessage(res?.message, {
-            translationKey: res?.translationKey,
-            fallback: "تمت العملية",
-          }),
-        ),
-      );
+      toast.update(toastId, Success(resolveCalendarMessage(res?.message)));
     }
     return res;
   } catch (e) {
@@ -41,12 +33,7 @@ export async function runCalendarMutation(
     if (shouldAutoToast) {
       toast.update(
         toastId,
-        Failed(
-          resolveCalendarMessage(code, {
-            translationKey: e?.data?.translationKey,
-            fallback: "حدث خطأ، حاول مرة أخرى",
-          }),
-        ),
+        Failed(resolveCalendarMessage(code, { fallback: "حدث خطأ، حاول مرة أخرى" })),
       );
     }
     return null;

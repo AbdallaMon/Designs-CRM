@@ -50,7 +50,6 @@ import {
 } from "react-icons/md";
 
 import LoadingOverlay from "@/app/v2/shared/components/feedback/LoadingOverlay";
-import { useT } from "@/app/v2/lib/i18n";
 import { calendarService } from "../calendar.service.js";
 import { resolveBrowserTimezone } from "../config/calendarConstants.js";
 
@@ -77,7 +76,6 @@ function ReminderSummary({ item, tz, icon }) {
 }
 
 function DayDetailDialog({ open, onClose, selectedDay, isAdmin, tz }) {
-  const { t } = useT();
   const [dayData, setDayData] = useState();
   const [loading, setLoading] = useState(false);
   const [tabValue, setTabValue] = useState(0);
@@ -124,7 +122,7 @@ function DayDetailDialog({ open, onClose, selectedDay, isAdmin, tz }) {
             label={
               <Badge badgeContent={dayData?.meetings?.length} color="primary">
                 <Box display="flex" alignItems="center" gap={1}>
-                  <MdEvent fontSize="small" /> {t("calendar.meetings", "المواعيد")}
+                  <MdEvent fontSize="small" /> المواعيد
                 </Box>
               </Badge>
             }
@@ -133,7 +131,7 @@ function DayDetailDialog({ open, onClose, selectedDay, isAdmin, tz }) {
             label={
               <Badge badgeContent={dayData?.calls?.length} color="secondary">
                 <Box display="flex" alignItems="center" gap={1}>
-                  <MdPhone fontSize="small" /> {t("calendar.calls", "المكالمات")}
+                  <MdPhone fontSize="small" /> المكالمات
                 </Box>
               </Badge>
             }
@@ -145,7 +143,7 @@ function DayDetailDialog({ open, onClose, selectedDay, isAdmin, tz }) {
             <Box>
               {!dayData?.meetings?.length ? (
                 <Typography color="text.secondary" textAlign="center" py={4}>
-                  {t("calendar.noMeetingsThisDay", "لا توجد مواعيد في هذا اليوم")}
+                  لا توجد مواعيد في هذا اليوم
                 </Typography>
               ) : (
                 dayData.meetings.map((meeting) => (
@@ -164,7 +162,7 @@ function DayDetailDialog({ open, onClose, selectedDay, isAdmin, tz }) {
             <Box>
               {!dayData?.calls?.length ? (
                 <Typography color="text.secondary" textAlign="center" py={4}>
-                  {t("calendar.noCallsThisDay", "لا توجد مكالمات في هذا اليوم")}
+                  لا توجد مكالمات في هذا اليوم
                 </Typography>
               ) : (
                 dayData.calls.map((call) => (
@@ -183,7 +181,6 @@ export function MeetingsMonthView({
   timezone: tz = resolveBrowserTimezone(),
   canSelfFilter = false,
 }) {
-  const { t } = useT();
   const [displayMonth, setDisplayMonth] = useState(dayjs().tz(tz));
   const [calendarData, setCalendarData] = useState({});
   const [loading, setLoading] = useState(true);
@@ -319,7 +316,7 @@ export function MeetingsMonthView({
               </Typography>
               {!displayMonth.isSame(dayjs().tz(tz), "month") && (
                 <Chip
-                  label={t("calendar.today", "اليوم")}
+                  label="اليوم"
                   onClick={goToToday}
                   size="small"
                   color="primary"
@@ -349,7 +346,7 @@ export function MeetingsMonthView({
                     {monthStats.totalMeetings}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {t("calendar.stats.meetings", "مواعيد")}
+                    مواعيد
                   </Typography>
                 </Box>
               </Stack>
@@ -362,7 +359,7 @@ export function MeetingsMonthView({
                     {monthStats.totalCalls}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {t("calendar.stats.calls", "مكالمات")}
+                    مكالمات
                   </Typography>
                 </Box>
               </Stack>
@@ -375,7 +372,7 @@ export function MeetingsMonthView({
                     {monthStats.activeDays}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {t("calendar.stats.activeDays", "أيام نشطة")}
+                    أيام نشطة
                   </Typography>
                 </Box>
               </Stack>
@@ -388,7 +385,7 @@ export function MeetingsMonthView({
           <Box sx={{ px: 3, py: 2, bgcolor: "background.default", borderBottom: 1, borderColor: "divider" }}>
             <FormControlLabel
               control={<Switch checked={isAdmin} onChange={(e) => setIsAdmin(e.target.checked)} color="primary" />}
-              label={t("calendar.showOwnDataOnly", "عرض بياناتك فقط")}
+              label="عرض بياناتك فقط"
             />
           </Box>
         )}
@@ -499,7 +496,7 @@ export function MeetingsMonthView({
                               <Stack direction="row" spacing={0.75} alignItems="center">
                                 <MdEvent size={10} color={theme.palette.primary.main} />
                                 <Typography variant="caption" color="primary.dark" fontWeight="700" sx={{ fontSize: "0.7rem" }}>
-                                  {t("calendar.meetingCount", "{count} موعد").replace("{count}", dayData.meetings.length)}
+                                  {dayData.meetings.length} موعد
                                 </Typography>
                               </Stack>
                             </Paper>
@@ -509,7 +506,7 @@ export function MeetingsMonthView({
                               <Stack direction="row" spacing={0.75} alignItems="center">
                                 <MdPhone size={10} color={theme.palette.secondary.main} />
                                 <Typography variant="caption" color="secondary.dark" fontWeight="700" sx={{ fontSize: "0.7rem" }}>
-                                  {t("calendar.callCount", "{count} مكالمة").replace("{count}", dayData.calls.length)}
+                                  {dayData.calls.length} مكالمة
                                 </Typography>
                               </Stack>
                             </Paper>
@@ -539,18 +536,18 @@ export function MeetingsMonthView({
             <Stack direction="row" spacing={1} alignItems="center">
               <Box sx={{ width: 16, height: 16, borderRadius: "50%", bgcolor: "primary.main" }} />
               <Typography variant="body2" fontWeight="600">
-                {t("calendar.meetings", "المواعيد")}
+                المواعيد
               </Typography>
             </Stack>
             <Stack direction="row" spacing={1} alignItems="center">
               <Box sx={{ width: 16, height: 16, borderRadius: "50%", bgcolor: "secondary.main" }} />
               <Typography variant="body2" fontWeight="600">
-                {t("calendar.calls", "المكالمات")}
+                المكالمات
               </Typography>
             </Stack>
           </Stack>
           <Typography variant="body2" color="text.secondary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <MdInfo size={16} /> {t("calendar.clickHighlightedDays", "اضغط على الأيام المميزة لعرض التفاصيل")}
+            <MdInfo size={16} /> اضغط على الأيام المميزة لعرض التفاصيل
           </Typography>
           <Chip label={`🌍 ${tz}`} variant="outlined" size="small" />
         </CardActions>

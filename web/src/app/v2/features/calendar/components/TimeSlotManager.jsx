@@ -47,7 +47,6 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 
 import LoadingOverlay from "@/app/v2/shared/components/feedback/LoadingOverlay";
-import { useT } from "@/app/v2/lib/i18n";
 import { calendarService } from "../calendar.service.js";
 import { runCalendarMutation } from "../calendar.mutations.js";
 import { DEFAULT_TIMEZONE, SLOT_DEFAULTS } from "../config/calendarConstants.js";
@@ -70,7 +69,6 @@ export function TimeSlotManager({
   selectedDate,
   canManage = false,
 }) {
-  const { t } = useT();
   const [startTime, setStartTime] = useState(SLOT_DEFAULTS.startTime);
   const [endTime, setEndTime] = useState(SLOT_DEFAULTS.endTime);
   const [slots, setSlots] = useState([]);
@@ -118,7 +116,7 @@ export function TimeSlotManager({
         isMultiDate
           ? calendarService.createMultipleDays(body, { timezone: tz })
           : calendarService.createDay(body, { timezone: tz }),
-      { loading: t("calendar.slot.saving", "جاري حفظ المواعيد...") },
+      { loading: "جاري حفظ المواعيد..." },
     );
     if (res) {
       if (isMultiDate) {
@@ -133,7 +131,7 @@ export function TimeSlotManager({
   const deleteSlot = async (slotId) => {
     if (!canManage) return;
     const res = await runCalendarMutation(() => calendarService.deleteSlot(slotId), {
-      loading: t("calendar.slot.deletingSlot", "جاري حذف الموعد..."),
+      loading: "جاري حذف الموعد...",
     });
     if (res) {
       await getSlotsData();
@@ -144,7 +142,7 @@ export function TimeSlotManager({
   const deleteDay = async () => {
     if (!canManage || !dayId) return;
     const res = await runCalendarMutation(() => calendarService.deleteDay(dayId), {
-      loading: t("calendar.slot.deletingDay", "جاري حذف اليوم..."),
+      loading: "جاري حذف اليوم...",
     });
     if (res) {
       await getSlotsData();
@@ -186,7 +184,7 @@ export function TimeSlotManager({
               <Close />
             </IconButton>
             <Typography variant="h6" sx={{ flexGrow: 1 }}>
-              {t("calendar.slot.setupSlots", "إعداد المواعيد")}
+              إعداد المواعيد
             </Typography>
           </Toolbar>
         </AppBar>
@@ -195,11 +193,11 @@ export function TimeSlotManager({
       {!isMobile && (
         <DialogTitle sx={{ pb: 1 }}>
           <Typography variant="h5" fontWeight="600">
-            {t("calendar.slot.setupSlots", "إعداد المواعيد")}
+            إعداد المواعيد
           </Typography>
           {isMultiDate && (
             <Typography variant="body2" color="text.secondary">
-              {t("calendar.slot.daysSelected", "{count} يوم محدد").replace("{count}", selectedDates.length)}
+              {selectedDates.length} يوم محدد
             </Typography>
           )}
         </DialogTitle>
@@ -209,14 +207,14 @@ export function TimeSlotManager({
         {canManage && (
           <Box mb={3}>
             <Typography variant="h6" gutterBottom fontWeight="600">
-              {t("calendar.slot.generationSettings", "إعدادات توليد المواعيد")}
+              إعدادات توليد المواعيد
             </Typography>
 
             <Grid container spacing={2}>
               <Grid size={{ xs: 6, sm: 3 }}>
                 <TextField
                   fullWidth
-                  label={t("calendar.slot.startTime", "وقت البدء")}
+                  label="وقت البدء"
                   type="time"
                   value={startTime}
                   onChange={(e) => setStartTime(e.target.value)}
@@ -227,7 +225,7 @@ export function TimeSlotManager({
               <Grid size={{ xs: 6, sm: 3 }}>
                 <TextField
                   fullWidth
-                  label={t("calendar.slot.endTime", "وقت الانتهاء")}
+                  label="وقت الانتهاء"
                   type="time"
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
@@ -238,7 +236,7 @@ export function TimeSlotManager({
               <Grid size={{ xs: 6, sm: 3 }}>
                 <TextField
                   fullWidth
-                  label={t("calendar.slot.duration", "المدة (دقيقة)")}
+                  label="المدة (دقيقة)"
                   type="number"
                   value={meetingDuration}
                   onChange={(e) => setMeetingDuration(Number(e.target.value))}
@@ -248,7 +246,7 @@ export function TimeSlotManager({
               <Grid size={{ xs: 6, sm: 3 }}>
                 <TextField
                   fullWidth
-                  label={t("calendar.slot.break", "الاستراحة (دقيقة)")}
+                  label="الاستراحة (دقيقة)"
                   type="number"
                   value={breakDuration}
                   onChange={(e) => setBreakDuration(Number(e.target.value))}
@@ -264,7 +262,7 @@ export function TimeSlotManager({
                 startIcon={<Schedule />}
                 sx={{ borderRadius: 2 }}
               >
-                {t("calendar.slot.generate", "توليد المواعيد")}
+                توليد المواعيد
               </Button>
             </Stack>
           </Box>
@@ -272,7 +270,7 @@ export function TimeSlotManager({
 
         <Box>
           <Typography variant="h6" gutterBottom fontWeight="600">
-            {t("calendar.slot.generatedSlots", "المواعيد المُولّدة ({count})").replace("{count}", slots.length)}
+            المواعيد المُولّدة ({slots.length})
           </Typography>
 
           {!isMultiDate &&
@@ -299,7 +297,7 @@ export function TimeSlotManager({
                               </Typography>
                               <Chip
                                 size="small"
-                                label={slot.isBooked ? t("calendar.slot.booked", "محجوز") : t("calendar.slot.available", "متاح")}
+                                label={slot.isBooked ? "محجوز" : "متاح"}
                                 color={slot.isBooked ? "error" : "success"}
                                 variant="outlined"
                                 sx={{
@@ -340,11 +338,11 @@ export function TimeSlotManager({
             variant="outlined"
             sx={{ borderRadius: 2 }}
           >
-            {t("calendar.slot.deleteDay", "حذف اليوم")}
+            حذف اليوم
           </Button>
         )}
         <Button onClick={onClose} variant="outlined" sx={{ borderRadius: 2 }}>
-          {t("calendar.slot.close", "إغلاق")}
+          إغلاق
         </Button>
       </DialogActions>
     </Dialog>

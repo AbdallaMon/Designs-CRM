@@ -9,7 +9,6 @@ import {
   Typography,
 } from "@mui/material";
 import { FaSync } from "react-icons/fa";
-import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { usePdfUtility } from "../hooks/usePdfUtility.js";
@@ -22,7 +21,6 @@ import PdfUtilityFieldCard from "./PdfUtilityFieldCard.jsx";
  * still enforces). Migrated from legacy PdfUtility.jsx — same fields, same UX.
  */
 export default function PdfUtility() {
-  const { t } = useT();
   const { hasPermission } = usePermission();
   const canEdit = hasPermission(PERMISSIONS.SITE_UTILITY.PDF_CONFIG_EDIT);
 
@@ -36,7 +34,7 @@ export default function PdfUtility() {
         justifyContent="space-between"
         sx={{ mb: 2 }}
       >
-        <Typography variant="h6">{t("siteUtility.pdf.title")}</Typography>
+        <Typography variant="h6">إعدادات ملف الـ PDF</Typography>
         <IconButton onClick={refetch} disabled={loading} aria-label="refresh">
           {loading ? <CircularProgress size={18} /> : <FaSync />}
         </IconButton>

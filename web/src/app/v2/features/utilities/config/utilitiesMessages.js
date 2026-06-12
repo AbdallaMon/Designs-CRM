@@ -21,8 +21,6 @@ export const utilitiesMessages = {
 
   // ── errors / domain rules ─────────────────────────────────────────────────────────
   MODEL_NOT_ALLOWED: "النموذج المطلوب غير مسموح به",
-  SEARCH_FAILED: "تعذّر تنفيذ البحث، حاول مرة أخرى",
-  USER_LOG_CHECK_FAILED: "تعذّر التحقق من سجل اليوم، حاول مرة أخرى",
 
   // ── generic envelope codes (shared) ──────────────────────────────────────────────
   OK: "تمت العملية بنجاح",
@@ -32,15 +30,12 @@ export const utilitiesMessages = {
   VALIDATION_ERROR: "بيانات غير صحيحة",
 };
 
-import { resolveMessageCode } from "@/app/v2/data/resolveMessageCode.js";
-
 /**
- * Resolve a backend message CODE to an Arabic display string. Feature Arabic wins first;
- * unknown codes delegate to the CENTRAL resolver. `translationKey` routes the central lookup.
+ * Resolve a backend message CODE to an Arabic display string.
  * @param {string} code
- * @param {{ fallback?: string, translationKey?: string }} [opts]
+ * @param {{ fallback?: string }} [opts]
  */
-export function resolveUtilitiesMessage(code, { fallback, translationKey } = {}) {
+export function resolveUtilitiesMessage(code, { fallback } = {}) {
   if (code && utilitiesMessages[code]) return utilitiesMessages[code];
-  return resolveMessageCode(code, { translationKey, fallback });
+  return fallback ?? "تمت العملية";
 }

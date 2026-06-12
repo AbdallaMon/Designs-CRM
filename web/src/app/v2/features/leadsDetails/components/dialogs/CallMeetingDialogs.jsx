@@ -8,7 +8,7 @@
 // Capability gating (§5c): the "schedule" button renders only when the matching
 // capability is true (canAddCall / canAddMeeting). The parent passes it down.
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   Button,
   Dialog,
@@ -25,41 +25,19 @@ import { IoMdCall } from "react-icons/io";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { useToastContext } from "@/app/v2/providers/ToastProvider";
-import { useT } from "@/app/v2/lib/i18n";
 import { leadsService } from "@/app/v2/features/leads/leads.service.js";
 import { runLeadMutation } from "@/app/v2/features/leads/leads.mutations.js";
 
 dayjs.extend(utc);
 
-export function NewCallMeetingDialog({
-  lead,
-  reminderType = "CALL",
-  canAdd,
-  onCreated,
-  autoOpen = false,
-  onAutoOpenConsumed,
-}) {
+const LABEL = { CALL: "مكالمة", MEETING: "اجتماع" };
+
+export function NewCallMeetingDialog({ lead, reminderType = "CALL", canAdd, onCreated }) {
   const [open, setOpen] = useState(false);
   const [time, setTime] = useState("");
   const [reminderReason, setReminderReason] = useState("");
   const { setLoading } = useToastContext();
-  const { t } = useT();
-  const name =
-    reminderType === "MEETING"
-      ? t("leadsDetails.callMeeting.label.meeting")
-      : t("leadsDetails.callMeeting.label.call");
-
-  // One-click daily verbs (item 4): a deep-link can request this dialog auto-open once on mount.
-  // We open exactly once per autoOpen=true and immediately tell the parent to clear the URL flag
-  // (so a refresh / back-forward doesn't reopen it). Honored only when the user can actually add.
-  const consumedRef = useRef(false);
-  useEffect(() => {
-    if (autoOpen && canAdd && !consumedRef.current) {
-      consumedRef.current = true;
-      setOpen(true);
-      onAutoOpenConsumed?.();
-    }
-  }, [autoOpen, canAdd, onAutoOpenConsumed]);
+  const name = LABEL[reminderType];
 
   if (!canAdd) return null;
 
@@ -81,7 +59,7 @@ export function NewCallMeetingDialog({
       reminderType === "MEETING"
         ? () => leadsService.createMeeting(lead.id, body)
         : () => leadsService.createCall(lead.id, body);
-    const res = await runLeadMutation(fn, { setLoading, loading: t("leadsDetails.callMeeting.create.loading") });
+    const res = await runLeadMutation(fn, { setLoading, loading: "جاري الإنشاء..." });
     if (res) {
       onCreated?.(res.data);
       onClose();
@@ -96,25 +74,25 @@ export function NewCallMeetingDialog({
         startIcon={<BsPlus size={20} />}
         sx={{ alignSelf: "flex-start" }}
       >
-        {t("leadsDetails.callMeeting.schedule").replace("{name}", name)}
+        جدولة {name} جديد
       </Button>
       {open && (
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth dir="rtl">
           <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>
-            {t("leadsDetails.callMeeting.schedule").replace("{name}", name)}
+            جدولة {name} جديد
           </DialogTitle>
           <DialogContent>
             <Stack spacing={3} sx={{ mt: 2 }}>
               <TextField
                 type="datetime-local"
-                label={t("leadsDetails.callMeeting.timeLabel").replace("{name}", name)}
+                label={`وقت ال${name}`}
                 value={time}
                 onChange={(e) => setTime(e.target.value)}
                 fullWidth
                 slotProps={{ inputLabel: { shrink: true } }}
               />
               <TextField
-                label={t("leadsDetails.callMeeting.reasonLabel")}
+                label="سبب التذكير"
                 value={reminderReason}
                 onChange={(e) => setReminderReason(e.target.value)}
                 fullWidth
@@ -125,10 +103,10 @@ export function NewCallMeetingDialog({
           </DialogContent>
           <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
             <Button onClick={onClose} variant="outlined">
-              {t("leadsDetails.callMeeting.cancel")}
+              إلغاء
             </Button>
             <Button onClick={handleCreate} variant="contained" color="primary" disabled={!time}>
-              {t("leadsDetails.callMeeting.confirm")}
+              جدولة
             </Button>
           </DialogActions>
         </Dialog>
@@ -147,11 +125,7 @@ export function CallMeetingResultDialog({
   const [status, setStatus] = useState("DONE");
   const [result, setResult] = useState("");
   const { setLoading } = useToastContext();
-  const { t } = useT();
-  const name =
-    reminderType === "MEETING"
-      ? t("leadsDetails.callMeeting.label.meeting")
-      : t("leadsDetails.callMeeting.label.call");
+  const name = LABEL[reminderType];
 
   if (!canManage) return null;
 
@@ -163,7 +137,7 @@ export function CallMeetingResultDialog({
       reminderType === "MEETING"
         ? () => leadsService.updateMeeting(reminder.id, body)
         : () => leadsService.updateCall(reminder.id, body);
-    const res = await runLeadMutation(fn, { setLoading, loading: t("leadsDetails.callMeeting.result.loading") });
+    const res = await runLeadMutation(fn, { setLoading, loading: "جاري التحديث..." });
     if (res) {
       onUpdated?.(res.data);
       setOpen(false);
@@ -180,23 +154,23 @@ export function CallMeetingResultDialog({
         size="small"
         sx={{ alignSelf: "flex-start" }}
       >
-        {t("leadsDetails.callMeeting.result.button").replace("{name}", name)}
+        تحديث نتيجة ال{name}
       </Button>
       {open && (
         <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth dir="rtl">
           <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>
-            {t("leadsDetails.callMeeting.result.title").replace("{name}", name)}
+            تحديث نتيجة ال{name}
           </DialogTitle>
           <DialogContent sx={{ mt: 2 }}>
             <Select value={status} onChange={(e) => setStatus(e.target.value)} sx={{ width: "100%" }}>
-              <MenuItem value="DONE">{t("leadsDetails.callMeeting.result.done")}</MenuItem>
-              <MenuItem value="MISSED">{t("leadsDetails.callMeeting.result.missed")}</MenuItem>
+              <MenuItem value="DONE">تم</MenuItem>
+              <MenuItem value="MISSED">فائت</MenuItem>
             </Select>
             {status === "DONE" && (
               <TextField
                 autoFocus
                 margin="dense"
-                label={t("leadsDetails.callMeeting.result.label")}
+                label="النتيجة"
                 fullWidth
                 multiline
                 rows={3}
@@ -208,7 +182,7 @@ export function CallMeetingResultDialog({
           </DialogContent>
           <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
             <Button onClick={() => setOpen(false)} variant="outlined">
-              {t("leadsDetails.callMeeting.cancel")}
+              إلغاء
             </Button>
             <Button
               onClick={handleUpdate}
@@ -216,7 +190,7 @@ export function CallMeetingResultDialog({
               color="primary"
               disabled={!result.trim() && status === "DONE"}
             >
-              {t("leadsDetails.callMeeting.result.confirm")}
+              تحديث
             </Button>
           </DialogActions>
         </Dialog>

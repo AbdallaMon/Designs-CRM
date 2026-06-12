@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import chatService, { clientChatService } from "../chat.service.js";
+import chatService from "../chat.service.js";
 import { useScroll } from "@/app/v2/hooks/useScroll";
 import { CHAT_LIMITS } from "../config/chatConstants.js";
-import { useT } from "@/app/v2/lib/i18n";
 
 function readFiles(res) {
   const data = res?.data ?? {};
@@ -18,12 +17,7 @@ function readFiles(res) {
 
 /** Chat room files with infinite scroll + type filter. Target list contract is
  *  { items, total, page, pageSize } (also reads the legacy { files, uniqueMonths }). */
-export function useChatFiles(
-  roomId,
-  { limit = CHAT_LIMITS.FILES, fileType = [], clientCtx = null } = {},
-) {
-  const { t } = useT();
-  const token = clientCtx?.token ?? null;
+export function useChatFiles(roomId, { limit = CHAT_LIMITS.FILES, fileType = [] } = {}) {
   const [files, setFiles] = useState([]);
   const [uniqueMonths, setUniqueMonths] = useState({});
   const [loading, setLoading] = useState(false);
@@ -50,15 +44,12 @@ export function useChatFiles(
 
     setError(null);
     try {
-      const params = {
+      const res = await chatService.listFiles(roomId, {
         page: currentPage,
         limit: LIMIT,
         sort: "newest",
         ...(fileType?.length ? { type: fileType } : {}),
-      };
-      const res = token
-        ? await clientChatService.listFiles(roomId, token, params)
-        : await chatService.listFiles(roomId, params);
+      });
       const env = readFiles(res);
       setFiles((prev) => (append ? [...prev, ...env.items] : env.items));
       setUniqueMonths((prev) => ({ ...prev, ...env.uniqueMonths }));
@@ -66,13 +57,13 @@ export function useChatFiles(
       setTotal(env.total);
       setHasMore((currentPageState + 1) * LIMIT < env.total);
     } catch (err) {
-      setError(err?.message || t("chat.error.loadFiles", "فشل تحميل الملفات"));
+      setError(err?.message || "فشل تحميل الملفات");
     } finally {
       setLoading(false);
       setLoadingMore(false);
       setInitialLoading(false);
     }
-  }, [roomId, limit, fileType, loading, loadingMore, token, t]);
+  }, [roomId, limit, fileType, loading, loadingMore]);
 
   const resetAll = useCallback(() => {
     setFiles([]);

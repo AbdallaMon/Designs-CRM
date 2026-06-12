@@ -14,23 +14,21 @@ import {
   Select,
   Typography,
 } from "@mui/material";
-import { useT } from "@/app/v2/lib/i18n";
 import { useAdmins } from "../hooks/useAdmins.js";
 import AdminBookingPanel from "./AdminBookingPanel.jsx";
 
 export function StaffAdminSelector({ timezone, canManage = false }) {
-  const { t } = useT();
   const [adminId, setAdminId] = useState("");
   const { admins, isLoading } = useAdmins();
 
   return (
     <>
       <FormControl fullWidth>
-        <InputLabel id="admin-select-label">{t("calendar.selectAdmin", "اختر المسؤول *")}</InputLabel>
+        <InputLabel id="admin-select-label">اختر المسؤول *</InputLabel>
         <Select
           labelId="admin-select-label"
           value={adminId || ""}
-          label={t("calendar.selectAdmin", "اختر المسؤول *")}
+          label="اختر المسؤول *"
           onChange={(e) => setAdminId(e.target.value)}
           disabled={isLoading}
           sx={{ borderRadius: 2 }}
@@ -38,7 +36,7 @@ export function StaffAdminSelector({ timezone, canManage = false }) {
           {isLoading ? (
             <MenuItem disabled>
               <Box display="flex" alignItems="center" gap={1}>
-                <CircularProgress size={16} /> {t("calendar.loading", "جاري التحميل...")}
+                <CircularProgress size={16} /> جاري التحميل...
               </Box>
             </MenuItem>
           ) : (
@@ -63,7 +61,7 @@ export function StaffAdminSelector({ timezone, canManage = false }) {
             adminId={adminId}
             timezone={timezone}
             canManage={canManage}
-            title={t("calendar.manageAdminAvailability", "إدارة توفر المسؤول")}
+            title="إدارة توفر المسؤول"
           />
         </Box>
       )}

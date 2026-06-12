@@ -5,8 +5,6 @@
 export { AdminReferenceDataPage } from "./pages/AdminReferenceDataPage.jsx";
 export { LeadSessionsPage } from "./pages/LeadSessionsPage.jsx";
 export { PublicImageSessionPage } from "./pages/PublicImageSessionPage.jsx";
-// Self-contained lead-scoped panel (a later wave mounts it inside the lead-detail tabs).
-export { LeadSessionsPanel } from "./components/LeadSessionsPanel.jsx";
 export { imageSessionsService } from "./imageSessions.service.js";
 export { runImageSessionMutation } from "./imageSessions.mutations.js";
 export { resolveImageSessionMessage } from "./config/imageSessionsMessages.js";

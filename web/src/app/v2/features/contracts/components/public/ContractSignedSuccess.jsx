@@ -6,10 +6,8 @@
 
 import { Box, Card, CardContent, Button, Typography, Stack, useTheme, alpha } from "@mui/material";
 import { MdCheckCircle, MdFileDownload } from "react-icons/md";
-import { useT } from "@/app/v2/lib/i18n";
 
 export default function ContractSignedSuccess({ pdfAr, pdfEn }) {
-  const { t } = useT();
   const theme = useTheme();
   const showBoth = Boolean(pdfAr && pdfEn);
   const hasAny = Boolean(pdfAr || pdfEn);
@@ -26,25 +24,25 @@ export default function ContractSignedSuccess({ pdfAr, pdfEn }) {
               <MdCheckCircle size={40} />
             </Box>
             <Stack spacing={1} alignItems="center" textAlign="center">
-              <Typography variant="h5" fontWeight={600} color="text.primary">{t("contracts.success.title")}</Typography>
+              <Typography variant="h5" fontWeight={600} color="text.primary">تم توقيع العقد بنجاح</Typography>
               <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 400 }}>
-                {t("contracts.success.subtitle")}
+                شكرًا لتعاونك. يمكنك تنزيل نسخة العقد بصيغة PDF.
               </Typography>
             </Stack>
             <Stack direction={showBoth ? "column" : "row"} spacing={1.5} sx={{ width: "100%", mt: 2 }}>
               {!hasAny && (
                 <Typography variant="body2" color="warning.main" textAlign="center">
-                  {t("contracts.success.noLink")}
+                  لا يوجد رابط متاح لتنزيل العقد حاليًا.
                 </Typography>
               )}
               {pdfAr && (
                 <Button component="a" href={pdfAr} target="_blank" rel="noopener noreferrer" variant="contained" startIcon={<MdFileDownload />} fullWidth sx={{ py: 1.25, fontWeight: 500 }}>
-                  {t("contracts.success.downloadAr")}
+                  تحميل العقد (عربي)
                 </Button>
               )}
               {pdfEn && (
                 <Button component="a" href={pdfEn} target="_blank" rel="noopener noreferrer" variant={showBoth ? "outlined" : "contained"} startIcon={<MdFileDownload />} fullWidth sx={{ py: 1.25, fontWeight: 500 }}>
-                  {t("contracts.success.downloadEn")}
+                  تحميل العقد (إنجليزي)
                 </Button>
               )}
             </Stack>

@@ -18,26 +18,33 @@ const trimmed = z.string().trim();
 // A finite, non-negative number (price-range tuple bounds).
 const money = z.coerce.number().finite().nonnegative();
 
+// Funnel fields are "fill what applies": the website sends `null` for any field the user
+// skips (e.g. emirate/clientDescription when the client is OUTSIDE the UAE). `.optional()`
+// accepts only `undefined`, so an explicit `null` 422s. Use `.nullish()` (= string | null |
+// undefined) so a null is treated as "absent" — the usecase already guards every optional
+// field with a truthy check (`if (body.x)`), so a null is simply not written.
+const optionalTrimmed = trimmed.nullish();
+
 // Known funnel keys. Unknown keys are stripped (default Zod strip), not rejected, to keep the
 // rich website form working unchanged.
 const baseLeadFields = {
-  lng: trimmed.optional(),
-  name: trimmed.min(1).optional(),
-  phone: trimmed.min(1).optional(),
-  email: z.string().trim().email().optional(),
-  category: trimmed.optional(),
-  item: trimmed.optional(),
-  emirate: trimmed.optional(),
-  location: trimmed.optional(),
-  country: trimmed.optional(),
-  clientDescription: trimmed.optional(),
-  stateOfTheProject: trimmed.optional(),
-  discoverySource: trimmed.optional(),
-  timeToContact: trimmed.optional(),
-  priceOption: trimmed.optional(),
-  priceRange: z.array(money).length(2).optional(),
-  url: trimmed.optional(),
-  notClientPage: z.boolean().optional(),
+  lng: optionalTrimmed,
+  name: trimmed.min(1).nullish(),
+  phone: trimmed.min(1).nullish(),
+  email: z.string().trim().email().nullish(),
+  category: optionalTrimmed,
+  item: optionalTrimmed,
+  emirate: optionalTrimmed,
+  location: optionalTrimmed,
+  country: optionalTrimmed,
+  clientDescription: optionalTrimmed,
+  stateOfTheProject: optionalTrimmed,
+  discoverySource: optionalTrimmed,
+  timeToContact: optionalTrimmed,
+  priceOption: optionalTrimmed,
+  priceRange: z.array(money).length(2).nullish(),
+  url: optionalTrimmed,
+  notClientPage: z.boolean().nullish(),
 };
 
 export const PublicLeadValidation = {

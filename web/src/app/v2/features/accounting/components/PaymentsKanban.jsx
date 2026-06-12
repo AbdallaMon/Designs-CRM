@@ -21,7 +21,6 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { usePaymentsBoard } from "../hooks/usePaymentsBoard.js";
@@ -38,7 +37,6 @@ const P = PERMISSIONS.ACCOUNTING;
  *                                          the lead's 3D work stage (read-only).
  */
 export function PaymentsKanban({ mode = "level" }) {
-  const { t } = useT();
   const { hasPermission } = usePermission();
   const canList = hasPermission(P.PAYMENT_LIST);
   const canChangeLevel = hasPermission(P.PAYMENT_CHANGE_LEVEL);
@@ -48,7 +46,7 @@ export function PaymentsKanban({ mode = "level" }) {
   if (!canList) {
     return (
       <Typography color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
-        {t("accounting.payments.denied")}
+        لا تملك صلاحية الوصول إلى الدفعات
       </Typography>
     );
   }
@@ -61,7 +59,7 @@ export function PaymentsKanban({ mode = "level" }) {
     <Box sx={{ overflowX: "auto" }}>
       {isLoading ? (
         <Typography sx={{ py: 4, textAlign: "center" }} color="text.secondary">
-          {t("accounting.state.loading")}
+          جاري التحميل...
         </Typography>
       ) : (
         <Stack direction="row" spacing={2} sx={{ p: 1, minWidth: "min-content" }}>
@@ -79,7 +77,7 @@ export function PaymentsKanban({ mode = "level" }) {
                 <Stack spacing={1.5}>
                   {cards.length === 0 ? (
                     <Typography variant="caption" color="text.secondary">
-                      {t("accounting.payments.empty")}
+                      لا توجد دفعات
                     </Typography>
                   ) : (
                     cards.map((payment) => {
@@ -104,7 +102,7 @@ export function PaymentsKanban({ mode = "level" }) {
                                 <ChangePaymentLevelDialog payment={payment} onChanged={refetch} />
                               )}
                               <PaymentInvoicesDialog paymentId={payment.id} />
-                              <NotesDialog idKey="paymentId" id={payment.id} buttonLabel={t("accounting.action.notes")} />
+                              <NotesDialog idKey="paymentId" id={payment.id} buttonLabel="ملاحظات" />
                             </Stack>
                           </CardContent>
                         </Card>

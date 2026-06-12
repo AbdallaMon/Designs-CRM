@@ -13,14 +13,12 @@
 import { Box, Container, Typography, CircularProgress, Alert } from "@mui/material";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { useRequest } from "@/app/v2/hooks/useRequest";
-import { useT } from "@/app/v2/lib/i18n";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { questionTypesUrl } from "../config/constant.js";
 
 const P = PERMISSIONS.QUESTION;
 
 export function QuestionsPanel({ leadId }) {
-  const { t } = useT();
   const { hasPermission } = usePermission();
   const canViewConfig = hasPermission(P.CONFIG_VIEW);
 
@@ -34,9 +32,7 @@ export function QuestionsPanel({ leadId }) {
   if (!canViewConfig) {
     return (
       <Container maxWidth="md" sx={{ py: 4 }}>
-        <Alert severity="warning">
-          {t("questions.noViewPermission", "لا تملك صلاحية عرض أسئلة العميل")}
-        </Alert>
+        <Alert severity="warning">لا تملك صلاحية عرض أسئلة العميل</Alert>
       </Container>
     );
   }
@@ -46,13 +42,11 @@ export function QuestionsPanel({ leadId }) {
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Typography variant="h5" sx={{ mb: 2 }}>
-        {t("questions.title", "أسئلة العميل")}
+        أسئلة العميل
       </Typography>
 
       {!hasLead && (
-        <Alert severity="info">
-          {t("questions.selectLeadHint", "حدد عميلاً (leadId) لعرض أنواع الأسئلة الخاصة به.")}
-        </Alert>
+        <Alert severity="info">حدد عميلاً (leadId) لعرض أنواع الأسئلة الخاصة به.</Alert>
       )}
 
       {hasLead && isLoading && (
@@ -62,21 +56,16 @@ export function QuestionsPanel({ leadId }) {
       )}
 
       {hasLead && !isLoading && error && (
-        <Alert severity="error">{t("questions.fetchTypesError", "تعذر جلب أنواع الأسئلة.")}</Alert>
+        <Alert severity="error">تعذر جلب أنواع الأسئلة.</Alert>
       )}
 
       {hasLead && !isLoading && !error && (
         <Box>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            {t("questions.typesCount", "أنواع الأسئلة ({count})").replace(
-              "{count}",
-              types.length,
-            )}
+            أنواع الأسئلة ({types.length})
           </Typography>
           {types.length === 0 ? (
-            <Typography color="text.secondary">
-              {t("questions.noTypes", "لا توجد أنواع أسئلة.")}
-            </Typography>
+            <Typography color="text.secondary">لا توجد أنواع أسئلة.</Typography>
           ) : (
             types.map((t) => (
               <Box

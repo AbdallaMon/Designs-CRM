@@ -28,7 +28,6 @@ import {
 import EmojiPicker from "emoji-picker-react";
 import { FILE_UPLOAD_LIMITS } from "../../config/chatConstants.js";
 import { useUpload } from "@/app/v2/hooks/useUpload";
-import { useT } from "@/app/v2/lib/i18n";
 
 function formatTime(seconds) {
   const m = String(Math.floor(seconds / 60)).padStart(2, "0");
@@ -72,7 +71,6 @@ function WaveBars({ active }) {
 }
 
 function RecordingBar({ status, seconds, audioUrl, onStop, onCancel, onSend, sending, uploadProgress, error }) {
-  const { t } = useT();
   const isRecording = status === "recording";
   const isRecorded = status === "recorded";
   return (
@@ -94,7 +92,7 @@ function RecordingBar({ status, seconds, audioUrl, onStop, onCancel, onSend, sen
           </Typography>
         </Stack>
         <Stack direction="row" alignItems="center" gap={0.5}>
-          <Tooltip title={t("chat.input.cancel", "إلغاء")} arrow>
+          <Tooltip title="إلغاء" arrow>
             <span>
               <IconButton size="small" onClick={onCancel} disabled={sending}>
                 <FaTrash size={16} />
@@ -102,7 +100,7 @@ function RecordingBar({ status, seconds, audioUrl, onStop, onCancel, onSend, sen
             </span>
           </Tooltip>
           {isRecording ? (
-            <Tooltip title={t("chat.input.stop", "إيقاف")} arrow>
+            <Tooltip title="إيقاف" arrow>
               <span>
                 <IconButton size="small" onClick={onStop} disabled={sending} color="error">
                   <FaStop size={16} />
@@ -110,7 +108,7 @@ function RecordingBar({ status, seconds, audioUrl, onStop, onCancel, onSend, sen
               </span>
             </Tooltip>
           ) : (
-            <Tooltip title={t("chat.input.sendVoice", "إرسال الصوت")} arrow>
+            <Tooltip title="إرسال الصوت" arrow>
               <span>
                 <IconButton size="small" onClick={onSend} disabled={sending} color="primary">
                   {sending ? <CircularProgress size={18} /> : <FaPaperPlane size={16} />}
@@ -150,7 +148,6 @@ export function ChatInput({
   room,
   inputRef,
 }) {
-  const { t } = useT();
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [emojiOpen, setEmojiOpen] = useState(false);
@@ -235,7 +232,7 @@ export function ChatInput({
     if (!canUseVoice || isInputDisabled) return;
     setVoiceError("");
     if (typeof window === "undefined" || !navigator?.mediaDevices?.getUserMedia) {
-      setVoiceError(t("chat.input.voiceUnsupported", "تسجيل الصوت غير مدعوم في هذا المتصفح."));
+      setVoiceError("تسجيل الصوت غير مدعوم في هذا المتصفح.");
       return;
     }
     try {
@@ -262,7 +259,7 @@ export function ChatInput({
       timerRef.current = setInterval(() => setVoiceSeconds((s) => s + 1), 1000);
       recorder.start();
     } catch {
-      setVoiceError(t("chat.input.micDenied", "تم رفض إذن الميكروفون أو غير متاح."));
+      setVoiceError("تم رفض إذن الميكروفون أو غير متاح.");
       cleanupVoice();
       setVoiceStatus("idle");
     }
@@ -275,7 +272,7 @@ export function ChatInput({
     const recorder = mediaRecorderRef.current;
     if (recorder && recorder.state !== "inactive") {
       try { recorder.stop(); } catch {
-        setVoiceError(t("chat.input.stopFailed", "فشل إيقاف التسجيل."));
+        setVoiceError("فشل إيقاف التسجيل.");
         cleanupVoice();
         setVoiceStatus("idle");
       }
@@ -306,10 +303,10 @@ export function ChatInput({
         });
         cancelRecording();
       } else {
-        setVoiceError(t("chat.input.voiceUploadFailed", "فشل رفع الرسالة الصوتية."));
+        setVoiceError("فشل رفع الرسالة الصوتية.");
       }
     } catch {
-      setVoiceError(t("chat.input.voiceSendFailed", "فشل إرسال الرسالة الصوتية."));
+      setVoiceError("فشل إرسال الرسالة الصوتية.");
     } finally {
       setIsSending(false);
       setVoiceUploadProgress(null);
@@ -336,7 +333,7 @@ export function ChatInput({
               fileSize: file.size,
             });
           } else {
-            setFileError(t("chat.input.uploadFailed", "فشل رفع {name}").replace("{name}", file.name));
+            setFileError(`فشل رفع ${file.name}`);
           }
           setUploadingFiles((prev) => {
             const updated = { ...prev };
@@ -351,7 +348,7 @@ export function ChatInput({
         await onSendMessage(message);
       }
     } catch {
-      setFileError(t("chat.input.sendFailed", "فشل إرسال الرسالة"));
+      setFileError("فشل إرسال الرسالة");
     } finally {
       setIsSending(false);
       setMessage("");
@@ -367,11 +364,11 @@ export function ChatInput({
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (file.size > FILE_UPLOAD_LIMITS.MAX_SIZE) {
-        setFileError(t("chat.input.fileTooLarge", 'الملف "{name}" يتجاوز الحد المسموح').replace("{name}", file.name));
+        setFileError(`الملف "${file.name}" يتجاوز الحد المسموح`);
         continue;
       }
       if (!FILE_UPLOAD_LIMITS.ALLOWED_TYPES.includes(file.type)) {
-        setFileError(t("chat.input.fileTypeNotAllowed", 'نوع الملف "{type}" غير مسموح').replace("{type}", file.type));
+        setFileError(`نوع الملف "${file.type}" غير مسموح`);
         continue;
       }
       newFiles.push({ id: `${Date.now()}-${i}`, file, text: "" });
@@ -403,7 +400,7 @@ export function ChatInput({
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Box>
               <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                {t("chat.input.replyTo", "رد على {name}").replace("{name}", onReplyingTo.sender?.name ?? "")}
+                رد على {onReplyingTo.sender?.name}
               </Typography>
               <Typography variant="body2">
                 {onReplyingTo.content?.substring(0, 50)}
@@ -425,14 +422,14 @@ export function ChatInput({
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography variant="caption" sx={{ fontWeight: 600 }}>📎 {fileObj.file.name}</Typography>
                   <Typography variant="caption" color="textSecondary" sx={{ display: "block", mb: 1 }}>
-                    {(fileObj.file.size / 1024 / 1024).toFixed(2)} {t("chat.input.megabytes", "ميجابايت")}
+                    {(fileObj.file.size / 1024 / 1024).toFixed(2)} ميجابايت
                   </Typography>
                   <TextField
                     fullWidth
                     multiline
                     maxRows={2}
                     size="small"
-                    placeholder={t("chat.input.fileTextPlaceholder", "نص اختياري لهذا الملف...")}
+                    placeholder="نص اختياري لهذا الملف..."
                     value={fileObj.text}
                     onChange={(e) => updateFileText(fileObj.id, e.target.value)}
                     disabled={isSending}
@@ -484,7 +481,7 @@ export function ChatInput({
               fullWidth
               multiline
               maxRows={4}
-              placeholder={t("chat.input.placeholder", "اكتب رسالة... (Shift+Enter لسطر جديد)")}
+              placeholder="اكتب رسالة... (Shift+Enter لسطر جديد)"
               value={message}
               onChange={handleMessageChange}
               onKeyDown={handleKeyDown}
@@ -499,7 +496,7 @@ export function ChatInput({
                     <InputAdornment position="end">
                       <Box sx={{ display: "flex", gap: 0.5 }}>
                         {room?.allowFiles && (
-                          <Tooltip title={t("chat.input.attachFiles", "إرفاق ملفات")} arrow>
+                          <Tooltip title="إرفاق ملفات" arrow>
                             <span>
                               <IconButton size="small" onClick={() => fileInputRef.current?.click()} disabled={isInputDisabled}>
                                 <FaPaperclip size={18} />
@@ -507,7 +504,7 @@ export function ChatInput({
                             </span>
                           </Tooltip>
                         )}
-                        <Tooltip title={t("chat.input.emoji", "رمز تعبيري")} arrow>
+                        <Tooltip title="رمز تعبيري" arrow>
                           <span>
                             <IconButton size="small" onClick={toggleEmojiPicker} disabled={isInputDisabled}>
                               <FaSmile size={18} />
@@ -515,7 +512,7 @@ export function ChatInput({
                           </span>
                         </Tooltip>
                         {canUseVoice ? (
-                          <Tooltip title={t("chat.input.recordVoice", "تسجيل صوتي")} arrow>
+                          <Tooltip title="تسجيل صوتي" arrow>
                             <span>
                               <IconButton size="small" onClick={startRecording} disabled={isInputDisabled} color="primary">
                                 <FaMicrophone size={18} />
@@ -523,7 +520,7 @@ export function ChatInput({
                             </span>
                           </Tooltip>
                         ) : (
-                          <Tooltip title={t("chat.input.send", "إرسال")} arrow>
+                          <Tooltip title="إرسال" arrow>
                             <span>
                               <IconButton
                                 size="small"
@@ -545,7 +542,7 @@ export function ChatInput({
             <Collapse in={emojiOpen} unmountOnExit>
               <Paper elevation={0} sx={{ border: "1px solid", borderTop: "none", borderColor: "divider", borderRadius: "0 0 12px 12px", overflow: "hidden" }}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1, py: 0.75, bgcolor: "background.paper" }}>
-                  <Typography variant="caption" sx={{ fontWeight: 700 }}>{t("chat.input.emojiTitle", "الرموز التعبيرية")}</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 700 }}>الرموز التعبيرية</Typography>
                   <IconButton size="small" onClick={closeEmojiPicker}>
                     <FaTimes size={14} />
                   </IconButton>

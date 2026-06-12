@@ -1,6 +1,5 @@
 import { createTheme } from "@mui/material";
-import colors from "@/app/v2/lib/theme/colors";
-import statusPalette from "./statusTokens";
+import colors from "@/app/helpers/colors";
 
 const generateMuiShadows = (baseShadowColor, darkShadowColor) => {
   const shadows = ["none"];
@@ -37,23 +36,12 @@ const generateMuiShadows = (baseShadowColor, darkShadowColor) => {
 };
 
 const theme = createTheme({
-  // RTL is produced by the emotion cache's stylis rtl plugin (see RtlCacheProvider),
-  // NOT by the theme. Mirrored from the working reference project, the theme direction
-  // is deliberately kept "ltr" so MUI does not flip its own logical properties a second
-  // time on top of the stylis transform (which would cancel out to LTR). The <html dir>
-  // is "rtl" (root layout) and the visual result is RTL. Looks counter-intuitive but is
-  // exactly how the reference's working RTL is wired.
-  direction: "ltr",
   palette: {
     primary: {
       main: colors.primary,
       light: colors.primaryLight,
       dark: colors.primaryDark,
       contrastText: colors.textOnPrimary,
-      // Accessible token for the brand color as TEXT on a light surface (the caramel `main`
-      // fails 4.5:1 on white). Read this via theme.palette.primary.textOnLight; `main` stays
-      // for fills/accents only. (UX plan §2 a11y.)
-      textOnLight: colors.primaryTextOnLight,
     },
     secondary: {
       main: colors.secondary,
@@ -108,9 +96,6 @@ const theme = createTheme({
     gradient: {
       primary: colors.primaryGradient,
     },
-    // One source of truth for status colors (folds legacy STATUS_COLORS / NotificationColors /
-    // contractLevelColors). Read by <StatusChip status domain> — see providers/statusTokens.js.
-    status: statusPalette,
   },
   zIndex: {
     modal: 1300,
@@ -191,20 +176,6 @@ const theme = createTheme({
   },
   shadows: generateMuiShadows(colors.shadow, colors.shadowDark),
   components: {
-    // Respect the OS "reduce motion" preference globally — kills our hover transitions (and any
-    // MUI transitions) for users who ask for it. Light, no layout-shifting animation anywhere.
-    MuiCssBaseline: {
-      styleOverrides: {
-        "@media (prefers-reduced-motion: reduce)": {
-          "*, *::before, *::after": {
-            transitionDuration: "0.01ms !important",
-            animationDuration: "0.01ms !important",
-            animationIterationCount: "1 !important",
-            scrollBehavior: "auto !important",
-          },
-        },
-      },
-    },
     MuiContainer: {
       defaultProps: {
         maxWidth: "xxl",
@@ -212,11 +183,6 @@ const theme = createTheme({
     },
     MuiPaper: {
       styleOverrides: {
-        // Softer modern radius — `rounded` (not `root`) so square/0-radius Paper variants and the
-        // AppBar/Drawer surfaces are unaffected; SectionCard/ChartCard (Paper-based) inherit it.
-        rounded: {
-          borderRadius: 16,
-        },
         root: {
           backgroundColor: colors.paperBg,
           backgroundImage: "none",
@@ -230,32 +196,8 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: colors.paperBg,
-          borderRadius: 16,
+          borderRadius: 12,
           boxShadow: `0 2px 8px ${colors.shadow}`,
-        },
-      },
-    },
-    MuiButtonBase: {
-      styleOverrides: {
-        // Subtle hover feedback for every clickable base (buttons, list items, tabs). No
-        // layout-shift — only color/background/shadow ease. Self-guarded with a media query so it
-        // respects "reduce motion" even if MuiCssBaseline isn't mounted (it currently isn't).
-        root: {
-          transition:
-            "background-color 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease",
-          "@media (prefers-reduced-motion: reduce)": {
-            transition: "none",
-          },
-        },
-      },
-    },
-    MuiListItemButton: {
-      styleOverrides: {
-        root: {
-          transition: "background-color 160ms ease, color 160ms ease, border-color 160ms ease",
-          "@media (prefers-reduced-motion: reduce)": {
-            transition: "none",
-          },
         },
       },
     },
@@ -342,34 +284,7 @@ const theme = createTheme({
         },
       },
     },
-    // Scrollable Tabs scroll arrows (lead-detail tabs, UrlTabs, accounting tabs). MUI's default
-    // disabled scroll button keeps `opacity: 0` but STILL occupies its 40px and stays in the DOM.
-    // Under RTL that invisible phantom sits at the inline-start (visual right) and silently swallows
-    // clicks/space — making the strip feel like "the arrow does nothing". Collapsing the disabled
-    // button to display:none removes the dead hit-area and lets the live arrow (and the tabs behind
-    // the phantom) take the click. Direction-agnostic and safe — only affects the already-invisible
-    // disabled state. RTL scroll-delta is handled by the emotion rtl stylis plugin + <html dir="rtl">
-    // (the theme direction itself is kept "ltr" to avoid a double-flip — see the note at theme top).
-    MuiTabScrollButton: {
-      styleOverrides: {
-        root: {
-          "&.Mui-disabled": {
-            display: "none",
-          },
-        },
-      },
-    },
   },
 });
-
-// BILINGUAL (Phase 1): theme factory. `direction` stays "ltr" for BOTH languages — exactly as the
-// single-language app had it (and as the working reference does): for ar the visual RTL flip is
-// produced by the emotion stylis-plugin-rtl in the cache, NOT the theme, so keeping the theme
-// "ltr" avoids a double-flip; for en there is no rtl plugin and "ltr" is the genuine direction.
-// The factory exists so callers can pass the server language symmetrically with the cache; the
-// returned theme is identical for now (the per-language branch is here for future divergence).
-export function createAppTheme(/* lng = "ar" */) {
-  return theme;
-}
 
 export default theme;

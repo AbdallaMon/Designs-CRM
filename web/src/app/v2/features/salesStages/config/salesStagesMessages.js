@@ -24,15 +24,12 @@ export const salesStagesMessages = {
   NOT_FOUND: "العنصر غير موجود",
 };
 
-import { resolveMessageCode } from "@/app/v2/data/resolveMessageCode.js";
-
 /**
- * Resolve a backend message CODE to an Arabic display string. Feature Arabic wins first;
- * unknown codes delegate to the CENTRAL resolver. `translationKey` routes the central lookup.
+ * Resolve a backend message CODE to an Arabic display string.
  * @param {string} code
- * @param {{ fallback?: string, translationKey?: string }} [opts]
+ * @param {{ fallback?: string }} [opts]
  */
-export function resolveSalesStagesMessage(code, { fallback, translationKey } = {}) {
+export function resolveSalesStagesMessage(code, { fallback } = {}) {
   if (code && salesStagesMessages[code]) return salesStagesMessages[code];
-  return resolveMessageCode(code, { translationKey, fallback });
+  return fallback ?? "تمت العملية";
 }

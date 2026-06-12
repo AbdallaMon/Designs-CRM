@@ -54,7 +54,6 @@ export const leadsMessages = {
   NOTE_CONTENT_EMPTY: "محتوى الملاحظة فارغ",
   FILE_FIELDS_REQUIRED: "حقول الملف مطلوبة",
   BULK_CONVERT_FORBIDDEN: "لا تملك صلاحية التحويل الجماعي",
-  LEAD_CONVERT_REQUIRES_OWNER: "لا يمكن التحويل إلى صفقة قبل إسناد العميل لموظف",
 
   // ── generic envelope codes (shared) ────────────────────────────────────────────
   OK: "تمت العملية بنجاح",
@@ -66,17 +65,12 @@ export const leadsMessages = {
   VALIDATION_ERROR: "بيانات غير صحيحة",
 };
 
-import { resolveMessageCode } from "@/app/v2/data/resolveMessageCode.js";
-
 /**
- * Resolve a backend message CODE to an Arabic display string. Feature-specific Arabic wins
- * first; anything unknown delegates to the CENTRAL resolver (so cross-cutting core/auth/
- * validation/prisma codes — or another module's code — still render as Arabic instead of
- * leaking the raw code). `translationKey` (from the envelope) routes the central lookup.
+ * Resolve a backend message CODE to an Arabic display string.
  * @param {string} code
- * @param {{ fallback?: string, translationKey?: string }} [opts]
+ * @param {{ fallback?: string }} [opts]
  */
-export function resolveLeadMessage(code, { fallback, translationKey } = {}) {
+export function resolveLeadMessage(code, { fallback } = {}) {
   if (code && leadsMessages[code]) return leadsMessages[code];
-  return resolveMessageCode(code, { translationKey, fallback });
+  return fallback ?? "تمت العملية";
 }

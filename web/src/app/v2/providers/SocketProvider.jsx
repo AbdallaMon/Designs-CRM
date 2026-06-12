@@ -1,8 +1,8 @@
 "use client";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { initSocket } from "@/app/v2/lib/socket/socketIO";
+import { initSocket } from "@/app/UiComponents/DataViewer/chat/utils";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
-import DotsLoader from "@/app/v2/shared/components/feedback/DotsLoading";
+import DotsLoader from "@/app/UiComponents/feedback/loaders/DotsLoading";
 import config from "@/app/v2/lib/config";
 
 export const SocketContext = createContext(null);
@@ -24,7 +24,7 @@ export function SocketProvider({ children, clientId }) {
       ? { userId: user.id, type: "user" }
       : { clientId, type: "client" };
 
-    const newSocket = initSocket(config.socketUrl, { query });
+    const newSocket = initSocket(config.legacyApiUrl, { query });
     socketRef.current = newSocket;
     setSocket(newSocket);
 

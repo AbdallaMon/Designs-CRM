@@ -1,61 +1,37 @@
 "use client";
 
-// Notes tab — lists the lead's notes and exposes the Add-note dialog (header add-button). Gated
-// on canAddNote (unchanged). Body = shared LeadRecordList; the note content is clamped to ~3
-// lines so a long note never blows out the row. No status indicator for notes.
+// Notes tab — lists the lead's notes and exposes the Add-note dialog. Gated on canAddNote.
 
-import { Typography } from "@mui/material";
-import { MdNotes } from "react-icons/md";
+import { List, ListItem, ListItemText, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
-import { useT } from "@/app/v2/lib/i18n";
-import { LeadRecordList } from "../LeadRecordList.jsx";
 import { NewNoteDialog } from "../dialogs/NoteDialog.jsx";
 
-export function NotesTab({ lead, onChanged, autoOpenAction, onAutoOpenConsumed }) {
-  const { t } = useT();
+export function NotesTab({ lead, onChanged }) {
   const caps = lead?.capabilities ?? {};
   const notes = Array.isArray(lead?.notes) ? lead.notes : [];
 
   return (
-    <LeadRecordList
-      title={t("leadsDetails.notes.title")}
-      icon={<MdNotes />}
-      items={notes}
-      headerAction={
-        <NewNoteDialog
-          lead={lead}
-          canAdd={caps.canAddNote}
-          onCreated={onChanged}
-          autoOpen={autoOpenAction === "add"}
-          onAutoOpenConsumed={onAutoOpenConsumed}
-        />
-      }
-      renderPrimary={(n) => (
-        <Typography
-          variant="body1"
-          sx={{
-            fontWeight: 500,
-            display: "-webkit-box",
-            WebkitLineClamp: 3,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-          }}
-        >
-          {n.content || "—"}
-        </Typography>
+    <Stack spacing={2}>
+      <NewNoteDialog lead={lead} canAdd={caps.canAddNote} onCreated={onChanged} />
+      {notes.length === 0 ? (
+        <Typography color="text.secondary">لا توجد ملاحظات</Typography>
+      ) : (
+        <List>
+          {notes.map((n) => (
+            <ListItem key={n.id} divider>
+              <ListItemText
+                primary={n.content}
+                secondary={
+                  <>
+                    {n.user?.name ? `${n.user.name} · ` : ""}
+                    {n.createdAt ? dayjs(n.createdAt).format("YYYY-MM-DD HH:mm") : ""}
+                  </>
+                }
+              />
+            </ListItem>
+          ))}
+        </List>
       )}
-      renderSecondary={(n) => (
-        <Typography variant="body2" color="text.secondary" component="span">
-          {n.user?.name ? `${n.user.name} · ` : ""}
-          {n.createdAt ? dayjs(n.createdAt).format("YYYY-MM-DD HH:mm") : ""}
-        </Typography>
-      )}
-      emptyTitle={t("leadsDetails.notes.empty.title")}
-      emptyDescription={
-        caps.canAddNote
-          ? t("leadsDetails.notes.empty.canAdd")
-          : t("leadsDetails.notes.empty.readonly")
-      }
-    />
+    </Stack>
   );
 }

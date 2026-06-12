@@ -22,15 +22,13 @@ export const siteUtilityMessages = {
   VALIDATION_ERROR: "بيانات غير صحيحة",
 };
 
-import { resolveMessageCode } from "@/app/v2/data/resolveMessageCode.js";
-
 /**
- * Resolve a backend message CODE to an Arabic display string. Feature Arabic wins first;
- * unknown codes delegate to the CENTRAL resolver. `translationKey` routes the central lookup.
+ * Resolve a backend message CODE to an Arabic display string. Falls back to a sensible
+ * default rather than showing the raw code to end users.
  * @param {string} code
- * @param {{ fallback?: string, translationKey?: string }} [opts]
+ * @param {{ fallback?: string }} [opts]
  */
-export function resolveSiteUtilityMessage(code, { fallback, translationKey } = {}) {
+export function resolveSiteUtilityMessage(code, { fallback } = {}) {
   if (code && siteUtilityMessages[code]) return siteUtilityMessages[code];
-  return resolveMessageCode(code, { translationKey, fallback });
+  return fallback ?? "تمت العملية";
 }

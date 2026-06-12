@@ -11,7 +11,6 @@ import { Box, Chip, Menu, MenuItem, Tooltip } from "@mui/material";
 import { MdEdit } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
-import { useT } from "@/app/v2/lib/i18n";
 import { TASKSTATUS, PRIORITY, TASK_STATUS_COLORS, TASK_PRIORITY_COLORS } from "../config/projectsConstants.js";
 import { projectsService, pickTaskFields } from "../projects.service.js";
 import { runProjectMutation } from "../projects.mutations.js";
@@ -20,7 +19,6 @@ const MENU = { STATUS: "status", PRIORITY: "priority" };
 
 export function TaskActions({ task, onChanged }) {
   const { hasPermission } = usePermission();
-  const { t } = useT();
   const [anchorEl, setAnchorEl] = useState(null);
   const [openMenu, setOpenMenu] = useState(null);
 
@@ -39,7 +37,7 @@ export function TaskActions({ task, onChanged }) {
     // §5c whitelist: send only { status } or { priority }.
     const body = pickTaskFields({ [type]: value });
     const res = await runProjectMutation(() => projectsService.updateTask(task.id, body), {
-      loading: t("projects.taskActions.loading.update"),
+      loading: "جاري التحديث...",
     });
     close();
     if (res) onChanged?.(res.data ?? { ...task, [type]: value });
@@ -47,7 +45,7 @@ export function TaskActions({ task, onChanged }) {
 
   return (
     <Box sx={{ display: "flex", gap: 1 }}>
-      <Tooltip title={t("projects.taskActions.changeStatus")}>
+      <Tooltip title="تغيير الحالة">
         <Chip
           label={task.status}
           color={TASK_STATUS_COLORS[task.status] || "default"}
@@ -64,7 +62,7 @@ export function TaskActions({ task, onChanged }) {
         ))}
       </Menu>
 
-      <Tooltip title={t("projects.taskActions.changePriority")}>
+      <Tooltip title="تغيير الأولوية">
         <Chip
           label={task.priority}
           color={TASK_PRIORITY_COLORS[task.priority] || "default"}

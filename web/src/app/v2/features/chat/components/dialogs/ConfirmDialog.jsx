@@ -8,7 +8,6 @@ import {
   DialogActions,
   Button,
 } from "@mui/material";
-import { useT } from "@/app/v2/lib/i18n";
 
 export function ConfirmDialog({
   open,
@@ -17,13 +16,10 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
   isLoading = false,
-  confirmButtonText,
-  cancelButtonText,
+  confirmButtonText = "حذف",
+  cancelButtonText = "إلغاء",
   confirmButtonColor = "error",
 }) {
-  const { t } = useT();
-  const confirmLabel = confirmButtonText ?? t("chat.confirm.delete", "حذف");
-  const cancelLabel = cancelButtonText ?? t("chat.confirm.cancel", "إلغاء");
   return (
     <Dialog open={open} onClose={onCancel} maxWidth="xs" fullWidth sx={{ zIndex: 1304 }}>
       <DialogTitle>{title}</DialogTitle>
@@ -32,10 +28,10 @@ export function ConfirmDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={onCancel} disabled={isLoading}>
-          {cancelLabel}
+          {cancelButtonText}
         </Button>
         <Button variant="contained" color={confirmButtonColor} onClick={onConfirm} disabled={isLoading}>
-          {confirmLabel}
+          {confirmButtonText}
         </Button>
       </DialogActions>
     </Dialog>

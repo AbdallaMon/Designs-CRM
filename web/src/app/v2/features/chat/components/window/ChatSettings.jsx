@@ -16,24 +16,20 @@ import {
 import { MdSettings } from "react-icons/md";
 import chatService from "../../chat.service.js";
 import { runChatMutation } from "../../chat.mutations.js";
-import { useT } from "@/app/v2/lib/i18n";
 
-// `labelKey` resolves the localized label via t() at render; `nameFallback` is the Arabic
-// default. `key` is the language-neutral payload field name (logic — do NOT translate).
 const ADMIN_SETTINGS = [
-  { nameFallback: "السماح بمشاركة الملفات", labelKey: "chat.settings.allowFiles", type: "checkbox", key: "allowFiles" },
-  { nameFallback: "تفعيل المحادثة", labelKey: "chat.settings.isChatEnabled", type: "checkbox", key: "isChatEnabled" },
-  { nameFallback: "السماح بالاجتماعات", labelKey: "chat.settings.allowMeetings", type: "checkbox", key: "allowMeetings" },
-  { nameFallback: "السماح بالمكالمات", labelKey: "chat.settings.allowCalls", type: "checkbox", key: "allowCalls" },
+  { name: "السماح بمشاركة الملفات", type: "checkbox", key: "allowFiles" },
+  { name: "تفعيل المحادثة", type: "checkbox", key: "isChatEnabled" },
+  { name: "السماح بالاجتماعات", type: "checkbox", key: "allowMeetings" },
+  { name: "السماح بالمكالمات", type: "checkbox", key: "allowCalls" },
 ];
-const NAME_SETTINGS = [{ nameFallback: "اسم المجموعة", labelKey: "chat.settings.name", type: "text", key: "name" }];
+const NAME_SETTINGS = [{ name: "اسم المجموعة", type: "text", key: "name" }];
 
 /**
  * Room settings. Visible only when the backend says the user can edit this room
  * (`room.capabilities.canEdit`). Saves via update-room-settings (ROOM_EDIT upstream).
  */
 export function ChatSettings({ room, reFetchRooms, fetchChatRoom }) {
-  const { t } = useT();
   const [open, setOpen] = useState(false);
   const canEdit = Boolean(room?.capabilities?.canEdit);
   if (!canEdit || room?.type === "STAFF_TO_STAFF") return null;
@@ -42,7 +38,7 @@ export function ChatSettings({ room, reFetchRooms, fetchChatRoom }) {
 
   return (
     <>
-      <IconButton aria-label="settings" title={t("chat.settings.button", "إعدادات المحادثة")} onClick={() => setOpen(true)}>
+      <IconButton aria-label="settings" title="إعدادات المحادثة" onClick={() => setOpen(true)}>
         <MdSettings size={20} />
       </IconButton>
       {open && (
@@ -59,7 +55,6 @@ export function ChatSettings({ room, reFetchRooms, fetchChatRoom }) {
 }
 
 function ChatSettingsModal({ handleClose, room, settings, reFetchRooms, fetchChatRoom }) {
-  const { t } = useT();
   const [formValues, setFormValues] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -72,7 +67,7 @@ function ChatSettingsModal({ handleClose, room, settings, reFetchRooms, fetchCha
   async function saveSettings() {
     const res = await runChatMutation(
       () => chatService.updateRoomSettings(room.id, formValues),
-      { loading: t("chat.settings.saving", "جاري حفظ الإعدادات..."), setLoading },
+      { loading: "جاري حفظ الإعدادات...", setLoading },
     );
     if (res) {
       fetchChatRoom?.();
@@ -83,7 +78,7 @@ function ChatSettingsModal({ handleClose, room, settings, reFetchRooms, fetchCha
 
   return (
     <Dialog open onClose={handleClose} maxWidth="sm" fullWidth sx={{ zIndex: 1302 }}>
-      <DialogTitle>{t("chat.settings.title", "إعدادات المحادثة")}</DialogTitle>
+      <DialogTitle>إعدادات المحادثة</DialogTitle>
       <DialogContent dividers>
         <Box sx={{ mt: 1 }}>
           {settings.map((setting) => (
@@ -96,11 +91,11 @@ function ChatSettingsModal({ handleClose, room, settings, reFetchRooms, fetchCha
                       onChange={(e) => setFormValues((p) => ({ ...p, [setting.key]: e.target.checked }))}
                     />
                   }
-                  label={t(setting.labelKey, setting.nameFallback)}
+                  label={setting.name}
                 />
               ) : (
                 <TextField
-                  label={t(setting.labelKey, setting.nameFallback)}
+                  label={setting.name}
                   value={formValues[setting.key] || ""}
                   onChange={(e) => setFormValues((p) => ({ ...p, [setting.key]: e.target.value }))}
                   fullWidth
@@ -111,8 +106,8 @@ function ChatSettingsModal({ handleClose, room, settings, reFetchRooms, fetchCha
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} color="error" disabled={loading}>{t("chat.settings.cancel", "إلغاء")}</Button>
-        <Button onClick={saveSettings} variant="contained" disabled={loading}>{t("chat.settings.save", "حفظ")}</Button>
+        <Button onClick={handleClose} color="error" disabled={loading}>إلغاء</Button>
+        <Button onClick={saveSettings} variant="contained" disabled={loading}>حفظ</Button>
       </DialogActions>
     </Dialog>
   );

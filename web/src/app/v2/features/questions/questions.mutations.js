@@ -25,15 +25,7 @@ export async function runQuestionsMutation(
   try {
     const res = await fn();
     if (shouldAutoToast) {
-      toast.update(
-        toastId,
-        Success(
-          resolveQuestionsMessage(res?.message, {
-            translationKey: res?.translationKey,
-            fallback: "تمت العملية",
-          }),
-        ),
-      );
+      toast.update(toastId, Success(resolveQuestionsMessage(res?.message)));
     }
     return res;
   } catch (e) {
@@ -41,12 +33,7 @@ export async function runQuestionsMutation(
     if (shouldAutoToast) {
       toast.update(
         toastId,
-        Failed(
-          resolveQuestionsMessage(code, {
-            translationKey: e?.data?.translationKey,
-            fallback: "حدث خطأ، حاول مرة أخرى",
-          }),
-        ),
+        Failed(resolveQuestionsMessage(code, { fallback: "حدث خطأ، حاول مرة أخرى" })),
       );
     }
     return null;

@@ -19,20 +19,18 @@ import {
   Typography,
 } from "@mui/material";
 import { useToastContext } from "@/app/v2/providers/ToastProvider";
-import { useT } from "@/app/v2/lib/i18n";
 import { leadsService } from "../leads.service.js";
 import { runLeadMutation } from "../leads.mutations.js";
 
 export function BulkConvertModal({ open, onClose, selectedIds = [], onDone }) {
   const [userId, setUserId] = useState("");
   const { setLoading } = useToastContext();
-  const { t } = useT();
 
   async function handleConvert() {
     if (!userId || selectedIds.length === 0) return;
     const res = await runLeadMutation(
       () => leadsService.bulkConvertLeads({ ids: selectedIds, userId: Number(userId) }),
-      { setLoading, loading: t("leads.bulk.loading") },
+      { setLoading, loading: "جاري التحويل الجماعي..." },
     );
     if (res) {
       setUserId("");
@@ -43,14 +41,14 @@ export function BulkConvertModal({ open, onClose, selectedIds = [], onDone }) {
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth dir="rtl">
-      <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>{t("leads.bulk.title")}</DialogTitle>
+      <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>تحويل جماعي</DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 2 }}>
           <Typography variant="body2" color="text.secondary">
-            {t("leads.bulk.selectedCount").replace("{count}", selectedIds.length)}
+            عدد العملاء المحددين: {selectedIds.length}
           </Typography>
           <TextField
-            label={t("leads.bulk.userIdLabel")}
+            label="رقم الموظف المستلم"
             type="number"
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
@@ -60,14 +58,14 @@ export function BulkConvertModal({ open, onClose, selectedIds = [], onDone }) {
       </DialogContent>
       <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
         <Button onClick={onClose} variant="outlined">
-          {t("leads.bulk.cancel")}
+          إلغاء
         </Button>
         <Button
           onClick={handleConvert}
           variant="contained"
           disabled={!userId || selectedIds.length === 0}
         >
-          {t("leads.bulk.convert")}
+          تحويل
         </Button>
       </DialogActions>
     </Dialog>

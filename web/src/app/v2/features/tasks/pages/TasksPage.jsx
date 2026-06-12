@@ -27,7 +27,6 @@ import Link from "next/link";
 import { MdDelete, MdOpenInNew, MdRefresh, MdTask } from "react-icons/md";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
-import { useT } from "@/app/v2/lib/i18n";
 import { useTasksList } from "../hooks/useTasksList.js";
 import { TaskActions } from "../../projects/components/TaskActions.jsx";
 import { CreateTaskModal } from "../../projects/components/CreateTaskModal.jsx";
@@ -36,7 +35,6 @@ import { runProjectMutation } from "../../projects/projects.mutations.js";
 
 export function TasksPage() {
   const { hasPermission } = usePermission();
-  const { t } = useT();
   const canList = hasPermission(PERMISSIONS.TASK.LIST);
   const canCreate = hasPermission(PERMISSIONS.TASK.CREATE);
   const [createOpen, setCreateOpen] = useState(false);
@@ -45,7 +43,7 @@ export function TasksPage() {
 
   const handleDelete = async (task) => {
     const res = await runProjectMutation(() => projectsService.deleteTask(task.id), {
-      loading: t("tasks.loading.delete"),
+      loading: "جاري الحذف...",
     });
     if (res) refetch();
   };
@@ -53,7 +51,7 @@ export function TasksPage() {
   if (!canList) {
     return (
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
-        <Typography color="textSecondary">{t("tasks.page.denied")}</Typography>
+        <Typography color="textSecondary">لا تملك صلاحية الوصول إلى المهام</Typography>
       </Box>
     );
   }
@@ -61,14 +59,14 @@ export function TasksPage() {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
-        <Typography variant="h5">{t("tasks.page.title")}</Typography>
+        <Typography variant="h5">المهام</Typography>
         <Stack direction="row" spacing={1}>
           {canCreate && (
             <Button variant="contained" startIcon={<MdTask />} onClick={() => setCreateOpen(true)}>
-              {t("tasks.action.create")}
+              إنشاء مهمة
             </Button>
           )}
-          <Tooltip title={t("tasks.action.refresh")}>
+          <Tooltip title="تحديث">
             <IconButton onClick={refetch}>
               <MdRefresh />
             </IconButton>
@@ -80,7 +78,7 @@ export function TasksPage() {
         <LinearProgress />
       ) : items.length === 0 ? (
         <Typography sx={{ py: 4, textAlign: "center" }} color="text.secondary">
-          {t("tasks.empty")}
+          لا توجد مهام
         </Typography>
       ) : (
         <Grid container spacing={2}>
@@ -91,9 +89,9 @@ export function TasksPage() {
                 <Card variant="outlined" sx={{ height: "100%" }}>
                   <CardHeader
                     title={<Typography variant="subtitle1" fontWeight={600}>{task.title}</Typography>}
-                    subheader={t("tasks.type").replace("{type}", task.type)}
+                    subheader={`النوع: ${task.type}`}
                     action={
-                      <Tooltip title={t("tasks.openDetails")}>
+                      <Tooltip title="فتح التفاصيل">
                         <IconButton component={Link} href={`/v2/tasks/${task.id}`} size="small">
                           <MdOpenInNew />
                         </IconButton>
@@ -105,20 +103,17 @@ export function TasksPage() {
                       <TaskActions task={task} onChanged={refetch} />
                     </Box>
                     <Typography variant="body2" color="textSecondary">
-                      {t("tasks.due").replace(
-                        "{value}",
-                        task.dueDate ? dayjs(task.dueDate).format("DD/MM/YYYY") : t("tasks.dueUnset"),
-                      )}
+                      الاستحقاق: {task.dueDate ? dayjs(task.dueDate).format("DD/MM/YYYY") : "غير محدد"}
                     </Typography>
                     {task.user && (
                       <Typography variant="body2" color="textSecondary">
-                        {t("tasks.assignedTo").replace("{name}", task.user.name)}
+                        معيّنة إلى: {task.user.name}
                       </Typography>
                     )}
                     {canDelete && (
                       <Box sx={{ mt: 1, textAlign: "end" }}>
                         <Button size="small" color="error" startIcon={<MdDelete />} onClick={() => handleDelete(task)}>
-                          {t("tasks.delete")}
+                          حذف
                         </Button>
                       </Box>
                     )}
@@ -130,7 +125,7 @@ export function TasksPage() {
         </Grid>
       )}
 
-      <CreateTaskModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={refetch} type="NORMAL" name={t("tasks.modal.name")} />
+      <CreateTaskModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={refetch} type="NORMAL" name="مهمة" />
     </Container>
   );
 }

@@ -23,7 +23,6 @@ import {
   Typography,
   Button,
 } from "@mui/material";
-import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { usePaginatedList } from "../hooks/usePaginatedList.js";
@@ -36,32 +35,28 @@ import { NotesDialog } from "./NotesDialog.jsx";
 
 const P = PERMISSIONS.ACCOUNTING;
 
-function buildColumns(t) {
-  return [
-    { key: "id", label: t("accounting.payments.col.id"), accessor: (r) => r.id },
-    { key: "clientName", label: t("accounting.payments.col.clientName"), accessor: (r) => r.clientLead?.client?.name ?? "—" },
-    { key: "clientPhone", label: t("accounting.payments.col.clientPhone"), accessor: (r) => r.clientLead?.client?.phone ?? "—" },
-    { key: "description", label: t("accounting.payments.col.description"), accessor: (r) => r.clientLead?.description ?? "—" },
-    { key: "price", label: t("accounting.payments.col.price"), accessor: (r) => r.clientLead?.averagePrice ?? "—" },
-    { key: "reason", label: t("accounting.payments.col.reason"), accessor: (r) => r.paymentReason ?? "—" },
-    { key: "amount", label: t("accounting.payments.col.amount"), accessor: (r) => r.amount },
-    { key: "amountPaid", label: t("accounting.payments.col.amountPaid"), accessor: (r) => r.amountPaid },
-    {
-      key: "level",
-      label: t("accounting.payments.col.level"),
-      accessor: (r) => PAYMENT_LEVELS[r.paymentLevel] ?? r.paymentLevel ?? "—",
-    },
-    {
-      key: "status",
-      label: t("accounting.payments.col.status"),
-      accessor: (r) => <Chip size="small" label={PAYMENT_STATUS[r.status] ?? r.status} />,
-    },
-  ];
-}
+const COLUMNS = [
+  { key: "id", label: "رقم الدفعة", accessor: (r) => r.id },
+  { key: "clientName", label: "اسم العميل", accessor: (r) => r.clientLead?.client?.name ?? "—" },
+  { key: "clientPhone", label: "هاتف العميل", accessor: (r) => r.clientLead?.client?.phone ?? "—" },
+  { key: "description", label: "الوصف", accessor: (r) => r.clientLead?.description ?? "—" },
+  { key: "price", label: "السعر", accessor: (r) => r.clientLead?.averagePrice ?? "—" },
+  { key: "reason", label: "سبب الدفعة", accessor: (r) => r.paymentReason ?? "—" },
+  { key: "amount", label: "المبلغ", accessor: (r) => r.amount },
+  { key: "amountPaid", label: "المدفوع", accessor: (r) => r.amountPaid },
+  {
+    key: "level",
+    label: "مستوى الدفعة",
+    accessor: (r) => PAYMENT_LEVELS[r.paymentLevel] ?? r.paymentLevel ?? "—",
+  },
+  {
+    key: "status",
+    label: "الحالة",
+    accessor: (r) => <Chip size="small" label={PAYMENT_STATUS[r.status] ?? r.status} />,
+  },
+];
 
 export function PaymentsTable({ status, showMarkOverdue = false }) {
-  const { t } = useT();
-  const COLUMNS = buildColumns(t);
   const { hasPermission } = usePermission();
   const canList = hasPermission(P.PAYMENT_LIST);
   const canProcess = hasPermission(P.PAYMENT_PROCESS);
@@ -77,7 +72,7 @@ export function PaymentsTable({ status, showMarkOverdue = false }) {
 
   async function handleMarkOverdue(payment) {
     const res = await runAccountingMutation(() => accountingService.markOverdue(payment.id), {
-      loading: t("accounting.payments.markOverdueLoading"),
+      loading: "جاري التعليم كمتأخرة...",
       setLoading: setMarking,
     });
     if (res) refetch();
@@ -90,7 +85,7 @@ export function PaymentsTable({ status, showMarkOverdue = false }) {
   if (!canList) {
     return (
       <Typography color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
-        {t("accounting.payments.denied")}
+        لا تملك صلاحية الوصول إلى الدفعات
       </Typography>
     );
   }
@@ -103,21 +98,21 @@ export function PaymentsTable({ status, showMarkOverdue = false }) {
             {COLUMNS.map((c) => (
               <TableCell key={c.key}>{c.label}</TableCell>
             ))}
-            <TableCell align="right">{t("accounting.action.actions")}</TableCell>
+            <TableCell align="right">إجراءات</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {isLoading && (
             <TableRow>
               <TableCell colSpan={COLUMNS.length + 1} align="center">
-                {t("accounting.state.loading")}
+                جاري التحميل...
               </TableCell>
             </TableRow>
           )}
           {!isLoading && items.length === 0 && (
             <TableRow>
               <TableCell colSpan={COLUMNS.length + 1} align="center">
-                {t("accounting.state.empty")}
+                لا توجد بيانات
               </TableCell>
             </TableRow>
           )}
@@ -140,11 +135,11 @@ export function PaymentsTable({ status, showMarkOverdue = false }) {
                           disabled={marking}
                           onClick={() => handleMarkOverdue(row)}
                         >
-                          {t("accounting.payments.markOverdue")}
+                          تعليم كمتأخرة
                         </Button>
                       )}
                       {(caps.canViewInvoices ?? true) && <PaymentInvoicesDialog paymentId={row.id} />}
-                      <NotesDialog idKey="paymentId" id={row.id} buttonLabel={t("accounting.action.notes")} />
+                      <NotesDialog idKey="paymentId" id={row.id} buttonLabel="ملاحظات" />
                     </Stack>
                   </TableCell>
                 </TableRow>
@@ -163,7 +158,7 @@ export function PaymentsTable({ status, showMarkOverdue = false }) {
           setPage(1);
         }}
         rowsPerPageOptions={[10, 25, 50]}
-        labelRowsPerPage={t("accounting.table.rowsPerPage")}
+        labelRowsPerPage="عدد الصفوف"
       />
     </TableContainer>
   );

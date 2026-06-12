@@ -3,7 +3,6 @@
 import { Menu, MenuItem } from "@mui/material";
 import { FaArchive, FaBell, FaBellSlash, FaTrash } from "react-icons/fa";
 import { CHAT_ROOM_TYPES } from "../../config/chatConstants.js";
-import { useT } from "@/app/v2/lib/i18n";
 
 /**
  * Room context menu. Mute/Archive are personal (always available to a member). Delete
@@ -23,7 +22,6 @@ export function RoomActions({
   isArchived,
   canDelete,
 }) {
-  const { t } = useT();
   const isDirect = room?.type === CHAT_ROOM_TYPES.STAFF_TO_STAFF;
 
   return (
@@ -43,11 +41,11 @@ export function RoomActions({
       >
         {isMuted ? (
           <>
-            <FaBell size={14} style={{ marginInlineEnd: 8 }} /> {t("chat.roomActions.unmute", "إلغاء الكتم")}
+            <FaBell size={14} style={{ marginInlineEnd: 8 }} /> إلغاء الكتم
           </>
         ) : (
           <>
-            <FaBellSlash size={14} style={{ marginInlineEnd: 8 }} /> {t("chat.roomActions.mute", "كتم")}
+            <FaBellSlash size={14} style={{ marginInlineEnd: 8 }} /> كتم
           </>
         )}
       </MenuItem>
@@ -58,16 +56,16 @@ export function RoomActions({
         }}
       >
         <FaArchive size={14} style={{ marginInlineEnd: 8 }} />
-        {isArchived ? t("chat.roomActions.unarchive", "إلغاء الأرشفة") : t("chat.roomActions.archive", "أرشفة")}
+        {isArchived ? "إلغاء الأرشفة" : "أرشفة"}
       </MenuItem>
       {!isDirect && canDelete && (
         <MenuItem onClick={() => setDeleteConfirm(true)}>
-          <FaTrash size={14} style={{ marginInlineEnd: 8 }} /> {t("chat.roomActions.delete", "حذف")}
+          <FaTrash size={14} style={{ marginInlineEnd: 8 }} /> حذف
         </MenuItem>
       )}
       {!isDirect && !canDelete && (
         <MenuItem onClick={() => setLeaveConfirm(true)}>
-          <FaTrash size={14} style={{ marginInlineEnd: 8 }} /> {t("chat.roomActions.leave", "مغادرة")}
+          <FaTrash size={14} style={{ marginInlineEnd: 8 }} /> مغادرة
         </MenuItem>
       )}
     </Menu>

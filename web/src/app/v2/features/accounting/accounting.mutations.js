@@ -25,15 +25,7 @@ export async function runAccountingMutation(
   try {
     const res = await fn();
     if (shouldAutoToast) {
-      toast.update(
-        toastId,
-        Success(
-          resolveAccountingMessage(res?.message, {
-            translationKey: res?.translationKey,
-            fallback: "تمت العملية",
-          }),
-        ),
-      );
+      toast.update(toastId, Success(resolveAccountingMessage(res?.message)));
     }
     return res;
   } catch (e) {
@@ -41,12 +33,7 @@ export async function runAccountingMutation(
     if (shouldAutoToast) {
       toast.update(
         toastId,
-        Failed(
-          resolveAccountingMessage(code, {
-            translationKey: e?.data?.translationKey,
-            fallback: "حدث خطأ، حاول مرة أخرى",
-          }),
-        ),
+        Failed(resolveAccountingMessage(code, { fallback: "حدث خطأ، حاول مرة أخرى" })),
       );
     }
     return null;

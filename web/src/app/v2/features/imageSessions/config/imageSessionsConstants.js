@@ -83,7 +83,7 @@ export const SESSION_STATUS = Object.freeze({
   SUBMITTED: "SUBMITTED",
 });
 
-// Arabic labels for the session status (single-language UI / safe fallback).
+// Arabic labels for the session status (single-language UI).
 export const SESSION_STATUS_LABELS = Object.freeze({
   INITIAL: "البداية",
   PREVIEW_COLOR_PATTERN: "معاينة الألوان",
@@ -97,16 +97,6 @@ export const SESSION_STATUS_LABELS = Object.freeze({
   PDF_GENERATED: "تم إنشاء الملف",
   SUBMITTED: "تم الإرسال",
 });
-
-/**
- * Resolve a localized session-status label. Pass the component's `t` (from useT). Falls back to
- * the Arabic SESSION_STATUS_LABELS map (and then the raw status) so callers without `t` still work.
- * NEVER call useT at module scope — call this inside a component with the hook's `t`.
- */
-export function sessionStatusLabel(status, t) {
-  const fallback = SESSION_STATUS_LABELS[status] || status;
-  return t ? t(`imageSessions.status.${status}`, fallback) : fallback;
-}
 
 // ── PUBLIC client step flow (status → { next, back }). Ported verbatim from the legacy
 // client-session/helpers.js sessionStatusFlow — drives the public selection state machine. ──
@@ -124,76 +114,13 @@ export const SESSION_STATUS_FLOW = Object.freeze({
   SUBMITTED: { next: null, back: "PDF_GENERATED" },
 });
 
-// ── Reference-data text language id. ⚠️ CONFLICT (reported): the admin reference create/edit
-// payload is the LEGACY bilingual builder shape — title/description are keyed by a `Language`
-// FK row id: { titles: { [langId]: { langId, text } }, descriptions: {...} }. The single-language
-// v2 app deliberately dropped the bilingual layer and exposes NO languages reader on the FIXED
-// imageSessions service, so the Arabic Language row id is not derivable client-side here. The
-// modal below submits the single Arabic entry under this id; confirm/override it with the real
-// seeded Arabic Language id (the BE create body is free-form `passthrough`, so the shape — not a
-// hard-coded id — is the contract). Until confirmed, create/edit is wired but parked behind this
-// documented assumption.
-export const REFERENCE_LANGUAGE_ID = 1;
-
-/** Build the legacy single-language text payload slice for a reference create/edit body. */
-export function buildReferenceText(field, text) {
-  if (text == null || text === "") return undefined;
-  return { [REFERENCE_LANGUAGE_ID]: { langId: REFERENCE_LANGUAGE_ID, text } };
-}
-
-// ── PUBLIC wizard step model — the ORDERED user-facing steps the StageStepper renders. Each
-// status in SESSION_STATUS_FLOW maps to ONE of these high-level steps (PREVIEW_* and SELECTED_*
-// of the same domain collapse to a single visible step). `key` is the wizard step id; `label`
-// is the Arabic stepper label; `statuses` are the SessionStatus values that resolve to it.
-// `label` is the Arabic fallback; `labelKey` resolves the localized label via t() at render time.
-export const WIZARD_STEPS = Object.freeze([
-  { key: "colors", label: "الألوان", labelKey: "imageSessions.step.colors", statuses: ["INITIAL", "PREVIEW_COLOR_PATTERN", "SELECTED_COLOR_PATTERN"] },
-  { key: "materials", label: "الخامات", labelKey: "imageSessions.step.materials", statuses: ["PREVIEW_MATERIAL", "SELECTED_MATERIAL"] },
-  { key: "styles", label: "الطرز", labelKey: "imageSessions.step.styles", statuses: ["PREVIEW_STYLE", "SELECTED_STYLE"] },
-  { key: "images", label: "الصور", labelKey: "imageSessions.step.images", statuses: ["PREVIEW_IMAGES", "SELECTED_STYLE_DONE", "SELECTED_IMAGES_PICK"] },
-  { key: "preview", label: "المعاينة", labelKey: "imageSessions.step.preview", statuses: ["SELECTED_IMAGES"] },
-  { key: "signature", label: "التوقيع", labelKey: "imageSessions.step.signature", statuses: ["SIGNATURE"] },
-  { key: "done", label: "الملف", labelKey: "imageSessions.step.done", statuses: ["PDF_GENERATED", "SUBMITTED"] },
-]);
-
-/**
- * Build the wizard steps with localized labels for the StageStepper. Pass the component's `t`.
- * Returns a new array with each step's `label` resolved (Arabic verbatim when `t` is absent).
- */
-export function buildWizardSteps(t) {
-  return WIZARD_STEPS.map((s) => ({ ...s, label: t ? t(s.labelKey, s.label) : s.label }));
-}
-
-// Map a raw SessionStatus → the index of its visible wizard step (for the StageStepper).
-// The selection flow has more granular statuses than visible steps; collapse them here.
-const STATUS_TO_STEP = Object.freeze({
-  INITIAL: 0,
-  PREVIEW_COLOR_PATTERN: 0,
-  SELECTED_COLOR_PATTERN: 0,
-  PREVIEW_MATERIAL: 1,
-  SELECTED_MATERIAL: 1,
-  PREVIEW_STYLE: 2,
-  SELECTED_STYLE: 3,
-  PREVIEW_IMAGES: 4,
-  SELECTED_IMAGES: 5,
-  PDF_GENERATED: 6,
-  SUBMITTED: 6,
-});
-
-/** Resolve a SessionStatus to its 0-based wizard-step index (clamped). */
-export function wizardStepIndex(status) {
-  const i = STATUS_TO_STEP[status];
-  return Number.isInteger(i) ? i : 0;
-}
-
 // ── Admin reference-data type registry (one entry per AdminGallery tab). `slug` is the URL
 // segment used by the service; `model` is the matching pick-list delegate; labels are Arabic.
-// `label` is the Arabic fallback; `labelKey` resolves the localized tab label via t() at render.
 export const ADMIN_REFERENCE_TYPES = Object.freeze([
-  { key: "images", slug: "images", model: PICK_LIST_MODELS.DESIGN_IMAGE, label: "معرض الصور", labelKey: "imageSessions.admin.type.images", paginated: true },
-  { key: "pageInfo", slug: "page-info", model: null, label: "معلومات الصفحة", labelKey: "imageSessions.admin.type.pageInfo", paginated: false },
-  { key: "colors", slug: "colors", model: PICK_LIST_MODELS.COLOR_PATTERN, label: "الألوان والأنماط", labelKey: "imageSessions.admin.type.colors", paginated: false },
-  { key: "spaces", slug: "space", model: PICK_LIST_MODELS.SPACE, label: "المساحات", labelKey: "imageSessions.admin.type.spaces", paginated: false },
-  { key: "materials", slug: "material", model: PICK_LIST_MODELS.MATERIAL, label: "الخامات", labelKey: "imageSessions.admin.type.materials", paginated: false },
-  { key: "styles", slug: "style", model: PICK_LIST_MODELS.STYLE, label: "الطرز", labelKey: "imageSessions.admin.type.styles", paginated: false },
+  { key: "images", slug: "images", model: PICK_LIST_MODELS.DESIGN_IMAGE, label: "معرض الصور", paginated: true },
+  { key: "pageInfo", slug: "page-info", model: null, label: "معلومات الصفحة", paginated: false },
+  { key: "colors", slug: "colors", model: PICK_LIST_MODELS.COLOR_PATTERN, label: "الألوان والأنماط", paginated: false },
+  { key: "spaces", slug: "space", model: PICK_LIST_MODELS.SPACE, label: "المساحات", paginated: false },
+  { key: "materials", slug: "material", model: PICK_LIST_MODELS.MATERIAL, label: "الخامات", paginated: false },
+  { key: "styles", slug: "style", model: PICK_LIST_MODELS.STYLE, label: "الطرز", paginated: false },
 ]);

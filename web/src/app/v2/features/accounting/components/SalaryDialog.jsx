@@ -36,7 +36,6 @@ import {
 } from "@mui/material";
 import dayjs from "dayjs";
 import { MdEdit } from "react-icons/md";
-import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { accountingService } from "../accounting.service.js";
@@ -48,7 +47,6 @@ import { NotesDialog } from "./NotesDialog.jsx";
 const P = PERMISSIONS.ACCOUNTING;
 
 export function SalaryDialog({ userId }) {
-  const { t } = useT();
   const { hasPermission } = usePermission();
   const canView = hasPermission(P.SALARY_VIEW);
   const canEdit = hasPermission(P.SALARY_EDIT);
@@ -98,7 +96,7 @@ export function SalaryDialog({ userId }) {
           baseWorkHours: Number(values.baseWorkHours),
           taxAmount: Number(values.taxAmount),
         }),
-      { loading: t("accounting.salaryDetail.editLoading"), setLoading: setSubmitting },
+      { loading: "جاري تحديث الراتب الأساسي...", setLoading: setSubmitting },
     );
     if (res) {
       setEditOpen(false);
@@ -111,15 +109,15 @@ export function SalaryDialog({ userId }) {
   return (
     <>
       <Button variant="contained" size="small" onClick={handleOpen}>
-        {t("accounting.salaryDetail.button")}
+        بيانات الراتب
       </Button>
 
       <Dialog open={open} onClose={() => setOpen(false)} fullScreen>
         <DialogTitle>
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <Typography variant="h6">{t("accounting.salaryDetail.title")}</Typography>
+            <Typography variant="h6">بيانات الراتب</Typography>
             <Button variant="outlined" onClick={() => setOpen(false)}>
-              {t("accounting.action.close")}
+              إغلاق
             </Button>
           </Box>
         </DialogTitle>
@@ -130,7 +128,7 @@ export function SalaryDialog({ userId }) {
             </Box>
           ) : !salaryData ? (
             <Typography color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
-              {t("accounting.state.empty")}
+              لا توجد بيانات
             </Typography>
           ) : (
             <Grid container spacing={3}>
@@ -141,7 +139,7 @@ export function SalaryDialog({ userId }) {
                     <TextField
                       type="date"
                       size="small"
-                      label={t("accounting.date.from")}
+                      label="من"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
                       InputLabelProps={{ shrink: true }}
@@ -149,17 +147,17 @@ export function SalaryDialog({ userId }) {
                     <TextField
                       type="date"
                       size="small"
-                      label={t("accounting.date.to")}
+                      label="إلى"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
                       InputLabelProps={{ shrink: true }}
                     />
                     <Button variant="outlined" onClick={fetchSalary}>
-                      {t("accounting.action.apply")}
+                      تطبيق
                     </Button>
                     {canEdit && (
                       <Button variant="outlined" startIcon={<MdEdit />} onClick={openEdit}>
-                        {t("accounting.salaryDetail.editButton")}
+                        تعديل الراتب الأساسي
                       </Button>
                     )}
                     {canPay && (
@@ -172,7 +170,7 @@ export function SalaryDialog({ userId }) {
                         }
                       />
                     )}
-                    <NotesDialog idKey="baseEmployeeSalaryId" id={salaryData.id} buttonLabel={t("accounting.action.notes")} />
+                    <NotesDialog idKey="baseEmployeeSalaryId" id={salaryData.id} buttonLabel="ملاحظات" />
                   </Stack>
                 </Paper>
               </Grid>
@@ -191,7 +189,7 @@ export function SalaryDialog({ userId }) {
                   <Grid container spacing={1}>
                     <Grid size={6}>
                       <Typography variant="body2" color="text.secondary">
-                        {t("accounting.salaryDetail.baseSalary")}
+                        الراتب الأساسي
                       </Typography>
                     </Grid>
                     <Grid size={6}>
@@ -199,7 +197,7 @@ export function SalaryDialog({ userId }) {
                     </Grid>
                     <Grid size={6}>
                       <Typography variant="body2" color="text.secondary">
-                        {t("accounting.salaryDetail.taxAmount")}
+                        مبلغ الضريبة
                       </Typography>
                     </Grid>
                     <Grid size={6}>
@@ -207,11 +205,11 @@ export function SalaryDialog({ userId }) {
                     </Grid>
                     <Grid size={6}>
                       <Typography variant="body2" color="text.secondary">
-                        {t("accounting.salaryDetail.baseWorkHours")}
+                        ساعات العمل الأساسية
                       </Typography>
                     </Grid>
                     <Grid size={6}>
-                      <Typography>{salaryData.baseWorkHours} {t("accounting.salaryDetail.hours")}</Typography>
+                      <Typography>{salaryData.baseWorkHours} ساعة</Typography>
                     </Grid>
                   </Grid>
                 </Paper>
@@ -221,20 +219,20 @@ export function SalaryDialog({ userId }) {
               <Grid size={{ xs: 12, md: 8 }}>
                 <Paper variant="outlined" sx={{ p: 3 }}>
                   <Typography variant="h6" gutterBottom>
-                    {t("accounting.salaryDetail.monthlyTitle")}
+                    الرواتب الشهرية
                   </Typography>
                   {salaryData.monthlySalaries?.length > 0 ? (
                     <TableContainer>
                       <Table size="small">
                         <TableHead>
                           <TableRow>
-                            <TableCell>{t("accounting.salaryDetail.col.month")}</TableCell>
-                            <TableCell>{t("accounting.salaryDetail.col.hours")}</TableCell>
-                            <TableCell>{t("accounting.salaryDetail.col.overtime")}</TableCell>
-                            <TableCell>{t("accounting.salaryDetail.col.bonuses")}</TableCell>
-                            <TableCell>{t("accounting.salaryDetail.col.deductions")}</TableCell>
-                            <TableCell>{t("accounting.salaryDetail.col.netSalary")}</TableCell>
-                            <TableCell>{t("accounting.salaryDetail.col.status")}</TableCell>
+                            <TableCell>الشهر</TableCell>
+                            <TableCell>الساعات</TableCell>
+                            <TableCell>الإضافي</TableCell>
+                            <TableCell>المكافآت</TableCell>
+                            <TableCell>الخصومات</TableCell>
+                            <TableCell>صافي الراتب</TableCell>
+                            <TableCell>الحالة</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
@@ -250,7 +248,7 @@ export function SalaryDialog({ userId }) {
                                 <Chip
                                   size="small"
                                   color={s.isFulfilled ? "success" : "warning"}
-                                  label={s.isFulfilled ? t("accounting.salaryDetail.status.fulfilled") : t("accounting.salaryDetail.status.notFulfilled")}
+                                  label={s.isFulfilled ? "مكتمل" : "غير مكتمل"}
                                 />
                               </TableCell>
                             </TableRow>
@@ -260,7 +258,7 @@ export function SalaryDialog({ userId }) {
                     </TableContainer>
                   ) : (
                     <Typography color="text.secondary" sx={{ py: 3, textAlign: "center" }}>
-                      {t("accounting.salaryDetail.monthlyEmpty")}
+                      لا توجد سجلات رواتب ضمن النطاق المحدد
                     </Typography>
                   )}
                 </Paper>
@@ -272,7 +270,7 @@ export function SalaryDialog({ userId }) {
 
       {/* Edit base salary */}
       <Dialog open={editOpen} onClose={() => setEditOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle>{t("accounting.salaryDetail.editTitle")}</DialogTitle>
+        <DialogTitle>تعديل الراتب الأساسي</DialogTitle>
         <form onSubmit={editForm.handleSubmit(onEditSubmit)} noValidate>
           <DialogContent dividers>
             <Stack spacing={2}>
@@ -280,14 +278,14 @@ export function SalaryDialog({ userId }) {
                 name="baseSalary"
                 control={editForm.control}
                 rules={{
-                  required: t("accounting.validation.required"),
-                  validate: (v) => Number(v) > 0 || t("accounting.validation.positive"),
+                  required: "مطلوب",
+                  validate: (v) => Number(v) > 0 || "يجب أن يكون رقماً موجباً",
                 }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
                     type="number"
-                    label={t("accounting.salaryDetail.field.baseSalary")}
+                    label="الراتب الأساسي"
                     fullWidth
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}
@@ -298,14 +296,14 @@ export function SalaryDialog({ userId }) {
                 name="baseWorkHours"
                 control={editForm.control}
                 rules={{
-                  required: t("accounting.validation.required"),
-                  validate: (v) => Number(v) > 0 || t("accounting.validation.positive"),
+                  required: "مطلوب",
+                  validate: (v) => Number(v) > 0 || "يجب أن يكون رقماً موجباً",
                 }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
                     type="number"
-                    label={t("accounting.salaryDetail.field.baseWorkHours")}
+                    label="ساعات العمل الأساسية"
                     fullWidth
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}
@@ -316,14 +314,14 @@ export function SalaryDialog({ userId }) {
                 name="taxAmount"
                 control={editForm.control}
                 rules={{
-                  required: t("accounting.validation.required"),
-                  validate: (v) => Number(v) >= 0 || t("accounting.validation.nonNegative"),
+                  required: "مطلوب",
+                  validate: (v) => Number(v) >= 0 || "يجب أن يكون رقماً غير سالب",
                 }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
                     type="number"
-                    label={t("accounting.salaryDetail.field.taxAmount")}
+                    label="مبلغ الضريبة"
                     fullWidth
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}
@@ -333,9 +331,9 @@ export function SalaryDialog({ userId }) {
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setEditOpen(false)}>{t("accounting.action.cancel")}</Button>
+            <Button onClick={() => setEditOpen(false)}>إلغاء</Button>
             <Button type="submit" variant="contained" disabled={submitting}>
-              {t("accounting.action.save")}
+              حفظ
             </Button>
           </DialogActions>
         </form>

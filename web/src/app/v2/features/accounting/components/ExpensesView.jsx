@@ -29,7 +29,6 @@ import {
 } from "@mui/material";
 import { MdAdd } from "react-icons/md";
 import dayjs from "dayjs";
-import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { usePaginatedList } from "../hooks/usePaginatedList.js";
@@ -40,7 +39,6 @@ import { NotesDialog } from "./NotesDialog.jsx";
 const P = PERMISSIONS.ACCOUNTING;
 
 export function ExpensesView() {
-  const { t } = useT();
   const { hasPermission } = usePermission();
   const canList = hasPermission(P.EXPENSE_LIST);
   const canCreate = hasPermission(P.EXPENSE_CREATE);
@@ -71,7 +69,7 @@ export function ExpensesView() {
           description: values.description,
           paymentDate: values.paymentDate,
         }),
-      { loading: t("accounting.expenses.loading"), setLoading: setSubmitting },
+      { loading: "جاري إضافة المصروف...", setLoading: setSubmitting },
     );
     if (res) {
       closeCreate();
@@ -82,7 +80,7 @@ export function ExpensesView() {
   if (!canList) {
     return (
       <Typography color="text.secondary" sx={{ py: 4, textAlign: "center" }}>
-        {t("accounting.expenses.denied")}
+        لا تملك صلاحية الوصول إلى المصروفات التشغيلية
       </Typography>
     );
   }
@@ -92,7 +90,7 @@ export function ExpensesView() {
       {canCreate && (
         <Box sx={{ mb: 2 }}>
           <Button variant="outlined" startIcon={<MdAdd />} onClick={() => setCreateOpen(true)}>
-            {t("accounting.expenses.addButton")}
+            إضافة مصروف تشغيلي
           </Button>
         </Box>
       )}
@@ -101,25 +99,25 @@ export function ExpensesView() {
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell>{t("accounting.expenses.col.category")}</TableCell>
-              <TableCell>{t("accounting.expenses.col.description")}</TableCell>
-              <TableCell>{t("accounting.expenses.col.amount")}</TableCell>
-              <TableCell>{t("accounting.expenses.col.paymentDate")}</TableCell>
-              <TableCell align="right">{t("accounting.action.actions")}</TableCell>
+              <TableCell>التصنيف</TableCell>
+              <TableCell>الوصف</TableCell>
+              <TableCell>المبلغ</TableCell>
+              <TableCell>تاريخ الدفع</TableCell>
+              <TableCell align="right">إجراءات</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {isLoading && (
               <TableRow>
                 <TableCell colSpan={5} align="center">
-                  {t("accounting.state.loading")}
+                  جاري التحميل...
                 </TableCell>
               </TableRow>
             )}
             {!isLoading && items.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} align="center">
-                  {t("accounting.state.empty")}
+                  لا توجد بيانات
                 </TableCell>
               </TableRow>
             )}
@@ -131,7 +129,7 @@ export function ExpensesView() {
                   <TableCell>{row.amount}</TableCell>
                   <TableCell>{row.paymentDate ? dayjs(row.paymentDate).format("YYYY/MM/DD") : "—"}</TableCell>
                   <TableCell align="right">
-                    <NotesDialog idKey="operationalExpensesId" id={row.id} buttonLabel={t("accounting.action.notes")} />
+                    <NotesDialog idKey="operationalExpensesId" id={row.id} buttonLabel="ملاحظات" />
                   </TableCell>
                 </TableRow>
               ))}
@@ -148,23 +146,23 @@ export function ExpensesView() {
             setPage(1);
           }}
           rowsPerPageOptions={[10, 25, 50]}
-          labelRowsPerPage={t("accounting.table.rowsPerPage")}
+          labelRowsPerPage="عدد الصفوف"
         />
       </TableContainer>
 
       <Dialog open={createOpen} onClose={closeCreate} fullWidth maxWidth="sm">
-        <DialogTitle>{t("accounting.expenses.createTitle")}</DialogTitle>
+        <DialogTitle>مصروف تشغيلي جديد</DialogTitle>
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <DialogContent dividers>
             <Stack spacing={2}>
               <Controller
                 name="category"
                 control={control}
-                rules={{ required: t("accounting.validation.categoryRequired") }}
+                rules={{ required: "التصنيف مطلوب" }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
-                    label={t("accounting.expenses.field.category")}
+                    label="التصنيف"
                     fullWidth
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}
@@ -174,23 +172,23 @@ export function ExpensesView() {
               <Controller
                 name="description"
                 control={control}
-                render={({ field }) => <TextField {...field} label={t("accounting.expenses.field.description")} fullWidth multiline minRows={2} />}
+                render={({ field }) => <TextField {...field} label="الوصف" fullWidth multiline minRows={2} />}
               />
               <Controller
                 name="amount"
                 control={control}
                 rules={{
-                  required: t("accounting.validation.amountRequired"),
+                  required: "المبلغ مطلوب",
                   validate: (v) => {
                     const n = Number(v);
-                    return (Number.isFinite(n) && n > 0) || t("accounting.validation.amountPositive");
+                    return (Number.isFinite(n) && n > 0) || "يجب أن يكون المبلغ رقماً موجباً";
                   },
                 }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
                     type="number"
-                    label={t("accounting.expenses.field.amount")}
+                    label="المبلغ"
                     fullWidth
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}
@@ -200,12 +198,12 @@ export function ExpensesView() {
               <Controller
                 name="paymentDate"
                 control={control}
-                rules={{ required: t("accounting.validation.paymentDateRequired") }}
+                rules={{ required: "تاريخ الدفع مطلوب" }}
                 render={({ field, fieldState }) => (
                   <TextField
                     {...field}
                     type="date"
-                    label={t("accounting.expenses.field.paymentDate")}
+                    label="تاريخ الدفع"
                     fullWidth
                     InputLabelProps={{ shrink: true }}
                     error={Boolean(fieldState.error)}
@@ -216,9 +214,9 @@ export function ExpensesView() {
             </Stack>
           </DialogContent>
           <DialogActions>
-            <Button onClick={closeCreate}>{t("accounting.action.cancel")}</Button>
+            <Button onClick={closeCreate}>إلغاء</Button>
             <Button type="submit" variant="contained" disabled={submitting}>
-              {t("accounting.action.add")}
+              إضافة
             </Button>
           </DialogActions>
         </form>

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Alert, Box, Link, Snackbar, TextField } from "@mui/material";
-import { useT } from "@/app/v2/lib/i18n";
 import { FILE_SIZE_LIMIT } from "../config/siteUtilityConstants.js";
 
 /**
@@ -17,16 +16,11 @@ export default function SiteFileInput({
   accept = "image/*",
   variant = "outlined",
   onPick,
-  helperText,
+  helperText = `الحد الأقصى لحجم الملف: ${FILE_SIZE_LIMIT / (1024 * 1024)} MB`,
 }) {
-  const { t } = useT();
   const [preview, setPreview] = useState(null);
   const [fileName, setFileName] = useState("");
   const [error, setError] = useState(null);
-
-  const sizeMb = String(FILE_SIZE_LIMIT / (1024 * 1024));
-  const resolvedHelperText =
-    helperText ?? t("siteUtility.file.sizeLimit").replace("{size}", sizeMb);
 
   const handleChange = (e) => {
     const file = e.target.files?.[0];
@@ -35,7 +29,7 @@ export default function SiteFileInput({
       return;
     }
     if (file.size > FILE_SIZE_LIMIT) {
-      setError(t("siteUtility.file.tooLarge").replace("{size}", sizeMb));
+      setError(`حجم الملف يتجاوز الحد المسموح (${FILE_SIZE_LIMIT / (1024 * 1024)} MB).`);
       setPreview(null);
       setFileName("");
       return;
@@ -50,7 +44,7 @@ export default function SiteFileInput({
       (isVideo && ft.startsWith("video/")) ||
       (isPdf && ft === "application/pdf");
     if (!isAccepted) {
-      setError(t("siteUtility.file.notAllowed"));
+      setError("نوع الملف غير مسموح به.");
       setPreview(null);
       setFileName("");
       return;
@@ -69,7 +63,7 @@ export default function SiteFileInput({
           id={id}
           type="file"
           variant={variant}
-          helperText={resolvedHelperText}
+          helperText={helperText}
           fullWidth
           size="small"
           onChange={handleChange}
@@ -80,7 +74,7 @@ export default function SiteFileInput({
         />
         {preview && (
           <Link href={preview} target="_blank" rel="noopener noreferrer">
-            {fileName || t("siteUtility.file.view")}
+            {fileName || "عرض الملف"}
           </Link>
         )}
       </Box>

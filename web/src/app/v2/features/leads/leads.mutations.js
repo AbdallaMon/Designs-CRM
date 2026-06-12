@@ -25,15 +25,7 @@ export async function runLeadMutation(
   try {
     const res = await fn();
     if (shouldAutoToast) {
-      toast.update(
-        toastId,
-        Success(
-          resolveLeadMessage(res?.message, {
-            translationKey: res?.translationKey,
-            fallback: "تمت العملية",
-          }),
-        ),
-      );
+      toast.update(toastId, Success(resolveLeadMessage(res?.message)));
     }
     return res;
   } catch (e) {
@@ -41,12 +33,7 @@ export async function runLeadMutation(
     if (shouldAutoToast) {
       toast.update(
         toastId,
-        Failed(
-          resolveLeadMessage(code, {
-            translationKey: e?.data?.translationKey,
-            fallback: "حدث خطأ، حاول مرة أخرى",
-          }),
-        ),
+        Failed(resolveLeadMessage(code, { fallback: "حدث خطأ، حاول مرة أخرى" })),
       );
     }
     return null;

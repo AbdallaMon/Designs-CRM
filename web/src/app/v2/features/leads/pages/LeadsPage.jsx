@@ -1,84 +1,57 @@
 "use client";
 
-// Leads pool list page — FLAT data table (reverted from the redesigned hub/kanban/workspace).
-// Collapses the legacy per-role-slot leads screens into ONE permission-gated feature: visibility
-// + per-row actions are driven by usePermission + the per-record capabilities.* the v2 API
-// returns, NOT by role slot.
+// Leads pool list page. Collapses the legacy per-role-slot leads screens
+// (@admin|@staff|@super_admin|@super_sales|@accountant|@threeD /leads) into ONE
+// permission-gated feature: visibility + per-row actions are driven by usePermission +
+// the per-record capabilities.* the v2 API returns, NOT by role slot. Same observable
+// list per role, one code path.
 //
-// A plain table is the ONLY view (no Kanban board, no list/board toggle, no workspace cockpit).
-// Two top-level entry points seed the list from the URL `?segment=`:
-//   • segment=new   → "العملاء المحتملون" (raw un-consulted leads pool; BE noConsulted=true)
-//   • segment=deals → "الصفقات الحالية"   (consulted pool; BE default status filter)
-// An explicit status filter takes precedence over the segment default (the BE status param wins
-// over the noConsulted branch). Bilingual ar/en via useT().
+// §5c deltas applied: data via the leads service against /v2/leads (list shape
+// { items, total, page, pageSize }); each row's actions gated on row.capabilities.*;
+// bulk-convert (admin-tier) gated on PERMISSIONS.LEAD.ASSIGN_OTHER.
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
-  Button,
   Checkbox,
-  Chip,
   Container,
   IconButton,
+  Paper,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TextField,
+  Toolbar,
   Tooltip,
+  Typography,
+  MenuItem,
+  Select,
 } from "@mui/material";
-import { MdOpenInNew, MdRefresh, MdGroupAdd } from "react-icons/md";
+import { MdOpenInNew, MdRefresh } from "react-icons/md";
 import Link from "next/link";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
-import { useT } from "@/app/v2/lib/i18n";
-import {
-  PageHeader,
-  DataTablePage,
-  PartialPermissionState,
-} from "@/app/v2/shared/components";
+import { useDebounce } from "@/app/v2/hooks/useDebounce";
 import { useLeadsList } from "../hooks/useLeadsList.js";
-import { buildLeadsColumns } from "../config/leadsColumns.js";
-import { buildLeadsFilters } from "../config/leadsFilters.js";
-import { leadsMessages } from "../config/leadsMessages.js";
+import { leadsColumns } from "../config/leadsColumns.js";
+import { LEAD_STATUS_LABELS } from "../config/leadsConstants.js";
 import { LeadAssignActions } from "../components/LeadAssignActions.jsx";
-import { LeadSearchAutocomplete } from "../components/LeadSearchAutocomplete.jsx";
 import { BulkConvertModal } from "../components/BulkConvertModal.jsx";
-
-const P = PERMISSIONS.LEAD;
-
-// Top-level segment: "new" surfaces the un-consulted raw-lead pool. The BE list ALWAYS forces
-// `initialConsult: true`, so the only way to see freshly-created leads (created with
-// initialConsult:false) is the BE's `noConsulted=true` escape. The "deals" branch is the
-// consulted pool (BE default `status notIn [NEW, CONVERTED, ON_HOLD]` + initialConsult:true).
-const SEGMENTS = {
-  NEW: "new",
-  DEALS: "deals",
-};
-
-function normalizeSegment(value) {
-  return value === SEGMENTS.DEALS ? SEGMENTS.DEALS : SEGMENTS.NEW;
-}
 
 export function LeadsPage() {
   const { hasPermission, hasAnyPermission } = usePermission();
-  const { t } = useT();
-  const router = useRouter();
-  const sp = useSearchParams();
-  const canList = hasPermission(P.LIST);
-  const canBulkConvert = hasPermission(P.ASSIGN_OTHER);
+  const canList = hasPermission(PERMISSIONS.LEAD.LIST);
+  const canBulkConvert = hasPermission(PERMISSIONS.LEAD.ASSIGN_OTHER);
 
-  // Segment is seeded from the URL (?segment=new|deals) so the two nav entries land here with the
-  // correct pool. Default to "new" so freshly-created client leads (status NEW) are visible.
-  const segment = normalizeSegment(sp.get("segment"));
-
-  // Controlled DataTablePage filter values; only `status` is wired (enum). "ALL" = no filter.
-  const [filterValues, setFilterValues] = useState({ status: "ALL" });
+  const [searchInput, setSearchInput] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const [selected, setSelected] = useState([]);
   const [bulkOpen, setBulkOpen] = useState(false);
-
-  // Reset the selection + status filter whenever the segment changes (a different pool).
-  useEffect(() => {
-    setFilterValues({ status: "ALL" });
-    setSelected([]);
-  }, [segment]);
 
   const {
     items,
@@ -87,126 +60,62 @@ export function LeadsPage() {
     setPage,
     pageSize,
     setPageSize,
+    setFilters,
     setExtra,
     isLoading,
-    error,
     refetch,
   } = useLeadsList({ autoFetch: canList });
 
-  const statusFilter = filterValues.status;
-  const statusActive = Boolean(statusFilter && statusFilter !== "ALL");
+  // Debounce the raw search term, then push it into the list hook's filter state.
+  // Parity: the legacy leads list (services/main/shared/leadServices.js getClientLeads)
+  // only ever supported searching by lead id (via filters.id) — it never honored a
+  // name/phone free-text search. So the search box is scoped to the numeric lead id; a
+  // non-numeric term matches nothing and is treated as no id filter.
+  const debouncedSearch = useDebounce(searchInput, 400);
 
-  // `noConsulted` (new segment) and `status` (explicit dropdown) are TOP-LEVEL query params the
-  // BE list reads directly off searchParams, NOT from the JSON `filters`, so they are routed
-  // through the hook's `extra`. An explicit status selection wins over the segment default;
-  // otherwise the "new" segment sends `noConsulted=true` (the only param that surfaces un-consulted
-  // raw leads) and "deals" sends nothing (BE applies its default status filter).
   useEffect(() => {
-    const next = {};
-    if (statusActive) {
-      next.status = statusFilter;
-    } else if (segment === SEGMENTS.NEW) {
-      next.noConsulted = "true";
-    }
-    setExtra(next);
-    // setExtra is a stable callback from the list hook (resets to page 1).
+    const term = debouncedSearch.trim();
+    const id = /^\d+$/.test(term) ? term : null;
+    setFilters(buildFilters(id));
+    // setFilters is a stable callback from the list hook.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [segment, statusFilter]);
+  }, [debouncedSearch]);
 
-  function onFilterChange(key, value) {
-    setFilterValues((prev) => ({ ...prev, [key]: value }));
+  // Status is a TOP-LEVEL query param the BE list reads directly (lead.usecase.js
+  // #buildListWhere reads `status` off searchParams, NOT from the JSON `filters`), so it
+  // is routed through the hook's `extra` (top-level params), not buildFilters.
+  useEffect(() => {
+    setExtra(statusFilter && statusFilter !== "ALL" ? { status: statusFilter } : {});
+    // setExtra is a stable callback from the list hook.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter]);
+
+  function buildFilters(id) {
+    const f = {};
+    if (id) f.id = id;
+    return f;
+  }
+
+  // Which columns to show: privileged-only columns (client PII) hidden unless the user
+  // can see them. We approximate the legacy gate with VIEW permission presence (the BE
+  // already redacts the payload for non-privileged roles, so this is cosmetic parity).
+  const visibleColumns = useMemo(() => {
+    const privileged = hasAnyPermission([
+      PERMISSIONS.LEAD.ASSIGN_OTHER,
+      PERMISSIONS.LEAD.CONVERT,
+    ]);
+    return leadsColumns.filter((c) => !c.privileged || privileged);
+  }, [hasAnyPermission]);
+
+  if (!canList) {
+    return (
+      <CenteredNotice text="لا تملك صلاحية الوصول إلى قائمة العملاء" />
+    );
   }
 
   function toggleSelect(id) {
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   }
-
-  // PII columns (client name / phone) are revealed only to privileged roles. The BE already
-  // redacts the payload for non-privileged roles, so this is cosmetic parity (legacy behavior).
-  const showPrivileged = useMemo(
-    () => hasAnyPermission([P.ASSIGN_OTHER, P.CONVERT]),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [hasAnyPermission],
-  );
-
-  // Columns are config-driven (config/leadsColumns.js). When the user can bulk-convert we prepend
-  // a selection column whose accessor renders a controlled checkbox.
-  const columns = useMemo(() => {
-    const baseColumns = buildLeadsColumns(t);
-    if (!canBulkConvert) return baseColumns;
-    const selectCol = {
-      field: "__select",
-      headerName: "",
-      width: 48,
-      accessor: (row) => (
-        <Checkbox
-          size="small"
-          checked={selected.includes(row.id)}
-          onClick={(e) => e.stopPropagation()}
-          onChange={() => toggleSelect(row.id)}
-          inputProps={{ "aria-label": t("leads.row.selectAria").replace("{id}", row.id) }}
-        />
-      ),
-    };
-    return [selectCol, ...baseColumns];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canBulkConvert, selected, t]);
-
-  // Distinct empty state per segment so the precedence is legible. A status filter narrows
-  // whichever pool is active; surface that in the copy.
-  const empty = useMemo(() => {
-    if (statusActive) {
-      return {
-        title: t("leads.empty.status.title"),
-        description: t("leads.empty.status.description"),
-      };
-    }
-    if (segment === SEGMENTS.NEW) {
-      return {
-        title: t("leads.empty.new.title"),
-        description: t("leads.empty.new.description"),
-      };
-    }
-    return {
-      title: t("leads.empty.deals.title"),
-      description: t("leads.empty.deals.description"),
-    };
-  }, [segment, statusActive, t]);
-
-  function renderRowActions(row) {
-    return (
-      <>
-        <LeadAssignActions lead={row} onChanged={refetch} />
-        <Tooltip title={t("leads.action.openDetails")}>
-          {/* Real anchor → middle-click / ctrl+click / open-in-new-tab all work. */}
-          <IconButton
-            component={Link}
-            href={`/v2/leads/${row.id}`}
-            size="small"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <MdOpenInNew />
-          </IconButton>
-        </Tooltip>
-      </>
-    );
-  }
-
-  if (!canList) {
-    return (
-      <Container maxWidth="md" sx={{ py: 6 }}>
-        <PartialPermissionState
-          denied
-          title={t("leads.denied.title")}
-          message={t("leads.denied.message")}
-        />
-      </Container>
-    );
-  }
-
-  // The page title reflects which pool is active (the two nav entries land on the same screen).
-  const pageTitle =
-    segment === SEGMENTS.DEALS ? t("leads.page.title.deals") : t("leads.page.title");
 
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
@@ -220,75 +129,132 @@ export function LeadsPage() {
         }}
       />
 
-      <PageHeader
-        title={pageTitle}
-        subtitle={t("leads.page.subtitle.total").replace("{total}", total)}
-        breadcrumbs={[{ label: t("leads.page.breadcrumb.sales") }, { label: pageTitle }]}
-      >
-        <LeadSearchAutocomplete
-          onSelect={(lead) => {
-            if (lead?.id != null) router.push(`/v2/leads/${lead.id}`);
-          }}
-        />
-        {canBulkConvert && (
-          <Tooltip title={t("leads.action.bulkConvert.tooltip")}>
-            <span>
-              <Button
-                variant="outlined"
-                color="primary"
-                startIcon={<MdGroupAdd />}
-                disabled={selected.length === 0}
-                onClick={() => setBulkOpen(true)}
-              >
-                {t("leads.action.bulkConvert.label").replace("{count}", selected.length)}
-              </Button>
-            </span>
-          </Tooltip>
-        )}
-        <Tooltip title={t("leads.action.refresh")}>
-          <IconButton onClick={refetch}>
-            <MdRefresh />
-          </IconButton>
-        </Tooltip>
-      </PageHeader>
+      <Typography variant="h5" sx={{ mb: 2 }}>
+        العملاء المحتملون
+      </Typography>
 
-      {statusActive && (
-        <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-          <Chip
+      <Paper variant="outlined" sx={{ mb: 2 }}>
+        <Toolbar sx={{ gap: 2, flexWrap: "wrap", py: 2 }}>
+          <TextField
             size="small"
-            color="info"
-            variant="outlined"
-            label={t("leads.segment.filteredChip")}
-            onDelete={() => setFilterValues({ status: "ALL" })}
+            label="بحث برقم العميل"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            sx={{ minWidth: 260 }}
           />
-        </Stack>
-      )}
+          <Select
+            size="small"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            sx={{ minWidth: 160 }}
+          >
+            <MenuItem value="ALL">كل الحالات</MenuItem>
+            {Object.entries(LEAD_STATUS_LABELS).map(([k, label]) => (
+              <MenuItem key={k} value={k}>
+                {label}
+              </MenuItem>
+            ))}
+          </Select>
+          <Box sx={{ flex: 1 }} />
+          {canBulkConvert && (
+            <Tooltip title="تحويل جماعي للعملاء المحددين">
+              <span>
+                <button
+                  type="button"
+                  disabled={selected.length === 0}
+                  onClick={() => setBulkOpen(true)}
+                  style={{ padding: "8px 16px", cursor: selected.length ? "pointer" : "not-allowed" }}
+                >
+                  تحويل جماعي ({selected.length})
+                </button>
+              </span>
+            </Tooltip>
+          )}
+          <Tooltip title="تحديث">
+            <IconButton onClick={refetch}>
+              <MdRefresh />
+            </IconButton>
+          </Tooltip>
+        </Toolbar>
+      </Paper>
 
-      <Box>
-        <DataTablePage
-          columns={columns}
-          filters={buildLeadsFilters(t)}
-          rows={items}
-          total={total}
-          page={page}
-          pageSize={pageSize}
-          onPageChange={setPage}
-          onPageSizeChange={setPageSize}
-          filterValues={filterValues}
-          onFilterChange={onFilterChange}
-          loading={isLoading}
-          error={error}
-          onRetry={refetch}
-          errorResolver={leadsMessages}
-          getRowKey={(row) => row.id}
-          renderRowActions={renderRowActions}
-          onRowClick={(row) => router.push(`/v2/leads/${row.id}`)}
-          rowHref={(row) => `/v2/leads/${row.id}`}
-          showPrivileged={showPrivileged}
-          empty={empty}
+      <TableContainer component={Paper} variant="outlined">
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              {canBulkConvert && <TableCell padding="checkbox" />}
+              {visibleColumns.map((c) => (
+                <TableCell key={c.field}>{c.headerName}</TableCell>
+              ))}
+              <TableCell align="right">إجراءات</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={visibleColumns.length + 2} align="center">
+                  جاري التحميل...
+                </TableCell>
+              </TableRow>
+            )}
+            {!isLoading && items.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={visibleColumns.length + 2} align="center">
+                  لا توجد بيانات
+                </TableCell>
+              </TableRow>
+            )}
+            {!isLoading &&
+              items.map((row) => (
+                <TableRow key={row.id} hover>
+                  {canBulkConvert && (
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        checked={selected.includes(row.id)}
+                        onChange={() => toggleSelect(row.id)}
+                      />
+                    </TableCell>
+                  )}
+                  {visibleColumns.map((c) => (
+                    <TableCell key={c.field}>{c.accessor(row)}</TableCell>
+                  ))}
+                  <TableCell align="right">
+                    <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
+                      <LeadAssignActions lead={row} onChanged={refetch} />
+                      <Tooltip title="فتح التفاصيل">
+                        <IconButton component={Link} href={`/v2/leads/${row.id}`} size="small">
+                          <MdOpenInNew />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ))}
+          </TableBody>
+        </Table>
+        <TablePagination
+          component="div"
+          count={total}
+          page={page - 1}
+          onPageChange={(_e, p) => setPage(p + 1)}
+          rowsPerPage={pageSize}
+          onRowsPerPageChange={(e) => {
+            setPageSize(parseInt(e.target.value, 10));
+            setPage(1);
+          }}
+          rowsPerPageOptions={[10, 25, 50]}
+          labelRowsPerPage="عدد الصفوف"
         />
-      </Box>
+      </TableContainer>
     </Container>
+  );
+}
+
+function CenteredNotice({ text }) {
+  return (
+    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh" }}>
+      <Typography color="textSecondary">{text}</Typography>
+    </Box>
   );
 }
 

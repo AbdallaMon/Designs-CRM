@@ -16,7 +16,6 @@ import { FaEllipsisV, FaReply, FaTrash, FaShare, FaCheck } from "react-icons/fa"
 import { MdPushPin } from "react-icons/md";
 import dayjs from "dayjs";
 import { ChatAttachments } from "./ChatAttachments.jsx";
-import { useT } from "@/app/v2/lib/i18n";
 
 function truncateText(text = "", max = 90) {
   const t = String(text || "");
@@ -24,14 +23,13 @@ function truncateText(text = "", max = 90) {
 }
 
 function ReplyPreview({ loadingReplayJump, replyTo, isOwnMessage, onJumpToMessage }) {
-  const { t } = useT();
   if (!replyTo) return null;
-  const repliedName = replyTo?.sender?.name || replyTo?.senderClient?.name || t("chat.message.unknownSender", "غير معروف");
+  const repliedName = replyTo?.sender?.name || replyTo?.senderClient?.name || "غير معروف";
   const repliedContent = replyTo?.isDeleted
-    ? t("chat.message.deletedReply", "(رسالة محذوفة)")
+    ? "(رسالة محذوفة)"
     : replyTo?.content?.trim()
       ? truncateText(replyTo.content, 110)
-      : t("chat.message.emptyReply", "(بدون نص)");
+      : "(بدون نص)";
   return (
     <Box
       onClick={() => onJumpToMessage?.(replyTo.id)}
@@ -53,7 +51,7 @@ function ReplyPreview({ loadingReplayJump, replyTo, isOwnMessage, onJumpToMessag
         </Box>
       )}
       <Typography variant="caption" sx={{ display: "block", fontWeight: 700 }}>
-        {t("chat.message.replyTo", "رد على {name}").replace("{name}", repliedName)}
+        رد على {repliedName}
       </Typography>
       <Typography variant="caption" sx={{ display: "block", opacity: 0.85 }}>
         {repliedContent}
@@ -82,14 +80,13 @@ export function ChatMessage({
   selectedMessages,
   setSelectedMessages,
 }) {
-  const { t } = useT();
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [flashOn, setFlashOn] = useState(false);
 
   const isSelected = selectedMessages.some((m) => m.id === message.id);
   const isPinned = message.isPinned || pinnedMessages?.some((pm) => pm.id === message.id);
   const isOwnMessage = message.sender?.id === currentUserId;
-  const sender = message.sender?.name || message.client?.name || t("chat.message.unknownSender", "غير معروف");
+  const sender = message.sender?.name || message.client?.name || "غير معروف";
   const isDeleted = Boolean(message.isDeleted);
 
   const isGroupChat = ["PROJECT_GROUP", "GROUP", "MULTI_PROJECT"].includes(room?.type);
@@ -200,7 +197,7 @@ export function ChatMessage({
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <FaTrash style={{ opacity: 0.75 }} />
               <Typography variant="body2" sx={{ fontStyle: "italic", opacity: 0.85 }}>
-                {t("chat.message.deleted", "تم حذف هذه الرسالة")}
+                تم حذف هذه الرسالة
               </Typography>
             </Box>
           ) : (
@@ -234,11 +231,7 @@ export function ChatMessage({
 
           <Typography variant="caption" sx={{ display: "block", mt: 0.5, opacity: 0.6 }}>
             {dayjs(message.createdAt).format("HH:mm")}
-            {message.isDeleted
-              ? t("chat.message.deletedTag", " • محذوفة")
-              : message.isEdited
-                ? t("chat.message.editedTag", " • معدّلة")
-                : ""}
+            {message.isDeleted ? " • محذوفة" : message.isEdited ? " • معدّلة" : ""}
           </Typography>
         </Box>
 
@@ -288,7 +281,6 @@ function MessageActions({
   selectedMessages,
   handleSelect,
 }) {
-  const { t } = useT();
   return (
     <>
       <IconButton
@@ -310,7 +302,7 @@ function MessageActions({
             onReply?.(message);
           }}
         >
-          <FaReply style={{ marginInlineEnd: 8 }} /> {t("chat.message.actionReply", "رد")}
+          <FaReply style={{ marginInlineEnd: 8 }} /> رد
         </MenuItem>
         {canPin && (
           <MenuItem
@@ -319,7 +311,7 @@ function MessageActions({
               isPinned ? onUnPin?.(message) : onPin?.(message);
             }}
           >
-            <MdPushPin style={{ marginInlineEnd: 8 }} /> {isPinned ? t("chat.message.actionUnpin", "إلغاء التثبيت") : t("chat.message.actionPin", "تثبيت")}
+            <MdPushPin style={{ marginInlineEnd: 8 }} /> {isPinned ? "إلغاء التثبيت" : "تثبيت"}
           </MenuItem>
         )}
         {canDelete && (
@@ -329,13 +321,13 @@ function MessageActions({
               onDelete?.(message.id);
             }}
           >
-            <FaTrash style={{ marginInlineEnd: 8 }} /> {t("chat.message.actionDelete", "حذف")}
+            <FaTrash style={{ marginInlineEnd: 8 }} /> حذف
           </MenuItem>
         )}
         {canForward && !message.isDeleted && (
           <MenuItem onClick={handleSelect}>
             <FaShare style={{ marginInlineEnd: 8 }} />{" "}
-            {selectedMessages.some((m) => m.id === message.id) ? t("chat.message.actionDeselect", "إلغاء التحديد") : t("chat.message.actionSelect", "تحديد")}
+            {selectedMessages.some((m) => m.id === message.id) ? "إلغاء التحديد" : "تحديد"}
           </MenuItem>
         )}
       </Menu>

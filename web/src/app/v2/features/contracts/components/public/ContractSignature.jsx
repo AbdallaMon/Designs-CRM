@@ -29,7 +29,6 @@ import {
 import SignatureCanvas from "react-signature-canvas";
 import { useUpload } from "@/app/v2/hooks/useUpload";
 import { useOverlay } from "@/app/v2/hooks/useOverlay";
-import { useT } from "@/app/v2/lib/i18n";
 import contractsService from "../../contracts.service.js";
 import { runContractMutation } from "../../contracts.mutations.js";
 
@@ -76,7 +75,6 @@ const cropToAspect = (img, outW, outH) => {
 };
 
 export default function ContractSignature({ session, token, onSignatureSaved, handleBack, disabled }) {
-  const { t } = useT();
   const sigCanvas = useRef({});
   const overlay = useOverlay();
   // Client chunk upload → returns a relative /uploads/... path (signatureUrl).
@@ -103,13 +101,13 @@ export default function ContractSignature({ session, token, onSignatureSaved, ha
   // the RELATIVE /uploads/... path the BE expects + SSRF-validates.
   async function finalize(signatureUrl) {
     if (!signatureUrl) {
-      setError(t("contracts.signature.err.uploadFailed"));
+      setError("فشل رفع التوقيع.");
       return;
     }
     setSubmitting(true);
     const res = await runContractMutation(
       () => contractsService.generatePdf({ arToken, signatureUrl, lng: "ar" }),
-      { loading: t("contracts.signature.finalizing") },
+      { loading: "جاري اعتماد العقد..." },
     );
     setSubmitting(false);
     if (res) onSignatureSaved?.();
@@ -128,12 +126,12 @@ export default function ContractSignature({ session, token, onSignatureSaved, ha
   const handleOnlineSave = async () => {
     setError("");
     if (sigCanvas.current?.isEmpty?.()) {
-      setError(t("contracts.signature.err.signFirst"));
+      setError("يرجى التوقيع قبل الحفظ.");
       return;
     }
     const file = await getSignatureAsFile();
     if (!file) {
-      setError(t("contracts.signature.err.cantRead"));
+      setError("تعذر قراءة التوقيع.");
       return;
     }
     const res = await uploadAsChunk({ file });
@@ -157,14 +155,14 @@ export default function ContractSignature({ session, token, onSignatureSaved, ha
       setProcessedBlob(blob);
       setProcessedPreview(URL.createObjectURL(blob));
     } catch {
-      setError(t("contracts.signature.err.processImage"));
+      setError("خطأ أثناء معالجة الصورة. جرّب صورة أخرى أو قصّها بشكل أوضح.");
     }
   };
 
   const handleImageConfirmUpload = async () => {
     setError("");
     if (!processedBlob) {
-      setError(t("contracts.signature.err.noPreview"));
+      setError("لا توجد معاينة جاهزة.");
       return;
     }
     const file = new File([processedBlob], `signature-only-${token || "custom"}.png`, { type: "image/png" });
@@ -177,10 +175,10 @@ export default function ContractSignature({ session, token, onSignatureSaved, ha
   return (
     <Box sx={{ px: 1 }} dir="rtl">
       <Box sx={{ px: 2, pt: 1 }}>
-        <Typography variant="subtitle1" sx={{ mb: 1 }}>{t("contracts.signature.chooseMethod")}</Typography>
+        <Typography variant="subtitle1" sx={{ mb: 1 }}>اختر طريقة التوقيع</Typography>
         <RadioGroup row value={method} onChange={(e) => setMethod(e.target.value)} name="signature-method">
-          <FormControlLabel value="online" control={<Radio />} label={t("contracts.signature.method.online")} />
-          <FormControlLabel value="image" control={<Radio />} label={t("contracts.signature.method.image")} />
+          <FormControlLabel value="online" control={<Radio />} label="توقيع إلكتروني" />
+          <FormControlLabel value="image" control={<Radio />} label="رفع صورة توقيع (مقصوصة)" />
         </RadioGroup>
         <Divider sx={{ mt: 1 }} />
       </Box>
@@ -189,7 +187,7 @@ export default function ContractSignature({ session, token, onSignatureSaved, ha
 
       {method === "online" && (
         <Paper variant="outlined" sx={{ p: 2, mt: 2 }}>
-          <Typography sx={{ mb: 1 }} variant="h6">{t("contracts.signature.draw.title")}</Typography>
+          <Typography sx={{ mb: 1 }} variant="h6">ارسم توقيعك</Typography>
           <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", p: 2, width: "100%", maxWidth: 800, mx: "auto", borderRadius: 1 }}>
             <SignatureCanvas
               penColor="black"
@@ -202,10 +200,10 @@ export default function ContractSignature({ session, token, onSignatureSaved, ha
               clearOnResize={false}
             />
             <Stack direction="row" spacing={1} sx={{ mt: 2, width: "100%" }}>
-              <Button variant="outlined" onClick={handleBack} disabled={busy}>{t("contracts.common.back")}</Button>
+              <Button variant="outlined" onClick={handleBack} disabled={busy}>رجوع</Button>
               <Box sx={{ flexGrow: 1 }} />
-              <Button variant="outlined" onClick={handleClearCanvas} disabled={busy}>{t("contracts.signature.draw.clear")}</Button>
-              <Button onClick={handleOnlineSave} variant="contained" disabled={busy}>{t("contracts.common.save")}</Button>
+              <Button variant="outlined" onClick={handleClearCanvas} disabled={busy}>مسح</Button>
+              <Button onClick={handleOnlineSave} variant="contained" disabled={busy}>حفظ</Button>
             </Stack>
           </Box>
         </Paper>
@@ -213,34 +211,34 @@ export default function ContractSignature({ session, token, onSignatureSaved, ha
 
       {method === "image" && (
         <Paper variant="outlined" sx={{ p: 2, mt: 2 }}>
-          <Typography variant="h6" sx={{ mb: 1 }}>{t("contracts.signature.image.title")}</Typography>
+          <Typography variant="h6" sx={{ mb: 1 }}>رفع صورة التوقيع فقط</Typography>
           <Typography variant="body2" sx={{ mb: 2 }}>
-            {t("contracts.signature.image.hint")}
+            رجاءً قص الصورة بحيث تحتوي على التوقيع فقط بدون خلفية زائدة. يفضّل نسبة 5:2. ستظهر المعاينة تلقائيًا بعد اختيار الصورة.
           </Typography>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center">
             <Button variant="outlined" component="label" disabled={busy}>
-              {t("contracts.signature.image.choose")}
+              اختر صورة
               <input type="file" hidden accept="image/*" onChange={(e) => setFileAndAutoPreview(e.target.files?.[0] || null)} />
             </Button>
             <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
-              {sigImageFile ? `${t("contracts.signature.image.selected")}${sigImageFile.name}` : t("contracts.signature.image.notSelected")}
+              {sigImageFile ? `الصورة المختارة: ${sigImageFile.name}` : "لم يتم اختيار صورة"}
             </Typography>
-            <Button variant="contained" disabled={!hasProcessed || busy} onClick={handleImageConfirmUpload}>{t("contracts.signature.image.confirmUpload")}</Button>
+            <Button variant="contained" disabled={!hasProcessed || busy} onClick={handleImageConfirmUpload}>تأكيد الرفع</Button>
           </Stack>
           {ratioInfo ? (
-            <Typography variant="caption" sx={{ mt: 1, display: "block" }}>{t("contracts.signature.image.ratio")}{ratioInfo}</Typography>
+            <Typography variant="caption" sx={{ mt: 1, display: "block" }}>نسبة أبعاد الصورة: {ratioInfo}</Typography>
           ) : null}
           {processedPreview && (
             <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle2">{t("contracts.signature.image.preview")}</Typography>
+              <Typography variant="subtitle2">المعاينة</Typography>
               <Box component="img" src={processedPreview} alt="signature preview" sx={{ mt: 1, width: "100%", maxWidth: 500, borderRadius: 1, border: "1px solid", borderColor: "divider" }} />
               <Typography variant="caption" sx={{ display: "block", mt: 1 }}>
-                {t("contracts.signature.image.savedSizePrefix")} {TARGET_WIDTH}×{TARGET_HEIGHT} {t("contracts.signature.image.savedSizeSuffix")}
+                سيتم الحفظ بالمقاس {TARGET_WIDTH}×{TARGET_HEIGHT} بكسل (PNG)
               </Typography>
             </Box>
           )}
           <Stack direction="row" sx={{ mt: 2 }}>
-            <Button variant="outlined" onClick={handleBack} disabled={busy}>{t("contracts.common.back")}</Button>
+            <Button variant="outlined" onClick={handleBack} disabled={busy}>رجوع</Button>
           </Stack>
         </Paper>
       )}

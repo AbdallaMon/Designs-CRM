@@ -9,21 +9,23 @@
 
 import { useEffect, useState } from "react";
 import {
+  Avatar,
   Box,
+  Card,
+  CardContent,
+  CardHeader,
   Chip,
+  CircularProgress,
   Divider,
   Tab,
   Tabs,
   Typography,
 } from "@mui/material";
 import { MdFolder } from "react-icons/md";
-import { SectionCard, EmptyState, LoadingState } from "@/app/v2/shared/components";
-import { useT } from "@/app/v2/lib/i18n";
 import { projectsService } from "../projects.service.js";
 import { ProjectDetails } from "./ProjectDetails.jsx";
 
 export function LeadProjects({ clientLeadId, initialProjects, noInitialLoad = false }) {
-  const { t } = useT();
   const [groupedProjects, setGroupedProjects] = useState(initialProjects || []);
   const [loading, setLoading] = useState(!noInitialLoad);
   const [activeProject, setActiveProject] = useState(null);
@@ -70,28 +72,39 @@ export function LeadProjects({ clientLeadId, initialProjects, noInitialLoad = fa
 
   if (loading) {
     return (
-      <SectionCard title={t("projects.group.sectionTitle")}>
-        <LoadingState variant="cards" count={3} columns={3} height={200} />
-      </SectionCard>
+      <Box display="flex" justifyContent="center" alignItems="center" height="300px">
+        <CircularProgress />
+      </Box>
     );
   }
 
   if (groupedProjects.length === 0) {
     return (
-      <SectionCard title={t("projects.group.sectionTitle")}>
-        <EmptyState
-          icon={<MdFolder />}
-          title={t("projects.group.empty.title")}
-          description={t("projects.group.empty.description")}
-        />
-      </SectionCard>
+      <Card variant="outlined">
+        <CardContent>
+          <Box display="flex" flexDirection="column" alignItems="center" py={6}>
+            <Avatar sx={{ width: 64, height: 64, mb: 2, bgcolor: "primary.light" }}>
+              <MdFolder size={32} />
+            </Avatar>
+            <Typography variant="h6">لا توجد مشاريع</Typography>
+          </Box>
+        </CardContent>
+      </Card>
     );
   }
 
   const currentGroup = groupedProjects[activeGroupTab] || {};
 
   return (
-    <SectionCard title={t("projects.group.sectionTitle")} noPadding>
+    <Card variant="outlined">
+      <CardHeader
+        title={
+          <Typography variant="h6" fontWeight={500}>
+            {currentGroup.groupTitle || "المشاريع"} — العميل #{clientLeadId}
+          </Typography>
+        }
+      />
+      <Divider />
       <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tabs
           value={activeGroupTab}
@@ -119,7 +132,7 @@ export function LeadProjects({ clientLeadId, initialProjects, noInitialLoad = fa
           ))}
         </Tabs>
       </Box>
-      <Box sx={{ p: 2.5 }}>
+      <CardContent>
         <Box display="flex" gap={1.5} flexWrap="wrap" mb={3}>
           {currentGroup.projects?.map((project) => (
             <Chip
@@ -133,7 +146,7 @@ export function LeadProjects({ clientLeadId, initialProjects, noInitialLoad = fa
           ))}
           {(!currentGroup.projects || currentGroup.projects.length === 0) && (
             <Typography variant="body2" color="text.secondary">
-              {t("projects.group.emptyInGroup")}
+              لا توجد مشاريع في هذه المجموعة
             </Typography>
           )}
         </Box>
@@ -146,12 +159,12 @@ export function LeadProjects({ clientLeadId, initialProjects, noInitialLoad = fa
         ) : (
           <Box display="flex" flexDirection="column" alignItems="center" py={6}>
             <Typography variant="h6" color="text.secondary">
-              {t("projects.group.noneSelected")}
+              لم يتم اختيار مشروع
             </Typography>
           </Box>
         )}
-      </Box>
-    </SectionCard>
+      </CardContent>
+    </Card>
   );
 }
 

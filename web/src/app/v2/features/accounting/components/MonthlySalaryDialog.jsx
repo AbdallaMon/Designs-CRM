@@ -26,7 +26,6 @@ import {
 } from "@mui/material";
 import dayjs from "dayjs";
 import { MdPayments } from "react-icons/md";
-import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { accountingService } from "../accounting.service.js";
@@ -36,7 +35,6 @@ import { formatCurrency } from "../config/accountingConstants.js";
 const P = PERMISSIONS.ACCOUNTING;
 
 export function MonthlySalaryDialog({ salaryData, onPaid }) {
-  const { t } = useT();
   const { hasPermission } = usePermission();
   const canPay = hasPermission(P.SALARY_PAY);
   const canLastSeen = hasPermission(P.USER_LAST_SEEN);
@@ -93,7 +91,7 @@ export function MonthlySalaryDialog({ salaryData, onPaid }) {
           isFulfilled: Boolean(form.isFulfilled),
           paymentDate: form.paymentDate,
         }),
-      { loading: t("accounting.monthly.loading"), setLoading: setSubmitting },
+      { loading: "جاري دفع الراتب...", setLoading: setSubmitting },
     );
     if (res) {
       onPaid?.(res.data);
@@ -106,10 +104,10 @@ export function MonthlySalaryDialog({ salaryData, onPaid }) {
   return (
     <>
       <Button variant="contained" size="small" startIcon={<MdPayments />} onClick={handleOpen}>
-        {t("accounting.monthly.button")}
+        دفع الراتب الشهري
       </Button>
       <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="md">
-        <DialogTitle>{t("accounting.monthly.title")}</DialogTitle>
+        <DialogTitle>دفع الراتب الشهري</DialogTitle>
         <DialogContent dividers>
           {fetching ? (
             <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
@@ -119,24 +117,24 @@ export function MonthlySalaryDialog({ salaryData, onPaid }) {
             <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <Paper variant="outlined" sx={{ p: 2 }}>
                 <Typography variant="subtitle2" gutterBottom>
-                  {t("accounting.monthly.employeeData")}
+                  بيانات الموظف
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <Typography variant="body2" color="text.secondary">
-                      {t("accounting.monthly.name")}
+                      الاسم
                     </Typography>
                     <Typography fontWeight="bold">{salaryData.employee?.name}</Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <Typography variant="body2" color="text.secondary">
-                      {t("accounting.monthly.baseSalary")}
+                      الراتب الأساسي
                     </Typography>
                     <Typography fontWeight="bold">{formatCurrency(salaryData.baseSalary)}</Typography>
                   </Grid>
                   <Grid size={{ xs: 12, sm: 4 }}>
                     <Typography variant="body2" color="text.secondary">
-                      {t("accounting.monthly.recordedHours")}
+                      ساعات الشهر المسجلة
                     </Typography>
                     <Typography fontWeight="bold">{monthly?.totalMonthHours ?? "—"}</Typography>
                   </Grid>
@@ -149,7 +147,7 @@ export function MonthlySalaryDialog({ salaryData, onPaid }) {
                     <TextField
                       fullWidth
                       type="number"
-                      label={t("accounting.monthly.field.totalHours")}
+                      label="إجمالي ساعات العمل"
                       value={form.totalHoursWorked}
                       onChange={(e) => setField("totalHoursWorked", e.target.value, true)}
                     />
@@ -158,7 +156,7 @@ export function MonthlySalaryDialog({ salaryData, onPaid }) {
                     <TextField
                       fullWidth
                       type="number"
-                      label={t("accounting.monthly.field.overtime")}
+                      label="الساعات الإضافية"
                       value={form.overtimeHours}
                       onChange={(e) => setField("overtimeHours", e.target.value, true)}
                     />
@@ -167,7 +165,7 @@ export function MonthlySalaryDialog({ salaryData, onPaid }) {
                     <TextField
                       fullWidth
                       type="number"
-                      label={t("accounting.monthly.field.bonuses")}
+                      label="المكافآت"
                       value={form.bonuses}
                       onChange={(e) => setField("bonuses", e.target.value, true)}
                     />
@@ -176,7 +174,7 @@ export function MonthlySalaryDialog({ salaryData, onPaid }) {
                     <TextField
                       fullWidth
                       type="number"
-                      label={t("accounting.monthly.field.deductions")}
+                      label="الخصومات"
                       value={form.deductions}
                       onChange={(e) => setField("deductions", e.target.value, true)}
                     />
@@ -185,7 +183,7 @@ export function MonthlySalaryDialog({ salaryData, onPaid }) {
                     <TextField
                       fullWidth
                       type="number"
-                      label={t("accounting.monthly.field.netSalary")}
+                      label="صافي الراتب (المبلغ المدفوع فعلياً)"
                       value={form.netSalary}
                       onChange={(e) => setField("netSalary", e.target.value, true)}
                     />
@@ -198,14 +196,14 @@ export function MonthlySalaryDialog({ salaryData, onPaid }) {
                           onChange={(e) => setField("isFulfilled", e.target.checked)}
                         />
                       }
-                      label={t("accounting.monthly.field.isFulfilled")}
+                      label="هل أكمل ساعات العمل"
                     />
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
                       fullWidth
                       type="date"
-                      label={t("accounting.monthly.field.paymentDate")}
+                      label="تاريخ الدفع"
                       value={form.paymentDate}
                       onChange={(e) => setField("paymentDate", e.target.value)}
                       InputLabelProps={{ shrink: true }}
@@ -217,13 +215,13 @@ export function MonthlySalaryDialog({ salaryData, onPaid }) {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)}>{t("accounting.action.cancel")}</Button>
+          <Button onClick={() => setOpen(false)}>إلغاء</Button>
           <Button
             variant="contained"
             disabled={submitting || !(Number(form.totalHoursWorked) > 0) || !(Number(form.netSalary) > 0)}
             onClick={handleSubmit}
           >
-            {t("accounting.monthly.payButton")}
+            دفع
           </Button>
         </DialogActions>
       </Dialog>

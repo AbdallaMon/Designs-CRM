@@ -1,72 +1,52 @@
 "use client";
 
-// Meetings tab — lists the lead's meeting reminders and exposes the New-meeting dialog (header
-// add-button) + per-reminder result dialog (row action). Capability-gated on canAddMeeting
-// (unchanged). Body = shared LeadRecordList; result status reads as a <StatusChip>.
+// Meetings tab — lists the lead's meeting reminders and exposes the New-meeting dialog +
+// per-reminder result dialog. Capability-gated on canAddMeeting.
 
-import { Stack, Typography } from "@mui/material";
-import { MdGroups } from "react-icons/md";
+import { List, ListItem, ListItemText, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
-import { StatusChip } from "@/app/v2/shared/components";
-import { useT } from "@/app/v2/lib/i18n";
-import { LeadRecordList } from "../LeadRecordList.jsx";
 import {
   NewCallMeetingDialog,
   CallMeetingResultDialog,
 } from "../dialogs/CallMeetingDialogs.jsx";
 
 export function MeetingsTab({ lead, onChanged }) {
-  const { t } = useT();
   const caps = lead?.capabilities ?? {};
   const meetings = Array.isArray(lead?.meetingReminders) ? lead.meetingReminders : [];
 
   return (
-    <LeadRecordList
-      title={t("leadsDetails.meetings.title")}
-      icon={<MdGroups />}
-      items={meetings}
-      headerAction={
-        <NewCallMeetingDialog
-          lead={lead}
-          reminderType="MEETING"
-          canAdd={caps.canAddMeeting}
-          onCreated={onChanged}
-        />
-      }
-      renderPrimary={(m) => (
-        <Typography variant="body1" sx={{ fontWeight: 500 }}>
-          {m.reminderReason || "—"}
-        </Typography>
+    <Stack spacing={2}>
+      <NewCallMeetingDialog lead={lead} reminderType="MEETING" canAdd={caps.canAddMeeting} onCreated={onChanged} />
+      {meetings.length === 0 ? (
+        <Typography color="text.secondary">لا توجد اجتماعات</Typography>
+      ) : (
+        <List>
+          {meetings.map((m) => (
+            <ListItem
+              key={m.id}
+              divider
+              secondaryAction={
+                <CallMeetingResultDialog
+                  reminder={m}
+                  reminderType="MEETING"
+                  canManage={caps.canAddMeeting}
+                  onUpdated={onChanged}
+                />
+              }
+            >
+              <ListItemText
+                primary={m.reminderReason || "—"}
+                secondary={
+                  <>
+                    {m.time ? dayjs(m.time).format("YYYY-MM-DD HH:mm") : ""} · {m.status || ""}
+                    {m.meetingResult ? ` · ${m.meetingResult}` : ""}
+                  </>
+                }
+              />
+            </ListItem>
+          ))}
+        </List>
       )}
-      renderSecondary={(m) => (
-        <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" rowGap={0.5}>
-          <Typography variant="body2" color="text.secondary" component="span">
-            {m.time ? dayjs(m.time).format("YYYY-MM-DD HH:mm") : "—"}
-          </Typography>
-          {m.meetingResult && (
-            <Typography variant="body2" color="text.secondary" component="span">
-              · {m.meetingResult}
-            </Typography>
-          )}
-        </Stack>
-      )}
-      renderStatus={(m) =>
-        m.status ? <StatusChip domain="reminder" status={m.status} /> : null
-      }
-      renderRowAction={(m) => (
-        <CallMeetingResultDialog
-          reminder={m}
-          reminderType="MEETING"
-          canManage={caps.canAddMeeting}
-          onUpdated={onChanged}
-        />
-      )}
-      emptyTitle={t("leadsDetails.meetings.empty.title")}
-      emptyDescription={
-        caps.canAddMeeting
-          ? t("leadsDetails.meetings.empty.canAdd")
-          : t("leadsDetails.meetings.empty.readonly")
-      }
-    />
+    </Stack>
   );
 }
