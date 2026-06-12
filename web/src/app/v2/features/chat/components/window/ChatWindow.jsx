@@ -287,19 +287,14 @@ export function ChatWindow({
     [roomId, user?.id, socket],
   );
 
-  // available users for add-members. The users module is not migrated to /v2, so the
-  // directory is served by the LEGACY base via chatService.listDirectoryUsers
-  // (admin/all-users for admins, shared/all-related-chat-users for normal users).
-  // Legacy returns the user array directly under response.data.
-  // TODO: switch to /v2/users when users module migrates.
+  // available users for add-members — served by the consolidated v2 directory
+  // (/v2/users/chat-directory). The server scopes by the auth token (admin sees all,
+  // staff sees project-related users), so the FE passes only projectId.
   const loadAvailableUsers = useCallback(async () => {
     if (!isNotDirectChat || !canManageMembers) return;
     setLoadingUsers(true);
     try {
-      const res = await chatService.listDirectoryUsers({
-        isAdmin: isAdminRole(user),
-        projectId,
-      });
+      const res = await chatService.listDirectoryUsers({ projectId });
       const list = Array.isArray(res?.data) ? res.data : (res?.data?.items ?? []);
       const alreadyMembers = members.filter((m) => m.userId).map((m) => m.userId);
       setAvailableUsers(list.filter((u) => !alreadyMembers.includes(u.id)));

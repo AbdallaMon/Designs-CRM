@@ -1,5 +1,6 @@
 import { toast } from "react-toastify";
 import { Failed, Success } from "@/app/v2/lib/toast/toastUtils";
+import { resolveMessage } from "@/app/v2/lib/messages/resolveMessage";
 import apiFetch, { legacyApiFetch } from "./ApiFetch";
 
 export async function handleRequestSubmit({
@@ -26,16 +27,17 @@ export async function handleRequestSubmit({
     );
 
     if (response.status === 200) {
-      toast.update(toastId, Success(response.message));
+      toast.update(toastId, Success(resolveMessage(response.message)));
       if (setRedirect) setRedirect((prev) => !prev);
     } else {
-      toast.update(toastId, Failed(response.message));
+      toast.update(toastId, Failed(resolveMessage(response.message)));
     }
 
     return response;
   } catch (err) {
-    toast.update(toastId, Failed("Error, " + err.message));
-    return { status: 500, message: "Error, " + err.message };
+    const message = resolveMessage(err?.data?.message || err?.message);
+    toast.update(toastId, Failed(message));
+    return { status: 500, message };
   } finally {
     setLoading(false);
   }

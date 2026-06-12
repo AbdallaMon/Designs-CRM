@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useLoading } from "./useLoading";
 import apiFetch from "../lib/api/ApiFetch";
+import { resolveMessage } from "../lib/messages/resolveMessage";
 
 export function useRequest({
   url,
@@ -33,12 +34,11 @@ export function useRequest({
         } else {
           response = await client[method](url, params);
         }
-        setSuccessMessage(response.message || "Operation successful");
+        setSuccessMessage(resolveMessage(response.message));
         setData(response.data);
         return response;
       } catch (e) {
-        const message =
-          e?.data?.message || e?.message || "Something went wrong";
+        const message = resolveMessage(e?.data?.message || e?.message);
 
         setError(message);
         throw e;

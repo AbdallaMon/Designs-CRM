@@ -15,9 +15,12 @@ export function useAuthHooks() {
   async function login(formData) {
     const response = await loginUser(formData, setLoading);
     if (response.status === 200) {
-      setAuthUser(response.user);
+      // Backend envelope is { success, message, data, translationKey } — the user
+      // lives under data.user, not at the top level.
+      setAuthUser(response.data?.user);
       const searchParams = new URLSearchParams(window.location.search);
-      const redirectTo = searchParams.get("redirect") || "/dashboard";
+      // Real app routes live under /v2/* ; "/v2" redirects to the landing screen.
+      const redirectTo = searchParams.get("redirect") || "/v2";
       window.location.href = redirectTo;
     }
 

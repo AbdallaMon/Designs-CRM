@@ -10,7 +10,7 @@ export async function loginUser(data, setLoading) {
     data,
     setLoading,
     path: "auth/login",
-    toastMessage: "Logging in...",
+    toastMessage: "جارٍ تسجيل الدخول...",
   });
 }
 
@@ -24,7 +24,7 @@ export async function requestPasswordReset(data, setLoading) {
     data,
     setLoading,
     path: "auth/request-password-reset",
-    toastMessage: "Sending reset email...",
+    toastMessage: "جارٍ إرسال رابط إعادة التعيين...",
   });
 }
 
@@ -38,6 +38,6 @@ export async function resetPassword(data, setLoading) {
     data,
     setLoading,
     path: "auth/reset-password",
-    toastMessage: "Resetting password...",
+    toastMessage: "جارٍ إعادة تعيين كلمة المرور...",
   });
 }

@@ -1,30 +1,33 @@
 "use client";
 
-// Dashboard FOUNDATION page — a wiring smoke-screen, NOT the redesigned dashboard. It proves
-// the v2 data layer is wired end-to-end for this feature: permission-gated on dashboard.view,
-// it fetches the primary aggregation (key-metrics) through useRequest → the dashboard.service
-// (which is the SOLE API caller, pointed at /v2/dashboard) and renders the raw envelope data.
-// The real multi-widget dashboard UI is built later in the UX-redesign phase on top of this
-// exact data layer. Single-language Arabic/RTL.
+// Dashboard — the real admin/sales multi-widget dashboard, wired to the migrated
+// /v2/dashboard/* backend. Permission-gated on dashboard.view (the BE additionally
+// self-scopes EACH of the 9 aggregations by token: admin-tier → global / optional staffId,
+// every other role → own id). Each widget owns its fetch (web/ useRequest → the dashboard
+// service, the SOLE caller pointed at /v2/dashboard) and renders an MUI card / recharts
+// chart with Arabic labels + loading/empty states. Layout mirrors the legacy Dashboard.jsx:
+// key-metrics row → monthly overview → status + activity → performance + new leads →
+// monthly income → emirates analytics. Single-language Arabic / RTL.
 
-import { Box, Container, Paper, Typography } from "@mui/material";
+import { Box, Container, Grid, Typography } from "@mui/material";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
-import { useRequest } from "@/app/v2/hooks/useRequest";
-import { KEY_METRICS_URL } from "../config/constant.js";
+import {
+  EmiratesAnalytics,
+  IncomeOverTimeChart,
+  KeyMetricsCard,
+  LeadStatusChart,
+  LeadsMonthlyOverviewSingle,
+  NewLeadsList,
+  PerformanceMetrics,
+  RecenteActivity,
+} from "../components/index.js";
 
 const P = PERMISSIONS.DASHBOARD;
 
 export function DashboardPage() {
   const { hasPermission } = usePermission();
   const canView = hasPermission(P.VIEW);
-
-  // Primary read proves the wiring. autoFetch only when the gate passes (no unauthorized call).
-  const { data, isLoading, error } = useRequest({
-    url: KEY_METRICS_URL,
-    method: "get",
-    autoFetch: canView,
-  });
 
   if (!canView) {
     return (
@@ -35,24 +38,49 @@ export function DashboardPage() {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Typography variant="h5" sx={{ mb: 2 }}>
+    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1800, mx: "auto" }}>
+      <Typography variant="h4" sx={{ mb: 4, fontWeight: "bold", color: "text.primary" }}>
         لوحة التحكم
       </Typography>
-      <Typography color="text.secondary" sx={{ mb: 3 }}>
-        أساس البيانات جاهز — تُبنى الواجهة الكاملة في مرحلة إعادة التصميم.
-      </Typography>
 
-      <Paper variant="outlined" sx={{ p: 2 }}>
-        {isLoading && <Typography color="text.secondary">جاري التحميل...</Typography>}
-        {error && <Typography color="error">تعذّر جلب البيانات</Typography>}
-        {!isLoading && !error && (
-          <Box component="pre" sx={{ m: 0, whiteSpace: "pre-wrap", fontSize: 13 }}>
-            {JSON.stringify(data, null, 2)}
-          </Box>
-        )}
-      </Paper>
-    </Container>
+      <Grid container spacing={4}>
+        {/* Key metrics — full width */}
+        <Grid size={12}>
+          <KeyMetricsCard enabled={canView} />
+        </Grid>
+
+        {/* Leads monthly overview — full width (own month picker + sub-tables/charts) */}
+        <Grid size={12}>
+          <LeadsMonthlyOverviewSingle enabled={canView} />
+        </Grid>
+
+        {/* Lead-status distribution + recent activity */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <LeadStatusChart enabled={canView} />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <RecenteActivity enabled={canView} />
+        </Grid>
+
+        {/* Weekly performance + newest leads */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <PerformanceMetrics enabled={canView} />
+        </Grid>
+        <Grid size={{ xs: 12, md: 6 }}>
+          <NewLeadsList enabled={canView} />
+        </Grid>
+
+        {/* Monthly income/performance trend — full width */}
+        <Grid size={12}>
+          <IncomeOverTimeChart enabled={canView} />
+        </Grid>
+
+        {/* Emirates analytics — full width */}
+        <Grid size={12}>
+          <EmiratesAnalytics enabled={canView} />
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
 

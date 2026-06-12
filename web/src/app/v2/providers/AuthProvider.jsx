@@ -51,7 +51,8 @@ export function AuthProvider({ children }) {
         pathname.startsWith(prefix),
       );
       if (isProtected) {
-        router.push("/login");
+        // Preserve the intended destination so login can return the user to it.
+        router.push(`/login?redirect=${encodeURIComponent(pathname)}`);
       }
     };
   }, [router]);

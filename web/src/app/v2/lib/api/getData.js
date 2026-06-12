@@ -1,3 +1,4 @@
+import { resolveMessage } from "@/app/v2/lib/messages/resolveMessage";
 import apiFetch, { legacyApiFetch } from "./ApiFetch";
 
 export async function getData({
@@ -29,7 +30,10 @@ export async function getData({
     return result;
   } catch (e) {
     console.error("[getData]", e);
-    return { status: 500, message: e.message };
+    return {
+      status: e?.status || 500,
+      message: resolveMessage(e?.data?.message || e?.message),
+    };
   } finally {
     setLoading(false);
   }

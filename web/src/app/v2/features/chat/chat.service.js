@@ -3,7 +3,7 @@
 // fetch/apiFetch directly. All responses share the { success, message, data,
 // translationKey } envelope; helpers return the parsed envelope.
 
-import apiFetch, { legacyApiFetch } from "@/app/v2/lib/api/ApiFetch";
+import apiFetch from "@/app/v2/lib/api/ApiFetch";
 import {
   CHAT_ROOMS_URL,
   chatRoomUrl,
@@ -79,17 +79,11 @@ export const chatService = {
   filesStats: (roomId) => apiFetch.get(chatFilesStatsUrl(roomId)),
 
   // ── User directory (add-members) ─────────────────────────────────────────────
-  // The users module is not migrated to /v2 yet, so the add-members directory still
-  // hits the LEGACY base (config.legacyApiUrl): /admin/all-users for admins and
-  // /shared/all-related-chat-users (with projectId) for normal users. Legacy returns
-  // the user array directly under response.data.
-  // TODO: switch to /v2/users when users module migrates.
-  listDirectoryUsers: ({ isAdmin = false, projectId = null } = {}) => {
-    const base = isAdmin ? "admin/all-users" : "shared/all-related-chat-users";
-    return legacyApiFetch.get(
-      withQuery(base, isAdmin ? {} : { projectId }),
-    );
-  },
+  // Consolidated v2 endpoint: the server branches on the auth token (admin-tier sees
+  // everyone, staff sees project-related users), so the FE passes only projectId.
+  // Returns the user array under response.data (or data.items).
+  listDirectoryUsers: ({ projectId = null } = {}) =>
+    apiFetch.get(withQuery("users/chat-directory", projectId ? { projectId } : {})),
 };
 
 export default chatService;
