@@ -32,6 +32,19 @@ export class TaskUsecase {
     return authUser?.role === "ADMIN" || authUser?.role === "SUPER_ADMIN";
   }
 
+  // The frontend sends `dueDate` as a date-only string ("2026-06-12"), but Prisma
+  // Task.dueDate is DateTime? and rejects a bare date ("premature end of input").
+  // Coerce any provided date-only field to a real Date before it reaches the repo,
+  // while leaving null/undefined/empty as null (never `new Date("")` → Invalid Date).
+  // Mirrors the existing last-mile coercion style in deliveryServices/projectServices.
+  coerceTaskDates(data) {
+    const out = { ...data };
+    if ("dueDate" in out) {
+      out.dueDate = out.dueDate ? new Date(out.dueDate) : null;
+    }
+    return out;
+  }
+
   // ── object-scope: resolve the task's parent project, then run project scope ───────
   async checkIfUserCanAccessTask({ taskId, authUser }) {
     const task = await this.projects.resolveTaskProject({ taskId });
@@ -87,7 +100,7 @@ export class TaskUsecase {
   // a task and optionally link a project). Preserve that; the route requires TASK.CREATE.
   async create({ body, authUser }) {
     const isAdmin = this.isAdminUser(authUser);
-    const data = { ...body, createdById: Number(authUser.id) };
+    const data = this.coerceTaskDates({ ...body, createdById: Number(authUser.id) });
     const task = await this.legacy.createNewTask({ data, isAdmin, staffId: authUser.id });
     return { task, isModification: task?.type === "MODIFICATION" };
   }
@@ -95,7 +108,7 @@ export class TaskUsecase {
   // PUT /:taskId — update. Object scope already enforced via the parent project.
   async update({ taskId, body, authUser }) {
     const isAdmin = this.isAdminUser(authUser);
-    const task = await this.legacy.updateTask({ data: { ...body }, taskId: Number(taskId), isAdmin, userId: authUser.id });
+    const task = await this.legacy.updateTask({ data: this.coerceTaskDates({ ...body }), taskId: Number(taskId), isAdmin, userId: authUser.id });
     return { task, isModification: task?.type === "MODIFICATION" };
   }
 

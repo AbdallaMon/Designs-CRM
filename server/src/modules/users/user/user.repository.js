@@ -39,16 +39,25 @@ class UserRepository {
   // Flags mirror the legacy 4th/3rd args:
   //   checkIfNotHasRelatedChat → exclude users already in a STAFF_TO_STAFF room with me
   //   checkIfHasRelatedChat    → only users already in such a room with me
-  async findDirectory({ searchParams, currentUser, checkIfNotHasRelatedChat = false, checkIfHasRelatedChat = false }) {
+  // `exactRole` (opt-in) narrows the match to the PRIMARY `role` column only — dropping
+  // the legacy subRole OR-clause. Because `UserSubRole.subRole` is itself a UserRole, the
+  // default OR match pulls in users whose PRIMARY role differs but who carry the requested
+  // role as a secondary subRole (e.g. a THREE_D_DESIGNER/TWO_D_EXECUTOR who also holds a
+  // `STAFF` subRole). The lead-assign picker must list SALES agents ONLY, so it requests
+  // `exactRole` to exclude designers/executors moonlighting with a STAFF subRole. The
+  // chat/directory consumers do NOT pass it, so their behavior is preserved 1:1.
+  async findDirectory({ searchParams, currentUser, checkIfNotHasRelatedChat = false, checkIfHasRelatedChat = false, exactRole = false }) {
     const params = { ...searchParams };
     if (!params.role) params.role = "STAFF";
 
     let where = {};
     if (params.role !== "all") {
-      where.OR = [
-        { role: params.role },
-        { subRoles: { some: { subRole: params.role } } },
-      ];
+      where.OR = exactRole
+        ? [{ role: params.role }]
+        : [
+            { role: params.role },
+            { subRoles: { some: { subRole: params.role } } },
+          ];
     }
     if (currentUser) {
       const checkIfNotAdmin = !ADMIN_ROLES.includes(currentUser.role);
@@ -63,10 +72,17 @@ class UserRepository {
         ];
         where.OR = [];
         for (const role of groupUserRoleAndSubRoles) {
-          where.OR.push(
-            { role: role },
-            { subRoles: { some: { subRole: role } } },
-          );
+          // exactRole (lead-assign): match the PRIMARY role column only, so a non-admin
+          // requester (e.g. SUPER_SALES = STAFF + isSuperSales) does not re-widen the pool
+          // back to designers/executors via the subRole OR-clause.
+          if (exactRole) {
+            where.OR.push({ role: role });
+          } else {
+            where.OR.push(
+              { role: role },
+              { subRoles: { some: { subRole: role } } },
+            );
+          }
         }
       }
     }

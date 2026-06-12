@@ -157,10 +157,19 @@ export class UserUsecase {
 
   // /all-users — the role-grouped pick list (legacy getAllUsers default shape, no chat
   // flags). Returns a bare list (no pagination — legacy returned `{ data: users }`).
+  //
+  // `exactRole=true` (sent by the lead-assign picker) narrows the match to the PRIMARY
+  // role column only — excluding designers/executors who merely carry the requested role
+  // as a secondary subRole. Sales-staff selection for lead assignment must list STAFF
+  // agents ONLY; without this flag the default OR(role, subRole) match leaks
+  // THREE_D_DESIGNER / TWO_D_DESIGNER / TWO_D_EXECUTOR users that hold a `STAFF` subRole.
+  // Other callers (e.g. the designer-assign modal) omit it and keep the legacy OR match.
   async allUsers({ query, authUser }) {
+    const { exactRole, ...searchParams } = query ?? {};
     const items = await this.repo.findDirectory({
-      searchParams: { ...query },
+      searchParams,
       currentUser: authUser,
+      exactRole: exactRole === true || exactRole === "true" || exactRole === "1",
     });
     return { items: items.map((u) => ({ ...u, capabilities: computeUserCapabilities(u, authUser) })) };
   }

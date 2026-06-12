@@ -230,6 +230,44 @@ describe("TaskUsecase scope via parent project", () => {
       usecase.remove({ id: 1, body: {}, authUser: designer }),
     ).rejects.toMatchObject({ statusCode: 400, message: C.DELETE_MODEL_REQUIRED });
   });
+
+  // ── dueDate coercion (Prisma DateTime? rejects a bare "2026-06-12" string) ──────
+  it("CREATE: coerces a date-only dueDate string to a real Date before the repo", async () => {
+    const legacy = { createNewTask: vi.fn().mockResolvedValue({ id: 60, type: "NORMAL" }) };
+    const usecase = new TaskUsecase({}, makeProjects(), legacy);
+    await usecase.create({ body: { title: "t", dueDate: "2026-06-12" }, authUser: designer });
+    const data = legacy.createNewTask.mock.calls[0][0].data;
+    expect(data.dueDate).toBeInstanceOf(Date);
+    expect(data.dueDate.toISOString()).toBe("2026-06-12T00:00:00.000Z");
+  });
+
+  it("CREATE: a null/absent dueDate stays null (never new Date(\"\") → Invalid Date)", async () => {
+    const legacy = { createNewTask: vi.fn().mockResolvedValue({ id: 61, type: "NORMAL" }) };
+    const usecase = new TaskUsecase({}, makeProjects(), legacy);
+    await usecase.create({ body: { title: "t", dueDate: null }, authUser: designer });
+    expect(legacy.createNewTask.mock.calls[0][0].data.dueDate).toBeNull();
+
+    await usecase.create({ body: { title: "t", dueDate: "" }, authUser: designer });
+    expect(legacy.createNewTask.mock.calls[1][0].data.dueDate).toBeNull();
+  });
+
+  it("UPDATE: coerces a date-only dueDate string the same way", async () => {
+    const projects = makeProjects();
+    const legacy = { updateTask: vi.fn().mockResolvedValue({ id: 62, type: "NORMAL" }) };
+    const usecase = new TaskUsecase({}, projects, legacy);
+    await usecase.update({ taskId: 62, body: { dueDate: "2026-06-12" }, authUser: designer });
+    const data = legacy.updateTask.mock.calls[0][0].data;
+    expect(data.dueDate).toBeInstanceOf(Date);
+    expect(data.dueDate.toISOString()).toBe("2026-06-12T00:00:00.000Z");
+  });
+
+  it("UPDATE: a body without dueDate is left untouched (no spurious null injected)", async () => {
+    const legacy = { updateTask: vi.fn().mockResolvedValue({ id: 63, type: "NORMAL" }) };
+    const usecase = new TaskUsecase({}, makeProjects(), legacy);
+    await usecase.update({ taskId: 63, body: { status: "DONE" }, authUser: designer });
+    const data = legacy.updateTask.mock.calls[0][0].data;
+    expect("dueDate" in data).toBe(false);
+  });
 });
 
 // ════════════════════════════════════════════════════════════════════════════
