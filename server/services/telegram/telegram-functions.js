@@ -309,7 +309,7 @@ export async function addUserListToAChnnelUsingQueue({
   }
 }
 export async function notifyUsersThatAClientHasSubmittedAPdf({ clientLeadId }) {
-  const link = `${process.env.OLDORIGIN}/dashboard/deals/${clientLeadId}`;
+  const link = `${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/deals/${clientLeadId}`;
   const note = {
     id: `style-${clientLeadId}`,
     clientLeadId: Number(clientLeadId),
@@ -319,7 +319,7 @@ export async function notifyUsersThatAClientHasSubmittedAPdf({ clientLeadId }) {
 }
 
 export async function notifyUsersThatAContractWasSigned({ clientLeadId }) {
-  const dashboardLink = `${process.env.OLDORIGIN}/dashboard/deals/${clientLeadId}`;
+  const dashboardLink = `${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/deals/${clientLeadId}`;
   const note = {
     id: `contract-signed-${clientLeadId}`,
     clientLeadId: Number(clientLeadId),
@@ -336,7 +336,7 @@ export async function notifyUsersAddedToProject({
   type,
   username,
 }) {
-  const link = `${process.env.OLDORIGIN}/dashboard/projects/${projectId}`;
+  const link = `${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/projects/${projectId}`;
   const note = {
     id: `${projectId}-${clientLeadId}`,
     clientLeadId: Number(clientLeadId),
@@ -350,7 +350,7 @@ export async function notifyUsersWithTheNewProjectStatus({
   clientLeadId,
   type,
 }) {
-  const link = `${process.env.OLDORIGIN}/dashboard/projects/${projectId}`;
+  const link = `${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/projects/${projectId}`;
   const note = {
     id: `${projectId}-${clientLeadId}`,
     clientLeadId: Number(clientLeadId),
@@ -1098,7 +1098,7 @@ async function sendNotification(
   staffId,
 ) {
   const link = href
-    ? `<a href="${process.env.OLDORIGIN}${href}" style="color: #1a73e8; text-decoration: none;">See details from here</a>`
+    ? `<a href="${process.env.LEGACY_DASHBOARD_ORIGIN}${href}" style="color: #1a73e8; text-decoration: none;">See details from here</a>`
     : "";
   const emailContent = `
         <div style=" color: #333; direction: ltr; text-align: left;">
@@ -1132,7 +1132,7 @@ async function sendNotification(
         ${emailContent}
     </div>
     <div style="margin-top: 10px;">
-        <a href="${process.env.OLDORIGIN}/dashboard/notifications" style="color: #007bff; text-decoration: none;">
+        <a href="${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/notifications" style="color: #007bff; text-decoration: none;">
             Go to notifications?
         </a>
     </div>

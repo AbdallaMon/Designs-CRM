@@ -1194,7 +1194,7 @@ export async function regenerateSessionToken(sessionId) {
 
   return {
     token: updated.token,
-    url: `${process.env.OLDORIGIN}/image-session?token=${updated.token}`,
+    url: `${process.env.LEGACY_DASHBOARD_ORIGIN}/image-session?token=${updated.token}`,
   };
 }
 export async function editSessionFileds({ sessionId, data }) {

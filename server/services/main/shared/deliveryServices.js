@@ -38,7 +38,7 @@ export async function createNewDeliverySchedule({
   if (daysLeft === 1) timeLeftLabel = "Tomorrow";
   else if (daysLeft === 0) timeLeftLabel = "Today";
   else timeLeftLabel = `${daysLeft} days left`;
-  const link = `${process.env.OLDORIGIN}/dashboard/projects/${projectId}`;
+  const link = `${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/projects/${projectId}`;
 
   const note = {
     id: `note-${projectId}-${userId}`,

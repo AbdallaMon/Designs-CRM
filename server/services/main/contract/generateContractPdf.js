@@ -1482,9 +1482,9 @@ async function renderDrawingsSection(
 ) {
   const drawings = contract?.drawings || [];
   const toRender = drawings.length
-    ? drawings.map((d) => `${process.env.IMAGEDOMAIN}${d.url}`)
+    ? drawings.map((d) => `${process.env.CRM_DOMAIN}${d.url}`)
     : defaultDrawingUrl
-    ? [`${process.env.IMAGEDOMAIN}${defaultDrawingUrl}`]
+    ? [`${process.env.CRM_DOMAIN}${defaultDrawingUrl}`]
     : [];
   if (!toRender.length) {
     return;
@@ -2220,7 +2220,7 @@ export async function buildAndUploadContractPdf({
   token,
   lng = "ar",
   signatureUrl,
-  // defaultDrawingUrl = `${process.env.SERVER}/uploads/default-drawing.jpg`,
+  // defaultDrawingUrl = `${process.env.SERVER_URL}/uploads/default-drawing.jpg`,
   canceled = false,
   defaultDrawingUrl = null,
   id,
@@ -2262,7 +2262,7 @@ export async function buildAndUploadContractPdf({
     contract,
     lng: "ar",
     clientName,
-    signatureUrl: `${process.env.IMAGEDOMAIN}${signatureUrl}`,
+    signatureUrl: `${process.env.CRM_DOMAIN}${signatureUrl}`,
     backgroundImageUrl,
     introImageUrl,
     defaultDrawingUrl,
@@ -2279,7 +2279,7 @@ export async function buildAndUploadContractPdf({
     contract,
     lng: "en",
     clientName,
-    signatureUrl: `${process.env.IMAGEDOMAIN}${signatureUrl}`,
+    signatureUrl: `${process.env.CRM_DOMAIN}${signatureUrl}`,
     backgroundImageUrl,
     introImageUrl,
     defaultDrawingUrl,

@@ -79,7 +79,7 @@ export async function sendContractEmailToClient({
   // If you have a public contract viewing page, put it here:
   // Adjust this path to your actual route (e.g., /contracts/view, /contract, etc.)
   const contractPageUrl = `${
-    process.env.OLDORIGIN
+    process.env.LEGACY_DASHBOARD_ORIGIN
   }/contracts?token=${encodeURIComponent(token)}`;
 
   const T = getClientEmailText(lng);
@@ -181,7 +181,7 @@ export async function sendContractEmailForStaff({
 }) {
   if (!staffs?.length) return;
 
-  const leadUrl = `${process.env.OLDORIGIN}/dashboard/deals/${clientLeadId}`;
+  const leadUrl = `${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/deals/${clientLeadId}`;
 
   const staffHtml = `
   <div style="font-family: Arial, sans-serif; color: #584d3f; background-color: #f4f2ee; padding: 30px;">

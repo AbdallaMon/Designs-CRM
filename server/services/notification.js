@@ -662,7 +662,7 @@ export async function sendPaymentSuccessEmail(
   leadId,
   lng = "ar",
 ) {
-  const completeRegistrationLink = `${process.env.ORIGIN}/register/complete?leadId=${leadId}&lng=${lng}`;
+  const completeRegistrationLink = `${process.env.CRM_ORIGIN}/register/complete?leadId=${leadId}&lng=${lng}`;
   const whatsappLink = "https://wa.me/+971585564778";
 
   const content = {

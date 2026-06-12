@@ -1,8 +1,8 @@
 // load .env
 import { config } from "dotenv";
 config();
-const origin = process.env.OLDORIGIN;
-const courseOrigin = process.env.COURSESORIGIN;
+const origin = process.env.LEGACY_DASHBOARD_ORIGIN;
+const courseOrigin = process.env.COURSES_ORIGIN;
 export const dashboardLink = origin + "/dashboard/";
 
 export const dealsLink = origin + "/dashboard/deals/";

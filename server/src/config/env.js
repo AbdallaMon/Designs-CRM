@@ -30,10 +30,10 @@ export const env = {
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
   GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI,
   ISLOCAL: process.env.ISLOCAL === "true",
-  IMAGEDOMAIN: process.env.IMAGEDOMAIN,
-  DREAMSTUDIIO_DOMAIN: process.env.DREAMSTUDIIO_DOMAIN,
-  AHMED_DOMAIN: process.env.AHMED_DOMAIN,
-  PORTFOLIO_DOMAIN: process.env.PORTFOLIOORIGIN,
+  SERVER_URL: process.env.SERVER_URL,
+  // Per-frontend public domains (link/asset building).
+  CRM_DOMAIN: process.env.CRM_DOMAIN,
+  PORTFOLIO_DOMAIN: process.env.PORTFOLIO_DOMAIN,
   COURSES_DOMAIN: process.env.COURSES_DOMAIN,
   ALLOW_ORIGIN: process.env.ALLOW_ORIGIN,
   UPLOADS_PATH: process.env.UPLOADS_PATH || "uploads",
@@ -53,11 +53,12 @@ export const env = {
   RUN_WORKERS: process.env.RUN_WORKERS !== "false",
   RUN_CRON: process.env.RUN_CRON !== "false",
 };
+// Per-frontend CORS origins (fallback when ALLOW_ORIGIN is unset). One per site.
 export const allowedOrigins = [
-  process.env.ORIGIN,
-  process.env.OLDORIGIN,
-  process.env.COURSESORIGIN,
-  process.env.PORTFOLIOORIGIN,
-  process.env.CONTACTORIGIN,
-  process.env.REGISTERPAGEORIGIN,
+  process.env.CRM_ORIGIN,
+  process.env.LEGACY_DASHBOARD_ORIGIN,
+  process.env.COURSES_ORIGIN,
+  process.env.PORTFOLIO_ORIGIN,
+  process.env.CONTACT_ORIGIN,
+  process.env.BOOKING_ORIGIN,
 ];

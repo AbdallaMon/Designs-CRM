@@ -48,8 +48,8 @@ export function createCheckoutSession({ clientId, clientLeadId, lng }) {
         quantity: 1,
       },
     ],
-    success_url: `${process.env.ORIGIN}/success?session_id={CHECKOUT_SESSION_ID}&clientId=${clientId}&clientLeadId=${clientLeadId}&lng=${lng}`,
-    cancel_url: `${process.env.ORIGIN}/cancel?session_id={CHECKOUT_SESSION_ID}&clientId=${clientId}&clientLeadId=${clientLeadId}&lng=${lng}`,
+    success_url: `${process.env.CRM_ORIGIN}/success?session_id={CHECKOUT_SESSION_ID}&clientId=${clientId}&clientLeadId=${clientLeadId}&lng=${lng}`,
+    cancel_url: `${process.env.CRM_ORIGIN}/cancel?session_id={CHECKOUT_SESSION_ID}&clientId=${clientId}&clientLeadId=${clientLeadId}&lng=${lng}`,
   });
 }
 

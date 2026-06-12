@@ -6,7 +6,7 @@ const c = brandData.colors;
 
 export class TelegramAuthEmails {
   static reAuthAlert() {
-    const reAuthLink = `${env.DREAMSTUDIIO_DOMAIN}/dashboard?profileOpen=true`;
+    const reAuthLink = `${env.CRM_DOMAIN}/dashboard?profileOpen=true`;
 
     const body = `
     <h2 style="color:${c.headingText};margin:0 0 8px 0;">Telegram Session Expired</h2>

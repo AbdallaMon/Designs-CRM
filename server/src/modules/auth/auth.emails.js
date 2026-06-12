@@ -6,7 +6,7 @@ const c = brandData.colors;
 
 export class AuthEmails {
   static resetEmail(resetToken) {
-    const resetLink = `${env.DREAMSTUDIIO_DOMAIN}/reset?token=${encodeURIComponent(resetToken)}`;
+    const resetLink = `${env.CRM_DOMAIN}/reset?token=${encodeURIComponent(resetToken)}`;
 
     const body = `
     <h2 style="color:${c.headingText};margin:0 0 8px 0;">Reset Your Password</h2>

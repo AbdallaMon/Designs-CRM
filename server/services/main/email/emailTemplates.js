@@ -14,7 +14,7 @@ export async function sendEmailToClient({
   pdfUrl,
   token,
 }) {
-  const sessionPageUrl = `${process.env.OLDORIGIN}/image-session?token=${token}`;
+  const sessionPageUrl = `${process.env.LEGACY_DASHBOARD_ORIGIN}/image-session?token=${token}`;
   const pdfDownloadUrl = pdfUrl;
 
   const clientHtml = `
@@ -95,7 +95,7 @@ export async function sendEmailForStaff({
           <p>Useful links:</p>
           <ul style="list-style: none; padding: 0;">
             <li style="margin: 10px 0;"><a href="${pdfDownloadUrl}" style="color: #d3ac71; font-weight: bold;">📄 Download Session PDF</a></li>
-            <li style="margin: 10px 0;"><a href="${process.env.OLDORIGIN}/dashboard/deals/${clientLeadId}" style="color: #d3ac71; font-weight: bold;">👤 Open lead page for more data</a></li>
+            <li style="margin: 10px 0;"><a href="${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/deals/${clientLeadId}" style="color: #d3ac71; font-weight: bold;">👤 Open lead page for more data</a></li>
           </ul>
           <p style="margin-top: 20px;">Please review the session or take follow-up actions as needed.</p>
           <p style="margin-top: 20px;">— Dream Studio System Notification</p>
@@ -207,7 +207,7 @@ export async function sendReminderToUser({
           </div>
 
           <ul style="list-style: none; padding: 0; margin: 0 0 20px 0;">
-            <li><a href="${process.env.OLDORIGIN}/dashboard/deals/${clientLeadId}" style="color: #d3ac71; font-weight: bold;">👤 Open Lead Page</a></li>
+            <li><a href="${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/deals/${clientLeadId}" style="color: #d3ac71; font-weight: bold;">👤 Open Lead Page</a></li>
           </ul>
 
           <div style="background: #fff; border: 1px solid #e0ddd8; border-radius: 6px; padding: 15px;">

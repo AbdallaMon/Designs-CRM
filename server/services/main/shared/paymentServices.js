@@ -115,8 +115,8 @@ export async function remindUserToPay({ clientLeadId }) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.ORIGIN}/success?session_id={CHECKOUT_SESSION_ID}&clientId=${clientLead.client.id}&clientLeadId=${clientLead.id}&lng=ar`,
-      cancel_url: `${process.env.ORIGIN}/cancel?session_id={CHECKOUT_SESSION_ID}&clientId=${clientLead.client.id}&clientLeadId=${clientLead.id}&lng=ar`,
+      success_url: `${process.env.CRM_ORIGIN}/success?session_id={CHECKOUT_SESSION_ID}&clientId=${clientLead.client.id}&clientLeadId=${clientLead.id}&lng=ar`,
+      cancel_url: `${process.env.CRM_ORIGIN}/cancel?session_id={CHECKOUT_SESSION_ID}&clientId=${clientLead.client.id}&clientLeadId=${clientLead.id}&lng=ar`,
       expires_at: Math.floor(Date.now() / 1000) + 3600 * 24,
     });
 

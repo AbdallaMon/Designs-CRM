@@ -5,7 +5,7 @@ import {
 } from "../../../../shared/notifications/index.js";
 
 function leadLink(id) {
-  return `${process.env.DREAMSTSUIIO_ORIGIN}/dashboard/deals/${id}`;
+  return `${process.env.CRM_ORIGIN}/dashboard/deals/${id}`;
 }
 
 function escapeHtml(text) {

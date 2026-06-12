@@ -88,7 +88,7 @@ export async function uploadPdfAndApproveSession({
     });
     const pdfBytes = await generateImageSessionPdf({
       sessionData,
-      signatureUrl: `${process.env.IMAGEDOMAIN}${signatureUrl}`,
+      signatureUrl: `${process.env.CRM_DOMAIN}${signatureUrl}`,
       lng,
       name: client.clientLead.client.name,
     });
@@ -566,7 +566,7 @@ export async function generateImageSessionPdf({
 
       // if image start with /upload directly from our server, convert to full url
       if (image && image.startsWith("/upload")) {
-        image = `${process.env.IMAGEDOMAIN}${image}`;
+        image = `${process.env.CRM_DOMAIN}${image}`;
       }
       if (image) {
         try {
@@ -718,7 +718,7 @@ export async function generateImageSessionPdf({
       if (imageUrl) {
         try {
           if (imageUrl && imageUrl.startsWith("/upload")) {
-            imageUrl = `${process.env.IMAGEDOMAIN}${imageUrl}`;
+            imageUrl = `${process.env.CRM_DOMAIN}${imageUrl}`;
           }
           const imgBytes = await fetchImageBuffer(imageUrl);
           let img;
@@ -1090,7 +1090,7 @@ export async function generateImageSessionPdf({
 
         try {
           if (imageUrl && imageUrl.startsWith("/upload")) {
-            imageUrl = `${process.env.IMAGEDOMAIN}${imageUrl}`;
+            imageUrl = `${process.env.CRM_DOMAIN}${imageUrl}`;
           }
           const imgBytes = await fetchImageBuffer(imageUrl);
           const sharpInstance = sharp(imgBytes);
@@ -1233,7 +1233,7 @@ export async function generateImageSessionPdf({
       if (noteObj.attachment) {
         try {
           if (noteObj.attachment && noteObj.attachment.startsWith("/upload")) {
-            noteObj.attachment = `${process.env.IMAGEDOMAIN}${noteObj.attachment}`;
+            noteObj.attachment = `${process.env.CRM_DOMAIN}${noteObj.attachment}`;
           }
           const imgBytes = await fetchImageBuffer(noteObj.attachment);
           const sharpInstance = sharp(imgBytes);

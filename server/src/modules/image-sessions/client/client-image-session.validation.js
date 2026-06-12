@@ -8,7 +8,7 @@
 import { z } from "zod";
 
 // SSRF hardening for the PUBLIC generate-pdf surface. The frozen builder does
-// `fetch(`${process.env.IMAGEDOMAIN}${signatureUrl}`)` (clientServices.js l.91) — raw string
+// `fetch(`${process.env.CRM_DOMAIN}${signatureUrl}`)` (clientServices.js l.91) — raw string
 // concat with no scheme/host lock. Legitimate signatures are ALWAYS relative upload paths
 // produced by the FROZEN chunk-upload handler (`/uploads/<uuid>.<ext>`), submitted verbatim
 // by the FE (SignatureComponet.jsx). So we lock signatureUrl to a safe RELATIVE path under

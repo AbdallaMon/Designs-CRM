@@ -594,7 +594,7 @@ export async function uploadAsHttp(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
-function buildPublicUrl(remoteFilename, server = process.env.IMAGEDOMAIN) {
+function buildPublicUrl(remoteFilename, server = process.env.CRM_DOMAIN) {
   if (!remoteFilename) return "";
 
   // Grab everything starting from "/uploads"
@@ -633,7 +633,7 @@ export async function uploadToFTPHttpAsBuffer(
     const form = new FormData();
     form.append("file", buffer, remoteFilename);
 
-    await axios.post(`${process.env.SERVER}/client/api/upload`, form, {
+    await axios.post(`${process.env.SERVER_URL}/client/api/upload`, form, {
       headers: form.getHeaders(),
       maxContentLength: Infinity,
       maxBodyLength: Infinity,
@@ -898,7 +898,7 @@ async function sendNotification(
   staffId,
 ) {
   const link = href
-    ? `<a href="${process.env.OLDORIGIN}${href}" style="color: #1a73e8; text-decoration: none;">See details from here</a>`
+    ? `<a href="${process.env.LEGACY_DASHBOARD_ORIGIN}${href}" style="color: #1a73e8; text-decoration: none;">See details from here</a>`
     : "";
   const emailContent = `
         <div style=" color: #333; direction: ltr; text-align: left;">
@@ -933,7 +933,7 @@ async function sendNotification(
         ${emailContent}
     </div>
     <div style="margin-top: 10px;">
-        <a href="${process.env.OLDORIGIN}/dashboard/notifications" style="color: #007bff; text-decoration: none;">
+        <a href="${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/notifications" style="color: #007bff; text-decoration: none;">
             Go to notifications?
         </a>
     </div>
