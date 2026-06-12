@@ -13,6 +13,7 @@
     "node": ">=24"
   },
   "scripts": {
+    "install:server_db": "npm install --workspace=packages/db && npm install --workspace=server",
     "install:web": "npm install --workspace=web",
     "install:server": "npm install --workspace=server",
     "dev:server": "npm run dev -w server",
