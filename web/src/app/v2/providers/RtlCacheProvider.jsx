@@ -38,8 +38,12 @@ export function RtlCacheProvider({ children, lng = "ar" }) {
       ? { key: "muirtl", stylisPlugins: [prefixer, rtlPlugin] }
       : { key: "mui", stylisPlugins: [prefixer] };
 
+  // key={lng} REMOUNTS the cache provider when the language changes. The emotion cache `options`
+  // (key + stylisPlugins) are read by AppRouterCacheProvider ONCE on mount, so a bare options swap
+  // would not re-seed the rtl/ltr plugin chain on a language toggle. Keying on `lng` forces a fresh
+  // cache (muirtl ↔ mui) so the drawer + every flipped style re-mount on the new direction.
   return (
-    <AppRouterCacheProvider options={options}>
+    <AppRouterCacheProvider key={lng} options={options}>
       {children}
     </AppRouterCacheProvider>
   );

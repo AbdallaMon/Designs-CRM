@@ -16,13 +16,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import { usePermission } from "@/app/v2/hooks/usePermission";
-import { useAuth } from "@/app/v2/providers/AuthProvider";
 import { buildVisibleNav } from "@/app/v2/features/shell";
-import {
-  resolveNavGroup,
-  resolveNavItem,
-  resolveDefaultDestination,
-} from "@/app/v2/features/shell/navLabels";
+import { resolveNavGroup, resolveNavItem } from "@/app/v2/features/shell/navLabels";
 import { AppSidebar } from "./AppSidebar";
 import { AppHeader } from "./AppHeader";
 
@@ -33,7 +28,6 @@ export function AppSidebarShell({ children }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const perm = usePermission();
-  const { user } = useAuth();
 
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -65,17 +59,12 @@ export function AppSidebarShell({ children }) {
     else toggleCollapsed();
   }, [isMobile, toggleCollapsed]);
 
-  // Landing destination for the brand block: the role's explicit landing (sales personas → the
-  // daily cockpit) when reachable, else the first visible nav destination, else the fallback.
+  // Landing destination for the brand block: the FIRST visible nav destination (a standard admin
+  // panel "home" link), else the dashboard fallback. No per-role cockpit fan-out.
   const landingHref = useMemo(() => {
     const groups = buildVisibleNav(perm, resolveNavGroup, resolveNavItem);
-    const explicit = resolveDefaultDestination(user);
-    if (explicit) {
-      const reachable = groups.some((g) => g.items.some((it) => it.href === explicit));
-      if (reachable) return explicit;
-    }
     return groups[0]?.items?.[0]?.href ?? FALLBACK_HREF;
-  }, [perm, user]);
+  }, [perm]);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "row", minHeight: "100vh", bgcolor: "background.default" }}>

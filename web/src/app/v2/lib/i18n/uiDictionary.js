@@ -33,10 +33,10 @@ const coreDictionary = {
 
     // ── nav: items ──────────────────────────────────────────────────────────────
     "nav.item.dashboard": "لوحة التحكم",
-    "nav.item.leadsWorkspace": "مساحة عملي",
     "nav.item.notifications": "الإشعارات",
     "nav.item.chat": "المحادثات",
-    "nav.item.leads": "قائمة العملاء",
+    "nav.item.leadsNew": "العملاء المحتملون",
+    "nav.item.leadsDeals": "الصفقات الحالية",
     "nav.item.adminProjects": "إدارة المشاريع",
     "nav.item.commissions": "العمولات",
     "nav.item.projects": "المشاريع",
@@ -93,10 +93,10 @@ const coreDictionary = {
 
     // ── nav: items ──────────────────────────────────────────────────────────────
     "nav.item.dashboard": "Dashboard",
-    "nav.item.leadsWorkspace": "My Workspace",
     "nav.item.notifications": "Notifications",
     "nav.item.chat": "Chat",
-    "nav.item.leads": "Leads",
+    "nav.item.leadsNew": "Potential clients",
+    "nav.item.leadsDeals": "Current deals",
     "nav.item.adminProjects": "Project Management",
     "nav.item.commissions": "Commissions",
     "nav.item.projects": "Projects",

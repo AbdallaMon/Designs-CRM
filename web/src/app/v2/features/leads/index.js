@@ -8,7 +8,6 @@ export {
 } from "./constants/bookingLeadFieldLabels";
 
 export { LeadsPage, default as LeadsPageDefault } from "./pages/LeadsPage.jsx";
-export { LeadsWorkspacePage } from "./pages/LeadsWorkspacePage.jsx";
 export { LeadAssignActions } from "./components/LeadAssignActions.jsx";
 export { BulkConvertModal } from "./components/BulkConvertModal.jsx";
 export { leadsService } from "./leads.service.js";

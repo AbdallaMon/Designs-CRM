@@ -48,11 +48,19 @@ export const ar = {
   "leadsDetails.orientation.logCall": "تسجيل مكالمة",
   "leadsDetails.orientation.addNote": "إضافة ملاحظة",
 
-  // ── hub header ──────────────────────────────────────────────────────────────
+  // ── detail header ───────────────────────────────────────────────────────────
   "leadsDetails.header.quick.logCall": "تسجيل مكالمة",
   "leadsDetails.header.quick.note": "ملاحظة",
   "leadsDetails.header.quick.payment": "دفعة",
   "leadsDetails.header.assignedTo": "مُسند إلى",
+
+  // ── delete lead ─────────────────────────────────────────────────────────────
+  "leadsDetails.delete.button": "حذف العميل",
+  "leadsDetails.delete.loading": "جاري حذف العميل المحتمل...",
+  "leadsDetails.delete.confirmTitle": "تأكيد حذف العميل المحتمل؟",
+  "leadsDetails.delete.confirmBody": 'سيتم حذف العميل "{name}" نهائياً ولا يمكن التراجع عن ذلك.',
+  "leadsDetails.delete.cancel": "إلغاء",
+  "leadsDetails.delete.confirm": "حذف",
 
   // ── related rail ────────────────────────────────────────────────────────────
   "leadsDetails.rail.navAria": "السجلات المرتبطة",
@@ -250,11 +258,19 @@ export const en = {
   "leadsDetails.orientation.logCall": "Log a call",
   "leadsDetails.orientation.addNote": "Add a note",
 
-  // ── hub header ──────────────────────────────────────────────────────────────
+  // ── detail header ───────────────────────────────────────────────────────────
   "leadsDetails.header.quick.logCall": "Log a call",
   "leadsDetails.header.quick.note": "Note",
   "leadsDetails.header.quick.payment": "Payment",
   "leadsDetails.header.assignedTo": "Assigned to",
+
+  // ── delete lead ─────────────────────────────────────────────────────────────
+  "leadsDetails.delete.button": "Delete lead",
+  "leadsDetails.delete.loading": "Deleting the lead...",
+  "leadsDetails.delete.confirmTitle": "Confirm deleting the lead?",
+  "leadsDetails.delete.confirmBody": 'The lead "{name}" will be permanently deleted and cannot be recovered.',
+  "leadsDetails.delete.cancel": "Cancel",
+  "leadsDetails.delete.confirm": "Delete",
 
   // ── related rail ────────────────────────────────────────────────────────────
   "leadsDetails.rail.navAria": "Related records",

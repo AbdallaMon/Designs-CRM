@@ -12,6 +12,7 @@
 export const ar = {
   // ── list page: header / view toggle / segments ──────────────────────────────
   "leads.page.title": "العملاء المحتملون",
+  "leads.page.title.deals": "الصفقات الحالية",
   "leads.page.breadcrumb.sales": "المبيعات",
   "leads.page.subtitle.kanban": "لوحة الصفقات",
   "leads.page.subtitle.total": "الإجمالي: {total}",
@@ -147,11 +148,28 @@ export const ar = {
 
   // ── booking lead details card ───────────────────────────────────────────────
   "leads.booking.title": "تفاصيل الحجز",
+
+  // ── admin create-lead option sets (category / item / emirate selects) ────────
+  "leads.create.category.DESIGN": "تصميم",
+  "leads.create.category.CONSULTATION": "استشارة",
+  "leads.create.item.RESIDENTIAL": "سكني",
+  "leads.create.item.COMMERCIAL": "تجاري",
+  "leads.create.item.ROOM": "غرفة",
+  "leads.create.item.BLUEPRINT": "مخطط",
+  "leads.create.item.CITY_VISIT": "زيارة ميدانية",
+  "leads.emirate.DUBAI": "دبي",
+  "leads.emirate.ABU_DHABI": "أبوظبي",
+  "leads.emirate.SHARJAH": "الشارقة",
+  "leads.emirate.AJMAN": "عجمان",
+  "leads.emirate.UMM_AL_QUWAIN": "أم القيوين",
+  "leads.emirate.RAS_AL_KHAIMAH": "رأس الخيمة",
+  "leads.emirate.FUJAIRAH": "الفجيرة",
 };
 
 export const en = {
   // ── list page: header / view toggle / segments ──────────────────────────────
-  "leads.page.title": "Leads",
+  "leads.page.title": "Potential clients",
+  "leads.page.title.deals": "Current deals",
   "leads.page.breadcrumb.sales": "Sales",
   "leads.page.subtitle.kanban": "Deals board",
   "leads.page.subtitle.total": "Total: {total}",
@@ -287,4 +305,20 @@ export const en = {
 
   // ── booking lead details card ───────────────────────────────────────────────
   "leads.booking.title": "Booking details",
+
+  // ── admin create-lead option sets (category / item / emirate selects) ────────
+  "leads.create.category.DESIGN": "Design",
+  "leads.create.category.CONSULTATION": "Consultation",
+  "leads.create.item.RESIDENTIAL": "Residential",
+  "leads.create.item.COMMERCIAL": "Commercial",
+  "leads.create.item.ROOM": "Room",
+  "leads.create.item.BLUEPRINT": "Blueprint",
+  "leads.create.item.CITY_VISIT": "Site visit",
+  "leads.emirate.DUBAI": "Dubai",
+  "leads.emirate.ABU_DHABI": "Abu Dhabi",
+  "leads.emirate.SHARJAH": "Sharjah",
+  "leads.emirate.AJMAN": "Ajman",
+  "leads.emirate.UMM_AL_QUWAIN": "Umm Al Quwain",
+  "leads.emirate.RAS_AL_KHAIMAH": "Ras Al Khaimah",
+  "leads.emirate.FUJAIRAH": "Fujairah",
 };

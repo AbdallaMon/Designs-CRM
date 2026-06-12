@@ -49,7 +49,8 @@ export function LeadAdminAssignAction({ lead, onChanged, size = "medium" }) {
     setLoadingStaff(true);
     (async () => {
       try {
-        const res = await usersService.getAllUsers({ role: "STAFF" });
+        // sales-only: exactRole prevents broader admin/sub-roles from leaking into the picker.
+        const res = await usersService.getAllUsers({ role: "STAFF", exactRole: true });
         if (!alive) return;
         const items = Array.isArray(res?.data) ? res.data : res?.data?.items ?? [];
         setStaff(items);

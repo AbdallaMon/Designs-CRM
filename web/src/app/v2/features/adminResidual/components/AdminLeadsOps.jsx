@@ -40,6 +40,11 @@ import { useT } from "@/app/v2/lib/i18n";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { SectionCard, EmptyState } from "@/app/v2/shared/components";
+import {
+  LEAD_CATEGORY_OPTIONS,
+  LEAD_ITEM_OPTIONS_BY_CATEGORY,
+  EMIRATES_OPTIONS,
+} from "@/app/v2/features/leads/config/leadsConstants.js";
 import { adminResidualService } from "../adminResidual.service.js";
 import { runAdminResidualMutation } from "../adminResidual.mutations.js";
 import { BulkImportCard } from "./BulkImportCard.jsx";
@@ -133,12 +138,30 @@ export function AdminLeadsOps() {
 }
 
 // ── admin create-lead (BE .passthrough → forwarded verbatim) ─────────────────────────────────
-const CREATE_LEAD_DEFAULTS = { name: "", phone: "", email: "", emirate: "", description: "" };
+// The BE REQUIRES email/name/phone + category/item (the create path reads category+item
+// unconditionally → selectedCategory/type). category is a SELECT (DESIGN/CONSULTATION), item is a
+// DEPENDENT select (its options change with category; CONSULTATION items are price-tabled), and
+// emirate is a SELECT of the UAE emirates. clientDescription stays free text.
+const CREATE_LEAD_DEFAULTS = {
+  name: "",
+  phone: "",
+  email: "",
+  category: "",
+  item: "",
+  emirate: "",
+  clientDescription: "",
+};
 
 function CreateLeadCard() {
   const { t } = useT();
   const [submitting, setSubmitting] = useState(false);
-  const { control, handleSubmit, reset } = useForm({ defaultValues: CREATE_LEAD_DEFAULTS });
+  const { control, handleSubmit, reset, watch, setValue } = useForm({
+    defaultValues: CREATE_LEAD_DEFAULTS,
+  });
+
+  // item depends on category — switching category resets a now-invalid item.
+  const category = watch("category");
+  const itemOptions = LEAD_ITEM_OPTIONS_BY_CATEGORY[category] ?? [];
 
   async function onSubmit(values) {
     // The BE reads this rich client form via .passthrough(); we forward the filled keys only.
@@ -194,8 +217,16 @@ function CreateLeadCard() {
             <Controller
               name="email"
               control={control}
-              render={({ field }) => (
-                <TextField {...field} type="email" label={t("adminResidual.leads.create.field.email", "البريد الإلكتروني")} fullWidth />
+              rules={{ required: t("adminResidual.leads.create.field.email.required", "البريد الإلكتروني مطلوب") }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  type="email"
+                  label={t("adminResidual.leads.create.field.email", "البريد الإلكتروني")}
+                  fullWidth
+                  error={Boolean(fieldState.error)}
+                  helperText={fieldState.error?.message}
+                />
               )}
             />
           </Grid>
@@ -203,12 +234,82 @@ function CreateLeadCard() {
             <Controller
               name="emirate"
               control={control}
-              render={({ field }) => <TextField {...field} label={t("adminResidual.leads.create.field.emirate", "الإمارة")} fullWidth />}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label={t("adminResidual.leads.create.field.emirate", "الإمارة")}
+                  fullWidth
+                >
+                  {EMIRATES_OPTIONS.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {t(opt.labelKey)}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Controller
+              name="category"
+              control={control}
+              rules={{ required: t("adminResidual.leads.create.field.category.required", "التصنيف مطلوب") }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  select
+                  label={t("adminResidual.leads.create.field.category", "التصنيف")}
+                  fullWidth
+                  error={Boolean(fieldState.error)}
+                  helperText={fieldState.error?.message}
+                  onChange={(e) => {
+                    field.onChange(e);
+                    // reset the dependent item whenever the category changes
+                    setValue("item", "");
+                  }}
+                >
+                  {LEAD_CATEGORY_OPTIONS.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {t(opt.labelKey)}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <Controller
+              name="item"
+              control={control}
+              rules={{ required: t("adminResidual.leads.create.field.item.required", "النوع مطلوب") }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  select
+                  label={t("adminResidual.leads.create.field.item", "النوع")}
+                  fullWidth
+                  disabled={!category}
+                  error={Boolean(fieldState.error)}
+                  helperText={
+                    fieldState.error?.message ??
+                    (!category
+                      ? t("adminResidual.leads.create.field.item.pickCategory", "اختر التصنيف أولاً")
+                      : undefined)
+                  }
+                >
+                  {itemOptions.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {t(opt.labelKey)}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
             />
           </Grid>
           <Grid size={{ xs: 12 }}>
             <Controller
-              name="description"
+              name="clientDescription"
               control={control}
               render={({ field }) => (
                 <TextField {...field} label={t("adminResidual.leads.create.field.description", "ملاحظات")} fullWidth multiline minRows={2} />

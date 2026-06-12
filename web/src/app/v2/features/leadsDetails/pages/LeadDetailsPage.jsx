@@ -1,41 +1,57 @@
 "use client";
 
-// Lead detail HUB (approved UX replan). Replaces the flat ~11-tab strip with:
-//   1) LeadHubHeader  — identity band (name + #id, status + payment chips, contact line,
-//      owner, sales-stage strip, capability-gated actions).
-//   2) LeadRelatedRail — compact count-cards (projects/contracts/sessions/payments/calls/
-//      meetings) that deep-link to the owning group/sub.
-//   3) Five GROUP tabs (نظرة عامة · السجل · الأعمال · المالية · أدوات المبيعات), each with an
-//      inner sub-tab strip. Group AND sub-section live in the URL (?tab=<group>&sub=<section>)
-//      so the rail/header can deep-link a specific section.
+// Lead detail — FLAT tab strip (reverted from the "hub" replan). A simple header band
+// (client name + #id, status + payment chips, contact line, assign/status/delete actions)
+// followed by ONE flat row of tabs (overview · calls · meetings · notes · files · price-offers
+// · payments · contracts · projects · sessions · sales-stage · SPIN · VERSA · chats · updates).
+// Tab state lives in the URL (?tab=). Each tab is gated on the SAME caps.* × permission-code
+// predicates as before; only the hub shell (LeadHubHeader / LeadRelatedRail / LeadOrientationBand
+// / leadHubTabs grouping) was removed. The sub-resource panels themselves are unchanged.
 //
-// Authorization is UNCHANGED: the same caps.* × hasPermission(...) predicates that gated the
-// legacy flat tabs now compose into per-section gates (buildSectionGates); a GROUP shows iff
-// ≥1 of its sub-sections is visible. The server still enforces every action.
-//
-// STILL DEFERRED (reported): Tasks/Modifications, Lead updates, Chats — other not-yet-migrated
-// FE modules, out of scope.
+// Authorization is UNCHANGED: the same predicates gate the same tabs; the server still enforces
+// every action. Single language? No — bilingual ar/en via useT() (this branch keeps i18n).
 
-import { useCallback, useEffect, useMemo } from "react";
-import { Box, Container, Tab, Tabs } from "@mui/material";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Avatar,
+  Box,
+  Button,
+  Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Divider,
+  Stack,
+  Tab,
+  Tabs,
+  Typography,
+} from "@mui/material";
+import {
+  MdPhone,
+  MdEmail,
+  MdLocationOn,
+  MdCategory,
+  MdPerson,
+  MdDeleteForever,
+} from "react-icons/md";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { usePermission } from "@/app/v2/hooks/usePermission";
 import { PERMISSIONS } from "@/app/v2/config/permissions";
 import { useT } from "@/app/v2/lib/i18n";
 import { useAuth } from "@/app/v2/providers/AuthProvider";
+import { useToastContext } from "@/app/v2/providers/ToastProvider";
 import {
   LoadingState,
   ErrorState,
   PartialPermissionState,
   SectionCard,
 } from "@/app/v2/shared/components";
+import { StatusChip } from "@/app/v2/shared/components/StatusChip.jsx";
 import { useLeadDetail } from "../hooks/useLeadDetail.js";
 import { pushRecentLead } from "@/app/v2/features/shell/hooks/useRecentLeads.js";
-import { LEAD_HUB_GROUPS, GATE } from "../config/leadHubTabs.js";
-import { resolveLeadEntry } from "../config/resolveLeadEntry.js";
-import { LeadOrientationBand } from "../components/LeadOrientationBand.jsx";
-import { LeadHubHeader } from "../components/LeadHubHeader.jsx";
-import { LeadRelatedRail } from "../components/LeadRelatedRail.jsx";
+import { LeadStatusMenu } from "../components/LeadStatusMenu.jsx";
 import { OverviewTab } from "../components/tabs/OverviewTab.jsx";
 import { CallsTab } from "../components/tabs/CallsTab.jsx";
 import { MeetingsTab } from "../components/tabs/MeetingsTab.jsx";
@@ -43,6 +59,16 @@ import { NotesTab } from "../components/tabs/NotesTab.jsx";
 import { FilesTab } from "../components/tabs/FilesTab.jsx";
 import { PriceOffersTab } from "../components/tabs/PriceOffersTab.jsx";
 import { PaymentsTab } from "../components/tabs/PaymentsTab.jsx";
+import { LeadAssignActions } from "@/app/v2/features/leads/components/LeadAssignActions.jsx";
+import { LeadAdminAssignAction } from "@/app/v2/features/leads/components/LeadAdminAssignAction.jsx";
+import {
+  paymentStatusLabel,
+  categoryLabel,
+} from "@/app/v2/features/leads/config/leadsConstants.js";
+import { leadsService } from "@/app/v2/features/leads/leads.service.js";
+import { runLeadMutation } from "@/app/v2/features/leads/leads.mutations.js";
+import { adminResidualService } from "@/app/v2/features/adminResidual/adminResidual.service.js";
+import { runAdminResidualMutation } from "@/app/v2/features/adminResidual/adminResidual.mutations.js";
 import { LeadContractsPage } from "@/app/v2/features/contracts";
 import { SalesStagePanel } from "@/app/v2/features/salesStages";
 import { SpinPanel, VersaPanel } from "@/app/v2/features/questions";
@@ -53,14 +79,38 @@ import { LeadChatLauncher } from "../components/LeadChatLauncher.jsx";
 
 const PRIVILEGED_ROLES = ["ADMIN", "SUPER_ADMIN", "ACCOUNTANT"];
 
+// Best-effort department label for the updates feed (mirrors the projects usage; the BE narrows
+// by the authed user's role regardless of this hint).
+const DEPARTMENT_BY_ROLE = {
+  THREE_D_DESIGNER: "3D_Designer",
+  TWO_D_DESIGNER: "2D_Study",
+  TWO_D_EXECUTOR: "2D_Final_Plans",
+};
+function departmentHint(user) {
+  return DEPARTMENT_BY_ROLE[user?.role] ?? "STAFF";
+}
+
+// One contact chip: icon + value. Renders nothing when the value is absent.
+function ContactItem({ icon, value }) {
+  if (value === null || value === undefined || value === "") return null;
+  return (
+    <Stack direction="row" spacing={0.5} alignItems="center" sx={{ color: "text.secondary" }}>
+      <Box sx={{ display: "flex", fontSize: 18, color: "text.disabled" }}>{icon}</Box>
+      <Typography variant="body2" sx={{ color: "text.secondary" }}>
+        {value}
+      </Typography>
+    </Stack>
+  );
+}
+
 export function LeadDetailsPage({ leadId }) {
   const { hasPermission } = usePermission();
   const { t } = useT();
   const { user } = useAuth();
+  const { setLoading } = useToastContext();
   const canView = hasPermission(PERMISSIONS.LEAD.VIEW);
 
-  // Cross-feature lead-tool gates (CODES only — these lead-scoped dtos emit NO capabilities.*;
-  // the BE enforces the lead object-scope per record).
+  // Cross-feature lead-tool gates (CODES only — these lead-scoped dtos emit NO capabilities.*).
   const canViewStage = hasPermission(PERMISSIONS.SALES_STAGE.VIEW);
   const canViewSpin =
     hasPermission(PERMISSIONS.QUESTION.CONFIG_VIEW) ||
@@ -71,11 +121,12 @@ export function LeadDetailsPage({ leadId }) {
   const canViewContracts = hasPermission(PERMISSIONS.CONTRACT.LIST);
   const canViewChat = hasPermission(PERMISSIONS.CHAT.ROOM_LIST);
   const canViewUpdates = hasPermission(PERMISSIONS.UPDATE.LIST);
+  // Destructive admin delete — base-role ADMIN-only on the BE; we DO NOT widen the FE gate.
+  const canDelete = hasPermission(PERMISSIONS.ADMIN_RESIDUAL.LEAD_DELETE);
 
   const { lead, isLoading, error, refetch } = useLeadDetail(leadId, { autoFetch: canView });
 
-  // Record this lead as recently-viewed (the recent-leads store; previously surfaced by the
-  // retired workspace panel — retained for any future "recently viewed" surface).
+  // Record this lead as recently-viewed (the recent-leads store).
   useEffect(() => {
     if (lead?.id != null) pushRecentLead({ id: lead.id, name: lead.client?.name });
   }, [lead?.id, lead?.client?.name]);
@@ -90,113 +141,77 @@ export function LeadDetailsPage({ leadId }) {
     return user?.role === "STAFF" && !user?.isPrimary && !privileged;
   }, [user]);
 
-  // ── Section gates: resolve each leadHubTabs GATE key to a runtime boolean. This is the ONE
-  // place caps.* × permission codes are composed — identical predicates to the legacy flat tabs.
   const caps = lead?.capabilities ?? {};
-  const gates = useMemo(
-    () => ({
-      [GATE.ALWAYS]: true,
-      [GATE.PRICE_OFFER]: Boolean(caps.canAddPriceOffer),
-      [GATE.PAYMENT]: Boolean(caps.canAddPayment || caps.canSendReminder),
-      [GATE.CONTRACTS]: canViewContracts,
-      [GATE.PROJECTS]: canViewProjects,
-      [GATE.SESSIONS]: canViewSessions,
-      [GATE.STAGE]: canViewStage,
-      [GATE.SPIN]: canViewSpin,
-      [GATE.VERSA]: canViewVersa,
-      [GATE.CHAT]: canViewChat,
-      [GATE.UPDATES]: canViewUpdates,
-    }),
-    [
-      caps.canAddPriceOffer,
-      caps.canAddPayment,
-      caps.canSendReminder,
-      canViewContracts,
-      canViewProjects,
-      canViewSessions,
-      canViewStage,
-      canViewSpin,
-      canViewVersa,
-      canViewChat,
-      canViewUpdates,
-    ],
-  );
 
-  // Visible groups = groups with ≥1 visible sub-section; each carries its visible sub list.
-  const visibleGroups = useMemo(() => {
-    return LEAD_HUB_GROUPS.map((group) => ({
-      ...group,
-      visibleSub: group.sub.filter((s) => gates[s.gateKey]),
-    })).filter((group) => group.visibleSub.length > 0);
-  }, [gates]);
+  // ── Flat tab set. Each entry is gated by a runtime boolean built from the SAME caps.* ×
+  // permission-code predicates as the removed hub. Filtered to the visible set; order = display
+  // order. `always` tabs (overview/calls/meetings/notes/files) are visible to any lead viewer.
+  const tabs = useMemo(() => {
+    const all = [
+      { key: "overview", labelKey: "leadsDetails.sub.overview", show: true },
+      { key: "calls", labelKey: "leadsDetails.sub.calls", show: true },
+      { key: "meetings", labelKey: "leadsDetails.sub.meetings", show: true },
+      { key: "notes", labelKey: "leadsDetails.sub.notes", show: true },
+      { key: "files", labelKey: "leadsDetails.sub.files", show: true },
+      { key: "priceOffers", labelKey: "leadsDetails.sub.priceOffers", show: Boolean(caps.canAddPriceOffer) },
+      { key: "payments", labelKey: "leadsDetails.sub.payments", show: Boolean(caps.canAddPayment || caps.canSendReminder) },
+      { key: "contracts", labelKey: "leadsDetails.sub.contracts", show: canViewContracts },
+      { key: "projects", labelKey: "leadsDetails.sub.projects", show: canViewProjects },
+      { key: "sessions", labelKey: "leadsDetails.sub.sessions", show: canViewSessions },
+      { key: "salesStage", labelKey: "leadsDetails.sub.salesStage", show: canViewStage },
+      { key: "spin", labelKey: "leadsDetails.sub.spin", show: canViewSpin },
+      { key: "versa", labelKey: "leadsDetails.sub.versa", show: canViewVersa },
+      { key: "chats", labelKey: "leadsDetails.sub.chats", show: canViewChat },
+      { key: "updates", labelKey: "leadsDetails.sub.updates", show: canViewUpdates },
+    ];
+    return all.filter((tab) => tab.show);
+  }, [
+    caps.canAddPriceOffer,
+    caps.canAddPayment,
+    caps.canSendReminder,
+    canViewContracts,
+    canViewProjects,
+    canViewSessions,
+    canViewStage,
+    canViewSpin,
+    canViewVersa,
+    canViewChat,
+    canViewUpdates,
+  ]);
 
-  // ── Role/status-adaptive DEFAULT landing — applied ONLY when the URL carries no ?tab/?sub
-  // (deep links + the rail must still win). Always validated against gates/visibleGroups inside
-  // the resolver, so a user can never be defaulted onto a tab they cannot see.
-  const entry = useMemo(
-    () => resolveLeadEntry(user, lead, gates, visibleGroups),
-    [user, lead, gates, visibleGroups],
-  );
+  // ── URL state: ?tab=<key>, validated against the visible set (default → first visible tab).
+  const activeTab = useMemo(() => {
+    const requested = sp.get("tab");
+    if (tabs.some((tab) => tab.key === requested)) return requested;
+    return tabs[0]?.key;
+  }, [sp, tabs]);
 
-  // ── URL state: ?tab=<group>&sub=<section>, both validated against the visible set.
-  const activeGroup = useMemo(() => {
-    const t = sp.get("tab");
-    if (visibleGroups.some((g) => g.key === t)) return t;
-    return entry.defaultGroup ?? visibleGroups[0]?.key;
-  }, [sp, visibleGroups, entry]);
-
-  const currentGroup = useMemo(
-    () => visibleGroups.find((g) => g.key === activeGroup),
-    [visibleGroups, activeGroup],
-  );
-
-  const activeSub = useMemo(() => {
-    const s = sp.get("sub");
-    const subs = currentGroup?.visibleSub ?? [];
-    if (subs.some((x) => x.key === s)) return s;
-    // Use the role-adaptive default sub only when it belongs to the active group; else first sub.
-    if (entry.defaultGroup === activeGroup && subs.some((x) => x.key === entry.defaultSub)) {
-      return entry.defaultSub;
-    }
-    return subs[0]?.key;
-  }, [sp, currentGroup, entry, activeGroup]);
-
-  // navigate(group, sub, action?) — action is the optional one-click flag (?action=add) the
-  // record/finance sub-tabs read on mount to auto-open their existing dialog (item 4). When
-  // omitted we strip any stale action so it never re-triggers on a plain tab switch.
-  const navigate = useCallback(
-    (groupKey, subKey, action) => {
+  const onTabChange = useCallback(
+    (_e, key) => {
       const params = new URLSearchParams(sp.toString());
-      params.set("tab", groupKey);
-      if (subKey) params.set("sub", subKey);
-      else params.delete("sub");
-      if (action) params.set("action", action);
-      else params.delete("action");
+      params.set("tab", key);
       router.push(`${pathname}?${params.toString()}`, { scroll: false });
     },
     [sp, pathname, router],
   );
 
-  // The pending one-click action from the URL (?action=add), and a consumer that clears it once
-  // the target dialog has opened — so a refresh / back-forward won't reopen the dialog.
-  const pendingAction = sp.get("action");
-  const consumeAction = useCallback(() => {
-    const params = new URLSearchParams(sp.toString());
-    if (!params.has("action")) return;
-    params.delete("action");
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }, [sp, pathname, router]);
+  // ── delete lead (confirm dialog → DELETE /v2/admin/client-leads/:id) ──────────────
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const clientName = lead?.client?.name ?? `#${lead?.id ?? ""}`;
 
-  const onGroupChange = useCallback(
-    (_e, groupKey) => {
-      const group = visibleGroups.find((g) => g.key === groupKey);
-      navigate(groupKey, group?.visibleSub[0]?.key);
-    },
-    [visibleGroups, navigate],
-  );
+  async function handleDelete() {
+    const res = await runAdminResidualMutation(
+      () => adminResidualService.deleteLead(lead.id),
+      { setLoading, loading: t("leadsDetails.delete.loading") },
+    );
+    setDeleting(false);
+    setConfirmDelete(false);
+    // On success leave the now-deleted detail for the leads pool.
+    if (res) router.push("/v2/leads");
+  }
 
   // ── 5 screen states ─────────────────────────────────────────────────────────────
-  // No-access-to-lead.
   if (!canView) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -209,7 +224,6 @@ export function LeadDetailsPage({ leadId }) {
     );
   }
 
-  // Error (with retry).
   if (error && !isLoading) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -218,127 +232,192 @@ export function LeadDetailsPage({ leadId }) {
     );
   }
 
-  // Loading → skeleton hub header + skeleton rail cards.
   if (isLoading && !lead) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <SectionCard sx={{ mb: 2 }}>
           <LoadingState variant="detail" />
         </SectionCard>
-        <LoadingState variant="cards" count={6} columns={6} height={96} />
       </Container>
     );
   }
 
   if (!lead) return null;
 
+  const owner = lead.assignedTo;
+  const ownerName = owner?.name;
+  const emirate = lead.country || lead.emirate;
+  const category = lead.selectedCategory ? categoryLabel(lead.selectedCategory) : null;
+
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <LeadOrientationBand
-        lead={lead}
-        canChangeStatus={caps.canChangeStatus}
-        beginner={beginner}
-        gates={gates}
-        user={user}
-        onNavigate={navigate}
-        onChanged={refetch}
-      />
+      {/* ── header band ──────────────────────────────────────────────────────────── */}
+      <SectionCard sx={{ mb: 2 }}>
+        <Stack spacing={2}>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            justifyContent="space-between"
+            alignItems={{ md: "flex-start" }}
+            spacing={2}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                  {lead.client?.name ?? "—"}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ color: "text.secondary", fontVariantNumeric: "tabular-nums" }}
+                >
+                  #{String(lead.id).padStart(7, "0")}
+                </Typography>
+              </Stack>
 
-      <LeadHubHeader
-        lead={lead}
-        leadId={leadId}
-        canChangeStatus={caps.canChangeStatus}
-        beginner={beginner}
-        canViewStage={canViewStage}
-        onChanged={refetch}
-        onNavigate={navigate}
-      />
+              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ mt: 1 }}>
+                <StatusChip status={lead.status} domain="lead" />
+                {lead.paymentStatus && (
+                  <StatusChip
+                    status={lead.paymentStatus}
+                    domain="payment"
+                    label={paymentStatusLabel(lead.paymentStatus)}
+                  />
+                )}
+              </Stack>
+            </Box>
 
-      <LeadRelatedRail lead={lead} gates={gates} onNavigate={navigate} />
+            <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+              <LeadAssignActions lead={lead} size="medium" onChanged={refetch} />
+              <LeadAdminAssignAction lead={lead} size="medium" onChanged={refetch} />
+              <LeadStatusMenu
+                lead={lead}
+                canChangeStatus={caps.canChangeStatus}
+                beginner={beginner}
+                onChanged={refetch}
+              />
+              {canDelete && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="medium"
+                  startIcon={<MdDeleteForever />}
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  {t("leadsDetails.delete.button")}
+                </Button>
+              )}
+            </Stack>
+          </Stack>
 
-      {/* Group tabs */}
-      <Tabs value={activeGroup} onChange={onGroupChange} variant="scrollable" scrollButtons="auto" sx={{ mb: 1 }}>
-        {visibleGroups.map((g) => (
-          <Tab key={g.key} value={g.key} label={t(g.labelKey)} />
+          {/* Contact line */}
+          <Stack direction="row" spacing={2.5} flexWrap="wrap" rowGap={1} alignItems="center">
+            <ContactItem icon={<MdPhone />} value={lead.client?.phone} />
+            <ContactItem icon={<MdEmail />} value={lead.client?.email} />
+            <ContactItem icon={<MdLocationOn />} value={emirate} />
+            <ContactItem icon={<MdCategory />} value={category} />
+          </Stack>
+
+          {/* Owner / assigned-to */}
+          {ownerName && (
+            <>
+              <Divider />
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Avatar sx={{ width: 28, height: 28, bgcolor: "primary.main", fontSize: 14 }}>
+                  {ownerName.trim().charAt(0) || <MdPerson />}
+                </Avatar>
+                <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                  {t("leadsDetails.header.assignedTo")}
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {ownerName}
+                </Typography>
+              </Stack>
+            </>
+          )}
+        </Stack>
+      </SectionCard>
+
+      {/* ── flat tab strip ───────────────────────────────────────────────────────── */}
+      <Tabs
+        value={activeTab}
+        onChange={onTabChange}
+        variant="scrollable"
+        scrollButtons="auto"
+        sx={{ mb: 2 }}
+      >
+        {tabs.map((tab) => (
+          <Tab key={tab.key} value={tab.key} label={t(tab.labelKey)} />
         ))}
       </Tabs>
 
-      {/* Inner sub-tab strip (only when the group has >1 visible section) */}
-      {currentGroup && currentGroup.visibleSub.length > 1 && (
-        <Tabs
-          value={activeSub}
-          onChange={(_e, subKey) => navigate(activeGroup, subKey)}
-          variant="scrollable"
-          scrollButtons="auto"
-          textColor="secondary"
-          indicatorColor="secondary"
-          sx={{ mb: 2, minHeight: 40, "& .MuiTab-root": { minHeight: 40 } }}
-        >
-          {currentGroup.visibleSub.map((s) => (
-            <Tab key={s.key} value={s.key} label={t(s.labelKey)} />
-          ))}
-        </Tabs>
-      )}
-
       {/*
-        key={activeSub} forces React to UNMOUNT the previous sub-tab's tree and MOUNT the next one
-        fresh, instead of reconciling two structurally different panels in the same position. Several
-        panels render Portal/Transition children (MUI Tooltip/Menu/Dialog, tables); morphing one such
-        tree into another in place is the classic trigger of "Failed to execute 'removeChild' on
-        'Node'" — which is exactly what the المحادثات (chats) tab hit. A stable per-tab key makes
-        every tab swap a clean remount.
+        key={activeTab} forces a clean remount per tab (several panels render Portal/Transition
+        children — MUI Tooltip/Menu/Dialog, tables — and morphing one such tree into another in
+        place is the classic "Failed to execute 'removeChild' on 'Node'" trigger).
       */}
-      <Box
-        key={activeSub}
-        sx={{ minHeight: 320, mt: currentGroup?.visibleSub.length > 1 ? 0 : 2 }}
-      >
-        {renderSection(activeSub, lead, refetch, {
-          user,
-          autoOpenAction: pendingAction,
-          onAutoOpenConsumed: consumeAction,
-        })}
+      <Box key={activeTab} sx={{ minHeight: 320 }}>
+        {renderTab(activeTab, lead, refetch, user)}
       </Box>
+
+      {/* ── delete confirm dialog ────────────────────────────────────────────────── */}
+      <Dialog
+        open={confirmDelete}
+        onClose={() => !deleting && setConfirmDelete(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>
+          {t("leadsDetails.delete.confirmTitle")}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mt: 2 }}>
+            {t("leadsDetails.delete.confirmBody").replace("{name}", clientName)}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
+          <Button onClick={() => setConfirmDelete(false)} variant="outlined" disabled={deleting}>
+            {t("leadsDetails.delete.cancel")}
+          </Button>
+          <Button
+            onClick={() => {
+              setDeleting(true);
+              handleDelete();
+            }}
+            variant="contained"
+            color="error"
+            disabled={deleting}
+          >
+            {t("leadsDetails.delete.confirm")}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }
 
-// Render the active sub-section's existing CONTENT component (unchanged — just remounted under
-// the new grouping). The section keys are the leadHubTabs sub keys.
-function renderSection(sub, lead, refetch, extras = {}) {
-  const { user, autoOpenAction, onAutoOpenConsumed } = extras;
-  // The one-click auto-open flag is only meaningful for the sub-tab named in the URL — pass it
-  // through only to that tab so a different tab never consumes another's action.
-  const autoProps = {
-    autoOpenAction,
-    onAutoOpenConsumed,
-  };
-  switch (sub) {
+// Render the active tab's existing CONTENT component (unchanged — the sub-resource panels are
+// shared). The tab keys match the flat tab set above.
+function renderTab(tab, lead, refetch, user) {
+  switch (tab) {
     case "overview":
       return <OverviewTab lead={lead} />;
     case "calls":
-      return <CallsTab lead={lead} onChanged={refetch} {...autoProps} />;
+      return <CallsTab lead={lead} onChanged={refetch} />;
     case "meetings":
       return <MeetingsTab lead={lead} onChanged={refetch} />;
     case "notes":
-      return <NotesTab lead={lead} onChanged={refetch} {...autoProps} />;
+      return <NotesTab lead={lead} onChanged={refetch} />;
     case "files":
       return <FilesTab lead={lead} onChanged={refetch} />;
+    case "priceOffers":
+      return <PriceOffersTab lead={lead} onChanged={refetch} />;
+    case "payments":
+      return <PaymentsTab lead={lead} onChanged={refetch} />;
+    case "contracts":
+      return <LeadContractsPage leadId={lead.id} lead={lead} />;
     case "projects":
-      // Self-loads grouped projects via GET /v2/projects?clientLeadId=.
       return <LeadProjects clientLeadId={lead.id} />;
     case "sessions":
       return <LeadSessionsPanel clientLeadId={lead.id} />;
-    case "updates":
-      // Lead-scoped updates feed (item 6). Self-loads GET /v2/updates/:clientLeadId and self-gates
-      // on PERMISSIONS.UPDATE.LIST; the department hint mirrors the projects usage (role → dept,
-      // else STAFF — the BE narrows by role regardless).
-      return <UpdatesList clientLeadId={lead.id} currentUserDepartment={departmentHint(user)} />;
-    case "contracts":
-      return <LeadContractsPage leadId={lead.id} lead={lead} />;
-    case "payments":
-      return <PaymentsTab lead={lead} onChanged={refetch} {...autoProps} />;
-    case "priceOffers":
-      return <PriceOffersTab lead={lead} onChanged={refetch} />;
     case "salesStage":
       return <SalesStagePanel leadId={lead.id} variant="panel" onChanged={refetch} />;
     case "spin":
@@ -346,26 +425,12 @@ function renderSection(sub, lead, refetch, extras = {}) {
     case "versa":
       return <VersaPanel clientLeadId={lead.id} />;
     case "chats":
-      // Lead-scoped chat (item 6). The page-mode ChatContainer can't be embedded cleanly here
-      // (it owns the ?roomId URL param and a full-height two-pane layout that collides with the
-      // hub's ?tab/?sub state), so we mount a compact launcher that lists THIS lead's rooms
-      // (useChatRooms({ clientLeadId })) and opens the real chat page focused on the chosen room.
       return <LeadChatLauncher leadId={lead.id} lead={lead} />;
+    case "updates":
+      return <UpdatesList clientLeadId={lead.id} currentUserDepartment={departmentHint(user)} />;
     default:
       return null;
   }
-}
-
-// Best-effort department label for the updates feed. The DEPARTMENTS values are project-board
-// departments; staff/sales/admin roles have no 1:1 mapping, so we fall back to "STAFF" (the
-// UpdatesList default) — the backend narrows the rows by the authed user's role regardless.
-const DEPARTMENT_BY_ROLE = {
-  THREE_D_DESIGNER: "3D_Designer",
-  TWO_D_DESIGNER: "2D_Study",
-  TWO_D_EXECUTOR: "2D_Final_Plans",
-};
-function departmentHint(user) {
-  return DEPARTMENT_BY_ROLE[user?.role] ?? "STAFF";
 }
 
 export default LeadDetailsPage;

@@ -56,15 +56,6 @@ export const NAV_ITEMS = [
     permission: P.DASHBOARD.VIEW,
   },
   {
-    // The daily cockpit — front-and-center as the SECOND top-level item, right after Dashboard.
-    key: "leadsWorkspace",
-    labelKey: "leadsWorkspace",
-    href: "/v2/leads/workspace",
-    icon: MdSpaceDashboard,
-    group: "home",
-    permission: P.LEAD.LIST,
-  },
-  {
     key: "notifications",
     labelKey: "notifications",
     href: "/v2/notifications",
@@ -82,11 +73,20 @@ export const NAV_ITEMS = [
   },
 
   // ── المبيعات ─────────────────────────────────────────────────────────────
+  // Two entry points into the SAME flat leads table, seeding the pool from ?segment=.
   {
-    key: "leads",
-    labelKey: "leads",
-    href: "/v2/leads",
+    key: "leadsNew",
+    labelKey: "leadsNew",
+    href: "/v2/leads?segment=new",
     icon: MdPeople,
+    group: "sales",
+    permission: P.LEAD.LIST,
+  },
+  {
+    key: "leadsDeals",
+    labelKey: "leadsDeals",
+    href: "/v2/leads?segment=deals",
+    icon: MdSpaceDashboard,
     group: "sales",
     permission: P.LEAD.LIST,
   },
