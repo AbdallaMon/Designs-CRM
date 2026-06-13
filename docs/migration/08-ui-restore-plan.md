@@ -74,3 +74,44 @@ courses → questions/sales-stages/reviews → chat → public surfaces (booking
 - Frontend URLs = master's `/dashboard/*` slugs; **API base stays `/v2`**.
 - Preserve master's role gating exactly (collapse ≠ widen access). Gate on real `permissions[]`.
 - Orchestrator runs all git; build agents never run git.
+
+---
+
+## CHECKPOINT — 2026-06-13 (tag: `ui-restore-v2-endpoints`)
+
+**Where we are.** `web/` is master's EXACT UI, wired to the migrated `/v2` backend, with the
+endpoint rewiring done centrally. Return to this point with: `git checkout ui-restore-v2-endpoints`.
+
+Session commits (on `server-migration`, after `2e6d9bf`):
+1. `794fd7f` — foundation: master libs verbatim + data layer rewired to /v2 (apiClient: base,
+   cookie, 401-refresh, envelope→flat normalizer; getData/getDataAndSet/handleSubmit/AuthProvider).
+2. `341ac67` — ALL of master's UI verbatim (102 dashboard pages, 8 @role slots) + removed the
+   321-file v2 reimplementation + `(v2-features)`; relocated the Arabic message resolver to
+   `helpers/messages/`.
+3. `9a2cd31` — master's public surfaces (booking, chats, contracts, image-session).
+4. `82f2505` — central legacy→/v2 path adapter (`helpers/functions/apiPathMap.js`); 232/233 roots
+   validated.
+5. `55872bb` — workflow-action + direct-fetch deltas (contracts /actions, accounting payment
+   /actions, NotificationIcon, SearchComponent, uploadAsChunk).
+
+Build: `npm run build:web` green. Routes = master exactly, **zero `/v2` URLs**.
+
+### ✅ Done
+- Master's exact UI restored (no visual change). All pages present at master's `/dashboard/*`
+  + public slugs. v2 reimplementation gone from `web`.
+- Data layer matches the `/v2` backend (envelope, pagination, cookie, refresh, message codes).
+- Endpoint rewiring: central adapter (bulk) + targeted workflow/direct-fetch deltas.
+
+### ❌ NOT done yet
+- **Code reorganization into feature components is NOT done.** The code is master's EXACT structure
+  — the `@role` parallel-route slots are still separate (thin `@admin/leads`, `@staff/leads`, … each
+  importing the shared `UiComponents` page). Collapsing those slots into single permission-gated
+  feature pages is the SEPARATE, still-pending "reorganize" phase (visual output would stay identical).
+- **Runtime verification** (needs login creds) — only build-verified + statically validated so far.
+- Open endpoint gaps (see `55872bb` commit msg): generic `DeleteModelButton` for non-Task models
+  (backend gap), client image-session image DELETE `{token}` body, `work-stages/:id/cost` (no route),
+  utilities model pick-list value renames.
+
+### ▶️ Next options
+(a) Runtime-verify + close the open endpoint gaps, or (b) start the code reorganization (collapse
+`@role` slots → feature components), or (c) the backend work for the generic-delete gap.
