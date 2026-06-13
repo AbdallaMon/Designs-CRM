@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Alert, alpha, Box, Stack, Tab, Tabs } from "@mui/material";
-import { BsFileText, BsInfoCircle, BsTelephone } from "react-icons/bs";
+import { Alert } from "@mui/material";
 import {
   KanbanBeginerLeadsStatus,
   KanbanLeadsStatus,
@@ -15,49 +14,23 @@ import {
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 import { FinalizeModal } from "@/app/UiComponents/DataViewer/leads/widgets/FinalizeModal.jsx";
-import { GoPaperclip } from "react-icons/go";
-import { PiCurrencyDollarSimpleLight } from "react-icons/pi";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
-import { FaServicestack } from "react-icons/fa";
-import { SalesToolsTabs } from "./tabs/SalesToolsTabs";
-import {
-  MdAnalytics,
-  MdBlock,
-  MdChat,
-  MdModeEdit,
-  MdSchedule,
-  MdTimeline,
-  MdUpdate,
-  MdWork,
-} from "react-icons/md";
-import LeadProjects from "../work-stages/projects/LeadProjects";
-import { TasksList } from "../tasks/TasksList";
-import { LeadContactInfo } from "./panels/LeadContactInfo";
-import { LeadInfo } from "./panels/LeadInfo";
+import { MdBlock } from "react-icons/md";
 import { PreviewLead } from "./features/PreviewLead";
-import UpdatesList from "./leadUpdates/UpdatesList";
-import SalesStageComponent from "./tabs/SalesStage";
-import LeadStripeInfo from "./panels/StipieData";
-import { CallReminders } from "./tabs/CallReminders";
-import { MeetingReminders } from "./tabs/MeetingReminders";
-import { FileList } from "./tabs/Files";
-import { LeadNotes } from "./tabs/LeadsNotes";
-import { PriceOffersList } from "./tabs/PriceOffers";
-import { ExtraServicesList } from "./tabs/ExtraTabs";
-import { TabPanel } from "./shared/TabPanel";
 import { MoreActionsMenu } from "./shared/MoreActionsMenu";
 import { LeadDialogHeader } from "./shared/LeadDialogHeader";
 import { StatusMenu } from "./shared/StatusMenu";
-import ChatsTab from "./tabs/ChatsTab";
-import { BookingLeadDetailsCard } from "@/app/UiComponents/booking-lead";
+import { LeadWorkspace } from "./LeadWorkspace";
+import { getVisibleLeadSections } from "./config/leadSections";
 
-// LeadContent Component (Extracted Shared Content)
+// LeadContent — the shared body of the lead/deal detail. The header + modals + status
+// menu stay here; the section list itself is now driven by the config registry
+// (config/leadSections.jsx) and rendered by the keyed workspace (no fragile tab indices).
 const LeadContent = ({
   lead,
   activeTab,
   setActiveTab,
   theme,
-  isMobile,
   handleClose,
   setleads,
   setLead,
@@ -72,13 +45,13 @@ const LeadContent = ({
   const { setLoading } = useToastContext();
   const [openConfirm, setOpenConfirm] = useState(false);
   const [openPriceModel, setOpenPriceModel] = useState(null);
-  const [isAllowed, setIsAllowed] = useState(true);
+  const [isAllowed] = useState(true);
   const [isAllowedLoading, setIsAllowedLoading] = useState(false);
   const [finalizeModel, setFinalizeModel] = useState(false);
   const [currentId, setCurrentId] = useState(null);
   const [payments, setPayments] = useState(lead ? lead.payments : []);
   const [paymentModal, setPaymentModal] = useState(false);
-  const isNotPrimaryUser = !isPrimaryStaff;
+
   async function createADeal(lead) {
     const assign = await handleRequestSubmit(
       lead,
@@ -175,6 +148,20 @@ const LeadContent = ({
     );
   }
 
+  const notUser = isPage && user.id !== lead.userId && !admin;
+  const leadCtx = {
+    lead,
+    user,
+    admin,
+    isPrimaryStaff,
+    notUser,
+    setLead,
+    setleads,
+    payments,
+    setPayments,
+  };
+  const visibleSections = getVisibleLeadSections(leadCtx);
+
   return (
     <>
       {/* Modals */}
@@ -253,263 +240,16 @@ const LeadContent = ({
         />
       )}
 
-      {/* Tabs */}
-      <Tabs
-        value={activeTab}
-        onChange={(e, newValue) => setActiveTab(newValue)}
-        sx={{
-          px: { xs: 0.5, md: 2 },
-          borderBottom: 1,
-          borderColor: "divider",
-          bgcolor: (t) => alpha(t.palette.background.default, 0.4),
-          minHeight: "fit-content",
-          "& .MuiTabs-indicator": {
-            height: 3,
-            borderRadius: "3px 3px 0 0",
-          },
-          "& .MuiTab-root": {
-            textTransform: "none",
-            fontWeight: 600,
-            minHeight: 56,
-            color: "text.secondary",
-            fontSize: { xs: "0.72rem", md: "0.85rem" },
-            transition: "color 0.2s ease, background-color 0.2s ease",
-            "&:hover": {
-              color: "primary.main",
-              bgcolor: (t) => alpha(t.palette.primary.main, 0.05),
-            },
-            "&.Mui-selected": {
-              color: "primary.dark",
-              fontWeight: 700,
-            },
-          },
-        }}
-        variant={"scrollable"}
-        scrollButtons="auto"
-        allowScrollButtonsMobile
-      >
-        <Tab
-          icon={<BsInfoCircle size={20} />}
-          label="Details"
-          sx={{ textTransform: "none" }}
-        />
-        <Tab
-          icon={<MdTimeline size={20} />}
-          label="Sales stage"
-          sx={{ textTransform: "none" }}
-        />
-        <Tab
-          icon={<BsTelephone size={20} />}
-          label="Calls"
-          sx={{ textTransform: "none" }}
-        />
-        <Tab
-          icon={<MdAnalytics size={20} />}
-          label="Client analysis"
-          sx={{ textTransform: "none" }}
-        />
-        <Tab
-          icon={<MdSchedule size={20} />}
-          label="Meetings"
-          sx={{ textTransform: "none" }}
-        />
-        <Tab
-          icon={<BsFileText size={20} />}
-          label="Notes"
-          sx={{ textTransform: "none" }}
-        />
-        {isNotPrimaryUser && !admin ? null : (
-          <Tab
-            icon={<PiCurrencyDollarSimpleLight size={20} />}
-            label="Price Offers"
-            sx={{ textTransform: "none" }}
-          />
-        )}
-        <Tab
-          icon={<GoPaperclip size={20} />}
-          label="Attatchments"
-          sx={{ textTransform: "none" }}
-        />
-
-        {payments?.length > 0 && (
-          <Tab
-            icon={<FaServicestack size={20} />}
-            label="Another services"
-            sx={{ textTransform: "none" }}
-          />
-        )}
-        {(user.role === "ADMIN" ||
-          user.role === "SUPER_ADMIN" ||
-          user.role === "STAFF") && (
-          <Tab
-            icon={<MdWork size={20} />}
-            label="Projects"
-            sx={{ textTransform: "none" }}
-          />
-        )}
-        {(admin || isPrimaryStaff) && (
-          <Tab
-            icon={<MdModeEdit size={20} />}
-            label="Modificaions"
-            sx={{ textTransform: "none" }}
-          />
-        )}
-        {lead.status === "FINALIZED" && (
-          <Tab
-            icon={<MdUpdate size={20} />}
-            label="Updates"
-            sx={{ textTransform: "none" }}
-          />
-        )}
-        <Tab
-          icon={<MdChat size={20} />}
-          label="Chats"
-          sx={{ textTransform: "none" }}
-        />
-      </Tabs>
-
-      <Box
-        sx={{
-          p: { xs: 1.5, md: 3 },
-          overflowY: "auto",
-          maxHeight: { md: "640px" },
-          bgcolor: (t) => alpha(t.palette.background.default, 0.25),
-          "&::-webkit-scrollbar": { width: 8 },
-          "&::-webkit-scrollbar-thumb": {
-            backgroundColor: (t) => alpha(t.palette.primary.main, 0.25),
-            borderRadius: 4,
-          },
-        }}
-      >
-        <TabPanel value={activeTab} index={0}>
-          <LeadData
-            lead={lead}
-            admin={admin}
-            setLead={setLead}
-            setleads={setleads}
-          />
-        </TabPanel>
-        <TabPanel value={activeTab} index={1}>
-          <SalesStageComponent clientLeadId={lead.id} />
-        </TabPanel>
-        <TabPanel value={activeTab} index={2}>
-          <CallReminders
-            admin={admin}
-            lead={lead}
-            setleads={setleads}
-            notUser={isPage && user.id !== lead.userId && !admin}
-          />
-        </TabPanel>
-        <TabPanel value={activeTab} index={3}>
-          <SalesToolsTabs lead={lead} setleads={setleads} setLead={setLead} />
-        </TabPanel>
-        <TabPanel value={activeTab} index={4}>
-          <MeetingReminders
-            admin={admin}
-            lead={lead}
-            setleads={setleads}
-            notUser={isPage && user.id !== lead.userId && !admin}
-          />
-        </TabPanel>
-        <TabPanel value={activeTab} index={5}>
-          <LeadNotes
-            admin={admin}
-            lead={lead}
-            notUser={isPage && user.id !== lead.userId && !admin}
-          />
-        </TabPanel>
-        {isNotPrimaryUser && !admin ? null : (
-          <TabPanel value={activeTab} index={6}>
-            <PriceOffersList
-              admin={admin}
-              lead={lead}
-              notUser={isPage && user.id !== lead.userId && !admin}
-            />
-          </TabPanel>
-        )}
-        <TabPanel value={activeTab} index={isNotPrimaryUser && !admin ? 6 : 7}>
-          <FileList
-            admin={admin}
-            lead={lead}
-            notUser={isPage && user.id !== lead.userId && !admin}
-          />
-        </TabPanel>
-
-        {payments?.length > 0 && isNotPrimaryUser && !admin && (
-          <TabPanel value={activeTab} index={7}>
-            <ExtraServicesList
-              admin={admin}
-              lead={lead}
-              notUser={isPage && user.id !== lead.userId && !admin}
-              setPayments={setPayments}
-            />
-          </TabPanel>
-        )}
-        {isNotPrimaryUser && !admin ? null : (
-          <>
-            {payments?.length > 0 && (
-              <TabPanel value={activeTab} index={8}>
-                <ExtraServicesList
-                  admin={admin}
-                  lead={lead}
-                  notUser={isPage && user.id !== lead.userId && !admin}
-                  setPayments={setPayments}
-                />
-              </TabPanel>
-            )}
-            <TabPanel value={activeTab} index={payments?.length > 0 ? 9 : 8}>
-              <LeadProjects clientLeadId={lead.id} />
-            </TabPanel>
-            <TabPanel value={activeTab} index={payments?.length > 0 ? 10 : 9}>
-              <TasksList
-                name="Modifcation"
-                type="MODIFICATION"
-                clientLeadId={lead.id}
-              />
-            </TabPanel>
-            {lead.status === "FINALIZED" && (
-              <TabPanel
-                value={activeTab}
-                index={payments?.length > 0 ? 11 : 10}
-              >
-                <UpdatesList clientLeadId={lead.id} />
-              </TabPanel>
-            )}
-          </>
-        )}
-        <TabPanel
-          value={activeTab}
-          index={
-            isNotPrimaryUser && !admin
-              ? payments?.length > 0
-                ? 8
-                : 7
-              : payments?.length > 0
-                ? lead.status === "FINALIZED"
-                  ? 12
-                  : 11
-                : lead.status === "FINALIZED"
-                  ? 11
-                  : 10
-          }
-        >
-          <ChatsTab clientLeadId={lead.id} />
-        </TabPanel>
-      </Box>
+      {/* Workspace — config-driven sections, keyed (no index math) */}
+      <LeadWorkspace
+        sections={visibleSections}
+        activeKey={activeTab}
+        onChange={setActiveTab}
+        ctx={leadCtx}
+      />
     </>
   );
 };
-
-function LeadData({ lead, setLead, setleads }) {
-  return (
-    <Stack spacing={3}>
-      <LeadInfo lead={lead} setLead={setLead} setleads={setleads} />
-      <LeadContactInfo lead={lead} setLead={setLead} setleads={setleads} />
-      <BookingLeadDetailsCard lead={lead} />
-      <LeadStripeInfo lead={lead} />
-    </Stack>
-  );
-}
 
 const PreviewDialog = ({
   open,

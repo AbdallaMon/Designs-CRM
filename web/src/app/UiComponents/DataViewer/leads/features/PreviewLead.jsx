@@ -44,15 +44,14 @@ export const PreviewLead = ({
   dontCheckIfNotUser,
   setRerenderColumns,
 }) => {
-  // In full-page mode the active tab is persisted in the URL (`?tab=`) so it survives other
-  // searchParam pushes and is restored on reload. In modal/kanban-card mode it's local state.
+  // In full-page mode the active section is persisted in the URL (`?tab=<key>`) so it
+  // survives other searchParam pushes and is restored on reload. In modal/kanban-card
+  // mode it's local state. The value is now the section KEY (e.g. "notes"), not an index.
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const initialTab = page ? parseInt(searchParams.get("tab") ?? "", 10) : NaN;
-  const [activeTab, setActiveTabState] = useState(
-    Number.isNaN(initialTab) ? 0 : initialTab
-  );
+  const initialTab = page ? searchParams.get("tab") || "" : "";
+  const [activeTab, setActiveTabState] = useState(initialTab || "details");
   const setActiveTab = (val) => {
     setActiveTabState((prev) => {
       const next = typeof val === "function" ? val(prev) : val;
