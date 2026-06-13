@@ -13,6 +13,7 @@ import {
   Grid,
   IconButton,
   Paper,
+  Stack,
   Tooltip,
   Typography,
   useTheme,
@@ -65,49 +66,92 @@ export default function NewLeadsPage({ searchParams, staff, withSearch }) {
   const { user } = useAuth();
 
   return (
-    <Container maxWidth="xxl">
-      <FixedData />
-      <CreateNewLead />
-      <NonConsultedLeads />
-      <Box mb={2}>
-        <SearchComponent
-          apiEndpoint="search?model=clientLead"
-          setFilters={setFilters}
-          inputLabel="Search lead by id ,name or phone"
-          renderKeys={["id", "client.name", "client.phone", "client.email"]}
-          mainKey="id"
-          searchKey={"id"}
-          localFilters={{
-            status: {
-              in: ["NEW"],
-            },
-            initialConsult: true,
+    <Container maxWidth="xxl" sx={{ py: { xs: 2, md: 3 } }}>
+      <Stack spacing={3}>
+        {/* Page header */}
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 2, md: 3 },
+            borderRadius: 3,
+            border: 1,
+            borderColor: "divider",
+            background: (t) =>
+              `linear-gradient(135deg, ${t.palette.primary.main}14 0%, ${t.palette.background.paper} 60%)`,
           }}
-        />
-      </Box>
-      <LeadsSlider
-        title="New leads"
-        loading={loading}
-        data={data}
-        total={total}
-        limit={limit}
-        page={page}
-        setLimit={setLimit}
-        setPage={setPage}
-        totalPages={totalPages}
-      >
-        {data?.map((lead) => (
-          <LeadSliderCard lead={lead} key={lead.id} setData={setData} />
-        ))}
-      </LeadsSlider>
-      {user.role !== "CONTACT_INITIATOR" && (
-        <>
-          <NextCalls staff={staff} />
-          <NextMeetings staff={staff} />
-        </>
-      )}
-      {user.role !== "CONTACT_INITIATOR" && <OnHoldLeads />}
-      <SearchForALead />
+        >
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            justifyContent="space-between"
+            alignItems={{ xs: "stretch", md: "center" }}
+            spacing={2}
+          >
+            <Box>
+              <Typography variant="h4" fontWeight={800} color="text.primary">
+                Leads
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                New, unconsulted and on-hold leads — pick one up and start a deal.
+              </Typography>
+            </Box>
+            <Box sx={{ flexShrink: 0 }}>
+              <CreateNewLead />
+            </Box>
+          </Stack>
+
+          <Box sx={{ mt: 2.5 }}>
+            <SearchComponent
+              apiEndpoint="search?model=clientLead"
+              setFilters={setFilters}
+              inputLabel="Search lead by id, name or phone"
+              renderKeys={["id", "client.name", "client.phone", "client.email"]}
+              mainKey="id"
+              searchKey={"id"}
+              localFilters={{
+                status: { in: ["NEW"] },
+                initialConsult: true,
+              }}
+            />
+          </Box>
+        </Paper>
+
+        {/* Needs attention — unconsulted leads */}
+        <NonConsultedLeads />
+
+        {/* New leads */}
+        <LeadsSlider
+          title="New leads"
+          loading={loading}
+          data={data}
+          total={total}
+          limit={limit}
+          page={page}
+          setLimit={setLimit}
+          setPage={setPage}
+          totalPages={totalPages}
+        >
+          {data?.map((lead) => (
+            <LeadSliderCard lead={lead} key={lead.id} setData={setData} />
+          ))}
+        </LeadsSlider>
+
+        {/* Upcoming activity */}
+        {user.role !== "CONTACT_INITIATOR" && (
+          <>
+            <NextCalls staff={staff} />
+            <NextMeetings staff={staff} />
+          </>
+        )}
+
+        {/* On-hold pool */}
+        {user.role !== "CONTACT_INITIATOR" && <OnHoldLeads />}
+
+        {/* Targets / fixed data */}
+        <FixedData />
+
+        {/* Admin: look up any lead */}
+        <SearchForALead />
+      </Stack>
     </Container>
   );
 }
@@ -136,155 +180,118 @@ export function LeadSliderCard({ lead, setData }) {
     return assign;
   }
 
+  const showContact =
+    user.role === "ADMIN" ||
+    user.role === "SUPER_ADMIN" ||
+    user.role === "CONTACT_INITIATOR" ||
+    user.isSuperSales;
+
   return (
     <Card
       sx={{
-        boxShadow: isFullyPaid
-          ? "0 0 0 2px #4caf50, 0 4px 10px rgba(0,0,0,0.12)"
-          : 3,
-        borderRadius: 2,
-        padding: 2,
+        width: 280,
+        borderRadius: 3,
+        border: 1,
+        borderColor: isFullyPaid ? "success.main" : "divider",
+        borderLeft: 4,
+        borderLeftColor: isFullyPaid ? "success.main" : "primary.main",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
-        transition: "transform 0.3s ease",
-        position: "relative",
-        backgroundColor: isFullyPaid ? "rgba(76, 175, 80, 0.05)" : "inherit",
+        overflow: "hidden",
+        boxShadow: "none",
+        transition: "box-shadow .2s ease, transform .2s ease",
+        bgcolor: isFullyPaid ? "rgba(76,175,80,0.04)" : "background.paper",
+        "&:hover": { boxShadow: 4, transform: "translateY(-2px)" },
       }}
     >
-      <Box
-        sx={{
-          position: "absolute",
-          top: 10,
-          left: 10,
-          // color: "white",
-          borderRadius: 10,
-          padding: "4px 10px",
-          fontSize: "0.75rem",
-          fontWeight: "bold",
-          display: "flex",
-          alignItems: "center",
-          gap: 0.5,
-        }}
-      >
-        #{lead?.id.toString().padStart(7, "0")}
-      </Box>
-      <Box
-        sx={{
-          position: "absolute",
-          top: 10,
-          right: 10,
-          backgroundColor: isFullyPaid ? "#4caf50" : "#9e9e9e",
-          color: "white",
-          borderRadius: 10,
-          padding: "4px 10px",
-          fontSize: "0.75rem",
-          fontWeight: "bold",
-          display: "flex",
-          alignItems: "center",
-          gap: 0.5,
-        }}
-      >
-        {isFullyPaid ? <MdCheck size={16} /> : <MdHourglassEmpty size={16} />}
-        {lead.paymentStatus}
-      </Box>
+      <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1, flex: 1 }}>
+        {/* id + payment */}
+        <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
+          <Chip
+            size="small"
+            label={`#${lead?.id.toString().padStart(7, "0")}`}
+            sx={{ fontFamily: "monospace", fontWeight: 700, borderRadius: 1.5 }}
+          />
+          <Chip
+            size="small"
+            icon={isFullyPaid ? <MdCheck size={14} /> : <MdHourglassEmpty size={14} />}
+            label={lead.paymentStatus}
+            color={isFullyPaid ? "success" : "default"}
+            variant={isFullyPaid ? "filled" : "outlined"}
+            sx={{ fontWeight: 700, borderRadius: 1.5 }}
+          />
+        </Stack>
 
-      <CardHeader
-        title={""}
-        titleTypographyProps={{
-          variant: "h6",
-          fontWeight: "bold",
-          color: "text.primary",
-        }}
-        sx={{ paddingBottom: 0 }}
-      />
-      <CardContent
-        sx={{
-          paddingTop: 0,
-          height: user.role === "ADMIN" ? "140px" : "100px",
-          overflowY: "hidden",
-        }}
-      >
-        {(user.role === "ADMIN" ||
-          user.role === "SUPER_ADMIN" ||
-          user.role === "CONTACT_INITIATOR" ||
-          user.isSuperSales) && (
-          <>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+        {/* identity / contact */}
+        {showContact && (
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="subtitle2" fontWeight={700} color="text.primary" noWrap>
               {lead.client.name}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+            <Typography variant="caption" color="text.secondary" noWrap display="block">
               {lead.client.phone}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+            <Typography variant="caption" color="text.secondary" noWrap display="block">
               {lead.client.email}
             </Typography>
-          </>
+          </Box>
         )}
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-          <strong>Created at:</strong> {formattedDate}
+
+        <Typography variant="caption" color="text.secondary">
+          Created {formattedDate}
         </Typography>
+
         {lead.description && (
           <Typography
             variant="body2"
-            color="text.secondary"
+            color="text.primary"
+            title={lead.description}
             sx={{
-              mt: 1,
-              whiteSpace: "nowrap",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
               overflow: "hidden",
-              textOverflow: "ellipsis",
             }}
-            title={lead.description} // Tooltip for full description
           >
-            <strong>Description:</strong> {lead.description}
+            {lead.description}
           </Typography>
         )}
-      </CardContent>
+      </Box>
 
-      <CardActions
-        sx={{ justifyContent: "flex-end", gap: 1, paddingTop: 1.5, px: 0 }}
+      {/* actions */}
+      <Box
+        sx={{
+          p: 1.5,
+          pt: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: 1,
+        }}
       >
         {user.role === "STAFF" && !user.isSuperSales && (
           <ConfirmWithActionModel
             title="Are you sure you want to get this lead and assign it to you as a new deal?"
             handleConfirm={() => createADeal(lead)}
             label="Start a Deal"
-            fullWidth={false}
+            fullWidth={true}
             size="small"
-            variant="outlined"
+            variant="contained"
           />
         )}
-        <Box
-          display="flex"
-          flexDirection="column"
-          sx={{
-            gap:
-              user.role !== "CONTACT_INITIATOR" && !user.isSuperSales ? 1 : 0,
-          }}
-        >
-          <UpdateInitialConsultButton clientLead={lead} />
-          {user.role !== "CONTACT_INITIATOR" && (
-            <Button
-              sx={{
-                display: "flex",
-                gap: 1,
-                justifyContent: "flex-start",
-                width: "100%",
-              }}
-              onClick={() => {
-                setPreviewDialogOpen(true);
-              }}
-              variant={"text"}
-            >
-              <MdPreview fontSize="small" sx={{ mr: 1 }} />
-              Preview Details
-            </Button>
-          )}
-          {/* <Box sx={{ width: "100%" }}>
-            <ReminderButtons lead={lead} clientLeadId={lead.id} />
-          </Box> */}
-        </Box>
-      </CardActions>
+        <UpdateInitialConsultButton clientLead={lead} />
+        {user.role !== "CONTACT_INITIATOR" && (
+          <Button
+            fullWidth
+            onClick={() => setPreviewDialogOpen(true)}
+            variant="outlined"
+            size="small"
+            startIcon={<MdPreview />}
+            sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
+          >
+            Preview details
+          </Button>
+        )}
+      </Box>
       <PreviewDialog
         open={previewDialogOpen}
         onClose={() => setPreviewDialogOpen(false)}
