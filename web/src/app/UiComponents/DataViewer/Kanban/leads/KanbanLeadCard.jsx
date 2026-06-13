@@ -57,21 +57,30 @@ const ItemTypes = {
 };
 
 const StyledCard = styled(Card)(({ theme, borderColor }) => ({
-  margin: theme.spacing(1),
-  padding: theme.spacing(0.2),
-  paddingLeft: theme.spacing(0.15),
-  borderLeft: `5px solid ${borderColor}`,
-  transition: "all 0.3s",
+  marginTop: theme.spacing(2.5),
+  marginBottom: theme.spacing(0.5),
+  borderRadius: "12px",
+  border: "1px solid",
+  borderColor: theme.palette.divider,
+  borderTop: `3px solid ${borderColor}`,
+  transition: "transform 0.2s ease, box-shadow 0.2s ease",
   position: "relative",
   cursor: "grab",
   overflow: "unset",
+  backgroundColor: theme.palette.background.paper,
+  boxShadow: "0 1px 3px rgba(42, 34, 26, 0.06)",
   "& .MuiCardContent-root": {
-    paddingLeft: "10px",
+    padding: theme.spacing(1.5),
+    paddingTop: theme.spacing(1.75),
     overflow: "hidden",
+    "&:last-child": {
+      paddingBottom: theme.spacing(1.5),
+    },
   },
   "&:hover": {
-    transform: "translateY(-2px)",
-    boxShadow: theme.shadows[4],
+    transform: "translateY(-3px)",
+    boxShadow: "0 8px 24px rgba(42, 34, 26, 0.14)",
+    borderColor: `${borderColor}66`,
   },
   "&:active": {
     cursor: "grabbing",
@@ -79,9 +88,10 @@ const StyledCard = styled(Card)(({ theme, borderColor }) => ({
 }));
 
 const CallInfoBox = styled(Box)(({ theme, variant }) => ({
-  padding: theme.spacing(1.5),
-  borderRadius: theme.shape.borderRadius,
-  backgroundColor: variant === "next" ? "#e3f2fd" : "#f5f5f5",
+  padding: theme.spacing(1.25),
+  borderRadius: "10px",
+  backgroundColor: variant === "next" ? "#e8f1fb" : "#f7f0e8",
+  border: `1px solid ${variant === "next" ? "#bcd6f0" : "#e5dcd1"}`,
   marginTop: theme.spacing(1),
 }));
 
@@ -166,19 +176,21 @@ const LeadCard = ({
   const levelColor = currentContract
     ? contractLevelColors[currentContract.contractLevel]
     : "#000000";
+  const statusColor =
+    type === "STAFF" || type === "CONTRACTLEVELS"
+      ? lead.status && statusColors[lead.status]
+      : statusColors[lead.projects?.[0]?.status];
+  const accentColor =
+    currentContract && levelColor !== "#000000"
+      ? levelColor
+      : statusColor || "#c7a16a";
   return (
     <div
       ref={drag}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <StyledCard
-        borderColor={
-          type === "STAFF" || type === "CONTRACTLEVELS"
-            ? levelColor
-            : statusColors[lead.projects[0].status]
-        }
-      >
+      <StyledCard borderColor={accentColor}>
         {showCheckbox && (
           <Box
             sx={{
@@ -200,49 +212,76 @@ const LeadCard = ({
         )}
         <FloatingIdBadge
           leadId={lead.id}
-          backgroundColor={`${levelColor}60`}
-          color={levelColor}
+          backgroundColor={`${accentColor}1f`}
+          color={accentColor}
         />
 
         <Box
           sx={{
             position: "absolute",
-            top: -20,
-            right: 0,
+            top: -16,
+            right: 8,
             zIndex: 1000,
           }}
         >
           <Chip
-            icon={<IoMdContract sx={{ fontSize: "12px !important" }} />}
+            size="small"
+            icon={
+              <IoMdContract
+                style={{ fontSize: "13px", color: "inherit" }}
+              />
+            }
             label={
               currentContract
                 ? CONTRACT_LEVELS[currentContract.contractLevel]
                 : "No Contract"
             }
             sx={{
-              fontWeight: "bold",
-              fontSize: "0.875rem",
-              color: levelColor,
-              bgcolor: levelColor + "60",
-              borderRadius: "0",
+              fontWeight: 700,
+              fontSize: "0.72rem",
+              height: "26px",
+              color: "#fff",
+              bgcolor: currentContract ? levelColor : "#9a8e82",
+              boxShadow: "0 2px 6px rgba(42,34,26,0.18)",
+              borderRadius: "13px",
               cursor: "default",
               userSelect: "none",
+              "& .MuiChip-icon": { color: "#fff", marginLeft: "6px" },
             }}
           />
         </Box>
 
         <CardContent>
-          <Box>
-            <Typography variant="h6" component="div">
+          <Box
+            display="flex"
+            alignItems="flex-start"
+            justifyContent="space-between"
+            gap={1}
+          >
+            <Typography
+              variant="subtitle1"
+              component="div"
+              sx={{
+                fontWeight: 700,
+                lineHeight: 1.3,
+                color: "text.primary",
+                display: "-webkit-box",
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+                wordBreak: "break-word",
+              }}
+              title={lead.client.name}
+            >
               {lead.client.name}
             </Typography>
-            <ClientImageSessionManager clientLeadId={lead.id} />
-          </Box>
-          <Box my={1} display="flex" alignItems="center" gap={1}>
-            <Chip icon={<MoneyIcon />} label={lead.price} variant="outlined" />
             {!admin ? (
               <Tooltip title="Actions">
-                <IconButton size="small" onClick={handleMenuClick}>
+                <IconButton
+                  size="small"
+                  onClick={handleMenuClick}
+                  sx={{ mt: -0.5, mr: -0.5, flexShrink: 0 }}
+                >
                   <MoreVertIcon />
                 </IconButton>
               </Tooltip>
@@ -253,19 +292,64 @@ const LeadCard = ({
                   onClick={() => {
                     setPreviewDialogOpen(true);
                   }}
+                  sx={{
+                    mt: -0.5,
+                    mr: -0.5,
+                    flexShrink: 0,
+                    color: accentColor,
+                  }}
                 >
                   <FaEye />
                 </IconButton>
               </Tooltip>
             )}
           </Box>
+
+          <Box mt={0.5} mb={1}>
+            <ClientImageSessionManager clientLeadId={lead.id} />
+          </Box>
+
+          <Box
+            display="flex"
+            alignItems="center"
+            flexWrap="wrap"
+            gap={0.75}
+            mb={admin && lead.assignedTo ? 1 : 1.5}
+          >
+            <Chip
+              size="small"
+              icon={<MoneyIcon />}
+              label={lead.price}
+              sx={{
+                fontWeight: 700,
+                color: "success.dark",
+                bgcolor: "rgba(107, 140, 90, 0.12)",
+                border: "1px solid rgba(107, 140, 90, 0.25)",
+                "& .MuiChip-icon": { color: "success.dark" },
+              }}
+            />
+          </Box>
+
           {admin && lead.assignedTo && (
-            <Box display="flex" alignItems="center" mb={2}>
-              <UserIcon
-                fontSize="small"
-                sx={{ mx: 1, color: "text.secondary" }}
-              />
-              <Typography variant="body2" color="text.secondary">
+            <Box
+              display="flex"
+              alignItems="center"
+              gap={0.75}
+              mb={1.5}
+              sx={{
+                bgcolor: "action.hover",
+                borderRadius: "8px",
+                px: 1,
+                py: 0.5,
+                width: "fit-content",
+              }}
+            >
+              <UserIcon style={{ fontSize: 14, color: "#7a6f63" }} />
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ fontWeight: 600 }}
+              >
                 {lead.assignedTo.name}
               </Typography>
             </Box>
@@ -277,13 +361,13 @@ const LeadCard = ({
                 mt: 1,
                 mb: 2,
                 p: 1.5,
-                borderRadius: 1,
-                bgcolor: "background.paper",
+                borderRadius: "10px",
+                bgcolor: "#faf7f3",
                 border: "1px solid",
                 borderColor: "divider",
               }}
             >
-              <Grid container spacing={1}>
+              <Grid container spacing={1.25}>
                 <Grid size={6}>
                   <Typography variant="caption" color="text.secondary">
                     Status

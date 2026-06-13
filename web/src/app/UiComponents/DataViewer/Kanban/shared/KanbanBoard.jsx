@@ -200,23 +200,27 @@ const KanbanBoard = ({
           container
           spacing={2}
           sx={{
-            p: 3,
-            bgcolor: "grey.100",
-            flexWrap: "noWrap",
+            p: { xs: 1.5, md: 2 },
+            mx: 1.5,
+            mb: 2,
+            background:
+              "linear-gradient(160deg, #f4efe9 0%, #f8f5f1 60%, #f1ece6 100%)",
+            borderRadius: "16px",
+            flexWrap: "nowrap",
+            alignItems: "flex-start",
             overflowX: "auto",
             "::-webkit-scrollbar": {
-              height: "6px",
+              height: "8px",
             },
             "::-webkit-scrollbar-track": {
-              background: "#f1f1f1",
-              borderRadius: "4px",
+              background: "transparent",
             },
             "::-webkit-scrollbar-thumb": {
-              background: "#bbb",
+              background: "#d6cdc2",
               borderRadius: "4px",
             },
             "::-webkit-scrollbar-thumb:hover": {
-              background: "#999",
+              background: "#c4b8ab",
             },
           }}
         >

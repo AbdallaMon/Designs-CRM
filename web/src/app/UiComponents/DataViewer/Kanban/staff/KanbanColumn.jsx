@@ -11,8 +11,9 @@ import {
   Button,
 } from "@mui/material";
 import { BiDollarCircle } from "react-icons/bi";
-import { BsKanban } from "react-icons/bs";
+import { BsInbox } from "react-icons/bs";
 import LeadCard from "../leads/KanbanLeadCard";
+import colors from "@/app/helpers/colors";
 import { useDrop } from "react-dnd";
 import WorkStageKanbanCard from "../work-stages/WorkStageKanbanCard";
 import { FinalizeModal } from "../../leads/widgets/FinalizeModal";
@@ -27,32 +28,26 @@ const ItemTypes = {
 };
 
 const ColumnHeader = styled(Box)(({ theme, statusColor }) => ({
-  background: theme.palette.background.paper,
-  padding: theme.spacing(2),
-  borderRadius: theme.shape.borderRadius,
-  marginBottom: theme.spacing(2),
+  position: "sticky",
+  top: 0,
+  zIndex: 5,
+  background: `linear-gradient(180deg, ${statusColor}14 0%, ${theme.palette.background.paper} 100%)`,
+  backdropFilter: "blur(6px)",
+  padding: theme.spacing(1.75, 1.75, 1.5),
+  borderRadius: "14px 14px 0 0",
   boxShadow: "none",
-  border: `1px solid ${theme.palette.divider}`,
-  position: "relative",
-  "&:before": {
-    content: '""',
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "4px",
-    backgroundColor: statusColor,
-    borderRadius: "4px 4px 0 0",
-  },
+  borderBottom: `1px solid ${theme.palette.divider}`,
 }));
 
 export const StatusChip = styled(Chip)(({ theme, statuscolor }) => ({
   backgroundColor: `${statuscolor}20`,
   color: statuscolor,
-  fontWeight: 600,
+  fontWeight: 700,
   height: "24px",
+  border: `1px solid ${statuscolor}33`,
   "& .MuiChip-label": {
-    padding: "0 8px",
+    padding: "0 10px",
+    fontSize: "0.78rem",
   },
 }));
 
@@ -209,14 +204,19 @@ const KanbanColumn = ({
         ref={drop}
         elevation={0}
         sx={{
-          bgcolor: "grey.50",
+          bgcolor: "rgba(255,255,255,0.55)",
           p: 0,
-          minWidth: type === "STAFF" ? 280 : 280,
-          height: "100vh",
-          borderRadius: 0,
+          minWidth: 300,
+          width: 300,
+          maxHeight: "calc(100vh - 32px)",
+          borderRadius: "14px",
+          border: "1px solid",
+          borderColor: "divider",
+          boxShadow: `0 1px 2px ${colors.shadow}`,
           display: "flex",
           flexDirection: "column",
           position: "relative",
+          overflow: "hidden",
         }}
       >
         {loading && (
@@ -226,69 +226,72 @@ const KanbanColumn = ({
               top: 0,
               left: 0,
               right: 0,
-              bottom: 0,
-              bgcolor: "#00000047",
-              display: "flex",
-              flexDirection: "column",
               zIndex: 1000,
             }}
           >
-            <Box sx={{ width: "90%", mb: 2 }}>
-              <LinearProgress
-                sx={{
-                  height: 4,
-                  borderRadius: 2,
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
-                  "& .MuiLinearProgress-bar": {
-                    backgroundColor: "#fff",
-                  },
-                }}
-              />
-            </Box>
+            <LinearProgress
+              sx={{
+                height: 3,
+                backgroundColor: `${statusColor}22`,
+                "& .MuiLinearProgress-bar": {
+                  backgroundColor: statusColor,
+                },
+              }}
+            />
           </Box>
         )}
         <ColumnHeader statusColor={statusColor}>
-          <Stack spacing={2}>
-            <Box display="flex" alignItems="center" gap={1}>
-              <BsKanban size={20} color={statusColor} />
+          <Stack spacing={1.25}>
+            <Box display="flex" alignItems="center" gap={1.25}>
+              <Box
+                sx={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  bgcolor: statusColor,
+                  boxShadow: `0 0 0 4px ${statusColor}22`,
+                  flexShrink: 0,
+                }}
+              />
               <Typography
                 variant="h6"
                 color="text.primary"
                 sx={{
-                  fontSize: "1.1rem",
-                  fontWeight: 600,
+                  fontSize: "1rem",
+                  fontWeight: 700,
+                  flexGrow: 1,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
+                title={status.replace(/_/g, " ")}
               >
                 {status.replace(/_/g, " ")}
               </Typography>
+              <StatusChip
+                label={totalLeads}
+                statuscolor={statusColor}
+                size="small"
+              />
             </Box>
 
             <Box
               display="flex"
-              justifyContent="space-between"
               alignItems="center"
+              gap={0.75}
+              sx={{
+                color: statusColor,
+                bgcolor: `${statusColor}12`,
+                py: 0.5,
+                px: 1,
+                borderRadius: "8px",
+                width: "fit-content",
+              }}
             >
-              <StatusChip
-                label={`${totalLeads} ${totalLeads === 1 ? "lead" : "leads"}`}
-                statuscolor={statusColor}
-                size="small"
-              />
-              <Box display="flex" alignItems="center" gap={1}>
-                <BiDollarCircle size={16} style={{ color: statusColor }} />
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: statusColor,
-                    bgcolor: `${statusColor}10`,
-                    py: 0.5,
-                    px: 1,
-                    borderRadius: 1,
-                    fontWeight: 500,
-                  }}
-                >
-                  {totalValue}
-                </Typography>
-              </Box>
+              <BiDollarCircle size={16} />
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                {totalValue}
+              </Typography>
             </Box>
           </Stack>
         </ColumnHeader>
@@ -297,24 +300,45 @@ const KanbanColumn = ({
           sx={{
             overflowY: "auto",
             flexGrow: 1,
-            paddingTop: "8px",
+            px: 0.75,
+            pt: 1.5,
+            pb: 1,
             "::-webkit-scrollbar": {
               width: "6px",
             },
             "::-webkit-scrollbar-track": {
-              background: "#f1f1f1",
-              borderRadius: "4px",
+              background: "transparent",
             },
             "::-webkit-scrollbar-thumb": {
-              background: "#bbb",
+              background: "#d6cdc2",
               borderRadius: "4px",
             },
             "::-webkit-scrollbar-thumb:hover": {
-              background: "#999",
+              background: "#c4b8ab",
             },
           }}
         >
-          <Stack spacing={1}>
+          {!loading && (!leads || leads.length === 0) && (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 1,
+                py: 6,
+                px: 2,
+                color: "text.disabled",
+                textAlign: "center",
+              }}
+            >
+              <BsInbox size={28} style={{ color: statusColor, opacity: 0.6 }} />
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                لا توجد عناصر
+              </Typography>
+            </Box>
+          )}
+          <Stack spacing={1.25}>
             {leads?.map((lead) => {
               if (type === "STAFF" || type === "CONTRACTLEVELS") {
                 return (
@@ -352,31 +376,48 @@ const KanbanColumn = ({
               !leads ||
               (leads?.length === 0 && totalLeads)) &&
               !hasMore) > 0 && (
-              <Button onClick={loadMore} variant="outlined" sx={{ mb: 4 }}>
-                Load more
+              <Button
+                onClick={loadMore}
+                variant="outlined"
+                fullWidth
+                sx={{
+                  mb: 2,
+                  borderRadius: "10px",
+                  textTransform: "none",
+                  borderColor: `${statusColor}55`,
+                  color: statusColor,
+                  "&:hover": {
+                    borderColor: statusColor,
+                    bgcolor: `${statusColor}12`,
+                  },
+                }}
+              >
+                تحميل المزيد
               </Button>
             )}
-            {loading && (
+            {loading && leads?.length > 0 && (
               <Box
                 sx={{
                   textAlign: "center",
                   color: "text.secondary",
-                  padding: 2,
+                  padding: 1.5,
+                  fontSize: "0.8rem",
                 }}
               >
-                Loading leads...
+                جارٍ التحميل...
               </Box>
             )}
 
-            {!loading && hasMore && (
+            {!loading && hasMore && leads?.length > 0 && (
               <Box
                 sx={{
                   textAlign: "center",
-                  color: "text.secondary",
-                  padding: 2,
+                  color: "text.disabled",
+                  padding: 1.5,
+                  fontSize: "0.8rem",
                 }}
               >
-                Loading more leads...
+                جارٍ تحميل المزيد...
               </Box>
             )}
           </Stack>
