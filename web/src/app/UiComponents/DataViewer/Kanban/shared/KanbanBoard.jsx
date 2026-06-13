@@ -15,6 +15,7 @@ import { CONTRACT_LEVELS } from "@/app/helpers/constants";
 import { checkIfAdminOrSuperSales } from "@/app/helpers/functions/utility";
 import { FaEllipsisV } from "react-icons/fa";
 import BulkConvertLeadsModal from "./BulkConvertLeadsModal";
+import KanbanFilterBar from "./KanbanFilterBar";
 
 dayjs.extend(relativeTime);
 
@@ -38,36 +39,8 @@ const KanbanBoard = ({
     <>
       <DndProvider backend={HTML5Backend}>
         <Box px={1.5}>
-          <Box
-            sx={{
-              display: "flex",
-              width: "100%",
-              p: { xs: 1.5, md: 3 },
-              mb: 2,
-              backgroundColor: "background.paper",
-              borderRadius: 1,
-              boxShadow: 1,
-              gap: 1,
-              alignItems: "center",
-              justifyContent: "space-between",
-              flexDirection: {
-                xs: "column",
-                md: "row",
-              },
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                gap: 2,
-                flexWrap: "wrap",
-                alignItems: "center",
-                width: {
-                  xs: "100%",
-                  md: "auto",
-                },
-              }}
-            >
+          <KanbanFilterBar
+            leadSearch={
               <SearchComponent
                 apiEndpoint="search?model=clientLead"
                 setFilters={setFilters}
@@ -84,7 +57,9 @@ const KanbanBoard = ({
                 localFilters={{ staffId: user.id, userRole: user.role }}
                 withParamsChange={true}
               />
-              {isAdminOrSuperSales && (
+            }
+            staffSearch={
+              isAdminOrSuperSales ? (
                 <SearchComponent
                   apiEndpoint={`search?model=${
                     type && type !== "CONTRACTLEVELS" ? type : "STAFF"
@@ -96,8 +71,10 @@ const KanbanBoard = ({
                   searchKey={"staffId"}
                   withParamsChange={true}
                 />
-              )}{" "}
-              {!isNotStaff && (
+              ) : null
+            }
+            filters={
+              !isNotStaff ? (
                 <>
                   {type !== "CONTRACTLEVELS" && (
                     <>
@@ -132,19 +109,10 @@ const KanbanBoard = ({
                     noDefaultValues={true}
                   />
                 </>
-              )}
-            </Box>
-            {links && (
-              <Box
-                display="flex"
-                justifyContent="flex-end"
-                sx={{
-                  width: {
-                    xs: "100%",
-                    md: "auto",
-                  },
-                }}
-              >
+              ) : null
+            }
+            links={
+              links ? (
                 <TabsWithLinks
                   links={links}
                   sx={{
@@ -156,45 +124,47 @@ const KanbanBoard = ({
                     },
                   }}
                 />
-              </Box>
-            )}
-            {selectedLeads.length > 0 && (
-              <Box
-                sx={{
-                  display: "flex",
-                  gap: 1,
-                  alignItems: "center",
-                  position: "fixed",
-                  bottom: 30,
-                  right: 50,
-                  zIndex: 1000,
-                }}
-              >
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={(e) => setAnchorEl(e.currentTarget)}
-                  endIcon={<FaEllipsisV />}
+              ) : null
+            }
+            bulkActions={
+              selectedLeads.length > 0 ? (
+                <Box
+                  sx={{
+                    display: "flex",
+                    gap: 1,
+                    alignItems: "center",
+                    position: "fixed",
+                    bottom: 30,
+                    right: 50,
+                    zIndex: 1000,
+                  }}
                 >
-                  Actions ({selectedLeads.length})
-                </Button>
-                <Menu
-                  anchorEl={anchorEl}
-                  open={Boolean(anchorEl)}
-                  onClose={() => setAnchorEl(null)}
-                >
-                  <MenuItem
-                    onClick={() => {
-                      setBulkConvertOpen(true);
-                      setAnchorEl(null);
-                    }}
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={(e) => setAnchorEl(e.currentTarget)}
+                    endIcon={<FaEllipsisV />}
                   >
-                    Convert Leads
-                  </MenuItem>
-                </Menu>
-              </Box>
-            )}
-          </Box>
+                    Actions ({selectedLeads.length})
+                  </Button>
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={() => setAnchorEl(null)}
+                  >
+                    <MenuItem
+                      onClick={() => {
+                        setBulkConvertOpen(true);
+                        setAnchorEl(null);
+                      }}
+                    >
+                      Convert Leads
+                    </MenuItem>
+                  </Menu>
+                </Box>
+              ) : null
+            }
+          />
         </Box>
         <Grid
           container
