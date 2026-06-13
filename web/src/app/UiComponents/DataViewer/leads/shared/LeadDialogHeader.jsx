@@ -4,6 +4,7 @@ import {
   Box,
   Button,
   Chip,
+  Divider,
   IconButton,
   Stack,
   Tooltip,
@@ -13,7 +14,7 @@ import {
 import dayjs from "dayjs";
 import { BsArrowRight, BsFileText } from "react-icons/bs";
 import { AiOutlineSwap } from "react-icons/ai";
-import { MdWork, MdTag, MdSchedule } from "react-icons/md";
+import { MdWork, MdTag, MdSchedule, MdOpenInNew } from "react-icons/md";
 import { IoMdContract } from "react-icons/io";
 import {
   ClientLeadStatus,
@@ -27,8 +28,18 @@ import UpdateInitialConsultButton from "../../../buttons/UpdateInitialConsultLea
 import ClientImageSessionManager from "../../image-session/users/ClientSessionImageManager";
 
 /**
- * LeadDialogHeader component for lead preview dialogs
- * Displays lead information, status controls, and action buttons
+ * LeadDialogHeader — the redesigned action header for the lead / deal detail.
+ *
+ * Two deliberate zones instead of the old scattered button salad:
+ *   1. IDENTITY row — back, avatar, name, id/code/date, and (right) the current status
+ *      as the single prominent control (click to change), plus contract / payment chips.
+ *   2. ACTION BAR — one bordered surface that groups every action by intent:
+ *        • the context primary CTA (Start Deal),
+ *        • the tool actions (Telegram, image session, initial consult, PDF),
+ *        • "open in a new tab" (only when shown as a modal from the kanban),
+ *        • the overflow "More" menu (assign / convert / delete / payments).
+ *
+ * All previously-available actions are preserved — only reorganized.
  */
 export const LeadDialogHeader = ({
   lead,
@@ -49,8 +60,12 @@ export const LeadDialogHeader = ({
     ? contractLevelColors[currentContract.contractLevel]
     : "#000000";
 
-  const isAnonymous = (lead.status === "NEW" || lead.status === "ON_HOLD") && !admin;
+  const isAnonymous =
+    (lead.status === "NEW" || lead.status === "ON_HOLD") && !admin;
   const statusColor = statusColors[lead.status] || theme.palette.primary.main;
+
+  const canChangeStatus = user.role !== "ACCOUNTANT" && lead.status !== "NEW";
+  const showStartDeal = lead.status === "NEW" && !admin;
 
   // Small reusable meta pill for the identity row
   const MetaPill = ({ icon, children }) => (
@@ -74,12 +89,8 @@ export const LeadDialogHeader = ({
   );
 
   return (
-    <Box
-      sx={{
-        borderBottom: `1px solid ${theme.palette.divider}`,
-      }}
-    >
-      {/* Hero / identity band */}
+    <Box sx={{ borderBottom: `1px solid ${theme.palette.divider}` }}>
+      {/* ───────────────────────── Identity band ───────────────────────── */}
       <Box
         sx={{
           px: { xs: 2, md: 3 },
@@ -100,7 +111,12 @@ export const LeadDialogHeader = ({
           spacing={2}
         >
           {/* Left: back + avatar + identity */}
-          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+          <Stack
+            direction="row"
+            spacing={1.5}
+            alignItems="center"
+            sx={{ minWidth: 0 }}
+          >
             {handleClose && (
               <Tooltip title="رجوع">
                 <IconButton
@@ -109,7 +125,9 @@ export const LeadDialogHeader = ({
                     bgcolor: theme.palette.background.paper,
                     border: `1px solid ${theme.palette.divider}`,
                     boxShadow: theme.shadows[1],
-                    "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.08) },
+                    "&:hover": {
+                      bgcolor: alpha(theme.palette.primary.main, 0.08),
+                    },
                   }}
                 >
                   <BsArrowRight size={18} />
@@ -133,7 +151,11 @@ export const LeadDialogHeader = ({
 
             <Box sx={{ minWidth: 0 }}>
               {isAnonymous ? (
-                <Typography variant="h6" color="text.secondary" fontWeight={600}>
+                <Typography
+                  variant="h6"
+                  color="text.secondary"
+                  fontWeight={600}
+                >
                   معاينة العميل المحتمل
                 </Typography>
               ) : (
@@ -174,7 +196,7 @@ export const LeadDialogHeader = ({
             </Box>
           </Stack>
 
-          {/* Right: status + contract/payment + primary actions */}
+          {/* Right: status control + contract / payment chips */}
           <Stack
             direction="row"
             spacing={1}
@@ -183,14 +205,50 @@ export const LeadDialogHeader = ({
             useFlexGap
             sx={{ justifyContent: { xs: "flex-start", md: "flex-end" } }}
           >
+            {canChangeStatus ? (
+              <Tooltip title="تغيير الحالة">
+                <Button
+                  variant="contained"
+                  startIcon={<AiOutlineSwap size={16} />}
+                  onClick={handleClick}
+                  disableElevation
+                  sx={{
+                    background: statusColor,
+                    color: "#fff",
+                    fontWeight: 700,
+                    borderRadius: 2,
+                    px: 2,
+                    py: 0.75,
+                    fontSize: "0.85rem",
+                    minWidth: 130,
+                    boxShadow: `0 2px 8px ${alpha(statusColor, 0.45)}`,
+                    "&:hover": {
+                      background: statusColor,
+                      filter: "brightness(0.95)",
+                      boxShadow: `0 4px 12px ${alpha(statusColor, 0.55)}`,
+                    },
+                  }}
+                >
+                  {ClientLeadStatus[lead.status]}
+                </Button>
+              </Tooltip>
+            ) : (
+              <Chip
+                label={ClientLeadStatus[lead.status] || lead.status}
+                sx={{
+                  fontWeight: 700,
+                  borderRadius: 2,
+                  color: statusColor,
+                  bgcolor: alpha(statusColor, 0.14),
+                  border: `1px solid ${alpha(statusColor, 0.4)}`,
+                }}
+              />
+            )}
+
             {(admin || user.role === "STAFF") && currentContract && (
               <Chip
                 icon={<IoMdContract style={{ fontSize: 14 }} />}
-                label={
-                  currentContract
-                    ? CONTRACT_LEVELS[currentContract.contractLevel]
-                    : "No Contract"
-                }
+                label={CONTRACT_LEVELS[currentContract.contractLevel]}
                 sx={{
                   fontWeight: 700,
                   fontSize: "0.8rem",
@@ -215,55 +273,23 @@ export const LeadDialogHeader = ({
               />
             )}
 
-            {/* Status Button/Menu */}
-            {user.role !== "ACCOUNTANT" && lead.status !== "NEW" && (
-              <Button
-                variant="contained"
-                startIcon={<AiOutlineSwap size={16} />}
-                onClick={handleClick}
-                disableElevation
-                sx={{
-                  background: statusColor,
-                  color: "#fff",
-                  fontWeight: 600,
-                  borderRadius: 2,
-                  px: 2,
-                  py: 0.75,
-                  fontSize: "0.85rem",
-                  minWidth: 130,
-                  boxShadow: `0 2px 8px ${alpha(statusColor, 0.45)}`,
-                  "&:hover": {
-                    background: statusColor,
-                    filter: "brightness(0.95)",
-                    boxShadow: `0 4px 12px ${alpha(statusColor, 0.55)}`,
-                  },
-                }}
-              >
-                {ClientLeadStatus[lead.status]}
-              </Button>
-            )}
-
-            {/* Start Deal or More Actions */}
-            {lead.status === "NEW" && !admin ? (
-              <Button
-                onClick={() => createADeal(lead)}
-                variant="contained"
-                startIcon={<MdWork size={16} />}
-                sx={{ borderRadius: 2, fontWeight: 600, px: 2 }}
-              >
-                بدء الصفقة
-              </Button>
-            ) : (
-              MoreActionsComponent
+            {lead.status === "FINALIZED" && lead.averagePrice && (
+              <Chip
+                label={`Final: ${lead.averagePrice}`}
+                color="success"
+                variant="outlined"
+                size="small"
+                sx={{ fontWeight: 700, borderRadius: 2 }}
+              />
             )}
           </Stack>
         </Stack>
       </Box>
 
-      {/* Quick actions toolbar */}
+      {/* ───────────────────────── Action bar ───────────────────────── */}
       <Box
         sx={{
-          px: { xs: 2, md: 3 },
+          px: { xs: 1.5, md: 2.5 },
           py: 1.25,
           bgcolor: alpha(theme.palette.background.default, 0.5),
         }}
@@ -283,21 +309,25 @@ export const LeadDialogHeader = ({
             "& > *": { flexShrink: 0 },
           }}
         >
-          <TelegramLink lead={lead} setLead={setLead} />
-
-          {lead.status !== "NEW" && (
-            <UpdateInitialConsultButton clientLead={lead} />
+          {/* Primary CTA — start the deal (non-admin, NEW lead) */}
+          {showStartDeal && (
+            <Button
+              onClick={() => createADeal(lead)}
+              variant="contained"
+              startIcon={<MdWork size={16} />}
+              sx={{ borderRadius: 2, fontWeight: 700, px: 2 }}
+            >
+              بدء الصفقة
+            </Button>
           )}
+
+          {/* Tool actions (self-contained action components) */}
+          <TelegramLink lead={lead} setLead={setLead} />
 
           <ClientImageSessionManager clientLeadId={lead.id} />
 
-          {lead.status === "FINALIZED" && lead.averagePrice && (
-            <Chip
-              label={`Final Price: ${lead.averagePrice}`}
-              color="success"
-              variant="outlined"
-              sx={{ fontWeight: 600, borderRadius: 2 }}
-            />
+          {lead.status !== "NEW" && (
+            <UpdateInitialConsultButton clientLead={lead} />
           )}
 
           <Button
@@ -305,17 +335,49 @@ export const LeadDialogHeader = ({
             size="small"
             startIcon={<BsFileText size={14} />}
             onClick={() => generatePDF(lead, user)}
-            sx={{
-              borderRadius: 2,
-              fontSize: "0.78rem",
-              px: 2,
-            }}
+            sx={{ borderRadius: 2, fontSize: "0.78rem", px: 2 }}
           >
             PDF
           </Button>
 
-          {/* Additional header content from parent */}
           {additionalHeaderContent}
+
+          {/* push the right-aligned cluster to the end */}
+          <Box sx={{ flex: 1, minWidth: 8 }} />
+
+          {/* Open this lead in its own page, in a new browser tab — only meaningful
+              from the kanban modal (on the standalone page you are already here). */}
+          {!isPage && (
+            <>
+              <Tooltip title="فتح في صفحة جديدة">
+                <IconButton
+                  component="a"
+                  href={`/dashboard/deals/${lead.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={(t) => ({
+                    width: 40,
+                    height: 40,
+                    borderRadius: 2,
+                    border: `1px solid ${t.palette.divider}`,
+                    bgcolor: t.palette.background.paper,
+                    boxShadow: t.shadows[1],
+                    "&:hover": {
+                      bgcolor: t.palette.action.hover,
+                      borderColor: t.palette.primary.main,
+                    },
+                  })}
+                >
+                  <MdOpenInNew size={18} />
+                </IconButton>
+              </Tooltip>
+              <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
+            </>
+          )}
+
+          {/* Overflow menu (assign / convert / delete / payments). The parent passes
+              <MoreActionsMenu/> here; Start Deal is the bar's primary CTA above. */}
+          {!showStartDeal && MoreActionsComponent}
         </Stack>
       </Box>
     </Box>
