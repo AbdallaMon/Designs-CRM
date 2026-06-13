@@ -195,17 +195,22 @@ const LeadCard = ({
           <Box
             sx={{
               position: "absolute",
-              top: 8,
-              right: 8,
+              top: 6,
+              left: 6,
               zIndex: 1001,
+              bgcolor: "background.paper",
+              borderRadius: "8px",
+              boxShadow: 1,
             }}
           >
             <Checkbox
+              size="small"
               checked={isSelected}
               onChange={handleCheckboxChange}
               onClick={(e) => e.stopPropagation()}
               sx={{
                 color: isSelected ? "primary.main" : "action.disabled",
+                p: 0.5,
               }}
             />
           </Box>

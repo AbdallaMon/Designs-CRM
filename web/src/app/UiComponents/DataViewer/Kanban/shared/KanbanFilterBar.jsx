@@ -128,7 +128,8 @@ const KanbanFilterBar = ({
           )}
         </Box>
 
-        {/* Filters group */}
+        {/* Filters group — full-width wrapping row so the wide date-range pickers
+            never overflow the card (they wrap onto the next line instead). */}
         {filters && (
           <Box
             sx={{
@@ -136,7 +137,8 @@ const KanbanFilterBar = ({
               flexWrap: "wrap",
               alignItems: "flex-end",
               gap: { xs: 1.5, md: 2 },
-              flex: { xs: "1 1 100%", md: "0 0 auto" },
+              flex: "1 1 100%",
+              minWidth: 0,
             }}
           >
             {filters}
@@ -161,7 +163,8 @@ const FieldGroup = ({ label, children }) => (
       display: "flex",
       flexDirection: "column",
       gap: 0.5,
-      minWidth: { xs: "100%", sm: "auto" },
+      width: { xs: "100%", sm: 300 },
+      flexShrink: 0,
     }}
   >
     {label && (

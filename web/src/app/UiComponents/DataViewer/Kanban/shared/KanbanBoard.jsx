@@ -78,36 +78,42 @@ const KanbanBoard = ({
                 <>
                   {type !== "CONTRACTLEVELS" && (
                     <>
-                      <DateRangeFilter
-                        noMargin={true}
-                        setFilters={setFilters}
-                        lastThreeMonth={true}
-                      />
-                      <FilterSelect
-                        options={Object.entries(CONTRACT_LEVELS).map(
-                          ([key, value]) => {
-                            return {
-                              id: key,
-                              name: value,
-                            };
-                          }
-                        )}
-                        label={"Contract Level"}
-                        loading={false}
-                        param={"contractLevel"}
-                        setFilters={setFilters}
-                      />
+                      <Box sx={{ width: { xs: "100%", md: "auto" }, flexShrink: 0 }}>
+                        <DateRangeFilter
+                          noMargin={true}
+                          setFilters={setFilters}
+                          lastThreeMonth={true}
+                        />
+                      </Box>
+                      <Box sx={{ width: { xs: "100%", sm: 220 }, flexShrink: 0 }}>
+                        <FilterSelect
+                          options={Object.entries(CONTRACT_LEVELS).map(
+                            ([key, value]) => {
+                              return {
+                                id: key,
+                                name: value,
+                              };
+                            }
+                          )}
+                          label={"Contract Level"}
+                          loading={false}
+                          param={"contractLevel"}
+                          setFilters={setFilters}
+                        />
+                      </Box>
                     </>
                   )}
-                  <DateRangeFilter
-                    noMargin={true}
-                    setFilters={setFilters}
-                    dateKey="finalizedRange"
-                    startLabel="Finalized Start Range Date"
-                    endLabel="Finalized End Range Date"
-                    withDeleteRange={true}
-                    noDefaultValues={true}
-                  />
+                  <Box sx={{ width: { xs: "100%", md: "auto" }, flexShrink: 0 }}>
+                    <DateRangeFilter
+                      noMargin={true}
+                      setFilters={setFilters}
+                      dateKey="finalizedRange"
+                      startLabel="Finalized Start Range Date"
+                      endLabel="Finalized End Range Date"
+                      withDeleteRange={true}
+                      noDefaultValues={true}
+                    />
+                  </Box>
                 </>
               ) : null
             }

@@ -23,6 +23,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { FaExclamationTriangle } from "react-icons/fa";
 import {
   MdInfoOutline,
@@ -42,7 +43,26 @@ export const PreviewLead = ({
   dontCheckIfNotUser,
   setRerenderColumns,
 }) => {
-  const [activeTab, setActiveTab] = useState(0);
+  // In full-page mode the active tab is persisted in the URL (`?tab=`) so it survives other
+  // searchParam pushes and is restored on reload. In modal/kanban-card mode it's local state.
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const initialTab = page ? parseInt(searchParams.get("tab") ?? "", 10) : NaN;
+  const [activeTab, setActiveTabState] = useState(
+    Number.isNaN(initialTab) ? 0 : initialTab
+  );
+  const setActiveTab = (val) => {
+    setActiveTabState((prev) => {
+      const next = typeof val === "function" ? val(prev) : val;
+      if (page && typeof window !== "undefined") {
+        const params = new URLSearchParams(Array.from(searchParams.entries()));
+        params.set("tab", String(next));
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      }
+      return next;
+    });
+  };
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [loading, setLoading] = useState(true);

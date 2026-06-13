@@ -47,12 +47,14 @@ export async function apiRequest(path, opts = {}, _retry = true) {
 // Detects the paginated envelope shape `data: { items, total, page, pageSize }` (decision
 // #2) so getData can re-expose it as master's flat `{ data, total, totalPages, page }`.
 function isPaginatedData(d) {
+  // Any envelope whose `data` is `{ items: [...] }` is a list — unwrap it to the array,
+  // whether or not it carries pagination meta (total/pageSize). Master's consumers expect
+  // `res.data` to be the array.
   return (
     d &&
     typeof d === "object" &&
     !Array.isArray(d) &&
-    Array.isArray(d.items) &&
-    ("total" in d || "pageSize" in d)
+    Array.isArray(d.items)
   );
 }
 

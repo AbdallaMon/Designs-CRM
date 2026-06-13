@@ -13,7 +13,7 @@ const FloatingIdBadge = ({
     <Box
       sx={{
         position: "absolute",
-        top: -20,
+        top: -28,
         left: 0,
         zIndex: 1000,
       }}
