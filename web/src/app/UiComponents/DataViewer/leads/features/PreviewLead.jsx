@@ -15,7 +15,10 @@ import {
   Dialog,
   DialogActions,
   Link,
+  Paper,
+  Stack,
   Typography,
+  alpha,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
@@ -146,50 +149,79 @@ export const PreviewLead = ({
         (lead.status === "ON_HOLD" && user.id === lead.userId)))
   ) {
     return (
-      <Container maxWidth="md">
-        <Box
+      <Container maxWidth="sm" sx={{ mt: 6 }}>
+        <Paper
+          elevation={0}
           sx={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             flexDirection: "column",
-            p: 2,
-            border: "1px solid #ddd",
-            borderRadius: "8px",
-            backgroundColor: "#f8d7da",
+            textAlign: "center",
+            gap: 1.5,
+            p: 5,
+            borderRadius: 4,
+            border: `1px solid ${alpha(theme.palette.error.main, 0.25)}`,
+            bgcolor: alpha(theme.palette.error.main, 0.05),
           }}
         >
-          <FaExclamationTriangle size={40} color="#721c24" />
-          <Typography variant="h6" sx={{ color: "#721c24", mt: 1 }}>
-            You are not allowed to access this page or the lead doesn&apos;t
-            exist
+          <Box
+            sx={{
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: alpha(theme.palette.error.main, 0.12),
+            }}
+          >
+            <FaExclamationTriangle size={28} color={theme.palette.error.dark} />
+          </Box>
+          <Typography variant="h6" sx={{ color: theme.palette.error.dark }}>
+            لا يمكنك الوصول إلى هذه الصفحة أو أن العميل غير موجود
           </Typography>
-        </Box>
+        </Paper>
       </Container>
     );
   }
+
+  const content = (
+    <LeadContent
+      lead={lead}
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      theme={theme}
+      isMobile={isMobile}
+      handleClose={handlePageClose}
+      setLead={setLead}
+      setleads={setleads}
+      admin={isAdmin}
+      isPage={page}
+      type={type}
+      dontCheckIfNotUser={dontCheckIfNotUser}
+      setRerenderColumns={setRerenderColumns}
+    />
+  );
+
   return (
     <>
       {page ? (
-        <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Container maxWidth="lg" sx={{ mt: { xs: 2, md: 4 }, mb: 4 }}>
           {loading ? (
             <FullScreenLoader />
           ) : (
-            <LeadContent
-              lead={lead}
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              theme={theme}
-              isMobile={isMobile}
-              handleClose={handlePageClose}
-              setLead={setLead}
-              setleads={setleads}
-              admin={isAdmin}
-              isPage={page}
-              type={type}
-              dontCheckIfNotUser={dontCheckIfNotUser}
-              setRerenderColumns={setRerenderColumns}
-            />
+            <Paper
+              elevation={0}
+              sx={{
+                borderRadius: 4,
+                overflow: "hidden",
+                border: `1px solid ${theme.palette.divider}`,
+                boxShadow: theme.shadows[2],
+              }}
+            >
+              {content}
+            </Paper>
           )}
         </Container>
       ) : (
@@ -199,7 +231,7 @@ export const PreviewLead = ({
           fullWidth
           maxWidth="lg"
           PaperProps={{
-            sx: { borderRadius: 2 },
+            sx: { borderRadius: { xs: 0, sm: 4 }, overflow: "hidden" },
           }}
           fullScreen={isMobile}
         >
@@ -207,30 +239,18 @@ export const PreviewLead = ({
             <FullScreenLoader />
           ) : (
             <>
-              <LeadContent
-                lead={lead}
-                activeTab={activeTab}
-                setActiveTab={setActiveTab}
-                theme={theme}
-                isMobile={isMobile}
-                handleClose={handlePageClose}
-                setLead={setLead}
-                setleads={setleads}
-                admin={isAdmin}
-                type={type}
-                dontCheckIfNotUser={dontCheckIfNotUser}
-                setRerenderColumns={setRerenderColumns}
-              />
+              {content}
               <DialogActions
                 sx={{
                   p: 2,
                   borderTop: 1,
                   borderColor: "divider",
+                  bgcolor: alpha(theme.palette.background.default, 0.5),
                   gap: 1,
                 }}
               >
                 <Button onClick={onClose} variant="outlined">
-                  Close
+                  إغلاق
                 </Button>
               </DialogActions>
             </>

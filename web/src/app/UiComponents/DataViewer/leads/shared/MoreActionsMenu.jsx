@@ -53,12 +53,18 @@ export const MoreActionsMenu = ({
     <>
       <IconButton
         onClick={handleMoreClick}
-        sx={{
-          backgroundColor: "#c7a9a9ff",
-          "&:hover": { backgroundColor: "#e0e0e0" },
+        sx={(theme) => ({
           width: 40,
           height: 40,
-        }}
+          borderRadius: 2,
+          border: `1px solid ${theme.palette.divider}`,
+          bgcolor: theme.palette.background.paper,
+          boxShadow: theme.shadows[1],
+          "&:hover": {
+            bgcolor: theme.palette.action.hover,
+            borderColor: theme.palette.primary.main,
+          },
+        })}
       >
         <MdMoreHoriz size={18} />
       </IconButton>

@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Alert, Box, Stack, Tab, Tabs } from "@mui/material";
+import { Alert, alpha, Box, Stack, Tab, Tabs } from "@mui/material";
 import { BsFileText, BsInfoCircle, BsTelephone } from "react-icons/bs";
 import {
   KanbanBeginerLeadsStatus,
@@ -258,16 +258,35 @@ const LeadContent = ({
         value={activeTab}
         onChange={(e, newValue) => setActiveTab(newValue)}
         sx={{
-          px: { xs: 0.5, md: 3 },
+          px: { xs: 0.5, md: 2 },
           borderBottom: 1,
           borderColor: "divider",
+          bgcolor: (t) => alpha(t.palette.background.default, 0.4),
           minHeight: "fit-content",
+          "& .MuiTabs-indicator": {
+            height: 3,
+            borderRadius: "3px 3px 0 0",
+          },
           "& .MuiTab-root": {
-            fontSize: { xs: "0.75rem", md: "0.875rem" }, // Smaller font size on mobile
+            textTransform: "none",
+            fontWeight: 600,
+            minHeight: 56,
+            color: "text.secondary",
+            fontSize: { xs: "0.72rem", md: "0.85rem" },
+            transition: "color 0.2s ease, background-color 0.2s ease",
+            "&:hover": {
+              color: "primary.main",
+              bgcolor: (t) => alpha(t.palette.primary.main, 0.05),
+            },
+            "&.Mui-selected": {
+              color: "primary.dark",
+              fontWeight: 700,
+            },
           },
         }}
         variant={"scrollable"}
         scrollButtons="auto"
+        allowScrollButtonsMobile
       >
         <Tab
           icon={<BsInfoCircle size={20} />}
@@ -351,9 +370,15 @@ const LeadContent = ({
 
       <Box
         sx={{
-          p: { xs: 2, md: 3 },
+          p: { xs: 1.5, md: 3 },
           overflowY: "auto",
-          maxHeight: { md: "600px" },
+          maxHeight: { md: "640px" },
+          bgcolor: (t) => alpha(t.palette.background.default, 0.25),
+          "&::-webkit-scrollbar": { width: 8 },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: (t) => alpha(t.palette.primary.main, 0.25),
+            borderRadius: 4,
+          },
         }}
       >
         <TabPanel value={activeTab} index={0}>

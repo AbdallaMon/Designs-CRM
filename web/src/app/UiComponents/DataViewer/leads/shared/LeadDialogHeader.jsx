@@ -4,15 +4,16 @@ import {
   Box,
   Button,
   Chip,
-  DialogTitle,
   IconButton,
   Stack,
+  Tooltip,
   Typography,
+  alpha,
 } from "@mui/material";
 import dayjs from "dayjs";
-import { BsArrowLeft, BsFileText } from "react-icons/bs";
+import { BsArrowRight, BsFileText } from "react-icons/bs";
 import { AiOutlineSwap } from "react-icons/ai";
-import { MdWork } from "react-icons/md";
+import { MdWork, MdTag, MdSchedule } from "react-icons/md";
 import { IoMdContract } from "react-icons/io";
 import {
   ClientLeadStatus,
@@ -48,154 +49,223 @@ export const LeadDialogHeader = ({
     ? contractLevelColors[currentContract.contractLevel]
     : "#000000";
 
-  return (
-    <DialogTitle
+  const isAnonymous = (lead.status === "NEW" || lead.status === "ON_HOLD") && !admin;
+  const statusColor = statusColors[lead.status] || theme.palette.primary.main;
+
+  // Small reusable meta pill for the identity row
+  const MetaPill = ({ icon, children }) => (
+    <Stack
+      direction="row"
+      spacing={0.5}
+      alignItems="center"
       sx={{
-        borderBottom: 1,
-        borderColor: "divider",
-        pb: 0,
-        background: "linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%)",
+        px: 1,
+        py: 0.25,
+        borderRadius: 2,
+        bgcolor: alpha(theme.palette.text.primary, 0.04),
+        color: "text.secondary",
       }}
     >
-      {/* Main Header Row */}
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        sx={{ py: 2, px: 1 }}
-      >
-        {/* Left Section - Lead Info */}
-        <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
-          {handleClose && (
-            <IconButton
-              onClick={() => handleClose(isPage)}
-              sx={{
-                backgroundColor: "#f5f5f5",
-                "&:hover": { backgroundColor: "#e0e0e0" },
-                mr: 1,
-              }}
-            >
-              <BsArrowLeft size={18} />
-            </IconButton>
-          )}
+      {icon}
+      <Typography variant="caption" sx={{ fontWeight: 600, color: "inherit" }}>
+        {children}
+      </Typography>
+    </Stack>
+  );
 
-          <Avatar
-            sx={{
-              bgcolor: theme.palette.primary.main,
-              width: 48,
-              height: 48,
-              fontSize: "1.2rem",
-              fontWeight: 600,
-            }}
-          >
-            {lead.client.name[0]}
-          </Avatar>
-
-          <Box>
-            {(lead.status === "NEW" || lead.status === "ON_HOLD") && !admin ? (
-              <Typography variant="h6" color="text.secondary">
-                Lead Preview
-              </Typography>
-            ) : (
-              <>
-                <Typography variant="h5" fontWeight={600} color="text.primary">
-                  {lead.client.name}
-                </Typography>
-                <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                  <Typography variant="body2" color="text.secondary">
-                    #{lead.id.toString().padStart(7, "0")}
-                  </Typography>
-                  -------
-                  <Typography variant="body2" color="text.secondary">
-                    code {lead.code}
-                  </Typography>
-                  {lead.createdAt && (
-                    <>
-                      -------
-                      <Typography variant="body2" color="text.secondary">
-                        {dayjs(lead.createdAt).format("DD/MM/YYYY HH:mm")}
-                      </Typography>
-                    </>
-                  )}
-                </Box>
-              </>
-            )}
-          </Box>
-        </Stack>
-
-        {/* Right Section - Status & Actions */}
-        <Stack direction="row" spacing={1} alignItems="center">
-          {(admin || user.role === "STAFF") && currentContract && (
-            <Chip
-              icon={<IoMdContract sx={{ fontSize: "12px !important" }} />}
-              label={
-                currentContract
-                  ? CONTRACT_LEVELS[currentContract.contractLevel]
-                  : "No Contract"
-              }
-              sx={{
-                fontWeight: "bold",
-                fontSize: "0.875rem",
-                color: levelColor,
-                bgcolor: levelColor + "60",
-                borderRadius: "0",
-                cursor: "default",
-                userSelect: "none",
-              }}
-            />
-          )}
-
-          {(admin || user.role === "STAFF") && lead.paymentStatus && (
-            <Chip
-              label={`Payment: ${lead.paymentStatus}`}
-              color="primary"
-              variant="outlined"
-              size="small"
-              sx={{ fontWeight: 500 }}
-            />
-          )}
-
-          {/* Status Button/Menu */}
-          {user.role !== "ACCOUNTANT" && lead.status !== "NEW" && (
-            <Button
-              variant="contained"
-              startIcon={<AiOutlineSwap size={16} />}
-              onClick={handleClick}
-              sx={{
-                background: statusColors[lead.status],
-                fontWeight: 500,
-                borderRadius: "20px",
-                px: 2,
-                py: 0.5,
-                fontSize: "0.875rem",
-                textTransform: "none",
-                minWidth: "120px",
-              }}
-            >
-              {ClientLeadStatus[lead.status]}
-            </Button>
-          )}
-
-          {/* Start Deal or More Actions */}
-          {lead.status === "NEW" && !admin ? (
-            <Button onClick={() => createADeal(lead)} variant="contained">
-              <MdWork size={16} style={{ marginRight: 12 }} />
-              Start Deal
-            </Button>
-          ) : (
-            MoreActionsComponent
-          )}
-        </Stack>
-      </Stack>
-
-      {/* Secondary Header Row - Quick Actions */}
+  return (
+    <Box
+      sx={{
+        borderBottom: `1px solid ${theme.palette.divider}`,
+      }}
+    >
+      {/* Hero / identity band */}
       <Box
         sx={{
-          borderTop: "1px solid",
-          borderColor: "divider",
-          backgroundColor: "#fafafa",
-          px: 3,
-          py: 1.5,
+          px: { xs: 2, md: 3 },
+          pt: { xs: 2, md: 2.5 },
+          pb: 2,
+          background: `linear-gradient(135deg, ${alpha(
+            theme.palette.primary.main,
+            0.1
+          )} 0%, ${alpha(theme.palette.primary.light, 0.04)} 55%, ${
+            theme.palette.background.paper
+          } 100%)`,
+        }}
+      >
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          alignItems={{ xs: "stretch", md: "center" }}
+          justifyContent="space-between"
+          spacing={2}
+        >
+          {/* Left: back + avatar + identity */}
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+            {handleClose && (
+              <Tooltip title="رجوع">
+                <IconButton
+                  onClick={() => handleClose(isPage)}
+                  sx={{
+                    bgcolor: theme.palette.background.paper,
+                    border: `1px solid ${theme.palette.divider}`,
+                    boxShadow: theme.shadows[1],
+                    "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.08) },
+                  }}
+                >
+                  <BsArrowRight size={18} />
+                </IconButton>
+              </Tooltip>
+            )}
+
+            <Avatar
+              sx={{
+                bgcolor: theme.palette.primary.main,
+                color: theme.palette.primary.contrastText,
+                width: 54,
+                height: 54,
+                fontSize: "1.35rem",
+                fontWeight: 700,
+                boxShadow: theme.shadows[2],
+              }}
+            >
+              {lead.client.name[0]}
+            </Avatar>
+
+            <Box sx={{ minWidth: 0 }}>
+              {isAnonymous ? (
+                <Typography variant="h6" color="text.secondary" fontWeight={600}>
+                  معاينة العميل المحتمل
+                </Typography>
+              ) : (
+                <>
+                  <Typography
+                    variant="h5"
+                    fontWeight={700}
+                    color="text.primary"
+                    noWrap
+                    sx={{ lineHeight: 1.2 }}
+                  >
+                    {lead.client.name}
+                  </Typography>
+                  <Stack
+                    direction="row"
+                    spacing={0.75}
+                    alignItems="center"
+                    flexWrap="wrap"
+                    useFlexGap
+                    sx={{ mt: 0.75 }}
+                  >
+                    <MetaPill icon={<MdTag size={13} />}>
+                      {lead.id.toString().padStart(7, "0")}
+                    </MetaPill>
+                    {lead.code && (
+                      <MetaPill icon={<MdTag size={13} />}>
+                        {`Code ${lead.code}`}
+                      </MetaPill>
+                    )}
+                    {lead.createdAt && (
+                      <MetaPill icon={<MdSchedule size={13} />}>
+                        {dayjs(lead.createdAt).format("DD/MM/YYYY HH:mm")}
+                      </MetaPill>
+                    )}
+                  </Stack>
+                </>
+              )}
+            </Box>
+          </Stack>
+
+          {/* Right: status + contract/payment + primary actions */}
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            flexWrap="wrap"
+            useFlexGap
+            sx={{ justifyContent: { xs: "flex-start", md: "flex-end" } }}
+          >
+            {(admin || user.role === "STAFF") && currentContract && (
+              <Chip
+                icon={<IoMdContract style={{ fontSize: 14 }} />}
+                label={
+                  currentContract
+                    ? CONTRACT_LEVELS[currentContract.contractLevel]
+                    : "No Contract"
+                }
+                sx={{
+                  fontWeight: 700,
+                  fontSize: "0.8rem",
+                  color: levelColor,
+                  bgcolor: alpha(levelColor, 0.16),
+                  border: `1px solid ${alpha(levelColor, 0.4)}`,
+                  borderRadius: 2,
+                  cursor: "default",
+                  userSelect: "none",
+                  "& .MuiChip-icon": { color: levelColor },
+                }}
+              />
+            )}
+
+            {(admin || user.role === "STAFF") && lead.paymentStatus && (
+              <Chip
+                label={`Payment: ${lead.paymentStatus}`}
+                color="primary"
+                variant="outlined"
+                size="small"
+                sx={{ fontWeight: 600, borderRadius: 2 }}
+              />
+            )}
+
+            {/* Status Button/Menu */}
+            {user.role !== "ACCOUNTANT" && lead.status !== "NEW" && (
+              <Button
+                variant="contained"
+                startIcon={<AiOutlineSwap size={16} />}
+                onClick={handleClick}
+                disableElevation
+                sx={{
+                  background: statusColor,
+                  color: "#fff",
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  px: 2,
+                  py: 0.75,
+                  fontSize: "0.85rem",
+                  minWidth: 130,
+                  boxShadow: `0 2px 8px ${alpha(statusColor, 0.45)}`,
+                  "&:hover": {
+                    background: statusColor,
+                    filter: "brightness(0.95)",
+                    boxShadow: `0 4px 12px ${alpha(statusColor, 0.55)}`,
+                  },
+                }}
+              >
+                {ClientLeadStatus[lead.status]}
+              </Button>
+            )}
+
+            {/* Start Deal or More Actions */}
+            {lead.status === "NEW" && !admin ? (
+              <Button
+                onClick={() => createADeal(lead)}
+                variant="contained"
+                startIcon={<MdWork size={16} />}
+                sx={{ borderRadius: 2, fontWeight: 600, px: 2 }}
+              >
+                بدء الصفقة
+              </Button>
+            ) : (
+              MoreActionsComponent
+            )}
+          </Stack>
+        </Stack>
+      </Box>
+
+      {/* Quick actions toolbar */}
+      <Box
+        sx={{
+          px: { xs: 2, md: 3 },
+          py: 1.25,
+          bgcolor: alpha(theme.palette.background.default, 0.5),
         }}
       >
         <Stack
@@ -204,13 +274,13 @@ export const LeadDialogHeader = ({
           alignItems="center"
           sx={{
             overflowX: "auto",
-            "&::-webkit-scrollbar": {
-              height: 4,
-            },
+            pb: 0.5,
+            "&::-webkit-scrollbar": { height: 5 },
             "&::-webkit-scrollbar-thumb": {
-              backgroundColor: "#ccc",
-              borderRadius: 2,
+              backgroundColor: alpha(theme.palette.primary.main, 0.3),
+              borderRadius: 3,
             },
+            "& > *": { flexShrink: 0 },
           }}
         >
           <TelegramLink lead={lead} setLead={setLead} />
@@ -226,7 +296,7 @@ export const LeadDialogHeader = ({
               label={`Final Price: ${lead.averagePrice}`}
               color="success"
               variant="outlined"
-              sx={{ fontWeight: 500 }}
+              sx={{ fontWeight: 600, borderRadius: 2 }}
             />
           )}
 
@@ -236,9 +306,8 @@ export const LeadDialogHeader = ({
             startIcon={<BsFileText size={14} />}
             onClick={() => generatePDF(lead, user)}
             sx={{
-              borderRadius: "16px",
-              textTransform: "none",
-              fontSize: "0.75rem",
+              borderRadius: 2,
+              fontSize: "0.78rem",
               px: 2,
             }}
           >
@@ -249,6 +318,6 @@ export const LeadDialogHeader = ({
           {additionalHeaderContent}
         </Stack>
       </Box>
-    </DialogTitle>
+    </Box>
   );
 };

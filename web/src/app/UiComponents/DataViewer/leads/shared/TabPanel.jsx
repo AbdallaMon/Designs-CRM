@@ -1,4 +1,4 @@
-import { Box } from "@mui/material";
+import { Box, Fade } from "@mui/material";
 
 /**
  * TabPanel component for rendering tab content
@@ -7,8 +7,15 @@ import { Box } from "@mui/material";
  * @param {number} props.value - Current active tab index
  * @param {number} props.index - This tab's index
  */
-export const TabPanel = ({ children, value, index }) => (
-  <Box role="tabpanel" hidden={value !== index} sx={{ py: 2 }}>
-    {value === index && children}
-  </Box>
-);
+export const TabPanel = ({ children, value, index }) => {
+  const active = value === index;
+  return (
+    <Box role="tabpanel" hidden={!active} sx={{ py: 1 }}>
+      {active && (
+        <Fade in={active} timeout={250}>
+          <Box>{children}</Box>
+        </Fade>
+      )}
+    </Box>
+  );
+};
