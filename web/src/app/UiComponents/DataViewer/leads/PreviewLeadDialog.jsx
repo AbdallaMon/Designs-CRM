@@ -49,7 +49,7 @@ import { MoreActionsMenu } from "./shared/MoreActionsMenu";
 import { LeadDialogHeader } from "./shared/LeadDialogHeader";
 import { StatusMenu } from "./shared/StatusMenu";
 import ChatsTab from "./tabs/ChatsTab";
-import { BookingLeadDetailsCard } from "@/app/v2/features/leads";
+import { BookingLeadDetailsCard } from "@/app/UiComponents/booking-lead";
 
 // LeadContent Component (Extracted Shared Content)
 const LeadContent = ({

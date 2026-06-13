@@ -7,11 +7,11 @@
 
 import { mapLegacyPathToV2 } from "./apiPathMap";
 
-// `NEXT_PUBLIC_API` = e.g. http://localhost:4000/v2  (NEXT_PUBLIC_URL stays the bare origin
-// for sockets / file links). Falls back to `${NEXT_PUBLIC_URL}/v2` if API is unset.
+// `NEXT_PUBLIC_API` = the backend origin, e.g. http://localhost:4001 (no version prefix —
+// the API is mounted at the root). `NEXT_PUBLIC_URL` is the same bare origin, also used for
+// sockets / file links. Falls back to NEXT_PUBLIC_URL if API is unset.
 export const API_BASE =
-  process.env.NEXT_PUBLIC_API ||
-  `${process.env.NEXT_PUBLIC_URL || ""}/v2`;
+  process.env.NEXT_PUBLIC_API || process.env.NEXT_PUBLIC_URL || "";
 
 // Single in-flight refresh shared across all callers (prevents a refresh storm when many
 // requests 401 at once).

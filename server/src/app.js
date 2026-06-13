@@ -41,9 +41,10 @@ if (env.ISLOCAL) {
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 // Cutover complete: ALL legacy routers retired. The migrated app is the only surface,
-// mounted under /v2 (route→controller→usecase→repository modules in src/modules/**,
-// which lazy-import the frozen logic still living under server/services/**).
-app.use("/v2", v2Routes);
+// mounted at the ROOT (route→controller→usecase→repository modules in src/modules/**,
+// which lazy-import the frozen logic still living under server/services/**). The old
+// `/v2` namespace was dropped — there is no API versioning prefix anymore.
+app.use(v2Routes);
 
 // ─── Global error handler ─────────────────────────────────────────────────────
 app.use(notFoundHandler);
