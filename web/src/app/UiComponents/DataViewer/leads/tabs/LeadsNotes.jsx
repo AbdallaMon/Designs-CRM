@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   alpha,
   Avatar,
@@ -17,13 +17,16 @@ import { MdStickyNote2 } from "react-icons/md";
 import DeleteModelButton from "../../../common/DeleteModelButton";
 import { SectionToolbar } from "../shared/SectionToolbar";
 import { EmptyState } from "../shared/EmptyState";
+import { TabLoading } from "../shared/TabLoading";
+import { useLeadTab } from "../context/LeadDetailsContext";
 
 export function LeadNotes({ lead, admin, notUser }) {
-  const [notes, setNotes] = useState(lead?.notes);
+  const { data: notes, onMutated: setNotes, showLoading } = useLeadTab("notes", {
+    fallback: lead?.notes,
+  });
   const theme = useTheme();
-  useEffect(() => {
-    if (lead?.notes) setNotes(lead.notes);
-  }, [lead]);
+
+  if (showLoading) return <TabLoading />;
 
   return (
     <Stack spacing={3}>

@@ -24,6 +24,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { LeadDetailsProvider } from "../context/LeadDetailsContext";
 import { FaExclamationTriangle } from "react-icons/fa";
 import {
   MdInfoOutline,
@@ -207,21 +208,28 @@ export const PreviewLead = ({
   }
 
   const content = (
-    <LeadContent
+    <LeadDetailsProvider
       lead={lead}
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-      theme={theme}
-      isMobile={isMobile}
-      handleClose={handlePageClose}
       setLead={setLead}
-      setleads={setleads}
-      admin={isAdmin}
-      isPage={page}
-      type={type}
-      dontCheckIfNotUser={dontCheckIfNotUser}
+      leadBaseUrl={url}
       setRerenderColumns={setRerenderColumns}
-    />
+    >
+      <LeadContent
+        lead={lead}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        theme={theme}
+        isMobile={isMobile}
+        handleClose={handlePageClose}
+        setLead={setLead}
+        setleads={setleads}
+        admin={isAdmin}
+        isPage={page}
+        type={type}
+        dontCheckIfNotUser={dontCheckIfNotUser}
+        setRerenderColumns={setRerenderColumns}
+      />
+    </LeadDetailsProvider>
   );
 
   return (

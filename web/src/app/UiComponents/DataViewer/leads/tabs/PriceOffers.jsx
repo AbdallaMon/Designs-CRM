@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   alpha,
   Box,
@@ -31,6 +31,8 @@ import DeleteModelButton from "../../../common/DeleteModelButton";
 import LeadContractList from "../../contracts/ContractsList";
 import { SectionToolbar } from "../shared/SectionToolbar";
 import { EmptyState } from "../shared/EmptyState";
+import { TabLoading } from "../shared/TabLoading";
+import { useLeadTab } from "../context/LeadDetailsContext";
 
 function MetaItem({ icon, label, value, theme }) {
   return (
@@ -64,8 +66,13 @@ function MetaItem({ icon, label, value, theme }) {
 }
 
 export function PriceOffersList({ admin, lead, notUser }) {
-  const [offers, setOffers] = useState(lead.priceOffers);
+  const { data: offers, onMutated: setOffers, showLoading } = useLeadTab(
+    "priceOffers",
+    { fallback: lead?.priceOffers }
+  );
   const theme = useTheme();
+
+  if (showLoading) return <TabLoading />;
 
   return (
     <Stack spacing={3}>

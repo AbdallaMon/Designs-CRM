@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   alpha,
   Box,
@@ -28,19 +28,18 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import DeleteModelButton from "../../../common/DeleteModelButton";
 import { SectionToolbar } from "../shared/SectionToolbar";
 import { EmptyState } from "../shared/EmptyState";
+import { TabLoading } from "../shared/TabLoading";
+import { useLeadTab } from "../context/LeadDetailsContext";
 
 const ADMIN_PURPLE = "#7B1FA2";
 
 export function MeetingReminders({ lead, setleads, admin, notUser }) {
-  const [meetingReminders, setMeetingReminders] = useState(
-    lead?.meetingReminders
-  );
+  const { data: meetingReminders, onMutated: setMeetingReminders, showLoading } =
+    useLeadTab("meetings", { fallback: lead?.meetingReminders });
   const theme = useTheme();
   const { user } = useAuth();
 
-  useEffect(() => {
-    if (lead?.meetingReminders) setMeetingReminders(lead.meetingReminders);
-  }, [lead]);
+  if (showLoading) return <TabLoading />;
 
   const getStatusStyles = (status) => ({
     backgroundColor:

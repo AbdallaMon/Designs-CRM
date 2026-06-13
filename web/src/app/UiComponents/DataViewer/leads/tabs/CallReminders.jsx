@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   alpha,
   Box,
@@ -27,14 +27,16 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import DeleteModelButton from "../../../common/DeleteModelButton";
 import { SectionToolbar } from "../shared/SectionToolbar";
 import { EmptyState } from "../shared/EmptyState";
+import { TabLoading } from "../shared/TabLoading";
+import { useLeadTab } from "../context/LeadDetailsContext";
 
 export function CallReminders({ lead, setleads, admin, notUser }) {
-  const [callReminders, setCallReminders] = useState(lead?.callReminders);
+  const { data: callReminders, onMutated: setCallReminders, showLoading } =
+    useLeadTab("calls", { fallback: lead?.callReminders });
   const theme = useTheme();
   const { user } = useAuth();
-  useEffect(() => {
-    if (lead?.callReminders) setCallReminders(lead.callReminders);
-  }, [lead]);
+
+  if (showLoading) return <TabLoading />;
 
   const getStatusStyles = (status) => ({
     backgroundColor:

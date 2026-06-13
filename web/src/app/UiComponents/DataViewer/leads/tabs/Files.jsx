@@ -24,17 +24,24 @@ import { FaEye } from "react-icons/fa";
 import { MdFolderOpen } from "react-icons/md";
 import { SectionToolbar } from "../shared/SectionToolbar";
 import { EmptyState } from "../shared/EmptyState";
+import { TabLoading } from "../shared/TabLoading";
+import { useLeadTab } from "../context/LeadDetailsContext";
 
 export function FileList({ lead, admin, notUser }) {
   const [currentTab, setCurrentTab] = useState(0);
   const theme = useTheme();
-  const [files, setFiles] = useState(lead.files);
+  const { data: files, onMutated: setFiles, showLoading } = useLeadTab("files", {
+    fallback: lead?.files,
+  });
   const { userFiles, clientFiles } = useMemo(() => {
     return {
       userFiles: files?.filter((file) => file.isUserFile),
       clientFiles: files?.filter((file) => !file.isUserFile),
     };
   }, [files]);
+
+  if (showLoading) return <TabLoading />;
+
   const handleTabChange = (event, newValue) => {
     setCurrentTab(newValue);
   };
