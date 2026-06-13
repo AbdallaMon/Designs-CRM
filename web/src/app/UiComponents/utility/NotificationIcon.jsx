@@ -22,11 +22,10 @@ import "dayjs/locale/ar";
 import parse from "html-react-parser";
 import { NotificationColors } from "@/app/helpers/colors.js";
 import { useSocket } from "../DataViewer/chat/hooks/useSocket";
+import { apiRequest } from "@/app/helpers/functions/apiClient";
 
 dayjs.extend(relativeTime);
 dayjs.locale("ar");
-
-const url = process.env.NEXT_PUBLIC_URL;
 
 const NotificationsIcon = () => {
   const { user } = useAuth();
@@ -40,17 +39,13 @@ const NotificationsIcon = () => {
   useEffect(() => {
     const fetchUnreadNotifications = async () => {
       try {
-        const response = await fetch(
-          `${url}/shared/utilities/notifications?userId=${user.id}&`,
-          {
-            credentials: "include",
-          }
-        );
+        const response = await apiRequest("notifications/unread");
         const res = await response.json();
-        setNotifications(res.data);
-        setUnreadCount(
-          res.data.filter((notification) => !notification.isRead).length
-        );
+        const list = Array.isArray(res?.data)
+          ? res.data
+          : (res?.data?.items ?? []);
+        setNotifications(list);
+        setUnreadCount(list.filter((notification) => !notification.isRead).length);
       } catch (error) {
         // Error fetching unread notifications
       }
@@ -79,8 +74,10 @@ const NotificationsIcon = () => {
     if (open) {
       const handleOpenNotificationPaper = async () => {
         try {
-          await fetch(`${url}/utility/notification/users/${user.id}`, {
+          await apiRequest("notifications/actions/mark-read", {
             method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({}),
           });
           handleMarkAsRead();
         } catch (error) {

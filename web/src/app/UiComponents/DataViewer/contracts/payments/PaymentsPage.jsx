@@ -195,7 +195,7 @@ function PaymentAmountsDialog({ open, onClose, payment, onSave, loading }) {
         status,
       },
       setLoading,
-      `shared/contracts/payments/${payment.id}/amounts`,
+      `shared/contracts/payments/${payment.id}/actions/update-amounts`,
       false,
       "Updating amounts",
       false
@@ -387,7 +387,7 @@ export default function ContractPaymentsPage() {
     const req = await handleRequestSubmit(
       { status: newStatus },
       setLoading,
-      `shared/contracts/payments/${paymentId}/status`,
+      `shared/contracts/payments/${paymentId}/actions/change-status`,
       false,
       "Updating",
       false

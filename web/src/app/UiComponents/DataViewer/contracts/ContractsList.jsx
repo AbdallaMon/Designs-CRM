@@ -218,11 +218,11 @@ function ContractMenu({
         canceled: true,
       },
       setLoading,
-      `shared/contracts/${contract.id}/cancel`,
+      `shared/contracts/${contract.id}/actions/cancel`,
       false,
       "Cancelling",
       false,
-      "PATCH"
+      "POST"
     );
     if (req.status === 200) {
       fetchContracts();

@@ -37,6 +37,11 @@ const RULES = [
   //     users, sales-stages, utilities, …)
   [/^shared\//, ""],
 
+  // ── accountant payment workflow actions: payments/<verb>/<id> → payments/<id>/actions/<v2> ──
+  [/^accountant\/payments\/overdue\/([^/?]+)/, "accounting/payments/$1/actions/mark-overdue"],
+  [/^accountant\/payments\/pay\/([^/?]+)/, "accounting/payments/$1/actions/pay"],
+  [/^accountant\/payments\/status\/([^/?]+)/, "accounting/payments/$1/actions/change-status"],
+
   // ── accountant → accounting ─────────────────────────────────────────────────────
   [/^accountant\//, "accounting/"],
 

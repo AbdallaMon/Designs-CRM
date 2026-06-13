@@ -18,7 +18,7 @@ export default function AccountantPage() {
       false,
       "Updating",
       false,
-      "PUT"
+      "POST"
     );
     if (request.status === 200) {
       setPayments((prev) =>

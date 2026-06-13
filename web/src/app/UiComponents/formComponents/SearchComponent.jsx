@@ -7,6 +7,7 @@ import {
   getPropertyValue,
   handleSearchParamsChange,
 } from "@/app/helpers/functions/utility";
+import { apiRequest } from "@/app/helpers/functions/apiClient";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const SearchComponent = ({
@@ -30,13 +31,10 @@ const SearchComponent = ({
   const fetchSearchResults = async (query) => {
     setLoading(true);
     try {
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_URL
-        }/utility/${apiEndpoint}&query=${query}&filters=${JSON.stringify(
+      const response = await apiRequest(
+        `utility/${apiEndpoint}&query=${query}&filters=${JSON.stringify(
           localFilters
-        )}`,
-        { credentials: "include" }
+        )}`
       );
       const result = await response.json();
       setSearchResults(result.data);

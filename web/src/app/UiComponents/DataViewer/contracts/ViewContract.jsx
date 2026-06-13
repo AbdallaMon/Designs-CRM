@@ -1045,7 +1045,7 @@ function PaymentRow({ payment, contractId, onReload, taxRate }) {
     const req = await handleRequestSubmit(
       { status: next },
       setLoading,
-      `shared/contracts/${contractId}/payments/${payment.id}/status`,
+      `shared/contracts/${contractId}/payments/${payment.id}/actions/change-status`,
       false,
       "Updating",
       false

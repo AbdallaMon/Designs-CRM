@@ -3,6 +3,7 @@ import {
   Success,
 } from "@/app/UiComponents/feedback/loaders/toast/ToastUpdate";
 import { toast } from "react-toastify";
+import { apiRequest } from "./apiClient";
 
 export async function uploadInChunks(file, setProgress, setOverlay, isClient) {
   const toastId = toast.loading("Uploading");
@@ -25,18 +26,18 @@ export async function uploadInChunks(file, setProgress, setOverlay, isClient) {
       formData.append("chunkIndex", i);
       formData.append("totalChunks", totalChunks);
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_URL}/${
-          isClient ? "client/upload-chunk" : "utility/upload-chunk"
-        }`,
+      // Frozen chunk-upload mechanism — only the path is repointed to the /v2 files module
+      // (legacy utility/upload-chunk → files/chunks, client/upload-chunk → files/client/chunks).
+      const res = await apiRequest(
+        isClient ? "files/client/chunks" : "files/chunks",
         {
           method: "POST",
           body: formData,
-          credentials: "include",
         }
       );
 
-      const json = await res.json();
+      const raw = await res.json();
+      const json = raw?.data ?? raw; // unwrap the /v2 { success, data } envelope
       if (json.url) {
         finalPayload = {
           url: json.url,
