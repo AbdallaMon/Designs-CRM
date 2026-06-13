@@ -380,10 +380,7 @@ export default function Layout({ children }) {
 
   return (
     <SocketProvider>
-      {/* Outer shell forced LTR so the drawer + its reserved space both sit on the
-          physical LEFT regardless of the app's RTL direction; content is re-flipped to
-          RTL on the main column below. */}
-      <Box dir="ltr" sx={{ display: "flex", backgroundColor: colors.bgSecondary }}>
+      <Box sx={{ display: "flex", backgroundColor: colors.bgSecondary }}>
         <SideNav
           links={links}
           collapsed={collapsed}
@@ -395,7 +392,6 @@ export default function Layout({ children }) {
 
         <Box
           component="main"
-          dir="rtl"
           sx={{
             flexGrow: 1,
             minWidth: 0,

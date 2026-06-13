@@ -316,7 +316,6 @@ const SideNav = ({
 
   const content = (
     <Box
-      dir="rtl"
       sx={{
         height: "100%",
         display: "flex",
