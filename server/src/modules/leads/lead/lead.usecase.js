@@ -211,6 +211,14 @@ export class LeadUsecase {
   //  admin-vs-staff branch + the staff-detail extra carve-outs, then add capabilities.
   // ════════════════════════════════════════════════════════════════════════════
   async getById({ id, query, authUser }) {
+    const lead = await this.#getDetail({ id, query, authUser });
+    return { ...lead, capabilities: computeLeadCapabilities(lead, authUser) };
+  }
+
+  // Shared detail resolver (the legacy admin-vs-staff branch + the staff carve-outs).
+  // Used by getById AND the per-tab readers below, so every tab observes the SAME
+  // scoped subset / record shapes the full detail returns (no fileWhere divergence).
+  async #getDetail({ id, query, authUser }) {
     const role = authUser.role;
     const searchParams = { ...query };
     const privileged =
@@ -223,11 +231,39 @@ export class LeadUsecase {
       searchParams.checkConsult = true;
     }
 
-    const lead = privileged
+    return privileged
       ? await this.#getAdminDetail(Number(id), searchParams)
       : await this.#getStaffDetail(Number(id), searchParams, role, authUser.id, authUser);
+  }
 
-    return { ...lead, capabilities: computeLeadCapabilities(lead, authUser) };
+  // ── Per-tab readers (lazy, object-scoped) ──────────────────────────────────────
+  // Each returns ONLY its slice of the detail so the FE can fetch a tab independently
+  // and refetch just that tab after a mutation. They reuse #getDetail so the exact
+  // admin/staff scoping + per-record shapes of the full detail are preserved 1:1
+  // (the route already enforced lead-access scope via checkIfUserCanAccessLead).
+  async getLeadNotes({ id, query, authUser }) {
+    const lead = await this.#getDetail({ id, query, authUser });
+    return lead?.notes ?? [];
+  }
+
+  async getLeadCalls({ id, query, authUser }) {
+    const lead = await this.#getDetail({ id, query, authUser });
+    return lead?.callReminders ?? [];
+  }
+
+  async getLeadMeetings({ id, query, authUser }) {
+    const lead = await this.#getDetail({ id, query, authUser });
+    return lead?.meetingReminders ?? [];
+  }
+
+  async getLeadFiles({ id, query, authUser }) {
+    const lead = await this.#getDetail({ id, query, authUser });
+    return lead?.files ?? [];
+  }
+
+  async getLeadPriceOffers({ id, query, authUser }) {
+    const lead = await this.#getDetail({ id, query, authUser });
+    return lead?.priceOffers ?? [];
   }
 
   async #getAdminDetail(clientLeadId, searchParams) {

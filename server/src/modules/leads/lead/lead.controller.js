@@ -82,6 +82,35 @@ export class LeadController {
     return ok(res, data, C.LEAD_FETCHED, TK);
   };
 
+  // ── per-tab readers (lazy lead sub-resource reads) ─────────────────────────────
+  // Each returns just one slice of the lead detail so the FE can load a tab on demand
+  // and refetch only that tab after a mutation. Object-scope enforced by the route
+  // (requireSpecialChecker(checkIfUserCanAccessLead)). The `id` param is `:clientLeadId`.
+  getLeadNotes = async (req, res) => {
+    const items = await this.usecase.getLeadNotes({ id: req.params.clientLeadId, query: req.query, authUser: req.auth });
+    return ok(res, items, C.LEAD_FETCHED, TK);
+  };
+
+  getLeadCalls = async (req, res) => {
+    const items = await this.usecase.getLeadCalls({ id: req.params.clientLeadId, query: req.query, authUser: req.auth });
+    return ok(res, items, C.LEAD_FETCHED, TK);
+  };
+
+  getLeadMeetings = async (req, res) => {
+    const items = await this.usecase.getLeadMeetings({ id: req.params.clientLeadId, query: req.query, authUser: req.auth });
+    return ok(res, items, C.LEAD_FETCHED, TK);
+  };
+
+  getLeadFiles = async (req, res) => {
+    const items = await this.usecase.getLeadFiles({ id: req.params.clientLeadId, query: req.query, authUser: req.auth });
+    return ok(res, items, C.LEAD_FETCHED, TK);
+  };
+
+  getLeadPriceOffers = async (req, res) => {
+    const items = await this.usecase.getLeadPriceOffers({ id: req.params.clientLeadId, query: req.query, authUser: req.auth });
+    return ok(res, items, C.LEAD_FETCHED, TK);
+  };
+
   // ── assign / convert / status ────────────────────────────────────────────────
   assign = async (req, res) => {
     const { data, assignedToOther } = await this.usecase.assign({ body: req.body, authUser: req.auth });

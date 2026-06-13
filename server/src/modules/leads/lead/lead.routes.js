@@ -141,6 +141,46 @@ router.get(
   AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanAccessLead),
   asyncHandler(leadController.getMeetingRemindersByLead),
 );
+
+// ── per-tab lead sub-resource reads (lazy; same object-scope as the full detail) ──
+// Additive reads so the FE detail can fetch one tab on demand and refetch just that
+// tab after a mutation. Each reuses the full-detail scoping (P.VIEW + lead-access
+// checker) and returns ONLY that tab's slice, in the SAME shape the bundle returns.
+router.get(
+  "/:clientLeadId/notes",
+  AuthMiddleware.requirePermissions([P.VIEW]),
+  validate(LeadValidation.clientLeadIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanAccessLead),
+  asyncHandler(leadController.getLeadNotes),
+);
+router.get(
+  "/:clientLeadId/call-reminders",
+  AuthMiddleware.requirePermissions([P.VIEW]),
+  validate(LeadValidation.clientLeadIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanAccessLead),
+  asyncHandler(leadController.getLeadCalls),
+);
+router.get(
+  "/:clientLeadId/meetings",
+  AuthMiddleware.requirePermissions([P.VIEW]),
+  validate(LeadValidation.clientLeadIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanAccessLead),
+  asyncHandler(leadController.getLeadMeetings),
+);
+router.get(
+  "/:clientLeadId/files",
+  AuthMiddleware.requirePermissions([P.VIEW]),
+  validate(LeadValidation.clientLeadIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanAccessLead),
+  asyncHandler(leadController.getLeadFiles),
+);
+router.get(
+  "/:clientLeadId/price-offers",
+  AuthMiddleware.requirePermissions([P.VIEW]),
+  validate(LeadValidation.clientLeadIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanAccessLead),
+  asyncHandler(leadController.getLeadPriceOffers),
+);
 router.post(
   "/:id/meeting-reminders/token",
   AuthMiddleware.requirePermissions([P.MEETING_MANAGE]),
