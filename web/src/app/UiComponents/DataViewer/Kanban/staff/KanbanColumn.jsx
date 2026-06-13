@@ -141,11 +141,11 @@ const KanbanColumn = ({
           id: l.projects[0].id,
         },
         setLoading,
-        `shared/projects/designers/${l.id}/status`,
+        `shared/projects/designers/${l.id}/actions/change-status`,
         false,
         "Updating",
         false,
-        "PUT"
+        "POST"
       );
       if (request.status === 200) {
         setRerenderColumns((prev) => ({

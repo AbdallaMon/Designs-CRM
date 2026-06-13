@@ -286,17 +286,21 @@ export const accountantLinks = [
     icon: <FiTrendingDown size={20} />, // Trending down for outstanding payments
   },
 ];
-export default function Layout({
-  admin,
-  staff,
-  threeD,
-  twoD,
-  accountant,
-  super_admin,
-  exacuter,
-  super_sales,
-  contact_initiator,
-}) {
+
+export function linksForRole(user) {
+  const role = user?.role;
+  if (role === "ADMIN") return adminLinks;
+  if (role === "STAFF") return user.isSuperSales ? superSalesLinks : staffLinks;
+  if (role === "THREE_D_DESIGNER") return threeDLinks;
+  if (role === "TWO_D_DESIGNER") return twoDLinks;
+  if (role === "ACCOUNTANT") return accountantLinks;
+  if (role === "TWO_D_EXECUTOR") return exacuterLinks;
+  if (role === "CONTACT_INITIATOR") return contactInitiatorLinks;
+  if (role === "SUPER_SALES") return superSalesLinks;
+  return adminLinks;
+}
+
+export default function Layout({ children }) {
   const router = useRouter();
   let { user, isLoggedIn, validatingAuth } = useAuth();
 
@@ -325,7 +329,6 @@ export default function Layout({
     fetchData();
   }, [validatingAuth]);
   if (!user || !user.role) return null;
-  const role = user?.role;
 
   return (
     <Box
@@ -336,48 +339,8 @@ export default function Layout({
     >
       {" "}
       <SocketProvider>
-        <Navbar
-          links={
-            role === "ADMIN"
-              ? adminLinks
-              : role === "STAFF"
-              ? user.isSuperSales
-                ? superSalesLinks
-                : staffLinks
-              : role === "THREE_D_DESIGNER"
-              ? threeDLinks
-              : role === "TWO_D_DESIGNER"
-              ? twoDLinks
-              : role === "ACCOUNTANT"
-              ? accountantLinks
-              : role === "TWO_D_EXECUTOR"
-              ? exacuterLinks
-              : role === "CONTACT_INITIATOR"
-              ? contactInitiatorLinks
-              : role === "SUPER_SALES"
-              ? superSalesLinks
-              : adminLinks
-          }
-        />
-        {role === "ADMIN"
-          ? admin
-          : role === "STAFF"
-          ? user.isSuperSales
-            ? super_sales
-            : staff
-          : role === "THREE_D_DESIGNER"
-          ? threeD
-          : role === "TWO_D_DESIGNER"
-          ? twoD
-          : role === "ACCOUNTANT"
-          ? accountant
-          : role === "TWO_D_EXECUTOR"
-          ? exacuter
-          : role === "CONTACT_INITIATOR"
-          ? contact_initiator
-          : role === "SUPER_SALES"
-          ? super_sales
-          : admin}
+        <Navbar links={linksForRole(user)} />
+        {children}
         <ChatWidget />
       </SocketProvider>
     </Box>
