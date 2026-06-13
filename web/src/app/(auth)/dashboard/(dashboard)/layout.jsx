@@ -1,13 +1,21 @@
 "use client";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import {
   Failed,
   Success,
 } from "@/app/UiComponents/feedback/loaders/toast/ToastUpdate";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { Box } from "@mui/material";
+import {
+  AppBar,
+  Box,
+  IconButton,
+  Toolbar,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import { FiMenu } from "react-icons/fi";
 import colors from "@/app/helpers/colors";
 import {
   FiGrid,
@@ -26,9 +34,18 @@ import {
   FiCalendar,
 } from "react-icons/fi";
 
-import Navbar from "@/app/UiComponents/utility/Navbar.jsx";
+import SideNav, {
+  SIDENAV_COLLAPSED_WIDTH,
+  SIDENAV_EXPANDED_WIDTH,
+} from "@/app/UiComponents/utility/SideNav.jsx";
+import NotificationsIcon from "@/app/UiComponents/utility/NotificationIcon.jsx";
+import SignInWithDifferentUserRole from "@/app/UiComponents/DataViewer/users/UserRoles";
+import ProfileDialogTrigger from "@/app/UiComponents/DataViewer/users/profile/ProfileDialogTrigger";
+import Logout from "@/app/UiComponents/buttons/Logout.jsx";
 import SocketProvider from "@/app/providers/SocketProvider";
 import ChatWidget from "@/app/UiComponents/DataViewer/chat/components/chat/ChatWidget";
+
+const SIDENAV_COLLAPSED_KEY = "sidenav-collapsed";
 
 let toastId;
 export const adminLinks = [
@@ -303,6 +320,29 @@ export function linksForRole(user) {
 export default function Layout({ children }) {
   const router = useRouter();
   let { user, isLoggedIn, validatingAuth } = useAuth();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  // Collapsed state persisted in localStorage; shared by the drawer + the
+  // content offset so they always stay in sync.
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(SIDENAV_COLLAPSED_KEY);
+    if (stored != null) setCollapsed(stored === "true");
+  }, []);
+
+  const handleToggleCollapsed = (next) => {
+    setCollapsed((prev) => {
+      const value = typeof next === "boolean" ? next : !prev;
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(SIDENAV_COLLAPSED_KEY, String(value));
+      }
+      return value;
+    });
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -330,19 +370,90 @@ export default function Layout({ children }) {
   }, [validatingAuth]);
   if (!user || !user.role) return null;
 
+  const links = linksForRole(user);
+  // Desktop content sits next to the permanent drawer; mobile has none.
+  const drawerWidth = isMobile
+    ? 0
+    : collapsed
+      ? SIDENAV_COLLAPSED_WIDTH
+      : SIDENAV_EXPANDED_WIDTH;
+
   return (
-    <Box
-      sx={{
-        minHeight: { xs: "calc(100vh - 75px)", md: "calc(100vh - 86px)" },
-        backgroundColor: colors.bgSecondary,
-      }}
-    >
-      {" "}
-      <SocketProvider>
-        <Navbar links={linksForRole(user)} />
-        {children}
+    <SocketProvider>
+      {/* Outer shell forced LTR so the drawer + its reserved space both sit on the
+          physical LEFT regardless of the app's RTL direction; content is re-flipped to
+          RTL on the main column below. */}
+      <Box dir="ltr" sx={{ display: "flex", backgroundColor: colors.bgSecondary }}>
+        <SideNav
+          links={links}
+          collapsed={collapsed}
+          onToggleCollapsed={handleToggleCollapsed}
+          mobileOpen={mobileOpen}
+          onMobileClose={() => setMobileOpen(false)}
+          isMobile={isMobile}
+        />
+
+        <Box
+          component="main"
+          dir="rtl"
+          sx={{
+            flexGrow: 1,
+            minWidth: 0,
+            width: { md: `calc(100% - ${drawerWidth}px)` },
+            transition: "width .2s ease",
+          }}
+        >
+          <AppBar
+            position="sticky"
+            elevation={0}
+            sx={{
+              backgroundColor: colors.paperBg,
+              color: colors.textPrimary,
+              borderBottom: `1px solid ${colors.borderLight}`,
+            }}
+          >
+            <Toolbar
+              variant="dense"
+              sx={{
+                minHeight: 56,
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 1,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                {isMobile && (
+                  <IconButton
+                    edge="start"
+                    aria-label="فتح القائمة"
+                    onClick={() => setMobileOpen(true)}
+                    sx={{ color: colors.textSecondary }}
+                  >
+                    <FiMenu size={22} />
+                  </IconButton>
+                )}
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                {user.role !== "ADMIN" && <SignInWithDifferentUserRole />}
+                <NotificationsIcon />
+                <ProfileDialogTrigger userId={user.id} />
+                <Logout fit />
+              </Box>
+            </Toolbar>
+          </AppBar>
+
+          <Box
+            sx={{
+              minHeight: "calc(100vh - 56px)",
+              backgroundColor: colors.bgSecondary,
+            }}
+          >
+            {children}
+          </Box>
+        </Box>
+
         <ChatWidget />
-      </SocketProvider>
-    </Box>
+      </Box>
+    </SocketProvider>
   );
 }
