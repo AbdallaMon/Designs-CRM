@@ -1,5 +1,6 @@
 import React from "react";
 import {
+  alpha,
   Box,
   CircularProgress,
   Table,
@@ -12,6 +13,7 @@ import {
   Paper,
   Button,
   Link,
+  Typography,
   useTheme,
 } from "@mui/material";
 import EditModal from "@/app/UiComponents/models/EditModal";
@@ -28,13 +30,20 @@ const DocumentRenderer = ({ value }) => {
       <img
         src={value}
         alt="Document"
-        style={{ maxWidth: "100px", maxHeight: "80px" }}
+        style={{ maxWidth: "100px", maxHeight: "80px", borderRadius: 8 }}
       />
     );
   }
   if (isPDF) {
     return (
-      <Button href={value} target="_blank" rel="noopener noreferrer">
+      <Button
+        size="small"
+        variant="outlined"
+        href={value}
+        target="_blank"
+        rel="noopener noreferrer"
+        sx={{ textTransform: "none", borderRadius: 2 }}
+      >
         View file
       </Button>
     );
@@ -77,225 +86,186 @@ export default function AdminTable({
 }) {
   const ExtraComponent = extraComponent;
   const theme = useTheme();
+
+  // Header-cell styling shared by every column / action header.
+  const headSx = {
+    fontWeight: 700,
+    fontSize: "0.72rem",
+    letterSpacing: 0.4,
+    textTransform: "uppercase",
+    color: "text.secondary",
+    whiteSpace: "nowrap",
+    borderBottom: `1px solid ${theme.palette.divider}`,
+    bgcolor: alpha(theme.palette.primary.main, 0.06),
+    py: 1.5,
+    px: 2.25,
+  };
+  const cellSx = { px: 2.25, py: 1.5, borderBottom: `1px solid ${theme.palette.divider}` };
+
+  const actionColumns =
+    (withEdit ? 1 : 0) +
+    (withDelete ? 1 : 0) +
+    (withArchive ? 1 : 0) +
+    (ExtraComponent ? 1 : 0);
+  const colSpan = (columns?.length || 0) + actionColumns;
+  const isEmpty = !loading && (!data || data.length === 0);
+
   return (
-    <Box sx={{ padding: "16px" }}>
-      <>
-        <TableContainer
-          component={Paper}
-          sx={{ borderRadius: "16px", boxShadow: theme.shadows[3] }}
-        >
+    <Box sx={{ p: { xs: 1, md: 2 } }}>
+      <TableContainer
+        component={Paper}
+        elevation={0}
+        sx={{
+          borderRadius: 3,
+          border: `1px solid ${theme.palette.divider}`,
+          overflowX: "auto",
+        }}
+      >
+        {children && (
           <Box
             sx={{
-              background: theme.palette.background.default,
+              display: "flex",
+              width: "100%",
+              gap: 2,
+              flexWrap: "wrap",
+              alignItems: "center",
+              p: { xs: 1.5, md: 2 },
+              borderBottom: `1px solid ${theme.palette.divider}`,
+              bgcolor: alpha(theme.palette.background.default, 0.5),
             }}
           >
-            <Box
-              display="flex"
-              width="100%"
-              gap={2}
-              flexWrap="wrap"
-              alignItems="center"
-              sx={{
-                p: { xs: 1.5, md: 2 },
-              }}
-            >
-              {children}
-            </Box>
+            {children}
           </Box>
-          <Table>
-            <TableHead>
+        )}
+
+        <Table sx={{ minWidth: 640 }}>
+          <TableHead>
+            <TableRow>
+              {columns.map((column) => (
+                <TableCell key={column.name} sx={headSx}>
+                  {column.label}
+                </TableCell>
+              ))}
+              {withEdit && <TableCell sx={headSx}>{editButtonText}</TableCell>}
+              {withDelete && <TableCell sx={headSx}>Delete</TableCell>}
+              {withArchive && <TableCell sx={headSx}>Archive</TableCell>}
+              {ExtraComponent && <TableCell sx={headSx}>Actions</TableCell>}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {isEmpty && (
               <TableRow>
-                {columns.map((column) => (
-                  <TableCell
-                    key={column.name}
-                    sx={{
-                      fontWeight: "bold",
-                      backgroundColor: theme.palette.primary.main,
-                      color: theme.palette.primary.contrastText,
-                    }}
-                  >
-                    {column.label}
-                  </TableCell>
-                ))}
-                {withEdit && (
-                  <TableCell
-                    sx={{
-                      fontWeight: "bold",
-                      backgroundColor: theme.palette.primary.main,
-                      color: theme.palette.primary.contrastText,
-                    }}
-                  >
-                    {editButtonText}
-                  </TableCell>
-                )}
-                {withDelete && (
-                  <TableCell
-                    sx={{
-                      fontWeight: "bold",
-                      backgroundColor: theme.palette.primary.main,
-                      color: theme.palette.primary.contrastText,
-                    }}
-                  >
-                    Delete
-                  </TableCell>
-                )}
-                {withArchive && (
-                  <TableCell
-                    sx={{
-                      fontWeight: "bold",
-                      backgroundColor: theme.palette.primary.main,
-                      color: theme.palette.primary.contrastText,
-                    }}
-                  >
-                    Archive
-                  </TableCell>
-                )}
-                {ExtraComponent && (
-                  <TableCell
-                    sx={{
-                      fontWeight: "bold",
-                      backgroundColor: theme.palette.primary.main,
-                      color: theme.palette.primary.contrastText,
-                    }}
-                  >
-                    Actions
-                  </TableCell>
-                )}
+                <TableCell colSpan={colSpan || 1} sx={{ borderBottom: "none" }}>
+                  <Box sx={{ py: 6, textAlign: "center" }}>
+                    <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
+                      No records to display
+                    </Typography>
+                  </Box>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {data?.map((item, index) => (
-                <TableRow
-                  key={item.id}
-                  sx={{
-                    backgroundColor:
-                      index % 2 === 0
-                        ? theme.palette.background.paper
-                        : theme.palette.background.default,
-                    "&:hover": {
-                      backgroundColor: theme.palette.action.hover,
-                    },
-                    ...(rowSx && typeof rowSx === "function"
-                      ? rowSx(item)
-                      : {}),
-                  }}
-                >
-                  {columns.map((column) => (
-                    <TableCell
-                      key={column.name}
-                      sx={{
-                        px: 2.5,
-                        py: 3,
-                      }}
-                    >
-                      {column.type === "document" ? (
-                        <DocumentRenderer
-                          value={getPropertyValue(
-                            item,
-                            column.name,
-                            column.enum,
-                            column.type
-                          )}
-                        />
-                      ) : column.type === "href" && column.linkCondition ? (
-                        <>
-                          <Link href={column.linkCondition(item)}>
-                            {getPropertyValue(
-                              item,
-                              column.name,
-                              column.enum,
-                              column.type,
-                              null
-                            )}
-                          </Link>
-                        </>
-                      ) : column.type === "function" ? (
-                        <>{column.render(item)}</>
-                      ) : (
-                        getPropertyValue(
+            )}
+            {data?.map((item, index) => (
+              <TableRow
+                key={item.id}
+                sx={{
+                  backgroundColor:
+                    index % 2 === 0
+                      ? "background.paper"
+                      : alpha(theme.palette.background.default, 0.5),
+                  transition: "background-color .15s ease",
+                  "&:hover": { backgroundColor: theme.palette.action.hover },
+                  "&:last-of-type td": { borderBottom: "none" },
+                  ...(rowSx && typeof rowSx === "function" ? rowSx(item) : {}),
+                }}
+              >
+                {columns.map((column) => (
+                  <TableCell key={column.name} sx={cellSx}>
+                    {column.type === "document" ? (
+                      <DocumentRenderer
+                        value={getPropertyValue(
+                          item,
+                          column.name,
+                          column.enum,
+                          column.type
+                        )}
+                      />
+                    ) : column.type === "href" && column.linkCondition ? (
+                      <Link href={column.linkCondition(item)}>
+                        {getPropertyValue(
                           item,
                           column.name,
                           column.enum,
                           column.type,
                           null
-                        )
-                      )}
-                    </TableCell>
-                  ))}
-                  {withEdit && (
-                    <TableCell
-                      sx={{
-                        px: 2.5,
-                        py: 3,
-                      }}
-                    >
-                      <EditModal
-                        editButtonText={editButtonText}
-                        item={item}
-                        inputs={inputs}
-                        setData={setData}
-                        href={editHref}
-                        handleBeforeSubmit={handleBeforeSubmit}
-                        checkChanges={checkChanges}
-                        extraEditParams={extraEditParams}
-                        renderFormTitle={renderFormTitle}
-                        editFormButton={editFormButton}
-                        handleAfterEdit={handleAfterEdit}
-                      />{" "}
-                    </TableCell>
-                  )}
-                  {withDelete && (
-                    <>
-                      <TableCell
-                        sx={{
-                          px: 2.5,
-                          py: 3,
-                        }}
-                      >
-                        <DeleteModal
-                          item={item}
-                          setData={setData}
-                          href={deleteHref}
-                          setTotal={setTotal}
-                        />
-                      </TableCell>
-                    </>
-                  )}
-                  {withArchive && (
-                    <TableCell
-                      sx={{
-                        px: 2.5,
-                        py: 3,
-                      }}
-                    >
-                      <DeleteModal
-                        item={item}
-                        setData={setData}
-                        href={archiveHref}
-                        setTotal={setTotal}
-                        archive={true}
-                      />
-                    </TableCell>
-                  )}
-                  {ExtraComponent && (
-                    <TableCell
-                      sx={{
-                        px: 2.5,
-                        py: 3,
-                      }}
-                    >
-                      <ExtraComponent
-                        item={item}
-                        setData={setData}
-                        {...extraComponentProps}
-                      />
-                    </TableCell>
-                  )}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          {!noPagination && (
+                        )}
+                      </Link>
+                    ) : column.type === "function" ? (
+                      <>{column.render(item)}</>
+                    ) : (
+                      getPropertyValue(
+                        item,
+                        column.name,
+                        column.enum,
+                        column.type,
+                        null
+                      )
+                    )}
+                  </TableCell>
+                ))}
+                {withEdit && (
+                  <TableCell sx={cellSx}>
+                    <EditModal
+                      editButtonText={editButtonText}
+                      item={item}
+                      inputs={inputs}
+                      setData={setData}
+                      href={editHref}
+                      handleBeforeSubmit={handleBeforeSubmit}
+                      checkChanges={checkChanges}
+                      extraEditParams={extraEditParams}
+                      renderFormTitle={renderFormTitle}
+                      editFormButton={editFormButton}
+                      handleAfterEdit={handleAfterEdit}
+                    />
+                  </TableCell>
+                )}
+                {withDelete && (
+                  <TableCell sx={cellSx}>
+                    <DeleteModal
+                      item={item}
+                      setData={setData}
+                      href={deleteHref}
+                      setTotal={setTotal}
+                    />
+                  </TableCell>
+                )}
+                {withArchive && (
+                  <TableCell sx={cellSx}>
+                    <DeleteModal
+                      item={item}
+                      setData={setData}
+                      href={archiveHref}
+                      setTotal={setTotal}
+                      archive={true}
+                    />
+                  </TableCell>
+                )}
+                {ExtraComponent && (
+                  <TableCell sx={cellSx}>
+                    <ExtraComponent
+                      item={item}
+                      setData={setData}
+                      {...extraComponentProps}
+                    />
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+
+        {!noPagination && (
+          <Box sx={{ borderTop: `1px solid ${theme.palette.divider}` }}>
             <PaginationWithLimit
               total={total}
               limit={limit}
@@ -304,9 +274,9 @@ export default function AdminTable({
               setPage={setPage}
               totalPages={totalPages}
             />
-          )}
-        </TableContainer>
-      </>
+          </Box>
+        )}
+      </TableContainer>
 
       <Backdrop sx={{ color: "#fff", zIndex: 6000000 }} open={loading}>
         <CircularProgress color="inherit" />
