@@ -4,7 +4,7 @@ import {
   Success,
 } from "@/app/UiComponents/feedback/loaders/toast/ToastUpdate";
 import { apiRequest } from "./apiClient";
-import { resolveMessage } from "@/app/v2/lib/messages/resolveMessage";
+import { resolveMessage } from "@/app/helpers/messages/resolveMessage";
 
 // Mutating request against the /v2 backend. The backend returns a language-neutral CODE in
 // `message` (e.g. LOGIN_SUCCESS / INVALID_CREDENTIALS), so the toast text is resolved to an

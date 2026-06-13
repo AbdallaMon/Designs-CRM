@@ -109,18 +109,18 @@ export const adminLinks = [
     name: "Reports",
     href: "/dashboard/report",
     active: "report",
-    icon: <FiFileText size={20} />,
+    icon: <FiFileText size={20} />, // General report icon
     subLinks: [
       {
         name: "Leads report",
         href: "/dashboard/report",
         active: "report",
-        icon: <FiTrendingUp size={20} />,
+        icon: <FiTrendingUp size={20} />, // Icon representing trends or growth for leads
       },
       {
         name: "Staff report",
         href: "/dashboard/report/staff",
-        icon: <FiUsers size={18} />,
+        icon: <FiUsers size={18} />, // Icon representing a group of people for staff
         active: "report/staff",
       },
     ],
@@ -148,6 +148,7 @@ export const adminLinks = [
 ];
 
 export const superAdminLinks = adminLinks;
+// Regular user navigation links
 export const staffLinks = [
   { name: "Dashboard", href: "/dashboard", icon: <FiGrid size={20} /> },
   { name: "Leads", href: "/dashboard/leads", icon: <FiTarget size={20} /> },
@@ -262,63 +263,42 @@ export const exacuterLinks = [
 ];
 
 export const accountantLinks = [
-  { name: "Payments", href: "/dashboard", icon: <FiDollarSign size={20} /> },
+  { name: "Payments", href: "/dashboard", icon: <FiDollarSign size={20} /> }, // Dollar sign for payments
 
   {
     name: "Operational Expenses",
     href: "/dashboard/operational-expenses",
-    icon: <FiShoppingCart size={20} />,
+    icon: <FiShoppingCart size={20} />, // Shopping cart for expenses
   },
   {
     name: "Rents",
     href: "/dashboard/rents",
-    icon: <FiHome size={20} />,
+    icon: <FiHome size={20} />, // Home icon for rents
   },
   {
     name: "Salaries",
     href: "/dashboard/salaries",
-    icon: <FiUsers size={20} />,
+    icon: <FiUsers size={20} />, // Users for salaries (employees)
   },
   {
     name: "Outstanding Payments",
     href: "/dashboard/outcome",
-    icon: <FiTrendingDown size={20} />,
+    icon: <FiTrendingDown size={20} />, // Trending down for outstanding payments
   },
 ];
-
-// Picks the nav link set for the current role — identical mapping to master's parallel-route
-// shell (display-only; page access itself is gated by real permissions inside each feature).
-export function linksForRole(user) {
-  const role = user?.role;
-  switch (role) {
-    case "ADMIN":
-      return adminLinks;
-    case "STAFF":
-      return user?.isSuperSales ? superSalesLinks : staffLinks;
-    case "THREE_D_DESIGNER":
-      return threeDLinks;
-    case "TWO_D_DESIGNER":
-      return twoDLinks;
-    case "ACCOUNTANT":
-      return accountantLinks;
-    case "TWO_D_EXECUTOR":
-      return exacuterLinks;
-    case "CONTACT_INITIATOR":
-      return contactInitiatorLinks;
-    case "SUPER_SALES":
-      return superSalesLinks;
-    default:
-      return adminLinks;
-  }
-}
-
-// Collapsed dashboard shell: master rendered one of nine parallel-route @role slots here;
-// we now render normal nested routes via {children}, keeping the same Navbar / session guard /
-// socket + chat widget. Role no longer selects a slot — each /dashboard/* route renders one
-// shared feature component, gated by permissions.
-export default function Layout({ children }) {
+export default function Layout({
+  admin,
+  staff,
+  threeD,
+  twoD,
+  accountant,
+  super_admin,
+  exacuter,
+  super_sales,
+  contact_initiator,
+}) {
   const router = useRouter();
-  const { user, isLoggedIn, validatingAuth } = useAuth();
+  let { user, isLoggedIn, validatingAuth } = useAuth();
 
   useEffect(() => {
     async function fetchData() {
@@ -337,11 +317,15 @@ export default function Layout({ children }) {
           Success("Your session has been validated, loading data.")
         );
       }
+      if (typeof window !== "undefined") {
+        console.log(document.referrer, "refresres");
+      }
     }
 
     fetchData();
   }, [validatingAuth]);
   if (!user || !user.role) return null;
+  const role = user?.role;
 
   return (
     <Box
@@ -350,9 +334,50 @@ export default function Layout({ children }) {
         backgroundColor: colors.bgSecondary,
       }}
     >
+      {" "}
       <SocketProvider>
-        <Navbar links={linksForRole(user)} />
-        {children}
+        <Navbar
+          links={
+            role === "ADMIN"
+              ? adminLinks
+              : role === "STAFF"
+              ? user.isSuperSales
+                ? superSalesLinks
+                : staffLinks
+              : role === "THREE_D_DESIGNER"
+              ? threeDLinks
+              : role === "TWO_D_DESIGNER"
+              ? twoDLinks
+              : role === "ACCOUNTANT"
+              ? accountantLinks
+              : role === "TWO_D_EXECUTOR"
+              ? exacuterLinks
+              : role === "CONTACT_INITIATOR"
+              ? contactInitiatorLinks
+              : role === "SUPER_SALES"
+              ? superSalesLinks
+              : adminLinks
+          }
+        />
+        {role === "ADMIN"
+          ? admin
+          : role === "STAFF"
+          ? user.isSuperSales
+            ? super_sales
+            : staff
+          : role === "THREE_D_DESIGNER"
+          ? threeD
+          : role === "TWO_D_DESIGNER"
+          ? twoD
+          : role === "ACCOUNTANT"
+          ? accountant
+          : role === "TWO_D_EXECUTOR"
+          ? exacuter
+          : role === "CONTACT_INITIATOR"
+          ? contact_initiator
+          : role === "SUPER_SALES"
+          ? super_sales
+          : admin}
         <ChatWidget />
       </SocketProvider>
     </Box>

@@ -1,5 +1,5 @@
 import { apiRequest, normalizeEnvelope } from "./apiClient";
-import { resolveMessage } from "@/app/v2/lib/messages/resolveMessage";
+import { resolveMessage } from "@/app/helpers/messages/resolveMessage";
 
 // Same as getData, but pushes the payload straight into a caller-supplied setter and
 // throws (optionally) on auth/explicit failures. Talks to /v2 via apiClient and unwraps
