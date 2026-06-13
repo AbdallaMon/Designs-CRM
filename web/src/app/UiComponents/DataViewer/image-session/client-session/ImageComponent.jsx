@@ -1,6 +1,6 @@
+import { memo } from "react";
 import {
   Box,
-  Button,
   Card,
   CardActionArea,
   CardActions,
@@ -22,7 +22,7 @@ import { ensureHttps } from "@/app/helpers/functions/utility";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 
-export function ImageComponent({
+function ImageComponentBase({
   handleImageClick,
   handleImageSelect = () => {},
   type,
@@ -73,11 +73,13 @@ export function ImageComponent({
           height={isMobile ? 280 : 300}
           image={ensureHttps(photo.imageUrl)}
           alt={`Image ${image.id}`}
+          loading="lazy"
+          decoding="async"
           sx={{
             cursor: "pointer",
             transition: "transform 0.3s ease",
+            bgcolor: "grey.100",
           }}
-          k
         />
 
         <Box
@@ -218,3 +220,7 @@ export function ImageComponent({
     </>
   );
 }
+
+// Memoized so re-rendering the gallery (e.g. on a single selection toggle) only
+// re-renders the cards whose props actually changed — not every image in the grid.
+export const ImageComponent = memo(ImageComponentBase);

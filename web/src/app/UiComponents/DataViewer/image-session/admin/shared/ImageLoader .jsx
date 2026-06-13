@@ -73,6 +73,8 @@ export const ImageLoader = ({
           <img
             src={src}
             alt={alt}
+            loading="lazy"
+            decoding="async"
             onLoad={handleImageLoad}
             onError={handleImageError}
             style={{

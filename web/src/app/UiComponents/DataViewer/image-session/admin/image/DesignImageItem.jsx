@@ -156,10 +156,15 @@ export const DesignImageItem = ({ item, onUpdate }) => {
           >
             <img
               src={item.imageUrl}
+              alt={`Design image ${item.id}`}
+              loading="lazy"
+              decoding="async"
               style={{
                 width: "100%",
                 height: "300px",
                 display: "block",
+                objectFit: "cover",
+                backgroundColor: "#f5f5f5",
                 transition: "transform 0.3s ease",
               }}
             />
