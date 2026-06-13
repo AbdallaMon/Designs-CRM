@@ -12,26 +12,36 @@ import { availabilityRepository } from "./availability.repository.js";
 
 const DEFAULT_TZ = "Asia/Dubai";
 
-// new-calendar.js is the availability/slot SERVICE (getAvailableDays/getAvailableSlotsForDay/
-// createOrUpdateAvailableDay/createOrUpdateMultipleDays). The month-view + reminders come
-// from the calendar service. Heavy logic is NOT duplicated — only invoked.
+// The availability/slot + month-view + reminders SERVICE all live in
+// services/main/calendar/calendarServices.js (the legacy `routes/calendar/new-calendar.js`
+// service file no longer exists in this repo). The slot-creation service uses `fromHour`/
+// `toHour`/`days` arg names + a `createAvailableDay` that already does create-or-replace +
+// `createAvailableDatesForMoreThanOneDay` for the bulk path, so the two create adapters
+// translate the usecase's fromTime/toTime/dates → the service's fromHour/toHour/days.
+// Heavy logic is NOT duplicated — only invoked.
+const CALENDAR_SERVICE = "../../../../services/main/calendar/calendarServices.js";
 const legacyDefaults = {
   getAvailableDays: (a) =>
-    import("../../../../routes/calendar/new-calendar.js").then((m) => m.getAvailableDays(a)),
+    import(CALENDAR_SERVICE).then((m) => m.getAvailableDays(a)),
   getAvailableSlotsForDay: (a) =>
-    import("../../../../routes/calendar/new-calendar.js").then((m) => m.getAvailableSlotsForDay(a)),
-  createOrUpdateAvailableDay: (a) =>
-    import("../../../../routes/calendar/new-calendar.js").then((m) => m.createOrUpdateAvailableDay(a)),
-  createOrUpdateMultipleDays: (a) =>
-    import("../../../../routes/calendar/new-calendar.js").then((m) => m.createOrUpdateMultipleDays(a)),
+    import(CALENDAR_SERVICE).then((m) => m.getAvailableSlotsForDay(a)),
+  createOrUpdateAvailableDay: ({ fromTime, toTime, ...rest }) =>
+    import(CALENDAR_SERVICE).then((m) =>
+      m.createAvailableDay({ ...rest, fromHour: fromTime, toHour: toTime }),
+    ),
+  createOrUpdateMultipleDays: ({ dates, fromTime, toTime, ...rest }) =>
+    import(CALENDAR_SERVICE).then((m) =>
+      m.createAvailableDatesForMoreThanOneDay({
+        ...rest,
+        days: dates,
+        fromHour: fromTime,
+        toHour: toTime,
+      }),
+    ),
   getCalendarDataForMonth: (a) =>
-    import("../../../../services/main/calendar/calendarServices.js").then((m) =>
-      m.getCalendarDataForMonth(a),
-    ),
+    import(CALENDAR_SERVICE).then((m) => m.getCalendarDataForMonth(a)),
   getRemindersForDay: (a) =>
-    import("../../../../services/main/calendar/calendarServices.js").then((m) =>
-      m.getRemindersForDay(a),
-    ),
+    import(CALENDAR_SERVICE).then((m) => m.getRemindersForDay(a)),
 };
 
 // Reproduce the legacy role gate used inside the month-view route handlers verbatim:

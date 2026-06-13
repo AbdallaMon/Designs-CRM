@@ -22,9 +22,13 @@ const legacyDefaults = {
   bookAMeeting: (a) =>
     import("../../../../services/main/client/calendar.js").then((m) => m.bookAMeeting(a)),
   getAvailableDays: (a) =>
-    import("../../../../routes/calendar/new-calendar.js").then((m) => m.getAvailableDays(a)),
+    import("../../../../services/main/calendar/calendarServices.js").then((m) =>
+      m.getAvailableDays(a),
+    ),
   getAvailableSlotsForDay: (a) =>
-    import("../../../../routes/calendar/new-calendar.js").then((m) => m.getAvailableSlotsForDay(a)),
+    import("../../../../services/main/calendar/calendarServices.js").then((m) =>
+      m.getAvailableSlotsForDay(a),
+    ),
 };
 
 export class ClientCalendarUsecase {
