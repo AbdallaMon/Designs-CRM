@@ -3,8 +3,8 @@ import { useState } from "react";
 import {
   Box,
   Button,
+  Divider,
   Fade,
-  IconButton,
   Menu,
   MenuItem,
   Modal,
@@ -51,23 +51,27 @@ export const MoreActionsMenu = ({
 
   return (
     <>
-      <IconButton
+      <Button
         onClick={handleMoreClick}
+        variant="outlined"
+        startIcon={<MdMoreHoriz size={18} />}
         sx={(theme) => ({
-          width: 40,
           height: 40,
           borderRadius: 2,
-          border: `1px solid ${theme.palette.divider}`,
+          px: 1.75,
+          fontWeight: 600,
+          textTransform: "none",
+          borderColor: theme.palette.divider,
+          color: "text.primary",
           bgcolor: theme.palette.background.paper,
-          boxShadow: theme.shadows[1],
           "&:hover": {
             bgcolor: theme.palette.action.hover,
             borderColor: theme.palette.primary.main,
           },
         })}
       >
-        <MdMoreHoriz size={18} />
-      </IconButton>
+        Actions
+      </Button>
 
       <Menu
         anchorEl={moreAnchorEl}
@@ -78,10 +82,19 @@ export const MoreActionsMenu = ({
             mt: 1,
             borderRadius: 2,
             boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-            minWidth: 200,
+            minWidth: 220,
           },
         }}
       >
+        <Box sx={{ px: 2, pt: 1, pb: 0.5 }}>
+          <Typography
+            variant="overline"
+            sx={{ fontWeight: 700, color: "text.disabled", letterSpacing: 0.6 }}
+          >
+            Lead actions
+          </Typography>
+        </Box>
+        <Divider />
         {/* Convert Lead Action - Staff Only */}
         {!admin &&
           user.role === "STAFF" &&
