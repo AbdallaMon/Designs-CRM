@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import {
+  alpha,
   Box,
   Typography,
   IconButton,
@@ -11,10 +12,10 @@ import {
   DialogActions,
   Button,
   CircularProgress,
-  Alert,
   useTheme,
   Chip,
   Divider,
+  Stack,
 } from "@mui/material";
 import {
   MdArrowUpward as ArrowUpward,
@@ -127,113 +128,98 @@ const SalesStageComponent = ({ clientLeadId }) => {
   const currentStageData = currentStage ? getStageData(currentStage.key) : null;
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1000, margin: "0 auto" }}>
-      {/* Header */}
-      <Box sx={{ textAlign: "center", mb: 4 }}>
+    <Box sx={{ maxWidth: 880, margin: "0 auto" }}>
+      {/* Current Stage Banner */}
+      <Box sx={{ textAlign: "center", mb: 3 }}>
         <Typography
-          variant="h4"
-          gutterBottom
-          sx={{
-            color: theme.palette.primary.main,
-            fontWeight: "bold",
-            mb: 2,
-          }}
+          variant="h5"
+          sx={{ color: "primary.main", fontWeight: 800, mb: 2 }}
         >
           مراحل البيع
         </Typography>
 
-        {/* Current Stage Indicator */}
         {currentStage && (
           <Paper
-            elevation={3}
+            elevation={0}
             sx={{
-              p: 2,
-              backgroundColor: theme.palette.primary.main,
-              borderRadius: 2,
-              maxWidth: 400,
+              p: 2.5,
+              borderRadius: 3,
+              maxWidth: 460,
               margin: "0 auto",
-              position: "relative",
-              overflow: "hidden",
+              background: theme.palette.primary.main,
+              color: theme.palette.primary.contrastText,
             }}
           >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 1,
-              }}
+            <Stack
+              direction="row"
+              alignItems="center"
+              justifyContent="center"
+              spacing={1.5}
             >
               <IconButton
-                size="medium"
+                size="small"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleViewDetails(currentStage, currentStageData.id);
                 }}
                 sx={{
-                  color: theme.palette.success.contrastText,
+                  color: "inherit",
                   backgroundColor: "rgba(255,255,255,0.2)",
-                  "&:hover": {
-                    backgroundColor: "rgba(255,255,255,0.3)",
-                  },
-                  border: "2px solid rgba(255,255,255,0.3)",
+                  "&:hover": { backgroundColor: "rgba(255,255,255,0.3)" },
                 }}
               >
                 <Visibility />
-              </IconButton>{" "}
-              <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+              </IconButton>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
                 المرحلة الحالية: {currentStage.label}
               </Typography>
-            </Box>
+            </Stack>
             {currentStageData && (
               <Typography variant="body2" sx={{ mt: 1, opacity: 0.9 }}>
                 Created at:{" "}
                 {dayjs(currentStageData.createdAt).format("DD MMMM YYYY")}
               </Typography>
             )}
-            <Box
-              sx={{
-                position: "absolute",
-                top: 0,
-                right: 0,
-                width: "100%",
-                height: "100%",
-                background:
-                  "linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%)",
-                pointerEvents: "none",
-              }}
-            />
           </Paper>
         )}
       </Box>
 
-      <Divider sx={{ mb: 4 }} />
+      <Divider sx={{ mb: 3 }} />
 
-      {/* Sales Stages List */}
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      {/* Stages list */}
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
         {salesStageEnum.map((stage, index) => {
           const isCompleted = isStageCompleted(stage.key);
           const stageData = getStageData(stage.key);
           const isCurrentStage = index === currentStageIndex;
           const canShowArrows =
             isCurrentStage || (currentStageIndex === -1 && index === 0);
+
+          const borderColor = isCompleted
+            ? theme.palette.success.main
+            : isCurrentStage
+            ? theme.palette.info.main
+            : theme.palette.divider;
+          const bg = isCompleted
+            ? alpha(theme.palette.success.main, 0.08)
+            : isCurrentStage
+            ? alpha(theme.palette.info.main, 0.08)
+            : alpha(theme.palette.background.default, 0.5);
+
           return (
             <Box key={stage.key}>
-              {/* Up Arrow */}
               {canShowArrows && index > 0 && (
-                <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
+                <Box sx={{ display: "flex", justifyContent: "center", mb: 0.5 }}>
                   <IconButton
                     onClick={() => handleStageAction(stage.key, "back", index)}
                     disabled={actionLoading}
                     sx={{
                       color: theme.palette.success.main,
-                      backgroundColor: theme.palette.success.light,
+                      backgroundColor: alpha(theme.palette.success.main, 0.12),
                       "&:hover": {
                         backgroundColor: theme.palette.success.main,
                         color: theme.palette.success.contrastText,
                       },
-                      boxShadow: theme.shadows[2],
-                      border: `2px solid ${theme.palette.success.main}`,
                     }}
                   >
                     <ArrowUpward />
@@ -241,104 +227,58 @@ const SalesStageComponent = ({ clientLeadId }) => {
                 </Box>
               )}
 
-              {/* Stage Card */}
               <Paper
-                elevation={isCompleted ? 4 : 2}
+                elevation={0}
                 sx={{
-                  p: 3,
-                  backgroundColor: isCompleted
-                    ? theme.palette.success.main
-                    : isCurrentStage
-                    ? theme.palette.info.light
-                    : theme.palette.grey[50],
-                  border: isCompleted
-                    ? `3px solid ${theme.palette.success.dark}`
-                    : isCurrentStage
-                    ? `3px solid ${theme.palette.info.main}`
-                    : `2px solid ${theme.palette.divider}`,
-                  borderRadius: 2,
-                  position: "relative",
-                  cursor: "pointer",
-                  transition: theme.transitions.create(["all"], {
-                    duration: theme.transitions.duration.shorter,
+                  p: 2.5,
+                  borderRadius: 2.5,
+                  bgcolor: bg,
+                  border: `1px solid ${borderColor}`,
+                  ...(isCurrentStage && {
+                    borderWidth: 2,
                   }),
-                  "&:hover": {
-                    boxShadow: theme.shadows[6],
-                    transform: "translateY(-2px)",
-                    backgroundColor: isCompleted
-                      ? theme.palette.success.dark
-                      : isCurrentStage
-                      ? theme.palette.info.main
-                      : theme.palette.grey[100],
-                  },
+                  transition: "all 0.2s ease-in-out",
+                  "&:hover": { boxShadow: theme.shadows[3] },
                 }}
               >
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  spacing={2}
                 >
-                  <Box
-                    sx={{
-                      flex: 1,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 2,
-                    }}
-                  >
-                    {/* Stage Icon */}
-                    <Box>
-                      {isCompleted ? (
-                        <CheckCircle
-                          sx={{
-                            color: theme.palette.success.contrastText,
-                            fontSize: 32,
-                          }}
-                        />
-                      ) : isCurrentStage ? (
-                        <PlayArrow
-                          sx={{
-                            color: theme.palette.info.main,
-                            fontSize: 32,
-                          }}
-                        />
-                      ) : (
-                        <RadioButtonUnchecked
-                          sx={{
-                            color: theme.palette.grey[400],
-                            fontSize: 32,
-                          }}
-                        />
-                      )}
-                    </Box>
-
-                    {/* Stage Info */}
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    {isCompleted ? (
+                      <CheckCircle
+                        style={{
+                          color: theme.palette.success.main,
+                          fontSize: 30,
+                        }}
+                      />
+                    ) : isCurrentStage ? (
+                      <PlayArrow
+                        style={{ color: theme.palette.info.main, fontSize: 30 }}
+                      />
+                    ) : (
+                      <RadioButtonUnchecked
+                        style={{
+                          color: theme.palette.grey[400],
+                          fontSize: 30,
+                        }}
+                      />
+                    )}
                     <Box>
                       <Typography
-                        variant="h6"
+                        variant="subtitle1"
                         sx={{
-                          color: isCompleted
-                            ? theme.palette.success.contrastText
-                            : isCurrentStage
-                            ? theme.palette.info.contrastText
-                            : theme.palette.text.primary,
-                          fontWeight:
-                            isCompleted || isCurrentStage ? "bold" : "medium",
-                          mb: 0.5,
+                          fontWeight: isCompleted || isCurrentStage ? 700 : 500,
+                          color: "text.primary",
                         }}
                       >
                         {stage.label}
                       </Typography>
                       {isCompleted && stageData && (
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: theme.palette.success.contrastText,
-                            opacity: 0.9,
-                          }}
-                        >
+                        <Typography variant="caption" color="text.secondary">
                           Created At:{" "}
                           {dayjs(stageData.createdAt).format("DD MMMM YYYY")}
                         </Typography>
@@ -347,55 +287,46 @@ const SalesStageComponent = ({ clientLeadId }) => {
                         <Chip
                           label="المرحلة الحالية"
                           size="small"
-                          sx={{
-                            backgroundColor: theme.palette.info.main,
-                            color: theme.palette.info.contrastText,
-                            fontWeight: "bold",
-                            fontSize: "0.75rem",
-                          }}
+                          color="info"
+                          sx={{ fontWeight: 700, mt: 0.5 }}
                         />
                       )}
                     </Box>
-                  </Box>
+                  </Stack>
 
-                  {/* Action Button */}
                   {isCompleted && (
                     <IconButton
-                      size="medium"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleViewDetails(stageData, stageData.id);
                       }}
                       sx={{
-                        color: theme.palette.success.contrastText,
-                        backgroundColor: "rgba(255,255,255,0.2)",
+                        color: theme.palette.success.main,
+                        backgroundColor: alpha(theme.palette.success.main, 0.12),
                         "&:hover": {
-                          backgroundColor: "rgba(255,255,255,0.3)",
+                          backgroundColor: theme.palette.success.main,
+                          color: theme.palette.success.contrastText,
                         },
-                        border: "2px solid rgba(255,255,255,0.3)",
                       }}
                     >
                       <Visibility />
                     </IconButton>
                   )}
-                </Box>
+                </Stack>
               </Paper>
 
-              {/* Down Arrow */}
               {canShowArrows && index !== salesStageEnum.length - 1 && (
-                <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 0.5 }}>
                   <IconButton
                     onClick={() => handleStageAction(stage.key, "next", index)}
                     disabled={actionLoading}
                     sx={{
                       color: theme.palette.warning.main,
-                      backgroundColor: theme.palette.warning.light,
+                      backgroundColor: alpha(theme.palette.warning.main, 0.12),
                       "&:hover": {
                         backgroundColor: theme.palette.warning.main,
                         color: theme.palette.warning.contrastText,
                       },
-                      boxShadow: theme.shadows[2],
-                      border: `2px solid ${theme.palette.warning.main}`,
                     }}
                   >
                     <ArrowDownward />
@@ -407,25 +338,20 @@ const SalesStageComponent = ({ clientLeadId }) => {
         })}
       </Box>
 
-      {/* Dialog for Stage Details */}
+      {/* Stage details dialog */}
       <Dialog
         open={dialogOpen}
         onClose={handleCloseDialog}
         maxWidth="md"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            boxShadow: theme.shadows[8],
-          },
-        }}
+        PaperProps={{ sx: { borderRadius: 3 } }}
       >
         <DialogTitle
           sx={{
             backgroundColor: theme.palette.primary.main,
             color: theme.palette.primary.contrastText,
             textAlign: "center",
-            fontWeight: "bold",
+            fontWeight: 700,
           }}
         >
           تفاصيل المرحلة
@@ -433,13 +359,9 @@ const SalesStageComponent = ({ clientLeadId }) => {
         <DialogContent sx={{ p: 3 }}>
           <Box>
             <Typography
-              variant="h5"
+              variant="h6"
               gutterBottom
-              sx={{
-                color: theme.palette.primary.main,
-                fontWeight: "bold",
-                mb: 2,
-              }}
+              sx={{ color: "primary.main", fontWeight: 700, mb: 1 }}
             >
               {selectedStage &&
                 salesStageEnum.find((s) => s.key === selectedStage.stage)
@@ -447,10 +369,10 @@ const SalesStageComponent = ({ clientLeadId }) => {
             </Typography>
 
             <Typography
-              variant="body1"
+              variant="body2"
               color="text.secondary"
               gutterBottom
-              sx={{ mb: 3 }}
+              sx={{ mb: 2 }}
             >
               تم في:{" "}
               {selectedStage &&
@@ -473,11 +395,7 @@ const SalesStageComponent = ({ clientLeadId }) => {
           <Button
             onClick={handleCloseDialog}
             variant="contained"
-            sx={{
-              minWidth: 120,
-              borderRadius: 2,
-              fontWeight: "bold",
-            }}
+            sx={{ minWidth: 120, fontWeight: 700, textTransform: "none" }}
           >
             إغلاق
           </Button>

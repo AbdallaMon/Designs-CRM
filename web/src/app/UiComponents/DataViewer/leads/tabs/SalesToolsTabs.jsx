@@ -1,19 +1,21 @@
 import React, { useState } from "react";
 import {
+  alpha,
   Alert,
   Box,
+  Card,
+  CardContent,
   FormControl,
+  Grid,
   InputLabel,
   MenuItem,
   Select,
+  Stack,
   Typography,
+  useTheme,
 } from "@mui/material";
 
 import { useAuth } from "@/app/providers/AuthProvider";
-
-import { Card, CardContent } from "@mui/material";
-
-import { Grid } from "@mui/material";
 
 import { MdQuestionAnswer, MdTouchApp } from "react-icons/md";
 
@@ -27,6 +29,55 @@ import VersaObjectionSystem from "../../meeting/VERSA/VERSADialog";
 
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { FaUser } from "react-icons/fa";
+
+function ToolCard({ icon, title, subtitle, children }) {
+  const theme = useTheme();
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        height: "100%",
+        borderRadius: 3,
+        border: `1px solid ${theme.palette.divider}`,
+        transition: "all 0.25s ease-in-out",
+        "&:hover": {
+          transform: "translateY(-4px)",
+          boxShadow: theme.shadows[6],
+          borderColor: alpha(theme.palette.primary.main, 0.4),
+        },
+      }}
+    >
+      <CardContent sx={{ p: 3 }}>
+        <Stack spacing={2} alignItems="center" textAlign="center">
+          <Box
+            sx={{
+              width: 64,
+              height: 64,
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: alpha(theme.palette.primary.main, 0.12),
+              color: theme.palette.primary.main,
+              fontSize: 30,
+            }}
+          >
+            {icon}
+          </Box>
+          <Box>
+            <Typography variant="h6" fontWeight={700}>
+              {title}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {subtitle}
+            </Typography>
+          </Box>
+          <Box sx={{ width: "100%", pt: 1 }}>{children}</Box>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+}
 
 export function SalesToolsTabs({ lead, setLead, setleads }) {
   const { user } = useAuth();
@@ -70,122 +121,55 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
     );
   }
   return (
-    <Box sx={{ width: "100%", maxWidth: 1200, margin: "0 auto", p: 2 }}>
+    <Box sx={{ width: "100%", maxWidth: 1200, margin: "0 auto" }}>
       <Grid container spacing={3}>
-        <Grid size={{ md: 6 }}>
-          <Card
-            sx={{
-              height: "100%",
-              transition: "transform 0.3s ease-in-out",
-              "&:hover": {
-                transform: "translateY(-5px)",
-                boxShadow: 6,
-              },
-            }}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <ToolCard
+            icon={<MdQuestionAnswer />}
+            title="SPIN Questions"
+            subtitle="سؤال اسبين"
           >
-            <CardContent sx={{ textAlign: "center", p: 2 }}>
-              <MdQuestionAnswer size={48} style={{ marginBottom: 16 }} />
-              <Typography
-                variant="h5"
-                component="h3"
-                gutterBottom
-                sx={{ fontWeight: "bold" }}
-              >
-                SPIN Questions
-              </Typography>
-              <Typography
-                variant="body1"
-                color="text.secondary"
-                sx={{ mb: 3, fontSize: "0.9rem" }}
-              >
-                سؤال اسبين
-              </Typography>
-              <SPAINQuestionsDialog clientLeadId={lead.id} />
-            </CardContent>
-          </Card>
+            <SPAINQuestionsDialog clientLeadId={lead.id} />
+          </ToolCard>
         </Grid>
+
         {user.role === "STAFF" && !user.isPrimary ? null : (
-          <Grid size={{ md: 6 }}>
-            <Card
-              sx={{
-                height: "100%",
-                transition: "transform 0.3s ease-in-out",
-                "&:hover": {
-                  transform: "translateY(-5px)",
-                  boxShadow: 6,
-                },
-              }}
+          <Grid size={{ xs: 12, md: 6 }}>
+            <ToolCard
+              icon={<MdTouchApp />}
+              title="VERSA Objections"
+              subtitle="نموذج الاعتراضات"
             >
-              <CardContent sx={{ textAlign: "center", p: 2 }}>
-                <MdTouchApp size={48} style={{ marginBottom: 16 }} />
-                <Typography
-                  variant="h5"
-                  component="h3"
-                  gutterBottom
-                  sx={{ fontWeight: "bold" }}
-                >
-                  VERSA Objections
-                </Typography>
-                <Typography
-                  variant="body1"
-                  color="text.secondary"
-                  sx={{ mb: 3, fontSize: "0.9rem" }}
-                >
-                  نموذج الاعتراضات
-                </Typography>
-                <VersaObjectionSystem clientLeadId={lead.id} />
-              </CardContent>
-            </Card>
+              <VersaObjectionSystem clientLeadId={lead.id} />
+            </ToolCard>
           </Grid>
         )}
 
-        <Grid size={{ md: 6 }}>
-          <Card
-            sx={{
-              transition: "transform 0.3s ease-in-out",
-              "&:hover": {
-                transform: "translateY(-5px)",
-                boxShadow: 6,
-              },
-            }}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <ToolCard
+            icon={<FaUser />}
+            title="Client Personality"
+            subtitle="شخصية العميل"
           >
-            <CardContent sx={{ textAlign: "center", p: 2 }}>
-              <FaUser size={48} style={{ marginBottom: 16 }} />
-              <Typography
-                variant="h5"
-                component="h3"
-                gutterBottom
-                sx={{ fontWeight: "bold" }}
+            <FormControl sx={{ minWidth: 200 }} fullWidth>
+              <InputLabel id="personality-select-label">
+                {personality ? "Change" : "Select"} Personality
+              </InputLabel>
+              <Select
+                labelId="personality-select-label"
+                value={personality}
+                label={`${personality ? "Change" : "Select"} Personality`}
+                onChange={async (e) => await handleChange(e)}
+                displayEmpty
               >
-                Client Personality
-              </Typography>
-              <Typography
-                variant="body1"
-                sx={{ mb: 3, fontSize: "0.9rem", opacity: 0.9 }}
-              >
-                شخصية العميل
-              </Typography>
-
-              <FormControl sx={{ minWidth: 200 }}>
-                <InputLabel id="personality-select-label">
-                  {personality ? "Change" : "Select"} Personality
-                </InputLabel>
-                <Select
-                  labelId="personality-select-label"
-                  value={personality}
-                  label="Select Personality"
-                  onChange={async (e) => await handleChange(e)}
-                  displayEmpty
-                >
-                  {Object.entries(personalityEnum).map(([key, value]) => (
-                    <MenuItem key={key} value={key}>
-                      {value}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </CardContent>
-          </Card>
+                {Object.entries(personalityEnum).map(([key, value]) => (
+                  <MenuItem key={key} value={key}>
+                    {value}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </ToolCard>
         </Grid>
       </Grid>
     </Box>

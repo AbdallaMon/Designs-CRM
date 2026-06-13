@@ -1,6 +1,8 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import {
+  alpha,
+  Box,
   Button,
   Dialog,
   DialogActions,
@@ -12,8 +14,11 @@ import {
   ListItemText,
   Stack,
   TextField,
+  Typography,
+  useTheme,
 } from "@mui/material";
 import { BsPlus } from "react-icons/bs";
+import { MdUploadFile } from "react-icons/md";
 import { useAlertContext } from "@/app/providers/MuiAlert.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
@@ -43,6 +48,7 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
   const { setLoading } = useToastContext();
   const { setAlertError } = useAlertContext();
   const { setProgress, setOverlay } = useUploadContext();
+  const theme = useTheme();
   function handleOpen() {
     setOpen(true);
   }
@@ -130,7 +136,7 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
           onClick={handleOpen}
           variant="contained"
           startIcon={<BsPlus size={20} />}
-          sx={{ alignSelf: "flex-start" }}
+          sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 600 }}
         >
           Add New File
         </Button>
@@ -138,12 +144,42 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
         <OpenButton handleOpen={handleOpen}>{children}</OpenButton>
       )}
       {open && (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-          <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>
-            New File
+        <Dialog
+          open={open}
+          onClose={onClose}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+          <DialogTitle sx={{ borderBottom: 1, borderColor: "divider", py: 2.5 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  bgcolor: alpha(theme.palette.primary.main, 0.12),
+                  color: theme.palette.primary.main,
+                  fontSize: 20,
+                }}
+              >
+                <MdUploadFile />
+              </Box>
+              <Box>
+                <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
+                  Upload Files
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Add one or more files, then save them all together
+                </Typography>
+              </Box>
+            </Stack>
           </DialogTitle>
-          <DialogContent>
-            <Stack spacing={3} sx={{ mt: 2 }}>
+          <DialogContent sx={{ pt: 3 }}>
+            <Stack spacing={2.5}>
               <TextField
                 label="File Name"
                 value={fileData.name}
@@ -161,7 +197,7 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
                 }
                 fullWidth
                 multiline
-                rows={3}
+                minRows={3}
                 InputLabelProps={{ shrink: true }}
               />
               <SimpleFileInput
@@ -172,51 +208,83 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
               />
               <Button
                 onClick={handleAddNewFile}
-                variant="contained"
+                variant="outlined"
                 color="primary"
+                startIcon={<BsPlus size={18} />}
                 disabled={!fileData.name || !fileData.file}
+                sx={{ textTransform: "none", fontWeight: 600, alignSelf: "flex-start" }}
               >
-                Add File
+                Add to list
               </Button>
             </Stack>
             {fileList.length > 0 && (
-              <List
-                sx={{
-                  mt: 2,
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                  maxHeight: 200,
-                  overflow: "auto",
-                }}
-              >
-                {fileList.map((file, index) => (
-                  <ListItem
-                    key={index}
-                    secondaryAction={
-                      <IconButton
-                        edge="end"
-                        onClick={() => handleRemoveFile(index)}
-                      >
-                        <MdDelete />
-                      </IconButton>
-                    }
-                  >
-                    <ListItemText
-                      primary={`Name: ${file.name}`}
-                      secondary={
-                        <>
-                          <div>{`File Name: ${file.file.name}`}</div>
-                          <div>{`Description: ${file.description}`}</div>
-                        </>
+              <Box sx={{ mt: 3 }}>
+                <Typography
+                  variant="overline"
+                  color="text.secondary"
+                  sx={{ fontWeight: 700 }}
+                >
+                  Files ready to upload ({fileList.length})
+                </Typography>
+                <List
+                  sx={{
+                    mt: 0.5,
+                    border: `1px solid ${theme.palette.divider}`,
+                    borderRadius: 2,
+                    maxHeight: 220,
+                    overflow: "auto",
+                    p: 0.5,
+                  }}
+                >
+                  {fileList.map((file, index) => (
+                    <ListItem
+                      key={index}
+                      sx={{
+                        borderRadius: 1.5,
+                        mb: 0.5,
+                        bgcolor: alpha(theme.palette.primary.main, 0.04),
+                      }}
+                      secondaryAction={
+                        <IconButton
+                          edge="end"
+                          color="error"
+                          onClick={() => handleRemoveFile(index)}
+                        >
+                          <MdDelete />
+                        </IconButton>
                       }
-                    />
-                  </ListItem>
-                ))}
-              </List>
+                    >
+                      <ListItemText
+                        primaryTypographyProps={{
+                          variant: "subtitle2",
+                          fontWeight: 600,
+                        }}
+                        primary={file.name}
+                        secondary={
+                          <>
+                            <Box component="span" sx={{ display: "block" }}>
+                              {file.file.name}
+                            </Box>
+                            {file.description && (
+                              <Box component="span" sx={{ display: "block" }}>
+                                {file.description}
+                              </Box>
+                            )}
+                          </>
+                        }
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
             )}
           </DialogContent>
-          <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
-            <Button onClick={onClose} variant="outlined">
+          <DialogActions sx={{ p: 2.5, borderTop: 1, borderColor: "divider" }}>
+            <Button
+              onClick={onClose}
+              variant="outlined"
+              sx={{ textTransform: "none", fontWeight: 600 }}
+            >
               Cancel
             </Button>
             <Button
@@ -224,6 +292,7 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
               variant="contained"
               color="primary"
               disabled={fileList.length === 0}
+              sx={{ textTransform: "none", fontWeight: 600, px: 3 }}
             >
               Save All
             </Button>

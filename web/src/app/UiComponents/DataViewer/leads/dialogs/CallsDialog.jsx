@@ -1,15 +1,21 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import {
+  alpha,
+  Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControl,
+  InputLabel,
   MenuItem,
   Select,
   Stack,
   TextField,
+  Typography,
+  useTheme,
 } from "@mui/material";
 import { BsPlus } from "react-icons/bs";
 import { useAlertContext } from "@/app/providers/MuiAlert.jsx";
@@ -41,6 +47,7 @@ export const CallResultDialog = ({
   const { setAlertError } = useAlertContext();
   const { user } = useAuth();
   const { setLoading } = useToastContext();
+  const theme = useTheme();
 
   function onClose() {
     setOpen(false);
@@ -131,37 +138,72 @@ export const CallResultDialog = ({
         <OpenButton handleOpen={handleOpen}>{children}</OpenButton>
       )}
       {open && (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-          <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>
-            {text}
+        <Dialog
+          open={open}
+          onClose={onClose}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+          <DialogTitle sx={{ borderBottom: 1, borderColor: "divider", py: 2.5 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  bgcolor: alpha(theme.palette.primary.main, 0.12),
+                  color: theme.palette.primary.main,
+                  fontSize: 20,
+                }}
+              >
+                <IoMdCall />
+              </Box>
+              <Typography variant="h6" fontWeight={700}>
+                {text}
+              </Typography>
+            </Stack>
           </DialogTitle>
-          <DialogContent sx={{ mt: 2 }}>
-            <Select
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value);
-              }}
-              sx={{ width: "100%" }}
-            >
-              <MenuItem value="DONE">Done</MenuItem>
-              <MenuItem value="MISSED">Missed</MenuItem>
-            </Select>
-            {status === "DONE" && (
-              <TextField
-                autoFocus
-                margin="dense"
-                label="Call Result"
-                fullWidth
-                multiline
-                rows={3}
-                variant="outlined"
-                value={result}
-                onChange={(e) => setResult(e.target.value)}
-              />
-            )}
+          <DialogContent sx={{ pt: 3 }}>
+            <Stack spacing={3}>
+              <FormControl fullWidth>
+                <InputLabel id="call-status-label">Status</InputLabel>
+                <Select
+                  labelId="call-status-label"
+                  label="Status"
+                  value={status}
+                  onChange={(e) => {
+                    setStatus(e.target.value);
+                  }}
+                >
+                  <MenuItem value="DONE">Done</MenuItem>
+                  <MenuItem value="MISSED">Missed</MenuItem>
+                </Select>
+              </FormControl>
+              {status === "DONE" && (
+                <TextField
+                  autoFocus
+                  label="Result"
+                  fullWidth
+                  multiline
+                  minRows={3}
+                  variant="outlined"
+                  value={result}
+                  onChange={(e) => setResult(e.target.value)}
+                  placeholder="Summarize the outcome of this call..."
+                />
+              )}
+            </Stack>
           </DialogContent>
-          <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
-            <Button onClick={onClose} variant="outlined">
+          <DialogActions sx={{ p: 2.5, borderTop: 1, borderColor: "divider" }}>
+            <Button
+              onClick={onClose}
+              variant="outlined"
+              sx={{ textTransform: "none", fontWeight: 600 }}
+            >
               Cancel
             </Button>
             <Button
@@ -169,6 +211,7 @@ export const CallResultDialog = ({
               variant="contained"
               color="primary"
               disabled={!result.trim() && status === "DONE"}
+              sx={{ textTransform: "none", fontWeight: 600, px: 3 }}
             >
               Update
             </Button>
@@ -191,6 +234,7 @@ export const NewCallDialog = ({
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
   const { setLoading } = useToastContext();
+  const theme = useTheme();
   function handleOpen() {
     setOpen(true);
   }
@@ -243,7 +287,7 @@ export const NewCallDialog = ({
           onClick={handleOpen}
           variant="contained"
           startIcon={<BsPlus size={20} />}
-          sx={{ alignSelf: "flex-start" }}
+          sx={{ alignSelf: "flex-start", textTransform: "none", fontWeight: 600 }}
         >
           Schedule New {reminderName}
         </Button>
@@ -251,12 +295,42 @@ export const NewCallDialog = ({
         <OpenButton handleOpen={handleOpen}>{children}</OpenButton>
       )}
       {open && (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-          <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>
-            Schedule New {reminderName}
+        <Dialog
+          open={open}
+          onClose={onClose}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+          <DialogTitle sx={{ borderBottom: 1, borderColor: "divider", py: 2.5 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  bgcolor: alpha(theme.palette.primary.main, 0.12),
+                  color: theme.palette.primary.main,
+                  fontSize: 20,
+                }}
+              >
+                <IoMdCall />
+              </Box>
+              <Box>
+                <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
+                  Schedule New {reminderName}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Pick a time and add a reason
+                </Typography>
+              </Box>
+            </Stack>
           </DialogTitle>
-          <DialogContent>
-            <Stack spacing={3} sx={{ mt: 2 }}>
+          <DialogContent sx={{ pt: 3 }}>
+            <Stack spacing={3}>
               <TextField
                 type="datetime-local"
                 label={`${reminderName} Time`}
@@ -275,18 +349,24 @@ export const NewCallDialog = ({
                 }
                 fullWidth
                 multiline
-                rows={2}
+                minRows={3}
+                placeholder={`Why are you scheduling this ${reminderName.toLowerCase()}?`}
               />
             </Stack>
           </DialogContent>
-          <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
-            <Button onClick={onClose} variant="outlined">
+          <DialogActions sx={{ p: 2.5, borderTop: 1, borderColor: "divider" }}>
+            <Button
+              onClick={onClose}
+              variant="outlined"
+              sx={{ textTransform: "none", fontWeight: 600 }}
+            >
               Cancel
             </Button>
             <Button
               onClick={handleAddNewCall}
               variant="contained"
               color="primary"
+              sx={{ textTransform: "none", fontWeight: 600, px: 3 }}
             >
               Schedule
             </Button>

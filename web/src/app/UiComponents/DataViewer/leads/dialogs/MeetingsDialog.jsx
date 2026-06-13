@@ -27,7 +27,10 @@ import {
   Typography,
   Divider,
   CircularProgress,
+  alpha,
+  useTheme,
 } from "@mui/material";
+import { RiGroupLine, RiLink } from "react-icons/ri";
 import utc from "dayjs/plugin/utc";
 import { meetingTypes } from "@/app/helpers/constants";
 import { getData } from "@/app/helpers/functions/getData";
@@ -54,6 +57,7 @@ export const NewMeetingDialog = ({
   const [loadingAdmins, setLoadingAdmins] = useState(false);
   const { user } = useAuth();
   const { setLoading } = useToastContext();
+  const theme = useTheme();
 
   // Function to load admin users
   const loadAdminUsers = async () => {
@@ -183,15 +187,34 @@ export const NewMeetingDialog = ({
             borderBottom: 1,
             borderColor: "divider",
             background: (theme) => theme.palette.grey[50],
-            fontWeight: 700,
-            fontSize: "1.5rem",
-            py: 3,
+            py: 2.5,
           }}
         >
-          <Box display="flex" alignItems="center" gap={1}>
-            <BsPlus size={24} />
-            Schedule New {reminderName}
-          </Box>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: 2,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: alpha(theme.palette.primary.main, 0.12),
+                color: theme.palette.primary.main,
+                fontSize: 22,
+              }}
+            >
+              <RiGroupLine />
+            </Box>
+            <Box>
+              <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
+                Schedule New {reminderName}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Set the type, time, and assignment
+              </Typography>
+            </Box>
+          </Stack>
         </DialogTitle>
 
         <DialogContent sx={{ p: 0 }}>
@@ -411,6 +434,7 @@ export const NewClientMeetingDialog = ({
   const [loadingAdmins, setLoadingAdmins] = useState(false);
   const { user } = useAuth();
   const { setLoading } = useToastContext();
+  const theme = useTheme();
 
   // Function to load admin users
   const loadAdminUsers = async () => {
@@ -529,15 +553,34 @@ export const NewClientMeetingDialog = ({
             borderBottom: 1,
             borderColor: "divider",
             background: (theme) => theme.palette.grey[50],
-            fontWeight: 700,
-            fontSize: "1.5rem",
-            py: 3,
+            py: 2.5,
           }}
         >
-          <Box display="flex" alignItems="center" gap={1}>
-            <BsPlus size={24} />
-            Client appointment link
-          </Box>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <Box
+              sx={{
+                width: 44,
+                height: 44,
+                borderRadius: 2,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: alpha(theme.palette.primary.main, 0.12),
+                color: theme.palette.primary.main,
+                fontSize: 22,
+              }}
+            >
+              <RiLink />
+            </Box>
+            <Box>
+              <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
+                Client appointment link
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Generate a link for the client to book a slot
+              </Typography>
+            </Box>
+          </Stack>
         </DialogTitle>
 
         <DialogContent sx={{ p: 0 }}>

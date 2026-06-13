@@ -17,6 +17,7 @@ import {
   RiAlarmLine,
   RiCalendarLine,
   RiCheckboxCircleLine,
+  RiPhoneLine,
   RiUserLine,
 } from "react-icons/ri";
 import { InProgressCall } from "@/app/UiComponents/DataViewer/leads/widgets/InProgressCall.jsx";
@@ -24,6 +25,8 @@ import dayjs from "dayjs";
 import { useAuth } from "@/app/providers/AuthProvider";
 
 import DeleteModelButton from "../../../common/DeleteModelButton";
+import { SectionToolbar } from "../shared/SectionToolbar";
+import { EmptyState } from "../shared/EmptyState";
 
 export function CallReminders({ lead, setleads, admin, notUser }) {
   const [callReminders, setCallReminders] = useState(lead?.callReminders);
@@ -50,101 +53,100 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
         DONE: theme.palette.success.main,
       }[status] || theme.palette.grey[300],
   });
-  console.log(notUser, "notUser");
+
+  const visibleCalls = callReminders?.filter((call) => {
+    if (
+      user.role !== "ADMIN" &&
+      user.role !== "SUPER_ADMIN" &&
+      user.role !== "STAFF" &&
+      user.role !== "SUPER_SALES" &&
+      call.userId !== user.id
+    ) {
+      return false;
+    }
+    return true;
+  });
+
   return (
     <Stack spacing={3}>
-      {!notUser && (
-        <NewCallDialog
-          lead={lead}
-          setCallReminders={setCallReminders}
-          setleads={setleads}
-        />
-      )}
-      <Stack spacing={2}>
-        {callReminders?.map((call) => {
-          if (
-            user.role !== "ADMIN" &&
-            user.role !== "SUPER_ADMIN" &&
-            user.role !== "STAFF" &&
-            user.role !== "SUPER_SALES" &&
-            call.userId !== user.id
-          ) {
-            return;
+      <SectionToolbar
+        icon={<RiPhoneLine />}
+        title="Call Reminders"
+        count={visibleCalls?.length || 0}
+        countLabel="calls"
+        action={
+          !notUser ? (
+            <NewCallDialog
+              lead={lead}
+              setCallReminders={setCallReminders}
+              setleads={setleads}
+            />
+          ) : null
+        }
+      />
+
+      {!visibleCalls?.length ? (
+        <EmptyState
+          icon={<RiPhoneLine />}
+          title="No call reminders"
+          description={
+            notUser
+              ? "There are no scheduled calls for this lead."
+              : "Schedule a call to follow up with this lead."
           }
-          return (
+        />
+      ) : (
+        <Stack spacing={2}>
+          {visibleCalls.map((call) => (
             <Paper
               key={call.id}
               elevation={0}
               sx={{
                 position: "relative",
                 p: 3,
-                borderRadius: 2,
+                borderRadius: 2.5,
                 border: `1px solid ${theme.palette.divider}`,
                 transition: "all 0.2s ease-in-out",
                 "&:hover": {
-                  boxShadow: theme.shadows[4],
-                  transform: "translateY(-2px)",
-                  borderColor: theme.palette.primary.main,
+                  boxShadow: theme.shadows[3],
+                  borderColor: alpha(theme.palette.primary.main, 0.4),
                 },
               }}
             >
               <Stack spacing={2}>
+                {/* Header row: status + owner */}
                 <Stack
                   direction="row"
                   justifyContent="space-between"
                   alignItems="center"
+                  flexWrap="wrap"
+                  gap={1}
                 >
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <Box>
-                      <Chip
-                        size="small"
-                        icon={
-                          call.status === "DONE" ? (
-                            <RiCheckboxCircleLine size={16} />
-                          ) : (
-                            <RiAlarmLine size={16} />
-                          )
-                        }
-                        label={call.status.replace(/_/g, " ")}
-                        sx={{
-                          ...getStatusStyles(call.status),
-                          fontWeight: 600,
-                          border: "1px solid",
-                          "& .MuiChip-icon": {
-                            color: "inherit",
-                          },
-                        }}
-                      />
-                      {call.status !== "IN_PROGRESS" && (
-                        <Typography variant="body2" fontWeight="600">
-                          Done at ,{dayjs(call.updatedAt).format("DD/MM/YYYY")}
-                        </Typography>
-                      )}
-                    </Box>
-                    {user.role !== "ACCOUNTANT" && (
-                      <>
-                        {call.status === "IN_PROGRESS" && (
-                          <CallResultDialog
-                            lead={lead}
-                            setCallReminders={setCallReminders}
-                            call={call}
-                            setleads={setleads}
-                          />
-                        )}
-                      </>
-                    )}
-                    <DeleteModelButton
-                      item={call}
-                      model={"CallReminder"}
-                      contentKey="reminderReason"
-                      onDelete={() => {
-                        setCallReminders((oldCalls) =>
-                          oldCalls.filter((c) => c.id !== call.id)
-                        );
+                  <Stack direction="row" spacing={1.5} alignItems="center">
+                    <Chip
+                      size="small"
+                      icon={
+                        call.status === "DONE" ? (
+                          <RiCheckboxCircleLine size={16} />
+                        ) : (
+                          <RiAlarmLine size={16} />
+                        )
+                      }
+                      label={call.status.replace(/_/g, " ")}
+                      sx={{
+                        ...getStatusStyles(call.status),
+                        fontWeight: 600,
+                        border: "1px solid",
+                        "& .MuiChip-icon": { color: "inherit" },
                       }}
                     />
+                    {call.status !== "IN_PROGRESS" && (
+                      <Typography variant="caption" color="text.secondary">
+                        Done at {dayjs(call.updatedAt).format("DD/MM/YYYY")}
+                      </Typography>
+                    )}
                   </Stack>
-                  <Stack direction="row" spacing={1} alignItems="center">
+                  <Stack direction="row" spacing={0.75} alignItems="center">
                     <RiUserLine
                       size={16}
                       color={theme.palette.text.secondary}
@@ -154,72 +156,110 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
                     </Typography>
                   </Stack>
                 </Stack>
+
                 {call.status === "IN_PROGRESS" && (
                   <InProgressCall call={call} />
                 )}
-                <Stack spacing={2}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <RiCalendarLine
-                      size={18}
-                      color={theme.palette.primary.main}
-                    />
-                    <Typography
-                      variant="subtitle2"
-                      sx={{
-                        fontWeight: call.isAdmin ? 600 : 400,
-                        color: call.isAdmin ? "#7B1FA2" : "inherit",
-                      }}
-                    >
-                      {call.time
-                        ? dayjs(call.time).format("MM/DD/YYYY, h:mm A")
-                        : "No time selected"}
-                    </Typography>
-                  </Stack>
 
+                {/* Scheduled time */}
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <RiCalendarLine
+                    size={18}
+                    color={theme.palette.primary.main}
+                  />
+                  <Typography
+                    variant="subtitle2"
+                    sx={{
+                      fontWeight: call.isAdmin ? 600 : 500,
+                      color: call.isAdmin ? "#7B1FA2" : "text.primary",
+                    }}
+                  >
+                    {call.time
+                      ? dayjs(call.time).format("MM/DD/YYYY, h:mm A")
+                      : "No time selected"}
+                  </Typography>
+                </Stack>
+
+                {/* Reason */}
+                <Box
+                  sx={{
+                    bgcolor: alpha(theme.palette.background.default, 0.6),
+                    p: 2,
+                    borderRadius: 2,
+                    border: `1px solid ${theme.palette.divider}`,
+                  }}
+                >
+                  <Typography
+                    variant="overline"
+                    color="text.secondary"
+                    sx={{ lineHeight: 1.4, fontWeight: 700 }}
+                  >
+                    Reason
+                  </Typography>
+                  <Typography variant="body2" color="text.primary">
+                    {call.reminderReason}
+                  </Typography>
+                </Box>
+
+                {/* Result */}
+                {call.callResult && (
                   <Box
                     sx={{
-                      bgcolor: alpha(theme.palette.background.default, 0.6),
                       p: 2,
+                      bgcolor: alpha(theme.palette.success.main, 0.05),
                       borderRadius: 2,
-                      border: `1px solid ${theme.palette.divider}`,
+                      border: `1px solid ${alpha(
+                        theme.palette.success.main,
+                        0.2
+                      )}`,
                     }}
                   >
                     <Typography
-                      variant="body2"
-                      sx={{ color: theme.palette.text.primary }}
+                      variant="overline"
+                      color="success.dark"
+                      sx={{ lineHeight: 1.4, fontWeight: 700 }}
                     >
-                      <Box component="span" fontWeight="600">
-                        Reason:
-                      </Box>{" "}
-                      {call.reminderReason}
+                      Result
+                    </Typography>
+                    <Typography variant="body2" color="success.dark">
+                      {call.callResult}
                     </Typography>
                   </Box>
-                  {call.callResult && (
-                    <Box
-                      sx={{
-                        p: 2,
-                        bgcolor: alpha(theme.palette.success.main, 0.05),
-                        borderRadius: 2,
-                        border: `1px solid ${alpha(
-                          theme.palette.success.main,
-                          0.1
-                        )}`,
-                      }}
-                    >
-                      <Typography variant="body2" color="success.dark">
-                        <Box component="span" fontWeight="600">
-                          Result:
-                        </Box>{" "}
-                        {call.callResult}
-                      </Typography>
-                    </Box>
-                  )}
+                )}
+
+                {/* Actions */}
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  sx={{ pt: 0.5, borderTop: `1px solid ${theme.palette.divider}` }}
+                >
+                  {user.role !== "ACCOUNTANT" &&
+                    call.status === "IN_PROGRESS" && (
+                      <CallResultDialog
+                        lead={lead}
+                        setCallReminders={setCallReminders}
+                        call={call}
+                        setleads={setleads}
+                      />
+                    )}
+                  <Box sx={{ flex: 1 }} />
+                  <DeleteModelButton
+                    item={call}
+                    model={"CallReminder"}
+                    contentKey="reminderReason"
+                    onDelete={() => {
+                      setCallReminders((oldCalls) =>
+                        oldCalls.filter((c) => c.id !== call.id)
+                      );
+                    }}
+                  />
                 </Stack>
               </Stack>
             </Paper>
-          );
-        })}
-      </Stack>
+          ))}
+        </Stack>
+      )}
     </Stack>
   );
 }

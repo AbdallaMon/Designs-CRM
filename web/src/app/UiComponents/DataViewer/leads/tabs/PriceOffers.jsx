@@ -1,16 +1,14 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useState } from "react";
 import {
-  Alert,
   alpha,
   Box,
+  Button,
   Chip,
-  FormControl,
-  InputLabel,
-  MenuItem,
+  Divider,
   Paper,
-  Select,
   Stack,
   Switch,
+  Tooltip,
   Typography,
   useTheme,
 } from "@mui/material";
@@ -19,201 +17,265 @@ import dayjs from "dayjs";
 import { useAuth } from "@/app/providers/AuthProvider";
 
 import {
-  Card,
-  CardContent,
-  List,
-  ListItem,
-  IconButton,
-  Tooltip,
-} from "@mui/material";
-
-import { Grid, Button } from "@mui/material";
-import { FaMoneyBillWave, FaUserAlt, FaCalendarAlt } from "react-icons/fa";
+  FaMoneyBillWave,
+  FaUserAlt,
+  FaCalendarAlt,
+  FaFileContract,
+} from "react-icons/fa";
+import { RiExternalLinkLine } from "react-icons/ri";
 import { AddPriceOffers } from "@/app/UiComponents/DataViewer/leads/dialogs/PriceOffersDialog.jsx";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import DeleteModelButton from "../../../common/DeleteModelButton";
 
 import LeadContractList from "../../contracts/ContractsList";
+import { SectionToolbar } from "../shared/SectionToolbar";
+import { EmptyState } from "../shared/EmptyState";
+
+function MetaItem({ icon, label, value, theme }) {
+  return (
+    <Stack direction="row" spacing={1.25} alignItems="flex-start">
+      <Box
+        sx={{
+          width: 32,
+          height: 32,
+          borderRadius: 1.5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          bgcolor: alpha(theme.palette.primary.main, 0.1),
+          color: theme.palette.primary.main,
+          flexShrink: 0,
+          fontSize: 15,
+        }}
+      >
+        {icon}
+      </Box>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography variant="caption" color="text.secondary">
+          {label}
+        </Typography>
+        <Typography variant="body2" fontWeight={600} color="text.primary">
+          {value}
+        </Typography>
+      </Box>
+    </Stack>
+  );
+}
 
 export function PriceOffersList({ admin, lead, notUser }) {
   const [offers, setOffers] = useState(lead.priceOffers);
   const theme = useTheme();
 
-  const cardStyles = {
-    height: "100%",
-    boxShadow: theme.shadows[1],
-    position: "relative",
-    p: 0,
-  };
-
-  const listItemStyles = {
-    borderRadius: 1,
-    mb: 2,
-    bgcolor: "background.paper",
-    "&:hover": {
-      bgcolor: theme.palette.grey[50],
-      transition: "background-color 0.2s ease-in-out",
-    },
-  };
-
-  const iconStyles = {
-    color: theme.palette.primary.main,
-    marginRight: theme.spacing(1),
-    fontSize: "1.2rem",
-  };
   return (
-    <Card sx={cardStyles}>
-      <CardContent
+    <Stack spacing={3}>
+      {/* Contracts section */}
+      <Paper
+        elevation={0}
         sx={{
-          pt: 0,
+          borderRadius: 2.5,
+          border: `1px solid ${theme.palette.divider}`,
+          overflow: "hidden",
         }}
       >
-        <Box
-          sx={{
-            height: "350px",
-            overflowY: "auto",
-          }}
+        <Stack
+          direction="row"
+          spacing={1.5}
+          alignItems="center"
+          sx={{ px: 2.5, py: 2, borderBottom: `1px solid ${theme.palette.divider}` }}
         >
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: 2,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: alpha(theme.palette.primary.main, 0.12),
+              color: theme.palette.primary.main,
+              fontSize: 20,
+            }}
+          >
+            <FaFileContract />
+          </Box>
+          <Typography variant="h6" fontWeight={700}>
+            Contracts
+          </Typography>
+        </Stack>
+        <Box sx={{ maxHeight: 350, overflowY: "auto", p: 2 }}>
           <LeadContractList leadId={lead.id} lead={lead} />
         </Box>
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyContent="space-between"
-          mb={3}
-          mt={3}
-        >
-          <Box>
-            <FaMoneyBillWave style={{ ...iconStyles, fontSize: "1.5rem" }} />
-            <Typography variant="h5" component="h2" color="primary">
-              Price Offers
-            </Typography>
-            <Chip
-              label={`${offers?.length || 0} offers`}
-              size="small"
-              sx={{ ml: 2 }}
-              color="primary"
-            />
-          </Box>
-          {!notUser && (
-            <AddPriceOffers lead={lead} setPriceOffers={setOffers} />
-          )}
-        </Box>
-        <List>
-          {offers?.map((offer) => (
-            <ListItem key={offer.id} sx={listItemStyles} disablePadding>
-              <Box sx={{ width: "100%", p: 2 }}>
-                <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                  <DeleteModelButton
-                    item={offer}
-                    model={"PriceOffers"}
-                    contentKey={offer.note ? "note" : "url"}
-                    onDelete={() => {
-                      setOffers((oldOffers) =>
-                        oldOffers.filter((o) => o.id !== offer.id)
-                      );
-                    }}
-                  />
-                  <PriceOfferSwitch
-                    priceOffer={offer}
-                    setPriceOffers={setOffers}
-                  />
-                  {offer.url && (
-                    <Button
-                      variant="outlined"
-                      component="a"
-                      href={offer.url}
-                      target="_blank"
-                    >
-                      Preview attachment
-                    </Button>
-                  )}
-                </Box>
-                <Grid container spacing={3}>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Box display="flex" alignItems="center">
-                      <Tooltip title="Added By">
-                        <IconButton size="small">
-                          <FaUserAlt style={iconStyles} />
-                        </IconButton>
-                      </Tooltip>
-                      <Box>
-                        <Typography variant="subtitle2" color="textSecondary">
-                          Added By
-                        </Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          {offer.user.name}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Grid>
+      </Paper>
 
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <Box display="flex" alignItems="center">
-                      <Tooltip title="Created Date">
-                        <IconButton size="small">
-                          <FaCalendarAlt style={iconStyles} />
-                        </IconButton>
-                      </Tooltip>
-                      <Box>
-                        <Typography variant="subtitle2" color="textSecondary">
-                          Created At
-                        </Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          {dayjs(offer.createdAt).format("YYYY-MM-DD HH:mm")}
-                        </Typography>
-                      </Box>
+      {/* Price offers section */}
+      <SectionToolbar
+        icon={<FaMoneyBillWave />}
+        title="Price Offers"
+        count={offers?.length || 0}
+        countLabel="offers"
+        action={
+          !notUser ? (
+            <AddPriceOffers lead={lead} setPriceOffers={setOffers} />
+          ) : null
+        }
+      />
+
+      {!offers?.length ? (
+        <EmptyState
+          icon={<FaMoneyBillWave />}
+          title="No price offers"
+          description={
+            notUser
+              ? "There are no price offers for this lead."
+              : "Add a price offer to share pricing with this lead."
+          }
+        />
+      ) : (
+        <Stack spacing={2}>
+          {offers.map((offer) => (
+            <Paper
+              key={offer.id}
+              elevation={0}
+              sx={{
+                p: 2.5,
+                borderRadius: 2.5,
+                border: `1px solid ${
+                  offer.isAccepted
+                    ? alpha(theme.palette.success.main, 0.5)
+                    : theme.palette.divider
+                }`,
+                bgcolor: offer.isAccepted
+                  ? alpha(theme.palette.success.main, 0.04)
+                  : "background.paper",
+                transition: "all 0.2s ease-in-out",
+                "&:hover": {
+                  boxShadow: theme.shadows[3],
+                },
+              }}
+            >
+              <Stack spacing={2}>
+                {/* Header: status chip + actions */}
+                <Stack
+                  direction="row"
+                  justifyContent="space-between"
+                  alignItems="center"
+                  flexWrap="wrap"
+                  gap={1}
+                >
+                  <Chip
+                    size="small"
+                    label={offer.isAccepted ? "Accepted" : "Pending"}
+                    color={offer.isAccepted ? "success" : "default"}
+                    sx={{ fontWeight: 600 }}
+                  />
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    {offer.url && (
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        component="a"
+                        href={offer.url}
+                        target="_blank"
+                        startIcon={<RiExternalLinkLine size={16} />}
+                        sx={{ textTransform: "none", fontWeight: 600 }}
+                      >
+                        Attachment
+                      </Button>
+                    )}
+                    <PriceOfferSwitch
+                      priceOffer={offer}
+                      setPriceOffers={setOffers}
+                    />
+                    <DeleteModelButton
+                      item={offer}
+                      model={"PriceOffers"}
+                      contentKey={offer.note ? "note" : "url"}
+                      onDelete={() => {
+                        setOffers((oldOffers) =>
+                          oldOffers.filter((o) => o.id !== offer.id)
+                        );
+                      }}
+                    />
+                  </Stack>
+                </Stack>
+
+                {offer.minPrice && (
+                  <Box
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      bgcolor: alpha(theme.palette.primary.main, 0.06),
+                      border: `1px solid ${alpha(
+                        theme.palette.primary.main,
+                        0.15
+                      )}`,
+                    }}
+                  >
+                    <Typography variant="caption" color="text.secondary">
+                      Price Range (AED)
+                    </Typography>
+                    <Typography
+                      variant="h6"
+                      fontWeight={700}
+                      color="primary.main"
+                    >
+                      {offer.minPrice.toLocaleString()} -{" "}
+                      {offer.maxPrice.toLocaleString()}
+                    </Typography>
+                  </Box>
+                )}
+
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={2}
+                  flexWrap="wrap"
+                  useFlexGap
+                >
+                  <MetaItem
+                    icon={<FaUserAlt />}
+                    label="Added By"
+                    value={offer.user.name}
+                    theme={theme}
+                  />
+                  <MetaItem
+                    icon={<FaCalendarAlt />}
+                    label="Created At"
+                    value={dayjs(offer.createdAt).format("YYYY-MM-DD HH:mm")}
+                    theme={theme}
+                  />
+                </Stack>
+
+                {offer.note && (
+                  <>
+                    <Divider />
+                    <Box>
+                      <Typography
+                        variant="overline"
+                        color="text.secondary"
+                        sx={{ fontWeight: 700 }}
+                      >
+                        Note
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.primary"
+                        sx={{ whiteSpace: "pre-wrap" }}
+                      >
+                        {offer.note}
+                      </Typography>
                     </Box>
-                  </Grid>
-                  {offer.minPrice && (
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Box display="flex" alignItems="center">
-                        <Tooltip title="Price Range">
-                          <IconButton size="small">
-                            <FaMoneyBillWave style={iconStyles} />
-                          </IconButton>
-                        </Tooltip>
-                        <Box>
-                          <Typography variant="subtitle2" color="textSecondary">
-                            Price Range (AED)
-                          </Typography>
-                          <Typography variant="body1" fontWeight="medium">
-                            {offer.minPrice.toLocaleString()} -{" "}
-                            {offer.maxPrice.toLocaleString()}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Grid>
-                  )}
-                  {offer.note && (
-                    <Grid size={{ xs: 12, md: 12 }}>
-                      <Box display="flex" alignItems="center">
-                        <Tooltip title="Note">
-                          <IconButton size="small">
-                            <FaMoneyBillWave style={iconStyles} />
-                          </IconButton>
-                        </Tooltip>
-                        <Box>
-                          <Typography variant="subtitle2" color="textSecondary">
-                            Note
-                          </Typography>
-                          <Typography component="pre" textWrap="wrap">
-                            {offer.note}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </Grid>
-                  )}
-                </Grid>
-              </Box>
-            </ListItem>
+                  </>
+                )}
+              </Stack>
+            </Paper>
           ))}
-        </List>
-      </CardContent>
-    </Card>
+        </Stack>
+      )}
+    </Stack>
   );
 }
+
 function PriceOfferSwitch({ priceOffer, setPriceOffers }) {
   const [checked, setChecked] = React.useState(priceOffer.isAccepted);
   const { user } = useAuth();
@@ -242,22 +304,25 @@ function PriceOfferSwitch({ priceOffer, setPriceOffers }) {
   };
 
   return (
-    <Box display="flex" alignItems="center" gap={1}>
-      <Typography variant="body1" color="textPrimary">
-        {checked ? "Offer Accepted" : "Accept Offer"}
+    <Box display="flex" alignItems="center" gap={0.5}>
+      <Typography variant="body2" color="text.secondary">
+        {checked ? "Accepted" : "Accept"}
       </Typography>
       <Tooltip title="Toggle to accept or reject the price offer">
-        <Switch
-          checked={checked}
-          onChange={handleChange}
-          inputProps={{ "aria-label": "Accept Price Offer" }}
-          disabled={
-            user.role !== "STAFF" &&
-            user.role !== "ADMIN" &&
-            user.role !== "SUPER_ADMIN" &&
-            user.role !== "SUPER_SALES"
-          }
-        />
+        <Box component="span">
+          <Switch
+            size="small"
+            checked={checked}
+            onChange={handleChange}
+            inputProps={{ "aria-label": "Accept Price Offer" }}
+            disabled={
+              user.role !== "STAFF" &&
+              user.role !== "ADMIN" &&
+              user.role !== "SUPER_ADMIN" &&
+              user.role !== "SUPER_SALES"
+            }
+          />
+        </Box>
       </Tooltip>
     </Box>
   );

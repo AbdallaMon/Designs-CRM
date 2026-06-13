@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   alpha,
   Box,
+  Button,
   Chip,
   Paper,
   Stack,
@@ -14,6 +15,8 @@ import {
   RiAlarmLine,
   RiCalendarLine,
   RiCheckboxCircleLine,
+  RiFileCopyLine,
+  RiGroupLine,
   RiLink,
   RiShieldUserLine,
   RiUserLine,
@@ -22,9 +25,11 @@ import { InProgressCall } from "@/app/UiComponents/DataViewer/leads/widgets/InPr
 import dayjs from "dayjs";
 import { useAuth } from "@/app/providers/AuthProvider";
 
-import { Button } from "@mui/material";
-
 import DeleteModelButton from "../../../common/DeleteModelButton";
+import { SectionToolbar } from "../shared/SectionToolbar";
+import { EmptyState } from "../shared/EmptyState";
+
+const ADMIN_PURPLE = "#7B1FA2";
 
 export function MeetingReminders({ lead, setleads, admin, notUser }) {
   const [meetingReminders, setMeetingReminders] = useState(
@@ -61,8 +66,8 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
         CONSULTATION: alpha(theme.palette.info.main, 0.1),
         FOLLOW_UP: alpha(theme.palette.secondary.main, 0.1),
         PRESENTATION: alpha(theme.palette.primary.main, 0.1),
-        NEGOTIATION: alpha("#FF9800", 0.1), // Orange
-        CLOSING: alpha("#4CAF50", 0.1), // Green
+        NEGOTIATION: alpha("#FF9800", 0.1),
+        CLOSING: alpha("#4CAF50", 0.1),
         OTHER: alpha(theme.palette.grey[500], 0.1),
       }[type] || alpha(theme.palette.grey[500], 0.1),
     color:
@@ -70,8 +75,8 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
         CONSULTATION: theme.palette.info.dark,
         FOLLOW_UP: theme.palette.secondary.dark,
         PRESENTATION: theme.palette.primary.dark,
-        NEGOTIATION: "#E65100", // Dark Orange
-        CLOSING: "#2E7D32", // Dark Green
+        NEGOTIATION: "#E65100",
+        CLOSING: "#2E7D32",
         OTHER: theme.palette.grey[700],
       }[type] || theme.palette.grey[700],
     borderColor:
@@ -93,94 +98,114 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
       .replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
+  const visibleMeetings = meetingReminders?.filter((call) => {
+    if (
+      user.role !== "ADMIN" &&
+      user.role !== "SUPER_ADMIN" &&
+      user.role !== "STAFF" &&
+      user.role !== "SUPER_SALES" &&
+      call.userId !== user.id
+    ) {
+      return false;
+    }
+    return true;
+  });
+
   return (
     <Stack spacing={3}>
-      {!notUser && (
-        <Box display="flex" gap={1.5}>
-          <NewClientMeetingDialog
-            lead={lead}
-            setMeetingReminders={setMeetingReminders}
-            setleads={setleads}
-          />
-          <Button
-            variant="outlined"
-            size="small"
-            component={"a"}
-            target="_blank"
-            href="/dashboard/calendar?tab=1"
-          >
-            See admin available days
-          </Button>
-        </Box>
-      )}
-      <Stack spacing={2}>
-        {meetingReminders?.map((call) => {
-          if (
-            user.role !== "ADMIN" &&
-            user.role !== "SUPER_ADMIN" &&
-            user.role !== "STAFF" &&
-            user.role !== "SUPER_SALES" &&
-            call.userId !== user.id
-          ) {
-            return;
+      <SectionToolbar
+        icon={<RiGroupLine />}
+        title="Meeting Reminders"
+        count={visibleMeetings?.length || 0}
+        countLabel="meetings"
+        action={
+          !notUser ? (
+            <Stack direction="row" gap={1.5} flexWrap="wrap">
+              <NewClientMeetingDialog
+                lead={lead}
+                setMeetingReminders={setMeetingReminders}
+                setleads={setleads}
+              />
+              <Button
+                variant="outlined"
+                size="small"
+                component={"a"}
+                target="_blank"
+                href="/dashboard/calendar?tab=1"
+                sx={{ textTransform: "none", fontWeight: 600 }}
+              >
+                See admin available days
+              </Button>
+            </Stack>
+          ) : null
+        }
+      />
+
+      {!visibleMeetings?.length ? (
+        <EmptyState
+          icon={<RiGroupLine />}
+          title="No meetings scheduled"
+          description={
+            notUser
+              ? "There are no scheduled meetings for this lead."
+              : "Generate a client appointment link to schedule a meeting."
           }
-          return (
-            <Paper
-              key={call.id}
-              elevation={0}
-              sx={{
-                position: "relative",
-                p: 3,
-                borderRadius: 2,
-                border: `1px solid ${theme.palette.divider}`,
-                transition: "all 0.2s ease-in-out",
-                "&:hover": {
-                  boxShadow: theme.shadows[4],
-                  transform: "translateY(-2px)",
-                  borderColor: call.isAdmin
-                    ? "#9C27B0"
-                    : theme.palette.primary.main,
-                },
-                // Special styling for admin meetings
-                ...(call.isAdmin && {
-                  background: `linear-gradient(135deg, ${alpha(
-                    "#9C27B0",
-                    0.02
-                  )} 0%, ${alpha("#9C27B0", 0.05)} 100%)`,
-                  borderColor: alpha("#9C27B0", 0.3),
-                }),
-              }}
-            >
-              <Stack spacing={2}>
-                <Stack
-                  direction="row"
-                  justifyContent="space-between"
-                  alignItems="flex-start"
-                >
-                  <Stack spacing={2}>
-                    {/* Status and Type Chips Row */}
+        />
+      ) : (
+        <Stack spacing={2}>
+          {visibleMeetings.map((call) => {
+            const clientLink =
+              call.token && typeof window !== "undefined"
+                ? `${window.location.origin}/booking?token=${call.token}`
+                : null;
+            return (
+              <Paper
+                key={call.id}
+                elevation={0}
+                sx={{
+                  position: "relative",
+                  p: 3,
+                  borderRadius: 2.5,
+                  border: `1px solid ${theme.palette.divider}`,
+                  transition: "all 0.2s ease-in-out",
+                  "&:hover": {
+                    boxShadow: theme.shadows[3],
+                    borderColor: call.isAdmin
+                      ? alpha(ADMIN_PURPLE, 0.5)
+                      : alpha(theme.palette.primary.main, 0.4),
+                  },
+                  ...(call.isAdmin && {
+                    background: `linear-gradient(135deg, ${alpha(
+                      "#9C27B0",
+                      0.02
+                    )} 0%, ${alpha("#9C27B0", 0.05)} 100%)`,
+                    borderColor: alpha("#9C27B0", 0.3),
+                  }),
+                }}
+              >
+                <Stack spacing={2}>
+                  {/* Chips row + owner */}
+                  <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="flex-start"
+                    flexWrap="wrap"
+                    gap={1}
+                  >
                     <Stack
                       direction="row"
                       spacing={1}
                       alignItems="center"
                       flexWrap="wrap"
+                      useFlexGap
                     >
                       <Chip
                         size="small"
-                        icon={
-                          call.status === "DONE" ? (
-                            <RiCheckboxCircleLine size={16} />
-                          ) : (
-                            <RiAlarmLine size={16} />
-                          )
-                        }
                         label={`# ${call.id}`}
                         sx={{
                           fontWeight: 600,
                           border: "1px solid",
-                          "& .MuiChip-icon": {
-                            color: "inherit",
-                          },
+                          borderColor: theme.palette.divider,
                         }}
                       />
                       <Chip
@@ -197,12 +222,9 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                           ...getStatusStyles(call.status),
                           fontWeight: 600,
                           border: "1px solid",
-                          "& .MuiChip-icon": {
-                            color: "inherit",
-                          },
+                          "& .MuiChip-icon": { color: "inherit" },
                         }}
                       />
-
                       <Chip
                         size="small"
                         label={formatMeetingType(call.type)}
@@ -212,8 +234,6 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                           border: "1px solid",
                         }}
                       />
-
-                      {/* Admin Tag */}
                       {call.isAdmin && (
                         <Chip
                           size="small"
@@ -221,27 +241,21 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                           label="ADMIN"
                           sx={{
                             backgroundColor: alpha("#9C27B0", 0.1),
-                            color: "#7B1FA2",
+                            color: ADMIN_PURPLE,
                             borderColor: "#9C27B0",
                             fontWeight: 700,
                             border: "1px solid",
-                            "& .MuiChip-icon": {
-                              color: "#7B1FA2",
-                            },
+                            "& .MuiChip-icon": { color: ADMIN_PURPLE },
                           }}
                         />
                       )}
-
                       {call.token && (
                         <Chip
                           size="small"
                           icon={<RiLink size={16} />}
                           label="Client Link"
                           sx={{
-                            backgroundColor: alpha(
-                              theme.palette.info.main,
-                              0.1
-                            ),
+                            backgroundColor: alpha(theme.palette.info.main, 0.1),
                             color: theme.palette.info.main,
                             fontWeight: 700,
                             border: `1px solid ${alpha(
@@ -256,108 +270,45 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                       )}
                     </Stack>
 
-                    {/* Done Date */}
-                    {call.status !== "IN_PROGRESS" && (
-                      <Typography
-                        variant="body2"
-                        fontWeight="600"
-                        color="text.secondary"
-                      >
-                        Done at {dayjs(call.updatedAt).format("DD/MM/YYYY")}
-                      </Typography>
-                    )}
-
-                    {/* Action Buttons */}
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      {user.role !== "ACCOUNTANT" && (
-                        <>
-                          {call.status === "IN_PROGRESS" && (
-                            <CallResultDialog
-                              lead={lead}
-                              setCallReminders={setMeetingReminders}
-                              call={call}
-                              setleads={setleads}
-                              reminderType="MEETING"
-                              text="Update meeting result"
-                            />
-                          )}
-                        </>
-                      )}
-                      {call.token && (
-                        <Stack
-                          direction="row"
-                          spacing={1}
-                          alignItems="center"
-                          sx={{ mt: 1, flexWrap: "wrap" }}
-                        >
-                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            Client Link:
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            color="primary"
-                            sx={{ wordBreak: "break-all" }}
-                          >
-                            {`${window.location.origin}/booking?token=${call.token}`}
-                          </Typography>
-                          <Button
-                            size="small"
-                            onClick={() =>
-                              navigator.clipboard.writeText(
-                                `${window.location.origin}/booking?token=${call.token}`
-                              )
-                            }
-                          >
-                            Copy
-                          </Button>
-                        </Stack>
-                      )}
-
-                      <DeleteModelButton
-                        item={call}
-                        model={"MeetingReminder"}
-                        contentKey="reminderReason"
-                        onDelete={() => {
-                          setMeetingReminders((oldCalls) =>
-                            oldCalls.filter((c) => c.id !== call.id)
-                          );
-                        }}
-                      />
-                    </Stack>
-                  </Stack>
-
-                  {/* User Info */}
-                  <Stack direction="column" spacing={1} alignItems="flex-end">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <RiUserLine
-                        size={16}
-                        color={theme.palette.text.secondary}
-                      />
-                      <Typography variant="body2" color="text.secondary">
-                        {call.user.name}
-                      </Typography>
-                    </Stack>
-
-                    {/* Admin Info (if admin meeting) */}
-                    {call.isAdmin && call.admin && (
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <RiShieldUserLine size={16} color="#9C27B0" />
-                        <Typography
-                          variant="body2"
-                          sx={{ color: "#7B1FA2", fontWeight: 600 }}
-                        >
-                          Admin: {call.admin.name}
+                    <Stack spacing={0.75} alignItems="flex-end">
+                      <Stack direction="row" spacing={0.75} alignItems="center">
+                        <RiUserLine
+                          size={16}
+                          color={theme.palette.text.secondary}
+                        />
+                        <Typography variant="body2" color="text.secondary">
+                          {call.user.name}
                         </Typography>
                       </Stack>
-                    )}
+                      {call.isAdmin && call.admin && (
+                        <Stack
+                          direction="row"
+                          spacing={0.75}
+                          alignItems="center"
+                        >
+                          <RiShieldUserLine size={16} color="#9C27B0" />
+                          <Typography
+                            variant="body2"
+                            sx={{ color: ADMIN_PURPLE, fontWeight: 600 }}
+                          >
+                            Admin: {call.admin.name}
+                          </Typography>
+                        </Stack>
+                      )}
+                    </Stack>
                   </Stack>
-                </Stack>
 
-                {call.status === "IN_PROGRESS" && (
-                  <InProgressCall call={call} type="MEETING" />
-                )}
+                  {call.status !== "IN_PROGRESS" && (
+                    <Typography variant="caption" color="text.secondary">
+                      Done at {dayjs(call.updatedAt).format("DD/MM/YYYY")}
+                    </Typography>
+                  )}
 
-                <Stack spacing={2}>
+                  {call.status === "IN_PROGRESS" && (
+                    <InProgressCall call={call} type="MEETING" />
+                  )}
+
+                  {/* Scheduled time */}
                   <Stack direction="row" spacing={1} alignItems="center">
                     <RiCalendarLine
                       size={18}
@@ -368,14 +319,15 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                     <Typography
                       variant="subtitle2"
                       sx={{
-                        fontWeight: call.isAdmin ? 600 : 400,
-                        color: call.isAdmin ? "#7B1FA2" : "inherit",
+                        fontWeight: call.isAdmin ? 600 : 500,
+                        color: call.isAdmin ? ADMIN_PURPLE : "text.primary",
                       }}
                     >
                       {dayjs(call.time).format("MM/DD/YYYY, h:mm A")}
                     </Typography>
                   </Stack>
 
+                  {/* Reason */}
                   <Box
                     sx={{
                       bgcolor: call.isAdmin
@@ -391,16 +343,18 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                     }}
                   >
                     <Typography
-                      variant="body2"
-                      sx={{ color: theme.palette.text.primary }}
+                      variant="overline"
+                      color="text.secondary"
+                      sx={{ lineHeight: 1.4, fontWeight: 700 }}
                     >
-                      <Box component="span" fontWeight="600">
-                        Reason:
-                      </Box>{" "}
+                      Reason
+                    </Typography>
+                    <Typography variant="body2" color="text.primary">
                       {call.reminderReason}
                     </Typography>
                   </Box>
 
+                  {/* Result */}
                   {call.meetingResult && (
                     <Box
                       sx={{
@@ -409,24 +363,114 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
                         borderRadius: 2,
                         border: `1px solid ${alpha(
                           theme.palette.success.main,
-                          0.1
+                          0.2
                         )}`,
                       }}
                     >
+                      <Typography
+                        variant="overline"
+                        color="success.dark"
+                        sx={{ lineHeight: 1.4, fontWeight: 700 }}
+                      >
+                        Result
+                      </Typography>
                       <Typography variant="body2" color="success.dark">
-                        <Box component="span" fontWeight="600">
-                          Result:
-                        </Box>{" "}
                         {call.meetingResult}
                       </Typography>
                     </Box>
                   )}
+
+                  {/* Client link block */}
+                  {clientLink && (
+                    <Box
+                      sx={{
+                        p: 2,
+                        bgcolor: alpha(theme.palette.info.main, 0.05),
+                        borderRadius: 2,
+                        border: `1px solid ${alpha(
+                          theme.palette.info.main,
+                          0.2
+                        )}`,
+                      }}
+                    >
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        justifyContent="space-between"
+                        flexWrap="wrap"
+                        gap={1}
+                      >
+                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                          <Typography
+                            variant="overline"
+                            color="info.main"
+                            sx={{ lineHeight: 1.4, fontWeight: 700 }}
+                          >
+                            Client Link
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            color="primary"
+                            sx={{ wordBreak: "break-all" }}
+                          >
+                            {clientLink}
+                          </Typography>
+                        </Box>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<RiFileCopyLine size={16} />}
+                          onClick={() =>
+                            navigator.clipboard.writeText(clientLink)
+                          }
+                          sx={{ textTransform: "none", fontWeight: 600 }}
+                        >
+                          Copy
+                        </Button>
+                      </Stack>
+                    </Box>
+                  )}
+
+                  {/* Actions */}
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                    sx={{
+                      pt: 0.5,
+                      borderTop: `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
+                    {user.role !== "ACCOUNTANT" &&
+                      call.status === "IN_PROGRESS" && (
+                        <CallResultDialog
+                          lead={lead}
+                          setCallReminders={setMeetingReminders}
+                          call={call}
+                          setleads={setleads}
+                          reminderType="MEETING"
+                          text="Update meeting result"
+                        />
+                      )}
+                    <Box sx={{ flex: 1 }} />
+                    <DeleteModelButton
+                      item={call}
+                      model={"MeetingReminder"}
+                      contentKey="reminderReason"
+                      onDelete={() => {
+                        setMeetingReminders((oldCalls) =>
+                          oldCalls.filter((c) => c.id !== call.id)
+                        );
+                      }}
+                    />
+                  </Stack>
                 </Stack>
-              </Stack>
-            </Paper>
-          );
-        })}
-      </Stack>
+              </Paper>
+            );
+          })}
+        </Stack>
+      )}
     </Stack>
   );
 }

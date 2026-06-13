@@ -1,19 +1,21 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import {
+  alpha,
   Avatar,
+  Box,
   Button,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Paper,
   Stack,
   TextField,
+  Typography,
   useTheme,
 } from "@mui/material";
-import { BsPlus } from "react-icons/bs";
 import { GoPlus } from "react-icons/go";
+import { MdStickyNote2 } from "react-icons/md";
 import { useAlertContext } from "@/app/providers/MuiAlert.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
@@ -77,7 +79,7 @@ export const NewNoteDialog = ({
           endIcon={<GoPlus />}
           onClick={handleOpen}
           variant="contained"
-          sx={{ width: "fit-content" }}
+          sx={{ width: "fit-content", textTransform: "none", fontWeight: 600 }}
         >
           Add new Note
         </Button>
@@ -85,57 +87,95 @@ export const NewNoteDialog = ({
         <OpenButton handleOpen={handleOpen}>{children}</OpenButton>
       )}
       {open && (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-          <DialogTitle sx={{ borderBottom: 1, borderColor: "divider" }}>
-            Add New Note
+        <Dialog
+          open={open}
+          onClose={onClose}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+          <DialogTitle
+            sx={{
+              borderBottom: 1,
+              borderColor: "divider",
+              py: 2.5,
+            }}
+          >
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  bgcolor: alpha(theme.palette.primary.main, 0.12),
+                  color: theme.palette.primary.main,
+                  fontSize: 20,
+                }}
+              >
+                <MdStickyNote2 />
+              </Box>
+              <Box>
+                <Typography variant="h6" fontWeight={700} lineHeight={1.2}>
+                  Add New Note
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Record an important detail about this lead
+                </Typography>
+              </Box>
+            </Stack>
           </DialogTitle>
-          <DialogContent>
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 2,
-                borderRadius: 2,
-                my: 2,
-                backgroundColor: theme.palette.background.paper,
-              }}
-            >
-              <Stack direction="row" spacing={2} alignItems="center">
-                {lead.assignedTo && (
-                  <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
-                    {lead.assignedTo.name[0]}
-                  </Avatar>
-                )}
-                <TextField
-                  label="Add a new note"
-                  variant="outlined"
-                  fullWidth
-                  multiline
-                  rows={2}
-                  value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleAddNote();
-                    }
+          <DialogContent sx={{ pt: 3 }}>
+            <Stack direction="row" spacing={2} alignItems="flex-start">
+              {lead.assignedTo && (
+                <Avatar
+                  sx={{
+                    bgcolor: theme.palette.primary.main,
+                    fontWeight: 600,
+                    mt: 0.5,
                   }}
-                  placeholder="Write your note here..."
-                />
-              </Stack>
-            </Paper>
+                >
+                  {lead.assignedTo.name[0]}
+                </Avatar>
+              )}
+              <TextField
+                label="Note"
+                variant="outlined"
+                fullWidth
+                multiline
+                minRows={4}
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleAddNote();
+                  }
+                }}
+                placeholder="Write your note here..."
+                helperText="Press Enter to save, Shift + Enter for a new line"
+              />
+            </Stack>
           </DialogContent>
-          <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
-            <Button onClick={onClose} variant="outlined">
+          <DialogActions sx={{ p: 2.5, borderTop: 1, borderColor: "divider" }}>
+            <Button
+              onClick={onClose}
+              variant="outlined"
+              sx={{ textTransform: "none", fontWeight: 600 }}
+            >
               Cancel
             </Button>
             <Button
               variant="contained"
               color="primary"
-              startIcon={<BsPlus size={16} />}
+              startIcon={<GoPlus size={18} />}
               onClick={handleAddNote}
               disabled={!newNote.trim()}
+              sx={{ textTransform: "none", fontWeight: 600, px: 3 }}
             >
-              Add
+              Add Note
             </Button>
           </DialogActions>
         </Dialog>

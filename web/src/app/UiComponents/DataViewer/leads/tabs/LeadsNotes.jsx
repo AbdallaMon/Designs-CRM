@@ -1,12 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { Paper, Stack, Typography, useTheme } from "@mui/material";
+import {
+  alpha,
+  Avatar,
+  Box,
+  Paper,
+  Stack,
+  Typography,
+  useTheme,
+} from "@mui/material";
 
 import dayjs from "dayjs";
 
-import { Avatar } from "@mui/material";
 import { NewNoteDialog } from "@/app/UiComponents/DataViewer/leads/dialogs/NoteDialog";
+import { MdStickyNote2 } from "react-icons/md";
 
 import DeleteModelButton from "../../../common/DeleteModelButton";
+import { SectionToolbar } from "../shared/SectionToolbar";
+import { EmptyState } from "../shared/EmptyState";
 
 export function LeadNotes({ lead, admin, notUser }) {
   const [notes, setNotes] = useState(lead?.notes);
@@ -14,62 +24,114 @@ export function LeadNotes({ lead, admin, notUser }) {
   useEffect(() => {
     if (lead?.notes) setNotes(lead.notes);
   }, [lead]);
+
   return (
-    <Stack spacing={2}>
-      {!notUser && <NewNoteDialog lead={lead} setNotes={setNotes} />}
-      <Stack spacing={2}>
-        {notes?.map((note) => (
-          <Paper
-            key={note.id}
-            variant="outlined"
-            sx={{
-              p: 2.5,
-              borderRadius: 2,
-              "&:hover": {
-                boxShadow: theme.shadows[2],
-                transition: "box-shadow 0.3s ease-in-out",
-              },
-            }}
-          >
-            <Stack spacing={1}>
-              <Typography
-                variant="body1"
+    <Stack spacing={3}>
+      <SectionToolbar
+        icon={<MdStickyNote2 />}
+        title="Notes"
+        count={notes?.length || 0}
+        countLabel="notes"
+        action={
+          !notUser ? <NewNoteDialog lead={lead} setNotes={setNotes} /> : null
+        }
+      />
+
+      {!notes?.length ? (
+        <EmptyState
+          icon={<MdStickyNote2 />}
+          title="No notes yet"
+          description={
+            notUser
+              ? "There are no notes recorded for this lead."
+              : "Add the first note to keep track of important details about this lead."
+          }
+        />
+      ) : (
+        <Stack spacing={2}>
+          {notes.map((note) => {
+            const authorName = note.user?.name || "";
+            return (
+              <Paper
+                key={note.id}
+                elevation={0}
                 sx={{
-                  wordWrap: "break-word",
+                  p: 2.5,
+                  borderRadius: 2.5,
+                  border: `1px solid ${theme.palette.divider}`,
+                  transition: "all 0.2s ease-in-out",
+                  "&:hover": {
+                    boxShadow: theme.shadows[3],
+                    borderColor: alpha(theme.palette.primary.main, 0.4),
+                  },
                 }}
               >
-                {note.content}
-              </Typography>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Avatar
-                  sx={{
-                    width: 24,
-                    height: 24,
-                    bgcolor: theme.palette.primary.main,
-                    fontSize: "0.75rem",
-                  }}
+                <Stack
+                  direction="row"
+                  spacing={2}
+                  alignItems="flex-start"
                 >
-                  {note.user.name[0]}
-                </Avatar>
-                <Typography variant="caption" color="text.secondary">
-                  {note.user.name} •{" "}
-                  {dayjs(note.createdAt).format("DD/MM/YYYY")}
-                </Typography>
-                <DeleteModelButton
-                  item={note}
-                  model={"Note"}
-                  contentKey="content"
-                  onDelete={() => {
-                    setNotes((oldNotes) =>
-                      oldNotes.filter((n) => n.id !== note.id)
-                    );
-                  }}
-                />
-              </Stack>
-            </Stack>
-          </Paper>
-        ))}
-      </Stack>
+                  <Avatar
+                    sx={{
+                      width: 40,
+                      height: 40,
+                      bgcolor: theme.palette.primary.main,
+                      fontSize: "0.95rem",
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {authorName ? authorName[0] : "?"}
+                  </Avatar>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="flex-start"
+                      spacing={1}
+                    >
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography
+                          variant="subtitle2"
+                          fontWeight={600}
+                          color="text.primary"
+                          noWrap
+                        >
+                          {authorName}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {dayjs(note.createdAt).format("DD MMM YYYY, h:mm A")}
+                        </Typography>
+                      </Box>
+                      <DeleteModelButton
+                        item={note}
+                        model={"Note"}
+                        contentKey="content"
+                        onDelete={() => {
+                          setNotes((oldNotes) =>
+                            oldNotes.filter((n) => n.id !== note.id)
+                          );
+                        }}
+                      />
+                    </Stack>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mt: 1,
+                        color: "text.primary",
+                        whiteSpace: "pre-wrap",
+                        wordWrap: "break-word",
+                      }}
+                    >
+                      {note.content}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
+            );
+          })}
+        </Stack>
+      )}
     </Stack>
   );
 }
