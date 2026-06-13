@@ -17,7 +17,8 @@ import {
 
 import { useAuth } from "@/app/providers/AuthProvider";
 
-import { MdQuestionAnswer, MdTouchApp } from "react-icons/md";
+import { MdAnalytics, MdQuestionAnswer, MdTouchApp } from "react-icons/md";
+import { TabSection } from "../shared/tabKit";
 
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 
@@ -121,7 +122,11 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
     );
   }
   return (
-    <Box sx={{ width: "100%", maxWidth: 1200, margin: "0 auto" }}>
+    <TabSection
+      icon={<MdAnalytics />}
+      title="Client analysis"
+      description="Sales tools — SPIN questions, VERSA objections and client personality."
+    >
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: 6 }}>
           <ToolCard
@@ -172,6 +177,6 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
           </ToolCard>
         </Grid>
       </Grid>
-    </Box>
+    </TabSection>
   );
 }

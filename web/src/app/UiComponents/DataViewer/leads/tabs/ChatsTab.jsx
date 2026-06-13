@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ChatContainer from "../../chat/ChatContainer";
 import {
   alpha,
@@ -13,41 +13,45 @@ import {
   Typography,
   useTheme,
 } from "@mui/material";
-import { MdClose, MdChat } from "react-icons/md";
-import { EmptyState } from "../shared/EmptyState";
+import { MdClose, MdChat, MdOpenInFull } from "react-icons/md";
+import { TabSection } from "../shared/tabKit";
 
 export default function ChatsTab({ clientLeadId }) {
-  const [open, setOpen] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const theme = useTheme();
-  useEffect(() => {
-    if (clientLeadId) {
-      setOpen(true);
-    }
-  }, [clientLeadId]);
-  return (
-    <Box>
-      <EmptyState
-        icon={<MdChat />}
-        title="Conversations"
-        description="Open the chat workspace to message the client and your team about this lead."
-        action={
-          <Button
-            onClick={() => setOpen(true)}
-            variant="contained"
-            startIcon={<MdChat />}
-            sx={{ mt: 1, textTransform: "none", fontWeight: 600 }}
-          >
-            Open Chats
-          </Button>
-        }
-      />
 
-      <Dialog
-        open={open}
-        onClose={() => setOpen(false)}
-        fullScreen
-        maxWidth="md"
-      >
+  return (
+    <TabSection
+      icon={<MdChat />}
+      title="Chats"
+      description="Message the client and your team about this lead."
+      action={
+        <Button
+          onClick={() => setFullscreen(true)}
+          variant="outlined"
+          size="small"
+          startIcon={<MdOpenInFull />}
+          sx={{ textTransform: "none", fontWeight: 600 }}
+        >
+          Fullscreen
+        </Button>
+      }
+    >
+      {/* Inline conversation (ChatContainer self-sizes). Unmounts while fullscreen is
+          open so only one chat instance is ever live. */}
+      {!fullscreen && (
+        <Box
+          sx={{
+            border: `1px solid ${theme.palette.divider}`,
+            borderRadius: 2.5,
+            overflow: "hidden",
+          }}
+        >
+          <ChatContainer type="tab" clientLeadId={clientLeadId} />
+        </Box>
+      )}
+
+      <Dialog open={fullscreen} onClose={() => setFullscreen(false)} fullScreen>
         <DialogTitle
           sx={{
             display: "flex",
@@ -77,18 +81,14 @@ export default function ChatsTab({ clientLeadId }) {
               Chats
             </Typography>
           </Stack>
-          <IconButton
-            aria-label="close"
-            onClick={() => setOpen(false)}
-            sx={{ color: theme.palette.grey[500] }}
-          >
+          <IconButton onClick={() => setFullscreen(false)} sx={{ color: theme.palette.grey[500] }}>
             <MdClose />
           </IconButton>
         </DialogTitle>
-        <DialogContent>
-          <ChatContainer type="tab" clientLeadId={clientLeadId} />
+        <DialogContent sx={{ p: 0 }}>
+          {fullscreen && <ChatContainer type="tab" clientLeadId={clientLeadId} />}
         </DialogContent>
       </Dialog>
-    </Box>
+    </TabSection>
   );
 }

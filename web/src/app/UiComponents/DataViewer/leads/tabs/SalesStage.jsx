@@ -25,9 +25,12 @@ import {
   MdRadioButtonUnchecked as RadioButtonUnchecked,
   MdPlayArrow as PlayArrow,
 } from "react-icons/md";
+import { MdTimeline } from "react-icons/md";
 import dayjs from "dayjs";
 import { salesStageEnum } from "@/app/helpers/constants";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
+import { TabSection } from "../shared/tabKit";
+import { TabLoading } from "../shared/TabLoading";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { NotesComponent } from "../../utility/Notes";
@@ -110,16 +113,7 @@ const SalesStageComponent = ({ clientLeadId }) => {
   }, [clientLeadId]);
 
   if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="200px"
-      >
-        <CircularProgress />
-      </Box>
-    );
+    return <TabLoading />;
   }
 
   const currentStageIndex = getCurrentStageIndex();
@@ -128,16 +122,10 @@ const SalesStageComponent = ({ clientLeadId }) => {
   const currentStageData = currentStage ? getStageData(currentStage.key) : null;
 
   return (
-    <Box sx={{ maxWidth: 880, margin: "0 auto" }}>
-      {/* Current Stage Banner */}
-      <Box sx={{ textAlign: "center", mb: 3 }}>
-        <Typography
-          variant="h5"
-          sx={{ color: "primary.main", fontWeight: 800, mb: 2 }}
-        >
-          مراحل البيع
-        </Typography>
-
+    <TabSection icon={<MdTimeline />} title="Sales stage" description="مراحل البيع">
+      <Box sx={{ maxWidth: 880, margin: "0 auto" }}>
+        {/* Current Stage Banner */}
+        <Box sx={{ textAlign: "center", mb: 3 }}>
         {currentStage && (
           <Paper
             elevation={0}
@@ -401,7 +389,8 @@ const SalesStageComponent = ({ clientLeadId }) => {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+      </Box>
+    </TabSection>
   );
 };
 

@@ -2,6 +2,7 @@
 // Frontend: src/components/ClientProjects/TasksList.tsx
 
 import React, { useState, useEffect, useCallback } from "react";
+import { TabLoading } from "../leads/shared/TabLoading";
 import {
   Box,
   Card,
@@ -91,7 +92,7 @@ export const TasksList = ({
   }, [clientLeadId, projectId, userId, type]);
 
   if (loading) {
-    return <LinearProgress />;
+    return <TabLoading />;
   }
 
   if (tasks.length === 0) {

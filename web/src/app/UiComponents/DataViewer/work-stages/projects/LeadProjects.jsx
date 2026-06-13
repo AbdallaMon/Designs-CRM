@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import { TabLoading } from "../../leads/shared/TabLoading";
 import {
   Box,
   Card,
@@ -195,16 +196,7 @@ export const LeadProjects = ({
 
   // Loading state
   if (loading) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        height="300px"
-      >
-        <CircularProgress />
-      </Box>
-    );
+    return <TabLoading minHeight={300} />;
   }
 
   // Empty state

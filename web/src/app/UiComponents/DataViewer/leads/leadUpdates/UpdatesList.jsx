@@ -2,15 +2,13 @@ import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
-  Typography,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   Stack,
-  Paper,
-  Container,
 } from "@mui/material";
+import { MdUpdate } from "react-icons/md";
 
 import { DEPARTMENTS } from "@/app/helpers/constants";
 import { getData } from "@/app/helpers/functions/getData";
@@ -18,6 +16,9 @@ import { UpdateCard } from "./UpdateCard";
 import { CreateUpdateModal } from "./CreateUpdate";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import { TabSection } from "../shared/tabKit";
+import { TabLoading } from "../shared/TabLoading";
+import { EmptyState } from "../shared/EmptyState";
 
 // Main Updates List Component
 const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
@@ -67,94 +68,79 @@ const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
   }
 
   if (loading) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Typography>Loading updates...</Typography>
-      </Container>
-    );
+    return <TabLoading />;
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={4}
-      >
-        <Typography variant="h4" component="h1" fontWeight="bold">
-          Updates
-        </Typography>
+    <TabSection
+      icon={<MdUpdate />}
+      title="Updates"
+      count={updates?.length || 0}
+      action={
         <CreateUpdateModal
           onCreate={handleCreateUpdate}
           clientLeadId={clientLeadId}
           currentUserDepartment={currentUserDepartment}
         />
-      </Box>
-
-      {/* Filters */}
-      <Paper sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-        <Typography variant="h6" gutterBottom>
-          Filters
-        </Typography>
-
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          alignItems="center"
-        >
-          <Stack direction="row" spacing={1}>
-            {[
-              { value: "all", label: "All types" },
-              { value: "notArchived", label: "Active" },
-              { value: "archived", label: "Archived" },
-            ].map((option) => (
-              <Button
-                key={option.value}
-                variant={filter === option.value ? "contained" : "outlined"}
-                onClick={() => setFilter(option.value)}
-                size="small"
-                sx={{ borderRadius: 2 }}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </Stack>
-
-          {isAdmin && (
-            <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel>Filter by Department</InputLabel>
-              <Select
-                value={departmentFilter}
-                onChange={(e) => setDepartmentFilter(e.target.value)}
-                label="Filter by Department"
-              >
-                <MenuItem value="">All Departments</MenuItem>
-                {DEPARTMENTS.map((dept) => (
-                  <MenuItem key={dept.value} value={dept.value}>
-                    {dept.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
+      }
+    >
+      {/* Filter bar */}
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={1.5}
+        alignItems={{ xs: "stretch", sm: "center" }}
+        justifyContent="space-between"
+      >
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          {[
+            { value: "all", label: "All types" },
+            { value: "notArchived", label: "Active" },
+            { value: "archived", label: "Archived" },
+          ].map((option) => (
+            <Button
+              key={option.value}
+              variant={filter === option.value ? "contained" : "outlined"}
+              onClick={() => setFilter(option.value)}
+              size="small"
+              sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
+            >
+              {option.label}
+            </Button>
+          ))}
         </Stack>
-      </Paper>
+
+        {isAdmin && (
+          <FormControl size="small" sx={{ minWidth: 200 }}>
+            <InputLabel>Filter by Department</InputLabel>
+            <Select
+              value={departmentFilter}
+              onChange={(e) => setDepartmentFilter(e.target.value)}
+              label="Filter by Department"
+            >
+              <MenuItem value="">All Departments</MenuItem>
+              {DEPARTMENTS.map((dept) => (
+                <MenuItem key={dept.value} value={dept.value}>
+                  {dept.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        )}
+      </Stack>
 
       <Box>
         {updates?.length === 0 ? (
-          <Paper sx={{ p: 4, textAlign: "center", borderRadius: 2 }}>
-            <Typography variant="h6" color="text.secondary">
-              No updates found
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mt={1}>
-              {filter === "archived"
-                ? "No archived updates to display"
+          <EmptyState
+            icon={<MdUpdate />}
+            title="No updates found"
+            description={
+              filter === "archived"
+                ? "No archived updates to display."
                 : filter === "notArchived"
-                ? "No active updates to display"
-                : "No updates match your current filters"}
-            </Typography>
-          </Paper>
+                ? "No active updates to display."
+                : "No updates match your current filters."
+            }
+          />
         ) : (
           updates?.map((update) => {
             const canManageDepartments =
@@ -192,7 +178,7 @@ const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
           })
         )}
       </Box>
-    </Container>
+    </TabSection>
   );
 };
 
