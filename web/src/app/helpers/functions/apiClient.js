@@ -5,6 +5,8 @@
 // helpers (a) point at the `/v2` base, (b) transparently refresh the access token on 401,
 // and (c) normalize the envelope back into the flat shape master's consumers expect.
 
+import { mapLegacyPathToV2 } from "./apiPathMap";
+
 // `NEXT_PUBLIC_API` = e.g. http://localhost:4000/v2  (NEXT_PUBLIC_URL stays the bare origin
 // for sockets / file links). Falls back to `${NEXT_PUBLIC_URL}/v2` if API is unset.
 export const API_BASE =
@@ -28,10 +30,12 @@ async function refreshAccessToken() {
   return _refreshPromise;
 }
 
-// Low-level request: prepends the /v2 base, always sends cookies, retries ONCE after a
-// successful token refresh on 401. `path` is relative (no leading /v2), query already built.
+// Low-level request: maps the legacy path → its /v2 module path, prepends the /v2 base,
+// always sends cookies, retries ONCE after a successful token refresh on 401. `path` is
+// relative (no leading /v2), query already built.
 export async function apiRequest(path, opts = {}, _retry = true) {
-  const url = `${API_BASE}/${String(path).replace(/^\//, "")}`;
+  const mapped = mapLegacyPathToV2(String(path));
+  const url = `${API_BASE}/${mapped.replace(/^\//, "")}`;
   const response = await fetch(url, { credentials: "include", ...opts });
   if (response.status === 401 && _retry && !opts._skipRefresh) {
     const ok = await refreshAccessToken();
