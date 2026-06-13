@@ -1,6 +1,18 @@
 import "./globals.css";
-import { Noto_Kufi_Arabic } from "next/font/google";
+import ToastProvider from "@/app/providers/ToastLoadingProvider";
+import AuthProvider from "@/app/providers/AuthProvider";
+import MUIContextProvider from "@/app/providers/MUIContext";
+import DotsLoader from "@/app/UiComponents/feedback/loaders/DotsLoading";
+import MuiAlertProvider from "@/app/providers/MuiAlert.jsx";
 import colors from "@/app/helpers/colors.js";
+import { Noto_Kufi_Arabic } from "next/font/google";
+import UploadingProvider, {
+  UploadingContext,
+} from "./providers/UploadingProgressProvider";
+
+import { Suspense } from "react";
+import ServiceWorkerRegister from "./UiComponents/DataViewer/utility/RegisterServiceWorker";
+import SocketProvider from "./providers/SocketProvider";
 
 const noto = Noto_Kufi_Arabic({
   weight: ["400", "500", "700"],
@@ -9,18 +21,66 @@ const noto = Noto_Kufi_Arabic({
   display: "swap",
 });
 
+// app/layout.js
 export const metadata = {
   title: "Dream Studio | تصميم داخلي فاخر وتصميم عمراني وأثاث مُصمّم خصيصًا",
   description:
-    "Dream Studio يقدم حلول تصميم داخلي فاخر، وتصميم عمراني مبتكر، وأثاثًا مُصمّمًا حسب الطلب.",
+    "Dream Studio يقدم حلول تصميم داخلي فاخر، وتصميم عمراني مبتكر، وأثاثًا مُصمّمًا حسب الطلب. نخدم العملاء المميزين في الإمارات بتصاميم تمزج بين الأناقة والراحة والطابع العملي للمنازل والفلل والمساحات التجارية.",
+  keywords: [
+    "Dream Studio",
+    "تصميم داخلي فاخر",
+    "تصميم عمراني",
+    "أثاث مُصمّم حسب الطلب",
+    "ديكور حديث",
+    "تصميم مجالس",
+    "تصميم فلل",
+    "ديكورات فاخرة",
+    "تصميم داخلي دبي",
+    "تصميم داخلي أبوظبي",
+    "تصميم فلل فاخرة الإمارات",
+    "أثاث فاخر الإمارات",
+    // دعم بحث عالمي
+    "Dream Studio interior design",
+    "Dream Studio urban design",
+    "Dream Studio furniture design",
+    "luxury villa design UAE",
+    "custom furniture UAE",
+    "luxury interiors Dubai",
+    "modern decor Abu Dhabi",
+  ],
+  creator: "Dream Studio",
   metadataBase: new URL("https://dreamstudiio.com"),
-  icons: { icon: "/favicon.ico", shortcut: "/favicon.ico", apple: "/favicon.ico" },
+  openGraph: {
+    title: "Dream Studio | تصميم داخلي فاخر وتصميم عمراني",
+    description:
+      "نحوّل الرؤى إلى مساحات فاخرة وأنيقة وعملية للمنازل والفلل والمشاريع التجارية  الإمارات مع خبراء Dream Studio.",
+    url: "https://dreamstudiio.com",
+    siteName: "Dream Studio",
+    images: [
+      {
+        url: "https://dreamstudiio.com/main-logo.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Dream Studio - تصميم داخلي فاخر وتصميم عمراني",
+      },
+    ],
+    locale: "ar_AE",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Dream Studio | تصميم داخلي فاخر وتصميم عمراني",
+    description:
+      "تصميم داخلي فاخر، تصميم عمراني مبتكر، وأثاث مُصمّم خصيصًا للمنازل والفلل والمساحات التجارية في الإمارات.",
+    images: ["https://dreamstudiio.com/main-logo.jpg"],
+  },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
 };
 
-// Minimal Arabic-RTL root. Each v2 feature route layout under (v2-features)/v2/* is
-// self-contained (its own emotion RTL cache + MUIProvider + ToastProvider + AuthProvider),
-// so the root only supplies the HTML shell + Arabic font + base background. No global
-// providers, no i18n, no redesign primitives — the faithful pre-redesign (57a3c00) baseline.
 export default function RootLayout({ children }) {
   return (
     <html>
@@ -31,7 +91,19 @@ export default function RootLayout({ children }) {
         className={noto.className}
         style={{ backgroundColor: colors.bgSecondary }}
       >
-        {children}
+        <MuiAlertProvider>
+          <MUIContextProvider>
+            <UploadingProvider>
+              <ToastProvider>
+                <AuthProvider>
+                  <DotsLoader />
+                  {children}
+                </AuthProvider>
+                <ServiceWorkerRegister />
+              </ToastProvider>
+            </UploadingProvider>
+          </MUIContextProvider>
+        </MuiAlertProvider>
       </body>
     </html>
   );
