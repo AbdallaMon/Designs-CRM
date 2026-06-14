@@ -528,9 +528,10 @@ const TimeSlotManager = ({
     const dateStr = date ? dayjs(date).format("YYYY-MM-DD") : null;
     const daysStr = selectedDates.map((d) => dayjs(d).format("YYYY-MM-DD"));
 
-    const data = {
-      date: dateStr,
-      days: daysStr,
+    // Send ONLY the field the target endpoint accepts: the single-day endpoint validates
+    // a `date` (strict, no `days`) and the multiple endpoint validates `days` (strict, no
+    // `date`). Sending both 422'd with "Unrecognized key" on whichever the schema lacked.
+    const slotKnobs = {
       fromHour: startTime,
       toHour: endTime,
       duration: meetingDuration,
@@ -538,11 +539,14 @@ const TimeSlotManager = ({
     };
 
     let url;
+    let data;
     if (isMultiDate) {
+      data = { days: daysStr, ...slotKnobs };
       url = `shared/calendar-management/available-days/multiple?timezone=${tz}&isMobile=${
         isMobile ? 1 : 0
       }&`;
     } else {
+      data = { date: dateStr, ...slotKnobs };
       url = `shared/calendar-management/available-days?timezone=${tz}&isMobile=${
         isMobile ? 1 : 0
       }&`;

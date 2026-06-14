@@ -46,6 +46,12 @@ export default function MuiInputField({
         setShowPassword(inputData.type !== "text");
     }, [inputData.type]);
 
+    // Never spread the raw config's `key`/`helperText` into the MUI field: `key` in a
+    // spread is rejected by React 19 (the muiName/removeChild crash) and `helperText` would
+    // clobber the validation message handled explicitly below. Everything else (id/type/
+    // label/...) is passed through unchanged.
+    const { key: _ignoredKey, helperText: _ignoredHelper, ...inputProps } = inputData;
+
     return (
           <TextField
                 fullWidth
@@ -62,7 +68,7 @@ export default function MuiInputField({
                 margin="none"
                 ref={inputRef}
                 onChange={handleChange}
-                {...inputData}
+                {...inputProps}
                 {...register(inputData.id, input.pattern)}
                 InputProps={{
                     endAdornment: input.data.type === "password" && (
