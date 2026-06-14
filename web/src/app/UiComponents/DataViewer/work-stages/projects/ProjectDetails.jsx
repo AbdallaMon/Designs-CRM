@@ -32,6 +32,9 @@ import {
   Menu,
   Avatar,
   Badge,
+  Stack,
+  alpha,
+  useTheme,
 } from "@mui/material";
 
 import {
@@ -57,6 +60,7 @@ import {
   MdDelete,
   MdAssignmentInd,
   MdGroup,
+  MdOpenInNew,
 } from "react-icons/md";
 import { PROJECT_STATUSES, statusColors } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
@@ -74,25 +78,56 @@ import { AssignDesignerModal } from "./AssignDesignerModal";
 import { ProjectTasksDialog, TasksDialog } from "../utility/ProjectTasksDialog";
 import DeliverySchedulesPanel from "../utility/ProjectDeilverySchedule";
 import { useAlertContext } from "@/app/providers/MuiAlert";
+import { StatusPill, MetaItem } from "../../leads/shared/tabKit";
+import { EmptyState } from "../../leads/shared/EmptyState";
+
+// Resolve a semantic color for a project status. Falls back to primary so any
+// future status still renders consistently. Uses the shared statusColors map.
+const getStatusColor = (status) => statusColors[status] || colors.primary;
+
+// Display-only Arabic labels for the project statuses. Keys remain the English
+// enum values used everywhere in logic/comparisons; only the shown text changes.
+const STATUS_LABELS_AR = {
+  "To Do": "قيد الانتظار",
+  "3D": "تصميم 3D",
+  Render: "إخراج (Render)",
+  Modification: "تعديلات",
+  Delivery: "تسليم",
+  Hold: "معلّق",
+  Completed: "مكتمل",
+  Rejected: "مرفوض",
+  Studying: "دراسة",
+  Electricity: "كهرباء",
+  Started: "بدأ",
+  "In Progress": "قيد التنفيذ",
+};
+const labelForStatus = (status) => STATUS_LABELS_AR[status] || status;
+
+const PRIORITY_LABELS_AR = {
+  VERY_LOW: "منخفضة جدًا",
+  LOW: "منخفضة",
+  MEDIUM: "متوسطة",
+  HIGH: "مرتفعة",
+  VERY_HIGH: "مرتفعة جدًا",
+};
 
 // Styled components
 export const StyledCard = styled(Card)(({ theme }) => ({
-  borderRadius: 12,
-  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.08)",
-  // height: "100%",
-  transition: "transform 0.3s ease, box-shadow 0.3s ease",
+  borderRadius: 16,
+  border: `1px solid ${theme.palette.divider}`,
+  boxShadow: "0 1px 3px rgba(0, 0, 0, 0.04)",
+  transition: "box-shadow 0.2s ease, border-color 0.2s ease",
   overflow: "visible",
 }));
 
 const StyledButton = styled(Button)(({ theme }) => ({
-  borderRadius: 8,
+  borderRadius: 10,
   textTransform: "none",
   fontWeight: 600,
-  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+  boxShadow: "none",
   transition: "all 0.2s ease",
   "&:hover": {
-    transform: "translateY(-2px)",
-    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.15)",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.12)",
   },
 }));
 
@@ -101,30 +136,29 @@ const InfoCard = styled(Box)(({ theme }) => ({
   alignItems: "center",
   backgroundColor: theme.palette.background.paper,
   padding: theme.spacing(2),
-  borderRadius: 12,
-  boxShadow: "0 2px 12px rgba(0, 0, 0, 0.06)",
-  transition: "transform 0.2s ease",
+  borderRadius: 14,
+  border: `1px solid ${theme.palette.divider}`,
+  transition: "box-shadow 0.2s ease, border-color 0.2s ease",
   "&:hover": {
-    transform: "translateY(-2px)",
-    boxShadow: "0 4px 15px rgba(0, 0, 0, 0.08)",
+    boxShadow: "0 2px 10px rgba(0, 0, 0, 0.06)",
+    borderColor: alpha(theme.palette.primary.main, 0.4),
   },
   minWidth: 160,
 }));
 
 const PriorityChip = styled(Chip)(({ theme, priority }) => ({
-  borderRadius: 16,
+  borderRadius: 12,
   height: 32,
-  fontWeight: 500,
-  boxShadow: "0 2px 5px rgba(0, 0, 0, 0.08)",
+  fontWeight: 600,
   marginLeft: theme.spacing(1),
 }));
 
 const StyledProgressBar = styled(LinearProgress)(({ theme }) => ({
-  height: 10,
-  borderRadius: 5,
+  height: 8,
+  borderRadius: 6,
   backgroundColor: theme.palette.grey[200],
   "& .MuiLinearProgress-bar": {
-    borderRadius: 5,
+    borderRadius: 6,
   },
 }));
 
@@ -137,7 +171,9 @@ const ProgressDot = styled(Box)(({ theme, active }) => ({
     : theme.palette.grey[300],
   transition: "all 0.3s ease",
   transform: active ? "scale(1.1)" : "scale(1)",
-  boxShadow: active ? "0 0 0 2px rgba(25, 118, 210, 0.2)" : "none",
+  boxShadow: active
+    ? `0 0 0 3px ${alpha(theme.palette.primary.main, 0.18)}`
+    : "none",
 }));
 
 export const StyledDesignerCard = styled(Box)(({ theme }) => ({
@@ -145,21 +181,22 @@ export const StyledDesignerCard = styled(Box)(({ theme }) => ({
   justifyContent: "space-between",
   alignItems: "center",
   gap: theme.spacing(1),
-  marginBottom: theme.spacing(1),
-  padding: theme.spacing(2),
+  marginBottom: theme.spacing(1.25),
+  padding: theme.spacing(1.75),
   backgroundColor: theme.palette.background.paper,
-  borderRadius: 10,
-  boxShadow: "0 2px 8px rgba(0, 0, 0, 0.06)",
+  borderRadius: 14,
+  border: `1px solid ${theme.palette.divider}`,
   width: "100%",
   transition: "all 0.2s ease",
   "&:hover": {
-    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
-    backgroundColor: theme.palette.grey[50],
+    boxShadow: "0 2px 10px rgba(0, 0, 0, 0.06)",
+    borderColor: alpha(theme.palette.primary.main, 0.4),
   },
 }));
 
 // Project Progress Tracker Component
 const ProjectProgressTracker = ({ project }) => {
+  const theme = useTheme();
   // Filter out Hold and get only completion statuses
   const getCompletionStatuses = (projectType) => {
     return PROJECT_STATUSES[projectType].filter(
@@ -182,7 +219,7 @@ const ProjectProgressTracker = ({ project }) => {
   // Calculate project duration
   const calculateProjectDuration = (startDate, endDate) => {
     if (!startDate) {
-      return { text: "Not started yet", color: "text.secondary" };
+      return { text: "لم يبدأ بعد", color: "text.secondary" };
     }
 
     if (!endDate) {
@@ -191,7 +228,7 @@ const ProjectProgressTracker = ({ project }) => {
       const days = now.diff(start, "day");
 
       return {
-        text: `In progress (${days} days so far)`,
+        text: `قيد التنفيذ (${days} يومًا حتى الآن)`,
         color: "info.main",
       };
     }
@@ -202,20 +239,20 @@ const ProjectProgressTracker = ({ project }) => {
     const months = end.diff(start, "month");
 
     if (days < 0) {
-      return { text: "Invalid dates", color: "error.main" };
+      return { text: "تواريخ غير صالحة", color: "error.main" };
     }
 
     if (days > 30) {
       return {
-        text: `Completed in ${months} ${
-          months === 1 ? "month" : "months"
-        } (${days} days)`,
+        text: `اكتمل خلال ${months} ${
+          months === 1 ? "شهر" : "أشهر"
+        } (${days} يومًا)`,
         color: "success.main",
       };
     }
 
     return {
-      text: `Completed in ${days} days`,
+      text: `اكتمل خلال ${days} يومًا`,
       color: "success.main",
     };
   };
@@ -227,14 +264,11 @@ const ProjectProgressTracker = ({ project }) => {
 
   return (
     <StyledCard
-      elevation={2}
+      elevation={0}
       sx={{
         mb: 3,
         overflow: "visible",
         "&.MuiPaper-root": {
-          height: "fit-content",
-        },
-        "&. MuiPaper-root": {
           height: "fit-content",
         },
       }}
@@ -242,24 +276,33 @@ const ProjectProgressTracker = ({ project }) => {
       <CardContent sx={{ p: 3 }}>
         {/* Status Message for Hold or Rejected */}
         {isOnHold || isRejected ? (
-          <Paper
-            elevation={0}
+          <Box
             sx={{
-              p: 2.5,
-              bgcolor: isOnHold ? "warning.light" : "error.light",
-              borderRadius: 2,
-              mb: 2,
+              p: 2.25,
+              borderRadius: 3,
               display: "flex",
               alignItems: "center",
+              gap: 1.5,
+              bgcolor: alpha(
+                isOnHold ? theme.palette.warning.main : theme.palette.error.main,
+                0.1
+              ),
+              border: `1px solid ${alpha(
+                isOnHold ? theme.palette.warning.main : theme.palette.error.main,
+                0.3
+              )}`,
+              color: isOnHold
+                ? theme.palette.warning.dark
+                : theme.palette.error.dark,
             }}
           >
             {isOnHold ? <MdPause size={22} /> : <MdError size={22} />}
-            <Typography variant="body1" sx={{ ml: 1.5, fontWeight: 500 }}>
+            <Typography variant="body1" sx={{ fontWeight: 600 }}>
               {isOnHold
-                ? "This project is currently on hold. Progress will resume when the hold is lifted."
-                : "This project has been rejected and requires attention before proceeding."}
+                ? "هذا المشروع معلّق حاليًا. سيُستأنف التقدم عند رفع التعليق."
+                : "تم رفض هذا المشروع ويتطلب المراجعة قبل المتابعة."}
             </Typography>
-          </Paper>
+          </Box>
         ) : (
           <Box>
             {/* Combined Progress and Duration */}
@@ -267,26 +310,30 @@ const ProjectProgressTracker = ({ project }) => {
               sx={{
                 display: "flex",
                 justifyContent: "space-between",
-                mb: 1,
+                mb: 1.5,
                 alignItems: "center",
+                flexWrap: "wrap",
+                gap: 1,
               }}
             >
-              <Typography variant="h6" fontWeight="medium">
-                Project Progress
+              <Typography variant="h6" fontWeight={700}>
+                تقدّم المشروع
               </Typography>
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Tooltip title="Progress percentage">
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
+              >
+                <Tooltip title="نسبة الإنجاز">
                   <Chip
                     label={`${percentageComplete}%`}
                     color="primary"
                     size="small"
-                    sx={{ fontWeight: "bold", mr: 1 }}
+                    sx={{ fontWeight: 700, borderRadius: 1.5 }}
                   />
                 </Tooltip>
                 <Typography
                   variant="body2"
                   color={duration.color}
-                  sx={{ fontWeight: 500 }}
+                  sx={{ fontWeight: 600 }}
                 >
                   {duration.text}
                 </Typography>
@@ -297,7 +344,7 @@ const ProjectProgressTracker = ({ project }) => {
             <StyledProgressBar
               variant="determinate"
               value={percentageComplete}
-              sx={{ mb: 2.5 }}
+              sx={{ mb: 3 }}
             />
 
             {/* Enhanced stepper with dots */}
@@ -311,7 +358,7 @@ const ProjectProgressTracker = ({ project }) => {
             >
               {completionStatuses.map((label, index) => (
                 <Box key={label} sx={{ textAlign: "center", flex: 1 }}>
-                  <Tooltip title={label}>
+                  <Tooltip title={labelForStatus(label)}>
                     <Box
                       sx={{
                         display: "flex",
@@ -325,14 +372,14 @@ const ProjectProgressTracker = ({ project }) => {
                         sx={{
                           fontSize: "0.7rem",
                           mt: 0.7,
-                          fontWeight: index <= currentStatusIndex ? 600 : 400,
+                          fontWeight: index <= currentStatusIndex ? 700 : 500,
                           color:
                             index <= currentStatusIndex
                               ? "primary.main"
                               : "text.secondary",
                         }}
                       >
-                        {label}
+                        {labelForStatus(label)}
                       </Typography>
                     </Box>
                   </Tooltip>
@@ -353,6 +400,7 @@ export const ProjectDetails = ({
   withReleventLinks,
   renderTasks = true,
 }) => {
+  const theme = useTheme();
   const [isEditing, setIsEditing] = useState(false);
   const [editedProject, setEditedProject] = useState({ ...project });
   const [open, setOpen] = useState(false);
@@ -444,19 +492,22 @@ export const ProjectDetails = ({
 
   // Format priority label
   const formatPriority = (priority) => {
-    return priority
-      .replace("_", " ")
-      .toLowerCase()
-      .replace(/\b\w/g, (l) => l.toUpperCase());
+    return (
+      PRIORITY_LABELS_AR[priority] ||
+      priority
+        .replace("_", " ")
+        .toLowerCase()
+        .replace(/\b\w/g, (l) => l.toUpperCase())
+    );
   };
 
   const renderEditForm = () => (
-    <StyledCard sx={{ p: 2, mt: 3 }}>
+    <StyledCard sx={{ p: 1, mt: 3 }}>
       <CardHeader
-        title="Edit Project Details"
+        title="تعديل تفاصيل المشروع"
         titleTypographyProps={{
           variant: "h6",
-          fontWeight: 600,
+          fontWeight: 700,
           color: "primary.main",
         }}
       />
@@ -465,26 +516,26 @@ export const ProjectDetails = ({
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, md: 6 }}>
               <FormControl fullWidth variant="outlined">
-                <InputLabel id="status-label">Project Status</InputLabel>
+                <InputLabel id="status-label">حالة المشروع</InputLabel>
                 <Select
                   labelId="status-label"
                   value={editedProject.status}
-                  label="Project Status"
+                  label="حالة المشروع"
                   onChange={(e) => handleInputChange("status", e.target.value)}
                 >
                   {PROJECT_STATUSES[project.type].map((status) => (
                     <MenuItem key={status} value={status}>
                       <Box sx={{ display: "flex", alignItems: "center" }}>
                         {status === "Hold" && (
-                          <MdPause size={18} style={{ marginRight: 8 }} />
+                          <MdPause size={18} style={{ marginInlineEnd: 8 }} />
                         )}
                         {status === "Rejected" && (
-                          <MdClose size={18} style={{ marginRight: 8 }} />
+                          <MdClose size={18} style={{ marginInlineEnd: 8 }} />
                         )}
                         {status === "Completed" && (
-                          <MdCheck size={18} style={{ marginRight: 8 }} />
+                          <MdCheck size={18} style={{ marginInlineEnd: 8 }} />
                         )}
-                        {status}
+                        {labelForStatus(status)}
                       </Box>
                     </MenuItem>
                   ))}
@@ -495,20 +546,20 @@ export const ProjectDetails = ({
             {!isDesigner && (
               <Grid size={{ xs: 12, md: 6 }}>
                 <FormControl fullWidth variant="outlined">
-                  <InputLabel id="priority-label">Priority Level</InputLabel>
+                  <InputLabel id="priority-label">مستوى الأولوية</InputLabel>
                   <Select
                     labelId="priority-label"
                     value={editedProject.priority}
-                    label="Priority Level"
+                    label="مستوى الأولوية"
                     onChange={(e) =>
                       handleInputChange("priority", e.target.value)
                     }
                   >
-                    <MenuItem value="VERY_LOW">Very Low</MenuItem>
-                    <MenuItem value="LOW">Low</MenuItem>
-                    <MenuItem value="MEDIUM">Medium</MenuItem>
-                    <MenuItem value="HIGH">High</MenuItem>
-                    <MenuItem value="VERY_HIGH">Very High</MenuItem>
+                    <MenuItem value="VERY_LOW">منخفضة جدًا</MenuItem>
+                    <MenuItem value="LOW">منخفضة</MenuItem>
+                    <MenuItem value="MEDIUM">متوسطة</MenuItem>
+                    <MenuItem value="HIGH">مرتفعة</MenuItem>
+                    <MenuItem value="VERY_HIGH">مرتفعة جدًا</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -516,7 +567,7 @@ export const ProjectDetails = ({
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
-                label="Area (m²)"
+                label="المساحة (م²)"
                 type="number"
                 variant="outlined"
                 inputProps={{ step: 0.01 }}
@@ -539,7 +590,7 @@ export const ProjectDetails = ({
                   onClick={() => setIsEditing(false)}
                   size="large"
                 >
-                  Cancel
+                  إلغاء
                 </StyledButton>
                 <StyledButton
                   type="submit"
@@ -548,7 +599,7 @@ export const ProjectDetails = ({
                   startIcon={<MdSave />}
                   size="large"
                 >
-                  Save Changes
+                  حفظ التغييرات
                 </StyledButton>
               </Box>
             </Grid>
@@ -562,103 +613,116 @@ export const ProjectDetails = ({
     <Box sx={{ mt: 3 }}>
       <Grid container spacing={3}>
         <Grid size={12}>
-          <InfoCard>
-            <Grid
-              container
-              spacing={3}
-              sx={{
-                width: "100%",
-              }}
-            >
-              <Grid size={3}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 2.5,
-                    width: "100%",
-                  }}
-                >
-                  <InfoCard>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: "primary.light",
-                        color: "primary.main",
-                        p: 1.5,
-                        borderRadius: 2,
-                        mr: 2,
-                      }}
-                    >
-                      <MdOutlineSquareFoot size={24} />
-                    </Box>
-                    <Box sx={{ width: "100%" }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Project Area
-                      </Typography>
-                      <Typography variant="subtitle1" fontWeight="600">
-                        {project.area ? `${project.area} m²` : "Not specified"}
-                      </Typography>
-                    </Box>
-                  </InfoCard>
+          <Grid
+            container
+            spacing={2.5}
+            sx={{
+              width: "100%",
+            }}
+          >
+            <Grid size={{ xs: 12, lg: 3 }}>
+              <Stack spacing={2}>
+                <InfoCard>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      bgcolor: alpha(theme.palette.primary.main, 0.12),
+                      color: "primary.main",
+                      p: 1.25,
+                      borderRadius: 2.5,
+                      mr: 2,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <MdOutlineSquareFoot size={22} />
+                  </Box>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                      مساحة المشروع
+                    </Typography>
+                    <Typography variant="subtitle1" fontWeight={700}>
+                      {project.area ? `${project.area} م²` : "غير محددة"}
+                    </Typography>
+                  </Box>
+                </InfoCard>
 
-                  <InfoCard>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        backgroundColor: "primary.light",
-                        color: "primary.main",
-                        p: 1.5,
-                        borderRadius: 2,
-                        mr: 2,
-                      }}
-                    >
-                      <MdOutlineAccessTime size={24} />
-                    </Box>
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Project Timeline
-                      </Typography>
-                      <Typography variant="subtitle1" fontWeight="600">
-                        {project.startedAt
-                          ? dayjs(project.startedAt).format("DD MMM, YY")
-                          : "Not started"}
-                        {project.endedAt
-                          ? ` - ${dayjs(project.endedAt).format("DD MMM, YY")}`
-                          : project.startedAt
-                          ? " - Ongoing"
-                          : ""}
-                      </Typography>
-                    </Box>
-                  </InfoCard>
-                </Box>
-              </Grid>
-              <Grid size={9}>
-                <Box>
-                  <DeliverySchedulesPanel
-                    projectId={project.id}
-                    clientLeadId={project.clientLeadId}
-                  />
-                </Box>
-              </Grid>
+                <InfoCard>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      bgcolor: alpha(theme.palette.primary.main, 0.12),
+                      color: "primary.main",
+                      p: 1.25,
+                      borderRadius: 2.5,
+                      mr: 2,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <MdOutlineAccessTime size={22} />
+                  </Box>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
+                      الجدول الزمني للمشروع
+                    </Typography>
+                    <Typography variant="subtitle1" fontWeight={700}>
+                      {project.startedAt
+                        ? dayjs(project.startedAt).format("DD MMM, YY")
+                        : "لم يبدأ"}
+                      {project.endedAt
+                        ? ` - ${dayjs(project.endedAt).format("DD MMM, YY")}`
+                        : project.startedAt
+                        ? " - مستمر"
+                        : ""}
+                    </Typography>
+                  </Box>
+                </InfoCard>
+              </Stack>
             </Grid>
-          </InfoCard>
-          <Divider mb={1} />
+            <Grid size={{ xs: 12, lg: 9 }}>
+              <Box
+                sx={{
+                  p: { xs: 2, md: 2.5 },
+                  borderRadius: 3.5,
+                  border: `1px solid ${theme.palette.divider}`,
+                  bgcolor: "background.paper",
+                  height: "100%",
+                }}
+              >
+                <DeliverySchedulesPanel
+                  projectId={project.id}
+                  clientLeadId={project.clientLeadId}
+                />
+              </Box>
+            </Grid>
+          </Grid>
         </Grid>
 
         {!isStaff && !cantDoActions && (
-          <Grid size={12} sx={{ mt: 3 }}>
+          <Grid size={12}>
             <StyledCard sx={{ p: 0, overflow: "visible" }}>
               <CardHeader
                 title={
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <MdAssignmentInd size={22} color={colors.primary} />
-                    <Typography variant="h6" sx={{ ml: 1.5, fontWeight: 600 }}>
-                      Project Designers
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
+                    <Box
+                      sx={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 2,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        bgcolor: alpha(theme.palette.primary.main, 0.12),
+                        color: "primary.main",
+                      }}
+                    >
+                      <MdAssignmentInd size={20} />
+                    </Box>
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                      مصممو المشروع
                     </Typography>
                   </Box>
                 }
@@ -674,7 +738,7 @@ export const ProjectDetails = ({
                     size="small"
                     startIcon={<MdAdd />}
                   >
-                    Assign New Designer
+                    إسناد مصمم جديد
                   </StyledButton>
                 }
                 sx={{ px: 3, pt: 2.5, pb: 1 }}
@@ -686,28 +750,29 @@ export const ProjectDetails = ({
                 {project.assignments?.length ? (
                   project.assignments?.map((assignment) => (
                     <StyledDesignerCard key={assignment.id}>
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                      <Box sx={{ display: "flex", alignItems: "center", minWidth: 0 }}>
                         <Avatar
                           sx={{
                             bgcolor: "primary.main",
                             width: 40,
                             height: 40,
+                            fontWeight: 700,
                           }}
                         >
                           {assignment.user.name.charAt(0)}
                         </Avatar>
-                        <Box sx={{ ml: 2 }}>
-                          <Typography variant="subtitle1" fontWeight="medium">
+                        <Box sx={{ ml: 2, minWidth: 0 }}>
+                          <Typography variant="subtitle1" fontWeight={600} noWrap>
                             {assignment.user.name}
                           </Typography>
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2" color="text.secondary" noWrap>
                             {assignment.user.email}
                           </Typography>
                         </Box>
                       </Box>
 
-                      <Box sx={{ display: "flex", gap: 1 }}>
-                        <Tooltip title="Remove from project">
+                      <Box sx={{ display: "flex", gap: 1, flexShrink: 0 }}>
+                        <Tooltip title="إزالة من المشروع">
                           <StyledButton
                             onClick={() => {
                               setOpen(true);
@@ -719,18 +784,18 @@ export const ProjectDetails = ({
                             size="small"
                             startIcon={<MdDelete />}
                           >
-                            Remove
+                            إزالة
                           </StyledButton>
                         </Tooltip>
                       </Box>
                     </StyledDesignerCard>
                   ))
                 ) : (
-                  <Box sx={{ p: 3, textAlign: "center" }}>
-                    <Typography variant="body1" color="text.secondary">
-                      No designers assigned to this project yet
-                    </Typography>
-                  </Box>
+                  <EmptyState
+                    icon={<MdAssignmentInd />}
+                    title="لا يوجد مصممون مُسندون"
+                    description="لم يتم إسناد أي مصمم إلى هذا المشروع بعد."
+                  />
                 )}
               </CardContent>
             </StyledCard>
@@ -773,11 +838,23 @@ export const ProjectDetails = ({
                 gap: 2,
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <PriorityChip
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.5,
+                  flexWrap: "wrap",
+                }}
+              >
+                <Chip
                   icon={<MdGroup />}
-                  label={`(Group: ${project.groupTitle})`}
-                  color="0d9488"
+                  label={`المجموعة: ${project.groupTitle}`}
+                  variant="outlined"
+                  sx={{
+                    borderRadius: 2,
+                    fontWeight: 600,
+                    height: 34,
+                  }}
                 />
                 <StyledButton
                   variant="contained"
@@ -786,23 +863,19 @@ export const ProjectDetails = ({
                   aria-haspopup="true"
                   aria-expanded={menuOpen ? "true" : undefined}
                   onClick={handleClick}
-                  color={
-                    project.status === "Completed"
-                      ? "success"
-                      : project.status === "Hold"
-                      ? "warning"
-                      : project.status === "Rejected"
-                      ? "error"
-                      : "primary"
-                  }
                   sx={{
-                    background: statusColors[project.status],
-                    fontWeight: 600,
-                    borderRadius: 3,
+                    bgcolor: getStatusColor(project.status),
+                    color: "#fff",
+                    fontWeight: 700,
+                    borderRadius: 2.5,
                     px: 2,
+                    "&:hover": {
+                      bgcolor: getStatusColor(project.status),
+                      filter: "brightness(0.94)",
+                    },
                   }}
                 >
-                  {project.status}
+                  {labelForStatus(project.status)}
                 </StyledButton>
                 <Menu
                   id="status-menu"
@@ -812,7 +885,7 @@ export const ProjectDetails = ({
                   onClose={() => setAnchorEl(null)}
                   PaperProps={{
                     sx: {
-                      borderRadius: 2,
+                      borderRadius: 2.5,
                       boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
                       mt: 1,
                     },
@@ -833,15 +906,15 @@ export const ProjectDetails = ({
                     >
                       <Box sx={{ display: "flex", alignItems: "center" }}>
                         {status === "Hold" && (
-                          <MdPause size={18} style={{ marginRight: 8 }} />
+                          <MdPause size={18} style={{ marginInlineEnd: 8 }} />
                         )}
                         {status === "Rejected" && (
-                          <MdClose size={18} style={{ marginRight: 8 }} />
+                          <MdClose size={18} style={{ marginInlineEnd: 8 }} />
                         )}
                         {status === "Completed" && (
-                          <MdCheck size={18} style={{ marginRight: 8 }} />
+                          <MdCheck size={18} style={{ marginInlineEnd: 8 }} />
                         )}
-                        {status}
+                        {labelForStatus(status)}
                       </Box>
                     </MenuItem>
                   ))}
@@ -855,7 +928,7 @@ export const ProjectDetails = ({
               </Box>
 
               {((!isStaff && !cantDoActions) || isDesigner) && (
-                <Box sx={{ display: "flex", gap: 2 }}>
+                <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
                   <StyledButton
                     variant="outlined"
                     color="primary"
@@ -865,16 +938,17 @@ export const ProjectDetails = ({
                       setEditedProject({ ...project });
                     }}
                   >
-                    Edit Details
+                    تعديل التفاصيل
                   </StyledButton>
                   {!isDesigner && (
                     <StyledButton
                       variant="contained"
                       color="primary"
+                      startIcon={<MdOpenInNew />}
                       component="a"
                       href={`/dashboard/projects/grouped/${project.clientLeadId}`}
                     >
-                      View All Lead Projects
+                      عرض كل مشاريع العميل
                     </StyledButton>
                   )}
                 </Box>

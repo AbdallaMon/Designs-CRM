@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import {
   Box,
   Button,
+  Chip,
   Divider,
   Menu,
   MenuItem,
@@ -280,7 +281,7 @@ function LeadData({ lead }) {
           {" "}
           <LeadInfo lead={lead} />
           <InfoCard
-            title="Related Projects"
+            title="المشاريع المرتبطة"
             icon={BsPersonCheckFill}
             theme={theme}
           >
@@ -291,38 +292,53 @@ function LeadData({ lead }) {
                   color="primary"
                   component="a"
                   href={`/dashboard/projects/grouped/${lead.id}`}
+                  sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2 }}
                 >
-                  See all the projects of this lead
+                  عرض كل مشاريع هذا العميل
                 </Button>
               )}
               {lead.projects?.map((project) => {
                 return (
-                  <>
-                    <Paper sx={{ background: "white", p: 2 }}>
-                      <Box display="flex" gap={2} alignItems="center" mb={2}>
-                        <Button
-                          variant="outlined"
-                          color="primary"
-                          type="a"
-                          href={`/dashboard/projects/${project.id}`}
-                          sx={{ mb: 0, textTransform: "none" }}
-                        >
-                          See the project <strong># </strong> {project.id}
-                        </Button>
-                        <Typography>
-                          <strong>Type:</strong> {project.type} <br />
-                        </Typography>
-                      </Box>
-                      <ProjectDetails
-                        project={project}
-                        isStaff={
-                          user.role !== "ADMIN" && user.role !== "SUPER_ADMIN"
-                        }
-                        withReleventLinks={true}
+                  <Paper
+                    key={project.id}
+                    elevation={0}
+                    sx={{
+                      bgcolor: "background.paper",
+                      p: { xs: 2, md: 2.5 },
+                      borderRadius: 4,
+                      border: (t) => `1px solid ${t.palette.divider}`,
+                    }}
+                  >
+                    <Box
+                      display="flex"
+                      gap={1.5}
+                      alignItems="center"
+                      flexWrap="wrap"
+                      mb={2}
+                    >
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        component="a"
+                        href={`/dashboard/projects/${project.id}`}
+                        sx={{ mb: 0, textTransform: "none", fontWeight: 600, borderRadius: 2 }}
+                      >
+                        عرض المشروع #{project.id}
+                      </Button>
+                      <Chip
+                        label={project.type.replace(/_/g, " ")}
+                        variant="outlined"
+                        sx={{ fontWeight: 600, borderRadius: 2 }}
                       />
-                      <Divider />{" "}
-                    </Paper>
-                  </>
+                    </Box>
+                    <ProjectDetails
+                      project={project}
+                      isStaff={
+                        user.role !== "ADMIN" && user.role !== "SUPER_ADMIN"
+                      }
+                      withReleventLinks={true}
+                    />
+                  </Paper>
                 );
               })}
             </>
