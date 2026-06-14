@@ -48,7 +48,7 @@ export default function SelectPaymentCondition({
           onChange={handleConditionChange}
           disabled={disabled || loading}
           renderInput={(params) => (
-            <TextField {...params} label="Select Payment Condition" />
+            <TextField {...params} label="اختر شرط الدفع" />
           )}
         />
       </Box>

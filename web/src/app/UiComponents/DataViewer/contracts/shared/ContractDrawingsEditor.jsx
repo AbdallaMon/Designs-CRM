@@ -5,15 +5,9 @@ import {
   Stack,
   Typography,
   Box,
-  Button,
-  Card,
-  CardHeader,
-  CardContent,
-  Avatar,
   TextField,
   IconButton,
   Tooltip,
-  Divider,
   Grid,
   alpha,
   useTheme,
@@ -22,10 +16,12 @@ import { FaPlus, FaTrash, FaRegImages } from "react-icons/fa";
 import SimpleFileInput from "../../../formComponents/SimpleFileInput";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
+import { SectionHeader, EditorCard, EmptyState, AddButton } from "./formKit";
 
 export default function ContractDrawingsEditor({ drawings, setDrawings }) {
   const { setProgress, setOverlay } = useUploadContext();
   const theme = useTheme();
+  const info = theme.palette.info.main;
 
   const addRow = () =>
     setDrawings([...drawings, { url: "", file: null, fileName: "" }]);
@@ -55,104 +51,110 @@ export default function ContractDrawingsEditor({ drawings, setDrawings }) {
 
   return (
     <Stack spacing={2}>
-      <Stack direction="row" alignItems="center" spacing={1}>
-        <FaRegImages style={{ color: theme.palette.info.main, fontSize: 20 }} />
-        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-          Drawings (Optional)
-        </Typography>
-        <Box flex={1} />
-        <Button
-          startIcon={<FaPlus />}
-          onClick={addRow}
-          variant="contained"
-          size="small"
-        >
-          Add
-        </Button>
-      </Stack>
+      <SectionHeader
+        icon={<FaRegImages />}
+        title="المخططات (اختياري)"
+        subtitle="أرفق روابط أو ملفات المخططات المرتبطة بالعقد"
+        count={drawings.length}
+        color={info}
+        action={
+          <AddButton
+            onClick={addRow}
+            label="إضافة مخطط"
+            startIcon={<FaPlus />}
+            color={info}
+          />
+        }
+      />
 
-      <Grid container spacing={2}>
-        {drawings.map((d, idx) => (
-          <Grid key={idx} size={{ xs: 12, md: 12 }}>
-            <Card
-              variant="outlined"
-              sx={{
-                background: `linear-gradient(135deg, ${alpha(
-                  theme.palette.info.main,
-                  0.08
-                )} 0%, ${alpha(theme.palette.info.main, 0.02)} 100%)`,
-                border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-                borderRadius: 2,
-                "&:hover": { boxShadow: "0 4px 12px rgba(0,0,0,0.08)" },
-                transition: "all 0.3s ease",
-              }}
+      {drawings.length === 0 ? (
+        <EmptyState
+          icon={<FaRegImages />}
+          color={info}
+          text="لا توجد مخططات — يمكنك إضافة رابط أو رفع ملف."
+          action={
+            <AddButton
+              onClick={addRow}
+              label="إضافة مخطط"
+              startIcon={<FaPlus />}
+              color={info}
+            />
+          }
+        />
+      ) : (
+        <Stack spacing={1.5}>
+          {drawings.map((d, idx) => (
+            <EditorCard
+              key={idx}
+              accent={info}
+              index={idx + 1}
+              label={`المخطط #${idx + 1}`}
+              onRemove={
+                <Tooltip title="حذف">
+                  <span>
+                    <IconButton
+                      color="error"
+                      onClick={() => removeRow(idx)}
+                      size="small"
+                    >
+                      <FaTrash />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              }
             >
-              <CardHeader
-                title={`Drawing #${idx + 1}`}
-                avatar={
-                  <Avatar sx={{ bgcolor: "info.main" }}>{idx + 1}</Avatar>
-                }
-                titleTypographyProps={{ fontWeight: 600 }}
-              />
-              <Divider />
-              <CardContent>
-                <Stack spacing={2}>
-                  <Grid container spacing={2}>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <TextField
-                        label="URL"
-                        value={d.url}
-                        onChange={(e) => updateRow(idx, "url", e.target.value)}
-                        fullWidth
-                        size="small"
-                      />
-                    </Grid>
-                    <Grid size={{ xs: 12, sm: 6 }}>
-                      <SimpleFileInput
-                        label="File"
-                        id={`file-${idx}`}
-                        variant="outlined"
-                        input={{ accept: "image/*" }}
-                        handleUpload={(file) => {
-                          handleUploadFile(file, idx);
-                        }}
-                      />
-                    </Grid>
+              <Stack spacing={1.5}>
+                <Grid container spacing={1.5}>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <TextField
+                      label="الرابط"
+                      value={d.url}
+                      onChange={(e) => updateRow(idx, "url", e.target.value)}
+                      fullWidth
+                      size="small"
+                    />
                   </Grid>
+                  <Grid size={{ xs: 12, sm: 6 }}>
+                    <SimpleFileInput
+                      label="ملف"
+                      id={`file-${idx}`}
+                      variant="outlined"
+                      input={{ accept: "image/*" }}
+                      handleUpload={(file) => {
+                        handleUploadFile(file, idx);
+                      }}
+                    />
+                  </Grid>
+                </Grid>
 
-                  <TextField
-                    label="File Name (Optional)"
-                    value={d.fileName || ""}
-                    onChange={(e) => updateRow(idx, "fileName", e.target.value)}
-                    fullWidth
-                    size="small"
-                  />
+                <TextField
+                  label="اسم الملف (اختياري)"
+                  value={d.fileName || ""}
+                  onChange={(e) => updateRow(idx, "fileName", e.target.value)}
+                  fullWidth
+                  size="small"
+                />
 
-                  {(d.file || d.url) && (
+                {(d.file || d.url) && (
+                  <Box
+                    sx={{
+                      px: 1.25,
+                      py: 0.75,
+                      borderRadius: 1.5,
+                      bgcolor: alpha(info, 0.08),
+                    }}
+                  >
                     <Typography variant="caption" color="text.secondary">
-                      Will use {d.file ? "uploaded image" : "URL"} when saving.
+                      سيتم استخدام {d.file ? "الصورة المرفوعة" : "الرابط"} عند
+                      الحفظ.
                     </Typography>
-                  )}
-
-                  <Stack direction="row" justifyContent="flex-end">
-                    <Tooltip title="Remove">
-                      <span>
-                        <IconButton
-                          color="error"
-                          onClick={() => removeRow(idx)}
-                          size="small"
-                        >
-                          <FaTrash />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  </Stack>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+                  </Box>
+                )}
+              </Stack>
+            </EditorCard>
+          ))}
+        </Stack>
+      )}
     </Stack>
   );
 }

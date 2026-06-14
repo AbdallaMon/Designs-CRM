@@ -2,8 +2,6 @@
 
 import React, { useMemo, useState } from "react";
 import {
-  Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Button,
@@ -11,17 +9,13 @@ import {
   Box,
   Stack,
   Typography,
-  Stepper,
-  Step,
-  StepLabel,
   useTheme,
   alpha,
-  Divider,
   Alert,
   Snackbar,
   IconButton,
 } from "@mui/material";
-import { FaPlus, FaUpload, FaExclamationCircle } from "react-icons/fa";
+import { FaPlus, FaFileSignature, FaUser, FaArrowRight, FaArrowLeft, FaCheck } from "react-icons/fa";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 
@@ -32,6 +26,8 @@ import PaymentsEditor from "./shared/PaymentsEditor";
 import SpecialItemsEditor from "./shared/SpecialItemsEditor";
 import ContractDrawingsEditor from "./shared/ContractDrawingsEditor";
 import { sum } from "./shared/contractHelpers";
+import { SectionHeader } from "./shared/formKit";
+import { ContractDialogShell, StepRail } from "./shared/dialogKit";
 import { MdClose } from "react-icons/md";
 
 // --- Main Dialog ---
@@ -58,7 +54,7 @@ export default function CreateContractDialog({
   const [arClientName, setArClientName] = useState(lead?.client?.arName);
   const [enClientName, setEnClientName] = useState(lead?.client?.enName);
   const [validationErrors, setValidationErrors] = useState([]);
-  const steps = ["Basics", "Items & Drawings"];
+  const steps = ["الأساسيات", "البنود والمخططات"];
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
@@ -174,34 +170,31 @@ export default function CreateContractDialog({
         size="large"
         sx={{
           background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-          textTransform: "none",
-          fontSize: "1rem",
-          fontWeight: 600,
+          fontSize: "0.95rem",
+          fontWeight: 700,
+          borderRadius: 2.5,
+          px: 2.5,
           boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
           "&:hover": {
             boxShadow: "0 6px 16px rgba(0, 0, 0, 0.2)",
           },
         }}
       >
-        Create New Contract
+        إنشاء عقد جديد
       </Button>
 
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
-        <DialogTitle
-          sx={{
-            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-            color: theme.palette.primary.contrastText,
-            fontWeight: 700,
-            fontSize: "1.3rem",
-            p: 2.5,
-          }}
-        >
-          Create New Contract
-        </DialogTitle>
-
+      <ContractDialogShell
+        open={open}
+        onClose={handleClose}
+        icon={<FaFileSignature />}
+        title="إنشاء عقد جديد"
+        subtitle="أدخل بيانات العقد على خطوتين"
+        activeStep={activeStep}
+        steps={steps}
+      >
         <DialogContent
           dividers
-          sx={{ p: 3, bgcolor: alpha(theme.palette.background.paper, 0.8) }}
+          sx={{ p: { xs: 2, sm: 3 }, bgcolor: theme.palette.background.default }}
         >
           <Stack spacing={3}>
             {validationErrors.length > 0 && (
@@ -215,14 +208,16 @@ export default function CreateContractDialog({
                   severity="error"
                   sx={{
                     position: "relative",
+                    borderRadius: 2,
+                    pr: 5,
                   }}
                 >
                   <Stack spacing={0.5}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      Please fix the following errors:
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      يرجى تصحيح الأخطاء التالية:
                     </Typography>
                     {validationErrors.map((error, idx) => (
-                      <Typography key={idx} variant="body2" sx={{ ml: 1 }}>
+                      <Typography key={idx} variant="body2" sx={{ ms: 1 }}>
                         • {error}
                       </Typography>
                     ))}
@@ -232,7 +227,7 @@ export default function CreateContractDialog({
                     onClick={() => setValidationErrors([])}
                     sx={{
                       position: "absolute",
-                      right: 8,
+                      insetInlineEnd: 8,
                       top: 8,
                       color: (theme) => theme.palette.grey[500],
                     }}
@@ -242,98 +237,149 @@ export default function CreateContractDialog({
                 </Alert>
               </Snackbar>
             )}
-            <Stepper activeStep={activeStep} alternativeLabel sx={{ pt: 1 }}>
-              {steps.map((label, idx) => (
-                <Step key={label}>
-                  <StepLabel
-                    StepIconProps={{
-                      sx: {
-                        color:
-                          idx < activeStep
-                            ? "success.main"
-                            : idx === activeStep
-                            ? "primary.main"
-                            : "text.secondary",
-                      },
-                    }}
-                  >
-                    <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                      {label}
-                    </Typography>
-                  </StepLabel>
-                </Step>
-              ))}
-            </Stepper>
+
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: 2.5,
+                bgcolor: "background.paper",
+                border: `1px solid ${theme.palette.divider}`,
+              }}
+            >
+              <StepRail steps={steps} activeStep={activeStep} />
+            </Box>
 
             {activeStep === 0 && (
-              <Stack spacing={3}>
-                <TextField
-                  label="Arabic Contract type"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  fullWidth
-                  size="small"
-                  placeholder="Enter arabic contract type"
-                />
+              <Stack spacing={2.5}>
+                <Box
+                  sx={{
+                    p: { xs: 2, sm: 2.5 },
+                    borderRadius: 2.5,
+                    bgcolor: "background.paper",
+                    border: `1px solid ${theme.palette.divider}`,
+                  }}
+                >
+                  <SectionHeader
+                    icon={<FaFileSignature />}
+                    title="بيانات العقد والعميل"
+                    subtitle="نوع العقد واسم العميل ومجموعة المشروع"
+                  />
+                  <Stack spacing={2} sx={{ mt: 2 }}>
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                        gap: 2,
+                      }}
+                    >
+                      <TextField
+                        label="نوع العقد (عربي)"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        fullWidth
+                        size="small"
+                        placeholder="أدخل نوع العقد بالعربية"
+                      />
+                      <TextField
+                        label="نوع العقد (إنجليزي)"
+                        value={enTitle}
+                        onChange={(e) => setEnTitle(e.target.value)}
+                        fullWidth
+                        size="small"
+                        placeholder="أدخل نوع العقد بالإنجليزية"
+                      />
+                    </Box>
 
-                <TextField
-                  label="English Contract type"
-                  value={enTitle}
-                  onChange={(e) => setEnTitle(e.target.value)}
-                  fullWidth
-                  size="small"
-                  placeholder="Enter english contract type"
-                />
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  Lead Client Name : {lead?.client?.name}
-                </Typography>
-                <TextField
-                  label="Arabic client name"
-                  value={arClientName}
-                  onChange={(e) => setArClientName(e.target.value)}
-                  fullWidth
-                  size="small"
-                  placeholder="Enter arabic client name"
-                />
+                    {lead?.client?.name && (
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        sx={{
+                          px: 1.5,
+                          py: 1,
+                          borderRadius: 2,
+                          bgcolor: alpha(theme.palette.primary.main, 0.06),
+                        }}
+                      >
+                        <FaUser style={{ color: theme.palette.primary.main }} />
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          اسم العميل في العميل المحتمل: {lead?.client?.name}
+                        </Typography>
+                      </Stack>
+                    )}
 
-                <TextField
-                  label="English client name"
-                  value={enClientName}
-                  onChange={(e) => setEnClientName(e.target.value)}
-                  fullWidth
-                  size="small"
-                  placeholder="Enter english client name"
-                />
-                <Box>
-                  <Typography
-                    variant="subtitle2"
-                    sx={{ fontWeight: 600, mb: 1 }}
-                  >
-                    Project Group
-                  </Typography>
-                  <ProjectGroupSelect
-                    value={projectGroup}
-                    onChange={setProjectGroup}
-                    clientLeadId={clientLeadId}
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                        gap: 2,
+                      }}
+                    >
+                      <TextField
+                        label="اسم العميل (عربي)"
+                        value={arClientName}
+                        onChange={(e) => setArClientName(e.target.value)}
+                        fullWidth
+                        size="small"
+                        placeholder="أدخل اسم العميل بالعربية"
+                      />
+                      <TextField
+                        label="اسم العميل (إنجليزي)"
+                        value={enClientName}
+                        onChange={(e) => setEnClientName(e.target.value)}
+                        fullWidth
+                        size="small"
+                        placeholder="أدخل اسم العميل بالإنجليزية"
+                      />
+                    </Box>
+
+                    <Box>
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ fontWeight: 700, mb: 1 }}
+                      >
+                        مجموعة المشروع
+                      </Typography>
+                      <ProjectGroupSelect
+                        value={projectGroup}
+                        onChange={setProjectGroup}
+                        clientLeadId={clientLeadId}
+                      />
+                    </Box>
+                  </Stack>
+                </Box>
+
+                <Box
+                  sx={{
+                    p: { xs: 2, sm: 2.5 },
+                    borderRadius: 2.5,
+                    bgcolor: "background.paper",
+                    border: `1px solid ${theme.palette.divider}`,
+                  }}
+                >
+                  <StagesSelector
+                    selected={selectedStages}
+                    onChange={setSelectedStages}
+                    perStageMeta={perStageMeta}
+                    setPerStageMeta={setPerStageMeta}
                   />
                 </Box>
 
-                <Divider />
-
-                <StagesSelector
-                  selected={selectedStages}
-                  onChange={setSelectedStages}
-                  perStageMeta={perStageMeta}
-                  setPerStageMeta={setPerStageMeta}
-                />
-
-                <Divider />
-
-                <PaymentsEditor
-                  payments={payments}
-                  setPayments={setPayments}
-                  taxRate={taxRate}
-                />
+                <Box
+                  sx={{
+                    p: { xs: 2, sm: 2.5 },
+                    borderRadius: 2.5,
+                    bgcolor: "background.paper",
+                    border: `1px solid ${theme.palette.divider}`,
+                  }}
+                >
+                  <PaymentsEditor
+                    payments={payments}
+                    setPayments={setPayments}
+                    taxRate={taxRate}
+                  />
+                </Box>
               </Stack>
             )}
 
@@ -346,16 +392,33 @@ export default function CreateContractDialog({
             )} */}
 
             {activeStep === 1 && (
-              <Stack spacing={3}>
-                <SpecialItemsEditor
-                  items={specialItems}
-                  setItems={setSpecialItems}
-                />
-                <Divider />
-                <ContractDrawingsEditor
-                  drawings={drawings}
-                  setDrawings={setDrawings}
-                />
+              <Stack spacing={2.5}>
+                <Box
+                  sx={{
+                    p: { xs: 2, sm: 2.5 },
+                    borderRadius: 2.5,
+                    bgcolor: "background.paper",
+                    border: `1px solid ${theme.palette.divider}`,
+                  }}
+                >
+                  <SpecialItemsEditor
+                    items={specialItems}
+                    setItems={setSpecialItems}
+                  />
+                </Box>
+                <Box
+                  sx={{
+                    p: { xs: 2, sm: 2.5 },
+                    borderRadius: 2.5,
+                    bgcolor: "background.paper",
+                    border: `1px solid ${theme.palette.divider}`,
+                  }}
+                >
+                  <ContractDrawingsEditor
+                    drawings={drawings}
+                    setDrawings={setDrawings}
+                  />
+                </Box>
               </Stack>
             )}
           </Stack>
@@ -363,55 +426,58 @@ export default function CreateContractDialog({
 
         <DialogActions
           sx={{
-            p: 2.5,
+            p: 2,
             gap: 1,
-            bgcolor: alpha(theme.palette.background.paper, 0.6),
-            borderTop: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+            bgcolor: "background.paper",
+            borderTop: `1px solid ${theme.palette.divider}`,
           }}
         >
-          <Button
-            onClick={handleClose}
-            sx={{ textTransform: "none", fontWeight: 600 }}
-          >
-            Cancel
+          <Button onClick={handleClose} sx={{ fontWeight: 700 }} color="inherit">
+            إلغاء
           </Button>
+          <Box sx={{ flex: 1 }} />
           {activeStep > 0 && (
             <Button
               onClick={back}
               variant="outlined"
-              sx={{ textTransform: "none", fontWeight: 600 }}
+              startIcon={<FaArrowRight />}
+              sx={{ fontWeight: 700, borderRadius: 2 }}
             >
-              Back
+              السابق
             </Button>
           )}
           {activeStep < steps.length - 1 && (
             <Button
               onClick={next}
               variant="contained"
+              endIcon={<FaArrowLeft />}
               sx={{
                 background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                textTransform: "none",
-                fontWeight: 600,
+                fontWeight: 700,
+                borderRadius: 2,
+                px: 2.5,
               }}
             >
-              Next
+              التالي
             </Button>
           )}
           {activeStep === steps.length - 1 && (
             <Button
               onClick={handleSubmit}
               variant="contained"
+              startIcon={<FaCheck />}
               sx={{
                 background: `linear-gradient(135deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)`,
-                textTransform: "none",
-                fontWeight: 600,
+                fontWeight: 700,
+                borderRadius: 2,
+                px: 2.5,
               }}
             >
-              Create Contract
+              إنشاء العقد
             </Button>
           )}
         </DialogActions>
-      </Dialog>
+      </ContractDialogShell>
     </Box>
   );
 }

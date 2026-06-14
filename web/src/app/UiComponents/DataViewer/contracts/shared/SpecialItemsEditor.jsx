@@ -3,25 +3,18 @@
 import React from "react";
 import {
   Stack,
-  Typography,
-  Box,
-  Button,
-  Card,
-  CardHeader,
-  CardContent,
-  Avatar,
   TextField,
   IconButton,
   Tooltip,
-  Divider,
   Grid,
-  alpha,
   useTheme,
 } from "@mui/material";
 import { FaPlus, FaTrash, FaSitemap } from "react-icons/fa";
+import { SectionHeader, EditorCard, EmptyState, AddButton } from "./formKit";
 
 export default function SpecialItemsEditor({ items, setItems }) {
   const theme = useTheme();
+  const secondary = theme.palette.secondary.main;
 
   const addItem = () => setItems([...items, { labelAr: "", labelEn: "" }]);
 
@@ -39,95 +32,83 @@ export default function SpecialItemsEditor({ items, setItems }) {
 
   return (
     <Stack spacing={2}>
-      <Stack direction="row" alignItems="center" spacing={1}>
-        <FaSitemap
-          style={{ color: theme.palette.secondary.main, fontSize: 20 }}
-        />
-        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-          Special Items
-        </Typography>
-        <Box flex={1} />
-        <Button
-          startIcon={<FaPlus />}
-          onClick={addItem}
-          variant="contained"
-          size="small"
-        >
-          Add
-        </Button>
-      </Stack>
+      <SectionHeader
+        icon={<FaSitemap />}
+        title="بنود خاصة"
+        subtitle="بنود إضافية تُدرج ضمن العقد (اختياري)"
+        count={items.length}
+        color={secondary}
+        action={
+          <AddButton
+            onClick={addItem}
+            label="إضافة بند"
+            startIcon={<FaPlus />}
+            color={secondary}
+          />
+        }
+      />
 
-      <Grid container spacing={2}>
-        {items.map((it, idx) => (
-          <Grid key={idx} size={{ xs: 12, md: 12 }}>
-            <Card
-              variant="outlined"
-              sx={{
-                background: `linear-gradient(135deg, ${alpha(
-                  theme.palette.secondary.main,
-                  0.08
-                )} 0%, ${alpha(theme.palette.secondary.main, 0.02)} 100%)`,
-                border: `1px solid ${alpha(theme.palette.secondary.main, 0.2)}`,
-                borderRadius: 2,
-                "&:hover": { boxShadow: "0 4px 12px rgba(0,0,0,0.08)" },
-                transition: "all 0.3s ease",
-              }}
+      {items.length === 0 ? (
+        <EmptyState
+          icon={<FaSitemap />}
+          color={secondary}
+          text="لا توجد بنود خاصة — يمكنك إضافة بنود إن لزم."
+          action={
+            <AddButton
+              onClick={addItem}
+              label="إضافة بند"
+              startIcon={<FaPlus />}
+              color={secondary}
+            />
+          }
+        />
+      ) : (
+        <Stack spacing={1.5}>
+          {items.map((it, idx) => (
+            <EditorCard
+              key={idx}
+              accent={secondary}
+              index={idx + 1}
+              label={`البند #${idx + 1}`}
+              onRemove={
+                <Tooltip title="حذف">
+                  <span>
+                    <IconButton
+                      color="error"
+                      onClick={() => removeItem(idx)}
+                      size="small"
+                    >
+                      <FaTrash />
+                    </IconButton>
+                  </span>
+                </Tooltip>
+              }
             >
-              <CardHeader
-                title={`Item #${idx + 1}`}
-                avatar={
-                  <Avatar sx={{ bgcolor: "secondary.main" }}>{idx + 1}</Avatar>
-                }
-                titleTypographyProps={{ fontWeight: 600 }}
-              />
-              <Divider />
-              <CardContent>
-                <Grid container spacing={2} alignItems="flex-start">
-                  <Grid size={{ xs: 12, sm: 5 }}>
-                    <TextField
-                      label="Item Name (Arabic) *"
-                      value={it.labelAr}
-                      onChange={(e) =>
-                        updateItem(idx, "labelAr", e.target.value)
-                      }
-                      fullWidth
-                      required
-                      size="small"
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, sm: 5 }}>
-                    <TextField
-                      label="Item Name (English)"
-                      value={it.labelEn || ""}
-                      onChange={(e) =>
-                        updateItem(idx, "labelEn", e.target.value)
-                      }
-                      fullWidth
-                      size="small"
-                    />
-                  </Grid>
-                  <Grid
-                    size={{ xs: 12, sm: 2 }}
-                    sx={{ display: "flex", justifyContent: "flex-end" }}
-                  >
-                    <Tooltip title="Remove">
-                      <span>
-                        <IconButton
-                          color="error"
-                          onClick={() => removeItem(idx)}
-                          size="small"
-                        >
-                          <FaTrash />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  </Grid>
+              <Grid container spacing={1.5} alignItems="flex-start">
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    label="اسم البند (عربي) *"
+                    value={it.labelAr}
+                    onChange={(e) => updateItem(idx, "labelAr", e.target.value)}
+                    fullWidth
+                    required
+                    size="small"
+                  />
                 </Grid>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <TextField
+                    label="اسم البند (إنجليزي)"
+                    value={it.labelEn || ""}
+                    onChange={(e) => updateItem(idx, "labelEn", e.target.value)}
+                    fullWidth
+                    size="small"
+                  />
+                </Grid>
+              </Grid>
+            </EditorCard>
+          ))}
+        </Stack>
+      )}
     </Stack>
   );
 }

@@ -5,22 +5,24 @@ import {
   Box,
   Stack,
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Button,
   TextField,
-  Divider,
   Typography,
-  Stepper,
-  Step,
-  StepLabel,
   LinearProgress,
   alpha,
   useTheme,
   Alert,
 } from "@mui/material";
-import { FaCopy, FaExclamationCircle } from "react-icons/fa";
+import {
+  FaCopy,
+  FaUser,
+  FaArrowRight,
+  FaArrowLeft,
+  FaCheck,
+  FaExclamationTriangle,
+} from "react-icons/fa";
 
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
@@ -33,6 +35,8 @@ import PaymentsEditor from "./shared/PaymentsEditor";
 import SpecialItemsEditor from "./shared/SpecialItemsEditor";
 import ContractDrawingsEditor from "./shared/ContractDrawingsEditor";
 import { CONTRACT_LEVELSENUM } from "@/app/helpers/constants";
+import { SectionHeader } from "./shared/formKit";
+import { ContractDialogShell, StepRail } from "./shared/dialogKit";
 export default function CloneContract({
   sourceId,
   onCloned,
@@ -44,7 +48,7 @@ export default function CloneContract({
 
   const taxRate = 5;
   const [activeStep, setActiveStep] = useState(0);
-  const steps = ["Basics", "Items & Drawings"];
+  const steps = ["الأساسيات", "البنود والمخططات"];
 
   // fetched
   const [loadingSrc, setLoadingSrc] = useState(false);
@@ -216,135 +220,184 @@ export default function CloneContract({
 
   return (
     <Box>
-      <Dialog open={open} onClose={handleClose} fullWidth maxWidth="md">
-        <DialogTitle
-          sx={{
-            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-            color: theme.palette.primary.contrastText,
-            fontWeight: 700,
-            fontSize: "1.2rem",
-            p: 2.5,
-          }}
-        >
-          Clone Contract
-        </DialogTitle>
-
+      <ContractDialogShell
+        open={open}
+        onClose={handleClose}
+        icon={<FaCopy />}
+        title="نسخ العقد"
+        subtitle="مراجعة وتعديل بيانات العقد قبل إنشاء النسخة"
+        activeStep={activeStep}
+        steps={steps}
+      >
         <DialogContent
           dividers
-          sx={{ p: 3, bgcolor: alpha(theme.palette.background.paper, 0.8) }}
+          sx={{ p: { xs: 2, sm: 3 }, bgcolor: theme.palette.background.default }}
         >
           {loadingSrc ? (
-            <Stack alignItems="center" sx={{ py: 6 }}>
-              <LinearProgress sx={{ width: "100%" }} />
-              <Typography variant="caption" sx={{ mt: 1 }}>
-                Loading source contract…
+            <Stack alignItems="center" spacing={1.5} sx={{ py: 6 }}>
+              <LinearProgress sx={{ width: "100%", borderRadius: 1 }} />
+              <Typography variant="caption" color="text.secondary">
+                جارٍ تحميل العقد المصدر…
               </Typography>
             </Stack>
           ) : (
             <Stack spacing={3}>
               {validationErrors.length > 0 && (
-                <Alert severity="error">
+                <Alert severity="error" sx={{ borderRadius: 2 }}>
                   <Stack spacing={0.5}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                      Please fix the following errors:
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                      يرجى تصحيح الأخطاء التالية:
                     </Typography>
                     {validationErrors.map((error, idx) => (
-                      <Typography key={idx} variant="body2" sx={{ ml: 1 }}>
+                      <Typography key={idx} variant="body2" sx={{ ms: 1 }}>
                         • {error}
                       </Typography>
                     ))}
                   </Stack>
                 </Alert>
               )}
-              <Stepper activeStep={activeStep} alternativeLabel sx={{ pt: 1 }}>
-                {steps.map((label, idx) => (
-                  <Step key={label}>
-                    <StepLabel
-                      StepIconProps={{
-                        sx: {
-                          color:
-                            idx < activeStep
-                              ? "success.main"
-                              : idx === activeStep
-                              ? "primary.main"
-                              : "text.secondary",
-                        },
-                      }}
-                    >
-                      <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                        {label}
-                      </Typography>
-                    </StepLabel>
-                  </Step>
-                ))}
-              </Stepper>
+
+              <Box
+                sx={{
+                  p: 2,
+                  borderRadius: 2.5,
+                  bgcolor: "background.paper",
+                  border: `1px solid ${theme.palette.divider}`,
+                }}
+              >
+                <StepRail steps={steps} activeStep={activeStep} />
+              </Box>
 
               {activeStep === 0 && (
-                <Stack spacing={3}>
-                  <TextField
-                    label="Arabic Contract type"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    fullWidth
-                    size="small"
-                  />
-                  <TextField
-                    label="English Contract type"
-                    value={enTitle}
-                    onChange={(e) => setEnTitle(e.target.value)}
-                    fullWidth
-                    size="small"
-                  />
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                    Lead Client Name : {src?.clientLead?.client?.name}
-                  </Typography>
-                  <TextField
-                    label="Arabic client name"
-                    value={arClientName}
-                    onChange={(e) => setArClientName(e.target.value)}
-                    fullWidth
-                    size="small"
-                    placeholder="Enter arabic client name"
-                  />
+                <Stack spacing={2.5}>
+                  <Box
+                    sx={{
+                      p: { xs: 2, sm: 2.5 },
+                      borderRadius: 2.5,
+                      bgcolor: "background.paper",
+                      border: `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
+                    <SectionHeader
+                      icon={<FaCopy />}
+                      title="بيانات العقد والعميل"
+                      subtitle="نوع العقد واسم العميل ومجموعة المشروع"
+                    />
+                    <Stack spacing={2} sx={{ mt: 2 }}>
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                          gap: 2,
+                        }}
+                      >
+                        <TextField
+                          label="نوع العقد (عربي)"
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          fullWidth
+                          size="small"
+                        />
+                        <TextField
+                          label="نوع العقد (إنجليزي)"
+                          value={enTitle}
+                          onChange={(e) => setEnTitle(e.target.value)}
+                          fullWidth
+                          size="small"
+                        />
+                      </Box>
 
-                  <TextField
-                    label="English client name"
-                    value={enClientName}
-                    onChange={(e) => setEnClientName(e.target.value)}
-                    fullWidth
-                    size="small"
-                    placeholder="Enter english client name"
-                  />
-                  <Box>
-                    <Typography
-                      variant="subtitle2"
-                      sx={{ fontWeight: 600, mb: 1 }}
-                    >
-                      Project Group
-                    </Typography>
-                    <ProjectGroupSelect
-                      value={projectGroup}
-                      onChange={setProjectGroup}
-                      clientLeadId={clientLeadId}
+                      {src?.clientLead?.client?.name && (
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          sx={{
+                            px: 1.5,
+                            py: 1,
+                            borderRadius: 2,
+                            bgcolor: alpha(theme.palette.primary.main, 0.06),
+                          }}
+                        >
+                          <FaUser style={{ color: theme.palette.primary.main }} />
+                          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                            اسم العميل في العميل المحتمل:{" "}
+                            {src?.clientLead?.client?.name}
+                          </Typography>
+                        </Stack>
+                      )}
+
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+                          gap: 2,
+                        }}
+                      >
+                        <TextField
+                          label="اسم العميل (عربي)"
+                          value={arClientName}
+                          onChange={(e) => setArClientName(e.target.value)}
+                          fullWidth
+                          size="small"
+                          placeholder="أدخل اسم العميل بالعربية"
+                        />
+                        <TextField
+                          label="اسم العميل (إنجليزي)"
+                          value={enClientName}
+                          onChange={(e) => setEnClientName(e.target.value)}
+                          fullWidth
+                          size="small"
+                          placeholder="أدخل اسم العميل بالإنجليزية"
+                        />
+                      </Box>
+
+                      <Box>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ fontWeight: 700, mb: 1 }}
+                        >
+                          مجموعة المشروع
+                        </Typography>
+                        <ProjectGroupSelect
+                          value={projectGroup}
+                          onChange={setProjectGroup}
+                          clientLeadId={clientLeadId}
+                        />
+                      </Box>
+                    </Stack>
+                  </Box>
+
+                  <Box
+                    sx={{
+                      p: { xs: 2, sm: 2.5 },
+                      borderRadius: 2.5,
+                      bgcolor: "background.paper",
+                      border: `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
+                    <StagesSelector
+                      selected={selectedStages}
+                      onChange={setSelectedStages}
+                      perStageMeta={perStageMeta}
+                      setPerStageMeta={setPerStageMeta}
                     />
                   </Box>
 
-                  <Divider />
-
-                  <StagesSelector
-                    selected={selectedStages}
-                    onChange={setSelectedStages}
-                    perStageMeta={perStageMeta}
-                    setPerStageMeta={setPerStageMeta}
-                  />
-
-                  <Divider />
-
-                  <PaymentsEditor
-                    payments={payments}
-                    setPayments={setPayments}
-                    taxRate={taxRate}
-                  />
+                  <Box
+                    sx={{
+                      p: { xs: 2, sm: 2.5 },
+                      borderRadius: 2.5,
+                      bgcolor: "background.paper",
+                      border: `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
+                    <PaymentsEditor
+                      payments={payments}
+                      setPayments={setPayments}
+                      taxRate={taxRate}
+                    />
+                  </Box>
                 </Stack>
               )}
 
@@ -357,16 +410,33 @@ export default function CloneContract({
               )} */}
 
               {activeStep === 1 && (
-                <Stack spacing={3}>
-                  <SpecialItemsEditor
-                    items={specialItems}
-                    setItems={setSpecialItems}
-                  />
-                  <Divider />
-                  <ContractDrawingsEditor
-                    drawings={drawings}
-                    setDrawings={setDrawings}
-                  />
+                <Stack spacing={2.5}>
+                  <Box
+                    sx={{
+                      p: { xs: 2, sm: 2.5 },
+                      borderRadius: 2.5,
+                      bgcolor: "background.paper",
+                      border: `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
+                    <SpecialItemsEditor
+                      items={specialItems}
+                      setItems={setSpecialItems}
+                    />
+                  </Box>
+                  <Box
+                    sx={{
+                      p: { xs: 2, sm: 2.5 },
+                      borderRadius: 2.5,
+                      bgcolor: "background.paper",
+                      border: `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
+                    <ContractDrawingsEditor
+                      drawings={drawings}
+                      setDrawings={setDrawings}
+                    />
+                  </Box>
                 </Stack>
               )}
             </Stack>
@@ -375,25 +445,24 @@ export default function CloneContract({
 
         <DialogActions
           sx={{
-            p: 2.5,
+            p: 2,
             gap: 1,
-            bgcolor: alpha(theme.palette.background.paper, 0.6),
-            borderTop: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+            bgcolor: "background.paper",
+            borderTop: `1px solid ${theme.palette.divider}`,
           }}
         >
-          <Button
-            onClick={handleClose}
-            sx={{ textTransform: "none", fontWeight: 600 }}
-          >
-            Cancel
+          <Button onClick={handleClose} sx={{ fontWeight: 700 }} color="inherit">
+            إلغاء
           </Button>
+          <Box sx={{ flex: 1 }} />
           {activeStep > 0 && (
             <Button
               onClick={() => setActiveStep((s) => Math.max(s - 1, 0))}
               variant="outlined"
-              sx={{ textTransform: "none", fontWeight: 600 }}
+              startIcon={<FaArrowRight />}
+              sx={{ fontWeight: 700, borderRadius: 2 }}
             >
-              Back
+              السابق
             </Button>
           )}
           {activeStep < steps.length - 1 && (
@@ -401,13 +470,15 @@ export default function CloneContract({
               onClick={next}
               variant="contained"
               disabled={loadingSrc || !canGoNext()}
+              endIcon={<FaArrowLeft />}
               sx={{
                 background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                textTransform: "none",
-                fontWeight: 600,
+                fontWeight: 700,
+                borderRadius: 2,
+                px: 2.5,
               }}
             >
-              Next
+              التالي
             </Button>
           )}
           {activeStep === steps.length - 1 && (
@@ -415,17 +486,19 @@ export default function CloneContract({
               onClick={() => setConfirmOpen(true)}
               variant="contained"
               disabled={loadingSrc}
+              startIcon={<FaCheck />}
               sx={{
                 background: `linear-gradient(135deg, ${theme.palette.success.main} 0%, ${theme.palette.success.dark} 100%)`,
-                textTransform: "none",
-                fontWeight: 600,
+                fontWeight: 700,
+                borderRadius: 2,
+                px: 2.5,
               }}
             >
-              Create Clone
+              إنشاء النسخة
             </Button>
           )}
         </DialogActions>
-      </Dialog>
+      </ContractDialogShell>
 
       {/* final confirm warning */}
       <Dialog
@@ -433,17 +506,49 @@ export default function CloneContract({
         onClose={() => setConfirmOpen(false)}
         maxWidth="xs"
         fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
       >
-        <DialogTitle sx={{ fontWeight: 700 }}>Confirm Clone</DialogTitle>
-        <DialogContent dividers>
-          <Typography variant="body2">
-            Continue and send the new data ?
+        <DialogContent sx={{ pt: 3, textAlign: "center" }}>
+          <Box
+            sx={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              mx: "auto",
+              mb: 1.5,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: alpha(theme.palette.warning.main, 0.14),
+              color: theme.palette.warning.main,
+              fontSize: 24,
+            }}
+          >
+            <FaExclamationTriangle />
+          </Box>
+          <Typography variant="h6" sx={{ fontWeight: 800, mb: 0.5 }}>
+            تأكيد النسخ
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            هل تريد المتابعة وإرسال البيانات الجديدة؟
           </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)}>Back</Button>
-          <Button color="error" variant="contained" onClick={handleSubmit}>
-            Yes, Continue
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button
+            onClick={() => setConfirmOpen(false)}
+            sx={{ fontWeight: 700 }}
+            color="inherit"
+          >
+            رجوع
+          </Button>
+          <Box sx={{ flex: 1 }} />
+          <Button
+            color="error"
+            variant="contained"
+            onClick={handleSubmit}
+            sx={{ fontWeight: 700, borderRadius: 2 }}
+          >
+            نعم، متابعة
           </Button>
         </DialogActions>
       </Dialog>

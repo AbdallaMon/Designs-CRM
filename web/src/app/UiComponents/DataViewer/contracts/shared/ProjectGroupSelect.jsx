@@ -41,10 +41,10 @@ export default function ProjectGroupSelect({
   return (
     <Stack direction="row" spacing={1} alignItems="flex-end" flex={1}>
       <FormControl fullWidth disabled={loading || disabled} size="small">
-        <InputLabel id="project-group-label">Project Group</InputLabel>
+        <InputLabel id="project-group-label">مجموعة المشروع</InputLabel>
         <Select
           labelId="project-group-label"
-          label="Project Group"
+          label="مجموعة المشروع"
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
         >
@@ -56,7 +56,7 @@ export default function ProjectGroupSelect({
         </Select>
       </FormControl>
 
-      <Tooltip title="Reload groups">
+      <Tooltip title="إعادة تحميل المجموعات">
         <span>
           <IconButton
             onClick={fetchGroups}
