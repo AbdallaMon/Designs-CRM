@@ -33,6 +33,14 @@ export function ChatWindowHeader({
   const roomLabelFinal = getRoomLabel(room);
   const roomLabelToShow = roomLabelFinal;
   const roomAvatar = getRoomAvatar(room);
+  const memberCount = Array.isArray(members) ? members.length : 0;
+  const roomTypeLabel = room
+    ? CHAT_ROOM_TYPE_LABELS[room.type] || room.type
+    : "";
+  const subtitle =
+    isNotDirectChat && memberCount > 0
+      ? `${roomTypeLabel} · ${memberCount} عضو`
+      : roomTypeLabel;
   return (
     <Box
       sx={{
@@ -40,12 +48,11 @@ export function ChatWindowHeader({
         alignItems: "center",
         justifyContent: "space-between",
         px: 2,
-        py: 1,
+        py: 1.25,
         borderBottom: "1px solid",
         borderColor: "divider",
         position: "relative",
-        background:
-          "linear-gradient(135deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0) 100%)",
+        bgcolor: "background.paper",
       }}
     >
       {loading && (
@@ -99,24 +106,29 @@ export function ChatWindowHeader({
             src={roomAvatar}
             alt={roomLabelToShow}
             sx={{
-              width: 40,
-              height: 40,
-              border: "2px solid",
-              borderColor: "background.paper",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+              width: 44,
+              height: 44,
+              fontWeight: 700,
+              bgcolor: "primary.main",
+              color: "primary.contrastText",
+              boxShadow: (theme) => theme.shadows[2],
               cursor: "pointer",
             }}
           >
             {roomLabelToShow.charAt(0)}
           </Avatar>
 
-          <Box sx={{ cursor: "pointer" }}>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          <Box sx={{ cursor: "pointer", minWidth: 0 }}>
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: 700, lineHeight: 1.3 }}
+              noWrap
+            >
               {roomLabelToShow}
             </Typography>
-            {room && (
-              <Typography variant="caption" color="textSecondary">
-                {CHAT_ROOM_TYPE_LABELS[room.type] || room.type}
+            {room && subtitle && (
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {subtitle}
               </Typography>
             )}
           </Box>
@@ -124,49 +136,35 @@ export function ChatWindowHeader({
       </Box>
 
       {/* Right Section: Actions */}
-      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-        <Tooltip title="Voice call" arrow>
-          <IconButton
-            size="small"
-            sx={{
-              transition: "all 0.2s ease",
-              "&:hover": {
-                bgcolor: "action.hover",
-                transform: "scale(1.1)",
-              },
-            }}
-          >
-            <FaPhone size={18} />
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 0.25,
+          "& .MuiIconButton-root": {
+            color: "text.secondary",
+            transition: "all 0.2s ease",
+            "&:hover": {
+              bgcolor: "action.hover",
+              color: "primary.main",
+            },
+          },
+        }}
+      >
+        <Tooltip title="مكالمة صوتية" arrow>
+          <IconButton size="small">
+            <FaPhone size={16} />
           </IconButton>
         </Tooltip>
-        <Tooltip title="Video call" arrow>
-          <IconButton
-            size="small"
-            sx={{
-              transition: "all 0.2s ease",
-              "&:hover": {
-                bgcolor: "action.hover",
-                transform: "scale(1.1)",
-              },
-            }}
-          >
-            <FaVideo size={18} />
+        <Tooltip title="مكالمة فيديو" arrow>
+          <IconButton size="small">
+            <FaVideo size={16} />
           </IconButton>
         </Tooltip>
         {isNotDirectChat && (
-          <Tooltip title="Members" arrow>
-            <IconButton
-              size="small"
-              onClick={onShowAddMembers}
-              sx={{
-                transition: "all 0.2s ease",
-                "&:hover": {
-                  bgcolor: "action.hover",
-                  transform: "scale(1.1)",
-                },
-              }}
-            >
-              <FaUsers size={18} />
+          <Tooltip title="الأعضاء" arrow>
+            <IconButton size="small" onClick={onShowAddMembers}>
+              <FaUsers size={16} />
             </IconButton>
           </Tooltip>
         )}

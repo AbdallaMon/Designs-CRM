@@ -57,35 +57,43 @@ function ReplyPreview({
   if (!replyTo) return null;
 
   const repliedName =
-    replyTo?.sender?.name || replyTo?.senderClient?.name || "Unknown";
+    replyTo?.sender?.name || replyTo?.senderClient?.name || "غير معروف";
 
   const repliedContent = replyTo?.isDeleted
-    ? "(Deleted message)"
+    ? "(رسالة محذوفة)"
     : replyTo?.content?.trim()
     ? truncateText(replyTo.content, 110)
-    : "(No text)";
+    : "(بدون نص)";
 
   return (
     <Box
       onClick={() => onJumpToMessage?.(replyTo.id)}
       sx={{
         mb: 1,
-        px: 1,
-        py: 0.75,
-        borderRadius: 1,
+        px: 1.25,
+        py: 0.85,
+        borderRadius: 2,
         cursor: onJumpToMessage ? "pointer" : "default",
-        borderLeft: "4px solid",
-        borderLeftColor: isOwnMessage
-          ? "rgba(255,255,255,0.8)"
+        borderInlineStart: "3px solid",
+        borderInlineStartColor: isOwnMessage
+          ? "rgba(255,255,255,0.85)"
           : "primary.main",
         bgcolor: isOwnMessage
-          ? "rgba(255,255,255,0.12)"
-          : "rgba(25,118,210,0.08)",
+          ? "rgba(255,255,255,0.16)"
+          : (theme) => alpha(theme.palette.primary.main, 0.08),
         position: "relative",
+        transition: "background-color .2s ease",
+        "&:hover": onJumpToMessage
+          ? {
+              bgcolor: isOwnMessage
+                ? "rgba(255,255,255,0.24)"
+                : (theme) => alpha(theme.palette.primary.main, 0.14),
+            }
+          : undefined,
       }}
     >
       {loadingReplayJump && (
-        <Box sx={{ position: "absolute", top: 8, right: 8 }}>
+        <Box sx={{ position: "absolute", top: 8, insetInlineEnd: 8 }}>
           <CircularProgress size={12} />
         </Box>
       )}
@@ -98,7 +106,7 @@ function ReplyPreview({
           opacity: isOwnMessage ? 0.95 : 0.9,
         }}
       >
-        Replying to {repliedName}
+        رد على {repliedName}
       </Typography>
 
       <Typography
@@ -214,7 +222,16 @@ export function ChatMessage({
   if (message.type === "SYSTEM") {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
-        <Chip label={message.content} size="small" />
+        <Chip
+          label={message.content}
+          size="small"
+          sx={{
+            bgcolor: (theme) => alpha(theme.palette.text.primary, 0.06),
+            color: "text.secondary",
+            fontWeight: 600,
+            borderRadius: 1.5,
+          }}
+        />
       </Box>
     );
   }
@@ -226,12 +243,24 @@ export function ChatMessage({
         justifyContent: "center",
         my: 2,
         position: "sticky",
-        top: 0,
+        top: 4,
         zIndex: 10,
         mx: "auto",
       }}
     >
-      <Chip label={message.dayGroup} size="small" variant="outlined" />
+      <Chip
+        label={message.dayGroup}
+        size="small"
+        sx={{
+          bgcolor: "background.paper",
+          border: "1px solid",
+          borderColor: "divider",
+          color: "text.secondary",
+          fontWeight: 700,
+          borderRadius: 1.5,
+          boxShadow: 1,
+        }}
+      />
     </Box>
   );
 
@@ -265,10 +294,11 @@ export function ChatMessage({
           }}
         >
           <Chip
-            label={`${message.unreadCount} unread`}
+            label={`${message.unreadCount} غير مقروءة`}
             size="small"
             color="error"
             variant="outlined"
+            sx={{ fontWeight: 700, borderRadius: 1.5 }}
           />
         </Box>
       )}
@@ -277,12 +307,18 @@ export function ChatMessage({
         sx={{
           display: "flex",
           justifyContent: isOwnMessage ? "flex-end" : "flex-start",
+          alignItems: "flex-end",
           gap: 1,
         }}
         id={`message-${message.id}`}
       >
         {!isOwnMessage && (
-          <Avatar src={message.sender?.profilePicture}>{sender?.[0]}</Avatar>
+          <Avatar
+            src={message.sender?.profilePicture}
+            sx={{ width: 34, height: 34, fontSize: "0.9rem", flexShrink: 0 }}
+          >
+            {sender?.[0]}
+          </Avatar>
         )}
 
         <Box
@@ -293,12 +329,20 @@ export function ChatMessage({
               : alpha(theme.palette.primary.main, 0.18);
 
             return {
-              maxWidth: "75%",
+              maxWidth: "78%",
               p: 1.5,
               pr: isDeleted ? 1.5 : 4,
-              borderRadius: 2,
-              bgcolor: isOwnMessage ? "action.selected" : "grey.100",
+              borderRadius: 2.5,
+              [isOwnMessage
+                ? "borderBottomRightRadius"
+                : "borderBottomLeftRadius"]: 6,
+              bgcolor: isOwnMessage ? "primary.main" : "background.paper",
               color: isOwnMessage ? "primary.contrastText" : "text.primary",
+              border: isOwnMessage ? "none" : "1px solid",
+              borderColor: isOwnMessage ? "transparent" : "divider",
+              boxShadow: isOwnMessage
+                ? `0 1px 2px ${alpha(theme.palette.primary.dark, 0.25)}`
+                : theme.shadows[1],
               position: "relative",
               overflow: "visible",
               zIndex: 0,
@@ -362,7 +406,13 @@ export function ChatMessage({
           {!isOwnMessage && (
             <Typography
               variant="subtitle2"
-              sx={{ fontWeight: 600, mb: 0.5, opacity: 0.85 }}
+              sx={{
+                fontWeight: 700,
+                mb: 0.5,
+                color: "primary.dark",
+                fontSize: "0.8rem",
+                lineHeight: 1.3,
+              }}
             >
               {sender}
             </Typography>
@@ -401,7 +451,7 @@ export function ChatMessage({
                   wordBreak: "break-word",
                 }}
               >
-                This message was deleted
+                تم حذف هذه الرسالة
               </Typography>
             </Box>
           ) : (
@@ -444,21 +494,44 @@ export function ChatMessage({
             </>
           )}
 
-          <Typography
-            variant="caption"
-            sx={{ display: "block", mt: 0.5, opacity: 0.6 }}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 0.5,
+              mt: 0.5,
+              justifyContent: isOwnMessage ? "flex-end" : "flex-start",
+            }}
           >
-            {dayjs(message.createdAt).format("HH:mm")}
-            {message.isDeleted
-              ? " • deleted"
-              : message.isEdited
-              ? " • edited"
-              : ""}
-          </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                opacity: isOwnMessage ? 0.85 : 0.6,
+                color: isOwnMessage ? "primary.contrastText" : "text.secondary",
+                fontSize: "0.7rem",
+              }}
+            >
+              {dayjs(message.createdAt).format("HH:mm")}
+              {message.isDeleted
+                ? " • محذوفة"
+                : message.isEdited
+                ? " • مُعدّلة"
+                : ""}
+            </Typography>
+            {isOwnMessage && !isDeleted && (
+              <FaCheck
+                size={11}
+                style={{ opacity: 0.85, color: "currentColor" }}
+              />
+            )}
+          </Box>
         </Box>
 
         {isOwnMessage && (
-          <Avatar src={message.sender?.profilePicture}>
+          <Avatar
+            src={message.sender?.profilePicture}
+            sx={{ width: 34, height: 34, fontSize: "0.9rem", flexShrink: 0 }}
+          >
             {message.sender?.name?.[0]}
           </Avatar>
         )}
@@ -515,9 +588,18 @@ function MessageActions({
       <IconButton
         size="small"
         onClick={(e) => setMenuAnchor(e.currentTarget)}
-        sx={{ position: "absolute", top: 4, right: 4, zIndex: 2 }}
+        sx={{
+          position: "absolute",
+          top: 4,
+          insetInlineEnd: 4,
+          zIndex: 2,
+          color: "inherit",
+          opacity: 0.55,
+          transition: "opacity .2s ease",
+          "&:hover": { opacity: 1, bgcolor: "action.hover" },
+        }}
       >
-        <FaEllipsisV />
+        <FaEllipsisV size={14} />
       </IconButton>
 
       <Menu
@@ -527,6 +609,19 @@ function MessageActions({
         sx={{
           zIndex: 1305,
         }}
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 2,
+              minWidth: 160,
+              boxShadow: 3,
+              "& .MuiMenuItem-root": {
+                fontSize: "0.85rem",
+                gap: 1,
+              },
+            },
+          },
+        }}
       >
         <MenuItem
           onClick={() => {
@@ -534,7 +629,7 @@ function MessageActions({
             onReply?.(message);
           }}
         >
-          <FaReply style={{ marginRight: 8 }} /> Reply
+          <FaReply /> رد
         </MenuItem>
 
         {canPin && (
@@ -550,11 +645,11 @@ function MessageActions({
           >
             {isPinned ? (
               <>
-                <MdPushPin style={{ marginRight: 8 }} /> Unpin
+                <MdPushPin /> إلغاء التثبيت
               </>
             ) : (
               <>
-                <MdPushPin style={{ marginRight: 8 }} /> Pin
+                <MdPushPin /> تثبيت
               </>
             )}
           </MenuItem>
@@ -566,16 +661,17 @@ function MessageActions({
               setMenuAnchor(null);
               onDelete?.(message.id);
             }}
+            sx={{ color: "error.main" }}
           >
-            <FaTrash style={{ marginRight: 8 }} /> Delete
+            <FaTrash /> حذف
           </MenuItem>
         )}
         {canForward && !message.isDeleted && (
           <MenuItem onClick={handleSelect}>
-            <FaShare style={{ marginRight: 8 }} />{" "}
+            <FaShare />{" "}
             {selectedMessages.some((m) => m.id === message.id)
-              ? "Deselect"
-              : "Select"}{" "}
+              ? "إلغاء التحديد"
+              : "تحديد"}{" "}
           </MenuItem>
         )}
       </Menu>

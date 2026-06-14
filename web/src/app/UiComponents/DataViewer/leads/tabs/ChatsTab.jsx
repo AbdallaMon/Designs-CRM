@@ -17,7 +17,9 @@ import { MdClose, MdChat, MdOpenInFull } from "react-icons/md";
 import { TabSection } from "../shared/tabKit";
 
 export default function ChatsTab({ clientLeadId }) {
-  const [fullscreen, setFullscreen] = useState(false);
+  // Open the conversation fullscreen by default when the Chats tab is entered
+  // (the user gets the roomy view immediately; closing it reveals the inline view).
+  const [fullscreen, setFullscreen] = useState(true);
   const theme = useTheme();
 
   return (

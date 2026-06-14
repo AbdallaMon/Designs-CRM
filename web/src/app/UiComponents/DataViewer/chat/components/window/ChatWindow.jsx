@@ -116,12 +116,12 @@ export function ChatWindow({
 
   // ✅ Confirm delete dialog states
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTitle, setConfirmTitle] = useState("Confirm");
+  const [confirmTitle, setConfirmTitle] = useState("تأكيد");
   const [confirmDescription, setConfirmDescription] = useState("");
   const confirmActionRef = useRef(null);
 
   const openConfirm = useCallback((title, description, onConfirm) => {
-    setConfirmTitle(title || "Confirm");
+    setConfirmTitle(title || "تأكيد");
     setConfirmDescription(description || "");
     confirmActionRef.current = onConfirm;
     setConfirmOpen(true);
@@ -377,10 +377,10 @@ export function ChatWindow({
 
   const confirmRemoveMember = useCallback(
     (member) => {
-      const name = member?.user?.name || member?.client?.name || "this member";
+      const name = member?.user?.name || member?.client?.name || "هذا العضو";
       openConfirm(
-        "Remove member?",
-        `Are you sure you want to remove ${name} from this chat?`,
+        "إزالة العضو؟",
+        `هل أنت متأكد من إزالة ${name} من هذه المحادثة؟`,
         async () => {
           await handleRemoveMember(member.id);
         }
@@ -397,8 +397,8 @@ export function ChatWindow({
       if (!msgId) return;
 
       openConfirm(
-        "Delete message?",
-        "This will delete the message for everyone in the chat.",
+        "حذف الرسالة؟",
+        "سيؤدي هذا إلى حذف الرسالة لدى الجميع في المحادثة.",
         async () => {
           await deleteMessage(msgId);
         }
@@ -409,8 +409,8 @@ export function ChatWindow({
   const confirmDeleteSelectedMessages = useCallback(
     (payload) => {
       openConfirm(
-        "Delete message?",
-        "This will delete the message for everyone in the chat.",
+        "حذف الرسائل؟",
+        "سيؤدي هذا إلى حذف الرسائل لدى الجميع في المحادثة.",
         async () => {
           await deleteSelectedMessages(selectedMessages);
           setSelectedMessages([]);
@@ -518,7 +518,7 @@ export function ChatWindow({
           color: "textSecondary",
         }}
       >
-        <Typography>Select a chat to start messaging</Typography>
+        <Typography>اختر محادثة لبدء المراسلة</Typography>
       </Box>
     );
   }
@@ -594,15 +594,16 @@ export function ChatWindow({
             display: "flex",
             flexDirection: "column",
             position: "relative",
+            bgcolor: "background.default",
             "&::-webkit-scrollbar": { width: "8px" },
             "&::-webkit-scrollbar-track": {
               backgroundColor: "transparent",
             },
             "&::-webkit-scrollbar-thumb": {
-              backgroundColor: "rgba(0,0,0,0.2)",
+              backgroundColor: "rgba(0,0,0,0.15)",
               borderRadius: "4px",
               "&:hover": {
-                backgroundColor: "rgba(0,0,0,0.3)",
+                backgroundColor: "rgba(0,0,0,0.28)",
               },
             },
           }}
@@ -628,13 +629,38 @@ export function ChatWindow({
             <Box
               sx={{
                 display: "flex",
+                flexDirection: "column",
                 justifyContent: "center",
                 alignItems: "center",
+                gap: 1,
                 flex: 1,
-                color: "textSecondary",
+                color: "text.secondary",
+                textAlign: "center",
+                px: 2,
               }}
             >
-              <Typography>No messages yet. Start the conversation!</Typography>
+              <Box
+                sx={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  bgcolor: "background.paper",
+                  border: "1px solid",
+                  borderColor: "divider",
+                  fontSize: 26,
+                }}
+              >
+                💬
+              </Box>
+              <Typography sx={{ fontWeight: 600 }}>
+                لا توجد رسائل بعد
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                ابدأ المحادثة الآن
+              </Typography>
             </Box>
           ) : (
             <>
@@ -645,11 +671,12 @@ export function ChatWindow({
                   sx={{
                     display: "block",
                     textAlign: "center",
-                    color: "textSecondary",
-                    mb: 1,
+                    color: "text.secondary",
+                    opacity: 0.7,
+                    mb: 1.5,
                   }}
                 >
-                  No more messages
+                  لا مزيد من الرسائل
                 </Typography>
               )}
               {loadingMore && <CircularProgress />}
@@ -716,7 +743,14 @@ export function ChatWindow({
           />
         </Box>
 
-        <Box sx={{ p: 2, borderTop: "1px solid", borderColor: "divider" }}>
+        <Box
+          sx={{
+            p: 1.5,
+            borderTop: "1px solid",
+            borderColor: "divider",
+            bgcolor: "background.paper",
+          }}
+        >
           <ChatInput
             onSendMessage={handleSendMessage}
             onReplyingTo={replyingTo}
@@ -780,7 +814,7 @@ export function ChatWindow({
         description={confirmDescription}
         onConfirm={handleConfirm}
         onCancel={closeConfirm}
-        confirmButtonText="Delete"
+        confirmButtonText="حذف"
         confirmButtonColor="error"
       />
     </Paper>

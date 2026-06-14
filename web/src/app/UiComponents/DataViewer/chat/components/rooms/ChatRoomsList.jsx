@@ -26,6 +26,7 @@ import {
   CircularProgress,
   Tooltip,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import {
   FaSearch,
   FaEllipsisV,
@@ -145,18 +146,19 @@ export function ChatRoomsList({
         return (
           <Typography
             variant="caption"
-            sx={{ fontStyle: "italic", color: "primary.main", fontWeight: 500 }}
+            sx={{ fontStyle: "italic", color: "primary.main", fontWeight: 600 }}
           >
-            {typingCount} {typingCount === 1 ? "person is" : "people are"}{" "}
-            typing...
+            {typingCount === 1
+              ? "يكتب الآن..."
+              : `${typingCount} أشخاص يكتبون...`}
           </Typography>
         );
       }
     }
 
     const last = room.lastMessage;
-    if (!last) return "No messages yet";
-    if (last.type === "FILE") return last.fileName || "File";
+    if (!last) return "لا توجد رسائل بعد";
+    if (last.type === "FILE") return last.fileName || "ملف";
     const text = last.content || "";
     return text.length > 60 ? `${text.slice(0, 60)}…` : text;
   };
@@ -196,9 +198,10 @@ export function ChatRoomsList({
               onClick={onCreateNewRoom}
               size="small"
               variant="outlined"
+              startIcon={<FaPlus size={12} />}
+              sx={{ borderRadius: 2, fontWeight: 600 }}
             >
-              <FaPlus />
-              {isTab ? "Group Chat" : "Group"}
+              {isTab ? "محادثة جماعية" : "مجموعة"}
             </Button>
           </Box>
         )}
@@ -209,7 +212,7 @@ export function ChatRoomsList({
         <TextField
           fullWidth
           size="small"
-          placeholder="Search chats..."
+          placeholder="ابحث في المحادثات..."
           value={searchQuery}
           onChange={(e) => {
             const v = e.target.value;
@@ -272,8 +275,22 @@ export function ChatRoomsList({
           position={{ top: 8, right: 8 }}
         />
         {rooms?.length === 0 ? (
-          <Box sx={{ display: "flex", justifyContent: "center", pt: 3 }}>
-            <Typography color="textSecondary">No chats found</Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1,
+              pt: 5,
+              px: 2,
+              textAlign: "center",
+            }}
+          >
+            <Box sx={{ fontSize: 30, opacity: 0.6 }}>💬</Box>
+            <Typography color="text.secondary" sx={{ fontWeight: 600 }}>
+              لا توجد محادثات
+            </Typography>
           </Box>
         ) : (
           rooms?.map((room) => {
@@ -290,13 +307,12 @@ export function ChatRoomsList({
                 key={room.id}
                 disablePadding
                 sx={{
-                  bgcolor: isSelected
-                    ? "action.selected"
-                    : selectedRoomId === room.id
-                    ? "action.selected"
-                    : unReadCount > 0
-                    ? "primary.lighter"
-                    : "transparent",
+                  bgcolor:
+                    isSelected || selectedRoomId === room.id
+                      ? "action.selected"
+                      : unReadCount > 0
+                      ? (theme) => alpha(theme.palette.primary.main, 0.06)
+                      : "transparent",
                   "&:hover": {
                     bgcolor: "action.hover",
                     "& .MuiIconButton-root": {
@@ -304,13 +320,13 @@ export function ChatRoomsList({
                     },
                   },
                   transition: "all 0.2s ease-in-out",
-                  borderLeft:
+                  borderInlineStart: "3px solid",
+                  borderInlineStartColor:
                     selectedRoomId === room.id
-                      ? "3px solid"
+                      ? "primary.main"
                       : unReadCount > 0
-                      ? "3px solid error.main"
-                      : "3px solid transparent",
-                  borderLeftColor: "primary.main",
+                      ? "error.main"
+                      : "transparent",
                 }}
                 secondaryAction={
                   <Box
@@ -321,7 +337,7 @@ export function ChatRoomsList({
                     }}
                   >
                     {!isForward && (
-                      <Tooltip title="Open chat in new window">
+                      <Tooltip title="فتح المحادثة في نافذة جديدة">
                         <IconButton
                           edge="start"
                           size="small"
@@ -388,7 +404,8 @@ export function ChatRoomsList({
                   // component={Link}
                   // href={`?roomId=${room.id}`}
                   sx={{
-                    borderRadius: 1,
+                    borderRadius: 2,
+                    py: 1.25,
                     transition: "all 0.2s ease",
                   }}
                 >
@@ -425,12 +442,16 @@ export function ChatRoomsList({
                       <Stack direction="row" gap={0.5} alignItems="center">
                         <Typography
                           variant="body2"
+                          noWrap
                           sx={{
                             fontWeight:
                               selectedRoomId === room.id || unReadCount > 0
                                 ? 700
                                 : 500,
-                            color: unReadCount > 0 ? "error.main" : "inherit",
+                            color:
+                              selectedRoomId === room.id
+                                ? "primary.dark"
+                                : "text.primary",
                           }}
                         >
                           {roomLabel}
@@ -441,16 +462,21 @@ export function ChatRoomsList({
                       </Stack>
                     }
                     secondary={
-                      <Stack spacing={0.4} sx={{ pr: 1 }}>
+                      <Stack spacing={0.3} sx={{ paddingInlineEnd: 1 }}>
                         <Typography
                           variant="caption"
-                          color="textPrimary"
                           noWrap
-                          sx={{ display: "block", maxWidth: "100%" }}
+                          sx={{
+                            display: "block",
+                            maxWidth: "100%",
+                            color:
+                              unReadCount > 0 ? "text.primary" : "text.secondary",
+                            fontWeight: unReadCount > 0 ? 600 : 400,
+                          }}
                         >
                           {getLastMessageText(room)}
                         </Typography>
-                        <Typography variant="caption" color="textSecondary">
+                        <Typography variant="caption" color="text.secondary">
                           <LastSeenAt lastSeenAt={room.lastSeenAt} />
                         </Typography>
                       </Stack>
@@ -508,16 +534,16 @@ function DeleteConfirmDialog({ open, onClose, onConfirm }) {
         zIndex: 1304,
       }}
     >
-      <DialogTitle>Delete Chat?</DialogTitle>
+      <DialogTitle>حذف المحادثة؟</DialogTitle>
       <DialogContent>
         <Typography>
-          This action cannot be undone. All messages will be deleted.
+          لا يمكن التراجع عن هذا الإجراء. سيتم حذف جميع الرسائل.
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>إلغاء</Button>
         <Button onClick={onConfirm} variant="contained" color="error">
-          Delete
+          حذف
         </Button>
       </DialogActions>
     </Dialog>
@@ -532,17 +558,17 @@ function LeaveConfirmDialog({ open, onClose, onConfirm }) {
         zIndex: 1304,
       }}
     >
-      <DialogTitle>Leave Chat?</DialogTitle>
+      <DialogTitle>مغادرة المحادثة؟</DialogTitle>
       <DialogContent>
         <Typography>
-          Are you sure you want to leave this chat? You will no longer receive
-          messages from this room.
+          هل أنت متأكد من رغبتك في مغادرة هذه المحادثة؟ لن تتلقى بعد الآن أي رسائل
+          من هذه الغرفة.
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>إلغاء</Button>
         <Button onClick={onConfirm} variant="contained" color="error">
-          Leave
+          مغادرة
         </Button>
       </DialogActions>
     </Dialog>

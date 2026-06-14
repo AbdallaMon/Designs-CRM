@@ -16,6 +16,7 @@ import {
   Divider,
   Collapse,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import {
   FaPaperPlane,
   FaPaperclip,
@@ -124,7 +125,7 @@ function RecordingBar({
         </Stack>
 
         <Stack direction="row" alignItems="center" gap={0.5}>
-          <Tooltip title="Cancel" arrow>
+          <Tooltip title="إلغاء" arrow>
             <span>
               <IconButton size="small" onClick={onCancel} disabled={sending}>
                 <FaTrash size={16} />
@@ -133,7 +134,7 @@ function RecordingBar({
           </Tooltip>
 
           {isRecording ? (
-            <Tooltip title="Stop" arrow>
+            <Tooltip title="إيقاف" arrow>
               <span>
                 <IconButton
                   size="small"
@@ -146,7 +147,7 @@ function RecordingBar({
               </span>
             </Tooltip>
           ) : (
-            <Tooltip title="Send voice" arrow>
+            <Tooltip title="إرسال التسجيل" arrow>
               <span>
                 <IconButton
                   size="small"
@@ -195,7 +196,14 @@ function RecordingBar({
 
       {error && (
         <Paper
-          sx={{ mt: 1, p: 1, bgcolor: "error.lighter", color: "error.main" }}
+          elevation={0}
+          sx={{
+            mt: 1,
+            p: 1,
+            borderRadius: 2,
+            bgcolor: (theme) => alpha(theme.palette.error.main, 0.1),
+            color: "error.main",
+          }}
         >
           <Typography variant="caption">{error}</Typography>
         </Paper>
@@ -327,7 +335,7 @@ export function ChatInput({
       typeof window === "undefined" ||
       !navigator?.mediaDevices?.getUserMedia
     ) {
-      setVoiceError("Voice recording is not supported in this browser.");
+      setVoiceError("تسجيل الصوت غير مدعوم في هذا المتصفح.");
       return;
     }
 
@@ -383,7 +391,7 @@ export function ChatInput({
       recorder.start();
     } catch (err) {
       console.error(err);
-      setVoiceError("Microphone permission denied or unavailable.");
+      setVoiceError("تم رفض إذن الميكروفون أو أنه غير متاح.");
       cleanupVoice();
       setVoiceStatus("idle");
     }
@@ -401,7 +409,7 @@ export function ChatInput({
         recorder.stop();
       } catch (err) {
         console.error(err);
-        setVoiceError("Failed to stop recording.");
+        setVoiceError("تعذّر إيقاف التسجيل.");
         cleanupVoice();
         setVoiceStatus("idle");
       }
@@ -449,11 +457,11 @@ export function ChatInput({
 
         cancelRecording();
       } else {
-        setVoiceError("Failed to upload voice note.");
+        setVoiceError("تعذّر رفع التسجيل الصوتي.");
       }
     } catch (err) {
       console.error(err);
-      setVoiceError("Failed to send voice note.");
+      setVoiceError("تعذّر إرسال التسجيل الصوتي.");
     } finally {
       setIsSending(false);
       setVoiceUploadProgress(null);
@@ -491,7 +499,7 @@ export function ChatInput({
               fileSize: file.size,
             });
           } else {
-            setFileError(`Failed to upload ${file.name}`);
+            setFileError(`تعذّر رفع ${file.name}`);
           }
 
           setUploadingFiles((prev) => {
@@ -518,7 +526,7 @@ export function ChatInput({
       }
     } catch (error) {
       console.error("Error sending message:", error);
-      setFileError("Failed to send message");
+      setFileError("تعذّر إرسال الرسالة");
     } finally {
       setIsSending(false);
       setMessage("");
@@ -538,15 +546,15 @@ export function ChatInput({
 
       if (file.size > FILE_UPLOAD_LIMITS.MAX_SIZE) {
         setFileError(
-          `File "${file.name}" exceeds ${
+          `الملف "${file.name}" يتجاوز الحد المسموح ${
             FILE_UPLOAD_LIMITS.MAX_SIZE / 1024 / 1024
-          }MB limit`
+          } ميجابايت`
         );
         continue;
       }
 
       if (!FILE_UPLOAD_LIMITS.ALLOWED_TYPES.includes(file.type)) {
-        setFileError(`File type "${file.type}" not allowed`);
+        setFileError(`نوع الملف "${file.type}" غير مسموح`);
         continue;
       }
 
@@ -591,11 +599,12 @@ export function ChatInput({
     <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
       {onReplyingTo && (
         <Paper
+          elevation={0}
           sx={{
-            p: 1.5,
-            bgcolor: "info.lighter",
-            border: "1px solid",
-            borderColor: "info.light",
+            p: 1.25,
+            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.06),
+            borderInlineStart: "3px solid",
+            borderInlineStartColor: "primary.main",
             borderRadius: 2,
             transition: "all 0.2s ease",
           }}
@@ -605,11 +614,14 @@ export function ChatInput({
             justifyContent="space-between"
             alignItems="center"
           >
-            <Box>
-              <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                Replying to {onReplyingTo.sender?.name}
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                variant="caption"
+                sx={{ fontWeight: 700, color: "primary.dark" }}
+              >
+                رد على {onReplyingTo.sender?.name}
               </Typography>
-              <Typography variant="body2">
+              <Typography variant="body2" color="text.secondary" noWrap>
                 {onReplyingTo.content?.substring(0, 50)}
                 {onReplyingTo.content?.length > 50 ? "..." : ""}
               </Typography>
@@ -634,14 +646,15 @@ export function ChatInput({
           {selectedFiles.map((fileObj) => (
             <Paper
               key={fileObj.id}
+              elevation={0}
               sx={{
                 p: 1.5,
-                bgcolor: "info.lighter",
+                bgcolor: "background.default",
                 border: "1px solid",
-                borderColor: "info.light",
+                borderColor: "divider",
                 borderRadius: 2,
                 transition: "all 0.2s ease",
-                "&:hover": { boxShadow: "0 2px 8px rgba(0,0,0,0.1)" },
+                "&:hover": { boxShadow: 2 },
               }}
             >
               <Stack direction="row" justifyContent="space-between" gap={1.5}>
@@ -662,7 +675,7 @@ export function ChatInput({
                     multiline
                     maxRows={2}
                     size="small"
-                    placeholder="Optional text for this file..."
+                    placeholder="نص اختياري لهذا الملف..."
                     value={fileObj.text}
                     onChange={(e) => updateFileText(fileObj.id, e.target.value)}
                     disabled={isSending}
@@ -700,7 +713,15 @@ export function ChatInput({
       )}
 
       {fileError && !isVoiceMode && (
-        <Paper sx={{ p: 1, bgcolor: "error.lighter", color: "error.main" }}>
+        <Paper
+          elevation={0}
+          sx={{
+            p: 1,
+            borderRadius: 2,
+            bgcolor: (theme) => alpha(theme.palette.error.main, 0.1),
+            color: "error.main",
+          }}
+        >
           <Typography variant="caption">{fileError}</Typography>
         </Paper>
       )}
@@ -725,7 +746,7 @@ export function ChatInput({
               fullWidth
               multiline
               maxRows={4}
-              placeholder="Type a message... (Shift+Enter for new line)"
+              placeholder="اكتب رسالة... (Shift+Enter لسطر جديد)"
               value={message}
               onChange={handleMessageChange}
               onKeyDown={handleKeyDown}
@@ -735,10 +756,16 @@ export function ChatInput({
               inputRef={inputRef}
               sx={{
                 "& .MuiOutlinedInput-root": {
-                  borderRadius: emojiOpen ? "12px 12px 0 0" : 3,
+                  borderRadius: emojiOpen ? "16px 16px 0 0" : 6,
+                  bgcolor: "background.default",
                   transition: "all 0.2s ease",
-                  "&:hover": { bgcolor: "action.hover" },
-                  "&.Mui-focused": { bgcolor: "background.paper" },
+                  "&:hover": {
+                    bgcolor: "background.default",
+                    "& fieldset": { borderColor: "primary.light" },
+                  },
+                  "&.Mui-focused": {
+                    bgcolor: "background.paper",
+                  },
                 },
               }}
               InputProps={{
@@ -746,7 +773,7 @@ export function ChatInput({
                   <InputAdornment position="end">
                     <Box sx={{ display: "flex", gap: 0.5 }}>
                       {room?.allowFiles && (
-                        <Tooltip title="Attach files (multi-select)" arrow>
+                        <Tooltip title="إرفاق ملفات" arrow>
                           <span>
                             <IconButton
                               size="small"
@@ -766,7 +793,7 @@ export function ChatInput({
                         </Tooltip>
                       )}
 
-                      <Tooltip title="Emoji" arrow>
+                      <Tooltip title="الرموز التعبيرية" arrow>
                         <span>
                           <IconButton
                             size="small"
@@ -786,7 +813,7 @@ export function ChatInput({
                       </Tooltip>
 
                       {canUseVoice ? (
-                        <Tooltip title="Record voice" arrow>
+                        <Tooltip title="تسجيل صوتي" arrow>
                           <span>
                             <IconButton
                               size="small"
@@ -807,7 +834,7 @@ export function ChatInput({
                           </span>
                         </Tooltip>
                       ) : (
-                        <Tooltip title="Send" arrow>
+                        <Tooltip title="إرسال" arrow>
                           <span>
                             <IconButton
                               size="small"
@@ -850,7 +877,7 @@ export function ChatInput({
                   border: "1px solid",
                   borderTop: "none",
                   borderColor: "divider",
-                  borderRadius: "0 0 12px 12px",
+                  borderRadius: "0 0 16px 16px",
                   overflow: "hidden",
                 }}
               >
@@ -861,7 +888,7 @@ export function ChatInput({
                   sx={{ px: 1, py: 0.75, bgcolor: "background.paper" }}
                 >
                   <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                    Emojis
+                    الرموز التعبيرية
                   </Typography>
                   <IconButton size="small" onClick={closeEmojiPicker}>
                     <FaTimes size={14} />
