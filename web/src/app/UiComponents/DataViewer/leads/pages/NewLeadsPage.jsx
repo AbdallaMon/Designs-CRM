@@ -652,7 +652,7 @@ function LeadListBody({
       ) : loading ? (
         <Grid container spacing={2}>
           {Array.from({ length: 8 }).map((_, i) => (
-            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={i}>
+            <Grid size={{ xs: 12, sm: 6 }} key={i}>
               <Skeleton variant="rounded" height={170} />
             </Grid>
           ))}
@@ -668,7 +668,7 @@ function LeadListBody({
         <>
           <Grid container spacing={2}>
             {data.map((lead) => (
-              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={lead.id}>
+              <Grid size={{ xs: 12, sm: 6 }} key={lead.id}>
                 <LeadSliderCard lead={lead} setData={setData} />
               </Grid>
             ))}
