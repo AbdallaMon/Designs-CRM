@@ -19,6 +19,7 @@ import { IoMdContract } from "react-icons/io";
 import {
   ClientLeadStatus,
   CONTRACT_LEVELS,
+  PaymentStatus,
   statusColors,
 } from "@/app/helpers/constants";
 import { contractLevelColors } from "@/app/helpers/colors";
@@ -182,7 +183,7 @@ export const LeadDialogHeader = ({
                     </MetaPill>
                     {lead.code && (
                       <MetaPill icon={<MdTag size={13} />}>
-                        {`Code ${lead.code}`}
+                        {`كود ${lead.code}`}
                       </MetaPill>
                     )}
                     {lead.createdAt && (
@@ -265,7 +266,7 @@ export const LeadDialogHeader = ({
 
             {(admin || user.role === "STAFF") && lead.paymentStatus && (
               <Chip
-                label={`Payment: ${lead.paymentStatus}`}
+                label={`الدفع: ${PaymentStatus[lead.paymentStatus] || lead.paymentStatus}`}
                 color="primary"
                 variant="outlined"
                 size="small"
@@ -275,7 +276,7 @@ export const LeadDialogHeader = ({
 
             {lead.status === "FINALIZED" && lead.averagePrice && (
               <Chip
-                label={`Final: ${lead.averagePrice}`}
+                label={`السعر النهائي: ${lead.averagePrice}`}
                 color="success"
                 variant="outlined"
                 size="small"

@@ -44,7 +44,7 @@ const DocumentRenderer = ({ value }) => {
         rel="noopener noreferrer"
         sx={{ textTransform: "none", borderRadius: 2 }}
       >
-        View file
+        عرض الملف
       </Button>
     );
   }
@@ -75,7 +75,7 @@ export default function AdminTable({
   setTotal,
   noPagination = false,
   checkChanges,
-  editButtonText = "Edit", // Default value is "Edit"
+  editButtonText = "تعديل", // Default action label (Arabic)
   handleAfterEdit,
   totalPages,
   handleBeforeSubmit,
@@ -147,9 +147,9 @@ export default function AdminTable({
                 </TableCell>
               ))}
               {withEdit && <TableCell sx={headSx}>{editButtonText}</TableCell>}
-              {withDelete && <TableCell sx={headSx}>Delete</TableCell>}
-              {withArchive && <TableCell sx={headSx}>Archive</TableCell>}
-              {ExtraComponent && <TableCell sx={headSx}>Actions</TableCell>}
+              {withDelete && <TableCell sx={headSx}>حذف</TableCell>}
+              {withArchive && <TableCell sx={headSx}>أرشفة</TableCell>}
+              {ExtraComponent && <TableCell sx={headSx}>إجراءات</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -158,7 +158,7 @@ export default function AdminTable({
                 <TableCell colSpan={colSpan || 1} sx={{ borderBottom: "none" }}>
                   <Box sx={{ py: 6, textAlign: "center" }}>
                     <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
-                      No records to display
+                      لا توجد سجلات للعرض
                     </Typography>
                   </Box>
                 </TableCell>
