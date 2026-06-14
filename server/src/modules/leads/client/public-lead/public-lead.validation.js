@@ -25,6 +25,23 @@ const money = z.coerce.number().finite().nonnegative();
 // field with a truthy check (`if (body.x)`), so a null is simply not written.
 const optionalTrimmed = trimmed.nullish();
 
+// The public website posts the WHOLE form object and uses "" for any field the user
+// skipped (e.g. `email` on the pre-captured path, `emirate` when OUTSIDE the UAE, etc.).
+// A blank string is "absent", not a value — coerce ""/whitespace to undefined BEFORE the
+// object schema runs, so an optional field never trips `.email()`/`.min(1)` and 422s a
+// legitimate submission. Unknown keys are still stripped by the object schema and the
+// usecase still reads only the known keys, so this changes no observable behavior beyond
+// no longer rejecting blanks.
+const blankToUndefined = (schema) =>
+  z.preprocess((val) => {
+    if (!val || typeof val !== "object" || Array.isArray(val)) return val;
+    const out = {};
+    for (const [k, v] of Object.entries(val)) {
+      out[k] = typeof v === "string" && v.trim() === "" ? undefined : v;
+    }
+    return out;
+  }, schema);
+
 // Known funnel keys. Unknown keys are stripped (default Zod strip), not rejected, to keep the
 // rich website form working unchanged.
 const baseLeadFields = {
@@ -49,41 +66,47 @@ const baseLeadFields = {
 
 export const PublicLeadValidation = {
   // POST /new-lead — name/phone/email required to create or match the Client.
-  newLead: z
-    .object({
-      ...baseLeadFields,
-      name: trimmed.min(1),
-      phone: trimmed.min(1),
-      email: z.string().trim().email(),
-    })
-    .strip(),
+  newLead: blankToUndefined(
+    z
+      .object({
+        ...baseLeadFields,
+        name: trimmed.min(1),
+        phone: trimmed.min(1),
+        email: z.string().trim().email(),
+      })
+      .strip(),
+  ),
 
   // POST /new-lead/register — email identifies the client; name/phone are OPTIONAL
   // (master fdefbbf): the usecase falls back to draft placeholders, and the
   // complete-register step writes the real values later.
-  registerLead: z
-    .object({
-      lng: trimmed.optional(),
-      name: trimmed.min(1).optional(),
-      phone: trimmed.min(1).optional(),
-      email: z.string().trim().email(),
-      stateOfTheProject: trimmed.optional(),
-    })
-    .strip(),
+  registerLead: blankToUndefined(
+    z
+      .object({
+        lng: trimmed.optional(),
+        name: trimmed.min(1).optional(),
+        phone: trimmed.min(1).optional(),
+        email: z.string().trim().email(),
+        stateOfTheProject: trimmed.optional(),
+      })
+      .strip(),
+  ),
 
   // POST /new-lead/complete-register/:leadId — completes a draft; body is the rich form.
-  completeRegister: z.object(baseLeadFields).strip(),
+  completeRegister: blankToUndefined(z.object(baseLeadFields).strip()),
 
   // POST /cooperation-requests — partner/cooperation contact form (email only).
-  cooperationRequest: z
-    .object({
-      lng: trimmed.optional(),
-      name: trimmed.optional(),
-      email: z.string().trim().email().optional(),
-      phone: trimmed.optional(),
-      website: trimmed.optional(),
-    })
-    .strip(),
+  cooperationRequest: blankToUndefined(
+    z
+      .object({
+        lng: trimmed.optional(),
+        name: trimmed.optional(),
+        email: z.string().trim().email().optional(),
+        phone: trimmed.optional(),
+        website: trimmed.optional(),
+      })
+      .strip(),
+  ),
 
   // :leadId path param — the draft lead id (authoritative over any body value).
   leadIdParams: z.object({
