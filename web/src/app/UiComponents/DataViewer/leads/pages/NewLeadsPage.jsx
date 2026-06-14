@@ -9,17 +9,19 @@ import {
   Chip,
   Container,
   Grid,
+  IconButton,
   Paper,
   Skeleton,
   Stack,
   Tab,
   Tabs,
+  Tooltip,
   Typography,
   alpha,
   useTheme,
 } from "@mui/material";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
@@ -42,6 +44,7 @@ import {
   MdLocationOn,
   MdCategory,
   MdPhone,
+  MdRefresh,
 } from "react-icons/md";
 import CreateNewLead from "../features/AddNewLead";
 import NextCalls from "../widgets/NextCalls";
@@ -51,6 +54,7 @@ import PreviewDialog from "../PreviewLeadDialog";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
+import { getData } from "@/app/helpers/functions/getData";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
 import PaginationWithLimit from "@/app/UiComponents/DataViewer/PaginationWithLimit.jsx";
 import { EmptyState } from "../shared/EmptyState";
@@ -61,41 +65,56 @@ import { LeadCategory } from "@/app/helpers/constants";
 dayjs.extend(relativeTime);
 
 /* ----------------------------------------------------------------------------
- * Tab registry — Arabic titles, icons, role predicates. Order matters.
+ * Tab registry — the LEAD POOLS only (new · non-consulted · stale). Arabic
+ * titles, icons, role predicates. Order matters. Calls/meetings/targets are no
+ * longer tabs — they render as their own stacked sections below the tabs.
  * -------------------------------------------------------------------------- */
 const TAB_DEFS = [
   {
     key: "new",
     title: "العملاء الجدد",
     icon: <MdOutlineFiberNew />,
+    countKey: "new",
     show: () => true,
   },
   {
     key: "non-consulted",
     title: "غير مستشارين",
     icon: <MdOutlinePending />,
+    countKey: "nonConsulted",
     show: (user) =>
       user.role === "ADMIN" ||
       user.role === "CONTACT_INITIATOR" ||
       user.isSuperSales,
   },
   {
+    key: "stale",
+    title: "متأخرة",
+    icon: <MdHistoryToggleOff />,
+    countKey: "stale",
+    warnable: true,
+    show: (user) => user.role !== "CONTACT_INITIATOR",
+  },
+];
+
+/* ----------------------------------------------------------------------------
+ * Section registry — the stacked, always-visible blocks BELOW the tabs. Each
+ * renders in its own Paper. Calls/meetings are hidden for CONTACT_INITIATOR;
+ * targets are always visible. `countKey` reads from the single summary payload.
+ * -------------------------------------------------------------------------- */
+const SECTION_DEFS = [
+  {
     key: "calls",
     title: "مكالمات اليوم",
     icon: <MdPhoneInTalk />,
+    countKey: "calls",
     show: (user) => user.role !== "CONTACT_INITIATOR",
   },
   {
     key: "meetings",
     title: "اجتماعات",
     icon: <MdEventAvailable />,
-    show: (user) => user.role !== "CONTACT_INITIATOR",
-  },
-  {
-    key: "stale",
-    title: "متأخرة",
-    icon: <MdHistoryToggleOff />,
-    warnable: true,
+    countKey: "meetings",
     show: (user) => user.role !== "CONTACT_INITIATOR",
   },
   {
@@ -114,12 +133,49 @@ function defaultTabFor(user) {
 }
 
 /* ----------------------------------------------------------------------------
- * Lightweight count fetchers for the KPI rail. They request a single row
- * (limit=1) only to read `total`, so the heavy lists never double-render.
+ * Single counts source. ONE call to `shared/client-leads/summary?staffId=<id>`
+ * returns `{ new, nonConsulted, stale, calls, meetings }`. These counts feed
+ * BOTH the KPI rail and the tab/section badges. Refetches whenever `token`
+ * changes (the page bumps it from the refresh button).
  * -------------------------------------------------------------------------- */
-function useCount(url, enabled) {
-  const { total, loading } = useDataFetcher(enabled ? url : null, false);
-  return { count: enabled ? total : 0, loading: enabled ? loading : false };
+const EMPTY_SUMMARY = {
+  new: 0,
+  nonConsulted: 0,
+  stale: 0,
+  calls: 0,
+  meetings: 0,
+};
+
+function useSummary(staffId, token) {
+  const [summary, setSummary] = useState(EMPTY_SUMMARY);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    async function load() {
+      const res = await getData({
+        url: `shared/client-leads/summary?staffId=${staffId}&`,
+        setLoading,
+        // getData appends pagination params; the summary endpoint ignores them.
+        page: 1,
+        limit: 1,
+        filters: {},
+        search: "",
+        sort: {},
+        others: "",
+      });
+      if (!alive) return;
+      if (res && res.status === 200 && res.data && typeof res.data === "object") {
+        setSummary({ ...EMPTY_SUMMARY, ...res.data });
+      }
+    }
+    load();
+    return () => {
+      alive = false;
+    };
+  }, [staffId, token]);
+
+  return { summary, loading };
 }
 
 /* ----------------------------------------------------------------------------
@@ -153,61 +209,33 @@ export default function NewLeadsPage({ searchParams, staff }) {
   const [lookupId, setLookupId] = useState(null);
   const [lookupOpen, setLookupOpen] = useState(false);
 
-  // KPI counts (only for tabs this role can see). Stale gets a warning accent.
-  const showNew = tabKeys.includes("new");
-  const showNon = tabKeys.includes("non-consulted");
-  const showCalls = tabKeys.includes("calls");
-  const showMeetings = tabKeys.includes("meetings");
-  const showStale = tabKeys.includes("stale");
+  // Single shared refetch token. Bumping it (a) refetches the summary counts and
+  // (b) remounts the active tab panel + the calls/meetings sections via `key=`,
+  // forcing their internal fetchers to re-run. The children own their own URLs,
+  // so a key-remount is the cleanest way to refetch them without touching them.
+  const [rerenderToken, setRerenderToken] = useState(0);
+  const refreshAll = useCallback(() => setRerenderToken((t) => t + 1), []);
 
-  const newCount = useCount("shared/client-leads?isNew=true&", showNew);
-  const nonCount = useCount("shared/client-leads?noConsulted=true&", showNon);
-  const callsCount = useCount(
-    `shared/client-leads/calls?staffId=${staff && user.id}&`,
-    showCalls
-  );
-  const meetingsCount = useCount(
-    `shared/client-leads/meetings?staffId=${staff && user.id}&`,
-    showMeetings
-  );
-  const staleCount = useCount(
-    `shared/client-leads?staffId=${user.id}&assignedOverdue=true&`,
-    showStale
+  // ONE summary call drives every count (KPI rail + tab/section badges). Scope
+  // matches NextCalls/NextMeetings: own leads for staff, all leads otherwise.
+  const staffId = staff ? user.id : "";
+  const { summary, loading: summaryLoading } = useSummary(staffId, rerenderToken);
+
+  // Sections (calls/meetings/targets) visible to this role.
+  const sections = useMemo(
+    () => SECTION_DEFS.filter((s) => s.show(user)),
+    [user]
   );
 
-  const kpis = [
-    showNew && {
-      key: "new",
-      label: "العملاء الجدد",
-      icon: <MdOutlineFiberNew />,
-      ...newCount,
-    },
-    showNon && {
-      key: "non-consulted",
-      label: "غير مستشارين",
-      icon: <MdOutlinePending />,
-      ...nonCount,
-    },
-    showCalls && {
-      key: "calls",
-      label: "مكالمات اليوم",
-      icon: <MdPhoneInTalk />,
-      ...callsCount,
-    },
-    showMeetings && {
-      key: "meetings",
-      label: "اجتماعات",
-      icon: <MdEventAvailable />,
-      ...meetingsCount,
-    },
-    showStale && {
-      key: "stale",
-      label: "متأخرة",
-      icon: <MdHistoryToggleOff />,
-      warn: true,
-      ...staleCount,
-    },
-  ].filter(Boolean);
+  // KPI rail — one tile per visible LEAD-POOL tab, count read from the summary.
+  const kpis = tabs.map((t) => ({
+    key: t.key,
+    label: t.title,
+    icon: t.icon,
+    warn: !!t.warnable,
+    count: summary[t.countKey] ?? 0,
+    loading: summaryLoading,
+  }));
 
   const activeDef = tabs.find((t) => t.key === active);
 
@@ -240,9 +268,28 @@ export default function NewLeadsPage({ searchParams, staff }) {
                 العملاء الجدد وغير المستشارين والمتأخرون — اختر عميلاً وابدأ صفقة.
               </Typography>
             </Box>
-            <Box sx={{ flexShrink: 0 }}>
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              sx={{ flexShrink: 0 }}
+            >
+              <Tooltip title="تحديث">
+                <IconButton
+                  onClick={refreshAll}
+                  color="primary"
+                  aria-label="تحديث"
+                  sx={{
+                    border: 1,
+                    borderColor: "divider",
+                    bgcolor: "background.paper",
+                  }}
+                >
+                  <MdRefresh />
+                </IconButton>
+              </Tooltip>
               <CreateNewLead />
-            </Box>
+            </Stack>
           </Stack>
 
           {/* Single search. For admins it looks up ANY lead and opens it in a
@@ -383,43 +430,108 @@ export default function NewLeadsPage({ searchParams, staff }) {
               "& .MuiTab-root": { textTransform: "none", fontWeight: 700 },
             }}
           >
-            {tabs.map((t) => (
-              <Tab
-                key={t.key}
-                value={t.key}
-                icon={t.icon}
-                iconPosition="start"
-                label={t.title}
-              />
-            ))}
+            {tabs.map((t) => {
+              const count = summary[t.countKey] ?? 0;
+              const warnOn = t.warnable && count > 0;
+              return (
+                <Tab
+                  key={t.key}
+                  value={t.key}
+                  icon={t.icon}
+                  iconPosition="start"
+                  label={
+                    <Stack
+                      direction="row"
+                      spacing={0.75}
+                      alignItems="center"
+                      component="span"
+                    >
+                      <span>{t.title}</span>
+                      {!summaryLoading && (
+                        <Box
+                          component="span"
+                          sx={{
+                            px: 0.75,
+                            py: 0.05,
+                            borderRadius: 1.25,
+                            fontSize: "0.72rem",
+                            fontWeight: 700,
+                            lineHeight: 1.6,
+                            color: warnOn ? "warning.main" : "primary.main",
+                            bgcolor: (th) =>
+                              alpha(
+                                warnOn
+                                  ? th.palette.warning.main
+                                  : th.palette.primary.main,
+                                0.12
+                              ),
+                          }}
+                        >
+                          {count}
+                        </Box>
+                      )}
+                    </Stack>
+                  }
+                />
+              );
+            })}
           </Tabs>
 
           <Box sx={{ p: { xs: 1.5, md: 2.5 } }}>
-            {/* Render only the active panel → only its fetcher runs. */}
+            {/* Render only the active LEAD-POOL panel → only its fetcher runs.
+                The rerenderToken in the key remounts it on manual refresh. */}
             {active === "new" && (
-              <NewLeadsPanel def={activeDef} searchParams={searchParams} />
+              <NewLeadsPanel
+                key={`new-${rerenderToken}`}
+                def={activeDef}
+                searchParams={searchParams}
+              />
             )}
             {active === "non-consulted" && (
-              <NonConsultedPanel def={activeDef} />
+              <NonConsultedPanel
+                key={`non-consulted-${rerenderToken}`}
+                def={activeDef}
+              />
             )}
-            {active === "calls" && (
-              <SimpleSection def={activeDef} count={callsCount.count}>
-                <NextCalls staff={staff} />
-              </SimpleSection>
-            )}
-            {active === "meetings" && (
-              <SimpleSection def={activeDef} count={meetingsCount.count}>
-                <NextMeetings staff={staff} />
-              </SimpleSection>
-            )}
-            {active === "stale" && <StalePanel def={activeDef} />}
-            {active === "targets" && (
-              <SimpleSection def={activeDef}>
-                <FixedData />
-              </SimpleSection>
+            {active === "stale" && (
+              <StalePanel key={`stale-${rerenderToken}`} def={activeDef} />
             )}
           </Box>
         </Paper>
+
+        {/* ===== Zone 4: stacked sections (calls · meetings · targets) =====
+            Always visible (role permitting), each in its own Paper below the
+            tabs. Calls/meetings carry their count from the single summary and
+            remount on manual refresh via the rerenderToken key. */}
+        {sections.map((s) => (
+          <Paper
+            key={s.key}
+            elevation={0}
+            sx={{
+              p: { xs: 1.5, md: 2.5 },
+              borderRadius: 3,
+              border: 1,
+              borderColor: "divider",
+              overflow: "hidden",
+            }}
+          >
+            {s.key === "calls" && (
+              <SimpleSection def={s} count={summary.calls ?? 0}>
+                <NextCalls key={`calls-${rerenderToken}`} staff={staff} />
+              </SimpleSection>
+            )}
+            {s.key === "meetings" && (
+              <SimpleSection def={s} count={summary.meetings ?? 0}>
+                <NextMeetings key={`meetings-${rerenderToken}`} staff={staff} />
+              </SimpleSection>
+            )}
+            {s.key === "targets" && (
+              <SimpleSection def={s}>
+                <FixedData />
+              </SimpleSection>
+            )}
+          </Paper>
+        ))}
       </Stack>
 
       {/* Admin: look up any lead → standard preview dialog */}
