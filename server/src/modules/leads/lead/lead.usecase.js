@@ -167,6 +167,42 @@ export class LeadUsecase {
     return where;
   }
 
+  // Counts for the leads-page KPI rail + tab badges, in ONE call. Each count reuses the
+  // SAME where-builder its pool uses so the badge equals what that pool actually lists:
+  //   new          → isNew (status NEW + initialConsult) pool
+  //   nonConsulted → noConsulted (initialConsult:false) pool
+  //   stale        → assignedOverdue (ON_HOLD not-assigned-to-me) pool — staffId = caller
+  //   calls/meetings → the IN_PROGRESS reminder countWhere (#staffFilter scoping)
+  async summary({ query, authUser }) {
+    const F = "{}"; // no extra filters for the headline counts
+    const [newWhere, nonConsultedWhere, staleWhere] = await Promise.all([
+      this.#buildListWhere({ isNew: true, checkConsult: true, filters: F }, authUser.id),
+      this.#buildListWhere({ noConsulted: "true", filters: F }, authUser.id),
+      this.#buildListWhere(
+        { assignedOverdue: true, staffId: authUser.id, filters: F },
+        authUser.id,
+      ),
+    ]);
+
+    const reminderCountWhere = {
+      status: "IN_PROGRESS",
+      clientLead: {
+        status: { notIn: ["CONVERTED", "ON_HOLD", "FINALIZED", "REJECTED"] },
+        ...this.#staffFilter(query),
+      },
+    };
+
+    const [newCount, nonConsulted, stale, calls, meetings] = await Promise.all([
+      this.repo.countLeads({ where: newWhere }),
+      this.repo.countLeads({ where: nonConsultedWhere }),
+      this.repo.countLeads({ where: staleWhere }),
+      this.repo.countCalls({ where: reminderCountWhere }),
+      this.repo.countMeetings({ where: reminderCountWhere }),
+    ]);
+
+    return { new: newCount, nonConsulted, stale, calls, meetings };
+  }
+
   // Deals / columns delegate to the legacy aggregators (identical filter+select
   // logic, heavy and self-contained) so behavior is preserved 1:1. We apply the same
   // self-scoping the legacy ROUTE applied before calling them.

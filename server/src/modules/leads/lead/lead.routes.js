@@ -27,6 +27,7 @@ router.get("/deals", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(l
 router.get("/columns", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(leadController.columns));
 router.get("/calls", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(leadController.listCalls));
 router.get("/meetings", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(leadController.listMeetings));
+router.get("/summary", AuthMiddleware.requirePermissions([P.LIST]), asyncHandler(leadController.summary));
 
 // ── assign / convert (collection-level mutations) ────────────────────────────────
 router.put(

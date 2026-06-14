@@ -108,6 +108,19 @@ class LeadRepository {
     });
   }
 
+  // ── Counts (lead-pool summary for the leads page KPI rail / tab badges) ──────────
+  countLeads({ where }) {
+    return prisma.clientLead.count({ where });
+  }
+
+  countCalls({ where }) {
+    return prisma.callReminder.count({ where });
+  }
+
+  countMeetings({ where }) {
+    return prisma.meetingReminder.count({ where });
+  }
+
   // ── Deals (legacy getClientLeadsByDateRange) ──────────────────────────────────
   findDeals({ where, callRemindersWhere, updatesWhere, sharedUpdatesWhere }) {
     return prisma.clientLead.findMany({

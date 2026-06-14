@@ -70,6 +70,12 @@ export class LeadController {
     return ok(res, { items: withListCapabilities(items, req.auth) }, C.DEALS_FETCHED, TK);
   };
 
+  // Lead-pool counts for the leads-page KPI rail + tab badges (one call, no list bodies).
+  summary = async (req, res) => {
+    const data = await this.usecase.summary({ query: req.query, authUser: req.auth });
+    return ok(res, data, C.LEADS_FETCHED, TK);
+  };
+
   columns = async (req, res) => {
     const result = await this.usecase.columns({ query: req.query, authUser: req.auth });
     const data = result?.data ? { ...result, data: withListCapabilities(result.data, req.auth) } : result;
