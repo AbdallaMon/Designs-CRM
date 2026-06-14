@@ -1,15 +1,15 @@
 "use client";
 import React, { useState } from "react";
 import {
+  alpha,
+  Box,
   Card,
   CardContent,
   Typography,
   List,
   ListItem,
   Avatar,
-  Grid,
   Container,
-  Divider,
   CardHeader,
   DialogContent,
   IconButton,
@@ -25,6 +25,7 @@ import { notificationIcons } from "@/app/helpers/constants.js";
 import colors, { NotificationColors } from "@/app/helpers/colors.js";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { MdClose } from "react-icons/md";
+import { FiActivity } from "react-icons/fi";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 function UserLogs({ staff, staffId }) {
   const [open, setOpen] = useState(false);
@@ -40,8 +41,13 @@ function UserLogs({ staff, staffId }) {
   return (
     <div>
       {/* Button to Open the Dialog */}
-      <Button variant="contained" onClick={handleClickOpen}>
-        See {staff.name} logs
+      <Button
+        variant="contained"
+        onClick={handleClickOpen}
+        startIcon={<FiActivity />}
+        sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
+      >
+        سجل نشاط {staff.name}
       </Button>
       <Dialog
         fullScreen
@@ -50,14 +56,41 @@ function UserLogs({ staff, staffId }) {
         aria-labelledby="full-screen-dialog-title"
       >
         {/* Dialog Title with Close Icon */}
-        <DialogTitle id="full-screen-dialog-title" sx={{ m: 0, p: 2 }}>
+        <DialogTitle
+          id="full-screen-dialog-title"
+          sx={{
+            m: 0,
+            px: 3,
+            py: 2,
+            display: "flex",
+            alignItems: "center",
+            gap: 1.25,
+            fontWeight: 700,
+            borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+          }}
+        >
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: 2,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
+              color: "primary.main",
+            }}
+          >
+            <FiActivity />
+          </Box>
+          سجل نشاط {staff.name}
           <IconButton
             aria-label="close"
             onClick={handleClose}
             sx={{
               position: "absolute",
-              right: 8,
-              top: 8,
+              insetInlineEnd: 12,
+              top: 12,
               color: (theme) => theme.palette.grey[500],
             }}
           >
@@ -87,76 +120,91 @@ const Logs = ({ staff, staffId }) => {
   return (
     <Container maxWidth="xl" sx={{ marginY: 4, position: "relative" }}>
       {loading && <FullScreenLoader />}
-      <Card sx={{ boxShadow: 3, padding: 2 }}>
+      <Card
+        elevation={0}
+        sx={{
+          borderRadius: 3,
+          border: (theme) => `1px solid ${theme.palette.divider}`,
+          p: { xs: 1, md: 2 },
+        }}
+      >
         <CardHeader
-          title={`${staff.name} Logs for today`}
-          subheader={`View ${staff.name} latest activity.`}
+          title={`سجل نشاط ${staff.name} اليوم`}
+          subheader={`عرض أحدث أنشطة ${staff.name}.`}
+          titleTypographyProps={{ fontWeight: 800 }}
         ></CardHeader>
         <CardContent sx={{ px: { xs: 0, md: 2 } }}>
-          <List className="notifications">
-            {notifications.map((notification) => (
-              <>
+          {!loading && notifications.length === 0 ? (
+            <Box
+              sx={{
+                py: 6,
+                textAlign: "center",
+                borderRadius: 2,
+                border: (theme) => `1px dashed ${theme.palette.divider}`,
+                bgcolor: (theme) => alpha(theme.palette.text.primary, 0.02),
+              }}
+            >
+              <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
+                لا يوجد نشاط لعرضه اليوم.
+              </Typography>
+            </Box>
+          ) : (
+            <List className="notifications" sx={{ display: "grid", gap: 1.25 }}>
+              {notifications.map((notification) => (
                 <ListItem
                   key={notification.id}
                   sx={{
-                    borderLeft: `2px solid ${
-                      NotificationColors[notification.type]
+                    borderInlineStart: `3px solid ${
+                      NotificationColors[notification.type] || "#607d8b"
                     }`,
-                    my: 1.5,
+                    borderRadius: 2,
+                    border: (theme) => `1px solid ${theme.palette.divider}`,
                     background: colors.bgSecondary,
                     py: 2,
+                    gap: 1.5,
                   }}
                 >
-                  <Grid
-                    container
-                    spacing={2}
-                    alignItems="center"
-                    justifyContent="center"
+                  <Avatar
+                    sx={{
+                      bgcolor:
+                        NotificationColors[notification.type] || "#607d8b",
+                      width: 40,
+                      height: 40,
+                      flexShrink: 0,
+                    }}
                   >
-                    <Grid>
-                      <Avatar
-                        sx={{
-                          bgcolor:
-                            NotificationColors[notification.type] || "#607d8b",
-                          width: 40,
-                          height: 40,
-                        }}
-                      >
-                        {notificationIcons[notification.type]}
-                      </Avatar>
-                    </Grid>
+                    {notificationIcons[notification.type]}
+                  </Avatar>
 
-                    <Grid>
-                      <Typography variant="body1">
-                        {parse(notification.content)}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        By
-                        {isAdmin ? (
-                          notification.staff ? (
-                            <a
-                              href={"/dashboard/users/" + notification.staffId}
-                            >
-                              {" "}
-                              {notification.staff?.name}
-                            </a>
-                          ) : (
-                            notification.client?.name
-                          )
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="body1" sx={{ wordBreak: "break-word" }}>
+                      {parse(notification.content)}
+                    </Typography>
+                    <Typography variant="body2" color="textSecondary">
+                      بواسطة{" "}
+                      {isAdmin ? (
+                        notification.staff ? (
+                          <a
+                            href={"/dashboard/users/" + notification.staffId}
+                          >
+                            {" "}
+                            {notification.staff?.name}
+                          </a>
                         ) : (
-                          notification.client?.name || "Admin"
-                        )}
-                        {` at ${dayjs(notification.createdAt).format(
-                          "YYYY-MM-DD HH:mm:ss"
-                        )}`}
-                      </Typography>
-                    </Grid>
-                  </Grid>
+                          notification.client?.name
+                        )
+                      ) : (
+                        notification.client?.name || "Admin"
+                      )}
+                      {` بتاريخ ${dayjs(notification.createdAt).format(
+                        "YYYY-MM-DD HH:mm:ss"
+                      )}`}
+                    </Typography>
+                  </Box>
                 </ListItem>
-                <Divider />
-              </>
-            ))}
-          </List>
+              ))}
+            </List>
+          )}
         </CardContent>
       </Card>
     </Container>

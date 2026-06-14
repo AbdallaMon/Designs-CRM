@@ -1,6 +1,18 @@
 import { useEffect, useState } from "react";
 import { getData } from "@/app/helpers/functions/getData.js";
-import { Box, Button, Card, CardContent, Typography } from "@mui/material";
+import {
+  alpha,
+  Avatar,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Divider,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { FiMail } from "react-icons/fi";
+import { MdOpenInNew } from "react-icons/md";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
 import UserLogs from "@/app/UiComponents/DataViewer/users/UserLogs.jsx";
 import LastSeen from "../../buttons/LastSeen";
@@ -27,15 +39,61 @@ export default function UserProfile({ id, role }) {
   return (
     <Box mb={2}>
       {loading && <LoadingOverlay />}
-      <Card>
-        <CardContent>
-          <Typography variant="body1">
-            <strong>Name:</strong> {user?.name || "N/A"}
+      <Card
+        elevation={0}
+        sx={{
+          borderRadius: 3,
+          border: (t) => `1px solid ${t.palette.divider}`,
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            alignItems={{ xs: "flex-start", sm: "center" }}
+          >
+            <Avatar
+              sx={{
+                width: 56,
+                height: 56,
+                fontSize: 24,
+                fontWeight: 700,
+                bgcolor: (t) => t.palette.primary.main,
+                color: "#fff",
+              }}
+            >
+              {user?.name ? user.name[0]?.toUpperCase() : "؟"}
+            </Avatar>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="h6" fontWeight={800} color="text.primary">
+                {user?.name || "غير متوفر"}
+              </Typography>
+              <Stack
+                direction="row"
+                spacing={0.75}
+                alignItems="center"
+                color="text.secondary"
+              >
+                <FiMail size={14} />
+                <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-all" }}>
+                  {user?.email || "غير متوفر"}
+                </Typography>
+              </Stack>
+            </Box>
+          </Stack>
+
+          <Divider sx={{ my: 2.5 }} />
+
+          <Typography variant="overline" fontWeight={700} color="text.secondary">
+            الإجراءات
           </Typography>
-          <Typography variant="body1">
-            <strong>Email:</strong> {user?.email || "N/A"}
-          </Typography>
-          <Box display="flex" flexWrap="wrap" justifyContent="flex-end" gap={2}>
+          <Box
+            display="flex"
+            flexWrap="wrap"
+            alignItems="center"
+            gap={1.5}
+            sx={{ mt: 1.25 }}
+          >
             {!loading && (
               <>
                 <LastSeen initialLastSeen={user.lastSeenAt} userId={user.id} />
@@ -56,8 +114,10 @@ export default function UserProfile({ id, role }) {
                       component="a"
                       target="_blank"
                       href={`/dashboard/deals?staffId=${user.id}`}
+                      startIcon={<MdOpenInNew />}
+                      sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
                     >
-                      View user current deals
+                      عرض صفقات المستخدم الحالية
                     </Button>
                   </>
                 )}
@@ -74,19 +134,19 @@ function UpdateUserMaxLeadsCounts({ user, setUser }) {
   return (
     <Box>
       <EditModal
-        editButtonText={"Edit max leads counts" + " " + user.maxLeadsCounts}
+        editButtonText={"حد العملاء المحتملين" + " " + user.maxLeadsCounts}
         item={user}
         inputs={[
           {
             data: {
               id: "maxLeadsCounts",
-              label: "Enter a number",
+              label: "أدخل رقمًا",
               type: "text",
             },
             pattern: {
               required: {
                 value: true,
-                message: "Please enter a number",
+                message: "الرجاء إدخال رقم",
               },
             },
           },
@@ -95,8 +155,8 @@ function UpdateUserMaxLeadsCounts({ user, setUser }) {
         href={`admin/users/max-leads`}
         setData={setUser}
         extraProps={{
-          formTitle: "Change max leads count",
-          btnText: "Change",
+          formTitle: "تغيير حد العملاء المحتملين",
+          btnText: "تغيير",
           variant: "outlined",
         }}
       />
@@ -109,20 +169,20 @@ function UpdateUserMaxLeadsCountPerDay({ user, setUser }) {
     <Box>
       <EditModal
         editButtonText={
-          "Edit leads counts per day" + " " + user.maxLeadCountPerDay
+          "حد العملاء المحتملين يوميًا" + " " + user.maxLeadCountPerDay
         }
         item={user}
         inputs={[
           {
             data: {
               id: "maxLeadCountPerDay",
-              label: "Enter a number",
+              label: "أدخل رقمًا",
               type: "text",
             },
             pattern: {
               required: {
                 value: true,
-                message: "Please enter a number",
+                message: "الرجاء إدخال رقم",
               },
             },
           },
@@ -131,8 +191,8 @@ function UpdateUserMaxLeadsCountPerDay({ user, setUser }) {
         href={`admin/users/max-leads-per-day`}
         setData={setUser}
         extraProps={{
-          formTitle: "Change max leads count",
-          btnText: "Change",
+          formTitle: "تغيير حد العملاء المحتملين",
+          btnText: "تغيير",
           variant: "outlined",
         }}
       />

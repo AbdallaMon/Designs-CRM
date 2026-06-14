@@ -2,16 +2,21 @@
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
 import {
-  Badge,
+  alpha,
+  Avatar,
   Box,
   Button,
+  Chip,
+  Collapse,
   Container,
+  Divider,
   FormControlLabel,
   IconButton,
   InputLabel,
   lighten,
   Menu,
   MenuItem,
+  Paper,
   Select,
   Stack,
   Switch,
@@ -41,7 +46,9 @@ import {
   MdDelete,
   MdMoreHoriz,
   MdVisibility,
+  MdExpandMore,
 } from "react-icons/md";
+import { FiUsers } from "react-icons/fi";
 import UserRestrictedCountries from "@/app/UiComponents/DataViewer/users/UserRestrictedCountries";
 import Commission from "@/app/UiComponents/DataViewer/utility/Commission";
 import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes";
@@ -49,13 +56,81 @@ import { RoleManagerDialog } from "../DataViewer/users/RoleManagerDialog";
 import { ProjectAutoAssignmentDialog } from "../DataViewer/users/ProjectAutoAssignmentDialog";
 
 const columns = [
-  { name: "name", label: "User Name" },
-  { name: "email", label: "Email" },
-  { name: "telegramUsername", label: "Telegram user name" },
+  {
+    name: "name",
+    label: "المستخدم",
+    type: "function",
+    render: (item) => {
+      const color = item.isActive
+        ? item.role === "STAFF"
+          ? item.isSuperSales
+            ? usersHexColors.isSuperSales
+            : item.isPrimary
+            ? usersHexColors.isPrimary
+            : usersHexColors[item.role]
+          : usersHexColors[item.role]
+        : usersHexColors.banned;
+      const safeColor = color || usersHexColors.default || "#6b7280";
+      return (
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
+          <Avatar
+            sx={{
+              width: 38,
+              height: 38,
+              bgcolor: safeColor,
+              color: "#fff",
+              fontSize: 16,
+              fontWeight: 700,
+              flexShrink: 0,
+            }}
+          >
+            {item.name ? item.name[0]?.toUpperCase() : "؟"}
+          </Avatar>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="subtitle2"
+              fontWeight={700}
+              color="text.primary"
+              sx={{ lineHeight: 1.3 }}
+              noWrap
+            >
+              {item.name || "—"}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" noWrap>
+              {item.email || "—"}
+            </Typography>
+          </Box>
+        </Stack>
+      );
+    },
+  },
+  {
+    name: "telegramUsername",
+    label: "معرّف تيليجرام",
+    type: "function",
+    render: (item) =>
+      item.telegramUsername ? (
+        <Chip
+          size="small"
+          label={item.telegramUsername}
+          sx={{
+            fontWeight: 600,
+            borderRadius: 1.5,
+            bgcolor: (theme) => alpha(theme.palette.info.main, 0.12),
+            color: "info.main",
+            border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.3)}`,
+          }}
+        />
+      ) : (
+        <Typography variant="caption" color="text.disabled">
+          —
+        </Typography>
+      ),
+  },
 
   {
     name: "role",
-    label: "Main role",
+    label: "الدور",
     type: "enum",
     enum: userRolesEnum,
     type: "function",
@@ -78,25 +153,39 @@ const columns = [
             : item.role
           : item.role;
 
-      const safeColor = color || usersHexColors.default || "#ffffff";
+      const safeColor = color || usersHexColors.default || "#6b7280";
       return (
-        <Badge
-          variant="dot"
-          sx={{
-            color: color,
-            backgroundColor: lighten(safeColor, 0.6),
-            px: 2,
-            py: 1,
-            borderRadius: 1,
-            fontWeight: "bold",
-            display: "flex",
-            alignItems: "center",
-            gap: 1,
-            width: "fit-content",
-          }}
-        >
-          {roleIcons[role]} {item.isActive ? role : `${role} (BANNED)`}
-        </Badge>
+        <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+          <Chip
+            size="small"
+            label={
+              <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
+                <span>{roleIcons[role]}</span>
+                <span>{userRolesEnum[role] || role}</span>
+              </Box>
+            }
+            sx={{
+              fontWeight: 700,
+              borderRadius: 1.5,
+              color: safeColor,
+              bgcolor: lighten(safeColor, 0.85),
+              border: `1px solid ${alpha(safeColor, 0.35)}`,
+            }}
+          />
+          {!item.isActive && (
+            <Chip
+              size="small"
+              label="محظور"
+              sx={{
+                fontWeight: 700,
+                borderRadius: 1.5,
+                color: usersHexColors.banned,
+                bgcolor: alpha(usersHexColors.banned, 0.12),
+                border: `1px solid ${alpha(usersHexColors.banned, 0.3)}`,
+              }}
+            />
+          )}
+        </Stack>
       );
     },
   },
@@ -252,45 +341,9 @@ export default function UsersPage() {
   });
   return (
     <div>
-      <Container maxWidth="lg">
-        <Box sx={{ pt: 5 }}>
-          <Typography variant="h5" fontWeight="bold" mb={2}>
-            Users Type Colors Legend{" "}
-          </Typography>
-          <Box
-            mb={2}
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 1.5,
-              width: "fit-content",
-              flexWrap: "wrap",
-              alignContent: "center",
-            }}
-          >
-            {usersColorsArray.map((color, index) => (
-              <Box
-                key={index}
-                variant="dot"
-                sx={{
-                  color: color,
-                  backgroundColor: lighten(color, 0.6),
-                  px: 2,
-                  py: 1,
-                  borderRadius: 1,
-                  fontWeight: "bold",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  fontSize: 12,
-                }}
-              >
-                {usersColors[color]}
-              </Box>
-            ))}
-          </Box>
-        </Box>
+      <Container maxWidth="xl" sx={{ pt: { xs: 3, md: 4 } }}>
+        <UsersPageHeader />
+        <UsersLegend />
       </Container>
       <AdminTable
         data={data}
@@ -346,36 +399,33 @@ export default function UsersPage() {
           flexDirection={{ xs: "column-reverse", md: "row" }}
         >
           <Box
-            display="flex"
-            gap={2}
-            flexWrap="wrap"
-            alignItems="center"
-            flex={1}
+            sx={{
+              width: { xs: "100%", md: 340 },
+              maxWidth: "100%",
+            }}
           >
-            <Box sx={{ width: { xs: "100%", md: "fit-content" } }}>
-              <SearchComponent
-                apiEndpoint="search?model=all-users"
-                setFilters={setFilters}
-                inputLabel="Search by name or email"
-                renderKeys={["name", "email"]}
-                mainKey="name"
-                searchKey={"userId"}
-                withParamsChange={true}
-              />
-            </Box>
-            <div>
-              <CreateModal
-                label={"Create new user"}
-                inputs={editInputs}
-                href={"admin/users"}
-                setData={setData}
-                extraProps={{
-                  formTitle: "New user",
-                  btnText: "Create",
-                  variant: "outlined",
-                }}
-              />
-            </div>
+            <SearchComponent
+              apiEndpoint="search?model=all-users"
+              setFilters={setFilters}
+              inputLabel="ابحث بالاسم أو البريد الإلكتروني"
+              renderKeys={["name", "email"]}
+              mainKey="name"
+              searchKey={"userId"}
+              withParamsChange={true}
+            />
+          </Box>
+          <Box sx={{ width: { xs: "100%", md: "auto" } }}>
+            <CreateModal
+              label={"إضافة مستخدم"}
+              inputs={editInputs}
+              href={"admin/users"}
+              setData={setData}
+              extraProps={{
+                formTitle: "مستخدم جديد",
+                btnText: "إنشاء",
+                variant: "contained",
+              }}
+            />
           </Box>
         </Box>
       </AdminTable>
@@ -408,9 +458,9 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
                 size="small"
               />
             }
-            label="Primary"
+            label="أساسي"
             labelPlacement="top"
-            sx={{ m: 0 }}
+            sx={{ m: 0, "& .MuiFormControlLabel-label": { fontSize: 12, fontWeight: 600 } }}
           />
           <FormControlLabel
             control={
@@ -420,9 +470,9 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
                 size="small"
               />
             }
-            label="Super Sales"
+            label="مبيعات متميزة"
             labelPlacement="top"
-            sx={{ m: 0 }}
+            sx={{ m: 0, "& .MuiFormControlLabel-label": { fontSize: 12, fontWeight: 600 } }}
           />
         </>
       )}
@@ -433,9 +483,9 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
         size="small"
         variant="outlined"
         startIcon={<MdVisibility />}
-        sx={{ whiteSpace: "nowrap" }}
+        sx={{ whiteSpace: "nowrap", borderRadius: 2, fontWeight: 600 }}
       >
-        View
+        عرض
       </Button>
     </Box>
   );
@@ -451,8 +501,15 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
         maxWidth: 520,
       }}
     >
-      <Tooltip title="More actions">
-        <IconButton size="small" onClick={(e) => setAnchorEl(e.currentTarget)}>
+      <Tooltip title="إجراءات إضافية">
+        <IconButton
+          size="small"
+          onClick={(e) => setAnchorEl(e.currentTarget)}
+          sx={{
+            border: (t) => `1px solid ${t.palette.divider}`,
+            borderRadius: 2,
+          }}
+        >
           <MdMoreHoriz />
         </IconButton>
       </Tooltip>
@@ -462,8 +519,21 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
         onClose={() => setAnchorEl(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
-        PaperProps={{ sx: { minWidth: 260, p: 1 } }}
+        PaperProps={{ sx: { minWidth: 280, p: 1, borderRadius: 3 } }}
       >
+        <Typography
+          variant="overline"
+          sx={{
+            px: 1.5,
+            py: 0.5,
+            display: "block",
+            fontWeight: 700,
+            color: "text.secondary",
+          }}
+        >
+          إدارة المستخدم
+        </Typography>
+        <Divider sx={{ mb: 0.5 }} />
         {/* On small screens, also show the primary inline controls inside the menu */}
         {smDown && (
           <Box sx={{ px: 1, pb: 1, display: "grid", gap: 1 }}>
@@ -476,15 +546,15 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
           <ConfirmWithActionModel
             title={
               item.isActive
-                ? "Are you sure you want to ban this user?"
-                : "Are you sure you want to unban this user?"
+                ? "هل أنت متأكد من حظر هذا المستخدم؟"
+                : "هل أنت متأكد من إلغاء حظر هذا المستخدم؟"
             }
             handleConfirm={async () => {
               await banAUser(item);
               setAnchorEl(null);
             }}
             isDelete={item.isActive}
-            label={item.isActive ? "Ban User" : "Unban User"}
+            label={item.isActive ? "حظر المستخدم" : "إلغاء الحظر"}
             fullWidth={true}
           />
         </Box>
@@ -523,5 +593,128 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
         </Box>
       )}
     </Stack>
+  );
+}
+
+function UsersPageHeader() {
+  const theme = useTheme();
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        borderRadius: 3,
+        border: `1px solid ${theme.palette.divider}`,
+        background: `linear-gradient(135deg, ${alpha(
+          theme.palette.primary.main,
+          0.08
+        )} 0%, ${alpha(theme.palette.primary.main, 0.02)} 100%)`,
+        p: { xs: 2.5, md: 3 },
+        mb: 2.5,
+      }}
+    >
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={2}
+        alignItems={{ xs: "flex-start", sm: "center" }}
+      >
+        <Box
+          sx={{
+            width: 52,
+            height: 52,
+            borderRadius: 2.5,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: alpha(theme.palette.primary.main, 0.14),
+            color: theme.palette.primary.main,
+            fontSize: 26,
+            flexShrink: 0,
+          }}
+        >
+          <FiUsers />
+        </Box>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="h5" fontWeight={800} color="text.primary">
+            المستخدمون
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            إدارة حسابات الفريق وأدوارهم وصلاحياتهم
+          </Typography>
+        </Box>
+      </Stack>
+    </Paper>
+  );
+}
+
+function UsersLegend() {
+  const theme = useTheme();
+  const [open, setOpen] = React.useState(false);
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        borderRadius: 3,
+        border: `1px solid ${theme.palette.divider}`,
+        bgcolor: "background.paper",
+        mb: 2,
+        overflow: "hidden",
+      }}
+    >
+      <Box
+        onClick={() => setOpen((v) => !v)}
+        role="button"
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 1,
+          px: 2,
+          py: 1.25,
+          cursor: "pointer",
+          userSelect: "none",
+          "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.04) },
+        }}
+      >
+        <Typography variant="subtitle2" fontWeight={700} color="text.secondary">
+          دليل ألوان أنواع المستخدمين
+        </Typography>
+        <MdExpandMore
+          style={{
+            transition: "transform .2s ease",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            fontSize: 20,
+          }}
+        />
+      </Box>
+      <Collapse in={open} timeout="auto" unmountOnExit>
+        <Divider />
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 1,
+            p: 2,
+          }}
+        >
+          {usersColorsArray.map((color, index) => {
+            const safe = color || "#6b7280";
+            return (
+              <Chip
+                key={index}
+                size="small"
+                label={usersColors[color]}
+                sx={{
+                  fontWeight: 700,
+                  borderRadius: 1.5,
+                  color: safe,
+                  bgcolor: lighten(safe, 0.85),
+                  border: `1px solid ${alpha(safe, 0.35)}`,
+                }}
+              />
+            );
+          })}
+        </Box>
+      </Collapse>
+    </Paper>
   );
 }

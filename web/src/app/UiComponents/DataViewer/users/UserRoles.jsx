@@ -37,38 +37,38 @@ const roleConfig = {
   ADMIN: {
     icon: <FaUserShield />,
     color: "#1976d2",
-    label: "Administrator",
-    description: "Full system access and management",
+    label: "مدير",
+    description: "وصول كامل للنظام وإدارته",
   },
   STAFF: {
     icon: <FaUserTie />,
     color: "#388e3c",
-    label: "Sales",
-    description: "Lead management and customer service",
+    label: "مبيعات",
+    description: "إدارة العملاء المحتملين وخدمة العملاء",
   },
   THREE_D_DESIGNER: {
     icon: <FaCube />,
     color: "#f57c00",
-    label: "3D Designer",
-    description: "3D modeling",
+    label: "مصمم ثلاثي الأبعاد",
+    description: "النمذجة ثلاثية الأبعاد",
   },
   TWO_D_DESIGNER: {
     icon: <FaPalette />,
     color: "#7b1fa2",
-    label: "2D Designer",
-    description: "2D graphics",
+    label: "مصمم ثنائي الأبعاد",
+    description: "التصميم ثنائي الأبعاد",
   },
   ACCOUNTANT: {
     icon: <FaCalculator />,
     color: "#00796b",
-    label: "Accountant",
-    description: "Financial management and reporting",
+    label: "محاسب",
+    description: "الإدارة المالية وإعداد التقارير",
   },
   SUPER_ADMIN: {
     icon: <FaCrown />,
     color: "#d32f2f",
-    label: "Super Administrator",
-    description: "Full system access and management",
+    label: "مدير عام",
+    description: "وصول كامل للنظام وإدارته",
   },
 };
 
@@ -126,7 +126,7 @@ export default function SignInWithDifferentUserRole() {
           transition: "all 0.2s ease-in-out",
         }}
       >
-        Switch Role
+        تبديل الدور
       </Button>
 
       <Dialog
@@ -151,7 +151,7 @@ export default function SignInWithDifferentUserRole() {
             <Box display="flex" alignItems="center" gap={1}>
               <MdOutlineSwitchAccount size={24} />
               <Typography variant="h6" fontWeight={600}>
-                Select Your Role
+                اختر دورك
               </Typography>
             </Box>
             <IconButton
@@ -163,7 +163,7 @@ export default function SignInWithDifferentUserRole() {
             </IconButton>
           </Box>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Choose the role you want to switch to
+            اختر الدور الذي تريد التبديل إليه
           </Typography>
         </DialogTitle>
 
@@ -180,7 +180,7 @@ export default function SignInWithDifferentUserRole() {
             >
               <CircularProgress size={40} />
               <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                Loading available roles...
+                جارٍ تحميل الأدوار المتاحة...
               </Typography>
             </Box>
           ) : roles.length === 0 ? (
@@ -192,7 +192,7 @@ export default function SignInWithDifferentUserRole() {
               py={6}
             >
               <Typography variant="body1" color="text.secondary">
-                No roles available
+                لا توجد أدوار متاحة
               </Typography>
             </Box>
           ) : (
@@ -249,7 +249,7 @@ export default function SignInWithDifferentUserRole() {
                           </Typography>
                           {isCurrentRole && (
                             <Chip
-                              label="Current"
+                              label="الحالي"
                               size="small"
                               color="primary"
                               variant="outlined"
@@ -258,7 +258,7 @@ export default function SignInWithDifferentUserRole() {
                           )}
                           {isSelected && (
                             <Chip
-                              label="Selected"
+                              label="محدّد"
                               size="small"
                               sx={{
                                 height: 20,
@@ -285,10 +285,10 @@ export default function SignInWithDifferentUserRole() {
 
         <DialogActions sx={{ p: 3, pt: 2 }}>
           <Button onClick={handleClose} color="inherit">
-            Cancel
+            إلغاء
           </Button>
           <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
-            {selectedRole ? "Switching role..." : "Select a role to continue"}
+            {selectedRole ? "جارٍ التبديل..." : "اختر دورًا للمتابعة"}
           </Typography>
         </DialogActions>
       </Dialog>

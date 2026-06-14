@@ -1,27 +1,31 @@
-import { roleIcons } from "@/app/helpers/constants";
+import { roleIcons, userRolesEnum } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import {
+  alpha,
+  Box,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   FormControl,
   IconButton,
   InputLabel,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   MenuItem,
   Select,
+  Stack,
   Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { MdAddCircleOutline, MdDelete } from "react-icons/md";
+import { FiShield } from "react-icons/fi";
+
+const roleLabel = (r) => userRolesEnum?.[r] || r;
 
 export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
   const allRoles = Object.keys(roleIcons); // Available roles
@@ -77,74 +81,159 @@ export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
   if (!admin) return null; // Only admins can manage roles
   if (!open)
     return (
-      <Button onClick={() => setOpen(true)} variant="contained" fullWidth>
-        Manage Roles
+      <Button
+        onClick={() => setOpen(true)}
+        variant="contained"
+        fullWidth
+        startIcon={<FiShield />}
+        sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
+      >
+        إدارة الأدوار
       </Button>
     );
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Manage User Roles</DialogTitle>
-      <DialogContent>
-        <Typography variant="h6">Main Role:</Typography>
-        <List>
-          <ListItem>
-            <ListItemIcon>{roleIcons[role]}</ListItemIcon>
-            <ListItemText primary={role} />
-          </ListItem>
-        </List>
-
-        <Typography variant="h6">Sub Roles:</Typography>
-        <List>
-          {selectedSubRoles.length > 0 ? (
-            selectedSubRoles.map((r) => (
-              <ListItem key={r}>
-                <ListItemIcon>{roleIcons[r]}</ListItemIcon>
-                <ListItemText primary={r} />
-                <IconButton onClick={() => handleRemoveRole(r)} color="error">
-                  <MdDelete />
-                </IconButton>
-              </ListItem>
-            ))
-          ) : (
-            <Typography variant="body2" color="textSecondary">
-              No sub-roles assigned.
-            </Typography>
-          )}
-        </List>
-
-        <FormControl fullWidth margin="normal">
-          <InputLabel>Add Sub-Role</InputLabel>
-          <Select
-            value={tempRole}
-            onChange={(e) => setTempRole(e.target.value)}
-          >
-            {allRoles
-              .filter((r) => r !== role && !selectedSubRoles.includes(r)) // Exclude main role & already selected ones
-              .map((r) => (
-                <MenuItem key={r} value={r}>
-                  {roleIcons[r]} {r}
-                </MenuItem>
-              ))}
-          </Select>
-        </FormControl>
-
-        <Button
-          variant="contained"
-          startIcon={<MdAddCircleOutline />}
-          onClick={handleAddRole}
-          fullWidth
-          disabled={!tempRole}
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      PaperProps={{ sx: { borderRadius: 3 } }}
+    >
+      <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.25, fontWeight: 700 }}>
+        <Box
+          sx={{
+            width: 36,
+            height: 36,
+            borderRadius: 2,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
+            color: "primary.main",
+          }}
         >
-          Add Role
-        </Button>
+          <FiShield />
+        </Box>
+        إدارة أدوار المستخدم
+      </DialogTitle>
+      <Divider />
+      <DialogContent sx={{ pt: 2.5 }}>
+        <Stack spacing={2.5}>
+          <Box>
+            <Typography variant="overline" fontWeight={700} color="text.secondary">
+              الدور الأساسي
+            </Typography>
+            <Box sx={{ mt: 1 }}>
+              <Chip
+                icon={<span style={{ fontSize: 16 }}>{roleIcons[role]}</span>}
+                label={roleLabel(role)}
+                sx={{
+                  fontWeight: 700,
+                  borderRadius: 1.5,
+                  bgcolor: (t) => alpha(t.palette.primary.main, 0.1),
+                  color: "primary.main",
+                  border: (t) => `1px solid ${alpha(t.palette.primary.main, 0.3)}`,
+                }}
+              />
+            </Box>
+          </Box>
+
+          <Divider />
+
+          <Box>
+            <Typography variant="overline" fontWeight={700} color="text.secondary">
+              الأدوار الفرعية
+            </Typography>
+            {selectedSubRoles.length > 0 ? (
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
+                {selectedSubRoles.map((r) => (
+                  <Chip
+                    key={r}
+                    icon={<span style={{ fontSize: 15 }}>{roleIcons[r]}</span>}
+                    label={roleLabel(r)}
+                    onDelete={() => handleRemoveRole(r)}
+                    deleteIcon={<MdDelete />}
+                    sx={{
+                      fontWeight: 600,
+                      borderRadius: 1.5,
+                      bgcolor: "background.paper",
+                      border: (t) => `1px solid ${t.palette.divider}`,
+                    }}
+                  />
+                ))}
+              </Stack>
+            ) : (
+              <Box
+                sx={{
+                  mt: 1,
+                  p: 2,
+                  borderRadius: 2,
+                  textAlign: "center",
+                  bgcolor: (t) => alpha(t.palette.text.primary, 0.03),
+                  border: (t) => `1px dashed ${t.palette.divider}`,
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  لا توجد أدوار فرعية مُسندة.
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
+          <Box>
+            <Typography variant="overline" fontWeight={700} color="text.secondary">
+              إضافة دور فرعي
+            </Typography>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 1 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>اختر دورًا</InputLabel>
+                <Select
+                  label="اختر دورًا"
+                  value={tempRole}
+                  onChange={(e) => setTempRole(e.target.value)}
+                  sx={{ borderRadius: 2 }}
+                >
+                  {allRoles
+                    .filter((r) => r !== role && !selectedSubRoles.includes(r)) // Exclude main role & already selected ones
+                    .map((r) => (
+                      <MenuItem key={r} value={r}>
+                        {roleIcons[r]} {roleLabel(r)}
+                      </MenuItem>
+                    ))}
+                </Select>
+              </FormControl>
+              <Button
+                variant="contained"
+                startIcon={<MdAddCircleOutline />}
+                onClick={handleAddRole}
+                disabled={!tempRole}
+                sx={{
+                  borderRadius: 2,
+                  textTransform: "none",
+                  fontWeight: 600,
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}
+              >
+                إضافة
+              </Button>
+            </Stack>
+          </Box>
+        </Stack>
       </DialogContent>
 
-      <DialogActions>
-        <Button onClick={onClose} color="secondary">
-          Cancel
+      <Divider />
+      <DialogActions sx={{ px: 3, py: 2 }}>
+        <Button onClick={onClose} color="inherit" sx={{ textTransform: "none" }}>
+          إلغاء
         </Button>
-        <Button onClick={handleSave} color="primary" variant="contained">
-          Save
+        <Button
+          onClick={handleSave}
+          color="primary"
+          variant="contained"
+          sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
+        >
+          حفظ
         </Button>
       </DialogActions>
     </Dialog>
