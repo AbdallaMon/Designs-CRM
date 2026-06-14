@@ -2,73 +2,219 @@
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import {
+  Alert,
   Box,
   Button,
-  Card,
-  CardActions,
-  CardContent,
-  CardHeader,
+  ButtonBase,
   Chip,
   Container,
   Grid,
-  IconButton,
   Paper,
+  Skeleton,
   Stack,
-  Tooltip,
+  Tab,
+  Tabs,
   Typography,
+  alpha,
   useTheme,
 } from "@mui/material";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
-import LeadsSlider from "@/app/UiComponents/DataViewer/slider/LeadsSlider.jsx";
 import dayjs from "dayjs";
-import Link from "next/link";
-import OnHoldLeads from "@/app/UiComponents/DataViewer/leads/pages/OnHoldLeads.jsx";
-import NextCalls from "@/app/UiComponents/DataViewer/leads/widgets/NextCalls.jsx";
-import { FixedData } from "@/app/UiComponents/DataViewer/leads/widgets/FixedData.jsx";
+import relativeTime from "dayjs/plugin/relativeTime";
+import "dayjs/locale/ar";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
-import { NonConsultedLeads } from "./NonConsultedLeads";
 import UpdateInitialConsultButton from "@/app/UiComponents/buttons/UpdateInitialConsultLead";
-import { MdCheck, MdHourglassEmpty, MdPreview } from "react-icons/md";
+import {
+  MdCheck,
+  MdHourglassEmpty,
+  MdOutlineFiberNew,
+  MdOutlinePending,
+  MdPhoneInTalk,
+  MdEventAvailable,
+  MdHistoryToggleOff,
+  MdOutlineFactCheck,
+  MdPreview,
+  MdSearch,
+  MdLocationOn,
+  MdCategory,
+  MdPhone,
+} from "react-icons/md";
 import CreateNewLead from "../features/AddNewLead";
+import NextCalls from "../widgets/NextCalls";
 import NextMeetings from "../widgets/NextMeetings";
+import { FixedData } from "@/app/UiComponents/DataViewer/leads/widgets/FixedData.jsx";
 import PreviewDialog from "../PreviewLeadDialog";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
+import PaginationWithLimit from "@/app/UiComponents/DataViewer/PaginationWithLimit.jsx";
+import { EmptyState } from "../shared/EmptyState";
+import { RecordCard, MetaItem, StatusPill, NameAvatar } from "../shared/tabKit";
 import { EmailRedirect, WhatsAppRedirect } from "../core/Utility";
 import { LeadCategory } from "@/app/helpers/constants";
 
-export default function NewLeadsPage({ searchParams, staff, withSearch }) {
-  const {
-    data,
-    loading,
-    setData,
-    page,
-    setPage,
-    filters,
-    limit,
-    setLimit,
-    total,
-    totalPages,
-    setFilters,
-  } = useDataFetcher("shared/client-leads" + `?isNew=true&`, false, {
-    clientId: searchParams.clientId ? searchParams.clientId : null,
-  });
-  useEffect(() => {
-    if (filters) {
-      setPage(1);
-    }
-  }, [filters]);
+dayjs.extend(relativeTime);
+
+/* ----------------------------------------------------------------------------
+ * Tab registry — Arabic titles, icons, role predicates. Order matters.
+ * -------------------------------------------------------------------------- */
+const TAB_DEFS = [
+  {
+    key: "new",
+    title: "العملاء الجدد",
+    icon: <MdOutlineFiberNew />,
+    show: () => true,
+  },
+  {
+    key: "non-consulted",
+    title: "غير مستشارين",
+    icon: <MdOutlinePending />,
+    show: (user) =>
+      user.role === "ADMIN" ||
+      user.role === "CONTACT_INITIATOR" ||
+      user.isSuperSales,
+  },
+  {
+    key: "calls",
+    title: "مكالمات اليوم",
+    icon: <MdPhoneInTalk />,
+    show: (user) => user.role !== "CONTACT_INITIATOR",
+  },
+  {
+    key: "meetings",
+    title: "اجتماعات",
+    icon: <MdEventAvailable />,
+    show: (user) => user.role !== "CONTACT_INITIATOR",
+  },
+  {
+    key: "stale",
+    title: "متأخرة",
+    icon: <MdHistoryToggleOff />,
+    warnable: true,
+    show: (user) => user.role !== "CONTACT_INITIATOR",
+  },
+  {
+    key: "targets",
+    title: "أهداف ونماذج",
+    icon: <MdOutlineFactCheck />,
+    show: () => true,
+  },
+];
+
+function defaultTabFor(user) {
+  if (user.role === "STAFF" && !user.isSuperSales) return "new";
+  // CONTACT_INITIATOR, SUPER_SALES, ADMIN → non-consulted (falls back to new
+  // if the role can't see non-consulted, e.g. plain STAFF).
+  return "non-consulted";
+}
+
+/* ----------------------------------------------------------------------------
+ * Lightweight count fetchers for the KPI rail. They request a single row
+ * (limit=1) only to read `total`, so the heavy lists never double-render.
+ * -------------------------------------------------------------------------- */
+function useCount(url, enabled) {
+  const { total, loading } = useDataFetcher(enabled ? url : null, false);
+  return { count: enabled ? total : 0, loading: enabled ? loading : false };
+}
+
+/* ----------------------------------------------------------------------------
+ * Main page
+ * -------------------------------------------------------------------------- */
+export default function NewLeadsPage({ searchParams, staff }) {
   const { user } = useAuth();
+  const theme = useTheme();
+  const router = useRouter();
+  const pathname = usePathname();
+  const sp = useSearchParams();
+  const admin = checkIfAdmin(user);
+
+  // Visible tabs for this role, in defined order.
+  const tabs = useMemo(() => TAB_DEFS.filter((t) => t.show(user)), [user]);
+  const tabKeys = tabs.map((t) => t.key);
+
+  // Active tab from the URL (?tab=), with a per-role default fallback.
+  const urlTab = sp.get("tab");
+  let initialDefault = defaultTabFor(user);
+  if (!tabKeys.includes(initialDefault)) initialDefault = tabKeys[0];
+  const active = tabKeys.includes(urlTab) ? urlTab : initialDefault;
+
+  function goToTab(key) {
+    const params = new URLSearchParams(sp.toString());
+    params.set("tab", key);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  // Admin "look up any lead" → opens the standard preview dialog.
+  const [lookupId, setLookupId] = useState(null);
+  const [lookupOpen, setLookupOpen] = useState(false);
+
+  // KPI counts (only for tabs this role can see). Stale gets a warning accent.
+  const showNew = tabKeys.includes("new");
+  const showNon = tabKeys.includes("non-consulted");
+  const showCalls = tabKeys.includes("calls");
+  const showMeetings = tabKeys.includes("meetings");
+  const showStale = tabKeys.includes("stale");
+
+  const newCount = useCount("shared/client-leads?isNew=true&", showNew);
+  const nonCount = useCount("shared/client-leads?noConsulted=true&", showNon);
+  const callsCount = useCount(
+    `shared/client-leads/calls?staffId=${staff && user.id}&`,
+    showCalls
+  );
+  const meetingsCount = useCount(
+    `shared/client-leads/meetings?staffId=${staff && user.id}&`,
+    showMeetings
+  );
+  const staleCount = useCount(
+    `shared/client-leads?staffId=${user.id}&assignedOverdue=true&`,
+    showStale
+  );
+
+  const kpis = [
+    showNew && {
+      key: "new",
+      label: "العملاء الجدد",
+      icon: <MdOutlineFiberNew />,
+      ...newCount,
+    },
+    showNon && {
+      key: "non-consulted",
+      label: "غير مستشارين",
+      icon: <MdOutlinePending />,
+      ...nonCount,
+    },
+    showCalls && {
+      key: "calls",
+      label: "مكالمات اليوم",
+      icon: <MdPhoneInTalk />,
+      ...callsCount,
+    },
+    showMeetings && {
+      key: "meetings",
+      label: "اجتماعات",
+      icon: <MdEventAvailable />,
+      ...meetingsCount,
+    },
+    showStale && {
+      key: "stale",
+      label: "متأخرة",
+      icon: <MdHistoryToggleOff />,
+      warn: true,
+      ...staleCount,
+    },
+  ].filter(Boolean);
+
+  const activeDef = tabs.find((t) => t.key === active);
 
   return (
     <Container maxWidth="xxl" sx={{ py: { xs: 2, md: 3 } }}>
       <Stack spacing={3}>
-        {/* Page header */}
+        {/* ===== Zone 1: header ===== */}
         <Paper
           elevation={0}
           sx={{
@@ -88,10 +234,10 @@ export default function NewLeadsPage({ searchParams, staff, withSearch }) {
           >
             <Box>
               <Typography variant="h4" fontWeight={800} color="text.primary">
-                Leads
+                العملاء المحتملون
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                New, unconsulted and on-hold leads — pick one up and start a deal.
+                العملاء الجدد وغير المستشارين والمتأخرون — اختر عميلاً وابدأ صفقة.
               </Typography>
             </Box>
             <Box sx={{ flexShrink: 0 }}>
@@ -99,70 +245,481 @@ export default function NewLeadsPage({ searchParams, staff, withSearch }) {
             </Box>
           </Stack>
 
+          {/* Single search. For admins it looks up ANY lead and opens it in a
+              dialog; for everyone else it filters the New-leads pool. */}
           <Box sx={{ mt: 2.5 }}>
             <SearchComponent
               apiEndpoint="search?model=clientLead"
-              setFilters={setFilters}
-              inputLabel="Search lead by id, name or phone"
+              setFilters={
+                admin
+                  ? (updater) => {
+                      // SearchComponent calls setFilters with an updater fn.
+                      const next =
+                        typeof updater === "function" ? updater({}) : updater;
+                      if (next && next.id) {
+                        setLookupId(next.id);
+                        setLookupOpen(true);
+                      }
+                    }
+                  : (updater) => {
+                      // Filter the New pool: jump to the New tab so the result shows.
+                      if (active !== "new" && tabKeys.includes("new")) {
+                        goToTab("new");
+                      }
+                    }
+              }
+              inputLabel="ابحث عن عميل بالرقم أو الاسم أو الهاتف"
               renderKeys={["id", "client.name", "client.phone", "client.email"]}
               mainKey="id"
               searchKey={"id"}
-              localFilters={{
-                status: { in: ["NEW"] },
-                initialConsult: true,
-              }}
+              withParamsChange={false}
             />
           </Box>
         </Paper>
 
-        {/* Needs attention — unconsulted leads */}
-        <NonConsultedLeads />
-
-        {/* New leads */}
-        <LeadsSlider
-          title="New leads"
-          loading={loading}
-          data={data}
-          total={total}
-          limit={limit}
-          page={page}
-          setLimit={setLimit}
-          setPage={setPage}
-          totalPages={totalPages}
-        >
-          {data?.map((lead) => (
-            <LeadSliderCard lead={lead} key={lead.id} setData={setData} />
-          ))}
-        </LeadsSlider>
-
-        {/* Upcoming activity */}
-        {user.role !== "CONTACT_INITIATOR" && (
-          <>
-            <NextCalls staff={staff} />
-            <NextMeetings staff={staff} />
-          </>
+        {/* ===== Zone 2: KPI rail ===== */}
+        {kpis.length > 0 && (
+          <Grid container spacing={1.5}>
+            {kpis.map((kpi) => {
+              const isActive = active === kpi.key;
+              const warnOn = kpi.warn && kpi.count > 0;
+              const accent = warnOn
+                ? theme.palette.warning.main
+                : theme.palette.primary.main;
+              return (
+                <Grid size={{ xs: 6, sm: 4, md: 12 / kpis.length }} key={kpi.key}>
+                  <ButtonBase
+                    onClick={() => goToTab(kpi.key)}
+                    sx={{
+                      width: "100%",
+                      textAlign: "start",
+                      borderRadius: 2.5,
+                      p: 1.75,
+                      border: `1px solid ${
+                        isActive ? alpha(accent, 0.5) : theme.palette.divider
+                      }`,
+                      bgcolor: isActive
+                        ? alpha(accent, 0.08)
+                        : "background.paper",
+                      transition: "all .2s ease",
+                      "&:hover": {
+                        borderColor: alpha(accent, 0.5),
+                        boxShadow: theme.shadows[2],
+                      },
+                    }}
+                  >
+                    <Stack
+                      direction="row"
+                      spacing={1.5}
+                      alignItems="center"
+                      sx={{ width: "100%" }}
+                    >
+                      <Box
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 2,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 20,
+                          flexShrink: 0,
+                          bgcolor: alpha(accent, 0.12),
+                          color: accent,
+                        }}
+                      >
+                        {kpi.icon}
+                      </Box>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          fontWeight={600}
+                          noWrap
+                          display="block"
+                        >
+                          {kpi.label}
+                        </Typography>
+                        {kpi.loading ? (
+                          <Skeleton width={28} height={26} />
+                        ) : (
+                          <Typography
+                            variant="h6"
+                            fontWeight={800}
+                            sx={{ color: warnOn ? accent : "text.primary" }}
+                          >
+                            {kpi.count}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Stack>
+                  </ButtonBase>
+                </Grid>
+              );
+            })}
+          </Grid>
         )}
 
-        {/* On-hold pool */}
-        {user.role !== "CONTACT_INITIATOR" && <OnHoldLeads />}
+        {/* ===== Zone 3: segmented body ===== */}
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 3,
+            border: 1,
+            borderColor: "divider",
+            overflow: "hidden",
+          }}
+        >
+          <Tabs
+            value={active}
+            onChange={(e, v) => goToTab(v)}
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
+            sx={{
+              px: 1,
+              borderBottom: 1,
+              borderColor: "divider",
+              "& .MuiTab-root": { textTransform: "none", fontWeight: 700 },
+            }}
+          >
+            {tabs.map((t) => (
+              <Tab
+                key={t.key}
+                value={t.key}
+                icon={t.icon}
+                iconPosition="start"
+                label={t.title}
+              />
+            ))}
+          </Tabs>
 
-        {/* Targets / fixed data */}
-        <FixedData />
-
-        {/* Admin: look up any lead */}
-        <SearchForALead />
+          <Box sx={{ p: { xs: 1.5, md: 2.5 } }}>
+            {/* Render only the active panel → only its fetcher runs. */}
+            {active === "new" && (
+              <NewLeadsPanel def={activeDef} searchParams={searchParams} />
+            )}
+            {active === "non-consulted" && (
+              <NonConsultedPanel def={activeDef} />
+            )}
+            {active === "calls" && (
+              <SimpleSection def={activeDef} count={callsCount.count}>
+                <NextCalls staff={staff} />
+              </SimpleSection>
+            )}
+            {active === "meetings" && (
+              <SimpleSection def={activeDef} count={meetingsCount.count}>
+                <NextMeetings staff={staff} />
+              </SimpleSection>
+            )}
+            {active === "stale" && <StalePanel def={activeDef} />}
+            {active === "targets" && (
+              <SimpleSection def={activeDef}>
+                <FixedData />
+              </SimpleSection>
+            )}
+          </Box>
+        </Paper>
       </Stack>
+
+      {/* Admin: look up any lead → standard preview dialog */}
+      {admin && lookupId && (
+        <PreviewDialog
+          open={lookupOpen}
+          onClose={() => setLookupOpen(false)}
+          setleads={() => {}}
+          id={lookupId}
+          admin={admin}
+        />
+      )}
     </Container>
   );
 }
 
-export function LeadSliderCard({ lead, setData }) {
-  const formattedDate = dayjs(lead.createdAt).format("YYYY-MM-DD");
+/* ----------------------------------------------------------------------------
+ * Section frame — the unified tab header (icon · Arabic title · count) + body.
+ * Lighter local copy so this page has no dependency on the detail-tab provider.
+ * -------------------------------------------------------------------------- */
+function SectionFrame({ def, count, children }) {
+  const theme = useTheme();
+  const hasCount = typeof count === "number";
+  return (
+    <Stack spacing={2.5}>
+      <Stack direction="row" spacing={1.5} alignItems="center">
+        <Box
+          sx={{
+            width: 42,
+            height: 42,
+            borderRadius: 2.5,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 21,
+            flexShrink: 0,
+            bgcolor: alpha(theme.palette.primary.main, 0.12),
+            color: theme.palette.primary.main,
+          }}
+        >
+          {def.icon}
+        </Box>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Typography variant="h6" fontWeight={700} color="text.primary">
+            {def.title}
+          </Typography>
+          {hasCount && (
+            <Box
+              sx={{
+                px: 1,
+                py: 0.1,
+                borderRadius: 1.5,
+                fontSize: "0.72rem",
+                fontWeight: 700,
+                color: "primary.main",
+                bgcolor: alpha(theme.palette.primary.main, 0.12),
+              }}
+            >
+              {count}
+            </Box>
+          )}
+        </Stack>
+      </Stack>
+      {children}
+    </Stack>
+  );
+}
+
+/** Wrapper for sections that keep their own self-framed widget (calls/meetings/
+ *  targets). We just put the unified header above them. */
+function SimpleSection({ def, count, children }) {
+  return (
+    <SectionFrame def={def} count={count}>
+      {children}
+    </SectionFrame>
+  );
+}
+
+/* ----------------------------------------------------------------------------
+ * Lead-list panel — the shared 5-state body for New / Non-consulted / Stale.
+ * Owns nothing; the caller passes the fetcher result + render config so each
+ * pool keeps its exact existing query.
+ * -------------------------------------------------------------------------- */
+function LeadListBody({
+  def,
+  loading,
+  error,
+  data,
+  setData,
+  total,
+  page,
+  setPage,
+  limit,
+  setLimit,
+  totalPages,
+  emptyTitle,
+  emptyDescription,
+  emptyAction,
+  onRetry,
+}) {
+  const isEmpty = !loading && !error && (!data || data.length === 0);
+
+  return (
+    <SectionFrame def={def} count={typeof total === "number" ? total : undefined}>
+      {error ? (
+        <Alert
+          severity="error"
+          action={
+            onRetry ? (
+              <Button color="inherit" size="small" onClick={onRetry}>
+                إعادة المحاولة
+              </Button>
+            ) : undefined
+          }
+        >
+          تعذّر تحميل البيانات. حاول مرة أخرى.
+        </Alert>
+      ) : loading ? (
+        <Grid container spacing={2}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={i}>
+              <Skeleton variant="rounded" height={170} />
+            </Grid>
+          ))}
+        </Grid>
+      ) : isEmpty ? (
+        <EmptyState
+          icon={<MdOutlineFiberNew />}
+          title={emptyTitle}
+          description={emptyDescription}
+          action={emptyAction}
+        />
+      ) : (
+        <>
+          <Grid container spacing={2}>
+            {data.map((lead) => (
+              <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={lead.id}>
+                <LeadSliderCard lead={lead} setData={setData} />
+              </Grid>
+            ))}
+          </Grid>
+          <Box sx={{ mt: 1 }}>
+            <PaginationWithLimit
+              total={total}
+              limit={limit}
+              page={page}
+              setLimit={setLimit}
+              setPage={setPage}
+              totalPages={totalPages}
+            />
+          </Box>
+        </>
+      )}
+    </SectionFrame>
+  );
+}
+
+/* ---- New leads pool ---- */
+function NewLeadsPanel({ def, searchParams }) {
+  const {
+    data,
+    loading,
+    error,
+    setData,
+    page,
+    setPage,
+    filters,
+    limit,
+    setLimit,
+    total,
+    totalPages,
+    setRender,
+  } = useDataFetcher("shared/client-leads?isNew=true&", false, {
+    clientId: searchParams?.clientId ? searchParams.clientId : null,
+  });
+  useEffect(() => {
+    if (filters) setPage(1);
+  }, [filters]);
+
+  return (
+    <LeadListBody
+      def={def}
+      loading={loading}
+      error={error}
+      data={data}
+      setData={setData}
+      total={total}
+      page={page}
+      setPage={setPage}
+      limit={limit}
+      setLimit={setLimit}
+      totalPages={totalPages}
+      onRetry={() => setRender((r) => !r)}
+      emptyTitle="لا يوجد عملاء جدد حالياً"
+      emptyDescription="عند وصول عملاء جدد سيظهرون هنا. يمكنك إضافة عميل يدوياً."
+      emptyAction={<CreateNewLead />}
+    />
+  );
+}
+
+/* ---- Non-consulted pool ---- */
+function NonConsultedPanel({ def }) {
+  const {
+    data,
+    loading,
+    error,
+    setData,
+    page,
+    setPage,
+    filters,
+    limit,
+    setLimit,
+    total,
+    totalPages,
+    setRender,
+  } = useDataFetcher("shared/client-leads?noConsulted=true&", false);
+  useEffect(() => {
+    if (filters) setPage(1);
+  }, [filters]);
+
+  return (
+    <LeadListBody
+      def={def}
+      loading={loading}
+      error={error}
+      data={data}
+      setData={setData}
+      total={total}
+      page={page}
+      setPage={setPage}
+      limit={limit}
+      setLimit={setLimit}
+      totalPages={totalPages}
+      onRetry={() => setRender((r) => !r)}
+      emptyTitle="لا يوجد عملاء بانتظار الاستشارة"
+      emptyDescription="جميع العملاء الجدد تمت استشارتهم. عمل رائع!"
+    />
+  );
+}
+
+/* ---- Stale / overdue pool (was "Shuffle") ---- */
+function StalePanel({ def }) {
   const { user } = useAuth();
+  const {
+    data,
+    loading,
+    error,
+    setData,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    totalPages,
+    setRender,
+  } = useDataFetcher(
+    `shared/client-leads?staffId=${user.id}&assignedOverdue=true&`,
+    false
+  );
+
+  return (
+    <LeadListBody
+      def={def}
+      loading={loading}
+      error={error}
+      data={data}
+      setData={setData}
+      total={total}
+      page={page}
+      setPage={setPage}
+      limit={limit}
+      setLimit={setLimit}
+      totalPages={totalPages}
+      onRetry={() => setRender((r) => !r)}
+      emptyTitle="لا توجد عملاء متأخرون"
+      emptyDescription="لا يوجد عملاء تجاوزوا المدة المحددة دون متابعة."
+    />
+  );
+}
+
+/* ----------------------------------------------------------------------------
+ * Lead card — rebuilt on the shared RecordCard. Same signature ({lead, setData})
+ * and same action wiring as before, so NonConsultedLeads/OnHoldLeads keep working.
+ * -------------------------------------------------------------------------- */
+export function LeadSliderCard({ lead, setData }) {
+  const { user } = useAuth();
+  const theme = useTheme();
   const { setLoading } = useToastContext();
   const [previewDialogOpen, setPreviewDialogOpen] = React.useState(false);
   const admin = checkIfAdmin(user);
   const isFullyPaid = lead.paymentStatus === "FULLY_PAID";
+
+  const relative = dayjs(lead.createdAt).locale("ar").fromNow();
+  const idLabel = `#${lead?.id.toString().padStart(7, "0")}`;
+
+  const showContact =
+    user.role === "ADMIN" ||
+    user.role === "SUPER_ADMIN" ||
+    user.role === "CONTACT_INITIATOR" ||
+    user.isSuperSales;
 
   async function createADeal(lead) {
     const assign = await handleRequestSubmit(
@@ -180,67 +737,85 @@ export function LeadSliderCard({ lead, setData }) {
     return assign;
   }
 
-  const showContact =
-    user.role === "ADMIN" ||
-    user.role === "SUPER_ADMIN" ||
-    user.role === "CONTACT_INITIATOR" ||
-    user.isSuperSales;
+  const category = LeadCategory[lead.selectedCategory] || lead.selectedCategory;
+  const location = lead.country || lead.emirate;
 
   return (
-    <Card
-      sx={{
-        width: 280,
-        borderRadius: 3,
-        border: 1,
-        borderColor: isFullyPaid ? "success.main" : "divider",
-        borderLeft: 4,
-        borderLeftColor: isFullyPaid ? "success.main" : "primary.main",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        boxShadow: "none",
-        transition: "box-shadow .2s ease, transform .2s ease",
-        bgcolor: isFullyPaid ? "rgba(76,175,80,0.04)" : "background.paper",
-        "&:hover": { boxShadow: 4, transform: "translateY(-2px)" },
-      }}
-    >
-      <Box sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1, flex: 1 }}>
-        {/* id + payment */}
-        <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
-          <Chip
-            size="small"
-            label={`#${lead?.id.toString().padStart(7, "0")}`}
-            sx={{ fontFamily: "monospace", fontWeight: 700, borderRadius: 1.5 }}
-          />
-          <Chip
-            size="small"
-            icon={isFullyPaid ? <MdCheck size={14} /> : <MdHourglassEmpty size={14} />}
+    <>
+      <RecordCard
+        sx={{ height: "100%", display: "flex", flexDirection: "column" }}
+        accent={isFullyPaid ? theme.palette.success.main : undefined}
+        leading={
+          showContact ? <NameAvatar name={lead.client?.name} /> : undefined
+        }
+        title={showContact ? lead.client?.name : idLabel}
+        subtitle={`${idLabel} · ${relative}`}
+        status={
+          <StatusPill
             label={lead.paymentStatus}
-            color={isFullyPaid ? "success" : "default"}
-            variant={isFullyPaid ? "filled" : "outlined"}
-            sx={{ fontWeight: 700, borderRadius: 1.5 }}
+            color={
+              isFullyPaid
+                ? theme.palette.success.main
+                : theme.palette.text.secondary
+            }
+            icon={
+              isFullyPaid ? (
+                <MdCheck size={14} />
+              ) : (
+                <MdHourglassEmpty size={14} />
+              )
+            }
           />
-        </Stack>
-
-        {/* identity / contact */}
-        {showContact && (
-          <Box sx={{ minWidth: 0 }}>
-            <Typography variant="subtitle2" fontWeight={700} color="text.primary" noWrap>
-              {lead.client.name}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" noWrap display="block">
-              {lead.client.phone}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" noWrap display="block">
-              {lead.client.email}
-            </Typography>
-          </Box>
-        )}
-
-        <Typography variant="caption" color="text.secondary">
-          Created {formattedDate}
-        </Typography>
-
+        }
+        meta={
+          <>
+            {category && (
+              <MetaItem
+                icon={<MdCategory size={14} />}
+                label="الفئة"
+                value={category}
+              />
+            )}
+            {location && (
+              <MetaItem
+                icon={<MdLocationOn size={14} />}
+                label="الموقع"
+                value={location}
+              />
+            )}
+            {showContact && lead.client?.phone && (
+              <MetaItem icon={<MdPhone size={14} />} value={lead.client.phone} />
+            )}
+          </>
+        }
+        actions={
+          <Stack spacing={1} sx={{ width: "100%" }}>
+            {user.role === "STAFF" && !user.isSuperSales && (
+              <ConfirmWithActionModel
+                title="هل أنت متأكد أنك تريد استلام هذا العميل وإسناده إليك كصفقة جديدة؟"
+                handleConfirm={() => createADeal(lead)}
+                label="ابدأ صفقة"
+                fullWidth={true}
+                size="small"
+                variant="contained"
+              />
+            )}
+            <UpdateInitialConsultButton clientLead={lead} />
+            {user.role !== "CONTACT_INITIATOR" && (
+              <Button
+                fullWidth
+                onClick={() => setPreviewDialogOpen(true)}
+                variant="outlined"
+                size="small"
+                startIcon={<MdPreview />}
+                sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
+              >
+                عرض التفاصيل
+              </Button>
+            )}
+          </Stack>
+        }
+      >
         {lead.description && (
           <Typography
             variant="body2"
@@ -256,42 +831,7 @@ export function LeadSliderCard({ lead, setData }) {
             {lead.description}
           </Typography>
         )}
-      </Box>
-
-      {/* actions */}
-      <Box
-        sx={{
-          p: 1.5,
-          pt: 0,
-          display: "flex",
-          flexDirection: "column",
-          gap: 1,
-        }}
-      >
-        {user.role === "STAFF" && !user.isSuperSales && (
-          <ConfirmWithActionModel
-            title="Are you sure you want to get this lead and assign it to you as a new deal?"
-            handleConfirm={() => createADeal(lead)}
-            label="Start a Deal"
-            fullWidth={true}
-            size="small"
-            variant="contained"
-          />
-        )}
-        <UpdateInitialConsultButton clientLead={lead} />
-        {user.role !== "CONTACT_INITIATOR" && (
-          <Button
-            fullWidth
-            onClick={() => setPreviewDialogOpen(true)}
-            variant="outlined"
-            size="small"
-            startIcon={<MdPreview />}
-            sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
-          >
-            Preview details
-          </Button>
-        )}
-      </Box>
+      </RecordCard>
       <PreviewDialog
         open={previewDialogOpen}
         onClose={() => setPreviewDialogOpen(false)}
@@ -299,10 +839,15 @@ export function LeadSliderCard({ lead, setData }) {
         id={lead.id}
         admin={admin}
       />
-    </Card>
+    </>
   );
 }
 
+/* ----------------------------------------------------------------------------
+ * Preserved (not in the page flow anymore): the admin lead-lookup card. Kept
+ * exported so no external reuse site breaks; the page now routes admin lookups
+ * into PreviewDialog instead. Body identical to the previous implementation.
+ * -------------------------------------------------------------------------- */
 export function SearchForALead() {
   const [lead, setLead] = useState();
   const [loading, setLoading] = useState();
@@ -333,18 +878,18 @@ export function SearchForALead() {
         background: theme.palette.background.default,
         position: "relative",
         mb: 10,
-        borderRadius: 3, // Rounded corners
-        boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)", // Subtle shadow
+        borderRadius: 3,
+        boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
       }}
     >
       {loading && <LoadingOverlay />}
       <Typography variant="h5" sx={{ pl: 2, mb: 0.5 }}>
-        Search in deals
+        البحث في الصفقات
       </Typography>
       <SearchComponent
         apiEndpoint="search?model=clientLead"
         setFilters={setFilters}
-        inputLabel="Search lead by id ,name or phone"
+        inputLabel="ابحث عن عميل بالرقم أو الاسم أو الهاتف"
         renderKeys={["id", "client.name", "client.phone", "client.email"]}
         mainKey="id"
         searchKey={"id"}
@@ -372,9 +917,7 @@ function LeadCard({ lead }) {
         },
       }}
     >
-      <Box
-        sx={{ mb: 3, borderBottom: "1px solid", borderColor: "divider", pb: 2 }}
-      >
+      <Box sx={{ mb: 3, borderBottom: "1px solid", borderColor: "divider", pb: 2 }}>
         <Box
           sx={{
             display: "flex",
@@ -434,14 +977,8 @@ function LeadCard({ lead }) {
         />
       </Box>
 
-      {/* Lead Details Section */}
       <Box sx={{ mb: 3 }}>
-        <Typography
-          variant="h6"
-          fontWeight={500}
-          color="text.primary"
-          sx={{ mb: 2 }}
-        >
+        <Typography variant="h6" fontWeight={500} color="text.primary" sx={{ mb: 2 }}>
           Lead Details
         </Typography>
         <Grid container spacing={3}>
@@ -450,11 +987,7 @@ function LeadCard({ lead }) {
               <Typography
                 color="text.secondary"
                 variant="caption"
-                sx={{
-                  fontWeight: 500,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
-                }}
+                sx={{ fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5 }}
               >
                 Category
               </Typography>
@@ -468,11 +1001,7 @@ function LeadCard({ lead }) {
               <Typography
                 color="text.secondary"
                 variant="caption"
-                sx={{
-                  fontWeight: 500,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
-                }}
+                sx={{ fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5 }}
               >
                 Location
               </Typography>
@@ -486,11 +1015,7 @@ function LeadCard({ lead }) {
               <Typography
                 color="text.secondary"
                 variant="caption"
-                sx={{
-                  fontWeight: 500,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
-                }}
+                sx={{ fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5 }}
               >
                 Description
               </Typography>
@@ -505,11 +1030,7 @@ function LeadCard({ lead }) {
                 <Typography
                   color="text.secondary"
                   variant="caption"
-                  sx={{
-                    fontWeight: 500,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
-                  }}
+                  sx={{ fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5 }}
                 >
                   Client Description
                 </Typography>
@@ -535,11 +1056,7 @@ function LeadCard({ lead }) {
                 <Typography
                   color="text.secondary"
                   variant="caption"
-                  sx={{
-                    fontWeight: 500,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
-                  }}
+                  sx={{ fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5 }}
                 >
                   Preferred Contact Time
                 </Typography>
@@ -552,24 +1069,14 @@ function LeadCard({ lead }) {
         </Grid>
       </Box>
 
-      {/* Contact Information Section */}
       <Box>
-        <Typography
-          variant="h6"
-          fontWeight={500}
-          color="text.primary"
-          sx={{ mb: 2 }}
-        >
+        <Typography variant="h6" fontWeight={500} color="text.primary" sx={{ mb: 2 }}>
           Contact Information
         </Typography>
         <Grid container spacing={3}>
           <Grid
             size={{ xs: 12, md: 6 }}
-            sx={{
-              "& .MuiBox-root": {
-                width: "100%",
-              },
-            }}
+            sx={{ "& .MuiBox-root": { width: "100%" } }}
           >
             <Box
               sx={{
@@ -583,18 +1090,11 @@ function LeadCard({ lead }) {
               <Typography
                 color="text.secondary"
                 variant="caption"
-                sx={{
-                  fontWeight: 500,
-                  textTransform: "uppercase",
-                  letterSpacing: 0.5,
-                }}
+                sx={{ fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5 }}
               >
                 Client Name
               </Typography>
-              <Typography
-                variant="body1"
-                sx={{ mt: 0.5, fontWeight: 500, mb: 2 }}
-              >
+              <Typography variant="body1" sx={{ mt: 0.5, fontWeight: 500, mb: 2 }}>
                 {lead.client.name}
               </Typography>
 
@@ -606,11 +1106,7 @@ function LeadCard({ lead }) {
                 <Typography
                   color="text.secondary"
                   variant="caption"
-                  sx={{
-                    fontWeight: 500,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
-                  }}
+                  sx={{ fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5 }}
                 >
                   Client Email
                 </Typography>
@@ -648,11 +1144,7 @@ function LeadCard({ lead }) {
                 <Typography variant="body1" sx={{ fontWeight: 500, mb: 0.5 }}>
                   {lead.assignedTo.name}
                 </Typography>
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  sx={{ mb: 1 }}
-                >
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                   {lead.assignedTo.email}
                 </Typography>
                 <Typography

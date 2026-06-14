@@ -15,6 +15,10 @@ export async function getData({
   others,
 }) {
   try {
+    if (!url) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     let queryPrefix = "?";
     if (url.endsWith("&")) {
