@@ -60,6 +60,68 @@ dayjs.locale("en");
 
 // =================== CALENDAR ===================
 
+/**
+ * Build the month-grid the calendar renders from the backend's FLAT list of
+ * available days (`[{ id, date, slots:[{startTime,...}], fullyBooked, ... }]`).
+ *
+ * Historically the backend service returned this flat array and the (old) client
+ * built the grid; the migrated availability endpoint still returns the flat array,
+ * so we rebuild the `{ month, weeks: [[cell,...7], ...] }` shape here. Logic is
+ * ported 1:1 from the previous client implementation (Old-cal.jsx) so behaviour
+ * (Sunday week start, tz-correct matching, isPast/isCurrentMonth) is unchanged.
+ *
+ * Resilient: if the backend ever returns a pre-built grid, pass it straight through.
+ */
+function buildMonthGrid(payload, displayMonth, userTimezone) {
+  // Already a grid? use it as-is.
+  if (payload && !Array.isArray(payload) && Array.isArray(payload.weeks)) {
+    return payload;
+  }
+  const availableDays = Array.isArray(payload) ? payload : [];
+
+  const startOfMonth = displayMonth.tz(userTimezone).locale("en").startOf("month");
+  const endOfMonth = displayMonth.tz(userTimezone).locale("en").endOf("month");
+  const startDate = startOfMonth.startOf("week");
+  const endDate = endOfMonth.endOf("week");
+
+  const todayInTz = dayjs().tz(userTimezone).startOf("day");
+
+  const cells = [];
+  let current = startDate.clone().locale("en").tz(userTimezone);
+  while (current.isBefore(endDate) || current.isSame(endDate, "day")) {
+    const dayStr = current.format("YYYY-MM-DD");
+
+    // Match the stored (GMT) day to this calendar cell by its slots, in the user's tz.
+    const availableDay = availableDays.find((d) =>
+      (d.slots || []).some(
+        (slot) =>
+          dayjs.utc(slot.startTime).tz(userTimezone).format("YYYY-MM-DD") ===
+          dayStr
+      )
+    );
+
+    cells.push({
+      isoDate: dayStr,
+      label: current.date(),
+      isCurrentMonth: current.month() === displayMonth.tz(userTimezone).month(),
+      isPast: current.tz(userTimezone).startOf("day").isBefore(todayInTz),
+      hasAvailableSlots: !!availableDay,
+      fullyBooked: !!availableDay && !!availableDay.fullyBooked,
+      availableDay: availableDay || null,
+    });
+
+    current = current.add(1, "day").locale("en");
+  }
+
+  // Chunk into weeks of 7.
+  const weeks = [];
+  for (let i = 0; i < cells.length; i += 7) {
+    weeks.push(cells.slice(i, i + 7));
+  }
+
+  return { month: startOfMonth.format("YYYY-MM"), weeks };
+}
+
 export const Calendar = ({
   selectedDate,
   onDateSelect,
@@ -133,15 +195,10 @@ export const Calendar = ({
       });
 
       if (dataReq.status === 200) {
-        // Expected shape:
-        // {
-        //   month: "2025-11",
-        //   weeks: [
-        //     [ { isoDate, label, isCurrentMonth, isPast, hasAvailableSlots, fullyBooked, availableDay }, ... 7 ],
-        //     ...
-        //   ]
-        // }
-        setMonthData(dataReq.data || { month: "", weeks: [] });
+        // The backend returns a FLAT array of available days; build the
+        // { month, weeks: [[cell,...7], ...] } grid the renderer expects.
+        // (If a backend ever returns a pre-built grid, it's passed through.)
+        setMonthData(buildMonthGrid(dataReq.data, displayMonth, userTimezone));
       } else {
         setMonthData({ month: "", weeks: [] });
       }
@@ -273,7 +330,7 @@ export const Calendar = ({
             </Grid>
           ))}
 
-          {monthData.weeks.map((week, wIndex) =>
+          {(monthData?.weeks || []).map((week, wIndex) =>
             week.map((cell, index) => {
               const selected = isCellSelected(cell);
               const { isCurrentMonth, isPast, hasAvailableSlots, fullyBooked } =

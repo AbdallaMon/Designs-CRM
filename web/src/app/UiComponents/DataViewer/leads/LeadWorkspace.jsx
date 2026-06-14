@@ -198,19 +198,13 @@ export function LeadWorkspace({ sections, activeKey, onChange, ctx }) {
         {renderNav(isMobile)}
       </Box>
 
-      {/* Content pane */}
+      {/* Content pane — flows naturally; scrolling is owned by the dialog/page
+          container so content can never be clipped out of reach. */}
       <Box
         sx={{
           flex: 1,
           minWidth: 0,
           p: { xs: 1.5, md: 3 },
-          overflowY: "auto",
-          maxHeight: { md: 640 },
-          "&::-webkit-scrollbar": { width: 8 },
-          "&::-webkit-scrollbar-thumb": {
-            backgroundColor: alpha(theme.palette.primary.main, 0.25),
-            borderRadius: 4,
-          },
         }}
       >
         {active.render(ctx)}

@@ -258,7 +258,15 @@ export const PreviewLead = ({
           fullWidth
           maxWidth="lg"
           PaperProps={{
-            sx: { borderRadius: { xs: 0, sm: 4 }, overflow: "hidden" },
+            sx: {
+              borderRadius: { xs: 0, sm: 4 },
+              overflow: "hidden",
+              // Flex column: a scrollable body + a pinned actions bar, capped to the
+              // viewport so tall tab content always scrolls instead of being clipped.
+              display: "flex",
+              flexDirection: "column",
+              maxHeight: { xs: "100%", sm: "92vh" },
+            },
           }}
           fullScreen={isMobile}
         >
@@ -266,9 +274,23 @@ export const PreviewLead = ({
             <FullScreenLoader />
           ) : (
             <>
-              {content}
+              <Box
+                sx={{
+                  flex: 1,
+                  minHeight: 0,
+                  overflowY: "auto",
+                  "&::-webkit-scrollbar": { width: 8 },
+                  "&::-webkit-scrollbar-thumb": {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.25),
+                    borderRadius: 4,
+                  },
+                }}
+              >
+                {content}
+              </Box>
               <DialogActions
                 sx={{
+                  flexShrink: 0,
                   p: 2,
                   borderTop: 1,
                   borderColor: "divider",
