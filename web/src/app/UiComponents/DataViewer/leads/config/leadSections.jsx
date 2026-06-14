@@ -90,7 +90,8 @@ export const LEAD_SECTIONS = [
     label: "Client analysis",
     group: "overview",
     icon: <MdAnalytics size={18} />,
-    visible: () => true,
+    // Mirrors SalesToolsTabs' own gate: admins and STAFF only (defense-in-depth kept inside).
+    visible: (ctx) => ctx.admin || ctx.user.role === "STAFF",
     render: (ctx) => (
       <SalesToolsTabs
         lead={ctx.lead}
@@ -193,7 +194,7 @@ export const LEAD_SECTIONS = [
     visible: (ctx) =>
       (ctx.admin || ctx.isPrimaryStaff) &&
       ["ADMIN", "SUPER_ADMIN", "STAFF"].includes(ctx.user.role),
-    render: (ctx) => <LeadProjects clientLeadId={ctx.lead.id} />,
+    render: (ctx) => <LeadProjects clientLeadId={ctx.lead.id} framed={false} />,
   },
   {
     key: "modifications",
@@ -202,7 +203,7 @@ export const LEAD_SECTIONS = [
     icon: <MdModeEdit size={18} />,
     visible: (ctx) => ctx.admin || ctx.isPrimaryStaff,
     render: (ctx) => (
-      <TasksList name="Modifcation" type="MODIFICATION" clientLeadId={ctx.lead.id} />
+      <TasksList name="Modification" type="MODIFICATION" clientLeadId={ctx.lead.id} />
     ),
   },
   {

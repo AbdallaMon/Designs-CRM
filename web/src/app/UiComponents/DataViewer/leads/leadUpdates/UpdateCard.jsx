@@ -32,6 +32,8 @@ import { NotesComponent } from "../../utility/Notes";
 import DeleteModelButton from "../../../common/DeleteModelButton";
 import { DepartmentManagementModal } from "./components/DepartmentManagementModal";
 import { UpdateActionMenu } from "./components/UpdateActionMenu";
+import { StatusPill } from "../shared/tabKit";
+import { useTheme } from "@mui/material";
 
 const getDepartmentConfig = (dept) =>
   DEPARTMENTS.find((d) => d.value === dept) || { label: dept, color: "#666" };
@@ -45,6 +47,7 @@ export const UpdateCard = ({
   isSimple,
 }) => {
   const { user } = useAuth();
+  const theme = useTheme();
   const isAdmin = checkIfAdmin(user);
   const canManageDepartments = update?.createdById === user?.id || isAdmin;
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
@@ -217,20 +220,15 @@ export const UpdateCard = ({
                     </IconButton>
                   </Tooltip>
                 </Box>
-                {isArchived && (
-                  <Chip
-                    label="Done"
-                    size="small"
-                    color="success"
-                    variant="outlined"
-                    icon={<MdCheckCircle fontSize="small" />}
-                    sx={{
-                      height: 24,
-                      fontSize: "0.7rem",
-                      fontWeight: 500,
-                    }}
-                  />
-                )}
+                <StatusPill
+                  label={isArchived ? "مكتمل" : "نشط"}
+                  color={
+                    isArchived
+                      ? theme.palette.success.main
+                      : theme.palette.info.main
+                  }
+                  icon={isArchived ? <MdCheckCircle fontSize="small" /> : undefined}
+                />
               </Box>
             </Box>
 

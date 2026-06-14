@@ -1,10 +1,7 @@
 import React, { useState } from "react";
 import {
   alpha,
-  Alert,
   Box,
-  Card,
-  CardContent,
   FormControl,
   Grid,
   InputLabel,
@@ -17,8 +14,14 @@ import {
 
 import { useAuth } from "@/app/providers/AuthProvider";
 
-import { MdAnalytics, MdQuestionAnswer, MdTouchApp } from "react-icons/md";
-import { TabSection } from "../shared/tabKit";
+import {
+  MdAnalytics,
+  MdLock,
+  MdQuestionAnswer,
+  MdTouchApp,
+} from "react-icons/md";
+import { TabSection, RecordCard } from "../shared/tabKit";
+import { EmptyState } from "../shared/EmptyState";
 
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 
@@ -31,52 +34,39 @@ import VersaObjectionSystem from "../../meeting/VERSA/VERSADialog";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { FaUser } from "react-icons/fa";
 
+// Thin wrapper over the shared RecordCard so the tool cards match every other card:
+// an accent rail + a centered icon header, then the tool's own control in the body.
 function ToolCard({ icon, title, subtitle, children }) {
   const theme = useTheme();
   return (
-    <Card
-      elevation={0}
-      sx={{
-        height: "100%",
-        borderRadius: 3,
-        border: `1px solid ${theme.palette.divider}`,
-        transition: "all 0.25s ease-in-out",
-        "&:hover": {
-          transform: "translateY(-4px)",
-          boxShadow: theme.shadows[6],
-          borderColor: alpha(theme.palette.primary.main, 0.4),
-        },
-      }}
-    >
-      <CardContent sx={{ p: 3 }}>
-        <Stack spacing={2} alignItems="center" textAlign="center">
-          <Box
-            sx={{
-              width: 64,
-              height: 64,
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              bgcolor: alpha(theme.palette.primary.main, 0.12),
-              color: theme.palette.primary.main,
-              fontSize: 30,
-            }}
-          >
-            {icon}
-          </Box>
-          <Box>
-            <Typography variant="h6" fontWeight={700}>
-              {title}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {subtitle}
-            </Typography>
-          </Box>
-          <Box sx={{ width: "100%", pt: 1 }}>{children}</Box>
-        </Stack>
-      </CardContent>
-    </Card>
+    <RecordCard sx={{ height: "100%" }}>
+      <Stack spacing={2} alignItems="center" textAlign="center">
+        <Box
+          sx={{
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: alpha(theme.palette.primary.main, 0.12),
+            color: theme.palette.primary.main,
+            fontSize: 28,
+          }}
+        >
+          {icon}
+        </Box>
+        <Box>
+          <Typography variant="subtitle1" fontWeight={700}>
+            {title}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {subtitle}
+          </Typography>
+        </Box>
+        <Box sx={{ width: "100%", pt: 0.5 }}>{children}</Box>
+      </Stack>
+    </RecordCard>
   );
 }
 
@@ -116,23 +106,31 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
       }
     }
   }
+
+  // Defense-in-depth: the section is hidden via leadSections `visible()` when not allowed,
+  // so this branch should not normally render — kept as a guard, now a calm empty state.
   if (!isAdmin && user.role !== "STAFF") {
     return (
-      <Alert severity="error">You are not allowed to access this tab </Alert>
+      <TabSection icon={<MdAnalytics />} title="تحليل العميل">
+        <EmptyState
+          icon={<MdLock />}
+          title="لا تملك صلاحية الوصول لهذا التبويب"
+        />
+      </TabSection>
     );
   }
   return (
     <TabSection
       icon={<MdAnalytics />}
-      title="Client analysis"
-      description="Sales tools — SPIN questions, VERSA objections and client personality."
+      title="تحليل العميل"
+      description="أدوات المبيعات — أسئلة سبين، اعتراضات فيرسا، وشخصية العميل."
     >
-      <Grid container spacing={3}>
+      <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 6 }}>
           <ToolCard
             icon={<MdQuestionAnswer />}
-            title="SPIN Questions"
-            subtitle="سؤال اسبين"
+            title="أسئلة سبين"
+            subtitle="SPIN Questions"
           >
             <SPAINQuestionsDialog clientLeadId={lead.id} />
           </ToolCard>
@@ -142,8 +140,8 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
           <Grid size={{ xs: 12, md: 6 }}>
             <ToolCard
               icon={<MdTouchApp />}
-              title="VERSA Objections"
-              subtitle="نموذج الاعتراضات"
+              title="اعتراضات فيرسا"
+              subtitle="VERSA Objections"
             >
               <VersaObjectionSystem clientLeadId={lead.id} />
             </ToolCard>
@@ -153,17 +151,17 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
         <Grid size={{ xs: 12, md: 6 }}>
           <ToolCard
             icon={<FaUser />}
-            title="Client Personality"
-            subtitle="شخصية العميل"
+            title="شخصية العميل"
+            subtitle="Client Personality"
           >
             <FormControl sx={{ minWidth: 200 }} fullWidth>
               <InputLabel id="personality-select-label">
-                {personality ? "Change" : "Select"} Personality
+                {personality ? "تغيير" : "اختيار"} الشخصية
               </InputLabel>
               <Select
                 labelId="personality-select-label"
                 value={personality}
-                label={`${personality ? "Change" : "Select"} Personality`}
+                label={`${personality ? "تغيير" : "اختيار"} الشخصية`}
                 onChange={async (e) => await handleChange(e)}
                 displayEmpty
               >

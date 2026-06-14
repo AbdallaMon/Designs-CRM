@@ -23,8 +23,8 @@ export default function ChatsTab({ clientLeadId }) {
   return (
     <TabSection
       icon={<MdChat />}
-      title="Chats"
-      description="Message the client and your team about this lead."
+      title="المحادثات"
+      description="راسل العميل وفريقك بخصوص هذا العميل المحتمل."
       action={
         <Button
           onClick={() => setFullscreen(true)}
@@ -33,7 +33,7 @@ export default function ChatsTab({ clientLeadId }) {
           startIcon={<MdOpenInFull />}
           sx={{ textTransform: "none", fontWeight: 600 }}
         >
-          Fullscreen
+          ملء الشاشة
         </Button>
       }
     >
@@ -78,7 +78,7 @@ export default function ChatsTab({ clientLeadId }) {
               <MdChat />
             </Box>
             <Typography variant="h6" fontWeight={700}>
-              Chats
+              المحادثات
             </Typography>
           </Stack>
           <IconButton onClick={() => setFullscreen(false)} sx={{ color: theme.palette.grey[500] }}>

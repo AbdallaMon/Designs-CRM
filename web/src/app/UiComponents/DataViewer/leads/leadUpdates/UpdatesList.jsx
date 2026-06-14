@@ -26,15 +26,19 @@ const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
   const [filter, setFilter] = useState("notArchived");
   const [departmentFilter, setDepartmentFilter] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const { user } = useAuth();
   const isAdmin = checkIfAdmin(user);
   async function getInitialData() {
+    setError(false);
     const clientLeadUpdates = await getData({
       url: `shared/updates/${clientLeadId}?type=${currentUserDepartment}&department=${departmentFilter}&`,
       setLoading,
     });
     if (clientLeadUpdates && clientLeadUpdates.status === 200) {
       setUpdates(clientLeadUpdates.data);
+    } else {
+      setError(true);
     }
   }
   useEffect(() => {
@@ -71,10 +75,31 @@ const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
     return <TabLoading />;
   }
 
+  if (error) {
+    return (
+      <TabSection icon={<MdUpdate />} title="التحديثات">
+        <EmptyState
+          icon={<MdUpdate />}
+          title="تعذّر تحميل التحديثات"
+          description="حدث خطأ أثناء جلب التحديثات. يرجى المحاولة مرة أخرى."
+          action={
+            <Button
+              variant="outlined"
+              onClick={getInitialData}
+              sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
+            >
+              إعادة المحاولة
+            </Button>
+          }
+        />
+      </TabSection>
+    );
+  }
+
   return (
     <TabSection
       icon={<MdUpdate />}
-      title="Updates"
+      title="التحديثات"
       count={updates?.length || 0}
       action={
         <CreateUpdateModal
@@ -93,9 +118,9 @@ const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
       >
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
           {[
-            { value: "all", label: "All types" },
-            { value: "notArchived", label: "Active" },
-            { value: "archived", label: "Archived" },
+            { value: "all", label: "الكل" },
+            { value: "notArchived", label: "النشطة" },
+            { value: "archived", label: "المؤرشفة" },
           ].map((option) => (
             <Button
               key={option.value}
@@ -111,13 +136,13 @@ const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
 
         {isAdmin && (
           <FormControl size="small" sx={{ minWidth: 200 }}>
-            <InputLabel>Filter by Department</InputLabel>
+            <InputLabel>تصفية حسب القسم</InputLabel>
             <Select
               value={departmentFilter}
               onChange={(e) => setDepartmentFilter(e.target.value)}
-              label="Filter by Department"
+              label="تصفية حسب القسم"
             >
-              <MenuItem value="">All Departments</MenuItem>
+              <MenuItem value="">كل الأقسام</MenuItem>
               {DEPARTMENTS.map((dept) => (
                 <MenuItem key={dept.value} value={dept.value}>
                   {dept.label}
@@ -132,13 +157,13 @@ const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
         {updates?.length === 0 ? (
           <EmptyState
             icon={<MdUpdate />}
-            title="No updates found"
+            title="لا توجد تحديثات"
             description={
               filter === "archived"
-                ? "No archived updates to display."
+                ? "لا توجد تحديثات مؤرشفة لعرضها."
                 : filter === "notArchived"
-                ? "No active updates to display."
-                : "No updates match your current filters."
+                ? "لا توجد تحديثات نشطة لعرضها."
+                : "لا توجد تحديثات مطابقة للتصفية الحالية."
             }
           />
         ) : (

@@ -259,7 +259,7 @@ const LeadContent = ({
           (type === "3D_Designer" && modificationProject)) && (
           <TabPanel value={activeTab} index={5}>
             <TasksList
-              name="Modifcation"
+              name="Modification"
               type="MODIFICATION"
               clientLeadId={lead.id}
             />

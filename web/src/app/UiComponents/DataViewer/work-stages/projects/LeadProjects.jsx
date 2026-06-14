@@ -1,23 +1,27 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { TabLoading } from "../../leads/shared/TabLoading";
+import { EmptyState } from "../../leads/shared/EmptyState";
 import {
+  TabSection,
+  RecordCard,
+  StatusPill,
+} from "../../leads/shared/tabKit";
+import {
+  alpha,
   Box,
+  Button,
   Card,
   CardContent,
-  CardHeader,
-  CircularProgress,
-  Typography,
   Chip,
-  Divider,
   IconButton,
   Tooltip,
   Tabs,
   Tab,
-  Avatar,
+  Typography,
   Menu,
   MenuItem,
-  Button,
+  useTheme,
 } from "@mui/material";
 import { getData } from "@/app/helpers/functions/getData";
 import { ProjectDetails } from "./ProjectDetails";
@@ -26,6 +30,7 @@ import {
   MdRefresh,
   MdAdd,
   MdFolder as FolderIcon,
+  MdWork,
   MdAssignment,
   MdArchitecture,
   Md3dRotation,
@@ -66,45 +71,19 @@ export const getProjectIcon = (type) => {
       return <MdAssignment size={iconSize} />;
   }
 };
-// Function to get random pastel color for avatars - ensures consistency for same project type
-const getAvatarColor = (type) => {
-  const colors = [
-    "#E57373",
-    "#F06292",
-    "#BA68C8",
-    "#9575CD",
-    "#7986CB",
-    "#64B5F6",
-    "#4FC3F7",
-    "#4DD0E1",
-    "#4DB6AC",
-    "#81C784",
-    "#AED581",
-    "#DCE775",
-    "#FFD54F",
-    "#FFB74D",
-    "#FF8A65",
-  ];
-
-  // Simple hash function for string
-  let hash = 0;
-  for (let i = 0; i < type.length; i++) {
-    hash = type.charCodeAt(i) + ((hash << 5) - hash);
-  }
-
-  // Use the hash to pick a color
-  const index = Math.abs(hash % colors.length);
-  return colors[index];
-};
 
 // Main component
 export const LeadProjects = ({
   clientLeadId,
   noIntialLoad = false,
   initialProjects,
+  framed = true,
+  showLeadLink = false,
 }) => {
+  const theme = useTheme();
   const [groupedProjects, setGroupedProjects] = useState([]);
   const [loading, setLoading] = useState(!noIntialLoad);
+  const [error, setError] = useState(false);
   const [activeProject, setActiveProject] = useState(null);
   const [activeGroupTab, setActiveGroupTab] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -123,6 +102,7 @@ export const LeadProjects = ({
 
   const loadProjects = async () => {
     setLoading(true);
+    setError(false);
 
     const projectsReq = await getData({
       url: `shared/projects?clientLeadId=${clientLeadId}&`,
@@ -136,6 +116,8 @@ export const LeadProjects = ({
       ) {
         setActiveProject(projectsReq.data[0].projects[0]);
       }
+    } else {
+      setError(true);
     }
   };
 
@@ -194,187 +176,199 @@ export const LeadProjects = ({
     setProjectContextMenu({ open: false, project: null, anchorEl: null });
   };
 
+  // Wraps the body in the outer Card only when `framed` (standalone pages); inside the
+  // lead workspace rail (`framed={false}`) it sits flush like the other tabs.
+  const Frame = ({ children }) =>
+    framed ? (
+      <Card elevation={3}>
+        <CardContent>{children}</CardContent>
+      </Card>
+    ) : (
+      <>{children}</>
+    );
+
   // Loading state
   if (loading) {
     return <TabLoading minHeight={300} />;
   }
 
-  // Empty state
-  if (groupedProjects.length === 0) {
+  // Error state
+  if (error) {
     return (
-      <Card elevation={3}>
-        <CardHeader
-          title="Projects Dashboard"
+      <Frame>
+        <TabSection icon={<MdWork />} title="المشاريع">
+          <EmptyState
+            icon={<MdFolder />}
+            title="تعذّر تحميل المشاريع"
+            description="حدث خطأ أثناء جلب المشاريع. يرجى المحاولة مرة أخرى."
+            action={
+              <Button
+                variant="outlined"
+                onClick={handleRefresh}
+                sx={{ textTransform: "none", fontWeight: 600 }}
+              >
+                إعادة المحاولة
+              </Button>
+            }
+          />
+        </TabSection>
+      </Frame>
+    );
+  }
+
+  // Empty state (no groups at all)
+  if (!groupedProjects || groupedProjects.length === 0) {
+    return (
+      <Frame>
+        <TabSection
+          icon={<MdWork />}
+          title="المشاريع"
+          count={0}
           action={
             <CreateProjectsGroup
               clientLeadId={clientLeadId}
               onGroupCreated={onGroupCreated}
             />
           }
-        />
-        <Divider />
-        <CardContent>
-          <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            py={8}
-          >
-            <Avatar
-              sx={{ width: 80, height: 80, mb: 2, bgcolor: "primary.light" }}
-            >
-              <MdFolder size={40} />
-            </Avatar>
-            <Typography variant="h6" gutterBottom>
-              No Projects Found
-            </Typography>
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              textAlign="center"
-              mb={3}
-            >
-              Start by creating a new project group to organize your work
-            </Typography>
-            <CreateProjectsGroup
-              clientLeadId={clientLeadId}
-              onGroupCreated={onGroupCreated}
-              buttonProps={{
-                variant: "contained",
-                startIcon: <MdAdd />,
-                children: "Create First Project Group",
-              }}
-            />
-          </Box>
-        </CardContent>
-      </Card>
+        >
+          <EmptyState
+            icon={<MdFolder />}
+            title="لا توجد مشاريع بعد"
+            description="ابدأ بإنشاء مجموعة مشاريع لتنظيم العمل."
+            action={
+              <CreateProjectsGroup
+                clientLeadId={clientLeadId}
+                onGroupCreated={onGroupCreated}
+                buttonProps={{
+                  variant: "contained",
+                  startIcon: <MdAdd />,
+                  children: "إنشاء مجموعة مشاريع",
+                }}
+              />
+            }
+          />
+        </TabSection>
+      </Frame>
     );
   }
 
   const currentGroup = groupedProjects[activeGroupTab] || {};
+  const currentProjects = currentGroup.projects || [];
 
   return (
-    <Card elevation={3}>
-      <CardHeader
-        title={
-          <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="space-between"
-          >
-            <Box display="flex" gap={2}>
-              <Typography variant="h5" fontWeight="500">
-                {currentGroup.groupTitle || "Projects Dashboard"}
-              </Typography>
-              <Button component="a" href={`/dashboard/deals/${clientLeadId}`}>
-                Lead # {clientLeadId}
+    <Frame>
+      <TabSection
+        icon={<MdWork />}
+        title="المشاريع"
+        count={currentProjects.length}
+        description={currentGroup.groupTitle || undefined}
+        action={
+          <Box display="flex" gap={1} alignItems="center">
+            {showLeadLink && (
+              <Button
+                component="a"
+                href={`/dashboard/deals/${clientLeadId}`}
+                size="small"
+                sx={{ textTransform: "none", fontWeight: 600 }}
+              >
+                {`العميل #${clientLeadId}`}
               </Button>
-            </Box>
-            <Box display="flex" gap={1}>
-              <Tooltip title="Refresh projects">
-                <IconButton
-                  onClick={handleRefresh}
-                  color="primary"
-                  size="small"
-                  disabled={refreshing}
-                >
-                  <MdRefresh className={refreshing ? "spin" : ""} />
-                </IconButton>
-              </Tooltip>
-
-              <CreateProjectsGroup
-                clientLeadId={clientLeadId}
-                onGroupCreated={onGroupCreated}
-              />
-            </Box>
+            )}
+            <Tooltip title="تحديث المشاريع">
+              <IconButton
+                onClick={handleRefresh}
+                color="primary"
+                size="small"
+                disabled={refreshing}
+              >
+                <MdRefresh className={refreshing ? "spin" : ""} />
+              </IconButton>
+            </Tooltip>
+            <CreateProjectsGroup
+              clientLeadId={clientLeadId}
+              onGroupCreated={onGroupCreated}
+            />
           </Box>
         }
-      />
-      <Divider />
-
-      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-        <Tabs
-          value={activeGroupTab}
-          onChange={handleGroupTabChange}
-          variant="scrollable"
-          scrollButtons="auto"
-          allowScrollButtonsMobile
-          textColor="primary"
-          indicatorColor="primary"
-          sx={{ px: 2 }}
-        >
-          {groupedProjects.map((group, index) => (
-            <Tab
-              key={group.groupId}
-              label={
-                <Box display="flex" alignItems="center" gap={1}>
-                  <FolderIcon size={18} />
-                  <Typography variant="body2">{group.groupTitle}</Typography>
-                  <Chip
-                    label={group.projects.length}
-                    size="small"
-                    sx={{ height: 20, fontSize: "0.7rem" }}
-                  />
-                </Box>
-              }
-              sx={{ textTransform: "none", minHeight: 48 }}
-            />
-          ))}
-        </Tabs>
-      </Box>
-
-      <CardContent>
-        <>
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-            mb={2}
-          >
-            <Typography variant="body1" fontWeight="medium">
-              {currentGroup.projects?.length || 0} Projects
-            </Typography>
+      >
+        {/* Group switcher */}
+        {groupedProjects.length > 1 && (
+          <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+            <Tabs
+              value={activeGroupTab}
+              onChange={handleGroupTabChange}
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsMobile
+              textColor="primary"
+              indicatorColor="primary"
+            >
+              {groupedProjects.map((group) => (
+                <Tab
+                  key={group.groupId}
+                  label={
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <FolderIcon size={18} />
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {group.groupTitle}
+                      </Typography>
+                      <Box
+                        sx={{
+                          px: 1,
+                          py: 0.1,
+                          borderRadius: 1.5,
+                          fontSize: "0.72rem",
+                          fontWeight: 700,
+                          color: "primary.main",
+                          bgcolor: alpha(theme.palette.primary.main, 0.12),
+                        }}
+                      >
+                        {group.projects.length}
+                      </Box>
+                    </Box>
+                  }
+                  sx={{ textTransform: "none", minHeight: 48 }}
+                />
+              ))}
+            </Tabs>
           </Box>
+        )}
 
-          <Box display="flex" gap={2} flexWrap="wrap" mb={4}>
-            {currentGroup.projects?.map((project) => (
-              <Chip
-                key={project.id}
-                label={project.type.replace(/_/g, " ")}
-                onClick={() => handleProjectClick(project)}
-                onContextMenu={(e) => handleProjectContextMenu(e, project)}
-                icon={getProjectIcon(project.type)}
-                color={
-                  activeProject && activeProject.id === project.id
-                    ? "primary"
-                    : "default"
-                }
-                variant={
-                  activeProject && activeProject.id === project.id
-                    ? "filled"
-                    : "outlined"
-                }
-                sx={{
-                  px: 1,
-                  py: 2.5,
-                  border: (theme) =>
-                    activeProject && activeProject.id === project.id
-                      ? `1px solid ${theme.palette.primary.main}`
-                      : `1px solid ${theme.palette.divider}`,
-                  "& .MuiChip-label": {
+        {/* Project chips */}
+        {currentProjects.length === 0 ? (
+          <EmptyState
+            icon={<MdFolder />}
+            title="لا توجد مشاريع في هذه المجموعة"
+            description="أضف مشاريع إلى هذه المجموعة لتظهر هنا."
+          />
+        ) : (
+          <Box display="flex" gap={1} flexWrap="wrap">
+            {currentProjects.map((project) => {
+              const isActive = activeProject && activeProject.id === project.id;
+              return (
+                <Chip
+                  key={project.id}
+                  label={project.type.replace(/_/g, " ")}
+                  onClick={() => handleProjectClick(project)}
+                  onContextMenu={(e) => handleProjectContextMenu(e, project)}
+                  icon={getProjectIcon(project.type)}
+                  color={isActive ? "primary" : "default"}
+                  variant={isActive ? "filled" : "outlined"}
+                  sx={{
                     px: 1,
-                  },
-                }}
-              />
-            ))}
-            {(!currentGroup.projects || currentGroup.projects.length === 0) && (
-              <Typography variant="body2" color="text.secondary">
-                No projects in this group
-              </Typography>
-            )}
+                    py: 2.5,
+                    borderRadius: 1.5,
+                    border: (t) =>
+                      isActive
+                        ? `1px solid ${t.palette.primary.main}`
+                        : `1px solid ${t.palette.divider}`,
+                    "& .MuiChip-label": { px: 1 },
+                  }}
+                />
+              );
+            })}
           </Box>
-        </>
+        )}
 
         <Menu
           open={projectContextMenu.open}
@@ -387,76 +381,61 @@ export const LeadProjects = ({
               closeProjectContextMenu();
             }}
           >
-            View Project
-          </MenuItem>
-          <MenuItem onClick={closeProjectContextMenu}>Edit</MenuItem>
-          <Divider />
-          <MenuItem
-            onClick={closeProjectContextMenu}
-            sx={{ color: "error.main" }}
-          >
-            Delete
+            عرض المشروع
           </MenuItem>
         </Menu>
 
-        {activeProject && (
-          <>
-            <Divider sx={{ my: 2 }} />
-            <Box>
+        {/* Active project details */}
+        {activeProject ? (
+          <RecordCard
+            accent={
+              activeProject.status === "Completed"
+                ? theme.palette.success.main
+                : theme.palette.primary.main
+            }
+            leading={
               <Box
-                mb={3}
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
+                sx={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  bgcolor: alpha(theme.palette.primary.main, 0.12),
+                  color: theme.palette.primary.main,
+                  flexShrink: 0,
+                }}
               >
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Avatar
-                    sx={{
-                      bgcolor: getAvatarColor(activeProject.type),
-                      width: 32,
-                      height: 32,
-                    }}
-                  >
-                    {getProjectIcon(activeProject.type)}
-                  </Avatar>
-                  <Typography variant="h6" fontWeight="bold">
-                    {activeProject.type.replace(/_/g, " ")}
-                  </Typography>
-                </Box>
-                <Chip
-                  label={activeProject.status || "Active"}
-                  color={
-                    activeProject.status === "Completed" ? "success" : "primary"
-                  }
-                  size="small"
-                />
+                {getProjectIcon(activeProject.type)}
               </Box>
-              <ProjectDetails
-                project={activeProject}
-                onUpdate={handleProjectUpdate}
+            }
+            title={activeProject.type.replace(/_/g, " ")}
+            status={
+              <StatusPill
+                label={activeProject.status || "نشط"}
+                color={
+                  activeProject.status === "Completed"
+                    ? theme.palette.success.main
+                    : theme.palette.primary.main
+                }
               />
-            </Box>
-          </>
-        )}
-
-        {!activeProject && (
-          <Box
-            display="flex"
-            flexDirection="column"
-            alignItems="center"
-            justifyContent="center"
-            py={8}
+            }
           >
-            <Typography variant="h6" color="text.secondary" gutterBottom>
-              No Project Selected
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Select a project to view details
-            </Typography>
-          </Box>
+            <ProjectDetails
+              project={activeProject}
+              onUpdate={handleProjectUpdate}
+            />
+          </RecordCard>
+        ) : (
+          <EmptyState
+            icon={<MdWork />}
+            title="اختر مشروعًا لعرض تفاصيله"
+            description="حدّد أحد المشاريع أعلاه لاستعراض تفاصيله."
+          />
         )}
-      </CardContent>
-    </Card>
+      </TabSection>
+    </Frame>
   );
 };
 
