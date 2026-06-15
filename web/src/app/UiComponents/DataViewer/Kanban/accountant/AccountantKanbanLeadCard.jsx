@@ -37,6 +37,7 @@ import ConfirmWithActionModel from "../../../models/ConfirmsWithActionModel";
 import Link from "next/link";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import { formatCurrency } from "@/app/helpers/functions/utility";
 
 const ItemTypes = {
   CARD: "card",
@@ -214,10 +215,10 @@ const AccountantKanbanLeadCard = ({
           <Box mb={2}>
             <Stack direction="row" justifyContent="space-between" mb={1}>
               <Typography variant="subtitle2" component="div">
-                <strong>Amount:</strong> ${payment.amount}
+                <strong>Amount:</strong> {formatCurrency(payment.amount)}
               </Typography>
               <Typography variant="subtitle2" component="div">
-                <strong>Paid:</strong> ${payment.amountPaid}
+                <strong>Paid:</strong> {formatCurrency(payment.amountPaid)}
               </Typography>
             </Stack>
 

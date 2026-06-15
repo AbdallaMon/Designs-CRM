@@ -221,3 +221,20 @@ export function ensureHttps(url) {
   if (typeof url !== "string") return url;
   return url.startsWith("http://") ? url.replace("http://", "https://") : url;
 }
+
+// Single source of truth for money formatting. The studio bills in AED, so
+// every amount across the app must render in AED (en-AE) — never USD/$.
+export function formatCurrency(amount) {
+  const n = Number(amount);
+  const value = Number.isFinite(n) ? n : 0;
+  try {
+    return new Intl.NumberFormat("en-AE", {
+      style: "currency",
+      currency: "AED",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  } catch {
+    return `AED ${value.toFixed(2)}`;
+  }
+}

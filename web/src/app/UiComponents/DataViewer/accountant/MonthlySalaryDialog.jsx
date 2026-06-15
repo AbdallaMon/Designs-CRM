@@ -32,6 +32,7 @@ import {
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { getData } from "@/app/helpers/functions/getData";
+import { formatCurrency } from "@/app/helpers/functions/utility";
 
 const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
   const [open, setOpen] = useState(false);
@@ -135,15 +136,6 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
       (old) => ({ ...old });
       handleClose();
     }
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
   };
 
   return (

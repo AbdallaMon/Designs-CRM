@@ -28,6 +28,7 @@ import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import ConfirmWithActionModel from "../../../models/ConfirmsWithActionModel";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import { formatCurrency } from "@/app/helpers/functions/utility";
 import SearchComponent from "../../../formComponents/SearchComponent";
 import { IncomeOutcomeSummary } from "../IncomeOutComeSummary";
 import CreateModal from "../../../models/CreateModal";
@@ -400,7 +401,7 @@ export const PaymentHistoryModal = ({ payment }) => {
                         >
                           <MdAttachMoney size={16} style={{ marginRight: 8 }} />
                           <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                            ${parseFloat(invoice.amount).toFixed(2)}
+                            {formatCurrency(invoice.amount)}
                           </Typography>
                         </Box>
                       </Box>

@@ -36,6 +36,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { getData } from "@/app/helpers/functions/getData";
+import { formatCurrency } from "@/app/helpers/functions/utility";
 import EditModal from "../../models/EditModal";
 import ProcessMonthlySalaryButton from "./MonthlySalaryDialog";
 import { NotesComponent } from "../utility/Notes";
@@ -113,13 +114,6 @@ const SalaryInfoButton = ({ userId }) => {
 
   const handleDateChange = () => {
     fetchSalaryData();
-  };
-
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
   };
 
   return (
