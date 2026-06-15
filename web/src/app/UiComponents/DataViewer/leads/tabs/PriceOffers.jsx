@@ -38,10 +38,13 @@ import {
 } from "../shared/tabKit";
 
 export function PriceOffersList({ admin, lead, notUser }) {
-  const { data: offers, onMutated: setOffers, showLoading } = useLeadTab(
-    "priceOffers",
-    { fallback: lead?.priceOffers }
-  );
+  const {
+    data: offers,
+    onMutated: setOffers,
+    showLoading,
+    error,
+    refetch,
+  } = useLeadTab("priceOffers", { fallback: lead?.priceOffers });
   const theme = useTheme();
 
   if (showLoading) return <TabLoading />;
@@ -100,7 +103,22 @@ export function PriceOffersList({ admin, lead, notUser }) {
           !notUser ? <AddPriceOffers lead={lead} setPriceOffers={setOffers} /> : null
         }
       >
-        {!offers?.length ? (
+        {error ? (
+          <EmptyState
+            icon={<FaMoneyBillWave />}
+            title="Couldn't load price offers"
+            description="Something went wrong while loading the price offers. Please try again."
+            action={
+              <Button
+                variant="outlined"
+                onClick={() => refetch()}
+                sx={{ textTransform: "none", fontWeight: 600 }}
+              >
+                Retry
+              </Button>
+            }
+          />
+        ) : !offers?.length ? (
           <EmptyState
             icon={<FaMoneyBillWave />}
             title="No price offers"
@@ -194,15 +212,16 @@ function PriceOfferSwitch({ priceOffer, setPriceOffers }) {
       "Updating"
     );
     if (request.status === 200) {
-      setChecked(request.data.isAccepted);
+      const nextAccepted =
+        request.data?.isAccepted ?? event.target.checked;
+      setChecked(nextAccepted);
       if (setPriceOffers) {
         setPriceOffers((oldPrices) =>
-          oldPrices.map((offer) => {
-            if (offer.id === priceOffer.id) {
-              offer.isAccepted = checked;
-            }
-            return offer;
-          })
+          oldPrices.map((offer) =>
+            offer.id === priceOffer.id
+              ? { ...offer, isAccepted: nextAccepted }
+              : offer
+          )
         );
       }
     }

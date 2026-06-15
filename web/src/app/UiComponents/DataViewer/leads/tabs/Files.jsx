@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import {
   Box,
+  Button,
   IconButton,
   Stack,
   ToggleButton,
@@ -27,7 +28,13 @@ import { TabSection, RecordCard } from "../shared/tabKit";
 export function FileList({ lead, admin, notUser }) {
   const theme = useTheme();
   const [scope, setScope] = useState("user");
-  const { data: files, onMutated: setFiles, showLoading } = useLeadTab("files", {
+  const {
+    data: files,
+    onMutated: setFiles,
+    showLoading,
+    error,
+    refetch,
+  } = useLeadTab("files", {
     fallback: lead?.files,
   });
   const { userFiles, clientFiles } = useMemo(
@@ -39,6 +46,27 @@ export function FileList({ lead, admin, notUser }) {
   );
 
   if (showLoading) return <TabLoading />;
+
+  if (error) {
+    return (
+      <TabSection icon={<GoPaperclip />} title="Attachments">
+        <EmptyState
+          icon={<MdFolderOpen />}
+          title="Couldn't load attachments"
+          description="Something went wrong while loading the attachments. Please try again."
+          action={
+            <Button
+              variant="outlined"
+              onClick={() => refetch()}
+              sx={{ textTransform: "none", fontWeight: 600 }}
+            >
+              Retry
+            </Button>
+          }
+        />
+      </TabSection>
+    );
+  }
 
   const list = scope === "user" ? userFiles : clientFiles;
 

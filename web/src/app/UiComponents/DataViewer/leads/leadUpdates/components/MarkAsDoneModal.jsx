@@ -63,7 +63,7 @@ export function MarkAsDoneModal({
   };
 
   const handleMarkAsDone = async () => {
-    const url = `shared/updates/shared-updates/${sharedUpdate.id}/archive`;
+    const url = `shared/updates/shared-updates/${sharedUpdate.id}/actions/archive`;
     const request = await handleRequestSubmit(
       { isArchived: !isArchived },
       setLoading,
@@ -71,7 +71,7 @@ export function MarkAsDoneModal({
       false,
       "Updating",
       false,
-      "PUT"
+      "POST"
     );
 
     if (request.status === 200) {

@@ -11,7 +11,7 @@ import {
   Button,
 } from "@mui/material";
 import { BiDollarCircle } from "react-icons/bi";
-import { BsInbox } from "react-icons/bs";
+import { BsInbox, BsExclamationTriangle } from "react-icons/bs";
 import LeadCard from "../leads/KanbanLeadCard";
 import colors from "@/app/helpers/colors";
 import { useDrop } from "react-dnd";
@@ -69,6 +69,7 @@ const KanbanColumn = ({
   const [currentId, setCurrentId] = useState(null);
   const [leads, setleads] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
   const [totalValue, setTotalValue] = useState(0);
   const [totalLeads, setTotalLeads] = useState(0);
   const [lead, setCurrentLead] = useState(null);
@@ -89,6 +90,7 @@ const KanbanColumn = ({
     setPage((prev) => prev + 1);
   }
   const fetchLeads = async () => {
+    setError(false);
     const request = await getData({
       url: isNotStaff
         ? `shared/projects/designers/columns?skip=${
@@ -110,6 +112,8 @@ const KanbanColumn = ({
       setTotalValue(request.data.totalValue || 0);
       setTotalLeads(request.data.totalLeads || 0);
       if (request.data.data?.length < take) setHasMore(false);
+    } else {
+      setError(true);
     }
   };
   useEffect(() => {
@@ -164,11 +168,11 @@ const KanbanColumn = ({
           isAdmin: user.role === "ADMIN",
         },
         setToastLoading,
-        `shared/client-leads/${l.id}/status`,
+        `shared/client-leads/${l.id}/actions/change-status`,
         false,
         "Updating",
         false,
-        "PUT"
+        "POST"
       );
       if (request.status === 200) {
         setRerenderColumns((prev) => ({
@@ -318,7 +322,42 @@ const KanbanColumn = ({
             },
           }}
         >
-          {!loading && (!leads || leads.length === 0) && (
+          {!loading && error && (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 1,
+                py: 6,
+                px: 2,
+                color: "error.main",
+                textAlign: "center",
+              }}
+            >
+              <BsExclamationTriangle size={28} />
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                تعذّر تحميل العناصر
+              </Typography>
+              <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                حدث خطأ أثناء التحميل. يرجى المحاولة مرة أخرى.
+              </Typography>
+              <Button
+                onClick={fetchLeads}
+                variant="outlined"
+                size="small"
+                sx={{
+                  mt: 0.5,
+                  borderRadius: "10px",
+                  textTransform: "none",
+                }}
+              >
+                إعادة المحاولة
+              </Button>
+            </Box>
+          )}
+          {!loading && !error && (!leads || leads.length === 0) && (
             <Box
               sx={{
                 display: "flex",

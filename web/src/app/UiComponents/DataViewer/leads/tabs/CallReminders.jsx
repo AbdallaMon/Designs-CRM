@@ -1,5 +1,5 @@
 import React from "react";
-import { Stack, Typography, useTheme } from "@mui/material";
+import { Button, Stack, Typography, useTheme } from "@mui/material";
 
 import {
   CallResultDialog,
@@ -29,12 +29,38 @@ import {
 } from "../shared/tabKit";
 
 export function CallReminders({ lead, setleads, admin, notUser }) {
-  const { data: callReminders, onMutated: setCallReminders, showLoading } =
-    useLeadTab("calls", { fallback: lead?.callReminders });
+  const {
+    data: callReminders,
+    onMutated: setCallReminders,
+    showLoading,
+    error,
+    refetch,
+  } = useLeadTab("calls", { fallback: lead?.callReminders });
   const theme = useTheme();
   const { user } = useAuth();
 
   if (showLoading) return <TabLoading />;
+
+  if (error) {
+    return (
+      <TabSection icon={<RiPhoneLine />} title="Call Reminders">
+        <EmptyState
+          icon={<RiPhoneLine />}
+          title="Couldn't load call reminders"
+          description="Something went wrong while loading the call reminders. Please try again."
+          action={
+            <Button
+              variant="outlined"
+              onClick={() => refetch()}
+              sx={{ textTransform: "none", fontWeight: 600 }}
+            >
+              Retry
+            </Button>
+          }
+        />
+      </TabSection>
+    );
+  }
 
   const statusColor = (status) =>
     ({

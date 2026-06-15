@@ -51,7 +51,7 @@ const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {
       {!staffId ? (
         <Typography
           variant="h4"
-          sx={{ mb: 4, fontWeight: "bold", color: "#333" }}
+          sx={{ mb: 4, fontWeight: "bold", color: "text.primary" }}
         >
           Dashboard
         </Typography>

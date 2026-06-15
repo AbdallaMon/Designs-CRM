@@ -6,6 +6,8 @@ import {
   Typography,
   Grid,
   Alert,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 
 import { ImageComponent } from "./ImageComponent";
@@ -158,7 +160,13 @@ const VirtualGrid = ({
   setImages,
 }) => {
   const containerRef = useRef(null);
-  const itemsPerRow = 4; // Adjust based on your grid setup
+  const theme = useTheme();
+  // Derive items-per-row from the SAME breakpoints the Grid items use
+  // (size={{ xs: 6, sm: 4, md: 3 }} → 2 / 3 / 4 per row). Hardcoding 4 made the
+  // virtual-scroll row/height/offset math wrong on mobile, causing scroll jumps.
+  const isSm = useMediaQuery(theme.breakpoints.up("sm"));
+  const isMd = useMediaQuery(theme.breakpoints.up("md"));
+  const itemsPerRow = isMd ? 4 : isSm ? 3 : 2;
   const itemHeight = 320; // Height including padding
 
   const { visibleRange } = useVirtualScroll(
@@ -197,7 +205,12 @@ const VirtualGrid = ({
     <Box
       ref={containerRef}
       sx={{
-        height: "100vh",
+        // Fill the parent (dialog/panel) instead of forcing a full 100vh, which
+        // overflowed inside dialogs and produced a nested scroll. Cap at the
+        // viewport so a tall standalone parent still scrolls inside this box.
+        height: "100%",
+        maxHeight: "100vh",
+        minHeight: 0,
         overflow: "auto",
         position: "relative",
       }}

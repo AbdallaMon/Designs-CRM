@@ -87,11 +87,11 @@ export function FinalizeModal({
         priceNote,
       },
       setLoading,
-      `shared/client-leads/${id}/status`,
+      `shared/client-leads/${id}/actions/change-status`,
       false,
       "Finalizing the lead",
       false,
-      "PUT"
+      "POST"
     );
     if (request.status === 200) {
       if (setLead) {

@@ -30,12 +30,38 @@ import {
 const ADMIN_PURPLE = "#7B1FA2";
 
 export function MeetingReminders({ lead, setleads, admin, notUser }) {
-  const { data: meetingReminders, onMutated: setMeetingReminders, showLoading } =
-    useLeadTab("meetings", { fallback: lead?.meetingReminders });
+  const {
+    data: meetingReminders,
+    onMutated: setMeetingReminders,
+    showLoading,
+    error,
+    refetch,
+  } = useLeadTab("meetings", { fallback: lead?.meetingReminders });
   const theme = useTheme();
   const { user } = useAuth();
 
   if (showLoading) return <TabLoading />;
+
+  if (error) {
+    return (
+      <TabSection icon={<RiGroupLine />} title="Meeting Reminders">
+        <EmptyState
+          icon={<RiGroupLine />}
+          title="Couldn't load meetings"
+          description="Something went wrong while loading the meetings. Please try again."
+          action={
+            <Button
+              variant="outlined"
+              onClick={() => refetch()}
+              sx={{ textTransform: "none", fontWeight: 600 }}
+            >
+              Retry
+            </Button>
+          }
+        />
+      </TabSection>
+    );
+  }
 
   const statusColor = (status) =>
     ({

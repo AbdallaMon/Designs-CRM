@@ -41,7 +41,7 @@ const NotificationPage = ({ searchParams }) => {
     totalPages,
     setFilters,
   } = useDataFetcher(
-    "shared/utilities/notifications?userId=" + user.id + "&",
+    "notifications",
     false,
     {
       staffId,

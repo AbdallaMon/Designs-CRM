@@ -50,16 +50,26 @@ export function LeadDetailsProvider({
   const [tabs, setTabs] = useState({});
   // in-flight guard so a remount (TabPanel unmounts inactive tabs) can't double-fetch.
   const inFlight = useRef({});
+  // a refetch requested while a fetch for the same key is in-flight is recorded here and
+  // replayed once the in-flight fetch settles — so a post-mutation reconcile is never dropped.
+  const pendingRefetch = useRef({});
   // always-fresh handle to the base url for callbacks created once.
   const baseUrlRef = useRef(leadBaseUrl);
   baseUrlRef.current = leadBaseUrl;
 
   const getTab = useCallback((key) => tabs[key] || EMPTY_TAB, [tabs]);
 
-  const doFetch = useCallback(async (key, { silent = false } = {}) => {
+  const doFetch = useCallback(async (key, opts = {}) => {
+    const { silent = false } = opts;
     const endpoint = TAB_ENDPOINTS[key];
     if (!endpoint || !baseUrlRef.current) return;
-    if (inFlight.current[key]) return;
+    // A fetch is already running for this key: record this request as a pending rerun
+    // (the latest opts win) so it replays when the current fetch settles, instead of
+    // being silently dropped.
+    if (inFlight.current[key]) {
+      pendingRefetch.current[key] = opts;
+      return;
+    }
     inFlight.current[key] = true;
     setTabs((prev) => ({
       ...prev,
@@ -95,6 +105,12 @@ export function LeadDetailsProvider({
       }));
     } finally {
       inFlight.current[key] = false;
+      // A refetch was requested while this fetch was running — replay it now.
+      if (pendingRefetch.current[key]) {
+        const rerunOpts = pendingRefetch.current[key];
+        delete pendingRefetch.current[key];
+        doFetch(key, rerunOpts);
+      }
     }
   }, []);
 

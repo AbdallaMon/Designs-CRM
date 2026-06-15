@@ -181,11 +181,11 @@ const AccountantKanbanLeadCard = ({
     const fileUpload = await handleRequestSubmit(
       formData,
       setLoading,
-      "utility/upload",
+      "files/single",
       true,
       "Uploading file"
     );
-    data.file = fileUpload.fileUrls.file[0];
+    data.file = fileUpload.data?.url;
     return data;
   }
 

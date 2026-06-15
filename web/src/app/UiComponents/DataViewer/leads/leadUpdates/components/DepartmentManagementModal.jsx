@@ -142,8 +142,8 @@ export function DepartmentManagementModal({ update, onUpdate }) {
     isCurrentlyAuthorized
   ) => {
     const url = !isCurrentlyAuthorized
-      ? `shared/updates/${update.id}/authorize`
-      : `shared/updates/${update.id}/authorize/shared`;
+      ? `shared/updates/${update.id}/actions/authorize`
+      : `shared/updates/${update.id}/actions/authorize-shared`;
 
     const request = await handleRequestSubmit(
       { type: departmentValue },
@@ -485,7 +485,7 @@ function MarkAsDoneModel({
   };
 
   const handleMarkAsDone = async () => {
-    const url = `shared/updates/shared-updates/${sharedUpdate.id}/archive`;
+    const url = `shared/updates/shared-updates/${sharedUpdate.id}/actions/archive`;
     const request = await handleRequestSubmit(
       {
         isArchived: !isArchived,
@@ -495,7 +495,7 @@ function MarkAsDoneModel({
       false,
       "Updating",
       false,
-      "PUT"
+      "POST"
     );
     if (request.status === 200) {
       if (onToggleArchive) {

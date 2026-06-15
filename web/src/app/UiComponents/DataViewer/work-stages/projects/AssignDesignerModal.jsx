@@ -89,11 +89,11 @@ export function AssignDesignerModal({
     const updatedProject = await handleRequestSubmit(
       requestData,
       setToastLoading,
-      `shared/projects/${project.id}/assign-designer`,
+      `shared/projects/${project.id}/actions/assign-designer`,
       false,
       deleteDesigner ? "Removing Designer" : "Assigning Designer",
       false,
-      "PUT"
+      "POST"
     );
 
     if (updatedProject.status === 200) {

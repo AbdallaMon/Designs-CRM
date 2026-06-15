@@ -54,15 +54,18 @@ const SalesStageComponent = ({ clientLeadId }) => {
   };
 
   const updateSalesStage = async (stageType, action = "next", item) => {
-    const data = {
-      action,
-      curentStageType: stageType,
-      nextStage: item,
-    };
+    // v2 renamed this to a workflow action: POST /sales-stages/:id/actions/set-stage.
+    // Advancing is driven purely by nextStage.key; `action`/`currentStageType` are only
+    // sent on roll-back (the backend body is .strict() and only accepts action: "back").
+    const data = { nextStage: item };
+    if (action === "back") {
+      data.action = "back";
+      data.currentStageType = stageType;
+    }
     const req = await handleRequestSubmit(
       data,
       setActionLoading,
-      `shared/sales-stages/${clientLeadId}`,
+      `shared/sales-stages/${clientLeadId}/actions/set-stage`,
       false,
       "Updating"
     );

@@ -4,11 +4,12 @@ import {
   Card,
   CardActionArea,
   CardActions,
-  CardMedia,
   IconButton,
+  alpha,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
+import ImageLoader from "../admin/shared/ImageLoader ";
 import {
   MdAdd,
   MdCheck,
@@ -35,6 +36,7 @@ function ImageComponentBase({
   const { setLoading } = useToastContext();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const photo = type === "SELECT" ? image : image.designImage;
+  const imageHeight = isMobile ? 280 : 300;
 
   const { lng } = useLanguageSwitcherContext();
   async function handleImageDelete(image) {
@@ -68,17 +70,23 @@ function ImageComponentBase({
           },
         }}
       >
-        <CardMedia
-          component="img"
-          height={isMobile ? 280 : 300}
-          image={ensureHttps(photo.imageUrl)}
+        {/* Per-image states (skeleton while loading + graceful error fallback
+            on a broken/slow URL) come from the shared ImageLoader. It already
+            renders an <img loading="lazy" decoding="async"> internally, so the
+            lazy behavior is preserved. We pass a fixed height + objectFit:cover
+            via `style` so the card keeps its 280/300px footprint and the
+            absolutely-positioned overlays/buttons still cover the image. */}
+        <ImageLoader
+          src={ensureHttps(photo.imageUrl)}
           alt={`Image ${image.id}`}
-          loading="lazy"
-          decoding="async"
-          sx={{
+          width="100%"
+          height={`${imageHeight}px`}
+          skeletonHeight={imageHeight}
+          borderRadius={0}
+          style={{
             cursor: "pointer",
-            transition: "transform 0.3s ease",
-            bgcolor: "grey.100",
+            objectFit: "cover",
+            backgroundColor: theme.palette.grey[100],
           }}
         />
 
@@ -86,11 +94,14 @@ function ImageComponentBase({
           sx={{
             position: "absolute",
             top: 0,
-            left: 0,
-            right: 0,
+            insetInlineStart: 0,
+            insetInlineEnd: 0,
             bottom: 0,
-            bgcolor: isSelected ? "rgba(25, 118, 210, 0.15)" : "transparent",
+            bgcolor: isSelected
+              ? alpha(theme.palette.success.main, 0.18)
+              : "transparent",
             transition: "all 0.3s ease",
+            pointerEvents: "none",
           }}
         />
 

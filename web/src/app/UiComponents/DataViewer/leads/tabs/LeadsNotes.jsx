@@ -1,5 +1,5 @@
 import React from "react";
-import { Stack, Typography } from "@mui/material";
+import { Button, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
 
 import { NewNoteDialog } from "@/app/UiComponents/DataViewer/leads/dialogs/NoteDialog";
@@ -12,11 +12,38 @@ import { useLeadTab } from "../context/LeadDetailsContext";
 import { TabSection, RecordCard, NameAvatar } from "../shared/tabKit";
 
 export function LeadNotes({ lead, admin, notUser }) {
-  const { data: notes, onMutated: setNotes, showLoading } = useLeadTab("notes", {
+  const {
+    data: notes,
+    onMutated: setNotes,
+    showLoading,
+    error,
+    refetch,
+  } = useLeadTab("notes", {
     fallback: lead?.notes,
   });
 
   if (showLoading) return <TabLoading />;
+
+  if (error) {
+    return (
+      <TabSection icon={<MdStickyNote2 />} title="Notes">
+        <EmptyState
+          icon={<MdStickyNote2 />}
+          title="Couldn't load notes"
+          description="Something went wrong while loading the notes. Please try again."
+          action={
+            <Button
+              variant="outlined"
+              onClick={() => refetch()}
+              sx={{ textTransform: "none", fontWeight: 600 }}
+            >
+              Retry
+            </Button>
+          }
+        />
+      </TabSection>
+    );
+  }
 
   return (
     <TabSection

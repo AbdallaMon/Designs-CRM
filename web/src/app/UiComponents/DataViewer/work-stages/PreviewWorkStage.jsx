@@ -73,11 +73,11 @@ const LeadContent = ({
         id: lead.projects[0].id,
       },
       setLoading,
-      `shared/client-leads/designers/${lead.id}/status`,
+      `shared/designers/${lead.id}/actions/change-status`,
       false,
       "Updating",
       null,
-      "PUT"
+      "POST"
     );
     if (request.status === 200) {
       if (setRerenderColumns) {

@@ -451,7 +451,7 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
     const req = await handleRequestSubmit(
       { deliveryId, meetingReminderId },
       setSubmitting,
-      `shared/delivery/${deliveryId}/link-meeting`,
+      `shared/delivery/${deliveryId}/actions/link-meeting`,
       false,
       "Linking meeting..."
     );

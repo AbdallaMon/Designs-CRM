@@ -73,7 +73,7 @@ const LeadStatusChart = ({ staff, staffId }) => {
         <Typography
           variant={isMobile ? "h6" : "h5"}
           gutterBottom
-          sx={{ fontWeight: "bold", color: "#333" }}
+          sx={{ fontWeight: "bold", color: "text.primary" }}
         >
           Lead Status Distribution
         </Typography>
@@ -104,7 +104,7 @@ const LeadStatusChart = ({ staff, staffId }) => {
                 height={36}
                 wrapperStyle={{ top: -10 }}
               />
-              <Bar dataKey="count" name="Number of Leads" fill="#8884d8">
+              <Bar dataKey="count" name="Number of Leads" fill={COLORS[0]}>
                 {data.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}

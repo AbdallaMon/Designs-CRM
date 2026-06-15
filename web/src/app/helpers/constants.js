@@ -1,3 +1,4 @@
+import colors from "./colors";
 import {
   AiOutlineEdit,
   AiOutlineFileText,
@@ -332,18 +333,20 @@ export const DEPARTMENTS = [
 
 export const PRIORITY = ["VERY_LOW", "LOW", "MEDIUM", "HIGH", "VERY_HIGH"];
 export const TASKSTATUS = ["TODO", "IN_PROGRESS", "DONE"];
+// Severity ramp (neutral → severe), derived from the warm brand palette so the
+// priority chips read as part of the same product, not a stray Material rainbow.
 export const priorityColors = {
-  VERY_LOW: { bg: "#f5f5f5", color: "#666666", border: "#e0e0e0" },
-  LOW: { bg: "#e8f5e8", color: "#2e7d32", border: "#4caf50" },
-  MEDIUM: { bg: "#fff3e0", color: "#f57c00", border: "#ff9800" },
-  HIGH: { bg: "#ffebee", color: "#d32f2f", border: "#f44336" },
-  VERY_HIGH: { bg: "#f3e5f5", color: "#7b1fa2", border: "#9c27b0" },
+  VERY_LOW: { bg: colors.bgTertiary, color: colors.textTertiary, border: colors.border },
+  LOW: { bg: colors.primaryAlt, color: colors.infoDark, border: colors.infoLight },
+  MEDIUM: { bg: colors.secondaryAlt, color: colors.secondaryDark, border: colors.accent },
+  HIGH: { bg: colors.surfaceElevated, color: colors.primaryDark, border: colors.primary },
+  VERY_HIGH: { bg: "#f7ece9", color: colors.errorDark, border: colors.error },
 };
 
 export const taskStatusColors = {
-  TODO: { bg: "#e3f2fd", color: "#1976d2", border: "#2196f3" },
-  IN_PROGRESS: { bg: "#fff3e0", color: "#f57c00", border: "#ff9800" },
-  DONE: { bg: "#e8f5e8", color: "#2e7d32", border: "#4caf50" },
+  TODO: { bg: colors.secondaryAlt, color: colors.secondaryDark, border: colors.accent },
+  IN_PROGRESS: { bg: colors.primaryAlt, color: colors.infoDark, border: colors.info },
+  DONE: { bg: "#eef2ea", color: colors.successDark, border: colors.success },
 };
 export function getPriorityOrder(priority) {
   const priorityMap = {
@@ -372,58 +375,71 @@ export const groupColors = {
   8: { bg: "#fcfcfc", border: "#607d8b", text: "#455a64" },
   9: { bg: "#f9faff", border: "#5c6bc0", text: "#3f51b5" },
 };
+// One semantic status map, derived from the warm caramel brand palette
+// (colors.js). Keys are the English enum values / project-status labels used
+// everywhere in logic — only the hues changed, so no call site breaks. Deduped
+// (the old map repeated IN_PROGRESS/REJECTED/Delivery) and completed (added the
+// "Rejected" project label that was previously missing → undefined border).
 export const statusColors = {
-  IN_PROGRESS: "#0d9488",
-  INTERESTED: "#10b981",
-  NEEDS_IDENTIFIED: "#f59e0b",
-  NEGOTIATING: "#3b82f6",
-  LEADEXCHANGE: "#f97316",
-  REJECTED: "#ef4444",
-  FINALIZED: "#0f766e",
-  ARCHIVED: "#0f757d",
-  CLIENT_COMMUNICATION: "#3b82f6",
-  DESIGN_STAGE: "#10b981",
-  THREE_D_STAGE: "#f59e0b",
-  THREE_D_APPROVAL: "#0d9488",
-  DRAWING_PLAN: "#f97316",
-  FINAL_DELIVERY: "#0f766e",
-  FIRST_MODIFICATION: "#3b82f6",
-  SECOND_MODIFICATION: "#10b981",
-  THIRD_MODIFICATION: "#f59e0b",
-  PROGRESS: "#0d9488",
-  PRICING: "#3b82f6",
-  ACCEPTED: "#10b981",
-  REJECTED: "#ef4444",
-  QUANTITY: "#f97316",
-  LEVEL_1: "#f97316", // First Payment - Orange
-  LEVEL_2: "#f59e0b", // Second Payment - Yellow
-  LEVEL_3: "#10b981", // Third Payment - Green
-  LEVEL_4: "#3b82f6", // Fourth Payment - Blue
-  LEVEL_5: "#0d9488", // Fifth Payment - Teal
-  LEVEL_6: "#0f766e", // Sixth Payment - Dark Teal
-  LEVEL_7_OR_MORE: "#ef4444", // Seventh
+  // Lead pipeline
+  NEW: colors.info,
+  IN_PROGRESS: colors.info,
+  INTERESTED: colors.success,
+  NEEDS_IDENTIFIED: colors.accent,
+  NEGOTIATING: colors.secondary,
+  LEADEXCHANGE: colors.textTertiary,
+  REJECTED: colors.error,
+  FINALIZED: colors.successDark,
+  ARCHIVED: colors.textMuted,
 
-  VERY_LOW: "#d1d5db", // Light Gray
-  LOW: "#f59e0b", // Yellow
-  MEDIUM: "#3b82f6", // Blue
-  HIGH: "#10b981", // Green
-  VERY_HIGH: "#ef4444", // Red
-  TODO: "#f97316", // Orange
-  IN_PROGRESS: "#0d9488", // Teal
-  DONE: "#10b981", // Green
+  // Deal / work-stage (enum-style)
+  CLIENT_COMMUNICATION: colors.info,
+  DESIGN_STAGE: colors.secondary,
+  THREE_D_STAGE: colors.primary,
+  THREE_D_APPROVAL: colors.success,
+  DRAWING_PLAN: colors.infoDark,
+  FINAL_DELIVERY: colors.successDark,
+  FIRST_MODIFICATION: colors.accent,
+  SECOND_MODIFICATION: colors.secondaryDark,
+  THIRD_MODIFICATION: colors.primaryDark,
+  PROGRESS: colors.info,
+  PRICING: colors.secondary,
+  ACCEPTED: colors.success,
+  QUANTITY: colors.accent,
 
-  "To Do": "#f59e0b", // Yellow
-  "3D": "#10b981", // Green
-  Render: "#3b82f6", // Blue
-  Delivery: "#0d9488", // Teal
-  Hold: "#ef4444", // Red
-  Completed: "#10b981", // Green
-  Modification: "#f97316", // Orange
-  Studying: "#3b82f6", // Blue
-  Electricity: "#a9bd3aff",
-  Delivery: "#0d9488", // Teal
-  Started: "#3b82f6", // Blue
-  "In Progress": "#0d9488", // Teal
+  // Payment levels — warm ramp, light → dark
+  LEVEL_1: colors.primaryLight,
+  LEVEL_2: colors.accent,
+  LEVEL_3: colors.primary,
+  LEVEL_4: colors.secondary,
+  LEVEL_5: colors.secondaryDark,
+  LEVEL_6: colors.primaryDark,
+  LEVEL_7_OR_MORE: colors.errorDark,
+
+  // Priority ramp (neutral → severe)
+  VERY_LOW: colors.textMuted,
+  LOW: colors.info,
+  MEDIUM: colors.accent,
+  HIGH: colors.secondaryDark,
+  VERY_HIGH: colors.error,
+
+  // Task status
+  TODO: colors.accent,
+  DONE: colors.success,
+
+  // Project work-stage labels (string keys)
+  "To Do": colors.accent,
+  "3D": colors.primary,
+  Render: colors.secondary,
+  Delivery: colors.successDark,
+  Hold: colors.textTertiary,
+  Completed: colors.success,
+  Modification: colors.primaryDark,
+  Rejected: colors.error,
+  Studying: colors.info,
+  Electricity: colors.infoDark,
+  Started: colors.secondary,
+  "In Progress": colors.info,
 };
 
 export const KanbanStatusArray = [

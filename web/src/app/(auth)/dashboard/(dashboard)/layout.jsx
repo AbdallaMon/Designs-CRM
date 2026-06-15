@@ -1,5 +1,5 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import {
@@ -10,8 +10,10 @@ import { useAuth } from "@/app/providers/AuthProvider";
 import {
   AppBar,
   Box,
+  Chip,
   IconButton,
   Toolbar,
+  Typography,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
@@ -317,8 +319,48 @@ export function linksForRole(user) {
   return adminLinks;
 }
 
+// Mirror SideNav's matching so the AppBar title agrees with the active nav item.
+function matchLink(link, pathname) {
+  if (link.active) return pathname.includes(link.active);
+  return pathname === link.href;
+}
+
+// Resolve the current page into { section, page } from the role's nav links.
+// `section` is the parent group name (only when matching a subLink), so the
+// AppBar can render a 2-level breadcrumb like "Work stages › All projects".
+function resolveCurrentPage(links, pathname) {
+  let fallback = null;
+  for (const link of links) {
+    if (link.subLinks?.length) {
+      const sub = link.subLinks.find((s) => matchLink(s, pathname));
+      if (sub) return { section: link.name, page: sub.name };
+      if (matchLink(link, pathname)) fallback = { section: null, page: link.name };
+    } else if (matchLink(link, pathname)) {
+      return { section: null, page: link.name };
+    }
+  }
+  return fallback;
+}
+
+const ROLE_LABELS = {
+  ADMIN: "Admin",
+  SUPER_ADMIN: "Admin",
+  THREE_D_DESIGNER: "3D Designer",
+  TWO_D_DESIGNER: "2D Designer",
+  TWO_D_EXECUTOR: "Executor",
+  ACCOUNTANT: "Accountant",
+  CONTACT_INITIATOR: "Contact Initiator",
+  SUPER_SALES: "Super Sales",
+};
+
+function roleLabel(user) {
+  if (user?.role === "STAFF") return user.isSuperSales ? "Super Sales" : "Sales";
+  return ROLE_LABELS[user?.role] || user?.role || "";
+}
+
 export default function Layout({ children }) {
   const router = useRouter();
+  const pathname = usePathname();
   let { user, isLoggedIn, validatingAuth } = useAuth();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -361,9 +403,6 @@ export default function Layout({ children }) {
           Success("Your session has been validated, loading data.")
         );
       }
-      if (typeof window !== "undefined") {
-        console.log(document.referrer, "refresres");
-      }
     }
 
     fetchData();
@@ -371,6 +410,8 @@ export default function Layout({ children }) {
   if (!user || !user.role) return null;
 
   const links = linksForRole(user);
+  const currentPage = resolveCurrentPage(links, pathname);
+  const userRoleLabel = roleLabel(user);
   // Desktop content sits next to the permanent drawer; mobile has none.
   const drawerWidth = isMobile
     ? 0
@@ -417,7 +458,14 @@ export default function Layout({ children }) {
                 gap: 1,
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center" }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  minWidth: 0,
+                  gap: 1,
+                }}
+              >
                 {isMobile && (
                   <IconButton
                     edge="start"
@@ -428,8 +476,53 @@ export default function Layout({ children }) {
                     <FiMenu size={22} />
                   </IconButton>
                 )}
+                {currentPage && (
+                  <Typography
+                    variant="subtitle1"
+                    component="h1"
+                    noWrap
+                    sx={{
+                      fontWeight: 600,
+                      color: colors.textPrimary,
+                      minWidth: 0,
+                    }}
+                  >
+                    {currentPage.section && (
+                      <Box
+                        component="span"
+                        sx={{
+                          color: colors.textTertiary,
+                          fontWeight: 400,
+                          display: { xs: "none", sm: "inline" },
+                        }}
+                      >
+                        {currentPage.section}
+                        <Box
+                          component="span"
+                          sx={{ mx: 0.75, color: colors.textMuted }}
+                        >
+                          ›
+                        </Box>
+                      </Box>
+                    )}
+                    {currentPage.page}
+                  </Typography>
+                )}
               </Box>
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                {userRoleLabel && (
+                  <Chip
+                    size="small"
+                    label={userRoleLabel}
+                    sx={{
+                      me: 0.5,
+                      fontWeight: 600,
+                      color: colors.textOnPrimary,
+                      backgroundColor: theme.palette.status.neutral,
+                      display: { xs: "none", sm: "inline-flex" },
+                    }}
+                  />
+                )}
                 {user.role !== "ADMIN" && <SignInWithDifferentUserRole />}
                 <NotificationsIcon />
                 <ProfileDialogTrigger userId={user.id} />

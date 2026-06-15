@@ -18,9 +18,9 @@ export default function ResetPage(props) {
   async function handleReset(data) {
     try {
       await handleRequestSubmit(
-        data,
+        token ? { ...data, token } : data,
         setLoading,
-        !token ? "auth/reset" : `auth/reset/${token}`,
+        !token ? "auth/request-password-reset" : "auth/reset-password",
         false,
         !token ? "Email is being reviewed" : "Resetting the password"
       );

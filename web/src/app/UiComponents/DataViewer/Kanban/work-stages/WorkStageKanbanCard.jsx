@@ -76,7 +76,7 @@ const StyledCard = styled(Card)(({ theme, status, groupId }) => {
     margin: theme.spacing(1),
     padding: 1,
     paddingLeft: theme.spacing(0.15),
-    borderLeft: `5px solid ${statusColors[status]}`,
+    borderLeft: `5px solid ${statusColors[status] || theme.palette.primary.main}`,
     borderTop: `3px solid ${groupColor.border}`,
     backgroundColor: groupColor.bg,
     transition: "all 0.3s",

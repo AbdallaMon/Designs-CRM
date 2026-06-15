@@ -376,11 +376,11 @@ function ContractBasics({ id, contract, onReload }) {
     const res = await handleRequestSubmit(
       { lang },
       setLoading,
-      `shared/contracts/${contract.id}`,
+      `shared/contracts/${contract.id}/actions/generate-pdf-token`,
       false,
       "Generating",
       false,
-      "PATCH"
+      "POST"
     );
     if (res?.status === 200) onReload();
   };

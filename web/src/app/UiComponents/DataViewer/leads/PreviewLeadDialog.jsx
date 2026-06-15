@@ -91,11 +91,11 @@ const LeadContent = ({
     const request = await handleRequestSubmit(
       { status: value, oldStatus: lead.status, isAdmin: admin },
       setLoading,
-      `shared/client-leads/${lead.id}/status`,
+      `shared/client-leads/${lead.id}/actions/change-status`,
       false,
       "Updating",
       null,
-      "PUT",
+      "POST",
     );
     if (request.status === 200) {
       if (setRerenderColumns) {
@@ -117,11 +117,11 @@ const LeadContent = ({
     const request = await handleRequestSubmit(
       { status: "ON_HOLD" },
       setLoading,
-      `shared/client-leads/${lead.id}/status`,
+      `shared/client-leads/${lead.id}/actions/change-status`,
       false,
       "Converting",
       false,
-      "PUT",
+      "POST",
     );
     if (request.status === 200) {
       window.setTimeout(() => {

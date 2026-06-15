@@ -433,11 +433,11 @@ export const ProjectDetails = ({
         id: project.id,
       },
       setLoading,
-      `shared/designers/${project.clientLeadId}/status`,
+      `shared/designers/${project.clientLeadId}/actions/change-status`,
       false,
       "Updating",
       null,
-      "PUT"
+      "POST"
     );
     if (request.status === 200) {
       window.location.reload();
