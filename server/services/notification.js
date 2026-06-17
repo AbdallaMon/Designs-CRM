@@ -734,7 +734,7 @@ export async function sendPaymentSuccessEmail(
           line-height: 1.6;
           color: #584d3f;
           max-width: 600px;
-          margin: 0 auto;
+          margin: auto;
           padding: 20px;
           background-color: #f4f2ee;
           text-align: ${textAlign};
