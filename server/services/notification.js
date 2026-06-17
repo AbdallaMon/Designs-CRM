@@ -679,12 +679,7 @@ export async function sendPaymentSuccessEmail(
           label: "Processing",
           description: "Our team will reach out within 48 hours.",
         },
-        {
-          label: "Next Step",
-          description: "Complete your registration to get started.",
-        },
       ],
-      buttonText: "Complete Registration",
       closing: "We look forward to supporting your journey.",
       regards: "Best regards,",
       team: "Eng. Ahmed's Design Team",
@@ -706,9 +701,7 @@ export async function sendPaymentSuccessEmail(
           label: "قيد المعالجة",
           description: "سيتواصل معك فريقنا خلال 48 ساعة.",
         },
-        { label: "الخطوة التالية", description: "يرجى إكمال التسجيل للبدء." },
       ],
-      buttonText: "إكمال التسجيل",
       closing: "نتطلع للعمل معك.",
       regards: "مع أطيب التحيات،",
       team: `فريق التصميم ${arEngName}`,
@@ -852,13 +845,7 @@ export async function sendPaymentSuccessEmail(
   
           </div>
           
-          
-          <div style="text-align: center;">
-            <a href="${completeRegistrationLink}" class="btn">${
-              langContent.buttonText
-            }</a>
-          </div>
-                    
+            
           <p>${langContent.closing}</p>
           
           <div class="contact-links">

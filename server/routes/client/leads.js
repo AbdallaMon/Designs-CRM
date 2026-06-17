@@ -199,8 +199,8 @@ router.post("/new-lead/register", async (req, res) => {
     //     : "Complete the payment now to proceed.";
     const message =
       body.lng === "ar"
-        ? "تم استلام استفسارك بنجاح! سنقوم بالتواصل معك في أقرب وقت ممكن."
-        : "Your inquiry has been received successfully! We will get back to you as soon as possible.";
+        ? "تم تسجيل ايميلك من فضلك تابع الخطوات لإكمال بياناتك وبدء العمل على مشروعك!"
+        : "Your email has been registered, please follow the steps to complete your information and start working on your project!";
 
     res.status(200).json({ data: clientLead, message });
   } catch (error) {
