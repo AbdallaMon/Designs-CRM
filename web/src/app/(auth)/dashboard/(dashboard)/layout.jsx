@@ -319,6 +319,102 @@ export function linksForRole(user) {
   return adminLinks;
 }
 
+// Client-side icon lookup for the backend-driven nav (`navigationTabs` carries
+// no icons — see packages/shared/constants/access/navigation.js). Keyed by the
+// same `key` NAVIGATION emits; icons are the exact ones master's link arrays
+// above use for the equivalent item.
+const ICON_BY_KEY = {
+  dashboard: <FiGrid size={20} />,
+  "users-admin": <FiUsers size={20} />,
+  "users-super-sales": <FiUsers size={20} />,
+  leads: <FiTarget size={20} />,
+  deals: <FiDollarSign size={20} />,
+  "work-stages": <FiDollarSign size={20} />,
+  reports: <FiFileText size={20} />,
+  "image-sessions": <FiImage size={20} />,
+  calendar: <FiCalendar size={20} />,
+  payments: <FiDollarSign size={20} />,
+  "website-utilities": <FiHome size={20} />,
+  "executor-leads": <FiTarget size={20} />,
+  "executor-work-stage": <FiBriefcase size={20} />,
+  "accountant-payments": <FiDollarSign size={20} />,
+  "operational-expenses": <FiShoppingCart size={20} />,
+  rents: <FiHome size={20} />,
+  salaries: <FiUsers size={20} />,
+  outcome: <FiTrendingDown size={20} />,
+  "contact-initiator-leads": <FiTarget size={20} />,
+};
+
+// Map a sub-link { label, href, active } (from navigationTabs) to SideNav's shape.
+function mapSubLink(s) {
+  return {
+    name: s.label,
+    href: s.href,
+    ...(s.active ? { active: s.active } : {}),
+  };
+}
+
+// Map a top-level nav tab { key, label, href, active, subLinks } (from
+// navigationTabs) to the { name, href, icon, active, subLinks } shape SideNav
+// expects, attaching the client-only icon by `key`.
+function mapNavigationTab(tab) {
+  return {
+    name: tab.label,
+    href: tab.href,
+    icon: ICON_BY_KEY[tab.key],
+    ...(tab.active ? { active: tab.active } : {}),
+    ...(tab.subLinks?.length ? { subLinks: tab.subLinks.map(mapSubLink) } : {}),
+  };
+}
+
+// Same target shape, but from the legacy client-side link arrays (used only
+// for the dev role-override fallback below, since navigationTabs reflects the
+// REAL backend role and won't match an overridden one).
+function mapLegacyLink(link) {
+  return {
+    name: link.name,
+    href: link.href,
+    icon: link.icon,
+    ...(link.active ? { active: link.active } : {}),
+    ...(link.subLinks?.length
+      ? {
+          subLinks: link.subLinks.map((s) => ({
+            name: s.name,
+            href: s.href,
+            ...(s.active ? { active: s.active } : {}),
+          })),
+        }
+      : {}),
+  };
+}
+
+// Is the dev role-switcher override active for this user? Mirrors the exact
+// condition AuthProvider uses to patch `user.role` from localStorage — when
+// active, `navigationTabs` (computed server-side from the REAL role) no
+// longer matches what should render, so we fall back to the client-side
+// `linksForRole` arrays (which honor the overridden role).
+function isRoleOverrideActive(user) {
+  if (typeof window === "undefined") return false;
+  const overrideRole = window.localStorage.getItem("role");
+  const overrideUserId = window.localStorage.getItem("userId");
+  return Boolean(
+    overrideRole &&
+      overrideUserId &&
+      user?.id === parseInt(overrideUserId)
+  );
+}
+
+// Derive the rendered sidebar links: normally from the backend-owned
+// `navigationTabs` (proven 1:1 with `linksForRole` per role, see
+// packages/shared/__tests__/navigation.test.js); falls back to the legacy
+// client arrays only while the dev role override is active.
+function resolveLinks(user) {
+  if (isRoleOverrideActive(user)) {
+    return linksForRole(user).map(mapLegacyLink);
+  }
+  return (user?.navigationTabs ?? []).map(mapNavigationTab);
+}
+
 // Mirror SideNav's matching so the AppBar title agrees with the active nav item.
 function matchLink(link, pathname) {
   if (link.active) return pathname.includes(link.active);
@@ -409,7 +505,7 @@ export default function Layout({ children }) {
   }, [validatingAuth]);
   if (!user || !user.role) return null;
 
-  const links = linksForRole(user);
+  const links = resolveLinks(user);
   const currentPage = resolveCurrentPage(links, pathname);
   const userRoleLabel = roleLabel(user);
   // Desktop content sits next to the permanent drawer; mobile has none.
