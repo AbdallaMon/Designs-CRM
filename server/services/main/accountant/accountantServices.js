@@ -375,7 +375,7 @@ export async function createOperationalExpense({
       description: `${category} - ${description}`,
       type: "OPERATIONAL_EXPENSE",
       createdAt: new Date(paymentDate),
-      operationalExpenses: {
+      operationalExpensesByOutcome: {
         connect: {
           id: newExpense.id,
         },
@@ -752,7 +752,7 @@ export async function generateMonthlySalary({
         description: `Monthly salary payment for ${
           user.baseSalary.employee.name
         } ,${dayjs().format("MMMM YYYY")}`,
-        monthlySalaries: {
+        monthlySalariesByOutcome: {
           connect: {
             id: monthlySalary.id,
           },
