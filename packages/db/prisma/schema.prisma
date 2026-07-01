@@ -1,4 +1,3 @@
-// Keep the generator, datasource and enums as is
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,59 +7,2009 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum LeadSource {
-  INSTAGRAM
-  TIKTOK
-  TV
-  FACEBOOK
-  YOUTUBE
-  GOOGLE
-  INTERIOR_MAGAZINE_SITE
-  REFERRAL
-  OTHER
+/// إعدادات عامة للموقع (Singleton: سجل واحد فقط)
+model SiteUtility {
+  id               Int      @id @default(1)
+  pdfFrame         String?  @db.VarChar(1024)
+  pdfHeader        String?  @db.VarChar(1024)
+  updatedAt        DateTime @default(now()) @updatedAt @db.DateTime(0)
+  introPage        String?
+  pageTitle        String?
+  pdfSignaturePart String?
 }
 
-enum NotificationType {
-  NEW_LEAD
-  LEAD_ASSIGNED
-  LEAD_STATUS_CHANGE
-  LEAD_TRANSFERRED
-  LEAD_UPDATED
-  LEAD_CONTACT
-  NOTE_ADDED
-  NEW_NOTE
-  NEW_FILE
-  CALL_REMINDER_CREATED
-  CALL_REMINDER_STATUS
-  PRICE_OFFER_SUBMITTED
-  PRICE_OFFER_UPDATED
-  FINAL_PRICE_ADDED
-  FINAL_PRICE_CHANGED
-  PAYMENT_ADDED // New payment recorded
-  PAYMENT_STATUS_UPDATED // Payment status updated
-  EXTRA_FINAL_PRICE_ADDED // Extra final price added
-  EXTRA_FINAL_PRICE_EDITED // Extra final price edited
-  WORK_STAGE_UPDATED // Work stage updated for 3D or 2D
-  OTHER
+model ContractUtility {
+  id                    Int                             @id
+  obligationsPartyOneAr String                          @db.Text
+  obligationsPartyOneEn String                          @db.Text
+  obligationsPartyTwoAr String                          @db.Text
+  obligationsPartyTwoEn String                          @db.Text
+  updatedAt             DateTime                        @default(now()) @updatedAt
+  levelClauses          ContractLevelClauseTemplate[]
+  specialClauses        ContractSpecialClauseTemplate[]
+  stageClauses          ContractStageClauseTemplate[]
+}
 
-  TEST_FINISHED
-  ATTEMPT_PASSED
-  ATTEMPT_FAILED
-  NEW_ATTEMPT_CREATED
-  NEW_ATTEMPT_ADDED
-  
-  // Chat notifications
-  NEW_CHAT_MESSAGE
-  CHAT_MENTION
-  CHAT_ROOM_CREATED
-  CHAT_MEMBER_ADDED
-  CHAT_CALL_INCOMING
-  CHAT_CALL_MISSED
+model ContractStageClauseTemplate {
+  id                Int             @id @default(autoincrement())
+  contractUtilityId Int
+  headingAr         String          @db.Text
+  headingEn         String          @db.Text
+  titleAr           String          @db.Text
+  titleEn           String          @db.Text
+  descriptionAr     String          @db.Text
+  descriptionEn     String          @db.Text
+  order             Int             @default(0)
+  contractUtility   ContractUtility @relation(fields: [contractUtilityId], references: [id])
 
-  // v2 Module - Booking Leads
-  LEAD_CREATED // v2: When a new lead is created
-  LEAD_SUBMITTED // v2: When a lead is submitted for review
-  LEAD_STATUS_CHANGED // v2: When lead status changes (to avoid duplication with old LEAD_STATUS_CHANGE)
+  @@index([contractUtilityId])
+}
+
+model ContractSpecialClauseTemplate {
+  id                Int             @id @default(autoincrement())
+  contractUtilityId Int
+  textAr            String          @db.Text
+  textEn            String?         @db.Text
+  order             Int             @default(0)
+  isActive          Boolean         @default(true)
+  contractUtility   ContractUtility @relation(fields: [contractUtilityId], references: [id])
+
+  @@index([contractUtilityId])
+}
+
+model ContractLevelClauseTemplate {
+  id                Int             @id @default(autoincrement())
+  contractUtilityId Int
+  level             ContractLevel
+  textAr            String          @db.Text
+  textEn            String?         @db.Text
+  order             Int             @default(0)
+  isActive          Boolean         @default(true)
+  contractUtility   ContractUtility @relation(fields: [contractUtilityId], references: [id])
+
+  @@index([contractUtilityId])
+  @@index([level])
+}
+
+model Contract {
+  id                      Int                   @id @default(autoincrement())
+  clientLeadId            Int
+  contractLevel           ContractLevel
+  title                   String?               @db.VarChar(255)
+  startDate               DateTime?             @db.DateTime(0)
+  endDate                 DateTime?             @db.DateTime(0)
+  createdAt               DateTime              @default(now()) @db.DateTime(0)
+  purpose                 String?               @db.VarChar(255)
+  isCompleted             Boolean               @default(false)
+  isInProgress            Boolean               @default(false)
+  pdfLinkAr               String?               @db.VarChar(1024)
+  pdfLinkEn               String?               @db.VarChar(1024)
+  signatureUrl            String?               @db.Text
+  handWrittenSignatureUrl String?               @db.Text
+  projectType             String?
+  writtenAt               DateTime?             @db.DateTime(0)
+  status                  ContractStatus        @default(IN_PROGRESS)
+  taxRate                 Decimal               @default(0.00) @db.Decimal(5, 2)
+  amount                  Decimal?              @db.Decimal(12, 2)
+  totalAmount             Decimal?              @db.Decimal(12, 2)
+  projectGroupId          Int?
+  arToken                 String?               @db.VarChar(64)
+  enToken                 String?               @db.VarChar(64)
+  sessionStatus           ContractSessionStatus @default(INITIAL)
+  enTitle                 String?
+  clientLead              ClientLead            @relation(fields: [clientLeadId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "Contract_ibfk_1")
+  drawings                ContractDrawing[]
+  paymentsNew             ContractPayment[]
+  specialItems            ContractSpecialItem[]
+  stages                  ContractStage[]
+  notes                   Note[]
+  projects                Project[]
+
+  @@index([clientLeadId], map: "idx_contract_clientLeadId")
+}
+
+/// المرحلة الجديدة بدل enum، مع عدد أيام المرحلة + عدد أيام القسم
+model ContractStage {
+  id               Int               @id @default(autoincrement())
+  contractId       Int
+  title            String
+  order            Int
+  deliveryDays     Int
+  deptDeliveryDays Int?
+  projectId        Int?
+  startDate        DateTime?         @db.DateTime(0)
+  endDate          DateTime?         @db.DateTime(0)
+  stageStatus      StageStatus       @default(NOT_STARTED)
+  payments         ContractPayment[]
+  contract         Contract          @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  project          Project?          @relation(fields: [projectId], references: [id])
+  deliverySchedule DeliverySchedule?
+
+  @@unique([contractId, order])
+  @@index([projectId])
+  @@index([contractId])
+  @@index([stageStatus], map: "idx_contractstage_stageStatus")
+}
+
+model ContractPayment {
+  id               Int                       @id @default(autoincrement())
+  contractId       Int
+  stageId          Int?
+  amount           Decimal                   @db.Decimal(12, 2)
+  amountLost       Decimal                   @default(0.00) @db.Decimal(12, 2)
+  amountReceived   Decimal                   @default(0.00) @db.Decimal(12, 2)
+  currency         String                    @default("AED") @db.VarChar(16)
+  dueDate          DateTime?                 @db.DateTime(0)
+  status           String                    @default("NOT_DUE") @db.VarChar(16)
+  reference        String?
+  note             String?                   @db.Text
+  createdAt        DateTime                  @default(now()) @db.DateTime(0)
+  updatedAt        DateTime                  @default(now()) @updatedAt @db.DateTime(0)
+  projectId        Int?
+  paymentCondition String?                   @db.VarChar(100)
+  conditionId      Int?
+  conditionItem    ContractPaymentCondition? @relation(fields: [conditionId], references: [id])
+  contract         Contract                  @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  stage            ContractStage?            @relation(fields: [stageId], references: [id])
+  project          Project?                  @relation(fields: [projectId], references: [id], map: "fk_contractpayment_project")
+
+  @@index([contractId])
+  @@index([stageId])
+  @@index([status, dueDate])
+  @@index([conditionId])
+  @@index([projectId], map: "idx_contractpayment_projectId")
+}
+
+model ContractPaymentCondition {
+  id            Int               @id @default(autoincrement())
+  conditionType String            @db.VarChar(255)
+  condition     String            @db.VarChar(255)
+  labelAr       String            @db.VarChar(255)
+  labelEn       String            @db.VarChar(255)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @default(now()) @updatedAt
+  payments      ContractPayment[]
+
+  @@unique([conditionType, condition, labelAr, labelEn], map: "ContractPaymentCondition_unique_business_key")
+}
+
+model ContractDrawing {
+  id           Int      @id @default(autoincrement())
+  contractId   Int
+  url          String   @db.VarChar(1024)
+  fileName     String?  @db.VarChar(255)
+  mimeType     String?
+  sizeBytes    Int?
+  uploadedAt   DateTime @default(now()) @db.DateTime(0)
+  uploadedById Int?
+  contract     Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId])
+}
+
+/// البنود الخاصة ثنائية اللغة (العربي إلزامي/الإنجليزي اختياري)
+model ContractSpecialItem {
+  id         Int      @id @default(autoincrement())
+  contractId Int
+  labelAr    String   @db.Text
+  labelEn    String?  @db.Text
+  contract   Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([contractId])
+}
+
+model ClientLeadUpdate {
+  id             Int            @id @default(autoincrement())
+  title          String         @db.VarChar(255)
+  description    String?        @db.Text
+  status         UpdateStatus   @default(IN_PROGRESS)
+  createdAt      DateTime?      @default(now()) @db.DateTime(0)
+  updatedAt      DateTime?      @default(now()) @updatedAt @db.DateTime(0)
+  createdById    Int
+  clientLeadId   Int
+  isArchived     Boolean        @default(false)
+  department     String         @default("STAFF") @db.VarChar(255)
+  isDone         Boolean        @default(false)
+  createdBy      User           @relation(fields: [createdById], references: [id], onUpdate: Restrict, map: "ClientLeadUpdate_ibfk_1")
+  clientLead     ClientLead     @relation(fields: [clientLeadId], references: [id], onUpdate: Restrict, map: "ClientLeadUpdate_ibfk_2")
+  notes          Note[]
+  sharedSettings SharedUpdate[]
+
+  @@index([clientLeadId], map: "clientLeadId")
+  @@index([createdById], map: "createdById")
+}
+
+model SharedUpdate {
+  id                Int              @id @default(autoincrement())
+  updateId          Int
+  type              String           @db.VarChar(255)
+  isArchived        Boolean?         @default(false)
+  createdAt         DateTime?        @default(now()) @db.DateTime(0)
+  updatedAt         DateTime?        @default(now()) @updatedAt @db.DateTime(0)
+  excludeFromSearch Boolean          @default(false)
+  notes             Note[]
+  update            ClientLeadUpdate @relation(fields: [updateId], references: [id], onUpdate: Restrict, map: "SharedUpdate_ibfk_1")
+
+  @@index([updateId], map: "updateId")
+}
+
+model SalesStage {
+  id           Int            @id @default(autoincrement())
+  clientLeadId Int
+  userId       Int?
+  stage        SalesStageType
+  createdAt    DateTime?      @default(now()) @db.DateTime(0)
+  notes        Note[]
+  clientLead   ClientLead     @relation(fields: [clientLeadId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_salesStage_clientLead")
+  user         User?          @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "fk_salesStage_user")
+
+  @@unique([clientLeadId, stage], map: "clientLead_stage_unique")
+  @@index([clientLeadId], map: "idx_clientLeadId")
+  @@index([userId], map: "idx_userId")
+}
+
+model TelegramChannel {
+  id           Int        @id @default(autoincrement())
+  clientLeadId Int        @unique(map: "clientLeadId")
+  channelLink  String     @db.VarChar(255)
+  channelId    BigInt     @unique(map: "channelId")
+  description  String?    @db.Text
+  createdAt    DateTime?  @default(now()) @db.DateTime(0)
+  accessHash   BigInt
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id], onUpdate: Restrict, map: "TelegramChannel_ibfk_1")
+}
+
+model TelegramConnection {
+  id                      Int                      @id @default(autoincrement())
+  name                    String                   @unique @default("MAIN") @db.VarChar(100)
+  apiId                   String?
+  apiHash                 String?
+  sessionString           String?                  @db.Text
+  isActive                Boolean                  @default(true)
+  status                  TelegramConnectionStatus @default(DISCONNECTED)
+  phoneNumber             String?                  @db.VarChar(20)
+  lastCheckedAt           DateTime?
+  lastConnectedAt         DateTime?
+  lastError               String?                  @db.Text
+  notifiedOfDisconnection Boolean                  @default(false)
+  updatedByUserId         Int?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @default(now()) @updatedAt
+  updatedBy               User?                    @relation("TelegramConnectionUpdatedBy", fields: [updatedByUserId], references: [id])
+
+  @@index([isActive])
+  @@index([updatedByUserId])
+}
+
+model ClientLead {
+  id                   Int                         @id @default(autoincrement())
+  clientId             Int
+  userId               Int?
+  selectedCategory     LeadCategory
+  type                 LeadType                    @default(CONSTRUCTION_VILLA)
+  description          String?
+  discount             Decimal                     @default(0.00) @db.Decimal(10, 2)
+  emirate              Emirate?
+  price                String?
+  averagePrice         Decimal?                    @db.Decimal(10, 2)
+  priceWithOutDiscount Decimal                     @default(0.00) @db.Decimal(10, 2)
+  status               ClientLead_status           @default(NEW)
+  assignedAt           DateTime?
+  reasonToConvert      String?
+  createdAt            DateTime                    @default(now())
+  updatedAt            DateTime                    @updatedAt
+  clientDescription    String?                     @db.Text
+  stripieMetadata      String?                     @db.LongText
+  timeToContact        DateTime?                   @db.DateTime(0)
+  country              String?                     @db.VarChar(255)
+  priceNote            String?                     @db.Text
+  accountantId         Int?
+  paymentStatus        PaymentStatus?              @default(PENDING)
+  accountantAssignedAt DateTime?                   @db.DateTime(0)
+  ourCost              String?                     @db.VarChar(255)
+  contractorCost       String?                     @db.VarChar(255)
+  commissionCleared    Boolean?                    @default(false)
+  paymentSessionId     String?                     @db.VarChar(255)
+  telegramLink         String?                     @db.VarChar(255)
+  initialConsult       Boolean?                    @default(true)
+  leadType             LeadConversionType          @default(NORMAL)
+  previousLeadId       Int?
+  personality          ClientPersonality?
+  discoverySource      ClientLead_discoverySource?
+  finalizedDate        DateTime?                   @db.DateTime(0)
+  code                 String?                     @unique
+  stateOfTheProject    String?                     @db.Text
+  location             String?                     @db.VarChar(255)
+  projectType          String?                     @db.VarChar(255)
+  projectStage         String?                     @db.VarChar(255)
+  previousWork         String?                     @db.Text
+  hasArchitecturalPlan String?                     @db.VarChar(255)
+  serviceType          String?                     @db.VarChar(255)
+  decisionMaker        String?                     @db.VarChar(255)
+  bookingRequestStatus BookingLeadRequestStatus    @default(IN_PROGRESS)
+  bookingSubmittedAt   DateTime?
+  callReminders        CallReminder[]              @relation("clientLeadCallReminders")
+  chatRooms            ChatRoom[]
+  imageSessions        ClientImageSession[]
+  client               Client                      @relation(fields: [clientId], references: [id])
+  assignedTo           User?                       @relation(fields: [userId], references: [id])
+  accountant           User?                       @relation("AccountantLeads", fields: [accountantId], references: [id], onUpdate: Restrict, map: "fk_accountant")
+  updates              ClientLeadUpdate[]
+  commissions          Commission[]
+  contracts            Contract[]
+  driveNodeLinks       DriveNodeClientLead[]
+  extraServices        ExtraService[]
+  lastTelegramMessages FetchedTelegramMessage[]
+  files                File[]
+  meetingReminders     MeetingReminder[]           @relation("clientLeadMeetingReminders")
+  notes                Note[]
+  notifications        Notification[]
+  payments             Payment[]
+  priceOffers          PriceOffers[]
+  projects             Project[]
+  salesStages          SalesStage[]
+  sessionQuestions     SessionQuestion[]
+  tasks                Task[]
+  telegramChannel      TelegramChannel?
+  versaModel           VersaModel[]
+
+  @@index([clientId])
+  @@index([userId])
+  @@index([accountantId], map: "fk_accountant")
+}
+
+model FetchedTelegramMessage {
+  id           Int        @id @default(autoincrement())
+  clientLeadId Int
+  messageId    Int?
+  fetchedAt    DateTime?  @default(now()) @db.DateTime(0)
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id], onUpdate: Restrict, map: "fk_clientLeadId")
+
+  @@index([clientLeadId], map: "idx_clientLeadId")
+}
+
+model MeetingReminder {
+  id                                                           Int                 @id @default(autoincrement())
+  clientLeadId                                                 Int
+  time                                                         DateTime?           @db.DateTime(0)
+  status                                                       CallReminderStatus? @default(IN_PROGRESS)
+  meetingResult                                                String?             @db.Text
+  reminderReason                                               String?             @db.Text
+  userId                                                       Int
+  createdAt                                                    DateTime?           @default(now()) @db.DateTime(0)
+  updatedAt                                                    DateTime?           @default(now()) @updatedAt @db.DateTime(0)
+  isAdmin                                                      Boolean             @default(false)
+  adminId                                                      Int?
+  type                                                         MeetingType?
+  availableSlotId                                              Int?                @unique(map: "availableSlotId")
+  token                                                        String?             @unique(map: "token")
+  userTimezone                                                 String?             @db.VarChar(100)
+  notified                                                     Boolean             @default(false)
+  notified4h                                                   Boolean             @default(false)
+  notified12h                                                  Boolean             @default(false)
+  googleEventId                                                String?             @db.VarChar(255)
+  googleCalendarSynced                                         Boolean             @default(false)
+  availableSlot                                                AvailableSlot?      @relation("SlotToMeeting")
+  deliverySchedules                                            DeliverySchedule[]
+  admin                                                        User?               @relation("AdminMeetingReminders", fields: [adminId], references: [id], onUpdate: Restrict, map: "fk_admin_user")
+  clientLead                                                   ClientLead          @relation("clientLeadMeetingReminders", fields: [clientLeadId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_meeting_clientLead")
+  AvailableSlot_MeetingReminder_availableSlotIdToAvailableSlot AvailableSlot?      @relation("MeetingReminder_availableSlotIdToAvailableSlot", fields: [availableSlotId], references: [id], onUpdate: Restrict, map: "fk_meeting_slot")
+  user                                                         User                @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_meeting_user")
+
+  @@index([adminId], map: "idx_adminId")
+  @@index([clientLeadId], map: "idx_clientLeadId")
+  @@index([userId], map: "idx_userId")
+}
+
+model DeliverySchedule {
+  id                Int              @id @default(autoincrement())
+  projectId         Int?
+  name              String?          @db.VarChar(255)
+  deliveryAt        DateTime         @db.DateTime(0)
+  meetingReminderId Int?
+  createdById       Int?
+  createdAt         DateTime         @default(now()) @db.DateTime(0)
+  stageId           Int?             @unique
+  stage             ContractStage?   @relation(fields: [stageId], references: [id])
+  createdBy         User?            @relation("DeliverySchedulesCreatedBy", fields: [createdById], references: [id], map: "fk_DeliverySchedule_createdBy")
+  meeting           MeetingReminder? @relation(fields: [meetingReminderId], references: [id], map: "fk_DeliverySchedule_meeting")
+  project           Project?         @relation(fields: [projectId], references: [id], onDelete: Cascade, map: "fk_DeliverySchedule_project")
+  notes             Note[]
+
+  @@index([createdById], map: "idx_DeliverySchedule_createdById")
+  @@index([deliveryAt], map: "idx_DeliverySchedule_deliveryAt")
+  @@index([meetingReminderId], map: "idx_DeliverySchedule_meetingReminderId")
+  @@index([projectId], map: "idx_DeliverySchedule_projectId")
+}
+
+model Commission {
+  id               Int        @id @default(autoincrement())
+  userId           Int
+  leadId           Int
+  amount           Decimal    @db.Decimal(10, 2)
+  amountPaid       Decimal    @default(0.00) @db.Decimal(10, 2)
+  createdAt        DateTime   @default(now()) @db.DateTime(0)
+  isCleared        Boolean    @default(false)
+  commissionReason String     @default("Finalized Lead Commission") @db.VarChar(255)
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "Commission_ibfk_1")
+  lead             ClientLead @relation(fields: [leadId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "Commission_ibfk_2")
+  notes            Note[]
+
+  @@index([leadId], map: "leadId")
+  @@index([userId], map: "userId")
+}
+
+model Project {
+  id                Int                @id @default(autoincrement())
+  clientLeadId      Int
+  deliveryTime      DateTime?
+  priority          Priority           @default(MEDIUM)
+  area              Decimal?           @db.Decimal(10, 2)
+  startedAt         DateTime?
+  endedAt           DateTime?
+  status            String
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  type              String
+  role              Project_role?      @default(THREE_D_DESIGNER)
+  groupTitle        String             @default("Initial Project") @db.VarChar(255)
+  groupId           Int                @default(1)
+  isModification    Boolean            @default(false)
+  notified7Days     Boolean?           @default(false)
+  notified3Days     Boolean?           @default(false)
+  notified2Days     Boolean?           @default(false)
+  notified1Day      Boolean?           @default(false)
+  contractId        Int?
+  assignments       Assignment[]
+  chatRooms         ChatRoom[]
+  chatRoomProjects  ChatRoomProject[]  @relation("ChatRoomProjects")
+  payments          ContractPayment[]
+  contractStages    ContractStage[]
+  deliverySchedules DeliverySchedule[]
+  driveNodeLinks    DriveNodeProject[]
+  clientLead        ClientLead         @relation(fields: [clientLeadId], references: [id])
+  contract          Contract?          @relation(fields: [contractId], references: [id], map: "fk_project_contract")
+  tasks             Task[]
+
+  @@index([clientLeadId])
+  @@index([groupId])
+  @@index([contractId], map: "idx_project_contractId")
+}
+
+model Task {
+  id           Int         @id @default(autoincrement())
+  title        String      @db.VarChar(255)
+  description  String?     @db.Text
+  status       TaskStatus  @default(TODO)
+  priority     Priority    @default(MEDIUM)
+  createdAt    DateTime    @default(now())
+  dueDate      DateTime?
+  finishedAt   DateTime?
+  projectId    Int?
+  userId       Int?
+  type         String      @default("NORMAL")
+  createdById  Int?
+  clientLeadId Int?
+  updatedAt    DateTime?   @updatedAt @db.DateTime(0)
+  notes        Note[]
+  clientLead   ClientLead? @relation(fields: [clientLeadId], references: [id], onUpdate: Restrict, map: "FK_Task_ClientLead")
+  createdBy    User?       @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "FK_Task_CreatedBy")
+  project      Project?    @relation(fields: [projectId], references: [id])
+  user         User?       @relation(fields: [userId], references: [id])
+
+  @@index([projectId])
+  @@index([userId])
+  @@index([clientLeadId], map: "FK_Task_ClientLead")
+  @@index([createdById], map: "FK_Task_CreatedBy")
+}
+
+model Payment {
+  id            Int            @id @default(autoincrement())
+  clientLeadId  Int
+  status        PaymentStatus? @default(PENDING)
+  amount        Decimal        @db.Decimal(10, 2)
+  amountPaid    Decimal?       @default(0.00) @db.Decimal(10, 2)
+  amountLeft    Decimal        @db.Decimal(10, 2)
+  createdAt     DateTime?      @default(now()) @db.DateTime(0)
+  updatedAt     DateTime?      @default(now()) @updatedAt @db.DateTime(0)
+  paymentReason String?        @db.Text
+  paymentLevel  String?        @db.VarChar(255)
+  invoices      Invoice[]
+  notes         Note[]
+  clientLead    ClientLead     @relation(fields: [clientLeadId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "Payment_ibfk_1")
+
+  @@index([clientLeadId], map: "clientLeadId")
+}
+
+model Invoice {
+  id            Int       @id @default(autoincrement())
+  paymentId     Int
+  issuedDate    DateTime? @default(now()) @db.DateTime(0)
+  amount        Decimal   @db.Decimal(10, 2)
+  createdAt     DateTime? @default(now()) @db.DateTime(0)
+  invoiceNumber String?   @unique(map: "invoiceNumber") @db.VarChar(20)
+  payment       Payment   @relation(fields: [paymentId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "Invoice_ibfk_1")
+  notes         Note[]
+
+  @@index([paymentId], map: "fk_payment_id")
+}
+
+model ExtraService {
+  id           Int        @id @default(autoincrement())
+  clientLeadId Int
+  price        Decimal    @db.Decimal(10, 2)
+  note         String?    @db.Text
+  createdAt    DateTime?  @default(now()) @db.DateTime(0)
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "ExtraService_ibfk_1")
+
+  @@index([clientLeadId], map: "clientLeadId")
+}
+
+model PriceOffers {
+  id           Int        @id @default(autoincrement())
+  clientLeadId Int
+  userId       Int
+  minPrice     Decimal?   @db.Decimal(10, 2)
+  maxPrice     Decimal?   @db.Decimal(10, 2)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  url          String?    @db.VarChar(255)
+  note         String?    @db.Text
+  isAccepted   Boolean?   @default(false)
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+
+  @@index([clientLeadId])
+  @@index([userId], map: "PriceOffers_userId_fkey")
+}
+
+model CallReminder {
+  id             Int                @id @default(autoincrement())
+  clientLeadId   Int
+  time           DateTime
+  status         CallReminderStatus @default(IN_PROGRESS)
+  callResult     String?            @db.Text
+  reminderReason String?            @db.Text
+  userId         Int
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  notified       Boolean            @default(false)
+  clientLead     ClientLead         @relation("clientLeadCallReminders", fields: [clientLeadId], references: [id])
+  user           User               @relation(fields: [userId], references: [id])
+
+  @@index([clientLeadId])
+  @@index([userId])
+}
+
+model File {
+  id           Int        @id @default(autoincrement())
+  name         String     @db.VarChar(255)
+  url          String     @db.VarChar(255)
+  description  String?    @db.Text
+  clientLeadId Int
+  isUserFile   Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  userId       Int?
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
+  user         User?      @relation(fields: [userId], references: [id])
+
+  @@index([clientLeadId, isUserFile])
+  @@index([userId], map: "File_userId_fkey")
+}
+
+model User {
+  id                                                       Int                    @id @default(autoincrement())
+  email                                                    String                 @unique @db.VarChar(255)
+  name                                                     String                 @db.VarChar(255)
+  password                                                 String                 @db.VarChar(255)
+  isActive                                                 Boolean                @default(true)
+  role                                                     UserRole?              @default(STAFF)
+  createdAt                                                DateTime               @default(now())
+  updatedAt                                                DateTime               @updatedAt
+  lastSeenAt                                               DateTime?              @db.DateTime(0)
+  maxLeadsCounts                                           Int?                   @default(50)
+  hasLogs                                                  Boolean?               @default(false)
+  baseSalaryId                                             Int?
+  monthlySalaryId                                          Int?
+  notAllowedCountries                                      String?                @db.LongText
+  isPrimary                                                Boolean                @default(false)
+  isSuperSales                                             Boolean                @default(false)
+  telegramUsername                                         String?                @db.VarChar(255)
+  maxLeadCountPerDay                                       Int                    @default(5)
+  googleRefreshToken                                       String?                @db.LongText
+  googleAccessToken                                        String?                @db.LongText
+  googleTokenExpiresAt                                     DateTime?
+  googleCalendarId                                         String?
+  googleEmail                                              String?                @db.VarChar(255)
+  profilePicture                                           String?                @db.LongText
+  allowNotification                                        Boolean                @default(true)
+  allowEmailing                                            Boolean                @default(true)
+  answers                                                  Answer[]
+  assignments                                              Assignment[]
+  autoAssignments                                          AutoAssignment[]
+  availableDays                                            AvailableDay[]
+  baseSalary                                               BaseEmployeeSalary?
+  callsInitiated                                           Call[]
+  callParticipations                                       CallParticipant[]
+  callReminders                                            CallReminder[]
+  certificates                                             Certificate[]
+  chatBookmarks                                            ChatBookmark[]
+  chatMemberships                                          ChatMember[]
+  chatMentions                                             ChatMention[]
+  chatMessages                                             ChatMessage[]
+  pinnedMessages                                           ChatPinnedMessage[]
+  chatReactions                                            ChatReaction[]
+  chatRoomsCreated                                         ChatRoom[]             @relation("ChatRoomCreator")
+  scheduledMessages                                        ChatScheduledMessage[]
+  chatTemplates                                            ChatTemplate[]
+  createdImageSessions                                     ClientImageSession[]
+  clientLeads                                              ClientLead[]
+  accountantLeads                                          ClientLead[]           @relation("AccountantLeads")
+  updates                                                  ClientLeadUpdate[]
+  commissions                                              Commission[]
+  courseProgress                                           CourseProgress[]
+  deliverySchedulesCreated                                 DeliverySchedule[]     @relation("DeliverySchedulesCreatedBy")
+  driveAcls                                                DriveAcl[]
+  driveNodesOwned                                          DriveNode[]
+  driveSharesCreated                                       DrivePublicShare[]
+  files                                                    File[]
+  allowedLessons                                           LessonAccess[]
+  homeWorks                                                LessonHomework[]
+  adminMeetingReminders                                    MeetingReminder[]      @relation("AdminMeetingReminders")
+  meetingReminders                                         MeetingReminder[]
+  userNotes                                                Note[]                 @relation("UserSubjectNotes")
+  notes                                                    Note[]
+  staffNotifications                                       Notification[]         @relation("StaffNotifications")
+  notifications                                            Notification[]         @relation("UserNotifications")
+  priceOffers                                              PriceOffers[]
+  salesStages                                              SalesStage[]
+  createdQuestions                                         SessionQuestion[]
+  createdTasks                                             Task[]                 @relation("CreatedTasks")
+  tasks                                                    Task[]
+  telegramConnectionsUpdated                               TelegramConnection[]   @relation("TelegramConnectionUpdatedBy")
+  examAttempts                                             TestAttempt[]
+  BaseEmployeeSalary_User_baseSalaryIdToBaseEmployeeSalary BaseEmployeeSalary?    @relation("User_baseSalaryIdToBaseEmployeeSalary", fields: [baseSalaryId], references: [id], onUpdate: Restrict, map: "User_ibfk_1")
+  MonthlySalary                                            MonthlySalary?         @relation(fields: [monthlySalaryId], references: [id], onUpdate: Restrict, map: "User_ibfk_2")
+  logs                                                     UserLog[]
+  subRoles                                                 UserSubRole[]
+  versaModels                                              VersaModel[]
+
+  @@index([email])
+  @@index([baseSalaryId], map: "baseSalaryId")
+  @@index([email], map: "idx_user_email")
+  @@index([monthlySalaryId], map: "monthlySalaryId")
+}
+
+model AutoAssignment {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+}
+
+model UserSubRole {
+  id      Int                 @id @default(autoincrement())
+  userId  Int
+  subRole UserSubRole_subRole
+  user    User                @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "UserSubRole_ibfk_1")
+
+  @@unique([userId, subRole], map: "userId")
+}
+
+model UserLog {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  date         DateTime @default(now()) @db.DateTime(0)
+  totalMinutes Int      @default(0)
+  description  String?  @db.Text
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_user")
+
+  @@index([userId], map: "idx_user")
+}
+
+model Assignment {
+  id         Int             @id @default(autoincrement())
+  userId     Int
+  projectId  Int?
+  type       String?         @db.VarChar(255)
+  role       Assignment_role @default(THREE_D_DESIGNER)
+  assignedAt DateTime?       @default(now())
+  createdAt  DateTime        @default(now())
+  project    Project?        @relation(fields: [projectId], references: [id])
+  user       User            @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([projectId])
+}
+
+model Client {
+  id                           Int               @id @default(autoincrement())
+  name                         String            @db.VarChar(255)
+  arName                       String?           @db.VarChar(255)
+  enName                       String?           @db.VarChar(255)
+  phone                        String            @db.VarChar(20)
+  email                        String            @unique @db.VarChar(255)
+  createdAt                    DateTime          @default(now())
+  updatedAt                    DateTime          @updatedAt
+  lastSeenAt                   DateTime?         @db.DateTime(0)
+  contactAgreement             Boolean?
+  contactInitialPriceAgreement Boolean?
+  callParticipations           CallParticipant[]
+  chatBookmarks                ChatBookmark[]
+  chatMemberships              ChatMember[]
+  chatMentions                 ChatMention[]
+  chatMessages                 ChatMessage[]
+  chatReactions                ChatReaction[]
+  clientLeads                  ClientLead[]
+
+  @@index([email])
+}
+
+model Note {
+  id                    Int                  @id @default(autoincrement())
+  content               String?              @db.Text
+  clientLeadId          Int?
+  userId                Int
+  createdAt             DateTime             @default(now())
+  baseEmployeeSalaryId  Int?
+  rentId                Int?
+  rentPeriodId          Int?
+  operationalExpensesId Int?
+  paymentId             Int?
+  invoiceId             Int?
+  attachment            String?              @db.Text
+  taskId                Int?
+  commissionId          Int?
+  updateId              Int?
+  sharedUpdateId        Int?
+  imageSessionId        Int?
+  selectedImageId       Int?
+  contractId            Int?
+  salesStageId          Int?
+  deliveryScheduleId    Int?
+  notedUserId           Int?
+  invoice               Invoice?             @relation(fields: [invoiceId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "FK_Invoice_Notes")
+  baseEmployeeSalary    BaseEmployeeSalary?  @relation(fields: [baseEmployeeSalaryId], references: [id])
+  clientLead            ClientLead?          @relation(fields: [clientLeadId], references: [id], onDelete: Restrict)
+  update                ClientLeadUpdate?    @relation(fields: [updateId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "Note_ibfk_1")
+  sharedUpdate          SharedUpdate?        @relation(fields: [sharedUpdateId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "Note_ibfk_2")
+  notedUser             User?                @relation("UserSubjectNotes", fields: [notedUserId], references: [id])
+  operationalExpenses   OperationalExpenses? @relation(fields: [operationalExpensesId], references: [id])
+  payment               Payment?             @relation(fields: [paymentId], references: [id])
+  rent                  Rent?                @relation(fields: [rentId], references: [id])
+  rentPeriod            RentPeriod?          @relation(fields: [rentPeriodId], references: [id])
+  task                  Task?                @relation(fields: [taskId], references: [id])
+  user                  User                 @relation(fields: [userId], references: [id])
+  deliverySchedule      DeliverySchedule?    @relation(fields: [deliveryScheduleId], references: [id], map: "fk_Note_DeliverySchedule")
+  commission            Commission?          @relation(fields: [commissionId], references: [id], onUpdate: Restrict, map: "fk_note_commission")
+  contract              Contract?            @relation(fields: [contractId], references: [id], onUpdate: Restrict, map: "fk_note_contract")
+  clientImageSession    ClientImageSession?  @relation(fields: [imageSessionId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_note_image_session")
+  salesStage            SalesStage?          @relation(fields: [salesStageId], references: [id], onUpdate: Restrict, map: "fk_note_salesStage")
+  clientSelectedImage   ClientSelectedImage? @relation(fields: [selectedImageId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_note_selected_image")
+
+  @@index([taskId])
+  @@index([clientLeadId])
+  @@index([userId])
+  @@index([baseEmployeeSalaryId])
+  @@index([rentId])
+  @@index([rentPeriodId])
+  @@index([operationalExpensesId])
+  @@index([paymentId])
+  @@index([notedUserId])
+  @@index([invoiceId], map: "IDX_Invoice_Notes")
+  @@index([commissionId], map: "commissionId")
+  @@index([contractId], map: "contractId_index")
+  @@index([imageSessionId], map: "fk_note_image_session")
+  @@index([selectedImageId], map: "fk_note_selected_image")
+  @@index([deliveryScheduleId], map: "idx_Note_deliveryScheduleId")
+  @@index([salesStageId], map: "idx_salesStageId")
+  @@index([sharedUpdateId], map: "sharedUpdateId")
+  @@index([updateId], map: "updateId")
+}
+
+model Notification {
+  id           Int               @id @default(autoincrement())
+  type         Notification_type
+  content      String            @db.Text
+  contentType  ContentType       @default(TEXT)
+  link         String?           @db.VarChar(255)
+  isRead       Boolean           @default(false)
+  userId       Int?
+  staffId      Int?
+  clientLeadId Int?
+  createdAt    DateTime          @default(now())
+  clientLead   ClientLead?       @relation(fields: [clientLeadId], references: [id])
+  staff        User?             @relation("StaffNotifications", fields: [staffId], references: [id])
+  user         User?             @relation("UserNotifications", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([clientLeadId])
+  @@index([staffId], map: "Notification_staffId_fkey")
+}
+
+model FixedData {
+  id          Int       @id @default(autoincrement())
+  title       String    @db.VarChar(255)
+  description String?   @db.Text
+  createdAt   DateTime? @default(now()) @db.Timestamp(0)
+  updatedAt   DateTime? @default(now()) @updatedAt @db.Timestamp(0)
+}
+
+model BaseEmployeeSalary {
+  id                                         Int             @id @default(autoincrement())
+  userId                                     Int             @unique(map: "userId")
+  baseSalary                                 Decimal         @db.Decimal(10, 2)
+  baseWorkHours                              Int
+  notes                                      String?         @db.Text
+  createdAt                                  DateTime?       @default(now()) @db.DateTime(0)
+  updatedAt                                  DateTime?       @default(now()) @updatedAt @db.DateTime(0)
+  taxAmount                                  Decimal?        @default(0.00) @db.Decimal(10, 2)
+  employee                                   User            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "BaseEmployeeSalary_ibfk_1")
+  monthlySalaries                            MonthlySalary[]
+  // `notes` scalar above is a real prod column; this Note[] back-relation was renamed to avoid the name clash.
+  noteList                                   Note[]
+  User_User_baseSalaryIdToBaseEmployeeSalary User[]          @relation("User_baseSalaryIdToBaseEmployeeSalary")
+}
+
+model MonthlySalary {
+  id                                             Int                @id @default(autoincrement())
+  baseSalaryId                                   Int
+  totalHoursWorked                               Int
+  overtimeHours                                  Int?               @default(0)
+  bonuses                                        Decimal?           @default(0.00) @db.Decimal(10, 2)
+  deductions                                     Decimal?           @default(0.00) @db.Decimal(10, 2)
+  netSalary                                      Decimal            @db.Decimal(10, 2)
+  isFulfilled                                    Boolean?           @default(false)
+  paymentDate                                    DateTime?          @db.DateTime(0)
+  outcomeId                                      Int?
+  createdAt                                      DateTime?          @default(now()) @db.DateTime(0)
+  updatedAt                                      DateTime?          @default(now()) @updatedAt @db.DateTime(0)
+  baseSalary                                     BaseEmployeeSalary @relation(fields: [baseSalaryId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "MonthlySalary_ibfk_2")
+  outcome                                        Outcome?           @relation("MonthlySalaryToOutcome", fields: [outcomeId], references: [id], onUpdate: Restrict, map: "MonthlySalary_ibfk_3")
+  Outcome_Outcome_monthlySalariesToMonthlySalary Outcome[]          @relation("Outcome_monthlySalariesToMonthlySalary")
+  User                                           User[]
+
+  @@index([baseSalaryId], map: "baseSalaryId")
+  @@index([outcomeId], map: "outcomeId")
+}
+
+model Rent {
+  id          Int          @id @default(autoincrement())
+  name        String       @db.VarChar(255)
+  description String?      @db.Text
+  notes       String?      @db.Text
+  createdAt   DateTime?    @default(now()) @db.DateTime(0)
+  updatedAt   DateTime?    @default(now()) @updatedAt @db.DateTime(0)
+  // `notes` scalar above is a real prod column; this Note[] back-relation was renamed to avoid the name clash.
+  noteList    Note[]
+  rentPeriods RentPeriod[]
+}
+
+model RentPeriod {
+  id                                      Int       @id @default(autoincrement())
+  rentId                                  Int?
+  startDate                               DateTime? @db.DateTime(0)
+  endDate                                 DateTime? @db.DateTime(0)
+  amount                                  Decimal?  @db.Decimal(10, 2)
+  isPaid                                  Boolean?  @default(false)
+  notes                                   String?   @db.Text
+  createdAt                               DateTime? @default(now()) @db.DateTime(0)
+  updatedAt                               DateTime? @default(now()) @updatedAt @db.DateTime(0)
+  outcomeId                               Int?
+  // `notes` scalar above is a real prod column; this Note[] back-relation was renamed to avoid the name clash.
+  noteList                                Note[]
+  Outcome_Outcome_rentPeriodsToRentPeriod Outcome[] @relation("Outcome_rentPeriodsToRentPeriod")
+  rent                                    Rent?     @relation(fields: [rentId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "RentPeriod_ibfk_1")
+  outcome                                 Outcome?  @relation("RentPeriodToOutcome", fields: [outcomeId], references: [id], onUpdate: Restrict, map: "RentPeriod_ibfk_2")
+
+  @@index([outcomeId], map: "outcomeId")
+  @@index([rentId], map: "rentId")
+}
+
+model OperationalExpenses {
+  id                                                       Int       @id @default(autoincrement())
+  category                                                 String    @db.VarChar(255)
+  description                                              String?   @db.Text
+  amount                                                   Decimal?  @db.Decimal(10, 2)
+  paymentDate                                              DateTime? @db.DateTime(0)
+  paymentStatus                                            String?   @default("PENDING") @db.VarChar(50)
+  notes                                                    String?   @db.Text
+  createdAt                                                DateTime? @default(now()) @db.DateTime(0)
+  updatedAt                                                DateTime? @default(now()) @updatedAt @db.DateTime(0)
+  outcomeId                                                Int?
+  // `notes` scalar above is a real prod column; this Note[] back-relation was renamed to avoid the name clash.
+  noteList                                                 Note[]
+  outcome                                                  Outcome?  @relation("OperationalExpensesToOutcome", fields: [outcomeId], references: [id], onUpdate: Restrict, map: "OperationalExpenses_ibfk_1")
+  Outcome_Outcome_operationalExpensesToOperationalExpenses Outcome[] @relation("Outcome_operationalExpensesToOperationalExpenses")
+
+  @@index([outcomeId], map: "outcomeId")
+}
+
+model Outcome {
+  id                                                                   Int                   @id @default(autoincrement())
+  type                                                                 String?               @db.VarChar(50)
+  amount                                                               Decimal?              @db.Decimal(10, 2)
+  description                                                          String?               @db.Text
+  createdAt                                                            DateTime?             @default(now()) @db.DateTime(0)
+  updatedAt                                                            DateTime?             @default(now()) @updatedAt @db.DateTime(0)
+  // Prod reality: these are scalar FK columns on Outcome (one Outcome -> one salary/expense/rent-period).
+  // The old schema's `[]` list back-relations here were a wrong inverse model and collided with these
+  // scalar column names, so they were removed; the correct to-one relations are declared below.
+  rentPeriods                                                          Int?
+  operationalExpenses                                                  Int?
+  monthlySalaries                                                      Int?
+  MonthlySalary_Outcome_monthlySalariesToMonthlySalary                 MonthlySalary?        @relation("Outcome_monthlySalariesToMonthlySalary", fields: [monthlySalaries], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_monthly_salaries")
+  OperationalExpenses_Outcome_operationalExpensesToOperationalExpenses OperationalExpenses?  @relation("Outcome_operationalExpensesToOperationalExpenses", fields: [operationalExpenses], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_operational_expense")
+  RentPeriod_Outcome_rentPeriodsToRentPeriod                           RentPeriod?           @relation("Outcome_rentPeriodsToRentPeriod", fields: [rentPeriods], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_rent_period")
+  // Opposite sides of the SECOND (distinct) FK direction: <model>.outcomeId -> Outcome.id
+  // (prod FKs MonthlySalary_ibfk_3 / OperationalExpenses_ibfk_1 / RentPeriod_ibfk_2).
+  // db pull could not name these because the scalar column names above were taken; named explicitly here.
+  monthlySalariesByOutcome                                             MonthlySalary[]       @relation("MonthlySalaryToOutcome")
+  operationalExpensesByOutcome                                         OperationalExpenses[] @relation("OperationalExpensesToOutcome")
+  rentPeriodsByOutcome                                                 RentPeriod[]          @relation("RentPeriodToOutcome")
+
+  @@index([operationalExpenses], map: "fk_operational_expense")
+  @@index([rentPeriods], map: "fk_rent_period")
+  @@index([monthlySalaries], map: "idx_monthly_salaries")
+}
+
+model QuestionType {
+  id               Int               @id @default(autoincrement())
+  name             String            @unique(map: "name") @db.VarChar(255)
+  label            String            @db.VarChar(255)
+  createdAt        DateTime?         @default(now()) @db.DateTime(0)
+  updatedAt        DateTime?         @default(now()) @updatedAt @db.DateTime(0)
+  baseQuestions    BaseQuestion[]
+  sessionQuestions SessionQuestion[]
+}
+
+model BaseQuestion {
+  id             Int          @id @default(autoincrement())
+  questionTypeId Int
+  title          String       @db.Text
+  order          Int?         @default(0)
+  createdAt      DateTime?    @default(now()) @db.DateTime(0)
+  updatedAt      DateTime?    @default(now()) @updatedAt @db.DateTime(0)
+  isArchived     Boolean      @default(false)
+  questionType   QuestionType @relation(fields: [questionTypeId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "BaseQuestion_ibfk_1")
+
+  @@index([questionTypeId], map: "questionTypeId")
+}
+
+model SessionQuestion {
+  id             Int          @id @default(autoincrement())
+  questionTypeId Int
+  title          String       @db.Text
+  isCustom       Boolean?     @default(false)
+  clientLeadId   Int
+  userId         Int?
+  order          Int?         @default(0)
+  createdAt      DateTime?    @default(now()) @db.DateTime(0)
+  answer         Answer?
+  questionType   QuestionType @relation(fields: [questionTypeId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "SessionQuestion_ibfk_1")
+  clientLead     ClientLead   @relation(fields: [clientLeadId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "SessionQuestion_ibfk_2")
+  createdBy      User?        @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "SessionQuestion_ibfk_3")
+
+  @@index([clientLeadId], map: "clientLeadId")
+  @@index([questionTypeId], map: "questionTypeId")
+  @@index([userId], map: "userId")
+}
+
+model Answer {
+  id                Int             @id @default(autoincrement())
+  response          String          @db.Text
+  sessionQuestionId Int             @unique(map: "sessionQuestionId")
+  userId            Int
+  createdAt         DateTime?       @default(now()) @db.DateTime(0)
+  sessionQuestion   SessionQuestion @relation(fields: [sessionQuestionId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "Answer_ibfk_1")
+  answeredBy        User            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "Answer_ibfk_2")
+
+  @@index([userId], map: "userId")
+}
+
+model ObjectionCategory {
+  id        Int          @id @default(autoincrement())
+  title     String       @db.VarChar(255)
+  label     String?      @db.VarChar(255)
+  createdAt DateTime?    @default(now()) @db.DateTime(0)
+  versas    VersaModel[]
+}
+
+model VersaModel {
+  id           Int                @id @default(autoincrement())
+  clientLeadId Int
+  userId       Int?
+  categoryId   Int?
+  vId          Int?               @unique(map: "vId")
+  eId          Int?               @unique(map: "eId")
+  rId          Int?               @unique(map: "rId")
+  sId          Int?               @unique(map: "sId")
+  aId          Int?               @unique(map: "aId")
+  createdAt    DateTime?          @default(now()) @db.DateTime(0)
+  updatedAt    DateTime?          @default(now()) @updatedAt @db.DateTime(0)
+  clientLead   ClientLead         @relation(fields: [clientLeadId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "VersaModel_ibfk_1")
+  createdBy    User?              @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "VersaModel_ibfk_2")
+  category     ObjectionCategory? @relation(fields: [categoryId], references: [id], onUpdate: Restrict, map: "VersaModel_ibfk_3")
+  v            VersaStep?         @relation("VStep", fields: [vId], references: [id], onUpdate: Restrict, map: "VersaModel_ibfk_4")
+  e            VersaStep?         @relation("EStep", fields: [eId], references: [id], onUpdate: Restrict, map: "VersaModel_ibfk_5")
+  r            VersaStep?         @relation("RStep", fields: [rId], references: [id], onUpdate: Restrict, map: "VersaModel_ibfk_6")
+  s            VersaStep?         @relation("SStep", fields: [sId], references: [id], onUpdate: Restrict, map: "VersaModel_ibfk_7")
+  a            VersaStep?         @relation("AStep", fields: [aId], references: [id], onUpdate: Restrict, map: "VersaModel_ibfk_8")
+
+  @@index([categoryId], map: "categoryId")
+  @@index([clientLeadId], map: "clientLeadId")
+  @@index([userId], map: "userId")
+}
+
+model VersaStep {
+  id             Int         @id @default(autoincrement())
+  label          String?     @db.VarChar(255)
+  question       String?     @db.Text
+  answer         String?     @db.Text
+  clientResponse String?     @db.Text
+  vVersa         VersaModel? @relation("VStep")
+  eVersa         VersaModel? @relation("EStep")
+  rVersa         VersaModel? @relation("RStep")
+  sVersa         VersaModel? @relation("SStep")
+  aVersa         VersaModel? @relation("AStep")
+}
+
+model AvailableDay {
+  id        Int             @id @default(autoincrement())
+  date      DateTime        @db.DateTime(0)
+  userId    Int
+  createdAt DateTime        @default(now()) @db.DateTime(0)
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_available_day_user")
+  slots     AvailableSlot[]
+
+  @@unique([userId, date], map: "unique_user_date")
+  @@index([userId], map: "fk_available_day_userId")
+}
+
+model AvailableSlot {
+  id                                                             Int              @id @default(autoincrement())
+  startTime                                                      DateTime         @db.DateTime(0)
+  endTime                                                        DateTime         @db.DateTime(0)
+  availableDayId                                                 Int
+  isBooked                                                       Boolean          @default(false)
+  meetingReminderId                                              Int?             @unique(map: "meetingReminderId")
+  userTimezone                                                   String?          @db.VarChar(100)
+  availableDay                                                   AvailableDay     @relation(fields: [availableDayId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_slot_day")
+  meetingReminder                                                MeetingReminder? @relation("SlotToMeeting", fields: [meetingReminderId], references: [id], onUpdate: Restrict, map: "fk_slot_meetingReminder")
+  MeetingReminder_MeetingReminder_availableSlotIdToAvailableSlot MeetingReminder? @relation("MeetingReminder_availableSlotIdToAvailableSlot")
+
+  @@index([availableDayId], map: "fk_slot_dayId")
+}
+
+model Language {
+  id         Int         @id @default(autoincrement())
+  code       String      @unique(map: "code") @db.VarChar(255)
+  name       String      @db.VarChar(255)
+  isArchived Boolean     @default(false)
+  longTexts  TextLong[]
+  shortTexts TextShort[]
+}
+
+model TextShort {
+  id             Int           @id @default(autoincrement())
+  text           String        @db.VarChar(255)
+  languageId     Int
+  materialId     Int?
+  styleId        Int?
+  colorPatternId Int?
+  pageInfoId     Int?
+  spaceId        Int?
+  language       Language      @relation(fields: [languageId], references: [id], map: "TextShort_ibfk_1")
+  material       Material?     @relation("MaterialTitles", fields: [materialId], references: [id], map: "TextShort_ibfk_2")
+  style          Style?        @relation("StyleTitles", fields: [styleId], references: [id], map: "TextShort_ibfk_3")
+  colorPattern   ColorPattern? @relation("ColorPatternTitles", fields: [colorPatternId], references: [id], map: "TextShort_ibfk_4")
+  pageInfo       PageInfo?     @relation("PageInfoTitles", fields: [pageInfoId], references: [id], map: "TextShort_ibfk_5")
+  space          Space?        @relation("SpaceTitles", fields: [spaceId], references: [id], map: "fk_textshort_space_title")
+
+  @@index([colorPatternId], map: "colorPatternId")
+  @@index([spaceId], map: "fk_textshort_space_title")
+  @@index([languageId], map: "languageId")
+  @@index([materialId], map: "materialId")
+  @@index([pageInfoId], map: "pageInfoId")
+  @@index([styleId], map: "styleId")
+}
+
+model TextLong {
+  id             Int           @id @default(autoincrement())
+  content        String        @db.Text
+  languageId     Int
+  materialId     Int?
+  styleId        Int?
+  colorPatternId Int?
+  pageInfoId     Int?
+  proId          Int?
+  conId          Int?
+  language       Language      @relation(fields: [languageId], references: [id], map: "TextLong_ibfk_1")
+  material       Material?     @relation("MaterialDescriptions", fields: [materialId], references: [id], map: "TextLong_ibfk_2")
+  style          Style?        @relation("StyleDescriptions", fields: [styleId], references: [id], map: "TextLong_ibfk_3")
+  colorPattern   ColorPattern? @relation("ColorPatternDescriptions", fields: [colorPatternId], references: [id], map: "TextLong_ibfk_4")
+  pageInfo       PageInfo?     @relation("PageInfoContents", fields: [pageInfoId], references: [id], map: "TextLong_ibfk_5")
+  pro            Pro?          @relation("ProTexts", fields: [proId], references: [id], map: "fk_textlong_pro")
+
+  @@index([colorPatternId], map: "colorPatternId")
+  @@index([proId], map: "fk_textlong_pro")
+  @@index([languageId], map: "languageId")
+  @@index([materialId], map: "materialId")
+  @@index([pageInfoId], map: "pageInfoId")
+  @@index([styleId], map: "styleId")
+}
+
+model Pro {
+  id         Int        @id @default(autoincrement())
+  materialId Int?
+  styleId    Int?
+  order      Int        @default(0)
+  material   Material?  @relation(fields: [materialId], references: [id], map: "Pro_ibfk_1")
+  style      Style?     @relation(fields: [styleId], references: [id], map: "Pro_ibfk_2")
+  content    TextLong[] @relation("ProTexts")
+
+  @@index([materialId], map: "materialId")
+  @@index([styleId], map: "styleId")
+}
+
+model Con {
+  id         Int       @id @default(autoincrement())
+  materialId Int?
+  styleId    Int?
+  order      Int       @default(0)
+  material   Material? @relation(fields: [materialId], references: [id], map: "Con_ibfk_1")
+  style      Style?    @relation(fields: [styleId], references: [id], map: "Con_ibfk_2")
+
+  @@index([materialId], map: "materialId")
+  @@index([styleId], map: "styleId")
+}
+
+model Material {
+  id             Int                            @id @default(autoincrement())
+  imageUrl       String?                        @db.VarChar(255)
+  isArchived     Boolean?                       @default(false)
+  createdAt      DateTime?                      @default(now())
+  updatedAt      DateTime?                      @default(now()) @updatedAt
+  templateId     Int?
+  cons           Con[]
+  template       Template?                      @relation(fields: [templateId], references: [id], onUpdate: Restrict, map: "fk_material_template")
+  clientSessions MaterialOnClientImageSession[]
+  pros           Pro[]
+  description    TextLong[]                     @relation("MaterialDescriptions")
+  title          TextShort[]                    @relation("MaterialTitles")
+
+  @@index([templateId], map: "fk_material_template")
+}
+
+model Style {
+  id             Int                  @id @default(autoincrement())
+  imageUrl       String?              @db.VarChar(255)
+  isArchived     Boolean?             @default(false)
+  createdAt      DateTime?            @default(now())
+  updatedAt      DateTime?            @default(now()) @updatedAt
+  templateId     Int?
+  clientSessions ClientImageSession[]
+  cons           Con[]
+  designImages   DesignImage[]
+  pros           Pro[]
+  template       Template?            @relation(fields: [templateId], references: [id], onUpdate: Restrict, map: "fk_style_template")
+  description    TextLong[]           @relation("StyleDescriptions")
+  title          TextShort[]          @relation("StyleTitles")
+
+  @@index([templateId], map: "fk_style_template")
+}
+
+model ColorPattern {
+  id             Int                  @id @default(autoincrement())
+  background     String?              @db.VarChar(255)
+  order          Int?                 @default(0)
+  isArchived     Boolean?             @default(false)
+  createdAt      DateTime?            @default(now())
+  updatedAt      DateTime?            @default(now()) @updatedAt
+  templateId     Int?
+  isFullWidth    Boolean?             @default(false)
+  imageUrl       String?              @db.VarChar(255)
+  clientSessions ClientImageSession[]
+  template       Template?            @relation(fields: [templateId], references: [id], onUpdate: Restrict, map: "fk_colorpattern_template")
+  colors         ColorPatternColor[]
+  description    TextLong[]           @relation("ColorPatternDescriptions")
+  title          TextShort[]          @relation("ColorPatternTitles")
+
+  @@index([templateId], map: "fk_colorpattern_template")
+}
+
+model ColorPatternColor {
+  id                 Int          @id @default(autoincrement())
+  colorHex           String       @db.VarChar(255)
+  isEditableByClient Boolean?     @default(false)
+  colorPatternId     Int
+  order              Int          @default(0)
+  colorPattern       ColorPattern @relation(fields: [colorPatternId], references: [id], map: "ColorPatternColor_ibfk_1")
+
+  @@index([colorPatternId], map: "colorPatternId")
+}
+
+model DesignImage {
+  id         Int                   @id @default(autoincrement())
+  imageUrl   String                @db.VarChar(255)
+  styleId    Int
+  isArchived Boolean?              @default(false)
+  createdAt  DateTime?             @default(now())
+  updatedAt  DateTime?             @default(now()) @updatedAt
+  selectedIn ClientSelectedImage[]
+  style      Style                 @relation(fields: [styleId], references: [id], map: "DesignImage_ibfk_1")
+  spaces     DesignImageSpace[]
+
+  @@index([styleId], map: "styleId")
+}
+
+model DesignImageSpace {
+  id            Int         @id @default(autoincrement())
+  designImageId Int
+  spaceId       Int
+  designImage   DesignImage @relation(fields: [designImageId], references: [id], map: "DesignImageSpace_ibfk_1")
+  space         Space       @relation(fields: [spaceId], references: [id], map: "DesignImageSpace_ibfk_2")
+
+  @@index([designImageId], map: "designImageId")
+  @@index([spaceId], map: "spaceId")
+}
+
+model PageInfo {
+  id         Int          @id @default(autoincrement())
+  type       PageInfoType @unique(map: "unique_type")
+  isArchived Boolean?     @default(false)
+  createdAt  DateTime?    @default(now())
+  updatedAt  DateTime?    @default(now()) @updatedAt
+  content    TextLong[]   @relation("PageInfoContents")
+  title      TextShort[]  @relation("PageInfoTitles")
+}
+
+model Template {
+  id              Int            @id @default(autoincrement())
+  type            TemplateType
+  order           Int            @default(0)
+  showTitle       Boolean        @default(true)
+  showImage       Boolean        @default(true)
+  showPros        Boolean        @default(false)
+  showCons        Boolean        @default(false)
+  showColors      Boolean        @default(false)
+  showDescription Boolean        @default(false)
+  isArchived      Boolean        @default(false)
+  blurValue       Int            @default(0)
+  customStyle     String?        @db.LongText
+  overlayOpacity  Float?         @default(0) @db.Float
+  equalDimensions Boolean?       @default(false)
+  showOverlay     Boolean?       @default(false)
+  backgroundImage String?        @db.Text
+  overlayColor    String?        @db.VarChar(50)
+  padding         String?        @db.VarChar(50)
+  paddingX        String?        @db.VarChar(50)
+  paddingY        String?        @db.VarChar(50)
+  borderRadius    String?        @db.VarChar(50)
+  colorSize       Int?
+  layout          String?        @db.LongText
+  colorsLayout    String         @default("vertical") @db.VarChar(100)
+  colorPatterns   ColorPattern[]
+  materials       Material[]
+  styles          Style[]
+}
+
+model Space {
+  id          Int                         @id @default(autoincrement())
+  isArchived  Boolean?                    @default(false)
+  createdAt   DateTime?                   @default(now())
+  updatedAt   DateTime?                   @default(now()) @updatedAt
+  selectedIn  ClientImageSessionToSpace[]
+  spaceImages DesignImageSpace[]
+  title       TextShort[]                 @relation("SpaceTitles")
+}
+
+model ClientImageSession {
+  id             Int                            @id @default(autoincrement())
+  token          String                         @unique(map: "token") @db.VarChar(255)
+  clientLeadId   Int
+  createdById    Int
+  colorPatternId Int?
+  styleId        Int?
+  customColors   String?                        @db.LongText
+  signatureUrl   String?                        @db.VarChar(255)
+  submittedAt    DateTime?
+  isArchived     Boolean?                       @default(false)
+  createdAt      DateTime?                      @default(now())
+  updatedAt      DateTime?                      @default(now()) @updatedAt
+  sessionStatus  SessionStatus?                 @default(INITIAL)
+  pdfUrl         String?
+  name           String?
+  clientLead     ClientLead                     @relation(fields: [clientLeadId], references: [id], map: "ClientImageSession_ibfk_1")
+  createdBy      User                           @relation(fields: [createdById], references: [id], map: "ClientImageSession_ibfk_2")
+  colorPattern   ColorPattern?                  @relation(fields: [colorPatternId], references: [id], map: "ClientImageSession_ibfk_4")
+  style          Style?                         @relation(fields: [styleId], references: [id], map: "ClientImageSession_ibfk_6")
+  selectedSpaces ClientImageSessionToSpace[]
+  selectedImages ClientSelectedImage[]
+  materials      MaterialOnClientImageSession[]
+  note           Note[]
+
+  @@index([clientLeadId], map: "clientLeadId")
+  @@index([colorPatternId], map: "colorPatternId")
+  @@index([createdById], map: "createdById")
+  @@index([styleId], map: "styleId")
+}
+
+model MaterialOnClientImageSession {
+  clientImageSessionId Int
+  materialId           Int
+  clientImageSession   ClientImageSession @relation(fields: [clientImageSessionId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "MaterialOnClientImageSession_ibfk_1")
+  material             Material           @relation(fields: [materialId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "MaterialOnClientImageSession_ibfk_2")
+
+  @@id([clientImageSessionId, materialId])
+  @@index([materialId], map: "materialId")
+}
+
+model ClientSelectedImage {
+  id             Int                @id @default(autoincrement())
+  imageSessionId Int
+  designImageId  Int
+  createdAt      DateTime?          @default(now())
+  imageSession   ClientImageSession @relation(fields: [imageSessionId], references: [id], map: "ClientSelectedImage_ibfk_1")
+  designImage    DesignImage        @relation(fields: [designImageId], references: [id], map: "ClientSelectedImage_ibfk_2")
+  note           Note[]
+
+  @@index([designImageId], map: "designImageId")
+  @@index([imageSessionId], map: "imageSessionId")
+}
+
+model ClientImageSessionToSpace {
+  clientImageSessionId Int
+  spaceId              Int
+  clientImageSession   ClientImageSession @relation(fields: [clientImageSessionId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "ClientImageSessionToSpace_ibfk_1")
+  space                Space              @relation(fields: [spaceId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "ClientImageSessionToSpace_ibfk_2")
+
+  @@id([clientImageSessionId, spaceId])
+  @@index([spaceId], map: "spaceId")
+}
+
+model Course {
+  id           Int              @id @default(autoincrement())
+  title        String           @db.VarChar(255)
+  description  String?          @db.Text
+  imageUrl     String?          @db.Text
+  isPublished  Boolean?         @default(false)
+  createdAt    DateTime?        @default(now()) @db.DateTime(0)
+  updatedAt    DateTime?        @default(now()) @updatedAt @db.DateTime(0)
+  certificates Certificate[]
+  progress     CourseProgress[]
+  roles        CourseRole[]
+  lessons      Lesson[]
+  tests        Test[]
+}
+
+model CourseRole {
+  id       Int             @id @default(autoincrement())
+  courseId Int
+  role     CourseRole_role
+  course   Course          @relation(fields: [courseId], references: [id], onUpdate: Restrict, map: "CourseRole_ibfk_1")
+
+  @@index([courseId], map: "courseId")
+}
+
+model Lesson {
+  id                 Int              @id @default(autoincrement())
+  courseId           Int
+  title              String           @db.VarChar(255)
+  description        String?          @db.Text
+  duration           Int?
+  order              Int?             @default(0)
+  isPreviewable      Boolean?         @default(false)
+  createdAt          DateTime?        @default(now()) @db.DateTime(0)
+  updatedAt          DateTime?        @default(now()) @updatedAt @db.DateTime(0)
+  mustUploadHomework Boolean          @default(true)
+  course             Course           @relation(fields: [courseId], references: [id], onUpdate: Restrict, map: "Lesson_ibfk_1")
+  allowedUsers       LessonAccess[]
+  homeWorks          LessonHomework[]
+  links              LessonLink[]
+  pdfs               LessonPDF[]
+  videos             LessonVideo[]
+  tests              Test[]
+
+  @@unique([courseId, order], map: "uniq_course_order")
+}
+
+model LessonAccess {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  lessonId  Int
+  grantedAt DateTime? @default(now()) @db.DateTime(0)
+  lesson    Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_lessonaccess_lesson")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_lessonaccess_user")
+
+  @@unique([userId, lessonId], map: "unique_user_lesson")
+  @@index([lessonId], map: "fk_lessonaccess_lesson")
+}
+
+model LessonHomework {
+  id        Int          @id @default(autoincrement())
+  userId    Int
+  lessonId  Int
+  title     String       @db.VarChar(255)
+  url       String       @db.Text
+  type      HomeworkType
+  createdAt DateTime?    @default(now()) @db.DateTime(0)
+  lesson    Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_lessonhomework_lesson")
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_lessonhomework_user")
+
+  @@index([lessonId], map: "idx_lessonId")
+  @@index([userId], map: "idx_userId")
+}
+
+model LessonVideo {
+  id        Int              @id @default(autoincrement())
+  lessonId  Int
+  url       String           @db.LongText
+  videoType LessonVideoType? @default(IFRAME)
+  order     Int              @default(0)
+  lesson    Lesson           @relation(fields: [lessonId], references: [id], onUpdate: Restrict, map: "LessonVideo_ibfk_1")
+  pdfs      LessonVideoPdf[]
+
+  @@index([lessonId], map: "lessonId")
+}
+
+model LessonVideoPdf {
+  id         Int         @id @default(autoincrement())
+  videoId    Int
+  title      String      @db.VarChar(255)
+  url        String      @db.Text
+  uploadedAt DateTime?   @default(now()) @db.DateTime(0)
+  video      LessonVideo @relation(fields: [videoId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "fk_video")
+
+  @@index([videoId], map: "fk_video")
+}
+
+model LessonPDF {
+  id       Int    @id @default(autoincrement())
+  lessonId Int
+  url      String @db.LongText
+  order    Int    @default(0)
+  lesson   Lesson @relation(fields: [lessonId], references: [id], onUpdate: Restrict, map: "LessonPDF_ibfk_1")
+
+  @@index([lessonId], map: "lessonId")
+}
+
+model LessonLink {
+  id       Int    @id @default(autoincrement())
+  lessonId Int
+  url      String @db.LongText
+  title    String @db.VarChar(255)
+  order    Int    @default(0)
+  lesson   Lesson @relation(fields: [lessonId], references: [id], onUpdate: Restrict, map: "LessonLink_ibfk_1")
+
+  @@index([lessonId], map: "lessonId")
+}
+
+model Test {
+  id                         Int            @id @default(autoincrement())
+  title                      String?        @db.VarChar(255)
+  type                       TestType?      @default(LESSON)
+  courseId                   Int?
+  lessonId                   Int?
+  attemptLimit               Int?           @default(2)
+  certificateApprovedByAdmin Boolean?       @default(false)
+  timeLimit                  Int?
+  published                  Boolean        @default(false)
+  course                     Course?        @relation(fields: [courseId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "Test_ibfk_1")
+  lesson                     Lesson?        @relation(fields: [lessonId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "Test_ibfk_2")
+  attempts                   TestAttempt[]
+  questions                  TestQuestion[]
+
+  @@index([courseId], map: "courseId")
+  @@index([lessonId], map: "lessonId")
+}
+
+model TestQuestion {
+  id          Int                 @id @default(autoincrement())
+  testId      Int
+  type        CoursesQuestionType
+  question    String              @db.Text
+  order       Int                 @default(1)
+  choices     TestChoice[]
+  test        Test                @relation(fields: [testId], references: [id], onUpdate: Restrict, map: "TestQuestion_ibfk_1")
+  userAnswers UserAnswer[]
+
+  @@index([testId], map: "testId")
+}
+
+model TestChoice {
+  id         Int          @id @default(autoincrement())
+  questionId Int
+  text       String       @db.VarChar(255)
+  value      String       @db.VarChar(255)
+  isCorrect  Boolean?     @default(false)
+  order      Int?
+  question   TestQuestion @relation(fields: [questionId], references: [id], onUpdate: Restrict, map: "TestChoice_ibfk_1")
+
+  @@index([questionId], map: "questionId")
+}
+
+model TestAttempt {
+  id           Int          @id @default(autoincrement())
+  testId       Int
+  userId       Int
+  score        Float?       @db.Float
+  passed       Boolean?     @default(false)
+  attemptCount Int?         @default(0)
+  attemptLimit Int?         @default(2)
+  createdAt    DateTime?    @default(now()) @db.DateTime(0)
+  updatedAt    DateTime?    @default(now()) @updatedAt @db.DateTime(0)
+  startTime    DateTime?    @db.DateTime(0)
+  endTime      DateTime?    @db.DateTime(0)
+  timePassed   Int?
+  test         Test         @relation(fields: [testId], references: [id], onUpdate: Restrict, map: "TestAttempt_ibfk_1")
+  user         User         @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "TestAttempt_ibfk_2")
+  answers      UserAnswer[]
+
+  @@index([testId], map: "testId")
+  @@index([userId], map: "userId")
+}
+
+model UserAnswer {
+  id              Int              @id @default(autoincrement())
+  attemptId       Int
+  questionId      Int
+  textAnswer      String?          @db.Text
+  isApproved      Boolean          @default(false)
+  selectedAnswers SelectedAnswer[]
+  attempt         TestAttempt      @relation(fields: [attemptId], references: [id], onUpdate: Restrict, map: "UserAnswer_ibfk_1")
+  question        TestQuestion     @relation(fields: [questionId], references: [id], onUpdate: Restrict, map: "UserAnswer_ibfk_2")
+
+  @@index([attemptId], map: "attemptId")
+  @@index([questionId], map: "questionId")
+}
+
+model SelectedAnswer {
+  id           Int        @id @default(autoincrement())
+  userAnswerId Int
+  value        String     @db.VarChar(255)
+  order        Int?
+  answer       UserAnswer @relation(fields: [userAnswerId], references: [id], onUpdate: Restrict, map: "SelectedAnswer_ibfk_1")
+
+  @@index([userAnswerId], map: "userAnswerId")
+}
+
+model CourseProgress {
+  id               Int               @id @default(autoincrement())
+  userId           Int
+  courseId         Int
+  updatedAt        DateTime?         @default(now()) @updatedAt @db.DateTime(0)
+  createdAt        DateTime?         @default(now()) @db.DateTime(0)
+  completedLessons CompletedLesson[]
+  completedTests   CompletedTest[]
+  user             User              @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "CourseProgress_ibfk_1")
+  course           Course            @relation(fields: [courseId], references: [id], onUpdate: Restrict, map: "CourseProgress_ibfk_2")
+
+  @@index([courseId], map: "courseId")
+  @@index([userId], map: "userId")
+}
+
+model CompletedLesson {
+  id               Int            @id @default(autoincrement())
+  courseProgressId Int
+  lessonId         Int
+  completedAt      DateTime?      @default(now()) @db.DateTime(0)
+  courseProgress   CourseProgress @relation(fields: [courseProgressId], references: [id], onUpdate: Restrict, map: "CompletedLesson_ibfk_1")
+
+  @@index([courseProgressId], map: "courseProgressId")
+}
+
+model CompletedTest {
+  id               Int            @id @default(autoincrement())
+  courseProgressId Int
+  testId           Int
+  completedAt      DateTime?      @default(now()) @db.DateTime(0)
+  courseProgress   CourseProgress @relation(fields: [courseProgressId], references: [id], onUpdate: Restrict, map: "CompletedTest_ibfk_1")
+
+  @@index([courseProgressId], map: "idx_courseProgressId")
+  @@index([testId], map: "idx_testId")
+}
+
+model Certificate {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  courseId   Int
+  isApproved Boolean?  @default(false)
+  createdAt  DateTime? @default(now()) @db.DateTime(0)
+  fileUrl    String?   @db.Text
+  user       User      @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "Certificate_ibfk_1")
+  course     Course    @relation(fields: [courseId], references: [id], onUpdate: Restrict, map: "Certificate_ibfk_2")
+
+  @@index([courseId], map: "courseId")
+  @@index([userId], map: "userId")
+}
+
+model ChatRoom {
+  id                  Int                    @id @default(autoincrement())
+  type                ChatRoom_type
+  name                String?                @db.VarChar(255)
+  avatarUrl           String?                @db.VarChar(500)
+  projectId           Int?
+  clientLeadId        Int?
+  allowFiles          Boolean                @default(true)
+  allowCalls          Boolean                @default(true)
+  isChatEnabled       Boolean                @default(true)
+  createdById         Int?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  allowChatForMembers Boolean                @default(false)
+  allowMeetings       Boolean                @default(false)
+  chatAccessToken     String?                @unique(map: "uq_chatroom_chatAccessToken") @db.VarChar(255)
+  calls               Call[]
+  members             ChatMember[]
+  messages            ChatMessage[]
+  pinnedMessages      ChatPinnedMessage[]
+  clientLead          ClientLead?            @relation(fields: [clientLeadId], references: [id])
+  createdBy           User?                  @relation("ChatRoomCreator", fields: [createdById], references: [id])
+  project             Project?               @relation(fields: [projectId], references: [id])
+  multiProjectRooms   ChatRoomProject[]
+  scheduledMessages   ChatScheduledMessage[]
+
+  @@index([type])
+  @@index([projectId])
+  @@index([clientLeadId])
+  @@index([createdById])
+}
+
+model ChatMember {
+  id            Int               @id @default(autoincrement())
+  roomId        Int
+  userId        Int?
+  clientId      Int?
+  role          ChatMemberRole    @default(MEMBER)
+  isMuted       Boolean           @default(false)
+  isPinned      Boolean           @default(false)
+  lastReadAt    DateTime?
+  notifyOnReply Boolean           @default(true)
+  joinedAt      DateTime          @default(now())
+  leftAt        DateTime?
+  isArchived    Boolean           @default(false)
+  createdAt     DateTime          @default(now()) @db.DateTime(0)
+  isDeleted     Boolean           @default(false)
+  client        Client?           @relation(fields: [clientId], references: [id])
+  room          ChatRoom          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user          User?             @relation(fields: [userId], references: [id])
+  readReceipts  ChatReadReceipt[]
+  typingStatus  ChatTypingStatus?
+
+  @@unique([roomId, userId])
+  @@unique([roomId, clientId])
+  @@index([roomId])
+  @@index([userId])
+  @@index([clientId])
+  @@index([userId, leftAt])
+  @@index([roomId, leftAt])
+}
+
+model ChatMessage {
+  id              Int                @id @default(autoincrement())
+  roomId          Int
+  senderId        Int?
+  senderClient    Int?
+  type            ChatMessageType
+  content         String?            @db.Text
+  fileUrl         String?            @db.VarChar(500)
+  fileName        String?            @db.VarChar(255)
+  fileSize        Int?
+  fileMimeType    String?            @db.VarChar(100)
+  replyToId       Int?
+  forwardedFromId Int?
+  isEdited        Boolean            @default(false)
+  isDeleted       Boolean            @default(false)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  attachments     ChatAttachment[]
+  bookmarks       ChatBookmark[]
+  mentions        ChatMention[]
+  forwardedFrom   ChatMessage?       @relation("ForwardedMessage", fields: [forwardedFromId], references: [id])
+  forwardedTo     ChatMessage[]      @relation("ForwardedMessage")
+  replyTo         ChatMessage?       @relation("MessageReply", fields: [replyToId], references: [id])
+  replies         ChatMessage[]      @relation("MessageReply")
+  room            ChatRoom           @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  client          Client?            @relation(fields: [senderClient], references: [id])
+  sender          User?              @relation(fields: [senderId], references: [id])
+  pinnedIn        ChatPinnedMessage?
+  reactions       ChatReaction[]
+  readReceipts    ChatReadReceipt[]
+
+  @@index([roomId])
+  @@index([senderId])
+  @@index([senderClient])
+  @@index([replyToId])
+  @@index([forwardedFromId])
+  @@index([createdAt])
+  @@index([roomId, createdAt])
+  @@index([roomId, isDeleted])
+  @@index([senderId, createdAt])
+}
+
+model ChatAttachment {
+  id           Int         @id @default(autoincrement())
+  messageId    Int
+  fileUrl      String      @db.VarChar(500)
+  fileName     String      @db.VarChar(255)
+  fileSize     Int?
+  fileMimeType String?     @db.VarChar(100)
+  thumbnailUrl String?     @db.VarChar(500)
+  uploadedAt   DateTime    @default(now())
+  content      String?     @db.Text
+  message      ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+model ChatReadReceipt {
+  id        Int         @id @default(autoincrement())
+  messageId Int
+  memberId  Int
+  readAt    DateTime    @default(now())
+  member    ChatMember  @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, memberId])
+  @@index([messageId])
+  @@index([memberId])
+}
+
+model ChatTypingStatus {
+  id         Int        @id @default(autoincrement())
+  memberId   Int        @unique
+  isTyping   Boolean    @default(false)
+  lastTyping DateTime   @default(now())
+  member     ChatMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+}
+
+model ChatReaction {
+  id        Int         @id @default(autoincrement())
+  messageId Int
+  userId    Int?
+  clientId  Int?
+  emoji     String      @db.VarChar(10)
+  createdAt DateTime    @default(now())
+  client    Client?     @relation(fields: [clientId], references: [id])
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User?       @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId, emoji])
+  @@unique([messageId, clientId, emoji])
+  @@index([messageId])
+  @@index([userId])
+  @@index([clientId])
+}
+
+model ChatMention {
+  id        Int         @id @default(autoincrement())
+  messageId Int
+  userId    Int?
+  clientId  Int?
+  createdAt DateTime    @default(now())
+  client    Client?     @relation(fields: [clientId], references: [id])
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User?       @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
+  @@unique([messageId, clientId])
+  @@index([messageId])
+  @@index([userId])
+  @@index([clientId])
+}
+
+model ChatPinnedMessage {
+  id         Int         @id @default(autoincrement())
+  roomId     Int
+  messageId  Int         @unique
+  pinnedById Int?
+  pinnedAt   DateTime    @default(now())
+  message    ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  pinnedBy   User?       @relation(fields: [pinnedById], references: [id])
+  room       ChatRoom    @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@index([pinnedById])
+}
+
+model ChatBookmark {
+  id        Int         @id @default(autoincrement())
+  messageId Int
+  userId    Int?
+  clientId  Int?
+  note      String?     @db.Text
+  createdAt DateTime    @default(now())
+  client    Client?     @relation(fields: [clientId], references: [id])
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User?       @relation(fields: [userId], references: [id])
+
+  @@unique([messageId, userId])
+  @@unique([messageId, clientId])
+  @@index([messageId])
+  @@index([userId])
+  @@index([clientId])
+}
+
+model ChatTemplate {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  title     String   @db.VarChar(255)
+  content   String   @db.Text
+  isGlobal  Boolean  @default(false)
+  category  String?  @db.VarChar(100)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([isGlobal])
+}
+
+model ChatScheduledMessage {
+  id            Int                    @id @default(autoincrement())
+  roomId        Int
+  senderId      Int?
+  content       String                 @db.Text
+  fileUrl       String?                @db.VarChar(500)
+  scheduledFor  DateTime
+  status        ScheduledMessageStatus @default(PENDING)
+  sentMessageId Int?
+  createdAt     DateTime               @default(now())
+  room          ChatRoom               @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  sender        User?                  @relation(fields: [senderId], references: [id])
+
+  @@index([roomId, scheduledFor])
+  @@index([status])
+  @@index([senderId])
+}
+
+model ChatRoomProject {
+  id        Int      @id @default(autoincrement())
+  roomId    Int
+  projectId Int
+  addedAt   DateTime @default(now())
+  project   Project  @relation("ChatRoomProjects", fields: [projectId], references: [id], onDelete: Cascade)
+  room      ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, projectId])
+  @@index([roomId])
+  @@index([projectId])
+}
+
+model Call {
+  id           Int               @id @default(autoincrement())
+  roomId       Int
+  type         CallType
+  status       CallStatus        @default(RINGING)
+  initiatorId  Int
+  startedAt    DateTime          @default(now())
+  endedAt      DateTime?
+  duration     Int?
+  initiator    User              @relation(fields: [initiatorId], references: [id], onDelete: Cascade)
+  room         ChatRoom          @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  participants CallParticipant[]
+
+  @@index([roomId])
+  @@index([initiatorId])
+  @@index([status])
+}
+
+model CallParticipant {
+  id       Int       @id @default(autoincrement())
+  callId   Int
+  userId   Int?
+  clientId Int?
+  joinedAt DateTime  @default(now())
+  leftAt   DateTime?
+  call     Call      @relation(fields: [callId], references: [id], onDelete: Cascade)
+  client   Client?   @relation(fields: [clientId], references: [id])
+  user     User?     @relation(fields: [userId], references: [id])
+
+  @@index([callId])
+  @@index([userId])
+  @@index([clientId])
+}
+
+model DriveNode {
+  id              Int                   @id @default(autoincrement())
+  type            DriveNodeType
+  visibility      DriveVisibility       @default(PRIVATE)
+  ownerId         Int
+  parentId        Int?
+  name            String                @db.VarChar(255)
+  storageProvider StorageProvider       @default(LOCAL)
+  storageKey      String?               @db.VarChar(1024)
+  mimeType        String?               @db.VarChar(120)
+  sizeBytes       BigInt?               @default(0)
+  checksum        String?               @db.VarChar(128)
+  isDeleted       Boolean               @default(false)
+  deletedAt       DateTime?             @db.DateTime(0)
+  createdAt       DateTime              @default(now()) @db.DateTime(0)
+  updatedAt       DateTime              @default(now()) @updatedAt @db.DateTime(0)
+  acl             DriveAcl[]
+  owner           User                  @relation(fields: [ownerId], references: [id], onUpdate: Restrict, map: "fk_DriveNode_owner")
+  parent          DriveNode?            @relation("DriveNodeChildren", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "fk_DriveNode_parent")
+  children        DriveNode[]           @relation("DriveNodeChildren")
+  nodeClientLeads DriveNodeClientLead[]
+  nodeProjects    DriveNodeProject[]
+  publicShares    DrivePublicShare[]
+
+  @@index([isDeleted], map: "idx_DriveNode_isDeleted")
+  @@index([ownerId], map: "idx_DriveNode_ownerId")
+  @@index([parentId], map: "idx_DriveNode_parentId")
+  @@index([visibility], map: "idx_DriveNode_visibility")
+}
+
+model DriveAcl {
+  id        Int       @id @default(autoincrement())
+  nodeId    Int
+  userId    Int
+  canView   Boolean   @default(true)
+  canUpload Boolean   @default(false)
+  canEdit   Boolean   @default(false)
+  canDelete Boolean   @default(false)
+  canShare  Boolean   @default(false)
+  createdAt DateTime  @default(now()) @db.DateTime(0)
+  node      DriveNode @relation(fields: [nodeId], references: [id], onUpdate: Restrict, map: "fk_DriveAcl_node")
+  user      User      @relation(fields: [userId], references: [id], onUpdate: Restrict, map: "fk_DriveAcl_user")
+
+  @@unique([nodeId, userId], map: "uq_DriveAcl_node_user")
+  @@index([nodeId], map: "idx_DriveAcl_nodeId")
+  @@index([userId], map: "idx_DriveAcl_userId")
+}
+
+model DrivePublicShare {
+  id           Int       @id @default(autoincrement())
+  nodeId       Int
+  createdById  Int
+  token        String    @unique(map: "uq_DrivePublicShare_token") @db.VarChar(80)
+  expiresAt    DateTime? @db.DateTime(0)
+  isRevoked    Boolean   @default(false)
+  revokedAt    DateTime? @db.DateTime(0)
+  passwordHash String?   @db.VarChar(255)
+  canView      Boolean   @default(true)
+  canDownload  Boolean   @default(true)
+  createdAt    DateTime  @default(now()) @db.DateTime(0)
+  createdBy    User      @relation(fields: [createdById], references: [id], onUpdate: Restrict, map: "fk_DrivePublicShare_createdBy")
+  node         DriveNode @relation(fields: [nodeId], references: [id], onUpdate: Restrict, map: "fk_DrivePublicShare_node")
+
+  @@index([createdById], map: "idx_DrivePublicShare_createdById")
+  @@index([nodeId], map: "idx_DrivePublicShare_nodeId")
+}
+
+model DriveNodeProject {
+  id        Int       @id @default(autoincrement())
+  nodeId    Int
+  projectId Int
+  createdAt DateTime  @default(now()) @db.DateTime(0)
+  node      DriveNode @relation(fields: [nodeId], references: [id], onUpdate: Restrict, map: "fk_DriveNodeProject_node")
+  project   Project   @relation(fields: [projectId], references: [id], onUpdate: Restrict, map: "fk_DriveNodeProject_project")
+
+  @@unique([nodeId, projectId], map: "uq_DriveNodeProject_node_project")
+  @@index([nodeId], map: "idx_DriveNodeProject_nodeId")
+  @@index([projectId], map: "idx_DriveNodeProject_projectId")
+}
+
+model DriveNodeClientLead {
+  id           Int        @id @default(autoincrement())
+  nodeId       Int
+  clientLeadId Int
+  createdAt    DateTime   @default(now()) @db.DateTime(0)
+  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id], onUpdate: Restrict, map: "fk_DriveNodeClientLead_lead")
+  node         DriveNode  @relation(fields: [nodeId], references: [id], onUpdate: Restrict, map: "fk_DriveNodeClientLead_node")
+
+  @@unique([nodeId, clientLeadId], map: "uq_DriveNodeClientLead_node_lead")
+  @@index([clientLeadId], map: "idx_DriveNodeClientLead_clientLeadId")
+  @@index([nodeId], map: "idx_DriveNodeClientLead_nodeId")
 }
 
 enum ContentType {
@@ -75,11 +2024,9 @@ enum LeadCategory {
 }
 
 enum LeadType {
-  // design
   ROOM
   BLUEPRINT
   CITY_VISIT
-
   APARTMENT
   CONSTRUCTION_VILLA
   UNDER_CONSTRUCTION_VILLA
@@ -112,20 +2059,6 @@ enum UserRole {
   CONTACT_INITIATOR
 }
 
-enum ClientLeadStatus {
-  NEW
-  IN_PROGRESS
-  INTERESTED
-  NEEDS_IDENTIFIED
-  NEGOTIATING
-  LEADEXCHANGE
-  REJECTED
-  FINALIZED
-  CONVERTED
-  ON_HOLD
-  ARCHIVED
-}
-
 enum BookingLeadRequestStatus {
   IN_PROGRESS
   SUBMITTED
@@ -144,20 +2077,10 @@ enum CallReminderStatus {
 }
 
 enum PaymentStatus {
-  PENDING // Payment is pending
-  PARTIALLY_PAID // Payment partially made
-  FULLY_PAID // Payment fully made
+  PENDING
+  PARTIALLY_PAID
+  FULLY_PAID
   OVERDUE
-}
-
-enum PaymentLevel {
-  LEVEL_1
-  LEVEL_2
-  LEVEL_3
-  LEVEL_4
-  LEVEL_5
-  LEVEL_6
-  LEVEL_7_OR_MORE
 }
 
 enum Priority {
@@ -168,16 +2091,6 @@ enum Priority {
   VERY_HIGH
 }
 
-// ==================== Chat System Enums ====================
-
-enum ChatRoomType {
-  STAFF_TO_STAFF
-  PROJECT_GROUP
-  CLIENT_TO_STAFF
-  MULTI_PROJECT
-  GROUP
-}
-
 enum ChatMessageType {
   TEXT
   FILE
@@ -185,12 +2098,6 @@ enum ChatMessageType {
   VOICE
   VIDEO
   SYSTEM
-}
-
-enum ChatMessageStatus {
-  SENT
-  DELIVERED
-  READ
 }
 
 enum ChatMemberRole {
@@ -243,10 +2150,10 @@ enum MeetingType {
 }
 
 enum ClientPersonality {
-  EXPRESSIVE // ثرثار / اجتماعي
-  ANALYTICAL // التحليلي الدقيق
-  INTROVERTED // المنطوي / المتحفظ
-  DRIVER // القيادي الحاسم
+  EXPRESSIVE
+  ANALYTICAL
+  INTROVERTED
+  DRIVER
 }
 
 enum ContractLevel {
@@ -259,89 +2166,6 @@ enum ContractLevel {
   LEVEL_7
 }
 
-/// إعدادات عامة للموقع (Singleton: سجل واحد فقط)
-model SiteUtility {
-  id Int @id @default(1)
-
-
-  pdfFrame  String? 
-  pdfHeader String? 
-  introPage  String?     
-  pageTitle String?   
-  pdfSignaturePart String?
-  updatedAt DateTime @updatedAt
-}
-
-model ContractUtility {
-  id Int @id @default(1)
-
-  obligationsPartyOneAr String @db.Text
-  obligationsPartyOneEn String @db.Text
-
-  obligationsPartyTwoAr String @db.Text
-  obligationsPartyTwoEn String @db.Text
-
-  stageClauses   ContractStageClauseTemplate[]
-  specialClauses ContractSpecialClauseTemplate[]
-  levelClauses   ContractLevelClauseTemplate[]
-
-  updatedAt DateTime @updatedAt
-}
-model ContractStageClauseTemplate {
-  id Int @id @default(autoincrement())
-
-  contractUtilityId Int
-  contractUtility   ContractUtility @relation(fields: [contractUtilityId], references: [id])
-
-  headingAr String @db.Text
-  headingEn String @db.Text
-
-  // ✅ make titles long text
-  titleAr   String @db.Text
-  titleEn   String @db.Text
-
-  descriptionAr String @db.Text    
-  descriptionEn String @db.Text
-
-  order Int @default(0)
-
-  @@index([contractUtilityId])
-}
-
-model ContractSpecialClauseTemplate {
-  id Int @id @default(autoincrement())
-
-  contractUtilityId Int
-  contractUtility   ContractUtility @relation(fields: [contractUtilityId], references: [id])
-
-  textAr String @db.Text
-  textEn String? @db.Text  
-
-  order    Int     @default(0)
-  isActive Boolean @default(true)
-
-  @@index([contractUtilityId])
-}
-model ContractLevelClauseTemplate {
-  id Int @id @default(autoincrement())
-
-  contractUtilityId Int
-  contractUtility   ContractUtility @relation(fields: [contractUtilityId], references: [id])
-
-  level ContractLevel   
-
-  textAr String @db.Text
-  textEn String? @db.Text
-
-  order    Int     @default(0)
-  isActive Boolean @default(true)
-
-  @@index([contractUtilityId])
-  @@index([level])
-}
-
-
-
 enum ContractStatus {
   IN_PROGRESS
   COMPLETED
@@ -349,211 +2173,15 @@ enum ContractStatus {
 }
 
 enum ContractSessionStatus {
-  INITIAL       
-  SIGNING       
-  REGISTERED     
-}
-model Contract {
-  id           Int        @id @default(autoincrement())
-  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
-  clientLeadId Int
-  sessionStatus ContractSessionStatus @default(INITIAL)
-
-  contractLevel ContractLevel
-  purpose       String
-  title         String?
-  enTitle        String? 
-  startDate     DateTime?
-  endDate       DateTime?
-  isCompleted   Boolean       @default(false)
-  isInProgress  Boolean       @default(false)
-  createdAt     DateTime      @default(now())
-  projectGroupId     Int?
-  arToken String? @unique @db.VarChar(64)
-  enToken String? @unique @db.VarChar(64)
-  status ContractStatus @default(IN_PROGRESS)
-  signatureUrl               String? @db.Text
-  handWrittenSignatureUrl    String? @db.Text
-
-  taxRate     Decimal   @default(0) @db.Decimal(5, 2)
-  totalAmount    Decimal?  @db.Decimal(12, 2)  // ← now nullable
-  amount         Decimal?  @db.Decimal(12, 2)  
-  // إضافاتك الجديدة فقط:
-  pdfLinkAr   String? // رابط PDF عربي (لينك)
-  pdfLinkEn   String? // رابط PDF إنجليزي (لينك، الاسم بنتعامل معه على مستوى العرض)
-  projectType String? // نوع المشروع (نصي)
-  writtenAt   DateTime? // تاريخ كتابة العقد
-
-  // علاقات جديدة:
-  stages       ContractStage[]
-  paymentsNew  ContractPayment[]
-  drawings     ContractDrawing[]
-  specialItems ContractSpecialItem[]
-  projects     Project[]
-
-  notes Note[]
-
-  @@index([clientLeadId, contractLevel])
-}
-
-/// المرحلة الجديدة بدل enum، مع عدد أيام المرحلة + عدد أيام القسم
-model ContractStage {
-  id         Int      @id @default(autoincrement())
-  contract   Contract @relation(fields: [contractId], references: [id])
-  contractId Int
-
-  title            String
-  order            Int
-  deliveryDays     Int
-  deptDeliveryDays Int?
-
-  startDate   DateTime?
-  endDate     DateTime?
-  stageStatus StageStatus @default(NOT_STARTED)
-
-  // ربط اختياري بمشروع واحد فقط
-  project   Project? @relation(fields: [projectId], references: [id])
-  projectId Int?
-
-  // علاقات مساعدة
-  payments ContractPayment[]
-  deliverySchedule DeliverySchedule?
-
-  @@unique([contractId, order]) // يمنع ترتيب مكرر لنفس العقد
-  @@index([projectId])
-  @@index([contractId])
+  INITIAL
+  SIGNING
+  REGISTERED
 }
 
 enum StageStatus {
   NOT_STARTED
   IN_PROGRESS
   COMPLETED
-}
-
-enum PaymentStatusNew {
-  RECEIVED // تم الاستلام
-  TRANSFERRED // تم التحويل
-  DUE // مستحقة
-  NOT_DUE // غير مستحقة
-}
-
-model ContractPayment {
-  id         Int      @id @default(autoincrement())
-  contract   Contract @relation(fields: [contractId], references: [id])
-  contractId Int
-
-  stage   ContractStage? @relation(fields: [stageId], references: [id])
-  stageId Int?
-
-  amount   Decimal          @db.Decimal(12, 2)
-  amountLost Decimal         @default(0) @db.Decimal(12, 2)
-  amountReceived Decimal     @default(0) @db.Decimal(12, 2)
-  currency String           @default("AED")
-  dueDate  DateTime?
-  status   PaymentStatusNew @default(NOT_DUE)
-
-  reference String?
-  note      String?
-
-  project          Project? @relation(fields: [projectId], references: [id])
-  projectId        Int?
-  paymentCondition String?
-
-  conditionId   Int?
-  conditionItem ContractPaymentCondition? @relation(fields: [conditionId], references: [id])
-
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([contractId])
-  @@index([stageId])
-  @@index([status, dueDate])
-  @@index([projectId])
-}
-
-model ContractPaymentCondition {
-  id           Int              @id @default(autoincrement())
-
-  payments      ContractPayment[]
-
-  conditionType String
-  condition     String
-  labelAr       String
-  labelEn       String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([conditionType, condition, labelAr, labelEn])
-}
-
-model ContractDrawing {
-  id         Int      @id @default(autoincrement())
-  contract   Contract @relation(fields: [contractId], references: [id])
-  contractId Int
-
-  url          String
-  fileName     String?
-  mimeType     String?
-  sizeBytes    Int?
-  uploadedAt   DateTime @default(now())
-  uploadedById Int?
-
-  @@index([contractId])
-}
-
-/// البنود الخاصة ثنائية اللغة (العربي إلزامي/الإنجليزي اختياري)
-model ContractSpecialItem {
-  id         Int      @id @default(autoincrement())
-  contract   Contract @relation(fields: [contractId], references: [id])
-  contractId Int
-  labelAr    String   @db.Text
-  labelEn    String?  @db.Text
-
-  @@index([contractId])
-}
-
-model ClientLeadUpdate {
-  id          Int          @id @default(autoincrement())
-  title       String
-  description String?      @db.Text
-  status      UpdateStatus @default(IN_PROGRESS)
-  department  String       @default("STAFF")
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  isArchived  Boolean      @default(false)
-  isDone      Boolean      @default(false)
-
-  createdBy   User @relation(fields: [createdById], references: [id])
-  createdById Int
-
-  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
-  clientLeadId Int
-
-  notes Note[]
-
-  sharedSettings SharedUpdate[]
-
-  @@index([clientLeadId])
-  @@index([createdById])
-}
-
-model SharedUpdate {
-  id       Int              @id @default(autoincrement())
-  update   ClientLeadUpdate @relation(fields: [updateId], references: [id])
-  updateId Int
-
-  type  String
-  notes Note[]
-
-  isArchived        Boolean @default(false)
-  excludeFromSearch Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([updateId])
 }
 
 enum SalesStageType {
@@ -569,1094 +2197,16 @@ enum SalesStageType {
   AFTER_SALES_FOLLOWUP
 }
 
-model SalesStage {
-  id           Int        @id @default(autoincrement())
-  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
-  clientLeadId Int
-
-  user   User? @relation(fields: [userId], references: [id])
-  userId Int?
-
-  stage     SalesStageType
-  notes     Note[]
-  createdAt DateTime       @default(now())
-
-  @@unique([clientLeadId, stage])
-  @@index([clientLeadId])
-  @@index([userId])
-}
-
-model TelegramChannel {
-  id           Int        @id @default(autoincrement())
-  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
-  clientLeadId Int        @unique
-  channelLink  String // t.me link
-  channelId    BigInt     @unique
-  accessHash   BigInt
-  description  String? // optional: why this channel exists, etc.
-  createdAt    DateTime   @default(now())
-}
-
-model TelegramConnection {
-  id              Int                      @id @default(autoincrement())
-  name            String                   @default("MAIN") @db.VarChar(100)
-  apiId           String?                  @db.VarChar(191)
-  apiHash         String?                  @db.VarChar(191)
-  sessionString   String?                  @db.Text
-  isActive        Boolean                  @default(true)
-  status          TelegramConnectionStatus @default(DISCONNECTED)
-  phoneNumber     String?                  @db.VarChar(20)
-  lastCheckedAt   DateTime?
-  lastConnectedAt DateTime?
-  lastError       String?                  @db.Text
-  notifiedOfDisconnection Boolean                  @default(false)
-  updatedByUserId Int?
-  updatedBy       User? @relation("TelegramConnectionUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([name])
-  @@index([isActive])
-  @@index([updatedByUserId])
-}
-
-model ClientLead {
-  id                   Int                      @id @default(autoincrement())
-  client               Client                   @relation(fields: [clientId], references: [id])
-  clientId             Int
-  code                 String?                  @unique
-  assignedTo           User?                    @relation(fields: [userId], references: [id])
-  userId               Int?
-  status               ClientLeadStatus         @default(NEW)
-  telegramChannel      TelegramChannel?
-  telegramLink         String?
-  selectedCategory     LeadCategory
-  type                 LeadType                 @default(CONSTRUCTION_VILLA)
-  description          String?
-  location             String?                  @db.VarChar(255)
-  projectType          String?                  @db.VarChar(255)
-  projectStage         String?                  @db.VarChar(255)
-  previousWork         String?                  @db.Text
-  hasArchitecturalPlan String?                  @db.VarChar(255)
-  serviceType          String?                  @db.VarChar(255)
-  decisionMaker        String?                  @db.VarChar(255)
-  bookingRequestStatus BookingLeadRequestStatus @default(IN_PROGRESS)
-  bookingSubmittedAt   DateTime?
-  clientDescription    String?                  @db.Text
-  stripieMetadata      Json?
-  emirate              Emirate?
-  leadType             LeadConversionType       @default(NORMAL)
-  previousLeadId       Int?
-  personality          ClientPersonality?
-  stateOfTheProject    String?                  @db.Text
-  discoverySource      LeadSource?
-
-  discount             Decimal           @default(0) @db.Decimal(10, 2)
-  price                String?
-  averagePrice         Decimal?          @db.Decimal(10, 2)
-  priceNote            String?           @db.Text
-  priceWithOutDiscount Decimal           @default(0) @db.Decimal(10, 2)
-
-  salesStages          SalesStage[]
-  lastTelegramMessages FetchedTelegramMessage[]
-  sessionQuestions     SessionQuestion[]
-  versaModel           VersaModel[]
-  contracts            Contract[]
-  projects         Project[]
-  priceOffers      PriceOffers[]
-  payments         Payment[]
-  tasks            Task[]
-  files            File[]
-  notes            Note[]
-  notifications    Notification[]
-  callReminders    CallReminder[]       @relation("clientLeadCallReminders")
-  meetingReminders MeetingReminder[]    @relation("clientLeadMeetingReminders")
-  extraServices    ExtraService[]
-  commissions      Commission[]
-  updates          ClientLeadUpdate[]
-  imageSessions    ClientImageSession[]
-
-  driveNodeLinks DriveNodeClientLead[]
-
-  reasonToConvert   String?
-  paymentStatus     PaymentStatus @default(PENDING)
-  paymentSessionId  String?
-  ourCost           String?
-  contractorCost    String?
-  country           String?
-  commissionCleared Boolean       @default(false)
-  initialConsult    Boolean       @default(true)
-
-  assignedAt    DateTime?
-  timeToContact DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  finalizedDate DateTime?
-
-  accountant   User? @relation("AccountantLeads", fields: [accountantId], references: [id]) // Assigned Accountant
-  accountantId Int?
-
-  accountantAssignedAt DateTime?
-  
-  // Chat relations
-  chatRooms ChatRoom[]
-
-  @@index([clientId])
-  @@index([userId])
-}
-
-model FetchedTelegramMessage {
-  id           Int        @id @default(autoincrement())
-  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
-  clientLeadId Int
-
-  messageId Int
-  fetchedAt DateTime @default(now())
-
-  @@index([clientLeadId])
-}
-
-model MeetingReminder {
-  id                Int                @id @default(autoincrement())
-  clientLead        ClientLead         @relation(fields: [clientLeadId], references: [id], name: "clientLeadMeetingReminders")
-  clientLeadId      Int
-  time              DateTime?
-  status            CallReminderStatus @default(IN_PROGRESS)
-  meetingResult     String?            @db.Text
-  reminderReason    String?            @db.Text
-  user              User               @relation(fields: [userId], references: [id])
-  userId            Int
-  admin             User?              @relation("AdminMeetingReminders", fields: [adminId], references: [id])
-  adminId           Int?
-  isAdmin           Boolean            @default(false)
-  type              MeetingType?
-  token             String?            @unique
-  availableSlot     AvailableSlot?     @relation("SlotToMeeting")
-  availableSlotId   Int?               @unique
-  userTimezone      String?
-  notified          Boolean            @default(false)
-  notified4h        Boolean            @default(false)
-  notified12h       Boolean            @default(false)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-  deliverySchedules DeliverySchedule[]
-  googleEventId   String?            @db.VarChar(255)
-  googleCalendarSynced Boolean          @default(false)
-
-  @@index([clientLeadId])
-  @@index([userId])
-  @@index([adminId])
-}
-
-model DeliverySchedule {
-  id        Int     @id @default(autoincrement())
-  project    Project?  @relation(fields: [projectId], references: [id])
-  projectId  Int?
-
-  name      String? @db.VarChar(255)
-
-  deliveryAt DateTime
-  notes      Note[]
-
-  meeting           MeetingReminder? @relation(fields: [meetingReminderId], references: [id])
-  meetingReminderId Int?
-  createdBy         User?            @relation("DeliverySchedulesCreatedBy", fields: [createdById], references: [id])
-  createdById       Int?
-
-  createdAt DateTime @default(now())
-
-  stage      ContractStage? @relation(fields: [stageId], references: [id])
-  stageId    Int?           @unique
-
-  @@index([projectId])
-  @@index([meetingReminderId])
-  @@index([deliveryAt])
-  @@index([createdById])
-}
-
-model Commission {
-  id               Int        @id @default(autoincrement())
-  user             User       @relation(fields: [userId], references: [id])
-  userId           Int
-  lead             ClientLead @relation(fields: [leadId], references: [id])
-  leadId           Int
-  amount           Decimal    @db.Decimal(10, 2)
-  amountPaid       Decimal    @default(0) @db.Decimal(10, 2)
-  createdAt        DateTime   @default(now())
-  isCleared        Boolean    @default(false)
-  commissionReason String     @default("Finalized Lead Commission") @db.VarChar(255)
-
-  notes Note[]
-
-  @@index([userId])
-  @@index([leadId])
-}
-
-model Project {
-  id         Int    @id @default(autoincrement())
-  groupTitle String @default("Initial Project") @db.VarChar(255)
-  groupId    Int    @default(1)
-
-  assignments Assignment[]
-
-  clientLeadId Int
-  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
-
-  isModification Boolean   @default(false)
-  contract       Contract? @relation(fields: [contractId], references: [id])
-  contractId     Int?
-
-  contractStages ContractStage[]
-  payments       ContractPayment[]
-  driveNodeLinks DriveNodeProject[]
-
-  deliveryTime      DateTime? // time to deliver the project (optional)
-  deliverySchedules DeliverySchedule[]
-  priority          Priority           @default(MEDIUM) // enum with default value
-  area              Decimal?           @db.Decimal(10, 2) // optional decimal field
-  startedAt         DateTime? // optional
-  endedAt           DateTime? // optional
-  status            String
-  type              String
-  role              UserRole           @default(THREE_D_DESIGNER)
-  tasks             Task[]
-
-  notified7Days Boolean @default(false)
-  notified3Days Boolean @default(false)
-  notified2Days Boolean @default(false)
-  notified1Day  Boolean @default(false)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  // Chat relations
-  chatRooms ChatRoom[]
-  chatRoomProjects ChatRoomProject[] @relation("ChatRoomProjects")
-
-  @@index([clientLeadId])
-  @@index([groupId])
-}
-
-model Task {
-  id          Int        @id @default(autoincrement())
-  title       String     @db.VarChar(255)
-  description String?    @db.Text
-  status      TaskStatus @default(TODO)
-  priority    Priority   @default(MEDIUM)
-  type        String     @default("NORMAL")
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  dueDate    DateTime?
-  finishedAt DateTime?
-
-  project   Project? @relation(fields: [projectId], references: [id])
-  projectId Int?
-
-  user   User? @relation(fields: [userId], references: [id])
-  userId Int?
-
-  clientLead   ClientLead? @relation(fields: [clientLeadId], references: [id])
-  clientLeadId Int?
-
-  createdBy   User? @relation("CreatedTasks", fields: [createdById], references: [id])
-  createdById Int?
-
-  notes Note[]
-
-  @@index([projectId])
-  @@index([userId])
-}
-
-model Payment {
-  id            Int           @id @default(autoincrement())
-  clientLead    ClientLead    @relation(fields: [clientLeadId], references: [id], onDelete: Cascade)
-  clientLeadId  Int
-  status        PaymentStatus @default(PENDING)
-  amount        Decimal       @db.Decimal(10, 2)
-  amountPaid    Decimal       @default(0) @db.Decimal(10, 2)
-  amountLeft    Decimal       @db.Decimal(10, 2)
-  paymentLevel  PaymentLevel?
-  paymentReason String?       @db.Text
-  invoices      Invoice[]
-  notes         Note[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-}
-
-// Invoice Model
-model Invoice {
-  id            Int      @id @default(autoincrement())
-  payment       Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-  paymentId     Int
-  issuedDate    DateTime @default(now())
-  amount        Decimal  @db.Decimal(10, 2)
-  notes         Note[]
-  createdAt     DateTime @default(now())
-  invoiceNumber String   @unique
-}
-
-model ExtraService {
-  id           Int        @id @default(autoincrement())
-  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
-  clientLeadId Int
-  price        Decimal    @db.Decimal(10, 2)
-  note         String?    @db.Text
-  createdAt    DateTime   @default(now())
-}
-
-model PriceOffers {
-  id           Int        @id @default(autoincrement())
-  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
-  clientLeadId Int
-  user         User       @relation(fields: [userId], references: [id])
-  userId       Int
-  url          String?    @db.VarChar(255)
-  minPrice     Decimal?   @db.Decimal(10, 2) // Made optional
-  maxPrice     Decimal?   @db.Decimal(10, 2) // Made optional
-  note         String?    @db.Text // Added this field
-  isAccepted   Boolean    @default(false)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-
-  @@index([clientLeadId])
-}
-
-model CallReminder {
-  id             Int                @id @default(autoincrement())
-  clientLead     ClientLead         @relation(fields: [clientLeadId], references: [id], name: "clientLeadCallReminders")
-  clientLeadId   Int
-  time           DateTime
-  status         CallReminderStatus @default(IN_PROGRESS)
-  callResult     String?            @db.Text
-  reminderReason String?            @db.Text
-  user           User               @relation(fields: [userId], references: [id])
-  userId         Int
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  notified       Boolean            @default(false)
-
-  @@index([clientLeadId])
-  @@index([userId])
-}
-
-model File {
-  id           Int        @id @default(autoincrement())
-  name         String     @db.VarChar(255)
-  url          String     @db.VarChar(255)
-  description  String?    @db.Text
-  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
-  clientLeadId Int
-  isUserFile   Boolean    @default(true)
-  createdAt    DateTime   @default(now())
-  user         User?      @relation(fields: [userId], references: [id])
-  userId       Int?
-
-  @@index([clientLeadId, isUserFile])
-}
-
-model User {
-  id                       Int                  @id @default(autoincrement())
-  email                    String               @unique @db.VarChar(255)
-  name                     String               @db.VarChar(255)
-  password                 String               @db.VarChar(255)
-  isActive                 Boolean              @default(true)
-  isPrimary                Boolean              @default(false)
-  isSuperSales             Boolean              @default(false)
-  role                     UserRole             @default(STAFF)
-  allowNotification       Boolean              @default(true)
-  allowEmailing            Boolean              @default(true)
-  telegramUsername         String?
-  telegramConnectionsUpdated TelegramConnection[] @relation("TelegramConnectionUpdatedBy")
-  subRoles                 UserSubRole[]
-  logs                     UserLog[]
-  clientLeads              ClientLead[]
-  notifications            Notification[]       @relation("UserNotifications")
-  staffNotifications       Notification[]       @relation("StaffNotifications")
-  notes                    Note[]
-  userNotes                Note[]               @relation("UserSubjectNotes")
-  tasks                    Task[]
-  createdTasks             Task[]               @relation("CreatedTasks")
-  priceOffers              PriceOffers[]
-  createdAt                DateTime             @default(now())
-  updatedAt                DateTime             @updatedAt
-  callReminders            CallReminder[]
-  meetingReminders         MeetingReminder[]
-  adminMeetingReminders    MeetingReminder[]    @relation("AdminMeetingReminders")
-  createdQuestions         SessionQuestion[]
-  answers                  Answer[]
-  updates                  ClientLeadUpdate[]
-  versaModels              VersaModel[]
-  availableDays            AvailableDay[]
-  salesStages              SalesStage[]
-  createdImageSessions     ClientImageSession[]
-  files                    File[]
-  lastSeenAt               DateTime?
-  maxLeadsCounts           Int?                 @default(50)
-  maxLeadCountPerDay       Int                  @default(5)   
-  accountantLeads          ClientLead[]         @relation("AccountantLeads")
-  commissions              Commission[]
-  assignments              Assignment[]
-  courseProgress           CourseProgress[]
-  examAttempts             TestAttempt[]
-  certificates             Certificate[]
-  allowedLessons           LessonAccess[]
-  homeWorks                LessonHomework[]
-  deliverySchedulesCreated DeliverySchedule[]   @relation("DeliverySchedulesCreatedBy")
-  // drive relations
-  driveNodesOwned      DriveNode[]
-  driveAcls            DriveAcl[]
-  driveSharesCreated DrivePublicShare[]
-
-  baseSalary          BaseEmployeeSalary?
-  notAllowedCountries Json?
-  autoAssignments AutoAssignment[]
-
-  profilePicture          String?   @db.Text
-
-  // google calendar
-
-  googleRefreshToken      String?   @db.Text
-  googleAccessToken       String?   @db.Text
-  googleTokenExpiresAt    DateTime?
-  googleCalendarId        String? 
-  googleEmail              String?  @db.VarChar(255)
-  
-  // Chat relations
-  chatRoomsCreated     ChatRoom[]          @relation("ChatRoomCreator")
-  chatMemberships      ChatMember[]
-  chatMessages         ChatMessage[]
-  chatReactions        ChatReaction[]
-  chatMentions         ChatMention[]
-  chatBookmarks        ChatBookmark[]
-  chatTemplates        ChatTemplate[]
-  scheduledMessages    ChatScheduledMessage[]
-  callsInitiated       Call[]
-  callParticipations   CallParticipant[]
-  pinnedMessages       ChatPinnedMessage[]
-
-  @@index([email])
-}
-
-model AutoAssignment {
-  id Int @id @default(autoincrement())
-
-  user   User @relation(fields: [userId], references: [id])
-  userId Int
-
-  type              String
-  isActive Boolean   @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, type]) 
-  @@index([userId])
-}
-
-model UserSubRole {
-  id      Int      @id @default(autoincrement())
-  userId  Int
-  subRole UserRole
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, subRole]) // Ensure a user cannot have the same sub-role twice
-}
-
-model UserLog {
-  id           Int      @id @default(autoincrement())
-  userId       Int
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date         DateTime @default(now()) // Not unique anymore
-  totalMinutes Int      @default(0) // Track minutes spent
-  description  String? // New field to store descripti
-
-  @@unique([userId]) // Ensure only one entry per day per user
-  @@index([userId])
-}
-
-model Assignment {
-  id Int @id @default(autoincrement())
-
-  user   User @relation(fields: [userId], references: [id])
-  userId Int
-
-  project   Project? @relation(fields: [projectId], references: [id])
-  projectId Int?
-
-  type String?
-  role UserRole @default(THREE_D_DESIGNER)
-
-  assignedAt DateTime? @default(now())
-  createdAt  DateTime  @default(now())
-
-  @@index([userId])
-  @@index([projectId])
-}
-
-model Client {
-  id          Int          @id @default(autoincrement())
-  name        String       @db.VarChar(255)
-  arName    String?  @db.VarChar(255)
-  enName    String?  @db.VarChar(255)
-  phone       String       @db.VarChar(20)
-  email       String       @unique @db.VarChar(255)
-  contactAgreement             Boolean?
-  contactInitialPriceAgreement Boolean?
-  clientLeads ClientLead[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  lastSeenAt               DateTime?
-
-  // Chat relations
-  chatMemberships    ChatMember[]
-  chatMessages       ChatMessage[]
-  chatReactions      ChatReaction[]
-  chatMentions       ChatMention[]
-  chatBookmarks      ChatBookmark[]
-  callParticipations CallParticipant[]
-
-  @@index([email])
-}
-
-model Note {
-  id           Int         @id @default(autoincrement())
-  content      String?     @db.Text
-  attachment   String?     @db.Text
-  clientLead   ClientLead? @relation(fields: [clientLeadId], references: [id])
-  clientLeadId Int?
-  user         User        @relation(fields: [userId], references: [id])
-  userId       Int
-  createdAt    DateTime    @default(now())
-
-  notedUser   User? @relation("UserSubjectNotes", fields: [notedUserId], references: [id])
-  notedUserId Int?
-
-  // New relations
-  baseEmployeeSalary    BaseEmployeeSalary?  @relation(fields: [baseEmployeeSalaryId], references: [id])
-  baseEmployeeSalaryId  Int?
-  rent                  Rent?                @relation(fields: [rentId], references: [id])
-  rentId                Int?
-  rentPeriod            RentPeriod?          @relation(fields: [rentPeriodId], references: [id])
-  rentPeriodId          Int?
-  operationalExpenses   OperationalExpenses? @relation(fields: [operationalExpensesId], references: [id])
-  operationalExpensesId Int?
-  payment               Payment?             @relation(fields: [paymentId], references: [id])
-  paymentId             Int?
-  invoice               Invoice?             @relation(fields: [invoiceId], references: [id])
-  invoiceId             Int?
-  task                  Task?                @relation(fields: [taskId], references: [id])
-  taskId                Int?
-  commission            Commission?          @relation(fields: [commissionId], references: [id])
-  commissionId          Int?
-  contract              Contract?            @relation(fields: [contractId], references: [id])
-  contractId            Int?
-
-  update   ClientLeadUpdate? @relation(fields: [updateId], references: [id])
-  updateId Int?
-
-  sharedUpdate   SharedUpdate? @relation(fields: [sharedUpdateId], references: [id])
-  sharedUpdateId Int?
-
-  clientImageSession ClientImageSession? @relation(fields: [imageSessionId], references: [id])
-  imageSessionId     Int?
-
-  clientSelectedImage ClientSelectedImage? @relation(fields: [selectedImageId], references: [id])
-  selectedImageId     Int?
-
-  salesStage   SalesStage? @relation(fields: [salesStageId], references: [id])
-  salesStageId Int?
-
-  deliverySchedule   DeliverySchedule? @relation(fields: [deliveryScheduleId], references: [id])
-  deliveryScheduleId Int?
-
-  @@index([taskId])
-  @@index([clientLeadId])
-  @@index([userId])
-  @@index([baseEmployeeSalaryId])
-  @@index([rentId])
-  @@index([rentPeriodId])
-  @@index([operationalExpensesId])
-  @@index([paymentId])
-  @@index([invoiceId])
-  @@index([commissionId])
-  @@index([sharedUpdateId])
-  @@index([updateId])
-  @@index([imageSessionId])
-  @@index([selectedImageId])
-  @@index([contractId])
-  @@index([salesStageId])
-  @@index([notedUserId])
-  @@index([deliveryScheduleId])
-}
-
-model Notification {
-  id           Int              @id @default(autoincrement())
-  type         NotificationType
-  content      String           @db.Text
-  contentType  ContentType      @default(TEXT)
-  link         String?          @db.VarChar(255)
-  isRead       Boolean          @default(false)
-  user         User?            @relation("UserNotifications", fields: [userId], references: [id])
-  userId       Int?
-  staff        User?            @relation("StaffNotifications", fields: [staffId], references: [id])
-  staffId      Int?
-  clientLead   ClientLead?      @relation(fields: [clientLeadId], references: [id])
-  clientLeadId Int?
-  createdAt    DateTime         @default(now())
-
-  @@index([userId])
-  @@index([clientLeadId])
-}
-
-model FixedData {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model BaseEmployeeSalary {
-  id              Int             @id @default(autoincrement())
-  employee        User            @relation(fields: [userId], references: [id])
-  userId          Int             @unique // Add @unique here to enforce the one-to-one relationship
-  baseSalary      Decimal         @db.Decimal(10, 2)
-  taxAmount       Decimal         @default(0) @db.Decimal(10, 2) // Add taxAmount field for transparency
-  baseWorkHours   Int
-  notes           Note[]
-  monthlySalaries MonthlySalary[]
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-}
-
-model MonthlySalary {
-  id               Int                @id @default(autoincrement())
-  baseSalary       BaseEmployeeSalary @relation(fields: [baseSalaryId], references: [id])
-  baseSalaryId     Int
-  totalHoursWorked Int
-  overtimeHours    Int                @default(0)
-  bonuses          Decimal            @default(0) @db.Decimal(10, 2)
-  deductions       Decimal            @default(0) @db.Decimal(10, 2)
-  netSalary        Decimal            @db.Decimal(10, 2)
-  isFulfilled      Boolean            @default(false)
-  paymentDate      DateTime?
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
-  outcome          Outcome?           @relation(fields: [outcomeId], references: [id]) // Optional relationship to Outcome
-  outcomeId        Int? // Foreign key to Outcome, nullable to make it optional
-}
-
-model Rent {
-  id          Int          @id @default(autoincrement())
-  name        String       @db.VarChar(255)
-  description String?      @db.Text
-  notes       Note[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  rentPeriods RentPeriod[]
-}
-
-model RentPeriod {
-  id        Int      @id @default(autoincrement())
-  rent      Rent     @relation(fields: [rentId], references: [id]) // Relationship to Rent model
-  rentId    Int
-  startDate DateTime
-  endDate   DateTime
-  amount    Decimal  @db.Decimal(10, 2)
-  isPaid    Boolean  @default(false)
-  notes     Note[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  outcome   Outcome? @relation(fields: [outcomeId], references: [id]) // Optional relationship to Outcome
-  outcomeId Int?
-}
-
-model OperationalExpenses {
-  id            Int           @id @default(autoincrement())
-  category      String        @db.VarChar(255) // e.g., "Utilities", "Office Supplies"
-  description   String?       @db.Text
-  amount        Decimal       @db.Decimal(10, 2)
-  paymentDate   DateTime
-  paymentStatus PaymentStatus @default(PENDING)
-  notes         Note[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-  outcome       Outcome?      @relation(fields: [outcomeId], references: [id]) // Optional relationship to Outcome
-  outcomeId     Int? // Foreign key to Outcome, nullable to make it optional
-}
-
-model Outcome {
-  id                  Int                   @id @default(autoincrement())
-  type                String?               @db.VarChar(50) // e.g., "Salary", "Rent", "Operational Expense"
-  amount              Decimal               @db.Decimal(10, 2)
-  description         String?               @db.Text // Optional description
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
-  rentPeriods         RentPeriod[] // Optional relation back to RentPeriod, making it optional
-  operationalExpenses OperationalExpenses[] // Optional relation back to OperationalExpenses, making it optional
-  monthlySalaries     MonthlySalary[] // Optional relation back to OperationalExpenses, making it optional
-}
-
-// SPAIN
-
-model QuestionType {
-  id               Int               @id @default(autoincrement())
-  name             String            @unique
-  label            String
-  baseQuestions    BaseQuestion[]
-  sessionQuestions SessionQuestion[]
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-}
-
-model BaseQuestion {
-  id             Int          @id @default(autoincrement())
-  questionType   QuestionType @relation(fields: [questionTypeId], references: [id])
-  questionTypeId Int
-  title          String       @db.Text
-  order          Int          @default(0)
-  isArchived     Boolean      @default(false)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-}
-
-model SessionQuestion {
-  id             Int          @id @default(autoincrement())
-  questionType   QuestionType @relation(fields: [questionTypeId], references: [id])
-  questionTypeId Int
-  title          String       @db.Text
-  isCustom       Boolean      @default(false)
-
-  order Int @default(0)
-
-  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
-  clientLeadId Int
-
-  createdBy User? @relation(fields: [userId], references: [id])
-  userId    Int?
-
-  answer    Answer?
-  createdAt DateTime @default(now())
-}
-
-model Answer {
-  id       Int    @id @default(autoincrement())
-  response String @db.Text
-
-  sessionQuestion   SessionQuestion @relation(fields: [sessionQuestionId], references: [id])
-  sessionQuestionId Int             @unique // 👈 Add @unique here
-
-  answeredBy User @relation(fields: [userId], references: [id])
-  userId     Int
-
-  createdAt DateTime @default(now())
-}
-
-// OBJECTION
-model ObjectionCategory {
-  id        Int          @id @default(autoincrement())
-  title     String       @db.VarChar(255) // e.g., Budget Objection
-  label     String       @db.VarChar(255) // e.g., اعتراض الميزانية (optional for frontend display)
-  versas    VersaModel[]
-  createdAt DateTime     @default(now())
-}
-
-model VersaModel {
-  id           Int        @id @default(autoincrement())
-  clientLead   ClientLead @relation(fields: [clientLeadId], references: [id])
-  clientLeadId Int
-
-  createdBy User @relation(fields: [userId], references: [id])
-  userId    Int
-
-  category   ObjectionCategory @relation(fields: [categoryId], references: [id])
-  categoryId Int
-
-  v   VersaStep? @relation("VStep", fields: [vId], references: [id])
-  vId Int?       @unique
-
-  e   VersaStep? @relation("EStep", fields: [eId], references: [id])
-  eId Int?       @unique
-
-  r   VersaStep? @relation("RStep", fields: [rId], references: [id])
-  rId Int?       @unique
-
-  s   VersaStep? @relation("SStep", fields: [sId], references: [id])
-  sId Int?       @unique
-
-  a   VersaStep? @relation("AStep", fields: [aId], references: [id])
-  aId Int?       @unique
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([clientLeadId])
-  @@index([userId])
-  @@index([categoryId])
-}
-
-model VersaStep {
-  id             Int     @id @default(autoincrement())
-  label          String? @db.VarChar(255) // optional (e.g., "V = Validate")
-  question       String? @db.Text
-  answer         String? @db.Text
-  clientResponse String? @db.Text
-
-  // reverse relations for each letter
-  vVersa VersaModel? @relation("VStep")
-  eVersa VersaModel? @relation("EStep")
-  rVersa VersaModel? @relation("RStep")
-  sVersa VersaModel? @relation("SStep")
-  aVersa VersaModel? @relation("AStep")
-}
-
-// calendy
-
-model AvailableDay {
-  id     Int             @id @default(autoincrement())
-  date   DateTime
-  user   User            @relation(fields: [userId], references: [id])
-  userId Int
-  slots  AvailableSlot[]
-
-  createdAt DateTime @default(now())
-
-  @@unique([userId, date])
-}
-
-model AvailableSlot {
-  id             Int          @id @default(autoincrement())
-  startTime      DateTime
-  endTime        DateTime
-  availableDay   AvailableDay @relation(fields: [availableDayId], references: [id])
-  availableDayId Int
-  isBooked       Boolean      @default(false)
-  userTimezone   String?
-
-  meetingReminder   MeetingReminder? @relation("SlotToMeeting", fields: [meetingReminderId], references: [id])
-  meetingReminderId Int?             @unique
-}
-
-model Language {
-  id         Int     @id @default(autoincrement())
-  code       String  @unique
-  name       String
-  isArchived Boolean @default(false)
-
-  shortTexts TextShort[]
-  longTexts  TextLong[]
-}
-
-model TextShort {
-  id         Int      @id @default(autoincrement())
-  text       String   @db.VarChar(255)
-  languageId Int
-  language   Language @relation(fields: [languageId], references: [id])
-
-  materialId Int?
-  material   Material? @relation("MaterialTitles", fields: [materialId], references: [id])
-
-  styleId Int?
-  style   Style? @relation("StyleTitles", fields: [styleId], references: [id])
-
-  colorPatternId Int?
-  colorPattern   ColorPattern? @relation("ColorPatternTitles", fields: [colorPatternId], references: [id])
-
-  pageInfoId Int?
-  pageInfo   PageInfo? @relation("PageInfoTitles", fields: [pageInfoId], references: [id])
-
-  spaceId Int?
-  space   Space? @relation("SpaceTitles", fields: [spaceId], references: [id])
-}
-
-model TextLong {
-  id         Int      @id @default(autoincrement())
-  content    String   @db.Text
-  languageId Int
-  language   Language @relation(fields: [languageId], references: [id])
-
-  materialId Int?
-  material   Material? @relation("MaterialDescriptions", fields: [materialId], references: [id])
-
-  styleId Int?
-  style   Style? @relation("StyleDescriptions", fields: [styleId], references: [id])
-
-  colorPatternId Int?
-  colorPattern   ColorPattern? @relation("ColorPatternDescriptions", fields: [colorPatternId], references: [id])
-
-  proId Int?
-  pro   Pro? @relation("ProTexts", fields: [proId], references: [id])
-
-  conId Int?
-  con   Con? @relation("ConTexts", fields: [conId], references: [id])
-
-  pageInfoId Int?
-  pageInfo   PageInfo? @relation("PageInfoContents", fields: [pageInfoId], references: [id])
-}
-
-model Pro {
-  id         Int        @id @default(autoincrement())
-  content    TextLong[] @relation("ProTexts")
-  materialId Int?
-  order      Int        @default(0)
-
-  material Material? @relation(fields: [materialId], references: [id])
-  styleId  Int?
-  style    Style?    @relation(fields: [styleId], references: [id])
-}
-
-model Con {
-  id         Int        @id @default(autoincrement())
-  content    TextLong[] @relation("ConTexts")
-  order      Int        @default(0)
-  materialId Int?
-  material   Material?  @relation(fields: [materialId], references: [id])
-  styleId    Int?
-  style      Style?     @relation(fields: [styleId], references: [id])
-}
-
-model Material {
-  id             Int                            @id @default(autoincrement())
-  title          TextShort[]                    @relation("MaterialTitles")
-  description    TextLong[]                     @relation("MaterialDescriptions")
-  pros           Pro[]
-  cons           Con[]
-  imageUrl       String?
-  isArchived     Boolean                        @default(false)
-  templateId     Int?
-  template       Template?                      @relation(fields: [templateId], references: [id])
-  clientSessions MaterialOnClientImageSession[]
-  createdAt      DateTime                       @default(now())
-  updatedAt      DateTime                       @updatedAt
-}
-
-model Style {
-  id             Int                  @id @default(autoincrement())
-  title          TextShort[]          @relation("StyleTitles")
-  description    TextLong[]           @relation("StyleDescriptions")
-  pros           Pro[]
-  cons           Con[]
-  imageUrl       String?
-  isArchived     Boolean              @default(false)
-  designImages   DesignImage[]
-  templateId     Int?
-  template       Template?            @relation(fields: [templateId], references: [id])
-  clientSessions ClientImageSession[]
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-}
-
-model ColorPattern {
-  id             Int                  @id @default(autoincrement())
-  title          TextShort[]          @relation("ColorPatternTitles")
-  description    TextLong[]           @relation("ColorPatternDescriptions")
-  background     String?
-  imageUrl       String?
-  colors         ColorPatternColor[]
-  order          Int                  @default(0)
-  isArchived     Boolean              @default(false)
-  isFullWidth    Boolean              @default(false)
-  templateId     Int?
-  template       Template?            @relation(fields: [templateId], references: [id])
-  clientSessions ClientImageSession[]
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-}
-
-model ColorPatternColor {
-  id                 Int          @id @default(autoincrement())
-  colorHex           String
-  isEditableByClient Boolean      @default(false)
-  order              Int          @default(0)
-  colorPatternId     Int
-  colorPattern       ColorPattern @relation(fields: [colorPatternId], references: [id])
-}
-
-model DesignImage {
-  id         Int                   @id @default(autoincrement())
-  imageUrl   String
-  styleId    Int
-  style      Style                 @relation(fields: [styleId], references: [id])
-  spaces     DesignImageSpace[]
-  selectedIn ClientSelectedImage[]
-  isArchived Boolean               @default(false)
-  createdAt  DateTime              @default(now())
-  updatedAt  DateTime              @updatedAt
-}
-
-model DesignImageSpace {
-  id            Int         @id @default(autoincrement())
-  designImageId Int
-  designImage   DesignImage @relation(fields: [designImageId], references: [id])
-  spaceId       Int
-  space         Space       @relation(fields: [spaceId], references: [id])
-}
-
 enum PageInfoType {
   BEFORE_PATTERN
   BEFORE_MATERIAL
   BEFORE_STYLE
 }
 
-model PageInfo {
-  id         Int          @id @default(autoincrement())
-  type       PageInfoType @unique
-  title      TextShort[]  @relation("PageInfoTitles")
-  content    TextLong[]   @relation("PageInfoContents")
-  isArchived Boolean      @default(false)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-}
-
 enum TemplateType {
   COLOR_PATTERN
   MATERIAL
   STYLE
-}
-
-model Template {
-  id              Int          @id @default(autoincrement())
-  type            TemplateType
-  order           Int          @default(0)
-  showTitle       Boolean      @default(true)
-  showImage       Boolean      @default(true)
-  showPros        Boolean      @default(false)
-  showCons        Boolean      @default(false)
-  showColors      Boolean      @default(false)
-  showDescription Boolean      @default(false)
-  showOverlay     Boolean      @default(true)
-  isArchived      Boolean      @default(false)
-  blurValue       Int          @default(0)
-
-  backgroundImage String?  @db.Text
-  overlayColor    String?  @db.VarChar(50)
-  overlayOpacity  Float?   @default(0)
-  padding         String?  @db.VarChar(50)
-  paddingX        String?  @db.VarChar(50)
-  paddingY        String?  @db.VarChar(50)
-  borderRadius    String?  @db.VarChar(50)
-  colorSize       Int?
-  equalDimensions Boolean? @default(false)
-  layout          Json?
-  colorsLayout    String   @default("vertical") @db.VarChar(100)
-  customStyle     Json?
-
-  materials     Material[]
-  styles        Style[]
-  colorPatterns ColorPattern[]
-}
-
-model Space {
-  id          Int                         @id @default(autoincrement())
-  title       TextShort[]                 @relation("SpaceTitles")
-  isArchived  Boolean                     @default(false)
-  selectedIn  ClientImageSessionToSpace[]
-  spaceImages DesignImageSpace[]
-  createdAt   DateTime                    @default(now())
-  updatedAt   DateTime                    @updatedAt
 }
 
 enum SessionStatus {
@@ -1673,64 +2223,6 @@ enum SessionStatus {
   SUBMITTED
 }
 
-model ClientImageSession {
-  id             Int                            @id @default(autoincrement())
-  token          String                         @unique
-  name           String? // optional field
-  sessionStatus  SessionStatus                  @default(INITIAL)
-  pdfUrl         String?
-  clientLeadId   Int
-  clientLead     ClientLead                     @relation(fields: [clientLeadId], references: [id])
-  createdById    Int
-  createdBy      User                           @relation(fields: [createdById], references: [id])
-  selectedSpaces ClientImageSessionToSpace[]
-  colorPatternId Int?
-  colorPattern   ColorPattern?                  @relation(fields: [colorPatternId], references: [id])
-  materials      MaterialOnClientImageSession[]
-  styleId        Int?
-  style          Style?                         @relation(fields: [styleId], references: [id])
-  selectedImages ClientSelectedImage[]
-  note           Note[]
-  customColors   Json?
-  signatureUrl   String?
-  submittedAt    DateTime?
-  isArchived     Boolean                        @default(false)
-  createdAt      DateTime                       @default(now())
-  updatedAt      DateTime                       @updatedAt
-}
-
-model MaterialOnClientImageSession {
-  clientImageSessionId Int
-  materialId           Int
-
-  clientImageSession ClientImageSession @relation(fields: [clientImageSessionId], references: [id])
-  material           Material           @relation(fields: [materialId], references: [id])
-
-  @@id([clientImageSessionId, materialId])
-}
-
-model ClientSelectedImage {
-  id             Int                @id @default(autoincrement())
-  imageSessionId Int
-  imageSession   ClientImageSession @relation(fields: [imageSessionId], references: [id])
-  designImageId  Int
-  designImage    DesignImage        @relation(fields: [designImageId], references: [id])
-  note           Note[]
-  createdAt      DateTime           @default(now())
-}
-
-model ClientImageSessionToSpace {
-  clientImageSessionId Int
-  spaceId              Int
-
-  clientImageSession ClientImageSession @relation(fields: [clientImageSessionId], references: [id])
-  space              Space              @relation(fields: [spaceId], references: [id])
-
-  @@id([clientImageSessionId, spaceId])
-}
-
-// courses
-
 enum CoursesQuestionType {
   MULTIPLE_CHOICE
   SINGLE_CHOICE
@@ -1746,590 +2238,15 @@ enum TestType {
   PLACEMENT
 }
 
-model Course {
-  id           Int              @id @default(autoincrement())
-  title        String
-  description  String?          @db.Text
-  imageUrl     String?          @db.Text
-  isPublished  Boolean          @default(false)
-  roles        CourseRole[]
-  certificates Certificate[]
-  lessons      Lesson[]
-  tests        Test[]
-  progress     CourseProgress[]
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-}
-
-model CourseRole {
-  id       Int      @id @default(autoincrement())
-  course   Course   @relation(fields: [courseId], references: [id])
-  courseId Int
-  role     UserRole
-}
-
-model Lesson {
-  id                 Int              @id @default(autoincrement())
-  course             Course           @relation(fields: [courseId], references: [id])
-  courseId           Int
-  title              String
-  description        String?          @db.Text
-  duration           Int?
-  order              Int              @default(0)
-  mustUploadHomework Boolean          @default(true)
-  isPreviewable      Boolean          @default(false)
-  videos             LessonVideo[]
-  pdfs               LessonPDF[]
-  links              LessonLink[]
-  tests              Test[]
-  allowedUsers       LessonAccess[]
-  homeWorks          LessonHomework[]
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-
-  @@unique([courseId, order])
-}
-
-model LessonAccess {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    Int
-  lesson    Lesson   @relation(fields: [lessonId], references: [id])
-  lessonId  Int
-  grantedAt DateTime @default(now())
-
-  @@unique([userId, lessonId])
-}
-
 enum LessonVideoType {
   IFRAME
   URL
-}
-
-model LessonHomework {
-  id        Int          @id @default(autoincrement())
-  user      User         @relation(fields: [userId], references: [id])
-  userId    Int
-  lesson    Lesson       @relation(fields: [lessonId], references: [id])
-  lessonId  Int
-  title     String
-  url       String
-  type      HomeworkType
-  createdAt DateTime     @default(now())
-
-  @@index([userId])
-  @@index([lessonId])
 }
 
 enum HomeworkType {
   VIDEO
   SUMMARY
 }
-
-model LessonVideo {
-  id        Int              @id @default(autoincrement())
-  lesson    Lesson           @relation(fields: [lessonId], references: [id])
-  lessonId  Int
-  url       String           @db.LongText
-  videoType LessonVideoType  @default(IFRAME)
-  order     Int              @default(0)
-  pdfs      LessonVideoPdf[]
-}
-
-model LessonVideoPdf {
-  id         Int         @id @default(autoincrement())
-  video      LessonVideo @relation(fields: [videoId], references: [id])
-  videoId    Int
-  title      String
-  url        String
-  uploadedAt DateTime    @default(now())
-}
-
-model LessonPDF {
-  id       Int    @id @default(autoincrement())
-  lesson   Lesson @relation(fields: [lessonId], references: [id])
-  lessonId Int
-  url      String @db.LongText
-  order    Int    @default(0)
-}
-
-model LessonLink {
-  id       Int    @id @default(autoincrement())
-  lesson   Lesson @relation(fields: [lessonId], references: [id])
-  lessonId Int
-  url      String @db.LongText
-  title    String
-  order    Int    @default(0)
-}
-
-model Test {
-  id                         Int            @id @default(autoincrement())
-  title                      String?
-  type                       TestType       @default(LESSON)
-  course                     Course?        @relation(fields: [courseId], references: [id])
-  courseId                   Int?
-  lesson                     Lesson?        @relation(fields: [lessonId], references: [id])
-  lessonId                   Int?
-  questions                  TestQuestion[]
-  attempts                   TestAttempt[]
-  certificateApprovedByAdmin Boolean        @default(false)
-  attemptLimit               Int            @default(2)
-  timeLimit                  Int?
-  published                  Boolean        @default(false)
-}
-
-model TestQuestion {
-  id          Int                 @id @default(autoincrement())
-  test        Test                @relation(fields: [testId], references: [id])
-  testId      Int
-  type        CoursesQuestionType
-  question    String              @db.Text
-  choices     TestChoice[]
-  order       Int                 @default(1)
-  userAnswers UserAnswer[]
-}
-
-model TestChoice {
-  id         Int          @id @default(autoincrement())
-  question   TestQuestion @relation(fields: [questionId], references: [id])
-  questionId Int
-  text       String
-  value      String
-  isCorrect  Boolean      @default(false)
-  order      Int?
-}
-
-model TestAttempt {
-  id           Int          @id @default(autoincrement())
-  test         Test         @relation(fields: [testId], references: [id])
-  testId       Int
-  user         User         @relation(fields: [userId], references: [id])
-  userId       Int
-  answers      UserAnswer[]
-  score        Float?
-  passed       Boolean      @default(false)
-  attemptCount Int          @default(0)
-  attemptLimit Int          @default(2)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  startTime    DateTime?
-  endTime      DateTime?
-  timePassed   Int?
-}
-
-model UserAnswer {
-  id              Int              @id @default(autoincrement())
-  attempt         TestAttempt      @relation(fields: [attemptId], references: [id])
-  attemptId       Int
-  question        TestQuestion     @relation(fields: [questionId], references: [id])
-  questionId      Int
-  selectedAnswers SelectedAnswer[]
-  textAnswer      String?          @db.Text
-  isApproved      Boolean          @default(false)
-}
-
-model SelectedAnswer {
-  id           Int        @id @default(autoincrement())
-  answer       UserAnswer @relation(fields: [userAnswerId], references: [id])
-  userAnswerId Int
-  value        String
-  order        Int?
-}
-
-model CourseProgress {
-  id               Int               @id @default(autoincrement())
-  user             User              @relation(fields: [userId], references: [id])
-  userId           Int
-  course           Course            @relation(fields: [courseId], references: [id])
-  courseId         Int
-  completedLessons CompletedLesson[]
-  completedTests   CompletedTest[]
-
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
-}
-
-model CompletedLesson {
-  id               Int            @id @default(autoincrement())
-  courseProgress   CourseProgress @relation(fields: [courseProgressId], references: [id])
-  courseProgressId Int
-  lessonId         Int
-  completedAt      DateTime       @default(now())
-}
-
-model CompletedTest {
-  id               Int            @id @default(autoincrement())
-  courseProgress   CourseProgress @relation(fields: [courseProgressId], references: [id])
-  courseProgressId Int
-  testId           Int // Reference to your existing Test model
-  completedAt      DateTime       @default(now())
-}
-
-model Certificate {
-  id         Int      @id @default(autoincrement())
-  user       User     @relation(fields: [userId], references: [id])
-  userId     Int
-  course     Course   @relation(fields: [courseId], references: [id])
-  courseId   Int
-  isApproved Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  fileUrl    String?  @db.Text
-}
-
-
-// ==================== Chat System Models ====================
-
-model ChatRoom {
-  id        Int          @id @default(autoincrement())
-  type      ChatRoomType
-  name      String?
-  avatarUrl String?
-
-  projectId    Int?
-  project      Project?     @relation(fields: [projectId], references: [id])
-  clientLeadId Int?
-  clientLead   ClientLead?  @relation(fields: [clientLeadId], references: [id])
-
-
-  allowFiles Boolean @default(true)
-  allowCalls Boolean @default(true)
-  allowMeetings Boolean @default(true)
-  allowChatForMembers Boolean @default(true)
-
-  // Chat room password (instead of client)
-  chatAccessToken String? @db.VarChar(255) @unique
-
-  isChatEnabled    Boolean @default(true)
-
-  createdById Int?
-  createdBy   User? @relation("ChatRoomCreator", fields: [createdById], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  members           ChatMember[]
-  messages          ChatMessage[]
-  calls             Call[]
-  pinnedMessages    ChatPinnedMessage[]
-  scheduledMessages ChatScheduledMessage[]
-  multiProjectRooms ChatRoomProject[]
-
-  @@index([type])
-  @@index([projectId])
-  @@index([clientLeadId])
-  @@index([createdById])
-}
-
-model ChatMember {
-  id     Int      @id @default(autoincrement())
-  roomId Int
-  room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  
-  userId Int?
-  user   User? @relation(fields: [userId], references: [id])
-  
-  clientId Int?
-  client   Client? @relation(fields: [clientId], references: [id])
-
-  role ChatMemberRole @default(MEMBER)
-
-  isMuted       Boolean   @default(false)
-  isArchived    Boolean   @default(false)
-  isPinned      Boolean   @default(false)
-  lastReadAt    DateTime?
-  isDeleted     Boolean   @default(false)
-  notifyOnReply Boolean   @default(true)
-  
-
-  joinedAt DateTime  @default(now())
-  leftAt   DateTime?
-  createdAt DateTime  @default(now())
-  readReceipts ChatReadReceipt[]
-  typingStatus ChatTypingStatus[]
-
-  @@unique([roomId, userId])
-  @@unique([roomId, clientId])
-  @@index([roomId])
-  @@index([userId])
-  @@index([clientId])
-  @@index([userId, leftAt])
-  @@index([roomId, leftAt])
-}
-
-model ChatMessage {
-  id     Int      @id @default(autoincrement())
-  roomId Int
-  room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  
-  senderId     Int?
-  sender       User?   @relation(fields: [senderId], references: [id])
-  senderClient Int?
-  client       Client? @relation(fields: [senderClient], references: [id])
-
-  type    ChatMessageType
-  content String?         @db.Text
-  
-  fileUrl      String?
-  fileName     String?
-  fileSize     Int?
-  fileMimeType String?
-  
-  
-  // Reply to message
-  replyToId Int?
-  replyTo   ChatMessage?  @relation("MessageReply", fields: [replyToId], references: [id], onDelete: SetNull)
-  replies   ChatMessage[] @relation("MessageReply")
-  
-  // Forward message
-  forwardedFromId Int?
-  forwardedFrom   ChatMessage?  @relation("ForwardedMessage", fields: [forwardedFromId], references: [id], onDelete: SetNull)
-  forwardedTo     ChatMessage[] @relation("ForwardedMessage")
-
-  isEdited  Boolean @default(false)
-  isDeleted Boolean @default(false)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  readReceipts ChatReadReceipt[]
-  attachments  ChatAttachment[]
-  reactions    ChatReaction[]
-  mentions     ChatMention[]
-  bookmarks    ChatBookmark[]
-  pinnedIn     ChatPinnedMessage?
-
-  @@index([roomId])
-  @@index([senderId])
-  @@index([senderClient])
-  @@index([replyToId])
-  @@index([forwardedFromId])
-  @@index([createdAt])
-  @@index([roomId, createdAt])
-  @@index([roomId, isDeleted])
-  @@index([senderId, createdAt])
-}
-
-model ChatAttachment {
-  id        Int         @id @default(autoincrement())
-  messageId Int
-  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  content String?         @db.Text
-
-  fileUrl      String
-  fileName     String
-  fileSize     Int?
-  fileMimeType String?
-  thumbnailUrl String?
-
-  uploadedAt DateTime @default(now())
-
-  @@index([messageId])
-}
-
-model ChatReadReceipt {
-  id        Int         @id @default(autoincrement())
-  messageId Int
-  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  
-  memberId Int
-  member   ChatMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
-
-  readAt DateTime @default(now())
-
-  @@unique([messageId, memberId])
-  @@index([messageId])
-  @@index([memberId])
-}
-
-model ChatTypingStatus {
-  id       Int        @id @default(autoincrement())
-  memberId Int
-  member   ChatMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
-
-  isTyping   Boolean  @default(false)
-  lastTyping DateTime @default(now())
-
-  @@unique([memberId])
-  @@index([memberId])
-}
-
-model ChatReaction {
-  id        Int         @id @default(autoincrement())
-  messageId Int
-  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  
-  userId Int?
-  user   User? @relation(fields: [userId], references: [id])
-  
-  clientId Int?
-  client   Client? @relation(fields: [clientId], references: [id])
-  
-  emoji String
-
-  createdAt DateTime @default(now())
-
-  @@unique([messageId, userId, emoji])
-  @@unique([messageId, clientId, emoji])
-  @@index([messageId])
-  @@index([userId])
-  @@index([clientId])
-}
-
-model ChatMention {
-  id        Int         @id @default(autoincrement())
-  messageId Int
-  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  
-  userId Int?
-  user   User? @relation(fields: [userId], references: [id])
-  
-  clientId Int?
-  client   Client? @relation(fields: [clientId], references: [id])
-
-  createdAt DateTime @default(now())
-
-  @@unique([messageId, userId])
-  @@unique([messageId, clientId])
-  @@index([messageId])
-  @@index([userId])
-  @@index([clientId])
-}
-
-model ChatPinnedMessage {
-  id        Int         @id @default(autoincrement())
-  roomId    Int
-  room      ChatRoom    @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  messageId Int         @unique
-  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  
-  pinnedById Int?
-  pinnedBy   User? @relation(fields: [pinnedById], references: [id])
-  
-  pinnedAt DateTime @default(now())
-
-  @@index([roomId])
-  @@index([pinnedById])
-}
-
-model ChatBookmark {
-  id        Int         @id @default(autoincrement())
-  messageId Int
-  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  
-  userId Int?
-  user   User? @relation(fields: [userId], references: [id])
-  
-  clientId Int?
-  client   Client? @relation(fields: [clientId], references: [id])
-  
-  note String? @db.Text
-
-  createdAt DateTime @default(now())
-
-  @@unique([messageId, userId])
-  @@unique([messageId, clientId])
-  @@index([messageId])
-  @@index([userId])
-  @@index([clientId])
-}
-
-model ChatTemplate {
-  id       Int    @id @default(autoincrement())
-  userId   Int?
-  user     User?  @relation(fields: [userId], references: [id])
-  title    String
-  content  String @db.Text
-  isGlobal Boolean @default(false)
-  category String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([isGlobal])
-}
-
-model ChatScheduledMessage {
-  id       Int      @id @default(autoincrement())
-  roomId   Int
-  room     ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  senderId Int?
-  sender   User?    @relation(fields: [senderId], references: [id])
-  
-  content  String @db.Text
-  fileUrl  String?
-  
-  scheduledFor  DateTime
-  status        ScheduledMessageStatus @default(PENDING)
-  sentMessageId Int?
-
-  createdAt DateTime @default(now())
-
-  @@index([roomId, scheduledFor])
-  @@index([status])
-  @@index([senderId])
-}
-
-// Junction table for multi-project chat rooms
-model ChatRoomProject {
-  id     Int      @id @default(autoincrement())
-  roomId Int
-  room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-
-  projectId Int
-  project   Project @relation("ChatRoomProjects", fields: [projectId], references: [id], onDelete: Cascade)
-
-  addedAt DateTime @default(now())
-
-  @@unique([roomId, projectId])
-  @@index([roomId])
-  @@index([projectId])
-}
-
-model Call {
-  id     Int      @id @default(autoincrement())
-  roomId Int
-  room   ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
-  
-  type   CallType
-  status CallStatus @default(RINGING)
-
-  initiatorId Int
-  initiator   User @relation(fields: [initiatorId], references: [id])
-
-  startedAt DateTime  @default(now())
-  endedAt   DateTime?
-  duration  Int?
-
-  participants CallParticipant[]
-
-  @@index([roomId])
-  @@index([initiatorId])
-  @@index([status])
-}
-
-model CallParticipant {
-  id     Int  @id @default(autoincrement())
-  callId Int
-  call   Call @relation(fields: [callId], references: [id], onDelete: Cascade)
-  
-  userId   Int?
-  user     User?   @relation(fields: [userId], references: [id])
-  clientId Int?
-  client   Client? @relation(fields: [clientId], references: [id])
-
-  joinedAt DateTime  @default(now())
-  leftAt   DateTime?
-
-  @@index([callId])
-  @@index([userId])
-  @@index([clientId])
-}
-
-
-
-// ==================== End of Chat System Models ====================
-// ==================== Folders and Files Models  ====================
 
 enum DriveNodeType {
   FOLDER
@@ -2345,134 +2262,115 @@ enum StorageProvider {
   LOCAL
   GDRIVE
 }
-model DriveNode {
-  id Int @id @default(autoincrement())
 
-  type       DriveNodeType
-  visibility DriveVisibility @default(PRIVATE)
-
-  // مين أنشأ/رفع
-  owner   User @relation(fields: [ownerId], references: [id])
-  ownerId Int
-
-  // Tree
-  parent   DriveNode?  @relation("DriveNodeChildren", fields: [parentId], references: [id])
-  parentId Int?
-  children DriveNode[] @relation("DriveNodeChildren")
-
-  name String @db.VarChar(255)
-
-  // FILE only
-  storageProvider StorageProvider @default(LOCAL)
-  storageKey      String? @db.VarChar(1024)  // مهم: للـ LOCAL هتبقى relative path
-  mimeType        String? @db.VarChar(120)
-  sizeBytes       BigInt? @default(0)
-  checksum        String? @db.VarChar(128)
-
-  // soft delete
-  isDeleted Boolean  @default(false)
-  deletedAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // ACL (لـ PRIVATE فقط عادةً)
-  acl DriveAcl[]
-
-  // Public external share links (tokens)
-  publicShares DrivePublicShare[]
-
-  // linking
-  nodeProjects   DriveNodeProject[]
-  nodeClientLeads DriveNodeClientLead[]
-
-  @@index([ownerId])
-  @@index([parentId])
-  @@index([visibility])
-  @@index([isDeleted])
+enum ChatRoom_type {
+  STAFF_TO_STAFF
+  PROJECT_GROUP
+  CLIENT_TO_STAFF
+  STAFF_GROUP
+  GROUP
 }
 
-model DriveAcl {
-  id Int @id @default(autoincrement())
-
-  node   DriveNode @relation(fields: [nodeId], references: [id])
-  nodeId Int
-
-  user   User @relation(fields: [userId], references: [id])
-  userId Int
-
-  // صلاحيات CRUD + مشاركة
-  canView   Boolean @default(true)
-  canUpload Boolean @default(false) // لو Folder
-  canEdit   Boolean @default(false) // rename/move
-  canDelete Boolean @default(false)
-  canShare  Boolean @default(false)
-
-  createdAt DateTime @default(now())
-
-  @@unique([nodeId, userId])
-  @@index([userId])
-  @@index([nodeId])
+enum Notification_type {
+  NEW_LEAD
+  LEAD_ASSIGNED
+  LEAD_STATUS_CHANGE
+  LEAD_TRANSFERRED
+  LEAD_UPDATED
+  LEAD_CONTACT
+  NOTE_ADDED
+  NEW_NOTE
+  NEW_FILE
+  CALL_REMINDER_CREATED
+  CALL_REMINDER_STATUS
+  PRICE_OFFER_SUBMITTED
+  PRICE_OFFER_UPDATED
+  FINAL_PRICE_ADDED
+  FINAL_PRICE_CHANGED
+  PAYMENT_ADDED
+  PAYMENT_STATUS_UPDATED
+  EXTRA_FINAL_PRICE_ADDED
+  EXTRA_FINAL_PRICE_EDITED
+  WORK_STAGE_UPDATED
+  OTHER
+  TEST_FINISHED
+  ATTEMPT_PASSED
+  ATTEMPT_FAILED
+  NEW_ATTEMPT_CREATED
+  NEW_ATTEMPT_ADDED
+  NEW_CHAT_MESSAGE
+  CHAT_MENTION
+  CHAT_ROOM_CREATED
+  CHAT_MEMBER_ADDED
+  CHAT_CALL_INCOMING
+  CHAT_CALL_MISSED
+  LEAD_CREATED
+  LEAD_SUBMITTED
+  LEAD_STATUS_CHANGED
+  TELEGRAM_REAUTH_NEEDED
 }
 
-model DrivePublicShare {
-  id Int @id @default(autoincrement())
-
-  node      DriveNode @relation(fields: [nodeId], references: [id])
-  nodeId    Int
-
-  createdBy User @relation(fields: [createdById], references: [id])
-  createdById Int
-
-  // token ثابت أو مؤقت
-  token      String   @unique @db.VarChar(80)
-  expiresAt  DateTime?
-  isRevoked  Boolean  @default(false)
-  revokedAt  DateTime?
-
-  // باسورد اختياري للينك
-  passwordHash String? @db.VarChar(255)
-
-  // صلاحيات اللينك الخارجي
-  canView     Boolean @default(true)
-  canDownload Boolean @default(true)
-
-  createdAt DateTime @default(now())
-
-  @@index([nodeId])
-  @@index([createdById])
+enum UserSubRole_subRole {
+  ADMIN
+  STAFF
+  THREE_D_DESIGNER
+  TWO_D_DESIGNER
+  ACCOUNTANT
+  SUPER_ADMIN
 }
 
-// Folder/Node مرتبط بمشاريع
-model DriveNodeProject {
-  id Int @id @default(autoincrement())
-
-  node   DriveNode @relation(fields: [nodeId], references: [id])
-  nodeId Int
-
-  project Project @relation(fields: [projectId], references: [id])
-  projectId Int
-
-  createdAt DateTime @default(now())
-
-  @@unique([nodeId, projectId])
-  @@index([projectId])
-  @@index([nodeId])
+enum CourseRole_role {
+  ADMIN
+  STAFF
+  THREE_D_DESIGNER
+  TWO_D_DESIGNER
+  TWO_D_EXECUTOR
+  ACCOUNTANT
+  SUPER_ADMIN
 }
 
-// Folder/Node مرتبط بـ Leads
-model DriveNodeClientLead {
-  id Int @id @default(autoincrement())
+enum Assignment_role {
+  ADMIN
+  STAFF
+  THREE_D_DESIGNER
+  TWO_D_DESIGNER
+  TWO_D_EXECUTOR
+  ACCOUNTANT
+  SUPER_ADMIN
+}
 
-  node   DriveNode @relation(fields: [nodeId], references: [id])
-  nodeId Int
+enum Project_role {
+  ADMIN
+  STAFF
+  THREE_D_DESIGNER
+  TWO_D_DESIGNER
+  TWO_D_EXECUTOR
+  ACCOUNTANT
+  SUPER_ADMIN
+}
 
-  clientLead ClientLead @relation(fields: [clientLeadId], references: [id])
-  clientLeadId Int
+enum ClientLead_status {
+  NEW
+  IN_PROGRESS
+  INTERESTED
+  NEEDS_IDENTIFIED
+  NEGOTIATING
+  REJECTED
+  FINALIZED
+  CONVERTED
+  ON_HOLD
+  ARCHIVED
+  LEADEXCHANGE
+}
 
-  createdAt DateTime @default(now())
-
-  @@unique([nodeId, clientLeadId])
-  @@index([clientLeadId])
-  @@index([nodeId])
+enum ClientLead_discoverySource {
+  TIKTOK
+  TV
+  FACEBOOK
+  YOUTUBE
+  GOOGLE
+  INSTAGRAM
+  INTERIOR_MAGAZINE_SITE
+  REFERRAL
+  OTHER
 }
