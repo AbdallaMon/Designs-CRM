@@ -23,8 +23,15 @@ export function errorHandler(err, req, res, next) {
     });
     return res.status(err.statusCode).json({
       success: false,
-      message: err.message,
-      details: err.details,
+      message: err.message, // CODE (unchanged key the FE already reads via resolveMessage)
+      code: err.code,
+      translationKey: err.translationKey,
+      reason: err.reason, // developer-facing "why"
+      redirectTo: err.redirectTo,
+      redirectText: err.redirectText,
+      dontRedirect: err.dontRedirect,
+      details: err.details, // e.g. { requiredPermissions: [...] }
+      route: `${req.method} ${req.originalUrl}`,
     });
   }
 
