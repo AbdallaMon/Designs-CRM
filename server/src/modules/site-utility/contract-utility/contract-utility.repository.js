@@ -1,7 +1,7 @@
 // Prisma I/O ONLY. No business logic, no AppError. Methods accept an optional
 // `client` so a usecase can compose them inside a prisma.$transaction.
 //
-// Models (server/prisma/schema.prisma — FROZEN):
+// Models (packages/db/prisma/schema.prisma — FROZEN):
 //   ContractUtility                 — singleton (id Int @id @default(1));
 //                                     obligationsParty{One,Two}{Ar,En} (Text).
 //   ContractStageClauseTemplate     — heading/title/description Ar+En (Text), order.
