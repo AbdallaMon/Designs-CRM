@@ -8,6 +8,8 @@
 
 import { ROLE_PERMISSIONS, SUPER_SALES_EXTRA_PERMISSIONS } from "./constants/access/role-permissions.js";
 import { splitPermissionCode } from "./constants/access/permissions.constants.js";
+import { NAVIGATION } from "./constants/access/navigation.js";
+import { USER_ROLES } from "./constants/access/roles.constants.js";
 
 /**
  * True when `user.role` is one of the given roles.
@@ -136,6 +138,67 @@ export function computeCapabilities(rules, ctx) {
     } catch {
       out[name] = false;
     }
+  }
+  return out;
+}
+
+/**
+ * Resolve the role used for NAVIGATION filtering. Mirrors master's
+ * `linksForRole(user)` special-case: a STAFF user with `isSuperSales` renders the
+ * SUPER_SALES sidebar. `user.activeRole` (role-switch) wins when present.
+ * @param {object} user
+ * @returns {string|undefined}
+ */
+function navRoleFor(user) {
+  const role = user?.activeRole || user?.role;
+  if (role === USER_ROLES.STAFF && user?.isSuperSales) return USER_ROLES.SUPER_SALES;
+  return role;
+}
+
+/**
+ * Build the ordered per-role sidebar tabs from the NAVIGATION config.
+ *
+ * ROLE-DRIVEN (primary rule: `role ∈ item.allowedRoles`), ported 1:1 from
+ * master's `linksForRole(user)`. An OPTIONAL `item.requiredPermission` acts as a
+ * NON-NARROWING guard (none set today). Sub-links are ALSO role-filtered — each
+ * sub-link may carry its own `allowedRoles`, so one row (e.g. "Work stages")
+ * renders the correct per-role sub-list; a parent is dropped only if, after
+ * filtering, it has NO surviving sub-link. Items are icon-stripped (icons are
+ * FE-only). Returns `[{ key, label, href, active?, subLinks? }]` in config order.
+ *
+ * @param {object} user  { role, activeRole?, isSuperSales?, subRoles?, permissions? }
+ * @returns {Array<{key:string,label:string,href:string,active?:string,subLinks?:Array}>}
+ */
+export function buildNavigationTabs(user) {
+  const role = navRoleFor(user);
+  if (!role) return [];
+
+  const permissions = user?.permissions
+    ? user.permissions
+    : getEffectivePermissions(user).permissions;
+
+  const out = [];
+  for (const item of NAVIGATION) {
+    if (!item.allowedRoles.includes(role)) continue;
+    if (item.requiredPermission && !permissions.includes(item.requiredPermission)) continue;
+
+    let subLinks;
+    if (item.subLinks?.length) {
+      const filtered = item.subLinks
+        .filter((s) => !s.allowedRoles || s.allowedRoles.includes(role))
+        .map(({ label, href, active }) => ({ label, href, ...(active ? { active } : {}) }));
+      // Drop a parent that has sub-links in config but none for this role.
+      if (filtered.length === 0) continue;
+      subLinks = filtered;
+    }
+
+    out.push({
+      key: item.key,
+      label: item.label,
+      href: item.href,
+      ...(item.active ? { active: item.active } : {}),
+      ...(subLinks ? { subLinks } : {}),
+    });
   }
   return out;
 }
