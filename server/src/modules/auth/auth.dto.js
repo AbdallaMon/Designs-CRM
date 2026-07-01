@@ -2,6 +2,7 @@ import {
   AUTH_COOKIE_NAME,
   AUTH_REFRESH_TOKEN_COOKIE_NAME,
   getEffectivePermissions,
+  buildNavigationTabs,
 } from "@dms/shared";
 
 class AuthSchema {
@@ -78,6 +79,14 @@ class AuthSchema {
           }
         : getEffectivePermissions({ ...user, subRoles });
 
+    const navigationTabs = buildNavigationTabs({
+      role: user.role,
+      activeRole: user.activeRole,
+      isSuperSales: user.isSuperSales,
+      subRoles,
+      permissions,
+    });
+
     return {
       id: user.id,
       email: user.email,
@@ -90,6 +99,7 @@ class AuthSchema {
       profilePicture: user.profilePicture ?? null,
       permissions,
       permissionsByModule,
+      navigationTabs,
     };
   }
 

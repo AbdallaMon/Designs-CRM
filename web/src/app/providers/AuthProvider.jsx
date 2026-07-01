@@ -12,6 +12,9 @@ export default function AuthProvider({ children }) {
   // (the collapsed, role-agnostic feature pages gate on these, not on role).
   const [permissions, setPermissions] = useState([]);
   const [permissionsByModule, setPermissionsByModule] = useState({});
+  // Per-role sidebar nav tabs emitted by /v2/auth/me (Task 6) — single source of
+  // truth for the dashboard sidebar, mirrors `permissions`/`permissionsByModule`.
+  const [navigationTabs, setNavigationTabs] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [validatingAuth, setValidatingAuth] = useState(true);
   useEffect(() => {
@@ -39,11 +42,13 @@ export default function AuthProvider({ children }) {
         setUser(nextUser);
         setPermissions(me.permissions ?? []);
         setPermissionsByModule(me.permissionsByModule ?? {});
+        setNavigationTabs(me.navigationTabs ?? []);
         setIsLoggedIn(true);
       } catch (err) {
         setIsLoggedIn(false);
         setPermissions([]);
         setPermissionsByModule({});
+        setNavigationTabs([]);
         setUser({
           role: null,
           emailConfirmed: null,
@@ -63,6 +68,7 @@ export default function AuthProvider({ children }) {
         user,
         permissions,
         permissionsByModule,
+        navigationTabs,
         isLoggedIn,
         setIsLoggedIn,
         validatingAuth,
