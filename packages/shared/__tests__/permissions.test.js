@@ -57,9 +57,16 @@ describe("getEffectivePermissions", () => {
     });
     expect(permissions).toContain(PERMISSIONS.TELEGRAM.MANAGE);
     expect(permissions).toContain(PERMISSIONS.CHAT.ROOM_VIEW);
-    // grouped by module for nav lookups
-    expect(permissionsByModule.telegram).toContain(PERMISSIONS.TELEGRAM.MANAGE);
-    expect(permissionsByModule.chat).toContain(PERMISSIONS.CHAT.ROOM_VIEW);
+    // grouped by module for nav lookups — each module entry is { codes, ...flags }
+    expect(permissionsByModule.telegram.codes).toContain(PERMISSIONS.TELEGRAM.MANAGE);
+    expect(permissionsByModule.chat.codes).toContain(PERMISSIONS.CHAT.ROOM_VIEW);
+  });
+
+  it("permissionsByModule exposes codes + action flags per module", () => {
+    const { permissionsByModule } = getEffectivePermissions({ role: USER_ROLES.ADMIN });
+    expect(permissionsByModule.lead.codes).toContain("lead.list");
+    expect(permissionsByModule.lead.canList).toBe(true);
+    expect(permissionsByModule.user.canCreate).toBe(true);
   });
 
   it("STAFF does NOT get telegram.manage", () => {

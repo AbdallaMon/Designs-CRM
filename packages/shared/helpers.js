@@ -8,7 +8,7 @@
 
 import { ROLE_PERMISSIONS, SUPER_SALES_EXTRA_PERMISSIONS } from "./constants/access/role-permissions.js";
 import { splitPermissionCode } from "./constants/access/permissions.constants.js";
-import { NAVIGATION } from "./constants/access/navigation.js";
+import { NAVIGATION, NAVIGATION_PERMISSION_ACTIONS } from "./constants/access/navigation.js";
 import { USER_ROLES } from "./constants/access/roles.constants.js";
 
 /**
@@ -46,7 +46,7 @@ export function getPermissionsForRole(role) {
  * @param {string} [user.role]
  * @param {boolean} [user.isSuperSales]
  * @param {Array<string|{subRole:string}>} [user.subRoles]
- * @returns {{ permissions: string[], permissionsByModule: Record<string, string[]> }}
+ * @returns {{ permissions: string[], permissionsByModule: Record<string, {codes: string[], [flag: string]: boolean|string[]}> }}
  */
 export function getEffectivePermissions(user) {
   if (!user) {
@@ -73,11 +73,18 @@ export function getEffectivePermissions(user) {
 
   const permissions = Array.from(set);
 
-  // group by module for nav/visibility lookups on the client
+  // group by module for nav/visibility lookups on the client. Each module
+  // entry keeps a `codes` array (back-compat) PLUS boolean action flags
+  // (canList/canView/canCreate/canEdit/...) derived from
+  // NAVIGATION_PERMISSION_ACTIONS, so the FE can gate on
+  // `permissionsByModule.<module>.canX` without re-deriving code strings.
   const permissionsByModule = {};
   for (const code of permissions) {
     const { module } = splitPermissionCode(code);
-    (permissionsByModule[module] ??= []).push(code);
+    const entry = (permissionsByModule[module] ??= { codes: [] });
+    entry.codes.push(code);
+    const actionFlag = NAVIGATION_PERMISSION_ACTIONS[module]?.[code];
+    if (actionFlag) entry[actionFlag] = true;
   }
 
   return { permissions, permissionsByModule };

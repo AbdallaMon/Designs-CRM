@@ -331,5 +331,50 @@ export const NAVIGATION = [
 ];
 
 // module → { permissionCode → actionFlagName } for the action-flag
-// permissionsByModule (Task 5). Intentionally empty here.
-export const NAVIGATION_PERMISSION_ACTIONS = {};
+// permissionsByModule (Task 5). `getEffectivePermissions` uses this to derive
+// boolean `canX` flags per module (in addition to the raw `codes` array), so
+// the FE can gate on `permissionsByModule.<module>.canList` etc. without
+// re-deriving code strings. Only the modules the FE actually gates on need an
+// entry here — an unmapped module still gets `{ codes: [...] }` with no flags.
+export const NAVIGATION_PERMISSION_ACTIONS = {
+  lead: {
+    "lead.list": "canList",
+    "lead.view": "canView",
+    "lead.edit": "canEdit",
+  },
+  project: {
+    "project.list": "canList",
+    "project.view": "canView",
+    "project.edit": "canEdit",
+  },
+  task: {
+    "task.list": "canList",
+    "task.view": "canView",
+    "task.create": "canCreate",
+    "task.edit": "canEdit",
+  },
+  user: {
+    "user.list": "canList",
+    "user.profile.view": "canView",
+    "user.create": "canCreate",
+    "user.update": "canEdit",
+  },
+  contract: {
+    "contract.list": "canList",
+    "contract.view": "canView",
+    "contract.create": "canCreate",
+    "contract.edit": "canEdit",
+  },
+  accounting: {
+    "accounting.payment.list": "canList",
+    "accounting.payment.process": "canEdit",
+  },
+  course: {
+    "course.view": "canView",
+    "course.manage": "canEdit",
+  },
+  image_session: {
+    "image_session.session.view": "canView",
+    "image_session.session.manage": "canEdit",
+  },
+};
