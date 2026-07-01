@@ -15,6 +15,7 @@ export const authMessagesCodes = {
 
   // authorization
   FORBIDDEN: "FORBIDDEN", // lacks the required permission code (gate 1)
+  PERMISSION_DENIED: "PERMISSION_DENIED", // specific gate-1 denial with requiredPermissions detail
   ACCESS_DENIED: "ACCESS_DENIED", // record outside the user's scope (gate 2 / IDOR)
 
   // success

@@ -4,6 +4,7 @@ import {
   AUTH_COOKIE_NAME,
   authMessagesCodes,
   getEffectivePermissions,
+  messagesNames,
 } from "@dms/shared";
 
 // Authorization = authentication + permission code + object scope (+ status).
@@ -59,7 +60,13 @@ class AuthMiddleware {
         : anyOf.some((p) => have.includes(p));
 
       if (!ok) {
-        return next(new AppError(authMessagesCodes.FORBIDDEN, 403));
+        const requiredPermissions = required.length ? required : anyOf;
+        return next(
+          new AppError(authMessagesCodes.PERMISSION_DENIED, 403, { requiredPermissions }, {
+            translationKey: messagesNames.authMessages,
+            reason: `missing permission(s): ${requiredPermissions.join(", ")}`,
+          }),
+        );
       }
       return next();
     };

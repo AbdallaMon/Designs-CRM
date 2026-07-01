@@ -29,7 +29,7 @@ describe("AuthMiddleware.requirePermissions", () => {
     expect(next).toHaveBeenCalledWith(); // no arg = success
   });
 
-  it("denies with 403 FORBIDDEN when the user lacks the required code", () => {
+  it("denies with 403 PERMISSION_DENIED when the user lacks the required code", () => {
     const req = makeReq(USER_ROLES.STAFF); // STAFF has no telegram.manage
     const next = vi.fn();
     AuthMiddleware.requirePermissions([PERMISSIONS.TELEGRAM.MANAGE])(
@@ -41,7 +41,7 @@ describe("AuthMiddleware.requirePermissions", () => {
     const err = next.mock.calls[0][0];
     expect(err).toBeInstanceOf(AppError);
     expect(err.statusCode).toBe(403);
-    expect(err.message).toBe(authMessagesCodes.FORBIDDEN);
+    expect(err.message).toBe(authMessagesCodes.PERMISSION_DENIED);
   });
 
   it("allows STAFF for a code every role holds (chat.room.view)", () => {
@@ -96,6 +96,17 @@ describe("AuthMiddleware.requirePermissions", () => {
     );
     const err = next.mock.calls[0][0];
     expect(err.statusCode).toBe(401);
+  });
+
+  it("requirePermissions throws PERMISSION_DENIED with the requiredPermissions details", () => {
+    const req = { auth: { permissions: ["lead.list"] } };
+    let captured;
+    const next = (e) => { captured = e; };
+    AuthMiddleware.requirePermissions(["lead.edit"])(req, {}, next);
+    expect(captured).toBeInstanceOf(AppError);
+    expect(captured.message).toBe("PERMISSION_DENIED");
+    expect(captured.statusCode).toBe(403);
+    expect(captured.details).toEqual({ requiredPermissions: ["lead.edit"] });
   });
 });
 

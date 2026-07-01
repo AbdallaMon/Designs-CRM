@@ -66,7 +66,7 @@ describe("admin-residual route permission gate (allow vs deny)", () => {
     const err = next.mock.calls[0][0];
     expect(err).toBeInstanceOf(AppError);
     expect(err.statusCode).toBe(403);
-    expect(err.message).toBe(authMessagesCodes.FORBIDDEN);
+    expect(err.message).toBe(authMessagesCodes.PERMISSION_DENIED);
   });
 
   it("a sales/contact-initiator is 403'd on the fixed-data + commissions gates", () => {

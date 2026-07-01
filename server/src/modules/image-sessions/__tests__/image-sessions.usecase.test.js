@@ -100,7 +100,7 @@ describe("image-sessions ADMIN surface — role parity (legacy `/admin/image-ses
       const err = next.mock.calls[0][0];
       expect(err, `${role} must be denied ADMIN_MANAGE`).toBeInstanceOf(AppError);
       expect(err.statusCode).toBe(403);
-      expect(err.message).toBe(authMessagesCodes.FORBIDDEN);
+      expect(err.message).toBe(authMessagesCodes.PERMISSION_DENIED);
     }
   });
 });
