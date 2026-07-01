@@ -40,9 +40,9 @@ export default function AuthProvider({ children }) {
         }
 
         setUser(nextUser);
-        setPermissions(me.permissions ?? []);
-        setPermissionsByModule(me.permissionsByModule ?? {});
-        setNavigationTabs(me.navigationTabs ?? []);
+        setPermissions(nextUser?.permissions ?? []);
+        setPermissionsByModule(nextUser?.permissionsByModule ?? {});
+        setNavigationTabs(nextUser?.navigationTabs ?? []);
         setIsLoggedIn(true);
       } catch (err) {
         setIsLoggedIn(false);
