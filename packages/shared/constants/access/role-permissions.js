@@ -26,7 +26,7 @@ const P = PERMISSIONS;
 // Codes EVERY authenticated user holds today (auth self-service + chat + authed
 // file upload). These modules gate on authentication alone in the current code,
 // so all roles receive them to preserve behavior.
-const SHARED_AUTHED = [
+export const SHARED_AUTHED = [
   P.AUTH.ME,
   P.AUTH.LOGOUT,
   P.CHAT.ROOM_LIST,
@@ -159,10 +159,10 @@ const SHARED_AUTHED = [
 // exactly without widening any base role (mirrors COURSE_ADMIN / USER_ADMIN). This is GLOBAL
 // studio reference data (spaces/templates/materials/styles/colors/design-images/page-info/
 // pros-and-cons) — no per-lead object scope; the admin code IS the gate (admins see all).
-const IMAGE_SESSION_ADMIN = [P.IMAGE_SESSION.ADMIN_VIEW, P.IMAGE_SESSION.ADMIN_MANAGE];
+export const IMAGE_SESSION_ADMIN = [P.IMAGE_SESSION.ADMIN_VIEW, P.IMAGE_SESSION.ADMIN_MANAGE];
 
 // Telegram management — ADMIN only today.
-const TELEGRAM_ADMIN = [P.TELEGRAM.MANAGE];
+export const TELEGRAM_ADMIN = [P.TELEGRAM.MANAGE];
 
 // ── leads / lead ────────────────────────────────────────────────────────────────
 // Legacy `/shared/client-leads` sat behind SHARED authentication only — EVERY
@@ -175,7 +175,7 @@ const TELEGRAM_ADMIN = [P.TELEGRAM.MANAGE];
 // admin-tier route in legacy was `/bulk-convert` (it threw for non-admin) and
 // assigning a lead to ANOTHER user (PUT / with isAdmin); both map to LEAD.ASSIGN_OTHER,
 // granted only to ADMIN/SUPER_ADMIN base + isSuperSales (see below) — matching legacy.
-const LEAD_AUTHED = [
+export const LEAD_AUTHED = [
   P.LEAD.LIST,
   P.LEAD.VIEW,
   P.LEAD.ASSIGN_SELF,
@@ -197,13 +197,13 @@ const LEAD_AUTHED = [
 // ADMIN/SUPER_ADMIN base here; the isSuperSales slice is layered via
 // SUPER_SALES_EXTRA_PERMISSIONS below (matching legacy exactly, without widening any
 // base role).
-const LEAD_ADMIN = [P.LEAD.ASSIGN_OTHER];
+export const LEAD_ADMIN = [P.LEAD.ASSIGN_OTHER];
 
 // Site-utility management — ADMIN + SUPER_ADMIN only. The legacy routes were only
 // behind SHARED authentication (any logged-in role could mutate them); the FE pages
 // are @admin / @super_admin, so the v2 module tightens this to a privileged-only
 // surface. This is a deliberate SECURITY FIX, not a behavior-preserving 1:1 grant.
-const SITE_UTILITY_ADMIN = [
+export const SITE_UTILITY_ADMIN = [
   P.SITE_UTILITY.PDF_CONFIG_VIEW,
   P.SITE_UTILITY.PDF_CONFIG_EDIT,
   P.SITE_UTILITY.PAYMENT_CONDITION_LIST,
@@ -224,7 +224,7 @@ const SITE_UTILITY_ADMIN = [
 // constrains isSuperSales: it may only create/edit STAFF users and may not set
 // ADMIN/SUPER_ADMIN roles — that finer rule is preserved in the v2 usecase, not the
 // grant.) Reads/writes split per convention.
-const USER_ADMIN = [
+export const USER_ADMIN = [
   P.USER.LIST,
   P.USER.VIEW_LOGS,
   P.USER.VIEW_LAST_SEEN,
@@ -249,7 +249,7 @@ const USER_ADMIN = [
 // management actions in legacy were assigning/unassigning a designer and changing the
 // designer-board project status (gated by the `isAdmin` union); both map to
 // PROJECT.MANAGE, granted only to ADMIN/SUPER_ADMIN base + isSuperSales (see below).
-const PROJECT_AUTHED = [
+export const PROJECT_AUTHED = [
   P.PROJECT.LIST,
   P.PROJECT.VIEW,
   P.PROJECT.EDIT,
@@ -275,14 +275,14 @@ const PROJECT_AUTHED = [
 // SUPER_ADMIN / isSuperSales). Granted to ADMIN/SUPER_ADMIN base here; the isSuperSales
 // slice is layered via SUPER_SALES_EXTRA_PERMISSIONS below (matching legacy exactly,
 // without widening any base role).
-const PROJECT_ADMIN = [P.PROJECT.MANAGE];
+export const PROJECT_ADMIN = [P.PROJECT.MANAGE];
 
 // Admin course management — ADMIN + SUPER_ADMIN (behavior-preserving 1:1 with the
 // legacy `/admin/courses` "ADMIN" gate, which admits ADMIN / SUPER_ADMIN, the
 // ADMIN/SUPER_ADMIN sub-roles, and `isSuperSales`). The `isSuperSales` slice is
 // granted via SUPER_SALES_EXTRA_PERMISSIONS below so the union matches legacy
 // `isAdmin` exactly without widening role grants.
-const COURSE_ADMIN = [
+export const COURSE_ADMIN = [
   P.COURSE.VIEW,
   P.COURSE.MANAGE,
   P.COURSE.ACCESS_MANAGE,
@@ -297,7 +297,7 @@ const COURSE_ADMIN = [
 // are NOT admitted). To preserve observable behavior 1:1, the full accounting code set
 // is granted to the ACCOUNTANT role ONLY — no ADMIN/SUPER_ADMIN/isSuperSales grant.
 // Widening this surface would be a behavior change and needs an explicit decision.
-const ACCOUNTING_ALL = [
+export const ACCOUNTING_ALL = [
   P.ACCOUNTING.PAYMENT_LIST,
   P.ACCOUNTING.PAYMENT_PROCESS,
   P.ACCOUNTING.PAYMENT_MARK_OVERDUE,
@@ -329,7 +329,7 @@ const ACCOUNTING_ALL = [
 // automatically by getEffectivePermissions — so the effective set matches the legacy
 // `isAdmin` union exactly without widening any other base role (mirrors COURSE_ADMIN /
 // USER_ADMIN / IMAGE_SESSION_ADMIN). NOT granted to plain STAFF/sales/designer/accountant.
-const ADMIN_RESIDUAL = [
+export const ADMIN_RESIDUAL = [
   P.ADMIN_RESIDUAL.REPORT_GENERATE,
   P.ADMIN_RESIDUAL.LEAD_IMPORT,
   P.ADMIN_RESIDUAL.LEAD_CREATE,
@@ -353,7 +353,7 @@ const ADMIN_RESIDUAL = [
 // preserve that gate 1:1 the code is granted to exactly those five base roles below —
 // and is deliberately ABSENT from SHARED_AUTHED and from the ADMIN/SUPER_ADMIN/SUPER_SALES/
 // CONTACT_INITIATOR role lists.
-const STAFF_GATE = [P.STAFF.LATEST_CALLS_VIEW];
+export const STAFF_GATE = [P.STAFF.LATEST_CALLS_VIEW];
 
 /**
  * Base role → permission codes. Every UserRole value is present (no role may be
@@ -473,3 +473,14 @@ export const SUPER_SALES_EXTRA_PERMISSIONS = [
   P.ADMIN_RESIDUAL.PROJECT_GROUP_CREATE,
   P.ADMIN_RESIDUAL.MODEL_ARCHIVE,
 ];
+
+// Lead-detail sections that master shows only to admin || primary staff. New VIEW
+// codes (see permissions.constants.js) granted to PRIMARY_SALES/SUPER_SALES/admin.
+export const LEAD_SECTION_PRIMARY = [
+  P.LEAD.PRICE_OFFER_VIEW,
+  P.LEAD.PROJECTS_VIEW,
+  P.LEAD.MODIFICATIONS_VIEW,
+  P.LEAD.UPDATES_VIEW,
+];
+// The client-analysis tools master shows to admin || ANY staff → also NORMAL_SALES.
+export const LEAD_SECTION_ANALYSIS = [P.LEAD.ANALYSIS_VIEW];

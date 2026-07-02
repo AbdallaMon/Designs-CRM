@@ -120,6 +120,14 @@ export const LEAD_PERMISSIONS = {
   NOTE_MANAGE: "lead.note.manage", // add a note to a lead
   REMINDER_SEND: "lead.reminder.send", // payment-reminder / complete-register triggers
   COUNTRY_CHECK: "lead.country.check", // POST /:userId/countries (allowed-to-take check)
+
+  // section-visibility codes (make the FE's isPrimary-gated tabs expressible as codes;
+  // nothing gates on them until Phase 3 — additive, no parity impact).
+  PRICE_OFFER_VIEW: "lead.price_offer.view",
+  PROJECTS_VIEW: "lead.projects.view",
+  MODIFICATIONS_VIEW: "lead.modifications.view",
+  UPDATES_VIEW: "lead.updates.view",
+  ANALYSIS_VIEW: "lead.analysis.view",
 };
 
 // ── courses / LMS — admin-course (management surface) ───────────────────────────
