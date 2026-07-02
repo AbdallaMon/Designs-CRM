@@ -22,6 +22,7 @@ import {
   MdWork,
 } from "react-icons/md";
 
+import { LEAD_CODES } from "@/app/helpers/permissionCodes";
 import { LeadInfo } from "../panels/LeadInfo";
 import { LeadContactInfo } from "../panels/LeadContactInfo";
 import LeadStripeInfo from "../panels/StipieData";
@@ -90,8 +91,9 @@ export const LEAD_SECTIONS = [
     label: "Client analysis",
     group: "overview",
     icon: <MdAnalytics size={18} />,
-    // Mirrors SalesToolsTabs' own gate: admins and STAFF only (defense-in-depth kept inside).
-    visible: (ctx) => ctx.admin || ctx.user.role === "STAFF",
+    // Parity: master shows this to admin || any STAFF; lead.analysis.view is granted to all
+    // sales profiles + admin (isSuperSales ⟹ STAFF invariant makes this exact).
+    visible: (ctx) => ctx.perms.hasPermission(LEAD_CODES.ANALYSIS_VIEW),
     render: (ctx) => (
       <SalesToolsTabs
         lead={ctx.lead}
@@ -153,7 +155,7 @@ export const LEAD_SECTIONS = [
     icon: <PiCurrencyDollarSimpleLight size={18} />,
     tabKey: "priceOffers",
     count: (ctx) => ctx.lead.priceOffers?.length,
-    visible: (ctx) => ctx.admin || ctx.isPrimaryStaff,
+    visible: (ctx) => ctx.perms.hasPermission(LEAD_CODES.PRICE_OFFER_VIEW),
     render: (ctx) => (
       <PriceOffersList admin={ctx.admin} lead={ctx.lead} notUser={ctx.notUser} />
     ),
@@ -191,9 +193,9 @@ export const LEAD_SECTIONS = [
     label: "Projects",
     group: "delivery",
     icon: <MdWork size={18} />,
-    visible: (ctx) =>
-      (ctx.admin || ctx.isPrimaryStaff) &&
-      ["ADMIN", "SUPER_ADMIN", "STAFF"].includes(ctx.user.role),
+    // The old role restriction (ADMIN/SUPER_ADMIN/STAFF) is redundant with the code under
+    // the isSuperSales⟹STAFF invariant, so the code alone preserves visibility.
+    visible: (ctx) => ctx.perms.hasPermission(LEAD_CODES.PROJECTS_VIEW),
     render: (ctx) => <LeadProjects clientLeadId={ctx.lead.id} framed={false} />,
   },
   {
@@ -201,7 +203,7 @@ export const LEAD_SECTIONS = [
     label: "Modifications",
     group: "delivery",
     icon: <MdModeEdit size={18} />,
-    visible: (ctx) => ctx.admin || ctx.isPrimaryStaff,
+    visible: (ctx) => ctx.perms.hasPermission(LEAD_CODES.MODIFICATIONS_VIEW),
     render: (ctx) => (
       <TasksList name="Modification" type="MODIFICATION" clientLeadId={ctx.lead.id} />
     ),
@@ -212,7 +214,7 @@ export const LEAD_SECTIONS = [
     group: "delivery",
     icon: <MdUpdate size={18} />,
     visible: (ctx) =>
-      ctx.lead.status === "FINALIZED" && (ctx.admin || ctx.isPrimaryStaff),
+      ctx.lead.status === "FINALIZED" && ctx.perms.hasPermission(LEAD_CODES.UPDATES_VIEW),
     render: (ctx) => <UpdatesList clientLeadId={ctx.lead.id} />,
   },
   {

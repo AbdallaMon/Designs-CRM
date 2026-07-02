@@ -13,6 +13,7 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 import { FinalizeModal } from "@/app/UiComponents/DataViewer/leads/widgets/FinalizeModal.jsx";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
+import { usePermission } from "@/app/hooks/usePermission";
 import { PreviewLead } from "./features/PreviewLead";
 import { MoreActionsMenu } from "./shared/MoreActionsMenu";
 import { LeadDialogHeader } from "./shared/LeadDialogHeader";
@@ -38,6 +39,7 @@ const LeadContent = ({
   const { user } = useAuth();
   const admin = checkIfAdminOrSuperSales(user);
   const isPrimaryStaff = checkIfPrimaryStaff(user);
+  const perms = usePermission();
   const details = useLeadDetails();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
@@ -137,6 +139,7 @@ const LeadContent = ({
     admin,
     isPrimaryStaff,
     notUser,
+    perms,
     setLead,
     setleads,
     payments,
