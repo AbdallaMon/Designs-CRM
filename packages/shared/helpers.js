@@ -10,6 +10,7 @@ import { ROLE_PERMISSIONS, SUPER_SALES_EXTRA_PERMISSIONS } from "./constants/acc
 import { splitPermissionCode } from "./constants/access/permissions.constants.js";
 import { NAVIGATION, NAVIGATION_PERMISSION_ACTIONS } from "./constants/access/navigation.js";
 import { USER_ROLES } from "./constants/access/roles.constants.js";
+import { PROFILES, resolveProfileKey } from "./constants/access/profiles.js";
 
 /**
  * True when `user.role` is one of the given roles.
@@ -31,11 +32,15 @@ export function getPermissionsForRole(role) {
 }
 
 /**
- * Compute a user's EFFECTIVE permissions from the code-defined role map.
+ * Compute a user's EFFECTIVE permissions, resolved via their PROFILE.
  *
- * Effective = base role codes
- *           ∪ each sub-role's role codes (user.subRoles[])
- *           ∪ isSuperSales extra codes (if user.isSuperSales).
+ * Effective = the resolved profile's codes (see `resolveProfileKey`/`PROFILES`)
+ *           ∪ each sub-role's role codes (user.subRoles[])           [transitional]
+ *           ∪ isSuperSales extra codes (if user.isSuperSales).       [transitional]
+ *
+ * The subRole + isSuperSales unions are TRANSITIONAL parity augmentations that
+ * guarantee the effective set stays a superset of the legacy role-only formula
+ * for every user (removed once profiles are the sole source in Phase 4).
  *
  * Pure & unit-testable: no DB, no side effects. Tolerant of both shapes of
  * `subRoles`:
@@ -44,29 +49,25 @@ export function getPermissionsForRole(role) {
  *
  * @param {object|null|undefined} user
  * @param {string} [user.role]
+ * @param {string} [user.profile]
  * @param {boolean} [user.isSuperSales]
  * @param {Array<string|{subRole:string}>} [user.subRoles]
  * @returns {{ permissions: string[], permissionsByModule: Record<string, {codes: string[], [flag: string]: boolean|string[]}> }}
  */
 export function getEffectivePermissions(user) {
-  if (!user) {
-    return { permissions: [], permissionsByModule: {} };
-  }
+  if (!user) return { permissions: [], permissionsByModule: {} };
 
-  const set = new Set();
+  // Profile is the primary source (Phase 1). subRole + isSuperSales unions are
+  // TRANSITIONAL parity augmentations — they guarantee the effective set is a
+  // superset of the legacy formula for every user, and are removed in Phase 4.
+  const set = new Set(PROFILES[resolveProfileKey(user)] ?? []);
 
-  // base role
-  for (const code of getPermissionsForRole(user.role)) set.add(code);
-
-  // sub-roles (each is itself a UserRole)
   const subRoles = Array.isArray(user.subRoles) ? user.subRoles : [];
   for (const entry of subRoles) {
     const subRole = typeof entry === "string" ? entry : entry?.subRole;
     if (!subRole) continue;
     for (const code of getPermissionsForRole(subRole)) set.add(code);
   }
-
-  // isSuperSales augmentation
   if (user.isSuperSales) {
     for (const code of SUPER_SALES_EXTRA_PERMISSIONS) set.add(code);
   }

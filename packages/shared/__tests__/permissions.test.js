@@ -75,11 +75,26 @@ describe("getEffectivePermissions", () => {
     expect(permissions).toContain(PERMISSIONS.CHAT.ROOM_VIEW);
   });
 
-  it("each base role resolves to exactly its mapped codes (deduped)", () => {
+  it("each base role resolves to exactly its mapped codes, plus profile-only new view codes", () => {
+    // getEffectivePermissions now resolves via the user's PROFILE (see
+    // constants/access/profiles.js), which additively grants the 5 new
+    // `lead.*.view` codes on top of the legacy ROLE_PERMISSIONS map for STAFF
+    // (analysis.view only) and ADMIN/SUPER_ADMIN (all five) — by design, not a
+    // regression. Restricting the effective set to the OLD code universe must
+    // still equal ROLE_PERMISSIONS exactly (parity); see profiles.test.js for the
+    // full parity matrix across every role/flag combination.
+    const NEW_VIEW_CODES = new Set([
+      PERMISSIONS.LEAD.PRICE_OFFER_VIEW,
+      PERMISSIONS.LEAD.PROJECTS_VIEW,
+      PERMISSIONS.LEAD.MODIFICATIONS_VIEW,
+      PERMISSIONS.LEAD.UPDATES_VIEW,
+      PERMISSIONS.LEAD.ANALYSIS_VIEW,
+    ]);
     for (const role of ALL_USER_ROLES) {
       const { permissions } = getEffectivePermissions({ role });
+      const oldUniverseOnly = permissions.filter((c) => !NEW_VIEW_CODES.has(c));
       const expected = Array.from(new Set(ROLE_PERMISSIONS[role]));
-      expect(permissions.sort()).toEqual(expected.sort());
+      expect(oldUniverseOnly.sort()).toEqual(expected.sort());
     }
   });
 
@@ -134,6 +149,13 @@ describe("getEffectivePermissions", () => {
     );
     expect(added.sort()).toEqual(
       [
+        // Profile-only addition: isSuperSales resolves to the SUPER_SALES profile,
+        // which extends PRIMARY_SALES — so the 4 primary-only lead section-visibility
+        // view codes come along too (additive, by design; see profiles.js).
+        PERMISSIONS.LEAD.PRICE_OFFER_VIEW,
+        PERMISSIONS.LEAD.PROJECTS_VIEW,
+        PERMISSIONS.LEAD.MODIFICATIONS_VIEW,
+        PERMISSIONS.LEAD.UPDATES_VIEW,
         PERMISSIONS.COURSE.VIEW,
         PERMISSIONS.COURSE.MANAGE,
         PERMISSIONS.COURSE.ACCESS_MANAGE,

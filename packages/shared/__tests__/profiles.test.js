@@ -3,6 +3,7 @@ import { PROFILES, PROFILE_KEYS, PROFILE_META, deriveProfileFromLegacy, resolveP
   from "../constants/access/profiles.js";
 import { ROLE_PERMISSIONS, SUPER_SALES_EXTRA_PERMISSIONS } from "../constants/access/role-permissions.js";
 import { ALL_PERMISSIONS } from "../constants/access/permissions.constants.js";
+import { getEffectivePermissions, getPermissionsForRole } from "../helpers.js";
 
 const set = (a) => new Set(a);
 const eq = (a, b) => set(a).size === set(b).size && a.every((x) => set(b).has(x));
@@ -67,5 +68,51 @@ describe("resolveProfileKey", () => {
   it("falls back to legacy derivation for an unset/invalid profile", () => {
     expect(resolveProfileKey({ profile: null, role: "STAFF", isPrimary: true })).toBe("PRIMARY_SALES");
     expect(resolveProfileKey({ profile: "NOPE", role: "ADMIN" })).toBe("ADMIN");
+  });
+});
+
+// The OLD formula, inlined as the parity oracle: role codes ∪ subRole codes ∪
+// (isSuperSales ? EXTRA). This is exactly what master/pre-change computed.
+function oldEffective(user) {
+  const s = new Set(getPermissionsForRole(user.role));
+  for (const e of user.subRoles ?? []) {
+    const sr = typeof e === "string" ? e : e?.subRole;
+    if (sr) for (const c of getPermissionsForRole(sr)) s.add(c);
+  }
+  if (user.isSuperSales) for (const c of SUPER_SALES_EXTRA_PERMISSIONS) s.add(c);
+  return s;
+}
+
+describe("getEffectivePermissions parity (old universe)", () => {
+  const NEW_CODES = new Set([
+    "lead.price_offer.view","lead.projects.view","lead.modifications.view",
+    "lead.updates.view","lead.analysis.view",
+  ]);
+  const roles = ["ADMIN","SUPER_ADMIN","STAFF","THREE_D_DESIGNER","TWO_D_DESIGNER",
+    "TWO_D_EXECUTOR","ACCOUNTANT","SUPER_SALES","CONTACT_INITIATOR"];
+  const combos = [];
+  for (const role of roles)
+    for (const isPrimary of [false, true])
+      for (const isSuperSales of [false, true])
+        combos.push({ role, isPrimary, isSuperSales, profile: null, subRoles: [] });
+  // a couple of subRole cases:
+  combos.push({ role: "STAFF", isPrimary: false, isSuperSales: false, profile: null, subRoles: [{ subRole: "ACCOUNTANT" }] });
+
+  it.each(combos)("effective ∩ oldUniverse === old formula for %o", (user) => {
+    const got = new Set(getEffectivePermissions(user).permissions);
+    const old = oldEffective(user);
+    // 1) restricting new to old codes equals the old formula:
+    const gotOld = new Set([...got].filter((c) => !NEW_CODES.has(c)));
+    expect(gotOld).toEqual(old);
+    // 2) new grants only ever ADD new codes (never remove an old one):
+    for (const c of old) expect(got.has(c)).toBe(true);
+  });
+
+  it("profile path grants the new primary view codes to STAFF+isPrimary", () => {
+    const perms = new Set(getEffectivePermissions({ role: "STAFF", isPrimary: true, profile: null }).permissions);
+    for (const c of ["lead.price_offer.view","lead.projects.view","lead.modifications.view","lead.updates.view"])
+      expect(perms.has(c)).toBe(true);
+    // analysis view is granted to ALL sales incl. normal:
+    expect(new Set(getEffectivePermissions({ role: "STAFF", profile: null }).permissions).has("lead.analysis.view")).toBe(true);
   });
 });
