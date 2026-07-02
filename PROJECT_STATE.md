@@ -62,9 +62,15 @@ Brought authorization to Transaction-app parity, identical-to-master:
 - **Audit:** `docs/superpowers/specs/permissions-parity-matrix.md` — **0 real mismatches** vs master across ~200 routes; only 4 **intentional** security tightenings kept (site-utility→admin-only, reviews token-hiding, IDOR object-scope checkers, model allow-lists).
 Design: `docs/superpowers/specs/2026-07-01-permissions-parity-and-denial-reasons-design.md`; plan: `docs/superpowers/plans/2026-07-01-permissions-parity.md`.
 
-**Verification:** full vitest suite **610/610 green**; both workstreams whole-branch-reviewed (READY, no critical/important findings). Commits are on `frontend-redesign` (not merged to master — the user directed staying on this branch).
+**Verification:** full vitest suite **619/619 green**; both workstreams whole-branch-reviewed (READY, no critical/important findings). Includes **runtime verification** beyond unit tests: a real **HTTP integration test** (`authz.integration.test.js`) exercising the live chain JWT→`requireAuth`→`requirePermissions`→`errorHandler`→envelope + `/auth/me` navigationTabs per role (403 carries `PERMISSION_DENIED`+`requiredPermissions`; scoped-checker denial carries `redirectTo`/`reason`), and the RouteGuard decision logic extracted to a pure `routeAccess.js` with per-role allow/block unit tests. Commits are on `frontend-redesign` (not merged to master — the user directed staying on this branch).
 
-**Next:** run the prod migration runbook (user); continue the UI redesign; the permissions FE primitives (`usePermission`/`PermissionGate`) are now available to gate redesigned screens.
+**Follow-ups / recommendations (not done):**
+- **Prod runbook (user):** the metadata-only `migrate resolve --applied` on production — the one blocking real-world step; agent never touches prod.
+- **Browser E2E:** the full app was NOT booted (its boot awaits Redis + a live Telegram connection before listening); actual in-browser render of the sidebar/RouteGuard/denial-toasts per role is verified by logic+HTTP tests but not by a running browser. Needs a running app (or a jsdom + @testing-library setup) — left for the user.
+- **Per-screen action gating:** `usePermission`/`PermissionGate` + `capabilities.*` (already attached on ~21 module DTOs) should be wired into each screen's buttons as screens are redesigned — not done speculatively (YAGNI).
+- **Audit logging:** a real who-did-what audit trail needs a NEW schema table (the existing `UserLog` is time-tracking). Schema is frozen → this is a user decision; NOT added autonomously.
+
+**Next:** run the prod migration runbook (user); continue the UI redesign, wiring the permission primitives into each screen as it's redesigned.
 
 ---
 
