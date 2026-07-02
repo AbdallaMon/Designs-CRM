@@ -19,12 +19,17 @@ export class UserValidation {
   static listQuery = z.object({}).passthrough();
 
   // ── admin create / edit (legacy createStaffUser / editStaffUser read these) ────
+  // `profile` (permission-profiles framework, @dms/shared PROFILE_KEYS/PROFILE_META) is
+  // optional here for shape/coercion only — the usecase validates the key is a known
+  // profile and derives role/isPrimary/isSuperSales from it. `role` is optional on
+  // create since a valid `profile` can supply it instead.
   static createUser = z
     .object({
       email: z.string().min(1),
       password: z.string().min(1),
       name: z.string().min(1),
-      role: z.string().min(1),
+      role: z.string().min(1).optional(),
+      profile: z.string().optional(),
       telegramUsername: z.string().nullish(),
     })
     .passthrough();
@@ -35,6 +40,7 @@ export class UserValidation {
       password: z.string().optional(),
       name: z.string().optional(),
       role: z.string().optional(),
+      profile: z.string().optional(),
       telegramUsername: z.string().nullish(),
     })
     .passthrough();

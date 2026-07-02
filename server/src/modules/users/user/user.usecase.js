@@ -21,7 +21,7 @@
 // same pattern as the migrated leads/courses modules.
 import bcrypt from "bcrypt";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { userMessagesCodes as C } from "@dms/shared";
+import { userMessagesCodes as C, PROFILE_KEYS, PROFILE_META } from "@dms/shared";
 import { userRepository } from "./user.repository.js";
 import {
   toSafeProfile,
@@ -83,6 +83,21 @@ const BCRYPT_COST = 8;
 // registered" for create AND edit).
 function isEmailTakenError(error) {
   return error?.code === "P2002" && error?.meta?.target?.includes?.("email");
+}
+
+// When a profile is supplied, it is authoritative: derive the legacy role/flags from
+// PROFILE_META and merge them into the body the frozen create/edit service writes, so
+// nothing that still reads role/isPrimary/isSuperSales goes out of sync. When no
+// profile is sent this is a no-op (parity with pre-profile behavior).
+function applyProfileToBody(body) {
+  const key = body?.profile;
+  if (key == null) return { body, profile: null };
+  if (!PROFILE_KEYS.includes(key)) throw new AppError(C.USER_ROLE_NOT_ALLOWED, 400);
+  const meta = PROFILE_META[key];
+  const merged = { ...body, role: meta.baseRole };
+  if (meta.isPrimary !== undefined) merged.isPrimary = meta.isPrimary;
+  if (meta.isSuperSales !== undefined) merged.isSuperSales = meta.isSuperSales;
+  return { body: merged, profile: key };
 }
 
 export class UserUsecase {
@@ -232,17 +247,24 @@ export class UserUsecase {
     if (!body || Object.keys(body).length === 0) {
       throw new AppError(C.USER_NO_DATA_SENT, 404);
     }
+    // A supplied `profile` is authoritative: derive role/isPrimary/isSuperSales from
+    // PROFILE_META before the legacy rule check + write. No profile → no-op (parity).
+    const { body: withRole, profile } = applyProfileToBody(body);
     // Legacy rule: an isSuperSales (non-admin) creator may only create STAFF users.
     if (
       authUser.isSuperSales &&
       authUser.role !== "ADMIN" &&
       authUser.role !== "SUPER_ADMIN" &&
-      (body.role === "ADMIN" || body.role === "SUPER_ADMIN" || body.role !== "STAFF")
+      (withRole.role === "ADMIN" || withRole.role === "SUPER_ADMIN" || withRole.role !== "STAFF")
     ) {
       throw new AppError(C.USER_ROLE_NOT_ALLOWED, 403);
     }
     try {
-      return await this.legacy.createStaffUser(body);
+      const createdUser = await this.legacy.createStaffUser(withRole);
+      if (profile && createdUser?.id != null) {
+        await this.repo.setUserProfile({ userId: createdUser.id, profile });
+      }
+      return createdUser;
     } catch (error) {
       if (isEmailTakenError(error)) throw new AppError(C.EMAIL_ALREADY_REGISTERED, 400);
       throw error;
@@ -251,18 +273,22 @@ export class UserUsecase {
 
   async update({ userId, body, authUser }) {
     if (!body || !userId) throw new AppError(C.USER_NOT_FOUND, 404);
+    // Same profile-authoritative derivation as create; no profile → no-op (parity).
+    const { body: withRole, profile } = applyProfileToBody(body);
     // Legacy rule: a non-admin isSuperSales editor may not change a role to non-STAFF.
     if (
       authUser.role !== "ADMIN" &&
       authUser.role !== "SUPER_ADMIN" &&
       authUser.isSuperSales &&
-      body.role &&
-      body.role !== "STAFF"
+      withRole.role &&
+      withRole.role !== "STAFF"
     ) {
       throw new AppError(C.USER_ROLE_NOT_ALLOWED, 403);
     }
     try {
-      return await this.legacy.editStaffUser(body, userId);
+      const updated = await this.legacy.editStaffUser(withRole, userId);
+      if (profile) await this.repo.setUserProfile({ userId: Number(userId), profile });
+      return updated;
     } catch (error) {
       if (isEmailTakenError(error)) throw new AppError(C.EMAIL_ALREADY_REGISTERED, 400);
       throw error;

@@ -170,6 +170,13 @@ class UserRepository {
     return prisma.user.update({ where: { id: Number(userId) }, data });
   }
 
+  // Persist the assigned permission profile (permission-profiles framework). Called
+  // from the create/update usecases AFTER the frozen legacy create/edit write, only
+  // when the caller sent a `profile` — single-field write, no business logic here.
+  setUserProfile({ userId, profile }) {
+    return prisma.user.update({ where: { id: Number(userId) }, data: { profile } });
+  }
+
   // ── Restricted countries (legacy get/updateNotAllowedCountries) ───────────────
   async findRestrictedCountries({ userId }) {
     const user = await prisma.user.findUnique({

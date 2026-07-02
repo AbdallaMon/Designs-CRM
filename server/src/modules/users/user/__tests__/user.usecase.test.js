@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 
 import { UserUsecase } from "../user.usecase.js";
-import { userMessagesCodes } from "@dms/shared";
+import { userMessagesCodes, PROFILE_META } from "@dms/shared";
 
 /** Minimal fake repository — only the methods the tested usecases touch. */
 function makeRepo(overrides = {}) {
@@ -263,5 +263,87 @@ describe("UserUsecase.changeStatus", () => {
     const usecase = new UserUsecase(repo);
     await usecase.changeStatus({ userId: 4, body: { user: { isActive: true } } });
     expect(repo.toggleStatus).toHaveBeenCalledWith({ userId: 4, isActive: true });
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+//  PROFILE ASSIGNMENT (create/update) — derives legacy role/flags from
+//  PROFILE_META and persists `profile` via the new repo.setUserProfile.
+//  NOTE: the real UserUsecase constructor is POSITIONAL — `(repository, legacy)`
+//  — not the `{ repository, legacy }` object shape; adapted accordingly.
+// ════════════════════════════════════════════════════════════════════════════
+function makeProfileUsecase() {
+  const created = [];
+  const setProfile = vi.fn(async () => {});
+  const legacy = {
+    createStaffUser: vi.fn(async (body) => {
+      created.push(body);
+      return { id: 99, ...body };
+    }),
+    editStaffUser: vi.fn(async (body) => ({ id: body.id ?? 1, ...body })),
+  };
+  const repo = makeRepo({ setUserProfile: setProfile });
+  const uc = new UserUsecase(repo, legacy);
+  return { uc, legacy, setProfile };
+}
+
+describe("create with profile", () => {
+  it("derives role+flags from PROFILE_META and persists profile", async () => {
+    const { uc, legacy, setProfile } = makeProfileUsecase();
+    await uc.create({
+      body: { email: "a@b.c", password: "x", name: "A", profile: "PRIMARY_SALES" },
+      authUser: { role: "ADMIN" },
+    });
+    const sent = legacy.createStaffUser.mock.calls[0][0];
+    expect(sent.role).toBe(PROFILE_META.PRIMARY_SALES.baseRole); // "STAFF"
+    expect(sent.isPrimary).toBe(true);
+    expect(sent.isSuperSales).toBe(false);
+    expect(setProfile).toHaveBeenCalledWith({ userId: 99, profile: "PRIMARY_SALES" });
+  });
+
+  it("rejects an unknown profile", async () => {
+    const { uc } = makeProfileUsecase();
+    await expect(
+      uc.create({
+        body: { email: "a@b.c", password: "x", name: "A", profile: "NOPE" },
+        authUser: { role: "ADMIN" },
+      }),
+    ).rejects.toBeTruthy();
+  });
+
+  it("no profile sent → parity no-op (role/flags untouched, setUserProfile not called)", async () => {
+    const { uc, legacy, setProfile } = makeProfileUsecase();
+    await uc.create({
+      body: { email: "a@b.c", password: "x", name: "A", role: "STAFF" },
+      authUser: { role: "ADMIN" },
+    });
+    const sent = legacy.createStaffUser.mock.calls[0][0];
+    expect(sent.role).toBe("STAFF");
+    expect(sent.isPrimary).toBeUndefined();
+    expect(sent.isSuperSales).toBeUndefined();
+    expect(setProfile).not.toHaveBeenCalled();
+  });
+});
+
+describe("update with profile", () => {
+  it("derives role+flags from PROFILE_META and persists profile", async () => {
+    const { uc, legacy, setProfile } = makeProfileUsecase();
+    await uc.update({
+      userId: 7,
+      body: { profile: "SUPER_SALES" },
+      authUser: { role: "ADMIN" },
+    });
+    const sent = legacy.editStaffUser.mock.calls[0][0];
+    expect(sent.role).toBe(PROFILE_META.SUPER_SALES.baseRole); // "STAFF"
+    expect(sent.isPrimary).toBe(false);
+    expect(sent.isSuperSales).toBe(true);
+    expect(setProfile).toHaveBeenCalledWith({ userId: 7, profile: "SUPER_SALES" });
+  });
+
+  it("no profile sent → parity no-op (existing update behavior unchanged)", async () => {
+    const { uc, legacy, setProfile } = makeProfileUsecase();
+    await uc.update({ userId: 7, body: { name: "New" }, authUser: { role: "ADMIN" } });
+    expect(legacy.editStaffUser).toHaveBeenCalledWith({ name: "New" }, 7);
+    expect(setProfile).not.toHaveBeenCalled();
   });
 });
