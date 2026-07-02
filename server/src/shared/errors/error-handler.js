@@ -16,11 +16,6 @@ export function errorHandler(err, req, res, next) {
 
   if (err instanceof AppError) {
     // خطأ متوقع (400, 401, 404, 409, 422 ...)
-    console.log("isAppError:", {
-      message: err.message,
-      statusCode: err.statusCode,
-      details: err.details,
-    });
     return res.status(err.statusCode).json({
       success: false,
       message: err.message, // CODE (unchanged key the FE already reads via resolveMessage)

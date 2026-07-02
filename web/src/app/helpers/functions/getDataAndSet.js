@@ -1,5 +1,5 @@
 import { apiRequest, normalizeEnvelope } from "./apiClient";
-import { resolveMessage } from "@/app/helpers/messages/resolveMessage";
+import { describeApiError } from "./richError";
 
 // Same as getData, but pushes the payload straight into a caller-supplied setter and
 // throws (optionally) on auth/explicit failures. Talks to /v2 via apiClient and unwraps
@@ -50,7 +50,12 @@ export async function getDataAndSet({
       status === 440 ||
       status === 498
     ) {
-      throw new Error(resolveMessage(body?.message) || "Unauthorized");
+      result.error = describeApiError(body);
+      const error = new Error(result.error.message || "Unauthorized");
+      error.redirectTo = result.error.redirectTo;
+      error.redirectText = result.error.redirectText;
+      error.dontRedirect = result.error.dontRedirect;
+      throw error;
     }
     return result;
   } catch (e) {
