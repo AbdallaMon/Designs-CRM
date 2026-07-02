@@ -55,6 +55,22 @@ import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes";
 import { RoleManagerDialog } from "../DataViewer/users/RoleManagerDialog";
 import { ProjectAutoAssignmentDialog } from "../DataViewer/users/ProjectAutoAssignmentDialog";
 
+// Mirrors `packages/shared/constants/access/profiles.js` PROFILE_META (web has no
+// dependency on @dms/shared, so the { value, label } options are kept in sync here).
+const PROFILE_OPTIONS = [
+  { value: "NORMAL_SALES", label: "موظف مبيعات" },
+  { value: "PRIMARY_SALES", label: "مبيعات أساسي" },
+  { value: "SUPER_SALES", label: "سوبر مبيعات" },
+  { value: "SUPER_SALES_BASE", label: "سوبر سيلز (دور)" },
+  { value: "ADMIN", label: "مدير" },
+  { value: "SUPER_ADMIN", label: "مدير أعلى" },
+  { value: "ACCOUNTANT", label: "محاسب" },
+  { value: "DESIGNER_3D", label: "مصمم 3D" },
+  { value: "DESIGNER_2D", label: "مصمم 2D" },
+  { value: "EXECUTOR_2D", label: "منفّذ 2D" },
+  { value: "CONTACT_INITIATOR", label: "مبادر تواصل" },
+];
+
 const columns = [
   {
     name: "name",
@@ -239,6 +255,20 @@ const inputs = [
       required: {
         value: true,
         message: "Please select a role",
+      },
+    },
+  },
+  {
+    data: {
+      id: "profile",
+      type: "SelectField",
+      label: "الملف الوظيفي (Profile)",
+      options: PROFILE_OPTIONS,
+    },
+    pattern: {
+      required: {
+        value: true,
+        message: "اختر ملفًا وظيفيًا",
       },
     },
   },
