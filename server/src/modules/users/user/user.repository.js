@@ -264,6 +264,7 @@ const MANAGEMENT_SELECT = {
   subRoles: true,
   isPrimary: true,
   isSuperSales: true,
+  profile: true,
   telegramUsername: true,
 };
 
