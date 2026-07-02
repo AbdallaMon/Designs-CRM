@@ -40,6 +40,7 @@ import SideNav, {
   SIDENAV_COLLAPSED_WIDTH,
   SIDENAV_EXPANDED_WIDTH,
 } from "@/app/UiComponents/utility/SideNav.jsx";
+import RouteGuard from "@/app/UiComponents/utility/RouteGuard.jsx";
 import NotificationsIcon from "@/app/UiComponents/utility/NotificationIcon.jsx";
 import SignInWithDifferentUserRole from "@/app/UiComponents/DataViewer/users/UserRoles";
 import ProfileDialogTrigger from "@/app/UiComponents/DataViewer/users/profile/ProfileDialogTrigger";
@@ -666,7 +667,7 @@ export default function Layout({ children }) {
               backgroundColor: colors.bgSecondary,
             }}
           >
-            {children}
+            <RouteGuard>{children}</RouteGuard>
           </Box>
         </Box>
 
