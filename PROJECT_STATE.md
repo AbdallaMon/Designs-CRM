@@ -3,9 +3,15 @@
 > **Open this file in any new chat.** It tells you what we are doing and where we have reached.
 > To resume: *"Read `PROJECT_STATE.md`, `CLAUDE.md`, and `docs/migration/`, then tell me where we are and what's next."*
 >
-> Last updated: **2026-06-10** · Branch: `server-migration`
+> Last updated: **2026-07-02** · Branch: `frontend-redesign`
 >
-> **Current phase (2026-06-10):** BE + FE migration COMPLETE; UX/UI redesign feature builds (Phases 0–4)
+> **CURRENT STATUS (2026-07-02) — full detail in §0 below.** The BE+FE migration is COMPLETE (legacy removed; boots `server/src/server.js`; frontend is `web/`). On `frontend-redesign` two forward workstreams are now **DONE**: **(1) DB-migration reconciliation** — schema + migrations reconciled to the deployed production DB, single canonical `packages/db/prisma`, migrations verified (Docker) to build a fresh DB byte-equal to prod; a **user-run** metadata-only prod runbook is pending. **(2) Permissions parity** — rich denial-reason/redirect contract, backend per-role `navigationTabs` + action-flag `permissionsByModule`, frontend `usePermission`/`PermissionGate`/route-guard, audited identical-to-master (0 mismatches). Vitest **610/610 green**. UI redesign continues.
+>
+> _(Historical server-migration / cutover detail retained below.)_
+>
+> Migration-cutover snapshot — Last updated: **2026-06-10** · Branch: `server-migration`
+>
+> **Phase (2026-06-10):** BE + FE migration COMPLETE; UX/UI redesign feature builds (Phases 0–4)
 > COMPLETE; post-redesign FE message-resolver centralization (`73e7f9d`) reconciled + fixed (`6193984`).
 > **Runtime browser verification DONE (Playwright, all 22 v2 routes)** — 18 screens clean, 4 blockers
 > found. **✅ ALL 4 BLOCKERS NOW FIXED (2026-06-10)** — reviewed (no blockers/no token leak),
@@ -30,6 +36,35 @@
 > (frozen-service redirect bridges + prod API base end in `/v2`). See `docs/migration/RESUME-CHECKPOINT.md`.
 > For the authoritative latest state + commit trail see **`docs/migration/RESUME-CHECKPOINT.md`** (this
 > file's §3 commit trail below is kept at the FE-features milestone and is not the latest).
+
+---
+
+## 0. Current status — `frontend-redesign` branch (2026-07-02)
+
+Migration is done (see §3 for the historical migration trail). Two workstreams on `frontend-redesign` are now complete; both preserve behavior identical to the deployed `master` baseline.
+
+### ✅ DB-migration reconciliation (COMPLETE)
+**Problem:** `master` recorded only 3 Prisma migrations; later schema changes were applied **by hand in MySQL** (chat, telegram, booking-lead, notif enums). The committed `catch_up_full_schema` migration was **broken** (couldn't build a fresh DB — errno 150 on `TextLong`), and `schema.prisma` itself was **drifted from prod + unbuildable** (missing 10 prod columns; an invalid `TextLong→Con` relation). Three duplicate schema/migration locations existed.
+**Fix (verified against the prod structure dump `C:\coding\backup\dreamstudiio\drea_studio_db.sql` in a throwaway MariaDB 10.11 Docker container):**
+- `prisma db pull` reconciled `packages/db/prisma/schema.prisma` to production (adopted all 10 prod columns; made it buildable) — proven `migrate diff prod↔schema = 0`.
+- Regenerated `catch_up_full_schema` as a valid `(3-old → prod)` diff — the migrations now build a fresh DB **byte-equal to prod** (`VERIFY: PASS`, re-run independently).
+- Consolidated to the single canonical `packages/db/prisma`; removed the stale `server/prisma/{schema,migrations}` + `server/src/infra/prisma/{schema,model,migrations}` copies (kept the `prisma.js` re-export shims).
+- Fixed 2 app call sites in `accountantServices.js` for the renamed inverse relations (behavior-preserving).
+- Guardrails: `docs/db-migrations-workflow.md` + a repo verification harness `packages/db/scripts/verify-migrations-against-dump.sh`.
+**PENDING (user action):** run the metadata-only prod reconciliation — `docs/superpowers/plans/prod-migration-runbook.md` (backup → `prisma migrate resolve --applied` the 4 migrations → `migrate status`). **The agent does not touch production.**
+Design: `docs/superpowers/specs/2026-07-01-prisma-migration-reconciliation-design.md`.
+
+### ✅ Permissions parity + denial reasons (COMPLETE)
+Brought authorization to Transaction-app parity, identical-to-master:
+- **Error/redirect contract:** `AppError` carries `code/translationKey/reason/redirectTo/redirectText/dontRedirect` (backward-compatible); the error-handler serializes them + `route`; `requirePermissions` emits a specific `PERMISSION_DENIED` + `details.requiredPermissions`; the FE resolves codes to Arabic and shows the reason (no silent failures).
+- **`/auth/me`** returns backend-computed per-role **`navigationTabs`** (role-driven, 1:1 with master's `linksForRole`) + action-flag **`permissionsByModule`** (`buildNavigationTabs` + `NAVIGATION` in `@dms/shared`).
+- **Frontend layer:** `usePermission` (hasPermission/any/all/hasAction), `<PermissionGate>`, data-layer reason/redirect surfacing, sidebar driven by `navigationTabs` (identical per-role output; dev role-switcher fallback preserved), and a **RouteGuard** that shows an explicit "no access" reason + redirect instead of a silent blank.
+- **Audit:** `docs/superpowers/specs/permissions-parity-matrix.md` — **0 real mismatches** vs master across ~200 routes; only 4 **intentional** security tightenings kept (site-utility→admin-only, reviews token-hiding, IDOR object-scope checkers, model allow-lists).
+Design: `docs/superpowers/specs/2026-07-01-permissions-parity-and-denial-reasons-design.md`; plan: `docs/superpowers/plans/2026-07-01-permissions-parity.md`.
+
+**Verification:** full vitest suite **610/610 green**; both workstreams whole-branch-reviewed (READY, no critical/important findings). Commits are on `frontend-redesign` (not merged to master — the user directed staying on this branch).
+
+**Next:** run the prod migration runbook (user); continue the UI redesign; the permissions FE primitives (`usePermission`/`PermissionGate`) are now available to gate redesigned screens.
 
 ---
 

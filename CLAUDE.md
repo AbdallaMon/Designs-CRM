@@ -2,7 +2,7 @@
 
 This file is the operating manual for any Claude/agent session in this repo. It reflects the **actual** state of the code and the migration in progress. When this file or the migration docs conflict with what is in the code, **stop and report the conflict** instead of guessing.
 
-> **New session? Read [`PROJECT_STATE.md`](PROJECT_STATE.md) first** — it tells you what we are doing and where we have reached. Then read the relevant doc(s) under [`docs/migration/`](docs/migration/).
+> **New session? Read [`PROJECT_STATE.md`](PROJECT_STATE.md) first** — it tells you what we are doing and where we have reached. For the migration background read [`docs/migration/`](docs/migration/); for the most recent work (DB-migration reconciliation + permissions parity) read [`docs/superpowers/specs/`](docs/superpowers/specs/) and [`docs/superpowers/plans/`](docs/superpowers/plans/).
 
 ---
 
@@ -15,42 +15,46 @@ This file is the operating manual for any Claude/agent session in this repo. It 
 
 ---
 
-## 2. What we are doing (the migration)
+## 2. Where the project is now
 
-We are migrating the entire app — backend and frontend — from a legacy structure into a **clean, modular npm-workspaces monorepo** that mirrors a mature reference project (`C:\coding\Cases-Digital-Assets-Managment`), **while preserving identical observable behavior**.
+The backend + frontend migration into a **clean, modular npm-workspaces monorepo** (mirroring `C:\coding\Cases-Digital-Assets-Managment`) is **COMPLETE**. `server/index.js` boots `server/src/server.js`; there is **no `server/v2/` and no legacy router duality** — the legacy `server/routes/**` were removed at cutover. What remains of the old code is `server/services/**` (the frozen PDF/business logic, lazy-imported by modules). The frontend is `web/` (the `ui/→web/` rename is done). Observable behavior was preserved throughout.
 
-A partial migration already exists under `server/v2/` and `ui/src/app/v2/`, and **`server/index.js` already boots from `server/v2/server.js`** (legacy + v2 routers run side-by-side — a strangler migration). We complete the migration *from* v2.
+**Current branch: `frontend-redesign`.** On top of the finished migration we run forward work:
+- **UI redesign** (collapsed, role-agnostic feature pages; leftover English UI is acceptable on this branch).
+- **✅ DB-migration reconciliation (COMPLETE):** the Prisma migration history was drifted (3 real migrations + hand-applied MySQL); `schema.prisma` was also drifted from prod and unbuildable. It was reconciled to the deployed production DB via `prisma db pull`, the baseline `catch_up_full_schema` regenerated so the migrations build a fresh DB byte-equal to prod (verified in Docker), and everything consolidated to a single canonical `packages/db/prisma`. Prod history is reconciled by a metadata-only runbook (`docs/superpowers/plans/prod-migration-runbook.md`) the **user** runs. See `docs/superpowers/specs/2026-07-01-prisma-migration-reconciliation-design.md`.
+- **✅ Permissions parity (COMPLETE):** rich error/redirect contract (denials carry a real reason + redirect), backend-computed per-role `navigationTabs` + action-flag `permissionsByModule` on `/auth/me`, a frontend `usePermission`/`PermissionGate`/route-guard layer, and an audit proving access is **identical to master** (0 mismatches; 4 documented intentional security tightenings). See `docs/superpowers/specs/2026-07-01-permissions-parity-and-denial-reasons-design.md` and `docs/superpowers/specs/permissions-parity-matrix.md`.
 
 ### Locked decisions (do not relitigate without the user)
-1. **Target = monorepo mirroring the reference:** `packages/db` + `packages/shared` + `server` (`src/modules`) + `web` (`features`). npm workspaces.
-2. **Schema is frozen.** `server/prisma/schema.prisma` is the data contract — relocated verbatim to `packages/db`, not redesigned.
-3. **Same observable API behavior.** We restructure (route→controller→usecase→repository) and harden security, but what the frontend receives stays equivalent. Real contract changes are explicitly tracked (see `03-backend-plan.md` §12 and `06-reconciliation.md`).
+1. **Monorepo layout (done):** `packages/db` + `packages/shared` + `server` (`src/modules`) + `web`. npm workspaces.
+2. **Schema is frozen** as a redesign target — the canonical schema is **`packages/db/prisma/schema.prisma`** (reconciled to production; the old `server/prisma/` + `server/src/infra/prisma/` copies were removed). Change it ONLY via `prisma migrate dev`, never by hand in MySQL.
+3. **Same observable API behavior.** route→controller→usecase→repository + hardening; the frontend contract stays equivalent. Real contract changes are tracked (`03-backend-plan.md` §12, `06-reconciliation.md`).
 4. **PDF generation is LOGIC-FROZEN.** 🔒 See §4.
-5. **Drop the bilingual i18n layer; keep the message-code mechanism** resolving to a **single Arabic** string source. (Borrow the *pattern* from the reference, not its ar/en translations.)
-6. **Complete from v2** — but remediate v2's known defects first.
+5. **Single Arabic UI (no bilingual i18n); keep the message-code mechanism** resolving to one Arabic source.
+6. **Baseline for parity = the deployed `master` branch.** New work must keep observable behavior identical to master unless a change is explicitly decided + documented.
 7. **Workers run as a bootstrap from the server only** (no detached worker processes).
 
 ---
 
-## 3. Tech stack (actual — verified 2026-06-06)
+## 3. Tech stack (actual)
 
 ESM throughout (`"type": "module"`). **JavaScript only** in source.
 
-### Frontend (`ui/`, to become `web/`)
-- Next.js **16.0.7** (App Router) · React **19.2.1** · MUI **v7** (`@mui/material`)
+### Frontend (`web/`)
+- Next.js **16** (App Router) · React **19** · MUI **v7** (`@mui/material`)
 - react-hook-form 7 · socket.io-client 4.8 · Emotion + `stylis-plugin-rtl` (RTL)
-- Custom `ApiFetch` data layer (no axios); custom tables (no MUI X DataGrid)
+- Custom `apiClient`/`getData`/`handleRequestSubmit` data layer (no axios); custom tables (no MUI X DataGrid)
+- Message CODEs resolved to Arabic via `web/src/app/helpers/messages/resolveMessage.js`
 
-### Backend (`server/`, to become `server/src`)
-- Node + **Express 4.21** (note: reference uses Express 5) · JWT · `cookie-parser` · `cors`
+### Backend (`server/src`)
+- Node + **Express 4.21** · JWT (single cookie scheme: `access_token` + `refresh_token`) · `cookie-parser` · `cors`
 - **Zod 4** validation
-- **BullMQ 5.54** + Redis. ⚠️ Both `ioredis` **and** `redis` are dependencies (redundant client — consolidate during migration).
+- **BullMQ 5.54** + Redis
 - Socket.IO 4.8 (server)
-- **PDF: `pdf-lib` 1.17 + `@pdf-lib/fontkit`** (contracts / image-sessions) **and `pdfkit` 0.17** (lead/staff reports) — two subsystems, both logic-frozen.
+- **PDF: `pdf-lib` 1.17 + `@pdf-lib/fontkit`** (contracts / image-sessions) **and `pdfkit` 0.17** (lead/staff reports) — two subsystems in `server/services/**`, both logic-frozen.
 - `multer` 1.4 + `sharp` 0.34 (upload/preview) · `nodemailer`
 
 ### Database
-- **MySQL via Prisma 6.9** (reference uses Prisma 7). Schema at `server/prisma/schema.prisma` (~120 models, ~40 enums, ~2478 lines). IDs and all relations are FROZEN.
+- **MySQL/MariaDB via Prisma 6.19.** Canonical schema at **`packages/db/prisma/schema.prisma`** (~120 models, reconciled to production). Migrations at `packages/db/prisma/migrations` (3 originals + a regenerated `catch_up_full_schema` baseline). IDs and all relations are FROZEN. Client is `@dms/db` (singleton; `server/prisma/prisma.js` + `server/src/infra/prisma/prisma.js` are thin re-export shims). **Never apply SQL by hand** — see `docs/db-migrations-workflow.md`.
 
 ---
 
@@ -79,6 +83,18 @@ Before changing anything non-trivial, read the relevant doc(s) under [`docs/migr
 | `07-decisions-resolved.md` | **Authoritative addendum** — final resolution of all 10 open items. **Overrides 03/04/05 where they differ.** |
 
 If docs conflict (with each other or the code), **07 wins for resolved decisions**; otherwise **stop and report**.
+
+**Recent-work docs (post-migration, on `frontend-redesign`):**
+
+| Doc | What it is |
+|---|---|
+| `docs/superpowers/specs/2026-07-01-prisma-migration-reconciliation-design.md` | DB-migration reconciliation design (drift diagnosis + fix). |
+| `docs/superpowers/plans/2026-07-01-prisma-migration-reconciliation.md` | Its implementation plan (6 tasks). |
+| `docs/superpowers/plans/prod-migration-runbook.md` | **User-run** metadata-only prod reconciliation (`migrate resolve --applied`). |
+| `docs/db-migrations-workflow.md` | Going-forward migrations workflow (canonical `packages/db`, `migrate dev`, no manual MySQL) + drift check. |
+| `docs/superpowers/specs/2026-07-01-permissions-parity-and-denial-reasons-design.md` | Permissions-parity design (error/redirect contract, navigationTabs, FE layer). |
+| `docs/superpowers/plans/2026-07-01-permissions-parity.md` | Its implementation plan (5 phases / 12 tasks). |
+| `docs/superpowers/specs/permissions-parity-matrix.md` | Master↔current per-role authorization parity evidence (0 mismatches + 4 intentional tightenings). |
 
 ---
 
@@ -109,10 +125,11 @@ If docs conflict (with each other or the code), **07 wins for resolved decisions
 
 ## 7. Working rules for this repo
 
-1. **Plans before code.** The migration is currently in the **planning** phase. Do not implement, move files, or scaffold until the user approves the plans and the open decisions in `06-reconciliation.md` are settled.
+1. **Plan non-trivial work before coding.** The migration itself is done; for substantial new work brainstorm → spec → plan (see `docs/superpowers/`) before implementing. Small, well-scoped changes can proceed directly.
 2. **Never change PDF behavior** (§4).
-3. **Never change the Prisma schema** as part of this migration unless explicitly told.
-4. **Preserve observable API behavior**; if you must change a contract, record it in `03-backend-plan.md` §12 and mirror it on the frontend.
-5. **Report conflicts**, don't guess.
-6. **Update `PROJECT_STATE.md`** whenever the migration status changes (what's done / in-progress / next).
-7. All messages/docs the user reads should be in **English** (the user's stated preference), even though they may write to you in Arabic. App UI strings are **Arabic**.
+3. **Never change the Prisma schema by hand.** The canonical schema is `packages/db/prisma/schema.prisma`; change it only via `prisma migrate dev` (never manual MySQL). Migrations must keep building a fresh DB equal to production. See `docs/db-migrations-workflow.md`. **Never touch production** — prod migration steps are a user-run runbook.
+4. **Preserve observable API behavior**; baseline = the deployed `master`. If you must change a contract, record it and mirror it on the frontend.
+5. **Authorization changes** follow the model in §6 (permission code + object-scope checker; never role-alone/wildcards) and must not widen access beyond master; run the parity matrix / permission tests.
+6. **Report conflicts**, don't guess.
+7. **Update `PROJECT_STATE.md`** whenever the status changes (what's done / in-progress / next).
+8. All messages/docs the user reads should be in **English** (the user's stated preference), even though they may write to you in Arabic. App UI strings are **Arabic**.
