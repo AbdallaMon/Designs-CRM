@@ -1,11 +1,9 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { Alert } from "@mui/material";
+import React, { useState } from "react";
 import {
   KanbanBeginerLeadsStatus,
   KanbanLeadsStatus,
 } from "@/app/helpers/constants.js";
-import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader.jsx";
 import {
   checkIfAdminOrSuperSales,
   checkIfPrimaryStaff,
@@ -15,13 +13,13 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 import { FinalizeModal } from "@/app/UiComponents/DataViewer/leads/widgets/FinalizeModal.jsx";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
-import { MdBlock } from "react-icons/md";
 import { PreviewLead } from "./features/PreviewLead";
 import { MoreActionsMenu } from "./shared/MoreActionsMenu";
 import { LeadDialogHeader } from "./shared/LeadDialogHeader";
 import { StatusMenu } from "./shared/StatusMenu";
 import { LeadWorkspace } from "./LeadWorkspace";
 import { getVisibleLeadSections } from "./config/leadSections";
+import { useLeadDetails } from "./context/LeadDetailsContext";
 
 // LeadContent — the shared body of the lead/deal detail. The header + modals + status
 // menu stay here; the section list itself is now driven by the config registry
@@ -40,13 +38,12 @@ const LeadContent = ({
   const { user } = useAuth();
   const admin = checkIfAdminOrSuperSales(user);
   const isPrimaryStaff = checkIfPrimaryStaff(user);
+  const details = useLeadDetails();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
   const { setLoading } = useToastContext();
   const [openConfirm, setOpenConfirm] = useState(false);
   const [openPriceModel, setOpenPriceModel] = useState(null);
-  const [isAllowed] = useState(true);
-  const [isAllowedLoading, setIsAllowedLoading] = useState(false);
   const [finalizeModel, setFinalizeModel] = useState(false);
   const [currentId, setCurrentId] = useState(null);
   const [payments, setPayments] = useState(lead ? lead.payments : []);
@@ -62,21 +59,14 @@ const LeadContent = ({
       false,
       "PUT",
     );
+    // Re-pull the core lead so ownership/header reflect the assignment in place —
+    // no full-page reload (which would drop tab caches + scroll position).
     if (assign.status === 200) {
-      window.location.reload();
+      await details?.refetchCore?.();
+      details?.refreshKanban?.();
     }
     return assign;
   }
-
-  useEffect(() => {
-    if (lead) {
-      if (user.id !== lead.userId && user.role === "STAFF") {
-        // Permission check logic here
-      } else {
-        setIsAllowedLoading(false);
-      }
-    }
-  }, [user.id, lead, lead?.country]);
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -89,7 +79,7 @@ const LeadContent = ({
       return;
     }
     const request = await handleRequestSubmit(
-      { status: value, oldStatus: lead.status, isAdmin: admin },
+      { status: value, oldStatus: lead.status },
       setLoading,
       `shared/client-leads/${lead.id}/actions/change-status`,
       false,
@@ -123,10 +113,12 @@ const LeadContent = ({
       false,
       "POST",
     );
+    // The owner just handed the lead back. Reflect ON_HOLD locally so the access
+    // guard in PreviewLead takes over (shows the "no access" screen) and bump the
+    // board — no full-page reload.
     if (request.status === 200) {
-      window.setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      if (setLead) setLead((old) => ({ ...old, status: "ON_HOLD" }));
+      details?.refreshKanban?.("ON_HOLD");
     }
   };
 
@@ -137,16 +129,6 @@ const LeadContent = ({
       ? KanbanBeginerLeadsStatus
       : KanbanLeadsStatus,
   );
-
-  if (isAllowedLoading) return <FullScreenLoader />;
-
-  if (!isAllowed && user.id !== lead.userId && user.role === "STAFF") {
-    return (
-      <Alert severity="error" icon={<MdBlock size={20} />}>
-        Access to this lead is <b>Not Allowed</b>.
-      </Alert>
-    );
-  }
 
   const notUser = isPage && user.id !== lead.userId && !admin;
   const leadCtx = {
@@ -228,17 +210,19 @@ const LeadContent = ({
         }
       />
 
-      {/* Status Menu */}
-      {lead.status !== "NEW" && (
-        <StatusMenu
-          open={open}
-          anchorEl={anchorEl}
-          onClose={() => setAnchorEl(null)}
-          statuses={leadStatus}
-          onStatusChange={handleMenuClose}
-          theme={theme}
-        />
-      )}
+      {/* Status Menu — kept in lockstep with the header's status control: gated on the
+          backend `canChangeStatus` capability when present (parity-safe), else shown. */}
+      {lead.status !== "NEW" &&
+        (lead.capabilities ? lead.capabilities.canChangeStatus : true) && (
+          <StatusMenu
+            open={open}
+            anchorEl={anchorEl}
+            onClose={() => setAnchorEl(null)}
+            statuses={leadStatus}
+            onStatusChange={handleMenuClose}
+            theme={theme}
+          />
+        )}
 
       {/* Workspace — config-driven sections, keyed (no index math) */}
       <LeadWorkspace

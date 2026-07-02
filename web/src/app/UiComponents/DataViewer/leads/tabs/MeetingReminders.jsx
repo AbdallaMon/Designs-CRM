@@ -27,8 +27,6 @@ import {
   StatusPill,
 } from "../shared/tabKit";
 
-const ADMIN_PURPLE = "#7B1FA2";
-
 export function MeetingReminders({ lead, setleads, admin, notUser }) {
   const {
     data: meetingReminders,
@@ -39,6 +37,9 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
   } = useLeadTab("meetings", { fallback: lead?.meetingReminders });
   const theme = useTheme();
   const { user } = useAuth();
+  // Admin accent maps to the brand secondary (cognac) — the closest palette token
+  // to the former one-off purple.
+  const ADMIN_PURPLE = theme.palette.secondary.main;
 
   if (showLoading) return <TabLoading />;
 
@@ -74,8 +75,8 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
       CONSULTATION: theme.palette.info.main,
       FOLLOW_UP: theme.palette.secondary.main,
       PRESENTATION: theme.palette.primary.main,
-      NEGOTIATION: "#FF9800",
-      CLOSING: "#4CAF50",
+      NEGOTIATION: theme.palette.warning.main,
+      CLOSING: theme.palette.success.main,
     })[type] || theme.palette.grey[500];
 
   const formatMeetingType = (type) => {

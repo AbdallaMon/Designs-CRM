@@ -1,5 +1,5 @@
 "use client";
-import { Box, Menu, MenuItem } from "@mui/material";
+import { Box, Menu, MenuItem, alpha } from "@mui/material";
 import { statusColors } from "@/app/helpers/constants";
 
 /**
@@ -30,7 +30,7 @@ export const StatusMenu = ({
         sx: {
           mt: 1,
           borderRadius: 2,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+          boxShadow: `0 8px 24px ${alpha(theme.palette.common.black, 0.12)}`,
         },
       }}
     >

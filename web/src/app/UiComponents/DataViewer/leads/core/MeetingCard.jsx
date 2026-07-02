@@ -62,8 +62,8 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
         CONSULTATION: alpha(theme.palette.info.main, 0.1),
         FOLLOW_UP: alpha(theme.palette.secondary.main, 0.1),
         PRESENTATION: alpha(theme.palette.primary.main, 0.1),
-        NEGOTIATION: alpha("#FF9800", 0.1),
-        CLOSING: alpha("#4CAF50", 0.1),
+        NEGOTIATION: alpha(theme.palette.warning.main, 0.1),
+        CLOSING: alpha(theme.palette.success.main, 0.1),
         OTHER: alpha(theme.palette.grey[500], 0.1),
       }[type] || alpha(theme.palette.grey[500], 0.1),
     color:
@@ -71,8 +71,8 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
         CONSULTATION: theme.palette.info.dark,
         FOLLOW_UP: theme.palette.secondary.dark,
         PRESENTATION: theme.palette.primary.dark,
-        NEGOTIATION: "#E65100",
-        CLOSING: "#2E7D32",
+        NEGOTIATION: theme.palette.warning.dark,
+        CLOSING: theme.palette.success.dark,
         OTHER: theme.palette.grey[700],
       }[type] || theme.palette.grey[700],
     borderColor:
@@ -80,8 +80,8 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
         CONSULTATION: theme.palette.info.main,
         FOLLOW_UP: theme.palette.secondary.main,
         PRESENTATION: theme.palette.primary.main,
-        NEGOTIATION: "#FF9800",
-        CLOSING: "#4CAF50",
+        NEGOTIATION: theme.palette.warning.main,
+        CLOSING: theme.palette.success.main,
         OTHER: theme.palette.grey[300],
       }[type] || theme.palette.grey[300],
   });
@@ -103,14 +103,16 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
         "&:hover": {
           boxShadow: theme.shadows[4],
           transform: "translateY(-2px)",
-          borderColor: meeting.isAdmin ? "#9C27B0" : theme.palette.primary.main,
+          borderColor: meeting.isAdmin
+            ? theme.palette.secondary.main
+            : theme.palette.primary.main,
         },
         ...(meeting.isAdmin && {
           background: `linear-gradient(135deg, ${alpha(
-            "#9C27B0",
+            theme.palette.secondary.main,
             0.02
-          )} 0%, ${alpha("#9C27B0", 0.05)} 100%)`,
-          borderColor: alpha("#9C27B0", 0.3),
+          )} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
+          borderColor: alpha(theme.palette.secondary.main, 0.3),
         }),
       }}
     >
@@ -127,15 +129,15 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
               boxShadow: theme.shadows[4],
               transform: "translateY(-2px)",
               borderColor: meeting.isAdmin
-                ? "#9C27B0"
+                ? theme.palette.secondary.main
                 : theme.palette.primary.main,
             },
             ...(meeting.isAdmin && {
               background: `linear-gradient(135deg, ${alpha(
-                "#9C27B0",
+                theme.palette.secondary.main,
                 0.02
-              )} 0%, ${alpha("#9C27B0", 0.05)} 100%)`,
-              borderColor: alpha("#9C27B0", 0.3),
+              )} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
+              borderColor: alpha(theme.palette.secondary.main, 0.3),
             }),
           }}
         >
@@ -194,13 +196,13 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
                       icon={<RiShieldUserLine size={16} />}
                       label="ADMIN"
                       sx={{
-                        backgroundColor: alpha("#9C27B0", 0.1),
-                        color: "#7B1FA2",
-                        borderColor: "#9C27B0",
+                        backgroundColor: alpha(theme.palette.secondary.main, 0.1),
+                        color: theme.palette.secondary.dark,
+                        borderColor: theme.palette.secondary.main,
                         fontWeight: 700,
                         border: "1px solid",
                         "& .MuiChip-icon": {
-                          color: "#7B1FA2",
+                          color: theme.palette.secondary.dark,
                         },
                       }}
                     />
@@ -310,10 +312,13 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
 
                 {meeting.isAdmin && meeting.admin && (
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <RiShieldUserLine size={16} color="#9C27B0" />
+                    <RiShieldUserLine
+                      size={16}
+                      color={theme.palette.secondary.main}
+                    />
                     <Typography
                       variant="body2"
-                      sx={{ color: "#7B1FA2", fontWeight: 600 }}
+                      sx={{ color: theme.palette.secondary.dark, fontWeight: 600 }}
                     >
                       Admin: {meeting.admin.name}
                     </Typography>
@@ -331,14 +336,18 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
                 <RiCalendarLine
                   size={18}
                   color={
-                    meeting.isAdmin ? "#9C27B0" : theme.palette.primary.main
+                    meeting.isAdmin
+                      ? theme.palette.secondary.main
+                      : theme.palette.primary.main
                   }
                 />
                 <Typography
                   variant="subtitle2"
                   sx={{
                     fontWeight: meeting.isAdmin ? 600 : 400,
-                    color: meeting.isAdmin ? "#7B1FA2" : "inherit",
+                    color: meeting.isAdmin
+                      ? theme.palette.secondary.dark
+                      : "inherit",
                   }}
                 >
                   {dayjs(meeting.time).format("MM/DD/YYYY, h:mm A")}
@@ -348,13 +357,13 @@ export const MeetingCard = ({ meeting, onUpdate, extra = false }) => {
               <Box
                 sx={{
                   bgcolor: meeting.isAdmin
-                    ? alpha("#9C27B0", 0.03)
+                    ? alpha(theme.palette.secondary.main, 0.03)
                     : alpha(theme.palette.background.default, 0.6),
                   p: 2,
                   borderRadius: 2,
                   border: `1px solid ${
                     meeting.isAdmin
-                      ? alpha("#9C27B0", 0.2)
+                      ? alpha(theme.palette.secondary.main, 0.2)
                       : theme.palette.divider
                   }`,
                 }}

@@ -10,6 +10,7 @@ import {
   Modal,
   Stack,
   Typography,
+  alpha,
 } from "@mui/material";
 import { BsPersonCheck } from "react-icons/bs";
 import { MdMoreHoriz, MdWork } from "react-icons/md";
@@ -78,12 +79,12 @@ export const MoreActionsMenu = ({
         open={moreOpen}
         onClose={handleMoreClose}
         PaperProps={{
-          sx: {
+          sx: (theme) => ({
             mt: 1,
             borderRadius: 2,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+            boxShadow: `0 8px 24px ${alpha(theme.palette.common.black, 0.12)}`,
             minWidth: 220,
-          },
+          }),
         }}
       >
         <Box sx={{ px: 2, pt: 1, pb: 0.5 }}>

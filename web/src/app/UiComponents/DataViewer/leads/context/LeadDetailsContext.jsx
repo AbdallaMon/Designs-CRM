@@ -26,13 +26,16 @@ import {
 } from "react";
 import { apiRequest, normalizeEnvelope } from "@/app/helpers/functions/apiClient";
 
-// tab key → the sub-resource path appended to the lead base url.
+// tab key → endpoint. A STRING is a sub-resource appended to the lead base url
+// (`shared/client-leads/:id/<string>`). A FUNCTION receives the lead id and returns
+// a FULL path, for tabs whose resource does not hang off the lead base url.
 const TAB_ENDPOINTS = {
   notes: "notes",
   calls: "call-reminders",
   meetings: "meetings",
   files: "files",
   priceOffers: "price-offers",
+  salesStage: (leadId) => `shared/sales-stages/${leadId}`,
 };
 
 const EMPTY_TAB = { data: undefined, loading: false, loaded: false, error: null };
@@ -56,13 +59,25 @@ export function LeadDetailsProvider({
   // always-fresh handle to the base url for callbacks created once.
   const baseUrlRef = useRef(leadBaseUrl);
   baseUrlRef.current = leadBaseUrl;
+  // lead id, for function-form endpoints that build a full (non-sub-resource) path.
+  const leadIdRef = useRef(lead?.id);
+  leadIdRef.current = lead?.id;
 
   const getTab = useCallback((key) => tabs[key] || EMPTY_TAB, [tabs]);
 
   const doFetch = useCallback(async (key, opts = {}) => {
     const { silent = false } = opts;
     const endpoint = TAB_ENDPOINTS[key];
-    if (!endpoint || !baseUrlRef.current) return;
+    if (!endpoint) return;
+    // Resolve the request path: function endpoints build a full path from the lead id;
+    // string endpoints are appended to the lead base url.
+    const path =
+      typeof endpoint === "function"
+        ? endpoint(leadIdRef.current)
+        : baseUrlRef.current
+        ? `${baseUrlRef.current}/${endpoint}`
+        : null;
+    if (!path) return;
     // A fetch is already running for this key: record this request as a pending rerun
     // (the latest opts win) so it replays when the current fetch settles, instead of
     // being silently dropped.
@@ -76,7 +91,7 @@ export function LeadDetailsProvider({
       [key]: { ...(prev[key] || EMPTY_TAB), loading: !silent, error: null },
     }));
     try {
-      const res = await apiRequest(`${baseUrlRef.current}/${endpoint}`, {
+      const res = await apiRequest(path, {
         headers: { "Content-Type": "application/json" },
       });
       let body;

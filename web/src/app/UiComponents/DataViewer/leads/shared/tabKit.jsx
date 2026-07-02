@@ -301,7 +301,7 @@ export function NameAvatar({ name, color, size = 38 }) {
         width: size,
         height: size,
         bgcolor: color || theme.palette.primary.main,
-        color: "#fff",
+        color: theme.palette.common.white,
         fontSize: size * 0.42,
         fontWeight: 700,
         flexShrink: 0,

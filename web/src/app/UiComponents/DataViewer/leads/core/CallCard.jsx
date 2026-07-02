@@ -155,7 +155,7 @@ export const CallCard = ({ call, onUpdate, extra = false }) => {
                   variant="subtitle2"
                   sx={{
                     fontWeight: call.isAdmin ? 600 : 400,
-                    color: call.isAdmin ? "#7B1FA2" : "inherit",
+                    color: call.isAdmin ? theme.palette.secondary.dark : "inherit",
                   }}
                 >
                   {call.time

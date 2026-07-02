@@ -59,13 +59,22 @@ export const LeadDialogHeader = ({
     lead.contracts && lead.contracts.length > 0 && lead.contracts[0];
   const levelColor = currentContract
     ? contractLevelColors[currentContract.contractLevel]
-    : "#000000";
+    : theme.palette.common.black;
 
   const isAnonymous =
     (lead.status === "NEW" || lead.status === "ON_HOLD") && !admin;
   const statusColor = statusColors[lead.status] || theme.palette.primary.main;
 
-  const canChangeStatus = user.role !== "ACCOUNTANT" && lead.status !== "NEW";
+  // Prefer the backend-computed capability (permission code + object scope + workflow
+  // lock) when the payload carries one — this is the parity-safe source of truth and
+  // hides a status control the user could never successfully use. Fall back to the
+  // legacy role rule for payloads without capabilities (e.g. the work-stage preview).
+  // A NEW lead never exposes a change control.
+  const canChangeStatus =
+    lead.status !== "NEW" &&
+    (lead.capabilities
+      ? Boolean(lead.capabilities.canChangeStatus)
+      : user.role !== "ACCOUNTANT");
   const showStartDeal = lead.status === "NEW" && !admin;
 
   // Small reusable meta pill for the identity row
@@ -215,7 +224,7 @@ export const LeadDialogHeader = ({
                   disableElevation
                   sx={{
                     background: statusColor,
-                    color: "#fff",
+                    color: theme.palette.common.white,
                     fontWeight: 700,
                     borderRadius: 2,
                     px: 2,

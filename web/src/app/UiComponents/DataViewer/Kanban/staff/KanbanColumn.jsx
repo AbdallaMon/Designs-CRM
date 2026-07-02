@@ -1,5 +1,8 @@
 "use client";
-import { statusColors } from "@/app/helpers/constants";
+import {
+  statusColors,
+  KanbanLeadsStatus,
+} from "@/app/helpers/constants";
 import {
   Box,
   Chip,
@@ -9,6 +12,11 @@ import {
   styled,
   Typography,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import { BiDollarCircle } from "react-icons/bi";
 import { BsInbox, BsExclamationTriangle } from "react-icons/bs";
@@ -20,12 +28,15 @@ import { FinalizeModal } from "../../leads/widgets/FinalizeModal";
 import { useEffect, useState } from "react";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { useAuth } from "@/app/providers/AuthProvider";
 import { getData } from "@/app/helpers/functions/getData";
 
 const ItemTypes = {
   CARD: "card",
 };
+
+// Deal transitions that are effectively irreversible from the board — dropping a card
+// onto one of these asks for confirmation first (FINALIZED keeps its own dedicated modal).
+const TERMINAL_DEAL_STATUSES = new Set(["REJECTED", "ARCHIVED"]);
 
 const ColumnHeader = styled(Box)(({ theme, statusColor }) => ({
   position: "sticky",
@@ -67,13 +78,14 @@ const KanbanColumn = ({
   const admin = isAdminOrSuperSales;
   const [finalizeModel, setFinalizeModel] = useState(false);
   const [currentId, setCurrentId] = useState(null);
+  // A drop onto a terminal status is parked here until the user confirms it.
+  const [pendingMove, setPendingMove] = useState(null); // { item, newStatus }
   const [leads, setleads] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [totalValue, setTotalValue] = useState(0);
   const [totalLeads, setTotalLeads] = useState(0);
   const [lead, setCurrentLead] = useState(null);
-  const { user } = useAuth();
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const take = 20;
@@ -127,61 +139,70 @@ const KanbanColumn = ({
       loadMore();
     }
   };
+  // Reconcile both affected columns from the server after a successful move: the
+  // destination refetches (replacing the optimistic card with the real row) and the
+  // source column drops the card.
+  const reconcileColumns = (oldStatus, newStatus) => {
+    setRerenderColumns((prev) => ({
+      ...prev,
+      [oldStatus]: !prev[oldStatus],
+      [newStatus]: !prev[newStatus],
+    }));
+  };
+
+  // Perform the move. Optimistically shows the card in THIS (destination) column
+  // immediately, then reconciles on success or rolls the insert back on failure.
+  // NOTE: authorization is derived server-side from the session — the client no
+  // longer sends an `isAdmin` flag (it was ignored by the backend).
+  const commitMove = async (l, newStatus) => {
+    const oldStatus = isNotStaff ? l.projects?.[0]?.status : l.status;
+    if (oldStatus === newStatus) return;
+
+    // Optimistic insert into the destination column (guard against a double drop).
+    setleads((prev) =>
+      prev.some((p) => p.id === l.id) ? prev : [{ ...l, status: newStatus }, ...prev]
+    );
+
+    const request = await handleRequestSubmit(
+      isNotStaff
+        ? { status: newStatus, oldStatus, id: l.projects[0].id }
+        : { status: newStatus, oldStatus },
+      isNotStaff ? setLoading : setToastLoading,
+      `shared/${isNotStaff ? "projects/designers" : "client-leads"}/${
+        l.id
+      }/actions/change-status`,
+      false,
+      "Updating",
+      false,
+      "POST"
+    );
+
+    if (request.status === 200) {
+      reconcileColumns(oldStatus, newStatus);
+    } else {
+      // Roll the optimistic insert back — the move did not stick.
+      setleads((prev) => prev.filter((p) => p.id !== l.id));
+    }
+  };
+
   const movelead = async (l, newStatus) => {
-    if (type === "CONTRACTLEVELS") {
+    if (type === "CONTRACTLEVELS") return;
+
+    // Deals moving to FINALIZED go through the finalize modal (price/contract capture).
+    if (!isNotStaff && newStatus === "FINALIZED") {
+      setCurrentId(l.id);
+      setFinalizeModel(true);
+      setCurrentLead(l);
       return;
     }
-    if (isNotStaff) {
-      const request = await handleRequestSubmit(
-        {
-          status: newStatus,
-          oldStatus: l.projects[0].status,
-          isAdmin: user.role === "ADMIN",
-          id: l.projects[0].id,
-        },
-        setLoading,
-        `shared/projects/designers/${l.id}/actions/change-status`,
-        false,
-        "Updating",
-        false,
-        "POST"
-      );
-      if (request.status === 200) {
-        setRerenderColumns((prev) => ({
-          ...prev,
-          [l.projects?.[0]?.status]: !prev[l.projects?.[0]?.status],
-          [newStatus]: !prev[newStatus],
-        }));
-      }
-    } else {
-      if (newStatus === "FINALIZED") {
-        setCurrentId(l.id);
-        setFinalizeModel(true);
-        setCurrentLead(l);
-        return;
-      }
 
-      const request = await handleRequestSubmit(
-        {
-          status: newStatus,
-          oldStatus: l.status,
-          isAdmin: user.role === "ADMIN",
-        },
-        setToastLoading,
-        `shared/client-leads/${l.id}/actions/change-status`,
-        false,
-        "Updating",
-        false,
-        "POST"
-      );
-      if (request.status === 200) {
-        setRerenderColumns((prev) => ({
-          ...prev,
-          [l.status]: !prev[l.status],
-          [newStatus]: !prev[newStatus],
-        }));
-      }
+    // Irreversible deal transitions ask for confirmation before committing.
+    if (!isNotStaff && TERMINAL_DEAL_STATUSES.has(newStatus)) {
+      setPendingMove({ item: l, newStatus });
+      return;
     }
+
+    await commitMove(l, newStatus);
   };
 
   return (
@@ -202,6 +223,36 @@ const KanbanColumn = ({
           }}
         />
       )}
+
+      {/* Confirm irreversible deal transitions (e.g. reject / archive) before committing. */}
+      <Dialog open={Boolean(pendingMove)} onClose={() => setPendingMove(null)}>
+        <DialogTitle>تأكيد نقل الصفقة</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {`سيتم نقل هذه الصفقة إلى "${
+              KanbanLeadsStatus[pendingMove?.newStatus] ||
+              pendingMove?.newStatus ||
+              ""
+            }". لا يمكن التراجع عن هذا الإجراء بسهولة. هل تريد المتابعة؟`}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button variant="outlined" onClick={() => setPendingMove(null)}>
+            إلغاء
+          </Button>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => {
+              const move = pendingMove;
+              setPendingMove(null);
+              if (move) commitMove(move.item, move.newStatus);
+            }}
+          >
+            تأكيد
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Grid
         size={2}
@@ -411,10 +462,7 @@ const KanbanColumn = ({
                 );
               }
             })}
-            {((totalLeads > leads?.length ||
-              !leads ||
-              (leads?.length === 0 && totalLeads)) &&
-              !hasMore) > 0 && (
+            {!hasMore && totalLeads > (leads?.length || 0) && (
               <Button
                 onClick={loadMore}
                 variant="outlined"

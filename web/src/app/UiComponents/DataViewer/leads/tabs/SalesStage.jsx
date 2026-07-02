@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   alpha,
   Box,
@@ -25,7 +25,7 @@ import {
 import { MdTimeline } from "react-icons/md";
 import dayjs from "dayjs";
 import { salesStageEnum } from "@/app/helpers/constants";
-import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
+import { useLeadTab } from "../context/LeadDetailsContext";
 import { TabSection, RecordCard, MetaItem, StatusPill } from "../shared/tabKit";
 import { TabLoading } from "../shared/TabLoading";
 import { EmptyState } from "../shared/EmptyState";
@@ -35,23 +35,19 @@ import { NotesComponent } from "../../utility/Notes";
 
 const SalesStageComponent = ({ clientLeadId }) => {
   const theme = useTheme();
-  const [salesStages, setSalesStages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedStage, setSelectedStage] = useState(null);
   const [currentStageId, setCurrentStageId] = useState(null);
   const { loading: actionLoading, setLoading: setActionLoading } =
     useToastContext();
-  const fetchSalesStages = async () => {
-    setError(null);
-    await getDataAndSet({
-      url: `shared/sales-stages/${clientLeadId}`,
-      setLoading,
-      setData: setSalesStages,
-      setError,
-    });
-  };
+  // Unified on the lead-detail per-tab cache (LeadDetailsContext): lazy fetch on first
+  // open, cached across tab switches, silent reconcile after a stage change (no flicker).
+  const {
+    data: salesStages,
+    showLoading: loading,
+    error,
+    refetch: fetchSalesStages,
+  } = useLeadTab("salesStage");
 
   const updateSalesStage = async (stageType, action = "next", item) => {
     // v2 renamed this to a workflow action: POST /sales-stages/:id/actions/set-stage.
@@ -109,12 +105,6 @@ const SalesStageComponent = ({ clientLeadId }) => {
   const getStageData = (stageKey) => {
     return salesStages.find((s) => s.stage === stageKey);
   };
-
-  useEffect(() => {
-    if (clientLeadId) {
-      fetchSalesStages(clientLeadId);
-    }
-  }, [clientLeadId]);
 
   if (loading) {
     return <TabLoading />;
@@ -188,8 +178,10 @@ const SalesStageComponent = ({ clientLeadId }) => {
                   }}
                   sx={{
                     color: "inherit",
-                    backgroundColor: "rgba(255,255,255,0.2)",
-                    "&:hover": { backgroundColor: "rgba(255,255,255,0.3)" },
+                    backgroundColor: alpha(theme.palette.common.white, 0.2),
+                    "&:hover": {
+                      backgroundColor: alpha(theme.palette.common.white, 0.3),
+                    },
                   }}
                 >
                   <Visibility />
