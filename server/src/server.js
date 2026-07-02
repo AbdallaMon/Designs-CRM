@@ -7,6 +7,8 @@ import { coonnectToTelegramV2 } from "./modules/telegram/connect.js";
 import { startWorkers } from "./infra/workers/start-workers.js";
 import { startCron } from "./infra/cron/index.js";
 import { env } from "./config/env.js";
+import prisma from "@dms/db";
+import { runProfileBackfill } from "./bootstrap/backfill-profiles.js";
 
 export const httpServer = createServer(app);
 
@@ -15,6 +17,16 @@ startSocketSubscriber(getIo());
 
 (async () => {
   await connectRedis();
+
+  // One-time (idempotent) profile backfill: assign profiles to users created before
+  // the profiles feature. Non-fatal — never block the API from serving HTTP.
+  try {
+    const r = await runProfileBackfill({ prisma });
+    if (r.updated) console.log(`✅ Profile backfill: ${r.updated}/${r.scanned} users assigned`);
+  } catch (e) {
+    console.error("❌ Profile backfill failed:", e?.message);
+  }
+
   // Connect the single GramJS client BEFORE workers/cron so the telegram workers and the
   // telegram cron reuse one connection (replaces the detached start-telegram-system.js).
   await coonnectToTelegramV2();
