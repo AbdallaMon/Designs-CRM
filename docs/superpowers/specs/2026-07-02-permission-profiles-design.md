@@ -352,6 +352,17 @@ Phase 4 is a small cleanup.
 
 ---
 
+## 12b. Accepted intentional simplifications (Phase 3)
+
+1. **subRole-STAFF hybrids resolve by base profile.** The legacy FE helpers
+   `checkIfPrimaryStaff`/`checkIfAdminOrSuperSales` honor `subRoles` (a non-STAFF
+   user with a STAFF subRole + `isPrimary`/`isSuperSales` sees the primary lead
+   tabs). Profiles key on base `role` only, so such a hybrid resolves to its base
+   profile and may lose those tabs under the code gate — **narrowing only,
+   fails-safe, rare.** Accepted (user decision) as aligned with one-profile-per-
+   user; these users are corrected when reassigned to a single profile. (First
+   applied when `leadSections.jsx` moved to `lead.*.view` codes.)
+
 ## 13. Open questions
 
 1. ~~Designer sub-variants~~ — **RESOLVED** from master (§5.1): three designer
