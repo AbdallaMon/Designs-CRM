@@ -89,15 +89,22 @@ function isEmailTakenError(error) {
 // PROFILE_META and merge them into the body the frozen create/edit service writes, so
 // nothing that still reads role/isPrimary/isSuperSales goes out of sync. When no
 // profile is sent this is a no-op (parity with pre-profile behavior).
+//
+// IMPORTANT: the frozen legacy `createStaffUser`/`editStaffUser` (adminServices.js)
+// build an EXPLICIT Prisma `data: { email, password, role, name, telegramUsername }` —
+// they silently IGNORE isPrimary/isSuperSales even when present on the merged body. So
+// those two flags can NEVER be synced by merging them into the legacy call's input; the
+// caller must write them separately via `repo.setUserProfile`. We return them here as an
+// explicit `sync` object (defaulting to false when PROFILE_META doesn't specify them) so
+// create/update can pass them through after the legacy write succeeds.
 function applyProfileToBody(body) {
   const key = body?.profile;
-  if (key == null) return { body, profile: null };
+  if (key == null) return { body, profile: null, sync: null };
   if (!PROFILE_KEYS.includes(key)) throw new AppError(C.USER_ROLE_NOT_ALLOWED, 400);
   const meta = PROFILE_META[key];
-  const merged = { ...body, role: meta.baseRole };
-  if (meta.isPrimary !== undefined) merged.isPrimary = meta.isPrimary;
-  if (meta.isSuperSales !== undefined) merged.isSuperSales = meta.isSuperSales;
-  return { body: merged, profile: key };
+  const sync = { isPrimary: Boolean(meta.isPrimary), isSuperSales: Boolean(meta.isSuperSales) };
+  const merged = { ...body, role: meta.baseRole, ...sync };
+  return { body: merged, profile: key, sync };
 }
 
 export class UserUsecase {
@@ -249,7 +256,7 @@ export class UserUsecase {
     }
     // A supplied `profile` is authoritative: derive role/isPrimary/isSuperSales from
     // PROFILE_META before the legacy rule check + write. No profile → no-op (parity).
-    const { body: withRole, profile } = applyProfileToBody(body);
+    const { body: withRole, profile, sync } = applyProfileToBody(body);
     // Legacy rule: an isSuperSales (non-admin) creator may only create STAFF users.
     if (
       authUser.isSuperSales &&
@@ -262,7 +269,10 @@ export class UserUsecase {
     try {
       const createdUser = await this.legacy.createStaffUser(withRole);
       if (profile && createdUser?.id != null) {
-        await this.repo.setUserProfile({ userId: createdUser.id, profile });
+        // The frozen createStaffUser Prisma write drops isPrimary/isSuperSales (its
+        // `data` object is explicit and never included them) — write them here so a
+        // profile-assigned user is never out of sync with PROFILE_META.
+        await this.repo.setUserProfile({ userId: createdUser.id, profile, ...sync });
       }
       return createdUser;
     } catch (error) {
@@ -274,7 +284,7 @@ export class UserUsecase {
   async update({ userId, body, authUser }) {
     if (!body || !userId) throw new AppError(C.USER_NOT_FOUND, 404);
     // Same profile-authoritative derivation as create; no profile → no-op (parity).
-    const { body: withRole, profile } = applyProfileToBody(body);
+    const { body: withRole, profile, sync } = applyProfileToBody(body);
     // Legacy rule: a non-admin isSuperSales editor may not change a role to non-STAFF.
     if (
       authUser.role !== "ADMIN" &&
@@ -287,7 +297,9 @@ export class UserUsecase {
     }
     try {
       const updated = await this.legacy.editStaffUser(withRole, userId);
-      if (profile) await this.repo.setUserProfile({ userId: Number(userId), profile });
+      // Same rationale as create(): the frozen editStaffUser write drops
+      // isPrimary/isSuperSales, so we sync them here explicitly.
+      if (profile) await this.repo.setUserProfile({ userId: Number(userId), profile, ...sync });
       return updated;
     } catch (error) {
       if (isEmailTakenError(error)) throw new AppError(C.EMAIL_ALREADY_REGISTERED, 400);

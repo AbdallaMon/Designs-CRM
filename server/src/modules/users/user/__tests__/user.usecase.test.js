@@ -268,19 +268,42 @@ describe("UserUsecase.changeStatus", () => {
 
 // ════════════════════════════════════════════════════════════════════════════
 //  PROFILE ASSIGNMENT (create/update) — derives legacy role/flags from
-//  PROFILE_META and persists `profile` via the new repo.setUserProfile.
+//  PROFILE_META and persists `profile` (+ isPrimary/isSuperSales) via the new
+//  repo.setUserProfile.
 //  NOTE: the real UserUsecase constructor is POSITIONAL — `(repository, legacy)`
 //  — not the `{ repository, legacy }` object shape; adapted accordingly.
+//
+//  The legacy.createStaffUser/editStaffUser mocks below are made REALISTIC: the real
+//  frozen services (server/services/main/admin/adminServices.js) build an EXPLICIT
+//  Prisma `data: { email, password, role, name, telegramUsername }` — they silently
+//  DROP isPrimary/isSuperSales even if present on the input. A mock that just echoes
+//  `{ ...body }` would hide that field-dropping and let the merge-only bug (fixed here)
+//  pass unnoticed. So these mocks only persist/echo the same field list the real
+//  Prisma `data` object does.
 // ════════════════════════════════════════════════════════════════════════════
+const LEGACY_PERSISTED_FIELDS = ["id", "email", "password", "role", "name", "telegramUsername"];
+function pickLegacyPersistedFields(obj) {
+  const out = {};
+  for (const key of LEGACY_PERSISTED_FIELDS) {
+    if (obj[key] !== undefined) out[key] = obj[key];
+  }
+  return out;
+}
+
 function makeProfileUsecase() {
   const created = [];
   const setProfile = vi.fn(async () => {});
   const legacy = {
+    // Mirrors createStaffUser's real Prisma `data` shape — drops isPrimary/isSuperSales.
     createStaffUser: vi.fn(async (body) => {
       created.push(body);
-      return { id: 99, ...body };
+      return { id: 99, ...pickLegacyPersistedFields(body) };
     }),
-    editStaffUser: vi.fn(async (body) => ({ id: body.id ?? 1, ...body })),
+    // Mirrors editStaffUser's real Prisma `data` shape — drops isPrimary/isSuperSales.
+    editStaffUser: vi.fn(async (body, userId) => ({
+      id: userId ?? body.id ?? 1,
+      ...pickLegacyPersistedFields(body),
+    })),
   };
   const repo = makeRepo({ setUserProfile: setProfile });
   const uc = new UserUsecase(repo, legacy);
@@ -288,7 +311,7 @@ function makeProfileUsecase() {
 }
 
 describe("create with profile", () => {
-  it("derives role+flags from PROFILE_META and persists profile", async () => {
+  it("derives role+flags from PROFILE_META and persists profile + isPrimary/isSuperSales", async () => {
     const { uc, legacy, setProfile } = makeProfileUsecase();
     await uc.create({
       body: { email: "a@b.c", password: "x", name: "A", profile: "PRIMARY_SALES" },
@@ -298,7 +321,31 @@ describe("create with profile", () => {
     expect(sent.role).toBe(PROFILE_META.PRIMARY_SALES.baseRole); // "STAFF"
     expect(sent.isPrimary).toBe(true);
     expect(sent.isSuperSales).toBe(false);
-    expect(setProfile).toHaveBeenCalledWith({ userId: 99, profile: "PRIMARY_SALES" });
+    // THE regression-catching assertion: even though the (realistic) legacy adapter
+    // drops isPrimary/isSuperSales from what it persists/returns, setUserProfile must
+    // still be called with the explicit sync flags so the DB columns stay in sync.
+    expect(setProfile).toHaveBeenCalledWith({
+      userId: 99,
+      profile: "PRIMARY_SALES",
+      isPrimary: true,
+      isSuperSales: false,
+    });
+  });
+
+  it("derives SUPER_SALES flags (isPrimary:false, isSuperSales:true) and persists them", async () => {
+    const { uc, legacy, setProfile } = makeProfileUsecase();
+    await uc.create({
+      body: { email: "s@b.c", password: "x", name: "S", profile: "SUPER_SALES" },
+      authUser: { role: "ADMIN" },
+    });
+    const sent = legacy.createStaffUser.mock.calls[0][0];
+    expect(sent.role).toBe(PROFILE_META.SUPER_SALES.baseRole); // "STAFF"
+    expect(setProfile).toHaveBeenCalledWith({
+      userId: 99,
+      profile: "SUPER_SALES",
+      isPrimary: false,
+      isSuperSales: true,
+    });
   });
 
   it("rejects an unknown profile", async () => {
@@ -308,7 +355,7 @@ describe("create with profile", () => {
         body: { email: "a@b.c", password: "x", name: "A", profile: "NOPE" },
         authUser: { role: "ADMIN" },
       }),
-    ).rejects.toBeTruthy();
+    ).rejects.toMatchObject({ statusCode: 400, message: userMessagesCodes.USER_ROLE_NOT_ALLOWED });
   });
 
   it("no profile sent → parity no-op (role/flags untouched, setUserProfile not called)", async () => {
@@ -326,7 +373,7 @@ describe("create with profile", () => {
 });
 
 describe("update with profile", () => {
-  it("derives role+flags from PROFILE_META and persists profile", async () => {
+  it("derives role+flags from PROFILE_META and persists profile + isPrimary/isSuperSales", async () => {
     const { uc, legacy, setProfile } = makeProfileUsecase();
     await uc.update({
       userId: 7,
@@ -337,7 +384,30 @@ describe("update with profile", () => {
     expect(sent.role).toBe(PROFILE_META.SUPER_SALES.baseRole); // "STAFF"
     expect(sent.isPrimary).toBe(false);
     expect(sent.isSuperSales).toBe(true);
-    expect(setProfile).toHaveBeenCalledWith({ userId: 7, profile: "SUPER_SALES" });
+    // THE regression-catching assertion (see create-with-profile test above for why).
+    expect(setProfile).toHaveBeenCalledWith({
+      userId: 7,
+      profile: "SUPER_SALES",
+      isPrimary: false,
+      isSuperSales: true,
+    });
+  });
+
+  it("derives PRIMARY_SALES flags (isPrimary:true, isSuperSales:false) and persists them", async () => {
+    const { uc, legacy, setProfile } = makeProfileUsecase();
+    await uc.update({
+      userId: 8,
+      body: { profile: "PRIMARY_SALES" },
+      authUser: { role: "ADMIN" },
+    });
+    const sent = legacy.editStaffUser.mock.calls[0][0];
+    expect(sent.role).toBe(PROFILE_META.PRIMARY_SALES.baseRole); // "STAFF"
+    expect(setProfile).toHaveBeenCalledWith({
+      userId: 8,
+      profile: "PRIMARY_SALES",
+      isPrimary: true,
+      isSuperSales: false,
+    });
   });
 
   it("no profile sent → parity no-op (existing update behavior unchanged)", async () => {

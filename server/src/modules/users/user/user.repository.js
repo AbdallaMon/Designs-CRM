@@ -173,8 +173,15 @@ class UserRepository {
   // Persist the assigned permission profile (permission-profiles framework). Called
   // from the create/update usecases AFTER the frozen legacy create/edit write, only
   // when the caller sent a `profile` — single-field write, no business logic here.
-  setUserProfile({ userId, profile }) {
-    return prisma.user.update({ where: { id: Number(userId) }, data: { profile } });
+  // `isPrimary`/`isSuperSales` are optionally included: the frozen legacy
+  // createStaffUser/editStaffUser writes never persist those two flags (their Prisma
+  // `data` is an explicit field list that omits them), so the usecase passes them here
+  // to keep the columns in sync with the assigned profile.
+  setUserProfile({ userId, profile, isPrimary, isSuperSales }) {
+    const data = { profile };
+    if (isPrimary !== undefined) data.isPrimary = isPrimary;
+    if (isSuperSales !== undefined) data.isSuperSales = isSuperSales;
+    return prisma.user.update({ where: { id: Number(userId) }, data });
   }
 
   // ── Restricted countries (legacy get/updateNotAllowedCountries) ───────────────
