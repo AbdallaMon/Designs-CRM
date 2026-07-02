@@ -3,6 +3,7 @@ import {
   AUTH_REFRESH_TOKEN_COOKIE_NAME,
   getEffectivePermissions,
   buildNavigationTabs,
+  resolveProfileKey,
 } from "@dms/shared";
 
 class AuthSchema {
@@ -96,6 +97,7 @@ class AuthSchema {
       subRoles,
       isSuperSales: Boolean(user.isSuperSales),
       isPrimary: Boolean(user.isPrimary),
+      profile: resolveProfileKey(user),
       profilePicture: user.profilePicture ?? null,
       permissions,
       permissionsByModule,
