@@ -345,23 +345,53 @@ const ICON_BY_KEY = {
   "contact-initiator-leads": <FiTarget size={20} />,
 };
 
+// Roles whose legacy "Dashboard" top-level link renders FiTarget instead of
+// FiGrid (threeDLinks / twoDLinks in the pre-change arrays above).
+const DASHBOARD_TARGET_ROLES = new Set(["THREE_D_DESIGNER", "TWO_D_DESIGNER"]);
+
+// Resolve the client-only icon for a top-level nav tab by `key`, honoring the
+// one role-dependent exception: the "dashboard" key renders FiTarget for
+// 3D/2D designers (matching threeDLinks/twoDLinks) and FiGrid otherwise.
+function resolveTopIcon(key, role) {
+  if (key === "dashboard" && DASHBOARD_TARGET_ROLES.has(role)) {
+    return <FiTarget size={20} />;
+  }
+  return ICON_BY_KEY[key];
+}
+
+// Sub-link icon lookup by href (navigationTabs sub-links carry no icons
+// either). Mirrors the legacy sub-link icons exactly; any href not listed
+// here is a work-stage item and falls back to FiBriefcase.
+const SUB_ICON_BY_HREF = {
+  "/dashboard/deals": <FiDollarSign size={20} />,
+  "/dashboard/on-hold-deals": <FiClock size={18} />,
+  "/dashboard/all-deals": <FiList size={18} />,
+  "/dashboard/report": <FiTrendingUp size={20} />,
+  "/dashboard/report/staff": <FiUsers size={18} />,
+};
+
+function resolveSubIcon(href) {
+  return SUB_ICON_BY_HREF[href] ?? <FiBriefcase size={20} />;
+}
+
 // Map a sub-link { label, href, active } (from navigationTabs) to SideNav's shape.
 function mapSubLink(s) {
   return {
     name: s.label,
     href: s.href,
+    icon: resolveSubIcon(s.href),
     ...(s.active ? { active: s.active } : {}),
   };
 }
 
 // Map a top-level nav tab { key, label, href, active, subLinks } (from
 // navigationTabs) to the { name, href, icon, active, subLinks } shape SideNav
-// expects, attaching the client-only icon by `key`.
-function mapNavigationTab(tab) {
+// expects, attaching the client-only icon by `key` (role-aware for "dashboard").
+function mapNavigationTab(tab, role) {
   return {
     name: tab.label,
     href: tab.href,
-    icon: ICON_BY_KEY[tab.key],
+    icon: resolveTopIcon(tab.key, role),
     ...(tab.active ? { active: tab.active } : {}),
     ...(tab.subLinks?.length ? { subLinks: tab.subLinks.map(mapSubLink) } : {}),
   };
@@ -369,7 +399,9 @@ function mapNavigationTab(tab) {
 
 // Same target shape, but from the legacy client-side link arrays (used only
 // for the dev role-override fallback below, since navigationTabs reflects the
-// REAL backend role and won't match an overridden one).
+// REAL backend role and won't match an overridden one). The legacy arrays
+// already carry the correct (role-specific) icon directly, so no lookup is
+// needed here for either top-level or sub-link icons.
 function mapLegacyLink(link) {
   return {
     name: link.name,
@@ -381,6 +413,7 @@ function mapLegacyLink(link) {
           subLinks: link.subLinks.map((s) => ({
             name: s.name,
             href: s.href,
+            icon: s.icon,
             ...(s.active ? { active: s.active } : {}),
           })),
         }
@@ -412,7 +445,7 @@ function resolveLinks(user) {
   if (isRoleOverrideActive(user)) {
     return linksForRole(user).map(mapLegacyLink);
   }
-  return (user?.navigationTabs ?? []).map(mapNavigationTab);
+  return (user?.navigationTabs ?? []).map((tab) => mapNavigationTab(tab, user?.role));
 }
 
 // Mirror SideNav's matching so the AppBar title agrees with the active nav item.
