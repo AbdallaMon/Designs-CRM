@@ -3,36 +3,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Box, Typography } from "@mui/material";
 import { useAuth } from "@/app/providers/AuthProvider";
-
-// Segment after "/dashboard/" in a pathname ("" for the landing itself,
-// e.g. "/dashboard/deals/9" -> "deals", "/dashboard" -> "").
-function firstSegment(pathname) {
-  const parts = pathname.split("/").filter(Boolean); // ["dashboard","leads",...]
-  return parts[1] ?? "";
-}
-
-// Cross-cutting routes reachable outside the sidebar (notification bell,
-// chat widget, task/detail links) — allowed regardless of nav membership.
-const ALWAYS_ALLOWED_SEGMENTS = new Set(["notifications", "chat", "tasks"]);
-
-// A path is allowed if it's the shared `/dashboard` landing (every role's
-// landing lives there), a cross-cutting always-allowed segment, or its first
-// path segment matches a top-level or sub-link href in the role's nav tabs.
-function isAllowed(pathname, tabs) {
-  if (pathname === "/dashboard") return true;
-  const seg = firstSegment(pathname);
-  if (ALWAYS_ALLOWED_SEGMENTS.has(seg)) return true;
-  const allowed = new Set();
-  for (const t of tabs) {
-    const s = firstSegment(t.href);
-    if (s) allowed.add(s);
-    for (const sub of t.subLinks ?? []) {
-      const ss = firstSegment(sub.href);
-      if (ss) allowed.add(ss);
-    }
-  }
-  return allowed.has(seg);
-}
+import { isAllowed } from "./routeAccess";
 
 export default function RouteGuard({ children }) {
   const { navigationTabs = [], validatingAuth, isLoggedIn } = useAuth();
