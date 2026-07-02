@@ -8,4 +8,5 @@ export const LEAD_CODES = {
   MODIFICATIONS_VIEW: "lead.modifications.view",
   UPDATES_VIEW: "lead.updates.view",
   ANALYSIS_VIEW: "lead.analysis.view",
+  ASSIGN_OTHER: "lead.assign.other",
 };

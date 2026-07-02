@@ -11,8 +11,9 @@ import FilterSelect from "@/app/UiComponents/formComponents/FilterSelect";
 import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks";
 import KanbanColumn from "../staff/KanbanColumn";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { usePermission } from "@/app/hooks/usePermission";
+import { LEAD_CODES } from "@/app/helpers/permissionCodes";
 import { CONTRACT_LEVELS } from "@/app/helpers/constants";
-import { checkIfAdminOrSuperSales } from "@/app/helpers/functions/utility";
 import { FaEllipsisV } from "react-icons/fa";
 import BulkConvertLeadsModal from "./BulkConvertLeadsModal";
 import KanbanFilterBar from "./KanbanFilterBar";
@@ -31,7 +32,11 @@ const KanbanBoard = ({
   isNotStaff,
 }) => {
   const { user } = useAuth();
-  const isAdminOrSuperSales = checkIfAdminOrSuperSales(user);
+  const { hasPermission } = usePermission();
+  // lead.assign.other is granted to exactly ADMIN/SUPER_ADMIN + isSuperSales
+  // (see permission-profiles-phase3-leads plan) — equivalent to checkIfAdminOrSuperSales
+  // for base roles; also honors admin/super-admin subRoles (affordance-only, backend enforces).
+  const isAdminOrSuperSales = hasPermission(LEAD_CODES.ASSIGN_OTHER);
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [anchorEl, setAnchorEl] = useState(null);
   const [bulkConvertOpen, setBulkConvertOpen] = useState(false);

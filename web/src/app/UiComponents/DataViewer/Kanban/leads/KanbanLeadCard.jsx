@@ -37,13 +37,12 @@ import {
   CallResultDialog,
   NewCallDialog,
 } from "@/app/UiComponents/DataViewer/leads/dialogs/CallsDialog.jsx";
-import {
-  checkIfAdminOrSuperSales,
-  hideMoreData,
-} from "@/app/helpers/functions/utility.js";
+import { hideMoreData } from "@/app/helpers/functions/utility.js";
 import { FaEye } from "react-icons/fa";
 import { InProgressCall } from "@/app/UiComponents/DataViewer/leads/widgets/InProgressCall.jsx";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { usePermission } from "@/app/hooks/usePermission";
+import { LEAD_CODES } from "@/app/helpers/permissionCodes";
 import PreviewWorkStage from "@/app/UiComponents/DataViewer/work-stages/PreviewWorkStage";
 import FloatingIdBadge from "@/app/UiComponents/DataViewer/leads/core/IdBadge";
 
@@ -118,7 +117,11 @@ const LeadCard = ({
     },
   });
   const { user } = useAuth();
-  const admin = checkIfAdminOrSuperSales(user);
+  const { hasPermission } = usePermission();
+  // lead.assign.other is granted to exactly ADMIN/SUPER_ADMIN + isSuperSales
+  // (see permission-profiles-phase3-leads plan) — equivalent to checkIfAdminOrSuperSales
+  // for base roles; also honors admin/super-admin subRoles (affordance-only, backend enforces).
+  const admin = hasPermission(LEAD_CODES.ASSIGN_OTHER);
   const [menuAnchorEl, setMenuAnchorEl] = React.useState(null);
   const [previewDialogOpen, setPreviewDialogOpen] = React.useState(false);
   const [hovered, setHovered] = React.useState(false);
