@@ -91,8 +91,11 @@ export const LEAD_SECTIONS = [
     label: "Client analysis",
     group: "overview",
     icon: <MdAnalytics size={18} />,
-    // Parity: master shows this to admin || any STAFF; lead.analysis.view is granted to all
-    // sales profiles + admin (isSuperSales ⟹ STAFF invariant makes this exact).
+    // Visibility follows the user's profile-derived `lead.analysis.view` code (granted to the
+    // sales profiles + admin). This matches master for base-role users. A NON-STAFF user who
+    // holds a STAFF *subRole* (+ isPrimary/isSuperSales) resolves by their BASE profile, so —
+    // as a deliberate simplification of the one-profile-per-user model — such rare hybrids may
+    // not see this section (narrowing only, fails-safe). See the permission-profiles spec.
     visible: (ctx) => ctx.perms.hasPermission(LEAD_CODES.ANALYSIS_VIEW),
     render: (ctx) => (
       <SalesToolsTabs
@@ -193,8 +196,10 @@ export const LEAD_SECTIONS = [
     label: "Projects",
     group: "delivery",
     icon: <MdWork size={18} />,
-    // The old role restriction (ADMIN/SUPER_ADMIN/STAFF) is redundant with the code under
-    // the isSuperSales⟹STAFF invariant, so the code alone preserves visibility.
+    // Gated on the profile-derived `lead.projects.view` code (granted to primary/super/admin
+    // profiles); the old base-role restriction is subsumed by the code for base-role users.
+    // STAFF-subRole hybrids resolve by their base profile (same deliberate simplification as
+    // the analysis section above — narrowing only, fails-safe).
     visible: (ctx) => ctx.perms.hasPermission(LEAD_CODES.PROJECTS_VIEW),
     render: (ctx) => <LeadProjects clientLeadId={ctx.lead.id} framed={false} />,
   },
