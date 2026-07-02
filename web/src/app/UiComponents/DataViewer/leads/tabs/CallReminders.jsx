@@ -81,13 +81,17 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
     return true;
   });
 
+  const canCreate = lead?.capabilities
+    ? Boolean(lead.capabilities.canAddCall)
+    : !notUser;
+
   return (
     <TabSection
       icon={<RiPhoneLine />}
       title="Call Reminders"
       count={visibleCalls?.length || 0}
       action={
-        !notUser ? (
+        canCreate ? (
           <NewCallDialog
             lead={lead}
             setCallReminders={setCallReminders}
@@ -101,7 +105,7 @@ export function CallReminders({ lead, setleads, admin, notUser }) {
           icon={<RiPhoneLine />}
           title="No call reminders"
           description={
-            notUser
+            !canCreate
               ? "There are no scheduled calls for this lead."
               : "Schedule a call to follow up with this lead."
           }

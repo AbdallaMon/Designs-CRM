@@ -45,19 +45,23 @@ export function LeadNotes({ lead, admin, notUser }) {
     );
   }
 
+  const canCreate = lead?.capabilities
+    ? Boolean(lead.capabilities.canAddNote)
+    : !notUser;
+
   return (
     <TabSection
       icon={<MdStickyNote2 />}
       title="Notes"
       count={notes?.length || 0}
-      action={!notUser ? <NewNoteDialog lead={lead} setNotes={setNotes} /> : null}
+      action={canCreate ? <NewNoteDialog lead={lead} setNotes={setNotes} /> : null}
     >
       {!notes?.length ? (
         <EmptyState
           icon={<MdStickyNote2 />}
           title="No notes yet"
           description={
-            notUser
+            !canCreate
               ? "There are no notes recorded for this lead."
               : "Add the first note to keep track of important details about this lead."
           }

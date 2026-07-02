@@ -49,6 +49,10 @@ export function PriceOffersList({ admin, lead, notUser }) {
 
   if (showLoading) return <TabLoading />;
 
+  const canCreate = lead?.capabilities
+    ? Boolean(lead.capabilities.canAddPriceOffer)
+    : !notUser;
+
   return (
     <Stack spacing={3}>
       {/* Contracts */}
@@ -100,7 +104,7 @@ export function PriceOffersList({ admin, lead, notUser }) {
         title="Price Offers"
         count={offers?.length || 0}
         action={
-          !notUser ? <AddPriceOffers lead={lead} setPriceOffers={setOffers} /> : null
+          canCreate ? <AddPriceOffers lead={lead} setPriceOffers={setOffers} /> : null
         }
       >
         {error ? (
@@ -123,7 +127,7 @@ export function PriceOffersList({ admin, lead, notUser }) {
             icon={<FaMoneyBillWave />}
             title="No price offers"
             description={
-              notUser
+              !canCreate
                 ? "There are no price offers for this lead."
                 : "Add a price offer to share pricing with this lead."
             }

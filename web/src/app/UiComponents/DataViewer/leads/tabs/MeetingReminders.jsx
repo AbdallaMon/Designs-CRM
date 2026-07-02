@@ -100,13 +100,17 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
     return true;
   });
 
+  const canCreate = lead?.capabilities
+    ? Boolean(lead.capabilities.canAddMeeting)
+    : !notUser;
+
   return (
     <TabSection
       icon={<RiGroupLine />}
       title="Meeting Reminders"
       count={visibleMeetings?.length || 0}
       action={
-        !notUser ? (
+        canCreate ? (
           <Stack direction="row" gap={1.5} flexWrap="wrap">
             <NewClientMeetingDialog
               lead={lead}
@@ -132,7 +136,7 @@ export function MeetingReminders({ lead, setleads, admin, notUser }) {
           icon={<RiGroupLine />}
           title="No meetings scheduled"
           description={
-            notUser
+            !canCreate
               ? "There are no scheduled meetings for this lead."
               : "Generate a client appointment link to schedule a meeting."
           }

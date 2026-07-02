@@ -70,6 +70,10 @@ export function FileList({ lead, admin, notUser }) {
 
   const list = scope === "user" ? userFiles : clientFiles;
 
+  const canCreate = lead?.capabilities
+    ? Boolean(lead.capabilities.canAddFile)
+    : !notUser;
+
   const renderGrid = (items, emptyTitle, emptyDescription) =>
     items.length === 0 ? (
       <EmptyState icon={<MdFolderOpen />} title={emptyTitle} description={emptyDescription} />
@@ -114,7 +118,7 @@ export function FileList({ lead, admin, notUser }) {
       icon={<GoPaperclip />}
       title="Attachments"
       count={files?.length || 0}
-      action={!notUser ? <AddFiles lead={lead} setFiles={setFiles} /> : null}
+      action={canCreate ? <AddFiles lead={lead} setFiles={setFiles} /> : null}
     >
       <ToggleButtonGroup
         value={scope}
@@ -135,7 +139,7 @@ export function FileList({ lead, admin, notUser }) {
         ? renderGrid(
             userFiles,
             "No user files",
-            notUser
+            !canCreate
               ? "There are no user files for this lead."
               : "Upload a file to attach it to this lead."
           )

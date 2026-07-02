@@ -29,6 +29,10 @@ export function ExtraServicesList({ admin, lead, notUser, setPayments }) {
   const [extraServices, setExtraServices] = useState(lead.extraServices);
   const theme = useTheme();
 
+  const canCreate = lead?.capabilities
+    ? Boolean(lead.capabilities.canAddPayment)
+    : !notUser;
+
   return (
     <Stack spacing={3}>
       <SectionToolbar
@@ -37,7 +41,7 @@ export function ExtraServicesList({ admin, lead, notUser, setPayments }) {
         count={extraServices?.length || 0}
         countLabel="services"
         action={
-          !notUser ? (
+          canCreate ? (
             <AddExtraService
               lead={lead}
               setExtraServices={setExtraServices}
@@ -52,7 +56,7 @@ export function ExtraServicesList({ admin, lead, notUser, setPayments }) {
           icon={<FaMoneyBillWave />}
           title="No extra services"
           description={
-            notUser
+            !canCreate
               ? "There are no extra services for this lead."
               : "Add an extra service to bill additional work."
           }
