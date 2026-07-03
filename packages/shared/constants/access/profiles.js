@@ -83,6 +83,22 @@ export function deriveProfileFromLegacy(user) {
   }
 }
 
+// Full profile set for a legacy user: the base-role profile (the default current)
+// plus one profile per subRole. Sales flags are already folded into the base via
+// deriveProfileFromLegacy. Used by the DB user-migration to assign a user its
+// UserProfile rows + pick the initial currentProfile.
+export function deriveProfilesFromLegacy(user) {
+  const current = deriveProfileFromLegacy(user);
+  const set = new Set([current]);
+  const subRoles = Array.isArray(user?.subRoles) ? user.subRoles : [];
+  for (const entry of subRoles) {
+    const sr = typeof entry === "string" ? entry : entry?.subRole;
+    if (!sr) continue;
+    set.add(deriveProfileFromLegacy({ role: sr }));
+  }
+  return { profiles: Array.from(set), current };
+}
+
 // The single place that decides a user's profile: the stored column if valid,
 // else the legacy derivation (transitional, for rows not yet backfilled).
 export function resolveProfileKey(user) {

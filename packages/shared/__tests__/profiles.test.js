@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { PROFILES, PROFILE_KEYS, PROFILE_META, deriveProfileFromLegacy, resolveProfileKey }
+import { PROFILES, PROFILE_KEYS, PROFILE_META, deriveProfileFromLegacy, deriveProfilesFromLegacy, resolveProfileKey }
   from "../constants/access/profiles.js";
 import { ROLE_PERMISSIONS, SUPER_SALES_EXTRA_PERMISSIONS } from "../constants/access/role-permissions.js";
 import { ALL_PERMISSIONS } from "../constants/access/permissions.constants.js";
@@ -114,5 +114,21 @@ describe("getEffectivePermissions parity (old universe)", () => {
       expect(perms.has(c)).toBe(true);
     // analysis view is granted to ALL sales incl. normal:
     expect(new Set(getEffectivePermissions({ role: "STAFF", profile: null }).permissions).has("lead.analysis.view")).toBe(true);
+  });
+});
+
+describe("deriveProfilesFromLegacy", () => {
+  it("single-role user → one profile, current == it", () => {
+    expect(deriveProfilesFromLegacy({ role: "ACCOUNTANT" }))
+      .toEqual({ profiles: ["ACCOUNTANT"], current: "ACCOUNTANT" });
+  });
+  it("STAFF+isSuperSales → SUPER_SALES current", () => {
+    expect(deriveProfilesFromLegacy({ role: "STAFF", isSuperSales: true }))
+      .toEqual({ profiles: ["SUPER_SALES"], current: "SUPER_SALES" });
+  });
+  it("base role + subRoles → union, current is base", () => {
+    const r = deriveProfilesFromLegacy({ role: "STAFF", subRoles: [{ subRole: "ACCOUNTANT" }] });
+    expect(r.current).toBe("NORMAL_SALES");
+    expect(new Set(r.profiles)).toEqual(new Set(["NORMAL_SALES", "ACCOUNTANT"]));
   });
 });
