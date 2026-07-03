@@ -1,11 +1,24 @@
 import { AppError } from "../errors/AppError.js";
 import { JwtService } from "../../infra/security/jwt.js";
+import { profileCache } from "../../infra/auth/profile-cache.js";
 import {
   AUTH_COOKIE_NAME,
   authMessagesCodes,
   getEffectivePermissions,
   messagesNames,
+  USER_ROLES,
 } from "@dms/shared";
+
+// Legacy admin-tier predicate — used ONLY in the transitional fallback path
+// (tokens minted before currentProfileId existed, or an unmigrated user). The
+// authoritative source is the current profile's `isAdminTier` (see requireAuth).
+function legacyIsAdminTier(payload) {
+  return (
+    payload?.role === USER_ROLES.ADMIN ||
+    payload?.role === USER_ROLES.SUPER_ADMIN ||
+    Boolean(payload?.isSuperSales)
+  );
+}
 
 // Authorization = authentication + permission code + object scope (+ status).
 // `requireAuth` runs once per router; `requirePermissions` is the coarse code
@@ -30,13 +43,32 @@ class AuthMiddleware {
       return next(new AppError(authMessagesCodes.INVALID_TOKEN, 401));
     }
 
-    // Compute effective permissions from the code-defined role map (base role ∪
-    // sub-roles ∪ isSuperSales). The token payload carries role/subRoles/
-    // isSuperSales, so this needs no extra DB hit.
-    const { permissions, permissionsByModule } =
-      getEffectivePermissions(payload);
+    // Authoritative resolution: the current profile's codes, from the in-process
+    // cache (zero DB hit). The token carries `currentProfileId`.
+    const resolved = profileCache.resolve(payload.currentProfileId);
+    if (resolved) {
+      req.auth = {
+        ...payload,
+        currentProfileKey: resolved.key,
+        baseRole: resolved.baseRole,
+        isAdminTier: Boolean(resolved.isAdminTier),
+        permissions: resolved.permissions,
+        permissionsByModule: resolved.permissionsByModule,
+      };
+      return next();
+    }
 
-    req.auth = { ...payload, permissions, permissionsByModule };
+    // TRANSITIONAL fallback: a token minted before `currentProfileId` existed, an
+    // unmigrated user, or a deleted profile. Resolve from the legacy code-map so
+    // access is never broken during rollout; the next refresh mints a
+    // currentProfile-bearing token. (Removed once the migration is complete.)
+    const { permissions, permissionsByModule } = getEffectivePermissions(payload);
+    req.auth = {
+      ...payload,
+      isAdminTier: legacyIsAdminTier(payload),
+      permissions,
+      permissionsByModule,
+    };
     return next();
   }
 

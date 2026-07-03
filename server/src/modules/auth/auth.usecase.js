@@ -7,6 +7,17 @@ import { sendEmail } from "../../infra/mail/mail.js";
 import { AuthEmails } from "./auth.emails.js";
 import { authMessagesCodes } from "@dms/shared";
 
+/**
+ * Pick the token's currentProfileId: the stored one if the user still holds it,
+ * else the first assigned profile (the backfill/switch keeps this sensible; this
+ * only corrects a stale/dangling current, e.g. after an admin removed a profile).
+ */
+export function resolveValidCurrentProfileId(user) {
+  const held = (user?.userProfiles ?? []).map((up) => up.profile?.id).filter((x) => x != null);
+  if (user?.currentProfileId && held.includes(user.currentProfileId)) return user.currentProfileId;
+  return held[0] ?? null;
+}
+
 class AuthUseCase {
   static async login(email, password) {
     const user = await AuthRepository.findByEmail(email);
@@ -26,10 +37,18 @@ class AuthUseCase {
       throw new AppError(authMessagesCodes.ACCOUNT_BLOCKED, 403);
     }
 
-    const accessToken = JwtService.signAccess(AuthSchema.toTokenPayload(user));
+    // Ensure the token carries a HELD current profile; persist a correction if the
+    // stored one is stale/null.
+    const currentProfileId = resolveValidCurrentProfileId(user);
+    if (currentProfileId && currentProfileId !== user.currentProfileId) {
+      await AuthRepository.setCurrentProfile(user.id, currentProfileId);
+    }
+    const withCurrent = { ...user, currentProfileId };
+
+    const accessToken = JwtService.signAccess(AuthSchema.toTokenPayload(withCurrent));
     const refreshToken = JwtService.signRefresh({ id: user.id });
 
-    return { user: AuthSchema.toPublicUser(user), accessToken, refreshToken };
+    return { user: AuthSchema.toPublicUser(withCurrent), accessToken, refreshToken };
   }
   static async refreshTokens(token) {
     if (!token) throw new AppError(authMessagesCodes.REFRESH_TOKEN_MISSING, 401);
@@ -40,7 +59,16 @@ class AuthUseCase {
     if (!user || !user.isActive)
       throw new AppError(authMessagesCodes.UNAUTHORIZED, 401);
 
-    const accessToken = JwtService.signAccess(AuthSchema.toTokenPayload(user));
+    // Re-validate the current profile on every refresh (this is where an admin's
+    // profile change propagates into a fresh access token).
+    const currentProfileId = resolveValidCurrentProfileId(user);
+    if (currentProfileId && currentProfileId !== user.currentProfileId) {
+      await AuthRepository.setCurrentProfile(user.id, currentProfileId);
+    }
+
+    const accessToken = JwtService.signAccess(
+      AuthSchema.toTokenPayload({ ...user, currentProfileId }),
+    );
     const refreshToken = JwtService.signRefresh({ id: user.id });
 
     return { accessToken, refreshToken };

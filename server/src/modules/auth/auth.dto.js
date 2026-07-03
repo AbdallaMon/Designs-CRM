@@ -6,6 +6,15 @@ import {
   resolveProfileKey,
 } from "@dms/shared";
 
+// Prisma nested-select fragments for the profile relations (shared by the auth
+// selects so /auth/me + switch validation see the user's profiles + current one).
+const CURRENT_PROFILE_SELECT = {
+  select: { id: true, key: true, baseRole: true, isAdminTier: true },
+};
+const USER_PROFILES_SELECT = {
+  select: { profile: { select: { id: true, key: true, label: true, family: true, isAdminTier: true } } },
+};
+
 class AuthSchema {
   // ─── Prisma select shapes ───────────────────────────────────────────────────
   // Used in auth.repository.js — keeps query projections consistent and centralized.
@@ -22,6 +31,9 @@ class AuthSchema {
     isSuperSales: true,
     profilePicture: true,
     subRoles: { select: { subRole: true } },
+    currentProfileId: true,
+    currentProfile: CURRENT_PROFILE_SELECT,
+    userProfiles: USER_PROFILES_SELECT,
   };
 
   /** Minimal fields for refresh-token rotation — no password needed. */
@@ -35,6 +47,9 @@ class AuthSchema {
     isSuperSales: true,
     profilePicture: true,
     subRoles: { select: { subRole: true } },
+    currentProfileId: true,
+    currentProfile: CURRENT_PROFILE_SELECT,
+    userProfiles: USER_PROFILES_SELECT,
   };
 
   // ─── Cookie names ──────────────────────────────────────────────────────────
@@ -108,9 +123,10 @@ class AuthSchema {
   // ─── JWT payload shape ─────────────────────────────────────────────────────
 
   /**
-   * Builds the minimal payload embedded in every token. Includes role + subRoles
-   * + isSuperSales so the auth middleware can compute effective permissions from
-   * the token without a DB hit.
+   * Builds the minimal payload embedded in every token. `currentProfileId` is the
+   * AUTHORITATIVE source of effective permissions (resolved via the profile cache
+   * in requireAuth, no DB hit). role/subRoles/isSuperSales are retained for
+   * display + the transitional legacy fallback only.
    */
   static toTokenPayload(user) {
     const subRoles = Array.isArray(user.subRoles)
@@ -126,6 +142,7 @@ class AuthSchema {
       isPrimary: user.isPrimary,
       isSuperSales: user.isSuperSales,
       subRoles,
+      currentProfileId: user.currentProfileId ?? user.currentProfile?.id ?? null,
     };
   }
 }

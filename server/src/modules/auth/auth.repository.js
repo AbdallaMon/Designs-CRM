@@ -25,6 +25,14 @@ class AuthRepository {
       },
     });
   }
+
+  /** Set the user's active profile (used by refresh re-validation + profile switch). */
+  static setCurrentProfile(id, profileId) {
+    return prisma.user.update({
+      where: { id: Number(id) },
+      data: { currentProfileId: profileId == null ? null : Number(profileId) },
+    });
+  }
 }
 
 export { AuthRepository };
