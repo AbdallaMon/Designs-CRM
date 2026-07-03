@@ -10,14 +10,16 @@ import {
 } from "@dms/shared";
 
 // Legacy admin-tier predicate — used ONLY in the transitional fallback path
-// (tokens minted before currentProfileId existed, or an unmigrated user). The
-// authoritative source is the current profile's `isAdminTier` (see requireAuth).
+// (tokens minted before currentProfileId existed, or an unmigrated user). Mirrors
+// the OLD isAdminTier union 1:1 (role ADMIN/SUPER_ADMIN ∪ isSuperSales ∪ an
+// ADMIN/SUPER_ADMIN sub-role) so the fallback preserves master behavior exactly.
+// The authoritative source is the current profile's `isAdminTier` (see requireAuth).
+const ADMIN_TIER_ROLES = [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN];
 function legacyIsAdminTier(payload) {
-  return (
-    payload?.role === USER_ROLES.ADMIN ||
-    payload?.role === USER_ROLES.SUPER_ADMIN ||
-    Boolean(payload?.isSuperSales)
-  );
+  if (payload?.isSuperSales) return true;
+  if (ADMIN_TIER_ROLES.includes(payload?.role)) return true;
+  const subRoles = Array.isArray(payload?.subRoles) ? payload.subRoles : [];
+  return subRoles.some((e) => ADMIN_TIER_ROLES.includes(typeof e === "string" ? e : e?.subRole));
 }
 
 // Authorization = authentication + permission code + object scope (+ status).

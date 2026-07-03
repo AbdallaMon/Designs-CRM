@@ -102,11 +102,21 @@ class AuthSchema {
     const currentProfileId = user.currentProfileId ?? user.currentProfile?.id ?? null;
     const currentProfileKey = user.currentProfile?.key ?? resolveProfileKey(user);
 
+    // Nav follows the ACTIVE profile: the SUPER_SALES profile (baseRole STAFF)
+    // renders the super-sales sidebar; every other profile renders its baseRole
+    // sidebar. Null when there's no active profile → buildNavigationTabs falls
+    // back to the legacy role rule (unmigrated parity).
+    const navRole = user.currentProfile
+      ? currentProfileKey === "SUPER_SALES"
+        ? "SUPER_SALES"
+        : user.currentProfile.baseRole
+      : undefined;
+
     const navigationTabs = buildNavigationTabs({
       role: user.role,
       activeRole: user.activeRole,
       isSuperSales: user.isSuperSales,
-      baseRole: user.currentProfile?.baseRole,
+      navRole,
       subRoles,
       permissions,
     });

@@ -32,8 +32,13 @@ const ADMIN_TIER_ROLES = ["ADMIN", "SUPER_ADMIN"];
  * `subRoles` is tolerated in either shape: the token/req.auth carries a plain string[]
  * (auth.dto.js toTokenPayload), while a raw Prisma row carries [{ subRole }].
  */
-function isAdminTier(authUser) {
+export function isAdminTier(authUser) {
   if (!authUser) return false;
+  // Authoritative: the resolved current profile's flag (attached to req.auth by
+  // requireAuth). This is what makes admin-tier follow the ACTIVE profile — an
+  // admin who switched to a sales profile is no longer admin-tier.
+  if (typeof authUser.isAdminTier === "boolean") return authUser.isAdminTier;
+  // Legacy fallback for raw user rows / callers without a resolved profile.
   if (authUser.isSuperSales) return true;
   if (ADMIN_TIER_ROLES.includes(authUser.role)) return true;
   const subRoles = Array.isArray(authUser.subRoles) ? authUser.subRoles : [];

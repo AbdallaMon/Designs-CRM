@@ -168,6 +168,11 @@ export function computeCapabilities(rules, ctx) {
  * @returns {string|undefined}
  */
 function navRoleFor(user) {
+  // The current profile drives the sidebar so switching profiles updates nav.
+  // `navRole` (computed from the active profile in auth.dto.toMe) wins when present;
+  // otherwise fall back to the legacy role rule (STAFF+isSuperSales → SUPER_SALES),
+  // which preserves master behavior for unmigrated users / raw rows.
+  if (user?.navRole) return user.navRole;
   const role = user?.activeRole || user?.role;
   if (role === USER_ROLES.STAFF && user?.isSuperSales) return USER_ROLES.SUPER_SALES;
   return role;

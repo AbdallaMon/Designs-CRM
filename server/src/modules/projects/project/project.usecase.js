@@ -44,6 +44,10 @@ export class ProjectUsecase {
   }
 
   isAdminUser(authUser) {
+    // Authoritative: the resolved current profile's admin-tier flag (from
+    // requireAuth) — object scope follows the ACTIVE profile. Falls back to the
+    // legacy role/flag computation for raw users without a resolved profile.
+    if (typeof authUser?.isAdminTier === "boolean") return authUser.isAdminTier;
     return (
       authUser?.role === "ADMIN" ||
       authUser?.role === "SUPER_ADMIN" ||
