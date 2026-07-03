@@ -413,6 +413,33 @@ export const ProjectDetails = ({
   const isAdmin = checkIfAdmin(user);
   const isDesigner = checkIfADesigner(user);
   //if designer he can edit area only
+
+  // Capability-with-fallback gates (profiles sweep). Prefer the backend-computed
+  // `project.capabilities.*` when the record carries them (the designer/project detail,
+  // the clientLead board list and getById now attach them); fall back to the legacy role
+  // expression for reuse contexts where the record is undecorated (e.g. the designer
+  // dashboard `user-profile` list), so those paths keep their exact current behavior.
+  // Board status change (POST .../actions/change-status) was STAFF-blocked → canChangeStatus.
+  const canChangeStatus = project?.capabilities
+    ? Boolean(project.capabilities.canChangeStatus)
+    : !cantDoActions;
+  // Plain field-edit submit (PUT /projects/:id) was STAFF-blocked → canEdit.
+  const canEditFields = project?.capabilities
+    ? Boolean(project.capabilities.canEdit)
+    : !cantDoActions;
+  // The edit-affordance row (edit button; also shown for designers) → canEdit.
+  const canShowEditActions = project?.capabilities
+    ? Boolean(project.capabilities.canEdit)
+    : (!isStaff && !cantDoActions) || isDesigner;
+  // Admin-management "designers" card (assign/remove designer) is `project.manage`.
+  const canManageDesigners = project?.capabilities
+    ? Boolean(project.capabilities.canAssignDesigner)
+    : !isStaff && !cantDoActions;
+  // Project tasks dialog affordance was STAFF-blocked → canAddTask.
+  const canAddTask = project?.capabilities
+    ? Boolean(project.capabilities.canAddTask)
+    : !cantDoActions;
+
   const [anchorEl, setAnchorEl] = useState(null);
   const menuOpen = Boolean(anchorEl);
 
@@ -421,7 +448,7 @@ export const ProjectDetails = ({
   };
 
   const handleMenuClose = async (value) => {
-    if (cantDoActions) {
+    if (!canChangeStatus) {
       setAlertError("You do not have permission to perform this action.");
       return;
     }
@@ -453,7 +480,7 @@ export const ProjectDetails = ({
   };
 
   const handleSubmit = async (e) => {
-    if (cantDoActions) {
+    if (!canEditFields) {
       setAlertError("You do not have permission to perform this action.");
       return;
     }
@@ -543,6 +570,8 @@ export const ProjectDetails = ({
               </FormControl>
             </Grid>
 
+            {/* TODO(profiles): no capability for area-only edit; left as role check
+                (designers may edit area but not priority). */}
             {!isDesigner && (
               <Grid size={{ xs: 12, md: 6 }}>
                 <FormControl fullWidth variant="outlined">
@@ -701,7 +730,7 @@ export const ProjectDetails = ({
           </Grid>
         </Grid>
 
-        {!isStaff && !cantDoActions && (
+        {canManageDesigners && (
           <Grid size={12}>
             <StyledCard sx={{ p: 0, overflow: "visible" }}>
               <CardHeader
@@ -927,7 +956,7 @@ export const ProjectDetails = ({
                 />
               </Box>
 
-              {((!isStaff && !cantDoActions) || isDesigner) && (
+              {canShowEditActions && (
                 <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
                   <StyledButton
                     variant="outlined"
@@ -940,6 +969,8 @@ export const ProjectDetails = ({
                   >
                     تعديل التفاصيل
                   </StyledButton>
+                  {/* TODO(profiles): no capability for "view all client projects";
+                      it's an admin-tier display nuance, left as role check. */}
                   {!isDesigner && (
                     <StyledButton
                       variant="contained"
@@ -960,7 +991,7 @@ export const ProjectDetails = ({
         </StyledCard>
       )}
 
-      {renderTasks && !cantDoActions && (
+      {renderTasks && canAddTask && (
         <ProjectTasksDialog project={project} />
       )}
     </>

@@ -28,6 +28,8 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 import { GoPaperclip } from "react-icons/go";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
+import { usePermission } from "@/app/hooks/usePermission";
+import { PROJECT_CODES } from "@/app/helpers/permissionCodes";
 import Link from "next/link";
 import { LeadNotes } from "../leads/tabs/LeadsNotes";
 import { MdModeEdit, MdTask, MdWork } from "react-icons/md";
@@ -60,6 +62,13 @@ const LeadContent = ({
 }) => {
   const { user } = useAuth();
   const isAdmin = checkIfAdmin(user);
+  const { hasPermission } = usePermission();
+  // Intentional, approved normalization: the admin-only "Projects" tab / view-all button
+  // (legacy exact-role `ADMIN || SUPER_ADMIN`) now gate on the `project.manage` code, which
+  // is the admin-tier management set (ADMIN/SUPER_ADMIN + isSuperSales). Used as the single
+  // predicate for both the Projects branch and its complementary Tasks branch so the tab
+  // indices stay in sync (exactly one of the two renders at index 4).
+  const canManageProjects = hasPermission(PROJECT_CODES.MANAGE);
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
   const { setLoading } = useToastContext();
@@ -192,14 +201,14 @@ const LeadContent = ({
           label="Attatchments"
           sx={{ textTransform: "none" }}
         />
-        {user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && (
+        {!canManageProjects && (
           <Tab
             icon={<MdTask size={20} />}
             label="Tasks"
             sx={{ textTransform: "none" }}
           />
         )}
-        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+        {canManageProjects && (
           <Tab
             icon={<MdWork size={20} />}
             label="Projects"
@@ -246,12 +255,12 @@ const LeadContent = ({
         <TabPanel value={activeTab} index={3}>
           <FileList admin={isAdmin} lead={lead} notUser={isPage && notUser} />
         </TabPanel>
-        {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+        {canManageProjects && (
           <TabPanel value={activeTab} index={4}>
             <LeadProjects clientLeadId={lead.id} />
           </TabPanel>
         )}
-        {user.role !== "ADMIN" && user.role !== "SUPER_ADMIN" && (
+        {!canManageProjects && (
           <TabPanel value={activeTab} index={4}>
             <TasksList projectId={lead.projects[0].id} type="PROJECT" />
           </TabPanel>
@@ -274,6 +283,10 @@ const LeadContent = ({
 function LeadData({ lead }) {
   const theme = useTheme();
   const { user } = useAuth();
+  const { hasPermission } = usePermission();
+  // Same approved normalization as above: admin-tier "view all client projects" gates on
+  // the `project.manage` code (adds isSuperSales) rather than exact ADMIN/SUPER_ADMIN role.
+  const canManageProjects = hasPermission(PROJECT_CODES.MANAGE);
   return (
     <Stack spacing={3}>
       {user.role !== "STAFF" && (
@@ -286,7 +299,7 @@ function LeadData({ lead }) {
             theme={theme}
           >
             <>
-              {(user.role === "ADMIN" || user.role === "SUPER_ADMIN") && (
+              {canManageProjects && (
                 <Button
                   variant="contained"
                   color="primary"

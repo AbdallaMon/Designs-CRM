@@ -10,3 +10,11 @@ export const LEAD_CODES = {
   ANALYSIS_VIEW: "lead.analysis.view",
   ASSIGN_OTHER: "lead.assign.other",
 };
+
+// Mirror of packages/shared/constants/access/permissions.constants.js PROJECT_PERMISSIONS.
+// MANAGE ("project.manage") is the admin-tier management set (assign/unassign a designer,
+// change a project's board status) granted to ADMIN/SUPER_ADMIN + isSuperSales.
+export const PROJECT_CODES = {
+  MANAGE: "project.manage",
+  LIST: "project.list",
+};
