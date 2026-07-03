@@ -5,7 +5,11 @@
 import { ok, created } from "../../../shared/http/response.js";
 import { projectsMessagesCodes, messagesNames } from "@dms/shared";
 import { projectUsecase } from "./project.usecase.js";
-import { withProjectListCapabilities, computeProjectCapabilities } from "./project.dto.js";
+import {
+  withProjectListCapabilities,
+  withProjectDetailCapabilities,
+  computeProjectCapabilities,
+} from "./project.dto.js";
 
 const C = projectsMessagesCodes;
 const TK = messagesNames.projectsMessages;
@@ -61,7 +65,7 @@ export class ProjectController {
 
   designerLeadDetail = async (req, res) => {
     const data = await this.usecase.designerLeadDetail({ id: req.params.id, query: req.query, authUser: req.auth });
-    return ok(res, data, C.DESIGNER_LEAD_FETCHED, TK);
+    return ok(res, withProjectDetailCapabilities(data, req.auth), C.DESIGNER_LEAD_FETCHED, TK);
   };
 
   // ── project list & detail ────────────────────────────────────────────────────

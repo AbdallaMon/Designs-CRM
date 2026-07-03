@@ -62,3 +62,21 @@ export function withProjectListCapabilities(items, authUser) {
       : {}),
   }));
 }
+
+/**
+ * Attach capabilities to a SINGLE project-shaped detail record (the designer/project
+ * detail read, `getLeadDetailsByProject`, returns a lead carrying nested `projects[]`).
+ * Mirrors the leads DTO's `withDetailCapabilities`, and additionally decorates the
+ * nested `projects[]` the same way the board list does — so the FE can gate per-project
+ * actions on the detail exactly as on the board. Null-safe; purely additive.
+ */
+export function withProjectDetailCapabilities(record, authUser) {
+  if (!record) return record;
+  return {
+    ...record,
+    capabilities: computeProjectCapabilities(record, authUser),
+    ...(Array.isArray(record?.projects)
+      ? { projects: record.projects.map((p) => ({ ...p, capabilities: computeProjectCapabilities(p, authUser) })) }
+      : {}),
+  };
+}
