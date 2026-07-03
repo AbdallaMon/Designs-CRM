@@ -60,15 +60,32 @@ class AuthController {
   }
 
   static async getCurrentUser(req, res) {
-    // req.auth already carries the flattened effective permissions (attached by
-    // requireAuth). toMe shapes the display fields + permissions + permissionsByModule.
-    const user = AuthSchema.toMe(req.auth);
+    // req.auth carries the cache-resolved effective permissions (from the active
+    // profile). One DB read here supplies the user's assigned-profiles list (for
+    // the switcher) — this is session-load, not the per-request hot path.
+    const dbUser = await AuthUseCase.getMe(req.auth.id);
+    const user = AuthSchema.toMe({
+      ...dbUser,
+      permissions: req.auth.permissions,
+      permissionsByModule: req.auth.permissionsByModule,
+    });
     ok(
       res,
       { user },
       authMessagesCodes.CURRENT_USER_RETRIEVED,
       messagesNames.authMessages,
     );
+  }
+
+  static async switchProfile(req, res) {
+    const { user, accessToken, refreshToken } = await AuthUseCase.switchProfile({
+      authUser: req.auth,
+      profileId: req.body.profileId,
+    });
+    res
+      .cookie(AuthSchema.cookieNames.ACCESS, accessToken, JwtService.cookies.access)
+      .cookie(AuthSchema.cookieNames.REFRESH, refreshToken, JwtService.cookies.refresh);
+    ok(res, { user }, authMessagesCodes.PROFILE_SWITCHED, messagesNames.authMessages);
   }
 }
 

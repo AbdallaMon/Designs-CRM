@@ -31,6 +31,16 @@ router.post(
   asyncHandler(AuthController.logout),
 );
 
+// POST /auth/profile/switch — self-service active-profile switch (every authed
+// user holds auth.me; the usecase enforces "only a profile you actually hold").
+router.post(
+  "/profile/switch",
+  AuthMiddleware.requireAuth,
+  AuthMiddleware.requirePermissions([PERMISSIONS.AUTH.ME]),
+  validate(authSchemas.switchProfile),
+  asyncHandler(AuthController.switchProfile),
+);
+
 router.post(
   "/request-password-reset",
   AuthRateLimit.forgotPasswordLimiter,

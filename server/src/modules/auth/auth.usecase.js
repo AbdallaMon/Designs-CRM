@@ -5,6 +5,8 @@ import { AuthRepository } from "./auth.repository.js";
 import { AuthSchema } from "./auth.dto.js";
 import { sendEmail } from "../../infra/mail/mail.js";
 import { AuthEmails } from "./auth.emails.js";
+import { profileCache } from "../../infra/auth/profile-cache.js";
+import { authAuditRepository, AUTH_AUDIT_ACTIONS } from "../../infra/audit/auth-audit.repository.js";
 import { authMessagesCodes } from "@dms/shared";
 
 /**
@@ -72,6 +74,57 @@ class AuthUseCase {
     const refreshToken = JwtService.signRefresh({ id: user.id });
 
     return { accessToken, refreshToken };
+  }
+
+  /** Load the full user (with profiles + current) for the /auth/me payload. */
+  static async getMe(id) {
+    const user = await AuthRepository.findById(id);
+    if (!user) throw new AppError(authMessagesCodes.UNAUTHORIZED, 401);
+    return user;
+  }
+
+  /**
+   * Self-service profile switch. The caller may only switch to a profile they
+   * actually hold. Persists the new current, audits it, and re-mints the token
+   * pair so the new profile's permissions take effect immediately.
+   */
+  static async switchProfile({ authUser, profileId }) {
+    const user = await AuthRepository.findById(authUser.id);
+    if (!user || !user.isActive) throw new AppError(authMessagesCodes.UNAUTHORIZED, 401);
+
+    const targetId = Number(profileId);
+    const held = (user.userProfiles ?? []).map((up) => up.profile.id);
+    if (!held.includes(targetId)) {
+      throw new AppError(authMessagesCodes.PROFILE_NOT_ASSIGNED, 403);
+    }
+    const resolved = profileCache.resolve(targetId);
+    if (!resolved) throw new AppError(authMessagesCodes.PROFILE_NOT_FOUND, 404);
+
+    await AuthRepository.setCurrentProfile(user.id, targetId);
+    await authAuditRepository.record({
+      actorUserId: user.id,
+      targetUserId: user.id,
+      action: AUTH_AUDIT_ACTIONS.PROFILE_SWITCH,
+      detail: { from: user.currentProfileId ?? null, to: targetId },
+    });
+
+    // Build the fresh view from the cache resolution (no second DB read).
+    const freshUser = {
+      ...user,
+      currentProfileId: targetId,
+      currentProfile: {
+        id: targetId,
+        key: resolved.key,
+        baseRole: resolved.baseRole,
+        isAdminTier: resolved.isAdminTier,
+      },
+      permissions: resolved.permissions,
+      permissionsByModule: resolved.permissionsByModule,
+    };
+    const accessToken = JwtService.signAccess(AuthSchema.toTokenPayload(freshUser));
+    const refreshToken = JwtService.signRefresh({ id: user.id });
+
+    return { user: AuthSchema.toMe(freshUser), accessToken, refreshToken };
   }
   static async requestPasswordReset(email) {
     const user = await AuthRepository.findByEmail(email);

@@ -31,6 +31,11 @@ class AuthSchemas {
     email: AuthSchemas.#email(),
   });
 
+  // POST /profile/switch  (self-service: set the active profile)
+  switchProfile = z.object({
+    profileId: z.coerce.number().int().positive(),
+  });
+
   // POST /reset/:token  (perform reset)
   resetPassword = z
     .object({
