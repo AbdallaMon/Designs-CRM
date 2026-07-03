@@ -43,6 +43,7 @@ import SideNav, {
 import RouteGuard from "@/app/UiComponents/utility/RouteGuard.jsx";
 import NotificationsIcon from "@/app/UiComponents/utility/NotificationIcon.jsx";
 import SignInWithDifferentUserRole from "@/app/UiComponents/DataViewer/users/UserRoles";
+import ProfileSwitcher from "@/app/UiComponents/utility/ProfileSwitcher.jsx";
 import ProfileDialogTrigger from "@/app/UiComponents/DataViewer/users/profile/ProfileDialogTrigger";
 import Logout from "@/app/UiComponents/buttons/Logout.jsx";
 import SocketProvider from "@/app/providers/SocketProvider";
@@ -653,6 +654,7 @@ export default function Layout({ children }) {
                     }}
                   />
                 )}
+                <ProfileSwitcher />
                 {user.role !== "ADMIN" && <SignInWithDifferentUserRole />}
                 <NotificationsIcon />
                 <ProfileDialogTrigger userId={user.id} />

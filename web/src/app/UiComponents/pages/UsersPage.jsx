@@ -53,6 +53,7 @@ import UserRestrictedCountries from "@/app/UiComponents/DataViewer/users/UserRes
 import Commission from "@/app/UiComponents/DataViewer/utility/Commission";
 import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes";
 import { RoleManagerDialog } from "../DataViewer/users/RoleManagerDialog";
+import { ProfileManagerDialog } from "../DataViewer/users/ProfileManagerDialog";
 import { ProjectAutoAssignmentDialog } from "../DataViewer/users/ProjectAutoAssignmentDialog";
 
 // Mirrors `packages/shared/constants/access/profiles.js` PROFILE_META (web has no
@@ -595,6 +596,14 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
             setData={setData}
             subRoles={item.subRoles?.map((r) => r.subRole)}
             userId={item.id}
+          />
+        </Box>
+        <Box sx={{ px: 1, py: 0.5 }}>
+          <ProfileManagerDialog
+            userId={item.id}
+            userProfiles={item.userProfiles}
+            currentProfileId={item.currentProfileId}
+            setData={setData}
           />
         </Box>
         <Box sx={{ px: 1, py: 0.5 }}>

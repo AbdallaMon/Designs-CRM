@@ -328,6 +328,8 @@ const MANAGEMENT_SELECT = {
   isPrimary: true,
   isSuperSales: true,
   profile: true,
+  currentProfileId: true,
+  userProfiles: { select: { profileId: true, profile: { select: { id: true, key: true, label: true } } } },
   telegramUsername: true,
 };
 

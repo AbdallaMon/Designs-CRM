@@ -25,6 +25,12 @@ export const authMessages = {
   PERMISSION_DENIED: "ليس لديك صلاحية للقيام بهذا الإجراء",
   ACCESS_DENIED: "لا تملك صلاحية الوصول إلى هذا العنصر",
 
+  // ── profiles (DB-relational permissions) ──────────────────────────────────────
+  PROFILE_NOT_ASSIGNED: "هذا الملف الوظيفي غير مُسند إليك",
+  PROFILE_NOT_FOUND: "الملف الوظيفي غير موجود",
+  PROFILE_SWITCHED: "تم تبديل الملف الوظيفي",
+  PROFILES_UPDATED: "تم تحديث الملفات الوظيفية",
+
   // ── auth: success ─────────────────────────────────────────────────────────────
   LOGIN_SUCCESS: "تم تسجيل الدخول بنجاح",
   LOGOUT_SUCCESS: "تم تسجيل الخروج بنجاح",

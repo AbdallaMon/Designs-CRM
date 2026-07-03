@@ -23,6 +23,8 @@ export const usersMessages = {
   USER_STAFF_EXTRA_UPDATED: "تم تحديث بيانات الموظف",
   USER_ROLES_UPDATED: "تم تحديث الأدوار",
   USER_PROFILE_UPDATED: "تم تحديث الملف الشخصي",
+  USER_PROFILES_UPDATED: "تم تحديث الملفات الوظيفية للمستخدم",
+  USER_PROFILES_FETCHED: "تم جلب الملفات الوظيفية",
   RESTRICTED_COUNTRIES_UPDATED: "تم تحديث الدول المقيدة",
   AUTO_ASSIGNMENTS_UPDATED: "تم تحديث التعيينات التلقائية",
   USER_MAX_LEADS_UPDATED: "تم تحديث الحد الأقصى للعملاء",
