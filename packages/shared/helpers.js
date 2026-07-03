@@ -72,13 +72,24 @@ export function getEffectivePermissions(user) {
     for (const code of SUPER_SALES_EXTRA_PERMISSIONS) set.add(code);
   }
 
-  const permissions = Array.from(set);
+  return buildPermissionsByModule(Array.from(set));
+}
 
-  // group by module for nav/visibility lookups on the client. Each module
-  // entry keeps a `codes` array (back-compat) PLUS boolean action flags
-  // (canList/canView/canCreate/canEdit/...) derived from
-  // NAVIGATION_PERMISSION_ACTIONS, so the FE can gate on
-  // `permissionsByModule.<module>.canX` without re-deriving code strings.
+/**
+ * Pure: turn a flat array of permission codes into
+ * `{ permissions, permissionsByModule }`. Each module entry keeps a `codes`
+ * array (back-compat) PLUS boolean action flags (canList/canView/canCreate/...)
+ * derived from NAVIGATION_PERMISSION_ACTIONS, so the FE can gate on
+ * `permissionsByModule.<module>.canX` without re-deriving code strings.
+ *
+ * This is the single grouping routine reused by both the legacy code-map
+ * resolver (`getEffectivePermissions`) and the DB-relational profile cache.
+ *
+ * @param {string[]} codes
+ * @returns {{ permissions: string[], permissionsByModule: Record<string, {codes: string[], [flag: string]: boolean|string[]}> }}
+ */
+export function buildPermissionsByModule(codes) {
+  const permissions = Array.from(new Set(Array.isArray(codes) ? codes : []));
   const permissionsByModule = {};
   for (const code of permissions) {
     const { module } = splitPermissionCode(code);
@@ -87,7 +98,6 @@ export function getEffectivePermissions(user) {
     const actionFlag = NAVIGATION_PERMISSION_ACTIONS[module]?.[code];
     if (actionFlag) entry[actionFlag] = true;
   }
-
   return { permissions, permissionsByModule };
 }
 
