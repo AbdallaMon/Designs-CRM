@@ -710,10 +710,10 @@ CREATE TABLE `ContractPayment` (
 -- CreateTable
 CREATE TABLE `ContractPaymentCondition` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `conditionType` VARCHAR(255) NOT NULL,
-    `condition` VARCHAR(255) NOT NULL,
-    `labelAr` VARCHAR(255) NOT NULL,
-    `labelEn` VARCHAR(255) NOT NULL,
+    `conditionType` VARCHAR(191) NOT NULL,
+    `condition` VARCHAR(191) NOT NULL,
+    `labelAr` VARCHAR(191) NOT NULL,
+    `labelEn` VARCHAR(191) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 

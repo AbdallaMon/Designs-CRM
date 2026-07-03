@@ -162,10 +162,10 @@ model ContractPayment {
 
 model ContractPaymentCondition {
   id            Int               @id @default(autoincrement())
-  conditionType String            @db.VarChar(255)
-  condition     String            @db.VarChar(255)
-  labelAr       String            @db.VarChar(255)
-  labelEn       String            @db.VarChar(255)
+  conditionType String            @db.VarChar(191)
+  condition     String            @db.VarChar(191)
+  labelAr       String            @db.VarChar(191)
+  labelEn       String            @db.VarChar(191)
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @default(now()) @updatedAt
   payments      ContractPayment[]
@@ -614,6 +614,8 @@ model User {
   notAllowedCountries                                      String?                @db.LongText
   isPrimary                                                Boolean                @default(false)
   isSuperSales                                             Boolean                @default(false)
+  profile                                                  String?                @db.VarChar(64)
+  currentProfileId                                         Int?
   telegramUsername                                         String?                @db.VarChar(255)
   maxLeadCountPerDay                                       Int                    @default(5)
   googleRefreshToken                                       String?                @db.LongText
@@ -673,6 +675,9 @@ model User {
   logs                                                     UserLog[]
   subRoles                                                 UserSubRole[]
   versaModels                                              VersaModel[]
+  currentProfile                                           Profile?               @relation("CurrentProfile", fields: [currentProfileId], references: [id], onDelete: SetNull, onUpdate: Restrict, map: "User_currentProfile_fk")
+  userProfiles                                             UserProfile[]          @relation("UserProfiles")
+  assignedProfiles                                         UserProfile[]          @relation("UserProfileAssignedBy")
 
   @@index([email])
   @@index([baseSalaryId], map: "baseSalaryId")
@@ -2373,4 +2378,81 @@ enum ClientLead_discoverySource {
   INTERIOR_MAGAZINE_SITE
   REFERRAL
   OTHER
+}
+
+// ── DB-relational permissions (design 2026-07-03) ────────────────────────────
+// PermissionCode = one row per permission code (seeded from ALL_PERMISSIONS).
+model PermissionCode {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique @db.VarChar(191)
+  module      String   @db.VarChar(64)
+  label       String?  @db.VarChar(191)
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  profileLinks ProfilePermission[]
+
+  @@index([module])
+}
+
+// Profile = a named permission profile (seeded from PROFILE_META).
+model Profile {
+  id           Int       @id @default(autoincrement())
+  key          String    @unique @db.VarChar(64)
+  label        String    @db.VarChar(191)
+  family       String?   @db.VarChar(64)
+  baseRole     UserRole?
+  isAdminTier  Boolean   @default(false)
+  sortOrder    Int       @default(0)
+  isAssignable Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  permissionLinks ProfilePermission[]
+  userLinks       UserProfile[]
+  currentForUsers User[]              @relation("CurrentProfile")
+}
+
+// Profile ↔ PermissionCode — what each profile grants.
+model ProfilePermission {
+  id               Int      @id @default(autoincrement())
+  profileId        Int
+  permissionCodeId Int
+  createdAt        DateTime @default(now())
+
+  profile        Profile        @relation(fields: [profileId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "ProfilePermission_profile_fk")
+  permissionCode PermissionCode @relation(fields: [permissionCodeId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "ProfilePermission_code_fk")
+
+  @@unique([profileId, permissionCodeId])
+  @@index([permissionCodeId])
+}
+
+// User ↔ Profile — assignment (replaces subRoles). A user may hold many.
+model UserProfile {
+  id               Int      @id @default(autoincrement())
+  userId           Int
+  profileId        Int
+  assignedByUserId Int?
+  createdAt        DateTime @default(now())
+
+  user       User    @relation("UserProfiles", fields: [userId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "UserProfile_user_fk")
+  profile    Profile @relation(fields: [profileId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "UserProfile_profile_fk")
+  assignedBy User?   @relation("UserProfileAssignedBy", fields: [assignedByUserId], references: [id], onDelete: SetNull, onUpdate: Restrict, map: "UserProfile_assignedby_fk")
+
+  @@unique([userId, profileId])
+  @@index([profileId])
+  @@index([assignedByUserId])
+}
+
+// Minimal authz audit — first audit pattern in the repo.
+model AuthAuditLog {
+  id           Int      @id @default(autoincrement())
+  actorUserId  Int
+  targetUserId Int?
+  action       String   @db.VarChar(64)
+  detail       Json?
+  createdAt    DateTime @default(now())
+
+  @@index([actorUserId])
+  @@index([targetUserId])
 }
