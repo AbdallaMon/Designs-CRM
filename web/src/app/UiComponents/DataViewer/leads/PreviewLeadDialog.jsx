@@ -5,7 +5,6 @@ import {
   KanbanLeadsStatus,
 } from "@/app/helpers/constants.js";
 import {
-  checkIfAdminOrSuperSales,
   checkIfPrimaryStaff,
   enumToKeyValueArray,
 } from "@/app/helpers/functions/utility.js";
@@ -14,6 +13,7 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 import { FinalizeModal } from "@/app/UiComponents/DataViewer/leads/widgets/FinalizeModal.jsx";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { usePermission } from "@/app/hooks/usePermission";
+import { LEAD_CODES } from "@/app/helpers/permissionCodes";
 import { PreviewLead } from "./features/PreviewLead";
 import { MoreActionsMenu } from "./shared/MoreActionsMenu";
 import { LeadDialogHeader } from "./shared/LeadDialogHeader";
@@ -37,9 +37,10 @@ const LeadContent = ({
   setRerenderColumns,
 }) => {
   const { user } = useAuth();
-  const admin = checkIfAdminOrSuperSales(user);
   const isPrimaryStaff = checkIfPrimaryStaff(user);
   const perms = usePermission();
+  // admin-tier lead operator = holds lead.assign.other (== checkIfAdminOrSuperSales); honors subRoles per the profiles model
+  const admin = perms.hasPermission(LEAD_CODES.ASSIGN_OTHER);
   const details = useLeadDetails();
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);

@@ -20,8 +20,8 @@ import {
 import { MdClose } from "react-icons/md";
 import { FinalSelectionForm } from "@/app/UiComponents/client-page/FinalSelectionForm";
 import { designLead } from "@/app/UiComponents/client-page/clientPageData";
-import { useAuth } from "@/app/providers/AuthProvider";
-import { checkIfAdminOrSuperSales } from "@/app/helpers/functions/utility";
+import { usePermission } from "@/app/hooks/usePermission";
+import { LEAD_CODES } from "@/app/helpers/permissionCodes";
 import LanguageProvider from "@/app/providers/LanguageProvider";
 
 export default function CreateNewLead() {
@@ -31,8 +31,9 @@ export default function CreateNewLead() {
   const [selectedDesignLead, setSelectedDesignLead] = useState("");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { user } = useAuth();
-  const isAdmin = checkIfAdminOrSuperSales(user);
+  const { hasPermission } = usePermission();
+  // admin-tier lead operator = holds lead.assign.other (== checkIfAdminOrSuperSales); honors subRoles per the profiles model
+  const isAdmin = hasPermission(LEAD_CODES.ASSIGN_OTHER);
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
     setOpen(false);

@@ -1,9 +1,8 @@
 import { getData } from "@/app/helpers/functions/getData";
-import {
-  checkIfAdmin,
-  checkIfAdminOrSuperSales,
-} from "@/app/helpers/functions/utility";
+import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { usePermission } from "@/app/hooks/usePermission";
+import { LEAD_CODES } from "@/app/helpers/permissionCodes";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 import {
   Alert,
@@ -68,7 +67,9 @@ export const PreviewLead = ({
   const [loading, setLoading] = useState(true);
   const [lead, setLead] = useState(null);
   const { user } = useAuth();
-  const isAdmin = checkIfAdminOrSuperSales(user);
+  const { hasPermission } = usePermission();
+  // admin-tier lead operator = holds lead.assign.other (== checkIfAdminOrSuperSales); honors subRoles per the profiles model
+  const isAdmin = hasPermission(LEAD_CODES.ASSIGN_OTHER);
   const LeadContent = leadContent;
   useEffect(() => {
     async function getALeadDetails() {

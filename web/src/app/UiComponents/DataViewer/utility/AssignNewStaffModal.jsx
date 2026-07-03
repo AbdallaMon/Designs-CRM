@@ -2,11 +2,9 @@
 
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import {
-  checkIfAdmin,
-  checkIfAdminOrSuperSales,
-} from "@/app/helpers/functions/utility";
-import { useAuth } from "@/app/providers/AuthProvider";
+import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import { usePermission } from "@/app/hooks/usePermission";
+import { LEAD_CODES } from "@/app/helpers/permissionCodes";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import {
   Box,
@@ -26,11 +24,12 @@ import { useEffect, useState } from "react";
 export function AssignNewStaffModal({ lead, onUpdate }) {
   const [userId, setUserId] = useState("");
   const [open, setOpen] = useState(false);
-  const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const { setLoading: setToastLoading } = useToastContext();
   const [, setLoading] = useState(true);
-  const isAdmin = checkIfAdminOrSuperSales(user);
+  const { hasPermission } = usePermission();
+  // admin-tier lead operator = holds lead.assign.other (== checkIfAdminOrSuperSales); honors subRoles per the profiles model
+  const isAdmin = hasPermission(LEAD_CODES.ASSIGN_OTHER);
   useEffect(() => {
     async function getUsers() {
       const usersRequest = await getData({
