@@ -18,6 +18,12 @@ export const authMessagesCodes = {
   PERMISSION_DENIED: "PERMISSION_DENIED", // specific gate-1 denial with requiredPermissions detail
   ACCESS_DENIED: "ACCESS_DENIED", // record outside the user's scope (gate 2 / IDOR)
 
+  // profiles (DB-relational permissions)
+  PROFILE_NOT_ASSIGNED: "PROFILE_NOT_ASSIGNED", // tried to switch to a profile the user doesn't hold
+  PROFILE_NOT_FOUND: "PROFILE_NOT_FOUND", // profile id does not exist
+  PROFILE_SWITCHED: "PROFILE_SWITCHED", // success: active profile changed
+  PROFILES_UPDATED: "PROFILES_UPDATED", // success: a user's assigned profiles changed (admin)
+
   // success
   LOGIN_SUCCESS: "LOGIN_SUCCESS",
   LOGOUT_SUCCESS: "LOGOUT_SUCCESS",
