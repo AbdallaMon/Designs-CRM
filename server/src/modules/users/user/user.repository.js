@@ -184,6 +184,69 @@ class UserRepository {
     return prisma.user.update({ where: { id: Number(userId) }, data });
   }
 
+  // ── DB-relational profiles (admin assign/remove) ──────────────────────────────
+  /** Assignable profiles for the admin picker (ordered). */
+  listAssignableProfiles() {
+    return prisma.profile.findMany({
+      where: { isAssignable: true },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, key: true, label: true, family: true, baseRole: true },
+    });
+  }
+
+  /** Resolve a set of profile ids to their key/baseRole (validate existence). */
+  findProfilesByIds({ ids }) {
+    return prisma.profile.findMany({
+      where: { id: { in: ids.map(Number) } },
+      select: { id: true, key: true, baseRole: true },
+    });
+  }
+
+  /** The profile ids a user currently holds. */
+  async getUserProfileIds({ userId }) {
+    const rows = await prisma.userProfile.findMany({
+      where: { userId: Number(userId) },
+      select: { profileId: true },
+    });
+    return rows.map((r) => r.profileId);
+  }
+
+  /**
+   * Diff-apply a user's assigned profiles + set the active one AND keep the legacy
+   * role/flags/profile-string columns in sync with the current profile (rollback
+   * safety) — all in one transaction.
+   */
+  async setUserProfiles({ userId, addIds, removeIds, currentProfileId, legacySync, assignedByUserId }) {
+    const uid = Number(userId);
+    const ops = [];
+    for (const profileId of addIds) {
+      ops.push(
+        prisma.userProfile.upsert({
+          where: { userId_profileId: { userId: uid, profileId } },
+          update: { assignedByUserId },
+          create: { userId: uid, profileId, assignedByUserId },
+        }),
+      );
+    }
+    if (removeIds.length) {
+      ops.push(prisma.userProfile.deleteMany({ where: { userId: uid, profileId: { in: removeIds } } }));
+    }
+    ops.push(
+      prisma.user.update({
+        where: { id: uid },
+        data: {
+          currentProfileId,
+          role: legacySync.role,
+          isPrimary: legacySync.isPrimary,
+          isSuperSales: legacySync.isSuperSales,
+          profile: legacySync.profileKey,
+        },
+      }),
+    );
+    await prisma.$transaction(ops);
+    return { userId: uid, added: addIds, removed: removeIds, currentProfileId };
+  }
+
   // ── Restricted countries (legacy get/updateNotAllowedCountries) ───────────────
   async findRestrictedCountries({ userId }) {
     const user = await prisma.user.findUnique({

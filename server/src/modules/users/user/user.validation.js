@@ -99,4 +99,12 @@ export class UserValidation {
   // (legacy accepted any body); the usecase whitelists the safe self-editable fields
   // for non-admin callers (the privilege-escalation fix).
   static updateProfile = z.object({}).passthrough();
+
+  // PUT /:userId/profiles — admin assigns the user's permission profiles + which is
+  // current. At least one profile is required (a user must always hold ≥1). The
+  // usecase validates the ids exist and that currentProfileId is among them.
+  static updateUserProfiles = z.object({
+    profileIds: z.array(z.coerce.number().int().positive()).min(1),
+    currentProfileId: z.coerce.number().int().positive().optional(),
+  });
 }

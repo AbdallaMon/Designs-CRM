@@ -98,6 +98,22 @@ export class UserController {
     return ok(res, data, C.USER_ROLES_UPDATED, TK);
   };
 
+  // ── DB-relational profiles (admin assign/remove + list) ──────────────────────
+  listProfiles = async (req, res) => {
+    const data = await this.usecase.listAssignableProfiles();
+    return ok(res, data, C.USER_PROFILES_FETCHED, TK);
+  };
+
+  updateProfiles = async (req, res) => {
+    const data = await this.usecase.updateUserProfiles({
+      authUser: req.auth,
+      userId: req.params.userId,
+      profileIds: req.body.profileIds,
+      currentProfileId: req.body.currentProfileId,
+    });
+    return ok(res, data, C.USER_PROFILES_UPDATED, TK);
+  };
+
   getAutoAssignments = async (req, res) => {
     const data = await this.usecase.getAutoAssignments({ userId: req.params.userId });
     return ok(res, data, C.AUTO_ASSIGNMENTS_FETCHED, TK);

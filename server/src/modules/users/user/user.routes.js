@@ -58,6 +58,12 @@ router.get(
   AuthMiddleware.requirePermissions([P.LIST]),
   asyncHandler(userController.allUsers),
 );
+// assignable permission profiles for the admin picker (literal — before /:userId)
+router.get(
+  "/assignable-profiles",
+  AuthMiddleware.requirePermissions([P.MANAGE_ROLES]),
+  asyncHandler(userController.listProfiles),
+);
 router.get(
   "/",
   AuthMiddleware.requirePermissions([P.LIST]),
@@ -135,6 +141,16 @@ router.put(
   validate(UserValidation.userIdParams, "params"),
   validate(UserValidation.manageRoles),
   asyncHandler(userController.manageRoles),
+);
+// PUT /:userId/profiles — admin assigns the user's permission profiles + current
+// (admin-tier gate: MANAGE_ROLES is granted only to admin profiles, matching the
+// sibling /:userId/roles endpoint — the code is the gate).
+router.put(
+  "/:userId/profiles",
+  AuthMiddleware.requirePermissions([P.MANAGE_ROLES]),
+  validate(UserValidation.userIdParams, "params"),
+  validate(UserValidation.updateUserProfiles),
+  asyncHandler(userController.updateProfiles),
 );
 router.get(
   "/:userId/auto-assignments",

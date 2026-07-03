@@ -23,6 +23,7 @@ import bcrypt from "bcrypt";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { userMessagesCodes as C, PROFILE_KEYS, PROFILE_META } from "@dms/shared";
 import { userRepository } from "./user.repository.js";
+import { authAuditRepository, AUTH_AUDIT_ACTIONS } from "../../../infra/audit/auth-audit.repository.js";
 import {
   toSafeProfile,
   computeUserCapabilities,
@@ -329,6 +330,81 @@ export class UserUsecase {
   // ════════════════════════════════════════════════════════════════════════════
   async manageRoles({ userId, body }) {
     return this.legacy.updateUserRoles(userId, body);
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  DB-RELATIONAL PROFILES (admin assign / remove + active)
+  // ════════════════════════════════════════════════════════════════════════════
+  async listAssignableProfiles() {
+    return { items: await this.repo.listAssignableProfiles() };
+  }
+
+  /**
+   * Admin sets a user's assigned permission profiles + which is current. Diff-applies
+   * the UserProfile rows, keeps the legacy role/flags/profile-string synced with the
+   * new current (rollback safety), and audits each add/remove. A user must always
+   * keep ≥1 profile. Propagation to the target's session is bounded by their token TTL
+   * (refresh re-validates), matching the master staleness contract.
+   */
+  async updateUserProfiles({ authUser, userId, profileIds, currentProfileId }) {
+    const targetId = Number(userId);
+    if (!Array.isArray(profileIds) || profileIds.length === 0) {
+      throw new AppError(C.USER_NO_DATA_SENT, 400);
+    }
+    const desired = [...new Set(profileIds.map(Number))];
+    const profiles = await this.repo.findProfilesByIds({ ids: desired });
+    if (profiles.length !== desired.length) throw new AppError(C.USER_ROLE_NOT_ALLOWED, 400);
+
+    // current = requested if it's in the new set, else the first assigned.
+    const nextCurrent =
+      currentProfileId != null && desired.includes(Number(currentProfileId))
+        ? Number(currentProfileId)
+        : desired[0];
+
+    const existing = await this.repo.getUserProfileIds({ userId: targetId });
+    const existingSet = new Set(existing);
+    const desiredSet = new Set(desired);
+    const addIds = desired.filter((id) => !existingSet.has(id));
+    const removeIds = existing.filter((id) => !desiredSet.has(id));
+
+    // Keep the legacy columns in sync with the new current profile (PROFILE_META owns
+    // the isPrimary/isSuperSales flags; baseRole comes from the profile row / meta).
+    const currentProfile = profiles.find((p) => p.id === nextCurrent);
+    const meta = PROFILE_META[currentProfile.key] ?? {};
+    const legacySync = {
+      role: currentProfile.baseRole ?? meta.baseRole ?? null,
+      isPrimary: Boolean(meta.isPrimary),
+      isSuperSales: Boolean(meta.isSuperSales),
+      profileKey: currentProfile.key,
+    };
+
+    await this.repo.setUserProfiles({
+      userId: targetId,
+      addIds,
+      removeIds,
+      currentProfileId: nextCurrent,
+      legacySync,
+      assignedByUserId: Number(authUser.id),
+    });
+
+    for (const id of addIds) {
+      await authAuditRepository.record({
+        actorUserId: Number(authUser.id),
+        targetUserId: targetId,
+        action: AUTH_AUDIT_ACTIONS.PROFILE_ASSIGN,
+        detail: { profileId: id },
+      });
+    }
+    for (const id of removeIds) {
+      await authAuditRepository.record({
+        actorUserId: Number(authUser.id),
+        targetUserId: targetId,
+        action: AUTH_AUDIT_ACTIONS.PROFILE_REMOVE,
+        detail: { profileId: id },
+      });
+    }
+
+    return { userId: targetId, profileIds: desired, currentProfileId: nextCurrent };
   }
 
   async getAutoAssignments({ userId }) {
