@@ -18,11 +18,13 @@ startSocketSubscriber(getIo());
 (async () => {
   await connectRedis();
 
-  // One-time (idempotent) profile backfill: assign profiles to users created before
-  // the profiles feature. Non-fatal — never block the API from serving HTTP.
+  // One-time (idempotent) relational profile backfill: ensure every user has
+  // UserProfile assignments + a currentProfile. Non-fatal — never block the API
+  // from serving HTTP. (Requires the Profile catalog to be seeded first.)
   try {
     const r = await runProfileBackfill({ prisma });
-    if (r.updated) console.log(`✅ Profile backfill: ${r.updated}/${r.scanned} users assigned`);
+    if (r.assigned || r.currentSet)
+      console.log(`✅ Profile backfill: ${r.assigned} assignments, ${r.currentSet} currents set (${r.scanned} users)`);
   } catch (e) {
     console.error("❌ Profile backfill failed:", e?.message);
   }

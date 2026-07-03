@@ -1,43 +1,44 @@
 import { describe, it, expect, vi } from "vitest";
-import { runProfileBackfill } from "../backfill-profiles.js";
-
-function fakePrisma(rows) {
-  const users = rows.map((r) => ({ isPrimary: false, isSuperSales: false, profile: null, ...r }));
-  return {
-    user: {
-      findMany: vi.fn(async ({ where }) =>
-        users.filter((u) => (where?.profile === null ? u.profile === null : true))
-             .map((u) => ({ id: u.id, role: u.role, isPrimary: u.isPrimary, isSuperSales: u.isSuperSales }))),
-      update: vi.fn(async ({ where, data }) => {
-        const u = users.find((x) => x.id === where.id);
-        u.profile = data.profile;
-        return u;
-      }),
-    },
-    _users: users,
-  };
-}
+import { runProfileBackfill, runLegacyStringProfileBackfill } from "../backfill-profiles.js";
+import { runUserProfileMigration } from "../../../../packages/db/scripts/migrate-users-to-profiles.js";
 
 describe("runProfileBackfill", () => {
-  it("assigns the derived profile to every unbackfilled user", async () => {
-    const prisma = fakePrisma([
-      { id: 1, role: "STAFF" },
-      { id: 2, role: "STAFF", isPrimary: true },
-      { id: 3, role: "STAFF", isSuperSales: true },
-      { id: 4, role: "THREE_D_DESIGNER" },
-      { id: 5, role: "ACCOUNTANT" },
-    ]);
-    const res = await runProfileBackfill({ prisma });
-    expect(res).toEqual({ scanned: 5, updated: 5 });
-    expect(prisma._users.map((u) => u.profile)).toEqual([
-      "NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES", "DESIGNER_3D", "ACCOUNTANT",
-    ]);
+  it("delegates to the relational user->profile migration", () => {
+    expect(runProfileBackfill).toBe(runUserProfileMigration);
   });
 
-  it("is idempotent — a second run updates nothing", async () => {
-    const prisma = fakePrisma([{ id: 1, role: "STAFF" }]);
-    await runProfileBackfill({ prisma });
-    const second = await runProfileBackfill({ prisma });
-    expect(second).toEqual({ scanned: 0, updated: 0 });
+  it("assigns UserProfile rows + sets currentProfileId when null", async () => {
+    const upserts = [];
+    const updates = [];
+    const db = {
+      profile: { findMany: vi.fn(async () => [{ id: 10, key: "NORMAL_SALES" }, { id: 30, key: "ADMIN" }]) },
+      user: {
+        findMany: vi.fn(async () => [
+          { id: 1, role: "STAFF", isPrimary: false, isSuperSales: false, currentProfileId: null, subRoles: [] },
+          { id: 2, role: "ADMIN", isPrimary: false, isSuperSales: false, currentProfileId: 30, subRoles: [] },
+        ]),
+        update: vi.fn(async ({ where, data }) => { updates.push({ id: where.id, ...data }); }),
+      },
+      userProfile: { upsert: vi.fn(async ({ create }) => { upserts.push(create); }) },
+    };
+    const res = await runProfileBackfill({ prisma: db });
+    expect(res).toEqual({ scanned: 2, assigned: 2, currentSet: 1 });
+    expect(upserts).toEqual([{ userId: 1, profileId: 10 }, { userId: 2, profileId: 30 }]);
+    expect(updates).toEqual([{ id: 1, currentProfileId: 10 }]); // user 2 already had a current
+  });
+});
+
+describe("runLegacyStringProfileBackfill (rollback path)", () => {
+  it("still populates the User.profile string column", async () => {
+    const users = [{ id: 1, role: "ACCOUNTANT", isPrimary: false, isSuperSales: false, profile: null }];
+    const db = {
+      user: {
+        findMany: vi.fn(async () => users.map((u) => ({ id: u.id, role: u.role, isPrimary: u.isPrimary, isSuperSales: u.isSuperSales }))),
+        update: vi.fn(async ({ where, data }) => { users.find((x) => x.id === where.id).profile = data.profile; }),
+      },
+    };
+    const res = await runLegacyStringProfileBackfill({ prisma: db });
+    expect(res).toEqual({ scanned: 1, updated: 1 });
+    expect(users[0].profile).toBe("ACCOUNTANT");
   });
 });
