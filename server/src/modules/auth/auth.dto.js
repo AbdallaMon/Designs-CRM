@@ -95,10 +95,13 @@ class AuthSchema {
           }
         : getEffectivePermissions({ ...user, subRoles });
 
-    // The user's assigned profiles (for the switcher) + the active one.
-    const profiles = Array.isArray(user.userProfiles)
-      ? user.userProfiles.map((up) => up.profile).filter(Boolean)
-      : [];
+    // The user's assigned profiles (for the switcher) + the active one. Prefer the
+    // cache-resolved list attached to req.auth; fall back to a raw DB user's relation.
+    const profiles = Array.isArray(user.profiles)
+      ? user.profiles
+      : Array.isArray(user.userProfiles)
+        ? user.userProfiles.map((up) => up.profile).filter(Boolean)
+        : [];
     const currentProfileId = user.currentProfileId ?? user.currentProfile?.id ?? null;
     const currentProfileKey = user.currentProfile?.key ?? resolveProfileKey(user);
 
@@ -163,6 +166,13 @@ class AuthSchema {
       isSuperSales: user.isSuperSales,
       subRoles,
       currentProfileId: user.currentProfileId ?? user.currentProfile?.id ?? null,
+      // The ids of the profiles the user holds — so /auth/me can build the switcher
+      // list from the cache (no DB read). Stale only until the next refresh.
+      profileIds: Array.isArray(user.userProfiles)
+        ? user.userProfiles.map((up) => up.profile?.id).filter((x) => x != null)
+        : Array.isArray(user.profileIds)
+          ? user.profileIds
+          : [],
     };
   }
 }

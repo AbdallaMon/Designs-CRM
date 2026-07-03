@@ -8,6 +8,8 @@ export const profileCacheRepository = {
       select: {
         id: true,
         key: true,
+        label: true,
+        family: true,
         isAdminTier: true,
         baseRole: true,
         permissionLinks: { select: { permissionCode: { select: { code: true } } } },
@@ -16,6 +18,8 @@ export const profileCacheRepository = {
     return rows.map((p) => ({
       id: p.id,
       key: p.key,
+      label: p.label,
+      family: p.family,
       isAdminTier: p.isAdminTier,
       baseRole: p.baseRole,
       codes: p.permissionLinks.map((l) => l.permissionCode.code),

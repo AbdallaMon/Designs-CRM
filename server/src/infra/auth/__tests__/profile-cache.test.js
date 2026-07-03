@@ -3,8 +3,8 @@ import { createProfileCache } from "../profile-cache.js";
 
 const fakeRepo = {
   loadProfilesWithCodes: async () => [
-    { id: 1, key: "ADMIN", isAdminTier: true, baseRole: "ADMIN", codes: ["lead.list", "lead.view"] },
-    { id: 2, key: "NORMAL_SALES", isAdminTier: false, baseRole: "STAFF", codes: ["lead.list"] },
+    { id: 1, key: "ADMIN", label: "مدير", family: "ADMIN", isAdminTier: true, baseRole: "ADMIN", codes: ["lead.list", "lead.view"] },
+    { id: 2, key: "NORMAL_SALES", label: "مبيعات", family: "SALES", isAdminTier: false, baseRole: "STAFF", codes: ["lead.list"] },
   ],
 };
 
@@ -37,5 +37,12 @@ describe("profile cache", () => {
     const cache = createProfileCache({ repository: fakeRepo });
     await cache.load();
     expect(cache.resolve("1").key).toBe("ADMIN");
+  });
+
+  it("resolveMeta returns light profile meta (no permission arrays)", async () => {
+    const cache = createProfileCache({ repository: fakeRepo });
+    await cache.load();
+    expect(cache.resolveMeta(1)).toEqual({ id: 1, key: "ADMIN", label: "مدير", family: "ADMIN", isAdminTier: true });
+    expect(cache.resolveMeta(999)).toBeNull();
   });
 });

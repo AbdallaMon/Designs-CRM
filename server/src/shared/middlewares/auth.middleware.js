@@ -49,6 +49,10 @@ class AuthMiddleware {
     // cache (zero DB hit). The token carries `currentProfileId`.
     const resolved = profileCache.resolve(payload.currentProfileId);
     if (resolved) {
+      // Build the switcher list from the cache (the token carries the ids only).
+      const profiles = Array.isArray(payload.profileIds)
+        ? payload.profileIds.map((id) => profileCache.resolveMeta(id)).filter(Boolean)
+        : [];
       req.auth = {
         ...payload,
         currentProfileKey: resolved.key,
@@ -56,6 +60,7 @@ class AuthMiddleware {
         isAdminTier: Boolean(resolved.isAdminTier),
         permissions: resolved.permissions,
         permissionsByModule: resolved.permissionsByModule,
+        profiles,
       };
       return next();
     }

@@ -14,7 +14,10 @@ export function createProfileCache({ repository = profileCacheRepository } = {})
     for (const p of rows) {
       const { permissions, permissionsByModule } = buildPermissionsByModule(p.codes);
       next.set(p.id, {
+        id: p.id,
         key: p.key,
+        label: p.label,
+        family: p.family,
         isAdminTier: Boolean(p.isAdminTier),
         baseRole: p.baseRole,
         permissions,
@@ -30,6 +33,12 @@ export function createProfileCache({ repository = profileCacheRepository } = {})
     resolve(profileId) {
       if (profileId == null) return null;
       return byId.get(Number(profileId)) ?? null;
+    },
+    // Light meta for the /auth/me profiles list (no permission arrays).
+    resolveMeta(profileId) {
+      const p = byId.get(Number(profileId));
+      if (!p) return null;
+      return { id: p.id, key: p.key, label: p.label, family: p.family, isAdminTier: p.isAdminTier };
     },
     get size() {
       return byId.size;

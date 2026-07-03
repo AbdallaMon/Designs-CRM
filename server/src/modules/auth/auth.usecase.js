@@ -76,13 +76,6 @@ class AuthUseCase {
     return { accessToken, refreshToken };
   }
 
-  /** Load the full user (with profiles + current) for the /auth/me payload. */
-  static async getMe(id) {
-    const user = await AuthRepository.findById(id);
-    if (!user) throw new AppError(authMessagesCodes.UNAUTHORIZED, 401);
-    return user;
-  }
-
   /**
    * Self-service profile switch. The caller may only switch to a profile they
    * actually hold. Persists the new current, audits it, and re-mints the token

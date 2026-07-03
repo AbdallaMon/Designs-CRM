@@ -60,15 +60,10 @@ class AuthController {
   }
 
   static async getCurrentUser(req, res) {
-    // req.auth carries the cache-resolved effective permissions (from the active
-    // profile). One DB read here supplies the user's assigned-profiles list (for
-    // the switcher) — this is session-load, not the per-request hot path.
-    const dbUser = await AuthUseCase.getMe(req.auth.id);
-    const user = AuthSchema.toMe({
-      ...dbUser,
-      permissions: req.auth.permissions,
-      permissionsByModule: req.auth.permissionsByModule,
-    });
+    // req.auth already carries the cache-resolved effective permissions AND the
+    // assigned-profiles list (both from the token + profile cache) — so /auth/me is
+    // DB-free, exactly like before. toMe shapes the display fields + permissions.
+    const user = AuthSchema.toMe(req.auth);
     ok(
       res,
       { user },
