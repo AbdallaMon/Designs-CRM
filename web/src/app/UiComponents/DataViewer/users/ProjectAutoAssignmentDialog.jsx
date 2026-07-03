@@ -22,8 +22,8 @@ import { PROJECT_TYPES } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { getData } from "@/app/helpers/functions/getData";
-import { useAuth } from "@/app/providers/AuthProvider";
-import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import { usePermission } from "@/app/hooks/usePermission";
+import { USER_CODES } from "@/app/helpers/permissionCodes";
 
 export const ProjectAutoAssignmentDialog = ({ userId }) => {
   const { setLoading } = useToastContext();
@@ -37,8 +37,11 @@ export const ProjectAutoAssignmentDialog = ({ userId }) => {
 
   const [tempType, setTempType] = useState(""); // type to add
   const [isFetching, setIsFetching] = useState(false);
-  const { user } = useAuth();
-  const admin = checkIfAdmin(user);
+  // Approved normalization + tightening (profiles sweep): the derived admin flag was DEAD
+  // and the management trigger below rendered UNCONDITIONALLY (an authorization gap). Gate
+  // it on the user.manage_auto_assignments code (admin-tier: ADMIN/SUPER_ADMIN + isSuperSales).
+  const { hasPermission } = usePermission();
+  const canManage = hasPermission(USER_CODES.MANAGE_AUTO_ASSIGNMENTS);
   const onClose = () => {
     setOpen(false);
     setTempType("");
@@ -108,6 +111,9 @@ export const ProjectAutoAssignmentDialog = ({ userId }) => {
   };
 
   if (!open) {
+    // Gap fix: only render the management trigger for users who hold the code. Since the
+    // dialog can only be opened via this trigger, gating it here gates the whole flow.
+    if (!canManage) return null;
     return (
       <Button onClick={handleOpen} variant="contained" fullWidth>
         Manage Project Auto Assignment

@@ -18,3 +18,18 @@ export const PROJECT_CODES = {
   MANAGE: "project.manage",
   LIST: "project.list",
 };
+
+// Mirror of packages/shared/constants/access/permissions.constants.js USER_PERMISSIONS.
+// Admin-tier user-management codes (granted to ADMIN/SUPER_ADMIN base + isSuperSales).
+export const USER_CODES = {
+  MANAGE_ROLES: "user.manage_roles",
+  MANAGE_AUTO_ASSIGNMENTS: "user.manage_auto_assignments",
+};
+
+// Mirror of packages/shared/constants/access/permissions.constants.js
+// ADMIN_RESIDUAL_PERMISSIONS. Residual admin-tier codes (ADMIN/SUPER_ADMIN base +
+// isSuperSales) for the project-group-create affordance and the telegram management actions.
+export const ADMIN_RESIDUAL_CODES = {
+  PROJECT_GROUP_CREATE: "admin_residual.project.group_create",
+  TELEGRAM_MANAGE: "admin_residual.telegram.manage",
+};

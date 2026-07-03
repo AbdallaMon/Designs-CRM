@@ -14,14 +14,18 @@ import { BsLink, BsTelegram } from "react-icons/bs";
 import { MdEdit, MdSave, MdCancel } from "react-icons/md";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { useAuth } from "@/app/providers/AuthProvider";
+import { usePermission } from "@/app/hooks/usePermission";
+import { ADMIN_RESIDUAL_CODES } from "@/app/helpers/permissionCodes";
 import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel";
 
 const TelegramLink = ({ lead, setLead, setleads }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempLink, setTempLink] = useState(lead?.telegramLink || "");
-  const { user } = useAuth();
-  const isAdmin = user?.role === "ADMIN" || user?.role === "SUPER_ADMIN";
+  // Approved normalization (profiles sweep): telegram edit/create-group/add-user moved off
+  // the raw role check (ADMIN/SUPER_ADMIN) to the admin_residual.telegram.manage code —
+  // adds isSuperSales (matches the proper admin-tier grant).
+  const { hasPermission } = usePermission();
+  const isAdmin = hasPermission(ADMIN_RESIDUAL_CODES.TELEGRAM_MANAGE);
   const { setLoading } = useToastContext();
 
   const handleSave = async () => {

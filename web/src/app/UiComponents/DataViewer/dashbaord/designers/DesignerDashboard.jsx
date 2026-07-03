@@ -1,13 +1,16 @@
 "use client";
 import { Grid } from "@mui/material";
 import DesignerMetricsCard from "./DesignerMatricsCard";
-import { useAuth } from "@/app/providers/AuthProvider";
-import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import { usePermission } from "@/app/hooks/usePermission";
+import { PROJECT_CODES } from "@/app/helpers/permissionCodes";
 import { ProjectsList } from "./ProjectList";
 
 const DesignerDashboard = ({ staff, staffId }) => {
-  const { user } = useAuth();
-  const isAdmin = checkIfAdmin(user);
+  // Approved normalization (profiles sweep): admin viewing a designer's projects moved off
+  // checkIfAdmin (ADMIN/SUPER_ADMIN/CONTACT_INITIATOR) to the project.manage code — drops
+  // CONTACT_INITIATOR, adds isSuperSales (matches the proper admin-tier grant).
+  const { hasPermission } = usePermission();
+  const isAdmin = hasPermission(PROJECT_CODES.MANAGE);
   return (
     <>
       <Grid container spacing={4}>

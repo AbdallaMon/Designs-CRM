@@ -148,6 +148,7 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
   const { user } = useAuth();
   const { loading: submitting, setLoading: setSubmitting } = useToastContext();
   const { setAlertError } = useAlertContext();
+  // TODO(profiles): no admin-tier delivery code; FE-only admin gate kept
   const admin = checkIfAdmin(user);
 
   useEffect(() => {
@@ -423,6 +424,7 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
     user.role === "ADMIN" ||
     user.role === "SUPER_ADMIN" ||
     user.role === "STAFF";
+  // TODO(profiles): no admin-tier delivery code; FE-only admin gate kept
   const admin = checkIfAdmin(user);
   const { setLoading: setSubmitting } = useToastContext();
   const [openCreate, setOpenCreate] = useState(false);

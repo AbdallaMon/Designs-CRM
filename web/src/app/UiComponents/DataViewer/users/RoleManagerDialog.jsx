@@ -1,7 +1,7 @@
 import { roleIcons, userRolesEnum } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { checkIfAdmin } from "@/app/helpers/functions/utility";
-import { useAuth } from "@/app/providers/AuthProvider";
+import { usePermission } from "@/app/hooks/usePermission";
+import { USER_CODES } from "@/app/helpers/permissionCodes";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import {
   alpha,
@@ -33,8 +33,11 @@ export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
   const [selectedSubRoles, setSelectedSubRoles] = useState([...subRoles]); // SubRoles state
   const [tempRole, setTempRole] = useState(""); // Temp role to add
   const { setLoading } = useToastContext();
-  const { user } = useAuth();
-  const admin = checkIfAdmin(user);
+  // Approved normalization (profiles sweep): manage-roles dialog moved off checkIfAdmin
+  // (ADMIN/SUPER_ADMIN/CONTACT_INITIATOR) to the user.manage_roles code — drops
+  // CONTACT_INITIATOR, adds isSuperSales (matches the proper admin-tier grant).
+  const { hasPermission } = usePermission();
+  const admin = hasPermission(USER_CODES.MANAGE_ROLES);
   function onClose() {
     setOpen(false);
   }

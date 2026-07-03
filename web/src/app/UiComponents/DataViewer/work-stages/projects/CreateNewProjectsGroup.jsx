@@ -1,6 +1,6 @@
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { checkIfAdmin } from "@/app/helpers/functions/utility";
-import { useAuth } from "@/app/providers/AuthProvider";
+import { usePermission } from "@/app/hooks/usePermission";
+import { ADMIN_RESIDUAL_CODES } from "@/app/helpers/permissionCodes";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import {
@@ -22,8 +22,11 @@ const CreateProjectsGroup = ({ clientLeadId, onGroupCreated }) => {
   const [title, setTitle] = useState("");
   const { setAlertError } = useAlertContext();
   const { setLoading } = useToastContext();
-  const { user } = useAuth();
-  const isAdmin = checkIfAdmin(user);
+  // Approved normalization (profiles sweep): create-project-group affordance moved off
+  // checkIfAdmin (ADMIN/SUPER_ADMIN/CONTACT_INITIATOR) to the admin_residual.project.group_create
+  // code — drops CONTACT_INITIATOR, adds isSuperSales (matches the proper admin-tier grant).
+  const { hasPermission } = usePermission();
+  const isAdmin = hasPermission(ADMIN_RESIDUAL_CODES.PROJECT_GROUP_CREATE);
   const handleOpen = () => {
     setOpen(true);
     setTitle("");
