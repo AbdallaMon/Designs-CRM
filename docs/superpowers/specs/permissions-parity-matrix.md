@@ -306,3 +306,43 @@ mass-assignment/mass-read hole; the permission code and role grants are unchange
 
 **No `role-permissions.js` or checker change was needed:** the current authorization already
 matches master role-for-role, with only the four confirmed intentional tightenings applied.
+
+---
+
+## Addendum (2026-07-03) — DB-relational permissions & switchable profiles
+
+The authorization SOURCE moved from the code-defined role→codes map to DB tables
+(`PermissionCode`/`Profile`/`ProfilePermission`/`UserProfile`), resolved from the user's
+**current profile** via an in-process cache. The `/auth/me` contract is unchanged
+(`permissions[]`, `permissionsByModule{}`, `navigationTabs[]`, `role`, `profile`) and only
+extended (`profiles[]`, `currentProfileId`). Design: `2026-07-03-db-relational-permissions-design.md`.
+
+**Parity preserved for single-profile users.** The catalog seed builds `ProfilePermission`
+from the SAME code-defined `PROFILES` map that master resolved, so a user who resolves to one
+profile (every user with no `subRoles`) has a byte-identical active code set. The middleware
+also keeps a TRANSITIONAL legacy fallback: a token minted before `currentProfileId` existed, an
+unmigrated user, or a missing cache entry resolves via the old code-map (so a deploy never
+locks anyone out; the next refresh mints a currentProfile-bearing token).
+
+**One intentional divergence — current-profile-only.** Effective permissions are the CURRENT
+profile's codes, NOT the union of `role ∪ subRoles ∪ superSalesExtras`. A multi-role user (base
+role + `subRoles`) now holds one profile per role and **switches** between them instead of
+holding both sets at once; admin-tier object scope (`isAdminTier`/`isAdminUser`) and the sidebar
+follow the active profile too. This changes the at-any-moment set ONLY for users who today rely
+on a `subRole` union. Quantify the blast radius on prod before/after rollout:
+
+```sql
+SELECT COUNT(*) AS users_with_subroles
+FROM (SELECT userId FROM UserSubRole GROUP BY userId) t;
+```
+
+If that count is 0 (or those users accept switching), observable access is identical to master.
+The divergence is a deliberate, documented product decision (the switchable-profile model), not a
+regression.
+
+**Tests.** Full monorepo suite **738 passing / 57 files** after the change, incl. the shared
+role→code parity files, the `getEffectivePermissions` old-universe parity matrix, the profile
+cache resolver, the middleware fallback, and the switch/assign authorization tests. A real-DB
+end-to-end check confirmed a STAFF+subRole(ACCOUNTANT) user migrates to `[PRIMARY_SALES,
+ACCOUNTANT]` (current PRIMARY_SALES, 91 codes) and switching to ACCOUNTANT yields 105 codes incl.
+`accounting.salary.view`.

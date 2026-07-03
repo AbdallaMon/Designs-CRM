@@ -3,7 +3,30 @@
 > **Open this file in any new chat.** It tells you what we are doing and where we have reached.
 > To resume: *"Read `PROJECT_STATE.md`, `CLAUDE.md`, and `docs/migration/`, then tell me where we are and what's next."*
 >
-> Last updated: **2026-07-02** · Branch: `frontend-redesign`
+> Last updated: **2026-07-03** · Branch: `frontend-redesign`
+>
+> **LATEST (2026-07-03) — DB-relational permissions & switchable profiles (implemented, local-verified; prod pending).**
+> Authorization moved from the code-defined role→codes map to DB tables: `PermissionCode`,
+> `Profile`, `ProfilePermission`, `UserProfile` (replaces subRoles), + `User.currentProfileId`
+> and an `AuthAuditLog` (additive migration `20260703194146_add_relational_permissions`, applied
+> to the local dev DB; **no columns dropped** — `role`/`profile`/`isPrimary`/`isSuperSales`/
+> `subRoles` retained for rollback). Effective permissions now come from the user's **current
+> profile ONLY** (the one intentional divergence from master — multi-role users switch instead of
+> holding a subRole union), resolved per request from an in-process **profile→codes cache** (zero
+> DB read on the auth hot path; the token carries `currentProfileId` + `profileIds`; a transitional
+> legacy-code-map fallback means a deploy never locks anyone out). `isAdminTier`/`isAdminUser` and
+> the sidebar now follow the active profile. New: `POST /v2/auth/profile/switch` (self-service,
+> audited, re-mints cookies), `PUT /v2/users/:id/profiles` + `GET /v2/users/assignable-profiles`
+> (admin assign/remove, audited). `/auth/me` contract preserved + extended (`profiles[]`,
+> `currentProfileId`). FE: `AuthProvider` exposes profiles + `refetchMe`; a header **ProfileSwitcher**;
+> an admin **ProfileManagerDialog** on the Users page; Arabic message mirror added. Idempotent
+> catalog **seed** (`packages/db/prisma/seed.js`) + **user-migration** (`packages/db/scripts/
+> migrate-users-to-profiles.js`), both upsert-only. **Full suite 738/57 green**; real-DB e2e verified
+> the migrate→resolve→switch flow. **PENDING (user-run):** the prod rollout —
+> `docs/superpowers/plans/prod-rollout-db-relational-permissions.md` (migrate deploy → seed →
+> user-migration → deploy code; never reset). Design: `docs/superpowers/specs/
+> 2026-07-03-db-relational-permissions-design.md`; plan: `docs/superpowers/plans/
+> 2026-07-03-db-relational-permissions.md`; parity addendum in `permissions-parity-matrix.md`.
 >
 > **CURRENT STATUS (2026-07-02) — full detail in §0 below.** The BE+FE migration is COMPLETE (legacy removed; boots `server/src/server.js`; frontend is `web/`). On `frontend-redesign` these forward workstreams are now **DONE**: **(1) DB-migration reconciliation** — schema + migrations reconciled to the deployed production DB, single canonical `packages/db/prisma`, migrations verified (Docker) to build a fresh DB byte-equal to prod; a **user-run** metadata-only prod runbook is pending. **(2) Permissions parity** — rich denial-reason/redirect contract, backend per-role `navigationTabs` + action-flag `permissionsByModule`, frontend `usePermission`/`PermissionGate`/route-guard, audited identical-to-master (0 mismatches). **(3) Frontend review fixes** — Kanban optimistic drag + terminal-transition confirm, lead-detail reload removal + capability-gated status action, SalesStage unified on `LeadDetailsContext`, dead-code removal, design-token harmonization. **(4) Permission profiles — Phases 1–2** — code-defined `PROFILES` in `@dms/shared` (one profile per user), `getEffectivePermissions` resolves via profile (parity-preserved: same access on the old code universe, only 5 additive `lead.*.view` codes), idempotent bootstrap backfill from the RETAINED `isPrimary`/`isSuperSales`, `/auth/me` emits `profile`, FE profile picker; 8 subagent-driven tasks, final whole-branch review clean after 1 blocker fix. **(5) Permission profiles — Phase 3 (the FE sweep)** — the leads area (detail sections → `lead.*.view` codes; kanban admin affordance → `lead.assign.other`; 6 lead-tab action buttons → `lead.capabilities.canAddX`) AND the projects/dashboard/users modules (backend `computeProjectCapabilities` wired onto the designer detail; ProjectDetails/PreviewWorkStage management gates → project capabilities/`project.manage`; project-group/manage-roles/auto-assign/designer-dashboard/telegram admin gates → codes) all moved off scattered `isPrimary`/`isSuperSales`/role branches. Each conversion subagent-driven + independently reviewed. Two accepted simplifications documented (subRole-STAFF hybrids resolve by base profile — narrowing; accountants/full-scope now see the lead-tab create buttons the backend permits — widening) plus one closed authz gap (the auto-assignment dialog was ungated). Vitest **699/699 green**, `web` build 42/42. **Remaining TODOs (documented in code):** no admin-tier `delivery.*` code (delivery gates left as role checks); designer area-only edit has no capability; the JWT/auth-selects still omit `profile` (runtime rides the derived fallback — parity-neutral). **PENDING (user-run):** the additive `User.profile` migration — `npm run db:migrate -- --name add_user_profile` then `npm run db:generate`, and commit `schema.prisma` + the generated migration together (the column edit is currently staged in the working tree; no `DATABASE_URL` in the agent env). Design + plans: `docs/superpowers/specs/2026-07-02-permission-profiles-design.md`, `docs/superpowers/plans/2026-07-02-permission-profiles*.md`. UI redesign continues.
 >
