@@ -95,10 +95,18 @@ class AuthSchema {
           }
         : getEffectivePermissions({ ...user, subRoles });
 
+    // The user's assigned profiles (for the switcher) + the active one.
+    const profiles = Array.isArray(user.userProfiles)
+      ? user.userProfiles.map((up) => up.profile).filter(Boolean)
+      : [];
+    const currentProfileId = user.currentProfileId ?? user.currentProfile?.id ?? null;
+    const currentProfileKey = user.currentProfile?.key ?? resolveProfileKey(user);
+
     const navigationTabs = buildNavigationTabs({
       role: user.role,
       activeRole: user.activeRole,
       isSuperSales: user.isSuperSales,
+      baseRole: user.currentProfile?.baseRole,
       subRoles,
       permissions,
     });
@@ -112,7 +120,9 @@ class AuthSchema {
       subRoles,
       isSuperSales: Boolean(user.isSuperSales),
       isPrimary: Boolean(user.isPrimary),
-      profile: resolveProfileKey(user),
+      profile: currentProfileKey,
+      currentProfileId,
+      profiles,
       profilePicture: user.profilePicture ?? null,
       permissions,
       permissionsByModule,
