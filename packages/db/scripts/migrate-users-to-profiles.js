@@ -44,7 +44,10 @@ export async function runUserProfileMigration({ prisma: db }) {
       assigned += 1;
     }
     if (u.currentProfileId == null && currentProfileId != null) {
-      await db.user.update({ where: { id: u.id }, data: { currentProfileId } });
+      // `select: { id }` so Prisma does NOT read back the full row (a MySQL update
+      // has no RETURNING, so a default update SELECTs every scalar — which would
+      // trip P2022 on any column the live DB is missing, unrelated to this write).
+      await db.user.update({ where: { id: u.id }, data: { currentProfileId }, select: { id: true } });
       currentSet += 1;
     }
   }
