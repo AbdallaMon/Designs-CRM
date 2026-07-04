@@ -53,7 +53,14 @@ const UserRestrictedCountries = ({ userId }) => {
         url: `admin/users/${userId}/restricted-countries`,
         setLoading,
       });
-      setRestrictedCountries(response);
+      // getData may return the raw array OR the { data } envelope — normalize to an
+      // array so the render computations (.filter/.forEach/.length) never crash.
+      const list = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.data)
+          ? response.data
+          : [];
+      setRestrictedCountries(list);
       setSelectedCountries([]);
     } catch (error) {
       console.error("Error fetching restricted countries:", error);

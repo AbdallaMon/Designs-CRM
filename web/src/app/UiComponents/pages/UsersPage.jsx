@@ -51,7 +51,6 @@ import {
 import { FiUsers } from "react-icons/fi";
 import UserRestrictedCountries from "@/app/UiComponents/DataViewer/users/UserRestrictedCountries";
 import Commission from "@/app/UiComponents/DataViewer/utility/Commission";
-import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes";
 import { ProfileManagerDialog } from "../DataViewer/users/ProfileManagerDialog";
 import { ProjectAutoAssignmentDialog } from "../DataViewer/users/ProjectAutoAssignmentDialog";
 
@@ -481,15 +480,6 @@ function UserRowActions({ item, setData, banAUser }) {
 
         <Box sx={{ px: 1, py: 0.5 }}>
           <Commission userId={item.id} />
-        </Box>
-
-        <Box sx={{ px: 1, py: 0.5 }}>
-          <NotesComponent
-            id={item.id}
-            idKey="notedUserId"
-            slug="shared"
-            fullWidth={true}
-          />
         </Box>
       </Menu>
       {!smDown && (
