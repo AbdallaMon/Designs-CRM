@@ -50,8 +50,8 @@ export default function PaymentsRulesEditor({ payments, rules, setRules }) {
     <Stack spacing={2}>
       <SectionHeader
         icon={<FaClipboardList />}
-        title="شروط الدفع"
-        subtitle="اربط كل دفعة بمشروع وشرط الاستحقاق"
+        title="Payment Conditions"
+        subtitle="Link each payment to a project and its due condition"
         count={payments.length}
         color={warning}
       />
@@ -60,7 +60,7 @@ export default function PaymentsRulesEditor({ payments, rules, setRules }) {
         <EmptyState
           icon={<FaClipboardList />}
           color={warning}
-          text="لا توجد دفعات مضافة. ارجع للخطوة السابقة لإضافة الدفعات."
+          text="No payments added. Go back to the previous step to add payments."
         />
       ) : (
         <Stack spacing={1.5}>
@@ -74,24 +74,25 @@ export default function PaymentsRulesEditor({ payments, rules, setRules }) {
                 key={idx}
                 accent={warning}
                 index={idx + 1}
-                label={`الدفعة #${idx + 1} — المبلغ: ${Number(
+                label={`Payment #${idx + 1} — Amount: ${Number(
                   p.amount || 0
                 ).toFixed(2)}`}
               >
                 <Stack spacing={1.5}>
                   {disabled && (
                     <Alert severity="error" icon={<FaCheckCircle />}>
-                      تُستحق هذه الدفعة بعد توقيع العميل على العقد
+                      This payment will be due after the client signs the
+                      contract
                     </Alert>
                   )}
 
                   <Grid container spacing={1.5}>
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <FormControl fullWidth disabled={disabled} size="small">
-                        <InputLabel id={`proj-${idx}`}>المشروع</InputLabel>
+                        <InputLabel id={`proj-${idx}`}>Project</InputLabel>
                         <Select
                           labelId={`proj-${idx}`}
-                          label="المشروع"
+                          label="Project"
                           value={row.projectName || ""}
                           onChange={(e) =>
                             setField(idx, "projectName", e.target.value)
@@ -114,10 +115,12 @@ export default function PaymentsRulesEditor({ payments, rules, setRules }) {
                         }
                         size="small"
                       >
-                        <InputLabel id={`cond-${idx}`}>شرط الدفع</InputLabel>
+                        <InputLabel id={`cond-${idx}`}>
+                          Payment Condition
+                        </InputLabel>
                         <Select
                           labelId={`cond-${idx}`}
-                          label="شرط الدفع"
+                          label="Payment Condition"
                           value={row.condition || ""}
                           onChange={(e) =>
                             setField(idx, "condition", e.target.value)

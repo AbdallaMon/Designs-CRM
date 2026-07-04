@@ -34,14 +34,14 @@ export default function SpecialItemsEditor({ items, setItems }) {
     <Stack spacing={2}>
       <SectionHeader
         icon={<FaSitemap />}
-        title="بنود خاصة"
-        subtitle="بنود إضافية تُدرج ضمن العقد (اختياري)"
+        title="Special Items"
+        subtitle="Additional items included in the contract (optional)"
         count={items.length}
         color={secondary}
         action={
           <AddButton
             onClick={addItem}
-            label="إضافة بند"
+            label="Add"
             startIcon={<FaPlus />}
             color={secondary}
           />
@@ -52,11 +52,11 @@ export default function SpecialItemsEditor({ items, setItems }) {
         <EmptyState
           icon={<FaSitemap />}
           color={secondary}
-          text="لا توجد بنود خاصة — يمكنك إضافة بنود إن لزم."
+          text="No special items — you can add items if needed."
           action={
             <AddButton
               onClick={addItem}
-              label="إضافة بند"
+              label="Add"
               startIcon={<FaPlus />}
               color={secondary}
             />
@@ -69,9 +69,9 @@ export default function SpecialItemsEditor({ items, setItems }) {
               key={idx}
               accent={secondary}
               index={idx + 1}
-              label={`البند #${idx + 1}`}
+              label={`Item #${idx + 1}`}
               onRemove={
-                <Tooltip title="حذف">
+                <Tooltip title="Remove">
                   <span>
                     <IconButton
                       color="error"
@@ -87,7 +87,7 @@ export default function SpecialItemsEditor({ items, setItems }) {
               <Grid container spacing={1.5} alignItems="flex-start">
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
-                    label="اسم البند (عربي) *"
+                    label="Item Name (Arabic) *"
                     value={it.labelAr}
                     onChange={(e) => updateItem(idx, "labelAr", e.target.value)}
                     fullWidth
@@ -97,7 +97,7 @@ export default function SpecialItemsEditor({ items, setItems }) {
                 </Grid>
                 <Grid size={{ xs: 12, sm: 6 }}>
                   <TextField
-                    label="اسم البند (إنجليزي)"
+                    label="Item Name (English)"
                     value={it.labelEn || ""}
                     onChange={(e) => updateItem(idx, "labelEn", e.target.value)}
                     fullWidth

@@ -48,7 +48,7 @@ export default function CloneContract({
 
   const taxRate = 5;
   const [activeStep, setActiveStep] = useState(0);
-  const steps = ["الأساسيات", "البنود والمخططات"];
+  const steps = ["Basics", "Items & Drawings"];
 
   // fetched
   const [loadingSrc, setLoadingSrc] = useState(false);
@@ -224,8 +224,8 @@ export default function CloneContract({
         open={open}
         onClose={handleClose}
         icon={<FaCopy />}
-        title="نسخ العقد"
-        subtitle="مراجعة وتعديل بيانات العقد قبل إنشاء النسخة"
+        title="Clone Contract"
+        subtitle="Review and edit contract details before creating the copy"
         activeStep={activeStep}
         steps={steps}
       >
@@ -237,7 +237,7 @@ export default function CloneContract({
             <Stack alignItems="center" spacing={1.5} sx={{ py: 6 }}>
               <LinearProgress sx={{ width: "100%", borderRadius: 1 }} />
               <Typography variant="caption" color="text.secondary">
-                جارٍ تحميل العقد المصدر…
+                Loading source contract…
               </Typography>
             </Stack>
           ) : (
@@ -246,7 +246,7 @@ export default function CloneContract({
                 <Alert severity="error" sx={{ borderRadius: 2 }}>
                   <Stack spacing={0.5}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                      يرجى تصحيح الأخطاء التالية:
+                      Please fix the following errors:
                     </Typography>
                     {validationErrors.map((error, idx) => (
                       <Typography key={idx} variant="body2" sx={{ ms: 1 }}>
@@ -280,8 +280,8 @@ export default function CloneContract({
                   >
                     <SectionHeader
                       icon={<FaCopy />}
-                      title="بيانات العقد والعميل"
-                      subtitle="نوع العقد واسم العميل ومجموعة المشروع"
+                      title="Contract & Client Details"
+                      subtitle="Contract type, client name, and project group"
                     />
                     <Stack spacing={2} sx={{ mt: 2 }}>
                       <Box
@@ -292,14 +292,14 @@ export default function CloneContract({
                         }}
                       >
                         <TextField
-                          label="نوع العقد (عربي)"
+                          label="Arabic Contract type"
                           value={title}
                           onChange={(e) => setTitle(e.target.value)}
                           fullWidth
                           size="small"
                         />
                         <TextField
-                          label="نوع العقد (إنجليزي)"
+                          label="English Contract type"
                           value={enTitle}
                           onChange={(e) => setEnTitle(e.target.value)}
                           fullWidth
@@ -321,7 +321,7 @@ export default function CloneContract({
                         >
                           <FaUser style={{ color: theme.palette.primary.main }} />
                           <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                            اسم العميل في العميل المحتمل:{" "}
+                            Lead Client Name :{" "}
                             {src?.clientLead?.client?.name}
                           </Typography>
                         </Stack>
@@ -335,20 +335,20 @@ export default function CloneContract({
                         }}
                       >
                         <TextField
-                          label="اسم العميل (عربي)"
+                          label="Arabic client name"
                           value={arClientName}
                           onChange={(e) => setArClientName(e.target.value)}
                           fullWidth
                           size="small"
-                          placeholder="أدخل اسم العميل بالعربية"
+                          placeholder="Enter arabic client name"
                         />
                         <TextField
-                          label="اسم العميل (إنجليزي)"
+                          label="English client name"
                           value={enClientName}
                           onChange={(e) => setEnClientName(e.target.value)}
                           fullWidth
                           size="small"
-                          placeholder="أدخل اسم العميل بالإنجليزية"
+                          placeholder="Enter english client name"
                         />
                       </Box>
 
@@ -357,7 +357,7 @@ export default function CloneContract({
                           variant="subtitle2"
                           sx={{ fontWeight: 700, mb: 1 }}
                         >
-                          مجموعة المشروع
+                          Project Group
                         </Typography>
                         <ProjectGroupSelect
                           value={projectGroup}
@@ -452,7 +452,7 @@ export default function CloneContract({
           }}
         >
           <Button onClick={handleClose} sx={{ fontWeight: 700 }} color="inherit">
-            إلغاء
+            Cancel
           </Button>
           <Box sx={{ flex: 1 }} />
           {activeStep > 0 && (
@@ -462,7 +462,7 @@ export default function CloneContract({
               startIcon={<FaArrowRight />}
               sx={{ fontWeight: 700, borderRadius: 2 }}
             >
-              السابق
+              Back
             </Button>
           )}
           {activeStep < steps.length - 1 && (
@@ -478,7 +478,7 @@ export default function CloneContract({
                 px: 2.5,
               }}
             >
-              التالي
+              Next
             </Button>
           )}
           {activeStep === steps.length - 1 && (
@@ -494,7 +494,7 @@ export default function CloneContract({
                 px: 2.5,
               }}
             >
-              إنشاء النسخة
+              Create Clone
             </Button>
           )}
         </DialogActions>
@@ -527,10 +527,10 @@ export default function CloneContract({
             <FaExclamationTriangle />
           </Box>
           <Typography variant="h6" sx={{ fontWeight: 800, mb: 0.5 }}>
-            تأكيد النسخ
+            Confirm Clone
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            هل تريد المتابعة وإرسال البيانات الجديدة؟
+            Continue and send the new data ?
           </Typography>
         </DialogContent>
         <DialogActions sx={{ p: 2, gap: 1 }}>
@@ -539,7 +539,7 @@ export default function CloneContract({
             sx={{ fontWeight: 700 }}
             color="inherit"
           >
-            رجوع
+            Back
           </Button>
           <Box sx={{ flex: 1 }} />
           <Button
@@ -548,7 +548,7 @@ export default function CloneContract({
             onClick={handleSubmit}
             sx={{ fontWeight: 700, borderRadius: 2 }}
           >
-            نعم، متابعة
+            Yes, Continue
           </Button>
         </DialogActions>
       </Dialog>

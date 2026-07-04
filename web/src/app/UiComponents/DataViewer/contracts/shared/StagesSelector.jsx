@@ -44,8 +44,8 @@ export default function StagesSelector({
     <Stack spacing={2}>
       <SectionHeader
         icon={<FaClipboardList />}
-        title="اختيار المراحل"
-        subtitle="حدّد المراحل المشمولة في العقد وأدخل مدد التسليم لكل مرحلة"
+        title="Select Stages"
+        subtitle="Select the stages included in the contract and enter delivery times for each stage"
         count={selected.length}
       />
 
@@ -73,12 +73,12 @@ export default function StagesSelector({
       {selected.length === 0 ? (
         <EmptyState
           icon={<FaClipboardList />}
-          text="لم يتم اختيار أي مرحلة بعد — اختر مرحلة واحدة على الأقل من الأعلى."
+          text="No stage selected yet — select at least one stage above."
         />
       ) : (
         <Stack spacing={1.5} sx={{ mt: 1 }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-            تفاصيل المراحل
+            Stage Details
           </Typography>
           <Grid container spacing={2}>
             {selected.map((s, idx) => (
@@ -133,7 +133,7 @@ export default function StagesSelector({
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         type="number"
-                        label="أيام التسليم *"
+                        label="Delivery Days *"
                         value={perStageMeta?.[s.enum]?.deliveryDays ?? ""}
                         onChange={(e) =>
                           setPerStageMeta({
@@ -152,7 +152,7 @@ export default function StagesSelector({
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         type="number"
-                        label="أيام القسم *"
+                        label="Department Days *"
                         value={perStageMeta?.[s.enum]?.deptDeliveryDays ?? ""}
                         onChange={(e) =>
                           setPerStageMeta({

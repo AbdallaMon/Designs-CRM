@@ -67,14 +67,14 @@ export default function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
     <Stack spacing={2}>
       <SectionHeader
         icon={<FaMoneyBill />}
-        title="الدفعات"
-        subtitle="أضف دفعات العقد وحدّد شرط استحقاق كل دفعة"
+        title="Payments"
+        subtitle="Add contract payments and set each payment's due condition"
         count={payments.length}
         color={success}
         action={
           <AddButton
             onClick={addPayment}
-            label="إضافة دفعة"
+            label="Add"
             startIcon={<FaPlus />}
             color={success}
           />
@@ -85,11 +85,11 @@ export default function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
         <EmptyState
           icon={<FaMoneyBill />}
           color={success}
-          text="لا توجد دفعات بعد — أضف دفعة واحدة على الأقل."
+          text="No payments yet — add at least one payment."
           action={
             <AddButton
               onClick={addPayment}
-              label="إضافة دفعة"
+              label="Add"
               startIcon={<FaPlus />}
               color={success}
             />
@@ -102,9 +102,9 @@ export default function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
               <EditorCard
                 accent={success}
                 index={idx + 1}
-                label={`الدفعة #${idx + 1}`}
+                label={`Payment #${idx + 1}`}
                 onRemove={
-                  <Tooltip title="حذف">
+                  <Tooltip title="Remove">
                     <span>
                       <IconButton
                         color="error"
@@ -123,7 +123,7 @@ export default function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
                     <Grid size={{ xs: 12, sm: 6 }}>
                       <TextField
                         type="number"
-                        label="المبلغ"
+                        label="Amount"
                         value={p.amount}
                         onChange={(e) =>
                           updatePayment(idx, "amount", e.target.value)
@@ -143,7 +143,7 @@ export default function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
                         }}
                       >
                         <Typography variant="caption" color="text.secondary">
-                          المبلغ شامل الضريبة
+                          Amount with Tax
                         </Typography>
                         <Typography
                           variant="body2"
@@ -159,7 +159,7 @@ export default function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
                   </Grid>
 
                   <TextField
-                    label="ملاحظة (اختياري)"
+                    label="Note (Optional)"
                     value={p.note || ""}
                     onChange={(e) => updatePayment(idx, "note", e.target.value)}
                     fullWidth
@@ -177,7 +177,8 @@ export default function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
                       }}
                     >
                       <Typography variant="caption" color="text.secondary">
-                        تُستحق هذه الدفعة بعد توقيع العميل على العقد.
+                        This payment will be due after the client signs the
+                        contract.
                       </Typography>
                     </Box>
                   ) : (
@@ -215,7 +216,7 @@ export default function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
         >
           <Stack spacing={0.25}>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-              المجموع الفرعي
+              Subtotal
             </Typography>
             <Typography variant="body1" sx={{ fontWeight: 700 }}>
               {total.toFixed(2)}
@@ -223,7 +224,7 @@ export default function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
           </Stack>
           <Stack spacing={0.25}>
             <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-              الضريبة
+              Tax
             </Typography>
             <Typography variant="body1" sx={{ fontWeight: 700 }}>
               {tax.toFixed(2)}
@@ -232,7 +233,7 @@ export default function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
           <Box sx={{ flex: 1 }} />
           <Stack spacing={0.25} sx={{ textAlign: { sm: "end" } }}>
             <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main" }}>
-              الإجمالي
+              Total
             </Typography>
             <Typography
               variant="h6"

@@ -54,7 +54,7 @@ export default function CreateContractDialog({
   const [arClientName, setArClientName] = useState(lead?.client?.arName);
   const [enClientName, setEnClientName] = useState(lead?.client?.enName);
   const [validationErrors, setValidationErrors] = useState([]);
-  const steps = ["الأساسيات", "البنود والمخططات"];
+  const steps = ["Basics", "Items & Drawings"];
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
@@ -180,15 +180,15 @@ export default function CreateContractDialog({
           },
         }}
       >
-        إنشاء عقد جديد
+        Create New Contract
       </Button>
 
       <ContractDialogShell
         open={open}
         onClose={handleClose}
         icon={<FaFileSignature />}
-        title="إنشاء عقد جديد"
-        subtitle="أدخل بيانات العقد على خطوتين"
+        title="Create New Contract"
+        subtitle="Enter contract details in two steps"
         activeStep={activeStep}
         steps={steps}
       >
@@ -214,7 +214,7 @@ export default function CreateContractDialog({
                 >
                   <Stack spacing={0.5}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                      يرجى تصحيح الأخطاء التالية:
+                      Please fix the following errors:
                     </Typography>
                     {validationErrors.map((error, idx) => (
                       <Typography key={idx} variant="body2" sx={{ ms: 1 }}>
@@ -261,8 +261,8 @@ export default function CreateContractDialog({
                 >
                   <SectionHeader
                     icon={<FaFileSignature />}
-                    title="بيانات العقد والعميل"
-                    subtitle="نوع العقد واسم العميل ومجموعة المشروع"
+                    title="Contract & Client Details"
+                    subtitle="Contract type, client name, and project group"
                   />
                   <Stack spacing={2} sx={{ mt: 2 }}>
                     <Box
@@ -273,20 +273,20 @@ export default function CreateContractDialog({
                       }}
                     >
                       <TextField
-                        label="نوع العقد (عربي)"
+                        label="Arabic Contract type"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         fullWidth
                         size="small"
-                        placeholder="أدخل نوع العقد بالعربية"
+                        placeholder="Enter arabic contract type"
                       />
                       <TextField
-                        label="نوع العقد (إنجليزي)"
+                        label="English Contract type"
                         value={enTitle}
                         onChange={(e) => setEnTitle(e.target.value)}
                         fullWidth
                         size="small"
-                        placeholder="أدخل نوع العقد بالإنجليزية"
+                        placeholder="Enter english contract type"
                       />
                     </Box>
 
@@ -304,7 +304,7 @@ export default function CreateContractDialog({
                       >
                         <FaUser style={{ color: theme.palette.primary.main }} />
                         <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                          اسم العميل في العميل المحتمل: {lead?.client?.name}
+                          Lead Client Name : {lead?.client?.name}
                         </Typography>
                       </Stack>
                     )}
@@ -317,20 +317,20 @@ export default function CreateContractDialog({
                       }}
                     >
                       <TextField
-                        label="اسم العميل (عربي)"
+                        label="Arabic client name"
                         value={arClientName}
                         onChange={(e) => setArClientName(e.target.value)}
                         fullWidth
                         size="small"
-                        placeholder="أدخل اسم العميل بالعربية"
+                        placeholder="Enter arabic client name"
                       />
                       <TextField
-                        label="اسم العميل (إنجليزي)"
+                        label="English client name"
                         value={enClientName}
                         onChange={(e) => setEnClientName(e.target.value)}
                         fullWidth
                         size="small"
-                        placeholder="أدخل اسم العميل بالإنجليزية"
+                        placeholder="Enter english client name"
                       />
                     </Box>
 
@@ -339,7 +339,7 @@ export default function CreateContractDialog({
                         variant="subtitle2"
                         sx={{ fontWeight: 700, mb: 1 }}
                       >
-                        مجموعة المشروع
+                        Project Group
                       </Typography>
                       <ProjectGroupSelect
                         value={projectGroup}
@@ -433,7 +433,7 @@ export default function CreateContractDialog({
           }}
         >
           <Button onClick={handleClose} sx={{ fontWeight: 700 }} color="inherit">
-            إلغاء
+            Cancel
           </Button>
           <Box sx={{ flex: 1 }} />
           {activeStep > 0 && (
@@ -443,7 +443,7 @@ export default function CreateContractDialog({
               startIcon={<FaArrowRight />}
               sx={{ fontWeight: 700, borderRadius: 2 }}
             >
-              السابق
+              Back
             </Button>
           )}
           {activeStep < steps.length - 1 && (
@@ -458,7 +458,7 @@ export default function CreateContractDialog({
                 px: 2.5,
               }}
             >
-              التالي
+              Next
             </Button>
           )}
           {activeStep === steps.length - 1 && (
@@ -473,7 +473,7 @@ export default function CreateContractDialog({
                 px: 2.5,
               }}
             >
-              إنشاء العقد
+              Create Contract
             </Button>
           )}
         </DialogActions>

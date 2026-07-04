@@ -53,14 +53,14 @@ export default function ContractDrawingsEditor({ drawings, setDrawings }) {
     <Stack spacing={2}>
       <SectionHeader
         icon={<FaRegImages />}
-        title="المخططات (اختياري)"
-        subtitle="أرفق روابط أو ملفات المخططات المرتبطة بالعقد"
+        title="Drawings (Optional)"
+        subtitle="Attach links or files of drawings related to the contract"
         count={drawings.length}
         color={info}
         action={
           <AddButton
             onClick={addRow}
-            label="إضافة مخطط"
+            label="Add"
             startIcon={<FaPlus />}
             color={info}
           />
@@ -71,11 +71,11 @@ export default function ContractDrawingsEditor({ drawings, setDrawings }) {
         <EmptyState
           icon={<FaRegImages />}
           color={info}
-          text="لا توجد مخططات — يمكنك إضافة رابط أو رفع ملف."
+          text="No drawings — you can add a link or upload a file."
           action={
             <AddButton
               onClick={addRow}
-              label="إضافة مخطط"
+              label="Add"
               startIcon={<FaPlus />}
               color={info}
             />
@@ -88,9 +88,9 @@ export default function ContractDrawingsEditor({ drawings, setDrawings }) {
               key={idx}
               accent={info}
               index={idx + 1}
-              label={`المخطط #${idx + 1}`}
+              label={`Drawing #${idx + 1}`}
               onRemove={
-                <Tooltip title="حذف">
+                <Tooltip title="Remove">
                   <span>
                     <IconButton
                       color="error"
@@ -107,7 +107,7 @@ export default function ContractDrawingsEditor({ drawings, setDrawings }) {
                 <Grid container spacing={1.5}>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <TextField
-                      label="الرابط"
+                      label="URL"
                       value={d.url}
                       onChange={(e) => updateRow(idx, "url", e.target.value)}
                       fullWidth
@@ -116,7 +116,7 @@ export default function ContractDrawingsEditor({ drawings, setDrawings }) {
                   </Grid>
                   <Grid size={{ xs: 12, sm: 6 }}>
                     <SimpleFileInput
-                      label="ملف"
+                      label="File"
                       id={`file-${idx}`}
                       variant="outlined"
                       input={{ accept: "image/*" }}
@@ -128,7 +128,7 @@ export default function ContractDrawingsEditor({ drawings, setDrawings }) {
                 </Grid>
 
                 <TextField
-                  label="اسم الملف (اختياري)"
+                  label="File Name (Optional)"
                   value={d.fileName || ""}
                   onChange={(e) => updateRow(idx, "fileName", e.target.value)}
                   fullWidth
@@ -145,8 +145,7 @@ export default function ContractDrawingsEditor({ drawings, setDrawings }) {
                     }}
                   >
                     <Typography variant="caption" color="text.secondary">
-                      سيتم استخدام {d.file ? "الصورة المرفوعة" : "الرابط"} عند
-                      الحفظ.
+                      Will use {d.file ? "uploaded image" : "URL"} when saving.
                     </Typography>
                   </Box>
                 )}
