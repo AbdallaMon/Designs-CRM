@@ -10,7 +10,7 @@ This file is the operating manual for any Claude/agent session in this repo. It 
 
 **Dream Studio** — a design/project-management system for a UAE luxury interior-design studio. Covers: leads/sales pipeline, contracts (with signed-PDF generation), image/design sessions, projects/tasks/work-stages, accounting, an LMS (courses), real-time chat, and a Telegram integration.
 
-- **Single language: Arabic (RTL).** This app is NOT bilingual. (The reference project is ar/en; we deliberately do **not** copy that — see §5.)
+- **Single-language UI: English** (matching `master`; NOT bilingual). The `frontend-redesign` branch reverted the redesign's Arabic UI back to English on 2026-07-04; only the handful of Arabic strings `master` itself keeps remain (contract legal blocks, the client image-session flow, SPIN sales-script seed, a couple of captions). RTL/layout mechanics are unchanged (it was a text-only revert). See §5.
 - Roles: admin / super-admin, super-sales, staff (sales), 3D/2D designers, executor, accountant, contact-initiator, and client-facing users.
 
 ---
@@ -29,7 +29,7 @@ The backend + frontend migration into a **clean, modular npm-workspaces monorepo
 2. **Schema is frozen** as a redesign target — the canonical schema is **`packages/db/prisma/schema.prisma`** (reconciled to production; the old `server/prisma/` + `server/src/infra/prisma/` copies were removed). Change it ONLY via `prisma migrate dev`, never by hand in MySQL.
 3. **Same observable API behavior.** route→controller→usecase→repository + hardening; the frontend contract stays equivalent. Real contract changes are tracked (`03-backend-plan.md` §12, `06-reconciliation.md`).
 4. **PDF generation is LOGIC-FROZEN.** 🔒 See §4.
-5. **Single Arabic UI (no bilingual i18n); keep the message-code mechanism** resolving to one Arabic source.
+5. **Single-language UI = English (matching `master`), no bilingual i18n; keep the message-code mechanism** resolving to one English source. (Superseded the earlier "single Arabic" decision on 2026-07-04; only master's own handful of Arabic strings remain.)
 6. **Baseline for parity = the deployed `master` branch.** New work must keep observable behavior identical to master unless a change is explicitly decided + documented.
 7. **Workers run as a bootstrap from the server only** (no detached worker processes).
 
@@ -43,7 +43,7 @@ ESM throughout (`"type": "module"`). **JavaScript only** in source.
 - Next.js **16** (App Router) · React **19** · MUI **v7** (`@mui/material`)
 - react-hook-form 7 · socket.io-client 4.8 · Emotion + `stylis-plugin-rtl` (RTL)
 - Custom `apiClient`/`getData`/`handleRequestSubmit` data layer (no axios); custom tables (no MUI X DataGrid)
-- Message CODEs resolved to Arabic via `web/src/app/helpers/messages/resolveMessage.js`
+- Message CODEs resolved to English via `web/src/app/helpers/messages/resolveMessage.js`
 
 ### Backend (`server/src`)
 - Node + **Express 4.21** · JWT (single cookie scheme: `access_token` + `refresh_token`) · `cookie-parser` · `cors`
@@ -106,8 +106,8 @@ If docs conflict (with each other or the code), **07 wins for resolved decisions
 - File suffix is **`.repository.js`** (the repo's existing convention; the reference uses `.repo.js` — we keep `.repository.js`).
 
 ### API contract & message codes
-- One envelope everywhere: `{ success, message, data, translationKey }`. `message` is **always a language-neutral CODE**, never Arabic prose.
-- Codes owned in `packages/shared/messages-codes/*`; the frontend mirrors resolution in a **single Arabic** map. Errors use `AppError`.
+- One envelope everywhere: `{ success, message, data, translationKey }`. `message` is **always a language-neutral CODE**, never user-facing prose.
+- Codes owned in `packages/shared/messages-codes/*`; the frontend mirrors resolution in a **single English** map. Errors use `AppError`.
 - Paginated lists return `data: { items, total, page, pageSize }`.
 
 ### Permissions (the weak point being fixed)
@@ -132,4 +132,4 @@ If docs conflict (with each other or the code), **07 wins for resolved decisions
 5. **Authorization changes** follow the model in §6 (permission code + object-scope checker; never role-alone/wildcards) and must not widen access beyond master; run the parity matrix / permission tests.
 6. **Report conflicts**, don't guess.
 7. **Update `PROJECT_STATE.md`** whenever the status changes (what's done / in-progress / next).
-8. All messages/docs the user reads should be in **English** (the user's stated preference), even though they may write to you in Arabic. App UI strings are **Arabic**.
+8. All messages/docs the user reads should be in **English** (the user's stated preference), even though they may write to you in Arabic. App UI strings are **English** (matching `master`; see §1/§5) — except master's own handful of Arabic strings.

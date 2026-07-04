@@ -3,7 +3,21 @@
 > **Open this file in any new chat.** It tells you what we are doing and where we have reached.
 > To resume: *"Read `PROJECT_STATE.md`, `CLAUDE.md`, and `docs/migration/`, then tell me where we are and what's next."*
 >
-> Last updated: **2026-07-03** · Branch: `frontend-redesign`
+> Last updated: **2026-07-04** · Branch: `frontend-redesign`
+>
+> **LATEST (2026-07-04) — UI language reverted to English (matching `master`).**
+> The redesign had introduced ~1050 Arabic UI strings on top of `master`; these were converted back to
+> English in 6 `i18n(web): …` commits (`2745493`→`24f1221`). Two surfaces: the message-resolution maps
+> (`web/src/app/helpers/messages/authMessages.js` + `maps/*.js` — string VALUES → English, KEYS/codes
+> unchanged, `{ success, message, translationKey }` contract intact) and inline component strings across
+> `web/src/**`. Method = match `master`'s exact English (`git show master:ui/<path>`; master's FE lives
+> under `ui/`, ours under `web/`), keeping only the handful of strings `master` itself has in Arabic
+> (contract legal blocks `wittenBlocksData.js`, the client-facing `image-session/*` flow, `constants.js`
+> status labels, SalesStage `مراحل البيع` + SalesToolsTabs captions, backend `questions.repository.js`
+> SPIN seed, the `payments.stripe.js` bilingual ternary). **Backend needed zero changes** (all Arabic
+> there is comments, test fixtures, master's own seed, or bilingual data). Verified: `cd web && npx next
+> build` (exit 0) + `npm test` (**733/57 green**); a Unicode scan confirms no `web` file has Arabic
+> beyond what `master` itself keeps. **This supersedes the earlier "single Arabic UI" decision** (§2 #5).
 >
 > **LATEST (2026-07-03) — DB-relational permissions & switchable profiles (implemented, local-verified; prod pending).**
 > Authorization moved from the code-defined role→codes map to DB tables: `PermissionCode`,
@@ -99,7 +113,7 @@ Design: `docs/superpowers/specs/2026-07-01-permissions-parity-and-denial-reasons
 
 ## 1. What we are doing — in one paragraph
 
-We are migrating the **entire Dream Studio app** (backend + frontend) from a messy legacy structure into a **clean modular npm-workspaces monorepo** that mirrors a mature reference project, **while preserving identical behavior** (same Prisma schema, same observable APIs). A strangler migration is already underway: `server/index.js` boots `server/v2/server.js`, and legacy + `v2` routers run side-by-side. We **complete the migration from `v2`** (after fixing v2's defects), redesign the weak permissions/auth layer, consolidate workers/cron to run from the server only, and **keep the PDF generation logic byte-for-byte frozen** (split into files only). i18n is dropped (single Arabic UI) but the message-code pattern is kept. A separate, forward-looking UX plan rides alongside, feature-by-feature.
+We are migrating the **entire Dream Studio app** (backend + frontend) from a messy legacy structure into a **clean modular npm-workspaces monorepo** that mirrors a mature reference project, **while preserving identical behavior** (same Prisma schema, same observable APIs). A strangler migration is already underway: `server/index.js` boots `server/v2/server.js`, and legacy + `v2` routers run side-by-side. We **complete the migration from `v2`** (after fixing v2's defects), redesign the weak permissions/auth layer, consolidate workers/cron to run from the server only, and **keep the PDF generation logic byte-for-byte frozen** (split into files only). i18n is dropped (single **English** UI, matching `master` — reverted from the redesign's Arabic on 2026-07-04) but the message-code pattern is kept. A separate, forward-looking UX plan rides alongside, feature-by-feature.
 
 Full operating manual: [`CLAUDE.md`](CLAUDE.md).
 
@@ -113,7 +127,7 @@ Full operating manual: [`CLAUDE.md`](CLAUDE.md).
 | 2 | **Prisma schema frozen** — relocated verbatim, not redesigned. |
 | 3 | **Same observable API behavior** — restructure + harden, but the frontend contract stays equivalent; real changes tracked explicitly. |
 | 4 | 🔒 **PDF generation logic-frozen** — split into files only, identical output. |
-| 5 | **Drop bilingual i18n; keep message-code mechanism** resolving to a single **Arabic** source. |
+| 5 | **Drop bilingual i18n; keep message-code mechanism** resolving to a single **English** source (matching `master`; superseded the earlier "Arabic" decision 2026-07-04). |
 | 6 | **Complete from `v2`** after remediating its defects. |
 | 7 | **Workers run as a bootstrap from the server only.** |
 
