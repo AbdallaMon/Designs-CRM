@@ -52,7 +52,6 @@ import { FiUsers } from "react-icons/fi";
 import UserRestrictedCountries from "@/app/UiComponents/DataViewer/users/UserRestrictedCountries";
 import Commission from "@/app/UiComponents/DataViewer/utility/Commission";
 import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes";
-import { RoleManagerDialog } from "../DataViewer/users/RoleManagerDialog";
 import { ProfileManagerDialog } from "../DataViewer/users/ProfileManagerDialog";
 import { ProjectAutoAssignmentDialog } from "../DataViewer/users/ProjectAutoAssignmentDialog";
 
@@ -72,22 +71,35 @@ const PROFILE_OPTIONS = [
   { value: "CONTACT_INITIATOR", label: "مبادر تواصل" },
 ];
 
+const PROFILE_LABEL = Object.fromEntries(PROFILE_OPTIONS.map((p) => [p.value, p.label]));
+
+// The user's assigned profiles (from admin/users MANAGEMENT_SELECT userProfiles).
+function assignedProfiles(item) {
+  const ups = Array.isArray(item.userProfiles) ? item.userProfiles : [];
+  return ups.map((up) => up.profile).filter(Boolean);
+}
+
+// The label of the user's ACTIVE profile (falls back to the legacy profile string).
+function currentProfileName(item) {
+  const current = assignedProfiles(item).find((p) => p?.id === item.currentProfileId);
+  if (current) return current.label || PROFILE_LABEL[current.key] || current.key;
+  return PROFILE_LABEL[item.profile] || item.profile || "—";
+}
+
+// A stable color for a user row, keyed off the (legacy) base role which the backend
+// keeps in sync with the current profile. No more isPrimary/isSuperSales branching.
+function userColor(item) {
+  if (!item.isActive) return usersHexColors.banned;
+  return usersHexColors[item.role] || usersHexColors.default || "#6b7280";
+}
+
 const columns = [
   {
     name: "name",
     label: "المستخدم",
     type: "function",
     render: (item) => {
-      const color = item.isActive
-        ? item.role === "STAFF"
-          ? item.isSuperSales
-            ? usersHexColors.isSuperSales
-            : item.isPrimary
-            ? usersHexColors.isPrimary
-            : usersHexColors[item.role]
-          : usersHexColors[item.role]
-        : usersHexColors.banned;
-      const safeColor = color || usersHexColors.default || "#6b7280";
+      const safeColor = userColor(item);
       return (
         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0 }}>
           <Avatar
@@ -146,41 +158,19 @@ const columns = [
   },
 
   {
-    name: "role",
-    label: "الدور",
-    type: "enum",
-    enum: userRolesEnum,
+    name: "profile",
+    label: "الأدوار",
     type: "function",
     render: (item) => {
-      const color = item.isActive
-        ? item.role === "STAFF"
-          ? item.isSuperSales
-            ? usersHexColors.isSuperSales
-            : item.isPrimary
-            ? usersHexColors.isPrimary
-            : usersHexColors[item.role]
-          : usersHexColors[item.role]
-        : usersHexColors.banned;
-      const role =
-        item.role === "STAFF"
-          ? item.isSuperSales
-            ? "SUPER_SALES"
-            : item.isPrimary
-            ? "PRIMARY_SALES"
-            : item.role
-          : item.role;
-
-      const safeColor = color || usersHexColors.default || "#6b7280";
+      const safeColor = userColor(item);
+      const profiles = assignedProfiles(item);
+      const currentLabel = currentProfileName(item);
       return (
         <Stack direction="row" spacing={1} alignItems="center" useFlexGap flexWrap="wrap">
+          {/* the ACTIVE profile */}
           <Chip
             size="small"
-            label={
-              <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
-                <span>{roleIcons[role]}</span>
-                <span>{userRolesEnum[role] || role}</span>
-              </Box>
-            }
+            label={currentLabel}
             sx={{
               fontWeight: 700,
               borderRadius: 1.5,
@@ -189,6 +179,18 @@ const columns = [
               border: `1px solid ${alpha(safeColor, 0.35)}`,
             }}
           />
+          {/* other assigned profiles the user can switch to */}
+          {profiles
+            .filter((p) => p.id !== item.currentProfileId)
+            .map((p) => (
+              <Chip
+                key={p.id}
+                size="small"
+                variant="outlined"
+                label={p.label || PROFILE_LABEL[p.key] || p.key}
+                sx={{ fontWeight: 600, borderRadius: 1.5, color: "text.secondary" }}
+              />
+            ))}
           {!item.isActive && (
             <Chip
               size="small"
@@ -206,34 +208,25 @@ const columns = [
       );
     },
   },
-  // {
-  //   name: "isActive",
-  //   label: "Account status",
-  //   type: "boolean",
-  //   enum: { TRUE: "Active", FALSE: "Banned" },
-  // },
 ];
+
+const PASSWORD_RULE =
+  "يجب أن تحتوي كلمة المرور على حرف كبير وحرف صغير ورقم، وألا تقل عن 8 أحرف";
 
 const inputs = [
   {
-    data: { id: "name", type: "text", label: "User name", key: "name" },
+    data: { id: "name", type: "text", label: "اسم المستخدم", key: "name" },
     pattern: {
-      required: {
-        value: true,
-        message: "Please enter a name",
-      },
+      required: { value: true, message: "أدخل اسم المستخدم" },
     },
   },
   {
-    data: { id: "email", type: "email", label: "Email" },
+    data: { id: "email", type: "email", label: "البريد الإلكتروني" },
     pattern: {
-      required: {
-        value: true,
-        message: "Please enter an email address",
-      },
+      required: { value: true, message: "أدخل البريد الإلكتروني" },
       pattern: {
         value: /\w+@[a-z]+\.[a-z]{2,}/gi,
-        message: "Please enter a valid email address",
+        message: "أدخل بريدًا إلكترونيًا صحيحًا",
       },
     },
   },
@@ -241,55 +234,35 @@ const inputs = [
     data: {
       id: "telegramUsername",
       type: "text",
-      label: "Telegram username",
+      label: "معرّف تيليجرام",
       key: "telegramUsername",
     },
   },
   {
-    data: {
-      id: "role",
-      type: "SelectField",
-      label: "Main role",
-      options: userRoles,
-    },
-    pattern: {
-      required: {
-        value: true,
-        message: "Please select a role",
-      },
-    },
-  },
-  {
+    // The profile IS the role — it derives role/permissions on the backend. There is
+    // no more "main role" + "sub-role" split; a user is assigned a profile (دور).
     data: {
       id: "profile",
       type: "SelectField",
-      label: "الملف الوظيفي (Profile)",
+      label: "الدور",
       options: PROFILE_OPTIONS,
     },
     pattern: {
-      required: {
-        value: true,
-        message: "اختر ملفًا وظيفيًا",
-      },
+      required: { value: true, message: "اختر الدور" },
     },
   },
   {
     data: {
       id: "password",
       type: "password",
-      label: "Password",
-      helperText:
-        "The password must contain an uppercase letter, a lowercase letter, a number, and be at least 8 characters long",
+      label: "كلمة المرور",
+      helperText: PASSWORD_RULE,
     },
     pattern: {
-      required: {
-        value: true,
-        message: "Please enter a password",
-      },
+      required: { value: true, message: "أدخل كلمة المرور" },
       pattern: {
         value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/,
-        message:
-          "The password must contain an uppercase letter, a lowercase letter, a number, and be at least 8 characters long",
+        message: PASSWORD_RULE,
       },
     },
   },
@@ -317,7 +290,7 @@ export default function UsersPage() {
       setLoading,
       `admin/users/${item.id}`,
       false,
-      "Banning",
+      "جارٍ الحظر",
       null,
       "PATCH"
     );
@@ -328,34 +301,6 @@ export default function UsersPage() {
             return { ...lead, isActive: !lead.isActive };
           }
           return lead;
-        })
-      );
-    }
-
-    return request;
-  }
-
-  async function toggleUserStatus(item, field) {
-    const newValue = !item[field];
-    const request = await handleRequestSubmit(
-      { [field]: newValue },
-      setLoading,
-      `admin/users/${item.id}/staff-extra`,
-      false,
-      `Updating ${
-        field === "isPrimary" ? "Primary Status" : "Super Sales Status"
-      }`,
-      null,
-      "PATCH"
-    );
-
-    if (request.status === 200) {
-      setData((oldData) =>
-        oldData.map((user) => {
-          if (user.id === item.id) {
-            return { ...user, [field]: newValue };
-          }
-          return user;
         })
       );
     }
@@ -390,34 +335,12 @@ export default function UsersPage() {
         inputs={inputs}
         loading={loading}
         withEdit={true}
-        rowSx={(user) => {
-          const baseColor = user.isActive
-            ? user.role === "STAFF"
-              ? user.isSuperSales
-                ? usersHexColors.isSuperSales
-                : user.isPrimary
-                ? usersHexColors.isPrimary
-                : usersHexColors[user.role]
-              : usersHexColors[user.role]
-            : usersHexColors.banned;
-
-          // fallback if undefined / invalid
-          const safeColor = baseColor || usersHexColors.default || "#ffffff";
-          if (safeColor === "#ffffff") {
-            console.log(user, "user");
-          }
-          return {
-            backgroundColor: lighten(safeColor, 0.95),
-          };
-        }}
+        rowSx={(user) => ({
+          backgroundColor: lighten(userColor(user), 0.95),
+        })}
         editHref={"admin/users"}
         extraComponent={({ item }) => (
-          <UserRowActions
-            item={item}
-            setData={setData}
-            toggleUserStatus={toggleUserStatus}
-            banAUser={banAUser}
-          />
+          <UserRowActions item={item} setData={setData} banAUser={banAUser} />
         )}
       >
         <Box
@@ -464,61 +387,23 @@ export default function UsersPage() {
   );
 }
 
-function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
+function UserRowActions({ item, setData, banAUser }) {
   const theme = useTheme();
   const smDown = useMediaQuery(theme.breakpoints.down("sm"));
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
-  const isStaff =
-    item.role === "STAFF" || item.subRoles?.some((r) => r.subRole === "STAFF");
 
-  const InlinePrimary = (
-    <Box
-      display={"flex"}
-      flexDirection="row-reverse"
-      gap={1}
-      alignItems={"center"}
+  const ViewButton = (
+    <Button
+      component={Link}
+      href={`/dashboard/users/${item.id}?role=${item.role}&`}
+      size="small"
+      variant="outlined"
+      startIcon={<MdVisibility />}
+      sx={{ whiteSpace: "nowrap", borderRadius: 2, fontWeight: 600 }}
     >
-      {isStaff && (
-        <>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={item.isPrimary || false}
-                onChange={() => toggleUserStatus(item, "isPrimary")}
-                size="small"
-              />
-            }
-            label="أساسي"
-            labelPlacement="top"
-            sx={{ m: 0, "& .MuiFormControlLabel-label": { fontSize: 12, fontWeight: 600 } }}
-          />
-          <FormControlLabel
-            control={
-              <Switch
-                checked={item.isSuperSales || false}
-                onChange={() => toggleUserStatus(item, "isSuperSales")}
-                size="small"
-              />
-            }
-            label="مبيعات متميزة"
-            labelPlacement="top"
-            sx={{ m: 0, "& .MuiFormControlLabel-label": { fontSize: 12, fontWeight: 600 } }}
-          />
-        </>
-      )}
-
-      <Button
-        component={Link}
-        href={`/dashboard/users/${item.id}?role=${item.role}&`}
-        size="small"
-        variant="outlined"
-        startIcon={<MdVisibility />}
-        sx={{ whiteSpace: "nowrap", borderRadius: 2, fontWeight: 600 }}
-      >
-        عرض
-      </Button>
-    </Box>
+      عرض
+    </Button>
   );
 
   return (
@@ -565,10 +450,10 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
           إدارة المستخدم
         </Typography>
         <Divider sx={{ mb: 0.5 }} />
-        {/* On small screens, also show the primary inline controls inside the menu */}
+        {/* On small screens, show the view button inside the menu */}
         {smDown && (
           <Box sx={{ px: 1, pb: 1, display: "grid", gap: 1 }}>
-            {InlinePrimary}
+            {ViewButton}
           </Box>
         )}
 
@@ -590,14 +475,6 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
           />
         </Box>
 
-        <Box sx={{ px: 1, py: 0.5 }}>
-          <RoleManagerDialog
-            role={item.role}
-            setData={setData}
-            subRoles={item.subRoles?.map((r) => r.subRole)}
-            userId={item.id}
-          />
-        </Box>
         <Box sx={{ px: 1, py: 0.5 }}>
           <ProfileManagerDialog
             userId={item.id}
@@ -628,7 +505,7 @@ function UserRowActions({ item, setData, toggleUserStatus, banAUser }) {
       </Menu>
       {!smDown && (
         <Box sx={{ display: "inline-flex", gap: 1, flexWrap: "wrap" }}>
-          {InlinePrimary}
+          {ViewButton}
         </Box>
       )}
     </Stack>

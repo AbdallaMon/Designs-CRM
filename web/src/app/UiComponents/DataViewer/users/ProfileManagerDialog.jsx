@@ -87,7 +87,7 @@ export function ProfileManagerDialog({ userId, userProfiles = [], currentProfile
         startIcon={<FiLayers />}
         sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
       >
-        الملفات الوظيفية
+        اسناد دور
       </Button>
     );
   }
@@ -103,12 +103,12 @@ export function ProfileManagerDialog({ userId, userProfiles = [], currentProfile
         >
           <FiLayers />
         </Box>
-        إدارة الملفات الوظيفية
+        اسناد الأدوار
       </DialogTitle>
       <Divider />
       <DialogContent sx={{ pt: 2.5 }}>
         <Typography variant="overline" fontWeight={700} color="text.secondary">
-          اختر الملفات المُسندة و الملف النشط
+          اختر الأدوار المُسندة و الدور النشط
         </Typography>
         <Stack spacing={0.5} sx={{ mt: 1 }}>
           {allProfiles.map((p) => {
@@ -144,7 +144,7 @@ export function ProfileManagerDialog({ userId, userProfiles = [], currentProfile
         </Stack>
         {selectedIds.length === 0 && (
           <Typography variant="caption" color="error" sx={{ mt: 1, display: "block" }}>
-            يجب إسناد ملف واحد على الأقل.
+            يجب إسناد دور واحد على الأقل.
           </Typography>
         )}
       </DialogContent>
