@@ -51,7 +51,7 @@ export default function BookingLeadDetailsCard({ lead }) {
           justifyContent="space-between"
           spacing={2}
         >
-          <Typography variant="h6">تفاصيل الحجز</Typography>
+          <Typography variant="h6">Booking details</Typography>
           <Chip
             size="small"
             color={

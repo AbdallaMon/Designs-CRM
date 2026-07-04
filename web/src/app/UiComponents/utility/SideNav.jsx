@@ -288,7 +288,7 @@ const SideNav = ({
       {isMobile ? (
         <IconButton
           onClick={onMobileClose}
-          aria-label="إغلاق القائمة"
+          aria-label="Close menu"
           size="small"
           sx={{ color: colors.textSecondary }}
         >
@@ -296,13 +296,13 @@ const SideNav = ({
         </IconButton>
       ) : (
         <Tooltip
-          title={collapsed ? "توسيع القائمة" : "طي القائمة"}
+          title={collapsed ? "Expand menu" : "Collapse menu"}
           placement="right"
           arrow
         >
           <IconButton
             onClick={() => onToggleCollapsed?.(!collapsed)}
-            aria-label={collapsed ? "توسيع القائمة" : "طي القائمة"}
+            aria-label={collapsed ? "Expand menu" : "Collapse menu"}
             size="small"
             sx={{ color: colors.textSecondary }}
           >

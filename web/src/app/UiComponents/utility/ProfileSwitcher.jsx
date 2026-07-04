@@ -22,7 +22,7 @@ export default function ProfileSwitcher() {
       setLoading,
       "auth/profile/switch",
       false,
-      "جارٍ تبديل الملف الوظيفي...",
+      "Switching profile...",
       null,
       "POST",
     );
@@ -40,13 +40,13 @@ export default function ProfileSwitcher() {
         value={currentProfileId ?? ""}
         onChange={onChange}
         disabled={loading}
-        aria-label="الملف الوظيفي النشط"
+        aria-label="Active profile"
         renderValue={(val) => {
           const p = profiles.find((x) => x.id === val);
           return (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               {loading && <CircularProgress size={14} />}
-              {p?.label ?? "الملف الوظيفي"}
+              {p?.label ?? "Profile"}
             </Box>
           );
         }}

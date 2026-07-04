@@ -4,15 +4,15 @@ import { isAllowed } from "../routeAccess.js";
 describe("routeAccess.isAllowed", () => {
   it("ACCOUNTANT tabs: allows own hrefs and segments, denies others", () => {
     const tabs = [
-      { key: "dashboard", label: "الرئيسية", href: "/dashboard" },
+      { key: "dashboard", label: "Dashboard", href: "/dashboard" },
       {
         key: "operational-expenses",
-        label: "المصروفات التشغيلية",
+        label: "Operational Expenses",
         href: "/dashboard/operational-expenses",
       },
-      { key: "rents", label: "الإيجارات", href: "/dashboard/rents" },
-      { key: "salaries", label: "الرواتب", href: "/dashboard/salaries" },
-      { key: "outcome", label: "المصروفات", href: "/dashboard/outcome" },
+      { key: "rents", label: "Rents", href: "/dashboard/rents" },
+      { key: "salaries", label: "Salaries", href: "/dashboard/salaries" },
+      { key: "outcome", label: "Outstanding Payments", href: "/dashboard/outcome" },
     ];
 
     expect(isAllowed("/dashboard/leads", tabs)).toBe(false);
@@ -26,9 +26,9 @@ describe("routeAccess.isAllowed", () => {
 
   it("STAFF tabs (no users tab): denies /dashboard/users", () => {
     const tabs = [
-      { key: "dashboard", label: "الرئيسية", href: "/dashboard" },
-      { key: "leads", label: "العملاء المحتملون", href: "/dashboard/leads" },
-      { key: "deals", label: "الصفقات", href: "/dashboard/deals" },
+      { key: "dashboard", label: "Dashboard", href: "/dashboard" },
+      { key: "leads", label: "Leads", href: "/dashboard/leads" },
+      { key: "deals", label: "Deals", href: "/dashboard/deals" },
     ];
 
     expect(isAllowed("/dashboard/users", tabs)).toBe(false);
@@ -36,9 +36,9 @@ describe("routeAccess.isAllowed", () => {
 
   it("SUPER_SALES tabs (with a /dashboard/users item): allows /dashboard/users", () => {
     const tabs = [
-      { key: "dashboard", label: "الرئيسية", href: "/dashboard" },
-      { key: "leads", label: "العملاء المحتملون", href: "/dashboard/leads" },
-      { key: "users", label: "المستخدمون", href: "/dashboard/users" },
+      { key: "dashboard", label: "Dashboard", href: "/dashboard" },
+      { key: "leads", label: "Leads", href: "/dashboard/leads" },
+      { key: "users", label: "Users", href: "/dashboard/users" },
     ];
 
     expect(isAllowed("/dashboard/users", tabs)).toBe(true);
@@ -46,15 +46,15 @@ describe("routeAccess.isAllowed", () => {
 
   it("tabs with subLinks: allows subLink segment and top-level detail routes", () => {
     const dealsTabs = [
-      { key: "dashboard", label: "الرئيسية", href: "/dashboard" },
+      { key: "dashboard", label: "Dashboard", href: "/dashboard" },
       {
         key: "deals",
-        label: "الصفقات",
+        label: "Deals",
         href: "/dashboard/deals",
         subLinks: [
           {
             key: "on-hold-deals",
-            label: "الصفقات المعلقة",
+            label: "On hold Deals",
             href: "/dashboard/on-hold-deals",
           },
         ],

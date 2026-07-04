@@ -92,7 +92,7 @@ export function ContractDialogShell({
               whiteSpace: "nowrap",
             }}
           >
-            خطوة {activeStep + 1} / {total}
+            Step {activeStep + 1} / {total}
           </Box>
           <IconButton
             onClick={onClose}

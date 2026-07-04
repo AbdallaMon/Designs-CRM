@@ -27,10 +27,10 @@ export default function RouteGuard({ children }) {
     return (
       <Box sx={{ p: 4, textAlign: "center" }}>
         <Typography variant="h6" component="h2" sx={{ fontWeight: 700, mb: 1 }}>
-          ليس لديك صلاحية للوصول إلى هذه الصفحة
+          You don't have permission to access this page
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          سيتم تحويلك إلى صفحتك الرئيسية…
+          You'll be redirected to your home page…
         </Typography>
       </Box>
     );
