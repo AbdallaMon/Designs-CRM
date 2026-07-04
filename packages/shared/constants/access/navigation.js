@@ -41,7 +41,7 @@ export const NAVIGATION = [
   //    "Dashboard": ADMIN/SUPER_ADMIN, STAFF, SUPER_SALES, 3D, 2D.
   {
     key: "dashboard",
-    label: "لوحة التحكم",
+    label: "Dashboard",
     href: "/dashboard",
     icon: "FiGrid",
     allowedRoles: [
@@ -58,7 +58,7 @@ export const NAVIGATION = [
   //    renders right after the dashboard, matching master's adminLinks order.
   {
     key: "users-admin",
-    label: "المستخدمون",
+    label: "Users",
     href: "/dashboard/users",
     icon: "FiUsers",
     allowedRoles: [...ADMIN_SET],
@@ -67,7 +67,7 @@ export const NAVIGATION = [
   // 3) Leads (the dedicated `/dashboard/leads` screen) — sales roles only.
   {
     key: "leads",
-    label: "العملاء المحتملون",
+    label: "Leads",
     href: "/dashboard/leads",
     icon: "FiTarget",
     allowedRoles: [...SALES_SET],
@@ -76,26 +76,26 @@ export const NAVIGATION = [
   // 4) Deals — sales roles. Sub-links are identical across those roles.
   {
     key: "deals",
-    label: "الصفقات",
+    label: "Deals",
     href: "/dashboard/deals",
     icon: "FiDollarSign",
     active: "deals",
     allowedRoles: [...SALES_SET],
     subLinks: [
       {
-        label: "الصفقات الحالية",
+        label: "Current Deals",
         href: "/dashboard/deals",
         active: "deals",
         allowedRoles: [...SALES_SET],
       },
       {
-        label: "الصفقات المعلقة",
+        label: "On hold Deals",
         href: "/dashboard/on-hold-deals",
         active: "on-hold",
         allowedRoles: [...SALES_SET],
       },
       {
-        label: "كل الصفقات",
+        label: "All Deals",
         href: "/dashboard/all-deals",
         active: "all-deals",
         allowedRoles: [...SALES_SET],
@@ -109,7 +109,7 @@ export const NAVIGATION = [
   //    TWO_D_EXECUTOR "Work stage" plain link is a separate row — see below.)
   {
     key: "work-stages",
-    label: "مراحل العمل",
+    label: "Work stages",
     href: "/dashboard/work-stages",
     icon: "FiDollarSign",
     active: "work",
@@ -117,74 +117,74 @@ export const NAVIGATION = [
     subLinks: [
       // ── ADMIN / SUPER_ADMIN sub-list (master adminLinks "Work stages") ──
       {
-        label: "كل المشاريع",
+        label: "All projects",
         href: "/dashboard/projects",
         allowedRoles: [...ADMIN_SET],
       },
       {
-        label: "قسم دراسة المخطط",
+        label: "Plan study department",
         href: "/dashboard/work-stages/study",
         allowedRoles: [...ADMIN_SET],
       },
       {
-        label: "مرحلة العمل ثلاثي الأبعاد",
+        label: "3D Work stage",
         href: "/dashboard/work-stages",
         allowedRoles: [...ADMIN_SET],
       },
       {
-        label: "قسم المخطط النهائي",
+        label: "Final plan department",
         href: "/dashboard/work-stages/final-plan",
         allowedRoles: [...ADMIN_SET],
       },
       {
-        label: "قسم حساب الكميات",
+        label: "Quantity calcualtion department",
         href: "/dashboard/work-stages/quantity",
         allowedRoles: [...ADMIN_SET],
       },
       {
-        label: "المشاريع المؤرشفة",
+        label: "Archived projects",
         href: "/dashboard/projects/archived",
         allowedRoles: [...ADMIN_SET],
       },
       {
-        label: "التعديلات ثلاثية الأبعاد",
+        label: "3D Modifcation",
         href: "/dashboard/work-stages/modification",
         allowedRoles: [...ADMIN_SET],
       },
       // ── THREE_D_DESIGNER sub-list (master threeDLinks "Work stages") ──
       {
-        label: "مرحلة العمل ثلاثي الأبعاد",
+        label: "3D Work stage",
         href: "/dashboard/work-stages",
         allowedRoles: [R.THREE_D_DESIGNER],
       },
       {
-        label: "مرحلة التعديل",
+        label: "Modifcation stage",
         href: "/dashboard/modification",
         allowedRoles: [R.THREE_D_DESIGNER],
       },
       {
-        label: "المشاريع المؤرشفة",
+        label: "Archived projects",
         href: "/dashboard/archived",
         allowedRoles: [R.THREE_D_DESIGNER],
       },
       // ── TWO_D_DESIGNER sub-list (master twoDLinks "Work stages") ──
       {
-        label: "قسم دراسة المخطط",
+        label: "Plan study department",
         href: "/dashboard/study",
         allowedRoles: [R.TWO_D_DESIGNER],
       },
       {
-        label: "قسم المخطط النهائي",
+        label: "Final plan department",
         href: "/dashboard/final-plan",
         allowedRoles: [R.TWO_D_DESIGNER],
       },
       {
-        label: "قسم حساب الكميات",
+        label: "Quantity calcualtion department",
         href: "/dashboard/quantity",
         allowedRoles: [R.TWO_D_DESIGNER],
       },
       {
-        label: "المشاريع المؤرشفة",
+        label: "Archived projects",
         href: "/dashboard/archived",
         allowedRoles: [R.TWO_D_DESIGNER],
       },
@@ -194,20 +194,20 @@ export const NAVIGATION = [
   // 6) Reports — ADMIN/SUPER_ADMIN only.
   {
     key: "reports",
-    label: "التقارير",
+    label: "Reports",
     href: "/dashboard/report",
     icon: "FiFileText",
     active: "report",
     allowedRoles: [...ADMIN_SET],
     subLinks: [
       {
-        label: "تقرير العملاء المحتملين",
+        label: "Leads report",
         href: "/dashboard/report",
         active: "report",
         allowedRoles: [...ADMIN_SET],
       },
       {
-        label: "تقرير الموظفين",
+        label: "Staff report",
         href: "/dashboard/report/staff",
         active: "report/staff",
         allowedRoles: [...ADMIN_SET],
@@ -218,7 +218,7 @@ export const NAVIGATION = [
   // 7) Images session gallery — ADMIN/SUPER_ADMIN only.
   {
     key: "image-sessions",
-    label: "معرض جلسات الصور",
+    label: "Images session gallery",
     href: "/dashboard/image-sessions",
     icon: "FiImage",
     allowedRoles: [...ADMIN_SET],
@@ -227,7 +227,7 @@ export const NAVIGATION = [
   // 8) Calendar — sales roles.
   {
     key: "calendar",
-    label: "التقويم",
+    label: "Calendar",
     href: "/dashboard/calendar",
     icon: "FiCalendar",
     allowedRoles: [...SALES_SET],
@@ -236,7 +236,7 @@ export const NAVIGATION = [
   // 9) Payments (the dedicated `/dashboard/payments` screen) — sales roles.
   {
     key: "payments",
-    label: "المدفوعات",
+    label: "Payments",
     href: "/dashboard/payments",
     icon: "FiDollarSign",
     allowedRoles: [...SALES_SET],
@@ -245,7 +245,7 @@ export const NAVIGATION = [
   // 10) Website utilities — ADMIN/SUPER_ADMIN only.
   {
     key: "website-utilities",
-    label: "إعدادات الموقع",
+    label: "Website utilities",
     href: "/dashboard/website-utilities",
     icon: "FiHome",
     allowedRoles: [...ADMIN_SET],
@@ -256,7 +256,7 @@ export const NAVIGATION = [
   //     mapped onto SUPER_SALES in buildNavigationTabs (matching linksForRole).
   {
     key: "users-super-sales",
-    label: "المستخدمون",
+    label: "Users",
     href: "/dashboard/users",
     icon: "FiUsers",
     allowedRoles: [R.SUPER_SALES],
@@ -266,7 +266,7 @@ export const NAVIGATION = [
   // 12) Landing labelled "Leads" → `/dashboard`.
   {
     key: "executor-leads",
-    label: "العملاء المحتملون",
+    label: "Leads",
     href: "/dashboard",
     icon: "FiTarget",
     allowedRoles: [R.TWO_D_EXECUTOR],
@@ -275,7 +275,7 @@ export const NAVIGATION = [
   //     ADMIN/3D/2D "Work stages" row.
   {
     key: "executor-work-stage",
-    label: "مرحلة العمل",
+    label: "Work stage",
     href: "/dashboard/work-stages",
     icon: "FiBriefcase",
     allowedRoles: [R.TWO_D_EXECUTOR],
@@ -285,35 +285,35 @@ export const NAVIGATION = [
   // 14) Landing labelled "Payments" → `/dashboard`.
   {
     key: "accountant-payments",
-    label: "المدفوعات",
+    label: "Payments",
     href: "/dashboard",
     icon: "FiDollarSign",
     allowedRoles: [R.ACCOUNTANT],
   },
   {
     key: "operational-expenses",
-    label: "المصروفات التشغيلية",
+    label: "Operational Expenses",
     href: "/dashboard/operational-expenses",
     icon: "FiShoppingCart",
     allowedRoles: [R.ACCOUNTANT],
   },
   {
     key: "rents",
-    label: "الإيجارات",
+    label: "Rents",
     href: "/dashboard/rents",
     icon: "FiHome",
     allowedRoles: [R.ACCOUNTANT],
   },
   {
     key: "salaries",
-    label: "الرواتب",
+    label: "Salaries",
     href: "/dashboard/salaries",
     icon: "FiUsers",
     allowedRoles: [R.ACCOUNTANT],
   },
   {
     key: "outcome",
-    label: "المستحقات",
+    label: "Outstanding Payments",
     href: "/dashboard/outcome",
     icon: "FiTrendingDown",
     allowedRoles: [R.ACCOUNTANT],
@@ -323,7 +323,7 @@ export const NAVIGATION = [
   // 15) Landing labelled "Leads" → `/dashboard`.
   {
     key: "contact-initiator-leads",
-    label: "العملاء المحتملون",
+    label: "Leads",
     href: "/dashboard",
     icon: "FiTarget",
     allowedRoles: [R.CONTACT_INITIATOR],
