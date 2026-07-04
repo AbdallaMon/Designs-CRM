@@ -68,19 +68,22 @@ export default function SignInWithDifferentUserRole() {
     <>
       <Button
         variant="outlined"
+        size="small"
         startIcon={<MdOutlineSwitchAccount />}
         onClick={() => setOpen(true)}
         sx={{
           borderRadius: 2,
           textTransform: "none",
-          fontWeight: 500,
-          px: 3,
-          py: 1,
-          "&:hover": { transform: "translateY(-2px)", boxShadow: 2 },
-          transition: "all 0.2s ease-in-out",
+          fontWeight: 600,
+          whiteSpace: "nowrap",
+          // Icon-only on narrow screens to keep the toolbar tidy.
+          "& .MuiButton-startIcon": { mr: { xs: 0, sm: 0.5 } },
+          "& .switch-role-label": { display: { xs: "none", sm: "inline" } },
         }}
       >
-        Switch Role
+        <Box component="span" className="switch-role-label">
+          Switch role
+        </Box>
       </Button>
 
       <Dialog

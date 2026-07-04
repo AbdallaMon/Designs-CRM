@@ -89,7 +89,10 @@ const SideNav = ({
     justifyContent: railCollapsed ? "center" : "flex-start",
     px: railCollapsed ? 1 : 1.5,
     color: colors.textSecondary,
-    transition: "background-color .15s ease, color .15s ease",
+    // Reserve the accent-bar gutter so active/inactive items never shift width.
+    borderInlineStart: "3px solid transparent",
+    transition:
+      "background-color .15s ease, color .15s ease, border-color .15s ease",
     "&:hover": {
       backgroundColor: colors.primaryAlt,
       color: colors.primaryDark,
@@ -100,6 +103,8 @@ const SideNav = ({
     backgroundColor: colors.primaryAlt,
     color: colors.primaryDark,
     fontWeight: 600,
+    // Inline-start accent bar marks the active route (RTL-safe).
+    borderInlineStartColor: colors.primary,
     "&:hover": { backgroundColor: colors.primaryAlt },
   };
 

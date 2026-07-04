@@ -11,6 +11,7 @@ import {
   AppBar,
   Box,
   Chip,
+  Divider,
   IconButton,
   Toolbar,
   Typography,
@@ -637,13 +638,18 @@ export default function Layout({ children }) {
                   </Typography>
                 )}
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: { xs: 0.5, sm: 1 },
+                }}
+              >
                 {userRoleLabel && (
                   <Chip
                     size="small"
                     label={userRoleLabel}
                     sx={{
-                      me: 0.5,
                       fontWeight: 600,
                       color: colors.textOnPrimary,
                       backgroundColor: theme.palette.status.neutral,
@@ -652,6 +658,15 @@ export default function Layout({ children }) {
                   />
                 )}
                 <SignInWithDifferentUserRole />
+                <Divider
+                  orientation="vertical"
+                  flexItem
+                  sx={{
+                    my: 1,
+                    borderColor: colors.borderLight,
+                    display: { xs: "none", sm: "block" },
+                  }}
+                />
                 <NotificationsIcon />
                 <ProfileDialogTrigger userId={user.id} />
                 <Logout fit />
