@@ -88,27 +88,27 @@ const getStatusColor = (status) => statusColors[status] || colors.primary;
 // Display-only Arabic labels for the project statuses. Keys remain the English
 // enum values used everywhere in logic/comparisons; only the shown text changes.
 const STATUS_LABELS_AR = {
-  "To Do": "قيد الانتظار",
-  "3D": "تصميم 3D",
-  Render: "إخراج (Render)",
-  Modification: "تعديلات",
-  Delivery: "تسليم",
-  Hold: "معلّق",
-  Completed: "مكتمل",
-  Rejected: "مرفوض",
-  Studying: "دراسة",
-  Electricity: "كهرباء",
-  Started: "بدأ",
-  "In Progress": "قيد التنفيذ",
+  "To Do": "To Do",
+  "3D": "3D",
+  Render: "Render",
+  Modification: "Modification",
+  Delivery: "Delivery",
+  Hold: "Hold",
+  Completed: "Completed",
+  Rejected: "Rejected",
+  Studying: "Studying",
+  Electricity: "Electricity",
+  Started: "Started",
+  "In Progress": "In Progress",
 };
 const labelForStatus = (status) => STATUS_LABELS_AR[status] || status;
 
 const PRIORITY_LABELS_AR = {
-  VERY_LOW: "منخفضة جدًا",
-  LOW: "منخفضة",
-  MEDIUM: "متوسطة",
-  HIGH: "مرتفعة",
-  VERY_HIGH: "مرتفعة جدًا",
+  VERY_LOW: "Very Low",
+  LOW: "Low",
+  MEDIUM: "Medium",
+  HIGH: "High",
+  VERY_HIGH: "Very High",
 };
 
 // Styled components
@@ -219,7 +219,7 @@ const ProjectProgressTracker = ({ project }) => {
   // Calculate project duration
   const calculateProjectDuration = (startDate, endDate) => {
     if (!startDate) {
-      return { text: "لم يبدأ بعد", color: "text.secondary" };
+      return { text: "Not started yet", color: "text.secondary" };
     }
 
     if (!endDate) {
@@ -228,7 +228,7 @@ const ProjectProgressTracker = ({ project }) => {
       const days = now.diff(start, "day");
 
       return {
-        text: `قيد التنفيذ (${days} يومًا حتى الآن)`,
+        text: `In progress (${days} days so far)`,
         color: "info.main",
       };
     }
@@ -239,20 +239,20 @@ const ProjectProgressTracker = ({ project }) => {
     const months = end.diff(start, "month");
 
     if (days < 0) {
-      return { text: "تواريخ غير صالحة", color: "error.main" };
+      return { text: "Invalid dates", color: "error.main" };
     }
 
     if (days > 30) {
       return {
-        text: `اكتمل خلال ${months} ${
-          months === 1 ? "شهر" : "أشهر"
-        } (${days} يومًا)`,
+        text: `Completed in ${months} ${
+          months === 1 ? "month" : "months"
+        } (${days} days)`,
         color: "success.main",
       };
     }
 
     return {
-      text: `اكتمل خلال ${days} يومًا`,
+      text: `Completed in ${days} days`,
       color: "success.main",
     };
   };
@@ -299,8 +299,8 @@ const ProjectProgressTracker = ({ project }) => {
             {isOnHold ? <MdPause size={22} /> : <MdError size={22} />}
             <Typography variant="body1" sx={{ fontWeight: 600 }}>
               {isOnHold
-                ? "هذا المشروع معلّق حاليًا. سيُستأنف التقدم عند رفع التعليق."
-                : "تم رفض هذا المشروع ويتطلب المراجعة قبل المتابعة."}
+                ? "This project is currently on hold. Progress will resume when the hold is lifted."
+                : "This project has been rejected and requires attention before proceeding."}
             </Typography>
           </Box>
         ) : (
@@ -317,12 +317,12 @@ const ProjectProgressTracker = ({ project }) => {
               }}
             >
               <Typography variant="h6" fontWeight={700}>
-                تقدّم المشروع
+                Project Progress
               </Typography>
               <Box
                 sx={{ display: "flex", alignItems: "center", gap: 1.5 }}
               >
-                <Tooltip title="نسبة الإنجاز">
+                <Tooltip title="Progress percentage">
                   <Chip
                     label={`${percentageComplete}%`}
                     color="primary"
@@ -531,7 +531,7 @@ export const ProjectDetails = ({
   const renderEditForm = () => (
     <StyledCard sx={{ p: 1, mt: 3 }}>
       <CardHeader
-        title="تعديل تفاصيل المشروع"
+        title="Edit Project Details"
         titleTypographyProps={{
           variant: "h6",
           fontWeight: 700,
@@ -543,11 +543,11 @@ export const ProjectDetails = ({
           <Grid container spacing={3}>
             <Grid size={{ xs: 12, md: 6 }}>
               <FormControl fullWidth variant="outlined">
-                <InputLabel id="status-label">حالة المشروع</InputLabel>
+                <InputLabel id="status-label">Project Status</InputLabel>
                 <Select
                   labelId="status-label"
                   value={editedProject.status}
-                  label="حالة المشروع"
+                  label="Project Status"
                   onChange={(e) => handleInputChange("status", e.target.value)}
                 >
                   {PROJECT_STATUSES[project.type].map((status) => (
@@ -575,20 +575,20 @@ export const ProjectDetails = ({
             {!isDesigner && (
               <Grid size={{ xs: 12, md: 6 }}>
                 <FormControl fullWidth variant="outlined">
-                  <InputLabel id="priority-label">مستوى الأولوية</InputLabel>
+                  <InputLabel id="priority-label">Priority Level</InputLabel>
                   <Select
                     labelId="priority-label"
                     value={editedProject.priority}
-                    label="مستوى الأولوية"
+                    label="Priority Level"
                     onChange={(e) =>
                       handleInputChange("priority", e.target.value)
                     }
                   >
-                    <MenuItem value="VERY_LOW">منخفضة جدًا</MenuItem>
-                    <MenuItem value="LOW">منخفضة</MenuItem>
-                    <MenuItem value="MEDIUM">متوسطة</MenuItem>
-                    <MenuItem value="HIGH">مرتفعة</MenuItem>
-                    <MenuItem value="VERY_HIGH">مرتفعة جدًا</MenuItem>
+                    <MenuItem value="VERY_LOW">Very Low</MenuItem>
+                    <MenuItem value="LOW">Low</MenuItem>
+                    <MenuItem value="MEDIUM">Medium</MenuItem>
+                    <MenuItem value="HIGH">High</MenuItem>
+                    <MenuItem value="VERY_HIGH">Very High</MenuItem>
                   </Select>
                 </FormControl>
               </Grid>
@@ -596,7 +596,7 @@ export const ProjectDetails = ({
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
-                label="المساحة (م²)"
+                label="Area (m²)"
                 type="number"
                 variant="outlined"
                 inputProps={{ step: 0.01 }}
@@ -619,7 +619,7 @@ export const ProjectDetails = ({
                   onClick={() => setIsEditing(false)}
                   size="large"
                 >
-                  إلغاء
+                  Cancel
                 </StyledButton>
                 <StyledButton
                   type="submit"
@@ -628,7 +628,7 @@ export const ProjectDetails = ({
                   startIcon={<MdSave />}
                   size="large"
                 >
-                  حفظ التغييرات
+                  Save Changes
                 </StyledButton>
               </Box>
             </Grid>
@@ -669,10 +669,10 @@ export const ProjectDetails = ({
                   </Box>
                   <Box sx={{ minWidth: 0 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                      مساحة المشروع
+                      Project Area
                     </Typography>
                     <Typography variant="subtitle1" fontWeight={700}>
-                      {project.area ? `${project.area} م²` : "غير محددة"}
+                      {project.area ? `${project.area} m²` : "Not specified"}
                     </Typography>
                   </Box>
                 </InfoCard>
@@ -695,16 +695,16 @@ export const ProjectDetails = ({
                   </Box>
                   <Box sx={{ minWidth: 0 }}>
                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                      الجدول الزمني للمشروع
+                      Project Timeline
                     </Typography>
                     <Typography variant="subtitle1" fontWeight={700}>
                       {project.startedAt
                         ? dayjs(project.startedAt).format("DD MMM, YY")
-                        : "لم يبدأ"}
+                        : "Not started"}
                       {project.endedAt
                         ? ` - ${dayjs(project.endedAt).format("DD MMM, YY")}`
                         : project.startedAt
-                        ? " - مستمر"
+                        ? " - Ongoing"
                         : ""}
                     </Typography>
                   </Box>
@@ -751,7 +751,7 @@ export const ProjectDetails = ({
                       <MdAssignmentInd size={20} />
                     </Box>
                     <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                      مصممو المشروع
+                      Project Designers
                     </Typography>
                   </Box>
                 }
@@ -767,7 +767,7 @@ export const ProjectDetails = ({
                     size="small"
                     startIcon={<MdAdd />}
                   >
-                    إسناد مصمم جديد
+                    Assign New Designer
                   </StyledButton>
                 }
                 sx={{ px: 3, pt: 2.5, pb: 1 }}
@@ -801,7 +801,7 @@ export const ProjectDetails = ({
                       </Box>
 
                       <Box sx={{ display: "flex", gap: 1, flexShrink: 0 }}>
-                        <Tooltip title="إزالة من المشروع">
+                        <Tooltip title="Remove from project">
                           <StyledButton
                             onClick={() => {
                               setOpen(true);
@@ -813,7 +813,7 @@ export const ProjectDetails = ({
                             size="small"
                             startIcon={<MdDelete />}
                           >
-                            إزالة
+                            Remove
                           </StyledButton>
                         </Tooltip>
                       </Box>
@@ -822,8 +822,8 @@ export const ProjectDetails = ({
                 ) : (
                   <EmptyState
                     icon={<MdAssignmentInd />}
-                    title="لا يوجد مصممون مُسندون"
-                    description="لم يتم إسناد أي مصمم إلى هذا المشروع بعد."
+                    title="No designers assigned"
+                    description="No designers have been assigned to this project yet."
                   />
                 )}
               </CardContent>
@@ -877,7 +877,7 @@ export const ProjectDetails = ({
               >
                 <Chip
                   icon={<MdGroup />}
-                  label={`المجموعة: ${project.groupTitle}`}
+                  label={`Group: ${project.groupTitle}`}
                   variant="outlined"
                   sx={{
                     borderRadius: 2,
@@ -967,7 +967,7 @@ export const ProjectDetails = ({
                       setEditedProject({ ...project });
                     }}
                   >
-                    تعديل التفاصيل
+                    Edit Details
                   </StyledButton>
                   {/* TODO(profiles): no capability for "view all client projects";
                       it's an admin-tier display nuance, left as role check. */}
@@ -979,7 +979,7 @@ export const ProjectDetails = ({
                       component="a"
                       href={`/dashboard/projects/grouped/${project.clientLeadId}`}
                     >
-                      عرض كل مشاريع العميل
+                      View All Lead Projects
                     </StyledButton>
                   )}
                 </Box>

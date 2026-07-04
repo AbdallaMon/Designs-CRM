@@ -597,7 +597,7 @@ export default function Layout({ children }) {
                 {isMobile && (
                   <IconButton
                     edge="start"
-                    aria-label="فتح القائمة"
+                    aria-label="Open menu"
                     onClick={() => setMobileOpen(true)}
                     sx={{ color: colors.textSecondary }}
                   >

@@ -196,18 +196,18 @@ export const LeadProjects = ({
   if (error) {
     return (
       <Frame>
-        <TabSection icon={<MdWork />} title="المشاريع">
+        <TabSection icon={<MdWork />} title="Projects">
           <EmptyState
             icon={<MdFolder />}
-            title="تعذّر تحميل المشاريع"
-            description="حدث خطأ أثناء جلب المشاريع. يرجى المحاولة مرة أخرى."
+            title="Failed to load projects"
+            description="An error occurred while loading projects. Please try again."
             action={
               <Button
                 variant="outlined"
                 onClick={handleRefresh}
                 sx={{ textTransform: "none", fontWeight: 600 }}
               >
-                إعادة المحاولة
+                Retry
               </Button>
             }
           />
@@ -222,7 +222,7 @@ export const LeadProjects = ({
       <Frame>
         <TabSection
           icon={<MdWork />}
-          title="المشاريع"
+          title="Projects"
           count={0}
           action={
             <CreateProjectsGroup
@@ -233,8 +233,8 @@ export const LeadProjects = ({
         >
           <EmptyState
             icon={<MdFolder />}
-            title="لا توجد مشاريع بعد"
-            description="ابدأ بإنشاء مجموعة مشاريع لتنظيم العمل."
+            title="No Projects Found"
+            description="Start by creating a new project group to organize your work"
             action={
               <CreateProjectsGroup
                 clientLeadId={clientLeadId}
@@ -242,7 +242,7 @@ export const LeadProjects = ({
                 buttonProps={{
                   variant: "contained",
                   startIcon: <MdAdd />,
-                  children: "إنشاء مجموعة مشاريع",
+                  children: "Create First Project Group",
                 }}
               />
             }
@@ -259,7 +259,7 @@ export const LeadProjects = ({
     <Frame>
       <TabSection
         icon={<MdWork />}
-        title="المشاريع"
+        title="Projects"
         count={currentProjects.length}
         description={currentGroup.groupTitle || undefined}
         action={
@@ -271,10 +271,10 @@ export const LeadProjects = ({
                 size="small"
                 sx={{ textTransform: "none", fontWeight: 600 }}
               >
-                {`العميل #${clientLeadId}`}
+                {`Lead #${clientLeadId}`}
               </Button>
             )}
-            <Tooltip title="تحديث المشاريع">
+            <Tooltip title="Refresh projects">
               <IconButton
                 onClick={handleRefresh}
                 color="primary"
@@ -338,8 +338,8 @@ export const LeadProjects = ({
         {currentProjects.length === 0 ? (
           <EmptyState
             icon={<MdFolder />}
-            title="لا توجد مشاريع في هذه المجموعة"
-            description="أضف مشاريع إلى هذه المجموعة لتظهر هنا."
+            title="No projects in this group"
+            description="Add projects to this group to see them here."
           />
         ) : (
           <Box display="flex" gap={1} flexWrap="wrap">
@@ -381,7 +381,7 @@ export const LeadProjects = ({
               closeProjectContextMenu();
             }}
           >
-            عرض المشروع
+            View Project
           </MenuItem>
         </Menu>
 
@@ -413,7 +413,7 @@ export const LeadProjects = ({
             title={activeProject.type.replace(/_/g, " ")}
             status={
               <StatusPill
-                label={activeProject.status || "نشط"}
+                label={activeProject.status || "Active"}
                 color={
                   activeProject.status === "Completed"
                     ? theme.palette.success.main
@@ -430,8 +430,8 @@ export const LeadProjects = ({
         ) : (
           <EmptyState
             icon={<MdWork />}
-            title="اختر مشروعًا لعرض تفاصيله"
-            description="حدّد أحد المشاريع أعلاه لاستعراض تفاصيله."
+            title="No Project Selected"
+            description="Select a project to view details"
           />
         )}
       </TabSection>

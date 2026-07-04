@@ -48,20 +48,20 @@ import { NotesComponent } from "../utility/Notes";
 import { getPriorityOrder } from "@/app/helpers/constants";
 
 // Arabic copy. `name` is the singular noun the call site passes ("Modification" / "Task").
-const arName = (name) => (name === "Modification" ? "التعديل" : "المهمة");
+const arName = (name) => (name === "Modification" ? "Modification" : "Task");
 const arNamePlural = (name) =>
-  name === "Modification" ? "التعديلات" : "المهام";
+  name === "Modification" ? "Modifications" : "Tasks";
 
 // status → { label (ar), color } for the StatusPill in each task card header.
 const taskStatusPill = (theme, status) => {
   switch (status) {
     case "DONE":
-      return { label: "مكتملة", color: theme.palette.success.main };
+      return { label: "Done", color: theme.palette.success.main };
     case "IN_PROGRESS":
-      return { label: "قيد التنفيذ", color: theme.palette.info.main };
+      return { label: "In Progress", color: theme.palette.info.main };
     case "TODO":
     default:
-      return { label: "قيد الانتظار", color: theme.palette.text.secondary };
+      return { label: "To Do", color: theme.palette.text.secondary };
   }
 };
 
@@ -119,7 +119,7 @@ export const TasksList = ({
       onClick={() => setTaskOpen(true)}
       sx={{ textTransform: "none", fontWeight: 600 }}
     >
-      {`إضافة ${arName(name)}`}
+      {`Create ${arName(name)}`}
     </Button>
   );
 
@@ -145,15 +145,15 @@ export const TasksList = ({
         {modal}
         <EmptyState
           icon={<MdTask />}
-          title="تعذّر تحميل البيانات"
-          description="حدث خطأ أثناء جلب القائمة. يرجى المحاولة مرة أخرى."
+          title="Failed to load data"
+          description="An error occurred while loading the list. Please try again."
           action={
             <Button
               variant="outlined"
               onClick={loadTasks}
               sx={{ textTransform: "none", fontWeight: 600 }}
             >
-              إعادة المحاولة
+              Retry
             </Button>
           }
         />
@@ -167,8 +167,8 @@ export const TasksList = ({
         {modal}
         <EmptyState
           icon={<MdTask />}
-          title={`لا توجد ${arNamePlural(name)} بعد`}
-          description={`ابدأ بإضافة ${arName(name)} لتظهر هنا.`}
+          title={`No ${arNamePlural(name)} yet`}
+          description={`Start by adding a ${arName(name)} to see it here.`}
           action={createButton}
         />
       </TabSection>
@@ -216,30 +216,30 @@ const TaskItem = ({ task, setTasks, name }) => {
       accent={accent}
       leading={task.user ? <NameAvatar name={task.user.name} /> : undefined}
       title={task.title}
-      subtitle={`النوع: ${(task.type || "").replace(/_/g, " ")}`}
+      subtitle={`Type: ${(task.type || "").replace(/_/g, " ")}`}
       status={<StatusPill label={pill.label} color={pill.color} />}
       meta={
         <>
           <MetaItem
             icon={<MdCalendarToday size={14} />}
-            label="الاستحقاق"
+            label="Due"
             value={
-              task.dueDate ? dayjs(task.dueDate).format("DD/MM/YYYY") : "غير محدد"
+              task.dueDate ? dayjs(task.dueDate).format("DD/MM/YYYY") : "Not set"
             }
           />
           <MetaItem
             icon={<MdAccessTime size={14} />}
-            label="آخر تحديث"
+            label="Updated"
             value={
               task.updatedAt
                 ? dayjs(task.updatedAt).format("DD/MM/YYYY")
-                : "غير متوفر"
+                : "Not available"
             }
           />
           {task.finishedAt && (
             <MetaItem
               icon={<MdAccessTime size={14} />}
-              label="اكتملت في"
+              label="Finished"
               value={dayjs(task.finishedAt).format("DD/MM/YYYY")}
               color={theme.palette.success.main}
             />
@@ -247,7 +247,7 @@ const TaskItem = ({ task, setTasks, name }) => {
           {createdByLabel && (
             <MetaItem
               icon={<MdPerson size={14} />}
-              label="بواسطة"
+              label="Created by"
               value={createdByLabel}
             />
           )}
@@ -256,7 +256,7 @@ const TaskItem = ({ task, setTasks, name }) => {
       actions={<TaskActions name={name} task={task} setTasks={setTasks} />}
     >
       {task.description && (
-        <CardBlock label="الوصف">
+        <CardBlock label="Description">
           {task.description.length > 160
             ? `${task.description.substring(0, 160)}...`
             : task.description}
@@ -377,13 +377,13 @@ function CreatTaskModel({
 
   return (
     <Dialog open={open} onClose={handleClose} fullWidth maxWidth="sm">
-      <DialogTitle>{`إضافة ${arName(name)}`}</DialogTitle>
+      <DialogTitle>{`Create ${arName(name)}`}</DialogTitle>
       <DialogContent>
         <Box>
           <Box mb={2} py={2}>
             <TextField
               fullWidth
-              label="العنوان"
+              label="Title"
               name="title"
               required
               id="title"
@@ -394,7 +394,7 @@ function CreatTaskModel({
           <Box mb={2}>
             <TextField
               fullWidth
-              label="الوصف"
+              label="Description"
               name="description"
               id="description"
               value={description}
@@ -406,7 +406,7 @@ function CreatTaskModel({
           <Box mb={2}>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DatePicker
-                label="تاريخ الاستحقاق"
+                label="Due Date"
                 name="dueDate"
                 renderInput={(params) => <TextField {...params} />}
                 value={dueDate}
@@ -419,7 +419,7 @@ function CreatTaskModel({
           <Box mb={2}>
             <TextField
               fullWidth
-              label="الأولوية"
+              label="Priority"
               select
               name="priority"
               required
@@ -427,19 +427,19 @@ function CreatTaskModel({
               value={priority}
               onChange={handlePriorityChange}
             >
-              <MenuItem value="VERY_LOW">منخفضة جدًا</MenuItem>
-              <MenuItem value="LOW">منخفضة</MenuItem>
-              <MenuItem value="MEDIUM">متوسطة</MenuItem>
-              <MenuItem value="HIGH">عالية</MenuItem>
-              <MenuItem value="VERY_HIGH">عالية جدًا</MenuItem>
+              <MenuItem value="VERY_LOW">Very Low</MenuItem>
+              <MenuItem value="LOW">Low</MenuItem>
+              <MenuItem value="MEDIUM">Medium</MenuItem>
+              <MenuItem value="HIGH">High</MenuItem>
+              <MenuItem value="VERY_HIGH">Very High</MenuItem>
             </TextField>
           </Box>
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>إلغاء</Button>
+        <Button onClick={handleClose}>Cancel</Button>
         <Button type="submit" onClick={handleSubmit} startIcon={<MdTask />}>
-          إضافة
+          Create
         </Button>
       </DialogActions>
     </Dialog>

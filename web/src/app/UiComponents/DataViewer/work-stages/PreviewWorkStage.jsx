@@ -294,7 +294,7 @@ function LeadData({ lead }) {
           {" "}
           <LeadInfo lead={lead} />
           <InfoCard
-            title="المشاريع المرتبطة"
+            title="Related Projects"
             icon={BsPersonCheckFill}
             theme={theme}
           >
@@ -307,7 +307,7 @@ function LeadData({ lead }) {
                   href={`/dashboard/projects/grouped/${lead.id}`}
                   sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2 }}
                 >
-                  عرض كل مشاريع هذا العميل
+                  See all the projects of this lead
                 </Button>
               )}
               {lead.projects?.map((project) => {
@@ -336,7 +336,7 @@ function LeadData({ lead }) {
                         href={`/dashboard/projects/${project.id}`}
                         sx={{ mb: 0, textTransform: "none", fontWeight: 600, borderRadius: 2 }}
                       >
-                        عرض المشروع #{project.id}
+                        See the project #{project.id}
                       </Button>
                       <Chip
                         label={project.type.replace(/_/g, " ")}

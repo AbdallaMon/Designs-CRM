@@ -78,7 +78,7 @@ function RowActions({
   return (
     <Stack direction="row" spacing={0.5} alignItems="center">
       {hasMeeting ? (
-        <Tooltip title="عرض تفاصيل الاجتماع">
+        <Tooltip title="Open meeting details">
           <Button
             size="small"
             variant="outlined"
@@ -100,7 +100,7 @@ function RowActions({
           )} */}
         </>
       )}
-      <Tooltip title="عرض الملاحظات">
+      <Tooltip title="Preview notes">
         <NotesComponent
           item={row}
           id={row.id}
@@ -109,7 +109,7 @@ function RowActions({
         />
       </Tooltip>
       {canDoActions && (
-        <Tooltip title="حذف موعد التسليم">
+        <Tooltip title="Delete delivery">
           <DeleteModelButton
             item={row}
             model={"DeliverySchedule"}
@@ -181,7 +181,7 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={1}>
           <FiCalendar />
-          <span>موعد تسليم جديد</span>
+          <span>New Delivery Time</span>
         </Stack>
       </DialogTitle>
 
@@ -189,7 +189,7 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
         <Stack spacing={2}>
           {/* 1) Name */}
           <TextField
-            label="الاسم"
+            label="Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             fullWidth
@@ -198,7 +198,7 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
 
           {/* 2) Days from today -> live preview */}
           <TextField
-            label="عدد الأيام من اليوم"
+            label="Days from today"
             type="number"
             value={days}
             onChange={(e) => setDays(e.target.value)}
@@ -209,7 +209,7 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
 
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <MobileDatePicker
-              label="تاريخ التسليم (معاينة)"
+              label="Delivery at (preview)"
               value={value}
               readOnly
               disabled
@@ -223,14 +223,14 @@ function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
 
       <DialogActions>
         <Button onClick={onClose} disabled={submitting}>
-          إلغاء
+          Cancel
         </Button>
         <Button
           onClick={handleSubmit}
           disabled={!value || submitting}
           variant="contained"
         >
-          {submitting ? "جارٍ الحفظ..." : "حفظ"}
+          {submitting ? "Saving..." : "Save"}
         </Button>
       </DialogActions>
     </Dialog>
@@ -267,7 +267,7 @@ function MeetingDetailsDialog({ open, onClose, meetingId }) {
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={1}>
           <FiExternalLink />
-          <span>تفاصيل الاجتماع #{meetingId}</span>
+          <span>Meeting Details #{meetingId}</span>
         </Stack>
       </DialogTitle>
       <DialogContent dividers>
@@ -276,13 +276,13 @@ function MeetingDetailsDialog({ open, onClose, meetingId }) {
             <CircularProgress />
           </Stack>
         ) : !meeting ? (
-          <Typography color="text.secondary">لم يتم العثور على الاجتماع.</Typography>
+          <Typography color="text.secondary">Meeting not found.</Typography>
         ) : (
           <Stack spacing={1.2}>
             <Stack direction="row" spacing={1} alignItems="center">
               <FiClock />
               <Typography>
-                الوقت:{" "}
+                Time:{" "}
                 <b>
                   {dayjs(meeting.time).format("YYYY-MM-DD HH:mm")} (
                   {dayjs(meeting.time).fromNow()})
@@ -291,16 +291,16 @@ function MeetingDetailsDialog({ open, onClose, meetingId }) {
             </Stack>
 
             <Typography>
-              الحالة: <Chip size="small" label={meeting.status} />
+              Status: <Chip size="small" label={meeting.status} />
             </Typography>
 
-            <Typography>النتيجة: {meeting.meetingResult || <i>—</i>}</Typography>
+            <Typography>Result: {meeting.meetingResult || <i>—</i>}</Typography>
 
             <Stack direction="row" spacing={2} alignItems="center">
               <Stack direction="row" spacing={0.8} alignItems="center">
                 <FiUser />
                 <Typography>
-                  المستخدم: <b>{meeting.user?.name}</b>
+                  User: <b>{meeting.user?.name}</b>
                 </Typography>
               </Stack>
             </Stack>
@@ -309,7 +309,7 @@ function MeetingDetailsDialog({ open, onClose, meetingId }) {
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} variant="contained">
-          إغلاق
+          Close
         </Button>
       </DialogActions>
     </Dialog>
@@ -358,7 +358,7 @@ function LinkMeetingDialog({
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={1}>
           <FiLink />
-          <span>ربط التسليم باجتماع</span>
+          <span>Link Delivery to Meeting</span>
         </Stack>
       </DialogTitle>
       <DialogContent dividers>
@@ -368,7 +368,7 @@ function LinkMeetingDialog({
           </Stack>
         ) : meetings.length === 0 ? (
           <Typography color="text.secondary">
-            لا توجد اجتماعات لهذا العميل.
+            No meetings found for this lead.
           </Typography>
         ) : (
           <RadioGroup
@@ -387,7 +387,7 @@ function LinkMeetingDialog({
                         {dayjs(m.time).fromNow()})
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        النتيجة: {m.meetingResult || "—"}
+                        Result: {m.meetingResult || "—"}
                       </Typography>
                     </Stack>
                   }
@@ -399,13 +399,13 @@ function LinkMeetingDialog({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>إلغاء</Button>
+        <Button onClick={onClose}>Cancel</Button>
         <Button
           disabled={!selectedId}
           onClick={handleConfirm}
           variant="contained"
         >
-          إسناد
+          Assign
         </Button>
       </DialogActions>
     </Dialog>
@@ -489,10 +489,10 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
           </Box>
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="subtitle1" fontWeight={700} noWrap>
-              جدول التسليم
+              Delivery Schedule
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              مواعيد تسليم مراحل المشروع
+              Project stage delivery dates
             </Typography>
           </Box>
         </Stack>
@@ -503,7 +503,7 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
             onClick={() => setOpenCreate(true)}
             sx={{ textTransform: "none", fontWeight: 600, borderRadius: 2.5, flexShrink: 0 }}
           >
-            موعد تسليم جديد
+            New delivery
           </Button>
         )}
       </Stack>
@@ -515,8 +515,8 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
       ) : rows.length === 0 ? (
         <EmptyState
           icon={<FiCalendar />}
-          title="لا توجد مواعيد تسليم بعد"
-          description="لم تتم إضافة أي موعد تسليم لهذا المشروع حتى الآن."
+          title="No deliveries yet"
+          description="No delivery times have been added for this project yet."
         />
       ) : (
         <Stack spacing={1.5}>
@@ -543,14 +543,14 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
                     <FiCalendar size={18} />
                   </Box>
                 }
-                title={row.name || "موعد تسليم"}
+                title={row.name || "Delivery"}
                 subtitle={`${dayjs(row.deliveryAt).format(
                   "YYYY-MM-DD HH:mm"
                 )} (${dayjs(row.deliveryAt).fromNow()})`}
                 status={
                   row.meetingReminderId ? (
                     <StatusPill
-                      label={`اجتماع #${row.meetingReminderId}`}
+                      label={`Meeting #${row.meetingReminderId}`}
                       color={colors.info}
                     />
                   ) : null
@@ -559,12 +559,12 @@ export default function DeliverySchedulesPanel({ projectId, clientLeadId }) {
                   <>
                     <MetaItem
                       icon={<FiUser size={14} />}
-                      label="أنشأه:"
+                      label="Created by:"
                       value={row.createdBy?.name || "—"}
                     />
                     <MetaItem
                       icon={<FiClock size={14} />}
-                      value={`أُنشئ ${dayjs(row.createdAt).fromNow()}`}
+                      value={`Created ${dayjs(row.createdAt).fromNow()}`}
                     />
                   </>
                 }
