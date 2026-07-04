@@ -56,28 +56,28 @@ describe("buildNavigationTabs matches master's per-role nav", () => {
 describe("Work stages sub-links match master exactly (labels + hrefs + order)", () => {
   it("ADMIN work-stages sub-links", () => {
     expect(subOf({ role: "ADMIN" }, "/dashboard/work-stages")).toEqual([
-      { label: "All projects", href: "/dashboard/projects" },
-      { label: "Plan study department", href: "/dashboard/work-stages/study" },
-      { label: "3D Work stage", href: "/dashboard/work-stages" },
-      { label: "Final plan department", href: "/dashboard/work-stages/final-plan" },
-      { label: "Quantity calcualtion department", href: "/dashboard/work-stages/quantity" },
-      { label: "Archived projects", href: "/dashboard/projects/archived" },
-      { label: "3D Modifcation", href: "/dashboard/work-stages/modification" },
+      { label: "كل المشاريع", href: "/dashboard/projects" },
+      { label: "قسم دراسة المخطط", href: "/dashboard/work-stages/study" },
+      { label: "مرحلة العمل ثلاثي الأبعاد", href: "/dashboard/work-stages" },
+      { label: "قسم المخطط النهائي", href: "/dashboard/work-stages/final-plan" },
+      { label: "قسم حساب الكميات", href: "/dashboard/work-stages/quantity" },
+      { label: "المشاريع المؤرشفة", href: "/dashboard/projects/archived" },
+      { label: "التعديلات ثلاثية الأبعاد", href: "/dashboard/work-stages/modification" },
     ]);
   });
   it("THREE_D_DESIGNER work-stages sub-links", () => {
     expect(subOf({ role: "THREE_D_DESIGNER" }, "/dashboard/work-stages")).toEqual([
-      { label: "3D Work stage", href: "/dashboard/work-stages" },
-      { label: "Modifcation stage", href: "/dashboard/modification" },
-      { label: "Archived projects", href: "/dashboard/archived" },
+      { label: "مرحلة العمل ثلاثي الأبعاد", href: "/dashboard/work-stages" },
+      { label: "مرحلة التعديل", href: "/dashboard/modification" },
+      { label: "المشاريع المؤرشفة", href: "/dashboard/archived" },
     ]);
   });
   it("TWO_D_DESIGNER work-stages sub-links", () => {
     expect(subOf({ role: "TWO_D_DESIGNER" }, "/dashboard/work-stages")).toEqual([
-      { label: "Plan study department", href: "/dashboard/study" },
-      { label: "Final plan department", href: "/dashboard/final-plan" },
-      { label: "Quantity calcualtion department", href: "/dashboard/quantity" },
-      { label: "Archived projects", href: "/dashboard/archived" },
+      { label: "قسم دراسة المخطط", href: "/dashboard/study" },
+      { label: "قسم المخطط النهائي", href: "/dashboard/final-plan" },
+      { label: "قسم حساب الكميات", href: "/dashboard/quantity" },
+      { label: "المشاريع المؤرشفة", href: "/dashboard/archived" },
     ]);
   });
   it("TWO_D_EXECUTOR work-stage has NO sub-links (direct link)", () => {
@@ -86,7 +86,7 @@ describe("Work stages sub-links match master exactly (labels + hrefs + order)", 
     );
     expect(item).toBeTruthy();
     expect(item.subLinks).toBeUndefined();
-    expect(item.label).toBe("Work stage");
+    expect(item.label).toBe("مرحلة العمل");
   });
 });
 
@@ -102,95 +102,95 @@ function expected(role, opts = {}) {
 }
 
 const DEALS_SUBS = [
-  { label: "Current Deals", href: "/dashboard/deals" },
-  { label: "On hold Deals", href: "/dashboard/on-hold-deals" },
-  { label: "All Deals", href: "/dashboard/all-deals" },
+  { label: "الصفقات الحالية", href: "/dashboard/deals" },
+  { label: "الصفقات المعلقة", href: "/dashboard/on-hold-deals" },
+  { label: "كل الصفقات", href: "/dashboard/all-deals" },
 ];
 
 const MASTER = {
   ADMIN: [
-    { label: "Dashboard", href: "/dashboard", subLinks: undefined },
-    { label: "Users", href: "/dashboard/users", subLinks: undefined },
-    { label: "Leads", href: "/dashboard/leads", subLinks: undefined },
-    { label: "Deals", href: "/dashboard/deals", subLinks: DEALS_SUBS },
+    { label: "لوحة التحكم", href: "/dashboard", subLinks: undefined },
+    { label: "المستخدمون", href: "/dashboard/users", subLinks: undefined },
+    { label: "العملاء المحتملون", href: "/dashboard/leads", subLinks: undefined },
+    { label: "الصفقات", href: "/dashboard/deals", subLinks: DEALS_SUBS },
     {
-      label: "Work stages",
+      label: "مراحل العمل",
       href: "/dashboard/work-stages",
       subLinks: [
-        { label: "All projects", href: "/dashboard/projects" },
-        { label: "Plan study department", href: "/dashboard/work-stages/study" },
-        { label: "3D Work stage", href: "/dashboard/work-stages" },
-        { label: "Final plan department", href: "/dashboard/work-stages/final-plan" },
-        { label: "Quantity calcualtion department", href: "/dashboard/work-stages/quantity" },
-        { label: "Archived projects", href: "/dashboard/projects/archived" },
-        { label: "3D Modifcation", href: "/dashboard/work-stages/modification" },
+        { label: "كل المشاريع", href: "/dashboard/projects" },
+        { label: "قسم دراسة المخطط", href: "/dashboard/work-stages/study" },
+        { label: "مرحلة العمل ثلاثي الأبعاد", href: "/dashboard/work-stages" },
+        { label: "قسم المخطط النهائي", href: "/dashboard/work-stages/final-plan" },
+        { label: "قسم حساب الكميات", href: "/dashboard/work-stages/quantity" },
+        { label: "المشاريع المؤرشفة", href: "/dashboard/projects/archived" },
+        { label: "التعديلات ثلاثية الأبعاد", href: "/dashboard/work-stages/modification" },
       ],
     },
     {
-      label: "Reports",
+      label: "التقارير",
       href: "/dashboard/report",
       subLinks: [
-        { label: "Leads report", href: "/dashboard/report" },
-        { label: "Staff report", href: "/dashboard/report/staff" },
+        { label: "تقرير العملاء المحتملين", href: "/dashboard/report" },
+        { label: "تقرير الموظفين", href: "/dashboard/report/staff" },
       ],
     },
-    { label: "Images session gallery", href: "/dashboard/image-sessions", subLinks: undefined },
-    { label: "Calendar", href: "/dashboard/calendar", subLinks: undefined },
-    { label: "Payments", href: "/dashboard/payments", subLinks: undefined },
-    { label: "Website utilities", href: "/dashboard/website-utilities", subLinks: undefined },
+    { label: "معرض جلسات الصور", href: "/dashboard/image-sessions", subLinks: undefined },
+    { label: "التقويم", href: "/dashboard/calendar", subLinks: undefined },
+    { label: "المدفوعات", href: "/dashboard/payments", subLinks: undefined },
+    { label: "إعدادات الموقع", href: "/dashboard/website-utilities", subLinks: undefined },
   ],
   STAFF: [
-    { label: "Dashboard", href: "/dashboard", subLinks: undefined },
-    { label: "Leads", href: "/dashboard/leads", subLinks: undefined },
-    { label: "Deals", href: "/dashboard/deals", subLinks: DEALS_SUBS },
-    { label: "Calendar", href: "/dashboard/calendar", subLinks: undefined },
-    { label: "Payments", href: "/dashboard/payments", subLinks: undefined },
+    { label: "لوحة التحكم", href: "/dashboard", subLinks: undefined },
+    { label: "العملاء المحتملون", href: "/dashboard/leads", subLinks: undefined },
+    { label: "الصفقات", href: "/dashboard/deals", subLinks: DEALS_SUBS },
+    { label: "التقويم", href: "/dashboard/calendar", subLinks: undefined },
+    { label: "المدفوعات", href: "/dashboard/payments", subLinks: undefined },
   ],
   SUPER_SALES: [
-    { label: "Dashboard", href: "/dashboard", subLinks: undefined },
-    { label: "Leads", href: "/dashboard/leads", subLinks: undefined },
-    { label: "Deals", href: "/dashboard/deals", subLinks: DEALS_SUBS },
-    { label: "Calendar", href: "/dashboard/calendar", subLinks: undefined },
-    { label: "Payments", href: "/dashboard/payments", subLinks: undefined },
-    { label: "Users", href: "/dashboard/users", subLinks: undefined },
+    { label: "لوحة التحكم", href: "/dashboard", subLinks: undefined },
+    { label: "العملاء المحتملون", href: "/dashboard/leads", subLinks: undefined },
+    { label: "الصفقات", href: "/dashboard/deals", subLinks: DEALS_SUBS },
+    { label: "التقويم", href: "/dashboard/calendar", subLinks: undefined },
+    { label: "المدفوعات", href: "/dashboard/payments", subLinks: undefined },
+    { label: "المستخدمون", href: "/dashboard/users", subLinks: undefined },
   ],
   THREE_D_DESIGNER: [
-    { label: "Dashboard", href: "/dashboard", subLinks: undefined },
+    { label: "لوحة التحكم", href: "/dashboard", subLinks: undefined },
     {
-      label: "Work stages",
+      label: "مراحل العمل",
       href: "/dashboard/work-stages",
       subLinks: [
-        { label: "3D Work stage", href: "/dashboard/work-stages" },
-        { label: "Modifcation stage", href: "/dashboard/modification" },
-        { label: "Archived projects", href: "/dashboard/archived" },
+        { label: "مرحلة العمل ثلاثي الأبعاد", href: "/dashboard/work-stages" },
+        { label: "مرحلة التعديل", href: "/dashboard/modification" },
+        { label: "المشاريع المؤرشفة", href: "/dashboard/archived" },
       ],
     },
   ],
   TWO_D_DESIGNER: [
-    { label: "Dashboard", href: "/dashboard", subLinks: undefined },
+    { label: "لوحة التحكم", href: "/dashboard", subLinks: undefined },
     {
-      label: "Work stages",
+      label: "مراحل العمل",
       href: "/dashboard/work-stages",
       subLinks: [
-        { label: "Plan study department", href: "/dashboard/study" },
-        { label: "Final plan department", href: "/dashboard/final-plan" },
-        { label: "Quantity calcualtion department", href: "/dashboard/quantity" },
-        { label: "Archived projects", href: "/dashboard/archived" },
+        { label: "قسم دراسة المخطط", href: "/dashboard/study" },
+        { label: "قسم المخطط النهائي", href: "/dashboard/final-plan" },
+        { label: "قسم حساب الكميات", href: "/dashboard/quantity" },
+        { label: "المشاريع المؤرشفة", href: "/dashboard/archived" },
       ],
     },
   ],
   TWO_D_EXECUTOR: [
-    { label: "Leads", href: "/dashboard", subLinks: undefined },
-    { label: "Work stage", href: "/dashboard/work-stages", subLinks: undefined },
+    { label: "العملاء المحتملون", href: "/dashboard", subLinks: undefined },
+    { label: "مرحلة العمل", href: "/dashboard/work-stages", subLinks: undefined },
   ],
   ACCOUNTANT: [
-    { label: "Payments", href: "/dashboard", subLinks: undefined },
-    { label: "Operational Expenses", href: "/dashboard/operational-expenses", subLinks: undefined },
-    { label: "Rents", href: "/dashboard/rents", subLinks: undefined },
-    { label: "Salaries", href: "/dashboard/salaries", subLinks: undefined },
-    { label: "Outstanding Payments", href: "/dashboard/outcome", subLinks: undefined },
+    { label: "المدفوعات", href: "/dashboard", subLinks: undefined },
+    { label: "المصروفات التشغيلية", href: "/dashboard/operational-expenses", subLinks: undefined },
+    { label: "الإيجارات", href: "/dashboard/rents", subLinks: undefined },
+    { label: "الرواتب", href: "/dashboard/salaries", subLinks: undefined },
+    { label: "المستحقات", href: "/dashboard/outcome", subLinks: undefined },
   ],
-  CONTACT_INITIATOR: [{ label: "Leads", href: "/dashboard", subLinks: undefined }],
+  CONTACT_INITIATOR: [{ label: "العملاء المحتملون", href: "/dashboard", subLinks: undefined }],
 };
 
 describe("full per-role parity with linksForRole (all 9 roles)", () => {
