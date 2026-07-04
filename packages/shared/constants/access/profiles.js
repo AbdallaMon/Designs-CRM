@@ -53,7 +53,7 @@ export const PROFILE_META = {
   SUPER_ADMIN:      { label: "مدير أعلى",     family: "ADMIN",    baseRole: USER_ROLES.SUPER_ADMIN },
   NORMAL_SALES:     { label: "موظف مبيعات",   family: "SALES",    baseRole: USER_ROLES.STAFF, isPrimary: false, isSuperSales: false },
   PRIMARY_SALES:    { label: "مبيعات أساسي",  family: "SALES",    baseRole: USER_ROLES.STAFF, isPrimary: true,  isSuperSales: false },
-  SUPER_SALES:      { label: "سوبر مبيعات",   family: "SALES",    baseRole: USER_ROLES.STAFF, isPrimary: false, isSuperSales: true },
+  SUPER_SALES:      { label: "سوبر سيلز",      family: "SALES",    baseRole: USER_ROLES.STAFF, isPrimary: false, isSuperSales: true },
   SUPER_SALES_BASE: { label: "سوبر سيلز (دور)", family: "SALES",  baseRole: USER_ROLES.SUPER_SALES },
   ACCOUNTANT:       { label: "محاسب",         family: "FINANCE",  baseRole: USER_ROLES.ACCOUNTANT },
   DESIGNER_3D:      { label: "مصمم 3D",       family: "DESIGN",   baseRole: USER_ROLES.THREE_D_DESIGNER },

@@ -60,8 +60,8 @@ import { ProjectAutoAssignmentDialog } from "../DataViewer/users/ProjectAutoAssi
 const PROFILE_OPTIONS = [
   { value: "NORMAL_SALES", label: "موظف مبيعات" },
   { value: "PRIMARY_SALES", label: "مبيعات أساسي" },
-  { value: "SUPER_SALES", label: "سوبر مبيعات" },
-  { value: "SUPER_SALES_BASE", label: "سوبر سيلز (دور)" },
+  { value: "SUPER_SALES", label: "سوبر سيلز" },
+  { value: "SUPER_SALES_BASE", label: "سوبر سيلز (أساسي)" },
   { value: "ADMIN", label: "مدير" },
   { value: "SUPER_ADMIN", label: "مدير أعلى" },
   { value: "ACCOUNTANT", label: "محاسب" },
@@ -211,22 +211,24 @@ const columns = [
 ];
 
 const PASSWORD_RULE =
-  "يجب أن تحتوي كلمة المرور على حرف كبير وحرف صغير ورقم، وألا تقل عن 8 أحرف";
+  "The password must contain an uppercase letter, a lowercase letter, a number, and be at least 8 characters long";
 
+// The create/edit form is IDENTITY only — no role/profile field. Roles are assigned
+// separately via the "اسناد دور" (profiles) dialog in the row actions.
 const inputs = [
   {
-    data: { id: "name", type: "text", label: "اسم المستخدم", key: "name" },
+    data: { id: "name", type: "text", label: "User name", key: "name" },
     pattern: {
-      required: { value: true, message: "أدخل اسم المستخدم" },
+      required: { value: true, message: "Please enter a name" },
     },
   },
   {
-    data: { id: "email", type: "email", label: "البريد الإلكتروني" },
+    data: { id: "email", type: "email", label: "Email" },
     pattern: {
-      required: { value: true, message: "أدخل البريد الإلكتروني" },
+      required: { value: true, message: "Please enter an email address" },
       pattern: {
         value: /\w+@[a-z]+\.[a-z]{2,}/gi,
-        message: "أدخل بريدًا إلكترونيًا صحيحًا",
+        message: "Please enter a valid email address",
       },
     },
   },
@@ -234,32 +236,19 @@ const inputs = [
     data: {
       id: "telegramUsername",
       type: "text",
-      label: "معرّف تيليجرام",
+      label: "Telegram username",
       key: "telegramUsername",
-    },
-  },
-  {
-    // The profile IS the role — it derives role/permissions on the backend. There is
-    // no more "main role" + "sub-role" split; a user is assigned a profile (دور).
-    data: {
-      id: "profile",
-      type: "SelectField",
-      label: "الدور",
-      options: PROFILE_OPTIONS,
-    },
-    pattern: {
-      required: { value: true, message: "اختر الدور" },
     },
   },
   {
     data: {
       id: "password",
       type: "password",
-      label: "كلمة المرور",
+      label: "Password",
       helperText: PASSWORD_RULE,
     },
     pattern: {
-      required: { value: true, message: "أدخل كلمة المرور" },
+      required: { value: true, message: "Please enter a password" },
       pattern: {
         value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/,
         message: PASSWORD_RULE,
@@ -290,7 +279,7 @@ export default function UsersPage() {
       setLoading,
       `admin/users/${item.id}`,
       false,
-      "جارٍ الحظر",
+      "Banning",
       null,
       "PATCH"
     );

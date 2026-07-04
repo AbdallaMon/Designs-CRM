@@ -255,27 +255,21 @@ export class UserUsecase {
     if (!body || Object.keys(body).length === 0) {
       throw new AppError(C.USER_NO_DATA_SENT, 404);
     }
-    // A supplied `profile` is authoritative: derive role/isPrimary/isSuperSales from
-    // PROFILE_META before the legacy rule check + write. No profile → no-op (parity).
-    const { body: withRole, profile, sync } = applyProfileToBody(body);
-    // Legacy rule: an isSuperSales (non-admin) creator may only create STAFF users.
+    // Identity only — NO role/profile is assigned from this form. A new user defaults
+    // to STAFF (createStaffUser) and receives its role(s) via the profiles endpoint
+    // (PUT /users/:id/profiles). Legacy guard: an isSuperSales (non-admin) creator may
+    // only create STAFF — enforced ONLY if a non-STAFF role is explicitly provided.
     if (
       authUser.isSuperSales &&
       authUser.role !== "ADMIN" &&
       authUser.role !== "SUPER_ADMIN" &&
-      (withRole.role === "ADMIN" || withRole.role === "SUPER_ADMIN" || withRole.role !== "STAFF")
+      body.role &&
+      body.role !== "STAFF"
     ) {
       throw new AppError(C.USER_ROLE_NOT_ALLOWED, 403);
     }
     try {
-      const createdUser = await this.legacy.createStaffUser(withRole);
-      if (profile && createdUser?.id != null) {
-        // The frozen createStaffUser Prisma write drops isPrimary/isSuperSales (its
-        // `data` object is explicit and never included them) — write them here so a
-        // profile-assigned user is never out of sync with PROFILE_META.
-        await this.repo.setUserProfile({ userId: createdUser.id, profile, ...sync });
-      }
-      return createdUser;
+      return await this.legacy.createStaffUser(body);
     } catch (error) {
       if (isEmailTakenError(error)) throw new AppError(C.EMAIL_ALREADY_REGISTERED, 400);
       throw error;
@@ -284,24 +278,19 @@ export class UserUsecase {
 
   async update({ userId, body, authUser }) {
     if (!body || !userId) throw new AppError(C.USER_NOT_FOUND, 404);
-    // Same profile-authoritative derivation as create; no profile → no-op (parity).
-    const { body: withRole, profile, sync } = applyProfileToBody(body);
-    // Legacy rule: a non-admin isSuperSales editor may not change a role to non-STAFF.
+    // Identity only — role/profile changes go through the profiles endpoint. Legacy
+    // guard: a non-admin isSuperSales editor may not set a non-STAFF role.
     if (
       authUser.role !== "ADMIN" &&
       authUser.role !== "SUPER_ADMIN" &&
       authUser.isSuperSales &&
-      withRole.role &&
-      withRole.role !== "STAFF"
+      body.role &&
+      body.role !== "STAFF"
     ) {
       throw new AppError(C.USER_ROLE_NOT_ALLOWED, 403);
     }
     try {
-      const updated = await this.legacy.editStaffUser(withRole, userId);
-      // Same rationale as create(): the frozen editStaffUser write drops
-      // isPrimary/isSuperSales, so we sync them here explicitly.
-      if (profile) await this.repo.setUserProfile({ userId: Number(userId), profile, ...sync });
-      return updated;
+      return await this.legacy.editStaffUser(body, userId);
     } catch (error) {
       if (isEmailTakenError(error)) throw new AppError(C.EMAIL_ALREADY_REGISTERED, 400);
       throw error;
