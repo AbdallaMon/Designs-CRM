@@ -6,48 +6,48 @@
 
 export const accountingMessages = {
   // ── reads / generic ────────────────────────────────────────────────────────────
-  PAYMENTS_FETCHED: "تم جلب الدفعات",
-  PAYMENT_INVOICES_FETCHED: "تم جلب الفواتير",
-  NOTES_FETCHED: "تم جلب الملاحظات",
-  OPERATIONAL_EXPENSES_FETCHED: "تم جلب المصروفات التشغيلية",
-  RENTS_FETCHED: "تم جلب الإيجارات",
-  OUTCOMES_FETCHED: "تم جلب المصروفات",
-  SUMMARY_FETCHED: "تم جلب الملخص المالي",
-  USERS_FETCHED: "تم جلب المستخدمين",
-  USER_LAST_SEEN_FETCHED: "تم جلب سجل النشاط",
-  SALARY_DATA_FETCHED: "تم جلب بيانات الراتب",
+  PAYMENTS_FETCHED: "Payments fetched",
+  PAYMENT_INVOICES_FETCHED: "Invoices fetched",
+  NOTES_FETCHED: "Notes fetched",
+  OPERATIONAL_EXPENSES_FETCHED: "Operational expenses fetched",
+  RENTS_FETCHED: "Rents fetched",
+  OUTCOMES_FETCHED: "Expenses fetched",
+  SUMMARY_FETCHED: "Financial summary fetched",
+  USERS_FETCHED: "Users fetched",
+  USER_LAST_SEEN_FETCHED: "Activity log fetched",
+  SALARY_DATA_FETCHED: "Salary data fetched",
 
   // ── success / mutations ──────────────────────────────────────────────────────────
-  PAYMENT_PROCESSED: "تم تسجيل الدفعة",
-  PAYMENT_MARKED_OVERDUE: "تم تعليم الدفعة كمتأخرة",
-  PAYMENT_LEVEL_CHANGED: "تم تغيير مستوى الدفعة",
-  NOTE_CREATED: "تمت إضافة الملاحظة",
-  OPERATIONAL_EXPENSE_CREATED: "تمت إضافة المصروف التشغيلي",
-  RENT_CREATED: "تمت إضافة الإيجار",
-  RENT_RENEWED: "تم تجديد الإيجار",
-  SALARY_CREATED: "تم إنشاء الراتب الأساسي",
-  SALARY_UPDATED: "تم تحديث الراتب الأساسي",
-  MONTHLY_SALARY_PAID: "تم دفع الراتب الشهري",
+  PAYMENT_PROCESSED: "Payment recorded",
+  PAYMENT_MARKED_OVERDUE: "Payment marked as overdue",
+  PAYMENT_LEVEL_CHANGED: "Payment level changed",
+  NOTE_CREATED: "Note added",
+  OPERATIONAL_EXPENSE_CREATED: "Operational expense added",
+  RENT_CREATED: "Rent added",
+  RENT_RENEWED: "Rent renewed",
+  SALARY_CREATED: "Base salary created",
+  SALARY_UPDATED: "Base salary updated",
+  MONTHLY_SALARY_PAID: "Monthly salary paid",
 
   // ── errors / scope / domain rules (preserved from legacy services) ───────────────
-  PAYMENT_NOT_FOUND: "الدفعة غير موجودة",
-  PAYMENT_ALREADY_FULLY_PAID: "تم دفع هذه الدفعة بالكامل بالفعل",
-  PAYMENT_AMOUNT_EXCEEDS_PENDING: "المبلغ المدخل يتجاوز المبلغ المتبقي",
-  PAYMENT_AMOUNT_INVALID: "المبلغ غير صحيح",
-  PAYMENT_DATE_REQUIRED: "تاريخ الدفع مطلوب",
-  RENT_NOT_FOUND: "الإيجار غير موجود",
-  MONTHLY_SALARY_ALREADY_EXISTS: "تم دفع راتب هذا الشهر بالفعل",
-  REQUIRED_FIELDS_MISSING: "يرجى تعبئة جميع الحقول المطلوبة",
-  ACCOUNTING_ACCESS_DENIED: "لا تملك صلاحية الوصول إلى هذا القسم",
+  PAYMENT_NOT_FOUND: "Payment not found",
+  PAYMENT_ALREADY_FULLY_PAID: "This payment has already been fully paid",
+  PAYMENT_AMOUNT_EXCEEDS_PENDING: "The entered amount exceeds the remaining balance",
+  PAYMENT_AMOUNT_INVALID: "Invalid amount",
+  PAYMENT_DATE_REQUIRED: "Payment date is required",
+  RENT_NOT_FOUND: "Rent not found",
+  MONTHLY_SALARY_ALREADY_EXISTS: "This month's salary has already been paid",
+  REQUIRED_FIELDS_MISSING: "Please fill in all required fields",
+  ACCOUNTING_ACCESS_DENIED: "You do not have access to this section",
 
   // ── generic envelope codes (shared) ──────────────────────────────────────────────
-  OK: "تمت العملية بنجاح",
-  CREATED: "تم الإنشاء بنجاح",
-  UPDATED: "تم التحديث بنجاح",
-  DELETED: "تم الحذف بنجاح",
-  FORBIDDEN: "لا تملك صلاحية تنفيذ هذا الإجراء",
-  ACCESS_DENIED: "لا تملك صلاحية الوصول",
-  VALIDATION_ERROR: "بيانات غير صحيحة",
+  OK: "Operation completed successfully",
+  CREATED: "Created successfully",
+  UPDATED: "Updated successfully",
+  DELETED: "Deleted successfully",
+  FORBIDDEN: "You do not have permission to perform this action",
+  ACCESS_DENIED: "You do not have access",
+  VALIDATION_ERROR: "Invalid data",
 };
 
 /**
@@ -57,5 +57,5 @@ export const accountingMessages = {
  */
 export function resolveAccountingMessage(code, { fallback } = {}) {
   if (code && accountingMessages[code]) return accountingMessages[code];
-  return fallback ?? "تمت العملية";
+  return fallback ?? "Operation completed";
 }

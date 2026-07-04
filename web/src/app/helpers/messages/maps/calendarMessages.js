@@ -6,41 +6,41 @@
 
 export const calendarMessages = {
   // ── reads ──────────────────────────────────────────────────────────────────────
-  AVAILABLE_DAYS_FETCHED: "تم جلب الأيام المتاحة",
-  SLOTS_FETCHED: "تم جلب المواعيد",
-  SLOT_DETAILS_FETCHED: "تم جلب تفاصيل الموعد",
-  CALENDAR_MONTH_FETCHED: "تم جلب التقويم",
-  REMINDERS_FETCHED: "تم جلب المواعيد والمكالمات",
-  MEETING_DATA_FETCHED: "تم جلب بيانات الحجز",
-  TIMEZONES_FETCHED: "تم جلب المناطق الزمنية",
+  AVAILABLE_DAYS_FETCHED: "Available days fetched",
+  SLOTS_FETCHED: "Slots fetched",
+  SLOT_DETAILS_FETCHED: "Slot details fetched",
+  CALENDAR_MONTH_FETCHED: "Calendar fetched",
+  REMINDERS_FETCHED: "Appointments and calls fetched",
+  MEETING_DATA_FETCHED: "Booking data fetched",
+  TIMEZONES_FETCHED: "Timezones fetched",
 
   // ── availability mutations ───────────────────────────────────────────────────────
-  AVAILABLE_DAY_SAVED: "تم حفظ اليوم المتاح",
-  AVAILABLE_DAYS_SAVED: "تم حفظ الأيام المتاحة",
-  AVAILABLE_DAY_DELETED: "تم حذف اليوم",
-  SLOT_DELETED: "تم حذف الموعد",
+  AVAILABLE_DAY_SAVED: "Available day saved",
+  AVAILABLE_DAYS_SAVED: "Available days saved",
+  AVAILABLE_DAY_DELETED: "Day deleted",
+  SLOT_DELETED: "Slot deleted",
 
   // ── client booking ───────────────────────────────────────────────────────────────
-  MEETING_BOOKED: "تم تأكيد الحجز بنجاح",
+  MEETING_BOOKED: "Booking confirmed successfully",
 
   // ── google integration ───────────────────────────────────────────────────────────
-  GOOGLE_AUTH_URL_GENERATED: "تم إنشاء رابط الربط",
-  GOOGLE_STATUS_FETCHED: "تم جلب حالة الربط",
-  GOOGLE_DISCONNECTED: "تم إلغاء ربط حساب جوجل",
+  GOOGLE_AUTH_URL_GENERATED: "Connection link created",
+  GOOGLE_STATUS_FETCHED: "Connection status fetched",
+  GOOGLE_DISCONNECTED: "Google account disconnected",
 
   // ── errors / domain rules ─────────────────────────────────────────────────────────
-  GOOGLE_ALREADY_CONNECTED: "حساب جوجل مرتبط بالفعل",
-  GOOGLE_CALLBACK_INVALID: "رابط الربط غير صالح",
-  CALENDAR_ACCESS_DENIED: "لا تملك صلاحية الوصول إلى التقويم",
+  GOOGLE_ALREADY_CONNECTED: "Google account is already connected",
+  GOOGLE_CALLBACK_INVALID: "Invalid connection link",
+  CALENDAR_ACCESS_DENIED: "You do not have access to the calendar",
 
   // ── generic envelope codes (shared) ──────────────────────────────────────────────
-  OK: "تمت العملية بنجاح",
-  CREATED: "تم الإنشاء بنجاح",
-  UPDATED: "تم التحديث بنجاح",
-  DELETED: "تم الحذف بنجاح",
-  FORBIDDEN: "لا تملك صلاحية تنفيذ هذا الإجراء",
-  ACCESS_DENIED: "لا تملك صلاحية الوصول",
-  VALIDATION_ERROR: "بيانات غير صحيحة",
+  OK: "Operation completed successfully",
+  CREATED: "Created successfully",
+  UPDATED: "Updated successfully",
+  DELETED: "Deleted successfully",
+  FORBIDDEN: "You do not have permission to perform this action",
+  ACCESS_DENIED: "You do not have access",
+  VALIDATION_ERROR: "Invalid data",
 };
 
 /**
@@ -50,5 +50,5 @@ export const calendarMessages = {
  */
 export function resolveCalendarMessage(code, { fallback } = {}) {
   if (code && calendarMessages[code]) return calendarMessages[code];
-  return fallback ?? "تمت العملية";
+  return fallback ?? "Operation completed";
 }

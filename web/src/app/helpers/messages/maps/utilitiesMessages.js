@@ -6,33 +6,33 @@
 
 export const utilitiesMessages = {
   // ── reads ──────────────────────────────────────────────────────────────────────
-  FIXED_DATA_FETCHED: "تم جلب البيانات الثابتة",
-  USER_LOG_FETCHED: "تم جلب سجل العمل",
-  USER_ROLE_FETCHED: "تم جلب صلاحية المستخدم",
-  ROLES_FETCHED: "تم جلب الأدوار",
-  ADMINS_FETCHED: "تم جلب المسؤولين",
-  IMAGES_FETCHED: "تم جلب الصور",
-  MODEL_FETCHED: "تم جلب البيانات",
-  MODEL_IDS_FETCHED: "تم جلب القائمة",
-  SEARCH_RESULTS_FETCHED: "تم جلب نتائج البحث",
+  FIXED_DATA_FETCHED: "Fixed data fetched",
+  USER_LOG_FETCHED: "Work log fetched",
+  USER_ROLE_FETCHED: "User role fetched",
+  ROLES_FETCHED: "Roles fetched",
+  ADMINS_FETCHED: "Admins fetched",
+  IMAGES_FETCHED: "Images fetched",
+  MODEL_FETCHED: "Data fetched",
+  MODEL_IDS_FETCHED: "List fetched",
+  SEARCH_RESULTS_FETCHED: "Search results fetched",
 
   // ── writes ─────────────────────────────────────────────────────────────────────
-  USER_LOG_SUBMITTED: "تم تسجيل سجل العمل",
+  USER_LOG_SUBMITTED: "Work log recorded",
   // Fixed-data writes are served by the admin-residual module (translationKey
   // `adminResidualMessages`); the resolver keys on the CODE string, so we mirror them here.
-  FIXED_DATA_CREATED: "تمت إضافة البيانات الثابتة",
-  FIXED_DATA_UPDATED: "تم تحديث البيانات الثابتة",
-  FIXED_DATA_DELETED: "تم حذف البيانات الثابتة",
+  FIXED_DATA_CREATED: "Fixed data added",
+  FIXED_DATA_UPDATED: "Fixed data updated",
+  FIXED_DATA_DELETED: "Fixed data deleted",
 
   // ── errors / domain rules ─────────────────────────────────────────────────────────
-  MODEL_NOT_ALLOWED: "النموذج المطلوب غير مسموح به",
+  MODEL_NOT_ALLOWED: "The requested model is not allowed",
 
   // ── generic envelope codes (shared) ──────────────────────────────────────────────
-  OK: "تمت العملية بنجاح",
-  CREATED: "تم الإنشاء بنجاح",
-  FORBIDDEN: "لا تملك صلاحية تنفيذ هذا الإجراء",
-  ACCESS_DENIED: "لا تملك صلاحية الوصول",
-  VALIDATION_ERROR: "بيانات غير صحيحة",
+  OK: "Operation completed successfully",
+  CREATED: "Created successfully",
+  FORBIDDEN: "You do not have permission to perform this action",
+  ACCESS_DENIED: "You do not have access",
+  VALIDATION_ERROR: "Invalid data",
 };
 
 /**
@@ -42,5 +42,5 @@ export const utilitiesMessages = {
  */
 export function resolveUtilitiesMessage(code, { fallback } = {}) {
   if (code && utilitiesMessages[code]) return utilitiesMessages[code];
-  return fallback ?? "تمت العملية";
+  return fallback ?? "Operation completed";
 }

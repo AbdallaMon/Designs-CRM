@@ -5,26 +5,26 @@
 
 export const chatMessages = {
   // rooms
-  CHAT_ROOM_CREATED: "تم إنشاء المحادثة",
-  CHAT_ROOM_UPDATED: "تم تحديث المحادثة",
-  CHAT_ROOM_DELETED: "تم حذف المحادثة",
-  CHAT_ROOM_NOT_FOUND: "المحادثة غير موجودة",
-  CHAT_ROOM_SETTINGS_UPDATED: "تم تحديث إعدادات المحادثة",
-  CHAT_TOKEN_REGENERATED: "تم إعادة إنشاء رابط الوصول",
-  CHAT_CLIENT_UPDATED: "تم تحديث العميل في المحادثة",
+  CHAT_ROOM_CREATED: "Chat created",
+  CHAT_ROOM_UPDATED: "Chat updated",
+  CHAT_ROOM_DELETED: "Chat deleted",
+  CHAT_ROOM_NOT_FOUND: "Chat not found",
+  CHAT_ROOM_SETTINGS_UPDATED: "Chat settings updated",
+  CHAT_TOKEN_REGENERATED: "Access link regenerated",
+  CHAT_CLIENT_UPDATED: "Client updated in chat",
   // members
-  CHAT_MEMBERS_ADDED: "تمت إضافة الأعضاء",
-  CHAT_MEMBER_REMOVED: "تمت إزالة العضو",
-  CHAT_MEMBER_UPDATED: "تم تحديث العضو",
+  CHAT_MEMBERS_ADDED: "Members added",
+  CHAT_MEMBER_REMOVED: "Member removed",
+  CHAT_MEMBER_UPDATED: "Member updated",
   // messages
-  CHAT_MESSAGES_READ: "تم تعليم الرسائل كمقروءة",
-  CHAT_REACTION_ADDED: "تمت إضافة التفاعل",
-  CHAT_REACTION_REMOVED: "تمت إزالة التفاعل",
+  CHAT_MESSAGES_READ: "Messages marked as read",
+  CHAT_REACTION_ADDED: "Reaction added",
+  CHAT_REACTION_REMOVED: "Reaction removed",
   // generic
-  OK: "تمت العملية بنجاح",
-  FORBIDDEN: "لا تملك صلاحية تنفيذ هذا الإجراء",
-  ACCESS_DENIED: "لا تملك صلاحية الوصول",
-  VALIDATION_ERROR: "بيانات غير صحيحة",
+  OK: "Operation completed successfully",
+  FORBIDDEN: "You do not have permission to perform this action",
+  ACCESS_DENIED: "You do not have access",
+  VALIDATION_ERROR: "Invalid data",
 };
 
 /**
@@ -35,5 +35,5 @@ export const chatMessages = {
  */
 export function resolveChatMessage(code, { fallback } = {}) {
   if (code && chatMessages[code]) return chatMessages[code];
-  return fallback ?? "تمت العملية";
+  return fallback ?? "Operation completed";
 }

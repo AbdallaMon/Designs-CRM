@@ -6,21 +6,21 @@
 
 export const dashboardMessages = {
   // ── reads (the 9 aggregations) ───────────────────────────────────────────────────
-  KEY_METRICS_FETCHED: "تم جلب المؤشرات الرئيسية",
-  LEAD_STATUS_FETCHED: "تم جلب حالة العملاء المحتملين",
-  MONTHLY_PERFORMANCE_FETCHED: "تم جلب الأداء الشهري",
-  EMIRATES_ANALYTICS_FETCHED: "تم جلب تحليلات الإمارات",
-  LEADS_MONTHLY_OVERVIEW_FETCHED: "تم جلب نظرة شهرية على العملاء",
-  WEEK_PERFORMANCE_FETCHED: "تم جلب أداء الأسبوع",
-  LATEST_LEADS_FETCHED: "تم جلب أحدث العملاء المحتملين",
-  RECENT_ACTIVITIES_FETCHED: "تم جلب آخر الأنشطة",
-  DESIGNER_METRICS_FETCHED: "تم جلب مؤشرات المصممين",
+  KEY_METRICS_FETCHED: "Key metrics fetched",
+  LEAD_STATUS_FETCHED: "Lead status fetched",
+  MONTHLY_PERFORMANCE_FETCHED: "Monthly performance fetched",
+  EMIRATES_ANALYTICS_FETCHED: "Emirates analytics fetched",
+  LEADS_MONTHLY_OVERVIEW_FETCHED: "Monthly leads overview fetched",
+  WEEK_PERFORMANCE_FETCHED: "Weekly performance fetched",
+  LATEST_LEADS_FETCHED: "Latest leads fetched",
+  RECENT_ACTIVITIES_FETCHED: "Recent activities fetched",
+  DESIGNER_METRICS_FETCHED: "Designer metrics fetched",
 
   // ── generic envelope codes (shared) ──────────────────────────────────────────────
-  OK: "تمت العملية بنجاح",
-  FORBIDDEN: "لا تملك صلاحية تنفيذ هذا الإجراء",
-  ACCESS_DENIED: "لا تملك صلاحية الوصول",
-  VALIDATION_ERROR: "بيانات غير صحيحة",
+  OK: "Operation completed successfully",
+  FORBIDDEN: "You do not have permission to perform this action",
+  ACCESS_DENIED: "You do not have access",
+  VALIDATION_ERROR: "Invalid data",
 };
 
 /**
@@ -30,5 +30,5 @@ export const dashboardMessages = {
  */
 export function resolveDashboardMessage(code, { fallback } = {}) {
   if (code && dashboardMessages[code]) return dashboardMessages[code];
-  return fallback ?? "تمت العملية";
+  return fallback ?? "Operation completed";
 }

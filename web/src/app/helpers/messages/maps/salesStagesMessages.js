@@ -6,22 +6,22 @@
 
 export const salesStagesMessages = {
   // ── reads ──────────────────────────────────────────────────────────────────────
-  SALES_STAGES_FETCHED: "تم جلب مراحل البيع",
+  SALES_STAGES_FETCHED: "Sales stages fetched",
 
   // ── writes ───────────────────────────────────────────────────────────────────────
-  SALES_STAGE_UPDATED: "تم تحديث مرحلة البيع",
+  SALES_STAGE_UPDATED: "Sales stage updated",
 
   // ── errors / domain rules ─────────────────────────────────────────────────────────
-  SALES_STAGE_ACCESS_DENIED: "لا تملك صلاحية الوصول إلى مراحل البيع",
+  SALES_STAGE_ACCESS_DENIED: "You do not have access to sales stages",
 
   // ── generic envelope codes (shared) ──────────────────────────────────────────────
-  OK: "تمت العملية بنجاح",
-  CREATED: "تم الإنشاء بنجاح",
-  UPDATED: "تم التحديث بنجاح",
-  FORBIDDEN: "لا تملك صلاحية تنفيذ هذا الإجراء",
-  ACCESS_DENIED: "لا تملك صلاحية الوصول",
-  VALIDATION_ERROR: "بيانات غير صحيحة",
-  NOT_FOUND: "العنصر غير موجود",
+  OK: "Operation completed successfully",
+  CREATED: "Created successfully",
+  UPDATED: "Updated successfully",
+  FORBIDDEN: "You do not have permission to perform this action",
+  ACCESS_DENIED: "You do not have access",
+  VALIDATION_ERROR: "Invalid data",
+  NOT_FOUND: "Item not found",
 };
 
 /**
@@ -31,5 +31,5 @@ export const salesStagesMessages = {
  */
 export function resolveSalesStagesMessage(code, { fallback } = {}) {
   if (code && salesStagesMessages[code]) return salesStagesMessages[code];
-  return fallback ?? "تمت العملية";
+  return fallback ?? "Operation completed";
 }

@@ -8,56 +8,56 @@
 
 export const contractsMessages = {
   // ── authed reads ────────────────────────────────────────────────────────────────
-  CONTRACTS_FETCHED: "تم جلب العقود",
-  CONTRACT_FETCHED: "تم جلب العقد",
-  CONTRACT_PAYMENTS_FETCHED: "تم جلب الدفعات",
+  CONTRACTS_FETCHED: "Contracts fetched",
+  CONTRACT_FETCHED: "Contract fetched",
+  CONTRACT_PAYMENTS_FETCHED: "Payments fetched",
 
   // ── authed writes (contract lifecycle) ─────────────────────────────────────────────
-  CONTRACT_CREATED: "تم إنشاء العقد",
-  CONTRACT_UPDATED: "تم تحديث العقد",
-  CONTRACT_CANCELLED: "تم إلغاء العقد",
-  CONTRACT_PDF_TOKEN_GENERATED: "تم إنشاء رابط التوقيع",
+  CONTRACT_CREATED: "Contract created",
+  CONTRACT_UPDATED: "Contract updated",
+  CONTRACT_CANCELLED: "Contract cancelled",
+  CONTRACT_PDF_TOKEN_GENERATED: "Signing link created",
 
   // ── authed writes (stages) ─────────────────────────────────────────────────────────
-  CONTRACT_STAGE_CREATED: "تمت إضافة المرحلة",
-  CONTRACT_STAGE_UPDATED: "تم تحديث المرحلة",
-  CONTRACT_STAGE_DELETED: "تم حذف المرحلة",
+  CONTRACT_STAGE_CREATED: "Stage added",
+  CONTRACT_STAGE_UPDATED: "Stage updated",
+  CONTRACT_STAGE_DELETED: "Stage deleted",
 
   // ── authed writes (payments) ───────────────────────────────────────────────────────
-  CONTRACT_PAYMENT_CREATED: "تمت إضافة الدفعة",
-  CONTRACT_PAYMENT_UPDATED: "تم تحديث الدفعة",
-  CONTRACT_PAYMENT_DELETED: "تم حذف الدفعة",
-  CONTRACT_PAYMENT_STATUS_UPDATED: "تم تحديث حالة الدفعة",
-  CONTRACT_PAYMENT_AMOUNTS_UPDATED: "تم تحديث مبالغ الدفعة",
+  CONTRACT_PAYMENT_CREATED: "Payment added",
+  CONTRACT_PAYMENT_UPDATED: "Payment updated",
+  CONTRACT_PAYMENT_DELETED: "Payment deleted",
+  CONTRACT_PAYMENT_STATUS_UPDATED: "Payment status updated",
+  CONTRACT_PAYMENT_AMOUNTS_UPDATED: "Payment amounts updated",
 
   // ── authed writes (drawings) ───────────────────────────────────────────────────────
-  CONTRACT_DRAWING_CREATED: "تمت إضافة المخطط",
-  CONTRACT_DRAWING_UPDATED: "تم تحديث المخطط",
-  CONTRACT_DRAWING_DELETED: "تم حذف المخطط",
+  CONTRACT_DRAWING_CREATED: "Drawing added",
+  CONTRACT_DRAWING_UPDATED: "Drawing updated",
+  CONTRACT_DRAWING_DELETED: "Drawing deleted",
 
   // ── authed writes (special items) ──────────────────────────────────────────────────
-  CONTRACT_SPECIAL_ITEM_CREATED: "تمت إضافة البند الخاص",
-  CONTRACT_SPECIAL_ITEM_UPDATED: "تم تحديث البند الخاص",
-  CONTRACT_SPECIAL_ITEM_DELETED: "تم حذف البند الخاص",
+  CONTRACT_SPECIAL_ITEM_CREATED: "Special item added",
+  CONTRACT_SPECIAL_ITEM_UPDATED: "Special item updated",
+  CONTRACT_SPECIAL_ITEM_DELETED: "Special item deleted",
 
   // ── public client e-sign surface ───────────────────────────────────────────────────
-  CONTRACT_SESSION_FETCHED: "تم جلب بيانات العقد",
-  CONTRACT_SESSION_STATUS_UPDATED: "تم حفظ الاستجابة بنجاح",
-  CONTRACT_PDF_GENERATED: "تم توقيع العقد بنجاح",
+  CONTRACT_SESSION_FETCHED: "Contract data fetched",
+  CONTRACT_SESSION_STATUS_UPDATED: "Response saved successfully",
+  CONTRACT_PDF_GENERATED: "Contract signed successfully",
 
   // ── errors / domain rules ──────────────────────────────────────────────────────────
-  CONTRACT_NOT_FOUND: "العقد غير موجود",
-  CONTRACT_SESSION_INVALID: "رابط التوقيع غير صالح",
-  CONTRACT_PDF_GENERATION_FAILED: "فشل إنشاء ملف العقد",
+  CONTRACT_NOT_FOUND: "Contract not found",
+  CONTRACT_SESSION_INVALID: "Invalid signing link",
+  CONTRACT_PDF_GENERATION_FAILED: "Failed to generate contract file",
 
   // ── generic envelope codes (shared) ────────────────────────────────────────────────
-  OK: "تمت العملية بنجاح",
-  CREATED: "تم الإنشاء بنجاح",
-  UPDATED: "تم التحديث بنجاح",
-  DELETED: "تم الحذف بنجاح",
-  FORBIDDEN: "لا تملك صلاحية تنفيذ هذا الإجراء",
-  ACCESS_DENIED: "لا تملك صلاحية الوصول",
-  VALIDATION_ERROR: "بيانات غير صحيحة",
+  OK: "Operation completed successfully",
+  CREATED: "Created successfully",
+  UPDATED: "Updated successfully",
+  DELETED: "Deleted successfully",
+  FORBIDDEN: "You do not have permission to perform this action",
+  ACCESS_DENIED: "You do not have access",
+  VALIDATION_ERROR: "Invalid data",
 };
 
 /**
@@ -67,5 +67,5 @@ export const contractsMessages = {
  */
 export function resolveContractMessage(code, { fallback } = {}) {
   if (code && contractsMessages[code]) return contractsMessages[code];
-  return fallback ?? "تمت العملية";
+  return fallback ?? "Operation completed";
 }

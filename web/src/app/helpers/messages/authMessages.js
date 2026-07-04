@@ -10,63 +10,63 @@
 
 export const authMessages = {
   // ── auth: authentication errors ───────────────────────────────────────────────
-  UNAUTHORIZED: "يجب تسجيل الدخول للمتابعة",
-  INVALID_TOKEN: "انتهت صلاحية الجلسة، يرجى تسجيل الدخول من جديد",
-  TOKEN_EXPIRED: "انتهت صلاحية الجلسة، يرجى تسجيل الدخول من جديد",
-  INVALID_CREDENTIALS: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
-  ACCOUNT_BLOCKED: "تم إيقاف هذا الحساب، يرجى التواصل مع الإدارة",
-  REFRESH_TOKEN_MISSING: "انتهت صلاحية الجلسة، يرجى تسجيل الدخول من جديد",
-  RESET_TOKEN_MISSING: "رابط إعادة التعيين غير صالح أو منتهي الصلاحية",
-  PASSWORD_MUST_DIFFER: "يجب أن تكون كلمة المرور الجديدة مختلفة عن السابقة",
-  RATE_LIMIT_EXCEEDED: "عدد المحاولات كبير، يرجى المحاولة لاحقًا",
+  UNAUTHORIZED: "You must sign in to continue",
+  INVALID_TOKEN: "Your session has expired, please sign in again",
+  TOKEN_EXPIRED: "Your session has expired, please sign in again",
+  INVALID_CREDENTIALS: "Incorrect email or password",
+  ACCOUNT_BLOCKED: "This account has been suspended, please contact the administration",
+  REFRESH_TOKEN_MISSING: "Your session has expired, please sign in again",
+  RESET_TOKEN_MISSING: "The reset link is invalid or has expired",
+  PASSWORD_MUST_DIFFER: "The new password must be different from the previous one",
+  RATE_LIMIT_EXCEEDED: "Too many attempts, please try again later",
 
   // ── auth: authorization errors ────────────────────────────────────────────────
-  FORBIDDEN: "لا تملك صلاحية تنفيذ هذا الإجراء",
-  PERMISSION_DENIED: "ليس لديك صلاحية للقيام بهذا الإجراء",
-  ACCESS_DENIED: "لا تملك صلاحية الوصول إلى هذا العنصر",
+  FORBIDDEN: "You do not have permission to perform this action",
+  PERMISSION_DENIED: "You do not have permission to perform this action",
+  ACCESS_DENIED: "You do not have access to this item",
 
   // ── profiles (DB-relational permissions) ──────────────────────────────────────
-  PROFILE_NOT_ASSIGNED: "هذا الملف الوظيفي غير مُسند إليك",
-  PROFILE_NOT_FOUND: "الملف الوظيفي غير موجود",
-  PROFILE_SWITCHED: "تم تبديل الملف الوظيفي",
-  PROFILES_UPDATED: "تم تحديث الملفات الوظيفية",
+  PROFILE_NOT_ASSIGNED: "This job profile is not assigned to you",
+  PROFILE_NOT_FOUND: "Job profile not found",
+  PROFILE_SWITCHED: "Job profile switched",
+  PROFILES_UPDATED: "Job profiles updated",
 
   // ── auth: success ─────────────────────────────────────────────────────────────
-  LOGIN_SUCCESS: "تم تسجيل الدخول بنجاح",
-  LOGOUT_SUCCESS: "تم تسجيل الخروج بنجاح",
-  TOKENS_REFRESHED: "تم تحديث الجلسة",
-  PASSWORD_RESET_REQUESTED: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك",
-  PASSWORD_RESET_REQUEST: "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك",
-  PASSWORD_CHANGED: "تم تغيير كلمة المرور بنجاح",
-  PASSWORD_RESET_SUCCESS: "تم تغيير كلمة المرور بنجاح",
-  CURRENT_USER_RETRIEVED: "تم جلب بيانات المستخدم",
+  LOGIN_SUCCESS: "Signed in successfully",
+  LOGOUT_SUCCESS: "Signed out successfully",
+  TOKENS_REFRESHED: "Session refreshed",
+  PASSWORD_RESET_REQUESTED: "A password reset link has been sent to your email",
+  PASSWORD_RESET_REQUEST: "A password reset link has been sent to your email",
+  PASSWORD_CHANGED: "Password changed successfully",
+  PASSWORD_RESET_SUCCESS: "Password changed successfully",
+  CURRENT_USER_RETRIEVED: "User data fetched",
 
   // ── generic envelope codes (shared core: messages-codes/core/general.js) ───────
-  OK: "تمت العملية بنجاح",
-  SUCCESS: "تمت العملية بنجاح",
-  OPERATION_SUCCESS: "تمت العملية بنجاح",
-  CREATED: "تم الإنشاء بنجاح",
-  UPDATED: "تم التحديث بنجاح",
-  DELETED: "تم الحذف بنجاح",
-  NOT_FOUND: "العنصر المطلوب غير موجود",
-  BAD_REQUEST: "طلب غير صالح",
-  VALIDATION_ERROR: "بيانات غير صحيحة، يرجى مراجعة الحقول",
-  CONFLICT: "تعارض في البيانات",
-  TOO_MANY_REQUESTS: "عدد الطلبات كبير، يرجى المحاولة لاحقًا",
-  SERVICE_UNAVAILABLE: "الخدمة غير متاحة حاليًا، يرجى المحاولة لاحقًا",
-  INTERNAL_ERROR: "حدث خطأ في الخادم، يرجى المحاولة لاحقًا",
-  INTERNAL_SERVER_ERROR: "حدث خطأ في الخادم، يرجى المحاولة لاحقًا",
-  UNEXPECTED_ERROR: "حدث خطأ غير متوقع، يرجى المحاولة لاحقًا",
+  OK: "Operation completed successfully",
+  SUCCESS: "Operation completed successfully",
+  OPERATION_SUCCESS: "Operation completed successfully",
+  CREATED: "Created successfully",
+  UPDATED: "Updated successfully",
+  DELETED: "Deleted successfully",
+  NOT_FOUND: "The requested item was not found",
+  BAD_REQUEST: "Invalid request",
+  VALIDATION_ERROR: "Invalid data, please review the fields",
+  CONFLICT: "Data conflict",
+  TOO_MANY_REQUESTS: "Too many requests, please try again later",
+  SERVICE_UNAVAILABLE: "The service is currently unavailable, please try again later",
+  INTERNAL_ERROR: "A server error occurred, please try again later",
+  INTERNAL_SERVER_ERROR: "A server error occurred, please try again later",
+  UNEXPECTED_ERROR: "An unexpected error occurred, please try again later",
 
   // ── file upload (shared core) ─────────────────────────────────────────────────
-  FILE_UPLOAD_ERROR: "فشل رفع الملف، يرجى المحاولة مرة أخرى",
-  FILE_TOO_LARGE: "حجم الملف كبير جدًا",
-  TOO_MANY_FILES: "عدد الملفات كبير جدًا",
-  UNEXPECTED_FILE_FIELD: "حقل ملف غير متوقع",
+  FILE_UPLOAD_ERROR: "File upload failed, please try again",
+  FILE_TOO_LARGE: "The file is too large",
+  TOO_MANY_FILES: "Too many files",
+  UNEXPECTED_FILE_FIELD: "Unexpected file field",
 };
 
 /** Neutral Arabic fallback when a code is unknown and no explicit fallback is given. */
-export const DEFAULT_FALLBACK_MESSAGE = "حدث خطأ ما، حاول مرة أخرى";
+export const DEFAULT_FALLBACK_MESSAGE = "Something went wrong, please try again";
 
 /**
  * Resolve an AUTH or GENERIC backend message CODE to an Arabic display string.

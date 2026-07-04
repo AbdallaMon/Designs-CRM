@@ -6,69 +6,69 @@
 
 export const projectsMessages = {
   // ── projects: reads ────────────────────────────────────────────────────────────
-  PROJECTS_FETCHED: "تم جلب المشاريع",
-  PROJECT_FETCHED: "تم جلب المشروع",
-  DESIGNER_PROJECTS_FETCHED: "تم جلب مشاريع المصممين",
-  DESIGNER_LEAD_FETCHED: "تم جلب بيانات العميل",
-  ARCHIVED_PROJECTS_FETCHED: "تم جلب المشاريع المؤرشفة",
-  USER_PROJECTS_FETCHED: "تم جلب مشاريع المستخدم",
-  PROJECT_GROUPS_FETCHED: "تم جلب مجموعات المشاريع",
+  PROJECTS_FETCHED: "Projects fetched",
+  PROJECT_FETCHED: "Project fetched",
+  DESIGNER_PROJECTS_FETCHED: "Designer projects fetched",
+  DESIGNER_LEAD_FETCHED: "Lead data fetched",
+  ARCHIVED_PROJECTS_FETCHED: "Archived projects fetched",
+  USER_PROJECTS_FETCHED: "User projects fetched",
+  PROJECT_GROUPS_FETCHED: "Project groups fetched",
 
   // ── projects: mutations ──────────────────────────────────────────────────────────
-  PROJECT_UPDATED: "تم تحديث المشروع",
-  PROJECT_DESIGNER_ASSIGNED: "تم تحديث تعيين المصمم",
-  PROJECT_STATUS_CHANGED: "تم تغيير حالة المشروع",
+  PROJECT_UPDATED: "Project updated",
+  PROJECT_DESIGNER_ASSIGNED: "Designer assignment updated",
+  PROJECT_STATUS_CHANGED: "Project status changed",
 
   // ── tasks ────────────────────────────────────────────────────────────────────────
-  TASKS_FETCHED: "تم جلب المهام",
-  TASK_FETCHED: "تم جلب المهمة",
-  TASK_CREATED: "تم إنشاء المهمة",
-  MODIFICATION_CREATED: "تم إنشاء التعديل",
-  TASK_UPDATED: "تم تحديث المهمة",
-  MODIFICATION_UPDATED: "تم تحديث التعديل",
-  TASK_DELETED: "تم حذف المهمة",
-  NOTES_FETCHED: "تم جلب الملاحظات",
-  NOTE_ADDED: "تمت إضافة الملاحظة",
+  TASKS_FETCHED: "Tasks fetched",
+  TASK_FETCHED: "Task fetched",
+  TASK_CREATED: "Task created",
+  MODIFICATION_CREATED: "Modification created",
+  TASK_UPDATED: "Task updated",
+  MODIFICATION_UPDATED: "Modification updated",
+  TASK_DELETED: "Task deleted",
+  NOTES_FETCHED: "Notes fetched",
+  NOTE_ADDED: "Note added",
 
   // ── updates ──────────────────────────────────────────────────────────────────────
-  UPDATES_FETCHED: "تم جلب التحديثات",
-  UPDATE_SHARED_SETTINGS_FETCHED: "تم جلب إعدادات المشاركة",
-  UPDATE_CREATED: "تم إنشاء التحديث",
-  UPDATE_DEPARTMENT_AUTHORIZED: "تم اعتماد القسم",
-  UPDATE_DEPARTMENT_UNAUTHORIZED: "تم إلغاء اعتماد القسم",
-  UPDATE_ARCHIVE_TOGGLED: "تم تحديث حالة الأرشفة",
-  SHARED_UPDATE_ARCHIVE_TOGGLED: "تم تحديث حالة الأرشفة",
-  UPDATE_MARKED_DONE: "تم وضع علامة منجز على التحديث",
+  UPDATES_FETCHED: "Updates fetched",
+  UPDATE_SHARED_SETTINGS_FETCHED: "Sharing settings fetched",
+  UPDATE_CREATED: "Update created",
+  UPDATE_DEPARTMENT_AUTHORIZED: "Department approved",
+  UPDATE_DEPARTMENT_UNAUTHORIZED: "Department approval revoked",
+  UPDATE_ARCHIVE_TOGGLED: "Archive status updated",
+  SHARED_UPDATE_ARCHIVE_TOGGLED: "Archive status updated",
+  UPDATE_MARKED_DONE: "Update marked as done",
 
   // ── delivery ─────────────────────────────────────────────────────────────────────
-  DELIVERY_SCHEDULES_FETCHED: "تم جلب مواعيد التسليم",
-  DELIVERY_SCHEDULE_CREATED: "تمت إضافة موعد التسليم",
-  DELIVERY_LINKED_TO_MEETING: "تم ربط التسليم بالاجتماع",
-  DELIVERY_SCHEDULE_DELETED: "تم حذف موعد التسليم",
+  DELIVERY_SCHEDULES_FETCHED: "Delivery schedules fetched",
+  DELIVERY_SCHEDULE_CREATED: "Delivery schedule added",
+  DELIVERY_LINKED_TO_MEETING: "Delivery linked to meeting",
+  DELIVERY_SCHEDULE_DELETED: "Delivery schedule deleted",
 
   // ── errors / scope / guards ────────────────────────────────────────────────────
-  PROJECT_NOT_FOUND: "المشروع غير موجود",
-  PROJECT_ACCESS_DENIED: "لا تملك صلاحية الوصول إلى هذا المشروع",
-  PROJECT_MUTATE_DENIED: "لا تملك صلاحية تعديل هذا المشروع",
-  TASK_NOT_FOUND: "المهمة غير موجودة",
-  UPDATE_NOT_FOUND: "التحديث غير موجود",
-  SHARED_UPDATE_NOT_FOUND: "التحديث المشترك غير موجود",
-  DELIVERY_NOT_FOUND: "موعد التسليم غير موجود",
-  PROJECT_STATUS_TRANSITION_FORBIDDEN: "لا يمكن تغيير الحالة من الحالة الحالية",
-  TASK_STATUS_TRANSITION_FORBIDDEN: "لا يمكن تعديل مهمة منتهية",
-  PROJECT_NOT_IN_MODIFICATION: "المشروع ليس في مرحلة التعديل بعد",
-  DESIGNER_ALREADY_ASSIGNED: "المصمم معيّن بالفعل",
-  DELETE_MODEL_REQUIRED: "نوع العنصر المراد حذفه مطلوب",
-  DELETE_NOT_ALLOWED: "لا يمكن حذف هذا العنصر",
+  PROJECT_NOT_FOUND: "Project not found",
+  PROJECT_ACCESS_DENIED: "You do not have access to this project",
+  PROJECT_MUTATE_DENIED: "You do not have permission to edit this project",
+  TASK_NOT_FOUND: "Task not found",
+  UPDATE_NOT_FOUND: "Update not found",
+  SHARED_UPDATE_NOT_FOUND: "Shared update not found",
+  DELIVERY_NOT_FOUND: "Delivery schedule not found",
+  PROJECT_STATUS_TRANSITION_FORBIDDEN: "Cannot change the status from the current status",
+  TASK_STATUS_TRANSITION_FORBIDDEN: "Cannot edit a completed task",
+  PROJECT_NOT_IN_MODIFICATION: "The project is not in the modification stage yet",
+  DESIGNER_ALREADY_ASSIGNED: "The designer is already assigned",
+  DELETE_MODEL_REQUIRED: "The type of item to delete is required",
+  DELETE_NOT_ALLOWED: "This item cannot be deleted",
 
   // ── generic envelope codes (shared) ────────────────────────────────────────────
-  OK: "تمت العملية بنجاح",
-  CREATED: "تم الإنشاء بنجاح",
-  UPDATED: "تم التحديث بنجاح",
-  DELETED: "تم الحذف بنجاح",
-  FORBIDDEN: "لا تملك صلاحية تنفيذ هذا الإجراء",
-  ACCESS_DENIED: "لا تملك صلاحية الوصول",
-  VALIDATION_ERROR: "بيانات غير صحيحة",
+  OK: "Operation completed successfully",
+  CREATED: "Created successfully",
+  UPDATED: "Updated successfully",
+  DELETED: "Deleted successfully",
+  FORBIDDEN: "You do not have permission to perform this action",
+  ACCESS_DENIED: "You do not have access",
+  VALIDATION_ERROR: "Invalid data",
 };
 
 /**
@@ -78,5 +78,5 @@ export const projectsMessages = {
  */
 export function resolveProjectsMessage(code, { fallback } = {}) {
   if (code && projectsMessages[code]) return projectsMessages[code];
-  return fallback ?? "تمت العملية";
+  return fallback ?? "Operation completed";
 }

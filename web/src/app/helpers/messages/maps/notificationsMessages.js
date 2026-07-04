@@ -6,17 +6,17 @@
 
 export const notificationsMessages = {
   // ── reads ──────────────────────────────────────────────────────────────────────
-  NOTIFICATIONS_FETCHED: "تم جلب الإشعارات",
-  UNREAD_NOTIFICATIONS_FETCHED: "تم جلب الإشعارات غير المقروءة",
+  NOTIFICATIONS_FETCHED: "Notifications fetched",
+  UNREAD_NOTIFICATIONS_FETCHED: "Unread notifications fetched",
 
   // ── action ───────────────────────────────────────────────────────────────────────
-  NOTIFICATIONS_MARKED_READ: "تم تعليم الإشعارات كمقروءة",
+  NOTIFICATIONS_MARKED_READ: "Notifications marked as read",
 
   // ── generic envelope codes (shared) ──────────────────────────────────────────────
-  OK: "تمت العملية بنجاح",
-  FORBIDDEN: "لا تملك صلاحية تنفيذ هذا الإجراء",
-  ACCESS_DENIED: "لا تملك صلاحية الوصول",
-  VALIDATION_ERROR: "بيانات غير صحيحة",
+  OK: "Operation completed successfully",
+  FORBIDDEN: "You do not have permission to perform this action",
+  ACCESS_DENIED: "You do not have access",
+  VALIDATION_ERROR: "Invalid data",
 };
 
 /**
@@ -26,5 +26,5 @@ export const notificationsMessages = {
  */
 export function resolveNotificationsMessage(code, { fallback } = {}) {
   if (code && notificationsMessages[code]) return notificationsMessages[code];
-  return fallback ?? "تمت العملية";
+  return fallback ?? "Operation completed";
 }

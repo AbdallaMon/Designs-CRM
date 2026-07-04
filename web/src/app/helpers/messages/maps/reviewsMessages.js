@@ -6,23 +6,23 @@
 
 export const reviewsMessages = {
   // ── reads ──────────────────────────────────────────────────────────────────────
-  REVIEW_LOCATIONS_FETCHED: "تم جلب المواقع",
-  REVIEWS_FETCHED: "تم جلب التقييمات",
+  REVIEW_LOCATIONS_FETCHED: "Locations fetched",
+  REVIEWS_FETCHED: "Reviews fetched",
 
   // ── oauth ─────────────────────────────────────────────────────────────────────────
-  REVIEW_AUTH_URL_GENERATED: "تم إنشاء رابط الربط",
-  REVIEW_OAUTH_CONNECTED: "تم ربط حساب جوجل للنشاط التجاري",
+  REVIEW_AUTH_URL_GENERATED: "Connection link created",
+  REVIEW_OAUTH_CONNECTED: "Google Business account connected",
 
   // ── errors / domain rules ─────────────────────────────────────────────────────────
-  REVIEW_OAUTH_MISSING_CODE: "رمز الربط مفقود",
-  REVIEW_INTEGRATION_ERROR: "تعذر الاتصال بخدمة تقييمات جوجل",
+  REVIEW_OAUTH_MISSING_CODE: "Connection code missing",
+  REVIEW_INTEGRATION_ERROR: "Could not connect to Google Reviews service",
 
   // ── generic envelope codes (shared) ──────────────────────────────────────────────
-  OK: "تمت العملية بنجاح",
-  FORBIDDEN: "لا تملك صلاحية تنفيذ هذا الإجراء",
-  ACCESS_DENIED: "لا تملك صلاحية الوصول",
-  VALIDATION_ERROR: "بيانات غير صحيحة",
-  NOT_FOUND: "العنصر غير موجود",
+  OK: "Operation completed successfully",
+  FORBIDDEN: "You do not have permission to perform this action",
+  ACCESS_DENIED: "You do not have access",
+  VALIDATION_ERROR: "Invalid data",
+  NOT_FOUND: "Item not found",
 };
 
 /**
@@ -32,5 +32,5 @@ export const reviewsMessages = {
  */
 export function resolveReviewsMessage(code, { fallback } = {}) {
   if (code && reviewsMessages[code]) return reviewsMessages[code];
-  return fallback ?? "تمت العملية";
+  return fallback ?? "Operation completed";
 }

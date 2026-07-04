@@ -7,53 +7,53 @@
 
 export const usersMessages = {
   // ── users: reads ─────────────────────────────────────────────────────────────────
-  USERS_FETCHED: "تم جلب المستخدمين",
-  ALL_USERS_FETCHED: "تم جلب قائمة المستخدمين",
-  USERS_DIRECTORY_FETCHED: "تم جلب دليل المستخدمين",
-  USER_PROFILE_FETCHED: "تم جلب الملف الشخصي",
-  USER_LOGS_FETCHED: "تم جلب السجلات",
-  USER_LAST_SEEN_FETCHED: "تم جلب آخر نشاط",
-  RESTRICTED_COUNTRIES_FETCHED: "تم جلب الدول المقيدة",
-  AUTO_ASSIGNMENTS_FETCHED: "تم جلب التعيينات التلقائية",
+  USERS_FETCHED: "Users fetched",
+  ALL_USERS_FETCHED: "Users list fetched",
+  USERS_DIRECTORY_FETCHED: "Users directory fetched",
+  USER_PROFILE_FETCHED: "Profile fetched",
+  USER_LOGS_FETCHED: "Logs fetched",
+  USER_LAST_SEEN_FETCHED: "Last activity fetched",
+  RESTRICTED_COUNTRIES_FETCHED: "Restricted countries fetched",
+  AUTO_ASSIGNMENTS_FETCHED: "Auto assignments fetched",
 
   // ── users: mutations ───────────────────────────────────────────────────────────────
-  USER_CREATED: "تم إنشاء المستخدم",
-  USER_UPDATED: "تم تحديث المستخدم",
-  USER_STATUS_TOGGLED: "تم تغيير حالة المستخدم",
-  USER_STAFF_EXTRA_UPDATED: "تم تحديث بيانات الموظف",
-  USER_ROLES_UPDATED: "تم تحديث الأدوار",
-  USER_PROFILE_UPDATED: "تم تحديث الملف الشخصي",
-  USER_PROFILES_UPDATED: "تم تحديث الملفات الوظيفية للمستخدم",
-  USER_PROFILES_FETCHED: "تم جلب الملفات الوظيفية",
-  RESTRICTED_COUNTRIES_UPDATED: "تم تحديث الدول المقيدة",
-  AUTO_ASSIGNMENTS_UPDATED: "تم تحديث التعيينات التلقائية",
-  USER_MAX_LEADS_UPDATED: "تم تحديث الحد الأقصى للعملاء",
-  USER_MAX_LEADS_PER_DAY_UPDATED: "تم تحديث الحد الأقصى اليومي للعملاء",
+  USER_CREATED: "User created",
+  USER_UPDATED: "User updated",
+  USER_STATUS_TOGGLED: "User status changed",
+  USER_STAFF_EXTRA_UPDATED: "Staff data updated",
+  USER_ROLES_UPDATED: "Roles updated",
+  USER_PROFILE_UPDATED: "Profile updated",
+  USER_PROFILES_UPDATED: "User job profiles updated",
+  USER_PROFILES_FETCHED: "Job profiles fetched",
+  RESTRICTED_COUNTRIES_UPDATED: "Restricted countries updated",
+  AUTO_ASSIGNMENTS_UPDATED: "Auto assignments updated",
+  USER_MAX_LEADS_UPDATED: "Maximum leads updated",
+  USER_MAX_LEADS_PER_DAY_UPDATED: "Daily maximum leads updated",
 
   // ── users: errors / scope / guards ────────────────────────────────────────────────
-  USER_NOT_FOUND: "المستخدم غير موجود",
-  USER_PROFILE_NOT_FOUND: "الملف الشخصي غير موجود",
-  USER_PROFILE_ACCESS_DENIED: "لا تملك صلاحية الوصول إلى هذا الملف الشخصي",
-  USER_PROFILE_MUTATE_DENIED: "لا تملك صلاحية تعديل هذا الملف الشخصي",
-  EMAIL_ALREADY_REGISTERED: "البريد الإلكتروني مسجل بالفعل",
-  USER_NO_DATA_SENT: "لم يتم إرسال أي بيانات",
-  USER_ROLE_NOT_ALLOWED: "هذا الدور غير مسموح به",
+  USER_NOT_FOUND: "User not found",
+  USER_PROFILE_NOT_FOUND: "Profile not found",
+  USER_PROFILE_ACCESS_DENIED: "You do not have access to this profile",
+  USER_PROFILE_MUTATE_DENIED: "You do not have permission to edit this profile",
+  EMAIL_ALREADY_REGISTERED: "The email is already registered",
+  USER_NO_DATA_SENT: "No data was sent",
+  USER_ROLE_NOT_ALLOWED: "This role is not allowed",
 
   // ── staff residual read (adminResidualMessages) ────────────────────────────────────
-  LATEST_CALLS_FETCHED: "تم جلب آخر المكالمات",
+  LATEST_CALLS_FETCHED: "Latest calls fetched",
 
   // ── generic envelope codes (shared core) ──────────────────────────────────────────
-  OK: "تمت العملية بنجاح",
-  CREATED: "تم الإنشاء بنجاح",
-  UPDATED: "تم التحديث بنجاح",
-  DELETED: "تم الحذف بنجاح",
-  NOT_FOUND: "غير موجود",
-  FORBIDDEN: "لا تملك صلاحية تنفيذ هذا الإجراء",
-  UNAUTHORIZED: "يجب تسجيل الدخول",
-  VALIDATION_ERROR: "بيانات غير صحيحة",
-  CONFLICT: "تعارض في البيانات",
-  INTERNAL_SERVER_ERROR: "حدث خطأ في الخادم",
-  UNEXPECTED_ERROR: "حدث خطأ غير متوقع",
+  OK: "Operation completed successfully",
+  CREATED: "Created successfully",
+  UPDATED: "Updated successfully",
+  DELETED: "Deleted successfully",
+  NOT_FOUND: "Not found",
+  FORBIDDEN: "You do not have permission to perform this action",
+  UNAUTHORIZED: "You must sign in",
+  VALIDATION_ERROR: "Invalid data",
+  CONFLICT: "Data conflict",
+  INTERNAL_SERVER_ERROR: "A server error occurred",
+  UNEXPECTED_ERROR: "An unexpected error occurred",
 };
 
 /**
@@ -63,5 +63,5 @@ export const usersMessages = {
  */
 export function resolveUsersMessage(code, { fallback } = {}) {
   if (code && usersMessages[code]) return usersMessages[code];
-  return fallback ?? "تمت العملية";
+  return fallback ?? "Operation completed";
 }

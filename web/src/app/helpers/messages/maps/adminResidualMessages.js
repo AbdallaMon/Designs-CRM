@@ -6,53 +6,53 @@
 
 export const adminResidualMessages = {
   // ── reports (🔒 frozen generators own the response body) ─────────────────────────
-  LEAD_REPORT_GENERATED: "تم إنشاء تقرير العملاء المحتملين",
-  STAFF_REPORT_GENERATED: "تم إنشاء تقرير الموظفين",
+  LEAD_REPORT_GENERATED: "Leads report generated",
+  STAFF_REPORT_GENERATED: "Staff report generated",
 
   // ── admin leads (import / create / update / delete) ──────────────────────────────
-  LEADS_IMPORTED: "تم استيراد العملاء المحتملين",
-  ADMIN_LEAD_CREATED: "تم إنشاء العميل المحتمل",
-  ADMIN_LEAD_UPDATED: "تم تحديث العميل المحتمل",
-  ADMIN_LEAD_DELETED: "تم حذف العميل المحتمل",
-  ADMIN_CLIENT_UPDATED: "تم تحديث بيانات العميل",
+  LEADS_IMPORTED: "Leads imported",
+  ADMIN_LEAD_CREATED: "Lead created",
+  ADMIN_LEAD_UPDATED: "Lead updated",
+  ADMIN_LEAD_DELETED: "Lead deleted",
+  ADMIN_CLIENT_UPDATED: "Client details updated",
 
   // ── telegram (lead-scoped) ───────────────────────────────────────────────────────
-  TELEGRAM_CHANNEL_CREATED: "تم إنشاء قناة تيليجرام",
-  TELEGRAM_USERS_QUEUED: "تم جدولة إضافة المستخدمين إلى تيليجرام",
+  TELEGRAM_CHANNEL_CREATED: "Telegram channel created",
+  TELEGRAM_USERS_QUEUED: "Adding users to Telegram scheduled",
 
   // ── fixed-data writes ────────────────────────────────────────────────────────────
-  FIXED_DATA_CREATED: "تم إضافة البيان الثابت",
-  FIXED_DATA_UPDATED: "تم تحديث البيان الثابت",
-  FIXED_DATA_DELETED: "تم حذف البيان الثابت",
+  FIXED_DATA_CREATED: "Fixed data added",
+  FIXED_DATA_UPDATED: "Fixed data updated",
+  FIXED_DATA_DELETED: "Fixed data deleted",
 
   // ── commissions ──────────────────────────────────────────────────────────────────
-  COMMISSIONS_FETCHED: "تم جلب العمولات",
-  COMMISSION_CREATED: "تم إضافة العمولة",
-  COMMISSION_UPDATED: "تم تحديث العمولة",
+  COMMISSIONS_FETCHED: "Commissions fetched",
+  COMMISSION_CREATED: "Commission added",
+  COMMISSION_UPDATED: "Commission updated",
 
   // ── admin projects ───────────────────────────────────────────────────────────────
-  ADMIN_PROJECTS_FETCHED: "تم جلب المشاريع",
-  PROJECT_GROUP_CREATED: "تم إنشاء مجموعة المشاريع",
+  ADMIN_PROJECTS_FETCHED: "Projects fetched",
+  PROJECT_GROUP_CREATED: "Project group created",
 
   // ── model archive (allow-listed) ─────────────────────────────────────────────────
-  MODEL_ARCHIVE_UPDATED: "تم تحديث حالة الأرشفة",
+  MODEL_ARCHIVE_UPDATED: "Archive status updated",
 
   // ── staff (the staff-tier residual read — included for completeness) ──────────────
-  LATEST_CALLS_FETCHED: "تم جلب آخر المكالمات",
+  LATEST_CALLS_FETCHED: "Latest calls fetched",
 
   // ── errors / domain rules ────────────────────────────────────────────────────────
-  MODEL_NOT_ALLOWED: "هذا النموذج غير مسموح بأرشفته",
-  COMMISSION_AMOUNT_INVALID: "قيمة العمولة غير صحيحة",
-  COMMISSION_REASON_REQUIRED: "سبب العمولة مطلوب",
+  MODEL_NOT_ALLOWED: "This model is not allowed to be archived",
+  COMMISSION_AMOUNT_INVALID: "Invalid commission amount",
+  COMMISSION_REASON_REQUIRED: "Commission reason is required",
 
   // ── generic envelope codes (shared) ──────────────────────────────────────────────
-  OK: "تمت العملية بنجاح",
-  CREATED: "تم الإنشاء بنجاح",
-  UPDATED: "تم التحديث بنجاح",
-  DELETED: "تم الحذف بنجاح",
-  FORBIDDEN: "لا تملك صلاحية تنفيذ هذا الإجراء",
-  ACCESS_DENIED: "لا تملك صلاحية الوصول",
-  VALIDATION_ERROR: "بيانات غير صحيحة",
+  OK: "Operation completed successfully",
+  CREATED: "Created successfully",
+  UPDATED: "Updated successfully",
+  DELETED: "Deleted successfully",
+  FORBIDDEN: "You do not have permission to perform this action",
+  ACCESS_DENIED: "You do not have access",
+  VALIDATION_ERROR: "Invalid data",
 };
 
 /**
@@ -62,5 +62,5 @@ export const adminResidualMessages = {
  */
 export function resolveAdminResidualMessage(code, { fallback } = {}) {
   if (code && adminResidualMessages[code]) return adminResidualMessages[code];
-  return fallback ?? "تمت العملية";
+  return fallback ?? "Operation completed";
 }
