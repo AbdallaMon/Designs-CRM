@@ -18,7 +18,7 @@ import FullScreenLoader from "../../feedback/loaders/FullscreenLoader";
 import { getData } from "@/app/helpers/functions/getData";
 import LeadsMonthlyOverviewSingle from "./LeadsMonthlyOverviewSingle";
 
-const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {
+const Dashboard = ({ staff, staffId, userRole = "STAFF", hideIdentity = false }) => {
   const [role, setRole] = useState(userRole);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -55,7 +55,7 @@ const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {
         >
           Dashboard
         </Typography>
-      ) : (
+      ) : hideIdentity ? null : (
         <>
           <UserProfile id={staffId} role={role} />
         </>
