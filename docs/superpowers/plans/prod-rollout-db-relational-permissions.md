@@ -95,3 +95,43 @@ Redeploy the previous server/web build. The old code reads `role`/`profile`(stri
 
 ## Cache invalidation note
 The profile→codes cache is loaded on boot. If you edit the catalog (re-run the seed) on a running instance without a redeploy, call the cache's `invalidate()` (or restart the instance) so the change is picked up. Per-user profile assignments do NOT require cache invalidation (they are resolved from the token, not the profile cache).
+
+## Troubleshooting — `P2022: column … does not exist` on `migrate:users` (schema drift)
+
+**Symptom.** `migrate:users` (or the running app) throws `PrismaClientKnownRequestError P2022: The column
+'…User.<col>' does not exist`. A MySQL `UPDATE` has no `RETURNING`, so Prisma reads the row back
+selecting every scalar — and errors on any column the live DB is missing. (The script now uses
+`select: { id }` on that update, but the app itself will still hit this on other reads.)
+
+**Cause.** The target DB was NOT built from the current schema — it's an older/partial copy missing
+columns (and often FKs/indexes). This happens when a Coolify DB was created from an old dump, or when
+the reconciliation runbook marked `catch_up_full_schema` `--applied` (metadata only) on a DB that was
+actually behind the reconciled schema.
+
+**Decide first — is the data disposable or real?**
+- **Disposable / fresh:** rebuild cleanly — `npx prisma migrate reset --force --skip-seed` then
+  `npm run seed -w @dms/db`. Gives the exact correct structure (all columns, enums, FKs).
+- **Real data to keep:** bring the structure up to the schema IN PLACE, applying **only the column /
+  type changes** and skipping the FK/index/rename statements (Prisma manages relations at the app
+  layer, so DB-level FKs aren't needed to run):
+
+```bash
+cd /app
+# 1) full diff (live DB → schema)
+npx prisma migrate diff \
+  --from-schema-datasource packages/db/prisma/schema.prisma \
+  --to-schema-datamodel   packages/db/prisma/schema.prisma \
+  --script > /tmp/drift.sql
+# 2) keep ONLY the ALTER TABLE (ADD COLUMN / MODIFY) blocks — drop FK/index/rename
+awk '/^-- / { keep = ($0 ~ /^-- AlterTable/); next } keep { print }' /tmp/drift.sql > /tmp/cols.sql
+# 3) verify no DATA-LOSS op (DROP DEFAULT is harmless — it only removes a column default)
+grep -iE 'drop[[:space:]]+(column|table)|truncate' /tmp/cols.sql && echo "STOP - review /tmp/cols.sql" || echo "SAFE"
+# 4) apply, then finish
+npx prisma db execute --schema packages/db/prisma/schema.prisma --file /tmp/cols.sql
+npm run migrate:users -w @dms/db
+```
+
+The skipped foreign keys/indexes are optional hardening — add them later from `/tmp/drift.sql` **after**
+cleaning orphaned rows (a `DROP DEFAULT` in the diff is safe; a `DROP COLUMN`/`DROP TABLE`/`TRUNCATE` is
+not — stop and review if `grep` flags one). NOTE: without DB-level FKs, `ON DELETE CASCADE` won't fire
+at the DB layer — verify delete flows or add the FKs before relying on cascades.
