@@ -97,5 +97,3 @@ export function computeProfileCapabilities(record, authUser) {
     {},
   );
 }
-
-export { isAdminTier };
