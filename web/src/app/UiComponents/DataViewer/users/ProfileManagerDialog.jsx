@@ -66,7 +66,7 @@ export function ProfileManagerDialog({ userId, userProfiles = [], currentProfile
       setLoading,
       `admin/users/${userId}/profiles`,
       false,
-      "جارٍ تحديث الملفات الوظيفية...",
+      "Updating profiles...",
       null,
       "PUT",
     );
@@ -87,7 +87,7 @@ export function ProfileManagerDialog({ userId, userProfiles = [], currentProfile
         startIcon={<FiLayers />}
         sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
       >
-        اسناد دور
+        Assign profile
       </Button>
     );
   }
@@ -103,12 +103,12 @@ export function ProfileManagerDialog({ userId, userProfiles = [], currentProfile
         >
           <FiLayers />
         </Box>
-        اسناد الأدوار
+        Assign profiles
       </DialogTitle>
       <Divider />
       <DialogContent sx={{ pt: 2.5 }}>
         <Typography variant="overline" fontWeight={700} color="text.secondary">
-          اختر الأدوار المُسندة و الدور النشط
+          Select the assigned profiles and the active profile
         </Typography>
         <Stack spacing={0.5} sx={{ mt: 1 }}>
           {allProfiles.map((p) => {
@@ -135,7 +135,7 @@ export function ProfileManagerDialog({ userId, userProfiles = [], currentProfile
                       onChange={() => setCurrent(p.id)}
                     />
                   }
-                  label={<Typography variant="caption" color="text.secondary">نشط</Typography>}
+                  label={<Typography variant="caption" color="text.secondary">Active</Typography>}
                   labelPlacement="start"
                 />
               </Box>
@@ -144,14 +144,14 @@ export function ProfileManagerDialog({ userId, userProfiles = [], currentProfile
         </Stack>
         {selectedIds.length === 0 && (
           <Typography variant="caption" color="error" sx={{ mt: 1, display: "block" }}>
-            يجب إسناد دور واحد على الأقل.
+            At least one profile must be assigned.
           </Typography>
         )}
       </DialogContent>
       <Divider />
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={() => setOpen(false)} color="inherit" sx={{ textTransform: "none" }}>
-          إلغاء
+          Cancel
         </Button>
         <Button
           onClick={onSave}
@@ -160,7 +160,7 @@ export function ProfileManagerDialog({ userId, userProfiles = [], currentProfile
           disabled={selectedIds.length === 0}
           sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
         >
-          حفظ
+          Save
         </Button>
       </DialogActions>
     </Dialog>

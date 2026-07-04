@@ -44,7 +44,7 @@ export async function handleRequestSubmit(
     if (ok) {
       await toast.update(
         id,
-        Success(resolveMessage(response.message, { fallback: "تمت العملية" }))
+        Success(resolveMessage(response.message, { fallback: "Operation completed" }))
       );
       if (setRedirect) {
         setRedirect((prev) => !prev);

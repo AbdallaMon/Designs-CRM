@@ -91,7 +91,7 @@ export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
         startIcon={<FiShield />}
         sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
       >
-        إدارة الأدوار
+        Manage Roles
       </Button>
     );
   return (
@@ -117,14 +117,14 @@ export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
         >
           <FiShield />
         </Box>
-        إدارة أدوار المستخدم
+        Manage User Roles
       </DialogTitle>
       <Divider />
       <DialogContent sx={{ pt: 2.5 }}>
         <Stack spacing={2.5}>
           <Box>
             <Typography variant="overline" fontWeight={700} color="text.secondary">
-              الدور الأساسي
+              Main Role
             </Typography>
             <Box sx={{ mt: 1 }}>
               <Chip
@@ -145,7 +145,7 @@ export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
 
           <Box>
             <Typography variant="overline" fontWeight={700} color="text.secondary">
-              الأدوار الفرعية
+              Sub Roles
             </Typography>
             {selectedSubRoles.length > 0 ? (
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
@@ -177,7 +177,7 @@ export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
                 }}
               >
                 <Typography variant="body2" color="text.secondary">
-                  لا توجد أدوار فرعية مُسندة.
+                  No sub-roles assigned.
                 </Typography>
               </Box>
             )}
@@ -185,13 +185,13 @@ export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
 
           <Box>
             <Typography variant="overline" fontWeight={700} color="text.secondary">
-              إضافة دور فرعي
+              Add Sub-Role
             </Typography>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 1 }}>
               <FormControl fullWidth size="small">
-                <InputLabel>اختر دورًا</InputLabel>
+                <InputLabel>Select a role</InputLabel>
                 <Select
-                  label="اختر دورًا"
+                  label="Select a role"
                   value={tempRole}
                   onChange={(e) => setTempRole(e.target.value)}
                   sx={{ borderRadius: 2 }}
@@ -218,7 +218,7 @@ export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
                   flexShrink: 0,
                 }}
               >
-                إضافة
+                Add Role
               </Button>
             </Stack>
           </Box>
@@ -228,7 +228,7 @@ export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
       <Divider />
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onClose} color="inherit" sx={{ textTransform: "none" }}>
-          إلغاء
+          Cancel
         </Button>
         <Button
           onClick={handleSave}
@@ -236,7 +236,7 @@ export const RoleManagerDialog = ({ role, subRoles, setData, userId }) => {
           variant="contained"
           sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
         >
-          حفظ
+          Save
         </Button>
       </DialogActions>
     </Dialog>

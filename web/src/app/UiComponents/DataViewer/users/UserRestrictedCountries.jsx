@@ -146,7 +146,7 @@ const UserRestrictedCountries = ({ userId }) => {
           transition: "all 0.2s ease",
         }}
       >
-        إدارة الدول المحظورة
+        Manage Restricted Countries
       </Button>
 
       <Dialog
@@ -184,7 +184,7 @@ const UserRestrictedCountries = ({ userId }) => {
           >
             <FiMapPin />
           </Box>
-          الدول المحظورة لهذا المستخدم
+          Restricted Countries for User
         </DialogTitle>
         <Divider />
 
@@ -206,7 +206,7 @@ const UserRestrictedCountries = ({ userId }) => {
                     gap: 1,
                   }}
                 >
-                  <FiGlobe /> اختر الدول المراد حظرها لهذا المستخدم:
+                  <FiGlobe /> Select countries to restrict for this user:
                 </Typography>
 
                 <Box mb={2}>
@@ -219,8 +219,8 @@ const UserRestrictedCountries = ({ userId }) => {
                       <TextField
                         {...params}
                         variant="outlined"
-                        label="اختر منطقة"
-                        placeholder="كل المناطق"
+                        label="Select Region"
+                        placeholder="All Regions"
                         InputProps={{
                           ...params.InputProps,
                           startAdornment: (
@@ -267,8 +267,8 @@ const UserRestrictedCountries = ({ userId }) => {
                       <TextField
                         {...params}
                         variant="outlined"
-                        label="اختر الدول"
-                        placeholder="اكتب للبحث عن الدول"
+                        label="Select Countries"
+                        placeholder="Type to search countries"
                         InputProps={{
                           ...params.InputProps,
                           startAdornment: (
@@ -303,7 +303,7 @@ const UserRestrictedCountries = ({ userId }) => {
                       height: "56px", // Match height of the Autocomplete
                     }}
                   >
-                    إضافة
+                    Add
                   </Button>
                 </Box>
               </Box>
@@ -319,7 +319,7 @@ const UserRestrictedCountries = ({ userId }) => {
                   marginTop: 3,
                 }}
               >
-                <FiMapPin /> الدول المحظورة حاليًا:
+                <FiMapPin /> Current Restricted Countries:
               </Typography>
 
               {restrictedCountries.length === 0 ? (
@@ -339,7 +339,7 @@ const UserRestrictedCountries = ({ userId }) => {
                     style={{ marginInlineEnd: "8px", color: "#666" }}
                   />
                   <Typography variant="body2" color="textSecondary">
-                    لا توجد دول محظورة لهذا المستخدم حاليًا.
+                    No countries are currently restricted for this user.
                   </Typography>
                 </Box>
               ) : (
@@ -425,7 +425,7 @@ const UserRestrictedCountries = ({ userId }) => {
               borderRadius: 2,
             }}
           >
-            إلغاء
+            Cancel
           </Button>
           <Button
             onClick={handleSubmit}
@@ -439,7 +439,7 @@ const UserRestrictedCountries = ({ userId }) => {
               borderRadius: 2,
             }}
           >
-            {loading ? <CircularProgress size={24} /> : "حفظ التغييرات"}
+            {loading ? <CircularProgress size={24} /> : "Save Changes"}
           </Button>
         </DialogActions>
       </Dialog>

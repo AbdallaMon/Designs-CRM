@@ -47,7 +47,7 @@ function UserLogs({ staff, staffId }) {
         startIcon={<FiActivity />}
         sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
       >
-        سجل نشاط {staff.name}
+        See {staff.name} logs
       </Button>
       <Dialog
         fullScreen
@@ -83,7 +83,7 @@ function UserLogs({ staff, staffId }) {
           >
             <FiActivity />
           </Box>
-          سجل نشاط {staff.name}
+          {staff.name} activity log
           <IconButton
             aria-label="close"
             onClick={handleClose}
@@ -129,8 +129,8 @@ const Logs = ({ staff, staffId }) => {
         }}
       >
         <CardHeader
-          title={`سجل نشاط ${staff.name} اليوم`}
-          subheader={`عرض أحدث أنشطة ${staff.name}.`}
+          title={`${staff.name} Logs for today`}
+          subheader={`View ${staff.name} latest activity.`}
           titleTypographyProps={{ fontWeight: 800 }}
         ></CardHeader>
         <CardContent sx={{ px: { xs: 0, md: 2 } }}>
@@ -145,7 +145,7 @@ const Logs = ({ staff, staffId }) => {
               }}
             >
               <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
-                لا يوجد نشاط لعرضه اليوم.
+                No activity to show today.
               </Typography>
             </Box>
           ) : (
@@ -181,7 +181,7 @@ const Logs = ({ staff, staffId }) => {
                       {parse(notification.content)}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
-                      بواسطة{" "}
+                      By{" "}
                       {isAdmin ? (
                         notification.staff ? (
                           <a
@@ -196,7 +196,7 @@ const Logs = ({ staff, staffId }) => {
                       ) : (
                         notification.client?.name || "Admin"
                       )}
-                      {` بتاريخ ${dayjs(notification.createdAt).format(
+                      {` at ${dayjs(notification.createdAt).format(
                         "YYYY-MM-DD HH:mm:ss"
                       )}`}
                     </Typography>

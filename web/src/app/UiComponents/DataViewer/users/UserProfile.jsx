@@ -62,11 +62,11 @@ export default function UserProfile({ id, role }) {
                 color: "#fff",
               }}
             >
-              {user?.name ? user.name[0]?.toUpperCase() : "؟"}
+              {user?.name ? user.name[0]?.toUpperCase() : "?"}
             </Avatar>
             <Box sx={{ minWidth: 0 }}>
               <Typography variant="h6" fontWeight={800} color="text.primary">
-                {user?.name || "غير متوفر"}
+                {user?.name || "N/A"}
               </Typography>
               <Stack
                 direction="row"
@@ -76,7 +76,7 @@ export default function UserProfile({ id, role }) {
               >
                 <FiMail size={14} />
                 <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-all" }}>
-                  {user?.email || "غير متوفر"}
+                  {user?.email || "N/A"}
                 </Typography>
               </Stack>
             </Box>
@@ -85,7 +85,7 @@ export default function UserProfile({ id, role }) {
           <Divider sx={{ my: 2.5 }} />
 
           <Typography variant="overline" fontWeight={700} color="text.secondary">
-            الإجراءات
+            Actions
           </Typography>
           <Box
             display="flex"
@@ -117,7 +117,7 @@ export default function UserProfile({ id, role }) {
                       startIcon={<MdOpenInNew />}
                       sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
                     >
-                      عرض صفقات المستخدم الحالية
+                      View user current deals
                     </Button>
                   </>
                 )}
@@ -134,19 +134,19 @@ function UpdateUserMaxLeadsCounts({ user, setUser }) {
   return (
     <Box>
       <EditModal
-        editButtonText={"حد العملاء المحتملين" + " " + user.maxLeadsCounts}
+        editButtonText={"Edit max leads counts" + " " + user.maxLeadsCounts}
         item={user}
         inputs={[
           {
             data: {
               id: "maxLeadsCounts",
-              label: "أدخل رقمًا",
+              label: "Enter a number",
               type: "text",
             },
             pattern: {
               required: {
                 value: true,
-                message: "الرجاء إدخال رقم",
+                message: "Please enter a number",
               },
             },
           },
@@ -155,8 +155,8 @@ function UpdateUserMaxLeadsCounts({ user, setUser }) {
         href={`admin/users/max-leads`}
         setData={setUser}
         extraProps={{
-          formTitle: "تغيير حد العملاء المحتملين",
-          btnText: "تغيير",
+          formTitle: "Change max leads count",
+          btnText: "Change",
           variant: "outlined",
         }}
       />
@@ -169,20 +169,20 @@ function UpdateUserMaxLeadsCountPerDay({ user, setUser }) {
     <Box>
       <EditModal
         editButtonText={
-          "حد العملاء المحتملين يوميًا" + " " + user.maxLeadCountPerDay
+          "Edit leads counts per day" + " " + user.maxLeadCountPerDay
         }
         item={user}
         inputs={[
           {
             data: {
               id: "maxLeadCountPerDay",
-              label: "أدخل رقمًا",
+              label: "Enter a number",
               type: "text",
             },
             pattern: {
               required: {
                 value: true,
-                message: "الرجاء إدخال رقم",
+                message: "Please enter a number",
               },
             },
           },
@@ -191,8 +191,8 @@ function UpdateUserMaxLeadsCountPerDay({ user, setUser }) {
         href={`admin/users/max-leads-per-day`}
         setData={setUser}
         extraProps={{
-          formTitle: "تغيير حد العملاء المحتملين",
-          btnText: "تغيير",
+          formTitle: "Change max leads count",
+          btnText: "Change",
           variant: "outlined",
         }}
       />

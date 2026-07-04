@@ -125,7 +125,7 @@ function RecordingBar({
         </Stack>
 
         <Stack direction="row" alignItems="center" gap={0.5}>
-          <Tooltip title="إلغاء" arrow>
+          <Tooltip title="Cancel" arrow>
             <span>
               <IconButton size="small" onClick={onCancel} disabled={sending}>
                 <FaTrash size={16} />
@@ -134,7 +134,7 @@ function RecordingBar({
           </Tooltip>
 
           {isRecording ? (
-            <Tooltip title="إيقاف" arrow>
+            <Tooltip title="Stop" arrow>
               <span>
                 <IconButton
                   size="small"
@@ -147,7 +147,7 @@ function RecordingBar({
               </span>
             </Tooltip>
           ) : (
-            <Tooltip title="إرسال التسجيل" arrow>
+            <Tooltip title="Send voice" arrow>
               <span>
                 <IconButton
                   size="small"
@@ -335,7 +335,7 @@ export function ChatInput({
       typeof window === "undefined" ||
       !navigator?.mediaDevices?.getUserMedia
     ) {
-      setVoiceError("تسجيل الصوت غير مدعوم في هذا المتصفح.");
+      setVoiceError("Voice recording is not supported in this browser.");
       return;
     }
 
@@ -391,7 +391,7 @@ export function ChatInput({
       recorder.start();
     } catch (err) {
       console.error(err);
-      setVoiceError("تم رفض إذن الميكروفون أو أنه غير متاح.");
+      setVoiceError("Microphone permission denied or unavailable.");
       cleanupVoice();
       setVoiceStatus("idle");
     }
@@ -409,7 +409,7 @@ export function ChatInput({
         recorder.stop();
       } catch (err) {
         console.error(err);
-        setVoiceError("تعذّر إيقاف التسجيل.");
+        setVoiceError("Failed to stop recording.");
         cleanupVoice();
         setVoiceStatus("idle");
       }
@@ -457,11 +457,11 @@ export function ChatInput({
 
         cancelRecording();
       } else {
-        setVoiceError("تعذّر رفع التسجيل الصوتي.");
+        setVoiceError("Failed to upload voice note.");
       }
     } catch (err) {
       console.error(err);
-      setVoiceError("تعذّر إرسال التسجيل الصوتي.");
+      setVoiceError("Failed to send voice note.");
     } finally {
       setIsSending(false);
       setVoiceUploadProgress(null);
@@ -499,7 +499,7 @@ export function ChatInput({
               fileSize: file.size,
             });
           } else {
-            setFileError(`تعذّر رفع ${file.name}`);
+            setFileError(`Failed to upload ${file.name}`);
           }
 
           setUploadingFiles((prev) => {
@@ -526,7 +526,7 @@ export function ChatInput({
       }
     } catch (error) {
       console.error("Error sending message:", error);
-      setFileError("تعذّر إرسال الرسالة");
+      setFileError("Failed to send message");
     } finally {
       setIsSending(false);
       setMessage("");
@@ -546,15 +546,15 @@ export function ChatInput({
 
       if (file.size > FILE_UPLOAD_LIMITS.MAX_SIZE) {
         setFileError(
-          `الملف "${file.name}" يتجاوز الحد المسموح ${
+          `File "${file.name}" exceeds ${
             FILE_UPLOAD_LIMITS.MAX_SIZE / 1024 / 1024
-          } ميجابايت`
+          }MB limit`
         );
         continue;
       }
 
       if (!FILE_UPLOAD_LIMITS.ALLOWED_TYPES.includes(file.type)) {
-        setFileError(`نوع الملف "${file.type}" غير مسموح`);
+        setFileError(`File type "${file.type}" not allowed`);
         continue;
       }
 
@@ -619,7 +619,7 @@ export function ChatInput({
                 variant="caption"
                 sx={{ fontWeight: 700, color: "primary.dark" }}
               >
-                رد على {onReplyingTo.sender?.name}
+                Replying to {onReplyingTo.sender?.name}
               </Typography>
               <Typography variant="body2" color="text.secondary" noWrap>
                 {onReplyingTo.content?.substring(0, 50)}
@@ -675,7 +675,7 @@ export function ChatInput({
                     multiline
                     maxRows={2}
                     size="small"
-                    placeholder="نص اختياري لهذا الملف..."
+                    placeholder="Optional text for this file..."
                     value={fileObj.text}
                     onChange={(e) => updateFileText(fileObj.id, e.target.value)}
                     disabled={isSending}
@@ -746,7 +746,7 @@ export function ChatInput({
               fullWidth
               multiline
               maxRows={4}
-              placeholder="اكتب رسالة... (Shift+Enter لسطر جديد)"
+              placeholder="Type a message... (Shift+Enter for new line)"
               value={message}
               onChange={handleMessageChange}
               onKeyDown={handleKeyDown}
@@ -773,7 +773,7 @@ export function ChatInput({
                   <InputAdornment position="end">
                     <Box sx={{ display: "flex", gap: 0.5 }}>
                       {room?.allowFiles && (
-                        <Tooltip title="إرفاق ملفات" arrow>
+                        <Tooltip title="Attach files (multi-select)" arrow>
                           <span>
                             <IconButton
                               size="small"
@@ -793,7 +793,7 @@ export function ChatInput({
                         </Tooltip>
                       )}
 
-                      <Tooltip title="الرموز التعبيرية" arrow>
+                      <Tooltip title="Emoji" arrow>
                         <span>
                           <IconButton
                             size="small"
@@ -813,7 +813,7 @@ export function ChatInput({
                       </Tooltip>
 
                       {canUseVoice ? (
-                        <Tooltip title="تسجيل صوتي" arrow>
+                        <Tooltip title="Record voice" arrow>
                           <span>
                             <IconButton
                               size="small"
@@ -834,7 +834,7 @@ export function ChatInput({
                           </span>
                         </Tooltip>
                       ) : (
-                        <Tooltip title="إرسال" arrow>
+                        <Tooltip title="Send" arrow>
                           <span>
                             <IconButton
                               size="small"
@@ -888,7 +888,7 @@ export function ChatInput({
                   sx={{ px: 1, py: 0.75, bgcolor: "background.paper" }}
                 >
                   <Typography variant="caption" sx={{ fontWeight: 700 }}>
-                    الرموز التعبيرية
+                    Emojis
                   </Typography>
                   <IconButton size="small" onClick={closeEmojiPicker}>
                     <FaTimes size={14} />

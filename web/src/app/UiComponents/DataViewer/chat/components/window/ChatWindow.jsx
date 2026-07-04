@@ -116,12 +116,12 @@ export function ChatWindow({
 
   // ✅ Confirm delete dialog states
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTitle, setConfirmTitle] = useState("تأكيد");
+  const [confirmTitle, setConfirmTitle] = useState("Confirm");
   const [confirmDescription, setConfirmDescription] = useState("");
   const confirmActionRef = useRef(null);
 
   const openConfirm = useCallback((title, description, onConfirm) => {
-    setConfirmTitle(title || "تأكيد");
+    setConfirmTitle(title || "Confirm");
     setConfirmDescription(description || "");
     confirmActionRef.current = onConfirm;
     setConfirmOpen(true);
@@ -377,10 +377,10 @@ export function ChatWindow({
 
   const confirmRemoveMember = useCallback(
     (member) => {
-      const name = member?.user?.name || member?.client?.name || "هذا العضو";
+      const name = member?.user?.name || member?.client?.name || "this member";
       openConfirm(
-        "إزالة العضو؟",
-        `هل أنت متأكد من إزالة ${name} من هذه المحادثة؟`,
+        "Remove member?",
+        `Are you sure you want to remove ${name} from this chat?`,
         async () => {
           await handleRemoveMember(member.id);
         }
@@ -397,8 +397,8 @@ export function ChatWindow({
       if (!msgId) return;
 
       openConfirm(
-        "حذف الرسالة؟",
-        "سيؤدي هذا إلى حذف الرسالة لدى الجميع في المحادثة.",
+        "Delete message?",
+        "This will delete the message for everyone in the chat.",
         async () => {
           await deleteMessage(msgId);
         }
@@ -409,8 +409,8 @@ export function ChatWindow({
   const confirmDeleteSelectedMessages = useCallback(
     (payload) => {
       openConfirm(
-        "حذف الرسائل؟",
-        "سيؤدي هذا إلى حذف الرسائل لدى الجميع في المحادثة.",
+        "Delete message?",
+        "This will delete the message for everyone in the chat.",
         async () => {
           await deleteSelectedMessages(selectedMessages);
           setSelectedMessages([]);
@@ -518,7 +518,7 @@ export function ChatWindow({
           color: "textSecondary",
         }}
       >
-        <Typography>اختر محادثة لبدء المراسلة</Typography>
+        <Typography>Select a chat to start messaging</Typography>
       </Box>
     );
   }
@@ -656,10 +656,10 @@ export function ChatWindow({
                 💬
               </Box>
               <Typography sx={{ fontWeight: 600 }}>
-                لا توجد رسائل بعد
+                No messages yet
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                ابدأ المحادثة الآن
+                Start the conversation now
               </Typography>
             </Box>
           ) : (
@@ -676,7 +676,7 @@ export function ChatWindow({
                     mb: 1.5,
                   }}
                 >
-                  لا مزيد من الرسائل
+                  No more messages
                 </Typography>
               )}
               {loadingMore && <CircularProgress />}
@@ -814,7 +814,7 @@ export function ChatWindow({
         description={confirmDescription}
         onConfirm={handleConfirm}
         onCancel={closeConfirm}
-        confirmButtonText="حذف"
+        confirmButtonText="Delete"
         confirmButtonColor="error"
       />
     </Paper>

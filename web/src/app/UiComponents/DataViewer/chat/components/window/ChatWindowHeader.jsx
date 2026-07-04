@@ -39,7 +39,7 @@ export function ChatWindowHeader({
     : "";
   const subtitle =
     isNotDirectChat && memberCount > 0
-      ? `${roomTypeLabel} · ${memberCount} عضو`
+      ? `${roomTypeLabel} · ${memberCount} members`
       : roomTypeLabel;
   return (
     <Box
@@ -151,18 +151,18 @@ export function ChatWindowHeader({
           },
         }}
       >
-        <Tooltip title="مكالمة صوتية" arrow>
+        <Tooltip title="Voice call" arrow>
           <IconButton size="small">
             <FaPhone size={16} />
           </IconButton>
         </Tooltip>
-        <Tooltip title="مكالمة فيديو" arrow>
+        <Tooltip title="Video call" arrow>
           <IconButton size="small">
             <FaVideo size={16} />
           </IconButton>
         </Tooltip>
         {isNotDirectChat && (
-          <Tooltip title="الأعضاء" arrow>
+          <Tooltip title="Members" arrow>
             <IconButton size="small" onClick={onShowAddMembers}>
               <FaUsers size={16} />
             </IconButton>

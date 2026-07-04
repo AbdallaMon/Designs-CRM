@@ -57,13 +57,13 @@ function ReplyPreview({
   if (!replyTo) return null;
 
   const repliedName =
-    replyTo?.sender?.name || replyTo?.senderClient?.name || "غير معروف";
+    replyTo?.sender?.name || replyTo?.senderClient?.name || "Unknown";
 
   const repliedContent = replyTo?.isDeleted
-    ? "(رسالة محذوفة)"
+    ? "(Deleted message)"
     : replyTo?.content?.trim()
     ? truncateText(replyTo.content, 110)
-    : "(بدون نص)";
+    : "(No text)";
 
   return (
     <Box
@@ -106,7 +106,7 @@ function ReplyPreview({
           opacity: isOwnMessage ? 0.95 : 0.9,
         }}
       >
-        رد على {repliedName}
+        Replying to {repliedName}
       </Typography>
 
       <Typography
@@ -294,7 +294,7 @@ export function ChatMessage({
           }}
         >
           <Chip
-            label={`${message.unreadCount} غير مقروءة`}
+            label={`${message.unreadCount} unread`}
             size="small"
             color="error"
             variant="outlined"
@@ -451,7 +451,7 @@ export function ChatMessage({
                   wordBreak: "break-word",
                 }}
               >
-                تم حذف هذه الرسالة
+                This message was deleted
               </Typography>
             </Box>
           ) : (
@@ -513,9 +513,9 @@ export function ChatMessage({
             >
               {dayjs(message.createdAt).format("HH:mm")}
               {message.isDeleted
-                ? " • محذوفة"
+                ? " • deleted"
                 : message.isEdited
-                ? " • مُعدّلة"
+                ? " • edited"
                 : ""}
             </Typography>
             {isOwnMessage && !isDeleted && (
@@ -629,7 +629,7 @@ function MessageActions({
             onReply?.(message);
           }}
         >
-          <FaReply /> رد
+          <FaReply /> Reply
         </MenuItem>
 
         {canPin && (
@@ -645,11 +645,11 @@ function MessageActions({
           >
             {isPinned ? (
               <>
-                <MdPushPin /> إلغاء التثبيت
+                <MdPushPin /> Unpin
               </>
             ) : (
               <>
-                <MdPushPin /> تثبيت
+                <MdPushPin /> Pin
               </>
             )}
           </MenuItem>
@@ -663,15 +663,15 @@ function MessageActions({
             }}
             sx={{ color: "error.main" }}
           >
-            <FaTrash /> حذف
+            <FaTrash /> Delete
           </MenuItem>
         )}
         {canForward && !message.isDeleted && (
           <MenuItem onClick={handleSelect}>
             <FaShare />{" "}
             {selectedMessages.some((m) => m.id === message.id)
-              ? "إلغاء التحديد"
-              : "تحديد"}{" "}
+              ? "Deselect"
+              : "Select"}{" "}
           </MenuItem>
         )}
       </Menu>

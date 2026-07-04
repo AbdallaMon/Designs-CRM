@@ -57,17 +57,17 @@ import { ProjectAutoAssignmentDialog } from "../DataViewer/users/ProjectAutoAssi
 // Mirrors `packages/shared/constants/access/profiles.js` PROFILE_META (web has no
 // dependency on @dms/shared, so the { value, label } options are kept in sync here).
 const PROFILE_OPTIONS = [
-  { value: "NORMAL_SALES", label: "موظف مبيعات" },
-  { value: "PRIMARY_SALES", label: "مبيعات أساسي" },
-  { value: "SUPER_SALES", label: "سوبر سيلز" },
-  { value: "SUPER_SALES_BASE", label: "سوبر سيلز (أساسي)" },
-  { value: "ADMIN", label: "مدير" },
-  { value: "SUPER_ADMIN", label: "مدير أعلى" },
-  { value: "ACCOUNTANT", label: "محاسب" },
-  { value: "DESIGNER_3D", label: "مصمم 3D" },
-  { value: "DESIGNER_2D", label: "مصمم 2D" },
-  { value: "EXECUTOR_2D", label: "منفّذ 2D" },
-  { value: "CONTACT_INITIATOR", label: "مبادر تواصل" },
+  { value: "NORMAL_SALES", label: "Sales" },
+  { value: "PRIMARY_SALES", label: "Primary sales" },
+  { value: "SUPER_SALES", label: "Super sales" },
+  { value: "SUPER_SALES_BASE", label: "Super sales (base)" },
+  { value: "ADMIN", label: "Admin" },
+  { value: "SUPER_ADMIN", label: "Super admin" },
+  { value: "ACCOUNTANT", label: "Accountant" },
+  { value: "DESIGNER_3D", label: "3D Designer" },
+  { value: "DESIGNER_2D", label: "2D Designer" },
+  { value: "EXECUTOR_2D", label: "2D Executor" },
+  { value: "CONTACT_INITIATOR", label: "Contact initiator" },
 ];
 
 const PROFILE_LABEL = Object.fromEntries(PROFILE_OPTIONS.map((p) => [p.value, p.label]));
@@ -95,7 +95,7 @@ function userColor(item) {
 const columns = [
   {
     name: "name",
-    label: "المستخدم",
+    label: "User Name",
     type: "function",
     render: (item) => {
       const safeColor = userColor(item);
@@ -112,7 +112,7 @@ const columns = [
               flexShrink: 0,
             }}
           >
-            {item.name ? item.name[0]?.toUpperCase() : "؟"}
+            {item.name ? item.name[0]?.toUpperCase() : "?"}
           </Avatar>
           <Box sx={{ minWidth: 0 }}>
             <Typography
@@ -134,7 +134,7 @@ const columns = [
   },
   {
     name: "telegramUsername",
-    label: "معرّف تيليجرام",
+    label: "Telegram user name",
     type: "function",
     render: (item) =>
       item.telegramUsername ? (
@@ -158,7 +158,7 @@ const columns = [
 
   {
     name: "profile",
-    label: "الأدوار",
+    label: "Roles",
     type: "function",
     render: (item) => {
       const safeColor = userColor(item);
@@ -193,7 +193,7 @@ const columns = [
           {!item.isActive && (
             <Chip
               size="small"
-              label="محظور"
+              label="Banned"
               sx={{
                 fontWeight: 700,
                 borderRadius: 1.5,
@@ -349,7 +349,7 @@ export default function UsersPage() {
             <SearchComponent
               apiEndpoint="search?model=all-users"
               setFilters={setFilters}
-              inputLabel="ابحث بالاسم أو البريد الإلكتروني"
+              inputLabel="Search by name or email"
               renderKeys={["name", "email"]}
               mainKey="name"
               searchKey={"userId"}
@@ -358,13 +358,13 @@ export default function UsersPage() {
           </Box>
           <Box sx={{ width: { xs: "100%", md: "auto" } }}>
             <CreateModal
-              label={"إضافة مستخدم"}
+              label={"Create new user"}
               inputs={editInputs}
               href={"admin/users"}
               setData={setData}
               extraProps={{
-                formTitle: "مستخدم جديد",
-                btnText: "إنشاء",
+                formTitle: "New user",
+                btnText: "Create",
                 variant: "contained",
               }}
             />
@@ -390,7 +390,7 @@ function UserRowActions({ item, setData, banAUser }) {
       startIcon={<MdVisibility />}
       sx={{ whiteSpace: "nowrap", borderRadius: 2, fontWeight: 600 }}
     >
-      عرض
+      View
     </Button>
   );
 
@@ -405,7 +405,7 @@ function UserRowActions({ item, setData, banAUser }) {
         maxWidth: 520,
       }}
     >
-      <Tooltip title="إجراءات إضافية">
+      <Tooltip title="More actions">
         <IconButton
           size="small"
           onClick={(e) => setAnchorEl(e.currentTarget)}
@@ -435,7 +435,7 @@ function UserRowActions({ item, setData, banAUser }) {
             color: "text.secondary",
           }}
         >
-          إدارة المستخدم
+          Manage user
         </Typography>
         <Divider sx={{ mb: 0.5 }} />
         {/* On small screens, show the view button inside the menu */}
@@ -450,15 +450,15 @@ function UserRowActions({ item, setData, banAUser }) {
           <ConfirmWithActionModel
             title={
               item.isActive
-                ? "هل أنت متأكد من حظر هذا المستخدم؟"
-                : "هل أنت متأكد من إلغاء حظر هذا المستخدم؟"
+                ? "Are you sure you want to ban this user?"
+                : "Are you sure you want to unban this user?"
             }
             handleConfirm={async () => {
               await banAUser(item);
               setAnchorEl(null);
             }}
             isDelete={item.isActive}
-            label={item.isActive ? "حظر المستخدم" : "إلغاء الحظر"}
+            label={item.isActive ? "Ban User" : "Unban User"}
             fullWidth={true}
           />
         </Box>
@@ -530,10 +530,10 @@ function UsersPageHeader() {
         </Box>
         <Box sx={{ minWidth: 0 }}>
           <Typography variant="h5" fontWeight={800} color="text.primary">
-            المستخدمون
+            Users
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            إدارة حسابات الفريق وأدوارهم وصلاحياتهم
+            Manage team accounts, their roles and permissions
           </Typography>
         </Box>
       </Stack>
@@ -571,7 +571,7 @@ function UsersLegend() {
         }}
       >
         <Typography variant="subtitle2" fontWeight={700} color="text.secondary">
-          دليل ألوان أنواع المستخدمين
+          Users Type Colors Legend
         </Typography>
         <MdExpandMore
           style={{

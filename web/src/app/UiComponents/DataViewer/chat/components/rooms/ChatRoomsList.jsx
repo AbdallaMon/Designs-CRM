@@ -149,16 +149,16 @@ export function ChatRoomsList({
             sx={{ fontStyle: "italic", color: "primary.main", fontWeight: 600 }}
           >
             {typingCount === 1
-              ? "يكتب الآن..."
-              : `${typingCount} أشخاص يكتبون...`}
+              ? "typing..."
+              : `${typingCount} people are typing...`}
           </Typography>
         );
       }
     }
 
     const last = room.lastMessage;
-    if (!last) return "لا توجد رسائل بعد";
-    if (last.type === "FILE") return last.fileName || "ملف";
+    if (!last) return "No messages yet";
+    if (last.type === "FILE") return last.fileName || "File";
     const text = last.content || "";
     return text.length > 60 ? `${text.slice(0, 60)}…` : text;
   };
@@ -201,7 +201,7 @@ export function ChatRoomsList({
               startIcon={<FaPlus size={12} />}
               sx={{ borderRadius: 2, fontWeight: 600 }}
             >
-              {isTab ? "محادثة جماعية" : "مجموعة"}
+              {isTab ? "Group Chat" : "Group"}
             </Button>
           </Box>
         )}
@@ -212,7 +212,7 @@ export function ChatRoomsList({
         <TextField
           fullWidth
           size="small"
-          placeholder="ابحث في المحادثات..."
+          placeholder="Search chats..."
           value={searchQuery}
           onChange={(e) => {
             const v = e.target.value;
@@ -289,7 +289,7 @@ export function ChatRoomsList({
           >
             <Box sx={{ fontSize: 30, opacity: 0.6 }}>💬</Box>
             <Typography color="text.secondary" sx={{ fontWeight: 600 }}>
-              لا توجد محادثات
+              No chats found
             </Typography>
           </Box>
         ) : (
@@ -337,7 +337,7 @@ export function ChatRoomsList({
                     }}
                   >
                     {!isForward && (
-                      <Tooltip title="فتح المحادثة في نافذة جديدة">
+                      <Tooltip title="Open chat in new window">
                         <IconButton
                           edge="start"
                           size="small"
@@ -534,16 +534,16 @@ function DeleteConfirmDialog({ open, onClose, onConfirm }) {
         zIndex: 1304,
       }}
     >
-      <DialogTitle>حذف المحادثة؟</DialogTitle>
+      <DialogTitle>Delete Chat?</DialogTitle>
       <DialogContent>
         <Typography>
-          لا يمكن التراجع عن هذا الإجراء. سيتم حذف جميع الرسائل.
+          This action cannot be undone. All messages will be deleted.
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>إلغاء</Button>
+        <Button onClick={onClose}>Cancel</Button>
         <Button onClick={onConfirm} variant="contained" color="error">
-          حذف
+          Delete
         </Button>
       </DialogActions>
     </Dialog>
@@ -558,17 +558,17 @@ function LeaveConfirmDialog({ open, onClose, onConfirm }) {
         zIndex: 1304,
       }}
     >
-      <DialogTitle>مغادرة المحادثة؟</DialogTitle>
+      <DialogTitle>Leave Chat?</DialogTitle>
       <DialogContent>
         <Typography>
-          هل أنت متأكد من رغبتك في مغادرة هذه المحادثة؟ لن تتلقى بعد الآن أي رسائل
-          من هذه الغرفة.
+          Are you sure you want to leave this chat? You will no longer receive
+          messages from this room.
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>إلغاء</Button>
+        <Button onClick={onClose}>Cancel</Button>
         <Button onClick={onConfirm} variant="contained" color="error">
-          مغادرة
+          Leave
         </Button>
       </DialogActions>
     </Dialog>

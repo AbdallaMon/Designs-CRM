@@ -54,7 +54,7 @@ export default function SignInWithDifferentUserRole() {
       setLoading,
       "auth/profile/switch",
       false,
-      "جارٍ تبديل الدور...",
+      "Switching role...",
       null,
       "POST",
     );
@@ -80,7 +80,7 @@ export default function SignInWithDifferentUserRole() {
           transition: "all 0.2s ease-in-out",
         }}
       >
-        تبديل الدور
+        Switch Role
       </Button>
 
       <Dialog
@@ -96,7 +96,7 @@ export default function SignInWithDifferentUserRole() {
             <Box display="flex" alignItems="center" gap={1}>
               <MdOutlineSwitchAccount size={24} />
               <Typography variant="h6" fontWeight={600}>
-                اختر دورك
+                Select Your Role
               </Typography>
             </Box>
             <IconButton onClick={() => setOpen(false)} size="small" sx={{ color: "grey.500" }}>
@@ -104,7 +104,7 @@ export default function SignInWithDifferentUserRole() {
             </IconButton>
           </Box>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            اختر الدور الذي تريد التبديل إليه
+            Choose the role you want to switch to
           </Typography>
         </DialogTitle>
 
@@ -144,7 +144,7 @@ export default function SignInWithDifferentUserRole() {
                         </Typography>
                         {isCurrent && (
                           <Chip
-                            label="الحالي"
+                            label="Current"
                             size="small"
                             color="primary"
                             variant="outlined"
@@ -162,7 +162,7 @@ export default function SignInWithDifferentUserRole() {
 
         <DialogActions sx={{ p: 3, pt: 2 }}>
           <Button onClick={() => setOpen(false)} color="inherit">
-            إلغاء
+            Cancel
           </Button>
         </DialogActions>
       </Dialog>
