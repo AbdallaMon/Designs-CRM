@@ -9,7 +9,7 @@ import { Button, Typography } from "@mui/material";
 
 export default function Page() {
   const { setLoading } = useToastContext();
-  const { setIsLoggedIn, setUser } = useAuth();
+  const { refetchMe } = useAuth();
 
   async function handleLogin(data) {
     const response = await handleRequestSubmit(
@@ -20,8 +20,10 @@ export default function Page() {
       "Logging"
     );
     if (response.status === 200 || response?.success === true) {
-      setIsLoggedIn(true);
-      setUser(response.data?.user ?? response.user);
+      // The /auth/login response is the bare user (no permissions / navigationTabs /
+      // profiles). Pull the full session from /auth/me so the dashboard drawer +
+      // gating populate immediately — no manual refresh needed.
+      await refetchMe();
     }
   }
 
