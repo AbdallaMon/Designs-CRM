@@ -41,3 +41,6 @@ next-env.d.ts
 .env
 .cookies.txt
 .server.log
+db-snapshot.mjs
+full-backup.sql
+data-only.sql
