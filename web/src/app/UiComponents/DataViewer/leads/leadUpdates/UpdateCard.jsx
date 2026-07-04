@@ -221,7 +221,7 @@ export const UpdateCard = ({
                   </Tooltip>
                 </Box>
                 <StatusPill
-                  label={isArchived ? "مكتمل" : "نشط"}
+                  label={isArchived ? "Done" : "Active"}
                   color={
                     isArchived
                       ? theme.palette.success.main

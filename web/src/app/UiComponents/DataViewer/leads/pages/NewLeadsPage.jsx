@@ -72,14 +72,14 @@ dayjs.extend(relativeTime);
 const TAB_DEFS = [
   {
     key: "new",
-    title: "العملاء الجدد",
+    title: "New leads",
     icon: <MdOutlineFiberNew />,
     countKey: "new",
     show: () => true,
   },
   {
     key: "non-consulted",
-    title: "غير مستشارين",
+    title: "Non-consulted",
     icon: <MdOutlinePending />,
     countKey: "nonConsulted",
     show: (user) =>
@@ -89,7 +89,7 @@ const TAB_DEFS = [
   },
   {
     key: "stale",
-    title: "متأخرة",
+    title: "Overdue",
     icon: <MdHistoryToggleOff />,
     countKey: "stale",
     warnable: true,
@@ -105,21 +105,21 @@ const TAB_DEFS = [
 const SECTION_DEFS = [
   {
     key: "calls",
-    title: "مكالمات اليوم",
+    title: "Today's Calls",
     icon: <MdPhoneInTalk />,
     countKey: "calls",
     show: (user) => user.role !== "CONTACT_INITIATOR",
   },
   {
     key: "meetings",
-    title: "اجتماعات",
+    title: "Meetings",
     icon: <MdEventAvailable />,
     countKey: "meetings",
     show: (user) => user.role !== "CONTACT_INITIATOR",
   },
   {
     key: "targets",
-    title: "أهداف ونماذج",
+    title: "Targets & Forms",
     icon: <MdOutlineFactCheck />,
     show: () => true,
   },
@@ -262,10 +262,11 @@ export default function NewLeadsPage({ searchParams, staff }) {
           >
             <Box>
               <Typography variant="h4" fontWeight={800} color="text.primary">
-                العملاء المحتملون
+                Leads
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                العملاء الجدد وغير المستشارين والمتأخرون — اختر عميلاً وابدأ صفقة.
+                New, non-consulted, and overdue leads — pick a lead and start a
+                deal.
               </Typography>
             </Box>
             <Stack
@@ -274,11 +275,11 @@ export default function NewLeadsPage({ searchParams, staff }) {
               alignItems="center"
               sx={{ flexShrink: 0 }}
             >
-              <Tooltip title="تحديث">
+              <Tooltip title="Refresh">
                 <IconButton
                   onClick={refreshAll}
                   color="primary"
-                  aria-label="تحديث"
+                  aria-label="Refresh"
                   sx={{
                     border: 1,
                     borderColor: "divider",
@@ -315,7 +316,7 @@ export default function NewLeadsPage({ searchParams, staff }) {
                       }
                     }
               }
-              inputLabel="ابحث عن عميل بالرقم أو الاسم أو الهاتف"
+              inputLabel="Search lead by id ,name or phone"
               renderKeys={["id", "client.name", "client.phone", "client.email"]}
               mainKey="id"
               searchKey={"id"}
@@ -642,12 +643,12 @@ function LeadListBody({
           action={
             onRetry ? (
               <Button color="inherit" size="small" onClick={onRetry}>
-                إعادة المحاولة
+                Retry
               </Button>
             ) : undefined
           }
         >
-          تعذّر تحميل البيانات. حاول مرة أخرى.
+          Failed to load data. Please try again.
         </Alert>
       ) : loading ? (
         <Grid container spacing={2}>
@@ -725,8 +726,8 @@ function NewLeadsPanel({ def, searchParams }) {
       setLimit={setLimit}
       totalPages={totalPages}
       onRetry={() => setRender((r) => !r)}
-      emptyTitle="لا يوجد عملاء جدد حالياً"
-      emptyDescription="عند وصول عملاء جدد سيظهرون هنا. يمكنك إضافة عميل يدوياً."
+      emptyTitle="No new leads right now"
+      emptyDescription="New leads will appear here when they arrive. You can add a lead manually."
       emptyAction={<CreateNewLead />}
     />
   );
@@ -766,8 +767,8 @@ function NonConsultedPanel({ def }) {
       setLimit={setLimit}
       totalPages={totalPages}
       onRetry={() => setRender((r) => !r)}
-      emptyTitle="لا يوجد عملاء بانتظار الاستشارة"
-      emptyDescription="جميع العملاء الجدد تمت استشارتهم. عمل رائع!"
+      emptyTitle="No leads awaiting consultation"
+      emptyDescription="All new leads have been consulted. Great work!"
     />
   );
 }
@@ -806,8 +807,8 @@ function StalePanel({ def }) {
       setLimit={setLimit}
       totalPages={totalPages}
       onRetry={() => setRender((r) => !r)}
-      emptyTitle="لا توجد عملاء متأخرون"
-      emptyDescription="لا يوجد عملاء تجاوزوا المدة المحددة دون متابعة."
+      emptyTitle="No overdue leads"
+      emptyDescription="No leads have exceeded the set time without follow-up."
     />
   );
 }
@@ -884,14 +885,14 @@ export function LeadSliderCard({ lead, setData }) {
             {category && (
               <MetaItem
                 icon={<MdCategory size={14} />}
-                label="الفئة"
+                label="Category"
                 value={category}
               />
             )}
             {location && (
               <MetaItem
                 icon={<MdLocationOn size={14} />}
-                label="الموقع"
+                label="Location"
                 value={location}
               />
             )}
@@ -904,9 +905,9 @@ export function LeadSliderCard({ lead, setData }) {
           <Stack spacing={1} sx={{ width: "100%" }}>
             {user.role === "STAFF" && !user.isSuperSales && (
               <ConfirmWithActionModel
-                title="هل أنت متأكد أنك تريد استلام هذا العميل وإسناده إليك كصفقة جديدة؟"
+                title="Are you sure you want to get this lead and assign it to you as a new deal?"
                 handleConfirm={() => createADeal(lead)}
-                label="ابدأ صفقة"
+                label="Start a Deal"
                 fullWidth={true}
                 size="small"
                 variant="contained"
@@ -922,7 +923,7 @@ export function LeadSliderCard({ lead, setData }) {
                 startIcon={<MdPreview />}
                 sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
               >
-                عرض التفاصيل
+                Preview Details
               </Button>
             )}
           </Stack>
@@ -996,12 +997,12 @@ export function SearchForALead() {
     >
       {loading && <LoadingOverlay />}
       <Typography variant="h5" sx={{ pl: 2, mb: 0.5 }}>
-        البحث في الصفقات
+        Search in deals
       </Typography>
       <SearchComponent
         apiEndpoint="search?model=clientLead"
         setFilters={setFilters}
-        inputLabel="ابحث عن عميل بالرقم أو الاسم أو الهاتف"
+        inputLabel="Search lead by id ,name or phone"
         renderKeys={["id", "client.name", "client.phone", "client.email"]}
         mainKey="id"
         searchKey={"id"}

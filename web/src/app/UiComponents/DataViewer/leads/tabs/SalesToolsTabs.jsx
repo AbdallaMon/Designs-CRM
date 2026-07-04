@@ -111,10 +111,10 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
   // so this branch should not normally render — kept as a guard, now a calm empty state.
   if (!isAdmin && user.role !== "STAFF") {
     return (
-      <TabSection icon={<MdAnalytics />} title="تحليل العميل">
+      <TabSection icon={<MdAnalytics />} title="Client Analysis">
         <EmptyState
           icon={<MdLock />}
-          title="لا تملك صلاحية الوصول لهذا التبويب"
+          title="You are not allowed to access this tab"
         />
       </TabSection>
     );
@@ -122,15 +122,15 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
   return (
     <TabSection
       icon={<MdAnalytics />}
-      title="تحليل العميل"
-      description="أدوات المبيعات — أسئلة سبين، اعتراضات فيرسا، وشخصية العميل."
+      title="Client Analysis"
+      description="Sales tools — SPIN questions, VERSA objections, and client personality."
     >
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 6 }}>
           <ToolCard
             icon={<MdQuestionAnswer />}
-            title="أسئلة سبين"
-            subtitle="SPIN Questions"
+            title="SPIN Questions"
+            subtitle="سؤال اسبين"
           >
             <SPAINQuestionsDialog clientLeadId={lead.id} />
           </ToolCard>
@@ -140,8 +140,8 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
           <Grid size={{ xs: 12, md: 6 }}>
             <ToolCard
               icon={<MdTouchApp />}
-              title="اعتراضات فيرسا"
-              subtitle="VERSA Objections"
+              title="VERSA Objections"
+              subtitle="نموذج الاعتراضات"
             >
               <VersaObjectionSystem clientLeadId={lead.id} />
             </ToolCard>
@@ -151,17 +151,17 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
         <Grid size={{ xs: 12, md: 6 }}>
           <ToolCard
             icon={<FaUser />}
-            title="شخصية العميل"
-            subtitle="Client Personality"
+            title="Client Personality"
+            subtitle="شخصية العميل"
           >
             <FormControl sx={{ minWidth: 200 }} fullWidth>
               <InputLabel id="personality-select-label">
-                {personality ? "تغيير" : "اختيار"} الشخصية
+                {personality ? "Change" : "Select"} Personality
               </InputLabel>
               <Select
                 labelId="personality-select-label"
                 value={personality}
-                label={`${personality ? "تغيير" : "اختيار"} الشخصية`}
+                label={`${personality ? "Change" : "Select"} Personality`}
                 onChange={async (e) => await handleChange(e)}
                 displayEmpty
               >

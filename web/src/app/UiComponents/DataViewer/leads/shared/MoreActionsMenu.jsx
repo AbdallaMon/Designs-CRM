@@ -71,7 +71,7 @@ export const MoreActionsMenu = ({
           },
         })}
       >
-        إجراءات
+        Actions
       </Button>
 
       <Menu
@@ -92,7 +92,7 @@ export const MoreActionsMenu = ({
             variant="overline"
             sx={{ fontWeight: 700, color: "text.disabled", letterSpacing: 0.6 }}
           >
-            إجراءات العميل
+            Lead Actions
           </Typography>
         </Box>
         <Divider />
@@ -108,7 +108,7 @@ export const MoreActionsMenu = ({
               sx={{ py: 1.5 }}
             >
               <BsPersonCheck size={16} style={{ marginRight: 12 }} />
-              تحويل العميل
+              Convert Lead
             </MenuItem>
           )}
 
@@ -124,7 +124,7 @@ export const MoreActionsMenu = ({
               sx={{ py: 1.5 }}
             >
               <MdWork size={16} style={{ marginRight: 12 }} />
-              بدء الصفقة
+              Start Deal
             </MenuItem>
           )}
 
@@ -219,21 +219,21 @@ export const MoreActionsMenu = ({
             }}
           >
             <Typography variant="h6" component="h2" mb={2}>
-              تحويل العميل
+              Convert Lead
             </Typography>
             <Typography variant="body2" color="text.secondary" mb={3}>
-              هل تريد تحويل هذا العميل ليتمكن شخص آخر من أخذه؟
+              Convert this lead so someone else can take it?
             </Typography>
             <Stack direction="row" spacing={2} justifyContent="flex-end">
               <Button variant="outlined" onClick={() => setOpenConfirm(false)}>
-                إلغاء
+                Cancel
               </Button>
               <Button
                 variant="contained"
                 onClick={handleConvertLead}
                 color="primary"
               >
-                تأكيد
+                Confirm
               </Button>
             </Stack>
           </Box>

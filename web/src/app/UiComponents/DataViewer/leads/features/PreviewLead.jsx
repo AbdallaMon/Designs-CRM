@@ -200,7 +200,8 @@ export const PreviewLead = ({
             <FaExclamationTriangle size={28} color={theme.palette.error.dark} />
           </Box>
           <Typography variant="h6" sx={{ color: theme.palette.error.dark }}>
-            لا يمكنك الوصول إلى هذه الصفحة أو أن العميل غير موجود
+            You are not allowed to access this page or the lead doesn&apos;t
+            exist
           </Typography>
         </Paper>
       </Container>
@@ -300,7 +301,7 @@ export const PreviewLead = ({
                 }}
               >
                 <Button onClick={onClose} variant="outlined">
-                  إغلاق
+                  Close
                 </Button>
               </DialogActions>
             </>

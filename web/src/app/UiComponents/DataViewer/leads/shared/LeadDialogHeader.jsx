@@ -128,7 +128,7 @@ export const LeadDialogHeader = ({
             sx={{ minWidth: 0 }}
           >
             {handleClose && (
-              <Tooltip title="رجوع">
+              <Tooltip title="Back">
                 <IconButton
                   onClick={() => handleClose(isPage)}
                   sx={{
@@ -166,7 +166,7 @@ export const LeadDialogHeader = ({
                   color="text.secondary"
                   fontWeight={600}
                 >
-                  معاينة العميل المحتمل
+                  Lead Preview
                 </Typography>
               ) : (
                 <>
@@ -192,7 +192,7 @@ export const LeadDialogHeader = ({
                     </MetaPill>
                     {lead.code && (
                       <MetaPill icon={<MdTag size={13} />}>
-                        {`كود ${lead.code}`}
+                        {`code ${lead.code}`}
                       </MetaPill>
                     )}
                     {lead.createdAt && (
@@ -216,7 +216,7 @@ export const LeadDialogHeader = ({
             sx={{ justifyContent: { xs: "flex-start", md: "flex-end" } }}
           >
             {canChangeStatus ? (
-              <Tooltip title="تغيير الحالة">
+              <Tooltip title="Change status">
                 <Button
                   variant="contained"
                   startIcon={<AiOutlineSwap size={16} />}
@@ -275,7 +275,7 @@ export const LeadDialogHeader = ({
 
             {(admin || user.role === "STAFF") && lead.paymentStatus && (
               <Chip
-                label={`الدفع: ${PaymentStatus[lead.paymentStatus] || lead.paymentStatus}`}
+                label={`Payment: ${PaymentStatus[lead.paymentStatus] || lead.paymentStatus}`}
                 color="primary"
                 variant="outlined"
                 size="small"
@@ -285,7 +285,7 @@ export const LeadDialogHeader = ({
 
             {lead.status === "FINALIZED" && lead.averagePrice && (
               <Chip
-                label={`السعر النهائي: ${lead.averagePrice}`}
+                label={`Final Price: ${lead.averagePrice}`}
                 color="success"
                 variant="outlined"
                 size="small"
@@ -327,7 +327,7 @@ export const LeadDialogHeader = ({
               startIcon={<MdWork size={16} />}
               sx={{ borderRadius: 2, fontWeight: 700, px: 2 }}
             >
-              بدء الصفقة
+              Start Deal
             </Button>
           )}
 
@@ -359,7 +359,7 @@ export const LeadDialogHeader = ({
               from the kanban modal (on the standalone page you are already here). */}
           {!isPage && (
             <>
-              <Tooltip title="فتح في صفحة جديدة">
+              <Tooltip title="Open in a new tab">
                 <IconButton
                   component="a"
                   href={`/dashboard/deals/${lead.id}`}

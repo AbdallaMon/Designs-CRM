@@ -115,15 +115,15 @@ const SalesStageComponent = ({ clientLeadId }) => {
       <TabSection icon={<MdTimeline />} title="مراحل البيع">
         <EmptyState
           icon={<MdTimeline />}
-          title="تعذّر تحميل مراحل البيع"
-          description="حدث خطأ أثناء جلب المراحل. يرجى المحاولة مرة أخرى."
+          title="Failed to load sales stages"
+          description="An error occurred while fetching the stages. Please try again."
           action={
             <Button
               variant="outlined"
               onClick={fetchSalesStages}
               sx={{ textTransform: "none", fontWeight: 600 }}
             >
-              إعادة المحاولة
+              Retry
             </Button>
           }
         />
@@ -141,8 +141,8 @@ const SalesStageComponent = ({ clientLeadId }) => {
       <TabSection icon={<MdTimeline />} title="مراحل البيع" description="مراحل البيع">
         <EmptyState
           icon={<MdTimeline />}
-          title="لم تبدأ مراحل البيع بعد"
-          description="ستظهر المراحل هنا فور بدء العمل على هذا العميل."
+          title="Sales stages haven't started yet"
+          description="Stages will appear here once work begins on this lead."
         />
       </TabSection>
     );
@@ -192,7 +192,7 @@ const SalesStageComponent = ({ clientLeadId }) => {
               </Stack>
               {currentStageData && (
                 <Typography variant="body2" sx={{ mt: 1, opacity: 0.9 }}>
-                  أُنشئت في:{" "}
+                  Created at:{" "}
                   {dayjs(currentStageData.createdAt).format("DD MMMM YYYY")}
                 </Typography>
               )}
@@ -269,7 +269,7 @@ const SalesStageComponent = ({ clientLeadId }) => {
                   status={
                     isCompleted ? (
                       <StatusPill
-                        label="مكتملة"
+                        label="Completed"
                         color={theme.palette.success.main}
                       />
                     ) : isCurrentStage ? (
@@ -282,7 +282,7 @@ const SalesStageComponent = ({ clientLeadId }) => {
                   meta={
                     isCompleted && stageData ? (
                       <MetaItem
-                        label="أُنشئت في"
+                        label="Created At"
                         value={dayjs(stageData.createdAt).format("DD MMMM YYYY")}
                       />
                     ) : undefined

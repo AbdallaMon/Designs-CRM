@@ -77,18 +77,18 @@ const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
 
   if (error) {
     return (
-      <TabSection icon={<MdUpdate />} title="التحديثات">
+      <TabSection icon={<MdUpdate />} title="Updates">
         <EmptyState
           icon={<MdUpdate />}
-          title="تعذّر تحميل التحديثات"
-          description="حدث خطأ أثناء جلب التحديثات. يرجى المحاولة مرة أخرى."
+          title="Failed to load updates"
+          description="An error occurred while fetching the updates. Please try again."
           action={
             <Button
               variant="outlined"
               onClick={getInitialData}
               sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
             >
-              إعادة المحاولة
+              Retry
             </Button>
           }
         />
@@ -99,7 +99,7 @@ const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
   return (
     <TabSection
       icon={<MdUpdate />}
-      title="التحديثات"
+      title="Updates"
       count={updates?.length || 0}
       action={
         <CreateUpdateModal
@@ -118,9 +118,9 @@ const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
       >
         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
           {[
-            { value: "all", label: "الكل" },
-            { value: "notArchived", label: "النشطة" },
-            { value: "archived", label: "المؤرشفة" },
+            { value: "all", label: "All types" },
+            { value: "notArchived", label: "Active" },
+            { value: "archived", label: "Archived" },
           ].map((option) => (
             <Button
               key={option.value}
@@ -136,13 +136,13 @@ const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
 
         {isAdmin && (
           <FormControl size="small" sx={{ minWidth: 200 }}>
-            <InputLabel>تصفية حسب القسم</InputLabel>
+            <InputLabel>Filter by Department</InputLabel>
             <Select
               value={departmentFilter}
               onChange={(e) => setDepartmentFilter(e.target.value)}
-              label="تصفية حسب القسم"
+              label="Filter by Department"
             >
-              <MenuItem value="">كل الأقسام</MenuItem>
+              <MenuItem value="">All Departments</MenuItem>
               {DEPARTMENTS.map((dept) => (
                 <MenuItem key={dept.value} value={dept.value}>
                   {dept.label}
@@ -157,13 +157,13 @@ const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {
         {updates?.length === 0 ? (
           <EmptyState
             icon={<MdUpdate />}
-            title="لا توجد تحديثات"
+            title="No updates found"
             description={
               filter === "archived"
-                ? "لا توجد تحديثات مؤرشفة لعرضها."
+                ? "No archived updates to display"
                 : filter === "notArchived"
-                ? "لا توجد تحديثات نشطة لعرضها."
-                : "لا توجد تحديثات مطابقة للتصفية الحالية."
+                ? "No active updates to display"
+                : "No updates match your current filters"
             }
           />
         ) : (

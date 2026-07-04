@@ -226,19 +226,19 @@ const KanbanColumn = ({
 
       {/* Confirm irreversible deal transitions (e.g. reject / archive) before committing. */}
       <Dialog open={Boolean(pendingMove)} onClose={() => setPendingMove(null)}>
-        <DialogTitle>تأكيد نقل الصفقة</DialogTitle>
+        <DialogTitle>Confirm Deal Move</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {`سيتم نقل هذه الصفقة إلى "${
+            {`This deal will be moved to "${
               KanbanLeadsStatus[pendingMove?.newStatus] ||
               pendingMove?.newStatus ||
               ""
-            }". لا يمكن التراجع عن هذا الإجراء بسهولة. هل تريد المتابعة؟`}
+            }". This action can't be easily undone. Do you want to continue?`}
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2, gap: 1 }}>
           <Button variant="outlined" onClick={() => setPendingMove(null)}>
-            إلغاء
+            Cancel
           </Button>
           <Button
             variant="contained"
@@ -249,7 +249,7 @@ const KanbanColumn = ({
               if (move) commitMove(move.item, move.newStatus);
             }}
           >
-            تأكيد
+            Confirm
           </Button>
         </DialogActions>
       </Dialog>
@@ -389,10 +389,10 @@ const KanbanColumn = ({
             >
               <BsExclamationTriangle size={28} />
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                تعذّر تحميل العناصر
+                Failed to load items
               </Typography>
               <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                حدث خطأ أثناء التحميل. يرجى المحاولة مرة أخرى.
+                An error occurred while loading. Please try again.
               </Typography>
               <Button
                 onClick={fetchLeads}
@@ -404,7 +404,7 @@ const KanbanColumn = ({
                   textTransform: "none",
                 }}
               >
-                إعادة المحاولة
+                Retry
               </Button>
             </Box>
           )}
@@ -424,7 +424,7 @@ const KanbanColumn = ({
             >
               <BsInbox size={28} style={{ color: statusColor, opacity: 0.6 }} />
               <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                لا توجد عناصر
+                No items
               </Typography>
             </Box>
           )}
@@ -479,7 +479,7 @@ const KanbanColumn = ({
                   },
                 }}
               >
-                تحميل المزيد
+                Load more
               </Button>
             )}
             {loading && leads?.length > 0 && (
@@ -491,7 +491,7 @@ const KanbanColumn = ({
                   fontSize: "0.8rem",
                 }}
               >
-                جارٍ التحميل...
+                Loading...
               </Box>
             )}
 
@@ -504,7 +504,7 @@ const KanbanColumn = ({
                   fontSize: "0.8rem",
                 }}
               >
-                جارٍ تحميل المزيد...
+                Loading more...
               </Box>
             )}
           </Stack>
