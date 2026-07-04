@@ -1,7 +1,8 @@
 "use client";
 
-import { getData } from "@/app/helpers/functions/getData";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import {
   Button,
   Dialog,
@@ -16,96 +17,52 @@ import {
   Divider,
   Box,
   Chip,
-  CircularProgress,
-  Paper,
   Fade,
   DialogActions,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { MdOutlineSwitchAccount, MdClose } from "react-icons/md";
-import {
-  FaUserShield,
-  FaUserTie,
-  FaCube,
-  FaPalette,
-  FaCalculator,
-  FaCrown,
-} from "react-icons/fa";
+import { FaUserShield, FaUserTie, FaPalette, FaCalculator } from "react-icons/fa";
 
-// Role configuration with icons and colors
-const roleConfig = {
-  ADMIN: {
-    icon: <FaUserShield />,
-    color: "#1976d2",
-    label: "مدير",
-    description: "وصول كامل للنظام وإدارته",
-  },
-  STAFF: {
-    icon: <FaUserTie />,
-    color: "#388e3c",
-    label: "مبيعات",
-    description: "إدارة العملاء المحتملين وخدمة العملاء",
-  },
-  THREE_D_DESIGNER: {
-    icon: <FaCube />,
-    color: "#f57c00",
-    label: "مصمم ثلاثي الأبعاد",
-    description: "النمذجة ثلاثية الأبعاد",
-  },
-  TWO_D_DESIGNER: {
-    icon: <FaPalette />,
-    color: "#7b1fa2",
-    label: "مصمم ثنائي الأبعاد",
-    description: "التصميم ثنائي الأبعاد",
-  },
-  ACCOUNTANT: {
-    icon: <FaCalculator />,
-    color: "#00796b",
-    label: "محاسب",
-    description: "الإدارة المالية وإعداد التقارير",
-  },
-  SUPER_ADMIN: {
-    icon: <FaCrown />,
-    color: "#d32f2f",
-    label: "مدير عام",
-    description: "وصول كامل للنظام وإدارته",
-  },
+// Icon + color per profile FAMILY (from /auth/me profiles[].family).
+const familyConfig = {
+  ADMIN: { icon: <FaUserShield />, color: "#1976d2" },
+  SALES: { icon: <FaUserTie />, color: "#388e3c" },
+  DESIGN: { icon: <FaPalette />, color: "#7b1fa2" },
+  FINANCE: { icon: <FaCalculator />, color: "#00796b" },
 };
+const fallbackConfig = { icon: <FaUserTie />, color: "#666" };
 
+// Real profile switcher (dialog UX). Lists the profiles assigned to the current
+// user (from /auth/me) and performs a SERVER-SIDE switch via /auth/profile/switch,
+// then refetches /auth/me so the whole app (nav + permissions) re-gates. Hidden
+// when the user holds a single profile.
 export default function SignInWithDifferentUserRole() {
   const [open, setOpen] = useState(false);
-  const { user, setUser } = useAuth();
-  const [roles, setRoles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [selectedRole, setSelectedRole] = useState(null);
+  const { profiles = [], currentProfileId, refetchMe } = useAuth();
+  const { setLoading } = useToastContext();
 
-  useEffect(() => {
-    async function getUserRoles() {
-      const rolesReq = await getData({
-        url: "shared/utilities/roles",
-        setLoading,
-      });
-      if (rolesReq && rolesReq.status === 200) setRoles(rolesReq.data);
-    }
-    getUserRoles();
-  }, []);
+  if (!Array.isArray(profiles) || profiles.length <= 1) return null;
 
-  const handleRoleSelect = (role) => {
-    setSelectedRole(role);
-    setUser({ ...user, role });
-    localStorage.setItem("role", role);
-    localStorage.setItem("userId", user.id);
-
-    setTimeout(() => {
+  async function handleSelect(profileId) {
+    if (profileId === currentProfileId) {
       setOpen(false);
-      window.location.href = "/dashboard";
-    }, 500);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-    setSelectedRole(null);
-  };
+      return;
+    }
+    const res = await handleRequestSubmit(
+      { profileId },
+      setLoading,
+      "auth/profile/switch",
+      false,
+      "جارٍ تبديل الدور...",
+      null,
+      "POST",
+    );
+    if (res?.success === true || res?.status === 200) {
+      await refetchMe();
+      setOpen(false);
+    }
+  }
 
   return (
     <>
@@ -119,10 +76,7 @@ export default function SignInWithDifferentUserRole() {
           fontWeight: 500,
           px: 3,
           py: 1,
-          "&:hover": {
-            transform: "translateY(-2px)",
-            boxShadow: 2,
-          },
+          "&:hover": { transform: "translateY(-2px)", boxShadow: 2 },
           transition: "all 0.2s ease-in-out",
         }}
       >
@@ -131,34 +85,21 @@ export default function SignInWithDifferentUserRole() {
 
       <Dialog
         open={open}
-        onClose={handleClose}
+        onClose={() => setOpen(false)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            minHeight: 400,
-          },
-        }}
+        PaperProps={{ sx: { borderRadius: 3, minHeight: 320 } }}
         TransitionComponent={Fade}
       >
         <DialogTitle sx={{ pb: 1 }}>
-          <Box
-            display="flex"
-            alignItems="center"
-            justifyContent="space-between"
-          >
+          <Box display="flex" alignItems="center" justifyContent="space-between">
             <Box display="flex" alignItems="center" gap={1}>
               <MdOutlineSwitchAccount size={24} />
               <Typography variant="h6" fontWeight={600}>
                 اختر دورك
               </Typography>
             </Box>
-            <IconButton
-              onClick={handleClose}
-              size="small"
-              sx={{ color: "grey.500" }}
-            >
+            <IconButton onClick={() => setOpen(false)} size="small" sx={{ color: "grey.500" }}>
               <MdClose />
             </IconButton>
           </Box>
@@ -170,126 +111,59 @@ export default function SignInWithDifferentUserRole() {
         <Divider />
 
         <DialogContent sx={{ p: 0 }}>
-          {loading ? (
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              justifyContent="center"
-              py={6}
-            >
-              <CircularProgress size={40} />
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                جارٍ تحميل الأدوار المتاحة...
-              </Typography>
-            </Box>
-          ) : roles.length === 0 ? (
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              justifyContent="center"
-              py={6}
-            >
-              <Typography variant="body1" color="text.secondary">
-                لا توجد أدوار متاحة
-              </Typography>
-            </Box>
-          ) : (
-            <List sx={{ p: 0, overflowX: "hidden" }}>
-              {roles.map((role, index) => {
-                const config = roleConfig[role] || {
-                  icon: <FaUserTie />,
-                  color: "#666",
-                  label: role,
-                  description: "Role access",
-                };
-                const isSelected = selectedRole === role;
-                const isCurrentRole = user?.role === role;
-
-                return (
-                  <ListItem
-                    key={role}
-                    onClick={() => handleRoleSelect(role)}
-                    sx={{
-                      cursor: "pointer",
-                      py: 2,
-                      px: 3,
-                      borderBottom:
-                        index < roles.length - 1 ? "1px solid" : "none",
-                      borderColor: "divider",
-                      transition: "all 0.2s ease-in-out",
-                      backgroundColor: isSelected
-                        ? `${config.color}15`
-                        : isCurrentRole
-                        ? "action.selected"
-                        : "transparent",
-                      "&:hover": {
-                        backgroundColor: isSelected
-                          ? `${config.color}25`
-                          : `${config.color}08`,
-                        transform: "translateX(4px)",
-                      },
-                    }}
-                  >
-                    <ListItemIcon
-                      sx={{
-                        color: config.color,
-                        minWidth: 48,
-                        fontSize: "1.25rem",
-                      }}
-                    >
-                      {config.icon}
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <Typography variant="subtitle1" fontWeight={500}>
-                            {config.label}
-                          </Typography>
-                          {isCurrentRole && (
-                            <Chip
-                              label="الحالي"
-                              size="small"
-                              color="primary"
-                              variant="outlined"
-                              sx={{ height: 20, fontSize: "0.75rem" }}
-                            />
-                          )}
-                          {isSelected && (
-                            <Chip
-                              label="محدّد"
-                              size="small"
-                              sx={{
-                                height: 20,
-                                fontSize: "0.75rem",
-                                backgroundColor: config.color,
-                                color: "white",
-                              }}
-                            />
-                          )}
-                        </Box>
-                      }
-                      secondary={
-                        <Typography variant="body2" color="text.secondary">
-                          {config.description}
+          <List sx={{ p: 0, overflowX: "hidden" }}>
+            {profiles.map((profile, index) => {
+              const config = familyConfig[profile.family] || fallbackConfig;
+              const isCurrent = profile.id === currentProfileId;
+              return (
+                <ListItem
+                  key={profile.id}
+                  onClick={() => handleSelect(profile.id)}
+                  sx={{
+                    cursor: "pointer",
+                    py: 2,
+                    px: 3,
+                    borderBottom: index < profiles.length - 1 ? "1px solid" : "none",
+                    borderColor: "divider",
+                    transition: "all 0.2s ease-in-out",
+                    backgroundColor: isCurrent ? "action.selected" : "transparent",
+                    "&:hover": {
+                      backgroundColor: `${config.color}12`,
+                      transform: "translateX(4px)",
+                    },
+                  }}
+                >
+                  <ListItemIcon sx={{ color: config.color, minWidth: 48, fontSize: "1.25rem" }}>
+                    {config.icon}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Typography variant="subtitle1" fontWeight={500}>
+                          {profile.label}
                         </Typography>
-                      }
-                    />
-                  </ListItem>
-                );
-              })}
-            </List>
-          )}
+                        {isCurrent && (
+                          <Chip
+                            label="الحالي"
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            sx={{ height: 20, fontSize: "0.75rem" }}
+                          />
+                        )}
+                      </Box>
+                    }
+                  />
+                </ListItem>
+              );
+            })}
+          </List>
         </DialogContent>
 
         <DialogActions sx={{ p: 3, pt: 2 }}>
-          <Button onClick={handleClose} color="inherit">
+          <Button onClick={() => setOpen(false)} color="inherit">
             إلغاء
           </Button>
-          <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
-            {selectedRole ? "جارٍ التبديل..." : "اختر دورًا للمتابعة"}
-          </Typography>
         </DialogActions>
       </Dialog>
     </>

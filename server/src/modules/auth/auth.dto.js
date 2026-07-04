@@ -102,18 +102,26 @@ class AuthSchema {
       : Array.isArray(user.userProfiles)
         ? user.userProfiles.map((up) => up.profile).filter(Boolean)
         : [];
+    // Prefer the cache-resolved fields attached to req.auth (currentProfileKey /
+    // baseRole) — the `currentProfile` OBJECT only exists when toMe is called with a
+    // raw DB user (switch/login), NOT on the /auth/me path (req.auth). Without this,
+    // /auth/me silently fell back to the legacy role and nav stopped following the
+    // active profile.
     const currentProfileId = user.currentProfileId ?? user.currentProfile?.id ?? null;
-    const currentProfileKey = user.currentProfile?.key ?? resolveProfileKey(user);
+    const currentProfileKey =
+      user.currentProfile?.key ?? user.currentProfileKey ?? resolveProfileKey(user);
+    const baseRole = user.currentProfile?.baseRole ?? user.baseRole ?? null;
 
     // Nav follows the ACTIVE profile: the SUPER_SALES profile (baseRole STAFF)
     // renders the super-sales sidebar; every other profile renders its baseRole
-    // sidebar. Null when there's no active profile → buildNavigationTabs falls
-    // back to the legacy role rule (unmigrated parity).
-    const navRole = user.currentProfile
-      ? currentProfileKey === "SUPER_SALES"
-        ? "SUPER_SALES"
-        : user.currentProfile.baseRole
-      : undefined;
+    // sidebar. Undefined only when there's truly no active profile → buildNavigationTabs
+    // falls back to the legacy role rule (unmigrated parity).
+    const navRole =
+      user.currentProfile || user.currentProfileKey || user.baseRole
+        ? currentProfileKey === "SUPER_SALES"
+          ? "SUPER_SALES"
+          : baseRole
+        : undefined;
 
     const navigationTabs = buildNavigationTabs({
       role: user.role,

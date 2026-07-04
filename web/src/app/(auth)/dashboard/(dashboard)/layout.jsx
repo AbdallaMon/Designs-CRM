@@ -43,7 +43,6 @@ import SideNav, {
 import RouteGuard from "@/app/UiComponents/utility/RouteGuard.jsx";
 import NotificationsIcon from "@/app/UiComponents/utility/NotificationIcon.jsx";
 import SignInWithDifferentUserRole from "@/app/UiComponents/DataViewer/users/UserRoles";
-import ProfileSwitcher from "@/app/UiComponents/utility/ProfileSwitcher.jsx";
 import ProfileDialogTrigger from "@/app/UiComponents/DataViewer/users/profile/ProfileDialogTrigger";
 import Logout from "@/app/UiComponents/buttons/Logout.jsx";
 import SocketProvider from "@/app/providers/SocketProvider";
@@ -439,14 +438,12 @@ function isRoleOverrideActive(user) {
   );
 }
 
-// Derive the rendered sidebar links: normally from the backend-owned
-// `navigationTabs` (proven 1:1 with `linksForRole` per role, see
-// packages/shared/__tests__/navigation.test.js); falls back to the legacy
-// client arrays only while the dev role override is active.
+// Derive the rendered sidebar links from the backend-owned `navigationTabs`,
+// which now follow the ACTIVE PROFILE (auth.dto.toMe → navRole). This is the
+// SINGLE source for both the sidebar and RouteGuard, so they never diverge. The
+// old client-side `linksForRole(user.role)` override is gone — it desynced the
+// sidebar from RouteGuard and pinned nav to a stale role.
 function resolveLinks(user) {
-  if (isRoleOverrideActive(user)) {
-    return linksForRole(user).map(mapLegacyLink);
-  }
   return (user?.navigationTabs ?? []).map((tab) => mapNavigationTab(tab, user?.role));
 }
 
@@ -654,8 +651,7 @@ export default function Layout({ children }) {
                     }}
                   />
                 )}
-                <ProfileSwitcher />
-                {user.role !== "ADMIN" && <SignInWithDifferentUserRole />}
+                <SignInWithDifferentUserRole />
                 <NotificationsIcon />
                 <ProfileDialogTrigger userId={user.id} />
                 <Logout fit />

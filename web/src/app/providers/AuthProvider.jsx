@@ -31,17 +31,12 @@ export default function AuthProvider({ children }) {
       }
       const result = await response.json();
       const me = result?.data ?? result;
-      let nextUser = me.user;
+      const nextUser = me.user;
 
-      // Preserve master's local role override (used by the role switcher in dev).
-      if (
-        typeof window !== "undefined" &&
-        window.localStorage.getItem("role") &&
-        window.localStorage.getItem("userId") &&
-        nextUser?.id === parseInt(window.localStorage.getItem("userId"))
-      ) {
-        nextUser = { ...nextUser, role: window.localStorage.getItem("role") };
-      }
+      // NOTE: the old localStorage `role` override was removed — it desynced
+      // `user.role` from the profile-derived `navigationTabs`/permissions and broke
+      // route access. Profile switching now goes through /auth/profile/switch +
+      // refetchMe (a real, server-side switch).
 
       setUser(nextUser);
       setPermissions(nextUser?.permissions ?? []);
