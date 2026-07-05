@@ -87,8 +87,14 @@ currentProfileId, identity, isActive, lastSeen) **merged with** `getData('admin/
   Countries, Max-leads (×2), Commissions, "View current deals", Activity Logs. Reuse existing
   components (RestrictedCountries already normalizes its response to an array).
 
-**Performance tab:** `<Dashboard staffId={id} staff={false} hideIdentity />` — the existing
-per-user analytics, unchanged.
+**Performance tab:** a NEW, profile-aware page (`UserPerformance.jsx`) — NOT the old
+role-branched `Dashboard`. It renders one section per FAMILY the user belongs to across ALL
+their profiles (`familiesOf` in `helpers/profiles.js`): a Sales section (KPI tiles from
+`shared/dashboard/key-metrics` + lead-status/income charts) and/or a Design section (KPI
+tiles from `shared/dashboard/designer-metrics`), plus a note for families without per-user
+metrics. Own KPI-tile layout, distinct from the main dashboard. The staffId metric endpoints
+return zeros for the wrong domain (never 500), so this is crash-safe by construction — which
+also fixes the error the reused `Dashboard` threw.
 
 Tabs via MUI `<Tabs>` (local state). English chrome; `getData`/`handleRequestSubmit`,
 `usePermission`/`PermissionGate`, AppForm/RHF for forms.

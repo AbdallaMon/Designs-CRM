@@ -29,7 +29,7 @@ import { usePermission } from "@/app/hooks/usePermission";
 import { USER_CODES } from "@/app/helpers/permissionCodes";
 import { useAuth } from "@/app/providers/AuthProvider";
 
-import Dashboard from "@/app/UiComponents/DataViewer/dashbaord/Dashboard.jsx";
+import UserPerformance from "@/app/UiComponents/DataViewer/users/UserPerformance";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 import LastSeen from "@/app/UiComponents/buttons/LastSeen";
 import EditModal from "@/app/UiComponents/models/EditModal";
@@ -213,14 +213,7 @@ export default function UserDetails({ userId }) {
         </Stack>
       )}
 
-      {tab === 1 && (
-        <Dashboard
-          staffId={userId}
-          staff={false}
-          userRole={user.role}
-          hideIdentity
-        />
-      )}
+      {tab === 1 && <UserPerformance user={user} />}
     </Box>
   );
 }
