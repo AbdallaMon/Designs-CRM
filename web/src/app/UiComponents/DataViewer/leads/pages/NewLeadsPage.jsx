@@ -913,7 +913,7 @@ export function LeadSliderCard({ lead, setData }) {
                 variant="contained"
               />
             )}
-            <UpdateInitialConsultButton clientLead={lead} />
+            <UpdateInitialConsultButton clientLead={lead} fullWidth />
             {user.role !== "CONTACT_INITIATOR" && (
               <Button
                 fullWidth

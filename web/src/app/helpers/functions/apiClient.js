@@ -10,8 +10,14 @@ import { mapLegacyPathToV2 } from "./apiPathMap";
 // `NEXT_PUBLIC_API` = the backend origin, e.g. http://localhost:4001 (no version prefix —
 // the API is mounted at the root). `NEXT_PUBLIC_URL` is the same bare origin, also used for
 // sockets / file links. Falls back to NEXT_PUBLIC_URL if API is unset.
-export const API_BASE =
-  process.env.NEXT_PUBLIC_API || process.env.NEXT_PUBLIC_URL || "";
+// Strip any trailing slash so we never build `https://host//files/chunks` — a double slash
+// makes some proxies (Coolify/Traefik) issue a normalizing 30x redirect, which downgrades a
+// chunk POST to GET and 404s ("Route not found: GET /files/chunks").
+export const API_BASE = (
+  process.env.NEXT_PUBLIC_API ||
+  process.env.NEXT_PUBLIC_URL ||
+  ""
+).replace(/\/+$/, "");
 
 // Single in-flight refresh shared across all callers (prevents a refresh storm when many
 // requests 401 at once).

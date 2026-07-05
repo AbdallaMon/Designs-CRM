@@ -24,7 +24,8 @@ uploadRouter.post(
   "/chunks",
   AuthMiddleware.requireAuth,
   AuthMiddleware.requirePermissions([PERMISSIONS.UPLOAD.FILE_UPLOAD]),
-  UploadMiddleware.chunkFile("file"),
+  // Frontend (frozen uploadInChunks) posts the part under field name "chunk" — must match.
+  UploadMiddleware.chunkFile("chunk"),
   //   validate(uploadSchemas.chunkUpload),
   asyncHandler(uploadController.uploadAsChunks),
 );
@@ -38,7 +39,7 @@ uploadRouter.post(
 
 uploadRouter.post(
   "/client/chunks",
-  UploadMiddleware.chunkFile("file", undefined, true),
+  UploadMiddleware.chunkFile("chunk", undefined, true),
   validate(uploadSchemas.chunkUpload),
   asyncHandler(uploadController.uploadAsChunks),
 );

@@ -178,7 +178,7 @@ export const AddFiles = ({ lead, type = "button", children, setFiles }) => {
               </Box>
             </Stack>
           </DialogTitle>
-          <DialogContent sx={{ pt: 3 }}>
+          <DialogContent sx={{ pt: 4 }}>
             <Stack spacing={2.5}>
               <TextField
                 label="File Name"

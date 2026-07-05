@@ -93,7 +93,14 @@ const LeadReportFilters = () => {
                 body: JSON.stringify(filters),
             });
             const data = await response.json();
-            setReportData(data);
+            // Only render a real report payload; an error body (no summary/leads) must not
+            // reach the renderer or it crashes reading `summary`/`leads`.
+            if (response.ok && data?.summary) {
+                setReportData(data);
+            } else {
+                console.error('Lead report request failed:', response.status, data);
+                setReportData(null);
+            }
         } catch (error) {
             console.error('Error fetching report:', error);
         } finally {

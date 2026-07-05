@@ -124,7 +124,7 @@ export const AddExtraService = ({
               </Box>
             </Stack>
           </DialogTitle>
-          <DialogContent sx={{ pt: 3 }}>
+          <DialogContent sx={{ pt: 4 }}>
             <Stack spacing={3}>
               <TextField
                 label="Price"

@@ -13,15 +13,21 @@ import { z } from "zod";
 // change their output (a frozen-behavior violation). We therefore validate only that the
 // body is an OBJECT and type the known top-level filter keys, while `.passthrough()`
 // preserves the full nested payload verbatim for the frozen generator.
+// NOTE: fields are `.nullish()` (optional AND nullable), not `.optional()`. The frontend
+// report forms initialise every unset filter to `null` (unpicked dates → `null`, cleared
+// selects → `null`), and legacy master had NO validation so those nulls passed straight to
+// the frozen generators, which treat them as falsy (`filters.startDate && filters.endDate`,
+// `filters.emirates?.length`). Using `.optional()` here would REJECT those nulls with a 422
+// and break parity — the forms could never generate a report without every filter set.
 const reportBody = z
   .object({
-    startDate: z.string().optional(),
-    endDate: z.string().optional(),
-    emirates: z.array(z.string()).optional(),
-    statuses: z.array(z.string()).optional(),
-    userIds: z.array(z.union([z.coerce.number().int(), z.string()])).optional(),
-    clientIds: z.array(z.union([z.coerce.number().int(), z.string()])).optional(),
-    reportType: z.string().optional(),
+    startDate: z.string().nullish(),
+    endDate: z.string().nullish(),
+    emirates: z.array(z.string()).nullish(),
+    statuses: z.array(z.string()).nullish(),
+    userIds: z.array(z.union([z.coerce.number().int(), z.string()])).nullish(),
+    clientIds: z.array(z.union([z.coerce.number().int(), z.string()])).nullish(),
+    reportType: z.string().nullish(),
     // prepared payload the excel/pdf generators write verbatim (object, not array)
     data: z.any().optional(),
   })
