@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   alpha,
   Box,
@@ -24,10 +24,19 @@ import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { AddExtraService } from "../dialogs/AddExtraService";
 import { SectionToolbar } from "../shared/SectionToolbar";
 import { EmptyState } from "../shared/EmptyState";
+import { useLeadDetails } from "../context/LeadDetailsContext";
 
 export function ExtraServicesList({ admin, lead, notUser, setPayments }) {
-  const [extraServices, setExtraServices] = useState(lead.extraServices);
+  const details = useLeadDetails();
+  const [extraServices, setExtraServices] = useState(lead.extraServices || []);
   const theme = useTheme();
+
+  // Keep the list in sync with the core lead: after adding a service we refetch the core
+  // lead (which carries the authoritative extraServices), so the optimistic item gets
+  // reconciled with the real server record instead of requiring a manual page refresh.
+  useEffect(() => {
+    setExtraServices(lead?.extraServices || []);
+  }, [lead?.extraServices]);
 
   const canCreate = lead?.capabilities
     ? Boolean(lead.capabilities.canAddPayment)
@@ -46,6 +55,7 @@ export function ExtraServicesList({ admin, lead, notUser, setPayments }) {
               lead={lead}
               setExtraServices={setExtraServices}
               setPayments={setPayments}
+              onAdded={() => details?.refetchCore?.()}
             />
           ) : null
         }

@@ -3,6 +3,7 @@
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
+import { useLeadDetails } from "../leads/context/LeadDetailsContext";
 import { usePermission } from "@/app/hooks/usePermission";
 import { LEAD_CODES } from "@/app/helpers/permissionCodes";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
@@ -25,6 +26,7 @@ export function AssignNewStaffModal({ lead, onUpdate }) {
   const [userId, setUserId] = useState("");
   const [open, setOpen] = useState(false);
   const [users, setUsers] = useState([]);
+  const details = useLeadDetails();
   const { setLoading: setToastLoading } = useToastContext();
   const [, setLoading] = useState(true);
   const { hasPermission } = usePermission();
@@ -66,11 +68,13 @@ export function AssignNewStaffModal({ lead, onUpdate }) {
     if (newAssign.status === 200) {
       if (onUpdate) {
         onUpdate(newAssign.data);
-        setUserId(false);
-        setOpen(false);
-      } else {
-        window.location.reload();
+      } else if (details?.refetchCore) {
+        // No local setter wired in — reconcile the lead in place instead of a hard reload.
+        details.refetchCore();
+        details.refreshKanban?.();
       }
+      setUserId(false);
+      setOpen(false);
     }
   };
   if (!isAdmin || !lead.userId) return <Box></Box>;

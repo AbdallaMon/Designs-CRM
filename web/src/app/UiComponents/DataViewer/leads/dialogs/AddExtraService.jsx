@@ -30,6 +30,7 @@ export const AddExtraService = ({
   type = "button",
   children,
   setPayments,
+  onAdded,
 }) => {
   const [extraService, setExtraService] = useState({
     note: null,
@@ -44,12 +45,17 @@ export const AddExtraService = ({
     setOpen(true);
   }
   function onClose(close) {
-    setExtraService({ note: null, price: 0 });
-    setOpen(false);
     if (close) {
-      // setExtraServices((old) => [...old, extraService]);
-      window.location.reload();
+      // Optimistically show the new service right away, then reconcile from the server
+      // (onAdded refetches the core lead, which carries the authoritative list + real id).
+      setExtraServices?.((old) => [
+        { ...extraService, id: `temp-${Date.now()}` },
+        ...(old || []),
+      ]);
+      onAdded?.();
     }
+    setExtraService({ note: null, price: 0, paymentReason: null });
+    setOpen(false);
   }
   const handleAddNewExtraService = async () => {
     if (!extraService.price || !extraService.paymentReason) {

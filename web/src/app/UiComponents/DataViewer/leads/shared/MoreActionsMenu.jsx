@@ -16,6 +16,7 @@ import { BsPersonCheck } from "react-icons/bs";
 import { MdMoreHoriz, MdWork } from "react-icons/md";
 import DeleteModal from "../../../models/DeleteModal";
 import { AssignNewStaffModal } from "../../utility/AssignNewStaffModal";
+import { useLeadDetails } from "../context/LeadDetailsContext";
 import AddPayments from "../payments/AddPayments";
 import PaymentDialog from "../payments/PaymentsDialog";
 
@@ -41,6 +42,7 @@ export const MoreActionsMenu = ({
 }) => {
   const [moreAnchorEl, setMoreAnchorEl] = useState(null);
   const moreOpen = Boolean(moreAnchorEl);
+  const details = useLeadDetails();
 
   const handleMoreClick = (event) => {
     setMoreAnchorEl(event.currentTarget);
@@ -164,8 +166,9 @@ export const MoreActionsMenu = ({
                       }
                     })
                   );
-                } else {
-                  window.location.reload();
+                } else if (details?.refetchCore) {
+                  details.refetchCore();
+                  details.refreshKanban?.();
                 }
               }}
             />
