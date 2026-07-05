@@ -35,10 +35,18 @@ import { clientUploadsRouter } from "../modules/client-portal/uploads/uploads.ro
 import { clientNotesRouter } from "../modules/client-portal/notes/notes.route.js";
 import { clientLanguagesRouter } from "../modules/client-portal/languages/languages.route.js";
 
+import { genericDeleteRouter } from "../modules/generic-delete/generic-delete.routes.js";
+
 import authRoutes from "../modules/auth/auth.routes.js";
 const router = Router();
 
 router.use("/auth", authRoutes);
+
+// Generic model delete (legacy `/shared/delete/:id`, FE-mapped to `/delete/:id`). Restored
+// after the strangler cutover removed the legacy shared router; the frontend's DeleteModelButton
+// (notes, files, price-offers, reminders, extra-services, …) depends on it. Auth + model
+// allow-list; the frozen deleteAModel service keeps the exact delete behavior.
+router.use("/delete", genericDeleteRouter);
 
 router.use("/client/booking-leads", bookingLeadsRouter);
 // Authenticated leads-management surface (legacy `/shared/client-leads`, kept mounted

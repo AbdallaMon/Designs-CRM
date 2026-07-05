@@ -4,9 +4,13 @@ export function ok(res, data, message = "OK", translationKey) {
     .json({ success: true, message, data, translationKey });
 }
 
+// NOTE: returns HTTP 200 (not 201) ON PURPOSE. The entire frontend data layer checks
+// `response.status === 200` after a create (notes, files, price-offers, payments, reminders,
+// …). master returned 200 for these creates; the migration's earlier 201 silently broke every
+// "add then show without refresh" flow. Keep 200 to preserve that observable contract.
 export function created(res, data, message = "Created", translationKey) {
   return res
-    .status(201)
+    .status(200)
     .json({ success: true, message, data, translationKey });
 }
 export function updated(res, data, message = "Updated", translationKey) {
