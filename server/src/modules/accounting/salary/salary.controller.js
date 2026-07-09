@@ -8,11 +8,7 @@ import { salaryUsecase } from "./salary.usecase.js";
 const C = accountingMessagesCodes;
 const TK = messagesNames.accountingMessages;
 
-function paginate(query) {
-  const page = parseInt(query.page, 10) || 1;
-  const limit = parseInt(query.limit, 10) || 10;
-  return { page, limit, skip: (page - 1) * limit };
-}
+import { paginate } from "../../../shared/utility/pagination.js";
 
 export class SalaryController {
   constructor(usecase) {

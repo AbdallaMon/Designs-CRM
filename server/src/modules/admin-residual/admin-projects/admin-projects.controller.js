@@ -10,11 +10,7 @@ import { leadUsecase } from "../../leads/lead/lead.usecase.js";
 const M = adminResidualMessagesCodes;
 const TK = messagesNames.adminResidualMessages;
 
-function paginate(query) {
-  const page = parseInt(query.page, 10) || 1;
-  const limit = parseInt(query.limit, 10) || 10;
-  return { page, limit, skip: (page - 1) * limit };
-}
+import { paginate } from "../../../shared/utility/pagination.js";
 
 export class AdminProjectsController {
   constructor(usecase) {

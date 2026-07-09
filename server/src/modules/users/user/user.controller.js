@@ -10,12 +10,7 @@ import { userUsecase } from "./user.usecase.js";
 const C = userMessagesCodes;
 const TK = messagesNames.usersMessages;
 
-// Legacy default pagination: page=1, limit=10 (services/main/utility getPagination).
-function paginate(query) {
-  const page = parseInt(query.page, 10) || 1;
-  const limit = parseInt(query.limit, 10) || 10;
-  return { page, limit, skip: (page - 1) * limit };
-}
+import { paginate } from "../../../shared/utility/pagination.js";
 
 export class UserController {
   /** @param {import("./user.usecase.js").UserUsecase} usecase */

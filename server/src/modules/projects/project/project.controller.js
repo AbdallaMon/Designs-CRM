@@ -14,12 +14,7 @@ import {
 const C = projectsMessagesCodes;
 const TK = messagesNames.projectsMessages;
 
-// Legacy default pagination: page=1, limit=10 (services/main/utility getPagination).
-function paginate(query) {
-  const page = parseInt(query.page, 10) || 1;
-  const limit = parseInt(query.limit, 10) || 10;
-  return { page, limit, skip: (page - 1) * limit };
-}
+import { paginate } from "../../../shared/utility/pagination.js";
 
 export class ProjectController {
   /** @param {import("./project.usecase.js").ProjectUsecase} usecase */
