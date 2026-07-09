@@ -15,7 +15,7 @@
 // auth-derived id under that same key. Everything else in the query is preserved.
 const legacyDefaults = {
   getCallReminders: (searchParams) =>
-    import("../../leads/legacy/staff-services.js").then((m) => m.getCallReminders(searchParams)),
+    import("../../leads/lead/lead.usecase.js").then((m) => m.getCallReminders(searchParams)),
 };
 
 export class StaffUsecase {

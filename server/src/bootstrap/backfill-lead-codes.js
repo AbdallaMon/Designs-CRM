@@ -1,46 +1,10 @@
-import prisma from "../../../infra/prisma/prisma.js";
-
-export async function generateCodeForNewLead(clientId, tx = prisma) {
-  // 1) Stable prefix from the *oldest* lead id for this client
-  const oldestLead = await tx.clientLead.findFirst({
-    where: { clientId: Number(clientId) },
-    orderBy: { id: "asc" },
-    select: { id: true },
-  });
-  if (!oldestLead) return null; // same behavior you had
-
-  const prefix = `${String(oldestLead.id).padStart(7, "0")}.`;
-
-  // 2) Pull the last code for this client with that prefix, then +1
-  const lastWithCode = await tx.clientLead.findFirst({
-    where: {
-      clientId: Number(clientId),
-      code: { startsWith: prefix },
-    },
-    orderBy: { code: "desc" }, // lexicographic works here since suffix is plain int
-    select: { code: true },
-  });
-
-  const nextSeq = lastWithCode
-    ? (parseInt(lastWithCode.code.split(".").pop(), 10) || 0) + 1
-    : 1;
-
-  return `${prefix}${nextSeq}`;
-}
-
-export async function uploadFile(body, clientLeadId) {
-  const data = {
-    name: "Client File",
-    clientLeadId: Number(clientLeadId),
-    url: body.url,
-    isUserFile: false,
-  };
-  const file = await prisma.file.create({
-    data,
-    select: { id: true },
-  });
-  return file;
-}
+// One-off maintenance BATCH (NOT a runtime layer): (re)compute the per-client
+// `ClientLead.code` sequence. Ported VERBATIM from the former
+// leads/legacy/client-leads-service.js `backfillLeadCodes`. It groups leads by client,
+// derives the stable `<oldest-id>.<seq>` code, and writes updates in batched
+// `$transaction`s. Kept out of the layered module (it is a batch script, like
+// backfill-profiles.js) and not wired into boot — invoke it explicitly when needed.
+import prisma from "../infra/prisma/prisma.js";
 
 export async function backfillLeadCodes({
   rewriteAll = false,

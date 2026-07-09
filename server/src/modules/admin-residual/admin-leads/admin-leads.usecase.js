@@ -84,9 +84,9 @@ const legacyDefaults = {
     import("../legacy/admin-services.js").then((m) => m.addAllProjectUsersToChannel(a)),
   // new-lead side effects (the CORRECT fns the public handler uses — deviation #2)
   generateCodeForNewLead: (clientId) =>
-    import("../../leads/legacy/client-leads-service.js").then((m) => m.generateCodeForNewLead(clientId)),
+    import("../../leads/lead/lead.repo.js").then((m) => m.leadRepository.generateCodeForNewLead(clientId)),
   uploadFile: (body, clientLeadId) =>
-    import("../../leads/legacy/client-leads-service.js").then((m) => m.uploadFile(body, clientLeadId)),
+    import("../../leads/lead/lead.repo.js").then((m) => m.leadRepository.uploadFile(body, clientLeadId)),
   newLeadNotification: (leadId, client, isAdmin) =>
     import("../../../infra/notifications/legacy-notification.js").then((m) => m.newLeadNotification(leadId, client, isAdmin)),
 };

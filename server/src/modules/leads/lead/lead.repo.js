@@ -406,6 +406,375 @@ class LeadRepository {
       },
     });
   }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  STAFF sub-resource data ops (notes / call+meeting reminders / price-offers /
+  //  files / reminder-status) — Prisma I/O ported VERBATIM from the former
+  //  legacy/staff-services.js. The interleaved SIDE EFFECTS (notifications, telegram
+  //  channels, updateLead) stay in the usecase module functions that orchestrate these.
+  // ════════════════════════════════════════════════════════════════════════════
+  createNoteRecord({ content, clientLeadId, userId }) {
+    return prisma.note.create({
+      data: {
+        content,
+        clientLeadId,
+        userId,
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
+  findNoteWithUser({ id }) {
+    return prisma.note.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        user: true,
+      },
+    });
+  }
+
+  createCallReminderRecord({ clientLeadId, userId, time, reminderReason }) {
+    return prisma.callReminder.create({
+      data: {
+        clientLeadId,
+        userId,
+        time,
+        reminderReason,
+      },
+      select: {
+        id: true,
+        time: true,
+        status: true,
+        reminderReason: true,
+        callResult: true,
+        userId: true,
+        user: {
+          select: { name: true },
+        },
+      },
+    });
+  }
+
+  findLatestCallReminders({ clientLeadId }) {
+    return prisma.callReminder.findMany({
+      where: {
+        clientLeadId,
+      },
+      orderBy: { time: "desc" },
+      take: 2,
+    });
+  }
+
+  // createMeetingReminder ±15-minute slot match (legacy verbatim).
+  findMatchingAvailableSlot({ adminId, minTime, maxTime }) {
+    return prisma.availableSlot.findFirst({
+      where: {
+        isBooked: false,
+        startTime: {
+          gte: minTime,
+          lte: maxTime,
+        },
+        availableDay: {
+          userId: Number(adminId),
+        },
+      },
+    });
+  }
+
+  // createMeetingReminderWithToken date-range slot lookup (legacy verbatim).
+  findAvailableSlotInRange({ adminId, from, to }) {
+    return prisma.availableSlot.findFirst({
+      where: {
+        isBooked: false,
+        startTime: {
+          gte: from,
+          lte: to,
+        },
+        availableDay: {
+          userId: Number(adminId),
+        },
+      },
+    });
+  }
+
+  createMeetingReminderRecord({ data }) {
+    return prisma.meetingReminder.create({
+      data,
+      select: {
+        id: true,
+        time: true,
+        status: true,
+        reminderReason: true,
+        meetingResult: true,
+        userId: true,
+        type: true,
+        isAdmin: true,
+        adminId: true,
+        token: true,
+        availableSlotId: true,
+        admin: {
+          select: {
+            name: true,
+          },
+        },
+        user: {
+          select: { name: true },
+        },
+      },
+    });
+  }
+
+  createMeetingReminderTokenRecord({ data }) {
+    return prisma.meetingReminder.create({
+      data,
+      select: {
+        id: true,
+        time: true,
+        status: true,
+        reminderReason: true,
+        meetingResult: true,
+        userId: true,
+        type: true,
+        isAdmin: true,
+        adminId: true,
+        token: true,
+        admin: {
+          select: {
+            name: true,
+          },
+        },
+        user: {
+          select: { name: true },
+        },
+      },
+    });
+  }
+
+  bookAvailableSlot({ id, meetingReminderId }) {
+    return prisma.availableSlot.update({
+      where: { id },
+      data: { isBooked: true, meetingReminderId },
+    });
+  }
+
+  findLatestMeetingReminders({ clientLeadId }) {
+    return prisma.meetingReminder.findMany({
+      where: {
+        clientLeadId,
+      },
+      orderBy: { time: "desc" },
+      take: 2,
+    });
+  }
+
+  createPriceOfferRecord({ clientLeadId, userId, priceOffer }) {
+    return prisma.PriceOffers.create({
+      data: {
+        clientLeadId,
+        userId,
+
+        url: priceOffer.url,
+        note: priceOffer.note,
+      },
+      select: {
+        id: true,
+        createdAt: true,
+        minPrice: true,
+        maxPrice: true,
+        note: true,
+        url: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+  }
+
+  createFileRecord({ data }) {
+    return prisma.file.create({
+      data,
+      select: {
+        id: true,
+        createdAt: true,
+        clientLeadId: true,
+        description: true,
+        url: true,
+        name: true,
+        isUserFile: true,
+        user: {
+          select: {
+            name: true,
+            id: true,
+            email: true,
+            telegramUsername: true,
+          },
+        },
+      },
+    });
+  }
+
+  findCallReminderOwner({ reminderId }) {
+    return prisma.callReminder.findUnique({
+      where: {
+        id: reminderId,
+      },
+      select: {
+        user: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+  }
+
+  updateCallReminderStatusRecord({ reminderId, status, callResult }) {
+    return prisma.callReminder.update({
+      where: { id: reminderId },
+      data: {
+        status,
+        callResult,
+        updatedAt: new Date(),
+      },
+      select: {
+        id: true,
+        time: true,
+        status: true,
+        reminderReason: true,
+        callResult: true,
+        userId: true,
+        clientLeadId: true,
+        updatedAt: true,
+        user: {
+          select: { name: true },
+        },
+      },
+    });
+  }
+
+  findMeetingReminderOwner({ reminderId }) {
+    return prisma.meetingReminder.findUnique({
+      where: {
+        id: reminderId,
+      },
+      select: {
+        user: {
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+  }
+
+  updateMeetingReminderStatusRecord({ reminderId, status, meetingResult }) {
+    return prisma.meetingReminder.update({
+      where: { id: reminderId },
+      data: {
+        status,
+        meetingResult,
+        updatedAt: new Date(),
+      },
+      select: {
+        id: true,
+        time: true,
+        status: true,
+        reminderReason: true,
+        meetingResult: true,
+        userId: true,
+        clientLeadId: true,
+        token: true,
+        updatedAt: true,
+        user: {
+          select: { name: true },
+        },
+      },
+    });
+  }
+
+  findInProgressCallReminders({ staffFilter }) {
+    return prisma.callReminder.findMany({
+      where: {
+        clientLead: {
+          status: {
+            notIn: ["CONVERTED", "ON_HOLD", "FINALIZED", "REJECTED"],
+          },
+          ...staffFilter,
+        },
+        status: "IN_PROGRESS",
+      },
+      include: {
+        clientLead: {
+          select: {
+            client: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // ── New-lead code sequencing + client file upload (legacy client-leads-service.js).
+  //  `generateCodeForNewLead` keeps its `tx = prisma` param so the public-lead create
+  //  path can run it inside a transaction exactly as before.
+  async generateCodeForNewLead(clientId, tx = prisma) {
+    // 1) Stable prefix from the *oldest* lead id for this client
+    const oldestLead = await tx.clientLead.findFirst({
+      where: { clientId: Number(clientId) },
+      orderBy: { id: "asc" },
+      select: { id: true },
+    });
+    if (!oldestLead) return null; // same behavior you had
+
+    const prefix = `${String(oldestLead.id).padStart(7, "0")}.`;
+
+    // 2) Pull the last code for this client with that prefix, then +1
+    const lastWithCode = await tx.clientLead.findFirst({
+      where: {
+        clientId: Number(clientId),
+        code: { startsWith: prefix },
+      },
+      orderBy: { code: "desc" }, // lexicographic works here since suffix is plain int
+      select: { code: true },
+    });
+
+    const nextSeq = lastWithCode
+      ? (parseInt(lastWithCode.code.split(".").pop(), 10) || 0) + 1
+      : 1;
+
+    return `${prefix}${nextSeq}`;
+  }
+
+  async uploadFile(body, clientLeadId) {
+    const data = {
+      name: "Client File",
+      clientLeadId: Number(clientLeadId),
+      url: body.url,
+      isUserFile: false,
+    };
+    const file = await prisma.file.create({
+      data,
+      select: { id: true },
+    });
+    return file;
+  }
 }
 
 // ── Selects (verbatim from legacy) ───────────────────────────────────────────────

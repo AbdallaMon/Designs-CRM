@@ -29,9 +29,25 @@ import {
   assignMultipleLeadsNotification,
   convertALeadNotification,
   updateLeadStatusNotification,
+  newCallNotification,
+  newFileUploaded,
+  newNoteNotification,
+  newPriceOffer,
+  updateCallNotification,
+  updateMettingNotification,
 } from "../../../infra/notifications/legacy-notification.js";
 import { ClientLeadStatus } from "../../../infra/config/legacy-enums.js";
 import { telegramChannelQueue } from "../../../infra/queues/telegram-channel.queue.js";
+import { v4 as uuidv4 } from "uuid";
+// Telegram channel side effects for note/file uploads (stay at their infra home).
+import {
+  getChannelEntitiyByTeleRecordAndLeadId,
+  uploadAnAttachment,
+  uploadANote,
+} from "../../../infra/telegram/telegram-functions.js";
+// The canonical "touch the lead" side effect the staff sub-resources interleave — kept
+// at its CURRENT home in the utilities legacy service (a separate later task owns that).
+import { updateLead } from "../../utilities/legacy/utility.js";
 // Payment functions migrated to the leads/payment sub-entity (Stripe + email side effects).
 import {
   makePayments as paymentMakePayments,
@@ -582,10 +598,324 @@ async function getClientLeadsColumnStatus({ searchParams, isAdmin, user }) {
   }
 }
 
+// ════════════════════════════════════════════════════════════════════════════════
+//  STAFF sub-resource orchestration (ported 1:1 from the former legacy/staff-services.js).
+//  Prisma I/O is delegated to leadRepository; the interleaved SIDE EFFECTS (notifications,
+//  telegram channels, updateLead, uuid tokens, dayjs tz) run from their CURRENT infra
+//  locations (imported above). Behavior, guards, error strings, and typos are verbatim.
+// ════════════════════════════════════════════════════════════════════════════════
+async function createNote({ clientLeadId, userId, content }) {
+  if (!content.trim()) {
+    throw new Error("Note content cannot be empty.");
+  }
+
+  const newNote = await leadRepository.createNoteRecord({
+    content,
+    clientLeadId,
+    userId,
+  });
+  if (clientLeadId) {
+    const teleChannel = await getChannelEntitiyByTeleRecordAndLeadId({
+      clientLeadId: Number(clientLeadId),
+    });
+    const note = await leadRepository.findNoteWithUser({ id: newNote.id });
+    if (teleChannel) {
+      await uploadANote(note, teleChannel);
+    }
+  }
+  await updateLead(clientLeadId);
+  newNote.content = content;
+  await newNoteNotification(clientLeadId, content, newNote.user.id);
+  return newNote;
+}
+
+async function createCallReminder({
+  clientLeadId,
+  userId,
+  time,
+  reminderReason,
+}) {
+  const userTimezone = dayjs.tz.guess(); // Detect user's timezone
+
+  let formattedTime = dayjs(time).tz(userTimezone).utc(); // Convert to UTC
+  if (formattedTime.isBefore(dayjs().utc())) {
+    throw new Error("The reminder time must be in the future.");
+  }
+  formattedTime = formattedTime.toDate().toISOString();
+  const newReminder = await leadRepository.createCallReminderRecord({
+    clientLeadId,
+    userId,
+    time: formattedTime,
+    reminderReason,
+  });
+  await newCallNotification(clientLeadId, newReminder);
+  let latestTwo = await leadRepository.findLatestCallReminders({ clientLeadId });
+  await updateLead(clientLeadId);
+  return { latestTwo, newReminder };
+}
+
+async function createMeetingReminder({
+  clientLeadId,
+  userId,
+  time,
+  reminderReason,
+  isAdmin,
+  adminId,
+  type,
+  currentUser,
+}) {
+  if (
+    currentUser.role === "THREE_D_DESIGNER" ||
+    currentUser.role === "TWO_D_DESIGNER"
+  ) {
+    throw new Error("You are not allow to create meeting");
+  }
+  const userTimezone = dayjs.tz.guess(); // Detect user's timezone
+
+  let formattedTime = dayjs(time).tz(userTimezone).utc();
+  if (formattedTime.isBefore(dayjs().utc())) {
+    throw new Error("The reminder time must be in the future.");
+  }
+  formattedTime = formattedTime.toDate().toISOString();
+  const submittedTime = dayjs(formattedTime); // already UTC ISO
+
+  const minTime = submittedTime.subtract(15, "minute").toISOString();
+  const maxTime = submittedTime.add(15, "minute").toISOString();
+  const data = { clientLeadId, userId, time: formattedTime, reminderReason };
+
+  if (adminId) {
+    const matchingSlot = await leadRepository.findMatchingAvailableSlot({
+      adminId,
+      minTime,
+      maxTime,
+    });
+    if (!matchingSlot) {
+      throw new Error("No available time for this admin in the current dates");
+    }
+    data.time = matchingSlot.startTime;
+    data.availableSlotId = matchingSlot.id;
+  }
+
+  if (isAdmin) {
+    data.isAdmin = true;
+  }
+  if (adminId) {
+    data.adminId = Number(adminId);
+  }
+  if (type) {
+    data.type = type;
+  }
+  const newReminder = await leadRepository.createMeetingReminderRecord({ data });
+  if (newReminder.availableSlotId) {
+    await leadRepository.bookAvailableSlot({
+      id: newReminder.availableSlotId,
+      meetingReminderId: newReminder.id,
+    });
+  }
+  await newCallNotification(clientLeadId, newReminder);
+  let latestTwo = await leadRepository.findLatestMeetingReminders({
+    clientLeadId,
+  });
+  await updateLead(clientLeadId);
+  return { latestTwo, newReminder };
+}
+
+async function createMeetingReminderWithToken({
+  clientLeadId,
+  userId,
+  reminderReason,
+  isAdmin,
+  adminId,
+  type,
+  currentUser,
+}) {
+  if (
+    currentUser.role === "THREE_D_DESIGNER" ||
+    currentUser.role === "TWO_D_DESIGNER"
+  ) {
+    throw new Error("You are not allow to create meeting");
+  }
+  const token = uuidv4();
+
+  const data = { clientLeadId, userId, reminderReason, token };
+
+  if (isAdmin) {
+    data.isAdmin = true;
+  }
+  if (adminId) {
+    data.adminId = Number(adminId);
+    const today = dayjs().startOf("day").toDate();
+    const halfNextMonth = dayjs()
+      .add(1, "month")
+      .startOf("month")
+      .add(14, "day")
+      .endOf("day")
+      .toDate();
+
+    const availableSlot = await leadRepository.findAvailableSlotInRange({
+      adminId,
+      from: today,
+      to: halfNextMonth,
+    });
+
+    if (!availableSlot) {
+      throw new Error(
+        "No available slots found for this admin in the coming days ,ask admin to add available slots"
+      );
+    }
+  }
+  if (type) {
+    data.type = type;
+  }
+
+  const newReminder = await leadRepository.createMeetingReminderTokenRecord({
+    data,
+  });
+  let latestTwo = await leadRepository.findLatestMeetingReminders({
+    clientLeadId,
+  });
+  await updateLead(clientLeadId);
+  return { latestTwo, newReminder };
+}
+
+async function createPriceOffer({ clientLeadId, userId, priceOffer }) {
+  if (priceOffer.minPrice > priceOffer.maxPrice) {
+    throw new Error("End price must be bigger or equal to start price");
+  }
+  const newPrice = await leadRepository.createPriceOfferRecord({
+    clientLeadId,
+    userId,
+    priceOffer,
+  });
+  await updateLead(clientLeadId);
+  await newPriceOffer(clientLeadId, newPrice);
+  return newPrice;
+}
+
+async function createFile({
+  clientLeadId,
+  url,
+  name,
+  description,
+  userId,
+}) {
+  if (!url || !name) {
+    throw new Error("Fill all the fields please");
+  }
+  const data = {
+    name,
+    clientLeadId,
+    url,
+    description,
+  };
+  if (userId) {
+    data.userId = Number(userId);
+  }
+  const file = await leadRepository.createFileRecord({ data });
+  if (file.clientLeadId) {
+    const teleChannel = await getChannelEntitiyByTeleRecordAndLeadId({
+      clientLeadId: Number(file.clientLeadId),
+    });
+    if (teleChannel) {
+      await uploadAnAttachment(file, teleChannel);
+    }
+  }
+  if (userId !== null) {
+    await newFileUploaded(clientLeadId, data, userId);
+  }
+  await updateLead(clientLeadId);
+  return { ...file, name, url, description, isUserFile: userId !== null };
+}
+
+async function updateCallReminderStatus({
+  reminderId,
+  currentUser,
+  status,
+  callResult = null,
+}) {
+  if (currentUser.role !== "ADMIN" && currentUser.role !== "SUPER_ADMIN") {
+    const callReminder = await leadRepository.findCallReminderOwner({
+      reminderId,
+    });
+    if (callReminder.user.id !== currentUser.id) {
+      throw new Error(
+        "You are not allowed to update this call result ask admin to do that"
+      );
+    }
+  }
+  const updatedReminder = await leadRepository.updateCallReminderStatusRecord({
+    reminderId,
+    status,
+    callResult: status === "DONE" ? callResult : "Missed call",
+  });
+  await updateLead(updatedReminder.clientLeadId);
+  await updateCallNotification(
+    updatedReminder.clientLeadId,
+    updatedReminder,
+    currentUser.id
+  );
+  return updatedReminder;
+}
+
+async function updateMeetingReminderStatus({
+  reminderId,
+  currentUser,
+  status,
+  meetingResult = null,
+}) {
+  if (
+    currentUser.role === "THREE_D_DESIGNER" ||
+    currentUser.role === "TWO_D_DESIGNER"
+  ) {
+    throw new Error("You are not allow to update this meeting");
+  }
+
+  if (currentUser.role !== "ADMIN" && currentUser.role !== "SUPER_ADMIN") {
+    const meetingReminder = await leadRepository.findMeetingReminderOwner({
+      reminderId,
+    });
+    if (meetingReminder.user.id !== currentUser.id) {
+      throw new Error(
+        "You are not allowed to update this call result ask admin to do that"
+      );
+    }
+  }
+  const updatedReminder = await leadRepository.updateMeetingReminderStatusRecord({
+    reminderId,
+    status,
+    meetingResult: status === "DONE" ? meetingResult : "Missed Meeting",
+  });
+  await updateLead(updatedReminder.clientLeadId);
+  await updateMettingNotification(
+    updatedReminder.clientLeadId,
+    updatedReminder,
+    currentUser.id
+  );
+  return updatedReminder;
+}
+
+export const getCallReminders = async (searchParams) => {
+  const staffFilter = searchParams.staffId
+    ? { userId: Number(searchParams.staffId) }
+    : {};
+
+  try {
+    const callReminders = await leadRepository.findInProgressCallReminders({
+      staffFilter,
+    });
+
+    return callReminders;
+  } catch (error) {
+    console.error("Error fetching call reminders:", error);
+    throw new Error("Unable to fetch call reminders");
+  }
+};
+
 // ── DI seam (unchanged shape). `legacyDefaults` now points at the REPO-BACKED module
-// functions above + the leads/payment sub-entity + the leads module's OWN legacy folder
-// (staff-services / admin-residual — a separate later task), instead of the removed
-// shared/legacy barrel. Tests can still override the whole bag via the constructor.
+// functions above (assign/status/convert + the STAFF sub-resources) + the leads/payment
+// sub-entity, with only `updateLeadField` still lazily reaching admin-residual's own
+// legacy folder (a separate later task), instead of the removed shared/legacy barrel.
+// Tests can still override the whole bag via the constructor.
 const legacyDefaults = {
   // migrated to repo-backed module functions in THIS file
   assignLeadToAUser,
@@ -602,16 +932,17 @@ const legacyDefaults = {
   remindUserToCompleteRegister: paymentRemindUserToCompleteRegister,
   // price-offer DATA now lives in the lead repo
   editPriceOfferStatus: (...a) => leadRepository.editPriceOfferStatus(...a),
-  // still in the leads module's OWN legacy folder / admin-residual (separate later task)
+  // still in admin-residual's OWN legacy folder (separate later task)
   updateLeadField: (a) => import("../../admin-residual/legacy/admin-services.js").then((m) => m.updateLeadField(a)),
-  createCallReminder: (a) => import("../legacy/staff-services.js").then((m) => m.createCallReminder(a)),
-  createMeetingReminder: (a) => import("../legacy/staff-services.js").then((m) => m.createMeetingReminder(a)),
-  createMeetingReminderWithToken: (a) => import("../legacy/staff-services.js").then((m) => m.createMeetingReminderWithToken(a)),
-  createPriceOffer: (a) => import("../legacy/staff-services.js").then((m) => m.createPriceOffer(a)),
-  createFile: (a) => import("../legacy/staff-services.js").then((m) => m.createFile(a)),
-  createNote: (a) => import("../legacy/staff-services.js").then((m) => m.createNote(a)),
-  updateCallReminderStatus: (a) => import("../legacy/staff-services.js").then((m) => m.updateCallReminderStatus(a)),
-  updateMeetingReminderStatus: (a) => import("../legacy/staff-services.js").then((m) => m.updateMeetingReminderStatus(a)),
+  // staff sub-resources — now the repo-backed module functions above
+  createCallReminder,
+  createMeetingReminder,
+  createMeetingReminderWithToken,
+  createPriceOffer,
+  createFile,
+  createNote,
+  updateCallReminderStatus,
+  updateMeetingReminderStatus,
 };
 
 // Roles that historically had FULL read scope on the LIST (legacy excluded these from
