@@ -66,6 +66,54 @@ class NotificationRepository {
       data: { isRead: true },
     });
   }
+
+  // ── Recipient lookups + row create for `createNotification` ─────────────────────
+  // Prisma I/O ported VERBATIM from the legacy `createNotification`/`sendNotification`
+  // (former utilities/legacy/utility.js). The fan-out orchestration lives in the usecase.
+  findFirstAdmin() {
+    return prisma.user.findFirst({ where: { role: "ADMIN" }, select: { id: true } });
+  }
+
+  findSubAdmins() {
+    return prisma.user.findMany({
+      where: { role: "SUPER_ADMIN" },
+      select: { id: true },
+    });
+  }
+
+  findActiveUsersByRoles({ roles }) {
+    return prisma.user.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { role: { in: roles } },
+          { subRoles: { some: { subRole: { in: roles } } } },
+        ],
+      },
+      select: { id: true },
+    });
+  }
+
+  findActiveDefaultRecipients() {
+    return prisma.user.findMany({
+      where: {
+        isActive: true,
+        role: { in: ["STAFF", "ADMIN", "SUPER_ADMIN"] },
+      },
+      select: { id: true },
+    });
+  }
+
+  createNotificationRow({ data }) {
+    return prisma.notification.create({ data });
+  }
+
+  findUserEmailById({ userId }) {
+    return prisma.user.findUnique({
+      where: { id: Number(userId) },
+      select: { email: true },
+    });
+  }
 }
 
 export const notificationRepository = new NotificationRepository();

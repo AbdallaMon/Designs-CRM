@@ -302,6 +302,16 @@ class UserRepository {
       select: { id: true },
     });
   }
+
+  // ── Minimal user lookup (legacy getUserDetailsWithSpecificFields) ──────────────
+  // Ported VERBATIM (positional signature preserved) from the former
+  // utilities/legacy/utility.js. Used by the notification-building infra helpers.
+  getUserDetailsWithSpecificFields(id, fields = { id: true, name: true, email: true }) {
+    return prisma.user.findUnique({
+      where: { id: Number(id) },
+      select: fields,
+    });
+  }
 }
 
 // ── Selects (verbatim from legacy) ───────────────────────────────────────────────

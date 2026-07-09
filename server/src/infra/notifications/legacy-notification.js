@@ -16,14 +16,12 @@ import {
 } from "../config/links.js";
 import dayjs from "dayjs";
 import { sendEmail } from "../mail/send-mail.js";
-import {
-  createNotification,
-  getUserDetailsWithSpecificFields,
-} from "../../modules/utilities/legacy/utility.js";
+import { createNotification } from "../../modules/notifications/notification.usecase.js";
+import { userRepository } from "../../modules/users/user/user.repo.js";
 import { arEngName, engName } from "../config/brand.constants.js";
 
 export async function convertALeadNotification(lead) {
-  const user = await getUserDetailsWithSpecificFields(lead.userId);
+  const user = await userRepository.getUserDetailsWithSpecificFields(lead.userId);
   const notificationHtml = `<div>
     <a href="${userLink + user.id}">#${
       user.name
@@ -75,7 +73,7 @@ export async function assignLeadNotification(
   userId,
   updatedClientLead,
 ) {
-  const user = await getUserDetailsWithSpecificFields(userId);
+  const user = await userRepository.getUserDetailsWithSpecificFields(userId);
   const notificationHtml = `<div>
     Lead <a href="${
       dealsLink + clientLeadId
@@ -102,7 +100,7 @@ export async function assignMultipleLeadsNotification(leadIds, userId) {
     .map((id) => `<a href="${dealsLink + id}"> #${id}</a>`)
     .join(", ");
   // render each lead as list of links instead
-  const user = await getUserDetailsWithSpecificFields(userId);
+  const user = await userRepository.getUserDetailsWithSpecificFields(userId);
   const notificationHtml = `<div>Leads numbers ${leadLinks} assigned to user <a href="${
     userLink + userId
   }">#${user.name}</a></div>`;
@@ -126,7 +124,7 @@ export async function assignWorkStageNotification(
   updatedClientLead,
   type,
 ) {
-  const user = await getUserDetailsWithSpecificFields(userId);
+  const user = await userRepository.getUserDetailsWithSpecificFields(userId);
   const notificationHtml = `<div>
     Lead <a href="${
       dealsLink + clientLeadId

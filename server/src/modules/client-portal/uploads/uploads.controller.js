@@ -12,7 +12,7 @@ const legacy = {
       m.uploadAsChunk(...args),
     ),
   uploadAsHttp: (...args) =>
-    import("../../utilities/legacy/utility.js").then((m) =>
+    import("../../../infra/upload/ftp-upload.js").then((m) =>
       m.uploadAsHttp(...args),
     ),
 };

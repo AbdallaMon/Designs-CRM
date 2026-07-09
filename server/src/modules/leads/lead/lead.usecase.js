@@ -45,9 +45,9 @@ import {
   uploadAnAttachment,
   uploadANote,
 } from "../../../infra/telegram/telegram-functions.js";
-// The canonical "touch the lead" side effect the staff sub-resources interleave — kept
-// at its CURRENT home in the utilities legacy service (a separate later task owns that).
-import { updateLead } from "../../utilities/legacy/utility.js";
+// The canonical "touch the lead" side effect the staff sub-resources interleave is
+// leadRepository.touchLead (already imported above) — the former utilities-legacy
+// `updateLead` duplicate has been dropped.
 // Payment functions migrated to the leads/payment sub-entity (Stripe + email side effects).
 import {
   makePayments as paymentMakePayments,
@@ -623,7 +623,7 @@ async function createNote({ clientLeadId, userId, content }) {
       await uploadANote(note, teleChannel);
     }
   }
-  await updateLead(clientLeadId);
+  await leadRepository.touchLead({ id: clientLeadId });
   newNote.content = content;
   await newNoteNotification(clientLeadId, content, newNote.user.id);
   return newNote;
@@ -650,7 +650,7 @@ async function createCallReminder({
   });
   await newCallNotification(clientLeadId, newReminder);
   let latestTwo = await leadRepository.findLatestCallReminders({ clientLeadId });
-  await updateLead(clientLeadId);
+  await leadRepository.touchLead({ id: clientLeadId });
   return { latestTwo, newReminder };
 }
 
@@ -716,7 +716,7 @@ async function createMeetingReminder({
   let latestTwo = await leadRepository.findLatestMeetingReminders({
     clientLeadId,
   });
-  await updateLead(clientLeadId);
+  await leadRepository.touchLead({ id: clientLeadId });
   return { latestTwo, newReminder };
 }
 
@@ -774,7 +774,7 @@ async function createMeetingReminderWithToken({
   let latestTwo = await leadRepository.findLatestMeetingReminders({
     clientLeadId,
   });
-  await updateLead(clientLeadId);
+  await leadRepository.touchLead({ id: clientLeadId });
   return { latestTwo, newReminder };
 }
 
@@ -787,7 +787,7 @@ async function createPriceOffer({ clientLeadId, userId, priceOffer }) {
     userId,
     priceOffer,
   });
-  await updateLead(clientLeadId);
+  await leadRepository.touchLead({ id: clientLeadId });
   await newPriceOffer(clientLeadId, newPrice);
   return newPrice;
 }
@@ -823,7 +823,7 @@ async function createFile({
   if (userId !== null) {
     await newFileUploaded(clientLeadId, data, userId);
   }
-  await updateLead(clientLeadId);
+  await leadRepository.touchLead({ id: clientLeadId });
   return { ...file, name, url, description, isUserFile: userId !== null };
 }
 
@@ -848,7 +848,7 @@ async function updateCallReminderStatus({
     status,
     callResult: status === "DONE" ? callResult : "Missed call",
   });
-  await updateLead(updatedReminder.clientLeadId);
+  await leadRepository.touchLead({ id: updatedReminder.clientLeadId });
   await updateCallNotification(
     updatedReminder.clientLeadId,
     updatedReminder,
@@ -885,7 +885,7 @@ async function updateMeetingReminderStatus({
     status,
     meetingResult: status === "DONE" ? meetingResult : "Missed Meeting",
   });
-  await updateLead(updatedReminder.clientLeadId);
+  await leadRepository.touchLead({ id: updatedReminder.clientLeadId });
   await updateMettingNotification(
     updatedReminder.clientLeadId,
     updatedReminder,

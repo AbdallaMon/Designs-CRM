@@ -104,6 +104,30 @@ class UtilityRepository {
   findModelPickList({ model, select }) {
     return prisma[model].findMany({ select });
   }
+
+  // ── cross-model search (Prisma I/O for the ported `searchData`) ─────────────────
+  // Look up a staff user's role facts to decide whether they may search ALL leads
+  // (checkIsAllowedToSearchAll runs in the usecase). Ported VERBATIM from the legacy
+  // `searchData` staff-scope branch.
+  findUserForSearchScope({ staffId }) {
+    return prisma.user.findUnique({
+      where: { id: Number(staffId) },
+      select: { role: true, subRoles: true, isSuperSales: true },
+    });
+  }
+
+  // Final search read. `delegateKey` is captured in the usecase from the ORIGINAL model
+  // name (legacy `modelMap[model] || modelMap["user"]`); anything outside the three
+  // supported delegates falls back to `user` — preserving the legacy quirk exactly.
+  searchFindMany({ delegateKey, where, select }) {
+    const modelMap = {
+      user: prisma.user,
+      client: prisma.client,
+      clientLead: prisma.clientLead,
+    };
+    const prismaModel = modelMap[delegateKey] || modelMap["user"];
+    return prismaModel.findMany({ where, select });
+  }
 }
 
 export const utilityRepository = new UtilityRepository();

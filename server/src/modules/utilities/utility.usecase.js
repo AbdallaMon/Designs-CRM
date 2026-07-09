@@ -25,10 +25,11 @@ import {
 } from "@dms/shared";
 import { utilityRepository } from "./utility.repo.js";
 
-// Lazy adapter to the not-yet-migrated legacy cross-model search (behavior-preserving).
+// The cross-model search (`searchData`) is now owned here (ported 1:1 from the former
+// legacy/utility.js). Its Prisma I/O is delegated to the repo; the DI seam is retained so
+// tests can still override the search implementation via the constructor.
 const legacyDefaults = {
-  searchData: (body, currentUser) =>
-    import("./legacy/utility.js").then((m) => m.searchData(body, currentUser)),
+  searchData: (body, currentUser) => searchData(body, currentUser),
 };
 
 export class UtilityUsecase {
@@ -128,3 +129,201 @@ export class UtilityUsecase {
 }
 
 export const utilityUsecase = new UtilityUsecase(utilityRepository);
+
+// ── cross-model search (ported VERBATIM from the former legacy/utility.js) ───────────
+// Orchestration only: builds the role-derived `where`, then delegates every Prisma read
+// to utilityRepository. All legacy branching/quirks are preserved 1:1.
+function checkIsAllowedToSearchAll(user) {
+  const adminRoles = ["ADMIN", "SUPER_ADMIN"];
+  if (
+    adminRoles.includes(user.role) ||
+    user.isSuperSales ||
+    (user.subRoles && user.subRoles.some((r) => adminRoles.includes(r.subRole)))
+  ) {
+    return true;
+  }
+}
+
+export async function searchData(body, currentUser) {
+  let { model, query, filters } = body;
+  // Legacy captured `prismaModel = modelMap[model] || modelMap["user"]` from the ORIGINAL
+  // model (only user/client/clientLead are real delegates; anything else → user), BEFORE
+  // the reassignments below. Capture the equivalent delegate key here to preserve that.
+  const delegateKey = ["user", "client", "clientLead"].includes(model)
+    ? model
+    : "user";
+  const isSuperSales =
+    currentUser.isSuperSales &&
+    currentUser.role !== "ADMIN" &&
+    currentUser.role !== "SUPER_ADMIN";
+  let where = {};
+  if (query) {
+    if (model === "user") {
+      where.OR = [
+        { email: { contains: query } },
+        { name: { contains: query } },
+      ];
+      where.role = "STAFF";
+    } else if (model === "all-users") {
+      model = "user";
+    } else if (model === "client") {
+      where.OR = [
+        { email: { contains: query } },
+        { name: { contains: query } },
+        { phone: { contains: query } },
+      ];
+    } else if (model === "clientLead") {
+      where.OR = [
+        {
+          client: {
+            OR: [
+              { email: { contains: query } },
+              { name: { contains: query } },
+              { phone: { contains: query } },
+            ],
+          },
+        },
+      ];
+      const codeIdOr = {
+        OR: [
+          {
+            code: {
+              contains: query,
+            },
+          },
+        ],
+      };
+      if (!isNaN(query)) {
+        codeIdOr.OR.push({ id: { equals: Number(query) } });
+        where.OR.push(codeIdOr);
+      }
+    } else {
+      where.OR = [
+        { email: { contains: query } },
+        { name: { contains: query } },
+      ];
+      where.role = model.toUpperCase();
+    }
+  }
+  if (filters && filters !== "undefined") {
+    const parsedFilters = JSON.parse(filters);
+    if (parsedFilters.role) {
+      where.role = parsedFilters.role;
+    }
+    if (parsedFilters.OR) {
+      where.OR = parsedFilters.OR;
+    }
+    if (parsedFilters.userId) {
+      where.clientLeads = {
+        some: {
+          userId: Number(parsedFilters.userId),
+        },
+      };
+    }
+    if (
+      parsedFilters.userRole === "STAFF" &&
+      parsedFilters.staffId &&
+      model === "clientLead"
+    ) {
+      const user = await utilityRepository.findUserForSearchScope({
+        staffId: parsedFilters.staffId,
+      });
+      const isAllowedToSearchAll = checkIsAllowedToSearchAll(user);
+      if (!isAllowedToSearchAll) {
+        where.userId = Number(parsedFilters.staffId);
+      }
+    }
+    if (
+      (parsedFilters.userRole === "THREE_D_DESIGNER" ||
+        parsedFilters.userRole === "TWO_D_DESIGNER") &&
+      parsedFilters.staffId &&
+      model === "clientLead"
+    ) {
+      where.projects = {
+        some: {
+          role: parsedFilters.userRole,
+          assignments: {
+            some: {
+              userId: Number(parsedFilters.staffId),
+            },
+          },
+        },
+      };
+    }
+    if (parsedFilters.status) {
+      where.status = parsedFilters.status;
+    }
+    if (
+      parsedFilters.initialConsult ||
+      parsedFilters.initialConsult === false
+    ) {
+      where.initialConsult = parsedFilters.initialConsult;
+    }
+  }
+  if (where && where.role?.startsWith("3D")) {
+    where.role = "THREE_D_DESIGNER";
+  } else if (where && where.role?.startsWith("2D")) {
+    where.role = "TWO_D_DESIGNER";
+  }
+  if (where.role) {
+    const role = where.role;
+    delete where.role;
+
+    const roleOrSubRole = [
+      { role: role },
+      { subRoles: { some: { subRole: role } } },
+    ];
+    if (where.OR) {
+      where.AND = [{ OR: where.OR }, { OR: roleOrSubRole }];
+      delete where.OR;
+    } else {
+      where.OR = roleOrSubRole;
+    }
+  }
+  if (model === "all-users-search") {
+    model = "user";
+    where.AND = where.AND[0];
+  }
+  if (isSuperSales && model === "user") {
+    where.OR = [
+      {
+        role: "STAFF",
+      },
+      {
+        subRoles: { some: { subRole: "STAFF" } },
+      },
+    ];
+  }
+
+  const selectFields = {
+    user: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+    },
+    client: {
+      id: true,
+      name: true,
+      email: where.userId ? false : true,
+      phone: where.userId ? false : true,
+    },
+    clientLead: {
+      id: true,
+      code: true,
+      client: {
+        select: {
+          name: true,
+          email: where.userId ? false : true,
+          phone: where.userId ? false : true,
+        },
+      },
+    },
+  };
+  const data = await utilityRepository.searchFindMany({
+    delegateKey,
+    where,
+    select: selectFields[model] || selectFields["user"],
+  });
+  return data;
+}

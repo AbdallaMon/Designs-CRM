@@ -15,7 +15,7 @@ import {
   formatDate,
   reverseString,
 } from "../../../infra/pdf/pdf-fonts.js";
-import { uploadToFTPHttpAsBuffer } from "../../utilities/legacy/utility.js";
+import { uploadToFTPHttpAsBuffer } from "../../../infra/upload/ftp-upload.js";
 import prisma from "../../../infra/prisma/prisma.js";
 import { v4 as uuidv4 } from "uuid";
 import dayjs from "dayjs";

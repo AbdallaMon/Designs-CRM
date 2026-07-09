@@ -6,7 +6,7 @@ import * as fontkit from "fontkit";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "url";
-import { uploadToFTPHttpAsBuffer } from "../../utilities/legacy/utility.js";
+import { uploadToFTPHttpAsBuffer } from "../../../infra/upload/ftp-upload.js";
 import {
   sendEmailForStaff,
   sendEmailToClient,
