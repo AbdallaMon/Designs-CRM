@@ -27,9 +27,9 @@ import { AppError } from "../../../shared/errors/AppError.js";
 import { imageSessionsMessagesCodes as M, UTILITY_MODEL_ALLOWLIST } from "@dms/shared";
 import { clientImageSessionRepository } from "./client-image-session.repo.js";
 
-const SVC = "../../legacy/image-session-services.js";
+const SVC = "../legacy/image-session-services.js";
 const CLIENT_SVC = "../legacy/client-services.js";
-const EXTRAS_SVC = "../../legacy/client-image-services.js";
+const EXTRAS_SVC = "../legacy/client-image-services.js";
 const SHARED_SVC = "../../../shared/legacy/index.js";
 
 const load = (path, fn) => (a) => import(path).then((m) => m[fn](a));

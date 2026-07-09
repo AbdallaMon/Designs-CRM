@@ -34,17 +34,17 @@ import {
 // ── Lazy adapters to the not-yet-migrated services (behavior-preserving) ──────────
 const legacyDefaults = {
   createStaffUser: (a) =>
-    import("../../../admin-residual/legacy/admin-services.js").then((m) => m.createStaffUser(a)),
+    import("../../admin-residual/legacy/admin-services.js").then((m) => m.createStaffUser(a)),
   editStaffUser: (a, b) =>
-    import("../../../admin-residual/legacy/admin-services.js").then((m) => m.editStaffUser(a, b)),
+    import("../../admin-residual/legacy/admin-services.js").then((m) => m.editStaffUser(a, b)),
   updateUserRoles: (a, b) =>
-    import("../../../admin-residual/legacy/admin-services.js").then((m) => m.updateUserRoles(a, b)),
+    import("../../admin-residual/legacy/admin-services.js").then((m) => m.updateUserRoles(a, b)),
   updateUserAutoAssignment: (a, b) =>
-    import("../../../admin-residual/legacy/admin-services.js").then((m) => m.updateUserAutoAssignment(a, b)),
+    import("../../admin-residual/legacy/admin-services.js").then((m) => m.updateUserAutoAssignment(a, b)),
   getUserLogs: (a, b, c) =>
-    import("../../../admin-residual/legacy/admin-services.js").then((m) => m.getUserLogs(a, b, c)),
+    import("../../admin-residual/legacy/admin-services.js").then((m) => m.getUserLogs(a, b, c)),
   getNotificationForTodayByStaffId: (a) =>
-    import("../../../admin-residual/legacy/admin-services.js").then((m) => m.getNotificationForTodayByStaffId(a)),
+    import("../../admin-residual/legacy/admin-services.js").then((m) => m.getNotificationForTodayByStaffId(a)),
 };
 
 // Non-admin self-profile editable fields. The legacy update was an unguarded

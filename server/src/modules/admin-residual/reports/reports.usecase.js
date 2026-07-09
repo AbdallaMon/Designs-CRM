@@ -10,17 +10,17 @@
 // helper after them — it just awaits. The usecase only routes body → frozen fn.
 const legacyDefaults = {
   generateLeadReport: (req, res) =>
-    import("../../legacy/admin-services.js").then((m) => m.generateLeadReport(req, res)),
+    import("../legacy/admin-services.js").then((m) => m.generateLeadReport(req, res)),
   generateExcelReport: (req, res) =>
-    import("../../legacy/admin-services.js").then((m) => m.generateExcelReport(req, res)),
+    import("../legacy/admin-services.js").then((m) => m.generateExcelReport(req, res)),
   generatePDFReport: (req, res) =>
-    import("../../legacy/admin-services.js").then((m) => m.generatePDFReport(req, res)),
+    import("../legacy/admin-services.js").then((m) => m.generatePDFReport(req, res)),
   generateStaffReport: (req, res) =>
-    import("../../legacy/admin-services.js").then((m) => m.generateStaffReport(req, res)),
+    import("../legacy/admin-services.js").then((m) => m.generateStaffReport(req, res)),
   generateStaffExcelReport: (req, res) =>
-    import("../../legacy/admin-services.js").then((m) => m.generateStaffExcelReport(req, res)),
+    import("../legacy/admin-services.js").then((m) => m.generateStaffExcelReport(req, res)),
   generateStaffPDFReport: (req, res) =>
-    import("../../legacy/admin-services.js").then((m) => m.generateStaffPDFReport(req, res)),
+    import("../legacy/admin-services.js").then((m) => m.generateStaffPDFReport(req, res)),
 };
 
 export class ReportsUsecase {

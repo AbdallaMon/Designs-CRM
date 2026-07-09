@@ -133,7 +133,7 @@ const legacyDefaults = {
   generateMonthlySalary: (a) => generateMonthlySalary(a),
   getUsersWithSalaries: (...a) => salaryRepository.getUsersWithSalaries(...a),
   getUserLogs: (...a) =>
-    import("../../../admin-residual/legacy/admin-services.js").then((m) => m.getUserLogs(...a)),
+    import("../../admin-residual/legacy/admin-services.js").then((m) => m.getUserLogs(...a)),
 };
 
 export class SalaryUsecase {

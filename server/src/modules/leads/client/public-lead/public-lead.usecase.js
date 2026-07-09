@@ -48,11 +48,11 @@ const consultationLeadPrices = {
 // Lazy adapters — frozen legacy services, imported on demand, never duplicated.
 const legacyDefaults = {
   generateCodeForNewLead: (clientId) =>
-    import("../../../legacy/client-leads-service.js").then((m) =>
+    import("../../legacy/client-leads-service.js").then((m) =>
       m.generateCodeForNewLead(clientId),
     ),
   uploadFile: (body, leadId) =>
-    import("../../../legacy/client-leads-service.js").then((m) =>
+    import("../../legacy/client-leads-service.js").then((m) =>
       m.uploadFile(body, leadId),
     ),
   newLeadNotification: (leadId, client, isAdmin) =>
