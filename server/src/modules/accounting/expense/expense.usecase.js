@@ -1,16 +1,40 @@
-// accounting/expense usecase — orchestration only (no Prisma). Behavior ported 1:1 from
-// the legacy handlers + accountant service. createOperationalExpense writes BOTH the
-// OperationalExpenses row and the linked Outcome row (legacy interleaves them); we invoke
-// the existing service so that two-write behavior is preserved exactly.
+// accounting/expense usecase — orchestration only (no Prisma). createOperationalExpense's
+// required-fields guard + numeric coercion live here; the two interleaved writes
+// (OperationalExpenses + linked Outcome) are delegated to expense.repo.js so that write
+// behavior is preserved exactly. The guard string is byte-identical to legacy (it currently
+// surfaces as a 500 because this usecase does not translate it — legacy behavior preserved).
+//
+// The `legacy` constructor param remains a dependency-injection seam; its defaults now point
+// at the relocated repo/usecase code instead of the deleted accountant service.
+import { expenseRepository } from "./expense.repo.js";
+
+async function createOperationalExpense({
+  category,
+  amount,
+  description,
+  paymentDate,
+}) {
+  if (!category || !amount || !paymentDate) {
+    throw new Error("Fill all the fields please");
+  }
+
+  amount = Number(amount);
+  const newExpense = await expenseRepository.createOperationalExpense({
+    category,
+    amount,
+    description,
+    paymentDate,
+  });
+
+  return {
+    data: newExpense,
+    message: "Operational Expense created successfully",
+  };
+}
+
 const legacyDefaults = {
-  getOperationalExpenses: (a) =>
-    import("../../legacy/accountant-services.js").then((m) =>
-      m.getOperationalExpenses(a),
-    ),
-  createOperationalExpense: (a) =>
-    import("../../legacy/accountant-services.js").then((m) =>
-      m.createOperationalExpense(a),
-    ),
+  getOperationalExpenses: (a) => expenseRepository.getOperationalExpenses(a),
+  createOperationalExpense: (a) => createOperationalExpense(a),
 };
 
 export class ExpenseUsecase {

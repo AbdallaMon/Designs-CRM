@@ -1,39 +1,137 @@
-// accounting/salary usecase — orchestration only (no Prisma). Behavior ported 1:1 from
-// the legacy handlers + accountant service (getSalaryData / createBaseSalary /
-// editBaseSalary / generateMonthlySalary / getUsersWithSalaries) and adminServices
-// (getUserLogs — the accountant-scoped last-seen helper). generateMonthlySalary runs a
-// $transaction inside the service (monthly salary + outcome); we invoke it as-is so the
-// atomic multi-write + the "already exists this month" rule are preserved exactly.
+// accounting/salary usecase — orchestration only (no Prisma). The salary reads
+// (getSalaryData / getUsersWithSalaries) are delegated straight to salary.repo.js; the
+// base-salary create/update and the monthly-salary generation keep their guards + numeric
+// coercion HERE and delegate the Prisma writes (including generateMonthlySalary's atomic
+// `$transaction`) to the repo. Behavior is ported 1:1 from the legacy accountant service.
 //
-// The /users + /users/:userId/last-seen endpoints are the ACCOUNTANT-scoped helper lists
-// the legacy accountant router exposed for salaries; they are ported here (NOT coupled to
-// the users module) to keep behavior 1:1 with the legacy accountant versions.
+// The /users + /users/:userId/last-seen endpoints are the ACCOUNTANT-scoped helper lists the
+// legacy accountant router exposed for salaries; getUsersWithSalaries is repo-backed, and
+// getUserLogs is still lazily imported from admin-residual (a separate frozen service, out of
+// scope for this reorg).
 //
 // Known legacy domain throws (editBaseSalary "Please fill all fiels"; generateMonthlySalary
-// "Fill all the fileds please" / "Monthly salary ... already exists for this user") are
-// translated to AppError codes via translateLegacyAccountingError so the FE error map works;
-// unrecognized errors re-throw as-is (still 500). The frozen service is NOT modified.
+// "Fill all the fileds please" / "Monthly salary ... already exists for this user") are kept
+// byte-identical and translated to AppError codes via translateLegacyAccountingError so the
+// FE error map works; unrecognized errors re-throw as-is (still 500).
+//
+// The `legacy` constructor param remains a dependency-injection seam; its defaults now point
+// at the relocated repo/usecase code instead of the deleted accountant service.
+import dayjs from "dayjs";
+import { salaryRepository } from "./salary.repo.js";
 import { translateLegacyAccountingError } from "../accounting.legacy-errors.js";
 
+async function createBaseSalary({ userId, taxAmount, baseSalary, baseWorkHours }) {
+  // Force all number fields to be numbers, even if undefined or null
+  userId = Number(userId);
+  baseSalary = Number(baseSalary);
+  baseWorkHours = Number(baseWorkHours);
+  taxAmount = Number(taxAmount || 0); // Default to 0 if not provided
+
+  // Ensure taxAmount is not negative
+  if (taxAmount < 0) {
+    taxAmount = 0;
+  }
+
+  // Create the base salary record after conversion
+  const salary = await salaryRepository.createBaseSalary({
+    userId,
+    baseSalary,
+    baseWorkHours,
+    taxAmount,
+  });
+
+  return { data: salary, message: "Created succssfully" };
+}
+
+async function editBaseSalary({ id, taxAmount, baseSalary, baseWorkHours }) {
+  if (!id || !baseSalary || !baseWorkHours || !taxAmount) {
+    throw new Error("Please fill all fiels");
+  }
+  // Force all number fields to be numbers, even if undefined or null
+  baseSalary = Number(baseSalary);
+  baseWorkHours = Number(baseWorkHours);
+  taxAmount = Number(taxAmount || 0); // Default to 0 if not provided
+
+  // Ensure taxAmount is not negative
+  if (taxAmount < 0) {
+    taxAmount = 0;
+  }
+  // Create the base salary record after conversion
+  const salary = await salaryRepository.editBaseSalary({
+    id,
+    baseSalary,
+    baseWorkHours,
+    taxAmount,
+  });
+
+  return { data: salary, message: "Updated succssfully" };
+}
+
+async function generateMonthlySalary({
+  totalHoursWorked,
+  overtimeHours,
+  bonuses,
+  baseSalaryId,
+  deductions,
+  netSalary,
+  isFulfilled,
+  paymentDate,
+}) {
+  if (!baseSalaryId || !totalHoursWorked || !netSalary || !paymentDate) {
+    throw new Error("Fill all the fileds please");
+  }
+  totalHoursWorked = Number(totalHoursWorked);
+  overtimeHours = Number(overtimeHours || 0); // Default to 0 if not provided
+  bonuses = Number(bonuses || 0); // Default to 0 if not provided
+  deductions = Number(deductions || 0); // Default to 0 if not provided
+  netSalary = Number(netSalary); // Ensure netSalary is a number
+  baseSalaryId = Number(baseSalaryId);
+
+  // Ensure `isFulfilled` is set to a boolean value (default to false if undefined)
+  isFulfilled = isFulfilled === undefined ? false : Boolean(isFulfilled);
+
+  // Handle paymentDate (it can be null)
+  paymentDate = paymentDate ? new Date(paymentDate) : null;
+
+  const startOfMonth = dayjs().startOf("month").toDate();
+  const endOfMonth = dayjs().endOf("month").toDate();
+
+  const hasMonthly = await salaryRepository.findMonthlySalaryForMonth({
+    baseSalaryId,
+    startOfMonth,
+    endOfMonth,
+  });
+
+  // If monthly salary already exists, throw an error
+  if (hasMonthly) {
+    throw new Error(
+      `Monthly salary for ${dayjs().format(
+        "MMMM YYYY"
+      )} already exists for this user`
+    );
+  }
+  if (paymentDate) {
+    paymentDate = new Date(paymentDate);
+  }
+
+  return await salaryRepository.createMonthlySalaryWithOutcome({
+    baseSalaryId,
+    totalHoursWorked,
+    overtimeHours,
+    bonuses,
+    deductions,
+    netSalary,
+    isFulfilled,
+    paymentDate,
+  });
+}
+
 const legacyDefaults = {
-  getSalaryData: (a) =>
-    import("../../legacy/accountant-services.js").then((m) => m.getSalaryData(a)),
-  createBaseSalary: (a) =>
-    import("../../legacy/accountant-services.js").then((m) =>
-      m.createBaseSalary(a),
-    ),
-  editBaseSalary: (a) =>
-    import("../../legacy/accountant-services.js").then((m) =>
-      m.editBaseSalary(a),
-    ),
-  generateMonthlySalary: (a) =>
-    import("../../legacy/accountant-services.js").then((m) =>
-      m.generateMonthlySalary(a),
-    ),
-  getUsersWithSalaries: (...a) =>
-    import("../../legacy/accountant-services.js").then((m) =>
-      m.getUsersWithSalaries(...a),
-    ),
+  getSalaryData: (a) => salaryRepository.getSalaryData(a),
+  createBaseSalary: (a) => createBaseSalary(a),
+  editBaseSalary: (a) => editBaseSalary(a),
+  generateMonthlySalary: (a) => generateMonthlySalary(a),
+  getUsersWithSalaries: (...a) => salaryRepository.getUsersWithSalaries(...a),
   getUserLogs: (...a) =>
     import("../../../admin-residual/legacy/admin-services.js").then((m) => m.getUserLogs(...a)),
 };

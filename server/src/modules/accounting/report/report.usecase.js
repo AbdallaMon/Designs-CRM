@@ -1,15 +1,19 @@
 // accounting/report usecase — outcome list + income/outcome summary (legacy
-// `/accountant/outcome` and `/accountant/summary`). Orchestration only (no Prisma);
-// behavior ported 1:1 from the accountant service (getOutcomes / getIncomeOutcomeSummary).
-// The legacy outcome route parsed `filters` (a JSON string) for an optional date range;
-// same behavior, but a malformed/absent `filters` now safely defaults to {} (no 500).
+// `/accountant/outcome` and `/accountant/summary`). Orchestration only (no Prisma); the
+// Prisma reads/aggregates are delegated to report.repo.js and the summary payload is shaped
+// by report.dto.js. The legacy outcome route parsed `filters` (a JSON string) for an
+// optional date range; same behavior, but a malformed/absent `filters` now safely defaults
+// to {} (no 500).
+//
+// The `legacy` constructor param remains a dependency-injection seam; its defaults now point
+// at the relocated repo/dto code instead of the deleted accountant service.
+import { reportRepository } from "./report.repo.js";
+import { shapeIncomeOutcomeSummary } from "./report.dto.js";
+
 const legacyDefaults = {
-  getOutcomes: (a) =>
-    import("../../legacy/accountant-services.js").then((m) => m.getOutcomes(a)),
-  getIncomeOutcomeSummary: () =>
-    import("../../legacy/accountant-services.js").then((m) =>
-      m.getIncomeOutcomeSummary(),
-    ),
+  getOutcomes: (a) => reportRepository.getOutcomes(a),
+  getIncomeOutcomeSummary: async () =>
+    shapeIncomeOutcomeSummary(await reportRepository.getIncomeOutcomeSummary()),
 };
 
 export class ReportUsecase {
