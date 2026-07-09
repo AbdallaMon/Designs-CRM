@@ -8,8 +8,8 @@
 // authoritative payment proof is the STRIPE SESSION itself, not a client-supplied id.
 //
 // 🔒 The Stripe SDK calls are FROZEN (relocated verbatim into payments.stripe.js); the billing
-// normalization (`first`/`asKV`) is reused from the frozen `services/main/client/payments.js`
-// via lazy adapters. The email side effects use the frozen `src/infra/notifications/legacy-notification.js`.
+// normalization (`first`/`asKV`) lives in payments.dto.js and is imported directly. The email
+// side effects use the frozen `src/infra/notifications/legacy-notification.js` via lazy adapters.
 //
 // IDOR CLOSE (vs legacy): legacy `/payment-status` marked the lead identified by the
 // CLIENT-SUPPLIED `clientLeadId` as FULLY_PAID once ANY `sessionId` came back `paid` — a
@@ -21,16 +21,16 @@ import { clientPortalMessagesCodes } from "@dms/shared";
 import {
   createCheckoutSession,
   retrieveCheckoutSession,
+  listCheckoutSessions,
+  getLeadIdFromUrl,
+  normalizeFromSession,
 } from "./payments.stripe.js";
+import { first, asKV } from "./payments.dto.js";
 import { paymentsRepository } from "./payments.repo.js";
 
 const C = clientPortalMessagesCodes;
 
 const legacyDefaults = {
-  first: (...a) =>
-    import("./legacy/client-payments-service.js").then((m) => m.first(...a)),
-  asKV: (o) =>
-    import("./legacy/client-payments-service.js").then((m) => m.asKV(o)),
   sendPaymentReminderEmail: (...a) =>
     import("../../../infra/notifications/legacy-notification.js").then((m) =>
       m.sendPaymentReminderEmail(...a),
@@ -51,6 +51,7 @@ export class PaymentsUsecase {
     this.stripe = {
       createCheckoutSession,
       retrieveCheckoutSession,
+      listCheckoutSessions,
       ...stripe,
     };
     this.legacy = { ...legacyDefaults, ...legacy };
@@ -132,26 +133,24 @@ export class PaymentsUsecase {
   }
 
   // Normalize Stripe billing details into the legacy KV shape (verbatim field derivation,
-  // reusing the frozen `first`/`asKV`).
-  async #buildBillingKV(session) {
-    const first = (...a) => this.legacy.first(...a);
-
+  // using the pure `first`/`asKV` from payments.dto.js).
+  #buildBillingKV(session) {
     const pi = session.payment_intent || null;
     const charge = pi?.latest_charge || null;
     const pm = pi?.payment_method || null;
 
     const billing = {
-      name: await first(
+      name: first(
         charge?.billing_details?.name,
         pm?.billing_details?.name,
         session.customer_details?.name,
       ),
-      email: await first(
+      email: first(
         charge?.billing_details?.email,
         pm?.billing_details?.email,
         session.customer_details?.email,
       ),
-      phone: await first(
+      phone: first(
         charge?.billing_details?.phone,
         pm?.billing_details?.phone,
         session.customer_details?.phone,
@@ -183,19 +182,67 @@ export class PaymentsUsecase {
     }
 
     const normalized = {
-      name: await first(billing.name),
-      email: await first(billing.email),
-      phone: await first(billing.phone),
-      billingAddressLine1: await first(addr.line1),
-      billingAddressLine2: await first(addr.line2),
-      billingCity: await first(addr.city),
-      billingState: await first(addr.state),
-      billingPostalCode: await first(addr.postal_code),
-      billingCountry: await first(addr.country),
-      paymentMethod: await first(paymentMethod),
+      name: first(billing.name),
+      email: first(billing.email),
+      phone: first(billing.phone),
+      billingAddressLine1: first(addr.line1),
+      billingAddressLine2: first(addr.line2),
+      billingCity: first(addr.city),
+      billingState: first(addr.state),
+      billingPostalCode: first(addr.postal_code),
+      billingCountry: first(addr.country),
+      paymentMethod: first(paymentMethod),
     };
 
-    return this.legacy.asKV(normalized);
+    return asKV(normalized);
+  }
+
+  // DORMANT maintenance orchestration — relocated VERBATIM from the legacy
+  // `services/main/client/payments.js` `backfillStripeSessions`. There is NO live caller (the
+  // `/stripe/backfill` route resolves to the no-op `backfill()` above); this is kept in its
+  // proper layer (Stripe reads via payments.stripe.js, the lead read/write via payments.repo.js)
+  // rather than deleted. Behavior is unchanged from legacy.
+  async backfillStripeSessions({
+    sinceEpoch = 0,
+    limitPerPage = 1000,
+    maxPages = 1000,
+  } = {}) {
+    let starting_after = undefined;
+    let processed = 0;
+
+    for (let page = 0; page < maxPages; page++) {
+      const list = await this.stripe.listCheckoutSessions({
+        limit: limitPerPage,
+        starting_after,
+        sinceEpoch,
+      });
+      if (!list.data.length) break;
+
+      for (const session of list.data) {
+        starting_after = session.id;
+        if (session.mode !== "payment" || session.payment_status !== "paid")
+          continue;
+
+        const leadId =
+          first(session.metadata?.clientLeadId) ||
+          first(getLeadIdFromUrl(session.success_url));
+        if (!leadId) continue;
+
+        const { normalized } = await normalizeFromSession(session);
+        const kv = asKV(normalized);
+
+        const lead = await this.repository.findLeadById(leadId);
+        if (!lead) continue;
+
+        await this.repository.saveStripeMetadata(leadId, kv);
+
+        processed++;
+      }
+
+      if (!list.has_more) break;
+    }
+
+    return { processed };
   }
 }
 

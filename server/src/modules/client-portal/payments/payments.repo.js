@@ -41,6 +41,15 @@ export class PaymentsRepository {
       data: { stripieMetadata: kv },
     });
   }
+
+  // Existence check for the DORMANT backfill orchestration (relocated verbatim from the legacy
+  // `backfillStripeSessions` `findUnique({ select: { id } })` before it writes the metadata).
+  findLeadById(clientLeadId) {
+    return prisma.clientLead.findUnique({
+      where: { id: Number(clientLeadId) },
+      select: { id: true },
+    });
+  }
 }
 
 export const paymentsRepository = new PaymentsRepository();

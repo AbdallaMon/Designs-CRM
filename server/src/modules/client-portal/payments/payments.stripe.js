@@ -4,6 +4,7 @@
 // There is NO webhook/signature handling in this flow (the legacy route had none); nothing
 // about signature verification is touched.
 import Stripe from "stripe";
+import { first } from "./payments.dto.js";
 
 // Lazily instantiate the Stripe client on first use (not at import time). Legacy created it at
 // module top-level, which crashes if STRIPE_SECRET_KEY is absent (e.g. in unit tests / a boot
@@ -68,5 +69,107 @@ export function retrieveCheckoutSession(sessionId) {
       "payment_intent.latest_charge.balance_transaction",
       "payment_intent.latest_charge.payment_method_details",
     ],
+  });
+}
+
+// ─── Backfill maintenance Stripe reads (relocated VERBATIM from the legacy
+// `services/main/client/payments.js` `backfillStripeSessions`). These support the DORMANT
+// `PaymentsUsecase.backfillStripeSessions` orchestration — there is no live caller (the
+// `/stripe/backfill` route early-returns a no-op). Relocated, not deleted, to preserve the
+// frozen Stripe logic in its proper layer.
+
+// Pure URL parse — pulls `clientLeadId` from a session `success_url` query string.
+export function getLeadIdFromUrl(url) {
+  if (!url) return "";
+  try {
+    const u = new URL(url);
+    return u.searchParams.get("clientLeadId") || "";
+  } catch {
+    return "";
+  }
+}
+
+// VERBATIM billing normalization from the legacy backfill (its own `retrieve` + expand list,
+// which differs from `retrieveCheckoutSession` above — do NOT merge them).
+export async function normalizeFromSession(session) {
+  if (!session?.id) return { normalized: {}, piId: null };
+
+  const full = await getStripe().checkout.sessions.retrieve(session.id, {
+    expand: [
+      "payment_intent.payment_method",
+      "payment_intent.latest_charge",
+      "payment_intent.latest_charge.payment_method_details",
+    ],
+  });
+
+  const pi = full.payment_intent || null;
+  const charge = pi?.latest_charge || null;
+  const pm = pi?.payment_method || null;
+
+  const billing = {
+    name: first(
+      charge?.billing_details?.name,
+      pm?.billing_details?.name,
+      full.customer_details?.name
+    ),
+    email: first(
+      charge?.billing_details?.email,
+      pm?.billing_details?.email,
+      full.customer_details?.email
+    ),
+    phone: first(
+      charge?.billing_details?.phone,
+      pm?.billing_details?.phone,
+      full.customer_details?.phone
+    ),
+    address:
+      charge?.billing_details?.address ||
+      pm?.billing_details?.address ||
+      full.customer_details?.address ||
+      null,
+  };
+
+  const addr = billing.address || {};
+  const pmd = charge?.payment_method_details;
+
+  let paymentMethod = "";
+  if (pmd?.type === "card") {
+    const walletType = pmd.card?.wallet?.type;
+    if (walletType) {
+      paymentMethod = walletType
+        .split("_")
+        .map((s) => s[0].toUpperCase() + s.slice(1))
+        .join(" ");
+    } else {
+      const brand = pm?.card?.brand || pmd.card?.brand || "Card";
+      paymentMethod = brand[0].toUpperCase() + brand.slice(1);
+    }
+  } else if (pmd?.type) {
+    paymentMethod = pmd.type[0].toUpperCase() + pmd.type.slice(1);
+  }
+
+  const normalized = {
+    name: first(billing.name),
+    email: first(billing.email),
+    phone: first(billing.phone),
+    billingAddressLine1: first(addr.line1),
+    billingAddressLine2: first(addr.line2),
+    billingCity: first(addr.city),
+    billingState: first(addr.state),
+    billingPostalCode: first(addr.postal_code),
+    billingCountry: first(addr.country),
+    paymentMethod: first(paymentMethod),
+  };
+
+  return { normalized, piId: pi?.id || null };
+}
+
+// VERBATIM Stripe list call from the legacy backfill (the page params are built exactly as
+// legacy: optional `starting_after` cursor + optional `created.gte` epoch filter).
+export function listCheckoutSessions({ limit, starting_after, sinceEpoch }) {
+  return getStripe().checkout.sessions.list({
+    limit,
+    ...(starting_after ? { starting_after } : {}),
+    ...(sinceEpoch ? { created: { gte: sinceEpoch } } : {}),
   });
 }
