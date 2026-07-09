@@ -18,7 +18,7 @@
 import prisma from "../../../infra/prisma/prisma.js";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { authMessagesCodes } from "@dms/shared";
-import { adminLeadsRepository } from "./admin-leads.repository.js";
+import { adminLeadsRepository } from "./admin-leads.repo.js";
 
 // FIX 3 (mass-assignment hardening): keys that must NEVER be written through the generic
 // single-field update path (ownership, workflow status, money/system-managed). The frozen

@@ -23,7 +23,7 @@ import {
   UTILITY_MODEL_ALLOWLIST,
   UTILITY_MODEL_PROJECTIONS,
 } from "@dms/shared";
-import { utilityRepository } from "./utility.repository.js";
+import { utilityRepository } from "./utility.repo.js";
 
 // Lazy adapter to the not-yet-migrated legacy cross-model search (behavior-preserving).
 const legacyDefaults = {
@@ -33,7 +33,7 @@ const legacyDefaults = {
 
 export class UtilityUsecase {
   /**
-   * @param {import("./utility.repository.js").UtilityRepository} repository
+   * @param {import("./utility.repo.js").UtilityRepository} repository
    * @param {Partial<typeof legacyDefaults>} [legacy]
    */
   constructor(repository, legacy = {}) {

@@ -16,7 +16,7 @@ import { ModelArchiveValidation } from "../model-archive/model-archive.validatio
 import { FixedDataValidation } from "../fixed-data/fixed-data.validation.js";
 import { ReportsValidation } from "../reports/reports.validation.js";
 import { AdminLeadsUsecase } from "../admin-leads/admin-leads.usecase.js";
-import { adminLeadsRepository } from "../admin-leads/admin-leads.repository.js";
+import { adminLeadsRepository } from "../admin-leads/admin-leads.repo.js";
 import { StaffUsecase } from "../staff/staff.usecase.js";
 
 const C = adminResidualMessagesCodes;

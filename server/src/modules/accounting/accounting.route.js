@@ -17,13 +17,13 @@
 //   /accountant/salaries*              → /v2/accounting/salaries
 import { Router } from "express";
 import { AuthMiddleware } from "../../shared/middlewares/auth.middleware.js";
-import { paymentRouter } from "./payment/payment.routes.js";
-import { noteRouter } from "./note/note.routes.js";
-import { expenseRouter } from "./expense/expense.routes.js";
-import { rentRouter } from "./rent/rent.routes.js";
-import { outcomeRouter, summaryRouter } from "./report/report.routes.js";
-import { accountingUsersRouter } from "./salary/accounting-users.routes.js";
-import { salaryRouter } from "./salary/salary.routes.js";
+import { paymentRouter } from "./payment/payment.route.js";
+import { noteRouter } from "./note/note.route.js";
+import { expenseRouter } from "./expense/expense.route.js";
+import { rentRouter } from "./rent/rent.route.js";
+import { outcomeRouter, summaryRouter } from "./report/report.route.js";
+import { accountingUsersRouter } from "./salary/accounting-users.route.js";
+import { salaryRouter } from "./salary/salary.route.js";
 
 const router = Router();
 

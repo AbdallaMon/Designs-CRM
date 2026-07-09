@@ -23,7 +23,7 @@
 import { AppError } from "../../../shared/errors/AppError.js";
 import { contractsMessagesCodes as C } from "@dms/shared";
 import { leadUsecase } from "../../leads/lead/lead.usecase.js";
-import { contractRepository } from "./contract.repository.js";
+import { contractRepository } from "./contract.repo.js";
 
 // Lazy adapters to the not-yet-migrated, FROZEN contract service (behavior-preserving).
 const legacyDefaults = {

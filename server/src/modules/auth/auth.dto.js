@@ -17,7 +17,7 @@ const USER_PROFILES_SELECT = {
 
 class AuthSchema {
   // ─── Prisma select shapes ───────────────────────────────────────────────────
-  // Used in auth.repository.js — keeps query projections consistent and centralized.
+  // Used in auth.repo.js — keeps query projections consistent and centralized.
 
   /** Fields needed for login + active status checks. Includes password for bcrypt. */
   static userAuthSelect = {

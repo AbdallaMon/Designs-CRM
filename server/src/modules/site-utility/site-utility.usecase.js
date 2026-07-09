@@ -1,6 +1,6 @@
 import { AppError } from "../../shared/errors/AppError.js";
 import { PERMISSIONS, siteUtilityMessagesCodes } from "@dms/shared";
-import { siteUtilityRepository } from "./site-utility.repository.js";
+import { siteUtilityRepository } from "./site-utility.repo.js";
 import {
   computePaymentConditionCapabilities,
   toPaymentConditionDto,
@@ -11,7 +11,7 @@ const P = PERMISSIONS.SITE_UTILITY;
 // Business logic / orchestration. Prisma never appears here — only repo calls.
 // Errors are thrown as AppError(code, statusCode); success values are returned.
 export class SiteUtilityUsecase {
-  /** @param {import("./site-utility.repository.js").SiteUtilityRepository} repository */
+  /** @param {import("./site-utility.repo.js").SiteUtilityRepository} repository */
   constructor(repository) {
     this.repository = repository;
   }

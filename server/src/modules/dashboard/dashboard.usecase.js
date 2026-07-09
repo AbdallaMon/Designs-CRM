@@ -28,7 +28,7 @@
 //  staffId (+ date filters + the harmless `profile` flag) — a raw client `staffId`/`userId`
 //  never reaches the aggregation (the same lesson as the notifications fix: no
 //  trusted-userId passthrough that makes the scope an illusion).
-import { dashboardRepository } from "./dashboard.repository.js";
+import { dashboardRepository } from "./dashboard.repo.js";
 
 // Roles that historically saw GLOBAL data / could scope to ANY user on the dashboard
 // (the legacy `isAdmin` union). Everyone else is forced to a self-scope.
@@ -59,7 +59,7 @@ const legacyDefaults = {
 
 export class DashboardUsecase {
   /**
-   * @param {import("./dashboard.repository.js").DashboardRepository} repository
+   * @param {import("./dashboard.repo.js").DashboardRepository} repository
    * @param {Partial<typeof legacyDefaults>} [legacy]
    */
   constructor(repository, legacy = {}) {

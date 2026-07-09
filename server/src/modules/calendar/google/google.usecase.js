@@ -10,7 +10,7 @@
 // envelope response) — the usecase exposes the callback handler so the controller stays thin.
 import { AppError } from "../../../shared/errors/AppError.js";
 import { calendarMessagesCodes as C } from "@dms/shared";
-import { googleCalendarRepository } from "./google.repository.js";
+import { googleCalendarRepository } from "./google.repo.js";
 
 const legacyDefaults = {
   getAuthUrl: (userId) =>

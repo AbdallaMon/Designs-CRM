@@ -22,7 +22,7 @@ import {
   createCheckoutSession,
   retrieveCheckoutSession,
 } from "./payments.stripe.js";
-import { paymentsRepository } from "./payments.repository.js";
+import { paymentsRepository } from "./payments.repo.js";
 
 const C = clientPortalMessagesCodes;
 

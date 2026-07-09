@@ -6,7 +6,7 @@
 // the inline availability deletes that the LEGACY route handlers
 // (routes/calendar/calendar.js DELETE /days/:id and DELETE /slots/:id) performed inline
 // against a global `prisma` reference. Those queries are moved here verbatim (same
-// semantics) so the v2 module keeps all Prisma in a *.repository.js file.
+// semantics) so the v2 module keeps all Prisma in a *.repo.js file.
 //
 // NOTE on the legacy DELETE /days/:id behavior preserved 1:1: it first deletes the day's
 // slots (deleteMany by availableDayId) and then the day itself — it does NOT guard against

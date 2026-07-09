@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("../auth.repository.js", () => ({
+vi.mock("../auth.repo.js", () => ({
   AuthRepository: { findById: vi.fn(), setCurrentProfile: vi.fn() },
 }));
 vi.mock("../../../infra/auth/profile-cache.js", () => ({
   profileCache: { resolve: vi.fn() },
 }));
-vi.mock("../../../infra/audit/auth-audit.repository.js", () => ({
+vi.mock("../../../infra/audit/auth-audit.repo.js", () => ({
   authAuditRepository: { record: vi.fn() },
   AUTH_AUDIT_ACTIONS: { PROFILE_SWITCH: "PROFILE_SWITCH", PROFILE_ASSIGN: "PROFILE_ASSIGN", PROFILE_REMOVE: "PROFILE_REMOVE" },
 }));
@@ -15,9 +15,9 @@ vi.mock("../../../infra/security/jwt.js", () => ({
 }));
 
 import { AuthUseCase } from "../auth.usecase.js";
-import { AuthRepository } from "../auth.repository.js";
+import { AuthRepository } from "../auth.repo.js";
 import { profileCache } from "../../../infra/auth/profile-cache.js";
-import { authAuditRepository } from "../../../infra/audit/auth-audit.repository.js";
+import { authAuditRepository } from "../../../infra/audit/auth-audit.repo.js";
 
 const baseUser = {
   id: 1, email: "a@b.c", name: "A", role: "STAFF", isActive: true, currentProfileId: 2,

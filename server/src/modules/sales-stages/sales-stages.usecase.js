@@ -13,7 +13,7 @@
 //   - if action === "back" and currentStageType !== "NOT_INITIATED": delete that stage
 //     row.
 import { leadUsecase } from "../leads/lead/lead.usecase.js";
-import { salesStagesRepository } from "./sales-stages.repository.js";
+import { salesStagesRepository } from "./sales-stages.repo.js";
 
 export class SalesStagesUsecase {
   constructor(repository, leads = leadUsecase) {

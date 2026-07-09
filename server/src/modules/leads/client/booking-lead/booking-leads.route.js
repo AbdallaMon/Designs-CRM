@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { BookingLeadsRepository } from "./booking-leads.repository.js";
+import { BookingLeadsRepository } from "./booking-leads.repo.js";
 import { BookingLeadsUsecase } from "./booking-leads.usecase.js";
 import { BookingLeadsController } from "./booking-leads.controller.js";
 import { asyncHandler } from "../../../../shared/middlewares/async-handler.js";

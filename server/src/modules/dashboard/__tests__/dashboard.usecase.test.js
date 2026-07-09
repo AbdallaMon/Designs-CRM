@@ -11,7 +11,7 @@ import {
 } from "@dms/shared";
 
 import { DashboardUsecase } from "../dashboard.usecase.js";
-import { DashboardRepository } from "../dashboard.repository.js";
+import { DashboardRepository } from "../dashboard.repo.js";
 import { DashboardValidation } from "../dashboard.validation.js";
 
 const DC = dashboardMessagesCodes;

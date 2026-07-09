@@ -5,7 +5,7 @@
 // forged/missing rent id before the service runs (additive hardening).
 import { AppError } from "../../../shared/errors/AppError.js";
 import { accountingMessagesCodes as C } from "@dms/shared";
-import { rentRepository } from "./rent.repository.js";
+import { rentRepository } from "./rent.repo.js";
 import { translateLegacyAccountingError } from "../accounting.legacy-errors.js";
 
 const legacyDefaults = {
@@ -21,7 +21,7 @@ const legacyDefaults = {
 
 export class RentUsecase {
   /**
-   * @param {import("./rent.repository.js").RentRepository} repository
+   * @param {import("./rent.repo.js").RentRepository} repository
    * @param {Partial<typeof legacyDefaults>} [legacy]
    */
   constructor(repository, legacy = {}) {

@@ -5,7 +5,7 @@
 // same outputs.
 import { AppError } from "../../../shared/errors/AppError.js";
 import { coursesMessagesCodes } from "@dms/shared";
-import { staffCourseRepository } from "./staff-course.repository.js";
+import { staffCourseRepository } from "./staff-course.repo.js";
 
 // Notification on a fully-consumed failed attempt. Injected so this module stays
 // import-light and unit-testable; the default lazily loads the (not-yet-migrated)
@@ -20,7 +20,7 @@ async function defaultNotifyAttemptFailed({ testId, userId }) {
 
 export class StaffCourseUsecase {
   /**
-   * @param {import("./staff-course.repository.js").StaffCourseRepository} repository
+   * @param {import("./staff-course.repo.js").StaffCourseRepository} repository
    * @param {{ notifyAttemptFailed?: Function }} [deps]
    */
   constructor(repository, { notifyAttemptFailed } = {}) {

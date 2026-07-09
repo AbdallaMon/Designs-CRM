@@ -25,7 +25,7 @@
 // `__dirname`-relative font loading, the fonts, the output bytes, or the chunk-upload flow.
 import { AppError } from "../../../shared/errors/AppError.js";
 import { imageSessionsMessagesCodes as M, UTILITY_MODEL_ALLOWLIST } from "@dms/shared";
-import { clientImageSessionRepository } from "./client-image-session.repository.js";
+import { clientImageSessionRepository } from "./client-image-session.repo.js";
 
 const SVC = "../../legacy/image-session-services.js";
 const CLIENT_SVC = "../legacy/client-services.js";

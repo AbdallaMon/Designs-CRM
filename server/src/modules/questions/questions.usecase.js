@@ -17,7 +17,7 @@
 import { AppError } from "../../shared/errors/AppError.js";
 import { questionsMessagesCodes as C } from "@dms/shared";
 import { leadUsecase } from "../leads/lead/lead.usecase.js";
-import { questionsRepository } from "./questions.repository.js";
+import { questionsRepository } from "./questions.repo.js";
 
 export class QuestionsUsecase {
   constructor(repository, leads = leadUsecase) {

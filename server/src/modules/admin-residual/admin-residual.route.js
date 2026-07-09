@@ -21,12 +21,12 @@
 //   /leads/* , /client/* , /client-leads/* , /new-lead → /v2/admin/* (adminLeadsRouter)
 import { Router } from "express";
 import { AuthMiddleware } from "../../shared/middlewares/auth.middleware.js";
-import { reportsRouter } from "./reports/reports.routes.js";
-import { commissionsRouter } from "./commissions/commissions.routes.js";
-import { fixedDataRouter } from "./fixed-data/fixed-data.routes.js";
-import { adminProjectsRouter } from "./admin-projects/admin-projects.routes.js";
-import { modelArchiveRouter } from "./model-archive/model-archive.routes.js";
-import { adminLeadsRouter } from "./admin-leads/admin-leads.routes.js";
+import { reportsRouter } from "./reports/reports.route.js";
+import { commissionsRouter } from "./commissions/commissions.route.js";
+import { fixedDataRouter } from "./fixed-data/fixed-data.route.js";
+import { adminProjectsRouter } from "./admin-projects/admin-projects.route.js";
+import { modelArchiveRouter } from "./model-archive/model-archive.route.js";
+import { adminLeadsRouter } from "./admin-leads/admin-leads.route.js";
 
 const router = Router();
 

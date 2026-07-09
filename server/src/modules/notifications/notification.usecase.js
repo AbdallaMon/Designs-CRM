@@ -16,12 +16,12 @@
 //    - the route is authenticated (requireAuth) + gated by a NOTIFICATION code, and
 //    - `userId` is taken from `authUser.id` ONLY. The legacy `searchParams.userId` /
 //      `filters.staffId` selectors are ignored. A user can only ever touch their own rows.
-import { notificationRepository } from "./notification.repository.js";
+import { notificationRepository } from "./notification.repo.js";
 import { NotificationDto } from "./notification.dto.js";
 
 export class NotificationUsecase {
   /**
-   * @param {import("./notification.repository.js").NotificationRepository} repository
+   * @param {import("./notification.repo.js").NotificationRepository} repository
    */
   constructor(repository) {
     this.repo = repository;

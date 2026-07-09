@@ -14,7 +14,7 @@
 // pattern used by the migrated courses + leads modules.
 import { AppError } from "../../../shared/errors/AppError.js";
 import { projectsMessagesCodes as C } from "@dms/shared";
-import { projectRepository } from "./project.repository.js";
+import { projectRepository } from "./project.repo.js";
 
 // ── Lazy adapters to the not-yet-migrated services (behavior-preserving) ──────────
 const legacyDefaults = {
@@ -35,7 +35,7 @@ const LOCKED_FROM_STATUSES_FOR_NON_ADMIN = ["Completed", "Canceled", "Rejected"]
 
 export class ProjectUsecase {
   /**
-   * @param {import("./project.repository.js").ProjectRepository} repository
+   * @param {import("./project.repo.js").ProjectRepository} repository
    * @param {Partial<typeof legacyDefaults>} [legacy]
    */
   constructor(repository, legacy = {}) {

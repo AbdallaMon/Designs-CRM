@@ -21,7 +21,7 @@
 import { AppError } from "../../../../shared/errors/AppError.js";
 import { leadsMessagesCodes } from "@dms/shared";
 import { buildCooperationRequestEmail } from "./public-lead.email.js";
-import { publicLeadRepository } from "./public-lead.repository.js";
+import { publicLeadRepository } from "./public-lead.repo.js";
 
 const C = leadsMessagesCodes;
 

@@ -1,12 +1,12 @@
 import { HashService } from "../../infra/security/hash.js";
 import { JwtService } from "../../infra/security/jwt.js";
 import { AppError } from "../../shared/errors/AppError.js";
-import { AuthRepository } from "./auth.repository.js";
+import { AuthRepository } from "./auth.repo.js";
 import { AuthSchema } from "./auth.dto.js";
 import { sendEmail } from "../../infra/mail/mail.js";
 import { AuthEmails } from "./auth.emails.js";
 import { profileCache } from "../../infra/auth/profile-cache.js";
-import { authAuditRepository, AUTH_AUDIT_ACTIONS } from "../../infra/audit/auth-audit.repository.js";
+import { authAuditRepository, AUTH_AUDIT_ACTIONS } from "../../infra/audit/auth-audit.repo.js";
 import { authMessagesCodes } from "@dms/shared";
 
 /**

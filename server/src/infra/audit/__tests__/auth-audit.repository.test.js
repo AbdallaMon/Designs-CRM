@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("@dms/db", () => ({ default: { authAuditLog: { create: vi.fn() } } }));
 
 import prisma from "@dms/db";
-import { authAuditRepository } from "../auth-audit.repository.js";
+import { authAuditRepository } from "../auth-audit.repo.js";
 
 describe("authAuditRepository.record", () => {
   beforeEach(() => vi.clearAllMocks());

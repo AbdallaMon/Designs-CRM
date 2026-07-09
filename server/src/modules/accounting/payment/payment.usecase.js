@@ -13,7 +13,7 @@
 // PRESERVED untouched — we do not re-implement or change any rounding/arithmetic.
 import { AppError } from "../../../shared/errors/AppError.js";
 import { accountingMessagesCodes as C } from "@dms/shared";
-import { paymentRepository } from "./payment.repository.js";
+import { paymentRepository } from "./payment.repo.js";
 import { translateLegacyAccountingError } from "../accounting.legacy-errors.js";
 
 // Lazy adapters to the not-yet-migrated accountant service (behavior-preserving).
@@ -40,7 +40,7 @@ const legacyDefaults = {
 
 export class PaymentUsecase {
   /**
-   * @param {import("./payment.repository.js").PaymentRepository} repository
+   * @param {import("./payment.repo.js").PaymentRepository} repository
    * @param {Partial<typeof legacyDefaults>} [legacy]
    */
   constructor(repository, legacy = {}) {

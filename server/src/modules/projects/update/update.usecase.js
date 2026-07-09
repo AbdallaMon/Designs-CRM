@@ -9,7 +9,7 @@
 // usecase). Sub-resources resolve their parent lead first, then run the same gate — the
 // IDOR fix the legacy `/:updateId/*` routes lacked.
 import { projectsMessagesCodes as C } from "@dms/shared";
-import { updateRepository } from "./update.repository.js";
+import { updateRepository } from "./update.repo.js";
 import { projectUsecase } from "../shared/project-scope.js";
 
 const legacyDefaults = {

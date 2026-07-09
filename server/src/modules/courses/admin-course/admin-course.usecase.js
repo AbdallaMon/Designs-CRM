@@ -5,12 +5,12 @@
 // same side effects), restructured into the layered module.
 import { AppError } from "../../../shared/errors/AppError.js";
 import { coursesMessagesCodes } from "@dms/shared";
-import { adminCourseRepository } from "./admin-course.repository.js";
+import { adminCourseRepository } from "./admin-course.repo.js";
 import { staffCourseUsecase } from "../staff-course/staff-course.usecase.js";
 
 export class AdminCourseUsecase {
   /**
-   * @param {import("./admin-course.repository.js").AdminCourseRepository} repository
+   * @param {import("./admin-course.repo.js").AdminCourseRepository} repository
    * @param {{ endAttempt?: Function }} [deps] — `endAttempt` re-scores an attempt
    *   after a text answer is approved (legacy imported it from the staff service).
    */

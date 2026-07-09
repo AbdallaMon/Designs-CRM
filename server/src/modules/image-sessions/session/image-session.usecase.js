@@ -21,7 +21,7 @@
 import { AppError } from "../../../shared/errors/AppError.js";
 import { imageSessionsMessagesCodes as M, UTILITY_MODEL_ALLOWLIST } from "@dms/shared";
 import { leadUsecase } from "../../leads/lead/lead.usecase.js";
-import { imageSessionRepository } from "./image-session.repository.js";
+import { imageSessionRepository } from "./image-session.repo.js";
 
 const SVC = "../../legacy/image-session-services.js";
 const ADMIN_SVC = "../../../admin-residual/legacy/admin-services.js";

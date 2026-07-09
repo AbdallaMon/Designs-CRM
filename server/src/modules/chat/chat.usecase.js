@@ -5,7 +5,7 @@ import { computeRoomCapabilities } from "./chat.dto.js";
 import { chatMessagesCodes } from "@dms/shared";
 
 export class ChatUsecase {
-  /** @param {import("./chat.repository.js").ChatRepository} repository */
+  /** @param {import("./chat.repo.js").ChatRepository} repository */
   constructor(repository) {
     this.repository = repository;
   }

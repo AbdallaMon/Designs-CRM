@@ -5,7 +5,7 @@ import { validate } from "../../shared/middlewares/validate.middleware.js";
 import { PERMISSIONS } from "@dms/shared";
 import { siteUtilityController } from "./site-utility.controller.js";
 import { SiteUtilityValidation } from "./site-utility.validation.js";
-import { contractUtilityRouter } from "./contract-utility/contract-utility.routes.js";
+import { contractUtilityRouter } from "./contract-utility/contract-utility.route.js";
 
 const P = PERMISSIONS.SITE_UTILITY;
 

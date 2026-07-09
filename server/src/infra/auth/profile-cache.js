@@ -3,7 +3,7 @@
 // hot path). Profiles are few and stable; the cache is loaded on boot and
 // invalidated whenever the profile catalog changes (seed / profile edit).
 import { buildPermissionsByModule } from "@dms/shared";
-import { profileCacheRepository } from "./profile-cache.repository.js";
+import { profileCacheRepository } from "./profile-cache.repo.js";
 
 export function createProfileCache({ repository = profileCacheRepository } = {}) {
   let byId = new Map();

@@ -5,7 +5,7 @@ import {
 } from "../../shared/notifications/notification.constants.js";
 import { sendToAdmins } from "../../shared/notifications/notification.service.js";
 import { TelegramAuthEmails } from "./auth/telegram.emails.js";
-import { telegramAuthRepo } from "./auth/telegram.repository.js";
+import { telegramAuthRepo } from "./auth/telegram.repo.js";
 import { TelegramAuthusecase } from "./auth/telegram.usecase.js";
 import { getTelegramManager } from "./manager/telegram.manager.js";
 async function initTelegram() {

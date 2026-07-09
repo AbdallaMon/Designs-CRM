@@ -8,7 +8,7 @@
 // project (projectId null) fall back to the legacy behavior (no project gate).
 import { AppError } from "../../../shared/errors/AppError.js";
 import { projectsMessagesCodes as C } from "@dms/shared";
-import { taskRepository } from "./task.repository.js";
+import { taskRepository } from "./task.repo.js";
 import { projectUsecase } from "../shared/project-scope.js";
 
 const legacyDefaults = {

@@ -141,7 +141,7 @@ describe("NotificationUsecase self-scope (IDOR fix)", () => {
   });
 
   it("the buildWhere repo helper always binds the userId into the where clause", async () => {
-    const { NotificationRepository } = await import("../notification.repository.js");
+    const { NotificationRepository } = await import("../notification.repo.js");
     const repo = new NotificationRepository();
     const where = repo.buildWhere({ userId: 7, range: null, unreadOnly: true });
     expect(where.userId).toBe(7);

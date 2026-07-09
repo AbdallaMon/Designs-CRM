@@ -11,7 +11,7 @@
 // BUGFIX (preserved-as-fixed): legacy `deleteDeliverySchedule` reads `{ id }` but the
 // route passed `{ deliveryId }` → `id` was undefined and the delete threw. We call it
 // with the correct `id` so DELETE actually works (observable improvement, noted).
-import { deliveryRepository } from "./delivery.repository.js";
+import { deliveryRepository } from "./delivery.repo.js";
 import { projectUsecase } from "../shared/project-scope.js";
 
 const legacyDefaults = {

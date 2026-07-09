@@ -1,4 +1,4 @@
-import { ChatRepository } from "./chat.repository.js";
+import { ChatRepository } from "./chat.repo.js";
 import { ChatUsecase } from "./chat.usecase.js";
 import { registerPresenceHandlers } from "./handlers/presence.handler.js";
 import { registerRoomHandlers } from "./handlers/room.handler.js";

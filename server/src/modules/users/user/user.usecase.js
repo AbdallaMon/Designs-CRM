@@ -22,8 +22,8 @@
 import bcrypt from "bcrypt";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { userMessagesCodes as C, PROFILE_KEYS, PROFILE_META } from "@dms/shared";
-import { userRepository } from "./user.repository.js";
-import { authAuditRepository, AUTH_AUDIT_ACTIONS } from "../../../infra/audit/auth-audit.repository.js";
+import { userRepository } from "./user.repo.js";
+import { authAuditRepository, AUTH_AUDIT_ACTIONS } from "../../../infra/audit/auth-audit.repo.js";
 import {
   toSafeProfile,
   computeUserCapabilities,
@@ -110,7 +110,7 @@ function applyProfileToBody(body) {
 
 export class UserUsecase {
   /**
-   * @param {import("./user.repository.js").UserRepository} repository
+   * @param {import("./user.repo.js").UserRepository} repository
    * @param {Partial<typeof legacyDefaults>} [legacy]
    */
   constructor(repository, legacy = {}) {

@@ -1,6 +1,6 @@
 import { AppError } from "../../../shared/errors/AppError.js";
 import { PERMISSIONS, siteUtilityMessagesCodes } from "@dms/shared";
-import { contractUtilityRepository } from "./contract-utility.repository.js";
+import { contractUtilityRepository } from "./contract-utility.repo.js";
 import { toContractUtilityDetailsDto } from "./contract-utility.dto.js";
 
 const P = PERMISSIONS.SITE_UTILITY;
@@ -16,7 +16,7 @@ const M = siteUtilityMessagesCodes;
 // the observable create behavior but fail cleanly (CONTRACT_UTILITY_NOT_FOUND, 409)
 // instead of throwing a raw TypeError — the obligations save creates the singleton.
 export class ContractUtilityUsecase {
-  /** @param {import("./contract-utility.repository.js").ContractUtilityRepository} repository */
+  /** @param {import("./contract-utility.repo.js").ContractUtilityRepository} repository */
   constructor(repository) {
     this.repository = repository;
   }

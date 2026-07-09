@@ -1,19 +1,19 @@
 import { Router } from "express";
-import { bookingLeadsRouter } from "../modules/leads/client/booking-lead/booking-leads.routes.js";
-import { leadRouter } from "../modules/leads/lead/lead.routes.js";
-import { userRouter } from "../modules/users/user/user.routes.js";
-import { telegramRouter } from "../modules/telegram/auth/telegram.routes.js";
-import { chatRouter } from "../modules/chat/chat.routes.js";
-import { uploadRouter } from "../modules/upload/upload.routes.js";
-import { siteUtilityRouter } from "../modules/site-utility/site-utility.routes.js";
-import { adminCourseRouter } from "../modules/courses/admin-course/admin-course.routes.js";
-import { staffCourseRouter } from "../modules/courses/staff-course/staff-course.routes.js";
-import { projectRouter } from "../modules/projects/project/project.routes.js";
-import { taskRouter } from "../modules/projects/task/task.routes.js";
-import { updateRouter } from "../modules/projects/update/update.routes.js";
-import { deliveryRouter } from "../modules/projects/delivery/delivery.routes.js";
-import { accountingRouter } from "../modules/accounting/accounting.routes.js";
-import { calendarRouter } from "../modules/calendar/calendar.routes.js";
+import { bookingLeadsRouter } from "../modules/leads/client/booking-lead/booking-leads.route.js";
+import { leadRouter } from "../modules/leads/lead/lead.route.js";
+import { userRouter } from "../modules/users/user/user.route.js";
+import { telegramRouter } from "../modules/telegram/auth/telegram.route.js";
+import { chatRouter } from "../modules/chat/chat.route.js";
+import { uploadRouter } from "../modules/upload/upload.route.js";
+import { siteUtilityRouter } from "../modules/site-utility/site-utility.route.js";
+import { adminCourseRouter } from "../modules/courses/admin-course/admin-course.route.js";
+import { staffCourseRouter } from "../modules/courses/staff-course/staff-course.route.js";
+import { projectRouter } from "../modules/projects/project/project.route.js";
+import { taskRouter } from "../modules/projects/task/task.route.js";
+import { updateRouter } from "../modules/projects/update/update.route.js";
+import { deliveryRouter } from "../modules/projects/delivery/delivery.route.js";
+import { accountingRouter } from "../modules/accounting/accounting.route.js";
+import { calendarRouter } from "../modules/calendar/calendar.route.js";
 import { clientCalendarRouter } from "../modules/calendar/client/client-calendar.route.js";
 import { notificationRouter } from "../modules/notifications/notification.route.js";
 import { utilityRouter } from "../modules/utilities/utility.route.js";
@@ -27,17 +27,17 @@ import { adminImageSessionRouter } from "../modules/image-sessions/admin/admin-i
 import { imageSessionRouter } from "../modules/image-sessions/session/image-session.route.js";
 import { clientImageSessionRouter } from "../modules/image-sessions/client/client-image-session.route.js";
 import { clientChatRouter } from "../modules/chat/client/client-chat.route.js";
-import { adminResidualRouter } from "../modules/admin-residual/admin-residual.routes.js";
-import { staffRouter } from "../modules/admin-residual/staff/staff.routes.js";
-import { publicLeadRouter } from "../modules/leads/client/public-lead/public-lead.routes.js";
+import { adminResidualRouter } from "../modules/admin-residual/admin-residual.route.js";
+import { staffRouter } from "../modules/admin-residual/staff/staff.route.js";
+import { publicLeadRouter } from "../modules/leads/client/public-lead/public-lead.route.js";
 import { clientPaymentsRouter } from "../modules/client-portal/payments/payments.route.js";
 import { clientUploadsRouter } from "../modules/client-portal/uploads/uploads.route.js";
 import { clientNotesRouter } from "../modules/client-portal/notes/notes.route.js";
 import { clientLanguagesRouter } from "../modules/client-portal/languages/languages.route.js";
 
-import { genericDeleteRouter } from "../modules/generic-delete/generic-delete.routes.js";
+import { genericDeleteRouter } from "../modules/generic-delete/generic-delete.route.js";
 
-import authRoutes from "../modules/auth/auth.routes.js";
+import authRoutes from "../modules/auth/auth.route.js";
 const router = Router();
 
 router.use("/auth", authRoutes);

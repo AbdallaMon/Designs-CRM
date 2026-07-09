@@ -15,7 +15,7 @@ import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { leadsMessagesCodes as C } from "@dms/shared";
-import { leadRepository } from "./lead.repository.js";
+import { leadRepository } from "./lead.repo.js";
 import { computeLeadCapabilities } from "./lead.dto.js";
 
 dayjs.extend(utc);
@@ -55,7 +55,7 @@ const LIST_FULL_ROLES = ["SUPER_ADMIN", "ADMIN", "SUPER_SALES", "CONTACT_INITIAT
 
 export class LeadUsecase {
   /**
-   * @param {import("./lead.repository.js").LeadRepository} repository
+   * @param {import("./lead.repo.js").LeadRepository} repository
    * @param {Partial<typeof legacyDefaults>} [legacy]
    */
   constructor(repository, legacy = {}) {

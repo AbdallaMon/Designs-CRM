@@ -9,7 +9,7 @@ import { TELEGRAM_CONSTANTS } from "../telegram.constant.js";
 import { TelegramAuthCache } from "./telegram.cache.js";
 import { mapTelegramStatus } from "./telegram.dto.js";
 import { TelegramAuthEmails } from "./telegram.emails.js";
-import { telegramAuthRepo } from "./telegram.repository.js";
+import { telegramAuthRepo } from "./telegram.repo.js";
 
 export class TelegramAuthusecase {
   static #CACHE_PREFIX = "telegram:auth:";

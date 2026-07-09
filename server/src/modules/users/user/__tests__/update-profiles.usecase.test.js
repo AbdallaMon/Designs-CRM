@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.mock("../../../../infra/audit/auth-audit.repository.js", () => ({
+vi.mock("../../../../infra/audit/auth-audit.repo.js", () => ({
   authAuditRepository: { record: vi.fn() },
   AUTH_AUDIT_ACTIONS: { PROFILE_ASSIGN: "PROFILE_ASSIGN", PROFILE_REMOVE: "PROFILE_REMOVE", PROFILE_SWITCH: "PROFILE_SWITCH" },
 }));
 
 import { UserUsecase } from "../user.usecase.js";
-import { authAuditRepository } from "../../../../infra/audit/auth-audit.repository.js";
+import { authAuditRepository } from "../../../../infra/audit/auth-audit.repo.js";
 
 function makeUsecase() {
   const repo = {

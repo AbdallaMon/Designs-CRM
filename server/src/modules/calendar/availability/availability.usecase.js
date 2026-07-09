@@ -8,7 +8,7 @@
 // `getCurrentUser(req)`. The adminId/userId resolution (default adminId → caller's id) is
 // preserved verbatim. Role-derived month-view filtering (admins see all; others see own;
 // isSuperSales sees own) is reproduced from the legacy route handlers.
-import { availabilityRepository } from "./availability.repository.js";
+import { availabilityRepository } from "./availability.repo.js";
 
 const DEFAULT_TZ = "Asia/Dubai";
 

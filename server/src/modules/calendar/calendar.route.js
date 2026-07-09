@@ -16,7 +16,7 @@
 //                                       → /v2/calendar(-management)/google/*    (google OAuth)
 //
 // The PUBLIC client booking surface (legacy /client/calendar) is a SEPARATE ungated router
-// (client-calendar.routes.js) and is NOT mounted here.
+// (client-calendar.route.js) and is NOT mounted here.
 import { Router } from "express";
 import { AuthMiddleware } from "../../shared/middlewares/auth.middleware.js";
 import { availabilityRouter } from "./availability/availability.route.js";
