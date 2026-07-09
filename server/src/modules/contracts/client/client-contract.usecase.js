@@ -20,20 +20,20 @@ import { contractsMessagesCodes as C } from "@dms/shared";
 // Lazy adapters to the not-yet-migrated, FROZEN client-contract + PDF services.
 const legacyDefaults = {
   getContractSessionByToken: (a) =>
-    import("../../../../services/main/contract/clientContractServices.js").then((m) =>
+    import("../../legacy/client-contract-services.js").then((m) =>
       m.getContractSessionByToken(a),
     ),
   getDefaultContractUtilityData: (a) =>
-    import("../../../../services/main/contract/clientContractServices.js").then((m) =>
+    import("../../legacy/client-contract-services.js").then((m) =>
       m.getDefaultContractUtilityData(a),
     ),
   changeContractSessionStatus: (a) =>
-    import("../../../../services/main/contract/clientContractServices.js").then((m) =>
+    import("../../legacy/client-contract-services.js").then((m) =>
       m.changeContractSessionStatus(a),
     ),
   // 🔒 FROZEN — wrapped, never modified.
   buildAndUploadContractPdf: (a) =>
-    import("../../../../services/main/contract/generateContractPdf.js").then((m) =>
+    import("../../legacy/generate-contract-pdf.js").then((m) =>
       m.buildAndUploadContractPdf(a),
     ),
 };

@@ -3,8 +3,8 @@
 // WHY TWO REDIS LIBRARIES REMAIN:
 //   - `redis` (node-redis) backs the cache layer (`redis.client.js` + `cache.service.js`).
 //   - `ioredis` backs BullMQ (which requires an ioredis-compatible connection) AND the
-//     cross-process Socket.IO pub/sub adapter (`services/redis/socketPublisher.js` /
-//     `socketSubscriber.js`).
+//     cross-process Socket.IO pub/sub adapter (`src/infra/socket/socket.publisher.js` /
+//     `socket.subscriber.js`).
 // BullMQ does not support node-redis, so the two libraries cannot collapse to one. What we
 // DO consolidate is the connection *configuration*: every ioredis client (BullMQ workers,
 // queues, the socket publisher and subscriber) now reads from this one module instead of

@@ -1,6 +1,6 @@
 import { Worker } from "bullmq";
 import bullmqConnection from "../redis/bullmq.connection.js";
-import { uploadItemsToTele } from "../../../services/telegram/telegram-functions.js";
+import { uploadItemsToTele } from "../telegram/telegram-functions.js";
 import { coonnectToTelegramV2 } from "../../modules/telegram/connect.js";
 
 export const telegramUploadWorker = new Worker(

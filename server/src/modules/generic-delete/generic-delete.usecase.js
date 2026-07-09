@@ -7,7 +7,7 @@ import { AppError } from "../../shared/errors/AppError.js";
 
 const legacyDefaults = {
   deleteAModel: (a) =>
-    import("../../../services/main/shared/index.js").then((m) => m.deleteAModel(a)),
+    import("../../shared/legacy/index.js").then((m) => m.deleteAModel(a)),
 };
 
 export class GenericDeleteUsecase {

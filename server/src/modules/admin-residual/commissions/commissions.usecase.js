@@ -4,11 +4,11 @@
 // (heavy Prisma + money rules) and is invoked via lazy adapters — never duplicated.
 const legacyDefaults = {
   getCommissionByUserId: (userId) =>
-    import("../../../../services/main/admin/adminServices.js").then((m) => m.getCommissionByUserId(userId)),
+    import("../../legacy/admin-services.js").then((m) => m.getCommissionByUserId(userId)),
   createCommissionByAdmin: (a) =>
-    import("../../../../services/main/admin/adminServices.js").then((m) => m.createCommissionByAdmin(a)),
+    import("../../legacy/admin-services.js").then((m) => m.createCommissionByAdmin(a)),
   updateCommission: (a) =>
-    import("../../../../services/main/admin/adminServices.js").then((m) => m.updateCommission(a)),
+    import("../../legacy/admin-services.js").then((m) => m.updateCommission(a)),
 };
 
 export class CommissionsUsecase {

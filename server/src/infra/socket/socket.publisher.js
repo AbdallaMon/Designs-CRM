@@ -1,0 +1,24 @@
+// socketPublisher.js
+// Used by worker processes to publish socket events to the main server.
+// A subscriber in the main server picks these up and forwards to the real io.
+
+import { createIoredisClient } from "../redis/ioredis.connection.js";
+
+const pub = createIoredisClient();
+
+const CHANNEL = "socket:emit";
+
+/**
+ * @param {string} event  - Socket event name (e.g. "notification")
+ * @param {string|null} room  - Room/user id to emit to, or null for broadcast
+ * @param {any} data  - Payload
+ */
+export async function publishToSocket(event, room, data) {
+  try {
+    await pub.publish(CHANNEL, JSON.stringify({ event, room, data }));
+  } catch (e) {
+    console.error("Failed to publish socket event:", e);
+  }
+}
+
+export { CHANNEL };

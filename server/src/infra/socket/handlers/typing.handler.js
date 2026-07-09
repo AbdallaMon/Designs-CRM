@@ -1,4 +1,4 @@
-import { emitToAllUsersRelatedToARoom } from "../../../../services/main/chat/chatMessageServices.js";
+import { emitToAllUsersRelatedToARoom } from "../../../modules/chat/legacy/chat-message-services.js";
 
 /**
  * Handles typing indicator socket events:

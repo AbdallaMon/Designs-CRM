@@ -12,13 +12,13 @@ import { taskRepository } from "./task.repository.js";
 import { projectUsecase } from "../shared/project-scope.js";
 
 const legacyDefaults = {
-  getTasksWithNotesIncluded: (a) => import("../../../../services/main/shared/index.js").then((m) => m.getTasksWithNotesIncluded(a)),
-  getTaskDetails: (a) => import("../../../../services/main/shared/index.js").then((m) => m.getTaskDetails(a)),
-  createNewTask: (a) => import("../../../../services/main/shared/index.js").then((m) => m.createNewTask(a)),
-  updateTask: (a) => import("../../../../services/main/shared/index.js").then((m) => m.updateTask(a)),
-  getNotes: (a) => import("../../../../services/main/shared/index.js").then((m) => m.getNotes(a)),
-  addNote: (a) => import("../../../../services/main/shared/index.js").then((m) => m.addNote(a)),
-  deleteAModel: (a) => import("../../../../services/main/shared/index.js").then((m) => m.deleteAModel(a)),
+  getTasksWithNotesIncluded: (a) => import("../../../shared/legacy/index.js").then((m) => m.getTasksWithNotesIncluded(a)),
+  getTaskDetails: (a) => import("../../../shared/legacy/index.js").then((m) => m.getTaskDetails(a)),
+  createNewTask: (a) => import("../../../shared/legacy/index.js").then((m) => m.createNewTask(a)),
+  updateTask: (a) => import("../../../shared/legacy/index.js").then((m) => m.updateTask(a)),
+  getNotes: (a) => import("../../../shared/legacy/index.js").then((m) => m.getNotes(a)),
+  addNote: (a) => import("../../../shared/legacy/index.js").then((m) => m.addNote(a)),
+  deleteAModel: (a) => import("../../../shared/legacy/index.js").then((m) => m.deleteAModel(a)),
 };
 
 export class TaskUsecase {

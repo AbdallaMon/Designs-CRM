@@ -13,11 +13,11 @@ const C = clientPortalMessagesCodes;
 
 const legacyDefaults = {
   getNotes: (args) =>
-    import("../../../../services/main/shared/noteServices.js").then((m) =>
+    import("../../../shared/legacy/note-services.js").then((m) =>
       m.getNotes(args),
     ),
   addNote: (args) =>
-    import("../../../../services/main/shared/noteServices.js").then((m) =>
+    import("../../../shared/legacy/note-services.js").then((m) =>
       m.addNote(args),
     ),
 };

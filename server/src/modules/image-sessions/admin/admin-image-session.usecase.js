@@ -14,7 +14,7 @@
 import { AppError } from "../../../shared/errors/AppError.js";
 import { imageSessionsMessagesCodes as M } from "@dms/shared";
 
-const SVC = "../../../../services/main/image-session/imageSessionSevices.js";
+const SVC = "../../legacy/image-session-services.js";
 const load = (fn) => (a) => import(SVC).then((m) => m[fn](a));
 
 // Lazy adapters to the not-yet-migrated legacy image-session service (behavior-preserving).

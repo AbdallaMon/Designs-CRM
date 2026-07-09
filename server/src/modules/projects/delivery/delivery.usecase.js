@@ -15,9 +15,9 @@ import { deliveryRepository } from "./delivery.repository.js";
 import { projectUsecase } from "../shared/project-scope.js";
 
 const legacyDefaults = {
-  createNewDeliverySchedule: (a) => import("../../../../services/main/shared/index.js").then((m) => m.createNewDeliverySchedule(a)),
-  linkADeliveryToMeeting: (a) => import("../../../../services/main/shared/index.js").then((m) => m.linkADeliveryToMeeting(a)),
-  deleteDeliverySchedule: (a) => import("../../../../services/main/shared/index.js").then((m) => m.deleteDeliverySchedule(a)),
+  createNewDeliverySchedule: (a) => import("../../../shared/legacy/index.js").then((m) => m.createNewDeliverySchedule(a)),
+  linkADeliveryToMeeting: (a) => import("../../../shared/legacy/index.js").then((m) => m.linkADeliveryToMeeting(a)),
+  deleteDeliverySchedule: (a) => import("../../../shared/legacy/index.js").then((m) => m.deleteDeliverySchedule(a)),
 };
 
 export class DeliveryUsecase {

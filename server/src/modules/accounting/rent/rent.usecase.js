@@ -10,11 +10,11 @@ import { translateLegacyAccountingError } from "../accounting.legacy-errors.js";
 
 const legacyDefaults = {
   getRents: (a) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) => m.getRents(a)),
+    import("../../legacy/accountant-services.js").then((m) => m.getRents(a)),
   createARent: (a) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) => m.createARent(a)),
+    import("../../legacy/accountant-services.js").then((m) => m.createARent(a)),
   renewRentAndMakeOutCome: (a) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) =>
+    import("../../legacy/accountant-services.js").then((m) =>
       m.renewRentAndMakeOutCome(a),
     ),
 };

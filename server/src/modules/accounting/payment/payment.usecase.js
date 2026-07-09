@@ -19,21 +19,21 @@ import { translateLegacyAccountingError } from "../accounting.legacy-errors.js";
 // Lazy adapters to the not-yet-migrated accountant service (behavior-preserving).
 const legacyDefaults = {
   getPayments: (a) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) => m.getPayments(a)),
+    import("../../legacy/accountant-services.js").then((m) => m.getPayments(a)),
   getListOfPaymentInvoices: (id) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) =>
+    import("../../legacy/accountant-services.js").then((m) =>
       m.getListOfPaymentInvoices(id),
     ),
   processPayment: (...a) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) =>
+    import("../../legacy/accountant-services.js").then((m) =>
       m.processPayment(...a),
     ),
   markPaymentAsOverdue: (id) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) =>
+    import("../../legacy/accountant-services.js").then((m) =>
       m.markPaymentAsOverdue(id),
     ),
   changePaymentLevel: (...a) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) =>
+    import("../../legacy/accountant-services.js").then((m) =>
       m.changePaymentLevel(...a),
     ),
 };

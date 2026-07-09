@@ -9,7 +9,7 @@ import {
   unpinMessage,
   addReaction,
   removeReaction,
-} from "../../../../services/main/chat/chatMessageServices.js";
+} from "../../../modules/chat/legacy/chat-message-services.js";
 
 /**
  * Handles all chat message socket events:

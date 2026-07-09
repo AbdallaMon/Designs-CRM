@@ -14,17 +14,17 @@ import { googleCalendarRepository } from "./google.repository.js";
 
 const legacyDefaults = {
   getAuthUrl: (userId) =>
-    import("../../../../services/main/calendar/googleCalendar.js").then((m) => m.getAuthUrl(userId)),
+    import("../../legacy/google-calendar.js").then((m) => m.getAuthUrl(userId)),
   handleOAuthCallback: (code, state) =>
-    import("../../../../services/main/calendar/googleCalendar.js").then((m) =>
+    import("../../legacy/google-calendar.js").then((m) =>
       m.handleOAuthCallback(code, state),
     ),
   disconnectGoogleCalendar: (userId) =>
-    import("../../../../services/main/calendar/googleCalendar.js").then((m) =>
+    import("../../legacy/google-calendar.js").then((m) =>
       m.disconnectGoogleCalendar(userId),
     ),
   isGoogleCalendarConnected: (userId) =>
-    import("../../../../services/main/calendar/googleCalendar.js").then((m) =>
+    import("../../legacy/google-calendar.js").then((m) =>
       m.isGoogleCalendarConnected(userId),
     ),
 };

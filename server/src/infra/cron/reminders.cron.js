@@ -2,8 +2,8 @@
 // Logic preserved verbatim (same every-minute cadence, same queries, same email fan-out).
 // Only changes vs the standalone: the cron registration is wrapped in start() so the server
 // bootstrap owns it, and the email-template import path is corrected to the real location
-// (`services/main/email/emailTemplates.js`; the standalone imported a non-existent
-// `services/main/emailTemplates.js`).
+// (`src/infra/mail/email-templates.js`; the standalone imported a non-existent
+// `emailTemplates.js` path).
 import cron from "node-cron";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
@@ -11,7 +11,7 @@ import timezone from "dayjs/plugin/timezone.js";
 import {
   sendReminderToClient,
   sendReminderToUser,
-} from "../../../services/main/email/emailTemplates.js";
+} from "../mail/email-templates.js";
 import prisma from "../../../prisma/prisma.js";
 
 dayjs.extend(utc);

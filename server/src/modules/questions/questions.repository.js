@@ -1,6 +1,6 @@
 // questions repository — Prisma I/O ONLY (no business rules, no AppError). The SPIN
 // session-questions/answers + VERSA objection-handling Prisma logic is ported VERBATIM
-// from the legacy service (services/main/shared-questions/shared-questions.js) so the
+// from the legacy shared-questions service so the
 // observable shapes/order/seeding are preserved 1:1. The only ADDED queries are the
 // parent-lead resolvers (findLeadIdBySessionQuestion / findLeadIdByVersaStep) used by
 // the usecase to enforce the object-scope checker the legacy routes were MISSING.

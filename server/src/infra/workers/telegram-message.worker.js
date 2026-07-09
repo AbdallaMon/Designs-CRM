@@ -4,7 +4,7 @@ import {
   getChannelEntitiyByTeleRecordAndLeadId,
   uploadAQueueAttachment,
   uploadAQueueNote,
-} from "../../../services/telegram/telegram-functions.js";
+} from "../telegram/telegram-functions.js";
 import { coonnectToTelegramV2 } from "../../modules/telegram/connect.js";
 
 export const telegramMessageWorker = new Worker(

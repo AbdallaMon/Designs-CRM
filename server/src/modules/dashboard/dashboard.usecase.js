@@ -38,23 +38,23 @@ const ADMIN_TIER_ROLES = ["ADMIN", "SUPER_ADMIN"];
 // graph stays light and the legacy service is the single source of the (frozen) math.
 const legacyDefaults = {
   getKeyMetrics: (sp, role) =>
-    import("../../../services/main/shared/dashboardServices.js").then((m) => m.getKeyMetrics(sp, role)),
+    import("../../shared/legacy/dashboard-services.js").then((m) => m.getKeyMetrics(sp, role)),
   getDashboardLeadStatusData: (sp, role) =>
-    import("../../../services/main/shared/dashboardServices.js").then((m) =>
+    import("../../shared/legacy/dashboard-services.js").then((m) =>
       m.getDashboardLeadStatusData(sp, role),
     ),
   getMonthlyPerformanceData: (sp) =>
-    import("../../../services/main/shared/dashboardServices.js").then((m) => m.getMonthlyPerformanceData(sp)),
+    import("../../shared/legacy/dashboard-services.js").then((m) => m.getMonthlyPerformanceData(sp)),
   getEmiratesAnalytics: (sp) =>
-    import("../../../services/main/shared/dashboardServices.js").then((m) => m.getEmiratesAnalytics(sp)),
+    import("../../shared/legacy/dashboard-services.js").then((m) => m.getEmiratesAnalytics(sp)),
   getLeadsMonthlyOverview: (sp) =>
-    import("../../../services/main/shared/dashboardServices.js").then((m) => m.getLeadsMonthlyOverview(sp)),
+    import("../../shared/legacy/dashboard-services.js").then((m) => m.getLeadsMonthlyOverview(sp)),
   getPerformanceMetrics: (sp) =>
-    import("../../../services/main/shared/dashboardServices.js").then((m) => m.getPerformanceMetrics(sp)),
+    import("../../shared/legacy/dashboard-services.js").then((m) => m.getPerformanceMetrics(sp)),
   getLatestNewLeads: () =>
-    import("../../../services/main/shared/dashboardServices.js").then((m) => m.getLatestNewLeads()),
+    import("../../shared/legacy/dashboard-services.js").then((m) => m.getLatestNewLeads()),
   getDesignerMetrics: (sp) =>
-    import("../../../services/main/shared/dashboardServices.js").then((m) => m.getDesignerMetrics(sp)),
+    import("../../shared/legacy/dashboard-services.js").then((m) => m.getDesignerMetrics(sp)),
 };
 
 export class DashboardUsecase {

@@ -13,14 +13,14 @@ import { updateRepository } from "./update.repository.js";
 import { projectUsecase } from "../shared/project-scope.js";
 
 const legacyDefaults = {
-  getUpdates: (...a) => import("../../../../services/main/shared/index.js").then((m) => m.getUpdates(...a)),
-  getSharedSettings: (a) => import("../../../../services/main/shared/index.js").then((m) => m.getSharedSettings(a)),
-  createAnUpdate: (a) => import("../../../../services/main/shared/index.js").then((m) => m.createAnUpdate(a)),
-  authorizeDepartmentToUpdate: (a) => import("../../../../services/main/shared/index.js").then((m) => m.authorizeDepartmentToUpdate(a)),
-  unAuthorizeDepartmentToUpdate: (a) => import("../../../../services/main/shared/index.js").then((m) => m.unAuthorizeDepartmentToUpdate(a)),
-  toggleArchieveAnUpdate: (a) => import("../../../../services/main/shared/index.js").then((m) => m.toggleArchieveAnUpdate(a)),
-  toggleArchieveASharedUpdate: (a) => import("../../../../services/main/shared/index.js").then((m) => m.toggleArchieveASharedUpdate(a)),
-  markAnUpdateAsDone: (a) => import("../../../../services/main/shared/index.js").then((m) => m.markAnUpdateAsDone(a)),
+  getUpdates: (...a) => import("../../../shared/legacy/index.js").then((m) => m.getUpdates(...a)),
+  getSharedSettings: (a) => import("../../../shared/legacy/index.js").then((m) => m.getSharedSettings(a)),
+  createAnUpdate: (a) => import("../../../shared/legacy/index.js").then((m) => m.createAnUpdate(a)),
+  authorizeDepartmentToUpdate: (a) => import("../../../shared/legacy/index.js").then((m) => m.authorizeDepartmentToUpdate(a)),
+  unAuthorizeDepartmentToUpdate: (a) => import("../../../shared/legacy/index.js").then((m) => m.unAuthorizeDepartmentToUpdate(a)),
+  toggleArchieveAnUpdate: (a) => import("../../../shared/legacy/index.js").then((m) => m.toggleArchieveAnUpdate(a)),
+  toggleArchieveASharedUpdate: (a) => import("../../../shared/legacy/index.js").then((m) => m.toggleArchieveASharedUpdate(a)),
+  markAnUpdateAsDone: (a) => import("../../../shared/legacy/index.js").then((m) => m.markAnUpdateAsDone(a)),
 };
 
 export class UpdateUsecase {

@@ -28,49 +28,49 @@ import { contractRepository } from "./contract.repository.js";
 // Lazy adapters to the not-yet-migrated, FROZEN contract service (behavior-preserving).
 const legacyDefaults = {
   getLeadContractList: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.getLeadContractList(a)),
+    import("../../legacy/contract-services.js").then((m) => m.getLeadContractList(a)),
   createContract: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.createContract(a)),
+    import("../../legacy/contract-services.js").then((m) => m.createContract(a)),
   getContractDetailsById: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.getContractDetailsById(a)),
+    import("../../legacy/contract-services.js").then((m) => m.getContractDetailsById(a)),
   updateContractBasics: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.updateContractBasics(a)),
+    import("../../legacy/contract-services.js").then((m) => m.updateContractBasics(a)),
   markContractAsCancelled: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.markContractAsCancelled(a)),
+    import("../../legacy/contract-services.js").then((m) => m.markContractAsCancelled(a)),
   generatePdfSessionToken: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.generatePdfSessionToken(a)),
+    import("../../legacy/contract-services.js").then((m) => m.generatePdfSessionToken(a)),
   createContractStage: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.createContractStage(a)),
+    import("../../legacy/contract-services.js").then((m) => m.createContractStage(a)),
   updateContractStage: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.updateContractStage(a)),
+    import("../../legacy/contract-services.js").then((m) => m.updateContractStage(a)),
   deleteContractStage: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.deleteContractStage(a)),
+    import("../../legacy/contract-services.js").then((m) => m.deleteContractStage(a)),
   getContractPaymentsGroupedService: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) =>
+    import("../../legacy/contract-services.js").then((m) =>
       m.getContractPaymentsGroupedService(a),
     ),
   updateContractPaymentStatus: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.updateContractPaymentStatus(a)),
+    import("../../legacy/contract-services.js").then((m) => m.updateContractPaymentStatus(a)),
   updateContractPaymentAmounts: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.updateContractPaymentAmounts(a)),
+    import("../../legacy/contract-services.js").then((m) => m.updateContractPaymentAmounts(a)),
   createNewContractPayment: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.createNewContractPayment(a)),
+    import("../../legacy/contract-services.js").then((m) => m.createNewContractPayment(a)),
   updateContractPayment: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.updateContractPayment(a)),
+    import("../../legacy/contract-services.js").then((m) => m.updateContractPayment(a)),
   deleteContractPayment: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.deleteContractPayment(a)),
+    import("../../legacy/contract-services.js").then((m) => m.deleteContractPayment(a)),
   createContractDrawing: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.createContractDrawing(a)),
+    import("../../legacy/contract-services.js").then((m) => m.createContractDrawing(a)),
   updateContractDrwaing: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.updateContractDrwaing(a)),
+    import("../../legacy/contract-services.js").then((m) => m.updateContractDrwaing(a)),
   deleteContractDrawing: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.deleteContractDrawing(a)),
+    import("../../legacy/contract-services.js").then((m) => m.deleteContractDrawing(a)),
   createContractSpecialItem: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.createContractSpecialItem(a)),
+    import("../../legacy/contract-services.js").then((m) => m.createContractSpecialItem(a)),
   updateContractSpecialItem: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.updateContractSpecialItem(a)),
+    import("../../legacy/contract-services.js").then((m) => m.updateContractSpecialItem(a)),
   deleteContractSpecialItem: (a) =>
-    import("../../../../services/main/contract/contractServices.js").then((m) => m.deleteContractSpecialItem(a)),
+    import("../../legacy/contract-services.js").then((m) => m.deleteContractSpecialItem(a)),
 };
 
 export class ContractUsecase {

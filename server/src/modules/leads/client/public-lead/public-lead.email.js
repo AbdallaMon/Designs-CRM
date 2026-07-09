@@ -1,6 +1,6 @@
 // leads/client/public-lead email — the cooperation-request HTML template, lifted VERBATIM
 // from legacy `routes/client/leads.js` (`/cooperation-requests`). Pure string building, no
-// I/O. The sending goes through the frozen `services/sendMail.js` via a lazy adapter.
+// I/O. The sending goes through the frozen `src/infra/mail/send-mail.js` via a lazy adapter.
 
 // quick safe fallback (so "undefined" doesn't show) — verbatim from legacy.
 const safe = (v) => (v ?? "").toString().trim() || "-";

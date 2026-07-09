@@ -4,11 +4,11 @@
 // already-migrated utilities module (UTILITY.FIXED_DATA_LIST). Only the WRITES are residual.
 const legacyDefaults = {
   createAFixedData: (a) =>
-    import("../../../../services/main/admin/adminServices.js").then((m) => m.createAFixedData(a)),
+    import("../../legacy/admin-services.js").then((m) => m.createAFixedData(a)),
   editAFixedData: (a) =>
-    import("../../../../services/main/admin/adminServices.js").then((m) => m.editAFixedData(a)),
+    import("../../legacy/admin-services.js").then((m) => m.editAFixedData(a)),
   deleteAFixedData: (a) =>
-    import("../../../../services/main/admin/adminServices.js").then((m) => m.deleteAFixedData(a)),
+    import("../../legacy/admin-services.js").then((m) => m.deleteAFixedData(a)),
 };
 
 export class FixedDataUsecase {

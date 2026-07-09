@@ -2,7 +2,7 @@
 // Logic + 10-minute cadence preserved verbatim. Changes vs the standalone:
 //   - Telegram is NOT connected here (the bootstrap connects the single GramJS client once).
 //   - Imports the canonical queue from `infra/queues` instead of the legacy
-//     `services/queues/*` re-export shim.
+//     (now-removed) queue re-export shims.
 import cron from "node-cron";
 import prisma from "../../../prisma/prisma.js";
 import { telegramCronQueue } from "../queues/telegram-cron.queue.js";

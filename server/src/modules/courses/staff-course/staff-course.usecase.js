@@ -1,7 +1,7 @@
 // Business logic / orchestration for the STAFF (course-consumption) surface.
 // Prisma never appears here — only repo calls. Errors are thrown as AppError(code,
 // statusCode); success values are returned. Behavior is ported 1:1 from
-// `services/main/courses/staffCoursesServices.js` — same gating, same scoring math,
+// the legacy staff course service — same gating, same scoring math,
 // same outputs.
 import { AppError } from "../../../shared/errors/AppError.js";
 import { coursesMessagesCodes } from "@dms/shared";
@@ -13,7 +13,7 @@ import { staffCourseRepository } from "./staff-course.repository.js";
 // migration — we call the existing implementation rather than duplicate it.
 async function defaultNotifyAttemptFailed({ testId, userId }) {
   const { attemptFailedByUser } = await import(
-    "../../../../services/notification.js"
+    "../../../infra/notifications/legacy-notification.js"
   );
   return attemptFailedByUser({ testId, userId });
 }

@@ -27,10 +27,10 @@ import { AppError } from "../../../shared/errors/AppError.js";
 import { imageSessionsMessagesCodes as M, UTILITY_MODEL_ALLOWLIST } from "@dms/shared";
 import { clientImageSessionRepository } from "./client-image-session.repository.js";
 
-const SVC = "../../../../services/main/image-session/imageSessionSevices.js";
-const CLIENT_SVC = "../../../../services/main/client/clientServices.js";
-const EXTRAS_SVC = "../../../../services/main/image-session/clientImageServices.js";
-const SHARED_SVC = "../../../../services/main/shared/index.js";
+const SVC = "../../legacy/image-session-services.js";
+const CLIENT_SVC = "../legacy/client-services.js";
+const EXTRAS_SVC = "../../legacy/client-image-services.js";
+const SHARED_SVC = "../../../shared/legacy/index.js";
 
 const load = (path, fn) => (a) => import(path).then((m) => m[fn](a));
 

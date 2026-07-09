@@ -8,11 +8,11 @@ import { chunkTmpDir } from "./uploads.middleware.js";
 
 const legacy = {
   uploadAsChunk: (...args) =>
-    import("../../../../services/main/utility/uploadAsChunk.js").then((m) =>
+    import("./legacy/upload-as-chunk.js").then((m) =>
       m.uploadAsChunk(...args),
     ),
   uploadAsHttp: (...args) =>
-    import("../../../../services/main/utility/utility.js").then((m) =>
+    import("../../utilities/legacy/utility.js").then((m) =>
       m.uploadAsHttp(...args),
     ),
 };

@@ -12,7 +12,7 @@
 //
 // Heavy/side-effecting legacy logic is invoked via LAZY ADAPTERS (never duplicated): the lead
 // code generator + file attach (`services/main/client/leads.js`), the notifications
-// (`services/notification.js`), and the cooperation email (`services/sendMail.js`). The
+// (`src/infra/notifications/legacy-notification.js`), and the cooperation email (`src/infra/mail/send-mail.js`). The
 // price-mapping tables and the data-shape assembly are PURE and moved here verbatim.
 //
 // All Arabic/English PROSE responses are REPLACED with language-neutral CODES (AppError for
@@ -48,27 +48,27 @@ const consultationLeadPrices = {
 // Lazy adapters — frozen legacy services, imported on demand, never duplicated.
 const legacyDefaults = {
   generateCodeForNewLead: (clientId) =>
-    import("../../../../../services/main/client/leads.js").then((m) =>
+    import("../../../legacy/client-leads-service.js").then((m) =>
       m.generateCodeForNewLead(clientId),
     ),
   uploadFile: (body, leadId) =>
-    import("../../../../../services/main/client/leads.js").then((m) =>
+    import("../../../legacy/client-leads-service.js").then((m) =>
       m.uploadFile(body, leadId),
     ),
   newLeadNotification: (leadId, client, isAdmin) =>
-    import("../../../../../services/notification.js").then((m) =>
+    import("../../../../infra/notifications/legacy-notification.js").then((m) =>
       m.newLeadNotification(leadId, client, isAdmin),
     ),
   newClientLeadNotification: (leadId, client, isAdmin) =>
-    import("../../../../../services/notification.js").then((m) =>
+    import("../../../../infra/notifications/legacy-notification.js").then((m) =>
       m.newClientLeadNotification(leadId, client, isAdmin),
     ),
   newLeadCompletedNotification: (leadId, client, isAdmin) =>
-    import("../../../../../services/notification.js").then((m) =>
+    import("../../../../infra/notifications/legacy-notification.js").then((m) =>
       m.newLeadCompletedNotification(leadId, client, isAdmin),
     ),
   sendEmail: (to, subject, html) =>
-    import("../../../../../services/sendMail.js").then((m) =>
+    import("../../../../infra/mail/send-mail.js").then((m) =>
       m.sendEmail(to, subject, html),
     ),
 };

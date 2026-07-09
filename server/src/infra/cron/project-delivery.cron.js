@@ -9,7 +9,7 @@ import cron from "node-cron";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
-import { handleProjectReminder } from "../../../services/telegram/telegram-functions.js";
+import { handleProjectReminder } from "../telegram/telegram-functions.js";
 import prisma from "../../../prisma/prisma.js";
 
 dayjs.extend(utc);

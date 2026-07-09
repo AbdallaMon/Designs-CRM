@@ -28,7 +28,7 @@ import { utilityRepository } from "./utility.repository.js";
 // Lazy adapter to the not-yet-migrated legacy cross-model search (behavior-preserving).
 const legacyDefaults = {
   searchData: (body, currentUser) =>
-    import("../../../services/main/utility/utility.js").then((m) => m.searchData(body, currentUser)),
+    import("./legacy/utility.js").then((m) => m.searchData(body, currentUser)),
 };
 
 export class UtilityUsecase {

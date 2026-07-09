@@ -6,9 +6,9 @@
 // from the client body.
 const legacyDefaults = {
   getNotes: (a) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) => m.getNotes(a)),
+    import("../../legacy/accountant-services.js").then((m) => m.getNotes(a)),
   addNote: (a) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) => m.addNote(a)),
+    import("../../legacy/accountant-services.js").then((m) => m.addNote(a)),
 };
 
 export class NoteUsecase {

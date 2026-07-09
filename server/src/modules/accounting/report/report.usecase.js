@@ -5,9 +5,9 @@
 // same behavior, but a malformed/absent `filters` now safely defaults to {} (no 500).
 const legacyDefaults = {
   getOutcomes: (a) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) => m.getOutcomes(a)),
+    import("../../legacy/accountant-services.js").then((m) => m.getOutcomes(a)),
   getIncomeOutcomeSummary: () =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) =>
+    import("../../legacy/accountant-services.js").then((m) =>
       m.getIncomeOutcomeSummary(),
     ),
 };

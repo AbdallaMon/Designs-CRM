@@ -23,8 +23,8 @@ import { imageSessionsMessagesCodes as M, UTILITY_MODEL_ALLOWLIST } from "@dms/s
 import { leadUsecase } from "../../leads/lead/lead.usecase.js";
 import { imageSessionRepository } from "./image-session.repository.js";
 
-const SVC = "../../../../services/main/image-session/imageSessionSevices.js";
-const ADMIN_SVC = "../../../../services/main/admin/adminServices.js";
+const SVC = "../../legacy/image-session-services.js";
+const ADMIN_SVC = "../../../admin-residual/legacy/admin-services.js";
 
 // Lazy adapters to the not-yet-migrated legacy services (behavior-preserving).
 const legacyDefaults = {

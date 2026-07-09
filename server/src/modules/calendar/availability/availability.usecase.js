@@ -19,7 +19,7 @@ const DEFAULT_TZ = "Asia/Dubai";
 // `createAvailableDatesForMoreThanOneDay` for the bulk path, so the two create adapters
 // translate the usecase's fromTime/toTime/dates → the service's fromHour/toHour/days.
 // Heavy logic is NOT duplicated — only invoked.
-const CALENDAR_SERVICE = "../../../../services/main/calendar/calendarServices.js";
+const CALENDAR_SERVICE = "../../legacy/calendar-services.js";
 const legacyDefaults = {
   getAvailableDays: (a) =>
     import(CALENDAR_SERVICE).then((m) => m.getAvailableDays(a)),

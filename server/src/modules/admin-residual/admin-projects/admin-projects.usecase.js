@@ -12,11 +12,11 @@
 // adapters (heavy Prisma + project-group creation) — no duplication.
 const legacyDefaults = {
   getAdminProjects: (searchParams, limit, skip) =>
-    import("../../../../services/main/admin/adminServices.js").then((m) =>
+    import("../../legacy/admin-services.js").then((m) =>
       m.getAdminProjects(searchParams, limit, skip),
     ),
   createGroupProjects: (a) =>
-    import("../../../../services/main/shared/projectServices.js").then((m) => m.createGroupProjects(a)),
+    import("../../../shared/legacy/project-services.js").then((m) => m.createGroupProjects(a)),
 };
 
 export class AdminProjectsUsecase {

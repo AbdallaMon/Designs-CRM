@@ -1,7 +1,7 @@
 // Business logic / orchestration for the ADMIN (management) course surface. Prisma
 // never appears here — only repo calls. Errors are thrown as AppError(code, status);
 // success values are returned. Behavior is ported 1:1 from
-// `services/main/courses/adminCourseServices.js` (same shapes, same aggregation,
+// the legacy admin course service (same shapes, same aggregation,
 // same side effects), restructured into the layered module.
 import { AppError } from "../../../shared/errors/AppError.js";
 import { coursesMessagesCodes } from "@dms/shared";

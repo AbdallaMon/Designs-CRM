@@ -18,15 +18,15 @@ import { projectRepository } from "./project.repository.js";
 
 // ── Lazy adapters to the not-yet-migrated services (behavior-preserving) ──────────
 const legacyDefaults = {
-  getLeadByPorjects: (a) => import("../../../../services/main/shared/index.js").then((m) => m.getLeadByPorjects(a)),
-  getLeadByPorjectsColumn: (a) => import("../../../../services/main/shared/index.js").then((m) => m.getLeadByPorjectsColumn(a)),
-  getLeadDetailsByProject: (...a) => import("../../../../services/main/shared/index.js").then((m) => m.getLeadDetailsByProject(...a)),
-  getProjectsByClientLeadId: (a) => import("../../../../services/main/shared/index.js").then((m) => m.getProjectsByClientLeadId(a)),
-  getUserProjects: (...a) => import("../../../../services/main/shared/index.js").then((m) => m.getUserProjects(...a)),
-  getProjectDetailsById: (a) => import("../../../../services/main/shared/index.js").then((m) => m.getProjectDetailsById(a)),
-  updateProject: (a) => import("../../../../services/main/shared/index.js").then((m) => m.updateProject(a)),
-  assignProjectToUser: (a) => import("../../../../services/main/shared/index.js").then((m) => m.assignProjectToUser(a)),
-  getUniqueProjectGroups: (a) => import("../../../../services/main/shared/index.js").then((m) => m.getUniqueProjectGroups(a)),
+  getLeadByPorjects: (a) => import("../../../shared/legacy/index.js").then((m) => m.getLeadByPorjects(a)),
+  getLeadByPorjectsColumn: (a) => import("../../../shared/legacy/index.js").then((m) => m.getLeadByPorjectsColumn(a)),
+  getLeadDetailsByProject: (...a) => import("../../../shared/legacy/index.js").then((m) => m.getLeadDetailsByProject(...a)),
+  getProjectsByClientLeadId: (a) => import("../../../shared/legacy/index.js").then((m) => m.getProjectsByClientLeadId(a)),
+  getUserProjects: (...a) => import("../../../shared/legacy/index.js").then((m) => m.getUserProjects(...a)),
+  getProjectDetailsById: (a) => import("../../../shared/legacy/index.js").then((m) => m.getProjectDetailsById(a)),
+  updateProject: (a) => import("../../../shared/legacy/index.js").then((m) => m.updateProject(a)),
+  assignProjectToUser: (a) => import("../../../shared/legacy/index.js").then((m) => m.assignProjectToUser(a)),
+  getUniqueProjectGroups: (a) => import("../../../shared/legacy/index.js").then((m) => m.getUniqueProjectGroups(a)),
 };
 
 // Project board statuses a NON-admin user cannot transition AWAY from (legacy
@@ -168,7 +168,7 @@ export class ProjectUsecase {
 
   // legacy getArchivedProjects ported into the repo (it is plain Prisma + grouping).
   async #archivedFromRepo({ searchParams, skip, take }) {
-    const { groupProjects } = await import("../../../../services/main/shared/projectServices.js");
+    const { groupProjects } = await import("../../../shared/legacy/project-services.js");
     const where = { projects: { some: {} }, status: "ARCHIVED" };
     const filters = JSON.parse(searchParams.filters);
     if (filters && filters !== "undefined" && filters.id) where.id = Number(filters.id);

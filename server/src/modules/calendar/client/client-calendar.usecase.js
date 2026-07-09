@@ -12,21 +12,21 @@ const DEFAULT_TZ = "Asia/Dubai";
 
 const legacyDefaults = {
   verifyAndExtractCalendarToken: (token) =>
-    import("../../../../services/main/client/calendar.js").then((m) =>
+    import("../../legacy/client-calendar-service.js").then((m) =>
       m.verifyAndExtractCalendarToken(token),
     ),
   verifySlotIsAvailableAndNotBooked: (a) =>
-    import("../../../../services/main/client/calendar.js").then((m) =>
+    import("../../legacy/client-calendar-service.js").then((m) =>
       m.verifySlotIsAvailableAndNotBooked(a),
     ),
   bookAMeeting: (a) =>
-    import("../../../../services/main/client/calendar.js").then((m) => m.bookAMeeting(a)),
+    import("../../legacy/client-calendar-service.js").then((m) => m.bookAMeeting(a)),
   getAvailableDays: (a) =>
-    import("../../../../services/main/calendar/calendarServices.js").then((m) =>
+    import("../../legacy/calendar-services.js").then((m) =>
       m.getAvailableDays(a),
     ),
   getAvailableSlotsForDay: (a) =>
-    import("../../../../services/main/calendar/calendarServices.js").then((m) =>
+    import("../../legacy/calendar-services.js").then((m) =>
       m.getAvailableSlotsForDay(a),
     ),
 };

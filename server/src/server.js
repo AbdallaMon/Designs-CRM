@@ -2,7 +2,7 @@ import { createServer } from "http";
 import app from "./app.js";
 import { initSocket, getIo } from "./infra/socket/index.js";
 import { connectRedis } from "./infra/redis/redis.client.js";
-import { startSocketSubscriber } from "../services/redis/socketSubscriber.js";
+import { startSocketSubscriber } from "./infra/socket/socket.subscriber.js";
 import { coonnectToTelegramV2 } from "./modules/telegram/connect.js";
 import { startWorkers } from "./infra/workers/start-workers.js";
 import { startCron } from "./infra/cron/index.js";

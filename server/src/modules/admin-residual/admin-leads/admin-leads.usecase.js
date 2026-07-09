@@ -67,28 +67,28 @@ const consultationLeadPrices = {
 const legacyDefaults = {
   // bulk excel import — owns its own (req,res) response stream
   createLeadFromExcelData: (req, res) =>
-    import("../../../../services/main/admin/adminServices.js").then((m) => m.createLeadFromExcelData(req, res)),
+    import("../../legacy/admin-services.js").then((m) => m.createLeadFromExcelData(req, res)),
   // admin lead field update (also wrapped by the leads module — reused here)
   updateLeadField: (a) =>
-    import("../../../../services/main/admin/adminServices.js").then((m) => m.updateLeadField(a)),
+    import("../../legacy/admin-services.js").then((m) => m.updateLeadField(a)),
   // admin client field update
   updateClientField: (a) =>
-    import("../../../../services/main/admin/adminServices.js").then((m) => m.updateClientField(a)),
+    import("../../legacy/admin-services.js").then((m) => m.updateClientField(a)),
   // admin delete lead (FK-aware transactional delete)
   deleteALead: (leadId) =>
-    import("../../../../services/main/admin/adminServices.js").then((m) => m.deleteALead(leadId)),
+    import("../../legacy/admin-services.js").then((m) => m.deleteALead(leadId)),
   // telegram — create channel + queue project users (lead-scoped)
   createNewTelegramLink: (a) =>
-    import("../../../../services/main/admin/adminServices.js").then((m) => m.createNewTelegramLink(a)),
+    import("../../legacy/admin-services.js").then((m) => m.createNewTelegramLink(a)),
   addAllProjectUsersToChannel: (a) =>
-    import("../../../../services/main/admin/adminServices.js").then((m) => m.addAllProjectUsersToChannel(a)),
+    import("../../legacy/admin-services.js").then((m) => m.addAllProjectUsersToChannel(a)),
   // new-lead side effects (the CORRECT fns the public handler uses — deviation #2)
   generateCodeForNewLead: (clientId) =>
-    import("../../../../services/main/client/leads.js").then((m) => m.generateCodeForNewLead(clientId)),
+    import("../../../leads/legacy/client-leads-service.js").then((m) => m.generateCodeForNewLead(clientId)),
   uploadFile: (body, clientLeadId) =>
-    import("../../../../services/main/client/leads.js").then((m) => m.uploadFile(body, clientLeadId)),
+    import("../../../leads/legacy/client-leads-service.js").then((m) => m.uploadFile(body, clientLeadId)),
   newLeadNotification: (leadId, client, isAdmin) =>
-    import("../../../../services/notification.js").then((m) => m.newLeadNotification(leadId, client, isAdmin)),
+    import("../../../infra/notifications/legacy-notification.js").then((m) => m.newLeadNotification(leadId, client, isAdmin)),
 };
 
 export class AdminLeadsUsecase {

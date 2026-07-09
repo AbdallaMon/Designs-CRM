@@ -17,25 +17,25 @@ import { translateLegacyAccountingError } from "../accounting.legacy-errors.js";
 
 const legacyDefaults = {
   getSalaryData: (a) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) => m.getSalaryData(a)),
+    import("../../legacy/accountant-services.js").then((m) => m.getSalaryData(a)),
   createBaseSalary: (a) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) =>
+    import("../../legacy/accountant-services.js").then((m) =>
       m.createBaseSalary(a),
     ),
   editBaseSalary: (a) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) =>
+    import("../../legacy/accountant-services.js").then((m) =>
       m.editBaseSalary(a),
     ),
   generateMonthlySalary: (a) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) =>
+    import("../../legacy/accountant-services.js").then((m) =>
       m.generateMonthlySalary(a),
     ),
   getUsersWithSalaries: (...a) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) =>
+    import("../../legacy/accountant-services.js").then((m) =>
       m.getUsersWithSalaries(...a),
     ),
   getUserLogs: (...a) =>
-    import("../../../../services/main/admin/adminServices.js").then((m) => m.getUserLogs(...a)),
+    import("../../../admin-residual/legacy/admin-services.js").then((m) => m.getUserLogs(...a)),
 };
 
 export class SalaryUsecase {

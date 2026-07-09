@@ -14,7 +14,7 @@ import { ADMIN_ARCHIVE_MODEL_ALLOWLIST, adminResidualMessagesCodes as C } from "
 
 const legacyDefaults = {
   toggleArchiveAModel: (a) =>
-    import("../../../../services/main/admin/adminServices.js").then((m) => m.toggleArchiveAModel(a)),
+    import("../../legacy/admin-services.js").then((m) => m.toggleArchiveAModel(a)),
 };
 
 export class ModelArchiveUsecase {

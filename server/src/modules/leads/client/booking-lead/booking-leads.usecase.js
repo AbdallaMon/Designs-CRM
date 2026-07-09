@@ -7,12 +7,12 @@ import { bookingLeadsEmails } from "./booking-leads.emails.js";
 import { AppError } from "../../../../shared/errors/AppError.js";
 
 // master 03ca4d3: after a successful booking submit, send the client a "thanks" email.
-// Routed through the FROZEN services/sendMail.js so the client-facing from-name/address
+// Routed through the src/infra/mail/send-mail.js so the client-facing from-name/address
 // (isClient=true → engineer's identity) is preserved exactly; the frozen service swallows
 // its own send errors, so a mail failure never breaks the submit.
 const legacyMailer = {
   sendEmail: (to, subject, html, isClient) =>
-    import("../../../../../services/sendMail.js").then((m) =>
+    import("../../../../infra/mail/send-mail.js").then((m) =>
       m.sendEmail(to, subject, html, isClient),
     ),
 };

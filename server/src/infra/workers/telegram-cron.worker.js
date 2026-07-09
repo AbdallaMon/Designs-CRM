@@ -1,6 +1,6 @@
 import { Worker } from "bullmq";
 import bullmqConnection from "../redis/bullmq.connection.js";
-import { getMeagsses } from "../../../services/telegram/telegram-functions.js";
+import { getMeagsses } from "../telegram/telegram-functions.js";
 import { coonnectToTelegramV2 } from "../../modules/telegram/connect.js";
 
 export const telegramCronWorker = new Worker(

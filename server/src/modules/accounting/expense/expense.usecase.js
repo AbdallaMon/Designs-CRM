@@ -4,11 +4,11 @@
 // the existing service so that two-write behavior is preserved exactly.
 const legacyDefaults = {
   getOperationalExpenses: (a) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) =>
+    import("../../legacy/accountant-services.js").then((m) =>
       m.getOperationalExpenses(a),
     ),
   createOperationalExpense: (a) =>
-    import("../../../../services/main/accountant/accountantServices.js").then((m) =>
+    import("../../legacy/accountant-services.js").then((m) =>
       m.createOperationalExpense(a),
     ),
 };

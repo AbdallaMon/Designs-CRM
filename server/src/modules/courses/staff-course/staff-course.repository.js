@@ -1,6 +1,6 @@
 // Prisma I/O ONLY. No business logic, no AppError. Methods accept an optional
 // `client` so a usecase can compose them inside a prisma.$transaction. Queries are
-// ported VERBATIM from `services/main/courses/staffCoursesServices.js` (shapes,
+// ported VERBATIM from the legacy staff course service (shapes,
 // includes, filters, ordering preserved) so the staff LMS contract is unchanged.
 import prisma from "../../../infra/prisma/prisma.js";
 
