@@ -1,34 +1,116 @@
 // calendar/client usecase — the PUBLIC client booking surface (legacy
 // routes/calendar/client-calendar.js, mounted at /client/calendar with NO auth gate). Every
 // action authenticates the CLIENT via a per-meeting token (MeetingReminder.token) that the
-// frozen service `verifyAndExtractCalendarToken` validates and expands into the
+// `verifyAndExtractCalendarToken` impl validates and (via calendar.dto) expands into the
 // reminderId/userId/clientLeadId/adminId context — exactly as the booking funnel and
 // /files/client/* are public. There is NO permission code and NO session here, by design.
 //
-// Heavy logic (token verification, slot availability, booking + notification + email +
-// Google sync) lives in the legacy services and is invoked via lazy adapters — never
-// duplicated. The slot/day reads reuse the same availability service the staff surface uses.
+// The booking logic (token verification, slot availability, booking + notification + email +
+// Google sync) now lives HERE as the `*Impl` functions (formerly legacy/client-calendar-
+// service.js); Prisma → clientCalendarRepository; token shaping → calendar.dto; the side
+// effects call their infra homes (notifications, mail, google client). The slot/day reads
+// reuse the same availability impls the staff surface uses.
+//
+// The `this.legacy` seam is retained so tests can inject stubs; production defaults to the
+// relocated impls below.
+import { newMeetingNotification } from "../../../infra/notifications/legacy-notification.js";
+import { sendReminderCreatedToClient } from "../../../infra/mail/email-templates.js";
+import { createCalendarEvent } from "../../../infra/google/google-calendar.client.js";
+import { clientCalendarRepository } from "./client-calendar.repo.js";
+import { shapeCalendarTokenData } from "../calendar.dto.js";
+import {
+  getAvailableDaysImpl,
+  getAvailableSlotsForDayImpl,
+} from "../availability/availability.usecase.js";
+
 const DEFAULT_TZ = "Asia/Dubai";
 
+// ════════════════════════════════════════════════════════════════════════════
+//  Relocated booking logic (formerly legacy/client-calendar-service.js). Prisma →
+//  clientCalendarRepository; shaping → calendar.dto; side effects → infra. Verbatim.
+// ════════════════════════════════════════════════════════════════════════════
+
+export async function bookAMeeting({
+  reminderId,
+  clientLeadId,
+  selectedSlot,
+  selectedTimezone = "Asia/Dubai",
+}) {
+  const time = selectedSlot.startTime;
+  const reminder = await clientCalendarRepository.updateMeetingReminderTime({
+    reminderId,
+    time,
+    userTimezone: selectedTimezone,
+  });
+  if (selectedSlot.type !== "MOCK") {
+    await assignSlotToMeeting({
+      slotId: selectedSlot.id,
+      meetingReminderId: reminderId,
+      userTimezone: selectedTimezone,
+    });
+  }
+  const reminderData = await clientCalendarRepository.findReminderForBooking(reminderId);
+  await newMeetingNotification(Number(clientLeadId), reminder);
+  await sendReminderCreatedToClient({
+    clientEmail: reminderData.clientLead.client.email,
+    clientName: reminderData.clientLead.client.name,
+    reminderTime: reminderData.time,
+    reminderTitle: "Booked succssfully",
+    userTimezone: reminderData.userTimezone,
+  });
+  return true;
+}
+
+export async function verifySlotIsAvailableAndNotBooked({ slotId }) {
+  const slotData = await clientCalendarRepository.findSlotById(slotId);
+  if (!slotData) {
+    throw new Error("Slot not found,please select another slot");
+  }
+  if (slotData.isBooked) {
+    throw new Error("Slot is already booked, please select another slot");
+  }
+  return slotData;
+}
+
+export async function verifyAndExtractCalendarToken(token) {
+  if (!token) throw new Error("No token provided");
+
+  const tokenData = await clientCalendarRepository.findReminderByToken(token);
+  return shapeCalendarTokenData(tokenData);
+}
+
+export async function assignSlotToMeeting({
+  slotId,
+  meetingReminderId,
+  userTimezone,
+}) {
+  slotId = Number(slotId);
+  meetingReminderId = Number(meetingReminderId);
+  const slot = await clientCalendarRepository.findSlotForAssign(slotId);
+
+  if (!slot || slot.isBooked)
+    throw new Error("Time already booked book another");
+
+  const reminder = await clientCalendarRepository.assignSlotToReminder({
+    meetingReminderId,
+    slotId,
+  });
+
+  const availableSlot = await clientCalendarRepository.markSlotBooked({
+    slotId,
+    meetingReminderId,
+    userTimezone,
+  });
+  await createCalendarEvent(reminder);
+  return availableSlot;
+}
+
 const legacyDefaults = {
-  verifyAndExtractCalendarToken: (token) =>
-    import("../../legacy/client-calendar-service.js").then((m) =>
-      m.verifyAndExtractCalendarToken(token),
-    ),
-  verifySlotIsAvailableAndNotBooked: (a) =>
-    import("../../legacy/client-calendar-service.js").then((m) =>
-      m.verifySlotIsAvailableAndNotBooked(a),
-    ),
-  bookAMeeting: (a) =>
-    import("../../legacy/client-calendar-service.js").then((m) => m.bookAMeeting(a)),
-  getAvailableDays: (a) =>
-    import("../../legacy/calendar-services.js").then((m) =>
-      m.getAvailableDays(a),
-    ),
-  getAvailableSlotsForDay: (a) =>
-    import("../../legacy/calendar-services.js").then((m) =>
-      m.getAvailableSlotsForDay(a),
-    ),
+  verifyAndExtractCalendarToken: (token) => verifyAndExtractCalendarToken(token),
+  verifySlotIsAvailableAndNotBooked: (a) => verifySlotIsAvailableAndNotBooked(a),
+  bookAMeeting: (a) => bookAMeeting(a),
+  getAvailableDays: (a) => getAvailableDaysImpl(a),
+  getAvailableSlotsForDay: (a) => getAvailableSlotsForDayImpl(a),
 };
 
 export class ClientCalendarUsecase {

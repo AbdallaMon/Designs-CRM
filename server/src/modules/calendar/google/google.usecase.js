@@ -12,21 +12,19 @@ import { AppError } from "../../../shared/errors/AppError.js";
 import { calendarMessagesCodes as C } from "@dms/shared";
 import { googleCalendarRepository } from "./google.repo.js";
 
+// The Google OAuth/Calendar side-effect flow now lives in the INFRA client
+// (infra/google/google-calendar.client.js). isGoogleCalendarConnected — and the resync loop it
+// invokes — stay in that infra client (see its header note); the usecase only invokes them.
+const GOOGLE_CLIENT = "../../../infra/google/google-calendar.client.js";
 const legacyDefaults = {
   getAuthUrl: (userId) =>
-    import("../../legacy/google-calendar.js").then((m) => m.getAuthUrl(userId)),
+    import(GOOGLE_CLIENT).then((m) => m.getAuthUrl(userId)),
   handleOAuthCallback: (code, state) =>
-    import("../../legacy/google-calendar.js").then((m) =>
-      m.handleOAuthCallback(code, state),
-    ),
+    import(GOOGLE_CLIENT).then((m) => m.handleOAuthCallback(code, state)),
   disconnectGoogleCalendar: (userId) =>
-    import("../../legacy/google-calendar.js").then((m) =>
-      m.disconnectGoogleCalendar(userId),
-    ),
+    import(GOOGLE_CLIENT).then((m) => m.disconnectGoogleCalendar(userId)),
   isGoogleCalendarConnected: (userId) =>
-    import("../../legacy/google-calendar.js").then((m) =>
-      m.isGoogleCalendarConnected(userId),
-    ),
+    import(GOOGLE_CLIENT).then((m) => m.isGoogleCalendarConnected(userId)),
 };
 
 export class GoogleCalendarUsecase {

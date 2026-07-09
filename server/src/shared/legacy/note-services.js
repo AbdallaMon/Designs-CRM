@@ -4,7 +4,7 @@ import {
   uploadANote,
 } from "../../infra/telegram/telegram-functions.js";
 import prisma from "../../infra/prisma/prisma.js";
-import { deleteCalendarEvent } from "../../modules/calendar/legacy/google-calendar.js";
+import { deleteCalendarEvent } from "../../infra/google/google-calendar.client.js";
 
 export async function getNotes({ idKey, id }) {
   const notes = await prisma.note.findMany({

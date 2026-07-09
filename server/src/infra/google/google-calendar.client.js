@@ -1,5 +1,18 @@
+// Google Calendar INFRA client — third-party OAuth/Calendar integration (moved verbatim from
+// modules/calendar/legacy/google-calendar.js). Owns the module-level `oauth2Client` singleton
+// and the Google env config. BEHAVIOR-FROZEN: logic is identical to the legacy service; only
+// the location + the prisma import path changed.
+//
+// NOTE (future repo target): the DB writes inside handleOAuthCallback / disconnectGoogleCalendar
+// / createCalendarEvent / updateCalendarEvent (user.update, meetingReminder.update) remain inline
+// here to keep this a strictly behavior-preserving MOVE. They are the natural candidates for a
+// future googleCalendar repo once behavior parity can be re-verified; do NOT split them now.
+//
+// resyncMeetingRemindersWithGoogleCalendar stays here (not in the google usecase) because
+// isGoogleCalendarConnected calls it as part of the connection check; keeping the call chain
+// verbatim preserves the exact side-effect ordering the google usecase's `connect` relies on.
 import { google } from "googleapis";
-import prisma from "../../../infra/prisma/prisma.js";
+import prisma from "../prisma/prisma.js";
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
