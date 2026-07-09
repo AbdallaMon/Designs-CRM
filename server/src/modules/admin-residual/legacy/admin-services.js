@@ -6,7 +6,7 @@ import pkg from "lodash";
 import dayjs from "dayjs";
 const { groupBy } = pkg;
 import XLSX from "xlsx";
-import { groupProjects } from "../../../shared/legacy/project-services.js";
+import { groupProjects } from "../../projects/project/project.dto.js";
 import {
   addUsersToATeleChannelUsingQueue,
   createChannelAndAddUsers,

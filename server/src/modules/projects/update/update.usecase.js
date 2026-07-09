@@ -12,15 +12,129 @@ import { projectsMessagesCodes as C } from "@dms/shared";
 import { updateRepository } from "./update.repo.js";
 import { projectUsecase } from "../shared/project-scope.js";
 
+// ── update flows ported 1:1 from the legacy shared/legacy/update-services.js. Prisma I/O
+// is delegated to updateRepository; the post-write re-fetch (getClientLeadUpdate) and
+// updateALead are cross-cluster helpers that STAY in shared-utility-services and are
+// invoked here via lazy imports (the target is not one of the projects-owned files).
+async function getUpdates(searchParams, isAdmin) {
+  const updatesWhere = {
+    clientLeadId: Number(searchParams.clientLeadId),
+  };
+  const sharedUpdatesWhere = {};
+  if (!isAdmin) {
+    updatesWhere.OR = [
+      {
+        department: searchParams.type,
+        sharedSettings: {
+          some: {
+            type: searchParams.type,
+          },
+        },
+      },
+      {
+        sharedSettings: {
+          some: {
+            type: searchParams.type,
+          },
+        },
+      },
+    ];
+  }
+
+  if (searchParams.department && isAdmin) {
+    updatesWhere.department = searchParams.department;
+  }
+
+  return updateRepository.findUpdates({ where: updatesWhere, sharedUpdatesWhere });
+}
+
+async function createAnUpdate({ data, searchParams, userId }) {
+  const createData = {
+    title: data.title,
+    createdById: Number(userId),
+    clientLeadId: Number(data.clientLeadId),
+  };
+  if (searchParams.department) {
+    createData.department = searchParams.department;
+  }
+
+  if (data.description) {
+    createData.description = data.description;
+  }
+  const newUpdate = await updateRepository.createClientLeadUpdate({ data: createData });
+  if (data.sharedDepartments) {
+    data.sharedDepartments.forEach(async (d) => {
+      await updateRepository.createSharedUpdate({
+        data: {
+          type: d,
+          updateId: newUpdate.id,
+          excludeFromSearch: d === searchParams.department,
+        },
+      });
+    });
+  }
+  await updateRepository.touchClientLead({ id: data.clientLeadId });
+  const { getClientLeadUpdate } = await import("../../../shared/legacy/shared-utility-services.js");
+  return await getClientLeadUpdate(newUpdate.id);
+}
+
+async function authorizeDepartmentToUpdate({ type, updateId }) {
+  await updateRepository.createSharedUpdate({
+    data: {
+      type: type,
+      updateId: Number(updateId),
+    },
+  });
+  const { getClientLeadUpdate } = await import("../../../shared/legacy/shared-utility-services.js");
+  return await getClientLeadUpdate(updateId);
+}
+
+async function unAuthorizeDepartmentToUpdate({ updateId, type }) {
+  await updateRepository.deleteSharedUpdates({ updateId, type });
+  const { getClientLeadUpdate } = await import("../../../shared/legacy/shared-utility-services.js");
+  return await getClientLeadUpdate(updateId);
+}
+
+async function toggleArchieveAnUpdate({ updateId, isArchived }) {
+  await updateRepository.updateClientLeadUpdate({ id: updateId, data: { isArchived } });
+
+  const { getClientLeadUpdate } = await import("../../../shared/legacy/shared-utility-services.js");
+  return await getClientLeadUpdate(updateId);
+}
+
+async function toggleArchieveASharedUpdate({ sharedUpdateId, isArchived }) {
+  const shared = await updateRepository.updateSharedUpdate({
+    id: sharedUpdateId,
+    data: { isArchived },
+  });
+  const { getClientLeadUpdate } = await import("../../../shared/legacy/shared-utility-services.js");
+  return await getClientLeadUpdate(shared.updateId);
+}
+
+async function markAnUpdateAsDone({ updateId, clientLeadId, isArchived }) {
+  await updateRepository.updateClientLeadUpdate({
+    id: updateId,
+    data: {
+      updatedAt: new Date(),
+      isArchived,
+      isDone: true,
+    },
+  });
+  const { updateALead, getClientLeadUpdate } = await import(
+    "../../../shared/legacy/shared-utility-services.js"
+  );
+  await updateALead(Number(clientLeadId));
+  return await getClientLeadUpdate(updateId);
+}
+
 const legacyDefaults = {
-  getUpdates: (...a) => import("../../../shared/legacy/index.js").then((m) => m.getUpdates(...a)),
-  getSharedSettings: (a) => import("../../../shared/legacy/index.js").then((m) => m.getSharedSettings(a)),
-  createAnUpdate: (a) => import("../../../shared/legacy/index.js").then((m) => m.createAnUpdate(a)),
-  authorizeDepartmentToUpdate: (a) => import("../../../shared/legacy/index.js").then((m) => m.authorizeDepartmentToUpdate(a)),
-  unAuthorizeDepartmentToUpdate: (a) => import("../../../shared/legacy/index.js").then((m) => m.unAuthorizeDepartmentToUpdate(a)),
-  toggleArchieveAnUpdate: (a) => import("../../../shared/legacy/index.js").then((m) => m.toggleArchieveAnUpdate(a)),
-  toggleArchieveASharedUpdate: (a) => import("../../../shared/legacy/index.js").then((m) => m.toggleArchieveASharedUpdate(a)),
-  markAnUpdateAsDone: (a) => import("../../../shared/legacy/index.js").then((m) => m.markAnUpdateAsDone(a)),
+  getUpdates,
+  createAnUpdate,
+  authorizeDepartmentToUpdate,
+  unAuthorizeDepartmentToUpdate,
+  toggleArchieveAnUpdate,
+  toggleArchieveASharedUpdate,
+  markAnUpdateAsDone,
 };
 
 export class UpdateUsecase {

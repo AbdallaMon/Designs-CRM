@@ -1,7 +1,7 @@
 import prisma from "../../../infra/prisma/prisma.js";
 import { v4 as uuidv4 } from "uuid";
 import { buildAndUploadContractPdf } from "./generate-contract-pdf.js";
-import { assignProjectToUser } from "../../../shared/legacy/project-services.js";
+import { assignProjectToUser } from "../../projects/project/project.usecase.js";
 export const stageLevelStartProject = {
   LEVEL_3: "2D_Study",
   LEVEL_4: "3D_Designer",

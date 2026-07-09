@@ -104,7 +104,7 @@ export async function addNote({
     await updateALead(update.clientLeadId);
   }
   if (actualNote.taskId) {
-    const { updateTask } = await import("./task-services.js");
+    const { updateTask } = await import("../../modules/projects/task/task.usecase.js");
     await updateTask({ data: {}, taskId: actualNote.taskId, isAdmin, userId });
   }
 

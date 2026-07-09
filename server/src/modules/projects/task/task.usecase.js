@@ -10,12 +10,131 @@ import { AppError } from "../../../shared/errors/AppError.js";
 import { projectsMessagesCodes as C } from "@dms/shared";
 import { taskRepository } from "./task.repo.js";
 import { projectUsecase } from "../shared/project-scope.js";
+import {
+  updateTaskNotification,
+  newTaskCreatedNotification,
+} from "../../../infra/notifications/legacy-notification.js";
+
+// ── task flows ported 1:1 from the legacy shared/legacy/task-services.js. Prisma I/O is
+// delegated to taskRepository; the notification fan-out stays here. The note helpers
+// (getNotes/addNote/deleteAModel) live in the cross-cluster note-services and are still
+// invoked via lazy barrel imports below.
+async function createNewTask({ data, isAdmin = false, staffId }) {
+  const { userId, projectId, ...rest } = data;
+
+  const createdTask = await taskRepository.createTask({ data: { ...rest } });
+  const update = {};
+  let project = null;
+  if (projectId) {
+    update.projectId = Number(projectId);
+    project = await taskRepository.findProjectAssignments({ id: projectId });
+  }
+  if (userId) {
+    update.userId = Number(userId);
+  }
+  if (Object.keys(update).length > 0) {
+    await taskRepository.updateTaskById({ id: createdTask.id, data: update });
+  }
+
+  const newTask = await taskRepository.findTaskById({ id: createdTask.id });
+
+  await newTaskCreatedNotification(
+    newTask.id,
+    staffId && !isAdmin ? staffId : null,
+    projectId,
+    newTask.title,
+    isAdmin,
+    newTask.type === "MODIFICATION"
+  );
+  if (project && project.assignments && isAdmin) {
+    project.assignments.forEach(async (assignment) => {
+      await newTaskCreatedNotification(
+        newTask.id,
+        assignment.userId,
+        projectId,
+        newTask.title,
+        null,
+        newTask.type === "MODIFICATION"
+      );
+    });
+  }
+  return newTask;
+}
+
+export async function updateTask({ data, taskId, isAdmin = false, userId }) {
+  const oldTask = await taskRepository.findTaskStatus({ id: taskId });
+  if (!isAdmin && oldTask.status === "DONE") {
+    throw new Error("You can't change the task after DONE only admin can");
+  }
+
+  if (data.status && data.status === "DONE") {
+    data.finishedAt = new Date();
+  }
+  data.updatedAt = new Date();
+  const updatedTask = await taskRepository.updateTaskById({ id: taskId, data });
+
+  const task = await taskRepository.findTaskCore({ id: taskId });
+  let project = null;
+  if (task.projectId) {
+    project = await taskRepository.findProjectAssignments({ id: task.projectId });
+  }
+  await updateTaskNotification(
+    task.id,
+    userId && !isAdmin ? userId : null,
+    task.projectId,
+    task.title,
+    isAdmin,
+    task.type === "MODIFICATION"
+  );
+  if (project && project.assignments && isAdmin) {
+    project.assignments.forEach(async (assignment) => {
+      await updateTaskNotification(
+        task.id,
+        assignment.userId,
+        task.projectId,
+        task.title,
+        false,
+        task.type === "MODIFICATION"
+      );
+    });
+  }
+  return updatedTask;
+}
+
+async function getTaskDetails({ searchParams, id }) {
+  const taskId = Number(id);
+  if (!searchParams.userId || searchParams.userId === "null") {
+    return await taskRepository.findTaskDetailNoUser({ id: taskId });
+  }
+
+  const userId = Number(searchParams.userId);
+
+  const task = await taskRepository.findTaskDetailWithProject({ id: taskId });
+  if (!task) {
+    return null;
+  }
+
+  if (task.projectId) {
+    const projectUser = await taskRepository.findProjectAssignmentUserIds({ id: task.projectId });
+    let passed = false;
+    projectUser.assignments?.forEach((assignment) => {
+      if (assignment.userId === Number(userId)) {
+        passed = true;
+        return;
+      }
+    });
+    if (passed) {
+      return task;
+    }
+  }
+
+  throw new Error("You are not allowed to see this task");
+}
 
 const legacyDefaults = {
-  getTasksWithNotesIncluded: (a) => import("../../../shared/legacy/index.js").then((m) => m.getTasksWithNotesIncluded(a)),
-  getTaskDetails: (a) => import("../../../shared/legacy/index.js").then((m) => m.getTaskDetails(a)),
-  createNewTask: (a) => import("../../../shared/legacy/index.js").then((m) => m.createNewTask(a)),
-  updateTask: (a) => import("../../../shared/legacy/index.js").then((m) => m.updateTask(a)),
+  getTaskDetails,
+  createNewTask,
+  updateTask,
   getNotes: (a) => import("../../../shared/legacy/index.js").then((m) => m.getNotes(a)),
   addNote: (a) => import("../../../shared/legacy/index.js").then((m) => m.addNote(a)),
   deleteAModel: (a) => import("../../../shared/legacy/index.js").then((m) => m.deleteAModel(a)),

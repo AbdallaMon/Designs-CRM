@@ -16,7 +16,7 @@ const legacyDefaults = {
       m.getAdminProjects(searchParams, limit, skip),
     ),
   createGroupProjects: (a) =>
-    import("../../../shared/legacy/project-services.js").then((m) => m.createGroupProjects(a)),
+    import("../../projects/project/project.usecase.js").then((m) => m.createGroupProjects(a)),
 };
 
 export class AdminProjectsUsecase {
