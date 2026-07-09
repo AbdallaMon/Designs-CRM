@@ -15,6 +15,7 @@
 // and are invoked from the usecase via lazy imports — exactly the leads/courses pattern
 // — so behavior is preserved 1:1 without duplicating it.
 import prisma from "../../../infra/prisma/prisma.js";
+import dayjs from "dayjs";
 
 // Roles that historically saw EVERY user in the directory/management lists (legacy
 // `checkIfNotAdmin` branch — non-admins were narrowed to their own role group). Kept
@@ -300,6 +301,204 @@ class UserRepository {
       where: { id: Number(userId) },
       data,
       select: { id: true },
+    });
+  }
+
+  // ── Staff create/edit (relocated from the legacy admin-services god-file) ─────────
+  // The password is hashed in the usecase (bcrypt) and passed in already-hashed; the repo
+  // only writes. The `data`/`select` shapes are ported VERBATIM from the legacy
+  // createStaffUser/editStaffUser.
+  createStaffUser({ user, hashedPassword }) {
+    return prisma.user.create({
+      data: {
+        email: user.email,
+        password: hashedPassword,
+        role: user.role,
+        name: user.name,
+        telegramUsername: user.telegramUsername,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isActive: true,
+        lastSeenAt: true,
+        role: true,
+        subRoles: true,
+        telegramUsername: true,
+        maxLeadsCounts: true,
+        maxLeadCountPerDay: true,
+      },
+    });
+  }
+
+  editStaffUser({ user, userId, hashedPassword }) {
+    return prisma.user.update({
+      where: { id: Number(userId) },
+      data: {
+        email: user.email && user.email,
+        password: hashedPassword && hashedPassword,
+        name: user.name,
+        role: user.role && user.role,
+        telegramUsername: user.telegramUsername,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        isActive: true,
+        lastSeenAt: true,
+        role: true,
+        subRoles: true,
+        telegramUsername: true,
+      },
+    });
+  }
+
+  // ── User sub-roles (relocated verbatim from the legacy admin-services god-file) ───
+  async updateUserRoles(userId, roles) {
+    await prisma.UserSubRole.deleteMany({
+      where: {
+        userId: Number(userId),
+        subRole: { in: roles.removed },
+      },
+    });
+    let newRoles = roles.added.map((role) => ({
+      userId: Number(userId),
+      subRole: role,
+    }));
+    const superSales = newRoles.find((r) => r.subRole === "SUPER_SALES");
+    const primarySales = newRoles.find((r) => r.subRole === "PRIMARY_SALES");
+    if (superSales) {
+      await prisma.user.update({
+        where: { id: Number(userId) },
+        data: { isSuperSales: true },
+      });
+      newRoles = newRoles.filter((r) => r.subRole === "PRIMARY_SALES");
+    }
+    if (primarySales) {
+      await prisma.user.update({
+        where: { id: Number(userId) },
+        data: { isPrimary: true },
+      });
+      newRoles = newRoles.filter((r) => r.subRole === "SUPER_SALES");
+    }
+    if (superSales || primarySales) {
+      newRoles.push({
+        userId: Number(userId),
+        subRole: "STAFF",
+      });
+    }
+    return await prisma.UserSubRole.createMany({
+      data: newRoles,
+      skipDuplicates: true,
+    });
+  }
+
+  // ── Auto-assignments write (relocated verbatim from the legacy god-file) ──────────
+  async updateUserAutoAssignment(userId, assigments) {
+    await prisma.autoAssignment.deleteMany({
+      where: {
+        userId: Number(userId),
+        type: { in: assigments.removed },
+      },
+    });
+    let newAssignMents = assigments.added.map((assigment) => ({
+      userId: Number(userId),
+      type: assigment,
+    }));
+
+    return await prisma.autoAssignment.createMany({
+      data: newAssignMents,
+      skipDuplicates: true,
+    });
+  }
+
+  // ── Today's notifications for a staff member (relocated verbatim from the god-file) ─
+  async getNotificationForTodayByStaffId(userId) {
+    const where = {};
+    where.staffId = Number(userId);
+    const startOfToday = dayjs().startOf("day").toDate();
+    const endOfToday = dayjs().endOf("day").toDate();
+    where.createdAt = {
+      gte: startOfToday,
+      lte: endOfToday,
+    };
+    const notifications = await prisma.notification.findMany({
+      where: where,
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        staff: {
+          select: {
+            name: true,
+          },
+        },
+        clientLead: {
+          select: {
+            location: true,
+            projectType: true,
+            projectStage: true,
+            previousWork: true,
+            hasArchitecturalPlan: true,
+            serviceType: true,
+            decisionMaker: true,
+            bookingRequestStatus: true,
+            bookingSubmittedAt: true,
+            client: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return notifications;
+  }
+
+  // ── Monthly user-log reads (backing getUserLogs; shaping lives in user.dto.js) ────
+  findUserLastSeenById({ userId }) {
+    return prisma.user.findUnique({
+      where: { id: Number(userId) },
+      select: {
+        lastSeenAt: true,
+      },
+    });
+  }
+
+  findUserLogsInRange({ userId, startOfMonth, endOfMonth }) {
+    return prisma.userLog.findMany({
+      where: {
+        userId: Number(userId),
+        date: {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        },
+      },
+      select: {
+        id: true,
+        date: true,
+        totalMinutes: true,
+        description: true,
+      },
+      orderBy: {
+        date: "desc",
+      },
+    });
+  }
+
+  findUserLogForDay({ userId, date }) {
+    return prisma.userLog.findFirst({
+      where: {
+        userId: Number(userId),
+        date,
+      },
+      select: {
+        totalMinutes: true,
+      },
     });
   }
 

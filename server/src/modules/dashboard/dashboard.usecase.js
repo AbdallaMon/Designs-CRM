@@ -32,7 +32,7 @@ import dayjs from "dayjs";
 import {
   getCommissionByUserId,
   reverseCommissions,
-} from "../admin-residual/legacy/admin-services.js";
+} from "../admin-residual/commissions/commissions.usecase.js";
 import { dashboardRepository } from "./dashboard.repo.js";
 import {
   updateKeyFilterForUserFilter,

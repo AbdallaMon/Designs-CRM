@@ -24,9 +24,8 @@ import { leadUsecase } from "../../leads/lead/lead.usecase.js";
 import { imageSessionRepository } from "./image-session.repo.js";
 
 const SVC = "./image-session.repo.js";
-const ADMIN_SVC = "../../admin-residual/legacy/admin-services.js";
 
-// Lazy adapters to the session repo (CRUD) + the residual admin service (behavior-preserving).
+// Lazy adapters to the session repo (CRUD + the relocated generic `getModelIds` read).
 const legacyDefaults = {
   getClientImageSessions: (clientLeadId) =>
     import(SVC).then((m) => m.getClientImageSessions(clientLeadId)),
@@ -35,7 +34,7 @@ const legacyDefaults = {
   regenerateSessionToken: (sessionId) => import(SVC).then((m) => m.regenerateSessionToken(sessionId)),
   deleteInProgressSession: (sessionId, user) =>
     import(SVC).then((m) => m.deleteInProgressSession(sessionId, user)),
-  getModelIds: (a) => import(ADMIN_SVC).then((m) => m.getModelIds(a)),
+  getModelIds: (a) => import(SVC).then((m) => m.getModelIds(a)),
 };
 
 export class ImageSessionUsecase {

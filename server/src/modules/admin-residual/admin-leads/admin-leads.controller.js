@@ -26,8 +26,22 @@ export class AdminLeadsController {
       authUser: req.auth,
     });
 
-  // ── bulk excel import (the frozen service owns the (req,res) response) ───────────
-  importLeads = (req, res) => this.usecase.importLeadsFromExcel({ req, res });
+  // ── bulk excel import (controller owns req/res; ported VERBATIM from the legacy
+  //    createLeadFromExcelData handler's responses) ─────────────────────────────────
+  importLeads = async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+      await this.usecase.importLeadsFromExcel({ file: req.file });
+      return res.status(200).json({ message: "Data processed successfully" });
+    } catch (error) {
+      console.error(error);
+      return res
+        .status(500)
+        .json({ error: "An error occurred while processing the data" });
+    }
+  };
 
   // ── admin lead field update (lead-scoped) ────────────────────────────────────────
   updateLead = async (req, res) => {

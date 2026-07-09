@@ -20,6 +20,7 @@
 // implementations so observable behavior is preserved without duplicating logic — the
 // same pattern as the migrated leads/courses modules.
 import bcrypt from "bcrypt";
+import dayjs from "dayjs";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { userMessagesCodes as C, PROFILE_KEYS, PROFILE_META } from "@dms/shared";
 import { userRepository } from "./user.repo.js";
@@ -29,22 +30,68 @@ import {
   computeUserCapabilities,
   computeProfileCapabilities,
   isAdminTier,
+  formatUserLogs,
 } from "./user.dto.js";
 
-// ── Lazy adapters to the not-yet-migrated services (behavior-preserving) ──────────
+// ── Relocated side-effecting user ops (formerly the admin-services god-file) ──────────
+// The heavy create/edit/logs operations now live in THIS module: bcrypt hashing stays in the
+// usecase layer, Prisma writes/reads go through user.repo.js, and the log shaping is in
+// user.dto.js. Behavior is ported 1:1 from the legacy admin-services implementations. The
+// pure-Prisma writes (updateUserRoles / updateUserAutoAssignment / getNotificationForToday*)
+// are wired straight to the repo in the DI seam below.
+export function createStaffUser(user) {
+  const hashedPassword = bcrypt.hashSync(user.password, BCRYPT_COST);
+  return userRepository.createStaffUser({ user, hashedPassword });
+}
+
+export function editStaffUser(user, userId) {
+  let hashedPassword = undefined;
+  if (user.password) {
+    hashedPassword = bcrypt.hashSync(user.password, BCRYPT_COST);
+  }
+  return userRepository.editStaffUser({ user, userId, hashedPassword });
+}
+
+// Monthly activity aggregation (legacy getUserLogs). Reads via the repo; shaping in the dto.
+export async function getUserLogs(userId, month, year) {
+  // Default to current month/year if not provided
+  const requestedMonth = month ? parseInt(month) - 1 : dayjs().month(); // 0-indexed month
+  const requestedYear = year ? parseInt(year) : dayjs().year();
+
+  // Get start and end dates for the requested month
+  const startOfMonth = dayjs()
+    .year(requestedYear)
+    .month(requestedMonth)
+    .startOf("month")
+    .toDate();
+  const endOfMonth = dayjs()
+    .year(requestedYear)
+    .month(requestedMonth)
+    .endOf("month")
+    .toDate();
+
+  const user = await userRepository.findUserLastSeenById({ userId });
+  const logs = await userRepository.findUserLogsInRange({
+    userId,
+    startOfMonth,
+    endOfMonth,
+  });
+
+  // Get today's hours for consistency
+  const today = dayjs().startOf("day").toDate();
+  const todayLog = await userRepository.findUserLogForDay({ userId, date: today });
+
+  return formatUserLogs({ user, logs, todayLog, requestedMonth, requestedYear });
+}
+
+// ── DI seam — defaults now point at the relocated implementations above / the repo ────
 const legacyDefaults = {
-  createStaffUser: (a) =>
-    import("../../admin-residual/legacy/admin-services.js").then((m) => m.createStaffUser(a)),
-  editStaffUser: (a, b) =>
-    import("../../admin-residual/legacy/admin-services.js").then((m) => m.editStaffUser(a, b)),
-  updateUserRoles: (a, b) =>
-    import("../../admin-residual/legacy/admin-services.js").then((m) => m.updateUserRoles(a, b)),
-  updateUserAutoAssignment: (a, b) =>
-    import("../../admin-residual/legacy/admin-services.js").then((m) => m.updateUserAutoAssignment(a, b)),
-  getUserLogs: (a, b, c) =>
-    import("../../admin-residual/legacy/admin-services.js").then((m) => m.getUserLogs(a, b, c)),
-  getNotificationForTodayByStaffId: (a) =>
-    import("../../admin-residual/legacy/admin-services.js").then((m) => m.getNotificationForTodayByStaffId(a)),
+  createStaffUser: (a) => createStaffUser(a),
+  editStaffUser: (a, b) => editStaffUser(a, b),
+  updateUserRoles: (a, b) => userRepository.updateUserRoles(a, b),
+  updateUserAutoAssignment: (a, b) => userRepository.updateUserAutoAssignment(a, b),
+  getUserLogs: (a, b, c) => getUserLogs(a, b, c),
+  getNotificationForTodayByStaffId: (a) => userRepository.getNotificationForTodayByStaffId(a),
 };
 
 // Non-admin self-profile editable fields. The legacy update was an unguarded

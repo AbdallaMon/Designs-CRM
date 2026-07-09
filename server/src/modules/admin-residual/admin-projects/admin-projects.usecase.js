@@ -8,13 +8,43 @@
 //     surface → migrated here as an admin-specific aggregation.
 //   - `POST /admin/projects/create-group` (`createGroupProjects`) has no equivalent in the
 //     projects module either. Migrated here.
-// Both wrap the FROZEN `services/main/shared/projectServices.js` + admin service via lazy
-// adapters (heavy Prisma + project-group creation) — no duplication.
+// The admin projects aggregation is decomposed into admin-projects.repo.js (Prisma) +
+// admin-projects.dto.js (groupProjects shaping); the where-build stays here (module fn
+// `getAdminProjects`, verbatim). createGroupProjects still wraps the FROZEN projects usecase.
+import { adminProjectsRepository } from "./admin-projects.repo.js";
+import { groupAdminProjects } from "./admin-projects.dto.js";
+
+// Ported VERBATIM from the legacy `getAdminProjects` (where-build + read + shape + count).
+export async function getAdminProjects(searchParams, limit, skip) {
+  const where = {
+    projects: {
+      some: {}, // Means at least one related project exists
+    },
+  };
+  const filters = JSON.parse(searchParams.filters);
+  if (filters && filters !== "undefined" && filters.id) {
+    where.id = Number(filters.id);
+  }
+  if (searchParams.id) {
+    where.id = Number(searchParams.id);
+  }
+  where.status = {
+    notIn: ["ARCHIVED", "NEW"],
+  };
+  const clientLeads = await adminProjectsRepository.findAdminProjects({
+    where,
+    skip,
+    take: limit,
+  });
+  const data = groupAdminProjects(clientLeads);
+
+  const total = await adminProjectsRepository.countAdminProjects({ where });
+  return { data, total };
+}
+
 const legacyDefaults = {
   getAdminProjects: (searchParams, limit, skip) =>
-    import("../legacy/admin-services.js").then((m) =>
-      m.getAdminProjects(searchParams, limit, skip),
-    ),
+    getAdminProjects(searchParams, limit, skip),
   createGroupProjects: (a) =>
     import("../../projects/project/project.usecase.js").then((m) => m.createGroupProjects(a)),
 };

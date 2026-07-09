@@ -932,8 +932,8 @@ const legacyDefaults = {
   remindUserToCompleteRegister: paymentRemindUserToCompleteRegister,
   // price-offer DATA now lives in the lead repo
   editPriceOfferStatus: (...a) => leadRepository.editPriceOfferStatus(...a),
-  // still in admin-residual's OWN legacy folder (separate later task)
-  updateLeadField: (a) => import("../../admin-residual/legacy/admin-services.js").then((m) => m.updateLeadField(a)),
+  // admin-residual's lead field-update repo (relocated from the former god-file)
+  updateLeadField: (a) => import("../../admin-residual/admin-leads/admin-leads.repo.js").then((m) => m.adminLeadsRepository.updateLeadField(a)),
   // staff sub-resources — now the repo-backed module functions above
   createCallReminder,
   createMeetingReminder,

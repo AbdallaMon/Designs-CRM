@@ -6,8 +6,8 @@
 //
 // The /users + /users/:userId/last-seen endpoints are the ACCOUNTANT-scoped helper lists the
 // legacy accountant router exposed for salaries; getUsersWithSalaries is repo-backed, and
-// getUserLogs is still lazily imported from admin-residual (a separate frozen service, out of
-// scope for this reorg).
+// getUserLogs is lazily imported from the users/user usecase (where it was relocated from the
+// former admin-services god-file).
 //
 // Known legacy domain throws (editBaseSalary "Please fill all fiels"; generateMonthlySalary
 // "Fill all the fileds please" / "Monthly salary ... already exists for this user") are kept
@@ -133,7 +133,7 @@ const legacyDefaults = {
   generateMonthlySalary: (a) => generateMonthlySalary(a),
   getUsersWithSalaries: (...a) => salaryRepository.getUsersWithSalaries(...a),
   getUserLogs: (...a) =>
-    import("../../admin-residual/legacy/admin-services.js").then((m) => m.getUserLogs(...a)),
+    import("../../users/user/user.usecase.js").then((m) => m.getUserLogs(...a)),
 };
 
 export class SalaryUsecase {

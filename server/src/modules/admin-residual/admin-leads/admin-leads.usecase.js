@@ -16,9 +16,14 @@
 //   3. The admin route emitted English/Arabic prose as the success message; the v2
 //      envelope carries a language-neutral CODE instead (sanctioned contract change).
 import prisma from "../../../infra/prisma/prisma.js";
+import XLSX from "xlsx";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { authMessagesCodes } from "@dms/shared";
 import { adminLeadsRepository } from "./admin-leads.repo.js";
+import {
+  addUsersToATeleChannelUsingQueue,
+  createChannelAndAddUsers,
+} from "../../../infra/telegram/telegram-functions.js";
 
 // FIX 3 (mass-assignment hardening): keys that must NEVER be written through the generic
 // single-field update path (ownership, workflow status, money/system-managed). The frozen
@@ -64,24 +69,59 @@ const consultationLeadPrices = {
   CITY_VISIT: "1800",
 };
 
+// Telegram operations (relocated from the god-file). The Prisma read goes through the repo;
+// the telegram infra calls stay here in the usecase layer. Behavior ported 1:1.
+export async function createNewTelegramLink({ leadId }) {
+  const newChannel = await createChannelAndAddUsers({
+    clientLeadId: Number(leadId),
+  });
+  return newChannel.inviteLink;
+}
+
+export async function addAllProjectUsersToChannel({ clientLeadId }) {
+  clientLeadId = Number(clientLeadId);
+  const clientLead = await adminLeadsRepository.findLeadForTelegram({ clientLeadId });
+
+  if (!clientLead) {
+    console.warn("? ClientLead not found");
+    return;
+  }
+
+  const usersSet = new Map();
+
+  if (clientLead.assignedTo?.telegramUsername) {
+    usersSet.set(clientLead.assignedTo.telegramUsername, clientLead.assignedTo);
+  }
+
+  for (const project of clientLead.projects) {
+    for (const assignment of project.assignments) {
+      const user = assignment.user;
+      if (user?.telegramUsername) {
+        usersSet.set(user.telegramUsername, user);
+      }
+    }
+  }
+
+  if (!clientLead.telegramChannel) {
+    throw new Error("?? No Telegram channel linked to this lead");
+  }
+
+  return await addUsersToATeleChannelUsingQueue({
+    clientLeadId,
+    usersList: Array.from(usersSet.values()),
+  });
+}
+
 const legacyDefaults = {
-  // bulk excel import — owns its own (req,res) response stream
-  createLeadFromExcelData: (req, res) =>
-    import("../legacy/admin-services.js").then((m) => m.createLeadFromExcelData(req, res)),
   // admin lead field update (also wrapped by the leads module — reused here)
-  updateLeadField: (a) =>
-    import("../legacy/admin-services.js").then((m) => m.updateLeadField(a)),
+  updateLeadField: (a) => adminLeadsRepository.updateLeadField(a),
   // admin client field update
-  updateClientField: (a) =>
-    import("../legacy/admin-services.js").then((m) => m.updateClientField(a)),
+  updateClientField: (a) => adminLeadsRepository.updateClientField(a),
   // admin delete lead (FK-aware transactional delete)
-  deleteALead: (leadId) =>
-    import("../legacy/admin-services.js").then((m) => m.deleteALead(leadId)),
+  deleteALead: (leadId) => adminLeadsRepository.deleteALead(leadId),
   // telegram — create channel + queue project users (lead-scoped)
-  createNewTelegramLink: (a) =>
-    import("../legacy/admin-services.js").then((m) => m.createNewTelegramLink(a)),
-  addAllProjectUsersToChannel: (a) =>
-    import("../legacy/admin-services.js").then((m) => m.addAllProjectUsersToChannel(a)),
+  createNewTelegramLink: (a) => createNewTelegramLink(a),
+  addAllProjectUsersToChannel: (a) => addAllProjectUsersToChannel(a),
   // new-lead side effects (the CORRECT fns the public handler uses — deviation #2)
   generateCodeForNewLead: (clientId) =>
     import("../../leads/lead/lead.repo.js").then((m) => m.leadRepository.generateCodeForNewLead(clientId)),
@@ -97,9 +137,91 @@ export class AdminLeadsUsecase {
     this.legacy = { ...legacyDefaults, ...legacy };
   }
 
-  // ── bulk excel import (the frozen service owns the response) ─────────────────────
-  importLeadsFromExcel({ req, res }) {
-    return this.legacy.createLeadFromExcelData(req, res);
+  // ── bulk excel import ─────────────────────────────────────────────────────────────
+  // Orchestration ported VERBATIM from the legacy createLeadFromExcelData (XLSX parse +
+  // per-row client/lead/note writes through the repo). The controller owns req/res (the
+  // no-file 400, the success 200, and the 500 envelope).
+  async importLeadsFromExcel({ file }) {
+    const workbook = XLSX.read(file.buffer, { type: "buffer" });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const fileData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+    // Header row
+    const headers = fileData[0];
+    // Rows of data (excluding the header)
+    const rows = fileData.slice(1);
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+
+      // Extract client fields
+      const phone = row[0] ? String(row[0]) : "unknown";
+      const name = row[2] || "unknown";
+
+      // Generate fake email based on last client ID
+      const lastClient = await this.repo.findLastClient();
+      const newClientId = lastClient ? lastClient.id + 1 : 1;
+      const email = `fakeEmail${newClientId}@example.com`;
+
+      // Create client
+      const client = await this.repo.createClient({
+        data: {
+          phone,
+          name,
+          email,
+        },
+      });
+      const price = row[4]?.toString() || "0";
+      const priceWithoutDiscount = !isNaN(parseFloat(row[4]))
+        ? parseFloat(row[4])
+        : 0;
+      const averagePrice = !isNaN(parseFloat(row[4])) ? parseFloat(row[4]) : 0;
+      const modifiedDate = row[9]
+        ? XLSX.SSF.format("yyyy-mm-dd", row[9])
+        : new Date().toISOString();
+
+      const clientLead = await this.repo.createClientLead({
+        data: {
+          clientId: client.id,
+          selectedCategory: "OLDLEAD",
+          type: "NONE",
+          description: row[3] || null,
+          price,
+          priceWithOutDiscount: priceWithoutDiscount,
+          averagePrice,
+          createdAt: new Date(modifiedDate),
+        },
+      });
+
+      // Extract notes
+      const notes = [];
+      if (row[5] && row[5].toString().trim()) {
+        notes.push({
+          content: `${headers[5]}: ${row[5]}`,
+        });
+      }
+      if (row[6] && row[6].toString().trim()) {
+        notes.push({
+          content: `${headers[6]}: ${row[6]}`,
+        });
+      }
+      if (row[8] && row[8].toString().trim()) {
+        notes.push({
+          content: `${headers[8]}: ${row[8]}`,
+        });
+      }
+
+      for (const note of notes) {
+        await this.repo.createNote({
+          data: {
+            content: note.content,
+            clientLeadId: clientLead.id,
+            userId: 1, // Default user ID (adjust as needed)
+          },
+        });
+      }
+    }
   }
 
   // FIX 1 (BLOCKING): the destructive lead DELETE is base-role-ADMIN ONLY — exactly as the

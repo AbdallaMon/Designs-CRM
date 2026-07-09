@@ -6,6 +6,7 @@
 // strips sensitive fields. The admin management lists already used narrow Prisma
 // `select`s (no password), so they are passed through unchanged.
 import { computeCapabilities, hasPermission, PERMISSIONS } from "@dms/shared";
+import dayjs from "dayjs";
 
 const P = PERMISSIONS.USER;
 
@@ -81,6 +82,62 @@ export function withListCapabilities(items, authUser) {
     ...record,
     capabilities: computeUserCapabilities(record, authUser),
   }));
+}
+
+/**
+ * Shape the monthly user-logs payload from the raw repo reads. Pure: no Prisma, no side
+ * effects. The grouping / totals / final object are ported VERBATIM from the legacy
+ * `getUserLogs` (only the Prisma reads were extracted into user.repo.js).
+ */
+export function formatUserLogs({ user, logs, todayLog, requestedMonth, requestedYear }) {
+  // Calculate total month hours
+  const totalMonthMinutes = logs.reduce(
+    (total, log) => total + log.totalMinutes,
+    0,
+  );
+  const totalMonthHours = (totalMonthMinutes / 60).toFixed(2);
+
+  // Group logs by date
+  const logsByDate = {};
+  logs.forEach((log) => {
+    const dateStr = dayjs(log.date).format("YYYY-MM-DD");
+    if (!logsByDate[dateStr]) {
+      logsByDate[dateStr] = {
+        date: dateStr,
+        formattedDate: dayjs(log.date).format("MMM DD, YYYY"),
+        totalMinutes: 0,
+        entries: [],
+      };
+    }
+
+    logsByDate[dateStr].totalMinutes += log.totalMinutes;
+    logsByDate[dateStr].entries.push({
+      id: log.id,
+      time: log.date,
+      formattedTime: dayjs(log.date).format("h:mm A"),
+      description: log.description || "Activity logged",
+      totalHours: log.totalMinutes / 60,
+    });
+  });
+
+  // Convert to array and calculate hours
+  const formattedLogs = Object.values(logsByDate).map((day) => ({
+    ...day,
+    totalHours: (day.totalMinutes / 60).toFixed(2),
+  }));
+
+  const todayHours = todayLog
+    ? (todayLog.totalMinutes / 60).toFixed(2)
+    : "0.00";
+
+  return {
+    lastSeenAt: user?.lastSeenAt || null,
+    logs: formattedLogs,
+    totalMonthHours,
+    totalHours: todayHours,
+    month: requestedMonth + 1, // Convert back to 1-indexed for display
+    year: requestedYear,
+  };
 }
 
 /** Capabilities for a single profile record (self OR admin viewing). */

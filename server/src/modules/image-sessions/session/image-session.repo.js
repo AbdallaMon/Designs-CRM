@@ -346,3 +346,72 @@ export async function changeSessionStatus({ token, id, sessionStatus, extra }) {
     },
   });
 }
+
+// Generic global reference-data pick-list read (legacy `getModelIds`). Moved VERBATIM from
+// the legacy `admin-services.js` god-file. The usecase validates `model` against the
+// allow-list and guards the JSON.parse BEFORE calling this (mass-read hardening).
+export async function getModelIds({ searchParams, model }) {
+  let queryWhere =
+    searchParams?.where && searchParams.where !== "undefined"
+      ? JSON.parse(searchParams.where)
+      : {};
+  const where = {};
+
+  const select = {};
+  const include = {};
+  if (searchParams.select) {
+    const selectFields = searchParams.select.split(",");
+    selectFields.forEach((field) => {
+      if (!select.select) {
+        select.select = {};
+      }
+      select.select = {
+        ...select.select,
+        [field]: true,
+      };
+    });
+  }
+  if (searchParams.isLanguage && searchParams.isLanguage === "true") {
+    if (!select.select) {
+      select.select = {};
+    }
+    select.select.title = {
+      select: {
+        id: true,
+        text: true,
+        language: {
+          select: {
+            code: true,
+          },
+        },
+      },
+    };
+    if (!select.select.id) {
+      select.select.id = true;
+    }
+  }
+  if (searchParams.include) {
+    const includeFields = searchParams.include.split(",");
+    includeFields.forEach((field) => {
+      if (!include.include) {
+        include.include = {};
+      }
+      include.include = {
+        ...select.include,
+        [field]: true,
+      };
+    });
+  }
+  if (searchParams) {
+    Object.keys(queryWhere).forEach((key) => {
+      where[key] = queryWhere[key];
+    });
+  }
+  return await prisma[model].findMany({
+    where: {
+      ...where,
+    },
+    ...(select && select),
+    ...(include && include),
+  });
+}

@@ -11,10 +11,10 @@
 // so the ADMIN code is the gate; there is no per-lead owner to scope.
 import { AppError } from "../../../shared/errors/AppError.js";
 import { ADMIN_ARCHIVE_MODEL_ALLOWLIST, adminResidualMessagesCodes as C } from "@dms/shared";
+import { modelArchiveRepository } from "./model-archive.repo.js";
 
 const legacyDefaults = {
-  toggleArchiveAModel: (a) =>
-    import("../legacy/admin-services.js").then((m) => m.toggleArchiveAModel(a)),
+  toggleArchiveAModel: (a) => modelArchiveRepository.toggleArchiveAModel(a),
 };
 
 export class ModelArchiveUsecase {
