@@ -2,58 +2,30 @@
 import React, { useState } from "react";
 import { useDrag } from "react-dnd";
 import {
-  Avatar,
   Box,
   Button,
-  Card,
   CardContent,
-  CardHeader,
-  Chip,
   Divider,
   Grid,
   IconButton,
   Menu,
   MenuItem,
-  Stack,
   Tooltip,
   Typography,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  Badge,
 } from "@mui/material";
 import {
-  AiOutlineDollar as MoneyIcon,
   AiOutlineEllipsis as MoreVertIcon,
   AiOutlineEye as PreviewIcon,
   AiOutlineFileText as NoteIcon,
-  AiOutlinePhone as PhoneIcon,
   AiOutlinePlus as AddIcon,
   AiOutlineSwap as ChangeStatusIcon,
-  AiOutlineUser as UserIcon,
 } from "react-icons/ai";
 
-import { styled } from "@mui/material/styles";
-import dayjs from "dayjs";
-import {
-  groupColors,
-  priorityColors,
-  statusColors,
-  taskStatusColors,
-} from "@/app/helpers/constants.js";
+import { statusColors } from "@/app/helpers/constants.js";
 import { NewNoteDialog } from "@/app/UiComponents/DataViewer/leads/dialogs/NoteDialog";
 import { checkIfAdmin } from "@/app/helpers/functions/utility.js";
 import { FaEye } from "react-icons/fa";
 import { useAuth } from "@/app/providers/AuthProvider";
-import {
-  MdAdd,
-  MdAssignmentInd,
-  MdDelete,
-  MdTask,
-  MdVisibility,
-} from "react-icons/md";
-import TaskDetails from "@/app/UiComponents/DataViewer/tasks/TaskDetails";
-import colors from "@/app/helpers/colors";
 import FloatingIdBadge from "@/app/UiComponents/DataViewer/leads/core/IdBadge";
 import CountdownTimer from "@/app/UiComponents/DataViewer/leads/widgets/CountdownTimer";
 import { NewCallDialog } from "@/app/UiComponents/DataViewer/leads/dialogs/CallsDialog";
@@ -62,331 +34,20 @@ import TelegramLink from "../../work-stages/utility/TelegramLink";
 import PreviewWorkStage from "../../work-stages/PreviewWorkStage";
 import { KanbanUpdateSection } from "../../leads/leadUpdates/KanbanUpdateSection";
 import { ProjectTasksDialog } from "../../work-stages/utility/ProjectTasksDialog";
-import { AssignDesignerModal } from "../../work-stages/projects/AssignDesignerModal";
-import { StyledDesignerCard } from "../../work-stages/projects/ProjectDetails";
+import {
+  GroupTitleChip,
+  PriorityBadge,
+  StyledCard,
+  TasksContainer,
+} from "./workStageKanbanStyles.js";
+import TaskItem from "./TaskItem.jsx";
+import TaskPreviewModal from "./TaskPreviewModal.jsx";
+import DesignersPreviewModal from "./DesignersPreviewModal.jsx";
+
+export { PriorityBadge } from "./workStageKanbanStyles.js";
 
 const ItemTypes = {
   CARD: "card",
-};
-
-const StyledCard = styled(Card)(({ theme, status, groupId }) => {
-  const groupColor = groupColors[groupId] || groupColors[0];
-
-  return {
-    margin: theme.spacing(1),
-    padding: 1,
-    paddingLeft: theme.spacing(0.15),
-    borderLeft: `5px solid ${statusColors[status] || theme.palette.primary.main}`,
-    borderTop: `3px solid ${groupColor.border}`,
-    backgroundColor: groupColor.bg,
-    transition: "all 0.3s",
-    cursor: "grab",
-    position: "relative",
-    overflow: "unset",
-    paddingTop: "15px",
-    "& .MuiCardContent-root": {
-      paddingLeft: "10px",
-      paddingRight: "4px",
-      overflow: "hidden",
-    },
-    "&:hover": {
-      transform: "translateY(-2px)",
-      boxShadow: theme.shadows[4],
-    },
-    "&:active": {
-      cursor: "grabbing",
-    },
-  };
-});
-
-export const PriorityBadge = styled(Chip)(
-  ({ theme, priority, task = false, extra }) => ({
-    position: "absolute",
-    top: 8,
-    right: task ? 32 : 8,
-    zIndex: 2,
-    fontSize: "0.7rem",
-    height: "22px",
-    ...(extra && extra),
-    backgroundColor: priorityColors[priority]?.bg || priorityColors.MEDIUM.bg,
-    color: priorityColors[priority]?.color || priorityColors.MEDIUM.color,
-    border: `1px solid ${
-      priorityColors[priority]?.border || priorityColors.MEDIUM.border
-    }`,
-    fontWeight: 600,
-    "& .MuiChip-label": {
-      padding: "0 6px",
-    },
-  })
-);
-
-const GroupTitleChip = styled(Chip)(({ theme, groupId, extra }) => {
-  const groupColor = groupColors[groupId] || groupColors[0];
-
-  return {
-    position: "absolute",
-    top: 8,
-    left: 8,
-    zIndex: 2,
-    fontSize: "0.65rem",
-    height: "20px",
-    backgroundColor: groupColor.border,
-    color: "white",
-    fontWeight: 600,
-    ...(extra && extra),
-    "& .MuiChip-label": {
-      padding: "0 4px",
-    },
-  };
-});
-
-const TaskCard = styled(Card)(({ theme }) => ({
-  marginBottom: theme.spacing(1),
-  padding: theme.spacing(1),
-  backgroundColor: "#fafafa",
-  border: "1px solid #e0e0e0",
-  borderRadius: theme.spacing(1),
-  transition: "all 0.2s",
-  position: "relative",
-
-  "&:hover": {
-    backgroundColor: "#f5f5f5",
-    borderColor: "#d0d0d0",
-  },
-}));
-
-const TaskStatusChip = styled(Chip)(({ theme, taskstatus }) => ({
-  fontSize: "0.65rem",
-  height: "18px",
-  backgroundColor: taskStatusColors[taskstatus]?.bg || taskStatusColors.TODO.bg,
-  color: taskStatusColors[taskstatus]?.color || taskStatusColors.TODO.color,
-  border: `1px solid ${
-    taskStatusColors[taskstatus]?.border || taskStatusColors.TODO.border
-  }`,
-  "& .MuiChip-label": {
-    padding: "0 4px",
-  },
-}));
-
-const TasksContainer = styled(Box)(({ theme }) => ({
-  maxHeight: "200px",
-  overflowY: "auto",
-  padding: theme.spacing(1),
-  backgroundColor: "#f9f9f9",
-  borderRadius: theme.spacing(1),
-  border: "1px solid #e0e0e0",
-}));
-
-// Task Preview Modal Component
-const TaskPreviewModal = ({ open, onClose, task, isModification = false }) => {
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogContent>
-        {open && (
-          <TaskDetails
-            id={task?.id}
-            type={isModification ? "MODIFICATION" : "PROJECT"}
-            showBackButton={false}
-          />
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const DesignersPreviewModal = ({ lead }) => {
-  const [open, setOpen] = useState(false);
-  const [assignmentId, setAssignmentId] = useState(null);
-  const [deleteDesigner, setDeleteDesigner] = useState(false);
-  const [openDesignerModal, setOpenDesignerModal] = useState(false);
-
-  return (
-    <>
-      <Button
-        mb={1}
-        startIcon={<MdAssignmentInd size={22} color={colors.primary} />}
-        variant="outlined"
-        onClick={() => setOpenDesignerModal(true)}
-      >
-        View assigned designers
-      </Button>
-      <Dialog
-        open={openDesignerModal}
-        onClose={() => setOpenDesignerModal(false)}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogContent>
-          <Grid size={12} sx={{ mt: 3 }}>
-            <StyledCard sx={{ p: 0, overflow: "visible" }}>
-              <CardHeader
-                title={
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <MdAssignmentInd size={22} color={colors.primary} />
-                    <Typography variant="h6" sx={{ ml: 1.5, fontWeight: 600 }}>
-                      Project Designers
-                    </Typography>
-                  </Box>
-                }
-                action={
-                  <Button
-                    onClick={() => {
-                      setOpen(true);
-                      setAssignmentId(null);
-                      setDeleteDesigner(false);
-                    }}
-                    variant="contained"
-                    color="primary"
-                    size="small"
-                    startIcon={<MdAdd />}
-                  >
-                    Assign New Designer
-                  </Button>
-                }
-                sx={{ px: 3, pt: 2.5, pb: 1 }}
-              />
-
-              <Divider sx={{ mx: 3 }} />
-
-              <CardContent sx={{ p: 3 }}>
-                {lead.projects[0].assignments?.length ? (
-                  lead.projects[0].assignments?.map((assignment) => (
-                    <StyledDesignerCard key={assignment.id}>
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <Avatar
-                          sx={{
-                            bgcolor: "primary.main",
-                            width: 40,
-                            height: 40,
-                          }}
-                        >
-                          {assignment.user.name.charAt(0)}
-                        </Avatar>
-                        <Box sx={{ ml: 2 }}>
-                          <Typography variant="subtitle1" fontWeight="medium">
-                            {assignment.user.name}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {assignment.user.email}
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      <Box sx={{ display: "flex", gap: 1 }}>
-                        <Tooltip title="Remove from project">
-                          <Button
-                            onClick={() => {
-                              setOpen(true);
-                              setAssignmentId(assignment.id);
-                              setDeleteDesigner(true);
-                            }}
-                            variant="outlined"
-                            color="error"
-                            size="small"
-                            startIcon={<MdDelete />}
-                          >
-                            Remove
-                          </Button>
-                        </Tooltip>
-                      </Box>
-                    </StyledDesignerCard>
-                  ))
-                ) : (
-                  <Box sx={{ p: 3, textAlign: "center" }}>
-                    <Typography variant="body1" color="text.secondary">
-                      No designers assigned to this project yet
-                    </Typography>
-                  </Box>
-                )}
-              </CardContent>
-            </StyledCard>
-          </Grid>
-        </DialogContent>
-      </Dialog>
-      {open && (
-        <AssignDesignerModal
-          open={open}
-          project={lead.projects[0]}
-          setOpen={setOpen}
-          onUpdate={() => {
-            window.location.reload();
-          }}
-          assignmentId={assignmentId}
-          deleteDesigner={deleteDesigner}
-        />
-      )}
-    </>
-  );
-};
-
-// Task Item Component
-const TaskItem = ({ task, onPreview }) => {
-  return (
-    <TaskCard>
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        mb={1}
-      >
-        <Typography variant="body2" fontWeight="medium" sx={{ flex: 1, mr: 1 }}>
-          {task.title}
-        </Typography>
-
-        <Box display="flex" gap={0.5} alignItems="center">
-          <PriorityBadge
-            priority={task.priority}
-            label={task.priority.replace("_", " ")}
-            size="small"
-            task={true}
-          />
-          <IconButton size="small" onClick={() => onPreview(task)}>
-            <MdVisibility size={14} />
-          </IconButton>
-        </Box>
-      </Box>
-
-      <Box display="flex" justifyContent="space-between" alignItems="center">
-        <TaskStatusChip
-          taskstatus={task.status}
-          label={task.status.replace("_", " ")}
-          size="small"
-        />
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            gap: 0.3,
-          }}
-        >
-          <Typography variant="caption" color="text.secondary">
-            Updated at:
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            {dayjs(task.updatedAt).format("MMM D")}
-          </Typography>
-        </Box>
-      </Box>
-
-      {task.description && (
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-            mt: 0.5,
-          }}
-        >
-          {task.description.length > 50
-            ? `${task.description.slice(0, 50)}...`
-            : task.description}
-        </Typography>
-      )}
-    </TaskCard>
-  );
 };
 
 const WorkStageKanbanCard = ({
