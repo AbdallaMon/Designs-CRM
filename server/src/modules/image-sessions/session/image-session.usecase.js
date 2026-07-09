@@ -23,10 +23,10 @@ import { imageSessionsMessagesCodes as M, UTILITY_MODEL_ALLOWLIST } from "@dms/s
 import { leadUsecase } from "../../leads/lead/lead.usecase.js";
 import { imageSessionRepository } from "./image-session.repo.js";
 
-const SVC = "../legacy/image-session-services.js";
+const SVC = "./image-session.repo.js";
 const ADMIN_SVC = "../../admin-residual/legacy/admin-services.js";
 
-// Lazy adapters to the not-yet-migrated legacy services (behavior-preserving).
+// Lazy adapters to the session repo (CRUD) + the residual admin service (behavior-preserving).
 const legacyDefaults = {
   getClientImageSessions: (clientLeadId) =>
     import(SVC).then((m) => m.getClientImageSessions(clientLeadId)),

@@ -4,10 +4,13 @@
 // usecase can run the leads-module scope checker BEFORE touching the heavy legacy
 // image-session service. (The `:clientLeadId` routes are scoped directly — no lookup.)
 //
-// All the heavy session CRUD logic (create/edit/regenerate/delete + reads) stays in the
-// legacy `imageSessionSevices.js` service and is invoked from the usecase via lazy adapters
-// — it is NOT duplicated here. The read below is a minimal id-resolution lookup only.
+// The scope-resolution lookup below is a minimal id-resolution helper used by the usecase
+// via constructor injection. The heavy session lifecycle CRUD (create/edit/regenerate/
+// delete + token reads + status change) lives in the named exports below, moved verbatim
+// from the legacy `image-session-services.js` service and invoked from the usecase via lazy
+// adapters — behavior-preserving.
 import prisma from "../../../infra/prisma/prisma.js";
+import { v4 as uuidv4 } from "uuid";
 
 class ImageSessionRepository {
   // Resolve a ClientImageSession → its parent clientLeadId (the scope key). Returns null if
@@ -22,3 +25,324 @@ class ImageSessionRepository {
 }
 
 export const imageSessionRepository = new ImageSessionRepository();
+
+// ── session lifecycle CRUD (moved verbatim from legacy `image-session-services.js`) ────────
+
+export async function getClientImageSessions(clientLeadId) {
+  const sessions = await prisma.clientImageSession.findMany({
+    where: { clientLeadId: Number(clientLeadId) },
+    include: {
+      note: true,
+
+      createdBy: true,
+      selectedSpaces: {
+        select: {
+          space: {
+            select: {
+              id: true,
+              title: {
+                select: {
+                  text: true,
+                  id: true,
+                  languageId: true,
+                  language: {
+                    select: {
+                      code: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      selectedImages: {
+        include: {
+          designImage: true,
+          note: true,
+        },
+      },
+      materials: {
+        select: {
+          material: {
+            select: {
+              id: true,
+              title: {
+                select: {
+                  text: true,
+                  id: true,
+                  languageId: true,
+                  language: {
+                    select: {
+                      code: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      colorPattern: {
+        select: {
+          title: {
+            select: {
+              text: true,
+              language: {
+                select: {
+                  code: true,
+                },
+              },
+            },
+          },
+          colors: {
+            select: {
+              id: true,
+              colorHex: true,
+            },
+          },
+        },
+      },
+      style: {
+        select: {
+          id: true,
+          title: {
+            select: {
+              text: true,
+              id: true,
+              languageId: true,
+              language: {
+                select: {
+                  code: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return sessions;
+}
+
+export async function createClientImageSession({
+  clientLeadId,
+  userId,
+  selectedSpaceIds,
+}) {
+  if (!selectedSpaceIds || selectedSpaceIds.length === 0) {
+    throw new Error("At least one space must be selected");
+  }
+
+  const token = uuidv4();
+
+  const session = await prisma.clientImageSession.create({
+    data: {
+      clientLeadId: Number(clientLeadId),
+      createdById: Number(userId),
+      token,
+      selectedSpaces: {
+        create: selectedSpaceIds.map((spaceId) => ({
+          space: { connect: { id: spaceId } },
+        })),
+      },
+    },
+  });
+
+  return session;
+}
+
+export async function regenerateSessionToken(sessionId) {
+  const session = await prisma.clientImageSession.findUnique({
+    where: { id: sessionId },
+  });
+
+  if (!session) throw new Error("Session not found");
+
+  const newToken = uuidv4();
+
+  const updated = await prisma.clientImageSession.update({
+    where: { id: sessionId },
+    data: {
+      token: newToken,
+    },
+  });
+
+  return {
+    token: updated.token,
+    url: `${process.env.LEGACY_DASHBOARD_ORIGIN}/image-session?token=${updated.token}`,
+  };
+}
+
+export async function editSessionFileds({ sessionId, data }) {
+  await prisma.clientImageSession.update({
+    where: {
+      id: Number(sessionId),
+    },
+    data,
+  });
+}
+
+export async function deleteInProgressSession(sessionId, user) {
+  const session = await prisma.clientImageSession.findUnique({
+    where: { id: sessionId },
+  });
+
+  if (!session) throw new Error("Session not found");
+  if (user.role !== "ADMIN" && user.role !== "SUPER_ADMIN") {
+    if (
+      session.sessionStatus !== "PDF_GENERATED" ||
+      session.sessionStatus !== "SUBMITTED"
+    ) {
+      throw new Error("You cant delete session after client submit it");
+    }
+  }
+  // await prisma
+  await prisma.materialOnClientImageSession.deleteMany({
+    where: { clientImageSessionId: sessionId },
+  });
+
+  await prisma.clientImageSessionToSpace.deleteMany({
+    where: { clientImageSessionId: sessionId },
+  });
+  await prisma.note.deleteMany({
+    where: {
+      clientSelectedImage: {
+        imageSessionId: sessionId,
+      },
+    },
+  }),
+    await prisma.clientSelectedImage.deleteMany({
+      where: { imageSessionId: sessionId },
+    });
+
+  await prisma.note.deleteMany({
+    where: { imageSessionId: sessionId }, // if this relation exists
+  });
+  await prisma.clientImageSession.delete({
+    where: { id: sessionId },
+  });
+
+  return { message: "Deleted succssfully" };
+}
+
+export async function getSessionByToken({ token }) {
+  const session = await prisma.clientImageSession.findUnique({
+    where: { token },
+    include: {
+      selectedSpaces: {
+        select: {
+          space: {
+            select: {
+              id: true,
+              title: {
+                select: {
+                  text: true,
+                  id: true,
+                  languageId: true,
+                  language: {
+                    select: {
+                      code: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      note: true,
+      selectedImages: {
+        include: {
+          designImage: true,
+          note: true,
+        },
+      },
+      materials: {
+        select: {
+          material: {
+            include: {
+              template: true,
+              title: {
+                select: {
+                  text: true,
+                  id: true,
+                  languageId: true,
+                  language: {
+                    select: {
+                      code: true,
+                    },
+                  },
+                },
+              },
+              description: {
+                select: {
+                  content: true,
+                  id: true,
+                  languageId: true,
+                  language: {
+                    select: {
+                      code: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      style: {
+        include: {
+          template: true,
+          title: {
+            select: {
+              text: true,
+              id: true,
+              languageId: true,
+              language: {
+                select: {
+                  code: true,
+                },
+              },
+            },
+          },
+          description: {
+            select: {
+              content: true,
+              id: true,
+              languageId: true,
+              language: {
+                select: {
+                  code: true,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!session) {
+    throw new Error("Session not found or expired");
+  }
+
+  return session;
+}
+
+export async function changeSessionStatus({ token, id, sessionStatus, extra }) {
+  const key = token ? "token" : "id";
+  const keyId = token || Number(id);
+
+  return await prisma.clientImageSession.update({
+    where: {
+      [key]: keyId,
+    },
+    data: {
+      sessionStatus,
+      ...(extra && extra),
+    },
+  });
+}

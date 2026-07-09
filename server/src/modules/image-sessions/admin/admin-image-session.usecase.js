@@ -14,38 +14,45 @@
 import { AppError } from "../../../shared/errors/AppError.js";
 import { imageSessionsMessagesCodes as M } from "@dms/shared";
 
-const SVC = "../legacy/image-session-services.js";
-const load = (fn) => (a) => import(SVC).then((m) => m[fn](a));
+const SPACE = "./space.repo.js";
+const TEMPLATE = "./template.repo.js";
+const MATERIAL = "./material.repo.js";
+const STYLE = "./style.repo.js";
+const COLOR = "./color.repo.js";
+const DESIGN_IMAGE = "./design-image.repo.js";
+const PAGE_INFO = "./page-info.repo.js";
+const PROS_CONS = "./pros-cons.repo.js";
+const load = (path, fn) => (a) => import(path).then((m) => m[fn](a));
 
-// Lazy adapters to the not-yet-migrated legacy image-session service (behavior-preserving).
+// Lazy adapters to the per-entity admin reference-data repos (behavior-preserving).
 const legacyDefaults = {
-  getSpaces: load("getSpaces"),
-  createSpace: load("createSpace"),
-  updateSpace: load("updateSpace"),
-  getTemplates: load("getTemplates"),
-  getTemplatesIds: load("getTemplatesIds"),
-  createTemplate: load("createTemplate"),
-  updateTemplate: load("updateTemplate"),
-  getMaterials: load("getMaterials"),
-  createMaterial: load("createMaterial"),
-  editMaterial: load("editMaterial"),
-  getStyles: load("getStyles"),
-  createStyle: load("createStyle"),
-  editStyle: load("editStyle"),
-  getColors: load("getColors"),
-  createColorPallete: load("createColorPallete"),
-  editColorPallete: load("editColorPallete"),
-  getDesignImages: load("getDesignImages"),
-  createDesignImage: load("createDesignImage"),
-  createBulkDesignImage: load("createBulkDesignImage"),
-  editDesignImage: load("editDesignImage"),
-  getPageInfos: load("getPageInfos"),
-  createPageInfo: load("createPageInfo"),
-  editPageInfo: load("editPageInfo"),
-  createProOrCon: load("createProOrCon"),
-  reorderProsAndCons: load("reorderProsAndCons"),
-  editProOrCon: load("editProOrCon"),
-  deleteProOrCon: load("deleteProOrCon"),
+  getSpaces: load(SPACE, "getSpaces"),
+  createSpace: load(SPACE, "createSpace"),
+  updateSpace: load(SPACE, "updateSpace"),
+  getTemplates: load(TEMPLATE, "getTemplates"),
+  getTemplatesIds: load(TEMPLATE, "getTemplatesIds"),
+  createTemplate: load(TEMPLATE, "createTemplate"),
+  updateTemplate: load(TEMPLATE, "updateTemplate"),
+  getMaterials: load(MATERIAL, "getMaterials"),
+  createMaterial: load(MATERIAL, "createMaterial"),
+  editMaterial: load(MATERIAL, "editMaterial"),
+  getStyles: load(STYLE, "getStyles"),
+  createStyle: load(STYLE, "createStyle"),
+  editStyle: load(STYLE, "editStyle"),
+  getColors: load(COLOR, "getColors"),
+  createColorPallete: load(COLOR, "createColorPallete"),
+  editColorPallete: load(COLOR, "editColorPallete"),
+  getDesignImages: load(DESIGN_IMAGE, "getDesignImages"),
+  createDesignImage: load(DESIGN_IMAGE, "createDesignImage"),
+  createBulkDesignImage: load(DESIGN_IMAGE, "createBulkDesignImage"),
+  editDesignImage: load(DESIGN_IMAGE, "editDesignImage"),
+  getPageInfos: load(PAGE_INFO, "getPageInfos"),
+  createPageInfo: load(PAGE_INFO, "createPageInfo"),
+  editPageInfo: load(PAGE_INFO, "editPageInfo"),
+  createProOrCon: load(PROS_CONS, "createProOrCon"),
+  reorderProsAndCons: load(PROS_CONS, "reorderProsAndCons"),
+  editProOrCon: load(PROS_CONS, "editProOrCon"),
+  deleteProOrCon: load(PROS_CONS, "deleteProOrCon"),
 };
 
 export class AdminImageSessionUsecase {

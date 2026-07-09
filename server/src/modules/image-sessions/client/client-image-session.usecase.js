@@ -27,34 +27,36 @@ import { AppError } from "../../../shared/errors/AppError.js";
 import { imageSessionsMessagesCodes as M, UTILITY_MODEL_ALLOWLIST } from "@dms/shared";
 import { clientImageSessionRepository } from "./client-image-session.repo.js";
 
-const SVC = "../legacy/image-session-services.js";
+const SESSION_REPO = "../session/image-session.repo.js";
+const CLIENT_REPO = "./client-image-session.repo.js";
+const PAGE_INFO_REPO = "../admin/page-info.repo.js";
+const PROS_CONS_REPO = "../admin/pros-cons.repo.js";
 const CLIENT_SVC = "../legacy/client-services.js";
-const EXTRAS_SVC = "../legacy/client-image-services.js";
 const SHARED_SVC = "../../../shared/legacy/index.js";
 
 const load = (path, fn) => (a) => import(path).then((m) => m[fn](a));
 
 const legacyDefaults = {
   // reads (reference data by language) — read-only, no scope
-  getPageInfo: load(SVC, "getPageInfo"),
-  getConsAndPros: load(SVC, "getConsAndPros"),
-  getSessionByToken: load(SVC, "getSessionByToken"),
-  getColorsByLng: load(SVC, "getColorsByLng"),
-  getMaterialsByLng: load(SVC, "getMaterialsByLng"),
-  getStyleByLng: load(SVC, "getStyleByLng"),
-  getImagesByStyleAndSpaces: load(SVC, "getImagesByStyleAndSpaces"),
-  // token-keyed writes
-  changeSessionStatus: load(SVC, "changeSessionStatus"),
-  saveClientSelectedColor: load(SVC, "saveClientSelectedColor"),
-  saveClientSelectedMaterials: load(SVC, "saveClientSelectedMaterials"),
-  saveClientSelectedStyle: load(SVC, "saveClientSelectedStyle"),
-  saveClientSelectedImages: load(SVC, "saveClientSelectedImages"),
-  deleteImage: load(SVC, "deleteImage"),
+  getPageInfo: load(PAGE_INFO_REPO, "getPageInfo"),
+  getConsAndPros: load(PROS_CONS_REPO, "getConsAndPros"),
+  getSessionByToken: load(SESSION_REPO, "getSessionByToken"),
+  getColorsByLng: load(CLIENT_REPO, "getColorsByLng"),
+  getMaterialsByLng: load(CLIENT_REPO, "getMaterialsByLng"),
+  getStyleByLng: load(CLIENT_REPO, "getStyleByLng"),
+  getImagesByStyleAndSpaces: load(CLIENT_REPO, "getImagesByStyleAndSpaces"),
+  // token-keyed writes — status change keys by { token, sessionStatus } (session repo variant)
+  changeSessionStatus: load(SESSION_REPO, "changeSessionStatus"),
+  saveClientSelectedColor: load(CLIENT_REPO, "saveClientSelectedColor"),
+  saveClientSelectedMaterials: load(CLIENT_REPO, "saveClientSelectedMaterials"),
+  saveClientSelectedStyle: load(CLIENT_REPO, "saveClientSelectedStyle"),
+  saveClientSelectedImages: load(CLIENT_REPO, "saveClientSelectedImages"),
+  deleteImage: load(CLIENT_REPO, "deleteImage"),
   // 🔒 frozen PDF orchestrator — wrapped, never modified.
   uploadPdfAndApproveSession: load(CLIENT_SVC, "uploadPdfAndApproveSession"),
   // EXTRAS router services (already token-keyed)
-  submitSelectedPatterns: load(EXTRAS_SVC, "submitSelectedPatterns"),
-  submitSelectedImages: load(EXTRAS_SVC, "submitSelectedImages"),
+  submitSelectedPatterns: load(CLIENT_REPO, "submitSelectedPatterns"),
+  submitSelectedImages: load(CLIENT_REPO, "submitSelectedImages"),
   // EXTRAS generic-model read (hardened with the allow-list)
   getImageSesssionModel: load(SHARED_SVC, "getImageSesssionModel"),
   getImages: load(SHARED_SVC, "getImages"),
