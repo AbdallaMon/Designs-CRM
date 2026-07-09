@@ -11,13 +11,50 @@
 // BUGFIX (preserved-as-fixed): legacy `deleteDeliverySchedule` reads `{ id }` but the
 // route passed `{ deliveryId }` → `id` was undefined and the delete threw. We call it
 // with the correct `id` so DELETE actually works (observable improvement, noted).
+import dayjs from "dayjs";
 import { deliveryRepository } from "./delivery.repo.js";
 import { projectUsecase } from "../shared/project-scope.js";
+import { uploadANote } from "../../../infra/telegram/telegram-functions.js";
+
+// Behavior ported 1:1 from legacy deliveryServices (create carries a telegram-note side
+// effect; Prisma I/O delegated to the repo). Exposed through the `legacy` seam below so
+// the existing DI/test seam is preserved.
+async function createNewDeliverySchedule({ projectId, deliveryAt, userId, name }) {
+  const schedule = await deliveryRepository.create({ projectId, deliveryAt, userId, name });
+  const now = dayjs.utc().startOf("day");
+
+  const deliveryDate = dayjs(deliveryAt);
+  const daysLeft = deliveryDate.diff(now, "day");
+  const project = await deliveryRepository.findProjectById({ projectId });
+  let timeLeftLabel;
+  if (daysLeft === 1) timeLeftLabel = "Tomorrow";
+  else if (daysLeft === 0) timeLeftLabel = "Today";
+  else timeLeftLabel = `${daysLeft} days left`;
+  const link = `${process.env.LEGACY_DASHBOARD_ORIGIN}/dashboard/projects/${projectId}`;
+
+  const note = {
+    id: `note-${projectId}-${userId}`,
+    clientLeadId: project.clientLeadId,
+    content: `New delivery schedule with name :${name} created for project ${project.type} in lead #${project.clientLeadId} - ${timeLeftLabel}. View it here: ${link}`,
+    binMessage: true,
+  };
+  await uploadANote(note);
+  return schedule;
+}
+
+async function linkADeliveryToMeeting({ deliveryId, meetingReminderId }) {
+  // legacy read the meeting then (deliveryAt sync commented out) updated the link.
+  await deliveryRepository.findMeetingReminderById({ meetingReminderId });
+  const delivery = await deliveryRepository.linkMeeting({ deliveryId, meetingReminderId });
+  return delivery;
+}
+
+const deleteDeliverySchedule = ({ id }) => deliveryRepository.deleteById({ id });
 
 const legacyDefaults = {
-  createNewDeliverySchedule: (a) => import("../../../shared/legacy/index.js").then((m) => m.createNewDeliverySchedule(a)),
-  linkADeliveryToMeeting: (a) => import("../../../shared/legacy/index.js").then((m) => m.linkADeliveryToMeeting(a)),
-  deleteDeliverySchedule: (a) => import("../../../shared/legacy/index.js").then((m) => m.deleteDeliverySchedule(a)),
+  createNewDeliverySchedule,
+  linkADeliveryToMeeting,
+  deleteDeliverySchedule,
 };
 
 export class DeliveryUsecase {
