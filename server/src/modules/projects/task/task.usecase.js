@@ -135,9 +135,9 @@ const legacyDefaults = {
   getTaskDetails,
   createNewTask,
   updateTask,
-  getNotes: (a) => import("../../../shared/legacy/index.js").then((m) => m.getNotes(a)),
-  addNote: (a) => import("../../../shared/legacy/index.js").then((m) => m.addNote(a)),
-  deleteAModel: (a) => import("../../../shared/legacy/index.js").then((m) => m.deleteAModel(a)),
+  getNotes: (a) => import("../../notes/note.usecase.js").then((m) => m.getNotes(a)),
+  addNote: (a) => import("../../notes/note.usecase.js").then((m) => m.addNote(a)),
+  deleteAModel: (a) => import("../../generic-delete/generic-delete.usecase.js").then((m) => m.deleteAModel(a)),
 };
 
 export class TaskUsecase {

@@ -356,6 +356,61 @@ export async function submitSelectedImages({ token, imageIds }) {
   return await getSessionByToken(token);
 }
 
+// ── EXTRAS generic-model reads (moved verbatim from legacy `shared/legacy/shared-utility-
+// services.js`). The usecase hardens `getImageSesssionModel` with UTILITY_MODEL_ALLOWLIST
+// before it is ever reached; the query shapes are preserved 1:1.
+export async function getImageSesssionModel({ model, searchParams }) {
+  const data = await prisma[model].findMany();
+  return data;
+}
+
+export async function getImages({ patternIds, spaceIds }) {
+  const patternIdList = patternIds
+    ? patternIds
+        .split(",")
+        .map((id) => Number(id))
+        .filter(Boolean)
+    : [];
+
+  const spaceIdList = spaceIds
+    ? spaceIds
+        .split(",")
+        .map((id) => Number(id))
+        .filter(Boolean)
+    : [];
+
+  const where = {
+    isArchived: false,
+    ...(patternIdList.length > 0 && {
+      patterns: {
+        some: {
+          id: { in: patternIdList },
+        },
+      },
+    }),
+    ...(spaceIdList.length > 0 && {
+      spaces: {
+        some: {
+          id: { in: spaceIdList },
+        },
+      },
+    }),
+  };
+
+  const images = await prisma.image.findMany({
+    where,
+    include: {
+      patterns: true,
+      spaces: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return images;
+}
+
 export async function changeSessionStatus({ token, status, extra }) {
   // Clear previous selected images and add new ones
   let data = {

@@ -32,7 +32,6 @@ const CLIENT_REPO = "./client-image-session.repo.js";
 const PAGE_INFO_REPO = "../admin/page-info.repo.js";
 const PROS_CONS_REPO = "../admin/pros-cons.repo.js";
 const CLIENT_SVC = "../legacy/client-services.js";
-const SHARED_SVC = "../../../shared/legacy/index.js";
 
 const load = (path, fn) => (a) => import(path).then((m) => m[fn](a));
 
@@ -57,9 +56,9 @@ const legacyDefaults = {
   // EXTRAS router services (already token-keyed)
   submitSelectedPatterns: load(CLIENT_REPO, "submitSelectedPatterns"),
   submitSelectedImages: load(CLIENT_REPO, "submitSelectedImages"),
-  // EXTRAS generic-model read (hardened with the allow-list)
-  getImageSesssionModel: load(SHARED_SVC, "getImageSesssionModel"),
-  getImages: load(SHARED_SVC, "getImages"),
+  // EXTRAS generic-model read (hardened with the allow-list); relocated to the client repo
+  getImageSesssionModel: load(CLIENT_REPO, "getImageSesssionModel"),
+  getImages: load(CLIENT_REPO, "getImages"),
 };
 
 export class ClientImageSessionUsecase {

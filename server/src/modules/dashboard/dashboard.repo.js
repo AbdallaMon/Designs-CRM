@@ -46,6 +46,107 @@ class DashboardRepository {
       take,
     });
   }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  Metric-aggregation reads (Prisma I/O for the decomposed legacy dashboard
+  //  services). Each method takes a usecase-built `where` and runs the exact query
+  //  the legacy service ran — behavior-preserving; the math/orchestration stays in
+  //  the usecase.
+  // ════════════════════════════════════════════════════════════════════════════
+  aggregateInvoiceAmount({ where }) {
+    return prisma.invoice.aggregate({ _sum: { amount: true }, where });
+  }
+
+  aggregateLeadAvgPrice({ where }) {
+    return prisma.clientLead.aggregate({ _avg: { averagePrice: true }, where });
+  }
+
+  aggregateLeadSumAvgPrice({ where }) {
+    return prisma.clientLead.aggregate({ _sum: { averagePrice: true }, where });
+  }
+
+  countLeads({ where }) {
+    return prisma.clientLead.count({ where });
+  }
+
+  aggregateCommission({ where }) {
+    return prisma.commission.aggregate({
+      where,
+      _sum: { amount: true, amountPaid: true },
+    });
+  }
+
+  findStaffUsers() {
+    return prisma.user.findMany({
+      where: {
+        OR: [{ role: "STAFF" }, { subRoles: { some: { subRole: "STAFF" } } }],
+      },
+      select: { id: true },
+    });
+  }
+
+  groupLeadsByStatus({ where }) {
+    return prisma.clientLead.groupBy({
+      by: ["status"],
+      _count: { status: true },
+      where,
+    });
+  }
+
+  groupLeadsCountAll({ by, where }) {
+    return prisma.clientLead.groupBy({ by, where, _count: { _all: true } });
+  }
+
+  groupTopSelectedCategory({ where }) {
+    return prisma.clientLead.groupBy({
+      by: ["selectedCategory"],
+      _count: { selectedCategory: true },
+      where,
+      orderBy: { _count: { selectedCategory: "desc" } },
+      take: 1,
+    });
+  }
+
+  findLatestNewLeads() {
+    return prisma.clientLead.findMany({
+      where: { status: "NEW" },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        client: { select: { id: true, name: true } },
+        status: true,
+        createdAt: true,
+      },
+    });
+  }
+
+  groupNotifications({ where }) {
+    return prisma.notification.groupBy({
+      by: ["userId", "createdAt"],
+      _count: { staffId: true },
+      where,
+    });
+  }
+
+  countCallReminders({ where }) {
+    return prisma.callReminder.count({ where });
+  }
+
+  countProjects({ where }) {
+    return prisma.project.count({ where });
+  }
+
+  aggregateProjectArea({ where }) {
+    return prisma.project.aggregate({ _sum: { area: true }, where });
+  }
+
+  findProjectsWithTime({ where }) {
+    return prisma.project.findMany({
+      where,
+      select: { startedAt: true, endedAt: true, createdAt: true },
+    });
+  }
 }
 
 export const dashboardRepository = new DashboardRepository();

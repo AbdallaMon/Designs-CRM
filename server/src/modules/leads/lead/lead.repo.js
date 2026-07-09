@@ -386,6 +386,15 @@ class LeadRepository {
     return prisma.clientLead.update(updateQuery);
   }
 
+  // Bump a clientLead's updatedAt (legacy shared-utility `updateALead` — the canonical
+  // "touch the lead" side effect, now owned here). Coerces the id exactly as legacy did.
+  touchLead({ id }) {
+    return prisma.clientLead.update({
+      where: { id: Number(id) },
+      data: { updatedAt: new Date() },
+    });
+  }
+
   // Price-offer accept/reject (legacy payment-services editPriceOfferStatus — price-offer DATA).
   editPriceOfferStatus(priceOfferId, isAccepted) {
     return prisma.priceOffers.update({

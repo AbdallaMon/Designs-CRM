@@ -59,6 +59,23 @@ class UpdateRepository {
       select: { updateId: true },
     });
   }
+
+  // Re-fetch an update with its shared settings (legacy shared-utility `getClientLeadUpdate`,
+  // relocated to its owner module — the post-write re-read every update flow returns).
+  findClientLeadUpdateById({ updateId }) {
+    return prisma.clientLeadUpdate.findUnique({
+      where: { id: Number(updateId) },
+      include: { sharedSettings: true },
+    });
+  }
+
+  // Bump a clientLeadUpdate's updatedAt (legacy shared-utility `updateAClientLeadUpdate`).
+  touchClientLeadUpdate({ id }) {
+    return prisma.clientLeadUpdate.update({
+      where: { id: Number(id) },
+      data: { updatedAt: new Date() },
+    });
+  }
 }
 
 export const updateRepository = new UpdateRepository();

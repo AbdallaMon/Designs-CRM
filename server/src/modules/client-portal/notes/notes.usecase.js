@@ -13,13 +13,9 @@ const C = clientPortalMessagesCodes;
 
 const legacyDefaults = {
   getNotes: (args) =>
-    import("../../../shared/legacy/note-services.js").then((m) =>
-      m.getNotes(args),
-    ),
+    import("../../notes/note.usecase.js").then((m) => m.getNotes(args)),
   addNote: (args) =>
-    import("../../../shared/legacy/note-services.js").then((m) =>
-      m.addNote(args),
-    ),
+    import("../../notes/note.usecase.js").then((m) => m.addNote(args)),
 };
 
 export class NotesUsecase {

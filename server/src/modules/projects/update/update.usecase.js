@@ -13,9 +13,10 @@ import { updateRepository } from "./update.repo.js";
 import { projectUsecase } from "../shared/project-scope.js";
 
 // ── update flows ported 1:1 from the legacy shared/legacy/update-services.js. Prisma I/O
-// is delegated to updateRepository; the post-write re-fetch (getClientLeadUpdate) and
-// updateALead are cross-cluster helpers that STAY in shared-utility-services and are
-// invoked here via lazy imports (the target is not one of the projects-owned files).
+// is delegated to updateRepository — including the post-write re-fetch
+// (findClientLeadUpdateById, formerly shared-utility `getClientLeadUpdate`) and the
+// lead/update "touch" side effects (touchClientLead, formerly shared-utility `updateALead`),
+// now owned by the update repo. The former shared/legacy lazy imports are gone.
 async function getUpdates(searchParams, isAdmin) {
   const updatesWhere = {
     clientLeadId: Number(searchParams.clientLeadId),
@@ -74,8 +75,7 @@ async function createAnUpdate({ data, searchParams, userId }) {
     });
   }
   await updateRepository.touchClientLead({ id: data.clientLeadId });
-  const { getClientLeadUpdate } = await import("../../../shared/legacy/shared-utility-services.js");
-  return await getClientLeadUpdate(newUpdate.id);
+  return await updateRepository.findClientLeadUpdateById({ updateId: newUpdate.id });
 }
 
 async function authorizeDepartmentToUpdate({ type, updateId }) {
@@ -85,21 +85,18 @@ async function authorizeDepartmentToUpdate({ type, updateId }) {
       updateId: Number(updateId),
     },
   });
-  const { getClientLeadUpdate } = await import("../../../shared/legacy/shared-utility-services.js");
-  return await getClientLeadUpdate(updateId);
+  return await updateRepository.findClientLeadUpdateById({ updateId });
 }
 
 async function unAuthorizeDepartmentToUpdate({ updateId, type }) {
   await updateRepository.deleteSharedUpdates({ updateId, type });
-  const { getClientLeadUpdate } = await import("../../../shared/legacy/shared-utility-services.js");
-  return await getClientLeadUpdate(updateId);
+  return await updateRepository.findClientLeadUpdateById({ updateId });
 }
 
 async function toggleArchieveAnUpdate({ updateId, isArchived }) {
   await updateRepository.updateClientLeadUpdate({ id: updateId, data: { isArchived } });
 
-  const { getClientLeadUpdate } = await import("../../../shared/legacy/shared-utility-services.js");
-  return await getClientLeadUpdate(updateId);
+  return await updateRepository.findClientLeadUpdateById({ updateId });
 }
 
 async function toggleArchieveASharedUpdate({ sharedUpdateId, isArchived }) {
@@ -107,8 +104,7 @@ async function toggleArchieveASharedUpdate({ sharedUpdateId, isArchived }) {
     id: sharedUpdateId,
     data: { isArchived },
   });
-  const { getClientLeadUpdate } = await import("../../../shared/legacy/shared-utility-services.js");
-  return await getClientLeadUpdate(shared.updateId);
+  return await updateRepository.findClientLeadUpdateById({ updateId: shared.updateId });
 }
 
 async function markAnUpdateAsDone({ updateId, clientLeadId, isArchived }) {
@@ -120,11 +116,8 @@ async function markAnUpdateAsDone({ updateId, clientLeadId, isArchived }) {
       isDone: true,
     },
   });
-  const { updateALead, getClientLeadUpdate } = await import(
-    "../../../shared/legacy/shared-utility-services.js"
-  );
-  await updateALead(Number(clientLeadId));
-  return await getClientLeadUpdate(updateId);
+  await updateRepository.touchClientLead({ id: clientLeadId });
+  return await updateRepository.findClientLeadUpdateById({ updateId });
 }
 
 const legacyDefaults = {
