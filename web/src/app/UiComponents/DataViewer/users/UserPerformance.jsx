@@ -33,8 +33,8 @@ import {
 
 import { getData } from "@/app/helpers/functions/getData";
 import { familiesOf, FAMILY_META } from "@/app/helpers/profiles";
-import LeadStatusChart from "@/app/UiComponents/DataViewer/dashbaord/LeadStatusChart.jsx";
-import IncomeOverTimeChart from "@/app/UiComponents/DataViewer/dashbaord/IncomeOverTimeChart.jsx";
+import LeadStatusChart from "@/app/UiComponents/DataViewer/dashboard/LeadStatusChart.jsx";
+import IncomeOverTimeChart from "@/app/UiComponents/DataViewer/dashboard/IncomeOverTimeChart.jsx";
 
 const nf = new Intl.NumberFormat("en-US");
 const fmtNum = (n) => nf.format(Number(n || 0));

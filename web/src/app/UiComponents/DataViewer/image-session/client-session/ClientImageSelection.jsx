@@ -21,7 +21,7 @@ import { ColorPalletes } from "./colors/ColorPalletes";
 import { Styles } from "./styles/Styles";
 import { Images } from "./Images";
 import { SelectedImages } from "./SelectedImages";
-import SignatureComponent from "./SignatureComponet";
+import SignatureComponent from "./SignatureComponent";
 import { ClientSessionSubmitted } from "./ClientSessionSubmitted";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";

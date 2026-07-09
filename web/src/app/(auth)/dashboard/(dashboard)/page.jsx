@@ -1,7 +1,7 @@
 "use client";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/providers/AuthProvider";
-import Dashboard from "@/app/UiComponents/DataViewer/dashbaord/Dashboard.jsx";
+import Dashboard from "@/app/UiComponents/DataViewer/dashboard/Dashboard.jsx";
 import NewLeadsPage from "@/app/UiComponents/DataViewer/leads/pages/NewLeadsPage.jsx";
 import AccountantLanding from "./_role-landings/AccountantLanding.jsx";
 

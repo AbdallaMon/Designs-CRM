@@ -7,7 +7,7 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { OpenItemDialog } from "../shared/OpenItemDialog";
 import { AutoCompleteSelector } from "../shared/session-item/AutoCompleteSelector";
 import { MultiAutoCompleteSelector } from "../shared/session-item/MultiAutoCompleteSelector";
-import ImageLoader from "../shared/ImageLoader ";
+import ImageLoader from "../shared/ImageLoader";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 

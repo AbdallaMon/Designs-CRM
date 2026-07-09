@@ -9,7 +9,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import ImageLoader from "../admin/shared/ImageLoader ";
+import ImageLoader from "../admin/shared/ImageLoader";
 import {
   MdAdd,
   MdCheck,

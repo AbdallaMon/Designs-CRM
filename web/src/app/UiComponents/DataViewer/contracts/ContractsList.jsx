@@ -32,7 +32,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { MdClose, MdExpandMore } from "react-icons/md";
-import ChipWithIcon from "../utility/ChipWIthIcon";
+import ChipWithIcon from "../utility/ChipWithIcon";
 import CreateContractDialog from "./CreateContract";
 import LoadingOverlay from "../../feedback/loaders/LoadingOverlay";
 import ViewContract from "./ViewContract";

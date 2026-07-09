@@ -76,7 +76,7 @@ import {
 } from "@/app/helpers/functions/utility";
 import { AssignDesignerModal } from "./AssignDesignerModal";
 import { ProjectTasksDialog, TasksDialog } from "../utility/ProjectTasksDialog";
-import DeliverySchedulesPanel from "../utility/ProjectDeilverySchedule";
+import DeliverySchedulesPanel from "../utility/ProjectDeliverySchedule";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { StatusPill, MetaItem } from "../../leads/shared/tabKit";
 import { EmptyState } from "../../leads/shared/EmptyState";
