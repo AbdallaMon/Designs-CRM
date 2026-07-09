@@ -1,11 +1,15 @@
-import Stripe from "stripe";
-import prisma from "../../infra/prisma/prisma.js";
+// leads/payment usecase — business logic / orchestration for lead payments. Prisma NEVER
+// appears here (only paymentRepository). Ported 1:1 from the legacy
+// shared/legacy/payment-services.js: the payment-array shaping stays here, Prisma I/O is
+// delegated to the repo, the Stripe client is the shared singleton (infra/payments/stripe.js),
+// and the reminder/success emails stay in the legacy notification service. All AR strings,
+// `lng: "ar"`, currency, and amounts are preserved verbatim.
+import stripe from "../../../infra/payments/stripe.js";
+import { paymentRepository } from "./payment.repo.js";
 import {
   sendPaymentReminderEmailByStaff,
   sendPaymentSuccessEmail,
-} from "../../infra/notifications/legacy-notification.js";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+} from "../../../infra/notifications/legacy-notification.js";
 
 export async function makePayments(data, leadId) {
   data.map((payment) => {
@@ -15,7 +19,7 @@ export async function makePayments(data, leadId) {
     payment.clientLeadId = Number(leadId);
     payment.paymentLevel = "LEVEL_1";
   });
-  await prisma.payment.createMany({ data });
+  await paymentRepository.createManyPayments({ data });
   return data;
 }
 
@@ -33,43 +37,17 @@ export async function makeExtraServicePayments({
     payment.clientLeadId = Number(leadId);
     payment.paymentLevel = "LEVEL_1";
   });
-  await prisma.payment.createMany({ data });
-  await prisma.extraService.create({
-    data: {
-      clientLeadId: Number(leadId),
-      price: Number(price),
-      note: note,
-    },
+  await paymentRepository.createManyPayments({ data });
+  await paymentRepository.createExtraService({
+    clientLeadId: Number(leadId),
+    price: Number(price),
+    note: note,
   });
   return data;
 }
 
-export async function editPriceOfferStatus(priceOfferId, isAccepted) {
-  return await prisma.priceOffers.update({
-    where: {
-      id: Number(priceOfferId),
-    },
-    data: {
-      isAccepted,
-    },
-  });
-}
-
 export async function remindUserToPay({ clientLeadId }) {
-  const clientLead = await prisma.clientLead.findUnique({
-    where: { id: Number(clientLeadId) },
-    select: {
-      id: true,
-      paymentSessionId: true,
-      client: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-    },
-  });
+  const clientLead = await paymentRepository.findLeadForPayment({ clientLeadId });
 
   let session;
   let reuseExistingSession = false;
@@ -120,11 +98,9 @@ export async function remindUserToPay({ clientLeadId }) {
       expires_at: Math.floor(Date.now() / 1000) + 3600 * 24,
     });
 
-    await prisma.clientLead.update({
-      where: { id: clientLead.id },
-      data: {
-        paymentSessionId: session.id,
-      },
+    await paymentRepository.updatePaymentSessionId({
+      id: clientLead.id,
+      paymentSessionId: session.id,
     });
   }
 
@@ -137,19 +113,7 @@ export async function remindUserToPay({ clientLeadId }) {
 }
 
 export async function remindUserToCompleteRegister({ clientLeadId }) {
-  const clientLead = await prisma.clientLead.findUnique({
-    where: { id: Number(clientLeadId) },
-    select: {
-      id: true,
-      client: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-    },
-  });
+  const clientLead = await paymentRepository.findLeadForRegister({ clientLeadId });
   await sendPaymentSuccessEmail(
     clientLead.client.email,
     clientLead.client.name,

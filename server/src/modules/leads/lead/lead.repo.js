@@ -242,6 +242,161 @@ class LeadRepository {
       select: { id: true, clientLeadId: true },
     });
   }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  ASSIGN / STATUS / CONVERT data ops (legacy lead-services mutations)
+  // ════════════════════════════════════════════════════════════════════════════
+  // Full lead record (legacy assignLeadToAUser read the whole row before the guards).
+  findFullLead({ id }) {
+    return prisma.clientLead.findUnique({ where: { id: Number(id) } });
+  }
+
+  // Per-user lead caps (legacy maxUserLeadsCount read).
+  getUserLeadLimits({ userId }) {
+    return prisma.user.findUnique({
+      where: { id: Number(userId) },
+      select: { maxLeadsCounts: true, maxLeadCountPerDay: true },
+    });
+  }
+
+  // notAllowedCountries only (legacy checkIfUserAllowedToTakeALead read).
+  getUserAllowedCountries({ userId }) {
+    return prisma.user.findUnique({
+      where: { id: Number(userId) },
+      select: { notAllowedCountries: true },
+    });
+  }
+
+  // Shadow/CONVERTED lead create (legacy assignLeadToAUser ON_HOLD/admin branch).
+  createLead({ data }) {
+    return prisma.clientLead.create({ data });
+  }
+
+  // Assign update (legacy select preserved verbatim).
+  assignLeadUpdate({ id, data }) {
+    return prisma.clientLead.update({
+      where: { id },
+      data,
+      select: {
+        id: true,
+        status: true,
+        assignedTo: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+  }
+
+  // Bulk assign (legacy bulkAssignLeadTsoAUser).
+  bulkAssignLeads({ leadsIds, userId }) {
+    return prisma.clientLead.updateMany({
+      where: {
+        id: { in: leadsIds },
+      },
+      data: {
+        userId: Number(userId),
+        assignedAt: new Date(),
+      },
+    });
+  }
+
+  // Status update returning the full row (legacy updateClientLeadStatus).
+  updateLeadStatusData({ id, data }) {
+    return prisma.clientLead.update({
+      where: { id },
+      data,
+    });
+  }
+
+  // FINALIZED cleanup group (legacy updateClientLeadStatus admin path), verbatim.
+  deleteInvoiceNotesByLead({ clientLeadId }) {
+    return prisma.note.deleteMany({
+      where: {
+        invoice: {
+          payment: {
+            clientLeadId: clientLeadId,
+          },
+        },
+      },
+    });
+  }
+
+  deleteInvoicesByLead({ clientLeadId }) {
+    return prisma.invoice.deleteMany({
+      where: {
+        payment: {
+          clientLeadId: clientLeadId,
+        },
+      },
+    });
+  }
+
+  deletePaymentNotesByLead({ clientLeadId }) {
+    return prisma.note.deleteMany({
+      where: {
+        payment: {
+          clientLeadId: clientLeadId,
+        },
+      },
+    });
+  }
+
+  deletePaymentsByLead({ clientLeadId }) {
+    return prisma.payment.deleteMany({
+      where: {
+        clientLeadId,
+      },
+    });
+  }
+
+  deleteExtraServicesByLead({ clientLeadId }) {
+    return prisma.extraService.deleteMany({
+      where: {
+        clientLeadId,
+      },
+    });
+  }
+
+  findTelegramChannelByLead({ clientLeadId }) {
+    return prisma.telegramChannel.findFirst({
+      where: {
+        clientLeadId: clientLeadId,
+      },
+    });
+  }
+
+  // Convert update with optional relation include (legacy markClientLeadAsConverted).
+  convertLeadUpdate({ clientLeadId, status, reason, withInclude }) {
+    const updateQuery = {
+      where: { id: clientLeadId },
+      data: { status: status, reasonToConvert: reason },
+    };
+    if (withInclude) {
+      updateQuery["include"] = {
+        files: true,
+        notes: true,
+        callReminders: true,
+        projects: true,
+        priceOffers: true,
+        payments: true,
+        tasks: true,
+        extraServices: true,
+      };
+    }
+    return prisma.clientLead.update(updateQuery);
+  }
+
+  // Price-offer accept/reject (legacy payment-services editPriceOfferStatus — price-offer DATA).
+  editPriceOfferStatus(priceOfferId, isAccepted) {
+    return prisma.priceOffers.update({
+      where: {
+        id: Number(priceOfferId),
+      },
+      data: {
+        isAccepted,
+      },
+    });
+  }
 }
 
 // ── Selects (verbatim from legacy) ───────────────────────────────────────────────
@@ -277,7 +432,6 @@ function dealsSelect({ callRemindersWhere, updatesWhere, sharedUpdatesWhere }) {
     createdAt: true,
     client: { select: { name: true } },
     assignedTo: { select: { name: true } },
-    userId: true,
     status: true,
     price: true,
     averagePrice: true,

@@ -74,3 +74,52 @@ export function withDetailCapabilities(record, authUser) {
 export function toPaginated({ items, total, page, pageSize }) {
   return { items, total, page, pageSize };
 }
+
+// ── Kanban / columns record shaping (ported verbatim from the legacy read aggregators
+// getClientLeadsByDateRange / getClientLeadsColumnStatus tails). Pure array/record
+// transforms — no Prisma, no side effects.
+
+/** Deals (kanban) shaping: when a contractLevel filter is active, keep only leads whose
+ *  active contract has that stage IN_PROGRESS. */
+export function filterDealsByContractLevel(clientLeads, filters) {
+  let result = clientLeads;
+  if (filters.contractLevel && filters.contractLevel !== "all") {
+    result = result.filter((lead) => {
+      if (lead.contracts.length) {
+        return lead.contracts[0].stages?.some((stage) => {
+          return (
+            stage.title === filters.contractLevel &&
+            stage.stageStatus === "IN_PROGRESS"
+          );
+        });
+      }
+    });
+  }
+  return result;
+}
+
+/** Columns shaping: decorate each lead's active contract with its current (or the
+ *  contractLevel-matched) IN_PROGRESS stage. */
+export function mapColumnLeadsContractStage(clientLeads, filters) {
+  let result = clientLeads;
+  result = result.map((lead) => {
+    if (lead.contracts.length) {
+      let contractZeroStage;
+      if (filters.contractLevel && filters.contractLevel !== "all") {
+        contractZeroStage = lead.contracts[0]?.stages?.find(
+          (stage) =>
+            stage.title === filters.contractLevel &&
+            stage.stageStatus === "IN_PROGRESS",
+        );
+      } else {
+        contractZeroStage = lead.contracts[0]?.stages?.find(
+          (stage) => stage.stageStatus === "IN_PROGRESS",
+        );
+      }
+      lead.contracts[0].stage = contractZeroStage;
+      lead.contracts[0].contractLevel = contractZeroStage?.title;
+    }
+    return lead;
+  });
+  return result;
+}
