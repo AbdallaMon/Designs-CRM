@@ -21,7 +21,7 @@ import prisma from "../../infra/prisma/prisma.js";
 import {
   addADesginerToAllRelatedProjectsRooms,
   addMemberToRoomBySystem,
-} from "../../modules/chat/legacy/chat-member-services.js";
+} from "../../modules/chat/system-rooms.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
