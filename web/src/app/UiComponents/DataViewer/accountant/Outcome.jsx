@@ -14,12 +14,7 @@ import { FaCalendarMonth, FaMoneyBillWave } from "react-icons/fa6";
 import dayjs from "dayjs";
 import { MdCalendarMonth, MdMoney } from "react-icons/md";
 import { IncomeOutcomeSummary } from "./IncomeOutComeSummary";
-const columns = [
-  { name: "amount", label: "Amount" },
-  { name: "type", label: "Type" },
-  { name: "description", label: "Description" },
-  { name: "createdAt", label: "Paid at", type: "date" },
-];
+import { columns } from "./config/outcomeConfig";
 
 const OutCome = () => {
   const {

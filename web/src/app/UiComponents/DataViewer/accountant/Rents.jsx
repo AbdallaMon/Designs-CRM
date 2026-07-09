@@ -5,65 +5,7 @@ import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import CreateModal from "../../models/CreateModal";
 import { NotesComponent } from "../utility/Notes";
-
-const renewInputs = [
-  {
-    data: {
-      id: "startDate",
-      label: "Start date",
-      type: "date",
-      defaultValue: new Date(),
-    },
-    useDefault: true,
-    pattern: { required: { value: true, message: "Date is required" } },
-  },
-  {
-    data: {
-      id: "endDate",
-      label: "End date",
-      type: "date",
-      defaultValue: new Date(),
-    },
-    useDefault: true,
-    pattern: { required: { value: true, message: "Date is required" } },
-  },
-  {
-    data: {
-      id: "paymentDate",
-      label: "Payment date",
-      type: "date",
-      defaultValue: new Date(),
-    },
-    useDefault: true,
-    pattern: { required: { value: true, message: "Date is required" } },
-  },
-  {
-    data: { id: "amount", label: "Amount", type: "number" },
-    pattern: { required: { value: true, message: "Amount is required" } },
-  },
-];
-const inputs = [
-  {
-    data: { id: "name", label: "Name of service", type: "text" },
-    pattern: { required: { value: true, message: "Payment category" } },
-  },
-  {
-    data: {
-      id: "description",
-      label: "Description",
-      type: "textarea",
-    },
-  },
-  ...renewInputs,
-];
-
-const columns = [
-  { name: "name", label: "Name" },
-  { name: "description", label: "Description" },
-  { name: "rentPeriods.startDate", label: "Start date", type: "date" },
-  { name: "rentPeriods.endDate", label: "End date", type: "date" },
-  { name: "rentPeriods.amount", label: "Amount" },
-];
+import { renewInputs, inputs, columns } from "./config/rentsConfig";
 
 const Rents = () => {
   const {

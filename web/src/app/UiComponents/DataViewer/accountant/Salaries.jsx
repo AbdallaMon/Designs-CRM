@@ -7,66 +7,10 @@ import React, { useEffect, useState } from "react";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 import LastSeen from "@/app/UiComponents/buttons/LastSeen";
-import { userRolesEnum } from "@/app/helpers/constants";
 import SalaryInfoButton from "./SalaryDialog";
 import CreateModal from "../../models/CreateModal";
 import EditModal from "../../models/EditModal";
-
-const inputs = [
-  {
-    data: {
-      id: "baseSalary",
-      type: "number",
-      label: "Base salary",
-      key: "baseSalary.baseSalary",
-    },
-    pattern: {
-      required: {
-        value: true,
-        message: "Please enter a Base salary",
-      },
-    },
-  },
-  {
-    data: {
-      id: "baseWorkHours",
-      type: "number",
-      label: "Base work hours",
-      key: "baseSalary.baseWorkHours",
-    },
-    pattern: {
-      required: {
-        value: true,
-        message: "Please enter a Base work hours",
-      },
-    },
-  },
-  {
-    data: {
-      id: "taxAmount",
-      type: "number",
-      label: "Tax amount",
-      key: "baseSalary.taxAmount",
-    },
-    pattern: {
-      required: {
-        value: true,
-        message: "Please enter a tax amount",
-      },
-    },
-  },
-];
-const columns = [
-  { name: "name", label: "User Name" },
-  { name: "email", label: "Email" },
-  { name: "role", label: "Main role", type: "enum", enum: userRolesEnum },
-  {
-    name: "isActive",
-    label: "Account status",
-    type: "boolean",
-    enum: { TRUE: "Active", FALSE: "Banned" },
-  },
-];
+import { inputs, columns } from "./config/salariesConfig";
 
 export default function Salaries() {
   const {

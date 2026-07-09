@@ -23,7 +23,6 @@ import {
 } from "@mui/material";
 import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
 import { useSearchParams } from "next/navigation";
-import { PaymentLevels, PaymentStatus } from "@/app/helpers/constants";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import ConfirmWithActionModel from "../../../models/ConfirmsWithActionModel";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
@@ -40,6 +39,7 @@ import {
   MdReceipt,
 } from "react-icons/md";
 import { getData } from "@/app/helpers/functions/getData";
+import { columns } from "../config/paymentsCalendarConfig";
 // const inputs = [
 //   {
 //     data: { id: "amount", label: "Amount to be paid", type: "number" },
@@ -66,29 +66,6 @@ import { getData } from "@/app/helpers/functions/getData";
 //     sx: { display: "none" },
 //   },
 // ];
-
-const columns = [
-  { name: "id", label: "Payment number" },
-  { name: "clientLead.client.name", label: "Client name" },
-  { name: "clientLead.client.phone", label: "Client phone" },
-  { name: "clientLead.description", label: "Description" },
-  { name: "clientLead.averagePrice", label: "Price" },
-  { name: "paymentReason", label: "Payment reason" },
-  { name: "amount", label: "Amount" },
-  { name: "amountPaid", label: "Amount paid" },
-  {
-    name: "paymentLevel",
-    label: "Payment level",
-    type: "enum",
-    enum: PaymentLevels,
-  },
-  {
-    name: "status",
-    label: "Payment status",
-    type: "enum",
-    enum: PaymentStatus,
-  },
-];
 
 const PaymentCalendar = ({ status = "PENDING" }) => {
   const searchParams = useSearchParams();
