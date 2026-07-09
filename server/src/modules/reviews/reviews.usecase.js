@@ -17,13 +17,13 @@ import { reviewsMessagesCodes as C } from "@dms/shared";
 
 const legacyDefaults = {
   handleOAuthCallback: (code) =>
-    import("./legacy/reviews-integration.js").then((m) => m.handleOAuthCallback(code)),
+    import("../../infra/integrations/google-business/google-business.client.js").then((m) => m.handleOAuthCallback(code)),
   getLocations: (code) =>
-    import("./legacy/reviews-integration.js").then((m) => m.getLocations(code)),
+    import("../../infra/integrations/google-business/google-business.client.js").then((m) => m.getLocations(code)),
   getReviews: (accountId, locationId) =>
-    import("./legacy/reviews-integration.js").then((m) => m.getReviews(accountId, locationId)),
+    import("../../infra/integrations/google-business/google-business.client.js").then((m) => m.getReviews(accountId, locationId)),
   createAuthUrl: () =>
-    import("./legacy/reviews-integration.js").then((m) => m.createAuthUrl()),
+    import("../../infra/integrations/google-business/google-business.client.js").then((m) => m.createAuthUrl()),
 };
 
 export class ReviewsUsecase {
