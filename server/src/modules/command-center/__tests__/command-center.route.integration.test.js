@@ -24,7 +24,7 @@ vi.mock("@dms/db", () => ({
       aggregate: vi.fn().mockResolvedValue({ _sum: { averagePrice: null } }),
     },
     invoice: { aggregate: vi.fn().mockResolvedValue({ _sum: { amount: null } }) },
-    commission: { aggregate: vi.fn().mockResolvedValue({ _sum: { amount: null, amountPaid: null } }) },
+    commission: { aggregate: vi.fn().mockResolvedValue({ _sum: { amount: null } }) },
     user: { findMany: vi.fn().mockResolvedValue([]) },
     project: { count: vi.fn().mockResolvedValue(0) },
     autoAssignment: { findMany: vi.fn().mockResolvedValue([]) },

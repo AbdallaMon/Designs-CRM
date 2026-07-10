@@ -7,7 +7,7 @@
 // (documented parity with master); ADMIN/SUPER_ADMIN do NOT hold ACCOUNTING_* codes. The
 // only money sources here are the ones admins can ALREADY see today via the dashboard:
 //   - Invoice._sum.amount (revenue)
-//   - Commission._sum.{amount, amountPaid}
+//   - Commission._sum.amount
 //   - ClientLead.averagePrice (pipeline / finalized value)
 // Widening to receivables/cash-flow is a future, explicit decision — not done here.
 import prisma from "../../infra/prisma/prisma.js";
@@ -27,8 +27,11 @@ export const ACTIVE_DEAL_STATUSES = Object.freeze([
 // (an assigned-but-unworked lead still counts toward the cap) plus the active-deal set.
 export const ACTIVE_LEAD_STATUSES = Object.freeze(["NEW", ...ACTIVE_DEAL_STATUSES]);
 
-// Won deals whose averagePrice is realized value.
-export const FINALIZED_DEAL_STATUSES = Object.freeze(["FINALIZED", "CONVERTED"]);
+// Won deals whose averagePrice is realized value. Kept in lock-step with the dashboard's
+// won/realized-value definition (dashboard.usecase.js `successLeadsCount`/`avgLeadValue` use
+// ["FINALIZED","ARCHIVED"]); CONVERTED is explicitly a LOST outcome there
+// (["CONVERTED","ON_HOLD","REJECTED"]), so it is NOT realized value.
+export const FINALIZED_DEAL_STATUSES = Object.freeze(["FINALIZED", "ARCHIVED"]);
 
 // Designer/executor roles whose active-project load the cockpit surfaces.
 export const DESIGNER_ROLES = Object.freeze([
@@ -75,10 +78,19 @@ class CommandCenterRepository {
     });
   }
 
-  finalizedValue(range) {
+  // Realized value is scoped by WHEN the deal was won (finalizedDate), matching how the
+  // dashboard scopes finalized-by-period (dashboard.usecase.js finalized queries filter on
+  // `finalizedDate`), NOT createdAt (when the lead first entered the pipeline).
+  finalizedValue(range = {}) {
+    const where = { status: { in: [...FINALIZED_DEAL_STATUSES] } };
+    if (range?.from || range?.to) {
+      where.finalizedDate = {};
+      if (range.from) where.finalizedDate.gte = range.from;
+      if (range.to) where.finalizedDate.lte = range.to;
+    }
     return prisma.clientLead.aggregate({
       _sum: { averagePrice: true },
-      where: { ...this.#rangeWhere(range), status: { in: [...FINALIZED_DEAL_STATUSES] } },
+      where,
     });
   }
 
@@ -92,7 +104,7 @@ class CommandCenterRepository {
 
   commissions(range) {
     return prisma.commission.aggregate({
-      _sum: { amount: true, amountPaid: true },
+      _sum: { amount: true },
       where: this.#rangeWhere(range),
     });
   }

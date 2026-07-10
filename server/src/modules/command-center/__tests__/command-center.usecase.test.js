@@ -12,7 +12,7 @@ function makeRepo(overrides = {}) {
     activeDealsCount: vi.fn().mockResolvedValue(42),
     finalizedValue: vi.fn().mockResolvedValue({ _sum: { averagePrice: "640000" } }),
     revenue: vi.fn().mockResolvedValue({ _sum: { amount: "512000" } }),
-    commissions: vi.fn().mockResolvedValue({ _sum: { amount: "48000", amountPaid: "20000" } }),
+    commissions: vi.fn().mockResolvedValue({ _sum: { amount: "48000" } }),
     designerLoad: vi.fn().mockResolvedValue([
       { userId: 12, name: "Sara", role: "THREE_D_DESIGNER", activeProjects: 7 },
       { userId: 13, name: "Ali", role: "TWO_D_DESIGNER", activeProjects: 3 },
