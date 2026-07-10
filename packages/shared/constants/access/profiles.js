@@ -48,18 +48,22 @@ export const PROFILES = {
 export const PROFILE_KEYS = Object.keys(PROFILES);
 
 // Display + the legacy fields to keep in sync when a profile is assigned (Phase 2).
+// Labels are English (matching the app UI). `isAssignable: false` hides a profile from the
+// admin assignment picker (server listAssignableProfiles filters on it) WITHOUT deleting it
+// from the model — used for the legacy SUPER_SALES *role* profile, which is superseded by the
+// STAFF-based SUPER_SALES profile and only duplicated it in the picker.
 export const PROFILE_META = {
-  ADMIN:            { label: "مدير",          family: "ADMIN",    baseRole: USER_ROLES.ADMIN },
-  SUPER_ADMIN:      { label: "مدير أعلى",     family: "ADMIN",    baseRole: USER_ROLES.SUPER_ADMIN },
-  NORMAL_SALES:     { label: "موظف مبيعات",   family: "SALES",    baseRole: USER_ROLES.STAFF, isPrimary: false, isSuperSales: false },
-  PRIMARY_SALES:    { label: "مبيعات أساسي",  family: "SALES",    baseRole: USER_ROLES.STAFF, isPrimary: true,  isSuperSales: false },
-  SUPER_SALES:      { label: "سوبر سيلز",      family: "SALES",    baseRole: USER_ROLES.STAFF, isPrimary: false, isSuperSales: true },
-  SUPER_SALES_BASE: { label: "سوبر سيلز (دور)", family: "SALES",  baseRole: USER_ROLES.SUPER_SALES },
-  ACCOUNTANT:       { label: "محاسب",         family: "FINANCE",  baseRole: USER_ROLES.ACCOUNTANT },
-  DESIGNER_3D:      { label: "مصمم 3D",       family: "DESIGN",   baseRole: USER_ROLES.THREE_D_DESIGNER },
-  DESIGNER_2D:      { label: "مصمم 2D",       family: "DESIGN",   baseRole: USER_ROLES.TWO_D_DESIGNER },
-  EXECUTOR_2D:      { label: "منفّذ 2D",      family: "DESIGN",   baseRole: USER_ROLES.TWO_D_EXECUTOR },
-  CONTACT_INITIATOR:{ label: "مبادر تواصل",   family: "SALES",    baseRole: USER_ROLES.CONTACT_INITIATOR },
+  ADMIN:            { label: "Admin",             family: "ADMIN",    baseRole: USER_ROLES.ADMIN },
+  SUPER_ADMIN:      { label: "Super admin",       family: "ADMIN",    baseRole: USER_ROLES.SUPER_ADMIN },
+  NORMAL_SALES:     { label: "Sales",             family: "SALES",    baseRole: USER_ROLES.STAFF, isPrimary: false, isSuperSales: false },
+  PRIMARY_SALES:    { label: "Primary sales",     family: "SALES",    baseRole: USER_ROLES.STAFF, isPrimary: true,  isSuperSales: false },
+  SUPER_SALES:      { label: "Super sales",       family: "SALES",    baseRole: USER_ROLES.STAFF, isPrimary: false, isSuperSales: true },
+  SUPER_SALES_BASE: { label: "Super sales (legacy role)", family: "SALES", baseRole: USER_ROLES.SUPER_SALES, isAssignable: false },
+  ACCOUNTANT:       { label: "Accountant",        family: "FINANCE",  baseRole: USER_ROLES.ACCOUNTANT },
+  DESIGNER_3D:      { label: "3D Designer",        family: "DESIGN",   baseRole: USER_ROLES.THREE_D_DESIGNER },
+  DESIGNER_2D:      { label: "2D Designer",        family: "DESIGN",   baseRole: USER_ROLES.TWO_D_DESIGNER },
+  EXECUTOR_2D:      { label: "2D Executor",        family: "DESIGN",   baseRole: USER_ROLES.TWO_D_EXECUTOR },
+  CONTACT_INITIATOR:{ label: "Contact initiator", family: "SALES",    baseRole: USER_ROLES.CONTACT_INITIATOR },
 };
 
 // Map a legacy user row (role + retained flags) to its profile key.

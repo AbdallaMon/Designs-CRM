@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import AdminTable from "@/shared/components/AdminTable";
 import { Box, Container, lighten } from "@mui/material";
@@ -11,8 +12,11 @@ import { columns, inputs, userColor } from "@/features/users/pages/users/config.
 import UserRowActions from "@/features/users/pages/users/UserRowActions.jsx";
 import UsersPageHeader from "@/features/users/pages/users/UsersPageHeader.jsx";
 import UsersLegend from "@/features/users/pages/users/UsersLegend.jsx";
+import { ProfileManagerDialog } from "@/features/users/ProfileManagerDialog.jsx";
 
 export default function UsersPage() {
+  // The user just created — assign their profiles right away (dialog auto-opens).
+  const [newUser, setNewUser] = useState(null);
   const {
     data,
     loading,
@@ -118,6 +122,18 @@ export default function UsersPage() {
               inputs={editInputs}
               href={"admin/users"}
               setData={setData}
+              withClose={true}
+              handleSubmit={(created) => {
+                // Add the new user to the list, then immediately open the profiles
+                // dialog so the admin assigns this user's profile(s) right away.
+                if (created?.id) {
+                  setData((prev) =>
+                    Array.isArray(prev) ? [...prev, created] : [created]
+                  );
+                  setTotal((prev) => (prev || 0) + 1);
+                  setNewUser(created);
+                }
+              }}
               extraProps={{
                 formTitle: "New user",
                 btnText: "Create",
@@ -126,6 +142,19 @@ export default function UsersPage() {
           </Box>
         </Box>
       </AdminTable>
+
+      {newUser && (
+        <ProfileManagerDialog
+          key={newUser.id}
+          userId={newUser.id}
+          userProfiles={[]}
+          currentProfileId={null}
+          setData={setData}
+          startOpen
+          hideTrigger
+          onClose={() => setNewUser(null)}
+        />
+      )}
     </div>
   );
 }

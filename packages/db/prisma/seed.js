@@ -78,6 +78,7 @@ export function buildCatalog() {
     family: m.family ?? null,
     baseRole: m.baseRole ?? null,
     isAdminTier: ADMIN_TIER_PROFILE_KEYS.includes(key),
+    isAssignable: m.isAssignable ?? true,
   }));
   const links = [];
   for (const [profileKey, codeList] of Object.entries(PROFILES))
@@ -93,7 +94,13 @@ export async function seedCatalog({ prisma: db }) {
   for (const p of profiles)
     await db.profile.upsert({
       where: { key: p.key },
-      update: { label: p.label, family: p.family, baseRole: p.baseRole, isAdminTier: p.isAdminTier },
+      update: {
+        label: p.label,
+        family: p.family,
+        baseRole: p.baseRole,
+        isAdminTier: p.isAdminTier,
+        isAssignable: p.isAssignable,
+      },
       create: p,
     });
 

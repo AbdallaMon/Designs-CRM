@@ -20,12 +20,27 @@ import {
 } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { FiLayers } from "react-icons/fi";
+import { PROFILE_LABEL } from "@/features/users/pages/users/config.jsx";
 
 // Admin manager for a user's DB-relational permission PROFILES: pick the assigned
 // set + which is the active (current) one. Replaces role/sub-role juggling for the
 // switchable-profile model. Gated by user.manage_roles (mirrors RoleManagerDialog).
-export function ProfileManagerDialog({ userId, userProfiles = [], currentProfileId, setData }) {
-  const [open, setOpen] = useState(false);
+// `startOpen` opens it immediately (used right after creating a user); `hideTrigger`
+// suppresses the "Assign profile" button; `onClose` fires when it closes.
+export function ProfileManagerDialog({
+  userId,
+  userProfiles = [],
+  currentProfileId,
+  setData,
+  startOpen = false,
+  hideTrigger = false,
+  onClose,
+}) {
+  const [open, setOpen] = useState(startOpen);
+  const closeDialog = () => {
+    setOpen(false);
+    onClose?.();
+  };
   const [allProfiles, setAllProfiles] = useState([]);
   const [selectedIds, setSelectedIds] = useState([]);
   const [current, setCurrent] = useState(currentProfileId ?? null);
@@ -79,6 +94,7 @@ export function ProfileManagerDialog({ userId, userProfiles = [], currentProfile
 
   if (!admin) return null;
   if (!open) {
+    if (hideTrigger) return null;
     return (
       <Button
         onClick={() => setOpen(true)}
@@ -93,7 +109,7 @@ export function ProfileManagerDialog({ userId, userProfiles = [], currentProfile
   }
 
   return (
-    <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
+    <Dialog open={open} onClose={closeDialog} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
       <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1.25, fontWeight: 700 }}>
         <Box
           sx={{
@@ -125,7 +141,7 @@ export function ProfileManagerDialog({ userId, userProfiles = [], currentProfile
               >
                 <FormControlLabel
                   control={<Checkbox checked={checked} onChange={() => toggle(p.id)} />}
-                  label={<Typography fontWeight={600}>{p.label ?? p.key}</Typography>}
+                  label={<Typography fontWeight={600}>{PROFILE_LABEL[p.key] ?? p.label ?? p.key}</Typography>}
                 />
                 <FormControlLabel
                   control={
@@ -150,7 +166,7 @@ export function ProfileManagerDialog({ userId, userProfiles = [], currentProfile
       </DialogContent>
       <Divider />
       <DialogActions sx={{ px: 3, py: 2 }}>
-        <Button onClick={() => setOpen(false)} color="inherit" sx={{ textTransform: "none" }}>
+        <Button onClick={closeDialog} color="inherit" sx={{ textTransform: "none" }}>
           Cancel
         </Button>
         <Button

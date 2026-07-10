@@ -16,7 +16,7 @@ export const PROFILE_OPTIONS = [
   { value: "NORMAL_SALES", label: "Sales" },
   { value: "PRIMARY_SALES", label: "Primary sales" },
   { value: "SUPER_SALES", label: "Super sales" },
-  { value: "SUPER_SALES_BASE", label: "Super sales (base)" },
+  { value: "SUPER_SALES_BASE", label: "Super sales (legacy role)" },
   { value: "ADMIN", label: "Admin" },
   { value: "SUPER_ADMIN", label: "Super admin" },
   { value: "ACCOUNTANT", label: "Accountant" },
