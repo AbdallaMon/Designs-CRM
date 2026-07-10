@@ -124,7 +124,7 @@ describe("GET /v2/leads/:clientLeadId/cockpit — object-scoped read (real HTTP)
     expect(body.data).toHaveProperty("health");
     expect(body.data).toHaveProperty("actions");
     expect(body.data).toHaveProperty("capabilities");
-    expect(body.data.health).toMatchObject({ status: "INTERESTED", currentStage: "WHATSAPP_QA" });
+    expect(body.data.health).toMatchObject({ status: "INTERESTED", isTerminal: false, currentStage: "WHATSAPP_QA" });
     // The overdue call surfaces as the top critical action.
     expect(body.data.actions[0]).toMatchObject({ type: "CALL_OVERDUE", severity: "critical" });
     // Owner + lead.call_manage -> the CTA is enabled.

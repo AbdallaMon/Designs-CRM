@@ -57,10 +57,11 @@ describe("LeadCockpitUsecase.getLeadCockpit", () => {
   });
 
   it("normalizes the `versaModel` relation to `versaModels` for the engine", async () => {
+    // The repo hands over VERSA steps already reduced to presence booleans.
     const { uc } = makeUsecase(
       bundle({
         callReminders: [],
-        versaModel: [{ v: { question: "Why?", answer: null, clientResponse: null } }],
+        versaModel: [{ v: { hasQuestion: true, hasResponse: false } }],
       }),
     );
     const data = await uc.getLeadCockpit({ clientLeadId: 5, authUser: OWNER, now: NOW });

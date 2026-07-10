@@ -179,11 +179,18 @@ class LeadRepository {
   // needs (plus `userId`/`status` for the capability computation). Deliberately
   // narrow — no PII, no free-text, no ids beyond what the rules read — so the
   // read-only endpoint never over-exposes. Prisma stays here.
-  findCockpitBundle({ clientLeadId }) {
-    return prisma.clientLead.findUnique({
+  //
+  // Defense-in-depth: the VERSA objection steps carry long free-text scripts/responses
+  // that the engine only needs as presence booleans. We collapse each step to
+  // `{ hasQuestion, hasResponse }` HERE, right after the query, so the raw free-text
+  // never leaves this read path (never handed to the engine, DTO, or response).
+  async findCockpitBundle({ clientLeadId }) {
+    const bundle = await prisma.clientLead.findUnique({
       where: { id: Number(clientLeadId) },
       select: COCKPIT_BUNDLE_SELECT,
     });
+    if (!bundle) return bundle;
+    return { ...bundle, versaModel: (bundle.versaModel ?? []).map(reduceVersaModel) };
   }
 
   // ── Calls / meetings lists ────────────────────────────────────────────────────
@@ -998,6 +1005,12 @@ function detailSelect(fileWhere) {
 // Cockpit bundle select — the minimal state the pure rules engine consumes. Note the
 // relation is `versaModel` (schema name); the usecase normalizes it to `versaModels`
 // for the pure function. `userId`/`status` also feed `computeLeadCapabilities`.
+//
+// VERSA free-text (question/answer/clientResponse) is selected ONLY because Prisma
+// can't project an "is-empty" boolean; `findCockpitBundle` immediately reduces each
+// step to `{ hasQuestion, hasResponse }` (see `reduceVersaModel`) so the text never
+// leaves the repo. `meetingReminders.type` and `versaModel.categoryId` are NOT
+// selected — the engine never reads them.
 const COCKPIT_BUNDLE_SELECT = {
   id: true,
   userId: true, // capability scope (canMutateLead)
@@ -1005,13 +1018,12 @@ const COCKPIT_BUNDLE_SELECT = {
   paymentStatus: true,
   salesStages: { select: { stage: true } },
   callReminders: { select: { time: true, status: true } },
-  meetingReminders: { select: { time: true, status: true, type: true } },
+  meetingReminders: { select: { time: true, status: true } },
   priceOffers: { select: { isAccepted: true } },
   // Only whether each SPIN question is answered — not the answer text.
   sessionQuestions: { select: { answer: { select: { id: true } } } },
   versaModel: {
     select: {
-      categoryId: true,
       v: { select: { question: true, answer: true, clientResponse: true } },
       e: { select: { question: true, answer: true, clientResponse: true } },
       r: { select: { question: true, answer: true, clientResponse: true } },
@@ -1020,6 +1032,28 @@ const COCKPIT_BUNDLE_SELECT = {
     },
   },
 };
+
+// Collapse one VERSA step's free-text to the two presence booleans the engine reads.
+// "Has a response" = a scripted answer OR a captured client response.
+function reduceVersaStep(step) {
+  if (!step) return null;
+  return {
+    hasQuestion: Boolean(step.question),
+    hasResponse: Boolean(step.answer) || Boolean(step.clientResponse),
+  };
+}
+
+// Map a VERSA model row to the boolean-only shape (drops all free-text before it can
+// enter the engine/DTO/response).
+function reduceVersaModel(vm) {
+  return {
+    v: reduceVersaStep(vm?.v),
+    e: reduceVersaStep(vm?.e),
+    r: reduceVersaStep(vm?.r),
+    s: reduceVersaStep(vm?.s),
+    a: reduceVersaStep(vm?.a),
+  };
+}
 
 const ADMIN_DETAIL_INCLUDE = {
   client: true,

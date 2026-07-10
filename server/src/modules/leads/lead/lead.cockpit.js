@@ -62,10 +62,12 @@ function action(type, severity, params, cta) {
   return { type, severity, params, cta };
 }
 
-// A VERSA objection step is "unhandled" when it poses a question but neither the
-// scripted answer nor the client's response has been captured yet.
+// A VERSA objection step is "unhandled" when it poses a question but no response has
+// been captured yet. The repo pre-reduces each step to `{ hasQuestion, hasResponse }`
+// booleans (`hasResponse` = scripted answer OR client response), so the free-text
+// objection scripts never reach this pure engine.
 function isUnhandledStep(step) {
-  return Boolean(step && step.question && !step.clientResponse && !step.answer);
+  return Boolean(step && step.hasQuestion && !step.hasResponse);
 }
 
 function countUnhandledObjections(versaModels) {
@@ -97,8 +99,10 @@ function computeHealth(bundle) {
   const maxIdx = presentIndices.length ? Math.max(...presentIndices) : -1;
   const currentStage = maxIdx >= 0 ? STAGE_ORDER[maxIdx] : null;
   const nextStage = maxIdx + 1 < STAGE_ORDER.length ? STAGE_ORDER[maxIdx + 1] : null;
+  const status = bundle.status ?? null;
   return {
-    status: bundle.status ?? null,
+    status,
+    isTerminal: TERMINAL_STATUSES.includes(status), // deal closed → FE shows the "closed" summary
     paymentStatus: bundle.paymentStatus ?? null,
     currentStage, // SalesStageType or null (NOT_INITIATED)
     nextStage, // SalesStageType or null (at/after the last stage)
@@ -111,10 +115,15 @@ function computeHealth(bundle) {
 /**
  * Compute the prioritized next-best-action list + deal-health summary for one lead.
  * @param {object} bundle  language-neutral lead state (see lead.repo.findCockpitBundle)
- * @param {Date}   now     the reference clock (injected — never read internally)
+ * @param {Date}   now     the reference clock (REQUIRED, injected — never read internally)
  * @returns {{ health: object, actions: Array<{type,severity,params,cta}> }}
  */
-export function computeCockpit(bundle = {}, now = new Date()) {
+export function computeCockpit(bundle = {}, now) {
+  // Determinism contract: the clock must be injected. No `new Date()` default here —
+  // an omitted `now` fails loudly instead of silently reading the wall clock.
+  if (!(now instanceof Date)) {
+    throw new TypeError("computeCockpit: `now` (a Date) is required — inject the clock for determinism.");
+  }
   const health = computeHealth(bundle);
   const status = bundle.status ?? null;
 

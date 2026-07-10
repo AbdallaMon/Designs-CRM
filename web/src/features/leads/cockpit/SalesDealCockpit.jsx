@@ -34,8 +34,6 @@ import {
   SEVERITY_PALETTE,
 } from "@/features/leads/cockpit/config/cockpitActions.jsx";
 
-const TERMINAL_STATUSES = ["FINALIZED", "CONVERTED", "REJECTED", "ARCHIVED"];
-
 // Inner label for a dialog-triggered CTA (the dialog wraps this in its own OpenButton).
 function CtaText({ children, color }) {
   return (
@@ -147,7 +145,8 @@ export function SalesDealCockpit({ lead, ctx, onGoToTab, statuses, onStatusChang
   if (!cockpit) return null;
 
   const { health, actions = [], capabilities = {} } = cockpit;
-  const isTerminal = TERMINAL_STATUSES.includes(health?.status);
+  // Server-computed: a terminal (closed) deal shows the "closed" empty-state copy.
+  const isTerminal = Boolean(health?.isTerminal);
 
   const renderCta = (action, color) => {
     const cfg = getActionConfig(action.type);

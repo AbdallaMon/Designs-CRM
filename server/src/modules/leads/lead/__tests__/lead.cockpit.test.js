@@ -37,6 +37,7 @@ describe("computeCockpit — health", () => {
     const { health } = computeCockpit(bundle, NOW);
     expect(health).toMatchObject({
       status: "NEGOTIATING",
+      isTerminal: false,
       paymentStatus: "PARTIALLY_PAID",
       currentStage: "HANDLE_OBJECTIONS",
       nextStage: "DEAL_CLOSED",
@@ -152,15 +153,15 @@ describe("computeCockpit — warning rules", () => {
   });
 
   it("OBJECTION_UNHANDLED when a VERSA step has a question but no response", () => {
+    // The repo pre-reduces each VERSA step to { hasQuestion, hasResponse } booleans.
     const bundle = baseBundle({
       versaModels: [
         {
-          categoryId: 3,
-          v: { question: "Why hesitate?", answer: null, clientResponse: null }, // unhandled
-          e: { question: "Budget?", answer: "handled", clientResponse: null }, // handled (answer)
-          r: { question: null, answer: null, clientResponse: null }, // no question -> ignore
+          v: { hasQuestion: true, hasResponse: false }, // unhandled
+          e: { hasQuestion: true, hasResponse: true }, // handled (scripted answer)
+          r: { hasQuestion: false, hasResponse: false }, // no question -> ignore
           s: null,
-          a: { question: "Timeline?", answer: null, clientResponse: "next month" }, // handled (response)
+          a: { hasQuestion: true, hasResponse: true }, // handled (client response)
         },
       ],
     });
@@ -258,6 +259,7 @@ describe("computeCockpit — sorting & suppression", () => {
     const result = computeCockpit(bundle, NOW);
     expect(result.actions).toEqual([]);
     expect(result.health.status).toBe("FINALIZED");
+    expect(result.health.isTerminal).toBe(true);
     expect(result.health.currentStage).toBe("DEAL_CLOSED");
   });
 
