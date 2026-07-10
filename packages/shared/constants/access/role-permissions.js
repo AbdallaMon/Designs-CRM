@@ -164,6 +164,12 @@ export const IMAGE_SESSION_ADMIN = [P.IMAGE_SESSION.ADMIN_VIEW, P.IMAGE_SESSION.
 // Telegram management — ADMIN only today.
 export const TELEGRAM_ADMIN = [P.TELEGRAM.MANAGE];
 
+// Action-audit viewer — ADMIN + SUPER_ADMIN ONLY (a NEW additive surface, no legacy
+// equivalent). Spread into the ADMIN + SUPER_ADMIN role arrays below and the ADMIN/
+// SUPER_ADMIN profiles — deliberately NOT in SHARED_AUTHED, NOT layered onto
+// isSuperSales, and NOT granted to any staff/sales/designer/accountant role.
+export const AUDIT_ADMIN = [P.AUDIT.LOG_VIEW];
+
 // ── leads / lead ────────────────────────────────────────────────────────────────
 // Legacy `/shared/client-leads` sat behind SHARED authentication only — EVERY
 // authenticated role could call every route; object scope was enforced ad-hoc inside
@@ -375,6 +381,7 @@ export const ROLE_PERMISSIONS = {
     ...PROJECT_ADMIN,
     ...IMAGE_SESSION_ADMIN,
     ...ADMIN_RESIDUAL,
+    ...AUDIT_ADMIN,
   ],
   [USER_ROLES.SUPER_ADMIN]: [
     ...SHARED_AUTHED,
@@ -388,6 +395,7 @@ export const ROLE_PERMISSIONS = {
     ...PROJECT_ADMIN,
     ...IMAGE_SESSION_ADMIN,
     ...ADMIN_RESIDUAL,
+    ...AUDIT_ADMIN,
   ],
 
   // All other roles currently have the shared authenticated surface (chat, authed

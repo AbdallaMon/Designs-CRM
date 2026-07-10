@@ -134,6 +134,7 @@ const MASTER = {
         { label: "Staff report", href: "/dashboard/report/staff" },
       ],
     },
+    { label: "Audit Log", href: "/dashboard/audit-logs", subLinks: undefined },
     { label: "Images session gallery", href: "/dashboard/image-sessions", subLinks: undefined },
     { label: "Calendar", href: "/dashboard/calendar", subLinks: undefined },
     { label: "Payments", href: "/dashboard/payments", subLinks: undefined },

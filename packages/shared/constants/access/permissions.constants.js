@@ -693,8 +693,20 @@ export const STAFF_PERMISSIONS = {
   LATEST_CALLS_VIEW: "staff.latest_calls.view", // GET /dashboard/latest-calls
 };
 
+// ── audit (admin-only action-audit trail viewer) ──────────────────────────────
+// A NEW additive surface (no legacy equivalent — the legacy app had no action audit
+// trail). The read-only `/v2/audit-logs` viewer is ADMIN + SUPER_ADMIN ONLY (per the
+// user's requirement) — granted via AUDIT_ADMIN in role-permissions.js and the ADMIN/
+// SUPER_ADMIN profiles, NOT to any other role/profile. There are NO write codes: the
+// trail is append-only, written from usecases by the non-blocking `recordAction`
+// service, never mutated through the API.
+export const AUDIT_PERMISSIONS = {
+  LOG_VIEW: "audit.log.view", // GET /v2/audit-logs (paginated, filterable admin viewer)
+};
+
 // ── nested aggregate (canonical reference for app code) ───────────────────────
 export const PERMISSIONS = {
+  AUDIT: AUDIT_PERMISSIONS,
   AUTH: AUTH_PERMISSIONS,
   CHAT: CHAT_PERMISSIONS,
   TELEGRAM: TELEGRAM_PERMISSIONS,

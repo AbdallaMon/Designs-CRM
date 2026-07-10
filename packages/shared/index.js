@@ -10,3 +10,4 @@ export * from "./constants/access/roles.constants.js";
 export * from "./constants/access/role-permissions.js";
 export * from "./constants/access/navigation.js";
 export * from "./constants/access/profiles.js";
+export * from "./constants/access/audit-actions.js";

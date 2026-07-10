@@ -215,6 +215,16 @@ export const NAVIGATION = [
     ],
   },
 
+  // 6b) Audit Log — ADMIN/SUPER_ADMIN only (a NEW admin-cluster screen, no master
+  //     equivalent). Placed right after Reports in the admin sidebar cluster.
+  {
+    key: "audit-logs",
+    label: "Audit Log",
+    href: "/dashboard/audit-logs",
+    icon: "FiActivity",
+    allowedRoles: [...ADMIN_SET],
+  },
+
   // 7) Images session gallery — ADMIN/SUPER_ADMIN only.
   {
     key: "image-sessions",
