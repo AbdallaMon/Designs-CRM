@@ -14,7 +14,6 @@ import {
   IconButton,
   Tooltip,
   Fade,
-  Skeleton,
   useTheme,
   alpha,
 } from "@mui/material";
@@ -34,6 +33,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { PreviewItem } from "./PreviewItem";
 import { SiMaterialformkdocs } from "react-icons/si";
+import { ClientSessionSubmittedSkeleton } from "./ClientSessionSubmittedSkeleton";
 
 // Register ScrollTrigger plugin
 gsap.registerPlugin(ScrollTrigger);
@@ -185,32 +185,7 @@ export function ClientSessionSubmitted({ session, loading }) {
   };
 
   if (loading) {
-    return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
-          <Skeleton
-            variant="circular"
-            width={48}
-            height={48}
-            sx={{ mx: "auto", mb: 2 }}
-          />
-          <Skeleton variant="text" height={60} sx={{ mb: 2 }} />
-          <Skeleton variant="text" height={40} />
-        </Paper>
-        <Grid container spacing={3}>
-          {[...Array(4)].map((_, index) => (
-            <Grid size={{ xs: 12, md: 6 }} key={index}>
-              <Card>
-                <CardContent>
-                  <Skeleton variant="text" height={40} sx={{ mb: 2 }} />
-                  <Skeleton variant="rectangular" height={60} />
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-    );
+    return <ClientSessionSubmittedSkeleton />;
   }
 
   return (
