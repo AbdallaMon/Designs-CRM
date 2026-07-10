@@ -1,12 +1,10 @@
 "use client";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
-import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import {
   Alert,
   Box,
   Button,
   ButtonBase,
-  Chip,
   Container,
   Grid,
   IconButton,
@@ -23,27 +21,15 @@ import {
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
-import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-import "dayjs/locale/ar";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
-import UpdateInitialConsultButton from "@/app/UiComponents/buttons/UpdateInitialConsultLead";
 import {
-  MdCheck,
-  MdHourglassEmpty,
   MdOutlineFiberNew,
   MdOutlinePending,
   MdPhoneInTalk,
   MdEventAvailable,
   MdHistoryToggleOff,
   MdOutlineFactCheck,
-  MdPreview,
   MdSearch,
-  MdLocationOn,
-  MdCategory,
-  MdPhone,
   MdRefresh,
 } from "react-icons/md";
 import CreateNewLead from "../features/AddNewLead";
@@ -53,21 +39,15 @@ import { FixedData } from "@/app/UiComponents/DataViewer/leads/widgets/FixedData
 import PreviewDialog from "../PreviewLeadDialog";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent";
-import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
-import { getData } from "@/app/helpers/functions/getData";
-import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
 import PaginationWithLimit from "@/app/UiComponents/DataViewer/PaginationWithLimit.jsx";
 import { EmptyState } from "../shared/EmptyState";
-import { RecordCard, MetaItem, StatusPill, NameAvatar } from "../shared/tabKit";
-import { EmailRedirect, WhatsAppRedirect } from "../core/Utility";
-import { LeadCategory } from "@/app/helpers/constants";
-
-dayjs.extend(relativeTime);
+import { LeadSliderCard } from "../core/LeadSliderCard";
+import { useSummary } from "./useSummary";
 
 /* ----------------------------------------------------------------------------
- * Tab registry — the LEAD POOLS only (new · non-consulted · stale). Arabic
+ * Tab registry â€” the LEAD POOLS only (new آ· non-consulted آ· stale). Arabic
  * titles, icons, role predicates. Order matters. Calls/meetings/targets are no
- * longer tabs — they render as their own stacked sections below the tabs.
+ * longer tabs â€” they render as their own stacked sections below the tabs.
  * -------------------------------------------------------------------------- */
 const TAB_DEFS = [
   {
@@ -98,7 +78,7 @@ const TAB_DEFS = [
 ];
 
 /* ----------------------------------------------------------------------------
- * Section registry — the stacked, always-visible blocks BELOW the tabs. Each
+ * Section registry â€” the stacked, always-visible blocks BELOW the tabs. Each
  * renders in its own Paper. Calls/meetings are hidden for CONTACT_INITIATOR;
  * targets are always visible. `countKey` reads from the single summary payload.
  * -------------------------------------------------------------------------- */
@@ -127,55 +107,9 @@ const SECTION_DEFS = [
 
 function defaultTabFor(user) {
   if (user.role === "STAFF" && !user.isSuperSales) return "new";
-  // CONTACT_INITIATOR, SUPER_SALES, ADMIN → non-consulted (falls back to new
+  // CONTACT_INITIATOR, SUPER_SALES, ADMIN â†’ non-consulted (falls back to new
   // if the role can't see non-consulted, e.g. plain STAFF).
   return "non-consulted";
-}
-
-/* ----------------------------------------------------------------------------
- * Single counts source. ONE call to `shared/client-leads/summary?staffId=<id>`
- * returns `{ new, nonConsulted, stale, calls, meetings }`. These counts feed
- * BOTH the KPI rail and the tab/section badges. Refetches whenever `token`
- * changes (the page bumps it from the refresh button).
- * -------------------------------------------------------------------------- */
-const EMPTY_SUMMARY = {
-  new: 0,
-  nonConsulted: 0,
-  stale: 0,
-  calls: 0,
-  meetings: 0,
-};
-
-function useSummary(staffId, token) {
-  const [summary, setSummary] = useState(EMPTY_SUMMARY);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let alive = true;
-    async function load() {
-      const res = await getData({
-        url: `shared/client-leads/summary?staffId=${staffId}&`,
-        setLoading,
-        // getData appends pagination params; the summary endpoint ignores them.
-        page: 1,
-        limit: 1,
-        filters: {},
-        search: "",
-        sort: {},
-        others: "",
-      });
-      if (!alive) return;
-      if (res && res.status === 200 && res.data && typeof res.data === "object") {
-        setSummary({ ...EMPTY_SUMMARY, ...res.data });
-      }
-    }
-    load();
-    return () => {
-      alive = false;
-    };
-  }, [staffId, token]);
-
-  return { summary, loading };
 }
 
 /* ----------------------------------------------------------------------------
@@ -205,7 +139,7 @@ export default function NewLeadsPage({ searchParams, staff }) {
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
-  // Admin "look up any lead" → opens the standard preview dialog.
+  // Admin "look up any lead" â†’ opens the standard preview dialog.
   const [lookupId, setLookupId] = useState(null);
   const [lookupOpen, setLookupOpen] = useState(false);
 
@@ -227,7 +161,7 @@ export default function NewLeadsPage({ searchParams, staff }) {
     [user]
   );
 
-  // KPI rail — one tile per visible LEAD-POOL tab, count read from the summary.
+  // KPI rail â€” one tile per visible LEAD-POOL tab, count read from the summary.
   const kpis = tabs.map((t) => ({
     key: t.key,
     label: t.title,
@@ -265,7 +199,7 @@ export default function NewLeadsPage({ searchParams, staff }) {
                 Leads
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                New, non-consulted, and overdue leads — pick a lead and start a
+                New, non-consulted, and overdue leads â€” pick a lead and start a
                 deal.
               </Typography>
             </Box>
@@ -479,7 +413,7 @@ export default function NewLeadsPage({ searchParams, staff }) {
           </Tabs>
 
           <Box sx={{ p: { xs: 1.5, md: 2.5 } }}>
-            {/* Render only the active LEAD-POOL panel → only its fetcher runs.
+            {/* Render only the active LEAD-POOL panel â†’ only its fetcher runs.
                 The rerenderToken in the key remounts it on manual refresh. */}
             {active === "new" && (
               <NewLeadsPanel
@@ -500,7 +434,7 @@ export default function NewLeadsPage({ searchParams, staff }) {
           </Box>
         </Paper>
 
-        {/* ===== Zone 4: stacked sections (calls · meetings · targets) =====
+        {/* ===== Zone 4: stacked sections (calls آ· meetings آ· targets) =====
             Always visible (role permitting), each in its own Paper below the
             tabs. Calls/meetings carry their count from the single summary and
             remount on manual refresh via the rerenderToken key. */}
@@ -535,7 +469,7 @@ export default function NewLeadsPage({ searchParams, staff }) {
         ))}
       </Stack>
 
-      {/* Admin: look up any lead → standard preview dialog */}
+      {/* Admin: look up any lead â†’ standard preview dialog */}
       {admin && lookupId && (
         <PreviewDialog
           open={lookupOpen}
@@ -550,7 +484,7 @@ export default function NewLeadsPage({ searchParams, staff }) {
 }
 
 /* ----------------------------------------------------------------------------
- * Section frame — the unified tab header (icon · Arabic title · count) + body.
+ * Section frame â€” the unified tab header (icon آ· Arabic title آ· count) + body.
  * Lighter local copy so this page has no dependency on the detail-tab provider.
  * -------------------------------------------------------------------------- */
 function SectionFrame({ def, count, children }) {
@@ -612,7 +546,7 @@ function SimpleSection({ def, count, children }) {
 }
 
 /* ----------------------------------------------------------------------------
- * Lead-list panel — the shared 5-state body for New / Non-consulted / Stale.
+ * Lead-list panel â€” the shared 5-state body for New / Non-consulted / Stale.
  * Owns nothing; the caller passes the fetcher result + render config so each
  * pool keeps its exact existing query.
  * -------------------------------------------------------------------------- */
@@ -810,468 +744,5 @@ function StalePanel({ def }) {
       emptyTitle="No overdue leads"
       emptyDescription="No leads have exceeded the set time without follow-up."
     />
-  );
-}
-
-/* ----------------------------------------------------------------------------
- * Lead card — rebuilt on the shared RecordCard. Same signature ({lead, setData})
- * and same action wiring as before, so NonConsultedLeads/OnHoldLeads keep working.
- * -------------------------------------------------------------------------- */
-export function LeadSliderCard({ lead, setData }) {
-  const { user } = useAuth();
-  const theme = useTheme();
-  const { setLoading } = useToastContext();
-  const [previewDialogOpen, setPreviewDialogOpen] = React.useState(false);
-  const admin = checkIfAdmin(user);
-  const isFullyPaid = lead.paymentStatus === "FULLY_PAID";
-
-  const relative = dayjs(lead.createdAt).locale("ar").fromNow();
-  const idLabel = `#${lead?.id.toString().padStart(7, "0")}`;
-
-  const showContact =
-    user.role === "ADMIN" ||
-    user.role === "SUPER_ADMIN" ||
-    user.role === "CONTACT_INITIATOR" ||
-    user.isSuperSales;
-
-  async function createADeal(lead) {
-    const assign = await handleRequestSubmit(
-      lead,
-      setLoading,
-      `shared/client-leads`,
-      false,
-      "Assigning",
-      false,
-      "PUT"
-    );
-    if (assign.status === 200) {
-      setData((data) => data.filter((l) => l.id !== lead.id));
-    }
-    return assign;
-  }
-
-  const category = LeadCategory[lead.selectedCategory] || lead.selectedCategory;
-  const location = lead.country || lead.emirate;
-
-  return (
-    <>
-      <RecordCard
-        sx={{ height: "100%", display: "flex", flexDirection: "column" }}
-        accent={isFullyPaid ? theme.palette.success.main : undefined}
-        leading={
-          showContact ? <NameAvatar name={lead.client?.name} /> : undefined
-        }
-        title={showContact ? lead.client?.name : idLabel}
-        subtitle={`${idLabel} · ${relative}`}
-        status={
-          <StatusPill
-            label={lead.paymentStatus}
-            color={
-              isFullyPaid
-                ? theme.palette.success.main
-                : theme.palette.text.secondary
-            }
-            icon={
-              isFullyPaid ? (
-                <MdCheck size={14} />
-              ) : (
-                <MdHourglassEmpty size={14} />
-              )
-            }
-          />
-        }
-        meta={
-          <>
-            {category && (
-              <MetaItem
-                icon={<MdCategory size={14} />}
-                label="Category"
-                value={category}
-              />
-            )}
-            {location && (
-              <MetaItem
-                icon={<MdLocationOn size={14} />}
-                label="Location"
-                value={location}
-              />
-            )}
-            {showContact && lead.client?.phone && (
-              <MetaItem icon={<MdPhone size={14} />} value={lead.client.phone} />
-            )}
-          </>
-        }
-        actions={
-          <Stack spacing={1} sx={{ width: "100%" }}>
-            {user.role === "STAFF" && !user.isSuperSales && (
-              <ConfirmWithActionModel
-                title="Are you sure you want to get this lead and assign it to you as a new deal?"
-                handleConfirm={() => createADeal(lead)}
-                label="Start a Deal"
-                fullWidth={true}
-                size="small"
-                variant="contained"
-              />
-            )}
-            <UpdateInitialConsultButton clientLead={lead} fullWidth />
-            {user.role !== "CONTACT_INITIATOR" && (
-              <Button
-                fullWidth
-                onClick={() => setPreviewDialogOpen(true)}
-                variant="outlined"
-                size="small"
-                startIcon={<MdPreview />}
-                sx={{ borderRadius: 2, textTransform: "none", fontWeight: 600 }}
-              >
-                Preview Details
-              </Button>
-            )}
-          </Stack>
-        }
-      >
-        {lead.description && (
-          <Typography
-            variant="body2"
-            color="text.primary"
-            title={lead.description}
-            sx={{
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-            }}
-          >
-            {lead.description}
-          </Typography>
-        )}
-      </RecordCard>
-      <PreviewDialog
-        open={previewDialogOpen}
-        onClose={() => setPreviewDialogOpen(false)}
-        setleads={setData}
-        id={lead.id}
-        admin={admin}
-      />
-    </>
-  );
-}
-
-/* ----------------------------------------------------------------------------
- * Preserved (not in the page flow anymore): the admin lead-lookup card. Kept
- * exported so no external reuse site breaks; the page now routes admin lookups
- * into PreviewDialog instead. Body identical to the previous implementation.
- * -------------------------------------------------------------------------- */
-export function SearchForALead() {
-  const [lead, setLead] = useState();
-  const [loading, setLoading] = useState();
-  const [filters, setFilters] = useState();
-  const { user } = useAuth();
-  const isAdmin = checkIfAdmin(user);
-  const theme = useTheme();
-  async function getALead() {
-    await getDataAndSet({
-      url: `shared/client-leads/${filters.id}`,
-      setLoading,
-      setData: setLead,
-    });
-  }
-  useEffect(() => {
-    if (filters && filters?.id) {
-      getALead();
-    }
-  }, [filters, filters?.id]);
-  if (!isAdmin) return;
-  return (
-    <Box
-      sx={{
-        width: "100%",
-        margin: "auto",
-        py: 1,
-        pb: 3,
-        background: theme.palette.background.default,
-        position: "relative",
-        mb: 10,
-        borderRadius: 3,
-        boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-      }}
-    >
-      {loading && <LoadingOverlay />}
-      <Typography variant="h5" sx={{ pl: 2, mb: 0.5 }}>
-        Search in deals
-      </Typography>
-      <SearchComponent
-        apiEndpoint="search?model=clientLead"
-        setFilters={setFilters}
-        inputLabel="Search lead by id ,name or phone"
-        renderKeys={["id", "client.name", "client.phone", "client.email"]}
-        mainKey="id"
-        searchKey={"id"}
-        withParamsChange={false}
-      />
-      {lead && <LeadCard lead={lead} />}
-    </Box>
-  );
-}
-
-function LeadCard({ lead }) {
-  const { user } = useAuth();
-  return (
-    <Box
-      sx={{
-        p: 3,
-        border: "1px solid",
-        borderColor: "divider",
-        borderRadius: 2,
-        backgroundColor: "background.paper",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        transition: "box-shadow 0.2s ease-in-out",
-        "&:hover": {
-          boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-        },
-      }}
-    >
-      <Box sx={{ mb: 3, borderBottom: "1px solid", borderColor: "divider", pb: 2 }}>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            mb: 1,
-          }}
-        >
-          <Typography variant="h5" fontWeight={600} color="text.primary">
-            {lead.client.name}
-          </Typography>
-          {user.role === "ADMIN" || user.role === "SUPER_ADMIN" ? (
-            <Button
-              variant="text"
-              color="text.secondary"
-              component="a"
-              href={`/dashboard/deals/${lead.id}`}
-              sx={{
-                fontFamily: "monospace",
-                backgroundColor: "grey.100",
-                px: 1,
-                py: 0.5,
-                borderRadius: 1,
-              }}
-            >
-              #{lead.id.toString().padStart(7, "0")}
-            </Button>
-          ) : (
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{
-                fontFamily: "monospace",
-                backgroundColor: "grey.100",
-                px: 1,
-                py: 0.5,
-                borderRadius: 1,
-              }}
-            >
-              #{lead.id.toString().padStart(7, "0")}
-            </Typography>
-          )}
-        </Box>
-        <Chip
-          label={`Payment: ${lead.paymentStatus}`}
-          color="primary"
-          variant="outlined"
-          size="small"
-          sx={{ fontWeight: 500 }}
-        />
-        <Chip
-          label={`Status: ${lead.status}`}
-          color="secondary"
-          variant="outlined"
-          size="small"
-          sx={{ fontWeight: 500 }}
-        />
-      </Box>
-
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h6" fontWeight={500} color="text.primary" sx={{ mb: 2 }}>
-          Lead Details
-        </Typography>
-        <Grid container spacing={3}>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Box sx={{ p: 2, backgroundColor: "grey.50", borderRadius: 1 }}>
-              <Typography
-                color="text.secondary"
-                variant="caption"
-                sx={{ fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5 }}
-              >
-                Category
-              </Typography>
-              <Typography variant="body1" sx={{ mt: 0.5, fontWeight: 500 }}>
-                {LeadCategory[lead.selectedCategory]}
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 12, md: 6 }}>
-            <Box sx={{ p: 2, backgroundColor: "grey.50", borderRadius: 1 }}>
-              <Typography
-                color="text.secondary"
-                variant="caption"
-                sx={{ fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5 }}
-              >
-                Location
-              </Typography>
-              <Typography variant="body1" sx={{ mt: 0.5, fontWeight: 500 }}>
-                {lead.country ? lead.country : lead.emirate}
-              </Typography>
-            </Box>
-          </Grid>
-          <Grid size={{ xs: 12 }}>
-            <Box sx={{ p: 2, backgroundColor: "grey.50", borderRadius: 1 }}>
-              <Typography
-                color="text.secondary"
-                variant="caption"
-                sx={{ fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5 }}
-              >
-                Description
-              </Typography>
-              <Typography variant="body1" sx={{ mt: 1, lineHeight: 1.6 }}>
-                {lead.description}
-              </Typography>
-            </Box>
-          </Grid>
-          {lead.clientDescription && (
-            <Grid size={{ xs: 12 }}>
-              <Box sx={{ p: 2, backgroundColor: "grey.50", borderRadius: 1 }}>
-                <Typography
-                  color="text.secondary"
-                  variant="caption"
-                  sx={{ fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5 }}
-                >
-                  Client Description
-                </Typography>
-                <Typography
-                  variant="body1"
-                  component="pre"
-                  sx={{
-                    textWrap: "auto",
-                    wordBreak: "break-all",
-                    mt: 1,
-                    lineHeight: 1.6,
-                    fontFamily: "inherit",
-                  }}
-                >
-                  {lead.clientDescription}
-                </Typography>
-              </Box>
-            </Grid>
-          )}
-          {lead.timeToContact && (
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Box sx={{ p: 2, backgroundColor: "grey.50", borderRadius: 1 }}>
-                <Typography
-                  color="text.secondary"
-                  variant="caption"
-                  sx={{ fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5 }}
-                >
-                  Preferred Contact Time
-                </Typography>
-                <Typography variant="body1" sx={{ mt: 0.5, fontWeight: 500 }}>
-                  {dayjs(lead.timeToContact).format("DD-MM-YYYY, HH:mm")}
-                </Typography>
-              </Box>
-            </Grid>
-          )}
-        </Grid>
-      </Box>
-
-      <Box>
-        <Typography variant="h6" fontWeight={500} color="text.primary" sx={{ mb: 2 }}>
-          Contact Information
-        </Typography>
-        <Grid container spacing={3}>
-          <Grid
-            size={{ xs: 12, md: 6 }}
-            sx={{ "& .MuiBox-root": { width: "100%" } }}
-          >
-            <Box
-              sx={{
-                p: 2,
-                backgroundColor: "primary.50",
-                borderRadius: 1,
-                border: "1px solid",
-                borderColor: "primary.200",
-              }}
-            >
-              <Typography
-                color="text.secondary"
-                variant="caption"
-                sx={{ fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5 }}
-              >
-                Client Name
-              </Typography>
-              <Typography variant="body1" sx={{ mt: 0.5, fontWeight: 500, mb: 2 }}>
-                {lead.client.name}
-              </Typography>
-
-              <Box sx={{ mb: 2 }}>
-                <WhatsAppRedirect lead={lead} />
-              </Box>
-
-              <Box>
-                <Typography
-                  color="text.secondary"
-                  variant="caption"
-                  sx={{ fontWeight: 500, textTransform: "uppercase", letterSpacing: 0.5 }}
-                >
-                  Client Email
-                </Typography>
-                <Box sx={{ mt: 0.5 }}>
-                  <EmailRedirect email={lead.client.email} />
-                </Box>
-              </Box>
-            </Box>
-          </Grid>
-
-          {lead.assignedTo && (
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Box
-                sx={{
-                  p: 2,
-                  backgroundColor: "success.50",
-                  borderRadius: 1,
-                  border: "1px solid",
-                  borderColor: "success.200",
-                }}
-              >
-                <Typography
-                  color="text.secondary"
-                  variant="caption"
-                  sx={{
-                    fontWeight: 500,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
-                    mb: 1,
-                    display: "block",
-                  }}
-                >
-                  Assigned To
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500, mb: 0.5 }}>
-                  {lead.assignedTo.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  {lead.assignedTo.email}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  sx={{ fontStyle: "italic" }}
-                >
-                  Assigned: {dayjs(lead.assignedAt).format("DD/MM/YYYY")}
-                </Typography>
-              </Box>
-            </Grid>
-          )}
-        </Grid>
-      </Box>
-    </Box>
   );
 }

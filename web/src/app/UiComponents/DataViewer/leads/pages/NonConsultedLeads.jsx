@@ -5,7 +5,7 @@ import { Box } from "@mui/material";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent";
 import LeadsSlider from "../../slider/LeadsSlider";
-import { LeadSliderCard } from "./NewLeadsPage";
+import { LeadSliderCard } from "../core/LeadSliderCard";
 
 /**
  * NonConsultedLeads Page Component
