@@ -8,3 +8,8 @@ export const PROJECT_TYPES = [
   "2D_Final_Plans",
   "2D_Quantity_Calculation",
 ];
+
+// Project board statuses a NON-admin user cannot transition AWAY from (legacy
+// updateProject rule). Single source of truth for the usecase workflow-guard
+// (re-exported via project-scope.js) and the dto `canEditStatus` capability.
+export const LOCKED_FROM_STATUSES_FOR_NON_ADMIN = ["Completed", "Canceled", "Rejected"];

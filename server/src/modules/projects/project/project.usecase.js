@@ -20,15 +20,12 @@ import { AppError } from "../../../shared/errors/AppError.js";
 import { projectsMessagesCodes as C } from "@dms/shared";
 import { projectRepository } from "./project.repo.js";
 import { groupProjects } from "./project.dto.js";
+import { LOCKED_FROM_STATUSES_FOR_NON_ADMIN } from "./project.constants.js";
 import { legacyDefaults } from "./project.legacy-flows.js";
 export {
   createGroupProjects,
   assignProjectToUser,
 } from "./project.legacy-flows.js";
-
-// Project board statuses a NON-admin user cannot transition AWAY from (legacy
-// updateProject rule). Used by the workflow-guard + the dto capability.
-const LOCKED_FROM_STATUSES_FOR_NON_ADMIN = ["Completed", "Canceled", "Rejected"];
 
 export class ProjectUsecase {
   /**

@@ -2,7 +2,7 @@
 // hints; the server checkers remain the source of truth). Pure: no Prisma, no side
 // effects.
 import { computeCapabilities, hasPermission, PERMISSIONS } from "@dms/shared";
-import { PROJECT_TYPES } from "./project.constants.js";
+import { PROJECT_TYPES, LOCKED_FROM_STATUSES_FOR_NON_ADMIN } from "./project.constants.js";
 
 const P = PERMISSIONS;
 
@@ -44,11 +44,6 @@ export function sortProjectsByTypeOrder(projects, order = PROJECT_TYPES) {
     return ai - bi;
   });
 }
-
-// Project board statuses a NON-admin user cannot transition AWAY from (legacy
-// updateProject rule). Used only to derive `canEditStatus` for the UI; the route still
-// enforces.
-const LOCKED_FROM_STATUSES_FOR_NON_ADMIN = ["Completed", "Canceled", "Rejected"];
 
 function isFullScope(authUser) {
   return (
