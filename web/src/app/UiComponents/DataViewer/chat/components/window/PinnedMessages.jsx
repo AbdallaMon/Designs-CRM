@@ -1,33 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import {
-  Box,
-  IconButton,
-  Drawer,
-  Typography,
-  List,
-  ListItemButton,
-  Divider,
-  CircularProgress,
-  Badge,
-  Paper,
-  Avatar,
-} from "@mui/material";
-import {
-  MdPushPin,
-  MdClose,
-  MdKeyboardArrowUp,
-  MdKeyboardArrowDown,
-} from "react-icons/md";
-import {
-  FaFileAlt,
-  FaFileImage,
-  FaFilePdf,
-  FaFileVideo,
-  FaFileAudio,
-} from "react-icons/fa";
-import colors from "@/app/helpers/colors";
+import { PinnedMessagesBar } from "./PinnedMessagesBar";
+import { PinnedMessagesDrawer } from "./PinnedMessagesDrawer";
 
 const MAX_PINNED = 20;
 
@@ -66,74 +41,6 @@ export default function PinnedMessages({
   useEffect(() => {
     setCurrentIndex((prev) => clampIndex(prev));
   }, [clampIndex]);
-
-  // ===== File icon =====
-  const renderFileIcon = (mimeType) => {
-    if (!mimeType) return <FaFileAlt size={16} />;
-
-    if (mimeType.startsWith("image/"))
-      return <FaFileImage size={16} color="#4CAF50" />;
-    if (mimeType.startsWith("video/"))
-      return <FaFileVideo size={16} color="#2196F3" />;
-    if (mimeType.startsWith("audio/"))
-      return <FaFileAudio size={16} color="#FF9800" />;
-    if (mimeType === "application/pdf")
-      return <FaFilePdf size={16} color="#F44336" />;
-
-    return <FaFileAlt size={16} color="#757575" />;
-  };
-
-  const renderMessagePreview = (message) => {
-    const hasFile = message?.fileUrl && message?.type !== "TEXT";
-    const hasContent = message?.content && message.content.trim() !== "";
-
-    if (hasFile && hasContent) {
-      return (
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-            {renderFileIcon(message.fileMimeType)}
-            <Typography
-              variant="caption"
-              sx={{ fontStyle: "italic", color: "text.secondary" }}
-            >
-              {message.fileName || "File"}
-            </Typography>
-          </Box>
-          <Typography variant="body2" sx={{ color: "text.primary" }}>
-            {message.content}
-          </Typography>
-        </Box>
-      );
-    }
-
-    if (hasFile) {
-      return (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          {renderFileIcon(message.fileMimeType)}
-          <Typography variant="body2" sx={{ fontStyle: "italic" }}>
-            {message.fileName || "File"}
-          </Typography>
-        </Box>
-      );
-    }
-
-    if (hasContent) {
-      return (
-        <Typography variant="body2" sx={{ color: "text.primary" }}>
-          {message.content}
-        </Typography>
-      );
-    }
-
-    return (
-      <Typography
-        variant="body2"
-        sx={{ fontStyle: "italic", color: "text.secondary" }}
-      >
-        Message
-      </Typography>
-    );
-  };
 
   // ===== Navigation core =====
   const navigateToMessage = async (index, options = {}) => {
@@ -269,290 +176,29 @@ export default function PinnedMessages({
   return (
     <>
       {/* WhatsApp-style Pinned Message Bar */}
-      <Paper
-        elevation={2}
-        sx={{
-          top: 60,
-          left: 0,
-          right: 0,
-          zIndex: 1000,
-          bgcolor: colors.primary + "15",
-          borderBottom: `2px solid ${colors.primary}`,
-          display: "flex",
-          alignItems: "center",
-          px: 2,
-          py: 1,
-          gap: 1,
-        }}
-      >
-        <MdPushPin size={20} color={colors.primary} />
-
-        {/* Click bar -> jump to current pinned then show NEXT in bar */}
-        <Box
-          onClick={() => navigateToMessage(currentIndex, { autoAdvance: true })}
-          sx={{
-            flex: 1,
-            cursor: "pointer",
-            minWidth: 0,
-            "&:hover": { opacity: 0.85 },
-          }}
-        >
-          <Typography
-            variant="caption"
-            sx={{
-              color: colors.primary,
-              fontWeight: "bold",
-              display: "block",
-            }}
-          >
-            {currentMessage?.sender?.name || "Unknown User"}
-          </Typography>
-
-          <Box
-            sx={{
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {renderMessagePreview(currentMessage)}
-          </Box>
-        </Box>
-
-        {/* Right controls */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          <Typography
-            variant="caption"
-            sx={{
-              color: colors.primary,
-              fontWeight: "bold",
-              minWidth: 40,
-              textAlign: "center",
-            }}
-          >
-            {currentIndex + 1}/{displayedMessages.length}
-          </Typography>
-
-          {/* REVERSED buttons */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            {/* UP = NEXT */}
-            <IconButton
-              size="small"
-              onClick={handleNext}
-              disabled={
-                currentIndex === displayedMessages.length - 1 || isNavigating
-              }
-              sx={{
-                p: 0.25,
-                color: colors.primary,
-                "&:disabled": { color: "text.disabled" },
-              }}
-            >
-              <MdKeyboardArrowUp size={20} />
-            </IconButton>
-
-            {/* DOWN = PREV */}
-            <IconButton
-              size="small"
-              onClick={handlePrevious}
-              disabled={currentIndex === 0 || isNavigating}
-              sx={{
-                p: 0.25,
-                color: colors.primary,
-                "&:disabled": { color: "text.disabled" },
-              }}
-            >
-              <MdKeyboardArrowDown size={20} />
-            </IconButton>
-          </Box>
-
-          <IconButton
-            size="small"
-            onClick={toggleDrawer}
-            sx={{ color: colors.primary, ml: 1 }}
-          >
-            <Badge
-              badgeContent={displayedMessages.length}
-              color="error"
-              max={20}
-            >
-              <MdPushPin size={20} />
-            </Badge>
-          </IconButton>
-        </Box>
-
-        {(loadingJumpToMessage || isNavigating) && (
-          <CircularProgress size={16} sx={{ color: colors.primary }} />
-        )}
-      </Paper>
+      <PinnedMessagesBar
+        currentMessage={currentMessage}
+        currentIndex={currentIndex}
+        displayedMessages={displayedMessages}
+        isNavigating={isNavigating}
+        loadingJumpToMessage={loadingJumpToMessage}
+        navigateToMessage={navigateToMessage}
+        handleNext={handleNext}
+        handlePrevious={handlePrevious}
+        toggleDrawer={toggleDrawer}
+      />
 
       {/* Drawer */}
-      <Drawer
-        anchor="right"
-        open={drawerOpen}
-        onClose={toggleDrawer}
-        PaperProps={{ sx: { width: { xs: "90%", sm: 400 }, maxWidth: "100%" } }}
-      >
-        <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-          {/* Header */}
-          <Box
-            sx={{
-              p: 2,
-              bgcolor: colors.primary,
-              color: "white",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <MdPushPin size={24} />
-              <Typography variant="h6" fontWeight="bold">
-                Pinned Messages
-              </Typography>
-            </Box>
-
-            <IconButton onClick={toggleDrawer} sx={{ color: "white" }}>
-              <MdClose size={24} />
-            </IconButton>
-          </Box>
-
-          {/* Content */}
-          <Box sx={{ flex: 1, overflow: "auto" }}>
-            {loadingPinnedMessages ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  height: "100%",
-                }}
-              >
-                <CircularProgress />
-              </Box>
-            ) : displayedMessages.length === 0 ? (
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  height: "100%",
-                  color: "text.secondary",
-                }}
-              >
-                <Typography>No pinned messages</Typography>
-              </Box>
-            ) : (
-              <List sx={{ p: 0 }}>
-                {displayedMessages.map((message, index) => (
-                  <Box key={message.id}>
-                    <ListItemButton
-                      onClick={() => handleMessageClick(message.id)}
-                      sx={{
-                        py: 2,
-                        px: 2,
-                        bgcolor:
-                          index === currentIndex
-                            ? colors.primary + "10"
-                            : "transparent",
-                        borderLeft:
-                          index === currentIndex
-                            ? `4px solid ${colors.primary}`
-                            : "4px solid transparent",
-                        "&:hover": { bgcolor: "action.hover" },
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          display: "flex",
-                          gap: 2,
-                          width: "100%",
-                          alignItems: "flex-start",
-                        }}
-                      >
-                        <Avatar
-                          src={message.sender?.profilePicture}
-                          sx={{
-                            bgcolor: colors.secondary,
-                            width: 40,
-                            height: 40,
-                          }}
-                        >
-                          {message.sender?.name?.[0]?.toUpperCase() || "U"}
-                        </Avatar>
-
-                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Typography
-                            variant="subtitle2"
-                            fontWeight="bold"
-                            color="text.primary"
-                          >
-                            {message.sender?.name || "Unknown User"}
-                          </Typography>
-
-                          <Box
-                            sx={{
-                              mt: 0.5,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              display: "-webkit-box",
-                              WebkitLineClamp: 3,
-                              WebkitBoxOrient: "vertical",
-                            }}
-                          >
-                            {renderMessagePreview(message)}
-                          </Box>
-
-                          <Typography
-                            variant="caption"
-                            color="text.disabled"
-                            sx={{ mt: 0.5, display: "block" }}
-                          >
-                            {new Date(message.createdAt).toLocaleDateString(
-                              "en-US",
-                              {
-                                month: "short",
-                                day: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
-                            )}
-                          </Typography>
-                        </Box>
-                      </Box>
-                    </ListItemButton>
-
-                    {index < displayedMessages.length - 1 && <Divider />}
-                  </Box>
-                ))}
-              </List>
-            )}
-          </Box>
-
-          {/* Footer */}
-          <Paper
-            elevation={3}
-            sx={{
-              p: 1.5,
-              bgcolor: "background.default",
-              borderTop: 1,
-              borderColor: "divider",
-            }}
-          >
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              align="center"
-              sx={{ display: "block" }}
-            >
-              {displayedMessages.length} pinned message
-              {displayedMessages.length !== 1 ? "s" : ""}
-              {pinnedMessages.length > MAX_PINNED &&
-                ` (showing first ${MAX_PINNED})`}
-            </Typography>
-          </Paper>
-        </Box>
-      </Drawer>
+      <PinnedMessagesDrawer
+        drawerOpen={drawerOpen}
+        toggleDrawer={toggleDrawer}
+        loadingPinnedMessages={loadingPinnedMessages}
+        displayedMessages={displayedMessages}
+        currentIndex={currentIndex}
+        handleMessageClick={handleMessageClick}
+        pinnedMessages={pinnedMessages}
+        maxPinned={MAX_PINNED}
+      />
     </>
   );
 }

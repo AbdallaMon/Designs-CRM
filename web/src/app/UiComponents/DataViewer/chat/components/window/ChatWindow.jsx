@@ -55,6 +55,9 @@ import { useChatRoom } from "../../hooks/useChatRoom";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
 import { MultiActions } from "../messages/MultiActions";
 import { ForwardMessagesDialog } from "../dialogs/ForwardMessagesDialog";
+import { ChatNoRoomSelected } from "./ChatNoRoomSelected";
+import { ChatEmptyState } from "./ChatEmptyState";
+import { ChatErrorSnackbar } from "./ChatErrorSnackbar";
 
 export function ChatWindow({
   roomId,
@@ -499,28 +502,7 @@ export function ChatWindow({
   }, [messages]);
 
   if (!room) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: clientId
-            ? {
-                xs: "calc(100vh - 32px)",
-                md: "calc(100vh - 32px)",
-              }
-            : {
-                xs: "calc(100vh - 62px)",
-                md: "calc(100vh - 105px)",
-              },
-
-          color: "textSecondary",
-        }}
-      >
-        <Typography>Select a chat to start messaging</Typography>
-      </Box>
-    );
+    return <ChatNoRoomSelected clientId={clientId} />;
   }
   // const toggleSelectUser = () => {};
 
@@ -540,19 +522,10 @@ export function ChatWindow({
       {/* {loading && <LoadingOverlay />} */}
       {error && <Alert severity="error">{error}</Alert>}
       {chatError && (
-        <Snackbar
-          open={Boolean(chatError)}
-          autoHideDuration={6000}
+        <ChatErrorSnackbar
+          chatError={chatError}
           onClose={() => setChatError(null)}
-        >
-          <Alert
-            onClose={() => setChatError(null)}
-            severity="error"
-            sx={{ width: "100%" }}
-          >
-            {chatError}
-          </Alert>
-        </Snackbar>
+        />
       )}
       {/* Header Section */}
       <ChatWindowHeader
@@ -626,42 +599,7 @@ export function ChatWindow({
               <CircularProgress />
             </Box>
           ) : messages.length === 0 ? (
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: 1,
-                flex: 1,
-                color: "text.secondary",
-                textAlign: "center",
-                px: 2,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  bgcolor: "background.paper",
-                  border: "1px solid",
-                  borderColor: "divider",
-                  fontSize: 26,
-                }}
-              >
-                💬
-              </Box>
-              <Typography sx={{ fontWeight: 600 }}>
-                No messages yet
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Start the conversation now
-              </Typography>
-            </Box>
+            <ChatEmptyState />
           ) : (
             <>
               <div ref={messagesStartRef} />
