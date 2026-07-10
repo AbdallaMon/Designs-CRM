@@ -9,14 +9,19 @@
 // `event` = { module, action, entityType?, entityId?, clientLeadId?, summary?,
 //             before?, after?, allowedKeys?, detail? }.
 // When before/after are given, the changed-only redacted diff becomes `detail`; an
-// explicit `detail` wins over the computed diff.
-import { diffFields } from "./diff-fields.js";
+// explicit `detail` wins over the computed diff — but is ITSELF run through the same
+// top-level redaction first (so a hand-built detail can't smuggle a secret into the
+// trail). Callers passing an explicit `detail` MUST pass a FLAT snapshot: redaction is
+// top-level only, so nested secrets would not be caught.
+import { diffFields, redactObject } from "./diff-fields.js";
 import { actionAuditRepository } from "./action-audit.repo.js";
 
 export async function recordAction(ctx = {}, event = {}) {
   try {
     const { before, after, allowedKeys, detail, ...rest } = event;
     const diff = before || after ? diffFields(before, after, allowedKeys) : null;
+    // An explicit detail bypasses the diff redaction path, so redact it here too.
+    const safeDetail = detail != null ? redactObject(detail) : null;
 
     await actionAuditRepository.create({
       actorUserId: ctx.actorUserId ?? null,
@@ -28,7 +33,7 @@ export async function recordAction(ctx = {}, event = {}) {
       entityId: rest.entityId ?? null,
       clientLeadId: rest.clientLeadId ?? null,
       summary: rest.summary ?? null,
-      detail: detail ?? diff ?? null,
+      detail: safeDetail ?? diff ?? null,
     });
   } catch (e) {
     // Swallow: the audit trail is best-effort and must never break the caller.

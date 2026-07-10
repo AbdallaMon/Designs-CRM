@@ -35,8 +35,10 @@ export class AuditUsecase {
   }
 
   async list({ query }) {
-    const page = Number(query.page) || 1;
-    const pageSize = Number(query.pageSize) || 20;
+    // INPUT param is `limit`; the OUTPUT envelope still exposes it as `pageSize`.
+    // Defensive clamp — page is a positive int (min 1) even if the validator is bypassed.
+    const page = Math.max(1, Number(query.page) || 1);
+    const pageSize = Number(query.limit) || 20;
     const skip = (page - 1) * pageSize;
 
     const where = this.#buildWhere(query);

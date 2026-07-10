@@ -77,6 +77,17 @@ describe("recordAction", () => {
     expect(row.detail).toEqual({ custom: true });
   });
 
+  it("redacts an explicit detail before persistence (no bypass of redaction)", async () => {
+    await recordAction(ctx, {
+      module: "auth",
+      action: "PROFILE_SWITCH",
+      detail: { token: "super-secret", note: "kept" },
+    });
+    const row = actionAuditRepository.create.mock.calls[0][0];
+    expect(row.detail.token).toBe("[redacted]");
+    expect(row.detail.note).toBe("kept"); // non-sensitive keys pass through
+  });
+
   it("defaults missing ctx/event fields to null", async () => {
     await recordAction({}, { module: "auth", action: "PROFILE_SWITCH" });
     const row = actionAuditRepository.create.mock.calls[0][0];

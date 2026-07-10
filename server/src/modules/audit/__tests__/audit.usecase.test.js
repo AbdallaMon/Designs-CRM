@@ -19,7 +19,7 @@ describe("AuditUsecase.list — filter → where building", () => {
     await usecase.list({
       query: {
         page: 1,
-        pageSize: 20,
+        limit: 20,
         actorUserId: 7,
         module: "lead",
         action: "LEAD_CREATED",
@@ -45,7 +45,7 @@ describe("AuditUsecase.list — filter → where building", () => {
   it("omits absent filters (empty where) and computes skip from page/pageSize", async () => {
     const repo = makeRepo();
     const usecase = new AuditUsecase(repo);
-    await usecase.list({ query: { page: 3, pageSize: 10 } });
+    await usecase.list({ query: { page: 3, limit: 10 } });
     const arg = repo.findManyPaged.mock.calls[0][0];
     expect(arg.where).toEqual({});
     expect(arg.skip).toBe(20); // (3-1)*10
@@ -56,7 +56,7 @@ describe("AuditUsecase.list — filter → where building", () => {
     const repo = makeRepo();
     const usecase = new AuditUsecase(repo);
     const from = new Date("2026-05-01");
-    await usecase.list({ query: { page: 1, pageSize: 20, from } });
+    await usecase.list({ query: { page: 1, limit: 20, from } });
     expect(repo.findManyPaged.mock.calls[0][0].where).toEqual({ createdAt: { gte: from } });
   });
 });
@@ -72,7 +72,7 @@ describe("AuditUsecase.list — actor resolution + dto mapping", () => {
       findUsersByIds: vi.fn().mockResolvedValue([{ id: 7, name: "Boss", role: "SUPER_ADMIN" }]),
     });
     const usecase = new AuditUsecase(repo);
-    const result = await usecase.list({ query: { page: 1, pageSize: 20 } });
+    const result = await usecase.list({ query: { page: 1, limit: 20 } });
 
     // distinct ids only (7 appears twice → looked up once)
     expect(repo.findUsersByIds).toHaveBeenCalledWith([7]);
@@ -115,25 +115,25 @@ describe("AuditUsecase.list — actor resolution + dto mapping", () => {
     ];
     const repo = makeRepo({ findManyPaged: vi.fn().mockResolvedValue({ items, total: 1 }) });
     const usecase = new AuditUsecase(repo);
-    const result = await usecase.list({ query: { page: 1, pageSize: 20 } });
+    const result = await usecase.list({ query: { page: 1, limit: 20 } });
     expect(result.items[0].actor).toEqual({ id: 99, name: null, role: "STAFF" });
   });
 });
 
 describe("AuditValidation.listQuery", () => {
-  it("defaults page=1, pageSize=20 and coerces string numbers", () => {
+  it("defaults page=1, limit=20 and coerces string numbers", () => {
     const r = AuditValidation.listQuery.safeParse({});
     expect(r.success).toBe(true);
     expect(r.data.page).toBe(1);
-    expect(r.data.pageSize).toBe(20);
+    expect(r.data.limit).toBe(20);
 
-    const r2 = AuditValidation.listQuery.safeParse({ page: "3", pageSize: "50" });
+    const r2 = AuditValidation.listQuery.safeParse({ page: "3", limit: "50" });
     expect(r2.data.page).toBe(3);
-    expect(r2.data.pageSize).toBe(50);
+    expect(r2.data.limit).toBe(50);
   });
 
-  it("rejects an over-max pageSize and a non-positive page", () => {
-    expect(AuditValidation.listQuery.safeParse({ pageSize: "1000" }).success).toBe(false);
+  it("rejects an over-max limit and a non-positive page", () => {
+    expect(AuditValidation.listQuery.safeParse({ limit: "1000" }).success).toBe(false);
     expect(AuditValidation.listQuery.safeParse({ page: "0" }).success).toBe(false);
   });
 

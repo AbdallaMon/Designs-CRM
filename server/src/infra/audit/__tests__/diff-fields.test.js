@@ -44,6 +44,25 @@ describe("diffFields", () => {
     }
   });
 
+  it("redacts the real schema secrets the old exact-list missed", () => {
+    const keys = ["googleAccessToken", "googleRefreshToken", "accessHash"];
+    for (const k of keys) {
+      const { after } = diffFields({ [k]: "a" }, { [k]: "b" });
+      expect(after[k]).toBe("[redacted]");
+    }
+  });
+
+  it("redacts an unknown key by the case-insensitive substring rule", () => {
+    // `someSecretField` is in no explicit list — caught only by the /secret/i pattern.
+    const { after: a1 } = diffFields({ someSecretField: "x" }, { someSecretField: "y" });
+    expect(a1.someSecretField).toBe("[redacted]");
+    // substring rule is case-insensitive across the fragment set.
+    const { after: a2 } = diffFields({ userPassword: "x" }, { userPassword: "y" });
+    expect(a2.userPassword).toBe("[redacted]");
+    const { after: a3 } = diffFields({ apiHashValue: "x" }, { apiHashValue: "y" });
+    expect(a3.apiHashValue).toBe("[redacted]");
+  });
+
   it("restricts the diff scope to allowedKeys when provided", () => {
     const before = { name: "a", secretField: "x", role: "STAFF" };
     const after = { name: "b", secretField: "y", role: "ADMIN" };

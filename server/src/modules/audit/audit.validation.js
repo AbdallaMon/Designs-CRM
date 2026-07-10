@@ -4,7 +4,9 @@
 import { z } from "zod";
 
 const pageNum = z.coerce.number().int().positive().default(1);
-const pageSizeNum = z.coerce.number().int().positive().max(100).default(20);
+// INPUT param is `limit` (matches the notifications module template). The OUTPUT dto
+// still returns `pageSize` — the usecase maps limit → pageSize in the response only.
+const limitNum = z.coerce.number().int().positive().max(100).default(20);
 const optionalId = z.coerce.number().int().positive().optional();
 const optionalStr = z.string().trim().min(1).max(64).optional();
 
@@ -15,7 +17,7 @@ export class AuditValidation {
   static listQuery = z
     .object({
       page: pageNum,
-      pageSize: pageSizeNum,
+      limit: limitNum,
       actorUserId: optionalId,
       module: optionalStr,
       action: optionalStr,

@@ -5,9 +5,10 @@
 // the server writes these codes via `recordAction`, and the admin viewer filters on them.
 //
 // KEEP additive: new audited actions append a code here (never repurpose an existing
-// value — a stored trail must stay interpretable). Only seed codes for the starter set
-// wired now (auth mirror + lead/contract/user); more arrive as the Sales/Admin build
-// grows the coverage floor.
+// value — a stored trail must stay interpretable). These starter codes are SEEDED for the
+// upcoming Sales/Admin wiring but are NOT yet emitted by any business usecase —
+// `recordAction` is not yet called from lead/contract/user (event wiring is a follow-up).
+// More codes arrive as the Sales/Admin build grows the coverage floor.
 
 // The audited business modules (the `module` column). Lowercase, matches the
 // permission-code `<module>` segment where one exists.
