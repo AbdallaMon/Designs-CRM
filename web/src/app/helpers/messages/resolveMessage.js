@@ -8,6 +8,7 @@ import { accountingMessages } from "./maps/accountingMessages";
 import { adminResidualMessages } from "./maps/adminResidualMessages";
 import { auditMessages } from "./maps/auditMessages";
 import { calendarMessages } from "./maps/calendarMessages";
+import { commandCenterMessages } from "./maps/commandCenterMessages";
 import { chatMessages } from "./maps/chatMessages";
 import { contractsMessages } from "./maps/contractsMessages";
 import { coursesMessages } from "./maps/coursesMessages";
@@ -30,6 +31,7 @@ const MESSAGES = {
   ...adminResidualMessages,
   ...auditMessages,
   ...calendarMessages,
+  ...commandCenterMessages,
   ...chatMessages,
   ...contractsMessages,
   ...coursesMessages,
