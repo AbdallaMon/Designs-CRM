@@ -12,6 +12,7 @@ export const leadsMessagesCodes = {
   MEETINGS_FETCHED: "MEETINGS_FETCHED",
   MEETING_REMINDERS_FETCHED: "MEETING_REMINDERS_FETCHED",
   MEETING_REMINDER_FETCHED: "MEETING_REMINDER_FETCHED",
+  LEAD_COCKPIT_FETCHED: "LEAD_COCKPIT_FETCHED", // GET /:id/cockpit (next-best-action strip)
   COUNTRY_CHECK_DONE: "COUNTRY_CHECK_DONE",
 
   // ── success / mutations ────────────────────────────────────────────────────────

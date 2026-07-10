@@ -182,6 +182,14 @@ router.get(
   AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanAccessLead),
   asyncHandler(leadController.getLeadPriceOffers),
 );
+// Sales Deal Cockpit — read-only next-best-action strip (same scope as the detail).
+router.get(
+  "/:clientLeadId/cockpit",
+  AuthMiddleware.requirePermissions([P.VIEW]),
+  validate(LeadValidation.clientLeadIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(leadController.checkIfUserCanAccessLead),
+  asyncHandler(leadController.getLeadCockpit),
+);
 router.post(
   "/:id/meeting-reminders/token",
   AuthMiddleware.requirePermissions([P.MEETING_MANAGE]),

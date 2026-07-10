@@ -14,6 +14,7 @@ export const leadsMessages = {
   MEETINGS_FETCHED: "Meetings fetched",
   MEETING_REMINDERS_FETCHED: "Meeting reminders fetched",
   MEETING_REMINDER_FETCHED: "Meeting reminder fetched",
+  LEAD_COCKPIT_FETCHED: "Cockpit loaded",
   COUNTRY_CHECK_DONE: "Country checked",
 
   // ── success / mutations ────────────────────────────────────────────────────────

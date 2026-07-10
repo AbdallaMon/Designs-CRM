@@ -8,6 +8,7 @@ import { ok, created } from "../../../shared/http/response.js";
 import { leadsMessagesCodes, messagesNames } from "@dms/shared";
 import { auditCtxFromReq } from "../../../infra/audit/record-action.js";
 import { leadUsecase } from "./lead.usecase.js";
+import { leadCockpitUsecase } from "./lead.cockpit.usecase.js";
 import { withListCapabilities } from "./lead.dto.js";
 
 const C = leadsMessagesCodes;
@@ -111,6 +112,13 @@ export class LeadController {
   getLeadPriceOffers = async (req, res) => {
     const items = await this.usecase.getLeadPriceOffers({ id: req.params.clientLeadId, query: req.query, authUser: req.auth });
     return ok(res, items, C.LEAD_FETCHED, TK);
+  };
+
+  // Sales Deal Cockpit — read-only next-best-action strip. Delegates to the focused
+  // cockpit usecase; object scope enforced by the route (checkIfUserCanAccessLead).
+  getLeadCockpit = async (req, res) => {
+    const data = await leadCockpitUsecase.getLeadCockpit({ clientLeadId: req.params.clientLeadId, authUser: req.auth });
+    return ok(res, data, C.LEAD_COCKPIT_FETCHED, TK);
   };
 
   // ── assign / convert / status ────────────────────────────────────────────────
