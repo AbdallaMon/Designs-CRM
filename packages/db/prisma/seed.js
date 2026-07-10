@@ -12,6 +12,63 @@ import { ALL_PERMISSIONS, PROFILE_META, PROFILES, splitPermissionCode } from "@d
 
 export const ADMIN_TIER_PROFILE_KEYS = ["ADMIN", "SUPER_ADMIN", "SUPER_SALES"];
 
+// ── Bootstrap admin ────────────────────────────────────────────────────────────
+// Default credentials for the first-run admin. Only used when the DB has NO admin-tier
+// user yet (see seedAdminUser). Override via env before seeding:
+//   SEED_ADMIN_EMAIL, SEED_ADMIN_NAME, SEED_ADMIN_PASSWORD_HASH (a bcrypt hash — the seed
+//   package has no bcrypt to hash a plaintext at runtime). Generate one with the server's
+//   bcrypt: `node -e "require('bcrypt').hash('yourpass',8).then(console.log)"`.
+const DEFAULT_ADMIN_EMAIL = "abdotlos60@gmail.com";
+const DEFAULT_ADMIN_NAME = "Admin";
+// bcrypt(cost 8) hash matching the requested default admin password.
+const DEFAULT_ADMIN_PASSWORD_HASH =
+  "$2b$08$Y9Ijxmfx2dsc9t.Eto.fn.JQ8FcKE9S4mHUNphYtaxWwdnEMZl7cm";
+
+// Idempotent: create a bootstrap ADMIN user ONLY when no admin-tier user exists yet. Safe to
+// re-run (no-op once any ADMIN/SUPER_ADMIN is present). Wires role + legacy `profile` string +
+// currentProfileId + a UserProfile link to the ADMIN profile so permission resolution works on
+// every path. Assumes seedCatalog ran first (so the ADMIN profile row exists).
+export async function seedAdminUser({ prisma: db }) {
+  const existingAdmin = await db.user.findFirst({
+    where: { role: { in: ["ADMIN", "SUPER_ADMIN"] } },
+    select: { id: true },
+  });
+  if (existingAdmin) return { created: false, reason: "admin-exists" };
+
+  const email = process.env.SEED_ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL;
+  const takenByEmail = await db.user.findUnique({ where: { email }, select: { id: true } });
+  if (takenByEmail) return { created: false, reason: "email-taken", email };
+
+  const adminProfile = await db.profile.findUnique({
+    where: { key: "ADMIN" },
+    select: { id: true },
+  });
+
+  const user = await db.user.create({
+    data: {
+      email,
+      name: process.env.SEED_ADMIN_NAME || DEFAULT_ADMIN_NAME,
+      password: process.env.SEED_ADMIN_PASSWORD_HASH || DEFAULT_ADMIN_PASSWORD_HASH,
+      role: "ADMIN",
+      isActive: true,
+      isPrimary: true,
+      profile: "ADMIN",
+      ...(adminProfile ? { currentProfileId: adminProfile.id } : {}),
+    },
+    select: { id: true, email: true },
+  });
+
+  if (adminProfile) {
+    await db.userProfile.upsert({
+      where: { userId_profileId: { userId: user.id, profileId: adminProfile.id } },
+      update: {},
+      create: { userId: user.id, profileId: adminProfile.id },
+    });
+  }
+
+  return { created: true, userId: user.id, email: user.email, linkedProfile: Boolean(adminProfile) };
+}
+
 // Pure — build the catalog rows from the shared constants (unit-testable, no DB).
 export function buildCatalog() {
   const codes = ALL_PERMISSIONS.map((code) => ({ code, module: splitPermissionCode(code).module }));
@@ -84,14 +141,16 @@ export async function seedCatalog({ prisma: db }) {
 
 const invokedDirectly = process.argv[1] && process.argv[1].replace(/\\/g, "/").endsWith("prisma/seed.js");
 if (invokedDirectly) {
-  seedCatalog({ prisma })
-    .then((r) => {
-      console.log(`✅ Seed: ${r.codes} codes, ${r.profiles} profiles, +${r.linksAdded}/-${r.linksRemoved} links`);
-      return prisma.$disconnect();
-    })
-    .catch(async (e) => {
-      console.error("❌ Seed failed:", e);
-      await prisma.$disconnect();
-      process.exit(1);
-    });
+  (async () => {
+    const r = await seedCatalog({ prisma });
+    console.log(`✅ Seed: ${r.codes} codes, ${r.profiles} profiles, +${r.linksAdded}/-${r.linksRemoved} links`);
+    const a = await seedAdminUser({ prisma });
+    if (a.created) console.log(`✅ Bootstrap admin created: ${a.email} (id ${a.userId}, profile-linked=${a.linkedProfile})`);
+    else console.log(`ℹ️  Bootstrap admin skipped (${a.reason}${a.email ? `: ${a.email}` : ""})`);
+    await prisma.$disconnect();
+  })().catch(async (e) => {
+    console.error("❌ Seed failed:", e);
+    await prisma.$disconnect();
+    process.exit(1);
+  });
 }
