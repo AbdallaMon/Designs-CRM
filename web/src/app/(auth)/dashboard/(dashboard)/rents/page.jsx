@@ -1,4 +1,4 @@
-import Rents from "@/app/UiComponents/DataViewer/accountant/Rents";
+import Rents from "@/features/accountant/Rents";
 
 export default function page() {
   return <Rents />;

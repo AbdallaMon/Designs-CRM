@@ -1,4 +1,4 @@
-import OverduePayments from "@/app/UiComponents/DataViewer/accountant/payments/OverduePayments";
+import OverduePayments from "@/features/accountant/payments/OverduePayments";
 
 export default function page() {
   return <OverduePayments />;

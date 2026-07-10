@@ -1,7 +1,7 @@
 "use client";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/providers/AuthProvider";
-import StaffLeadsKanbanBoard from "@/app/UiComponents/DataViewer/Kanban/staff/StaffLeadsKanbanBoard";
+import StaffLeadsKanbanBoard from "@/features/Kanban/staff/StaffLeadsKanbanBoard";
 
 export default function Page() {
   const { user } = useAuth();

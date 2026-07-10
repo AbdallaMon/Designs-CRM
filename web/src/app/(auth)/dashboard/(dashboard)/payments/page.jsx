@@ -1,4 +1,4 @@
-import ContractPaymentsPage from "@/app/UiComponents/DataViewer/contracts/payments/PaymentsPage";
+import ContractPaymentsPage from "@/features/contracts/payments/PaymentsPage";
 
 export default function page() {
   return <ContractPaymentsPage />;

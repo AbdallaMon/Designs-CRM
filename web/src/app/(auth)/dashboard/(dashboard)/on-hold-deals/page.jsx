@@ -1,16 +1,16 @@
 "use client";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
-import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
+import AdminTable from "@/shared/components/AdminTable";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { Box } from "@mui/material";
 
 import React from "react";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
-import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
+import SearchComponent from "@/shared/components/formComponents/SearchComponent.jsx";
 import { LeadCategory } from "@/app/helpers/constants.js";
-import FilterSelect from "@/app/UiComponents/formComponents/FilterSelect.jsx";
+import FilterSelect from "@/shared/components/formComponents/FilterSelect.jsx";
 import { enumToKeyValueArray } from "@/app/helpers/functions/utility.js";
-import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
+import ConfirmWithActionModel from "@/shared/components/models/ConfirmsWithActionModel.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 
 // Admin variant (matches the former @admin/on-hold-deals slot)

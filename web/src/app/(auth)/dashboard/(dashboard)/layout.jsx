@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import {
   Failed,
   Success,
-} from "@/app/UiComponents/feedback/loaders/toast/ToastUpdate";
+} from "@/shared/components/feedback/loaders/toast/ToastUpdate";
 import { useAuth } from "@/app/providers/AuthProvider";
 import {
   AppBar,
@@ -40,14 +40,14 @@ import {
 import SideNav, {
   SIDENAV_COLLAPSED_WIDTH,
   SIDENAV_EXPANDED_WIDTH,
-} from "@/app/UiComponents/utility/SideNav.jsx";
-import RouteGuard from "@/app/UiComponents/utility/RouteGuard.jsx";
-import NotificationsIcon from "@/app/UiComponents/utility/NotificationIcon.jsx";
-import SignInWithDifferentUserRole from "@/app/UiComponents/DataViewer/users/UserRoles";
-import ProfileDialogTrigger from "@/app/UiComponents/DataViewer/users/profile/ProfileDialogTrigger";
-import Logout from "@/app/UiComponents/buttons/Logout.jsx";
+} from "@/shared/components/utility/SideNav.jsx";
+import RouteGuard from "@/shared/components/utility/RouteGuard.jsx";
+import NotificationsIcon from "@/shared/components/utility/NotificationIcon.jsx";
+import SignInWithDifferentUserRole from "@/features/users/UserRoles";
+import ProfileDialogTrigger from "@/features/users/profile/ProfileDialogTrigger";
+import Logout from "@/shared/components/buttons/Logout.jsx";
 import SocketProvider from "@/app/providers/SocketProvider";
-import ChatWidget from "@/app/UiComponents/DataViewer/chat/components/chat/ChatWidget";
+import ChatWidget from "@/features/chat/components/chat/ChatWidget";
 
 const SIDENAV_COLLAPSED_KEY = "sidenav-collapsed";
 

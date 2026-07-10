@@ -2,7 +2,7 @@ import { toast } from "react-toastify";
 import {
   Failed,
   Success,
-} from "@/app/UiComponents/feedback/loaders/toast/ToastUpdate";
+} from "@/shared/components/feedback/loaders/toast/ToastUpdate";
 import { apiRequest } from "./apiClient";
 import { resolveMessage } from "@/app/helpers/messages/resolveMessage";
 import { describeApiError } from "./richError";

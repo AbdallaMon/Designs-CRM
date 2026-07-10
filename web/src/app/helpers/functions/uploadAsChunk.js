@@ -1,7 +1,7 @@
 import {
   Failed,
   Success,
-} from "@/app/UiComponents/feedback/loaders/toast/ToastUpdate";
+} from "@/shared/components/feedback/loaders/toast/ToastUpdate";
 import { toast } from "react-toastify";
 import { apiRequest } from "./apiClient";
 

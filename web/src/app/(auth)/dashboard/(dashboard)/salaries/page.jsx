@@ -1,4 +1,4 @@
-import Salaries from "@/app/UiComponents/DataViewer/accountant/Salaries";
+import Salaries from "@/features/accountant/Salaries";
 
 export default function page() {
   return <Salaries />;

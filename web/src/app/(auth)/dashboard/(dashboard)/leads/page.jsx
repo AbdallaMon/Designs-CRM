@@ -1,7 +1,7 @@
 "use client";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/providers/AuthProvider";
-import NewLeadsPage from "@/app/UiComponents/DataViewer/leads/pages/NewLeadsPage.jsx";
+import NewLeadsPage from "@/features/leads/pages/NewLeadsPage.jsx";
 
 export default function Page() {
   const { user } = useAuth();

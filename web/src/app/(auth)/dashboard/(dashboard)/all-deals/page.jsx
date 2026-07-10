@@ -1,6 +1,6 @@
 "use client";
 import { useAuth } from "@/app/providers/AuthProvider";
-import AllDealsPage from "@/app/UiComponents/DataViewer/leads/pages/AllDealsPage.jsx";
+import AllDealsPage from "@/features/leads/pages/AllDealsPage.jsx";
 
 export default function Page() {
   const { user } = useAuth();

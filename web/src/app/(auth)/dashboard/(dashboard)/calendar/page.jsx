@@ -1,7 +1,7 @@
 "use client";
 import { useAuth } from "@/app/providers/AuthProvider";
-import CalendarBookingSystem from "@/app/UiComponents/DataViewer/meeting/calendar/AdminCalendar";
-import StaffCalendarPanel from "@/app/UiComponents/DataViewer/meeting/calendar/StaffCalendar";
+import CalendarBookingSystem from "@/features/meeting/calendar/AdminCalendar";
+import StaffCalendarPanel from "@/features/meeting/calendar/StaffCalendar";
 
 export default function Page() {
   const { user } = useAuth();

@@ -1,4 +1,4 @@
-import FinalizedLeadKanban from "@/app/UiComponents/DataViewer/Kanban/staff/FinalizedLeadKanban";
+import FinalizedLeadKanban from "@/features/Kanban/staff/FinalizedLeadKanban";
 import { Suspense } from "react";
 
 export default async function page(props) {

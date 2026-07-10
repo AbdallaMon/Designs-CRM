@@ -1,7 +1,7 @@
 "use client";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/app/providers/AuthProvider";
-import NotificationPage from "@/app/UiComponents/DataViewer/Logs.jsx";
+import NotificationPage from "@/shared/components/Logs.jsx";
 
 export default function Notification() {
   const { user } = useAuth();

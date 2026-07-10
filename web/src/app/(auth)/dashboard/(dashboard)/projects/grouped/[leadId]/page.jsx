@@ -1,4 +1,4 @@
-import LeadProjects from "@/app/UiComponents/DataViewer/work-stages/projects/LeadProjects";
+import LeadProjects from "@/features/work-stages/projects/LeadProjects";
 import { Container } from "@mui/material";
 
 export default function GroupedProjects({ params }) {

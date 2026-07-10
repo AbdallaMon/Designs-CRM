@@ -1,7 +1,7 @@
 "use client";
 import { useParams } from "next/navigation";
 import { useAuth } from "@/app/providers/AuthProvider";
-import PreviewWorkStage from "@/app/UiComponents/DataViewer/work-stages/PreviewWorkStage";
+import PreviewWorkStage from "@/features/work-stages/PreviewWorkStage";
 
 export default function Page() {
   const { user } = useAuth();

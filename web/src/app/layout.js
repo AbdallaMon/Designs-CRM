@@ -2,7 +2,7 @@ import "./globals.css";
 import ToastProvider from "@/app/providers/ToastLoadingProvider";
 import AuthProvider from "@/app/providers/AuthProvider";
 import MUIContextProvider from "@/app/providers/MUIContext";
-import DotsLoader from "@/app/UiComponents/feedback/loaders/DotsLoading";
+import DotsLoader from "@/shared/components/feedback/loaders/DotsLoading";
 import MuiAlertProvider from "@/app/providers/MuiAlert.jsx";
 import colors from "@/app/helpers/colors.js";
 import { Noto_Kufi_Arabic } from "next/font/google";
@@ -11,7 +11,7 @@ import UploadingProvider, {
 } from "./providers/UploadingProgressProvider";
 
 import { Suspense } from "react";
-import ServiceWorkerRegister from "@/app/UiComponents/DataViewer/utility/RegisterServiceWorker.jsx";
+import ServiceWorkerRegister from "@/shared/components/common/RegisterServiceWorker.jsx";
 import SocketProvider from "./providers/SocketProvider";
 
 const noto = Noto_Kufi_Arabic({

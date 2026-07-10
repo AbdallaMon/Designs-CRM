@@ -1,4 +1,4 @@
-import SiteUtilityManager from "@/app/UiComponents/DataViewer/website-utilities/SiteUtilityManager";
+import SiteUtilityManager from "@/features/website-utilities/SiteUtilityManager";
 
 export default function Page() {
   return <SiteUtilityManager />;

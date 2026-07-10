@@ -1,4 +1,4 @@
-import OperationalExpenses from "@/app/UiComponents/DataViewer/accountant/OperationalExpenses";
+import OperationalExpenses from "@/features/accountant/OperationalExpenses";
 
 export default function page() {
   return <OperationalExpenses />;
