@@ -83,8 +83,14 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html>
+    // lang="en" + notranslate: the UI is English-only (matching master). Without this the
+    // browser offers to auto-translate the page; accepting it makes Google Translate rewrap
+    // text nodes, and the next React state change (e.g. closing a modal) then throws
+    // "Failed to execute 'removeChild' on 'Node'". Marking the app non-translatable prevents
+    // that whole class of DOM-reconciliation crash.
+    <html lang="en" translate="no">
       <head>
+        <meta name="google" content="notranslate" />
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body

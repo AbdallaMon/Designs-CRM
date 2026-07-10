@@ -43,16 +43,19 @@ export class AdminLeadsValidation {
       phone: z.string().trim().min(1),
       category: z.string().trim().min(1),
       item: z.string().trim().min(1),
-      emirate: z.string().optional(),
-      location: z.string().optional(),
-      country: z.string().optional(),
-      clientDescription: z.string().optional(),
-      timeToContact: z.string().optional(),
-      priceOption: z.string().optional(),
-      priceRange: z.array(z.number()).optional(),
+      // .nullish() (not .optional()): the rich client form sends unset fields as `null`,
+      // and master's legacy route spread req.body straight into the frozen create logic,
+      // so nulls were accepted. .optional() alone rejects null → 422 on new-lead create.
+      emirate: z.string().nullish(),
+      location: z.string().nullish(),
+      country: z.string().nullish(),
+      clientDescription: z.string().nullish(),
+      timeToContact: z.string().nullish(),
+      priceOption: z.string().nullish(),
+      priceRange: z.array(z.number()).nullish(),
       url: z.any().optional(),
-      notClientPage: z.boolean().optional(),
-      lng: z.string().optional(),
+      notClientPage: z.boolean().nullish(),
+      lng: z.string().nullish(),
     })
     .passthrough();
 }

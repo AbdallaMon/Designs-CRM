@@ -17,14 +17,26 @@ import { useAuth } from "@/app/providers/AuthProvider";
 
 /**
  * LeadStripeInfo
- * - Expects lead.stripieMetadata as: [{ key: "name", value: "Ahmed" }, ...]
+ * - Expects lead.stripieMetadata as [{ key: "name", value: "Ahmed" }, ...] OR the JSON
+ *   string of that array (the column is LONGTEXT, so the backend returns a string).
  * - Renders nothing if empty.
  */
+function parseStripeMetadata(raw) {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string" && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 export default function LeadStripeInfo({ lead }) {
   const theme = useTheme();
-  const items = Array.isArray(lead?.stripieMetadata)
-    ? lead.stripieMetadata
-    : [];
+  const items = parseStripeMetadata(lead?.stripieMetadata);
 
   const labelFor = (key) => {
     const map = {

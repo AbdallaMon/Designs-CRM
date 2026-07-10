@@ -38,7 +38,10 @@ export class PaymentsRepository {
   saveStripeMetadata(clientLeadId, kv) {
     return prisma.clientLead.update({
       where: { id: Number(clientLeadId) },
-      data: { stripieMetadata: kv },
+      // `stripieMetadata` is LONGTEXT (String) in the reconciled prod schema — it was a
+      // Prisma `Json?` column when this was written, so the raw `{key,value}[]` array was
+      // valid. Serialize to a JSON string to match the String column (readers JSON.parse it).
+      data: { stripieMetadata: JSON.stringify(kv) },
     });
   }
 
