@@ -121,7 +121,6 @@ export default function UsersPage() {
               extraProps={{
                 formTitle: "New user",
                 btnText: "Create",
-                variant: "contained",
               }}
             />
           </Box>

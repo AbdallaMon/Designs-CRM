@@ -52,16 +52,24 @@ export default function MuiInputField({
     // label/...) is passed through unchanged.
     const { key: _ignoredKey, helperText: _ignoredHelper, ...inputProps } = inputData;
 
+    // MUI TextField only accepts "standard" | "filled" | "outlined"; any other value (e.g. a
+    // Button "contained" variant passed to the form by mistake) makes MUI resolve an undefined
+    // input component and throw "Cannot read properties of undefined (reading 'muiName')".
+    // Fall back to "filled" so a stray variant can never crash the form.
+    const safeVariant = ["standard", "filled", "outlined"].includes(variant)
+        ? variant
+        : "filled";
+
     return (
           <TextField
                 fullWidth
                 sx={(theme) => ({
-                    backgroundColor: variant === "outlined" ? theme.palette.background.default : 'inherit',
+                    backgroundColor: safeVariant === "outlined" ? theme.palette.background.default : 'inherit',
                     width: "100%",
                     ...(input.sx && input.sx),
                 })}
                 onInput={() => setType(true)}
-                variant={variant}
+                variant={safeVariant}
                 error={Boolean(errors[inputData.id])}
                 disabled={input.disabled}
                 helperText={errors[inputData.id]?.message ? errors[inputData.id]?.message : inputData.helperText}
