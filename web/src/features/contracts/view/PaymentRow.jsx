@@ -79,7 +79,6 @@ export default function PaymentRow({ payment, contractId, onReload, taxRate }) {
     if (req.status === 200) {
       setStatus(next);
       await onReload();
-      oad();
     }
   };
 

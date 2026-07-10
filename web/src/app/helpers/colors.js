@@ -77,7 +77,7 @@ export const STATUS_COLORS = {
 export const NotificationColors = {
   NEW_LEAD: "#4caf50",
   LEAD_ASSIGNED: "#2196f3",
-  LEAD_STATUS_CHANGE: "#ff9800",
+  LEAD_STATUS_CHANGED: "#ff9800",
   LEAD_TRANSFERRED: "#f44336",
   LEAD_UPDATED: "#03a9f4",
   LEAD_CONTACT: "#009688",
