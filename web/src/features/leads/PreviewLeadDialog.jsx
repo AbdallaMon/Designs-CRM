@@ -21,6 +21,7 @@ import { StatusMenu } from "@/features/leads/shared/StatusMenu.jsx";
 import { LeadWorkspace } from "@/features/leads/LeadWorkspace.jsx";
 import { getVisibleLeadSections } from "@/features/leads/config/leadSections.jsx";
 import { useLeadDetails } from "@/features/leads/context/LeadDetailsContext.jsx";
+import { SalesDealCockpit } from "@/features/leads/cockpit/SalesDealCockpit.jsx";
 
 // LeadContent — the shared body of the lead/deal detail. The header + modals + status
 // menu stay here; the section list itself is now driven by the config registry
@@ -213,6 +214,20 @@ const LeadContent = ({
           />
         }
       />
+
+      {/* Deal cockpit — next-best-action strip between the header and the workspace.
+          Only shown when the current user actually owns/can-access the deal (a non-owner
+          view would 403 the cockpit endpoint). CTAs reuse the existing dialogs; status
+          changes reuse LeadContent's handleMenuClose + the workspace section switch. */}
+      {!notUser && (
+        <SalesDealCockpit
+          lead={lead}
+          ctx={leadCtx}
+          onGoToTab={setActiveTab}
+          statuses={leadStatus}
+          onStatusChange={handleMenuClose}
+        />
+      )}
 
       {/* Status Menu — kept in lockstep with the header's status control: gated on the
           backend `canChangeStatus` capability when present (parity-safe), else shown. */}

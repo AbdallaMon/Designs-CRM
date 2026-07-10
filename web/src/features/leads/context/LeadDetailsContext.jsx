@@ -36,6 +36,7 @@ const TAB_ENDPOINTS = {
   files: "files",
   priceOffers: "price-offers",
   salesStage: (leadId) => `shared/sales-stages/${leadId}`,
+  cockpit: (leadId) => `shared/client-leads/${leadId}/cockpit`,
 };
 
 const EMPTY_TAB = { data: undefined, loading: false, loaded: false, error: null };
