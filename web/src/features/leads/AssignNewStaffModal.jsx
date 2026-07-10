@@ -77,7 +77,10 @@ export function AssignNewStaffModal({ lead, onUpdate }) {
       setOpen(false);
     }
   };
-  if (!isAdmin || !lead.userId) return <Box></Box>;
+  // Show for any admin-tier operator (lead.assign.other), regardless of whether the lead
+  // is already taken — the assign endpoint handles NEW/unowned leads (status === "NEW"),
+  // so the button must appear to ASSIGN a new lead as well as to CHANGE an existing owner.
+  if (!isAdmin) return <Box></Box>;
 
   return (
     <Box>

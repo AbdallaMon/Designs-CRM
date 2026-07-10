@@ -19,6 +19,8 @@ export const adminResidualMessages = {
   // ── telegram (lead-scoped) ───────────────────────────────────────────────────────
   TELEGRAM_CHANNEL_CREATED: "Telegram channel created",
   TELEGRAM_USERS_QUEUED: "Adding users to Telegram scheduled",
+  // telegram profile auth (2FA password step)
+  TELEGRAM_PASSWORD_INCORRECT: "Incorrect Telegram password. Please try again.",
 
   // ── fixed-data writes ────────────────────────────────────────────────────────────
   FIXED_DATA_CREATED: "Fixed data added",

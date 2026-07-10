@@ -50,7 +50,7 @@ const VersaObjectionSystem = ({ clientLeadId }) => {
 
     if (!category.hasVersa) {
       const newVersa = await handleRequestSubmit(
-        { categoryId: category.id, clientLeadId },
+        { categoryId: category.id },
         setLoading,
         `shared/questions/versa/${clientLeadId}/category/${category.id}`
       );

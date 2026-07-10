@@ -66,7 +66,7 @@ export const CategorySection = ({ category, clientLeadId }) => {
 
   const handleSubmitAnswer = async (sessionQuestionId, content) => {
     const request = await handleRequestSubmit(
-      { sessionQuestionId, response: content },
+      { response: content },
       setLoading,
       `shared/questions/${sessionQuestionId}/answer`,
       false,

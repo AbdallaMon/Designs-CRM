@@ -176,8 +176,12 @@ export function ChatContainer({
     return id ? Number(id) : null;
   }, [searchParams, type]);
 
-  // When rooms load, pick room from search params if present
+  // When rooms load, pick room from search params if present.
+  // Only page mode is URL-driven; tab/widget mode selects rooms by click, so it must NOT
+  // touch the URL — the old unconditional router.replace("?") wiped the lead-detail dialog's
+  // query state on mount and on every rooms refresh, so the chat could never stay open.
   useEffect(() => {
+    if (type !== "page") return;
     if (roomIdFromParams) {
       setSelectedRoomId(roomIdFromParams);
       if (isMobile) setViewMode("CHAT");
@@ -185,7 +189,7 @@ export function ChatContainer({
       // clear searchPArams
       router.replace("?");
     }
-  }, [rooms, roomIdFromParams, isMobile]);
+  }, [rooms, roomIdFromParams, isMobile, type]);
 
   // Update selected room when rooms change
   useEffect(() => {

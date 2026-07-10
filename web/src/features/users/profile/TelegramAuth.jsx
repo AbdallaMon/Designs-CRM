@@ -112,7 +112,6 @@ export default function TelegramAuth() {
       "Updating",
       false,
     );
-    console.log("Telegram auth response:", req);
     if (
       req?.message ===
       "The code you entered has expired. Please request a new code."
@@ -128,9 +127,18 @@ export default function TelegramAuth() {
       setFormData((prev) => ({ ...prev, password: "" }));
       return;
     }
-    if (req.status === 200) {
-      setCurrentTelegramAuthStep(req.data.teleStatus);
+    // Any other failed step (e.g. a wrong 2FA password → 401 TELEGRAM_PASSWORD_INCORRECT)
+    // must surface its message to the user instead of failing silently. Keep the user on
+    // the current step so they can correct and retry.
+    if (!req || req.status !== 200) {
+      setAuthError(
+        req?.message ||
+          "We couldn't complete this step. Please check your input and try again.",
+      );
+      setFormData((prev) => ({ ...prev, password: "" }));
+      return;
     }
+    setCurrentTelegramAuthStep(req.data.teleStatus);
     if (req?.data?.teleStatus === "SUCCESS") {
       await getTelegramAuth();
     }

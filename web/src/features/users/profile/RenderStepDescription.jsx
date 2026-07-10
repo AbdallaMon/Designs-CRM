@@ -28,10 +28,18 @@ export default function RenderStepDescription({
   }
   if (currentTelegramAuthStep === "REQUIRE_PASSWORD") {
     return (
-      <Typography variant="body2" color="text.secondary">
-        Your account has two-step verification enabled. Enter your Telegram
-        password to proceed.
-      </Typography>
+      <Box display="flex" flexDirection="column" gap={1}>
+        {authError ? (
+          <Alert severity="error" sx={{ py: 0.5 }}>
+            {authError}
+          </Alert>
+        ) : (
+          <Typography variant="body2" color="text.secondary">
+            Your account has two-step verification enabled. Enter your Telegram
+            password to proceed.
+          </Typography>
+        )}
+      </Box>
     );
   }
   if (currentTelegramAuthStep === "AWAIT_TO_REWRITE_2FA_PASSWORD") {

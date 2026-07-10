@@ -77,12 +77,15 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
   const isAdmin = checkIfAdmin(user);
 
   const handleChange = async (event) => {
-    setPersonality(event.target.value);
-    await handleChangePersonality(event.target.value);
+    const prev = personality;
+    const next = event.target.value;
+    setPersonality(next);
+    const ok = await handleChangePersonality(next);
+    if (!ok) setPersonality(prev); // revert optimistic change if the update failed
   };
   async function handleChangePersonality(personality) {
     const request = await handleRequestSubmit(
-      { personality },
+      { personality, field: "personality", inputType: "text" },
       setLoading,
       `shared/client-leads/update/${lead.id}`,
       false,
@@ -105,6 +108,7 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
         setLead({ ...lead, personality });
       }
     }
+    return request.status === 200;
   }
 
   // Defense-in-depth: the section is hidden via leadSections `visible()` when not allowed,

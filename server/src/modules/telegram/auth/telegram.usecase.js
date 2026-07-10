@@ -223,10 +223,9 @@ export class TelegramAuthusecase {
     } catch (error) {
       if (error instanceof AppError) throw error;
       if (error.errorMessage === "PASSWORD_HASH_INVALID") {
-        throw new AppError(
-          "Incorrect Telegram password. Please try again.",
-          401,
-        );
+        // Language-neutral CODE (not prose) so the FE resolveMessage map can surface a
+        // clear "wrong password" message instead of the generic fallback.
+        throw new AppError("TELEGRAM_PASSWORD_INCORRECT", 401);
       }
       throw new AppError(
         error.errorMessage ||

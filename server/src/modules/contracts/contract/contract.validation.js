@@ -44,6 +44,11 @@ const paymentItem = z
 // `.passthrough()` is NOT used — only the known consumed fields are accepted (`.strict()`).
 const stageItem = z
   .object({
+    // `title` is accepted-and-ignored: the frozen service overwrites stage.title with
+    // levelEnum (contract-services.js createStage), and master's legacy route spread
+    // req.body straight in, so the FE has always sent a `title` here. Whitelisting it
+    // (instead of `.strict()`-rejecting it) preserves master's observable behavior.
+    title: z.string().nullish(),
     levelEnum: z.string().min(1),
     deliveryDays: z.coerce.number().int().nonnegative().optional(),
     deptDeliveryDays: z.coerce.number().int().nonnegative().optional(),
