@@ -27,6 +27,10 @@ import {
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import {
+  sanitizePaymentsForSubmit,
+  sanitizeDrawingsForSubmit,
+} from "@/features/contracts/shared/contractHelpers.js";
 
 // Import shared components
 import ProjectGroupSelect from "@/features/contracts/shared/ProjectGroupSelect.jsx";
@@ -195,9 +199,9 @@ export default function CloneContract({
       enTitle: enTitle.trim(),
       projectGroupId: projectGroup,
       stages: stagesPayload,
-      payments,
+      payments: sanitizePaymentsForSubmit(payments),
       specialItems,
-      drawings,
+      drawings: sanitizeDrawingsForSubmit(drawings),
       // clone extras:
       oldContractId: sourceId,
       // markOldAsCancelled: true,

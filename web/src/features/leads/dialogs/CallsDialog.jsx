@@ -167,7 +167,7 @@ export const CallResultDialog = ({
               </Typography>
             </Stack>
           </DialogTitle>
-          <DialogContent sx={{ pt: 4 }}>
+          <DialogContent sx={{ "&.MuiDialogContent-root": { pt: 4 } }}>
             <Stack spacing={3}>
               <FormControl fullWidth>
                 <InputLabel id="call-status-label">Status</InputLabel>
@@ -329,7 +329,7 @@ export const NewCallDialog = ({
               </Box>
             </Stack>
           </DialogTitle>
-          <DialogContent sx={{ pt: 4 }}>
+          <DialogContent sx={{ "&.MuiDialogContent-root": { pt: 4 } }}>
             <Stack spacing={3}>
               <TextField
                 type="datetime-local"

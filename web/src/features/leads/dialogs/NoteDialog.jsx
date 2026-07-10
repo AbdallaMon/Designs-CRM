@@ -127,7 +127,7 @@ export const NewNoteDialog = ({
               </Box>
             </Stack>
           </DialogTitle>
-          <DialogContent sx={{ pt: 4 }}>
+          <DialogContent sx={{ "&.MuiDialogContent-root": { pt: 4 } }}>
             <Stack direction="row" spacing={2} alignItems="flex-start">
               {lead.assignedTo && (
                 <Avatar

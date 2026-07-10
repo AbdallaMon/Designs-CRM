@@ -5,24 +5,21 @@ import { useEffect, useState } from "react";
 import { CategorySection } from "@/features/meeting/SPAIN/utility.jsx";
 
 import {
-  Fab,
   Button,
-  DialogActions,
   Box,
   Alert,
   CircularProgress,
   DialogContent,
   IconButton,
   Typography,
-  DialogTitle,
   Dialog,
-  Slide,
-  useTheme,
-  alpha,
   Container,
+  Stack,
+  alpha,
 } from "@mui/material";
 import { MdQuestionAnswer, MdClose } from "react-icons/md";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
+
 const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,135 +40,80 @@ const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
   }, [open, clientLeadId]);
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="lg"
-      fullWidth
-      fullScreen
-      PaperProps={{
-        sx: {
-          background: (theme) =>
-            `linear-gradient(135deg, ${alpha(
-              theme.palette.background.default,
-              0.95
-            )} 0%, ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-          backdropFilter: "blur(20px)",
-        },
-      }}
-    >
-      <DialogTitle
+    <Dialog open={open} onClose={onClose} fullScreen>
+      {/* Calm header bar — icon tile · title · close. No gradient takeover. */}
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          p: 3,
-          background: (theme) =>
-            `linear-gradient(135deg, ${alpha(
-              theme.palette.primary.main,
-              0.1
-            )} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
-          borderBottom: (theme) =>
-            `1px solid ${alpha(theme.palette.divider, 0.12)}`,
+          px: { xs: 2, sm: 3 },
+          py: 1.5,
+          bgcolor: "background.paper",
+          borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Stack direction="row" spacing={1.5} alignItems="center">
           <Box
             sx={{
-              p: 2,
-              borderRadius: 3,
-              background: (theme) =>
-                `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-              color: "white",
-              boxShadow: (theme) =>
-                `0 4px 16px ${alpha(theme.palette.primary.main, 0.3)}`,
+              width: 42,
+              height: 42,
+              borderRadius: 2.5,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
+              color: "primary.main",
+              fontSize: 21,
             }}
           >
-            <MdQuestionAnswer size={24} />
+            <MdQuestionAnswer />
           </Box>
-          <Typography variant="h4" sx={{ fontWeight: 700 }}>
-            SPIN
-          </Typography>
-        </Box>
-        <IconButton
-          onClick={onClose}
-          size="large"
-          sx={{
-            borderRadius: 2,
-            "&:hover": {
-              background: (theme) => alpha(theme.palette.action.hover, 0.08),
-            },
-          }}
-        >
-          <MdClose size={24} />
+          <Box>
+            <Typography variant="h6" fontWeight={700}>
+              SPIN Questions
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              سؤال اسبين
+            </Typography>
+          </Box>
+        </Stack>
+        <IconButton onClick={onClose} aria-label="Close">
+          <MdClose />
         </IconButton>
-      </DialogTitle>
+      </Stack>
 
-      <DialogContent sx={{ p: 3, py: 5, overflow: "auto" }}>
-        <Container maxWidth="xxl" sx={{ py: 5,direction:"rtl" }}>
+      <DialogContent sx={{ p: 0, bgcolor: "background.default" }}>
+        <Container maxWidth="lg" sx={{ py: 3, direction: "rtl" }}>
           {loading ? (
             <Box
               sx={{
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
-                height: 400,
+                height: 320,
               }}
             >
-              <CircularProgress size={64} thickness={4} />
+              <CircularProgress />
             </Box>
           ) : categories && categories.length === 0 ? (
-            <Alert
-              severity="info"
-              sx={{
-                borderRadius: 3,
-                fontSize: "1.1rem",
-                p: 3,
-              }}
-            >
+            <Alert severity="info" sx={{ borderRadius: 2 }}>
               No question categories found for this meeting.
             </Alert>
           ) : (
-            <Box>
+            <Stack spacing={2}>
               {categories &&
-                categories.map((category, index) => (
+                categories.map((category) => (
                   <CategorySection
                     key={category.id}
                     category={category}
                     clientLeadId={clientLeadId}
                   />
                 ))}
-            </Box>
+            </Stack>
           )}
         </Container>
       </DialogContent>
-
-      <DialogActions
-        sx={{
-          borderTop: (theme) =>
-            `1px solid ${alpha(theme.palette.divider, 0.12)}`,
-          p: 3,
-          background: (theme) =>
-            `linear-gradient(135deg, ${alpha(
-              theme.palette.background.paper,
-              0.8
-            )} 0%, ${alpha(theme.palette.background.default, 0.6)} 100%)`,
-        }}
-      >
-        <Button
-          onClick={onClose}
-          variant="outlined"
-          size="large"
-          sx={{
-            minWidth: 120,
-            borderRadius: 2,
-            textTransform: "none",
-            fontWeight: 600,
-          }}
-        >
-          Close
-        </Button>
-      </DialogActions>
     </Dialog>
   );
 };
@@ -180,12 +122,8 @@ const SPAINQuestionsComponent = ({ open, onClose, clientLeadId }) => {
 export const SPAINQuestionsDialog = ({ clientLeadId }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { user } = useAuth();
-const isAdmin=checkIfAdmin(user)
-  if (
-!isAdmin&&
-    user.role !== "STAFF"
-  ){
-
+  const isAdmin = checkIfAdmin(user);
+  if (!isAdmin && user.role !== "STAFF") {
     return null;
   }
 
@@ -194,26 +132,12 @@ const isAdmin=checkIfAdmin(user)
       <Button
         color="primary"
         variant="contained"
+        fullWidth
         onClick={() => setDialogOpen(true)}
         startIcon={<MdQuestionAnswer />}
-        sx={{
-          borderRadius: 3,
-          textTransform: "none",
-          fontWeight: 600,
-          px: 3,
-          py: 1.5,
-          background: (theme) =>
-            `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-          boxShadow: (theme) =>
-            `0 4px 16px ${alpha(theme.palette.primary.main, 0.3)}`,
-          "&:hover": {
-            transform: "translateY(-2px)",
-            boxShadow: (theme) =>
-              `0 6px 20px ${alpha(theme.palette.primary.main, 0.4)}`,
-          },
-        }}
+        sx={{ textTransform: "none", fontWeight: 600 }}
       >
-        Open SPAIN Questions & Results
+        Open SPIN Questions
       </Button>
 
       <SPAINQuestionsComponent

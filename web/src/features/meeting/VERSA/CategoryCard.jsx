@@ -1,161 +1,78 @@
 "use client";
 
 import React from "react";
-import {
-  Button,
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  Chip,
-  Grow,
-  useTheme,
-  alpha,
-} from "@mui/material";
+import { Button, Typography, Box, Chip, Stack, alpha } from "@mui/material";
 
 import { MdAdd, MdCheckCircle } from "react-icons/md";
 
-// CategoryCard Component - Enhanced
-export const CategoryCard = ({ category, onClick, index }) => {
-  const theme = useTheme();
+// Calm category card: accent rail (success/warning), title, label, status pill, one action.
+export const CategoryCard = ({ category, onClick }) => {
+  const accent = category.hasVersa ? "success" : "warning";
 
   return (
-    <Grow in timeout={300 + index * 100}>
-      <Card
-        sx={{
-          cursor: "pointer",
-          transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
-          height: "100%",
-          borderRadius: 3,
-          position: "relative",
-          overflow: "hidden",
-          background: category.hasVersa
-            ? `linear-gradient(135deg, ${alpha(
-                theme.palette.success.main,
-                0.1
-              )} 0%, ${alpha(theme.palette.success.main, 0.05)} 100%)`
-            : `linear-gradient(135deg, ${alpha(
-                theme.palette.warning.main,
-                0.1
-              )} 0%, ${alpha(theme.palette.warning.main, 0.05)} 100%)`,
-          border: `2px solid ${
-            category.hasVersa
-              ? alpha(theme.palette.success.main, 0.2)
-              : alpha(theme.palette.warning.main, 0.2)
-          }`,
-          "&:hover": {
-            transform: "translateY(-8px) scale(1.02)",
-            boxShadow: `0 16px 40px ${alpha(
-              category.hasVersa
-                ? theme.palette.success.main
-                : theme.palette.warning.main,
-              0.25
-            )}`,
-            border: `2px solid ${
-              category.hasVersa
-                ? theme.palette.success.main
-                : theme.palette.warning.main
-            }`,
-          },
-        }}
-        onClick={() => onClick(category)}
+    <Box
+      onClick={() => onClick(category)}
+      sx={{
+        height: "100%",
+        cursor: "pointer",
+        borderRadius: 2.5,
+        border: (theme) => `1px solid ${theme.palette.divider}`,
+        borderLeft: (theme) => `3px solid ${theme.palette[accent].main}`,
+        bgcolor: "background.paper",
+        p: 2.25,
+        display: "flex",
+        flexDirection: "column",
+        transition: "box-shadow .2s ease, border-color .2s ease",
+        "&:hover": {
+          boxShadow: (theme) => theme.shadows[3],
+          borderColor: (theme) => alpha(theme.palette[accent].main, 0.5),
+        },
+      }}
+    >
+      <Stack
+        direction="row"
+        alignItems="flex-start"
+        justifyContent="space-between"
+        spacing={1}
+        sx={{ mb: 1.5 }}
       >
-        {/* Decorative corner element */}
-        <Box
-          sx={{
-            position: "absolute",
-            top: 0,
-            right: 0,
-            width: 60,
-            height: 60,
-            background: `linear-gradient(135deg, ${
-              category.hasVersa
-                ? theme.palette.success.main
-                : theme.palette.warning.main
-            }, ${
-              category.hasVersa
-                ? theme.palette.success.dark
-                : theme.palette.warning.dark
-            })`,
-            clipPath: "polygon(100% 0, 0 0, 100% 100%)",
-            opacity: 0.8,
-          }}
-        />
-
-        <CardContent
-          sx={{
-            p: 3,
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
-          <Box mb={3}>
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 700,
-                color: theme.palette.text.primary,
-                mb: 1.5,
-                lineHeight: 1.3,
-              }}
-            >
-              {category.title}
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{
-                color: theme.palette.text.secondary,
-                lineHeight: 1.5,
-                fontSize: "0.9rem",
-              }}
-            >
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="subtitle1" fontWeight={700} sx={{ lineHeight: 1.3 }}>
+            {category.title}
+          </Typography>
+          {category.label && (
+            <Typography variant="caption" color="text.secondary">
               {category.label}
             </Typography>
-          </Box>
+          )}
+        </Box>
+        <Chip
+          size="small"
+          label={category.hasVersa ? "Ready" : "New"}
+          icon={category.hasVersa ? <MdCheckCircle /> : <MdAdd />}
+          sx={{
+            flexShrink: 0,
+            fontWeight: 700,
+            borderRadius: 1.5,
+            color: `${accent}.main`,
+            bgcolor: (theme) => alpha(theme.palette[accent].main, 0.12),
+            border: (theme) => `1px solid ${alpha(theme.palette[accent].main, 0.3)}`,
+            "& .MuiChip-icon": { color: `${accent}.main` },
+          }}
+        />
+      </Stack>
 
-          <Box mb={3}>
-            <Chip
-              label={category.hasVersa ? "VERSA Ready" : "Create New"}
-              color={category.hasVersa ? "success" : "warning"}
-              icon={category.hasVersa ? <MdCheckCircle /> : <MdAdd />}
-              variant={category.hasVersa ? "filled" : "outlined"}
-              sx={{
-                fontWeight: 600,
-                fontSize: "0.8rem",
-                height: 32,
-                "& .MuiChip-icon": {
-                  fontSize: "1.1rem",
-                },
-              }}
-            />
-          </Box>
-
-          <Box mt="auto">
-            <Button
-              variant={category.hasVersa ? "contained" : "outlined"}
-              color={category.hasVersa ? "success" : "warning"}
-              fullWidth
-              size="large"
-              startIcon={category.hasVersa ? <MdCheckCircle /> : <MdAdd />}
-              sx={{
-                borderRadius: 2,
-                fontWeight: 600,
-                textTransform: "none",
-                fontSize: "1rem",
-                py: 1.5,
-                boxShadow: category.hasVersa
-                  ? `0 4px 16px ${alpha(theme.palette.success.main, 0.3)}`
-                  : "none",
-              }}
-            >
-              {category.hasVersa ? "View & Edit" : "Create VERSA"}
-            </Button>
-          </Box>
-        </CardContent>
-      </Card>
-    </Grow>
+      <Box sx={{ mt: "auto" }}>
+        <Button
+          variant={category.hasVersa ? "contained" : "outlined"}
+          color={accent}
+          fullWidth
+          startIcon={category.hasVersa ? <MdCheckCircle /> : <MdAdd />}
+          sx={{ textTransform: "none", fontWeight: 600 }}
+        >
+          {category.hasVersa ? "View & Edit" : "Create VERSA"}
+        </Button>
+      </Box>
+    </Box>
   );
 };

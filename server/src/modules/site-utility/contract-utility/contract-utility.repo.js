@@ -2,7 +2,8 @@
 // `client` so a usecase can compose them inside a prisma.$transaction.
 //
 // Models (packages/db/prisma/schema.prisma — FROZEN):
-//   ContractUtility                 — singleton (id Int @id @default(1));
+//   ContractUtility                 — singleton (id Int @id — NO db default; the
+//                                     usecase supplies the fixed singleton id on create);
 //                                     obligationsParty{One,Two}{Ar,En} (Text).
 //   ContractStageClauseTemplate     — heading/title/description Ar+En (Text), order.
 //   ContractSpecialClauseTemplate   — textAr (Text), textEn (Text?), order, isActive.

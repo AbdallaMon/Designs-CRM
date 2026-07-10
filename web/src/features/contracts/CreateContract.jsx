@@ -25,7 +25,11 @@ import StagesSelector from "@/features/contracts/shared/StagesSelector.jsx";
 import PaymentsEditor from "@/features/contracts/shared/PaymentsEditor.jsx";
 import SpecialItemsEditor from "@/features/contracts/shared/SpecialItemsEditor.jsx";
 import ContractDrawingsEditor from "@/features/contracts/shared/ContractDrawingsEditor.jsx";
-import { sum } from "@/features/contracts/shared/contractHelpers.js";
+import {
+  sum,
+  sanitizePaymentsForSubmit,
+  sanitizeDrawingsForSubmit,
+} from "@/features/contracts/shared/contractHelpers.js";
 import { SectionHeader } from "@/features/contracts/shared/formKit.jsx";
 import { ContractDialogShell, StepRail } from "@/features/contracts/shared/dialogKit.jsx";
 import { MdClose } from "react-icons/md";
@@ -124,9 +128,9 @@ export default function CreateContractDialog({
       enName: enClientName.trim(),
       projectGroupId: projectGroup,
       stages: stagesPayload,
-      payments: payments,
+      payments: sanitizePaymentsForSubmit(payments),
       specialItems,
-      drawings,
+      drawings: sanitizeDrawingsForSubmit(drawings),
     };
 
     const req = await handleRequestSubmit(

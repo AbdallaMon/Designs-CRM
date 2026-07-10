@@ -5,9 +5,6 @@ import {
   Typography,
   Box,
   CircularProgress,
-  LinearProgress,
-  useTheme,
-  alpha,
 } from "@mui/material";
 
 import { MdTouchApp } from "react-icons/md";
@@ -19,9 +16,8 @@ import { Transition } from "@/features/meeting/VERSA/Transition.jsx";
 import { CategoriesDialog } from "@/features/meeting/VERSA/CategoriesDialog.jsx";
 import { VersaModelEditor } from "@/features/meeting/VERSA/VersaModelEditor.jsx";
 
-// Main VersaObjectionSystem Component - Enhanced
+// Main VersaObjectionSystem Component
 const VersaObjectionSystem = ({ clientLeadId }) => {
-  const theme = useTheme();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [versaData, setVersaData] = useState(null);
@@ -73,25 +69,10 @@ const VersaObjectionSystem = ({ clientLeadId }) => {
     <Box>
       <Button
         variant="contained"
-        size="large"
+        fullWidth
         startIcon={<MdTouchApp />}
         onClick={handleOpenDialog}
-        sx={{
-          borderRadius: 3,
-          textTransform: "none",
-          fontWeight: 600,
-          px: 3,
-          py: 1.5,
-          background: (theme) =>
-            `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-          boxShadow: (theme) =>
-            `0 4px 16px ${alpha(theme.palette.primary.main, 0.3)}`,
-          "&:hover": {
-            transform: "translateY(-2px)",
-            boxShadow: (theme) =>
-              `0 6px 20px ${alpha(theme.palette.primary.main, 0.4)}`,
-          },
-        }}
+        sx={{ textTransform: "none", fontWeight: 600 }}
       >
         Manage Objections
       </Button>
@@ -110,28 +91,17 @@ const VersaObjectionSystem = ({ clientLeadId }) => {
         TransitionComponent={Transition}
       >
         {loadingVersa ? (
-          <Box>
-            <LinearProgress
-              sx={{
-                height: 4,
-                backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                "& .MuiLinearProgress-bar": {
-                  background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                },
-              }}
-            />
-            <Box
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              justifyContent="center"
-              sx={{ height: "50vh" }}
-            >
-              <CircularProgress size={60} sx={{ mb: 3 }} />
-              <Typography variant="h6" color="text.secondary">
-                Loading VERSA model...
-              </Typography>
-            </Box>
+          <Box
+            display="flex"
+            flexDirection="column"
+            alignItems="center"
+            justifyContent="center"
+            sx={{ height: "50vh" }}
+          >
+            <CircularProgress sx={{ mb: 2 }} />
+            <Typography variant="body2" color="text.secondary">
+              Loading VERSA model...
+            </Typography>
           </Box>
         ) : (
           selectedCategory && (

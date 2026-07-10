@@ -1,7 +1,10 @@
 // image-sessions/admin color repository — Prisma I/O ONLY. Reference-data CRUD for color
 // palettes, moved verbatim from the legacy `image-session-services.js` service.
 import prisma from "../../../infra/prisma/prisma.js";
-import { createTextAndConnect } from "../image-sessions.helpers.js";
+import {
+  createTextAndConnect,
+  deserializeTemplatesDeep,
+} from "../image-sessions.helpers.js";
 import { createAListOfText, editAListOftext } from "./text.repo.js";
 
 export async function getColors({ notArchived }) {
@@ -9,7 +12,7 @@ export async function getColors({ notArchived }) {
   if (notArchived) {
     where.isArchived = false;
   }
-  return await prisma.colorPattern.findMany({
+  const rows = await prisma.colorPattern.findMany({
     where,
     orderBy: {
       order: "asc",
@@ -45,6 +48,7 @@ export async function getColors({ notArchived }) {
       colors: true,
     },
   });
+  return deserializeTemplatesDeep(rows);
 }
 
 export async function createColorPallete({ data }) {

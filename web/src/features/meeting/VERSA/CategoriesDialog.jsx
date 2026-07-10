@@ -10,27 +10,23 @@ import {
   Alert,
   CircularProgress,
   Container,
-  AppBar,
-  Toolbar,
-  Fade,
-  useTheme,
+  Stack,
   alpha,
 } from "@mui/material";
 
-import { MdClose } from "react-icons/md";
+import { MdClose, MdTouchApp } from "react-icons/md";
 import { getData } from "@/app/helpers/functions/getData";
 
 import { Transition } from "@/features/meeting/VERSA/Transition.jsx";
 import { CategoriesGrid } from "@/features/meeting/VERSA/CategoriesGrid.jsx";
 
-// CategoriesDialog Component - Enhanced
+// Calm fullscreen category picker: header bar · legend · grid of category cards.
 export const CategoriesDialog = ({
   clientLeadId,
   open,
   onClose,
   onCategorySelect,
 }) => {
-  const theme = useTheme();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -57,109 +53,76 @@ export const CategoriesDialog = ({
       onClose={onClose}
       TransitionComponent={Transition}
     >
-      <AppBar
+      {/* Calm header bar */}
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
         sx={{
-          position: "relative",
-          background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-          boxShadow: `0 4px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
+          px: { xs: 2, sm: 3 },
+          py: 1.5,
+          bgcolor: "background.paper",
+          borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
         }}
       >
-        <Toolbar sx={{ py: 1 }}>
-          <IconButton
-            edge="start"
-            color="inherit"
-            onClick={onClose}
-            aria-label="close"
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Box
             sx={{
-              mr: 2,
-              "&:hover": {
-                backgroundColor: alpha(theme.palette.common.white, 0.1),
-              },
+              width: 42,
+              height: 42,
+              borderRadius: 2.5,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.12),
+              color: "primary.main",
+              fontSize: 21,
             }}
           >
-            <MdClose />
-          </IconButton>
-          <Box flex={1}>
-            <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
-              VERSA Objection Management System
+            <MdTouchApp />
+          </Box>
+          <Box>
+            <Typography variant="h6" fontWeight={700}>
+              VERSA Objections
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              نموذج الاعتراضات
             </Typography>
           </Box>
-          <Typography
-            variant="subtitle1"
-            sx={{
-              fontWeight: 500,
-              opacity: 0.9,
-            }}
-          >
-            نموذج الاعتراضات
-          </Typography>
-        </Toolbar>
-      </AppBar>
+        </Stack>
+        <IconButton onClick={onClose} aria-label="Close">
+          <MdClose />
+        </IconButton>
+      </Stack>
 
-      <DialogContent sx={{ p: 0 }}>
-        <Box
-          sx={{
-            background: `linear-gradient(135deg, ${alpha(
-              theme.palette.primary.main,
-              0.05
-            )} 0%, ${alpha(theme.palette.background.default, 1)} 30%)`,
-            minHeight: "100vh",
-          }}
-        >
-          <Container maxWidth="lg" sx={{ py: 6 }}>
-            <Fade in timeout={500}>
-              <Box mb={6}>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    color: theme.palette.text.secondary,
-                    mb: 3,
-                    fontSize: "1.2rem",
-                  }}
-                >
-                  Select a category to view or create its VERSA model
-                </Typography>
-                <Alert
-                  severity="info"
-                  sx={{
-                    mb: 4,
-                    borderRadius: 2,
-                    border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-                    backgroundColor: alpha(theme.palette.info.main, 0.05),
-                  }}
-                >
-                  <Typography variant="body1" sx={{ lineHeight: 1.6 }}>
-                    <strong>Green categories</strong> have existing VERSA models
-                    you can view and edit.
-                    <br />
-                    <strong>Orange categories</strong> need new VERSA models to
-                    be created.
-                  </Typography>
-                </Alert>
-              </Box>
-            </Fade>
+      <DialogContent sx={{ p: 0, bgcolor: "background.default" }}>
+        <Container maxWidth="lg" sx={{ py: 3 }}>
+          <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+            Pick a category to view or create its VERSA model.{" "}
+            <strong>Green</strong> categories already have a model;{" "}
+            <strong>amber</strong> ones need one created.
+          </Alert>
 
-            {loading ? (
-              <Box
-                display="flex"
-                flexDirection="column"
-                alignItems="center"
-                justifyContent="center"
-                p={8}
-              >
-                <CircularProgress size={60} sx={{ mb: 3 }} />
-                <Typography variant="h6" color="text.secondary">
-                  Loading categories...
-                </Typography>
-              </Box>
-            ) : (
-              <CategoriesGrid
-                categories={categories}
-                onCategoryClick={onCategorySelect}
-              />
-            )}
-          </Container>
-        </Box>
+          {loading ? (
+            <Box
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+              sx={{ py: 8 }}
+            >
+              <CircularProgress sx={{ mb: 2 }} />
+              <Typography variant="body2" color="text.secondary">
+                Loading categories...
+              </Typography>
+            </Box>
+          ) : (
+            <CategoriesGrid
+              categories={categories}
+              onCategoryClick={onCategorySelect}
+            />
+          )}
+        </Container>
       </DialogContent>
     </Dialog>
   );

@@ -6,6 +6,13 @@ import { toContractUtilityDetailsDto } from "./contract-utility.dto.js";
 const P = PERMISSIONS.SITE_UTILITY;
 const M = siteUtilityMessagesCodes;
 
+// ContractUtility is a singleton whose PK is `id Int @id` (schema.prisma) with NO
+// DB-side default (not autoincrement — verified against the reconciled prod schema).
+// The row is seeded lazily on the first obligations save, so the create must supply
+// an explicit id or Prisma rejects it ("Argument `id` is missing"). We use a fixed
+// singleton id, mirroring the sibling SiteUtility singleton (`id Int @id @default(1)`).
+const CONTRACT_UTILITY_SINGLETON_ID = 1;
+
 // Business logic / orchestration for the contract-utility editor. Prisma never
 // appears here — only repo calls. Errors are thrown as AppError(code, statusCode);
 // success values are returned.
@@ -42,7 +49,9 @@ export class ContractUtilityUsecase {
   async saveObligations({ input }) {
     const existing = await this.repository.getUtility();
     if (!existing) {
-      return this.repository.createUtility({ data: input });
+      return this.repository.createUtility({
+        data: { ...input, id: CONTRACT_UTILITY_SINGLETON_ID },
+      });
     }
     return this.repository.updateUtility({ id: existing.id, data: input });
   }

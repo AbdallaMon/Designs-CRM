@@ -33,9 +33,19 @@ export async function getData({
     if (url.includes("?")) {
       queryPrefix = "&";
     }
-    const path = `${url}${queryPrefix}page=${page}&limit=${limit}&filters=${JSON.stringify(
-      filters
-    )}&search=${search}&sort=${JSON.stringify(sort)}&${others}`;
+    // Only serialize params that were actually supplied. Emitting `page=undefined`
+    // (etc.) sends the literal string "undefined", which defeats server-side
+    // `z.coerce.number().default(1)` (Number("undefined") is NaN, not missing) and
+    // 422s every paginated endpoint the caller didn't pass page/limit to.
+    const parts = [];
+    if (page !== undefined) parts.push(`page=${page}`);
+    if (limit !== undefined) parts.push(`limit=${limit}`);
+    if (filters !== undefined) parts.push(`filters=${JSON.stringify(filters)}`);
+    if (search !== undefined) parts.push(`search=${search}`);
+    if (sort !== undefined) parts.push(`sort=${JSON.stringify(sort)}`);
+    if (others) parts.push(others);
+    const query = parts.join("&");
+    const path = query ? `${url}${queryPrefix}${query}` : url;
 
     const response = await apiRequest(path, {
       headers: { "Content-Type": "application/json" },

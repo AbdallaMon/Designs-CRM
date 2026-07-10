@@ -1,7 +1,10 @@
 // image-sessions/admin material repository — Prisma I/O ONLY. Reference-data CRUD for
 // materials, moved verbatim from the legacy `image-session-services.js` service.
 import prisma from "../../../infra/prisma/prisma.js";
-import { createTextAndConnect } from "../image-sessions.helpers.js";
+import {
+  createTextAndConnect,
+  deserializeTemplatesDeep,
+} from "../image-sessions.helpers.js";
 import { createAListOfText, editAListOftext } from "./text.repo.js";
 
 export async function getMaterials({ notArchived }) {
@@ -9,7 +12,7 @@ export async function getMaterials({ notArchived }) {
   if (notArchived) {
     where.isArchived = false;
   }
-  return await prisma.material.findMany({
+  const rows = await prisma.material.findMany({
     where,
     include: {
       title: {
@@ -41,6 +44,7 @@ export async function getMaterials({ notArchived }) {
       template: true,
     },
   });
+  return deserializeTemplatesDeep(rows);
 }
 
 export async function createMaterial({ data }) {

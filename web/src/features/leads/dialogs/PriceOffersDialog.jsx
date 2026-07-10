@@ -140,7 +140,7 @@ export const AddPriceOffers = ({
               </Box>
             </Stack>
           </DialogTitle>
-          <DialogContent sx={{ pt: 4 }}>
+          <DialogContent sx={{ "&.MuiDialogContent-root": { pt: 4 } }}>
             <Stack spacing={3}>
               <TextField
                 label="Note"

@@ -16,6 +16,7 @@
 // — so behavior is preserved 1:1 without duplicating it.
 import prisma from "../../../infra/prisma/prisma.js";
 import dayjs from "dayjs";
+import { serializeJsonField, parseJsonField } from "../../../shared/utility/json-field.js";
 
 // Roles that historically saw EVERY user in the directory/management lists (legacy
 // `checkIfNotAdmin` branch — non-admins were narrowed to their own role group). Kept
@@ -254,13 +255,15 @@ class UserRepository {
       where: { id: Number(userId) },
       select: { notAllowedCountries: true },
     });
-    return user?.notAllowedCountries || [];
+    // notAllowedCountries is now a String? (LongText) JSON column — decode to the array.
+    return parseJsonField(user?.notAllowedCountries) || [];
   }
 
   updateRestrictedCountries({ userId, countries }) {
     return prisma.user.update({
       where: { id: Number(userId) },
-      data: { notAllowedCountries: countries },
+      // Serialize the country array to a JSON string for the String? (LongText) column.
+      data: { notAllowedCountries: serializeJsonField(countries) },
     });
   }
 

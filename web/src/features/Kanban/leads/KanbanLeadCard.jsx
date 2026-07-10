@@ -156,30 +156,6 @@ const LeadCard = ({
       onMouseLeave={() => setHovered(false)}
     >
       <StyledCard borderColor={accentColor}>
-        {showCheckbox && (
-          <Box
-            sx={{
-              position: "absolute",
-              top: 6,
-              left: 6,
-              zIndex: 1001,
-              bgcolor: "background.paper",
-              borderRadius: "8px",
-              boxShadow: 1,
-            }}
-          >
-            <Checkbox
-              size="small"
-              checked={isSelected}
-              onChange={handleCheckboxChange}
-              onClick={(e) => e.stopPropagation()}
-              sx={{
-                color: isSelected ? "primary.main" : "action.disabled",
-                p: 0.5,
-              }}
-            />
-          </Box>
-        )}
         <FloatingIdBadge
           leadId={lead.id}
           backgroundColor={`${accentColor}1f`}
@@ -228,6 +204,29 @@ const LeadCard = ({
             justifyContent="space-between"
             gap={1}
           >
+            {admin && (
+              <Box
+                sx={{
+                  flexShrink: 0,
+                  opacity: showCheckbox ? 1 : 0,
+                  pointerEvents: showCheckbox ? "auto" : "none",
+                  transition: "opacity 0.15s ease",
+                }}
+              >
+                <Checkbox
+                  size="small"
+                  checked={isSelected}
+                  onChange={handleCheckboxChange}
+                  onClick={(e) => e.stopPropagation()}
+                  sx={{
+                    color: isSelected ? "primary.main" : "action.disabled",
+                    p: 0.5,
+                    mt: -0.5,
+                    ml: -0.5,
+                  }}
+                />
+              </Box>
+            )}
             <Typography
               variant="subtitle1"
               component="div"

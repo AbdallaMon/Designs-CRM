@@ -145,9 +145,15 @@ const KanbanBoard = ({
                     gap: 1,
                     alignItems: "center",
                     position: "fixed",
-                    bottom: 30,
-                    right: 50,
-                    zIndex: 1000,
+                    bottom: 24,
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    zIndex: 1401,
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: "999px",
+                    bgcolor: "background.paper",
+                    boxShadow: "0 4px 16px rgba(42,34,26,0.18)",
                   }}
                 >
                   <Button

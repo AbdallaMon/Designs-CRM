@@ -1,13 +1,19 @@
 // image-sessions/admin template repository — Prisma I/O ONLY. Reference-data CRUD for
 // templates, moved verbatim from the legacy `image-session-services.js` service.
 import prisma from "../../../infra/prisma/prisma.js";
+import {
+  serializeTemplateForWrite,
+  deserializeTemplatesDeep,
+} from "../image-sessions.helpers.js";
 
 export async function getTemplates({ type }) {
-  return await prisma.template.findMany({
-    where: {
-      type,
-    },
-  });
+  return deserializeTemplatesDeep(
+    await prisma.template.findMany({
+      where: {
+        type,
+      },
+    })
+  );
 }
 
 export async function getTemplatesIds({ type }) {
@@ -24,21 +30,22 @@ export async function getTemplatesIds({ type }) {
 export async function createTemplate({ template }) {
   await prisma.template.create({
     data: {
-      ...template,
+      ...serializeTemplateForWrite(template),
     },
   });
   return true;
 }
 
 export async function updateTemplate({ template }) {
-  const id = template.id;
-  delete template.id;
+  const data = serializeTemplateForWrite(template);
+  const id = data.id;
+  delete data.id;
   await prisma.template.update({
     where: {
       id: Number(id),
     },
     data: {
-      ...template,
+      ...data,
     },
   });
   return true;

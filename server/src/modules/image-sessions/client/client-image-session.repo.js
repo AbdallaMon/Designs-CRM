@@ -11,6 +11,8 @@
 // moved verbatim from the legacy `image-session-services.js` + `client-image-services.js`
 // services and invoked from the usecase via lazy adapters — behavior-preserving.
 import prisma from "../../../infra/prisma/prisma.js";
+import { deserializeTemplatesDeep } from "../image-sessions.helpers.js";
+import { serializeJsonField } from "../../../shared/utility/json-field.js";
 
 class ClientImageSessionRepository {
   // Resolve a ClientSelectedImage → its owning imageSessionId (the scope key). Selects ONLY
@@ -37,7 +39,7 @@ export async function getColorsByLng({ lng }) {
       code: lng,
     };
   }
-  return await prisma.colorPattern.findMany({
+  const rows = await prisma.colorPattern.findMany({
     where,
     orderBy: {
       order: "asc",
@@ -75,6 +77,7 @@ export async function getColorsByLng({ lng }) {
       colors: true,
     },
   });
+  return deserializeTemplatesDeep(rows);
 }
 
 export async function saveClientSelectedColor({
@@ -89,7 +92,8 @@ export async function saveClientSelectedColor({
     },
     data: {
       colorPatternId: selectedColor.id,
-      customColors: customColors?.map((color) => color.colorHex),
+      // customColors is now a String? (LongText) column — store the hex array as a JSON string.
+      customColors: serializeJsonField(customColors?.map((color) => color.colorHex)),
       sessionStatus: status,
     },
   });
@@ -105,7 +109,7 @@ export async function getMaterialsByLng({ lng }) {
     };
   }
 
-  return await prisma.material.findMany({
+  const rows = await prisma.material.findMany({
     where,
     include: {
       title: {
@@ -139,6 +143,7 @@ export async function getMaterialsByLng({ lng }) {
       template: true,
     },
   });
+  return deserializeTemplatesDeep(rows);
 }
 
 export async function saveClientSelectedMaterials({
@@ -184,7 +189,7 @@ export async function getStyleByLng({ lng }) {
     };
   }
 
-  return await prisma.style.findMany({
+  const rows = await prisma.style.findMany({
     where,
     include: {
       title: {
@@ -218,6 +223,7 @@ export async function getStyleByLng({ lng }) {
       template: true,
     },
   });
+  return deserializeTemplatesDeep(rows);
 }
 
 export async function saveClientSelectedStyle({

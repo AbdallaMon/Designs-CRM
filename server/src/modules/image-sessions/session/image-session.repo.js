@@ -11,6 +11,8 @@
 // adapters — behavior-preserving.
 import prisma from "../../../infra/prisma/prisma.js";
 import { v4 as uuidv4 } from "uuid";
+import { deserializeTemplatesDeep } from "../image-sessions.helpers.js";
+import { parseJsonField } from "../../../shared/utility/json-field.js";
 
 class ImageSessionRepository {
   // Resolve a ClientImageSession → its parent clientLeadId (the scope key). Returns null if
@@ -124,6 +126,8 @@ export async function getClientImageSessions(clientLeadId) {
     orderBy: { createdAt: "desc" },
   });
 
+  // customColors is a String? (LongText) JSON column — decode to the hex array callers expect.
+  for (const s of sessions) s.customColors = parseJsonField(s.customColors);
   return sessions;
 }
 
@@ -329,7 +333,9 @@ export async function getSessionByToken({ token }) {
     throw new Error("Session not found or expired");
   }
 
-  return session;
+  // customColors is a String? (LongText) JSON column — decode to the hex array callers expect.
+  session.customColors = parseJsonField(session.customColors);
+  return deserializeTemplatesDeep(session);
 }
 
 export async function changeSessionStatus({ token, id, sessionStatus, extra }) {

@@ -1,7 +1,10 @@
 // image-sessions/admin style repository — Prisma I/O ONLY. Reference-data CRUD for styles,
 // moved verbatim from the legacy `image-session-services.js` service.
 import prisma from "../../../infra/prisma/prisma.js";
-import { createTextAndConnect } from "../image-sessions.helpers.js";
+import {
+  createTextAndConnect,
+  deserializeTemplatesDeep,
+} from "../image-sessions.helpers.js";
 import { createAListOfText, editAListOftext } from "./text.repo.js";
 
 export async function getStyles({ notArchived }) {
@@ -9,7 +12,7 @@ export async function getStyles({ notArchived }) {
   if (notArchived) {
     where.isArchived = false;
   }
-  return await prisma.style.findMany({
+  const rows = await prisma.style.findMany({
     where,
     include: {
       title: {
@@ -41,6 +44,7 @@ export async function getStyles({ notArchived }) {
       template: true,
     },
   });
+  return deserializeTemplatesDeep(rows);
 }
 
 export async function createStyle({ data }) {

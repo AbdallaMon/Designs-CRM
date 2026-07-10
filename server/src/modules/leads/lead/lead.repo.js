@@ -14,6 +14,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import prisma from "../../../infra/prisma/prisma.js";
+import { parseJsonField } from "../../../shared/utility/json-field.js";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -101,11 +102,14 @@ class LeadRepository {
     return { items, total };
   }
 
-  getUserCountryRole({ userId }) {
-    return prisma.user.findUnique({
+  async getUserCountryRole({ userId }) {
+    const user = await prisma.user.findUnique({
       where: { id: Number(userId) },
       select: { notAllowedCountries: true, role: true },
     });
+    // notAllowedCountries is now a String? (LongText) JSON column — decode to the array.
+    if (user) user.notAllowedCountries = parseJsonField(user.notAllowedCountries);
+    return user;
   }
 
   // ── Counts (lead-pool summary for the leads page KPI rail / tab badges) ──────────
@@ -279,11 +283,14 @@ class LeadRepository {
   }
 
   // notAllowedCountries only (legacy checkIfUserAllowedToTakeALead read).
-  getUserAllowedCountries({ userId }) {
-    return prisma.user.findUnique({
+  async getUserAllowedCountries({ userId }) {
+    const user = await prisma.user.findUnique({
       where: { id: Number(userId) },
       select: { notAllowedCountries: true },
     });
+    // notAllowedCountries is now a String? (LongText) JSON column — decode to the array.
+    if (user) user.notAllowedCountries = parseJsonField(user.notAllowedCountries);
+    return user;
   }
 
   // Shadow/CONVERTED lead create (legacy assignLeadToAUser ON_HOLD/admin branch).
@@ -646,21 +653,6 @@ class LeadRepository {
     });
   }
 
-  findCallReminderOwner({ reminderId }) {
-    return prisma.callReminder.findUnique({
-      where: {
-        id: reminderId,
-      },
-      select: {
-        user: {
-          select: {
-            id: true,
-          },
-        },
-      },
-    });
-  }
-
   updateCallReminderStatusRecord({ reminderId, status, callResult }) {
     return prisma.callReminder.update({
       where: { id: reminderId },
@@ -680,21 +672,6 @@ class LeadRepository {
         updatedAt: true,
         user: {
           select: { name: true },
-        },
-      },
-    });
-  }
-
-  findMeetingReminderOwner({ reminderId }) {
-    return prisma.meetingReminder.findUnique({
-      where: {
-        id: reminderId,
-      },
-      select: {
-        user: {
-          select: {
-            id: true,
-          },
         },
       },
     });
