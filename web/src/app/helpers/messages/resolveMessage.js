@@ -6,6 +6,7 @@
 
 import { accountingMessages } from "./maps/accountingMessages";
 import { adminResidualMessages } from "./maps/adminResidualMessages";
+import { auditMessages } from "./maps/auditMessages";
 import { calendarMessages } from "./maps/calendarMessages";
 import { chatMessages } from "./maps/chatMessages";
 import { contractsMessages } from "./maps/contractsMessages";
@@ -27,6 +28,7 @@ import { authMessages, DEFAULT_FALLBACK_MESSAGE } from "./authMessages";
 const MESSAGES = {
   ...accountingMessages,
   ...adminResidualMessages,
+  ...auditMessages,
   ...calendarMessages,
   ...chatMessages,
   ...contractsMessages,
