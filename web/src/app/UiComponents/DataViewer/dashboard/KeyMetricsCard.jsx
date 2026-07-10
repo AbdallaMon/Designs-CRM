@@ -5,12 +5,8 @@ import {
   Card,
   CardContent,
   Typography,
-  Box,
   useMediaQuery,
   useTheme,
-  Avatar,
-  LinearProgress,
-  alpha,
 } from "@mui/material";
 import {
   FaDollarSign,
@@ -23,6 +19,8 @@ import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.j
 import { getData } from "@/app/helpers/functions/getData.js";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { formatCurrency } from "@/app/helpers/functions/utility";
+import KeyMetricFinancialTile from "./KeyMetricFinancialTile.jsx";
+import KeyMetricSecondaryTile from "./KeyMetricSecondaryTile.jsx";
 
 const KeyMetricsCard = ({ staff, staffId }) => {
   const theme = useTheme();
@@ -221,61 +219,7 @@ const KeyMetricsCard = ({ staff, staffId }) => {
         <Grid container spacing={2} sx={{ mb: 3 }}>
           {financialTiles.map((metric, index) => (
             <Grid size={{ xs: 12, sm: 6, md: 3 }} key={`fin-${index}`}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  p: 2.5,
-                  height: "100%",
-                  boxShadow: 3,
-                  borderRadius: 2,
-                  bgcolor: "background.paper",
-                  borderInlineStart: 4,
-                  borderColor: metric.color,
-                  background: (t) =>
-                    `linear-gradient(135deg, ${alpha(
-                      metric.color,
-                      0.1
-                    )} 0%, ${t.palette.background.paper} 60%)`,
-                  transition: "transform 0.3s, box-shadow 0.3s",
-                  "&:hover": {
-                    transform: "translateY(-5px)",
-                    boxShadow: 8,
-                  },
-                }}
-              >
-                <Avatar
-                  sx={{
-                    bgcolor: metric.color,
-                    width: 64,
-                    height: 64,
-                    marginInlineEnd: 2,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {metric.icon}
-                </Avatar>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography
-                    variant="subtitle2"
-                    sx={{ color: "text.secondary" }}
-                  >
-                    {metric.title}
-                  </Typography>
-                  <Typography
-                    variant={isMobile ? "h6" : "h5"}
-                    sx={{
-                      fontWeight: "bold",
-                      color: "text.primary",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {metric.value}
-                  </Typography>
-                </Box>
-              </Box>
+              <KeyMetricFinancialTile metric={metric} isMobile={isMobile} />
             </Grid>
           ))}
         </Grid>
@@ -284,67 +228,10 @@ const KeyMetricsCard = ({ staff, staffId }) => {
         <Grid container spacing={1.5}>
           {secondaryTiles.map((metric, index) => (
             <Grid size={{ xs: 6, sm: 4, md: 3 }} key={`sec-${index}`}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  p: 1.5,
-                  height: "100%",
-                  boxShadow: 1,
-                  borderRadius: 2,
-                  bgcolor: "background.paper",
-                  transition: "transform 0.3s, box-shadow 0.3s",
-                  "&:hover": {
-                    transform: "translateY(-3px)",
-                    boxShadow: 4,
-                  },
-                }}
-              >
-                <Avatar
-                  sx={{
-                    bgcolor: metric.color,
-                    width: 40,
-                    height: 40,
-                    marginInlineEnd: 1.5,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {metric.icon}
-                </Avatar>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography
-                    variant="caption"
-                    sx={{ color: "text.secondary", display: "block" }}
-                  >
-                    {metric.title}
-                  </Typography>
-                  <Typography
-                    variant="subtitle1"
-                    sx={{ fontWeight: "bold", color: "text.primary" }}
-                  >
-                    {metric.value}
-                  </Typography>
-                  {metric.isProgress && (
-                    <Box sx={{ width: "100%", mt: 0.5 }}>
-                      <LinearProgress
-                        variant="determinate"
-                        value={financialMetrics.successRate}
-                        sx={{
-                          height: 6,
-                          borderRadius: 5,
-                          bgcolor: "action.disabledBackground",
-                          "& .MuiLinearProgress-bar": {
-                            borderRadius: 5,
-                            backgroundColor: theme.palette.success.main,
-                          },
-                        }}
-                      />
-                    </Box>
-                  )}
-                </Box>
-              </Box>
+              <KeyMetricSecondaryTile
+                metric={metric}
+                successRate={financialMetrics.successRate}
+              />
             </Grid>
           ))}
         </Grid>

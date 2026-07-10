@@ -7,11 +7,6 @@ import {
   Grid,
   Box,
   Avatar,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
   useMediaQuery,
   useTheme,
   IconButton,
@@ -26,7 +21,7 @@ import {
 } from "react-icons/fa";
 import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 
-import { Tabs, Tab, LinearProgress } from "@mui/material";
+import { Tabs, Tab } from "@mui/material";
 import {
   BarChart,
   Bar,
@@ -40,6 +35,10 @@ import {
 } from "recharts";
 
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
+import LeadsCreatedByRegionTable from "./LeadsCreatedByRegionTable.jsx";
+import LeadsFinalizedByRegionTable from "./LeadsFinalizedByRegionTable.jsx";
+import FinalizedHotspotsTable from "./FinalizedHotspotsTable.jsx";
+import DiscoverySourcesTable from "./DiscoverySourcesTable.jsx";
 import { getData } from "@/app/helpers/functions/getData.js";
 import { COLORS } from "@/app/helpers/colors.js";
 import { LEAD_SOURCE_LABELS } from "@/app/helpers/constants";
@@ -257,29 +256,11 @@ const LeadsMonthlyOverviewSingle = ({ staffId }) => {
               <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
                 Inside UAE by Emirate (Created)
               </Typography>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Emirate</TableCell>
-                    <TableCell align="right">Leads</TableCell>
-                    <TableCell align="right">Finalized</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {inside?.rows?.map((r, i) => (
-                    <TableRow key={i}>
-                      <TableCell>{r.emirate}</TableCell>
-                      <TableCell align="right">{r.leads}</TableCell>
-                      <TableCell align="right">{r.finalized}</TableCell>
-                    </TableRow>
-                  ))}
-                  {(!inside?.rows || inside.rows.length === 0) && (
-                    <TableRow>
-                      <TableCell colSpan={4}>No data</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+              <LeadsCreatedByRegionTable
+                firstColLabel="Emirate"
+                firstColKey="emirate"
+                rows={inside?.rows}
+              />
             </CardContent>
           </Card>
         </Grid>
@@ -291,29 +272,11 @@ const LeadsMonthlyOverviewSingle = ({ staffId }) => {
               <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
                 Outside UAE by Country (Created)
               </Typography>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Country</TableCell>
-                    <TableCell align="right">Leads</TableCell>
-                    <TableCell align="right">Finalized</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {outside?.rows?.map((r, i) => (
-                    <TableRow key={i}>
-                      <TableCell>{r.country}</TableCell>
-                      <TableCell align="right">{r.leads}</TableCell>
-                      <TableCell align="right">{r.finalized}</TableCell>
-                    </TableRow>
-                  ))}
-                  {(!outside?.rows || outside.rows.length === 0) && (
-                    <TableRow>
-                      <TableCell colSpan={4}>No data</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+              <LeadsCreatedByRegionTable
+                firstColLabel="Country"
+                firstColKey="country"
+                rows={outside?.rows}
+              />
             </CardContent>
           </Card>
         </Grid>
@@ -364,40 +327,10 @@ const LeadsMonthlyOverviewSingle = ({ staffId }) => {
               </Box>
 
               {/* Table */}
-              <Table size="small" sx={{ mt: 2 }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>#</TableCell>
-                    <TableCell>{firstColLabel}</TableCell>
-                    <TableCell align="right">Finalized</TableCell>
-                    <TableCell align="right" sx={{ width: 200 }}>
-                      %
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {activeData.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4}>No data</TableCell>
-                    </TableRow>
-                  )}
-                  {activeData.map((r, i) => (
-                    <TableRow key={i}>
-                      <TableCell>{i + 1}</TableCell>
-                      <TableCell>{r.name}</TableCell>
-                      <TableCell align="right">{r.finalized}</TableCell>
-                      <TableCell align="right">
-                        {r.percent}%
-                        <LinearProgress
-                          variant="determinate"
-                          value={r.percent}
-                          sx={{ height: 6, borderRadius: 6, ml: 1 }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <FinalizedHotspotsTable
+                activeData={activeData}
+                firstColLabel={firstColLabel}
+              />
             </CardContent>
           </Card>
         </Grid>
@@ -450,22 +383,7 @@ const LeadsMonthlyOverviewSingle = ({ staffId }) => {
                 </ResponsiveContainer>
               </Box>
 
-              <Table size="small" sx={{ mt: 2 }}>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>المصدر</TableCell>
-                    <TableCell align="right">عدد العملاء</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {sourcesData.map((r, i) => (
-                    <TableRow key={i}>
-                      <TableCell>{r.source}</TableCell>
-                      <TableCell align="right">{r.count}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DiscoverySourcesTable sourcesData={sourcesData} />
             </CardContent>
           </Card>
         </Grid>
@@ -478,28 +396,11 @@ const LeadsMonthlyOverviewSingle = ({ staffId }) => {
               <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
                 Finalized Inside UAE (by Emirate)
               </Typography>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Emirate</TableCell>
-                    <TableCell align="right">Finalized</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {finalizedInsideRows?.map((r, i) => (
-                    <TableRow key={i}>
-                      <TableCell>{r.emirate}</TableCell>
-                      <TableCell align="right">{r.finalized}</TableCell>
-                    </TableRow>
-                  ))}
-                  {(!finalizedInsideRows ||
-                    finalizedInsideRows.length === 0) && (
-                    <TableRow>
-                      <TableCell colSpan={2}>No data</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+              <LeadsFinalizedByRegionTable
+                firstColLabel="Emirate"
+                firstColKey="emirate"
+                rows={finalizedInsideRows}
+              />
             </CardContent>
           </Card>
         </Grid>
@@ -511,28 +412,11 @@ const LeadsMonthlyOverviewSingle = ({ staffId }) => {
               <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
                 Finalized Outside UAE (by Country)
               </Typography>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Country</TableCell>
-                    <TableCell align="right">Finalized</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {finalizedOutsideRows?.map((r, i) => (
-                    <TableRow key={i}>
-                      <TableCell>{r.country}</TableCell>
-                      <TableCell align="right">{r.finalized}</TableCell>
-                    </TableRow>
-                  ))}
-                  {(!finalizedOutsideRows ||
-                    finalizedOutsideRows.length === 0) && (
-                    <TableRow>
-                      <TableCell colSpan={2}>No data</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+              <LeadsFinalizedByRegionTable
+                firstColLabel="Country"
+                firstColKey="country"
+                rows={finalizedOutsideRows}
+              />
             </CardContent>
           </Card>
         </Grid>
