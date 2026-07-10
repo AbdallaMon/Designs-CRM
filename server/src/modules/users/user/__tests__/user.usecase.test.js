@@ -1,5 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 
+// Mock the audit infra seam so user usecases can be asserted without a DB.
+vi.mock("../../../../infra/audit/record-action.js", () => ({
+  recordAction: vi.fn(),
+  auditCtxFromReq: vi.fn(() => ({})),
+}));
+
+import { recordAction } from "../../../../infra/audit/record-action.js";
 import { UserUsecase } from "../user.usecase.js";
 import { userMessagesCodes } from "@dms/shared";
 
@@ -285,5 +292,52 @@ describe("UserUsecase.update (identity only)", () => {
     await expect(
       uc.update({ userId: 7, body: { role: "ADMIN" }, authUser: superSales }),
     ).rejects.toMatchObject({ statusCode: 403, message: userMessagesCodes.USER_ROLE_NOT_ALLOWED });
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+//  SEMANTIC AUDIT — create / update emit ActionAuditLog events (mocked seam)
+// ════════════════════════════════════════════════════════════════════════════
+describe("UserUsecase semantic audit events", () => {
+  it("update: records USER_UPDATED once with before/after (secrets auto-redacted by the helper)", async () => {
+    recordAction.mockClear();
+    const repo = makeRepo({
+      findUserProfileById: vi.fn().mockResolvedValue({ id: 7, name: "Old", password: "HASH" }),
+    });
+    const editStaffUser = vi.fn(async (body, userId) => ({ id: userId, name: body.name, password: "NEWHASH" }));
+    const uc = new UserUsecase(repo, { editStaffUser });
+
+    await uc.update({ userId: 7, body: { name: "New", password: "x" }, authUser: { role: "ADMIN" }, auditCtx: {} });
+
+    expect(recordAction).toHaveBeenCalledTimes(1);
+    expect(recordAction).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({
+        module: "user",
+        action: "USER_UPDATED",
+        entityType: "User",
+        entityId: 7,
+        allowedKeys: ["name", "password"],
+      }),
+    );
+  });
+
+  it("create: records USER_CREATED once with the new user id", async () => {
+    recordAction.mockClear();
+    const created = { id: 11, name: "N", email: "a@b.com", role: "STAFF" };
+    const uc = new UserUsecase(makeRepo(), { createStaffUser: vi.fn().mockResolvedValue(created) });
+
+    await uc.create({ body: { role: "STAFF", email: "a@b.com", password: "p", name: "N" }, authUser: admin, auditCtx: {} });
+
+    expect(recordAction).toHaveBeenCalledTimes(1);
+    expect(recordAction).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({
+        module: "user",
+        action: "USER_CREATED",
+        entityType: "User",
+        entityId: 11,
+      }),
+    );
   });
 });

@@ -22,9 +22,16 @@
 import bcrypt from "bcrypt";
 import dayjs from "dayjs";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { userMessagesCodes as C, PROFILE_KEYS, PROFILE_META } from "@dms/shared";
+import {
+  userMessagesCodes as C,
+  PROFILE_KEYS,
+  PROFILE_META,
+  AUDIT_MODULES,
+  AUDIT_ACTIONS,
+} from "@dms/shared";
 import { userRepository } from "./user.repo.js";
 import { authAuditRepository, AUTH_AUDIT_ACTIONS } from "../../../infra/audit/auth-audit.repo.js";
+import { recordAction } from "../../../infra/audit/record-action.js";
 import {
   toSafeProfile,
   computeUserCapabilities,
@@ -298,7 +305,7 @@ export class UserUsecase {
   // ════════════════════════════════════════════════════════════════════════════
   //  ADMIN CREATE / EDIT / STATUS / STAFF-EXTRA
   // ════════════════════════════════════════════════════════════════════════════
-  async create({ body, authUser }) {
+  async create({ body, authUser, auditCtx }) {
     if (!body || Object.keys(body).length === 0) {
       throw new AppError(C.USER_NO_DATA_SENT, 404);
     }
@@ -316,14 +323,24 @@ export class UserUsecase {
       throw new AppError(C.USER_ROLE_NOT_ALLOWED, 403);
     }
     try {
-      return await this.legacy.createStaffUser(body);
+      const createdUser = await this.legacy.createStaffUser(body);
+      // Semantic audit: a new user account was created (secrets auto-redacted).
+      await recordAction(auditCtx, {
+        module: AUDIT_MODULES.USER,
+        action: AUDIT_ACTIONS.USER_CREATED,
+        entityType: "User",
+        entityId: createdUser?.id ?? null,
+        summary: `User #${createdUser?.id ?? "?"} created`,
+        after: { name: createdUser?.name, email: createdUser?.email, role: createdUser?.role },
+      });
+      return createdUser;
     } catch (error) {
       if (isEmailTakenError(error)) throw new AppError(C.EMAIL_ALREADY_REGISTERED, 400);
       throw error;
     }
   }
 
-  async update({ userId, body, authUser }) {
+  async update({ userId, body, authUser, auditCtx }) {
     if (!body || !userId) throw new AppError(C.USER_NOT_FOUND, 404);
     // Identity only — role/profile changes go through the profiles endpoint. Legacy
     // guard: a non-admin isSuperSales editor may not set a non-STAFF role.
@@ -336,8 +353,27 @@ export class UserUsecase {
     ) {
       throw new AppError(C.USER_ROLE_NOT_ALLOWED, 403);
     }
+    // Snapshot the pre-edit row for the before/after diff (best-effort; never breaks the
+    // update). The diff+redaction helper captures only the edited fields (secrets redacted).
+    let before = null;
     try {
-      return await this.legacy.editStaffUser(body, userId);
+      before = await this.repo.findUserProfileById({ userId });
+    } catch {
+      before = null;
+    }
+    try {
+      const updatedUser = await this.legacy.editStaffUser(body, userId);
+      await recordAction(auditCtx, {
+        module: AUDIT_MODULES.USER,
+        action: AUDIT_ACTIONS.USER_UPDATED,
+        entityType: "User",
+        entityId: Number(userId),
+        summary: `User #${userId} updated`,
+        before,
+        after: updatedUser,
+        allowedKeys: Object.keys(body),
+      });
+      return updatedUser;
     } catch (error) {
       if (isEmailTakenError(error)) throw new AppError(C.EMAIL_ALREADY_REGISTERED, 400);
       throw error;
@@ -364,8 +400,18 @@ export class UserUsecase {
   // ════════════════════════════════════════════════════════════════════════════
   //  ROLES / AUTO-ASSIGNMENTS / RESTRICTED COUNTRIES / MAX LEADS
   // ════════════════════════════════════════════════════════════════════════════
-  async manageRoles({ userId, body }) {
-    return this.legacy.updateUserRoles(userId, body);
+  async manageRoles({ userId, body, auditCtx }) {
+    const result = await this.legacy.updateUserRoles(userId, body);
+    // Semantic audit: a user's role(s) were changed.
+    await recordAction(auditCtx, {
+      module: AUDIT_MODULES.USER,
+      action: AUDIT_ACTIONS.USER_ROLE_CHANGED,
+      entityType: "User",
+      entityId: Number(userId),
+      summary: `User #${userId} roles changed`,
+      after: body,
+    });
+    return result;
   }
 
   // ════════════════════════════════════════════════════════════════════════════

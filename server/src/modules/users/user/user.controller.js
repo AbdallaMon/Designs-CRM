@@ -5,6 +5,7 @@
 // scope context on success (stashed on req.scoped so updateProfile can read adminTier).
 import { ok, created } from "../../../shared/http/response.js";
 import { userMessagesCodes, messagesNames } from "@dms/shared";
+import { auditCtxFromReq } from "../../../infra/audit/record-action.js";
 import { userUsecase } from "./user.usecase.js";
 
 const C = userMessagesCodes;
@@ -69,12 +70,12 @@ export class UserController {
 
   // ── admin user-management ────────────────────────────────────────────────────
   create = async (req, res) => {
-    const data = await this.usecase.create({ body: req.body, authUser: req.auth });
+    const data = await this.usecase.create({ body: req.body, authUser: req.auth, auditCtx: auditCtxFromReq(req) });
     return created(res, data, C.USER_CREATED, TK);
   };
 
   update = async (req, res) => {
-    const data = await this.usecase.update({ userId: req.params.userId, body: req.body, authUser: req.auth });
+    const data = await this.usecase.update({ userId: req.params.userId, body: req.body, authUser: req.auth, auditCtx: auditCtxFromReq(req) });
     return ok(res, data, C.USER_UPDATED, TK);
   };
 
@@ -89,7 +90,7 @@ export class UserController {
   };
 
   manageRoles = async (req, res) => {
-    const data = await this.usecase.manageRoles({ userId: req.params.userId, body: req.body });
+    const data = await this.usecase.manageRoles({ userId: req.params.userId, body: req.body, auditCtx: auditCtxFromReq(req) });
     return ok(res, data, C.USER_ROLES_UPDATED, TK);
   };
 
