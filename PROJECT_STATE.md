@@ -3,9 +3,27 @@
 > **Open this file in any new chat.** It tells you what we are doing and where we have reached.
 > To resume: *"Read `PROJECT_STATE.md`, `CLAUDE.md`, and `docs/migration/`, then tell me where we are and what's next."*
 >
-> Last updated: **2026-07-10** · Branch: `frontend-redesign` (reorg work on `reorg/ref-alignment`)
+> Last updated: **2026-07-10** · Branch: `frontend-redesign` (reorg work on `reorg/ref-alignment`; Sales/Admin feature work on `feat/audit-log-sales-admin`)
 >
-> **LATEST (2026-07-10) — Ref-alignment reorganization (behavior-preserving) on branch `reorg/ref-alignment`.**
+> **LATEST (2026-07-10) — Sales/Admin feature workstream on branch `feat/audit-log-sales-admin` (off `reorg/ref-alignment`).**
+> Three new features, each spec→plan→build→review→verify (specs/plans in `docs/superpowers/`), all following the
+> repo's layered conventions. **Full suite 855 green; `next build` exit 0; security + convention reviewed.**
+> **(1) Action Audit Log** — new additive `ActionAuditLog` model; non-blocking `recordAction` infra (secret-redacting
+> diff) wired into lead/contract/user usecases + auth-event mirror; admin-only `GET /v2/audit-logs` + `audit.log.view`
+> (ADMIN/SUPER_ADMIN only) + a config-driven viewer at `/dashboard/audit-logs`.
+> **(2) Sales Deal Cockpit** — `GET /v2/leads/:id/cockpit` (pure `computeCockpit` next-best-action engine, object-scoped)
+> + a capability-gated cockpit strip on the deal detail (CTAs reuse existing dialogs).
+> **(3) Admin Command Center** — admin-only `command_center.view` + `GET /v2/command-center/overview` (pipeline/
+> capacity/delivery KPIs) + `/dashboard/command-center` screen with the audit activity feed. **Money boundary preserved:**
+> uses ONLY already-admin-visible figures (Invoice revenue, Commission, `averagePrice`); NO Payment/ContractPayment/
+> Outcome aggregates (accounting stays ACCOUNTANT-only — widening deferred pending explicit sign-off + parity update).
+> Plus tech-debt fixes: chat↔socket import cycle broken (lazy import), `LOCKED_FROM_STATUSES_FOR_NON_ADMIN` deduped,
+> notification icon/color key `LEAD_STATUS_CHANGE`→`LEAD_STATUS_CHANGED`, 15 raw `throw new Error(prose)` in the lead
+> usecases → `AppError`+message-codes (+ stop swallowing column-status errors), and a stray `oad()` ReferenceError in
+> PaymentRow removed. **PENDING (user-run):** apply the audit migration — `npm run db:migrate -- --name add_action_audit_log`
+> then `npm run db:generate`, and commit `schema.prisma` + the generated migration together (agent env has no `DATABASE_URL`).
+>
+> **PRIOR (2026-07-10) — Ref-alignment reorganization (behavior-preserving) on branch `reorg/ref-alignment`.**
 > A large file/structure reorg to match the reference monorepos (`Transaction-app` request-flow, `school-system`
 > validation). **46 commits, all verified green** (backend `npm test` 733/57, `next build` OK, 0 broken imports).
 > DONE: suffix rename `*.repository.js`→`*.repo.js` + `*.routes.js`→`*.route.js`; extracted shared `pagination.js`;
