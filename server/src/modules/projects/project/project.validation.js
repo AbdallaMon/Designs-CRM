@@ -8,6 +8,17 @@ import { z } from "zod";
 
 const idParam = z.coerce.number().int().positive();
 
+// Optional id that tolerates the empty/null placeholders the legacy FE sends for
+// not-yet-chosen ids (e.g. designerId "" on the remove path, a null groupId/assignmentId
+// on the add path). Plain `z.coerce.number().int().positive().optional()` would coerce
+// "" / null → 0 and reject it as non-positive (only `undefined` skips), whereas master's
+// legacy route spread req.body straight in — so these placeholders were harmless. Drop
+// them to `undefined` first to preserve that tolerance.
+const optionalId = z.preprocess(
+  (v) => (v === "" || v === null ? undefined : v),
+  z.coerce.number().int().positive().optional(),
+);
+
 export class ProjectValidation {
   // ── params ───────────────────────────────────────────────────────────────────
   static idParams = z.object({ id: idParam });
@@ -47,12 +58,12 @@ export class ProjectValidation {
 
   // POST /:id/actions/assign-designer.
   static assignDesigner = z.object({
-    designerId: z.coerce.number().int().positive().optional(),
-    assignmentId: z.coerce.number().int().positive().optional(),
+    designerId: optionalId,
+    assignmentId: optionalId,
     deleteDesigner: z.boolean().optional(),
     addToModification: z.boolean().optional(),
     removeFromModification: z.boolean().optional(),
-    groupId: z.coerce.number().int().positive().optional(),
+    groupId: optionalId,
   }).passthrough();
 
   // POST /designers/:leadId/actions/change-status — the project id travels in the body.
