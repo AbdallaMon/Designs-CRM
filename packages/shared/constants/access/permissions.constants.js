@@ -704,9 +704,23 @@ export const AUDIT_PERMISSIONS = {
   LOG_VIEW: "audit.log.view", // GET /v2/audit-logs (paginated, filterable admin viewer)
 };
 
+// ── command-center (admin-only operational cockpit) ───────────────────────────
+// A NEW additive surface (no legacy equivalent) — the ADMIN + SUPER_ADMIN-only
+// Command Center hub (KPIs, pipeline, team capacity, delivery health). Mirrors the
+// `audit.log.view` wiring EXACTLY: granted via COMMAND_CENTER_ADMIN in
+// role-permissions.js + the ADMIN/SUPER_ADMIN profiles ONLY, NOT in SHARED_AUTHED,
+// NOT layered onto isSuperSales, NOT granted to any staff/sales/designer/accountant
+// role. There are NO write codes — the surface is a single read-only composite
+// aggregation (`GET /overview`). Money figures reuse only already-admin-visible
+// sources (Invoice/Commission/ClientLead.averagePrice) — no new accounting exposure.
+export const COMMAND_CENTER_PERMISSIONS = {
+  VIEW: "command_center.view", // GET /v2/command-center/overview (composite admin cockpit)
+};
+
 // ── nested aggregate (canonical reference for app code) ───────────────────────
 export const PERMISSIONS = {
   AUDIT: AUDIT_PERMISSIONS,
+  COMMAND_CENTER: COMMAND_CENTER_PERMISSIONS,
   AUTH: AUTH_PERMISSIONS,
   CHAT: CHAT_PERMISSIONS,
   TELEGRAM: TELEGRAM_PERMISSIONS,

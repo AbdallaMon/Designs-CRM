@@ -170,6 +170,13 @@ export const TELEGRAM_ADMIN = [P.TELEGRAM.MANAGE];
 // isSuperSales, and NOT granted to any staff/sales/designer/accountant role.
 export const AUDIT_ADMIN = [P.AUDIT.LOG_VIEW];
 
+// Command Center — ADMIN + SUPER_ADMIN ONLY (a NEW additive operational cockpit, no
+// legacy equivalent). Spread into the ADMIN + SUPER_ADMIN role arrays below and the
+// ADMIN/SUPER_ADMIN profiles — deliberately NOT in SHARED_AUTHED, NOT layered onto
+// isSuperSales, and NOT granted to any staff/sales/designer/accountant role. Mirrors
+// AUDIT_ADMIN exactly.
+export const COMMAND_CENTER_ADMIN = [P.COMMAND_CENTER.VIEW];
+
 // ── leads / lead ────────────────────────────────────────────────────────────────
 // Legacy `/shared/client-leads` sat behind SHARED authentication only — EVERY
 // authenticated role could call every route; object scope was enforced ad-hoc inside
@@ -382,6 +389,7 @@ export const ROLE_PERMISSIONS = {
     ...IMAGE_SESSION_ADMIN,
     ...ADMIN_RESIDUAL,
     ...AUDIT_ADMIN,
+    ...COMMAND_CENTER_ADMIN,
   ],
   [USER_ROLES.SUPER_ADMIN]: [
     ...SHARED_AUTHED,
@@ -396,6 +404,7 @@ export const ROLE_PERMISSIONS = {
     ...IMAGE_SESSION_ADMIN,
     ...ADMIN_RESIDUAL,
     ...AUDIT_ADMIN,
+    ...COMMAND_CENTER_ADMIN,
   ],
 
   // All other roles currently have the shared authenticated surface (chat, authed
