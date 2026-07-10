@@ -43,9 +43,12 @@ Dead files deleted + 6 misspelled paths fixed (F0).
 ## ✅ `features/` migration — DONE (2026-07-10)
 Relocated `web/src/app/UiComponents/*` → `web/src/features/*` + `web/src/shared/components/*` (siblings under
 `src/`, mirroring Transaction-app / school-system). Done as ONE coordinated pass in 3 commits:
-1. **Deleted 24 dead/unreachable files** — verified via a static import-graph reachability analysis
-   (case-insensitive, seeded from 59 app-router entrypoints; confirmed 0 dynamic/string imports so the graph is
-   authoritative). Grep-double-checked the by-name hits were comments / a name-collision / one undefined-JSX leftover.
+1. **Deleted 24 dead/unreachable files** (net 22 — see correction below) — verified via a static import-graph
+   reachability analysis (case-insensitive, seeded from 59 app-router entrypoints; confirmed 0 dynamic/string
+   imports so the graph is authoritative). Grep-double-checked the by-name hits were comments / a name-collision /
+   one undefined-JSX leftover. **Correction:** 2 of the 24 (`leadSections.test.js`, `routeAccess.test.js`) were
+   live tests run by the root vitest suite (`web/**/*.test.js`), NOT dead — restored + relocated to their new
+   `features/leads/config/__tests__` and `shared/components/utility/__tests__` homes (backend suite back to 733).
 2. **Normalized 674 relative import specs → `@/app/UiComponents/...` alias** so the move became a pure prefix swap.
 3. **Moved 435 files + rewrote 894 import specs** across 327 files (app shells + all importers). `DataViewer/utility`
    grab-bag split by concern (Media→shared/components/media, Commission→features/accountant, etc.).
@@ -54,6 +57,27 @@ Relocated `web/src/app/UiComponents/*` → `web/src/features/*` + `web/src/share
 - **NOT done (deliberate, low-value/high-churn):** deeper per-feature `pages/components/config` bucketing — each
   feature moved structure-preserving. Feature internals already carry sensible substructure (view/, dialogs/,
   config/). Deep bucketing across 14 features is optional polish left as a follow-up.
+
+## ✅ Post-reorg functional bug-fix pass — DONE (2026-07-10, 8 bugs)
+Separate from the behavior-preserving reorg: 8 real functional bugs fixed (logic changes). Most were
+FE↔BE contract regressions from the migration's stricter Zod schemas (extra/omitted fields the loose
+legacy routes tolerated), plus a few frontend logic bugs. Baseline stays master-parity.
+- **contract create (8)**: `stageItem` `.strict()` rejected the `title` every stage-builder sends; the frozen
+  service overwrites stage.title with levelEnum, so accept-and-ignore it → `contract.validation.js`.
+- **assign-designer (1)**: `assignDesigner` coerced empty/null id placeholders → 0 → failed `.positive()` (422);
+  added an empty-tolerant `optionalId` preprocess → `project.validation.js`.
+- **SPAIN (5)** / **VERSA (6)**: FE sent a redundant path-param field (`sessionQuestionId` / `clientLeadId`) in
+  the POST body that the strict schema rejected → dropped from the FE payload.
+- **persona (4)**: FE omitted the required `field`; added `field`+`inputType`, and revert the optimistic Select on
+  failure → `SalesToolsTabs.jsx`.
+- **assign-sales button (3)**: `AssignNewStaffModal` was hidden when `!lead.userId`; gate on ASSIGN_OTHER only so
+  the button shows for NEW/unowned leads too (covers both "assign new" and "change existing").
+- **telegram password (7)**: backend returns a language-neutral CODE (`TELEGRAM_PASSWORD_INCORRECT`) instead of
+  prose so resolveMessage surfaces it; FE `handleTelegramAuth` adds a failure branch (was silently swallowed) +
+  RenderStepDescription renders the error on REQUIRE_PASSWORD.
+- **chat not opening (2)**: `ChatContainer` fired `router.replace("?")` in tab mode on every rooms refresh, wiping
+  the lead dialog's query state; guarded the URL effect to page mode only.
+- Verified: web `next build` green; backend `vitest run` **733 passing**.
 
 ## RESUME NOTES
 - Verify commands: backend `npm test` (733) + `node scan-legacy-imports.mjs` (scratchpad); frontend `cd web && npx next build`.
