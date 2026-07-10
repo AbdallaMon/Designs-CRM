@@ -391,6 +391,13 @@ export class UserUsecase {
     const profiles = await this.repo.findProfilesByIds({ ids: desired });
     if (profiles.length !== desired.length) throw new AppError(C.USER_ROLE_NOT_ALLOWED, 400);
 
+    // Sales tier is mutually exclusive: at most one of Sales / Primary sales / Super sales
+    // (hierarchical variants of the same STAFF-sales role). Other families combine freely.
+    const SALES_TIER = ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"];
+    if (profiles.filter((p) => SALES_TIER.includes(p.key)).length > 1) {
+      throw new AppError(C.USER_SALES_TIER_EXCLUSIVE, 400);
+    }
+
     // current = requested if it's in the new set, else the first assigned.
     const nextCurrent =
       currentProfileId != null && desired.includes(Number(currentProfileId))

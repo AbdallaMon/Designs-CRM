@@ -35,4 +35,5 @@ export const userMessagesCodes = {
   EMAIL_ALREADY_REGISTERED: "EMAIL_ALREADY_REGISTERED", // legacy P2002 on email
   USER_NO_DATA_SENT: "USER_NO_DATA_SENT", // legacy "No data was sent" on create
   USER_ROLE_NOT_ALLOWED: "USER_ROLE_NOT_ALLOWED", // super-sales creating/editing non-STAFF roles
+  USER_SALES_TIER_EXCLUSIVE: "USER_SALES_TIER_EXCLUSIVE", // >1 of Sales/Primary/Super-sales assigned
 };

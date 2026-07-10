@@ -57,4 +57,34 @@ describe("updateUserProfiles", () => {
     await uc.updateUserProfiles({ authUser: { id: 99 }, userId: 1, profileIds: [2, 5], currentProfileId: 999 });
     expect(repo.setUserProfiles.mock.calls[0][0].currentProfileId).toBe(2);
   });
+
+  it("rejects more than one sales-tier profile (Sales/Primary/Super are mutually exclusive)", async () => {
+    const repo = {
+      findProfilesByIds: vi.fn(async () => [
+        { id: 2, key: "NORMAL_SALES", baseRole: "STAFF" },
+        { id: 3, key: "SUPER_SALES", baseRole: "STAFF" },
+      ]),
+      getUserProfileIds: vi.fn(async () => []),
+      setUserProfiles: vi.fn(async (a) => a),
+    };
+    const uc = new UserUsecase(repo);
+    await expect(
+      uc.updateUserProfiles({ authUser: { id: 99 }, userId: 1, profileIds: [2, 3] }),
+    ).rejects.toMatchObject({ statusCode: 400, code: "USER_SALES_TIER_EXCLUSIVE" });
+    expect(repo.setUserProfiles).not.toHaveBeenCalled();
+  });
+
+  it("allows one sales-tier profile combined with a different family", async () => {
+    const repo = {
+      findProfilesByIds: vi.fn(async () => [
+        { id: 2, key: "SUPER_SALES", baseRole: "STAFF" },
+        { id: 5, key: "ACCOUNTANT", baseRole: "ACCOUNTANT" },
+      ]),
+      getUserProfileIds: vi.fn(async () => []),
+      setUserProfiles: vi.fn(async (a) => a),
+    };
+    const uc = new UserUsecase(repo);
+    await uc.updateUserProfiles({ authUser: { id: 99 }, userId: 1, profileIds: [2, 5], currentProfileId: 2 });
+    expect(repo.setUserProfiles).toHaveBeenCalledOnce();
+  });
 });

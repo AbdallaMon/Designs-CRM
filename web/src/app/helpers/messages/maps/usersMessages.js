@@ -38,6 +38,8 @@ export const usersMessages = {
   EMAIL_ALREADY_REGISTERED: "The email is already registered",
   USER_NO_DATA_SENT: "No data was sent",
   USER_ROLE_NOT_ALLOWED: "This role is not allowed",
+  USER_SALES_TIER_EXCLUSIVE:
+    "Only one sales level (Sales, Primary sales, or Super sales) can be assigned to a user.",
 
   // ── staff residual read (adminResidualMessages) ────────────────────────────────────
   LATEST_CALLS_FETCHED: "Latest calls fetched",

@@ -62,7 +62,7 @@ export const PROFILE_META = {
   ACCOUNTANT:       { label: "Accountant",        family: "FINANCE",  baseRole: USER_ROLES.ACCOUNTANT },
   DESIGNER_3D:      { label: "3D Designer",        family: "DESIGN",   baseRole: USER_ROLES.THREE_D_DESIGNER },
   DESIGNER_2D:      { label: "2D Designer",        family: "DESIGN",   baseRole: USER_ROLES.TWO_D_DESIGNER },
-  EXECUTOR_2D:      { label: "2D Executor",        family: "DESIGN",   baseRole: USER_ROLES.TWO_D_EXECUTOR },
+  EXECUTOR_2D:      { label: "2D Executor",        family: "DESIGN",   baseRole: USER_ROLES.TWO_D_EXECUTOR, isAssignable: false },
   CONTACT_INITIATOR:{ label: "Contact initiator", family: "SALES",    baseRole: USER_ROLES.CONTACT_INITIATOR },
 };
 

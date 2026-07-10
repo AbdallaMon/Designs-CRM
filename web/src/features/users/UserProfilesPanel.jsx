@@ -19,6 +19,10 @@ import { apiRequest } from "@/app/helpers/functions/apiClient";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { usePermission } from "@/app/hooks/usePermission";
 import { USER_CODES } from "@/app/helpers/permissionCodes";
+import { PROFILE_LABEL } from "@/features/users/pages/users/config.jsx";
+
+// At most one of the three STAFF-sales profiles; other families combine freely.
+const SALES_TIER = ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES"];
 
 // Inline (non-modal) editor for a user's DB-relational permission PROFILES: pick the
 // assigned set + which one is active (current). Same endpoints as ProfileManagerDialog
@@ -66,11 +70,21 @@ export default function UserProfilesPanel({
     };
   }, []);
 
+  const keyById = useMemo(
+    () => Object.fromEntries(allProfiles.map((p) => [p.id, p.key])),
+    [allProfiles],
+  );
+
   function toggle(id) {
     setSelectedIds((prev) => {
-      const next = prev.includes(id)
-        ? prev.filter((x) => x !== id)
-        : [...prev, id];
+      let next;
+      if (prev.includes(id)) {
+        next = prev.filter((x) => x !== id);
+      } else if (SALES_TIER.includes(keyById[id])) {
+        next = [...prev.filter((x) => !SALES_TIER.includes(keyById[x])), id];
+      } else {
+        next = [...prev, id];
+      }
       if (!next.includes(current)) setCurrent(next[0] ?? null);
       return next;
     });
@@ -124,8 +138,9 @@ export default function UserProfilesPanel({
           Assign roles
         </Typography>
       </Stack>
-      <Typography variant="caption" color="text.secondary">
-        Select the roles this user holds and mark the active one.
+      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+        Select the roles this user holds and mark the active one. Only one sales level
+        (Sales, Primary sales, or Super sales) can be assigned; other roles combine freely.
       </Typography>
 
       {fetching ? (
@@ -165,7 +180,9 @@ export default function UserProfilesPanel({
                     />
                   }
                   label={
-                    <Typography fontWeight={600}>{p.label ?? p.key}</Typography>
+                    <Typography fontWeight={600}>
+                      {PROFILE_LABEL[p.key] ?? p.label ?? p.key}
+                    </Typography>
                   }
                 />
                 <FormControlLabel
