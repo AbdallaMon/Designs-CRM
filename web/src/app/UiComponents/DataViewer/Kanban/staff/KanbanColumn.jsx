@@ -20,11 +20,11 @@ import {
 } from "@mui/material";
 import { BiDollarCircle } from "react-icons/bi";
 import { BsInbox, BsExclamationTriangle } from "react-icons/bs";
-import LeadCard from "../leads/KanbanLeadCard";
+import LeadCard from "@/app/UiComponents/DataViewer/Kanban/leads/KanbanLeadCard.jsx";
 import colors from "@/app/helpers/colors";
 import { useDrop } from "react-dnd";
-import WorkStageKanbanCard from "../work-stages/WorkStageKanbanCard";
-import { FinalizeModal } from "../../leads/widgets/FinalizeModal";
+import WorkStageKanbanCard from "@/app/UiComponents/DataViewer/Kanban/work-stages/WorkStageKanbanCard.jsx";
+import { FinalizeModal } from "@/app/UiComponents/DataViewer/leads/widgets/FinalizeModal.jsx";
 import { useEffect, useState } from "react";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";

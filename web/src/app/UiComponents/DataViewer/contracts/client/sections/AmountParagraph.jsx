@@ -1,9 +1,9 @@
 // AmountParagraph.jsx
 import React from "react";
 import { Stack, Typography } from "@mui/material";
-import { FIXED_TEXT } from "../wittenBlocksData";
-import { SectionCard } from "./primitives";
-import { formatAED } from "./sessionHelpers";
+import { FIXED_TEXT } from "@/app/UiComponents/DataViewer/contracts/client/wittenBlocksData.js";
+import { SectionCard } from "@/app/UiComponents/DataViewer/contracts/client/sections/primitives.jsx";
+import { formatAED } from "@/app/UiComponents/DataViewer/contracts/client/sections/sessionHelpers.js";
 
 export default function AmountParagraph({ session, lng }) {
   const amount = Number(session?.amount ?? 0);

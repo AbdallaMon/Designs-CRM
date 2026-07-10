@@ -18,9 +18,9 @@ import {
   MdCategory,
   MdPhone,
 } from "react-icons/md";
-import PreviewDialog from "../PreviewLeadDialog";
+import PreviewDialog from "@/app/UiComponents/DataViewer/leads/PreviewLeadDialog.jsx";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
-import { RecordCard, MetaItem, StatusPill, NameAvatar } from "../shared/tabKit";
+import { RecordCard, MetaItem, StatusPill, NameAvatar } from "@/app/UiComponents/DataViewer/leads/shared/tabKit.jsx";
 import { LeadCategory } from "@/app/helpers/constants";
 
 dayjs.extend(relativeTime);

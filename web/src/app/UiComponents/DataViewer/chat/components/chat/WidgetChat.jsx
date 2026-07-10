@@ -4,7 +4,7 @@ import React from "react";
 import { Box, Paper, Stack, Badge, Fab, IconButton, Slide } from "@mui/material";
 import { FaComments, FaExternalLinkAlt } from "react-icons/fa";
 import Link from "next/link";
-import { CreateGroupDialog } from "../dialogs";
+import { CreateGroupDialog } from "@/app/UiComponents/DataViewer/chat/components/dialogs/index.js";
 
 export function RenderWidgetChat({
   selectedRoomId,

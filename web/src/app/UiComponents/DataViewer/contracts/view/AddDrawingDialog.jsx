@@ -11,7 +11,7 @@ import {
   DialogContent,
   DialogActions,
 } from "@mui/material";
-import SimpleFileInput from "../../../formComponents/SimpleFileInput";
+import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 

@@ -5,8 +5,8 @@ import { Stack, Typography, IconButton, Grid, Container } from "@mui/material";
 import { FaSync } from "react-icons/fa";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 
-import PdfUtilityFieldCard from "./PdfUtilityFieldCard";
-import LoadingOverlay from "../../feedback/loaders/LoadingOverlay";
+import PdfUtilityFieldCard from "@/app/UiComponents/DataViewer/website-utilities/PdfUtilityFieldCard.jsx";
+import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
 
 export default function PdfUtility({
   fields = [

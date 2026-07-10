@@ -8,11 +8,11 @@ import {
   CardBlock,
   NameAvatar,
   StatusPill,
-} from "../leads/shared/tabKit";
+} from "@/app/UiComponents/DataViewer/leads/shared/tabKit.jsx";
 import { MdAccessTime, MdCalendarToday, MdPerson } from "react-icons/md";
 import dayjs from "dayjs";
-import { TaskActions } from "./TaskActions";
-import { NotesComponent } from "../utility/Notes";
+import { TaskActions } from "@/app/UiComponents/DataViewer/tasks/TaskActions.jsx";
+import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes.jsx";
 
 // status → { label (ar), color } for the StatusPill in each task card header.
 const taskStatusPill = (theme, status) => {

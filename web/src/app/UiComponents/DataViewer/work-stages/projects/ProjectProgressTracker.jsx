@@ -16,7 +16,7 @@ import {
   StyledCard,
   StyledProgressBar,
   ProgressDot,
-} from "./projectDetailsStyles";
+} from "@/app/UiComponents/DataViewer/work-stages/projects/projectDetailsStyles.js";
 
 // Display-only Arabic labels for the project statuses. Keys remain the English
 // enum values used everywhere in logic/comparisons; only the shown text changes.

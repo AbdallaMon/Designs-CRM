@@ -8,9 +8,9 @@ import {
   alpha,
 } from "@mui/material";
 import { IoMdEye } from "react-icons/io";
-import DeleteModelButton from "../../common/DeleteModelButton";
+import DeleteModelButton from "@/app/UiComponents/common/DeleteModelButton.jsx";
 import { FaCopy } from "react-icons/fa";
-import ConfirmWithActionModel from "../../models/ConfirmsWithActionModel";
+import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 

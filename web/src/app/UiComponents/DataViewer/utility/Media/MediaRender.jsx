@@ -1,2 +1,2 @@
-export { RenderListOfFiles } from "./renderers/RenderListOfFiles";
-export { RenderFileAccordingToType } from "./renderers/RenderFileAccordingToType";
+export { RenderListOfFiles } from "@/app/UiComponents/DataViewer/utility/Media/renderers/RenderListOfFiles.jsx";
+export { RenderFileAccordingToType } from "@/app/UiComponents/DataViewer/utility/Media/renderers/RenderFileAccordingToType.jsx";

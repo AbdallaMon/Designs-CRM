@@ -21,9 +21,9 @@ import {
 import { FaEdit, FaSave, FaTimes, FaTrash } from "react-icons/fa";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import SelectPaymentCondition from "../payments/SelectPaymentCondition";
-import ConfirmDialog from "./ConfirmDialog";
-import { diffPayload, canDeletePayment } from "./viewContractHelpers";
+import SelectPaymentCondition from "@/app/UiComponents/DataViewer/contracts/payments/SelectPaymentCondition.jsx";
+import ConfirmDialog from "@/app/UiComponents/DataViewer/contracts/view/ConfirmDialog.jsx";
+import { diffPayload, canDeletePayment } from "@/app/UiComponents/DataViewer/contracts/view/viewContractHelpers.js";
 
 export default function PaymentRow({ payment, contractId, onReload, taxRate }) {
   const theme = useTheme();

@@ -1,5 +1,5 @@
-import SessionModelItemManager from "../shared/session-item/SessionModelItemManager";
-import { StyleItemCard } from "./StyleItem";
+import SessionModelItemManager from "@/app/UiComponents/DataViewer/image-session/admin/shared/session-item/SessionModelItemManager.jsx";
+import { StyleItemCard } from "@/app/UiComponents/DataViewer/image-session/admin/style/StyleItem.jsx";
 
 const StyleManager = () => {
   return (

@@ -28,11 +28,11 @@ import {
   MdSchedule,
   MdAccessTime,
 } from "react-icons/md";
-import { NotesComponent } from "../../utility/Notes";
-import DeleteModelButton from "../../../common/DeleteModelButton";
-import { DepartmentManagementModal } from "./components/DepartmentManagementModal";
-import { UpdateActionMenu } from "./components/UpdateActionMenu";
-import { StatusPill } from "../shared/tabKit";
+import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes.jsx";
+import DeleteModelButton from "@/app/UiComponents/common/DeleteModelButton.jsx";
+import { DepartmentManagementModal } from "@/app/UiComponents/DataViewer/leads/leadUpdates/components/DepartmentManagementModal.jsx";
+import { UpdateActionMenu } from "@/app/UiComponents/DataViewer/leads/leadUpdates/components/UpdateActionMenu.jsx";
+import { StatusPill } from "@/app/UiComponents/DataViewer/leads/shared/tabKit.jsx";
 import { useTheme } from "@mui/material";
 
 const getDepartmentConfig = (dept) =>

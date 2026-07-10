@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getData } from "@/app/helpers/functions/getData";
-import { CHAT_LIMITS } from "../utils/chatConstants";
+import { CHAT_LIMITS } from "@/app/UiComponents/DataViewer/chat/utils/chatConstants.js";
 import { useScroll } from "@/app/helpers/hooks/useScroll";
 
 /**

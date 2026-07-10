@@ -34,9 +34,9 @@ import { MdPushPin } from "react-icons/md";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { FILE_TYPE_CONFIG } from "@/app/helpers/constants";
-import { RenderListOfFiles } from "../../../utility/Media/MediaRender";
-import { ReplyPreview } from "./ReplyPreview";
-import { MessageActions } from "./MessageActions";
+import { RenderListOfFiles } from "@/app/UiComponents/DataViewer/utility/Media/MediaRender.jsx";
+import { ReplyPreview } from "@/app/UiComponents/DataViewer/chat/components/messages/ReplyPreview.jsx";
+import { MessageActions } from "@/app/UiComponents/DataViewer/chat/components/messages/MessageActions.jsx";
 
 dayjs.extend(relativeTime);
 

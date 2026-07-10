@@ -28,7 +28,7 @@ import {
   FiChevronDown,
   FiEdit3,
 } from "react-icons/fi";
-import PaginationWithLimit from "../../PaginationWithLimit";
+import PaginationWithLimit from "@/app/UiComponents/DataViewer/PaginationWithLimit.jsx";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";

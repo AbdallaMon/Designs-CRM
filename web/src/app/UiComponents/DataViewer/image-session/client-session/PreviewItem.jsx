@@ -6,7 +6,7 @@ import {
   IconButton,
   Typography,
 } from "@mui/material";
-import ProsAndConsDialogButton from "../admin/shared/ProsAndCons";
+import ProsAndConsDialogButton from "@/app/UiComponents/DataViewer/image-session/admin/shared/ProsAndCons.jsx";
 import { ensureHttps } from "@/app/helpers/functions/utility";
 import {
   MdCheckCircle,
@@ -15,7 +15,7 @@ import {
   MdRadioButtonUnchecked,
 } from "react-icons/md";
 import { useState, useEffect, useRef } from "react";
-import { useDebounce } from "../admin/shared/CreateTitleOrDesc";
+import { useDebounce } from "@/app/UiComponents/DataViewer/image-session/admin/shared/CreateTitleOrDesc.jsx";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import gsap from "gsap";
 import { HexColorPicker } from "react-colorful";

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import ClientBooking from "../UiComponents/DataViewer/meeting/calendar/ClientBooking";
+import ClientBooking from "@/app/UiComponents/DataViewer/meeting/calendar/ClientBooking.jsx";
 import MuiAlertProvider from "../providers/MuiAlert";
 
 export default function BookingPage({ params, searchParams }) {

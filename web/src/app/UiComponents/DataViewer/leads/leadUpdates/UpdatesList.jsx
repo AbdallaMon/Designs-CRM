@@ -12,13 +12,13 @@ import { MdUpdate } from "react-icons/md";
 
 import { DEPARTMENTS } from "@/app/helpers/constants";
 import { getData } from "@/app/helpers/functions/getData";
-import { UpdateCard } from "./UpdateCard";
-import { CreateUpdateModal } from "./CreateUpdate";
+import { UpdateCard } from "@/app/UiComponents/DataViewer/leads/leadUpdates/UpdateCard.jsx";
+import { CreateUpdateModal } from "@/app/UiComponents/DataViewer/leads/leadUpdates/CreateUpdate.jsx";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
-import { TabSection } from "../shared/tabKit";
-import { TabLoading } from "../shared/TabLoading";
-import { EmptyState } from "../shared/EmptyState";
+import { TabSection } from "@/app/UiComponents/DataViewer/leads/shared/tabKit.jsx";
+import { TabLoading } from "@/app/UiComponents/DataViewer/leads/shared/TabLoading.jsx";
+import { EmptyState } from "@/app/UiComponents/DataViewer/leads/shared/EmptyState.jsx";
 
 // Main Updates List Component
 const UpdatesList = ({ clientLeadId, currentUserDepartment = "STAFF" }) => {

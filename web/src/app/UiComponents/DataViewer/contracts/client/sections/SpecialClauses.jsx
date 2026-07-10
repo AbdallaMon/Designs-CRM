@@ -4,7 +4,7 @@
 import React from "react";
 import { Box, Stack, Typography, useTheme } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { SectionCard } from "./primitives";
+import { SectionCard } from "@/app/UiComponents/DataViewer/contracts/client/sections/primitives.jsx";
 
 export default function SpecialClauses({ items = [], lng }) {
   const theme = useTheme();

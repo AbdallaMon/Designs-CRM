@@ -24,13 +24,13 @@ import {
 import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
 import { useSearchParams } from "next/navigation";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
-import ConfirmWithActionModel from "../../../models/ConfirmsWithActionModel";
+import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { formatCurrency } from "@/app/helpers/functions/utility";
-import SearchComponent from "../../../formComponents/SearchComponent";
-import { IncomeOutcomeSummary } from "../IncomeOutComeSummary";
-import CreateModal from "../../../models/CreateModal";
+import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
+import { IncomeOutcomeSummary } from "@/app/UiComponents/DataViewer/accountant/IncomeOutComeSummary.jsx";
+import CreateModal from "@/app/UiComponents/models/CreateModal.jsx";
 import dayjs from "dayjs";
 import {
   MdClose,
@@ -39,7 +39,7 @@ import {
   MdReceipt,
 } from "react-icons/md";
 import { getData } from "@/app/helpers/functions/getData";
-import { columns } from "../config/paymentsCalendarConfig";
+import { columns } from "@/app/UiComponents/DataViewer/accountant/config/paymentsCalendarConfig.js";
 // const inputs = [
 //   {
 //     data: { id: "amount", label: "Amount to be paid", type: "number" },

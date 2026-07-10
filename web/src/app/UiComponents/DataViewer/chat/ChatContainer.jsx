@@ -21,16 +21,16 @@ import {
   FaExternalLinkAlt,
 } from "react-icons/fa";
 import Link from "next/link";
-import { ChatRoomsList } from "./components/rooms/ChatRoomsList";
-import { ChatWindow } from "./components/window/ChatWindow";
-import { useChatRooms, useSocket } from "./hooks";
+import { ChatRoomsList } from "@/app/UiComponents/DataViewer/chat/components/rooms/ChatRoomsList.jsx";
+import { ChatWindow } from "@/app/UiComponents/DataViewer/chat/components/window/ChatWindow.jsx";
+import { useChatRooms, useSocket } from "@/app/UiComponents/DataViewer/chat/hooks/index.js";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { CHAT_ROOM_TYPES } from "./utils/chatConstants";
+import { CHAT_ROOM_TYPES } from "@/app/UiComponents/DataViewer/chat/utils/chatConstants.js";
 import { useRouter, useSearchParams } from "next/navigation";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
-import { RenderWidgetChat } from "./components/chat/WidgetChat";
-import { RenderPageChat } from "./components/chat/PageChat";
-import { RenderTabChat } from "./components/chat/TabChat";
+import { RenderWidgetChat } from "@/app/UiComponents/DataViewer/chat/components/chat/WidgetChat.jsx";
+import { RenderPageChat } from "@/app/UiComponents/DataViewer/chat/components/chat/PageChat.jsx";
+import { RenderTabChat } from "@/app/UiComponents/DataViewer/chat/components/chat/TabChat.jsx";
 
 export function ChatContainer({
   type = "page", // "page" | "widget" | "project" | "clientLead" | "tab"

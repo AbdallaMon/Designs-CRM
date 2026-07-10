@@ -3,7 +3,7 @@
 import React from "react";
 import { Box, Paper } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import CreateLeadChatGroup from "../dialogs/CreateLeadChatGroup";
+import CreateLeadChatGroup from "@/app/UiComponents/DataViewer/chat/components/dialogs/CreateLeadChatGroup.jsx";
 
 export function RenderTabChat({
   isMobile,

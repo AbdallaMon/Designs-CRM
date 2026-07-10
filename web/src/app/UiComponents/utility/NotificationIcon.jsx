@@ -21,7 +21,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import "dayjs/locale/ar";
 import parse from "html-react-parser";
 import { NotificationColors } from "@/app/helpers/colors.js";
-import { useSocket } from "../DataViewer/chat/hooks/useSocket";
+import { useSocket } from "@/app/UiComponents/DataViewer/chat/hooks/useSocket.js";
 import { apiRequest } from "@/app/helpers/functions/apiClient";
 
 dayjs.extend(relativeTime);

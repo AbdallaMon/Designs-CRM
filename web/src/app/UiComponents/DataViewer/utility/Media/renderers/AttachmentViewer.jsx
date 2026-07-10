@@ -14,8 +14,8 @@ import {
   FaTimes,
 } from "react-icons/fa";
 import { useEffect, useRef, useState } from "react";
-import { isPdf } from "../fileTypes";
-import { RenderFileAccordingToType } from "./RenderFileAccordingToType";
+import { isPdf } from "@/app/UiComponents/DataViewer/utility/Media/fileTypes.js";
+import { RenderFileAccordingToType } from "@/app/UiComponents/DataViewer/utility/Media/renderers/RenderFileAccordingToType.jsx";
 
 export function AttachmentViewer({
   open,

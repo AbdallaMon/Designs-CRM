@@ -19,7 +19,7 @@ import { FaMoneyBill } from "react-icons/fa";
 import { PROJECT_TYPES, PROJECT_STATUSES } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import SelectPaymentCondition from "./SelectPaymentCondition";
+import SelectPaymentCondition from "@/app/UiComponents/DataViewer/contracts/payments/SelectPaymentCondition.jsx";
 
 export default function AddPaymentDialog({
   open,

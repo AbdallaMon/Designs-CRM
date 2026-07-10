@@ -6,8 +6,8 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
-import ColorPicker from "./ColorPicker";
-import EnhancedSlider from "./EnhancedSlider";
+import ColorPicker from "@/app/UiComponents/DataViewer/image-session/admin/shared/template/ColorPicker.jsx";
+import EnhancedSlider from "@/app/UiComponents/DataViewer/image-session/admin/shared/template/EnhancedSlider.jsx";
 
 /**
  * Memoized component for all styling controls to prevent unnecessary re-renders.

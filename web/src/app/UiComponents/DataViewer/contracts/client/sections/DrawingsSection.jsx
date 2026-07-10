@@ -3,8 +3,8 @@
 
 import React from "react";
 import { Box, Card, CardHeader, CardContent, Grid } from "@mui/material";
-import { FIXED_TEXT } from "../wittenBlocksData";
-import { SectionCard } from "./primitives";
+import { FIXED_TEXT } from "@/app/UiComponents/DataViewer/contracts/client/wittenBlocksData.js";
+import { SectionCard } from "@/app/UiComponents/DataViewer/contracts/client/sections/primitives.jsx";
 
 export default function DrawingsSection({ session, lng }) {
   const drawings = session?.drawings || [];

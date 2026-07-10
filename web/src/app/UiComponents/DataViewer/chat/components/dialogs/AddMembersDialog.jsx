@@ -18,9 +18,9 @@ import {
   Grid,
 } from "@mui/material";
 import { MdDelete } from "react-icons/md";
-import { LastSeenAt, OnlineStatus } from "../members/LastSeenAt";
-import { AddOrRemoveClient } from "../chat/utility/AddOrRemoveClient";
-import ChatAccessLinkBox from "../chat/utility/ChatAccessLinkBox";
+import { LastSeenAt, OnlineStatus } from "@/app/UiComponents/DataViewer/chat/components/members/LastSeenAt.jsx";
+import { AddOrRemoveClient } from "@/app/UiComponents/DataViewer/chat/components/chat/utility/AddOrRemoveClient.jsx";
+import ChatAccessLinkBox from "@/app/UiComponents/DataViewer/chat/components/chat/utility/ChatAccessLinkBox.jsx";
 import { ConfirmDialog } from ".";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";

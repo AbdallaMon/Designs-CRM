@@ -3,7 +3,7 @@
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
-import { useLeadDetails } from "../leads/context/LeadDetailsContext";
+import { useLeadDetails } from "@/app/UiComponents/DataViewer/leads/context/LeadDetailsContext.jsx";
 import { usePermission } from "@/app/hooks/usePermission";
 import { LEAD_CODES } from "@/app/helpers/permissionCodes";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";

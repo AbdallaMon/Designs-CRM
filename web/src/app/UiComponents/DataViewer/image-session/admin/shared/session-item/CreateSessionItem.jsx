@@ -4,9 +4,9 @@ import { Box } from "@mui/material";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useLanguage } from "@/app/helpers/hooks/useLanguage";
-import { OpenItemDialog } from "../OpenItemDialog";
-import { CreateTitleOrDesc } from "../CreateTitleOrDesc";
-import { TemplateAutocomplete } from "../SelectATemplate";
+import { OpenItemDialog } from "@/app/UiComponents/DataViewer/image-session/admin/shared/OpenItemDialog.jsx";
+import { CreateTitleOrDesc } from "@/app/UiComponents/DataViewer/image-session/admin/shared/CreateTitleOrDesc.jsx";
+import { TemplateAutocomplete } from "@/app/UiComponents/DataViewer/image-session/admin/shared/SelectATemplate.jsx";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 

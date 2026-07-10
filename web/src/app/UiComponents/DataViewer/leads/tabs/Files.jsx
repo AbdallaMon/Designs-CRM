@@ -12,7 +12,7 @@ import {
 
 import { AddFiles } from "@/app/UiComponents/DataViewer/leads/dialogs/AddFilesDialog";
 
-import DeleteModelButton from "../../../common/DeleteModelButton";
+import DeleteModelButton from "@/app/UiComponents/common/DeleteModelButton.jsx";
 import {
   getFileTypeIcon,
   renderFilePreview,
@@ -20,10 +20,10 @@ import {
 import { FaEye } from "react-icons/fa";
 import { MdFolderOpen } from "react-icons/md";
 import { GoPaperclip } from "react-icons/go";
-import { EmptyState } from "../shared/EmptyState";
-import { TabLoading } from "../shared/TabLoading";
-import { useLeadTab } from "../context/LeadDetailsContext";
-import { TabSection, RecordCard } from "../shared/tabKit";
+import { EmptyState } from "@/app/UiComponents/DataViewer/leads/shared/EmptyState.jsx";
+import { TabLoading } from "@/app/UiComponents/DataViewer/leads/shared/TabLoading.jsx";
+import { useLeadTab } from "@/app/UiComponents/DataViewer/leads/context/LeadDetailsContext.jsx";
+import { TabSection, RecordCard } from "@/app/UiComponents/DataViewer/leads/shared/tabKit.jsx";
 
 export function FileList({ lead, admin, notUser }) {
   const theme = useTheme();

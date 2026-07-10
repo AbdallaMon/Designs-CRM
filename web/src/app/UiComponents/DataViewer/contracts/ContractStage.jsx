@@ -12,7 +12,7 @@ import {
   alpha,
 } from "@mui/material";
 import { Grid } from "@mui/material";
-import ChipWithIcon from "../utility/ChipWithIcon";
+import ChipWithIcon from "@/app/UiComponents/DataViewer/utility/ChipWithIcon.jsx";
 
 export default function ContractStage({ stage, index }) {
   const theme = useTheme();

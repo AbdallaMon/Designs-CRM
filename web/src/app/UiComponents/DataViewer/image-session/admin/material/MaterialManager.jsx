@@ -1,5 +1,5 @@
-import SessionModelItemManager from "../shared/session-item/SessionModelItemManager";
-import MaterialItemCard from "./MaterialItem";
+import SessionModelItemManager from "@/app/UiComponents/DataViewer/image-session/admin/shared/session-item/SessionModelItemManager.jsx";
+import MaterialItemCard from "@/app/UiComponents/DataViewer/image-session/admin/material/MaterialItem.jsx";
 
 const MaterialManager = ({ type = "MATERIAL", slug = "material" }) => {
   return (

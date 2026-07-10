@@ -39,10 +39,10 @@ import {
   MdPhone,
   MdToday,
 } from "react-icons/md";
-import { CallCard, MeetingCard } from "../../leads/core/CallAndMeetingCard";
+import { CallCard, MeetingCard } from "@/app/UiComponents/DataViewer/leads/core/CallAndMeetingCard.jsx";
 import { getData } from "@/app/helpers/functions/getData";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
-import DayDetailDialog from "./DayDetailDialog";
+import DayDetailDialog from "@/app/UiComponents/DataViewer/meeting/calendar/DayDetailDialog.jsx";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);

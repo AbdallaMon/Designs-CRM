@@ -18,7 +18,7 @@ import {
   MonthlyInformationPanel,
   SalaryCalculationPanel,
   PaymentDetailsPanel,
-} from "./MonthlySalaryPanels";
+} from "@/app/UiComponents/DataViewer/accountant/MonthlySalaryPanels.jsx";
 
 const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
   const [open, setOpen] = useState(false);

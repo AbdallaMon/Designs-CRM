@@ -23,7 +23,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { LeadDetailsProvider } from "../context/LeadDetailsContext";
+import { LeadDetailsProvider } from "@/app/UiComponents/DataViewer/leads/context/LeadDetailsContext.jsx";
 import { FaExclamationTriangle } from "react-icons/fa";
 import {
   MdInfoOutline,

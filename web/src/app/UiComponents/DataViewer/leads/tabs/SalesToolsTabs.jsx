@@ -20,16 +20,16 @@ import {
   MdQuestionAnswer,
   MdTouchApp,
 } from "react-icons/md";
-import { TabSection, RecordCard } from "../shared/tabKit";
-import { EmptyState } from "../shared/EmptyState";
+import { TabSection, RecordCard } from "@/app/UiComponents/DataViewer/leads/shared/tabKit.jsx";
+import { EmptyState } from "@/app/UiComponents/DataViewer/leads/shared/EmptyState.jsx";
 
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 
-import { SPAINQuestionsDialog } from "../../meeting/SPAIN/SPAINQuestionDialog";
+import { SPAINQuestionsDialog } from "@/app/UiComponents/DataViewer/meeting/SPAIN/SPAINQuestionDialog.jsx";
 import { personalityEnum } from "@/app/helpers/constants";
-import VersaObjectionSystem from "../../meeting/VERSA/VERSADialog";
+import VersaObjectionSystem from "@/app/UiComponents/DataViewer/meeting/VERSA/VERSADialog.jsx";
 
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { FaUser } from "react-icons/fa";

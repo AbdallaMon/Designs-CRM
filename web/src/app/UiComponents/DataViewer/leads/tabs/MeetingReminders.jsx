@@ -15,17 +15,17 @@ import { InProgressCall } from "@/app/UiComponents/DataViewer/leads/widgets/InPr
 import dayjs from "dayjs";
 import { useAuth } from "@/app/providers/AuthProvider";
 
-import DeleteModelButton from "../../../common/DeleteModelButton";
-import { EmptyState } from "../shared/EmptyState";
-import { TabLoading } from "../shared/TabLoading";
-import { useLeadTab } from "../context/LeadDetailsContext";
+import DeleteModelButton from "@/app/UiComponents/common/DeleteModelButton.jsx";
+import { EmptyState } from "@/app/UiComponents/DataViewer/leads/shared/EmptyState.jsx";
+import { TabLoading } from "@/app/UiComponents/DataViewer/leads/shared/TabLoading.jsx";
+import { useLeadTab } from "@/app/UiComponents/DataViewer/leads/context/LeadDetailsContext.jsx";
 import {
   TabSection,
   RecordCard,
   MetaItem,
   CardBlock,
   StatusPill,
-} from "../shared/tabKit";
+} from "@/app/UiComponents/DataViewer/leads/shared/tabKit.jsx";
 
 export function MeetingReminders({ lead, setleads, admin, notUser }) {
   const {

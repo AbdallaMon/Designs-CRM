@@ -25,7 +25,7 @@ import {
 } from "@mui/material";
 import { FaTimes } from "react-icons/fa";
 import { getData } from "@/app/helpers/functions/getData";
-import { CHAT_ROOM_TYPES } from "../../utils/chatConstants";
+import { CHAT_ROOM_TYPES } from "@/app/UiComponents/DataViewer/chat/utils/chatConstants.js";
 
 function getInitials(name = "") {
   const parts = name.trim().split(" ").filter(Boolean);

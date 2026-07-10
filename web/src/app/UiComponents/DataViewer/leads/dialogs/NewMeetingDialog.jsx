@@ -34,7 +34,7 @@ import { RiGroupLine } from "react-icons/ri";
 import utc from "dayjs/plugin/utc";
 import { meetingTypes } from "@/app/helpers/constants";
 import { getData } from "@/app/helpers/functions/getData";
-import { OpenButton } from "./OpenButton";
+import { OpenButton } from "@/app/UiComponents/DataViewer/leads/dialogs/OpenButton.jsx";
 
 dayjs.extend(utc);
 

@@ -3,9 +3,9 @@ import { Box, Grid, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { Fragment, useMemo, useState } from "react";
-import { isImage, isVideo } from "../fileTypes";
-import { RenderFileAccordingToType } from "./RenderFileAccordingToType";
-import { AttachmentViewer } from "./AttachmentViewer";
+import { isImage, isVideo } from "@/app/UiComponents/DataViewer/utility/Media/fileTypes.js";
+import { RenderFileAccordingToType } from "@/app/UiComponents/DataViewer/utility/Media/renderers/RenderFileAccordingToType.jsx";
+import { AttachmentViewer } from "@/app/UiComponents/DataViewer/utility/Media/renderers/AttachmentViewer.jsx";
 dayjs.extend(relativeTime);
 
 export function RenderListOfFiles({

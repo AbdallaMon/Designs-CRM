@@ -16,8 +16,8 @@ import {
 import { FaEdit, FaSave, FaTimes, FaTrash } from "react-icons/fa";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import ConfirmDialog from "./ConfirmDialog";
-import { diffPayload } from "./viewContractHelpers";
+import ConfirmDialog from "@/app/UiComponents/DataViewer/contracts/view/ConfirmDialog.jsx";
+import { diffPayload } from "@/app/UiComponents/DataViewer/contracts/view/viewContractHelpers.js";
 
 export default function SpecialItemRow({ item, contractId, onReload }) {
   const theme = useTheme();

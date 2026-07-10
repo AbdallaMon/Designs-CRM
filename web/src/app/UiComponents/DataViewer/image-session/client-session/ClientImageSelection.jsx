@@ -10,22 +10,22 @@ import {
   Zoom,
 } from "@mui/material";
 import { useEffect, useState } from "react";
-import PageInfoComponent from "./PageInfo";
-import { ClientImageAppBar } from "./Utility";
+import PageInfoComponent from "@/app/UiComponents/DataViewer/image-session/client-session/PageInfo.jsx";
+import { ClientImageAppBar } from "@/app/UiComponents/DataViewer/image-session/client-session/Utility.jsx";
 import { PageInfoType } from "@/app/helpers/constants";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { sessionStatusFlow } from "./helpers";
-import { ColorPalletes } from "./colors/ColorPalletes";
-import { Styles } from "./styles/Styles";
-import { Images } from "./Images";
-import { SelectedImages } from "./SelectedImages";
-import SignatureComponent from "./SignatureComponent";
-import { ClientSessionSubmitted } from "./ClientSessionSubmitted";
+import { sessionStatusFlow } from "@/app/UiComponents/DataViewer/image-session/client-session/helpers.js";
+import { ColorPalletes } from "@/app/UiComponents/DataViewer/image-session/client-session/colors/ColorPalletes.jsx";
+import { Styles } from "@/app/UiComponents/DataViewer/image-session/client-session/styles/Styles.jsx";
+import { Images } from "@/app/UiComponents/DataViewer/image-session/client-session/Images.jsx";
+import { SelectedImages } from "@/app/UiComponents/DataViewer/image-session/client-session/SelectedImages.jsx";
+import SignatureComponent from "@/app/UiComponents/DataViewer/image-session/client-session/SignatureComponent.jsx";
+import { ClientSessionSubmitted } from "@/app/UiComponents/DataViewer/image-session/client-session/ClientSessionSubmitted.jsx";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
-import { Materials } from "./material/Materials";
+import { Materials } from "@/app/UiComponents/DataViewer/image-session/client-session/material/Materials.jsx";
 
 const AnimatedComponent = ({
   children,

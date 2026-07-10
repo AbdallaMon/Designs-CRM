@@ -27,9 +27,9 @@ import {
   FaTrash,
 } from "react-icons/fa";
 import EmojiPicker from "emoji-picker-react";
-import { FILE_UPLOAD_LIMITS } from "../../utils/chatConstants";
+import { FILE_UPLOAD_LIMITS } from "@/app/UiComponents/DataViewer/chat/utils/chatConstants.js";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
-import { RecordingBar } from "./RecordingBar";
+import { RecordingBar } from "@/app/UiComponents/DataViewer/chat/components/messages/RecordingBar.jsx";
 
 /* ===================== Main Component ===================== */
 

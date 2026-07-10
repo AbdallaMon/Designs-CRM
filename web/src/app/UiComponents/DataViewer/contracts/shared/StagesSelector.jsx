@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { FaClipboardList, FaCheckCircle } from "react-icons/fa";
 import { CONTRACT_LEVELSENUM, contractLevel } from "@/app/helpers/constants";
-import { SectionHeader, EmptyState } from "./formKit";
+import { SectionHeader, EmptyState } from "@/app/UiComponents/DataViewer/contracts/shared/formKit.jsx";
 
 export default function StagesSelector({
   selected,

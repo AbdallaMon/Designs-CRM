@@ -7,5 +7,5 @@
  * - MeetingCard.jsx
  */
 
-export { CallCard } from "./CallCard";
-export { MeetingCard } from "./MeetingCard";
+export { CallCard } from "@/app/UiComponents/DataViewer/leads/core/CallCard.jsx";
+export { MeetingCard } from "@/app/UiComponents/DataViewer/leads/core/MeetingCard.jsx";

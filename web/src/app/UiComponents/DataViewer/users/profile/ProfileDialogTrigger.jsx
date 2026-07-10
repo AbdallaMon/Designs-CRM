@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { IconButton, Tooltip } from "@mui/material";
 import { FaUserCircle } from "react-icons/fa";
-import ProfileDialog from "./ProfileDialog";
+import ProfileDialog from "@/app/UiComponents/DataViewer/users/profile/ProfileDialog.jsx";
 import { useSearchParams } from "next/navigation";
 
 export default function ProfileDialogTrigger({ userId, iconSize = 22 }) {

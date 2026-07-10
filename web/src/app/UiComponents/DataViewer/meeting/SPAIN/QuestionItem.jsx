@@ -21,7 +21,7 @@ import {
 } from "react-icons/md";
 
 import { FAB_QUESTIONS_WITH_ANSWERS_AR } from "@/app/helpers/constants";
-import { AnswerInput } from "./AnswerInput";
+import { AnswerInput } from "@/app/UiComponents/DataViewer/meeting/SPAIN/AnswerInput.jsx";
 
 // Modern Question Item with Glassmorphism Effect
 export const QuestionItem = ({ sessionQuestion, onSubmitAnswer }) => {

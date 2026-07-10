@@ -1,9 +1,9 @@
 "use client";
 import { Grid } from "@mui/material";
-import DesignerMetricsCard from "./DesignerMatricsCard";
+import DesignerMetricsCard from "@/app/UiComponents/DataViewer/dashboard/designers/DesignerMatricsCard.jsx";
 import { usePermission } from "@/app/hooks/usePermission";
 import { PROJECT_CODES } from "@/app/helpers/permissionCodes";
-import { ProjectsList } from "./ProjectList";
+import { ProjectsList } from "@/app/UiComponents/DataViewer/dashboard/designers/ProjectList.jsx";
 
 const DesignerDashboard = ({ staff, staffId }) => {
   // Approved normalization (profiles sweep): admin viewing a designer's projects moved off

@@ -14,9 +14,9 @@ import {
 import { gsap } from "gsap";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { FloatingActionButton } from "../Utility";
-import { SharedCardItem } from "../shared/SharedCardItem";
-import { PreviewItemDialog } from "../shared/PreviewItemDialog";
+import { FloatingActionButton } from "@/app/UiComponents/DataViewer/image-session/client-session/Utility.jsx";
+import { SharedCardItem } from "@/app/UiComponents/DataViewer/image-session/client-session/shared/SharedCardItem.jsx";
+import { PreviewItemDialog } from "@/app/UiComponents/DataViewer/image-session/client-session/shared/PreviewItemDialog.jsx";
 
 export function Materials({
   session,

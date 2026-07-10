@@ -1,6 +1,6 @@
 // PartyTwoObligations.jsx
 import React from "react";
-import { SectionCard, BulletText } from "./primitives";
+import { SectionCard, BulletText } from "@/app/UiComponents/DataViewer/contracts/client/sections/primitives.jsx";
 
 export default function PartyTwoObligations({ lng, contractUtility }) {
   return (

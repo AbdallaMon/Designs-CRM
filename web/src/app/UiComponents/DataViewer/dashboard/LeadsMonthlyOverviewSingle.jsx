@@ -35,10 +35,10 @@ import {
 } from "recharts";
 
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
-import LeadsCreatedByRegionTable from "./LeadsCreatedByRegionTable.jsx";
-import LeadsFinalizedByRegionTable from "./LeadsFinalizedByRegionTable.jsx";
-import FinalizedHotspotsTable from "./FinalizedHotspotsTable.jsx";
-import DiscoverySourcesTable from "./DiscoverySourcesTable.jsx";
+import LeadsCreatedByRegionTable from "@/app/UiComponents/DataViewer/dashboard/LeadsCreatedByRegionTable.jsx";
+import LeadsFinalizedByRegionTable from "@/app/UiComponents/DataViewer/dashboard/LeadsFinalizedByRegionTable.jsx";
+import FinalizedHotspotsTable from "@/app/UiComponents/DataViewer/dashboard/FinalizedHotspotsTable.jsx";
+import DiscoverySourcesTable from "@/app/UiComponents/DataViewer/dashboard/DiscoverySourcesTable.jsx";
 import { getData } from "@/app/helpers/functions/getData.js";
 import { COLORS } from "@/app/helpers/colors.js";
 import { LEAD_SOURCE_LABELS } from "@/app/helpers/constants";

@@ -13,13 +13,13 @@ import {
   alpha,
 } from "@mui/material";
 import { FaEdit, FaSave, FaTimes, FaTrash } from "react-icons/fa";
-import SimpleFileInput from "../../../formComponents/SimpleFileInput";
+import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import ConfirmDialog from "./ConfirmDialog";
-import { diffPayload } from "./viewContractHelpers";
+import ConfirmDialog from "@/app/UiComponents/DataViewer/contracts/view/ConfirmDialog.jsx";
+import { diffPayload } from "@/app/UiComponents/DataViewer/contracts/view/viewContractHelpers.js";
 
 export default function DrawingRow({ row, contractId, onReload }) {
   const theme = useTheme();

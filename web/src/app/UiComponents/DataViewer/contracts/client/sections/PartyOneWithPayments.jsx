@@ -7,8 +7,8 @@ import {
   ListItem,
   ListItemText,
 } from "@mui/material";
-import { SectionCard, BulletText } from "./primitives";
-import { buildPaymentLine } from "./sessionHelpers";
+import { SectionCard, BulletText } from "@/app/UiComponents/DataViewer/contracts/client/sections/primitives.jsx";
+import { buildPaymentLine } from "@/app/UiComponents/DataViewer/contracts/client/sections/sessionHelpers.js";
 
 export default function PartyOneWithPayments({ session, lng, contractUtility }) {
   const payments = session?.payments || session?.paymentsNew || [];

@@ -2,14 +2,14 @@
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { useEffect, useState, useRef, useCallback } from "react";
-import { PreviewItem } from "./PreviewItem";
+import { PreviewItem } from "@/app/UiComponents/DataViewer/image-session/client-session/PreviewItem.jsx";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 import { Box, Grid, Typography } from "@mui/material";
-import { FloatingActionButton } from "./Utility";
+import { FloatingActionButton } from "@/app/UiComponents/DataViewer/image-session/client-session/Utility.jsx";
 import { gsap } from "gsap";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { ImageGroup } from "./ImageGroup";
+import { ImageGroup } from "@/app/UiComponents/DataViewer/image-session/client-session/ImageGroup.jsx";
 import { debounce } from "lodash";
 
 export function Images({

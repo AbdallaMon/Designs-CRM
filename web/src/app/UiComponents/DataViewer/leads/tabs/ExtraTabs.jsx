@@ -12,19 +12,19 @@ import {
 
 import { FaMoneyBillWave } from "react-icons/fa";
 import { MdAttachFile } from "react-icons/md";
-import SimpleFileInput from "../../../formComponents/SimpleFileInput";
+import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import DeleteModelButton from "../../../common/DeleteModelButton";
+import DeleteModelButton from "@/app/UiComponents/common/DeleteModelButton.jsx";
 
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 
-import { AddExtraService } from "../dialogs/AddExtraService";
-import { SectionToolbar } from "../shared/SectionToolbar";
-import { EmptyState } from "../shared/EmptyState";
-import { useLeadDetails } from "../context/LeadDetailsContext";
+import { AddExtraService } from "@/app/UiComponents/DataViewer/leads/dialogs/AddExtraService.jsx";
+import { SectionToolbar } from "@/app/UiComponents/DataViewer/leads/shared/SectionToolbar.jsx";
+import { EmptyState } from "@/app/UiComponents/DataViewer/leads/shared/EmptyState.jsx";
+import { useLeadDetails } from "@/app/UiComponents/DataViewer/leads/context/LeadDetailsContext.jsx";
 
 export function ExtraServicesList({ admin, lead, notUser, setPayments }) {
   const details = useLeadDetails();

@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { MdAdd, MdDelete } from "react-icons/md";
 
-import { useDebounce } from "../shared/CreateTitleOrDesc";
+import { useDebounce } from "@/app/UiComponents/DataViewer/image-session/admin/shared/CreateTitleOrDesc.jsx";
 
 export function ColorSelector({
   color,

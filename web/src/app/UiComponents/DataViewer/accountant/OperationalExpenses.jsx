@@ -3,9 +3,9 @@ import React from "react";
 import { Box, Container } from "@mui/material";
 import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
-import CreateModal from "../../models/CreateModal";
-import { NotesComponent } from "../utility/Notes";
-import { inputs, columns } from "./config/expensesConfig";
+import CreateModal from "@/app/UiComponents/models/CreateModal.jsx";
+import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes.jsx";
+import { inputs, columns } from "@/app/UiComponents/DataViewer/accountant/config/expensesConfig.js";
 
 const OperationalExpenses = () => {
   const {

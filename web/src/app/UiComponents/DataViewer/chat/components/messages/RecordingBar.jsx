@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { FaPaperPlane, FaStop, FaTrash } from "react-icons/fa";
-import { WaveBars } from "./WaveBars";
+import { WaveBars } from "@/app/UiComponents/DataViewer/chat/components/messages/WaveBars.jsx";
 
 function formatTime(seconds) {
   const m = String(Math.floor(seconds / 60)).padStart(2, "0");

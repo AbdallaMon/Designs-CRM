@@ -3,7 +3,7 @@
 
 import React from "react";
 import { Box, Stack, Typography, useTheme } from "@mui/material";
-import { SectionCard, ClauseCard } from "./primitives";
+import { SectionCard, ClauseCard } from "@/app/UiComponents/DataViewer/contracts/client/sections/primitives.jsx";
 
 // Readable stage clauses (now always fully expanded — no collapse)
 export default function ReadableStageClauses({ lng, stageClauses }) {

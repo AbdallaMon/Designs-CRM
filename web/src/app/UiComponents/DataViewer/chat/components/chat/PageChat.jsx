@@ -3,7 +3,7 @@
 import React from "react";
 import { Box, Paper } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { CreateGroupDialog } from "../dialogs";
+import { CreateGroupDialog } from "@/app/UiComponents/DataViewer/chat/components/dialogs/index.js";
 
 export function RenderPageChat({
   isMobile,

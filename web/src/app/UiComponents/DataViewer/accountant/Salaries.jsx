@@ -7,10 +7,10 @@ import React, { useEffect, useState } from "react";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 import LastSeen from "@/app/UiComponents/buttons/LastSeen";
-import SalaryInfoButton from "./SalaryDialog";
-import CreateModal from "../../models/CreateModal";
-import EditModal from "../../models/EditModal";
-import { inputs, columns } from "./config/salariesConfig";
+import SalaryInfoButton from "@/app/UiComponents/DataViewer/accountant/SalaryDialog.jsx";
+import CreateModal from "@/app/UiComponents/models/CreateModal.jsx";
+import EditModal from "@/app/UiComponents/models/EditModal.jsx";
+import { inputs, columns } from "@/app/UiComponents/DataViewer/accountant/config/salariesConfig.js";
 
 export default function Salaries() {
   const {

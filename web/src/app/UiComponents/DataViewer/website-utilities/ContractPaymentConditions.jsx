@@ -32,8 +32,8 @@ import { PROJECT_STATUSES } from "@/app/helpers/constants";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
-import DeleteModal from "../../models/DeleteModal";
-import DeleteModelButton from "../../common/DeleteModelButton";
+import DeleteModal from "@/app/UiComponents/models/DeleteModal.jsx";
+import DeleteModelButton from "@/app/UiComponents/common/DeleteModelButton.jsx";
 
 function RowActions({ row, onEditClick, onDelete }) {
   return (

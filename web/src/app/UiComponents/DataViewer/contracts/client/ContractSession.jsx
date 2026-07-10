@@ -10,18 +10,18 @@ import {
   Container,
 } from "@mui/material";
 import { FaCheckCircle } from "react-icons/fa";
-import { FIXED_TEXT } from "./wittenBlocksData";
-import { FloatingActionButton } from "../../image-session/client-session/Utility";
-import { SectionCard } from "./sections/primitives";
-import ClientSection from "./sections/ClientSection";
-import AmountParagraph from "./sections/AmountParagraph";
-import DbSpecialItems from "./sections/DbSpecialItems";
-import PartyOneWithPayments from "./sections/PartyOneWithPayments";
-import StagesTable from "./sections/StagesTable";
-import ReadableStageClauses from "./sections/ReadableStageClauses";
-import PartyTwoObligations from "./sections/PartyTwoObligations";
-import SpecialClauses from "./sections/SpecialClauses";
-import DrawingsSection from "./sections/DrawingsSection";
+import { FIXED_TEXT } from "@/app/UiComponents/DataViewer/contracts/client/wittenBlocksData.js";
+import { FloatingActionButton } from "@/app/UiComponents/DataViewer/image-session/client-session/Utility.jsx";
+import { SectionCard } from "@/app/UiComponents/DataViewer/contracts/client/sections/primitives.jsx";
+import ClientSection from "@/app/UiComponents/DataViewer/contracts/client/sections/ClientSection.jsx";
+import AmountParagraph from "@/app/UiComponents/DataViewer/contracts/client/sections/AmountParagraph.jsx";
+import DbSpecialItems from "@/app/UiComponents/DataViewer/contracts/client/sections/DbSpecialItems.jsx";
+import PartyOneWithPayments from "@/app/UiComponents/DataViewer/contracts/client/sections/PartyOneWithPayments.jsx";
+import StagesTable from "@/app/UiComponents/DataViewer/contracts/client/sections/StagesTable.jsx";
+import ReadableStageClauses from "@/app/UiComponents/DataViewer/contracts/client/sections/ReadableStageClauses.jsx";
+import PartyTwoObligations from "@/app/UiComponents/DataViewer/contracts/client/sections/PartyTwoObligations.jsx";
+import SpecialClauses from "@/app/UiComponents/DataViewer/contracts/client/sections/SpecialClauses.jsx";
+import DrawingsSection from "@/app/UiComponents/DataViewer/contracts/client/sections/DrawingsSection.jsx";
 
 function toArabicIndex(n) {
   return (

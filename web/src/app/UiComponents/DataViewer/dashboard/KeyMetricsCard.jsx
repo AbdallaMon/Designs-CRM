@@ -19,8 +19,8 @@ import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.j
 import { getData } from "@/app/helpers/functions/getData.js";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { formatCurrency } from "@/app/helpers/functions/utility";
-import KeyMetricFinancialTile from "./KeyMetricFinancialTile.jsx";
-import KeyMetricSecondaryTile from "./KeyMetricSecondaryTile.jsx";
+import KeyMetricFinancialTile from "@/app/UiComponents/DataViewer/dashboard/KeyMetricFinancialTile.jsx";
+import KeyMetricSecondaryTile from "@/app/UiComponents/DataViewer/dashboard/KeyMetricSecondaryTile.jsx";
 
 const KeyMetricsCard = ({ staff, staffId }) => {
   const theme = useTheme();

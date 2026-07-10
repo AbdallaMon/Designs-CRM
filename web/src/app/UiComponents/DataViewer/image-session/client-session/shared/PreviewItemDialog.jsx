@@ -23,7 +23,7 @@ import {
 } from "react-icons/md";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { ensureHttps } from "@/app/helpers/functions/utility";
-import ProsAndConsDialogButton from "../../admin/shared/ProsAndCons";
+import ProsAndConsDialogButton from "@/app/UiComponents/DataViewer/image-session/admin/shared/ProsAndCons.jsx";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;

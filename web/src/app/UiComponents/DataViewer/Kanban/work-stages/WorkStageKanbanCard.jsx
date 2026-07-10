@@ -30,21 +30,21 @@ import FloatingIdBadge from "@/app/UiComponents/DataViewer/leads/core/IdBadge";
 import CountdownTimer from "@/app/UiComponents/DataViewer/leads/widgets/CountdownTimer";
 import { NewCallDialog } from "@/app/UiComponents/DataViewer/leads/dialogs/CallsDialog";
 import ClientImageSessionManager from "@/app/UiComponents/DataViewer/image-session/users/ClientSessionImageManager";
-import TelegramLink from "../../work-stages/utility/TelegramLink";
-import PreviewWorkStage from "../../work-stages/PreviewWorkStage";
-import { KanbanUpdateSection } from "../../leads/leadUpdates/KanbanUpdateSection";
-import { ProjectTasksDialog } from "../../work-stages/utility/ProjectTasksDialog";
+import TelegramLink from "@/app/UiComponents/DataViewer/work-stages/utility/TelegramLink.jsx";
+import PreviewWorkStage from "@/app/UiComponents/DataViewer/work-stages/PreviewWorkStage.jsx";
+import { KanbanUpdateSection } from "@/app/UiComponents/DataViewer/leads/leadUpdates/KanbanUpdateSection.jsx";
+import { ProjectTasksDialog } from "@/app/UiComponents/DataViewer/work-stages/utility/ProjectTasksDialog.jsx";
 import {
   GroupTitleChip,
   PriorityBadge,
   StyledCard,
   TasksContainer,
-} from "./workStageKanbanStyles.js";
-import TaskItem from "./TaskItem.jsx";
-import TaskPreviewModal from "./TaskPreviewModal.jsx";
-import DesignersPreviewModal from "./DesignersPreviewModal.jsx";
+} from "@/app/UiComponents/DataViewer/Kanban/work-stages/workStageKanbanStyles.js";
+import TaskItem from "@/app/UiComponents/DataViewer/Kanban/work-stages/TaskItem.jsx";
+import TaskPreviewModal from "@/app/UiComponents/DataViewer/Kanban/work-stages/TaskPreviewModal.jsx";
+import DesignersPreviewModal from "@/app/UiComponents/DataViewer/Kanban/work-stages/DesignersPreviewModal.jsx";
 
-export { PriorityBadge } from "./workStageKanbanStyles.js";
+export { PriorityBadge } from "@/app/UiComponents/DataViewer/Kanban/work-stages/workStageKanbanStyles.js";
 
 const ItemTypes = {
   CARD: "card",

@@ -55,15 +55,15 @@ import {
 import { Link as MUILink } from "@mui/material";
 
 // Upload helpers (for Drawings)
-import SimpleFileInput from "../../formComponents/SimpleFileInput";
+import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
-import LoadingOverlay from "../../feedback/loaders/LoadingOverlay";
+import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import AddPaymentDialog from "./payments/AddPaymentDialog";
-import ContractPaymentConditions from "../website-utilities/ContractPaymentConditions";
-import SelectPaymentCondition from "./payments/SelectPaymentCondition";
+import AddPaymentDialog from "@/app/UiComponents/DataViewer/contracts/payments/AddPaymentDialog.jsx";
+import ContractPaymentConditions from "@/app/UiComponents/DataViewer/website-utilities/ContractPaymentConditions.jsx";
+import SelectPaymentCondition from "@/app/UiComponents/DataViewer/contracts/payments/SelectPaymentCondition.jsx";
 import {
   ConfirmDialog,
   SectionCard,
@@ -76,7 +76,7 @@ import {
   AddDrawingDialog,
   DrawingRow,
   isoDateOnly,
-} from "./view";
+} from "@/app/UiComponents/DataViewer/contracts/view/index.js";
 
 /* ===================== Project Group select ===================== */
 

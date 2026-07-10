@@ -41,18 +41,18 @@ import {
 import {
   CHAT_ROOM_TYPE_LABELS,
   CHAT_ROOM_TYPES,
-} from "../../utils/chatConstants";
+} from "@/app/UiComponents/DataViewer/chat/utils/chatConstants.js";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import ChatChips from "./ChatChips";
-import { LastSeenAt, OnlineStatus } from "../members";
-import { ScrollButton } from "../messages";
-import { StartNewChat } from "../dialogs";
-import { getRoomAvatar, getRoomLabel } from "./helpers";
+import ChatChips from "@/app/UiComponents/DataViewer/chat/components/rooms/ChatChips.jsx";
+import { LastSeenAt, OnlineStatus } from "@/app/UiComponents/DataViewer/chat/components/members/index.js";
+import { ScrollButton } from "@/app/UiComponents/DataViewer/chat/components/messages/index.js";
+import { StartNewChat } from "@/app/UiComponents/DataViewer/chat/components/dialogs/index.js";
+import { getRoomAvatar, getRoomLabel } from "@/app/UiComponents/DataViewer/chat/components/rooms/helpers.js";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { RoomActions } from "./RoomActions";
-import { LoadMoreButton } from "../indicators/LoadMoreButton";
-import { DeleteConfirmDialog, LeaveConfirmDialog } from "./ConfirmDialogs";
+import { RoomActions } from "@/app/UiComponents/DataViewer/chat/components/rooms/RoomActions.jsx";
+import { LoadMoreButton } from "@/app/UiComponents/DataViewer/chat/components/indicators/LoadMoreButton.jsx";
+import { DeleteConfirmDialog, LeaveConfirmDialog } from "@/app/UiComponents/DataViewer/chat/components/rooms/ConfirmDialogs.jsx";
 
 dayjs.extend(relativeTime);
 

@@ -22,12 +22,12 @@ import colors from "@/app/helpers/colors";
 import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { useDebounce } from "./CreateTitleOrDesc";
+import { useDebounce } from "@/app/UiComponents/DataViewer/image-session/admin/shared/CreateTitleOrDesc.jsx";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
-import ColorPicker from "./template/ColorPicker";
-import LayoutEditor from "./template/LayoutEditor";
-import StyleEditor from "./template/StyleEditor";
+import ColorPicker from "@/app/UiComponents/DataViewer/image-session/admin/shared/template/ColorPicker.jsx";
+import LayoutEditor from "@/app/UiComponents/DataViewer/image-session/admin/shared/template/LayoutEditor.jsx";
+import StyleEditor from "@/app/UiComponents/DataViewer/image-session/admin/shared/template/StyleEditor.jsx";
 
 export const PreviewTemplateCard = ({
   template,

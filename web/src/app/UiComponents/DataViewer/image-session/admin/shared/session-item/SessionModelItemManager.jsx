@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
-import Templates from "../Templates";
-import { ImageItemViewer } from "../ImageItemViewer";
-import { CreateSessionItem } from "./CreateSessionItem";
+import Templates from "@/app/UiComponents/DataViewer/image-session/admin/shared/Templates.jsx";
+import { ImageItemViewer } from "@/app/UiComponents/DataViewer/image-session/admin/shared/ImageItemViewer.jsx";
+import { CreateSessionItem } from "@/app/UiComponents/DataViewer/image-session/admin/shared/session-item/CreateSessionItem.jsx";
 
 const SessionModelItemManager = ({
   name = "Material",

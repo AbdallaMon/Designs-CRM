@@ -1,5 +1,5 @@
-import { OpenItemDialog } from "../shared/OpenItemDialog";
-import { CreateTitleOrDesc } from "../shared/CreateTitleOrDesc";
+import { OpenItemDialog } from "@/app/UiComponents/DataViewer/image-session/admin/shared/OpenItemDialog.jsx";
+import { CreateTitleOrDesc } from "@/app/UiComponents/DataViewer/image-session/admin/shared/CreateTitleOrDesc.jsx";
 import { useLanguage } from "@/app/helpers/hooks/useLanguage";
 import { Box, FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 

@@ -8,7 +8,7 @@ import {
   AccordionDetails,
 } from "@mui/material";
 import { MdStyle as Style, MdExpandMore as ExpandMore } from "react-icons/md";
-import StyleEditorControls from "./StyleEditorControls";
+import StyleEditorControls from "@/app/UiComponents/DataViewer/image-session/admin/shared/template/StyleEditorControls.jsx";
 
 /**
  * Refactored style editor component with improved performance and UX.

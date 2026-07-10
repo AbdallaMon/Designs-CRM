@@ -1,5 +1,5 @@
 import { Avatar, Box } from "@mui/material";
-import SimpleFileInput from "./SimpleFileInput";
+import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 

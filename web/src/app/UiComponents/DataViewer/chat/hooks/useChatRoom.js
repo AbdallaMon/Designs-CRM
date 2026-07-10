@@ -1,7 +1,7 @@
 "use client";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useEffect, useState } from "react";
-import { useSocket } from "./useSocket";
+import { useSocket } from "@/app/UiComponents/DataViewer/chat/hooks/useSocket.js";
 
 export function useChatRoom(roomId, clientId) {
   const [chatRoom, setChatRoom] = useState(null);

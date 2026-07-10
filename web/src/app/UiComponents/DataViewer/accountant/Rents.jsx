@@ -3,9 +3,9 @@ import React from "react";
 import { Box, Container } from "@mui/material";
 import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
-import CreateModal from "../../models/CreateModal";
-import { NotesComponent } from "../utility/Notes";
-import { renewInputs, inputs, columns } from "./config/rentsConfig";
+import CreateModal from "@/app/UiComponents/models/CreateModal.jsx";
+import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes.jsx";
+import { renewInputs, inputs, columns } from "@/app/UiComponents/DataViewer/accountant/config/rentsConfig.js";
 
 const Rents = () => {
   const {

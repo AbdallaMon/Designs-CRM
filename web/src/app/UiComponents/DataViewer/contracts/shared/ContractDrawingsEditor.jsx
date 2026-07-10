@@ -13,10 +13,10 @@ import {
   useTheme,
 } from "@mui/material";
 import { FaPlus, FaTrash, FaRegImages } from "react-icons/fa";
-import SimpleFileInput from "../../../formComponents/SimpleFileInput";
+import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
-import { SectionHeader, EditorCard, EmptyState, AddButton } from "./formKit";
+import { SectionHeader, EditorCard, EmptyState, AddButton } from "@/app/UiComponents/DataViewer/contracts/shared/formKit.jsx";
 
 export default function ContractDrawingsEditor({ drawings, setDrawings }) {
   const { setProgress, setOverlay } = useUploadContext();

@@ -31,19 +31,19 @@ import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { usePermission } from "@/app/hooks/usePermission";
 import { PROJECT_CODES } from "@/app/helpers/permissionCodes";
 import Link from "next/link";
-import { LeadNotes } from "../leads/tabs/LeadsNotes";
+import { LeadNotes } from "@/app/UiComponents/DataViewer/leads/tabs/LeadsNotes.jsx";
 import { MdModeEdit, MdTask, MdWork } from "react-icons/md";
-import LeadProjects from "./projects/LeadProjects";
-import { TasksList } from "../tasks/TasksList";
-import { ProjectDetails } from "./projects/ProjectDetails";
-import { InfoCard } from "../leads/core/InfoCard";
-import { LeadContactInfo } from "../leads/panels/LeadContactInfo";
-import { LeadInfo } from "../leads/panels/LeadInfo";
-import { PreviewLead } from "../leads/features/PreviewLead";
-import { CallReminders } from "../leads/tabs/CallReminders";
-import { FileList } from "../leads/tabs/Files";
-import { TabPanel } from "../leads/shared/TabPanel";
-import { WorkStageDialogHeader } from "../leads/shared/WorkStageDialogHeader";
+import LeadProjects from "@/app/UiComponents/DataViewer/work-stages/projects/LeadProjects.jsx";
+import { TasksList } from "@/app/UiComponents/DataViewer/tasks/TasksList.jsx";
+import { ProjectDetails } from "@/app/UiComponents/DataViewer/work-stages/projects/ProjectDetails.jsx";
+import { InfoCard } from "@/app/UiComponents/DataViewer/leads/core/InfoCard.jsx";
+import { LeadContactInfo } from "@/app/UiComponents/DataViewer/leads/panels/LeadContactInfo.jsx";
+import { LeadInfo } from "@/app/UiComponents/DataViewer/leads/panels/LeadInfo.jsx";
+import { PreviewLead } from "@/app/UiComponents/DataViewer/leads/features/PreviewLead.jsx";
+import { CallReminders } from "@/app/UiComponents/DataViewer/leads/tabs/CallReminders.jsx";
+import { FileList } from "@/app/UiComponents/DataViewer/leads/tabs/Files.jsx";
+import { TabPanel } from "@/app/UiComponents/DataViewer/leads/shared/TabPanel.jsx";
+import { WorkStageDialogHeader } from "@/app/UiComponents/DataViewer/leads/shared/WorkStageDialogHeader.jsx";
 
 // LeadContent Component (Extracted Shared Content)
 const LeadContent = ({

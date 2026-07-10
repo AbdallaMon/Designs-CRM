@@ -15,10 +15,10 @@ import { FiMail } from "react-icons/fi";
 import { MdOpenInNew } from "react-icons/md";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
 import UserLogs from "@/app/UiComponents/DataViewer/users/UserLogs.jsx";
-import LastSeen from "../../buttons/LastSeen";
-import EditModal from "../../models/EditModal";
-import UserRestrictedCountries from "./UserRestrictedCountries";
-import Commission from "../utility/Commission";
+import LastSeen from "@/app/UiComponents/buttons/LastSeen.jsx";
+import EditModal from "@/app/UiComponents/models/EditModal.jsx";
+import UserRestrictedCountries from "@/app/UiComponents/DataViewer/users/UserRestrictedCountries.jsx";
+import Commission from "@/app/UiComponents/DataViewer/utility/Commission.jsx";
 
 export default function UserProfile({ id, role }) {
   const [user, setUser] = useState(null);

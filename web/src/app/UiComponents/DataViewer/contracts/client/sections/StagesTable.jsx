@@ -17,10 +17,10 @@ import {
   CONTRACT_LEVELSENUM,
   STAGE_STATUS_LABEL,
 } from "@/app/helpers/constants";
-import { FIXED_TEXT, defaultStageLabels } from "../wittenBlocksData";
-import { SectionCard } from "./primitives";
-import { extractStageNumber } from "./sessionHelpers";
-import RenderStageBullets from "./RenderStageBullets";
+import { FIXED_TEXT, defaultStageLabels } from "@/app/UiComponents/DataViewer/contracts/client/wittenBlocksData.js";
+import { SectionCard } from "@/app/UiComponents/DataViewer/contracts/client/sections/primitives.jsx";
+import { extractStageNumber } from "@/app/UiComponents/DataViewer/contracts/client/sections/sessionHelpers.js";
+import RenderStageBullets from "@/app/UiComponents/DataViewer/contracts/client/sections/RenderStageBullets.jsx";
 
 export default function StagesTable({ session, lng, levelClauses }) {
   const theme = useTheme();

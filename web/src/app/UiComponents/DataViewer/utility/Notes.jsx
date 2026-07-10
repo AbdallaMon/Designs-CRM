@@ -1,7 +1,7 @@
 "use client";
 import { getData } from "@/app/helpers/functions/getData";
 import { Fragment, useEffect, useState } from "react";
-import LoadingOverlay from "../../feedback/loaders/LoadingOverlay";
+import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
 import {
   Box,
   Button,
@@ -17,7 +17,7 @@ import {
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { simpleModalStyle } from "@/app/helpers/constants";
-import SimpleFileInput from "../../formComponents/SimpleFileInput";
+import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import {
   MdNoteAdd,

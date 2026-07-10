@@ -1,3 +1,3 @@
-export { AnswerInput } from "./AnswerInput";
-export { QuestionItem } from "./QuestionItem";
-export { CategorySection } from "./CategorySection";
+export { AnswerInput } from "@/app/UiComponents/DataViewer/meeting/SPAIN/AnswerInput.jsx";
+export { QuestionItem } from "@/app/UiComponents/DataViewer/meeting/SPAIN/QuestionItem.jsx";
+export { CategorySection } from "@/app/UiComponents/DataViewer/meeting/SPAIN/CategorySection.jsx";

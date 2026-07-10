@@ -9,14 +9,14 @@ import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent";
 import DateRangeFilter from "@/app/UiComponents/formComponents/DateRangeFilter";
 import FilterSelect from "@/app/UiComponents/formComponents/FilterSelect";
 import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks";
-import KanbanColumn from "../staff/KanbanColumn";
+import KanbanColumn from "@/app/UiComponents/DataViewer/Kanban/staff/KanbanColumn.jsx";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { usePermission } from "@/app/hooks/usePermission";
 import { LEAD_CODES } from "@/app/helpers/permissionCodes";
 import { CONTRACT_LEVELS } from "@/app/helpers/constants";
 import { FaEllipsisV } from "react-icons/fa";
-import BulkConvertLeadsModal from "./BulkConvertLeadsModal";
-import KanbanFilterBar from "./KanbanFilterBar";
+import BulkConvertLeadsModal from "@/app/UiComponents/DataViewer/Kanban/shared/BulkConvertLeadsModal.jsx";
+import KanbanFilterBar from "@/app/UiComponents/DataViewer/Kanban/shared/KanbanFilterBar.jsx";
 
 dayjs.extend(relativeTime);
 

@@ -10,7 +10,7 @@ import {
   Stack,
   useTheme,
 } from "@mui/material";
-import { InfoCard } from "../core/InfoCard";
+import { InfoCard } from "@/app/UiComponents/DataViewer/leads/core/InfoCard.jsx";
 import { MdPayment } from "react-icons/md";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";

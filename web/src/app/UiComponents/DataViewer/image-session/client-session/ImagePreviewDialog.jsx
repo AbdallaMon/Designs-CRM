@@ -18,7 +18,7 @@ import {
   MdClose,
   MdRadioButtonUnchecked,
 } from "react-icons/md";
-import { NotesComponent } from "../../utility/Notes";
+import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes.jsx";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { ensureHttps } from "@/app/helpers/functions/utility";
 

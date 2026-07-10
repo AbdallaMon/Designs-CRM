@@ -1,11 +1,11 @@
 "use client";
 import { Typography, Grid, useTheme } from "@mui/material";
-import { InfoCard } from "../core/InfoCard";
-import { FinalPriceCalc } from "../core/FinalPriceCalc";
+import { InfoCard } from "@/app/UiComponents/DataViewer/leads/core/InfoCard.jsx";
+import { FinalPriceCalc } from "@/app/UiComponents/DataViewer/leads/core/FinalPriceCalc.jsx";
 import { BsBuilding } from "react-icons/bs";
 import dayjs from "dayjs";
 import { LEAD_SOURCE_LABELS, LeadCategory } from "@/app/helpers/constants";
-import { EditFieldButton } from "../../../common/EditFieldButton";
+import { EditFieldButton } from "@/app/UiComponents/common/EditFieldButton.jsx";
 
 export function LeadInfo({ lead, setleads, setLead }) {
   const theme = useTheme();

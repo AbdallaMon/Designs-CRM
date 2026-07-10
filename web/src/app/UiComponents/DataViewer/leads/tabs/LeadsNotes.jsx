@@ -5,11 +5,11 @@ import dayjs from "dayjs";
 import { NewNoteDialog } from "@/app/UiComponents/DataViewer/leads/dialogs/NoteDialog";
 import { MdStickyNote2 } from "react-icons/md";
 
-import DeleteModelButton from "../../../common/DeleteModelButton";
-import { EmptyState } from "../shared/EmptyState";
-import { TabLoading } from "../shared/TabLoading";
-import { useLeadTab } from "../context/LeadDetailsContext";
-import { TabSection, RecordCard, NameAvatar } from "../shared/tabKit";
+import DeleteModelButton from "@/app/UiComponents/common/DeleteModelButton.jsx";
+import { EmptyState } from "@/app/UiComponents/DataViewer/leads/shared/EmptyState.jsx";
+import { TabLoading } from "@/app/UiComponents/DataViewer/leads/shared/TabLoading.jsx";
+import { useLeadTab } from "@/app/UiComponents/DataViewer/leads/context/LeadDetailsContext.jsx";
+import { TabSection, RecordCard, NameAvatar } from "@/app/UiComponents/DataViewer/leads/shared/tabKit.jsx";
 
 export function LeadNotes({ lead, admin, notUser }) {
   const {

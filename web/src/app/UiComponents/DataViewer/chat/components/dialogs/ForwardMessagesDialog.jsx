@@ -9,9 +9,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useState } from "react";
-import { ChatRoomsList } from "../rooms";
-import { useChatRooms } from "../../hooks";
-import { forwardMultipleMessages } from "../../utils/socketIO";
+import { ChatRoomsList } from "@/app/UiComponents/DataViewer/chat/components/rooms/index.js";
+import { useChatRooms } from "@/app/UiComponents/DataViewer/chat/hooks/index.js";
+import { forwardMultipleMessages } from "@/app/UiComponents/DataViewer/chat/utils/socketIO.js";
 
 export function ForwardMessagesDialog({ open, onClose, selectedMessages }) {
   const [selectedRooms, setSelectedRooms] = useState([]);

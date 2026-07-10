@@ -3,7 +3,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Box, Typography } from "@mui/material";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { isAllowed } from "./routeAccess";
+import { isAllowed } from "@/app/UiComponents/utility/routeAccess.js";
 
 export default function RouteGuard({ children }) {
   const { navigationTabs = [], validatingAuth, isLoggedIn } = useAuth();

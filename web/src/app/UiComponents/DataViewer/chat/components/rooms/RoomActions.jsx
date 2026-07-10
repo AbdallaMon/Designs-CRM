@@ -1,5 +1,5 @@
 import { Menu, MenuItem } from "@mui/material";
-import { CHAT_ROOM_TYPES } from "../../utils";
+import { CHAT_ROOM_TYPES } from "@/app/UiComponents/DataViewer/chat/utils/index.js";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { FaArchive, FaBell, FaBellSlash, FaTrash } from "react-icons/fa";

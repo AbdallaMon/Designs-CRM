@@ -1,12 +1,12 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { TabLoading } from "../../leads/shared/TabLoading";
-import { EmptyState } from "../../leads/shared/EmptyState";
+import { TabLoading } from "@/app/UiComponents/DataViewer/leads/shared/TabLoading.jsx";
+import { EmptyState } from "@/app/UiComponents/DataViewer/leads/shared/EmptyState.jsx";
 import {
   TabSection,
   RecordCard,
   StatusPill,
-} from "../../leads/shared/tabKit";
+} from "@/app/UiComponents/DataViewer/leads/shared/tabKit.jsx";
 import {
   alpha,
   Box,
@@ -24,7 +24,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { getData } from "@/app/helpers/functions/getData";
-import { ProjectDetails } from "./ProjectDetails";
+import { ProjectDetails } from "@/app/UiComponents/DataViewer/work-stages/projects/ProjectDetails.jsx";
 import {
   MdFolder,
   MdRefresh,
@@ -39,7 +39,7 @@ import {
   MdCalculate,
   MdBrush,
 } from "react-icons/md";
-import CreateProjectsGroup from "./CreateNewProjectsGroup";
+import CreateProjectsGroup from "@/app/UiComponents/DataViewer/work-stages/projects/CreateNewProjectsGroup.jsx";
 
 export const getProjectIcon = (type) => {
   const iconSize = 20;

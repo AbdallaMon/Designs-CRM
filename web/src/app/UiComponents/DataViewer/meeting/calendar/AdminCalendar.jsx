@@ -1,9 +1,9 @@
 "use client";
 import { Box, Container, Paper, Tab, Tabs } from "@mui/material";
 import { MdAdminPanelSettings, MdPerson } from "react-icons/md";
-import { AdminBookingPanel } from "./Calendar";
+import { AdminBookingPanel } from "@/app/UiComponents/DataViewer/meeting/calendar/Calendar.jsx";
 import { useEffect, useState } from "react";
-import BigCalendar from "./BigCalendar";
+import BigCalendar from "@/app/UiComponents/DataViewer/meeting/calendar/BigCalendar.jsx";
 import { useRouter, useSearchParams } from "next/navigation";
 
 const CalendarBookingSystem = () => {

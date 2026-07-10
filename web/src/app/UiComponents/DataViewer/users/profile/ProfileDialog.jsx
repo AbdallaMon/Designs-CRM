@@ -31,8 +31,8 @@ import UploadImageWithAvatarPreview from "@/app/UiComponents/formComponents/Uplo
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { getData } from "@/app/helpers/functions/getData";
-import TelegramAuth from "./TelegramAuth";
-import GoogleRedirectStatus from "./GoogleRedirectStatus";
+import TelegramAuth from "@/app/UiComponents/DataViewer/users/profile/TelegramAuth.jsx";
+import GoogleRedirectStatus from "@/app/UiComponents/DataViewer/users/profile/GoogleRedirectStatus.jsx";
 
 export default function ProfileDialog({ open, onClose, userId }) {
   const { loading, setLoading } = useToastContext();

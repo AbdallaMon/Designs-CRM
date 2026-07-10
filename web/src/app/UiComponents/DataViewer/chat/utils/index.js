@@ -8,7 +8,7 @@ export {
   CALL_STATUSES,
   SCHEDULED_MESSAGE_STATUSES,
   FILE_UPLOAD_LIMITS,
-} from "./chatConstants";
+} from "@/app/UiComponents/DataViewer/chat/utils/chatConstants.js";
 export {
   initSocket,
   getSocket,
@@ -18,4 +18,4 @@ export {
   offSocket,
   joinChatRoom,
   leaveChatRoom,
-} from "./socketIO";
+} from "@/app/UiComponents/DataViewer/chat/utils/socketIO.js";

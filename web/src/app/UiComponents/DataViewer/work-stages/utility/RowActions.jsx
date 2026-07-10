@@ -1,8 +1,8 @@
 import React from "react";
 import { Button, IconButton, Stack, Tooltip } from "@mui/material";
 import { FiLink, FiExternalLink } from "react-icons/fi";
-import DeleteModelButton from "../../../common/DeleteModelButton";
-import { NotesComponent } from "../../utility/Notes";
+import DeleteModelButton from "@/app/UiComponents/common/DeleteModelButton.jsx";
+import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes.jsx";
 
 function RowActions({
   reload,

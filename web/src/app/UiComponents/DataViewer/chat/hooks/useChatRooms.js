@@ -4,10 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { useSocket } from "./useSocket";
+import { useSocket } from "@/app/UiComponents/DataViewer/chat/hooks/useSocket.js";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useSearchParams } from "next/navigation";
-import { CHAT_LIMITS } from "../utils/chatConstants";
+import { CHAT_LIMITS } from "@/app/UiComponents/DataViewer/chat/utils/chatConstants.js";
 import { useScroll } from "@/app/helpers/hooks/useScroll";
 
 export function useChatRooms({

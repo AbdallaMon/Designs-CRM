@@ -7,10 +7,10 @@ import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.j
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 import CreateModal from "@/app/UiComponents/models/CreateModal.jsx";
-import { columns, inputs, userColor } from "./users/config.jsx";
-import UserRowActions from "./users/UserRowActions.jsx";
-import UsersPageHeader from "./users/UsersPageHeader.jsx";
-import UsersLegend from "./users/UsersLegend.jsx";
+import { columns, inputs, userColor } from "@/app/UiComponents/pages/users/config.jsx";
+import UserRowActions from "@/app/UiComponents/pages/users/UserRowActions.jsx";
+import UsersPageHeader from "@/app/UiComponents/pages/users/UsersPageHeader.jsx";
+import UsersLegend from "@/app/UiComponents/pages/users/UsersLegend.jsx";
 
 export default function UsersPage() {
   const {

@@ -4,10 +4,10 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { Box } from "@mui/material";
 import { ensureHttps } from "@/app/helpers/functions/utility";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { OpenItemDialog } from "../shared/OpenItemDialog";
-import { AutoCompleteSelector } from "../shared/session-item/AutoCompleteSelector";
-import { MultiAutoCompleteSelector } from "../shared/session-item/MultiAutoCompleteSelector";
-import ImageLoader from "../shared/ImageLoader";
+import { OpenItemDialog } from "@/app/UiComponents/DataViewer/image-session/admin/shared/OpenItemDialog.jsx";
+import { AutoCompleteSelector } from "@/app/UiComponents/DataViewer/image-session/admin/shared/session-item/AutoCompleteSelector.jsx";
+import { MultiAutoCompleteSelector } from "@/app/UiComponents/DataViewer/image-session/admin/shared/session-item/MultiAutoCompleteSelector.jsx";
+import ImageLoader from "@/app/UiComponents/DataViewer/image-session/admin/shared/ImageLoader.jsx";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 

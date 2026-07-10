@@ -4,7 +4,7 @@ import { Box, Chip, Grid, Stack, styled, Typography } from "@mui/material";
 import { BiDollarCircle } from "react-icons/bi";
 import { BsKanban } from "react-icons/bs";
 import { useDrop } from "react-dnd";
-import AccountantKanbanLeadCard from "./AccountantKanbanLeadCard";
+import AccountantKanbanLeadCard from "@/app/UiComponents/DataViewer/Kanban/accountant/AccountantKanbanLeadCard.jsx";
 
 const ItemTypes = {
   CARD: "card",

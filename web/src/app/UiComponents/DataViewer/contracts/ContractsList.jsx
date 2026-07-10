@@ -15,11 +15,11 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { MdClose } from "react-icons/md";
-import CreateContractDialog from "./CreateContract";
-import LoadingOverlay from "../../feedback/loaders/LoadingOverlay";
-import ViewContract from "./ViewContract";
-import CloneContract from "./CloneContract";
-import ContractAccordion from "./ContractAccordion";
+import CreateContractDialog from "@/app/UiComponents/DataViewer/contracts/CreateContract.jsx";
+import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay.jsx";
+import ViewContract from "@/app/UiComponents/DataViewer/contracts/ViewContract.jsx";
+import CloneContract from "@/app/UiComponents/DataViewer/contracts/CloneContract.jsx";
+import ContractAccordion from "@/app/UiComponents/DataViewer/contracts/ContractAccordion.jsx";
 
 export default function LeadContractList({
   leadId,

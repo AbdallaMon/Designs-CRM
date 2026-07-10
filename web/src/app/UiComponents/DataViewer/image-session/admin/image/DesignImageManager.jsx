@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
-import DesignImageItem from "./DesignImageItem";
-import { ImageItemViewer } from "../shared/ImageItemViewer";
-import { CreateDesginImage } from "./CreateDesginImage";
+import DesignImageItem from "@/app/UiComponents/DataViewer/image-session/admin/image/DesignImageItem.jsx";
+import { ImageItemViewer } from "@/app/UiComponents/DataViewer/image-session/admin/shared/ImageItemViewer.jsx";
+import { CreateDesginImage } from "@/app/UiComponents/DataViewer/image-session/admin/image/CreateDesginImage.jsx";
 
 const DesignImageManager = () => {
   return (

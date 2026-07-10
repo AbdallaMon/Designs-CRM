@@ -17,12 +17,12 @@ import { FaEdit, FaSave, FaTimes, FaTrash } from "react-icons/fa";
 import { STAGE_STATUS } from "@/app/helpers/constants";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import ConfirmDialog from "./ConfirmDialog";
+import ConfirmDialog from "@/app/UiComponents/DataViewer/contracts/view/ConfirmDialog.jsx";
 import {
   diffPayload,
   canEditStageDays,
   canDeleteStage,
-} from "./viewContractHelpers";
+} from "@/app/UiComponents/DataViewer/contracts/view/viewContractHelpers.js";
 
 export default function StageRow({ stage, onReload, contractId }) {
   const theme = useTheme();

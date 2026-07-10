@@ -27,13 +27,13 @@ import {
   MdStyle,
 } from "react-icons/md";
 
-import { ClientSelectedImages } from "./ClientSelectedImages";
+import { ClientSelectedImages } from "@/app/UiComponents/DataViewer/image-session/client-session/ClientSelectedImages.jsx";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
-import { PreviewItem } from "./PreviewItem";
+import { PreviewItem } from "@/app/UiComponents/DataViewer/image-session/client-session/PreviewItem.jsx";
 import { SiMaterialformkdocs } from "react-icons/si";
-import { ClientSessionSubmittedSkeleton } from "./ClientSessionSubmittedSkeleton";
+import { ClientSessionSubmittedSkeleton } from "@/app/UiComponents/DataViewer/image-session/client-session/ClientSessionSubmittedSkeleton.jsx";
 
 // Register ScrollTrigger plugin
 gsap.registerPlugin(ScrollTrigger);

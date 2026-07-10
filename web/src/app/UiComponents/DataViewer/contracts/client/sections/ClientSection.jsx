@@ -4,14 +4,14 @@
 import React, { useMemo } from "react";
 import { Stack, Typography, Chip, Grid } from "@mui/material";
 import { FaInfoCircle } from "react-icons/fa";
-import { FIXED_TEXT } from "../wittenBlocksData";
-import { SectionCard, KeyValue } from "./primitives";
+import { FIXED_TEXT } from "@/app/UiComponents/DataViewer/contracts/client/wittenBlocksData.js";
+import { SectionCard, KeyValue } from "@/app/UiComponents/DataViewer/contracts/client/sections/primitives.jsx";
 import {
   extractStageNumber,
   numList,
   getToday,
   emirateOrCountryLabel,
-} from "./sessionHelpers";
+} from "@/app/UiComponents/DataViewer/contracts/client/sections/sessionHelpers.js";
 
 // -----------------------------
 // Sections

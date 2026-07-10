@@ -13,10 +13,10 @@ import PerformanceMetricsCard from "@/app/UiComponents/DataViewer/dashboard/Perf
 import NewLeadsList from "@/app/UiComponents/DataViewer/dashboard/NewLeadsList.jsx";
 import RecentActivities from "@/app/UiComponents/DataViewer/dashboard/RecentActivity.jsx";
 import UserProfile from "@/app/UiComponents/DataViewer/users/UserProfile.jsx";
-import DesignerDashboard from "./designers/DesignerDashboard";
-import FullScreenLoader from "../../feedback/loaders/FullscreenLoader";
+import DesignerDashboard from "@/app/UiComponents/DataViewer/dashboard/designers/DesignerDashboard.jsx";
+import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader.jsx";
 import { getData } from "@/app/helpers/functions/getData";
-import LeadsMonthlyOverviewSingle from "./LeadsMonthlyOverviewSingle";
+import LeadsMonthlyOverviewSingle from "@/app/UiComponents/DataViewer/dashboard/LeadsMonthlyOverviewSingle.jsx";
 
 const Dashboard = ({ staff, staffId, userRole = "STAFF" }) => {
   const [role, setRole] = useState(userRole);

@@ -19,7 +19,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { MdSettings } from "react-icons/md";
-import { ConfirmDialog } from "../dialogs";
+import { ConfirmDialog } from "@/app/UiComponents/DataViewer/chat/components/dialogs/index.js";
 
 const AdminSettings = [
   {

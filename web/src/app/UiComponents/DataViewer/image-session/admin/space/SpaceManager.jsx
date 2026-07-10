@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
-import { ImageItemViewer } from "../shared/ImageItemViewer";
-import SpaceItemCard from "./SpaceItem";
-import { CreateSpace } from "./CreateSpace";
+import { ImageItemViewer } from "@/app/UiComponents/DataViewer/image-session/admin/shared/ImageItemViewer.jsx";
+import SpaceItemCard from "@/app/UiComponents/DataViewer/image-session/admin/space/SpaceItem.jsx";
+import { CreateSpace } from "@/app/UiComponents/DataViewer/image-session/admin/space/CreateSpace.jsx";
 
 const SpaceManager = () => {
   return (

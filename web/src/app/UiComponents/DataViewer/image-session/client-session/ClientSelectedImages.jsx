@@ -1,9 +1,9 @@
 import { Box, Paper, Typography, Grid } from "@mui/material";
-import { ImagePreviewDialog } from "./ImagePreviewDialog";
+import { ImagePreviewDialog } from "@/app/UiComponents/DataViewer/image-session/client-session/ImagePreviewDialog.jsx";
 import { useState } from "react";
-import { ImageGroup } from "./ImageGroup";
-import { NotesComponent } from "../../utility/Notes";
-import { ActionButtons } from "./Utility";
+import { ImageGroup } from "@/app/UiComponents/DataViewer/image-session/client-session/ImageGroup.jsx";
+import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes.jsx";
+import { ActionButtons } from "@/app/UiComponents/DataViewer/image-session/client-session/Utility.jsx";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 
 export function ClientSelectedImages({

@@ -1,7 +1,7 @@
 import { Box, Typography } from "@mui/material";
-import { CreateUpdateModal } from "./CreateUpdate";
-import LeadListModal from "./LeadListModal";
-import { UpdateCard } from "./UpdateCard";
+import { CreateUpdateModal } from "@/app/UiComponents/DataViewer/leads/leadUpdates/CreateUpdate.jsx";
+import LeadListModal from "@/app/UiComponents/DataViewer/leads/leadUpdates/LeadListModal.jsx";
+import { UpdateCard } from "@/app/UiComponents/DataViewer/leads/leadUpdates/UpdateCard.jsx";
 
 export function KanbanUpdateSection({
   lead,

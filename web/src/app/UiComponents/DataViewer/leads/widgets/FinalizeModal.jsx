@@ -14,8 +14,8 @@ import {
   Typography,
 } from "@mui/material";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
-import LeadContractList from "../../contracts/ContractsList";
-import ViewContract from "../../contracts/ViewContract";
+import LeadContractList from "@/app/UiComponents/DataViewer/contracts/ContractsList.jsx";
+import ViewContract from "@/app/UiComponents/DataViewer/contracts/ViewContract.jsx";
 import { getData } from "@/app/helpers/functions/getData";
 
 export function FinalizeModal({

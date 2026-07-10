@@ -7,7 +7,7 @@ import {
   EMIRATE_LABEL,
   UAE_LABEL,
 } from "@/app/helpers/constants";
-import { PAYMENT_ORDINAL } from "../wittenBlocksData";
+import { PAYMENT_ORDINAL } from "@/app/UiComponents/DataViewer/contracts/client/wittenBlocksData.js";
 
 // -----------------------------
 // Helpers (kept unchanged behavior)

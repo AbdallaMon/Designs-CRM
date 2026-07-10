@@ -24,9 +24,9 @@ import {
 } from "@/app/helpers/constants";
 import { contractLevelColors } from "@/app/helpers/colors";
 import { generatePDF } from "@/app/UiComponents/buttons/GenerateLeadPdf";
-import TelegramLink from "../../work-stages/utility/TelegramLink";
-import UpdateInitialConsultButton from "../../../buttons/UpdateInitialConsultLead";
-import ClientImageSessionManager from "../../image-session/users/ClientSessionImageManager";
+import TelegramLink from "@/app/UiComponents/DataViewer/work-stages/utility/TelegramLink.jsx";
+import UpdateInitialConsultButton from "@/app/UiComponents/buttons/UpdateInitialConsultLead.jsx";
+import ClientImageSessionManager from "@/app/UiComponents/DataViewer/image-session/users/ClientSessionImageManager.jsx";
 
 /**
  * LeadDialogHeader — the redesigned action header for the lead / deal detail.

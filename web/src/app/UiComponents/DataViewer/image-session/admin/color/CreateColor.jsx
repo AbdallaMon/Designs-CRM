@@ -8,10 +8,10 @@ import IsFullWidthSwitch, {
   ColorSelector,
   CreateColorPattern,
   OrderInput,
-} from "./PalleteItems";
-import { OpenItemDialog } from "../shared/OpenItemDialog";
-import { CreateTitleOrDesc } from "../shared/CreateTitleOrDesc";
-import { TemplateAutocomplete } from "../shared/SelectATemplate";
+} from "@/app/UiComponents/DataViewer/image-session/admin/color/PalleteItems.jsx";
+import { OpenItemDialog } from "@/app/UiComponents/DataViewer/image-session/admin/shared/OpenItemDialog.jsx";
+import { CreateTitleOrDesc } from "@/app/UiComponents/DataViewer/image-session/admin/shared/CreateTitleOrDesc.jsx";
+import { TemplateAutocomplete } from "@/app/UiComponents/DataViewer/image-session/admin/shared/SelectATemplate.jsx";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 

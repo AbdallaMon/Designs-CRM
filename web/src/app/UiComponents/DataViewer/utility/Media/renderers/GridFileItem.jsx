@@ -1,7 +1,7 @@
 "use client";
 import { Box, IconButton, Typography } from "@mui/material";
 import { FaDownload, FaPlay } from "react-icons/fa";
-import { getFileConfig, isImage, isVideo } from "../fileTypes";
+import { getFileConfig, isImage, isVideo } from "@/app/UiComponents/DataViewer/utility/Media/fileTypes.js";
 
 export function GridFileItem({ file, onPreview }) {
   const config = getFileConfig(file.fileMimeType);

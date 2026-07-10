@@ -25,7 +25,7 @@ import dayjs from "dayjs";
 
 import utc from "dayjs/plugin/utc";
 
-import { OpenButton } from "./OpenButton";
+import { OpenButton } from "@/app/UiComponents/DataViewer/leads/dialogs/OpenButton.jsx";
 
 dayjs.extend(utc);
 

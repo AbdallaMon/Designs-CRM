@@ -1,9 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useRef, useState } from "react";
-import { initSocket } from "../UiComponents/DataViewer/chat/utils";
+import { initSocket } from "@/app/UiComponents/DataViewer/chat/utils/index.js";
 import { useAuth } from "./AuthProvider";
-import DotsLoader from "../UiComponents/feedback/loaders/DotsLoading";
+import DotsLoader from "@/app/UiComponents/feedback/loaders/DotsLoading.jsx";
 
 export const SocketContext = createContext(null);
 

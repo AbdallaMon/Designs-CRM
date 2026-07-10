@@ -21,12 +21,12 @@ import {
   MdRoom,
   MdStyle,
 } from "react-icons/md";
-import SpaceManager from "./space/SpaceManager";
-import StyleManager from "./style/StyleItemManager";
-import MaterialManager from "./material/MaterialManager.jsx";
-import ColorsMangaer from "./color/ColorsManager.jsx";
-import DesignImageManager from "./image/DesignImageManager";
-import PageInfoManager from "./page-info/PageInfoManager";
+import SpaceManager from "@/app/UiComponents/DataViewer/image-session/admin/space/SpaceManager.jsx";
+import StyleManager from "@/app/UiComponents/DataViewer/image-session/admin/style/StyleItemManager.jsx";
+import MaterialManager from "@/app/UiComponents/DataViewer/image-session/admin/material/MaterialManager.jsx";
+import ColorsMangaer from "@/app/UiComponents/DataViewer/image-session/admin/color/ColorsManager.jsx";
+import DesignImageManager from "@/app/UiComponents/DataViewer/image-session/admin/image/DesignImageManager.jsx";
+import PageInfoManager from "@/app/UiComponents/DataViewer/image-session/admin/page-info/PageInfoManager.jsx";
 
 function TabPanel({ children, value, index, ...other }) {
   return (

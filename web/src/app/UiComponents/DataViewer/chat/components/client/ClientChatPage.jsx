@@ -1,7 +1,7 @@
 "use client";
 
 import { Alert, Container } from "@mui/material";
-import { ChatWindow } from "../window";
+import { ChatWindow } from "@/app/UiComponents/DataViewer/chat/components/window/index.js";
 import SocketProvider from "@/app/providers/SocketProvider";
 import { useEffect, useState } from "react";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";

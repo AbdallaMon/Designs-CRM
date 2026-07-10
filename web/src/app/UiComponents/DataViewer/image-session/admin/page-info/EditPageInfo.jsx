@@ -1,6 +1,6 @@
-import { OpenItemDialog } from "../shared/OpenItemDialog";
+import { OpenItemDialog } from "@/app/UiComponents/DataViewer/image-session/admin/shared/OpenItemDialog.jsx";
 import { useLanguage } from "@/app/helpers/hooks/useLanguage";
-import { EditTitleAndDescriptionFields } from "../shared/EditTitleAndDescription";
+import { EditTitleAndDescriptionFields } from "@/app/UiComponents/DataViewer/image-session/admin/shared/EditTitleAndDescription.jsx";
 
 export function EditPageInfo({ onUpdate, pageInfo }) {
   const { languages } = useLanguage();

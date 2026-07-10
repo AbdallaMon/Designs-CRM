@@ -2,13 +2,13 @@
 import React from "react";
 import { Box, Button, Container } from "@mui/material";
 import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
-import DateRangeFilter from "../../../formComponents/DateRangeFilter";
+import DateRangeFilter from "@/app/UiComponents/formComponents/DateRangeFilter.jsx";
 import Link from "next/link";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
-import SearchComponent from "../../../formComponents/SearchComponent";
-import { PaymentHistoryModal } from "./PaymentsCalendar";
+import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
+import { PaymentHistoryModal } from "@/app/UiComponents/DataViewer/accountant/payments/PaymentsCalendar.jsx";
 import CreateModal from "@/app/UiComponents/models/CreateModal";
-import { inputs, columns } from "../config/overduePaymentsConfig";
+import { inputs, columns } from "@/app/UiComponents/DataViewer/accountant/config/overduePaymentsConfig.js";
 
 const OverduePayments = () => {
   const {

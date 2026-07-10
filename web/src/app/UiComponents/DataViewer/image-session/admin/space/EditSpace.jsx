@@ -1,6 +1,6 @@
-import { OpenItemDialog } from "../shared/OpenItemDialog";
+import { OpenItemDialog } from "@/app/UiComponents/DataViewer/image-session/admin/shared/OpenItemDialog.jsx";
 import { useLanguage } from "@/app/helpers/hooks/useLanguage";
-import { EditTitleOrDescFields } from "../shared/EditTitleOrDesc";
+import { EditTitleOrDescFields } from "@/app/UiComponents/DataViewer/image-session/admin/shared/EditTitleOrDesc.jsx";
 
 export function EditSpace({ onUpdate, space }) {
   const { languages } = useLanguage();

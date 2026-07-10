@@ -13,9 +13,9 @@ import {
   useTheme,
 } from "@mui/material";
 import { FaPlus, FaTrash, FaMoneyBill } from "react-icons/fa";
-import { sum } from "./contractHelpers";
-import SelectPaymentCondition from "../payments/SelectPaymentCondition";
-import { SectionHeader, EditorCard, EmptyState, AddButton } from "./formKit";
+import { sum } from "@/app/UiComponents/DataViewer/contracts/shared/contractHelpers.js";
+import SelectPaymentCondition from "@/app/UiComponents/DataViewer/contracts/payments/SelectPaymentCondition.jsx";
+import { SectionHeader, EditorCard, EmptyState, AddButton } from "@/app/UiComponents/DataViewer/contracts/shared/formKit.jsx";
 
 export default function PaymentsEditor({ payments, setPayments, taxRate = 5 }) {
   const theme = useTheme();

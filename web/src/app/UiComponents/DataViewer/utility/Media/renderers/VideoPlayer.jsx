@@ -2,7 +2,7 @@
 import { Box, CircularProgress, IconButton } from "@mui/material";
 import { FaPlay } from "react-icons/fa";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useCacheStatus } from "../hooks/useCacheState";
+import { useCacheStatus } from "@/app/UiComponents/DataViewer/utility/Media/hooks/useCacheState.js";
 
 export function VideoPlayer({
   url,

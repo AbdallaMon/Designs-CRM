@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button, Box, Typography } from "@mui/material";
 import { MdThumbUp, MdThumbDown } from "react-icons/md";
-import ProsConsDialog from "./ProsConsDialog";
+import ProsConsDialog from "@/app/UiComponents/DataViewer/image-session/admin/shared/ProsConsDialog.jsx";
 
 // Example usage component
 const ProsAndConsDialogButton = ({

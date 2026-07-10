@@ -11,8 +11,8 @@ import {
   Typography,
 } from "@mui/material";
 import { MdClose, MdList } from "react-icons/md";
-import { TasksList } from "../../tasks/TasksList";
-import { StyledCard } from "../projects/ProjectDetails";
+import { TasksList } from "@/app/UiComponents/DataViewer/tasks/TasksList.jsx";
+import { StyledCard } from "@/app/UiComponents/DataViewer/work-stages/projects/ProjectDetails.jsx";
 import { useState } from "react";
 
 export const ProjectTasksDialog = ({

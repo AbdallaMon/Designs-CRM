@@ -23,19 +23,19 @@ import { RiExternalLinkLine } from "react-icons/ri";
 import { AddPriceOffers } from "@/app/UiComponents/DataViewer/leads/dialogs/PriceOffersDialog.jsx";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import DeleteModelButton from "../../../common/DeleteModelButton";
+import DeleteModelButton from "@/app/UiComponents/common/DeleteModelButton.jsx";
 
-import LeadContractList from "../../contracts/ContractsList";
-import { EmptyState } from "../shared/EmptyState";
-import { TabLoading } from "../shared/TabLoading";
-import { useLeadTab } from "../context/LeadDetailsContext";
+import LeadContractList from "@/app/UiComponents/DataViewer/contracts/ContractsList.jsx";
+import { EmptyState } from "@/app/UiComponents/DataViewer/leads/shared/EmptyState.jsx";
+import { TabLoading } from "@/app/UiComponents/DataViewer/leads/shared/TabLoading.jsx";
+import { useLeadTab } from "@/app/UiComponents/DataViewer/leads/context/LeadDetailsContext.jsx";
 import {
   TabSection,
   RecordCard,
   MetaItem,
   CardBlock,
   StatusPill,
-} from "../shared/tabKit";
+} from "@/app/UiComponents/DataViewer/leads/shared/tabKit.jsx";
 
 export function PriceOffersList({ admin, lead, notUser }) {
   const {

@@ -32,17 +32,17 @@ import {
   MdSearch,
   MdRefresh,
 } from "react-icons/md";
-import CreateNewLead from "../features/AddNewLead";
-import NextCalls from "../widgets/NextCalls";
-import NextMeetings from "../widgets/NextMeetings";
+import CreateNewLead from "@/app/UiComponents/DataViewer/leads/features/AddNewLead.jsx";
+import NextCalls from "@/app/UiComponents/DataViewer/leads/widgets/NextCalls.jsx";
+import NextMeetings from "@/app/UiComponents/DataViewer/leads/widgets/NextMeetings.jsx";
 import { FixedData } from "@/app/UiComponents/DataViewer/leads/widgets/FixedData.jsx";
-import PreviewDialog from "../PreviewLeadDialog";
+import PreviewDialog from "@/app/UiComponents/DataViewer/leads/PreviewLeadDialog.jsx";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent";
 import PaginationWithLimit from "@/app/UiComponents/DataViewer/PaginationWithLimit.jsx";
-import { EmptyState } from "../shared/EmptyState";
-import { LeadSliderCard } from "../core/LeadSliderCard";
-import { useSummary } from "./useSummary";
+import { EmptyState } from "@/app/UiComponents/DataViewer/leads/shared/EmptyState.jsx";
+import { LeadSliderCard } from "@/app/UiComponents/DataViewer/leads/core/LeadSliderCard.jsx";
+import { useSummary } from "@/app/UiComponents/DataViewer/leads/pages/useSummary.js";
 
 /* ----------------------------------------------------------------------------
  * Tab registry â€” the LEAD POOLS only (new آ· non-consulted آ· stale). Arabic

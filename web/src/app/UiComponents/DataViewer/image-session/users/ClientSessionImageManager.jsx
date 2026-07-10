@@ -52,14 +52,14 @@ import { useAlertContext } from "@/app/providers/MuiAlert";
 import dayjs from "dayjs";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import FullScreenLoader from "../../../feedback/loaders/FullscreenLoader";
+import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader.jsx";
 import { useAuth } from "@/app/providers/AuthProvider";
-import DeleteModal from "../../../models/DeleteModal";
-import ConfirmWithActionModel from "../../../models/ConfirmsWithActionModel";
+import DeleteModal from "@/app/UiComponents/models/DeleteModal.jsx";
+import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
-import NoteCard from "../../utility/NoteCard";
-import ClientImageSessionName from "./ClientImageSessionName";
+import NoteCard from "@/app/UiComponents/DataViewer/utility/NoteCard.jsx";
+import ClientImageSessionName from "@/app/UiComponents/DataViewer/image-session/users/ClientImageSessionName.jsx";
 
 const ClientImageSessionManager = ({ clientLeadId }) => {
   const { user } = useAuth();

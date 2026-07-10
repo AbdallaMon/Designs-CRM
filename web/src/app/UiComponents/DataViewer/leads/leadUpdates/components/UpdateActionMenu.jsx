@@ -1,6 +1,6 @@
 import { Menu, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
 import { MdNote } from "react-icons/md";
-import { MarkAsDoneModal } from "./MarkAsDoneModal";
+import { MarkAsDoneModal } from "@/app/UiComponents/DataViewer/leads/leadUpdates/components/MarkAsDoneModal.jsx";
 
 /**
  * UpdateActionMenu Component

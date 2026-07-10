@@ -7,7 +7,7 @@ import {
   MdKeyboardArrowDown,
 } from "react-icons/md";
 import colors from "@/app/helpers/colors";
-import { PinnedMessagePreview } from "./PinnedMessagePreview";
+import { PinnedMessagePreview } from "@/app/UiComponents/DataViewer/chat/components/window/PinnedMessagePreview.jsx";
 
 export function PinnedMessagesBar({
   currentMessage,

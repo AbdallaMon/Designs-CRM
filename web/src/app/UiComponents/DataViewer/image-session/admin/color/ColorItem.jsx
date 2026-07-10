@@ -15,11 +15,11 @@ import {
   CardContent,
 } from "@mui/material";
 import { MdArchive, MdClose, MdUnarchive } from "react-icons/md";
-import RenderTitle from "../shared/RenderTitle";
+import RenderTitle from "@/app/UiComponents/DataViewer/image-session/admin/shared/RenderTitle.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import ProsAndConsDialogButton from "../shared/ProsAndCons";
-import { PreviewItemTemplate } from "../shared/PreviewItemTemplate";
-import { EditColor } from "./EditColor";
+import ProsAndConsDialogButton from "@/app/UiComponents/DataViewer/image-session/admin/shared/ProsAndCons.jsx";
+import { PreviewItemTemplate } from "@/app/UiComponents/DataViewer/image-session/admin/shared/PreviewItemTemplate.jsx";
+import { EditColor } from "@/app/UiComponents/DataViewer/image-session/admin/color/EditColor.jsx";
 
 export const ColorItemCard = ({ item, onUpdate }) => {
   const [isArchiving, setIsArchiving] = useState(false);

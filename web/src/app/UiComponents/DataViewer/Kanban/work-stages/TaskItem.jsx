@@ -6,7 +6,7 @@ import {
   PriorityBadge,
   TaskCard,
   TaskStatusChip,
-} from "./workStageKanbanStyles.js";
+} from "@/app/UiComponents/DataViewer/Kanban/work-stages/workStageKanbanStyles.js";
 
 // Task Item Component
 const TaskItem = ({ task, onPreview }) => {

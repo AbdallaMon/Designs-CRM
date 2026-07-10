@@ -12,7 +12,7 @@ import {
   BOOKING_LEAD_FIELD_LABELS,
   BOOKING_LEAD_FIELDS,
   BOOKING_LEAD_VALUE_LABELS,
-} from "../constants/bookingLeadFieldLabels";
+} from "@/app/UiComponents/booking-lead/constants/bookingLeadFieldLabels.js";
 
 function formatValue(fieldKey, value) {
   if (value === null || value === undefined || value === "") {

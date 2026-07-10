@@ -1,7 +1,7 @@
 "use client";
 import { Box, IconButton, Typography } from "@mui/material";
 import { FaDownload } from "react-icons/fa";
-import { getFileConfig } from "../fileTypes";
+import { getFileConfig } from "@/app/UiComponents/DataViewer/utility/Media/fileTypes.js";
 
 export function AudioFileRow({ att, handleMediaReady }) {
   const mime = att?.fileMimeType || "";

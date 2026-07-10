@@ -23,22 +23,22 @@ import {
 } from "react-icons/md";
 
 import { LEAD_CODES } from "@/app/helpers/permissionCodes";
-import { LeadInfo } from "../panels/LeadInfo";
-import { LeadContactInfo } from "../panels/LeadContactInfo";
-import LeadStripeInfo from "../panels/StipieData";
+import { LeadInfo } from "@/app/UiComponents/DataViewer/leads/panels/LeadInfo.jsx";
+import { LeadContactInfo } from "@/app/UiComponents/DataViewer/leads/panels/LeadContactInfo.jsx";
+import LeadStripeInfo from "@/app/UiComponents/DataViewer/leads/panels/StipieData.jsx";
 import { BookingLeadDetailsCard } from "@/app/UiComponents/booking-lead";
-import SalesStageComponent from "../tabs/SalesStage";
-import { CallReminders } from "../tabs/CallReminders";
-import { SalesToolsTabs } from "../tabs/SalesToolsTabs";
-import { MeetingReminders } from "../tabs/MeetingReminders";
-import { LeadNotes } from "../tabs/LeadsNotes";
-import { PriceOffersList } from "../tabs/PriceOffers";
-import { FileList } from "../tabs/Files";
-import { ExtraServicesList } from "../tabs/ExtraTabs";
-import { TasksList } from "../../tasks/TasksList";
-import LeadProjects from "../../work-stages/projects/LeadProjects";
-import UpdatesList from "../leadUpdates/UpdatesList";
-import ChatsTab from "../tabs/ChatsTab";
+import SalesStageComponent from "@/app/UiComponents/DataViewer/leads/tabs/SalesStage.jsx";
+import { CallReminders } from "@/app/UiComponents/DataViewer/leads/tabs/CallReminders.jsx";
+import { SalesToolsTabs } from "@/app/UiComponents/DataViewer/leads/tabs/SalesToolsTabs.jsx";
+import { MeetingReminders } from "@/app/UiComponents/DataViewer/leads/tabs/MeetingReminders.jsx";
+import { LeadNotes } from "@/app/UiComponents/DataViewer/leads/tabs/LeadsNotes.jsx";
+import { PriceOffersList } from "@/app/UiComponents/DataViewer/leads/tabs/PriceOffers.jsx";
+import { FileList } from "@/app/UiComponents/DataViewer/leads/tabs/Files.jsx";
+import { ExtraServicesList } from "@/app/UiComponents/DataViewer/leads/tabs/ExtraTabs.jsx";
+import { TasksList } from "@/app/UiComponents/DataViewer/tasks/TasksList.jsx";
+import LeadProjects from "@/app/UiComponents/DataViewer/work-stages/projects/LeadProjects.jsx";
+import UpdatesList from "@/app/UiComponents/DataViewer/leads/leadUpdates/UpdatesList.jsx";
+import ChatsTab from "@/app/UiComponents/DataViewer/leads/tabs/ChatsTab.jsx";
 
 // The Details ("overview") body — the always-present shared lead data.
 function LeadOverview({ lead, admin, setLead, setleads }) {

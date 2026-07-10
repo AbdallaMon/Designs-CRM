@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Button, Box, Card, CardContent } from "@mui/material";
 import { MdAdd as Add } from "react-icons/md";
-import { CreateTitleOrDesc } from "./CreateTitleOrDesc";
+import { CreateTitleOrDesc } from "@/app/UiComponents/DataViewer/image-session/admin/shared/CreateTitleOrDesc.jsx";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useLanguage } from "@/app/helpers/hooks/useLanguage";
 

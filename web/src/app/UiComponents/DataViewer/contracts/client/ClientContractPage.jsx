@@ -1,16 +1,16 @@
 "use client";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
-import { ClientImageAppBar } from "../../image-session/client-session/Utility";
+import { ClientImageAppBar } from "@/app/UiComponents/DataViewer/image-session/client-session/Utility.jsx";
 import { useEffect, useState } from "react";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { Alert, Box, Container, Typography } from "@mui/material";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
-import ContractSession from "./ContractSession";
-import { contractSessionStatusFlow } from "./helpers";
-import ContractSignature from "./ContractSignature";
-import ContractSignedSuccessSection from "./ContractSignedSuccessSection";
+import ContractSession from "@/app/UiComponents/DataViewer/contracts/client/ContractSession.jsx";
+import { contractSessionStatusFlow } from "@/app/UiComponents/DataViewer/contracts/client/helpers.js";
+import ContractSignature from "@/app/UiComponents/DataViewer/contracts/client/ContractSignature.jsx";
+import ContractSignedSuccessSection from "@/app/UiComponents/DataViewer/contracts/client/ContractSignedSuccessSection.jsx";
 const AnimatedComponent = ({
   children,
   animationType = "fade",

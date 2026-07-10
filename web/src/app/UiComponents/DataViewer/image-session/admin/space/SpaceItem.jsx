@@ -12,8 +12,8 @@ import {
   Tooltip,
 } from "@mui/material";
 import { MdEdit, MdArchive, MdUnarchive } from "react-icons/md";
-import RenderTitle from "../shared/RenderTitle";
-import { EditSpace } from "./EditSpace";
+import RenderTitle from "@/app/UiComponents/DataViewer/image-session/admin/shared/RenderTitle.jsx";
+import { EditSpace } from "@/app/UiComponents/DataViewer/image-session/admin/space/EditSpace.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 
 const SpaceItemCard = ({ item, onUpdate }) => {

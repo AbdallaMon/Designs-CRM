@@ -11,7 +11,7 @@ import {
   Divider,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import { splitFirstSentence } from "./sessionHelpers";
+import { splitFirstSentence } from "@/app/UiComponents/DataViewer/contracts/client/sections/sessionHelpers.js";
 
 // -----------------------------
 // UI atoms

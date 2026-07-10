@@ -8,8 +8,8 @@ import {
   Box,
   Divider,
 } from "@mui/material";
-import RenderTitle from "../shared/RenderTitle";
-import { EditPageInfo } from "./EditPageInfo";
+import RenderTitle from "@/app/UiComponents/DataViewer/image-session/admin/shared/RenderTitle.jsx";
+import { EditPageInfo } from "@/app/UiComponents/DataViewer/image-session/admin/page-info/EditPageInfo.jsx";
 
 const PageInfoItem = ({ item, onUpdate }) => {
   return (

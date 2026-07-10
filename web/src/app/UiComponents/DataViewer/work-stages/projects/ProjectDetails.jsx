@@ -67,30 +67,30 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import dayjs from "dayjs";
 import colors from "@/app/helpers/colors";
-import { RelatedLinks } from "../../utility/RelatedLinks";
+import { RelatedLinks } from "@/app/UiComponents/DataViewer/utility/RelatedLinks.jsx";
 import { AiOutlineSwap } from "react-icons/ai";
 import { useAuth } from "@/app/providers/AuthProvider";
 import {
   checkIfADesigner,
   checkIfAdmin,
 } from "@/app/helpers/functions/utility";
-import { AssignDesignerModal } from "./AssignDesignerModal";
-import { ProjectTasksDialog, TasksDialog } from "../utility/ProjectTasksDialog";
-import DeliverySchedulesPanel from "../utility/ProjectDeliverySchedule";
+import { AssignDesignerModal } from "@/app/UiComponents/DataViewer/work-stages/projects/AssignDesignerModal.jsx";
+import { ProjectTasksDialog, TasksDialog } from "@/app/UiComponents/DataViewer/work-stages/utility/ProjectTasksDialog.jsx";
+import DeliverySchedulesPanel from "@/app/UiComponents/DataViewer/work-stages/utility/ProjectDeliverySchedule.jsx";
 import { useAlertContext } from "@/app/providers/MuiAlert";
-import { StatusPill, MetaItem } from "../../leads/shared/tabKit";
-import { EmptyState } from "../../leads/shared/EmptyState";
+import { StatusPill, MetaItem } from "@/app/UiComponents/DataViewer/leads/shared/tabKit.jsx";
+import { EmptyState } from "@/app/UiComponents/DataViewer/leads/shared/EmptyState.jsx";
 import {
   StyledCard,
   StyledButton,
   InfoCard,
   PriorityChip,
   StyledDesignerCard,
-} from "./projectDetailsStyles";
+} from "@/app/UiComponents/DataViewer/work-stages/projects/projectDetailsStyles.js";
 import {
   ProjectProgressTracker,
   labelForStatus,
-} from "./ProjectProgressTracker";
+} from "@/app/UiComponents/DataViewer/work-stages/projects/ProjectProgressTracker.jsx";
 
 // Re-exported so existing external importers keep resolving these from here.
 export { StyledCard, StyledDesignerCard };

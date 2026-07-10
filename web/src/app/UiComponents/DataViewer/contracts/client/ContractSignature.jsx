@@ -21,7 +21,7 @@ import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
-import { FloatingActionButton } from "../../image-session/client-session/Utility";
+import { FloatingActionButton } from "@/app/UiComponents/DataViewer/image-session/client-session/Utility.jsx";
 
 // ===== Signature image processing constants
 const TARGET_RATIO_W = 5;

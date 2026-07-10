@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import ChatContainer from "../../chat/ChatContainer";
+import ChatContainer from "@/app/UiComponents/DataViewer/chat/ChatContainer.jsx";
 import {
   alpha,
   Box,
@@ -14,7 +14,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { MdClose, MdChat, MdOpenInFull } from "react-icons/md";
-import { TabSection } from "../shared/tabKit";
+import { TabSection } from "@/app/UiComponents/DataViewer/leads/shared/tabKit.jsx";
 
 export default function ChatsTab({ clientLeadId }) {
   // Open the conversation fullscreen by default when the Chats tab is entered

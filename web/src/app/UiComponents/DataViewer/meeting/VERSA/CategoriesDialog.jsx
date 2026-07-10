@@ -20,8 +20,8 @@ import {
 import { MdClose } from "react-icons/md";
 import { getData } from "@/app/helpers/functions/getData";
 
-import { Transition } from "./Transition";
-import { CategoriesGrid } from "./CategoriesGrid";
+import { Transition } from "@/app/UiComponents/DataViewer/meeting/VERSA/Transition.jsx";
+import { CategoriesGrid } from "@/app/UiComponents/DataViewer/meeting/VERSA/CategoriesGrid.jsx";
 
 // CategoriesDialog Component - Enhanced
 export const CategoriesDialog = ({

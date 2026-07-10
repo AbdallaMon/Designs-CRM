@@ -3,7 +3,7 @@
 
 import React from "react";
 import { List, ListItem, ListItemText, useTheme } from "@mui/material";
-import { SectionCard } from "./primitives";
+import { SectionCard } from "@/app/UiComponents/DataViewer/contracts/client/sections/primitives.jsx";
 
 export default function DbSpecialItems({ session, lng }) {
   const items = (session?.specialItems || [])

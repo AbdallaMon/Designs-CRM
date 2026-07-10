@@ -10,7 +10,7 @@ import {
   KanbanLeadsStatus,
 } from "@/app/helpers/constants";
 import { useAuth } from "@/app/providers/AuthProvider";
-import KanbanBoard from "../shared/KanbanBoard";
+import KanbanBoard from "@/app/UiComponents/DataViewer/Kanban/shared/KanbanBoard.jsx";
 
 dayjs.extend(relativeTime);
 

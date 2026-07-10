@@ -31,9 +31,9 @@ import {
 } from "react-icons/fa";
 import { MuiTelInput, matchIsValidTel } from "mui-tel-input";
 import { useEffect, useState } from "react";
-import { TELEGRAM_CONSTANTS } from "./constant";
-import RenderStepDescription from "./RenderStepDescription";
-import RenderTelegramAuthInput from "./RenderTelegramAuthInput";
+import { TELEGRAM_CONSTANTS } from "@/app/UiComponents/DataViewer/users/profile/constant.js";
+import RenderStepDescription from "@/app/UiComponents/DataViewer/users/profile/RenderStepDescription.jsx";
+import RenderTelegramAuthInput from "@/app/UiComponents/DataViewer/users/profile/RenderTelegramAuthInput.jsx";
 
 const STEPS = ["Phone Number", "Verification Code", "Connected"];
 

@@ -11,7 +11,7 @@ import UploadingProvider, {
 } from "./providers/UploadingProgressProvider";
 
 import { Suspense } from "react";
-import ServiceWorkerRegister from "./UiComponents/DataViewer/utility/RegisterServiceWorker";
+import ServiceWorkerRegister from "@/app/UiComponents/DataViewer/utility/RegisterServiceWorker.jsx";
 import SocketProvider from "./providers/SocketProvider";
 
 const noto = Noto_Kufi_Arabic({

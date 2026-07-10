@@ -1,4 +1,4 @@
-import { AutoCompleteSelector } from "./session-item/AutoCompleteSelector";
+import { AutoCompleteSelector } from "@/app/UiComponents/DataViewer/image-session/admin/shared/session-item/AutoCompleteSelector.jsx";
 
 export const TemplateAutocomplete = ({
   onTemplateSelect,

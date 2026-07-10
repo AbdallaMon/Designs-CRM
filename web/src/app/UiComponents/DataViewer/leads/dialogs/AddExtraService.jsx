@@ -18,7 +18,7 @@ import { FaMoneyBillWave } from "react-icons/fa";
 import { useAlertContext } from "@/app/providers/MuiAlert.jsx";
 
 import dayjs from "dayjs";
-import AddPayments from "../payments/AddPayments";
+import AddPayments from "@/app/UiComponents/DataViewer/leads/payments/AddPayments.jsx";
 
 import utc from "dayjs/plugin/utc";
 

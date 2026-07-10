@@ -19,10 +19,10 @@ import {
 
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 
-import { ObligationsDialog } from "./dialogs/ObligationsDialog";
-import { StageClausesDialog } from "./dialogs/StageClausesDialog";
-import { SpecialClausesDialog } from "./dialogs/SpecialClausesDialog";
-import { LevelClausesDialog } from "./dialogs/LevelClausesDialog";
+import { ObligationsDialog } from "@/app/UiComponents/DataViewer/contracts/ContractUtilityPage/dialogs/ObligationsDialog.jsx";
+import { StageClausesDialog } from "@/app/UiComponents/DataViewer/contracts/ContractUtilityPage/dialogs/StageClausesDialog.jsx";
+import { SpecialClausesDialog } from "@/app/UiComponents/DataViewer/contracts/ContractUtilityPage/dialogs/SpecialClausesDialog.jsx";
+import { LevelClausesDialog } from "@/app/UiComponents/DataViewer/contracts/ContractUtilityPage/dialogs/LevelClausesDialog.jsx";
 
 // -----------------------------------------------------------------------------
 // Main page

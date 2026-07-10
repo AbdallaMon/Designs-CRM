@@ -14,9 +14,9 @@ import {
 } from "@mui/material";
 import { MdAdd, MdAssignmentInd, MdDelete } from "react-icons/md";
 import colors from "@/app/helpers/colors";
-import { AssignDesignerModal } from "../../work-stages/projects/AssignDesignerModal";
-import { StyledDesignerCard } from "../../work-stages/projects/ProjectDetails";
-import { StyledCard } from "./workStageKanbanStyles.js";
+import { AssignDesignerModal } from "@/app/UiComponents/DataViewer/work-stages/projects/AssignDesignerModal.jsx";
+import { StyledDesignerCard } from "@/app/UiComponents/DataViewer/work-stages/projects/ProjectDetails.jsx";
+import { StyledCard } from "@/app/UiComponents/DataViewer/Kanban/work-stages/workStageKanbanStyles.js";
 
 const DesignersPreviewModal = ({ lead }) => {
   const [open, setOpen] = useState(false);

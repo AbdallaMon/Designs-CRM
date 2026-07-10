@@ -33,9 +33,9 @@ import {
   FILE_TYPE_CATEGORIES,
   FILE_TYPE_CONFIG,
 } from "@/app/helpers/constants";
-import { useChatFiles } from "../../hooks";
-import { LoadMoreButton } from "../indicators/LoadMoreButton";
-import { RenderListOfFiles } from "../../../utility/Media/MediaRender";
+import { useChatFiles } from "@/app/UiComponents/DataViewer/chat/hooks/index.js";
+import { LoadMoreButton } from "@/app/UiComponents/DataViewer/chat/components/indicators/LoadMoreButton.jsx";
+import { RenderListOfFiles } from "@/app/UiComponents/DataViewer/utility/Media/MediaRender.jsx";
 
 /* ================= Helpers ================= */
 

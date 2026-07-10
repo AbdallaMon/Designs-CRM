@@ -1,12 +1,12 @@
 import { useLanguage } from "@/app/helpers/hooks/useLanguage";
-import { TemplateAutocomplete } from "../SelectATemplate";
+import { TemplateAutocomplete } from "@/app/UiComponents/DataViewer/image-session/admin/shared/SelectATemplate.jsx";
 import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { Box } from "@mui/material";
-import { EditTitleAndDescriptionFields } from "../EditTitleAndDescription";
+import { EditTitleAndDescriptionFields } from "@/app/UiComponents/DataViewer/image-session/admin/shared/EditTitleAndDescription.jsx";
 import { ensureHttps } from "@/app/helpers/functions/utility";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { OpenItemDialog } from "../OpenItemDialog";
+import { OpenItemDialog } from "@/app/UiComponents/DataViewer/image-session/admin/shared/OpenItemDialog.jsx";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 

@@ -3,7 +3,7 @@
 import React from "react";
 import { Grid, Container } from "@mui/material";
 
-import { CategoryCard } from "./CategoryCard";
+import { CategoryCard } from "@/app/UiComponents/DataViewer/meeting/VERSA/CategoryCard.jsx";
 
 export const CategoriesGrid = ({ categories, onCategoryClick }) => {
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ProjectDetails } from "./ProjectDetails";
+import { ProjectDetails } from "@/app/UiComponents/DataViewer/work-stages/projects/ProjectDetails.jsx";
 import { Box, CircularProgress, Alert, Button, Container } from "@mui/material";
 import { getData } from "@/app/helpers/functions/getData";
 

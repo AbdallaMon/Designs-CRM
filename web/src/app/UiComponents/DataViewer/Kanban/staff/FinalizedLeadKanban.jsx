@@ -5,7 +5,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { CONTRACT_LEVELS } from "@/app/helpers/constants";
 
-import KanbanBoard from "../shared/KanbanBoard";
+import KanbanBoard from "@/app/UiComponents/DataViewer/Kanban/shared/KanbanBoard.jsx";
 
 dayjs.extend(relativeTime);
 

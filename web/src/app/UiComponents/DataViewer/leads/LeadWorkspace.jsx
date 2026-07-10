@@ -7,8 +7,8 @@
 //
 // Responsive: a vertical grouped rail on md+, a horizontal chip scroller on xs.
 import { alpha, Badge, Box, Stack, Typography, useMediaQuery, useTheme } from "@mui/material";
-import { useLeadDetails } from "./context/LeadDetailsContext";
-import { LEAD_SECTION_GROUPS } from "./config/leadSections";
+import { useLeadDetails } from "@/app/UiComponents/DataViewer/leads/context/LeadDetailsContext.jsx";
+import { LEAD_SECTION_GROUPS } from "@/app/UiComponents/DataViewer/leads/config/leadSections.jsx";
 
 function useSectionCount(section, ctx) {
   const ld = useLeadDetails();

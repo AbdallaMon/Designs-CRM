@@ -1,12 +1,12 @@
 "use client";
 import { Box, Grid, Typography, useTheme } from "@mui/material";
-import { InfoCard } from "../core/InfoCard";
-import { EmailRedirect, WhatsAppRedirect } from "../core/Utility";
+import { InfoCard } from "@/app/UiComponents/DataViewer/leads/core/InfoCard.jsx";
+import { EmailRedirect, WhatsAppRedirect } from "@/app/UiComponents/DataViewer/leads/core/Utility.jsx";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";
 import dayjs from "dayjs";
 import { BsPerson } from "react-icons/bs";
-import { EditFieldButton } from "../../../common/EditFieldButton";
+import { EditFieldButton } from "@/app/UiComponents/common/EditFieldButton.jsx";
 export function LeadContactInfo({ lead, setleads, setLead }) {
   const { user } = useAuth();
 

@@ -12,9 +12,9 @@ import {
   emitDeleteMessage,
   emitEditMessage,
   sendNewMessage,
-} from "../utils/socketIO";
+} from "@/app/UiComponents/DataViewer/chat/utils/socketIO.js";
 import { useAuth } from "@/app/providers/AuthProvider";
-import { CHAT_LIMITS } from "../utils/chatConstants";
+import { CHAT_LIMITS } from "@/app/UiComponents/DataViewer/chat/utils/chatConstants.js";
 import { useScroll } from "@/app/helpers/hooks/useScroll";
 
 export function useChatMessages(roomId, initialPage = 0, clientId) {

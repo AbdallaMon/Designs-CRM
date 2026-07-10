@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { BsArrowLeft } from "react-icons/bs";
 import Link from "next/link";
-import TelegramLink from "../../work-stages/utility/TelegramLink";
+import TelegramLink from "@/app/UiComponents/DataViewer/work-stages/utility/TelegramLink.jsx";
 
 /**
  * WorkStageDialogHeader component for work-stage preview dialogs

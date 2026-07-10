@@ -4,14 +4,14 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { Box, Typography } from "@mui/material";
 import { ensureHttps } from "@/app/helpers/functions/utility";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { OpenItemDialog } from "../shared/OpenItemDialog";
-import { EditTitleAndDescriptionFields } from "../shared/EditTitleAndDescription";
-import { TemplateAutocomplete } from "../shared/SelectATemplate";
+import { OpenItemDialog } from "@/app/UiComponents/DataViewer/image-session/admin/shared/OpenItemDialog.jsx";
+import { EditTitleAndDescriptionFields } from "@/app/UiComponents/DataViewer/image-session/admin/shared/EditTitleAndDescription.jsx";
+import { TemplateAutocomplete } from "@/app/UiComponents/DataViewer/image-session/admin/shared/SelectATemplate.jsx";
 import IsFullWidthSwitch, {
   ColorSelector,
   EditColorPattern,
   OrderInput,
-} from "./PalleteItems";
+} from "@/app/UiComponents/DataViewer/image-session/admin/color/PalleteItems.jsx";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 

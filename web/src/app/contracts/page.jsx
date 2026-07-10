@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import ClientContractPage from "../UiComponents/DataViewer/contracts/client/ClientContractPage";
+import ClientContractPage from "@/app/UiComponents/DataViewer/contracts/client/ClientContractPage.jsx";
 import LanguageSwitcherProvider from "../providers/LanguageSwitcherProvider";
 
 export default async function page({ params, searchParams }) {

@@ -17,7 +17,7 @@ import {
 
 import { MdClose, MdArrowBack } from "react-icons/md";
 
-import { VersaStep } from "./VersaStep";
+import { VersaStep } from "@/app/UiComponents/DataViewer/meeting/VERSA/VersaStep.jsx";
 
 // VersaModelEditor Component - Enhanced
 export const VersaModelEditor = ({ category, versaData, onSave, onClose }) => {

@@ -1,4 +1,4 @@
-import { CHAT_ROOM_TYPE_LABELS } from "../../utils/chatConstants";
+import { CHAT_ROOM_TYPE_LABELS } from "@/app/UiComponents/DataViewer/chat/utils/chatConstants.js";
 
 export const getRoomAvatar = (room) => {
   if (!room) return null;

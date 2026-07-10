@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, CircularProgress } from "@mui/material";
-import { ConfirmDialog } from "../../dialogs";
+import { ConfirmDialog } from "@/app/UiComponents/DataViewer/chat/components/dialogs/index.js";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { useState } from "react";

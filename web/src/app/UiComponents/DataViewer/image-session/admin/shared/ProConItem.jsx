@@ -18,8 +18,8 @@ import {
   MdExpandMore as ExpandMore,
   MdExpandLess as ExpandLess,
 } from "react-icons/md";
-import RenderTitle from "./RenderTitle";
-import { EditTitleOrDescFields } from "./EditTitleOrDesc";
+import RenderTitle from "@/app/UiComponents/DataViewer/image-session/admin/shared/RenderTitle.jsx";
+import { EditTitleOrDescFields } from "@/app/UiComponents/DataViewer/image-session/admin/shared/EditTitleOrDesc.jsx";
 
 const ProConItem = ({
   item,

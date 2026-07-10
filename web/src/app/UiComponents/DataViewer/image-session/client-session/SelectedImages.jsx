@@ -2,7 +2,7 @@
 
 import { gsap } from "gsap";
 
-import { ClientSelectedImages } from "./ClientSelectedImages";
+import { ClientSelectedImages } from "@/app/UiComponents/DataViewer/image-session/client-session/ClientSelectedImages.jsx";
 import { useEffect, useRef } from "react";
 
 export function SelectedImages({

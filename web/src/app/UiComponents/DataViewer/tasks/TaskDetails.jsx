@@ -14,7 +14,7 @@ import {
   Container,
 } from "@mui/material";
 
-import { RelatedLinks } from "../utility/RelatedLinks";
+import { RelatedLinks } from "@/app/UiComponents/DataViewer/utility/RelatedLinks.jsx";
 import { getData } from "@/app/helpers/functions/getData";
 import {
   MdAccessTime,
@@ -26,8 +26,8 @@ import {
   MdTask,
 } from "react-icons/md";
 import dayjs from "dayjs";
-import { TaskActions } from "./TaskActions";
-import { NotesComponent } from "../utility/Notes";
+import { TaskActions } from "@/app/UiComponents/DataViewer/tasks/TaskActions.jsx";
+import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes.jsx";
 export default function TaskDetails({ id, showBackButton = true }) {
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);

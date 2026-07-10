@@ -15,7 +15,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { MdClose, MdEvent, MdPhone } from "react-icons/md";
-import { CallCard, MeetingCard } from "../../leads/core/CallAndMeetingCard";
+import { CallCard, MeetingCard } from "@/app/UiComponents/DataViewer/leads/core/CallAndMeetingCard.jsx";
 import { getData } from "@/app/helpers/functions/getData";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
 

@@ -2,7 +2,7 @@
 import { getData } from "@/app/helpers/functions/getData";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useEffect, useState } from "react";
-import { CategorySection } from "./utility";
+import { CategorySection } from "@/app/UiComponents/DataViewer/meeting/SPAIN/utility.jsx";
 
 import {
   Fab,

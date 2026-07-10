@@ -1,7 +1,7 @@
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { Alert, Box, Grid, Paper, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
-import TemplateEditor, { PreviewTemplateCard } from "./Template";
+import TemplateEditor, { PreviewTemplateCard } from "@/app/UiComponents/DataViewer/image-session/admin/shared/Template.jsx";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 
 export default function Templates({ type }) {

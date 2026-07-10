@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import DotsLoader from "../feedback/loaders/DotsLoading";
+import DotsLoader from "@/app/UiComponents/feedback/loaders/DotsLoading.jsx";
 
 export default function ClinetPage() {
   useEffect(() => {

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense } from "react";
-import { ChatContainer } from "../../ChatContainer";
+import { ChatContainer } from "@/app/UiComponents/DataViewer/chat/ChatContainer.jsx";
 import { usePathname } from "next/navigation";
 import SocketProvider from "@/app/providers/SocketProvider";
 

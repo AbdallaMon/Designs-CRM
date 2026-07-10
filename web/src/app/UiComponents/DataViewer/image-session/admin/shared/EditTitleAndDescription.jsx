@@ -1,5 +1,5 @@
 import { Box, Typography } from "@mui/material";
-import { MemoizedTextField, useDebounce } from "./CreateTitleOrDesc"; // Assuming these are in this path
+import { MemoizedTextField, useDebounce } from "@/app/UiComponents/DataViewer/image-session/admin/shared/CreateTitleOrDesc.jsx"; // Assuming these are in this path
 import { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/app/helpers/hooks/useLanguage";
 

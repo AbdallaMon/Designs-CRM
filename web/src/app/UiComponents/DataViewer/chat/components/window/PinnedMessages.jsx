@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { PinnedMessagesBar } from "./PinnedMessagesBar";
-import { PinnedMessagesDrawer } from "./PinnedMessagesDrawer";
+import { PinnedMessagesBar } from "@/app/UiComponents/DataViewer/chat/components/window/PinnedMessagesBar.jsx";
+import { PinnedMessagesDrawer } from "@/app/UiComponents/DataViewer/chat/components/window/PinnedMessagesDrawer.jsx";
 
 const MAX_PINNED = 20;
 

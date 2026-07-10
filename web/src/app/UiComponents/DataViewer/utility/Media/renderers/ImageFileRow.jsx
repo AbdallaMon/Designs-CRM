@@ -2,7 +2,7 @@
 import { Box, Skeleton, Typography } from "@mui/material";
 import { FaDownload, FaFile } from "react-icons/fa";
 import { useEffect, useState } from "react";
-import { isImage, isInCache, isPdf } from "../fileTypes";
+import { isImage, isInCache, isPdf } from "@/app/UiComponents/DataViewer/utility/Media/fileTypes.js";
 
 export function ImageFileRow({
   att,

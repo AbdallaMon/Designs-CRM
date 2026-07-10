@@ -28,7 +28,7 @@ import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { getData } from "@/app/helpers/functions/getData";
-import { MarkAsDoneModel } from "./MarkAsDoneModel";
+import { MarkAsDoneModel } from "@/app/UiComponents/DataViewer/leads/leadUpdates/components/MarkAsDoneModel.jsx";
 
 const getDepartmentConfig = (dept) =>
   DEPARTMENTS.find((d) => d.value === dept) || { label: dept, color: "#666" };

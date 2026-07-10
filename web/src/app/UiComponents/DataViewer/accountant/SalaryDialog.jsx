@@ -23,14 +23,14 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { getData } from "@/app/helpers/functions/getData";
-import EditModal from "../../models/EditModal";
-import ProcessMonthlySalaryButton from "./MonthlySalaryDialog";
-import { NotesComponent } from "../utility/Notes";
-import { inputs } from "./config/salaryDialogConfig";
+import EditModal from "@/app/UiComponents/models/EditModal.jsx";
+import ProcessMonthlySalaryButton from "@/app/UiComponents/DataViewer/accountant/MonthlySalaryDialog.jsx";
+import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes.jsx";
+import { inputs } from "@/app/UiComponents/DataViewer/accountant/config/salaryDialogConfig.js";
 import {
   SalaryEmployeeInfoCard,
   MonthlySalariesTable,
-} from "./SalaryDialogSections";
+} from "@/app/UiComponents/DataViewer/accountant/SalaryDialogSections.jsx";
 const SalaryInfoButton = ({ userId }) => {
   const [open, setOpen] = useState(false);
   const [salaryData, setSalaryData] = useState(null);

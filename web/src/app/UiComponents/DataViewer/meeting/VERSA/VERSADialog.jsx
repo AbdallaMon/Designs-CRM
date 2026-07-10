@@ -15,9 +15,9 @@ import { getData } from "@/app/helpers/functions/getData";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 
-import { Transition } from "./Transition";
-import { CategoriesDialog } from "./CategoriesDialog";
-import { VersaModelEditor } from "./VersaModelEditor";
+import { Transition } from "@/app/UiComponents/DataViewer/meeting/VERSA/Transition.jsx";
+import { CategoriesDialog } from "@/app/UiComponents/DataViewer/meeting/VERSA/CategoriesDialog.jsx";
+import { VersaModelEditor } from "@/app/UiComponents/DataViewer/meeting/VERSA/VersaModelEditor.jsx";
 
 // Main VersaObjectionSystem Component - Enhanced
 const VersaObjectionSystem = ({ clientLeadId }) => {

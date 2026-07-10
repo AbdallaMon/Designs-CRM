@@ -29,14 +29,14 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
-import { RecordCard, MetaItem, StatusPill } from "../../leads/shared/tabKit";
-import { EmptyState } from "../../leads/shared/EmptyState";
-import { TabLoading } from "../../leads/shared/TabLoading";
+import { RecordCard, MetaItem, StatusPill } from "@/app/UiComponents/DataViewer/leads/shared/tabKit.jsx";
+import { EmptyState } from "@/app/UiComponents/DataViewer/leads/shared/EmptyState.jsx";
+import { TabLoading } from "@/app/UiComponents/DataViewer/leads/shared/TabLoading.jsx";
 import colors from "@/app/helpers/colors";
-import RowActions from "./RowActions";
-import CreateDeliveryDialog from "./CreateDeliveryDialog";
-import MeetingDetailsDialog from "./MeetingDetailsDialog";
-import LinkMeetingDialog from "./LinkMeetingDialog";
+import RowActions from "@/app/UiComponents/DataViewer/work-stages/utility/RowActions.jsx";
+import CreateDeliveryDialog from "@/app/UiComponents/DataViewer/work-stages/utility/CreateDeliveryDialog.jsx";
+import MeetingDetailsDialog from "@/app/UiComponents/DataViewer/work-stages/utility/MeetingDetailsDialog.jsx";
+import LinkMeetingDialog from "@/app/UiComponents/DataViewer/work-stages/utility/LinkMeetingDialog.jsx";
 
 /* =========================================
    Dialog: Create Delivery

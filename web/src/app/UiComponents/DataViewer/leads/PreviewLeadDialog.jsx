@@ -14,13 +14,13 @@ import { FinalizeModal } from "@/app/UiComponents/DataViewer/leads/widgets/Final
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { usePermission } from "@/app/hooks/usePermission";
 import { LEAD_CODES } from "@/app/helpers/permissionCodes";
-import { PreviewLead } from "./features/PreviewLead";
-import { MoreActionsMenu } from "./shared/MoreActionsMenu";
-import { LeadDialogHeader } from "./shared/LeadDialogHeader";
-import { StatusMenu } from "./shared/StatusMenu";
-import { LeadWorkspace } from "./LeadWorkspace";
-import { getVisibleLeadSections } from "./config/leadSections";
-import { useLeadDetails } from "./context/LeadDetailsContext";
+import { PreviewLead } from "@/app/UiComponents/DataViewer/leads/features/PreviewLead.jsx";
+import { MoreActionsMenu } from "@/app/UiComponents/DataViewer/leads/shared/MoreActionsMenu.jsx";
+import { LeadDialogHeader } from "@/app/UiComponents/DataViewer/leads/shared/LeadDialogHeader.jsx";
+import { StatusMenu } from "@/app/UiComponents/DataViewer/leads/shared/StatusMenu.jsx";
+import { LeadWorkspace } from "@/app/UiComponents/DataViewer/leads/LeadWorkspace.jsx";
+import { getVisibleLeadSections } from "@/app/UiComponents/DataViewer/leads/config/leadSections.jsx";
+import { useLeadDetails } from "@/app/UiComponents/DataViewer/leads/context/LeadDetailsContext.jsx";
 
 // LeadContent — the shared body of the lead/deal detail. The header + modals + status
 // menu stay here; the section list itself is now driven by the config registry

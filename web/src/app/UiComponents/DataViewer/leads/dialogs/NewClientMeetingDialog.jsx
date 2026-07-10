@@ -28,7 +28,7 @@ import {
 } from "@mui/material";
 import { RiLink } from "react-icons/ri";
 import { getData } from "@/app/helpers/functions/getData";
-import { OpenButton } from "./OpenButton";
+import { OpenButton } from "@/app/UiComponents/DataViewer/leads/dialogs/OpenButton.jsx";
 
 export const NewClientMeetingDialog = ({
   lead,

@@ -50,7 +50,7 @@ import { KanbanUpdateSection } from "@/app/UiComponents/DataViewer/leads/leadUpd
 import ClientImageSessionManager from "@/app/UiComponents/DataViewer/image-session/users/ClientSessionImageManager";
 import { contractLevelColors } from "@/app/helpers/colors";
 import { IoMdContract } from "react-icons/io";
-import { CallInfoBox, StyledCard } from "./kanbanLeadCardStyles.js";
+import { CallInfoBox, StyledCard } from "@/app/UiComponents/DataViewer/Kanban/leads/kanbanLeadCardStyles.js";
 
 const ItemTypes = {
   CARD: "card",

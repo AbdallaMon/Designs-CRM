@@ -9,7 +9,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import ImageLoader from "../admin/shared/ImageLoader";
+import ImageLoader from "@/app/UiComponents/DataViewer/image-session/admin/shared/ImageLoader.jsx";
 import {
   MdAdd,
   MdCheck,
@@ -17,7 +17,7 @@ import {
   MdDelete,
   MdFullscreen,
 } from "react-icons/md";
-import { NotesComponent } from "../../utility/Notes";
+import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes.jsx";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { ensureHttps } from "@/app/helpers/functions/utility";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";

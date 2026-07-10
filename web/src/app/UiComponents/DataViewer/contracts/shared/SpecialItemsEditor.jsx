@@ -10,7 +10,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { FaPlus, FaTrash, FaSitemap } from "react-icons/fa";
-import { SectionHeader, EditorCard, EmptyState, AddButton } from "./formKit";
+import { SectionHeader, EditorCard, EmptyState, AddButton } from "@/app/UiComponents/DataViewer/contracts/shared/formKit.jsx";
 
 export default function SpecialItemsEditor({ items, setItems }) {
   const theme = useTheme();

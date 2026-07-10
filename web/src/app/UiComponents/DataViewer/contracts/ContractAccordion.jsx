@@ -12,9 +12,9 @@ import {
   alpha,
 } from "@mui/material";
 import { MdExpandMore } from "react-icons/md";
-import ChipWithIcon from "../utility/ChipWithIcon";
-import ContractMenu from "./ContractMenu";
-import ContractStage from "./ContractStage";
+import ChipWithIcon from "@/app/UiComponents/DataViewer/utility/ChipWithIcon.jsx";
+import ContractMenu from "@/app/UiComponents/DataViewer/contracts/ContractMenu.jsx";
+import ContractStage from "@/app/UiComponents/DataViewer/contracts/ContractStage.jsx";
 
 export default function ContractAccordion({
   contract,

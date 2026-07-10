@@ -2,10 +2,10 @@
 
 import { Container, Tab, Tabs } from "@mui/material";
 import { useEffect, useState } from "react";
-import PdfUtility from "./PdfUtility";
+import PdfUtility from "@/app/UiComponents/DataViewer/website-utilities/PdfUtility.jsx";
 import { useSearchParams } from "next/navigation";
-import ContractPaymentConditionsManager from "./ContractPaymentConditions";
-import ContractUtilityPage from "../contracts/ContractUtilityPage/ContractUtility";
+import ContractPaymentConditionsManager from "@/app/UiComponents/DataViewer/website-utilities/ContractPaymentConditions.jsx";
+import ContractUtilityPage from "@/app/UiComponents/DataViewer/contracts/ContractUtilityPage/ContractUtility.jsx";
 
 export default function SiteUtilityManager() {
   const [value, setValue] = useState(0);

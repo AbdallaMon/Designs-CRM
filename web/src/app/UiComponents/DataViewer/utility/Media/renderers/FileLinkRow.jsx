@@ -2,7 +2,7 @@
 import { Box, Typography } from "@mui/material";
 import { FaDownload } from "react-icons/fa";
 import { useEffect } from "react";
-import { getFileConfig, isPdf } from "../fileTypes";
+import { getFileConfig, isPdf } from "@/app/UiComponents/DataViewer/utility/Media/fileTypes.js";
 
 export function FileLinkRow({ att, iframe, handleMediaReady }) {
   const mime = att?.fileMimeType || "";

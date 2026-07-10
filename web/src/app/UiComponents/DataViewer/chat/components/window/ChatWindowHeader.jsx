@@ -10,9 +10,9 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { FaArrowLeft, FaPhone, FaVideo, FaUsers } from "react-icons/fa";
-import { CHAT_ROOM_TYPE_LABELS } from "../../utils/chatConstants";
-import ChatSettings from "./ChatSettings";
-import { getRoomAvatar, getRoomLabel } from "../rooms/helpers";
+import { CHAT_ROOM_TYPE_LABELS } from "@/app/UiComponents/DataViewer/chat/utils/chatConstants.js";
+import ChatSettings from "@/app/UiComponents/DataViewer/chat/components/window/ChatSettings.jsx";
+import { getRoomAvatar, getRoomLabel } from "@/app/UiComponents/DataViewer/chat/components/rooms/helpers.js";
 
 export function ChatWindowHeader({
   roomId,

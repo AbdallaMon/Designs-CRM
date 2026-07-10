@@ -7,9 +7,9 @@ import { Box, Grid, Typography } from "@mui/material";
 import { gsap } from "gsap";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { FloatingActionButton } from "../Utility";
-import { PreviewItemDialog } from "../shared/PreviewItemDialog";
-import { SharedCardItem } from "../shared/SharedCardItem";
+import { FloatingActionButton } from "@/app/UiComponents/DataViewer/image-session/client-session/Utility.jsx";
+import { PreviewItemDialog } from "@/app/UiComponents/DataViewer/image-session/client-session/shared/PreviewItemDialog.jsx";
+import { SharedCardItem } from "@/app/UiComponents/DataViewer/image-session/client-session/shared/SharedCardItem.jsx";
 
 export function Styles({
   session,

@@ -20,9 +20,9 @@ import {
   RiUserLine,
   RiCalendarLine,
 } from "react-icons/ri";
-import { CallResultDialog } from "../dialogs/CallsDialog";
-import DeleteModelButton from "../../../common/DeleteModelButton";
-import { InProgressCall } from "../widgets/InProgressCall";
+import { CallResultDialog } from "@/app/UiComponents/DataViewer/leads/dialogs/CallsDialog.jsx";
+import DeleteModelButton from "@/app/UiComponents/common/DeleteModelButton.jsx";
+import { InProgressCall } from "@/app/UiComponents/DataViewer/leads/widgets/InProgressCall.jsx";
 import { useAuth } from "@/app/providers/AuthProvider";
 
 dayjs.extend(utc);

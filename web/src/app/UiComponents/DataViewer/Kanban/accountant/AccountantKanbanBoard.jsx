@@ -7,7 +7,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import TabsWithLinks from "@/app/UiComponents/utility/TabsWithLinks.jsx";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent.jsx";
-import AccountantKanbanColumn from "./AccountantKanbanColumn";
+import AccountantKanbanColumn from "@/app/UiComponents/DataViewer/Kanban/accountant/AccountantKanbanColumn.jsx";
 import { useSearchParams } from "next/navigation";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 

@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import { FaCopy, FaExternalLinkAlt, FaSyncAlt } from "react-icons/fa";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { ConfirmDialog } from "../../dialogs";
+import { ConfirmDialog } from "@/app/UiComponents/DataViewer/chat/components/dialogs/index.js";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 
 export default function ChatAccessLinkBox({

@@ -29,7 +29,7 @@ import {
 
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
-import { QuestionItem } from "./QuestionItem";
+import { QuestionItem } from "@/app/UiComponents/DataViewer/meeting/SPAIN/QuestionItem.jsx";
 
 // Modern Category Section with Advanced Animations
 export const CategorySection = ({ category, clientLeadId }) => {

@@ -1,5 +1,5 @@
 import { Box } from "@mui/material";
-import { MemoizedTextField, useDebounce } from "./CreateTitleOrDesc";
+import { MemoizedTextField, useDebounce } from "@/app/UiComponents/DataViewer/image-session/admin/shared/CreateTitleOrDesc.jsx";
 import { useCallback, useEffect, useState } from "react";
 import { useLanguage } from "@/app/helpers/hooks/useLanguage";
 function deepEqual(obj1, obj2) {

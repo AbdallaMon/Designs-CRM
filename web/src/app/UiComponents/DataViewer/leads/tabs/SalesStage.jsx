@@ -25,13 +25,13 @@ import {
 import { MdTimeline } from "react-icons/md";
 import dayjs from "dayjs";
 import { salesStageEnum } from "@/app/helpers/constants";
-import { useLeadTab } from "../context/LeadDetailsContext";
-import { TabSection, RecordCard, MetaItem, StatusPill } from "../shared/tabKit";
-import { TabLoading } from "../shared/TabLoading";
-import { EmptyState } from "../shared/EmptyState";
+import { useLeadTab } from "@/app/UiComponents/DataViewer/leads/context/LeadDetailsContext.jsx";
+import { TabSection, RecordCard, MetaItem, StatusPill } from "@/app/UiComponents/DataViewer/leads/shared/tabKit.jsx";
+import { TabLoading } from "@/app/UiComponents/DataViewer/leads/shared/TabLoading.jsx";
+import { EmptyState } from "@/app/UiComponents/DataViewer/leads/shared/EmptyState.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { NotesComponent } from "../../utility/Notes";
+import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes.jsx";
 
 const SalesStageComponent = ({ clientLeadId }) => {
   const theme = useTheme();

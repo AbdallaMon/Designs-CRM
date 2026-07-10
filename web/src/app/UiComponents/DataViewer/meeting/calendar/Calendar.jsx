@@ -49,8 +49,8 @@ import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { buildMonthGrid } from "./calendarHelpers";
-import TimeSlotManager from "./TimeSlotManager";
+import { buildMonthGrid } from "@/app/UiComponents/DataViewer/meeting/calendar/calendarHelpers.js";
+import TimeSlotManager from "@/app/UiComponents/DataViewer/meeting/calendar/TimeSlotManager.jsx";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);

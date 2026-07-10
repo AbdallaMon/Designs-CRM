@@ -1,6 +1,6 @@
 "use client";
 import { Box, Card, Typography } from "@mui/material";
-import ProsAndConsDialogButton from "./ProsAndCons";
+import ProsAndConsDialogButton from "@/app/UiComponents/DataViewer/image-session/admin/shared/ProsAndCons.jsx";
 import { ensureHttps } from "@/app/helpers/functions/utility";
 
 export function PreviewItemTemplate({ template, item }) {

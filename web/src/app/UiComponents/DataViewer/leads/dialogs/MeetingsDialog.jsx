@@ -1,3 +1,3 @@
 "use client";
-export { NewMeetingDialog } from "./NewMeetingDialog";
-export { NewClientMeetingDialog } from "./NewClientMeetingDialog";
+export { NewMeetingDialog } from "@/app/UiComponents/DataViewer/leads/dialogs/NewMeetingDialog.jsx";
+export { NewClientMeetingDialog } from "@/app/UiComponents/DataViewer/leads/dialogs/NewClientMeetingDialog.jsx";

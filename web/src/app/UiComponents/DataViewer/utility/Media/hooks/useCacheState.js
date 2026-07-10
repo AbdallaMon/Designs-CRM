@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { isInCache } from "../utility";
+import { isInCache } from "@/app/UiComponents/DataViewer/utility/Media/utility.js";
 
 export function useCacheStatus(url) {
   const [cached, setCached] = useState(null); // null = unknown

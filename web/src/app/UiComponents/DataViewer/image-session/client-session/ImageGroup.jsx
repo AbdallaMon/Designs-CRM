@@ -10,8 +10,8 @@ import {
   useTheme,
 } from "@mui/material";
 
-import { ImageComponent } from "./ImageComponent";
-import { ImagePreviewDialog } from "./ImagePreviewDialog";
+import { ImageComponent } from "@/app/UiComponents/DataViewer/image-session/client-session/ImageComponent.jsx";
+import { ImagePreviewDialog } from "@/app/UiComponents/DataViewer/image-session/client-session/ImagePreviewDialog.jsx";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 
 // Virtual scrolling hook

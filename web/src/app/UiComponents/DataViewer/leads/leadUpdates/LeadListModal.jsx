@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button, Modal, Box, Typography, IconButton } from "@mui/material";
 import { MdClose } from "react-icons/md";
-import UpdatesList from "./UpdatesList";
+import UpdatesList from "@/app/UiComponents/DataViewer/leads/leadUpdates/UpdatesList.jsx";
 
 const style = {
   position: "absolute",

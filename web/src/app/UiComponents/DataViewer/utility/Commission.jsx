@@ -29,8 +29,8 @@ import {
   MdPendingActions,
 } from "react-icons/md";
 import { useAlertContext } from "@/app/providers/MuiAlert";
-import { NotesComponent } from "./Notes";
-import AdminCommissionForm from "./AdminCommissionForm";
+import { NotesComponent } from "@/app/UiComponents/DataViewer/utility/Notes.jsx";
+import AdminCommissionForm from "@/app/UiComponents/DataViewer/utility/AdminCommissionForm.jsx";
 
 const Commission = ({ userId }) => {
   const [open, setOpen] = useState(false);

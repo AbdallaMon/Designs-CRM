@@ -18,11 +18,11 @@ import {
 } from "@mui/material";
 import { MdAssignment, MdPriorityHigh, MdBusinessCenter } from "react-icons/md";
 
-import { ProjectDetails } from "../../work-stages/projects/ProjectDetails";
+import { ProjectDetails } from "@/app/UiComponents/DataViewer/work-stages/projects/ProjectDetails.jsx";
 import { getData } from "@/app/helpers/functions/getData";
 import SearchComponent from "@/app/UiComponents/formComponents/SearchComponent";
 import { statusColors } from "@/app/helpers/constants";
-import PaginationWithLimit from "../../PaginationWithLimit";
+import PaginationWithLimit from "@/app/UiComponents/DataViewer/PaginationWithLimit.jsx";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 

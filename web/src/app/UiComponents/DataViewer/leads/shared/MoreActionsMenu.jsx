@@ -14,11 +14,11 @@ import {
 } from "@mui/material";
 import { BsPersonCheck } from "react-icons/bs";
 import { MdMoreHoriz, MdWork } from "react-icons/md";
-import DeleteModal from "../../../models/DeleteModal";
-import { AssignNewStaffModal } from "../../utility/AssignNewStaffModal";
-import { useLeadDetails } from "../context/LeadDetailsContext";
-import AddPayments from "../payments/AddPayments";
-import PaymentDialog from "../payments/PaymentsDialog";
+import DeleteModal from "@/app/UiComponents/models/DeleteModal.jsx";
+import { AssignNewStaffModal } from "@/app/UiComponents/DataViewer/utility/AssignNewStaffModal.jsx";
+import { useLeadDetails } from "@/app/UiComponents/DataViewer/leads/context/LeadDetailsContext.jsx";
+import AddPayments from "@/app/UiComponents/DataViewer/leads/payments/AddPayments.jsx";
+import PaymentDialog from "@/app/UiComponents/DataViewer/leads/payments/PaymentsDialog.jsx";
 
 /**
  * MoreActionsMenu component for lead actions dropdown

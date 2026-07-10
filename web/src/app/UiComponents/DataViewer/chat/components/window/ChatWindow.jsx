@@ -17,7 +17,7 @@ import {
   Snackbar,
 } from "@mui/material";
 
-import { CHAT_ROOM_TYPES } from "../../utils/chatConstants";
+import { CHAT_ROOM_TYPES } from "@/app/UiComponents/DataViewer/chat/utils/chatConstants.js";
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useAuth } from "@/app/providers/AuthProvider";
@@ -27,8 +27,8 @@ import {
   ChatInput,
   ChatFilesTab,
   ScrollButton,
-} from "../messages";
-import { useChatMessages, useSocket } from "../../hooks";
+} from "@/app/UiComponents/DataViewer/chat/components/messages/index.js";
+import { useChatMessages, useSocket } from "@/app/UiComponents/DataViewer/chat/hooks/index.js";
 
 import {
   markMessagesRead,
@@ -40,24 +40,24 @@ import {
   emitUnpinMessage,
   socket,
   joinChatRoomAsClient,
-} from "../../utils/socketIO";
+} from "@/app/UiComponents/DataViewer/chat/utils/socketIO.js";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
-import { useChatMembers } from "../../hooks/useChatMembers";
-import { LastSeenAt, OnlineStatus } from "../members/LastSeenAt";
-import { AddMembersDialog } from "../dialogs/AddMembersDialog";
-import { ChatTypingIndicator } from "../indicators/ChatTypingIndicator";
-import { NewMemberAlert } from "../indicators/NewMemberAlert";
-import { ConfirmDialog } from "../dialogs/ConfirmDialog";
-import PinnedMessages from "./PinnedMessages";
-import { ChatWindowHeader } from "./ChatWindowHeader";
-import { LoadMoreButton } from "../indicators/LoadMoreButton";
-import { useChatRoom } from "../../hooks/useChatRoom";
+import { useChatMembers } from "@/app/UiComponents/DataViewer/chat/hooks/useChatMembers.js";
+import { LastSeenAt, OnlineStatus } from "@/app/UiComponents/DataViewer/chat/components/members/LastSeenAt.jsx";
+import { AddMembersDialog } from "@/app/UiComponents/DataViewer/chat/components/dialogs/AddMembersDialog.jsx";
+import { ChatTypingIndicator } from "@/app/UiComponents/DataViewer/chat/components/indicators/ChatTypingIndicator.jsx";
+import { NewMemberAlert } from "@/app/UiComponents/DataViewer/chat/components/indicators/NewMemberAlert.jsx";
+import { ConfirmDialog } from "@/app/UiComponents/DataViewer/chat/components/dialogs/ConfirmDialog.jsx";
+import PinnedMessages from "@/app/UiComponents/DataViewer/chat/components/window/PinnedMessages.jsx";
+import { ChatWindowHeader } from "@/app/UiComponents/DataViewer/chat/components/window/ChatWindowHeader.jsx";
+import { LoadMoreButton } from "@/app/UiComponents/DataViewer/chat/components/indicators/LoadMoreButton.jsx";
+import { useChatRoom } from "@/app/UiComponents/DataViewer/chat/hooks/useChatRoom.js";
 import LoadingOverlay from "@/app/UiComponents/feedback/loaders/LoadingOverlay";
-import { MultiActions } from "../messages/MultiActions";
-import { ForwardMessagesDialog } from "../dialogs/ForwardMessagesDialog";
-import { ChatNoRoomSelected } from "./ChatNoRoomSelected";
-import { ChatEmptyState } from "./ChatEmptyState";
-import { ChatErrorSnackbar } from "./ChatErrorSnackbar";
+import { MultiActions } from "@/app/UiComponents/DataViewer/chat/components/messages/MultiActions.jsx";
+import { ForwardMessagesDialog } from "@/app/UiComponents/DataViewer/chat/components/dialogs/ForwardMessagesDialog.jsx";
+import { ChatNoRoomSelected } from "@/app/UiComponents/DataViewer/chat/components/window/ChatNoRoomSelected.jsx";
+import { ChatEmptyState } from "@/app/UiComponents/DataViewer/chat/components/window/ChatEmptyState.jsx";
+import { ChatErrorSnackbar } from "@/app/UiComponents/DataViewer/chat/components/window/ChatErrorSnackbar.jsx";
 
 export function ChatWindow({
   roomId,

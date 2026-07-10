@@ -21,8 +21,8 @@ import {
 import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import AddNewItem from "./AddNewItem";
-import ProConItem from "./ProConItem";
+import AddNewItem from "@/app/UiComponents/DataViewer/image-session/admin/shared/AddNewItem.jsx";
+import ProConItem from "@/app/UiComponents/DataViewer/image-session/admin/shared/ProConItem.jsx";
 
 const ProsConsDialog = ({
   open,

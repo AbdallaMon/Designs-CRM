@@ -31,9 +31,9 @@ import { styled } from "@mui/material/styles";
 import { statusColors } from "@/app/helpers/constants.js";
 
 import { MdOutlinePayments } from "react-icons/md";
-import CreateModal from "../../../models/CreateModal";
-import { PaymentHistoryModal } from "../../accountant/payments/PaymentsCalendar";
-import ConfirmWithActionModel from "../../../models/ConfirmsWithActionModel";
+import CreateModal from "@/app/UiComponents/models/CreateModal.jsx";
+import { PaymentHistoryModal } from "@/app/UiComponents/DataViewer/accountant/payments/PaymentsCalendar.jsx";
+import ConfirmWithActionModel from "@/app/UiComponents/models/ConfirmsWithActionModel.jsx";
 import Link from "next/link";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";

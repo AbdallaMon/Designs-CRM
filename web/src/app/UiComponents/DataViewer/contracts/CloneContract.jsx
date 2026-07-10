@@ -29,14 +29,14 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 
 // Import shared components
-import ProjectGroupSelect from "./shared/ProjectGroupSelect";
-import StagesSelector from "./shared/StagesSelector";
-import PaymentsEditor from "./shared/PaymentsEditor";
-import SpecialItemsEditor from "./shared/SpecialItemsEditor";
-import ContractDrawingsEditor from "./shared/ContractDrawingsEditor";
+import ProjectGroupSelect from "@/app/UiComponents/DataViewer/contracts/shared/ProjectGroupSelect.jsx";
+import StagesSelector from "@/app/UiComponents/DataViewer/contracts/shared/StagesSelector.jsx";
+import PaymentsEditor from "@/app/UiComponents/DataViewer/contracts/shared/PaymentsEditor.jsx";
+import SpecialItemsEditor from "@/app/UiComponents/DataViewer/contracts/shared/SpecialItemsEditor.jsx";
+import ContractDrawingsEditor from "@/app/UiComponents/DataViewer/contracts/shared/ContractDrawingsEditor.jsx";
 import { CONTRACT_LEVELSENUM } from "@/app/helpers/constants";
-import { SectionHeader } from "./shared/formKit";
-import { ContractDialogShell, StepRail } from "./shared/dialogKit";
+import { SectionHeader } from "@/app/UiComponents/DataViewer/contracts/shared/formKit.jsx";
+import { ContractDialogShell, StepRail } from "@/app/UiComponents/DataViewer/contracts/shared/dialogKit.jsx";
 export default function CloneContract({
   sourceId,
   onCloned,

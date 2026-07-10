@@ -7,15 +7,15 @@
 // Presentation is built from the shared lead tabKit so it reads as the same system.
 
 import React, { useState, useEffect, useCallback } from "react";
-import { TabLoading } from "../leads/shared/TabLoading";
-import { EmptyState } from "../leads/shared/EmptyState";
-import { TabSection } from "../leads/shared/tabKit";
+import { TabLoading } from "@/app/UiComponents/DataViewer/leads/shared/TabLoading.jsx";
+import { EmptyState } from "@/app/UiComponents/DataViewer/leads/shared/EmptyState.jsx";
+import { TabSection } from "@/app/UiComponents/DataViewer/leads/shared/tabKit.jsx";
 import { Button, Grid } from "@mui/material";
 
 import { MdTask } from "react-icons/md";
 import { getData } from "@/app/helpers/functions/getData";
-import { TaskItem } from "./TaskItem";
-import { CreateTaskModal } from "./CreateTaskModal";
+import { TaskItem } from "@/app/UiComponents/DataViewer/tasks/TaskItem.jsx";
+import { CreateTaskModal } from "@/app/UiComponents/DataViewer/tasks/CreateTaskModal.jsx";
 
 // Arabic copy. `name` is the singular noun the call site passes ("Modification" / "Task").
 const arName = (name) => (name === "Modification" ? "Modification" : "Task");

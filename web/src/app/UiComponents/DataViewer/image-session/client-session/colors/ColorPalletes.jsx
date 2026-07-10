@@ -2,11 +2,11 @@
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { useEffect, useState, useRef } from "react";
-import { PreviewItem } from "../PreviewItem";
+import { PreviewItem } from "@/app/UiComponents/DataViewer/image-session/client-session/PreviewItem.jsx";
 import FullScreenLoader from "@/app/UiComponents/feedback/loaders/FullscreenLoader";
 import { Box, Grid } from "@mui/material";
-import { FloatingActionButton } from "../Utility";
-import { ColorPalleteItem } from "./ColorPalleteItem";
+import { FloatingActionButton } from "@/app/UiComponents/DataViewer/image-session/client-session/Utility.jsx";
+import { ColorPalleteItem } from "@/app/UiComponents/DataViewer/image-session/client-session/colors/ColorPalleteItem.jsx";
 import { gsap } from "gsap";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";

@@ -1,10 +1,10 @@
 "use client";
-import { isAudio, isImage, isVideo } from "../fileTypes";
-import { ImageFileRow } from "./ImageFileRow";
-import { VideoPlayer } from "./VideoPlayer";
-import { AudioFileRow } from "./AudioFileRow";
-import { FileLinkRow } from "./FileLinkRow";
-import { GridFileItem } from "./GridFileItem";
+import { isAudio, isImage, isVideo } from "@/app/UiComponents/DataViewer/utility/Media/fileTypes.js";
+import { ImageFileRow } from "@/app/UiComponents/DataViewer/utility/Media/renderers/ImageFileRow.jsx";
+import { VideoPlayer } from "@/app/UiComponents/DataViewer/utility/Media/renderers/VideoPlayer.jsx";
+import { AudioFileRow } from "@/app/UiComponents/DataViewer/utility/Media/renderers/AudioFileRow.jsx";
+import { FileLinkRow } from "@/app/UiComponents/DataViewer/utility/Media/renderers/FileLinkRow.jsx";
+import { GridFileItem } from "@/app/UiComponents/DataViewer/utility/Media/renderers/GridFileItem.jsx";
 
 export function RenderFileAccordingToType({
   att,

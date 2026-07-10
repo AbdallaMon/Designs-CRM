@@ -2,7 +2,7 @@
 import React from "react";
 import AdminTable from "@/app/UiComponents/DataViewer/AdminTable";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
-import DateRangeFilter from "../../formComponents/DateRangeFilter";
+import DateRangeFilter from "@/app/UiComponents/formComponents/DateRangeFilter.jsx";
 import {
   Box,
   Container,
@@ -13,8 +13,8 @@ import {
 import { FaCalendarMonth, FaMoneyBillWave } from "react-icons/fa6";
 import dayjs from "dayjs";
 import { MdCalendarMonth, MdMoney } from "react-icons/md";
-import { IncomeOutcomeSummary } from "./IncomeOutComeSummary";
-import { columns } from "./config/outcomeConfig";
+import { IncomeOutcomeSummary } from "@/app/UiComponents/DataViewer/accountant/IncomeOutComeSummary.jsx";
+import { columns } from "@/app/UiComponents/DataViewer/accountant/config/outcomeConfig.js";
 
 const OutCome = () => {
   const {

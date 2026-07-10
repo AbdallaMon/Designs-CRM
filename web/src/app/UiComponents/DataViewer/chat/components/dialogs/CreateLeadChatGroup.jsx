@@ -21,11 +21,11 @@ import {
 } from "@mui/material";
 import { Grid } from "@mui/material";
 
-import { CHAT_ROOM_TYPES } from "../../utils";
+import { CHAT_ROOM_TYPES } from "@/app/UiComponents/DataViewer/chat/utils/index.js";
 import { PROJECT_TYPES } from "@/app/helpers/constants";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { MdClose } from "react-icons/md";
-import ProjectGroupMultiSelect from "../../../work-stages/projects/ProjectGroupMultiSelector";
+import ProjectGroupMultiSelect from "@/app/UiComponents/DataViewer/work-stages/projects/ProjectGroupMultiSelector.jsx";
 
 export default function CreateLeadChatGroup({
   open,

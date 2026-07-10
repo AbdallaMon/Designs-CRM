@@ -23,7 +23,7 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useAlertContext } from "@/app/providers/MuiAlert";
 import { useAuth } from "@/app/providers/AuthProvider";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
-import { DUBAI_TZ, toMiddayUTC } from "./ProjectDeliverySchedule";
+import { DUBAI_TZ, toMiddayUTC } from "@/app/UiComponents/DataViewer/work-stages/utility/ProjectDeliverySchedule.jsx";
 
 function CreateDeliveryDialog({ projectId, open, onClose, onCreate }) {
   const [name, setName] = useState("");

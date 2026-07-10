@@ -22,13 +22,13 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider.js";
 import SimpleFileInput from "@/app/UiComponents/formComponents/SimpleFileInput.jsx";
 import dayjs from "dayjs";
 import { MdDelete } from "react-icons/md";
-import AddPayments from "../payments/AddPayments";
+import AddPayments from "@/app/UiComponents/DataViewer/leads/payments/AddPayments.jsx";
 
 import utc from "dayjs/plugin/utc";
 
 import { uploadInChunks } from "@/app/helpers/functions/uploadAsChunk";
 import { useUploadContext } from "@/app/providers/UploadingProgressProvider";
-import { OpenButton } from "./OpenButton";
+import { OpenButton } from "@/app/UiComponents/DataViewer/leads/dialogs/OpenButton.jsx";
 
 dayjs.extend(utc);
 
