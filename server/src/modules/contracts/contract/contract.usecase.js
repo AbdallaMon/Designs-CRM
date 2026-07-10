@@ -21,7 +21,8 @@
 // permission code is the gate and the service supplies the scope. We pass req.auth as the
 // `user` exactly as legacy passed getCurrentUser(req).
 import { AppError } from "../../../shared/errors/AppError.js";
-import { contractsMessagesCodes as C } from "@dms/shared";
+import { contractsMessagesCodes as C, AUDIT_MODULES, AUDIT_ACTIONS } from "@dms/shared";
+import { recordAction } from "../../../infra/audit/record-action.js";
 import { leadUsecase } from "../../leads/lead/lead.usecase.js";
 import { contractRepository } from "./contract.repo.js";
 
@@ -120,9 +121,24 @@ export class ContractUsecase {
   }
 
   // POST / — create a contract for a lead (WRITE scope on the target lead, from the body).
-  async create({ payload, authUser }) {
+  async create({ payload, authUser, auditCtx }) {
     await this.assertLeadMutate({ clientLeadId: payload.clientLeadId, authUser });
-    return this.legacy.createContract({ payload });
+    const contract = await this.legacy.createContract({ payload });
+    // Semantic audit: a contract was created for the lead.
+    await recordAction(auditCtx, {
+      module: AUDIT_MODULES.CONTRACT,
+      action: AUDIT_ACTIONS.CONTRACT_CREATED,
+      entityType: "Contract",
+      entityId: contract?.id ?? null,
+      clientLeadId: contract?.clientLeadId ?? Number(payload.clientLeadId),
+      summary: `Contract #${contract?.id ?? "?"} created for lead #${payload.clientLeadId}`,
+      detail: {
+        contractId: contract?.id ?? null,
+        title: contract?.title ?? payload.title ?? null,
+        totalAmount: contract?.totalAmount ?? null,
+      },
+    });
+    return contract;
   }
 
   // GET /:contractId — lead-scoped detail (READ scope via contract → lead).
@@ -215,13 +231,27 @@ export class ContractUsecase {
     return this.legacy.deleteContractPayment({ paymentId });
   }
 
-  async updatePaymentStatus({ paymentId, status, authUser }) {
-    await this.#scopeByResolved({
+  async updatePaymentStatus({ paymentId, status, authUser, auditCtx }) {
+    const row = await this.#scopeByResolved({
       resolver: () => this.repo.getPaymentClientLeadId({ paymentId }),
       authUser,
       mode: "mutate",
     });
-    return this.legacy.updateContractPaymentStatus({ paymentId, status });
+    const result = await this.legacy.updateContractPaymentStatus({ paymentId, status });
+    // Semantic audit: only a transition to a PAID state (RECEIVED / TRANSFERRED — the two
+    // "money collected" statuses the payment-status control allows) is a "payment paid".
+    if (status === "RECEIVED" || status === "TRANSFERRED") {
+      await recordAction(auditCtx, {
+        module: AUDIT_MODULES.CONTRACT,
+        action: AUDIT_ACTIONS.CONTRACT_PAYMENT_PAID,
+        entityType: "ContractPayment",
+        entityId: Number(paymentId),
+        clientLeadId: row?.clientLeadId ?? null,
+        summary: `Contract payment #${paymentId} marked ${status}`,
+        detail: { paymentId: Number(paymentId), status },
+      });
+    }
+    return result;
   }
 
   async updatePaymentAmounts({ paymentId, amountLost, amountReceived, status, authUser }) {

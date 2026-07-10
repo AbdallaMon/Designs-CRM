@@ -6,6 +6,7 @@
 // Path ids are authoritative over body ids.
 import { ok, created } from "../../../shared/http/response.js";
 import { contractsMessagesCodes, messagesNames } from "@dms/shared";
+import { auditCtxFromReq } from "../../../infra/audit/record-action.js";
 import { contractUsecase } from "./contract.usecase.js";
 
 const C = contractsMessagesCodes;
@@ -23,7 +24,7 @@ export class ContractController {
   };
 
   create = async (req, res) => {
-    const data = await this.usecase.create({ payload: req.body, authUser: req.auth });
+    const data = await this.usecase.create({ payload: req.body, authUser: req.auth, auditCtx: auditCtxFromReq(req) });
     return created(res, data, C.CONTRACT_CREATED, TK);
   };
 
@@ -120,6 +121,7 @@ export class ContractController {
       paymentId: req.params.paymentId,
       status: req.body.status,
       authUser: req.auth,
+      auditCtx: auditCtxFromReq(req),
     });
     return ok(res, data, C.CONTRACT_PAYMENT_STATUS_UPDATED, TK);
   };

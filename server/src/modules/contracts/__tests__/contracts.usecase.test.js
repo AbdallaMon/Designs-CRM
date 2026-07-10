@@ -1,5 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
 
+// Mock the audit infra seam so contract usecases can be asserted without a DB.
+vi.mock("../../../infra/audit/record-action.js", () => ({
+  recordAction: vi.fn(),
+  auditCtxFromReq: vi.fn(() => ({})),
+}));
+
+import { recordAction } from "../../../infra/audit/record-action.js";
 import { AuthMiddleware } from "../../../shared/middlewares/auth.middleware.js";
 import { AppError } from "../../../shared/errors/AppError.js";
 import {
@@ -129,6 +136,47 @@ describe("ContractUsecase object scope (the IDOR fix)", () => {
     await uc.create({ payload: { clientLeadId: 100 }, authUser: AUTH });
     expect(leads.checkIfUserCanMutateLead).toHaveBeenCalledWith({ id: 100, authUser: AUTH });
     expect(legacy.createContract).toHaveBeenCalledWith({ payload: { clientLeadId: 100 } });
+  });
+
+  it("create: records a CONTRACT_CREATED audit event once with the new contract id", async () => {
+    recordAction.mockClear();
+    const legacy = { createContract: vi.fn().mockResolvedValue({ id: 7, clientLeadId: 100 }) };
+    const uc = new ContractUsecase(makeRepo(), makeLeads(), legacy);
+    await uc.create({ payload: { clientLeadId: 100 }, authUser: AUTH, auditCtx: {} });
+    expect(recordAction).toHaveBeenCalledTimes(1);
+    expect(recordAction).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({
+        module: "contract",
+        action: "CONTRACT_CREATED",
+        entityType: "Contract",
+        entityId: 7,
+        clientLeadId: 100,
+      }),
+    );
+  });
+
+  it("updatePaymentStatus: records CONTRACT_PAYMENT_PAID only for a paid status", async () => {
+    const legacy = { updateContractPaymentStatus: vi.fn().mockResolvedValue(undefined) };
+    const uc = new ContractUsecase(makeRepo(100), makeLeads(), legacy);
+
+    recordAction.mockClear();
+    await uc.updatePaymentStatus({ paymentId: 42, status: "DUE", authUser: AUTH, auditCtx: {} });
+    expect(recordAction).not.toHaveBeenCalled();
+
+    recordAction.mockClear();
+    await uc.updatePaymentStatus({ paymentId: 42, status: "RECEIVED", authUser: AUTH, auditCtx: {} });
+    expect(recordAction).toHaveBeenCalledTimes(1);
+    expect(recordAction).toHaveBeenCalledWith(
+      {},
+      expect.objectContaining({
+        module: "contract",
+        action: "CONTRACT_PAYMENT_PAID",
+        entityType: "ContractPayment",
+        entityId: 42,
+        clientLeadId: 100,
+      }),
+    );
   });
 
   it("create: DENIES a lead that is only READable (mutate-scope, not read-scope)", async () => {
