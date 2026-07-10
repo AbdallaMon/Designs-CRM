@@ -34,6 +34,20 @@
 > build` (exit 0) + `npm test` (**733/57 green**); a Unicode scan confirms no `web` file has Arabic
 > beyond what `master` itself keeps. **This supersedes the earlier "single Arabic UI" decision** (§2 #5).
 >
+> **LATEST (2026-07-10) — Action Audit Log (admin-only trail), Tasks 1–5 (implemented on `feat/audit-log-sales-admin`).**
+> Additive `ActionAuditLog` model (rich semantic trail, distinct from the authz-only `AuthAuditLog`),
+> a non-blocking `recordAction` infra service + `diffFields` redact helper, and a read-only
+> `/v2/audit-logs` six-file module gated by the new `audit.log.view` permission (ADMIN/SUPER_ADMIN
+> only). Wired in `@dms/shared` (audit-actions codes, permission, role-permissions, profiles, nav).
+> **PENDING (user-run):** the additive `ActionAuditLog` migration — `npm run db:migrate -- --name
+> add_action_audit_log` then `npm run db:generate`, and commit `schema.prisma` + the generated
+> migration together (the model edit is committed; the agent env has no `DATABASE_URL`, and
+> `npx prisma generate` could not finish offline because the query-engine dll is locked by the
+> running dev servers — backend tests run against the mocked prisma seam meanwhile). Task 6 (wiring
+> `recordAction` into lead/contract/user/auth usecases) + Task 7 (frontend viewer) still to do.
+> Design/plan: `docs/superpowers/specs/2026-07-10-action-audit-log-design.md`,
+> `docs/superpowers/plans/2026-07-10-action-audit-log.md`.
+>
 > **LATEST (2026-07-03) — DB-relational permissions & switchable profiles (implemented, local-verified; prod pending).**
 > Authorization moved from the code-defined role→codes map to DB tables: `PermissionCode`,
 > `Profile`, `ProfilePermission`, `UserProfile` (replaces subRoles), + `User.currentProfileId`

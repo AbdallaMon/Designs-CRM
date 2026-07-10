@@ -2456,3 +2456,28 @@ model AuthAuditLog {
   @@index([actorUserId])
   @@index([targetUserId])
 }
+
+// Rich, semantic, append-only ACTION audit trail (admin-only viewer). Distinct from
+// AuthAuditLog (which is authorization-only). Written from usecases after successful
+// writes via the non-blocking `recordAction` service. Purely additive — no relations on
+// the frozen User/ClientLead models; joins are done by id in the repo.
+model ActionAuditLog {
+  id           Int      @id @default(autoincrement())
+  actorUserId  Int
+  actorRole    String?  @db.VarChar(48)
+  module       String   @db.VarChar(48)
+  action       String   @db.VarChar(64)
+  entityType   String?  @db.VarChar(48)
+  entityId     Int?
+  clientLeadId Int?
+  summary      String?  @db.VarChar(255)
+  detail       Json?
+  ip           String?  @db.VarChar(64)
+  createdAt    DateTime @default(now())
+
+  @@index([actorUserId])
+  @@index([entityType, entityId])
+  @@index([clientLeadId])
+  @@index([module, action])
+  @@index([createdAt])
+}
