@@ -28,7 +28,7 @@ import {
 } from "react-icons/ai";
 
 import { styled } from "@mui/material/styles";
-import { statusColors } from "@/app/helpers/constants.js";
+import { statusColors } from "@/app/helpers/constants";
 
 import { MdOutlinePayments } from "react-icons/md";
 import CreateModal from "@/shared/components/models/CreateModal.jsx";

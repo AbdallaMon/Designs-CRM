@@ -36,11 +36,11 @@ export default function UsersPage() {
     const request = await handleRequestSubmit(
       { user: item },
       setLoading,
-      `admin/users/${item.id}`,
+      `admin/users/${item.id}/actions/change-status`,
       false,
       "Banning",
       null,
-      "PATCH"
+      "POST"
     );
     if (request.status === 200) {
       setData((oldData) =>

@@ -5,7 +5,7 @@ import {
   priorityColors,
   statusColors,
   taskStatusColors,
-} from "@/app/helpers/constants.js";
+} from "@/app/helpers/constants";
 
 export const StyledCard = styled(Card)(({ theme, status, groupId }) => {
   const groupColor = groupColors[groupId] || groupColors[0];

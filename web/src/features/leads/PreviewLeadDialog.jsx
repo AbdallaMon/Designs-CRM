@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import {
   KanbanBeginerLeadsStatus,
   KanbanLeadsStatus,
-} from "@/app/helpers/constants.js";
+} from "@/app/helpers/constants";
 import {
   checkIfPrimaryStaff,
   enumToKeyValueArray,

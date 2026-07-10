@@ -21,7 +21,7 @@ import {
   AiOutlineSwap as ChangeStatusIcon,
 } from "react-icons/ai";
 
-import { statusColors } from "@/app/helpers/constants.js";
+import { statusColors } from "@/app/helpers/constants";
 import { NewNoteDialog } from "@/features/leads/dialogs/NoteDialog";
 import { checkIfAdmin } from "@/app/helpers/functions/utility.js";
 import { FaEye } from "react-icons/fa";

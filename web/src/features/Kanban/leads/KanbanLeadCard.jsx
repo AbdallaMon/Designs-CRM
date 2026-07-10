@@ -30,7 +30,7 @@ import {
 
 import { styled } from "@mui/material/styles";
 import dayjs from "dayjs";
-import { CONTRACT_LEVELS, statusColors } from "@/app/helpers/constants.js";
+import { CONTRACT_LEVELS, statusColors } from "@/app/helpers/constants";
 import PreviewDialog from "@/features/leads/PreviewLeadDialog.jsx";
 import { NewNoteDialog } from "@/features/leads/dialogs/NoteDialog";
 import {

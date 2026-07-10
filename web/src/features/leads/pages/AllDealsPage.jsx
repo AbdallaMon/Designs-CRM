@@ -6,7 +6,7 @@ import { Box, Button } from "@mui/material";
 import React, { useState } from "react";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import SearchComponent from "@/shared/components/formComponents/SearchComponent.jsx";
-import { LeadCategory } from "@/app/helpers/constants.js";
+import { LeadCategory } from "@/app/helpers/constants";
 import { FaBusinessTime } from "react-icons/fa";
 import TabsWithLinks from "@/shared/components/utility/TabsWithLinks.jsx";
 import PreviewDialog from "@/features/leads/PreviewLeadDialog.jsx";

@@ -27,7 +27,7 @@ import { MdDownload, MdSearch, MdRefresh } from 'react-icons/md';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import {STATUS_COLORS} from "@/app/helpers/colors.js";
-import {statusColors} from "@/app/helpers/constants.js";
+import {statusColors} from "@/app/helpers/constants";
 
 const LeadReportFilters = () => {
     const [filters, setFilters] = useState({

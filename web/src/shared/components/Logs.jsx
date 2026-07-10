@@ -21,7 +21,7 @@ import PaginationWithLimit from "@/shared/components/PaginationWithLimit.jsx";
 import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader.jsx";
 import DateRangeFilter from "@/shared/components/formComponents/DateRangeFilter.jsx";
 import SearchComponent from "@/shared/components/formComponents/SearchComponent.jsx";
-import { notificationIcons } from "@/app/helpers/constants.js";
+import { notificationIcons } from "@/app/helpers/constants";
 import colors, { NotificationColors } from "@/app/helpers/colors.js";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";

@@ -173,6 +173,15 @@ router.patch(
   asyncHandler(userController.staffExtra),
 );
 
+// Status change is a workflow transition → dedicated action endpoint (not a generic PATCH).
+router.post(
+  "/:userId/actions/change-status",
+  AuthMiddleware.requirePermissions([P.UPDATE]),
+  validate(UserValidation.userIdParams, "params"),
+  validate(UserValidation.changeStatus),
+  asyncHandler(userController.changeStatus),
+);
+
 // ── admin user CRUD by id (declared LAST so the sub-resource literals above win) ──
 router.put(
   "/:userId",
@@ -180,13 +189,6 @@ router.put(
   validate(UserValidation.userIdParams, "params"),
   validate(UserValidation.updateUser),
   asyncHandler(userController.update),
-);
-router.patch(
-  "/:userId",
-  AuthMiddleware.requirePermissions([P.UPDATE]),
-  validate(UserValidation.userIdParams, "params"),
-  validate(UserValidation.changeStatus),
-  asyncHandler(userController.changeStatus),
 );
 
 export { router as userRouter };

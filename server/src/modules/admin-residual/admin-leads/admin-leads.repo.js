@@ -7,6 +7,12 @@
 import prisma from "../../../infra/prisma/prisma.js";
 
 export class AdminLeadsRepository {
+  // Multi-write transaction boundary owned by the repo (Prisma stays out of the usecase).
+  // The usecase passes an orchestration callback; each repo call inside receives `client: tx`.
+  runInTransaction(fn) {
+    return prisma.$transaction(fn);
+  }
+
   findClientByEmail({ email, client = prisma }) {
     return client.client.findUnique({ where: { email } });
   }

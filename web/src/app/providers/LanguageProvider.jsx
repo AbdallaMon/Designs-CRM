@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
-import { dictionary } from "@/app/helpers/constants.js";
+import { dictionary } from "@/app/helpers/constants";
 import createCache from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import rtlPlugin from "stylis-plugin-rtl";

@@ -15,7 +15,6 @@
 //      handler uses `uploadFile(body, clientLeadId)`. We wrap the CORRECT `uploadFile`.
 //   3. The admin route emitted English/Arabic prose as the success message; the v2
 //      envelope carries a language-neutral CODE instead (sanctioned contract change).
-import prisma from "../../../infra/prisma/prisma.js";
 import XLSX from "xlsx";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { authMessagesCodes } from "@dms/shared";
@@ -279,7 +278,7 @@ export class AdminLeadsUsecase {
 
   // ── admin create new lead (inline-in-legacy logic, faithfully ported) ────────────
   async createNewLead({ body }) {
-    const created = await prisma.$transaction(async (tx) => {
+    const created = await this.repo.runInTransaction(async (tx) => {
       let client = await this.repo.findClientByEmail({ email: body.email, client: tx });
 
       if (!client) {

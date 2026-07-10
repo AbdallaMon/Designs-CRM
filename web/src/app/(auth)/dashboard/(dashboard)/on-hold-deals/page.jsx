@@ -7,7 +7,7 @@ import { Box } from "@mui/material";
 import React from "react";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import SearchComponent from "@/shared/components/formComponents/SearchComponent.jsx";
-import { LeadCategory } from "@/app/helpers/constants.js";
+import { LeadCategory } from "@/app/helpers/constants";
 import FilterSelect from "@/shared/components/formComponents/FilterSelect.jsx";
 import { enumToKeyValueArray } from "@/app/helpers/functions/utility.js";
 import ConfirmWithActionModel from "@/shared/components/models/ConfirmsWithActionModel.jsx";

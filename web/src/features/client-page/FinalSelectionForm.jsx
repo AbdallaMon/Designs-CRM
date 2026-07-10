@@ -25,7 +25,7 @@ import {
   Emirate,
   LeadCategory,
   LeadType,
-} from "@/app/helpers/constants.js";
+} from "@/app/helpers/constants";
 import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput.jsx";
 import { priceRange } from "@/features/client-page/clientPageData.js";
 import { matchIsValidTel, MuiTelInput } from "mui-tel-input";

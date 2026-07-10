@@ -1,0 +1,428 @@
+import { AppError } from "../../shared/errors/AppError.js";
+import { getIo } from "../../infra/socket/index.js";
+import { computeRoomCapabilities } from "./chat.dto.js";
+import { chatMessagesCodes } from "@dms/shared";
+
+/**
+ * Rooms concern of ChatUsecase — scope check, room CRUD, membership resolution.
+ * Prototype-composed onto {@link ChatUsecase} (see chat.usecase.js); moved
+ * verbatim, behavior-preserving only.
+ */
+export const roomMethods = {
+  // ── Object-scope checker (REFERENCE EXAMPLE for module agents) ───────────────
+  // Pattern: `checkIfUserCanAccessX` — load the scoped relation (here: room
+  // membership via the ChatMember FK), THROW AppError(403, ACCESS_DENIED) when the
+  // record is outside the user's scope, and RETURN the loaded row on success.
+  // CRITICAL: it must THROW on denial — returning false/undefined would let the
+  // request through (`requireSpecialChecker` only catches thrown errors). Copy
+  // this shape for read scope; pair a stricter `checkIfUserCanMutateX` for writes.
+  async checkIfUserCanAccessRoom({ roomId, authUserId, clientId = null }) {
+    const member = await this.repository.getMember({
+      roomId,
+      userId: authUserId,
+      clientId,
+    });
+    if (!member) {
+      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+    }
+    return member;
+  },
+
+  // ── Rooms ──────────────────────────────────────────────────────────────────
+
+  async getRooms(authUser, query) {
+    const userId = authUser.id;
+    const permissions = authUser.permissions || [];
+    const {
+      category,
+      projectId,
+      clientLeadId,
+      page,
+      limit,
+      searchKey,
+      chatType,
+    } = query;
+    const parsedPage = page ? Number(page) : 0;
+    const pageSize = limit ? Number(limit) : 25;
+    const { rooms, total } = await this.repository.getRooms({
+      userId,
+      category,
+      projectId,
+      clientLeadId,
+      page: parsedPage,
+      limit: pageSize,
+      search: searchKey || "",
+      chatType: chatType || null,
+    });
+
+    const roomsWithMeta = await Promise.all(
+      rooms.map(async (room) => {
+        const selfMember = room.members?.find(
+          (m) => m.userId === Number(userId),
+        );
+        const otherMembers =
+          room.members?.filter((m) => m.userId !== Number(userId)) || [];
+        const unreadCount = selfMember
+          ? await this.repository.countUnreadMessages({
+              roomId: room.id,
+              memberId: selfMember.id,
+              userId: Number(userId),
+            })
+          : 0;
+        return {
+          ...room,
+          unreadCount,
+          lastMessage: room.messages?.[0] || null,
+          otherMembers,
+          lastSeenAt:
+            otherMembers.length > 0 ? otherMembers[0]?.user?.lastSeenAt : null,
+          capabilities: computeRoomCapabilities(room, {
+            permissions,
+            authUserId: userId,
+            selfMember,
+          }),
+        };
+      }),
+    );
+
+    const totalUnread = roomsWithMeta.reduce(
+      (sum, r) => sum + (r.unreadCount || 0),
+      0,
+    );
+
+    return {
+      items: roomsWithMeta,
+      total,
+      page: parsedPage,
+      pageSize,
+      totalUnread,
+    };
+  },
+
+  async getRoomById(roomId, authUser, clientId) {
+    const userId = authUser.id;
+    const permissions = authUser.permissions || [];
+    const selfMember = await this.repository.getMember({
+      roomId,
+      userId,
+      clientId,
+    });
+    if (!selfMember)
+      throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+
+    const room = await this.repository.getRoomById(roomId, userId, clientId);
+    if (!room) throw new AppError(chatMessagesCodes.ROOM_NOT_FOUND, 404);
+
+    const otherMembers =
+      room.members?.filter((m) => m.userId !== Number(userId)) || [];
+    return {
+      ...room,
+      otherMembers,
+      lastSeenAt:
+        otherMembers.length > 0 ? otherMembers[0]?.user?.lastSeenAt : null,
+      selfMember,
+      capabilities: computeRoomCapabilities(room, {
+        permissions,
+        authUserId: userId,
+        selfMember,
+      }),
+    };
+  },
+
+  async createRoom(userId, body) {
+    const {
+      name,
+      type,
+      projectId,
+      clientLeadId,
+      projectIds,
+      userIds,
+      allowFiles,
+      allowCalls,
+      isChatEnabled,
+    } = body;
+
+    const room = await this.repository.createRoom({
+      name,
+      type,
+      projectId,
+      clientLeadId,
+      userIds,
+      createdById: userId,
+      allowFiles,
+      allowCalls,
+      isChatEnabled,
+    });
+
+    if (type === "MULTI_PROJECT" && projectIds?.length) {
+      await this.repository.addRoomProjects(room.id, projectIds);
+    }
+
+    const memberData = [
+      { roomId: room.id, userId: Number(userId), role: "ADMIN" },
+    ];
+    const filteredUserIds = [
+      ...new Set((userIds || []).filter((id) => Number(id) !== Number(userId))),
+    ];
+    for (const uid of filteredUserIds) {
+      memberData.push({ roomId: room.id, userId: Number(uid), role: "MEMBER" });
+    }
+    await this.repository.addRoomMembers(memberData);
+
+    const completeRoom = await this.repository.getFullRoom(room.id);
+
+    await this.emitToAllMembersExcluding({
+      roomId: room.id,
+      userId,
+      event: "notification:room_created",
+      content: { roomId: room.id },
+    }).catch(console.error);
+
+    return completeRoom;
+  },
+
+  async createDirectChat(userId, participantId) {
+    const existing = await this.repository.checkRoomExists({
+      userId,
+      otherUserId: participantId,
+    });
+    if (existing) return existing;
+
+    return this.createRoom(userId, {
+      name: "Staff to Staff Chat",
+      type: "STAFF_TO_STAFF",
+      userIds: [participantId],
+      allowFiles: true,
+      allowCalls: true,
+      isChatEnabled: true,
+    });
+  },
+
+  async createLeadsRoom(userId, body) {
+    const {
+      name,
+      groupType,
+      clientLeadId,
+      projectIds,
+      projectGroupIds,
+      selectedProjectsTypes,
+      addClient,
+      addRelatedSalesStaff,
+      addRelatedDesigners,
+      chatPasswordHash,
+    } = body;
+
+    const projectWhere =
+      groupType === "MULTI_PROJECT"
+        ? {
+            type: { in: selectedProjectsTypes || [] },
+            groupId: { in: (projectGroupIds || []).map(Number) },
+          }
+        : {};
+
+    const clientLead = await this.repository.getClientLeadWithProjects(
+      clientLeadId,
+      projectWhere,
+    );
+    if (!clientLead) throw new AppError(chatMessagesCodes.CLIENT_LEAD_NOT_FOUND, 404);
+
+    let autoName = `${groupType === "CLIENT_TO_STAFF" ? "Lead" : "Projects"} ${clientLead.client.name} #(${clientLead.code})`;
+    const count = await this.repository.countRoomsForLead(
+      clientLeadId,
+      groupType,
+    );
+    autoName += ` #${count + 1}`;
+
+    const token = await this.repository.generateChatToken();
+
+    const room = await this.repository.createRoom({
+      name: name || autoName,
+      type: groupType,
+      clientLeadId,
+      createdById: userId,
+      chatAccessToken: token,
+    });
+
+    if (groupType === "MULTI_PROJECT") {
+      const pIds = clientLead.projects.map((p) => p.id);
+      if (!pIds.length)
+        throw new AppError(chatMessagesCodes.NO_PROJECTS_FOR_CRITERIA, 400);
+      await this.repository.addRoomProjects(room.id, pIds);
+    }
+
+    const assignments =
+      clientLead.projects?.flatMap((p) => p.assignments) || [];
+    let userIds = [];
+
+    if (
+      groupType === "CLIENT_TO_STAFF" &&
+      addRelatedSalesStaff &&
+      clientLead.assignedTo
+    ) {
+      userIds.push(String(clientLead.assignedTo.id));
+    }
+    if (
+      (groupType === "CLIENT_TO_STAFF" && addRelatedDesigners) ||
+      groupType === "MULTI_PROJECT"
+    ) {
+      const staffIds = [
+        ...new Set(
+          assignments
+            .map((a) => String(a.userId))
+            .filter((id) => id !== String(userId)),
+        ),
+      ];
+      userIds = userIds.concat(staffIds);
+    }
+
+    const memberData = [
+      { roomId: room.id, userId: Number(userId), role: "ADMIN" },
+    ];
+    if (groupType === "CLIENT_TO_STAFF" && addClient && clientLead.clientId) {
+      memberData.push({
+        roomId: room.id,
+        clientId: clientLead.clientId,
+        role: "MEMBER",
+      });
+    }
+    const uniqueUserIds = [
+      ...new Set(userIds.filter((id) => id !== String(userId))),
+    ];
+    for (const uid of uniqueUserIds) {
+      memberData.push({ roomId: room.id, userId: Number(uid), role: "MEMBER" });
+    }
+    await this.repository.addRoomMembers(memberData);
+
+    const completeRoom = await this.repository.getFullRoom(room.id);
+
+    await this.emitToAllMembersExcluding({
+      roomId: room.id,
+      userId,
+      event: "notification:room_created",
+      content: { roomId: room.id },
+    }).catch(console.error);
+
+    return completeRoom;
+  },
+
+  async updateRoom(roomId, userId, updates) {
+    const member = await this.repository.getMember({ roomId, userId });
+    if (!member) throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+
+    const room = await this.repository.findRoomBasic(roomId);
+    if (!room) throw new AppError(chatMessagesCodes.ROOM_NOT_FOUND, 404);
+
+    const isAdminOrMod = member.role === "ADMIN" || member.role === "MODERATOR";
+    if (!isAdminOrMod && room.type !== "STAFF_TO_STAFF") {
+      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
+    }
+
+    // Sanitise — remove empty values
+    const sanitized = Object.fromEntries(
+      Object.entries(updates).filter(
+        ([, v]) => v !== undefined && v !== null && v !== "",
+      ),
+    );
+
+    const isMemberField = "isMuted" in sanitized || "isArchived" in sanitized;
+
+    const result = isMemberField
+      ? await this.repository.updateMemberSelf(member.id, sanitized)
+      : await this.repository.updateRoom(roomId, sanitized);
+
+    const io = getIo();
+    io.to(`room:${roomId}`).emit("room:updated", {
+      roomId: Number(roomId),
+      updates: sanitized,
+    });
+
+    await this.emitToAllMembersExcluding({
+      roomId,
+      userId,
+      event: "notification:room_updated",
+      content: { roomId: Number(roomId), updates: sanitized },
+    }).catch(console.error);
+
+    return result;
+  },
+
+  async deleteRoom(roomId, userId) {
+    const member = await this.repository.getMember({ roomId, userId });
+    if (!member || member.role !== "ADMIN")
+      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
+
+    const room = await this.repository.findRoomBasic(roomId);
+    if (!room) throw new AppError(chatMessagesCodes.ROOM_NOT_FOUND, 404);
+    if (room.type === "STAFF_TO_STAFF" || room.type === "PROJECT_GROUP") {
+      throw new AppError(chatMessagesCodes.ROOM_NOT_DELETABLE, 400);
+    }
+
+    await this.emitToAllMembersExcluding({
+      roomId,
+      userId,
+      event: "notification:room_deleted",
+      content: { roomId: Number(roomId) },
+    }).catch(console.error);
+
+    await this.repository.deleteRoom(roomId);
+    return { code: chatMessagesCodes.ROOM_DELETED };
+  },
+
+  async manageClient(roomId, userId, action) {
+    const member = await this.repository.getMember({ roomId, userId });
+    if (!member) throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+
+    const isAdminOrMod = member.role === "ADMIN" || member.role === "MODERATOR";
+    if (!isAdminOrMod)
+      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
+
+    const room = await this.repository.findRoomBasic(roomId);
+    if (!room?.clientLead)
+      throw new AppError(chatMessagesCodes.NO_CLIENT_LEAD_ON_ROOM, 400);
+
+    const clientId = room.clientLead.clientId;
+
+    if (action === "addClient") {
+      await this.repository.addRoomMembers([
+        { roomId: Number(roomId), clientId, role: "MEMBER" },
+      ]);
+      const token = await this.repository.generateChatToken();
+      await this.repository.updateRoom(roomId, { chatAccessToken: token });
+      return { code: chatMessagesCodes.CLIENT_ADDED };
+    }
+
+    if (action === "removeClient") {
+      const clientMember = await this.repository.getMember({
+        roomId,
+        clientId: String(clientId),
+      });
+      if (clientMember) {
+        await this.repository.removeMember(clientMember.id);
+      }
+      await this.repository.updateRoom(roomId, { chatAccessToken: null });
+      return { code: chatMessagesCodes.CLIENT_REMOVED };
+    }
+
+    throw new AppError(chatMessagesCodes.INVALID_MANAGE_CLIENT_ACTION, 400);
+  },
+
+  async regenerateToken(roomId, userId) {
+    const member = await this.repository.getMember({ roomId, userId });
+    const isAdminOrMod =
+      member?.role === "ADMIN" || member?.role === "MODERATOR";
+    if (!isAdminOrMod)
+      throw new AppError(chatMessagesCodes.ROOM_FORBIDDEN_ACTION, 403);
+
+    const token = await this.repository.generateChatToken();
+    const room = await this.repository.updateRoom(roomId, {
+      chatAccessToken: token,
+    });
+    return room;
+  },
+
+  // ── Room access check (for socket join) ───────────────────────────────────
+
+  async getRoomMembership({ roomId, userId, clientId }) {
+    return this.repository.getMember({ roomId, userId, clientId });
+  },
+};

@@ -21,7 +21,7 @@ import parse from "html-react-parser";
 import dayjs from "dayjs";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher.js";
 import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader.jsx";
-import { notificationIcons } from "@/app/helpers/constants.js";
+import { notificationIcons } from "@/app/helpers/constants";
 import colors, { NotificationColors } from "@/app/helpers/colors.js";
 import { useAuth } from "@/app/providers/AuthProvider.jsx";
 import { MdClose } from "react-icons/md";

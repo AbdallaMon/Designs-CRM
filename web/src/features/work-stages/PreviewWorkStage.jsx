@@ -21,7 +21,7 @@ import {
   BsPersonCheckFill,
   BsTelephone,
 } from "react-icons/bs";
-import { PROJECT_STATUSES, statusColors } from "@/app/helpers/constants.js";
+import { PROJECT_STATUSES, statusColors } from "@/app/helpers/constants";
 
 import { checkIfAdmin } from "@/app/helpers/functions/utility.js";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit.js";

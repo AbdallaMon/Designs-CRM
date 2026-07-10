@@ -31,6 +31,7 @@ export default function AddPaymentDialog({
   const [note, setNote] = useState("");
   const [projectType, setProjectType] = useState("");
   const [condition, setCondition] = useState("");
+  const [conditionId, setConditionId] = useState("");
   const [error, setError] = useState("");
   const { setLoading } = useToastContext();
 
@@ -44,6 +45,7 @@ export default function AddPaymentDialog({
     setNote("");
     setProjectType("");
     setCondition("");
+    setConditionId("");
     setError("");
   };
 
@@ -51,11 +53,14 @@ export default function AddPaymentDialog({
     setError("");
     if (!valid) return;
 
+    // Field names must match the backend `createPayment` (.strict) schema:
+    // { amount, note, type, condition, conditionId } — see contract.validation.js.
     const payload = {
       amount: Number(amount),
       note: note || undefined,
-      projectType,
-      paymentCondition: condition,
+      type: projectType,
+      condition,
+      conditionId: conditionId || undefined,
     };
     const req = await handleRequestSubmit(
       payload,
@@ -98,8 +103,9 @@ export default function AddPaymentDialog({
           />
           <SelectPaymentCondition
             onConditionChange={(value) => {
-              setCondition(value.condition);
-              setProjectType(value.type);
+              setCondition(value?.condition ?? "");
+              setProjectType(value?.type ?? "");
+              setConditionId(value?.id ?? "");
             }}
           />
 
