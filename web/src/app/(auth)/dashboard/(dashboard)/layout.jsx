@@ -30,6 +30,7 @@ import {
   FiTrendingDown,
   FiImage,
   FiCalendar,
+  FiActivity,
 } from "react-icons/fi";
 
 import SideNav, {
@@ -321,6 +322,7 @@ export function linksForRole(user) {
 // above use for the equivalent item.
 const ICON_BY_KEY = {
   dashboard: <FiGrid size={20} />,
+  "command-center": <FiActivity size={20} />,
   "users-admin": <FiUsers size={20} />,
   "users-super-sales": <FiUsers size={20} />,
   leads: <FiTarget size={20} />,
