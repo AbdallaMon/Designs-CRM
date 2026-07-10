@@ -35,6 +35,8 @@ import { clientUploadsRouter } from "../modules/client-portal/uploads/uploads.ro
 import { clientNotesRouter } from "../modules/client-portal/notes/notes.route.js";
 import { clientLanguagesRouter } from "../modules/client-portal/languages/languages.route.js";
 
+import { auditRouter } from "../modules/audit/audit.route.js";
+
 import { genericDeleteRouter } from "../modules/generic-delete/generic-delete.route.js";
 
 import authRoutes from "../modules/auth/auth.route.js";
@@ -251,6 +253,14 @@ router.use("/admin", adminResidualRouter);
 //    "STAFF" gate admits (STAFF / THREE_D_DESIGNER / TWO_D_DESIGNER / ACCOUNTANT /
 //    TWO_D_EXECUTOR) — NOT ADMIN/SUPER_ADMIN/SUPER_SALES/CONTACT_INITIATOR.
 router.use("/staff", staffRouter);
+
+// Audit — the ADMIN-ONLY action-audit viewer (a NEW additive surface, no legacy
+// equivalent). Auth once at the aggregate; the single read route is gated by
+// AUDIT.LOG_VIEW (granted to ADMIN/SUPER_ADMIN only). The rich ActionAuditLog trail is
+// written from usecases by the non-blocking recordAction service; this surface is
+// read-only + append-only (no create/update/delete). Every row is global (no per-record
+// owner), so the code is the gate — no object-scope checker.
+router.use("/audit-logs", auditRouter);
 
 // ── PUBLIC client-portal standalone surfaces ─────────────────────────────────────────────
 // The remaining client-facing sub-routers the legacy `routes/clients/clients.js` aggregated
