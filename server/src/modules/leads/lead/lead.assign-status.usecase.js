@@ -17,6 +17,8 @@ import {
 } from "../../../infra/notifications/legacy-notification.js";
 import { ClientLeadStatus } from "../../../infra/config/legacy-enums.js";
 import { telegramChannelQueue } from "../../../infra/queues/telegram-channel.queue.js";
+import { AppError } from "../../../shared/errors/AppError.js";
+import { leadsMessagesCodes as C } from "@dms/shared";
 
 // ════════════════════════════════════════════════════════════════════════════════
 //  REPO-BACKED module functions (ported 1:1 from the legacy shared/legacy/lead-services.js
@@ -41,16 +43,14 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
     clientLead.status !== "ON_HOLD" &&
     !isAdmin
   ) {
-    throw new Error("This lead has already been assigned to a user");
+    throw new AppError(C.LEAD_ALREADY_ASSIGNED, 400);
   }
   const isAlloedToTakeThisLead = await checkIfUserAllowedToTakeALead(
     Number(userId),
     clientLead.country,
   );
   if (!isAlloedToTakeThisLead) {
-    throw new Error(
-      "You are not allowed to take this lead cause it is out of your allowed countries range",
-    );
+    throw new AppError(C.LEAD_COUNTRY_NOT_ALLOWED, 403);
   }
   const activeLeadsCount = await leadRepository.countLeads({
     where: {
@@ -62,11 +62,7 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
   });
   const maxUserLeadsCount = await leadRepository.getUserLeadLimits({ userId });
   if (activeLeadsCount >= (maxUserLeadsCount.maxLeadsCounts || 50)) {
-    throw new Error(
-      `You cannot take more than ${
-        maxUserLeadsCount.maxLeadsCounts || 50
-      } active leads.`,
-    );
+    throw new AppError(C.LEAD_MAX_ACTIVE_REACHED, 400);
   }
   const startOfToday = dayjs().startOf("day").toDate();
   const endOfToday = dayjs().endOf("day").toDate();
@@ -83,11 +79,7 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
     todaysLeadsCount >= (maxUserLeadsCount.maxLeadCountPerDay || 5) &&
     !isAdmin
   ) {
-    throw new Error(
-      `You cannot take more than ${
-        maxUserLeadsCount.maxLeadCountPerDay || 5
-      } leads per day.`,
-    );
+    throw new AppError(C.LEAD_MAX_PER_DAY_REACHED, 400);
   }
   if (clientLead.status === "ON_HOLD" || isAdmin) {
     const shadowLead = await leadRepository.createLead({
@@ -148,14 +140,10 @@ export async function updateClientLeadStatus({
       oldStatus === "REJECTED" ||
       oldStatus === "ARCHIVED"
     ) {
-      throw new Error(
-        "You cant change the status from rejected or finalized or archived only admin can ,Contact your administrator to take an action",
-      );
+      throw new AppError(C.LEAD_STATUS_TRANSITION_FORBIDDEN, 403);
     }
     if (oldStatus === "ON_HOLD") {
-      throw new Error(
-        "You cant change the status from hold only admin can ,Contact your administrator to take an action",
-      );
+      throw new AppError(C.LEAD_STATUS_TRANSITION_FORBIDDEN, 403);
     }
   }
 
@@ -553,6 +541,7 @@ export async function getClientLeadsColumnStatus({ searchParams, isAdmin, user }
 
     return { data: result, totalValue, totalLeads };
   } catch (e) {
-    console.log(e.message, "error in column statsus");
+    console.error(e.message, "error in column status");
+    throw e;
   }
 }
