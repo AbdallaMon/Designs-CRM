@@ -6,6 +6,7 @@
 // lead id, then run the lead mutate check.
 import { ok, created } from "../../../shared/http/response.js";
 import { leadsMessagesCodes, messagesNames } from "@dms/shared";
+import { auditCtxFromReq } from "../../../infra/audit/record-action.js";
 import { leadUsecase } from "./lead.usecase.js";
 import { withListCapabilities } from "./lead.dto.js";
 
@@ -142,6 +143,7 @@ export class LeadController {
       body: req.body,
       authUser: req.auth,
       currentStatus: req.scoped?.status,
+      auditCtx: auditCtxFromReq(req),
     });
     return ok(res, null, updatePrice ? C.LEAD_PRICE_UPDATED : C.LEAD_STATUS_CHANGED, TK);
   };
@@ -159,7 +161,7 @@ export class LeadController {
   };
 
   createCall = async (req, res) => {
-    const data = await this.usecase.createCall({ id: req.params.id, body: req.body, authUser: req.auth });
+    const data = await this.usecase.createCall({ id: req.params.id, body: req.body, authUser: req.auth, auditCtx: auditCtxFromReq(req) });
     return created(res, data, C.CALL_REMINDER_CREATED, TK);
   };
 
@@ -202,7 +204,7 @@ export class LeadController {
 
   // ── price offers / payments / files / notes / reminders ────────────────────────
   createPriceOffer = async (req, res) => {
-    const data = await this.usecase.createPriceOffer({ id: req.params.id, body: req.body, authUser: req.auth });
+    const data = await this.usecase.createPriceOffer({ id: req.params.id, body: req.body, authUser: req.auth, auditCtx: auditCtxFromReq(req) });
     return created(res, data, C.PRICE_OFFER_CREATED, TK);
   };
 

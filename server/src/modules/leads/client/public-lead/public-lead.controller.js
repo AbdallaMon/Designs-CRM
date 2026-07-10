@@ -5,6 +5,7 @@
 // Legacy returned the lead under `data` with a `message` string — preserved as `data` + a code.
 import { ok, created } from "../../../../shared/http/response.js";
 import { leadsMessagesCodes, messagesNames } from "@dms/shared";
+import { auditCtxFromReq } from "../../../../infra/audit/record-action.js";
 import { publicLeadUsecase } from "./public-lead.usecase.js";
 
 const C = leadsMessagesCodes;
@@ -16,7 +17,7 @@ export class PublicLeadController {
   }
 
   createLead = async (req, res) => {
-    const lead = await this.usecase.createLead(req.body);
+    const lead = await this.usecase.createLead(req.body, auditCtxFromReq(req));
     return created(res, lead, C.CLIENT_LEAD_CREATED, TK);
   };
 

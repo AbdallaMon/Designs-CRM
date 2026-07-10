@@ -14,7 +14,8 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { leadsMessagesCodes as C } from "@dms/shared";
+import { leadsMessagesCodes as C, AUDIT_MODULES, AUDIT_ACTIONS } from "@dms/shared";
+import { recordAction } from "../../../infra/audit/record-action.js";
 import { leadRepository } from "./lead.repo.js";
 import { computeLeadCapabilities } from "./lead.dto.js";
 // Payment functions migrated to the leads/payment sub-entity (Stripe + email side effects).
@@ -422,7 +423,7 @@ export class LeadUsecase {
     return this.legacy.markClientLeadAsConverted(Number(body.id), body.reasonToConvert, "ON_HOLD");
   }
 
-  async changeStatus({ id, body, authUser, currentStatus }) {
+  async changeStatus({ id, body, authUser, currentStatus, auditCtx }) {
     const isAdmin = this.isAdminUser(authUser);
     // SECURITY: the legacy non-admin transition lock keys off `oldStatus`. A client
     // could forge `oldStatus` to bypass the FINALIZED/REJECTED/ARCHIVED/ON_HOLD lock
@@ -438,6 +439,17 @@ export class LeadUsecase {
       oldStatus: serverOldStatus,
       isAdmin,
       userId: Number(authUser.id),
+    });
+    // Semantic audit: lead status transition (before/after snapshot → diff).
+    await recordAction(auditCtx, {
+      module: AUDIT_MODULES.LEAD,
+      action: AUDIT_ACTIONS.LEAD_STATUS_CHANGED,
+      entityType: "ClientLead",
+      entityId: Number(id),
+      clientLeadId: Number(id),
+      summary: `Lead #${id} status ${serverOldStatus ?? "?"} → ${rest.status}`,
+      before: { status: serverOldStatus ?? null },
+      after: { status: rest.status },
     });
     return { updatePrice: Boolean(body.updatePrice) };
   }
@@ -471,8 +483,19 @@ export class LeadUsecase {
     return { items, total, page, pageSize: limit };
   }
 
-  async createCall({ id, body, authUser }) {
-    return this.legacy.createCallReminder({ clientLeadId: Number(id), userId: authUser.id, ...body });
+  async createCall({ id, body, authUser, auditCtx }) {
+    const result = await this.legacy.createCallReminder({ clientLeadId: Number(id), userId: authUser.id, ...body });
+    // Semantic audit: a call reminder was logged against the lead.
+    await recordAction(auditCtx, {
+      module: AUDIT_MODULES.LEAD,
+      action: AUDIT_ACTIONS.LEAD_CALL_LOGGED,
+      entityType: "ClientLead",
+      entityId: Number(id),
+      clientLeadId: Number(id),
+      summary: `Call logged on lead #${id}`,
+      detail: { reminderId: result?.newReminder?.id ?? null, time: result?.newReminder?.time ?? null },
+    });
+    return result;
   }
 
   async updateCall({ reminderId, body, authUser }) {
@@ -523,8 +546,23 @@ export class LeadUsecase {
   // ════════════════════════════════════════════════════════════════════════════
   //  PRICE OFFERS / PAYMENTS / FILES / NOTES / REMINDERS
   // ════════════════════════════════════════════════════════════════════════════
-  async createPriceOffer({ id, body, authUser }) {
-    return this.legacy.createPriceOffer({ clientLeadId: Number(id), userId: authUser.id, ...body });
+  async createPriceOffer({ id, body, authUser, auditCtx }) {
+    const result = await this.legacy.createPriceOffer({ clientLeadId: Number(id), userId: authUser.id, ...body });
+    // Semantic audit: a price offer was created for the lead.
+    await recordAction(auditCtx, {
+      module: AUDIT_MODULES.LEAD,
+      action: AUDIT_ACTIONS.PRICE_OFFER_CREATED,
+      entityType: "ClientLead",
+      entityId: Number(id),
+      clientLeadId: Number(id),
+      summary: `Price offer created on lead #${id}`,
+      detail: {
+        priceOfferId: result?.id ?? null,
+        minPrice: result?.minPrice ?? body?.priceOffer?.minPrice ?? null,
+        maxPrice: result?.maxPrice ?? body?.priceOffer?.maxPrice ?? null,
+      },
+    });
+    return result;
   }
 
   async changePriceOfferStatus({ body }) {

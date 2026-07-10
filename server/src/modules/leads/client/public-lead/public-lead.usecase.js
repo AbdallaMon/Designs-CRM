@@ -19,7 +19,8 @@
 // the guard failures, success codes via the controller). `lng` is still accepted for parity
 // but is no longer used to pick a string.
 import { AppError } from "../../../../shared/errors/AppError.js";
-import { leadsMessagesCodes } from "@dms/shared";
+import { leadsMessagesCodes, AUDIT_MODULES, AUDIT_ACTIONS } from "@dms/shared";
+import { recordAction } from "../../../../infra/audit/record-action.js";
 import { buildCooperationRequestEmail } from "./public-lead.email.js";
 import { publicLeadRepository } from "./public-lead.repo.js";
 
@@ -109,7 +110,7 @@ export class PublicLeadUsecase {
   }
 
   // POST /new-lead
-  async createLead(body) {
+  async createLead(body, auditCtx) {
     const client = await this.#resolveClientOrThrow(body);
 
     const data = {
@@ -140,6 +141,22 @@ export class PublicLeadUsecase {
     const clientLead = await this.repository.createLead(data);
     if (body.url) await this.legacy.uploadFile(body, clientLead.id);
     await this.legacy.newLeadNotification(clientLead.id, client, true);
+
+    // Semantic audit: a new lead entered the funnel (actor is null for the public form).
+    await recordAction(auditCtx, {
+      module: AUDIT_MODULES.LEAD,
+      action: AUDIT_ACTIONS.LEAD_CREATED,
+      entityType: "ClientLead",
+      entityId: clientLead.id,
+      clientLeadId: clientLead.id,
+      summary: `Lead #${clientLead.id} created`,
+      after: {
+        status: clientLead.status,
+        selectedCategory: clientLead.selectedCategory,
+        type: clientLead.type,
+        clientId: clientLead.clientId,
+      },
+    });
 
     return clientLead;
   }
