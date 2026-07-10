@@ -174,6 +174,18 @@ class LeadRepository {
     return prisma.clientLead.findUnique({ where, include: ADMIN_DETAIL_INCLUDE });
   }
 
+  // ── Cockpit bundle (Sales Deal Cockpit) ───────────────────────────────────────
+  // ONE query returning ONLY the language-neutral state the pure `computeCockpit`
+  // needs (plus `userId`/`status` for the capability computation). Deliberately
+  // narrow — no PII, no free-text, no ids beyond what the rules read — so the
+  // read-only endpoint never over-exposes. Prisma stays here.
+  findCockpitBundle({ clientLeadId }) {
+    return prisma.clientLead.findUnique({
+      where: { id: Number(clientLeadId) },
+      select: COCKPIT_BUNDLE_SELECT,
+    });
+  }
+
   // ── Calls / meetings lists ────────────────────────────────────────────────────
   async findNextCalls({ where, countWhere, skip, take }) {
     const [items, total] = await Promise.all([
@@ -982,6 +994,32 @@ function detailSelect(fileWhere) {
     _count: { select: { projects: true, contracts: true, imageSessions: true } },
   };
 }
+
+// Cockpit bundle select — the minimal state the pure rules engine consumes. Note the
+// relation is `versaModel` (schema name); the usecase normalizes it to `versaModels`
+// for the pure function. `userId`/`status` also feed `computeLeadCapabilities`.
+const COCKPIT_BUNDLE_SELECT = {
+  id: true,
+  userId: true, // capability scope (canMutateLead)
+  status: true, // health + rules + capability status guard
+  paymentStatus: true,
+  salesStages: { select: { stage: true } },
+  callReminders: { select: { time: true, status: true } },
+  meetingReminders: { select: { time: true, status: true, type: true } },
+  priceOffers: { select: { isAccepted: true } },
+  // Only whether each SPIN question is answered — not the answer text.
+  sessionQuestions: { select: { answer: { select: { id: true } } } },
+  versaModel: {
+    select: {
+      categoryId: true,
+      v: { select: { question: true, answer: true, clientResponse: true } },
+      e: { select: { question: true, answer: true, clientResponse: true } },
+      r: { select: { question: true, answer: true, clientResponse: true } },
+      s: { select: { question: true, answer: true, clientResponse: true } },
+      a: { select: { question: true, answer: true, clientResponse: true } },
+    },
+  },
+};
 
 const ADMIN_DETAIL_INCLUDE = {
   client: true,

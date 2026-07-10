@@ -57,6 +57,21 @@ export function computeLeadCapabilities(record, authUser) {
   );
 }
 
+/**
+ * Cockpit DTO — the read-only Sales Deal Cockpit response `data`. Combines the pure
+ * `computeCockpit` output (`{ health, actions }`) with the per-record capabilities so
+ * the FE gates each action CTA with the SAME predicate as the tab actions. `record` is
+ * the narrow cockpit bundle (it carries `userId`/`status`, which is all
+ * `computeLeadCapabilities` reads). Pure: no Prisma, no side effects.
+ */
+export function toCockpitDto(computed, record, authUser) {
+  return {
+    health: computed.health,
+    actions: computed.actions,
+    capabilities: computeLeadCapabilities(record, authUser),
+  };
+}
+
 /** Attach capabilities to a list of lead-shaped records. */
 export function withListCapabilities(items, authUser) {
   if (!Array.isArray(items)) return items;

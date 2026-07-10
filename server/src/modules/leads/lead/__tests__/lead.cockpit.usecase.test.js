@@ -1,0 +1,93 @@
+// Usecase test for getLeadCockpit — mocks the repo bundle (no DB), asserts the usecase
+// runs the pure engine, attaches capabilities from computeLeadCapabilities, and returns
+// the { health, actions, capabilities } DTO. `now` is injected for determinism.
+import { describe, it, expect, vi } from "vitest";
+import { LeadCockpitUsecase } from "../lead.cockpit.usecase.js";
+import { PERMISSIONS } from "@dms/shared";
+
+const P = PERMISSIONS.LEAD;
+const NOW = new Date("2026-07-10T12:00:00.000Z");
+const past = (h) => new Date(NOW.getTime() - h * 3600_000);
+
+// A sales user who OWNS lead #5 and holds the call/price-offer/status perms.
+const OWNER = {
+  id: 7,
+  role: "STAFF",
+  permissions: [P.VIEW, P.CALL_MANAGE, P.PRICE_OFFER_MANAGE, P.CHANGE_STATUS, P.PAYMENT_MANAGE, P.MEETING_MANAGE],
+};
+
+// The repo bundle shape (relation is `versaModel`, singular — usecase normalizes it).
+function bundle(overrides = {}) {
+  return {
+    id: 5,
+    userId: 7,
+    status: "INTERESTED",
+    paymentStatus: "PENDING",
+    salesStages: [{ stage: "WHATSAPP_QA" }],
+    callReminders: [{ time: past(48), status: "IN_PROGRESS" }], // overdue -> CALL_OVERDUE
+    meetingReminders: [],
+    priceOffers: [],
+    sessionQuestions: [],
+    versaModel: [],
+    ...overrides,
+  };
+}
+
+function makeUsecase(bundleRow) {
+  const repo = { findCockpitBundle: vi.fn().mockResolvedValue(bundleRow) };
+  return { uc: new LeadCockpitUsecase(repo), repo };
+}
+
+describe("LeadCockpitUsecase.getLeadCockpit", () => {
+  it("fetches the bundle by id and returns { health, actions, capabilities }", async () => {
+    const { uc, repo } = makeUsecase(bundle());
+    const data = await uc.getLeadCockpit({ clientLeadId: 5, authUser: OWNER, now: NOW });
+
+    expect(repo.findCockpitBundle).toHaveBeenCalledWith({ clientLeadId: 5 });
+    expect(data).toHaveProperty("health");
+    expect(data).toHaveProperty("actions");
+    expect(data).toHaveProperty("capabilities");
+    expect(data.health).toMatchObject({ status: "INTERESTED", currentStage: "WHATSAPP_QA" });
+  });
+
+  it("runs the pure engine: an overdue call surfaces CALL_OVERDUE first (critical)", async () => {
+    const { uc } = makeUsecase(bundle());
+    const data = await uc.getLeadCockpit({ clientLeadId: 5, authUser: OWNER, now: NOW });
+    expect(data.actions[0]).toMatchObject({ type: "CALL_OVERDUE", severity: "critical" });
+  });
+
+  it("normalizes the `versaModel` relation to `versaModels` for the engine", async () => {
+    const { uc } = makeUsecase(
+      bundle({
+        callReminders: [],
+        versaModel: [{ v: { question: "Why?", answer: null, clientResponse: null } }],
+      }),
+    );
+    const data = await uc.getLeadCockpit({ clientLeadId: 5, authUser: OWNER, now: NOW });
+    expect(data.actions.map((a) => a.type)).toContain("OBJECTION_UNHANDLED");
+  });
+
+  it("attaches capabilities from the auth user (owner + perms => canAddCall true)", async () => {
+    const { uc } = makeUsecase(bundle());
+    const data = await uc.getLeadCockpit({ clientLeadId: 5, authUser: OWNER, now: NOW });
+    expect(data.capabilities.canAddCall).toBe(true);
+    expect(data.capabilities.canAddPriceOffer).toBe(true);
+  });
+
+  it("gates capabilities for a non-owner scoped user (canAddCall false)", async () => {
+    // NOTE: object-scope denial happens at the route; here we only assert the
+    // capability predicate mirrors ownership — a different user cannot mutate.
+    const stranger = { id: 99, role: "STAFF", permissions: [P.VIEW, P.CALL_MANAGE] };
+    const { uc } = makeUsecase(bundle());
+    const data = await uc.getLeadCockpit({ clientLeadId: 5, authUser: stranger, now: NOW });
+    expect(data.capabilities.canAddCall).toBe(false);
+  });
+
+  it("throws LEAD_NOT_FOUND (404) when the bundle is missing", async () => {
+    const { uc } = makeUsecase(null);
+    await expect(uc.getLeadCockpit({ clientLeadId: 999, authUser: OWNER, now: NOW })).rejects.toMatchObject({
+      statusCode: 404,
+      message: "LEAD_NOT_FOUND",
+    });
+  });
+});
