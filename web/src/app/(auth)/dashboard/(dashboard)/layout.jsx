@@ -1,11 +1,6 @@
 "use client";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { toast } from "react-toastify";
-import {
-  Failed,
-  Success,
-} from "@/shared/components/feedback/loaders/toast/ToastUpdate";
 import { useAuth } from "@/app/providers/AuthProvider";
 import {
   AppBar,
@@ -51,7 +46,6 @@ import ChatWidget from "@/features/chat/components/chat/ChatWidget";
 
 const SIDENAV_COLLAPSED_KEY = "sidenav-collapsed";
 
-let toastId;
 export const adminLinks = [
   { name: "Dashboard", href: "/dashboard", icon: <FiGrid size={20} /> },
   { name: "Users", href: "/dashboard/users", icon: <FiUsers size={20} /> },
@@ -515,26 +509,14 @@ export default function Layout({ children }) {
     });
   };
 
+  // Session validation is SILENT — no per-page "validating/validated" toast. On a real
+  // logout (not logged in once validation settles) we redirect to /login; the redirect is
+  // the feedback, so no toast noise on every dashboard page.
   useEffect(() => {
-    async function fetchData() {
-      if (validatingAuth || toastId === undefined) {
-        toastId = toast.loading("Validating your session");
-      }
-      if (!isLoggedIn && !validatingAuth) {
-        window.localStorage.setItem("redirect", window.location.pathname);
-        toast.update(toastId, Failed("You must log in first, redirecting..."));
-        router.push("/login");
-        return;
-      }
-      if (isLoggedIn && !validatingAuth) {
-        toast.update(
-          toastId,
-          Success("Your session has been validated, loading data.")
-        );
-      }
+    if (!isLoggedIn && !validatingAuth) {
+      window.localStorage.setItem("redirect", window.location.pathname);
+      router.push("/login");
     }
-
-    fetchData();
   }, [validatingAuth]);
   if (!user || !user.role) return null;
 

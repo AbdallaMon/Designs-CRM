@@ -138,7 +138,15 @@ export const MoreActionsMenu = ({
               href={"admin/client-leads"}
               fullButtonWidth={true}
               handleClose={() => {
-                window.location.reload();
+                // Remove the deleted lead from local state instead of a full page reload.
+                if (setleads) {
+                  setleads((prev) => prev.filter((l) => l.id !== lead.id));
+                } else if (details?.refetchCore) {
+                  details.refetchCore();
+                  details.refreshKanban?.();
+                } else {
+                  window.location.reload();
+                }
               }}
             />
           </MenuItem>,
