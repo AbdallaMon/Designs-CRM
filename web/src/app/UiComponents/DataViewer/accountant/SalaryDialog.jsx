@@ -10,25 +10,12 @@ import {
   Typography,
   Box,
   Grid,
-  Avatar,
-  Divider,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
   CircularProgress,
-  Chip,
 } from "@mui/material";
 import {
   FaMoneyBillWave,
   FaCalendarAlt,
-  FaUserTie,
-  FaCheckCircle,
-  FaTimesCircle,
-  FaClock,
   FaFileInvoiceDollar,
 } from "react-icons/fa";
 import dayjs from "dayjs";
@@ -36,54 +23,14 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { getData } from "@/app/helpers/functions/getData";
-import { formatCurrency } from "@/app/helpers/functions/utility";
 import EditModal from "../../models/EditModal";
 import ProcessMonthlySalaryButton from "./MonthlySalaryDialog";
 import { NotesComponent } from "../utility/Notes";
-const inputs = [
-  {
-    data: {
-      id: "baseSalary",
-      type: "number",
-      label: "Base salary",
-      key: "baseSalary.baseSalary",
-    },
-    pattern: {
-      required: {
-        value: true,
-        message: "Please enter a Base salary",
-      },
-    },
-  },
-  {
-    data: {
-      id: "baseWorkHours",
-      type: "number",
-      label: "Base work hours",
-      key: "baseSalary.baseWorkHours",
-    },
-    pattern: {
-      required: {
-        value: true,
-        message: "Please enter a Base work hours",
-      },
-    },
-  },
-  {
-    data: {
-      id: "taxAmount",
-      type: "number",
-      label: "Tax amount",
-      key: "baseSalary.taxAmount",
-    },
-    pattern: {
-      required: {
-        value: true,
-        message: "Please enter a tax amount",
-      },
-    },
-  },
-];
+import { inputs } from "./config/salaryDialogConfig";
+import {
+  SalaryEmployeeInfoCard,
+  MonthlySalariesTable,
+} from "./SalaryDialogSections";
 const SalaryInfoButton = ({ userId }) => {
   const [open, setOpen] = useState(false);
   const [salaryData, setSalaryData] = useState(null);
@@ -241,70 +188,7 @@ const SalaryInfoButton = ({ userId }) => {
 
                 {/* Employee Information */}
                 <Grid size={{ xs: 12, md: 4 }}>
-                  <Paper elevation={3} sx={{ p: 3, height: "100%" }}>
-                    <Box
-                      display="flex"
-                      flexDirection="column"
-                      alignItems="center"
-                      mb={2}
-                    >
-                      <Typography variant="h6">
-                        {salaryData.employee.name}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        {salaryData.employee.email}
-                      </Typography>
-                      <Chip
-                        label={salaryData.employee.role}
-                        color="primary"
-                        size="small"
-                        sx={{ mt: 1 }}
-                      />
-                    </Box>
-                    <Divider sx={{ my: 2 }} />
-                    <Typography variant="subtitle1" gutterBottom>
-                      <FaUserTie
-                        style={{ marginRight: "10px", verticalAlign: "middle" }}
-                      />
-                      Base Salary Information
-                    </Typography>
-                    <Box sx={{ mt: 2 }}>
-                      <Grid container spacing={2}>
-                        <Grid size={6}>
-                          <Typography variant="body2" color="textSecondary">
-                            Base Salary:
-                          </Typography>
-                        </Grid>
-                        <Grid size={6}>
-                          <Typography variant="body1" fontWeight="bold">
-                            {formatCurrency(salaryData.baseSalary)}
-                          </Typography>
-                        </Grid>
-
-                        <Grid size={6}>
-                          <Typography variant="body2" color="textSecondary">
-                            Tax Amount:
-                          </Typography>
-                        </Grid>
-                        <Grid size={6}>
-                          <Typography variant="body1">
-                            {formatCurrency(salaryData.taxAmount)}
-                          </Typography>
-                        </Grid>
-
-                        <Grid size={6}>
-                          <Typography variant="body2" color="textSecondary">
-                            Base Work Hours:
-                          </Typography>
-                        </Grid>
-                        <Grid size={6}>
-                          <Typography variant="body1">
-                            {salaryData.baseWorkHours} hours
-                          </Typography>
-                        </Grid>
-                      </Grid>
-                    </Box>
-                  </Paper>
+                  <SalaryEmployeeInfoCard salaryData={salaryData} />
                 </Grid>
 
                 {/* Monthly Salaries */}
@@ -317,71 +201,9 @@ const SalaryInfoButton = ({ userId }) => {
                       Monthly Salaries
                     </Typography>
 
-                    {salaryData.monthlySalaries.length > 0 ? (
-                      <TableContainer component={Paper} elevation={0}>
-                        <Table>
-                          <TableHead>
-                            <TableRow>
-                              <TableCell>Month</TableCell>
-                              <TableCell>Hours</TableCell>
-                              <TableCell>Overtime</TableCell>
-                              <TableCell>Bonuses</TableCell>
-                              <TableCell>Deductions</TableCell>
-                              <TableCell>Net Salary</TableCell>
-                              <TableCell>Status</TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {salaryData.monthlySalaries.map((salary) => (
-                              <TableRow key={salary.id}>
-                                <TableCell>
-                                  {dayjs(salary.createdAt).format("MMM YYYY")}
-                                </TableCell>
-                                <TableCell>
-                                  <Box display="flex" alignItems="center">
-                                    <FaClock style={{ marginRight: "5px" }} />
-                                    {salary.totalHoursWorked}
-                                  </Box>
-                                </TableCell>
-                                <TableCell>{salary.overtimeHours}</TableCell>
-                                <TableCell>
-                                  {formatCurrency(salary.bonuses)}
-                                </TableCell>
-                                <TableCell>
-                                  {formatCurrency(salary.deductions)}
-                                </TableCell>
-                                <TableCell sx={{ fontWeight: "bold" }}>
-                                  {formatCurrency(salary.netSalary)}
-                                </TableCell>
-                                <TableCell>
-                                  {salary.isFulfilled ? (
-                                    <Chip
-                                      icon={<FaCheckCircle />}
-                                      label="Fulfilled"
-                                      color="success"
-                                      size="small"
-                                    />
-                                  ) : (
-                                    <Chip
-                                      icon={<FaTimesCircle />}
-                                      label="Didnot fulfilled"
-                                      color="warning"
-                                      size="small"
-                                    />
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </TableContainer>
-                    ) : (
-                      <Box py={3} textAlign="center">
-                        <Typography color="textSecondary">
-                          No salary records found for the selected date range.
-                        </Typography>
-                      </Box>
-                    )}
+                    <MonthlySalariesTable
+                      monthlySalaries={salaryData.monthlySalaries}
+                    />
                   </Paper>
                 </Grid>
               </Grid>
