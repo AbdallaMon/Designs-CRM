@@ -1,7 +1,6 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
-  Box,
   Button,
   FormControl,
   InputLabel,
@@ -12,12 +11,29 @@ import {
   Typography,
 } from "@mui/material";
 import { FiEye, FiRefreshCw } from "react-icons/fi";
+import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import AdminTable from "@/shared/components/AdminTable";
-import { initialPageLimit } from "@/app/helpers/constants";
 import { auditColumns } from "@/features/audit/config/columns.jsx";
-import { auditFilters } from "@/features/audit/config/filters.js";
-import { getAuditLogs } from "@/features/audit/services/auditService.js";
+import { auditFilters, AUDIT_FILTER_KEYS } from "@/features/audit/config/filters.js";
+import { AUDIT_LOGS_URL } from "@/features/audit/config/constant.js";
 import AuditDetailDrawer from "@/features/audit/AuditDetailDrawer.jsx";
+
+// The audit backend reads FLAT query params (actorUserId, module, action, entityType,
+// entityId, clientLeadId, from, to) straight off `req.query` — NOT getData's `filters`
+// JSON blob. `useDataFetcher`/`getData` send `page` + `limit` natively and append the
+// `others` string raw, so the active filters are serialized into `others` here. Empty
+// values are skipped so they never reach the Prisma where.
+function buildFilterQuery(filters) {
+  const params = new URLSearchParams();
+  for (const key of AUDIT_FILTER_KEYS) {
+    const value = filters[key];
+    if (value === undefined || value === null) continue;
+    const str = String(value).trim();
+    if (str === "") continue;
+    params.append(key, str);
+  }
+  return params.toString();
+}
 
 // Row action injected into AdminTable's `extraComponent` — opens the detail drawer.
 function ViewAction({ item, onView }) {
@@ -86,46 +102,31 @@ function FilterField({ config, value, onChange }) {
   );
 }
 
-// The admin-only, config-driven, paginated audit-log table. Manages page/limit/filter
-// state locally and fetches through the shared `getData`-backed service (no raw fetch).
+// The admin-only, config-driven, paginated audit-log table. Fetching/pagination/error
+// state come from the shared `useDataFetcher` hook (same convention as UsersPage); the
+// filter bar commits its draft into the hook's `others` on Apply.
 export default function AuditLogTable() {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(initialPageLimit);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [error, setError] = useState(null);
+  const {
+    data,
+    loading,
+    setData,
+    page,
+    setPage,
+    limit,
+    setLimit,
+    total,
+    setTotal,
+    totalPages,
+    setOthers,
+    error,
+  } = useDataFetcher(AUDIT_LOGS_URL, false);
 
-  // `draft` = the values in the bar; `applied` = what the fetch actually uses. The
-  // Apply button commits draft → applied so typing doesn't refetch on every keystroke.
+  // `draft` = the values currently in the bar. The Apply button commits draft → the
+  // hook's `others` so typing doesn't refetch on every keystroke.
   const [draft, setDraft] = useState({});
-  const [applied, setApplied] = useState({});
 
   const [selected, setSelected] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      const res = await getAuditLogs({ page, limit, filters: applied, setLoading });
-      if (!active) return;
-      if (res && res.status === 200) {
-        setData(Array.isArray(res.data) ? res.data : []);
-        setTotal(res.total || 0);
-        setTotalPages(res.totalPages || 0);
-        setError(null);
-      } else if (res) {
-        setData([]);
-        setTotal(0);
-        setTotalPages(0);
-        setError(res.error?.reason || "Could not load the audit log.");
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [page, limit, applied]);
 
   const handleDraftChange = useCallback((key, value) => {
     setDraft((prev) => ({ ...prev, [key]: value }));
@@ -133,14 +134,14 @@ export default function AuditLogTable() {
 
   const applyFilters = useCallback(() => {
     setPage(1);
-    setApplied({ ...draft });
-  }, [draft]);
+    setOthers(buildFilterQuery(draft));
+  }, [draft, setPage, setOthers]);
 
   const resetFilters = useCallback(() => {
     setDraft({});
-    setApplied({});
     setPage(1);
-  }, []);
+    setOthers("");
+  }, [setPage, setOthers]);
 
   const openDrawer = useCallback((item) => {
     setSelected(item);
@@ -198,7 +199,7 @@ export default function AuditLogTable() {
           </Stack>
           {error && (
             <Typography variant="body2" color="error">
-              {error}
+              Could not load the audit log.
             </Typography>
           )}
         </Stack>
