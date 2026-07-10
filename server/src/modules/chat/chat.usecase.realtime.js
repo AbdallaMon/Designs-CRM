@@ -1,4 +1,11 @@
-import { getIo } from "../../infra/socket/index.js";
+// Lazily resolve the socket server at call time. A static `import { getIo }`
+// here would recreate a load-order-fragile cycle:
+// infra/socket/index.js → chat.socket.js → chat.usecase.js → this file →
+// infra/socket/index.js. The dynamic import is cached by the module loader, so
+// this only defers resolution; the io instance and emit behavior are unchanged.
+async function getIo() {
+  return (await import("../../infra/socket/index.js")).getIo();
+}
 
 /**
  * Realtime concern of ChatUsecase — socket emit helpers, presence, and typing.
@@ -16,7 +23,7 @@ export const realtimeMethods = {
     event,
     content,
   }) {
-    const io = getIo();
+    const io = await getIo();
     const members = await this.repository.getActiveMembersExcluding({
       roomId,
       userId,
@@ -29,7 +36,7 @@ export const realtimeMethods = {
   },
 
   async emitToAllMembers({ roomId, event, content }) {
-    const io = getIo();
+    const io = await getIo();
     const members = await this.repository.getActiveMembers(roomId);
     for (const m of members) {
       if (m.userId) io.to(`user:${m.userId}`).emit(event, content);

@@ -1,4 +1,11 @@
-import { getIo } from "../../infra/socket/index.js";
+// Lazily resolve the socket server at call time. A static `import { getIo }`
+// here would recreate a load-order-fragile cycle:
+// infra/socket/index.js → chat.socket.js → chat.usecase.js → this file →
+// infra/socket/index.js. The dynamic import is cached by the module loader, so
+// this only defers resolution; the io instance and emit behavior are unchanged.
+async function getIo() {
+  return (await import("../../infra/socket/index.js")).getIo();
+}
 
 /**
  * Calls concern of ChatUsecase — socket-triggered call lifecycle. Prototype-
@@ -14,7 +21,7 @@ export const callMethods = {
       initiatorId: userId,
       type: callType,
     });
-    const io = getIo();
+    const io = await getIo();
     io.to(`room:${roomId}`).emit("call:initiated", {
       callId: call.id,
       callType,
@@ -28,7 +35,7 @@ export const callMethods = {
   async answerCall({ callId, roomId, userId }) {
     await this.repository.updateCall(callId, { status: "ONGOING" });
     await this.repository.addCallParticipant({ callId, userId });
-    const io = getIo();
+    const io = await getIo();
     io.to(`room:${roomId}`).emit("call:answered", {
       callId: Number(callId),
       answeredBy: Number(userId),
@@ -45,7 +52,7 @@ export const callMethods = {
       const duration = Math.floor((new Date() - call.startedAt) / 1000);
       await this.repository.updateCall(callId, { duration });
     }
-    const io = getIo();
+    const io = await getIo();
     io.to(`room:${roomId}`).emit("call:ended", {
       callId: Number(callId),
       endedBy: Number(userId),
