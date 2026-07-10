@@ -103,7 +103,8 @@ If docs conflict (with each other or the code), **07 wins for resolved decisions
 ### Backend layering (strict)
 `route → controller → usecase → repository` (+ `validation`, + `dto`) — the six-file module shape.
 - Routes only wire middleware. Controllers stay thin (coerce input, call a usecase, respond). **All business logic lives in usecases.** **Prisma lives ONLY in repositories** (sanctioned `prisma.$transaction` escape hatch for multi-repo writes).
-- File suffix is **`.repository.js`** (the repo's existing convention; the reference uses `.repo.js` — we keep `.repository.js`).
+- File suffix is **`.repo.js`** and **`.route.js`** (matching the reference repos). *(Updated 2026-07-10 on `reorg/ref-alignment`: the old `.repository.js`/`.routes.js` were renamed to `.repo.js`/`.route.js` per user decision. The former `.repository.js` lock is superseded.)*
+- The old `server/src/shared/legacy/` cross-module barrel has been **dissolved** — its services were decomposed into their owner modules' layers; there is no `shared/legacy` anymore. The remaining `legacy/` folders are only the **frozen PDF tier** (`contracts/legacy`, `image-sessions/legacy/client-services.js`) + the barrel-split `infra/notifications/legacy/` sub-files.
 
 ### API contract & message codes
 - One envelope everywhere: `{ success, message, data, translationKey }`. `message` is **always a language-neutral CODE**, never user-facing prose.

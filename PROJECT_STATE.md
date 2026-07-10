@@ -3,7 +3,22 @@
 > **Open this file in any new chat.** It tells you what we are doing and where we have reached.
 > To resume: *"Read `PROJECT_STATE.md`, `CLAUDE.md`, and `docs/migration/`, then tell me where we are and what's next."*
 >
-> Last updated: **2026-07-04** · Branch: `frontend-redesign`
+> Last updated: **2026-07-10** · Branch: `frontend-redesign` (reorg work on `reorg/ref-alignment`)
+>
+> **LATEST (2026-07-10) — Ref-alignment reorganization (behavior-preserving) on branch `reorg/ref-alignment`.**
+> A large file/structure reorg to match the reference monorepos (`Transaction-app` request-flow, `school-system`
+> validation). **46 commits, all verified green** (backend `npm test` 733/57, `next build` OK, 0 broken imports).
+> DONE: suffix rename `*.repository.js`→`*.repo.js` + `*.routes.js`→`*.route.js`; extracted shared `pagination.js`;
+> **decomposed every non-frozen `legacy/` folder into proper module layers** (Prisma repo-only) and **deleted the
+> `shared/legacy` barrel**; split the god-files (`admin-services.js` 2246L→10 modules; infra `legacy-notification`
+> 1355L + `telegram-functions` 1149L split behind barrels; ~25 frontend god-files split, configs extracted).
+> **🔴 Also fixed a real production bug**: the staged services-elimination had **71 broken lazy-import paths** (extra
+> `../`) that threw `ERR_MODULE_NOT_FOUND` at runtime — masked by mock-seam tests. **The branch needs a runtime
+> server smoke.** Frozen PDF tier (`contracts/legacy`, `image-sessions/legacy/client-services.js`) left AS-IS per
+> §4 (no byte-diff harness). **REMAINING (one phase):** the frontend `features/` migration (relocate
+> `app/UiComponents/DataViewer/*` → `src/features/*`) — a pure mechanical relocation, not yet done. Full detail:
+> `docs/superpowers/plans/2026-07-09-ref-alignment-PROGRESS.md` + `…-reorg-master.md`. NOTE: this reorg is on a
+> separate branch and NOT yet merged into `frontend-redesign`.
 >
 > **LATEST (2026-07-04) — UI language reverted to English (matching `master`).**
 > The redesign had introduced ~1050 Arabic UI strings on top of `master`; these were converted back to
