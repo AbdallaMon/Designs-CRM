@@ -22,7 +22,14 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 
-export function AssignNewStaffModal({ lead, onUpdate }) {
+export function AssignNewStaffModal({
+  lead,
+  onUpdate,
+  // Labels are overridable so the New-leads card can read "Assign lead" while the
+  // in-detail overflow menu keeps its original "Convert lead" wording (same action).
+  triggerLabel = "Convert lead",
+  title = "Convert lead to new staff",
+}) {
   const [userId, setUserId] = useState("");
   const [open, setOpen] = useState(false);
   const [users, setUsers] = useState([]);
@@ -85,14 +92,14 @@ export function AssignNewStaffModal({ lead, onUpdate }) {
   return (
     <Box>
       <Button variant="contained" fullWidth onClick={() => setOpen(true)}>
-        Convert lead
+        {triggerLabel}
       </Button>
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
         PaperProps={{ sx: { width: "400px", maxWidth: "100%" } }}
       >
-        <DialogTitle>Convert lead to new staff</DialogTitle>
+        <DialogTitle>{title}</DialogTitle>
         <DialogContent>
           <FormControl fullWidth sx={{ mt: 1 }}>
             <InputLabel id="designer-label">Select Staff</InputLabel>

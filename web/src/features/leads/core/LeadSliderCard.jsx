@@ -123,10 +123,13 @@ export function LeadSliderCard({ lead, setData }) {
             {canAssignOther && (
               <AssignNewStaffModal
                 lead={lead}
+                triggerLabel="Assign lead"
+                title="Assign lead to staff"
                 onUpdate={() => setData((data) => data.filter((l) => l.id !== lead.id))}
               />
             )}
-            {user.role === "STAFF" && !user.isSuperSales && (
+            {/* Claimant path: a STAFF whose ACTIVE profile is not super-sales (profile-based, no isSuperSales flag). */}
+            {user.role === "STAFF" && user.profile !== "SUPER_SALES" && (
               <ConfirmWithActionModel
                 title="Are you sure you want to get this lead and assign it to you as a new deal?"
                 handleConfirm={() => createADeal(lead)}

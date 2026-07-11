@@ -268,7 +268,6 @@ export class LeadUsecase {
   // self-scoping the legacy ROUTE applied before calling them.
   async deals({ query, authUser }) {
     const searchParams = { ...query };
-    const admin = this.isAdminUser(authUser);
     if (
       authUser.role !== "ADMIN" &&
       authUser.role !== "SUPER_ADMIN" &&

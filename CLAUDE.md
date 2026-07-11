@@ -32,6 +32,7 @@ The backend + frontend migration into a **clean, modular npm-workspaces monorepo
 5. **Single-language UI = English (matching `master`), no bilingual i18n; keep the message-code mechanism** resolving to one English source. (Superseded the earlier "single Arabic" decision on 2026-07-04; only master's own handful of Arabic strings remain.)
 6. **Baseline for parity = the deployed `master` branch.** New work must keep observable behavior identical to master unless a change is explicitly decided + documented.
 7. **Workers run as a bootstrap from the server only** (no detached worker processes).
+8. **Profiles are the sole source of truth for sales tier — NOT the `isSuperSales`/`isPrimary` flags.** (Decided 2026-07-11.) A user "is super-sales" / "is primary" iff their **active profile** is `SUPER_SALES` / `PRIMARY_SALES` (`SUPER_SALES ⊇ PRIMARY_SALES`). Both authorization/**search** scoping AND **display** derive from the active profile — backend via `authUser.currentProfileKey` / `authUser.isAdminTier`, frontend via `user.profile`. The `isPrimary`/`isSuperSales` **columns stay in the schema** but are READ in exactly one place each: (a) the boot **backfill/derivation** (`deriveProfilesFromLegacy` / `resolveProfileKey`) that maps legacy accounts to profiles, and (b) the **user-CRUD legacy WRITE-sync** (`setUserProfile`) that keeps the columns consistent for the frozen legacy services. Everywhere else, reading `isSuperSales`/`isPrimary` is a bug. Leads module is migrated; the rest of the codebase sweep is tracked (see `PROJECT_STATE.md`).
 
 ---
 
@@ -113,6 +114,7 @@ If docs conflict (with each other or the code), **07 wins for resolved decisions
 
 ### Permissions (the weak point being fixed)
 - **Never authorize on role alone. No wildcards.** Authorization = authentication + permission code + object scope + status/workflow guard.
+- **Sales tier comes from the active profile, never the flags** (see §2.8): derive super-sales/primary from `authUser.currentProfileKey` / `authUser.isAdminTier` (backend) or `user.profile` (frontend). Do **not** read `authUser.isSuperSales` / `isPrimary` in module logic — the only sanctioned flag reads are the boot backfill derivation and the user-CRUD write-sync.
 - `requirePermissions` route guard + object-scope checkers (`checkIfUserCanAccessX` / `MutateX`) that **throw** on denial. `auth/me` returns flattened `permissions[]` + `permissionsByModule{}`; scoped list/detail dtos attach per-record `capabilities.*`.
 - System-managed status changes go through dedicated **`POST /:id/actions/<kebab>`** endpoints — never a generic PATCH.
 
