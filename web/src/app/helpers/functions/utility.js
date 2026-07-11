@@ -190,7 +190,7 @@ export const checkIfPrimaryStaff = (user) => {
   return (
     (user.role === "STAFF" ||
       user.subRoles?.some((r) => r.subRole === "STAFF")) &&
-    user.isPrimary
+    user.profile === "PRIMARY_SALES"
   );
 };
 export const checkIfAdmin = (user) => {
@@ -205,7 +205,7 @@ export const checkIfAdminOnly = (user) => {
 };
 export const checkIfAdminOrSuperSales = (user) => {
   return (
-    user.role === "ADMIN" || user.role === "SUPER_ADMIN" || user.isSuperSales
+    user.role === "ADMIN" || user.role === "SUPER_ADMIN" || user.profile === "SUPER_SALES"
   );
 };
 
@@ -213,7 +213,7 @@ export const checkIfAdminOrSuperOrContactInitiator = (user) => {
   return (
     user.role === "ADMIN" ||
     user.role === "SUPER_ADMIN" ||
-    user.isSuperSales ||
+    user.profile === "SUPER_SALES" ||
     user.role === "CONTACT_INITIATOR"
   );
 };
