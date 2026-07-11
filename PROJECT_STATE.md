@@ -3,9 +3,26 @@
 > **Open this file in any new chat.** It tells you what we are doing and where we have reached.
 > To resume: *"Read `PROJECT_STATE.md`, `CLAUDE.md`, and `docs/migration/`, then tell me where we are and what's next."*
 >
-> Last updated: **2026-07-10** · Branch: `frontend-redesign` (reorg work on `reorg/ref-alignment`; Sales/Admin feature work on `feat/audit-log-sales-admin`)
+> Last updated: **2026-07-11** · Branch: `frontend-redesign` (reorg work on `reorg/ref-alignment`; Sales/Admin feature work on `feat/audit-log-sales-admin`)
 >
-> **LATEST (2026-07-10) — Sales/Admin feature workstream on branch `feat/audit-log-sales-admin` (off `reorg/ref-alignment`).**
+> **LATEST (2026-07-11) — Profile-Aware Deal Cockpit on branch `feat/audit-log-sales-admin`.**
+> The Sales Deal Cockpit now speaks to EVERY person by their **active profile** instead of going dark at `FINALIZED`.
+> Full spec→plan→build→TDD (`docs/superpowers/specs/2026-07-11-*`, `docs/superpowers/plans/2026-07-11-profile-aware-deal-cockpit.md`).
+> **(1)** The pure `computeCockpit` engine gained a `profileKey` input + a widened language-neutral bundle (active
+> `Contract` + its `ContractStage`s/`ContractPayment`s) and a profile-scoped rule registry; the `FINALIZED` **blackout is
+> removed** (only `REJECTED`/`ARCHIVED` stay action-silent) and the sales funnel rules are suppressed on closed-won deals
+> (fixes the `1/10 + Finalized + "nothing to action"` contradiction). New sales signals: `SIGNING_AWAITED`,
+> `CONTRACT_STAGE_IN_PROGRESS`, `AFTER_SALES_DUE`, `CONTRACT_COMPLETED` (replacing the proxy `AWAIT_SIGNATURE`); `health`
+> gains `contract` + `payment` blocks (payment **derived from `ContractPayment`** — `ClientLead.paymentStatus` is inert —
+> **no migration**). **(2)** Accountant rule set: `DOWNPAYMENT_DUE`/`PAYMENT_DUE`. **(3)** Designers/executor get an
+> assignment-scoped `WORK_STAGE_ASSIGNED_TO_YOU` strip on their own `PreviewWorkStage` surface (pure
+> `computeWorkStageActions` + a legacy `lead.projects` adapter wired into `designerLeadDetail`) — **no lead-IDOR widening,
+> no legacy edit**. FE: new signal copy in `cockpitActions.jsx`, contract `LEVEL_N/7` in `DealHealthBar`, new
+> `WorkStageCockpit.jsx`. **Verified: leads module 75 green (cockpit unit/usecase/integration + work-stage); `next build`
+> compiled OK.** (Pre-existing, unrelated: 2 failing cases in `projects.security-fixes.test.js` — Zod strict-update schema,
+> present before this work.)
+>
+> **PRIOR (2026-07-10) — Sales/Admin feature workstream on branch `feat/audit-log-sales-admin` (off `reorg/ref-alignment`).**
 > Three new features, each spec→plan→build→review→verify (specs/plans in `docs/superpowers/`), all following the
 > repo's layered conventions. **Full suite 855 green; `next build` exit 0; security + convention reviewed.**
 > **(1) Action Audit Log** — new additive `ActionAuditLog` model; non-blocking `recordAction` infra (secret-redacting
