@@ -216,18 +216,86 @@ describe("computeCockpit — info rules", () => {
     expect(types(result)).not.toContain("ADVANCE_STAGE");
   });
 
-  it("AWAIT_SIGNATURE when an offer is accepted and the deal is not finalized", () => {
-    const bundle = baseBundle({
-      status: "NEGOTIATING",
-      priceOffers: [{ isAccepted: true }],
-      callReminders: [{ time: future(24), status: "IN_PROGRESS" }],
-      salesStages: [{ stage: "HANDLE_OBJECTIONS" }],
+});
+
+describe("computeCockpit — contract health + post-finalize (Phase 1)", () => {
+  const withContract = (over = {}) =>
+    baseBundle({
+      status: "FINALIZED",
+      salesStages: [{ stage: "INITIAL_CONTACT" }],
+      contracts: [
+        {
+          id: 1,
+          status: "IN_PROGRESS",
+          sessionStatus: "SIGNING",
+          stages: [
+            { title: "LEVEL_1", stageStatus: "COMPLETED", order: 1 },
+            { title: "LEVEL_2", stageStatus: "IN_PROGRESS", order: 2 },
+            { title: "LEVEL_3", stageStatus: "NOT_STARTED", order: 3 },
+          ],
+        },
+      ],
+      ...over,
     });
-    const result = computeCockpit(bundle, NOW);
-    expect(types(result)).toContain("AWAIT_SIGNATURE");
-    const a = result.actions.find((x) => x.type === "AWAIT_SIGNATURE");
+
+  it("derives health.contract from the active contract stages", () => {
+    const { health } = computeCockpit(withContract(), NOW);
+    expect(health.contract).toMatchObject({
+      status: "IN_PROGRESS",
+      sessionStatus: "SIGNING",
+      currentLevel: "LEVEL_2",
+      levelsDone: 1,
+      levelsTotal: 3,
+    });
+  });
+
+  it("health.contract is null when there is no contract", () => {
+    const { health } = computeCockpit(baseBundle({ status: "IN_PROGRESS" }), NOW);
+    expect(health.contract).toBeNull();
+  });
+
+  it("FINALIZED is NO LONGER a blackout — emits contract signals (fixes the 1/10 bug)", () => {
+    const t = types(computeCockpit(withContract(), NOW));
+    expect(t).toContain("SIGNING_AWAITED");
+    expect(t).toContain("CONTRACT_STAGE_IN_PROGRESS");
+    expect(t).not.toContain("ADVANCE_STAGE");
+  });
+
+  it("SIGNING_AWAITED fires on sessionStatus SIGNING (warning, contracts tab)", () => {
+    const a = computeCockpit(withContract(), NOW).actions.find((x) => x.type === "SIGNING_AWAITED");
+    expect(a.severity).toBe("warning");
+    expect(a.cta).toMatchObject({ kind: "GOTO_TAB", capability: null, tabKey: "contracts" });
+  });
+
+  it("CONTRACT_STAGE_IN_PROGRESS carries level params", () => {
+    const a = computeCockpit(withContract(), NOW).actions.find((x) => x.type === "CONTRACT_STAGE_IN_PROGRESS");
     expect(a.severity).toBe("info");
-    expect(a.cta).toMatchObject({ kind: "GOTO_TAB", tabKey: "contracts" });
+    expect(a.params).toMatchObject({ level: "LEVEL_2", levelsDone: 1, levelsTotal: 3 });
+  });
+
+  it("AFTER_SALES_DUE when contract COMPLETED and no after-sales stage yet", () => {
+    const bundle = withContract({
+      contracts: [{ id: 1, status: "COMPLETED", sessionStatus: "REGISTERED", stages: [{ title: "LEVEL_1", stageStatus: "COMPLETED", order: 1 }] }],
+      salesStages: [{ stage: "DEAL_CLOSED" }],
+    });
+    const t = types(computeCockpit(bundle, NOW));
+    expect(t).toContain("AFTER_SALES_DUE");
+    expect(t).not.toContain("CONTRACT_COMPLETED");
+  });
+
+  it("CONTRACT_COMPLETED when contract COMPLETED and after-sales already done", () => {
+    const bundle = withContract({
+      contracts: [{ id: 1, status: "COMPLETED", sessionStatus: "REGISTERED", stages: [{ title: "LEVEL_1", stageStatus: "COMPLETED", order: 1 }] }],
+      salesStages: [{ stage: "AFTER_SALES_FOLLOWUP" }],
+    });
+    const t = types(computeCockpit(bundle, NOW));
+    expect(t).toContain("CONTRACT_COMPLETED");
+    expect(t).not.toContain("AFTER_SALES_DUE");
+  });
+
+  it("a non-sales profile with no matching rule set gets no sales actions", () => {
+    const result = computeCockpit(withContract(), NOW, { profileKey: "ACCOUNTANT" });
+    expect(types(result)).not.toContain("SIGNING_AWAITED");
   });
 });
 
@@ -248,23 +316,23 @@ describe("computeCockpit — sorting & suppression", () => {
     expect(severities).toEqual([...severities].sort((a, b) => ({ critical: 0, warning: 1, info: 2 }[a] - { critical: 0, warning: 1, info: 2 }[b])));
   });
 
-  it("terminal status FINALIZED → health only, no actions", () => {
+  it("FINALIZED with no contract → no sales nag, isTerminal true", () => {
     const bundle = baseBundle({
       status: "FINALIZED",
-      paymentStatus: "OVERDUE", // would be critical if not terminal
+      paymentStatus: "OVERDUE",
       callReminders: [{ time: past(48), status: "IN_PROGRESS" }],
       priceOffers: [],
       salesStages: [{ stage: "DEAL_CLOSED" }],
     });
     const result = computeCockpit(bundle, NOW);
-    expect(result.actions).toEqual([]);
+    expect(types(result)).not.toContain("ADVANCE_STAGE");
     expect(result.health.status).toBe("FINALIZED");
     expect(result.health.isTerminal).toBe(true);
     expect(result.health.currentStage).toBe("DEAL_CLOSED");
   });
 
-  it.each(["CONVERTED", "REJECTED", "ARCHIVED"])(
-    "terminal status %s → no actions",
+  it.each(["REJECTED", "ARCHIVED"])(
+    "dead status %s → no actions",
     (status) => {
       const result = computeCockpit(
         baseBundle({ status, paymentStatus: "OVERDUE", callReminders: [{ time: past(2), status: "IN_PROGRESS" }] }),

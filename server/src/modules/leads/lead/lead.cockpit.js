@@ -30,8 +30,26 @@ const STAGE_ORDER = [
   "AFTER_SALES_FOLLOWUP",
 ];
 
-// Deal is closed/terminal: return the health summary ONLY, never a nagging action.
+// `isTerminal` (health flag): the deal is closed/won/lost — the FE shows the "closed" summary.
 const TERMINAL_STATUSES = ["FINALIZED", "CONVERTED", "REJECTED", "ARCHIVED"];
+
+// Action-silent statuses: a lost/dead deal gets NO actions at all.
+const DEAD_STATUSES = ["REJECTED", "ARCHIVED"];
+
+// Closed-won: the sales FUNNEL rules are suppressed (no "advance to social-media check" on a
+// finalized deal — the §0 bug), but the CONTRACT signals still run.
+const CLOSED_WON = ["FINALIZED", "CONVERTED"];
+
+// Profile → which rule set to emit. SALES is the default (back-compat + a missing profileKey).
+const PROFILE_TO_RULESET = {
+  NORMAL_SALES: "SALES",
+  PRIMARY_SALES: "SALES",
+  SUPER_SALES: "SALES",
+  CONTACT_INITIATOR: "SALES",
+  ADMIN: "SALES", // admins see the sales view for now (WORK_STAGE_BLOCKED is a later add)
+  SUPER_ADMIN: "SALES",
+  ACCOUNTANT: "ACCOUNTANT", // rules added in Phase 2
+};
 
 // Deal is actively being worked (chasing a touch / advancing the stage makes sense).
 const ACTIVE_STATUSES = ["IN_PROGRESS", "INTERESTED", "NEEDS_IDENTIFIED", "NEGOTIATING"];
@@ -91,7 +109,23 @@ function sortActions(actions) {
     .map((x) => x.a);
 }
 
-/** Deal-health summary: stage progress + status/payment/offer facts. */
+// The active contract on the bundle (0 or 1 entry — the latest IN_PROGRESS/COMPLETED).
+function firstContract(bundle) {
+  return arr(bundle.contracts)[0] ?? null;
+}
+
+// Contract work-stage progress (LEVEL_1..7). `currentLevel` = the IN_PROGRESS stage's title.
+function contractStageProgress(stages) {
+  const list = arr(stages);
+  const inProgress = list.find((s) => s.stageStatus === "IN_PROGRESS");
+  return {
+    currentLevel: inProgress?.title ?? null,
+    levelsDone: list.filter((s) => s.stageStatus === "COMPLETED").length,
+    levelsTotal: list.length,
+  };
+}
+
+/** Deal-health summary: sales-stage progress + status/payment/offer facts + contract progress. */
 function computeHealth(bundle) {
   const presentIndices = arr(bundle.salesStages)
     .map((s) => STAGE_ORDER.indexOf(s.stage))
@@ -100,6 +134,7 @@ function computeHealth(bundle) {
   const currentStage = maxIdx >= 0 ? STAGE_ORDER[maxIdx] : null;
   const nextStage = maxIdx + 1 < STAGE_ORDER.length ? STAGE_ORDER[maxIdx + 1] : null;
   const status = bundle.status ?? null;
+  const contract = firstContract(bundle);
   return {
     status,
     isTerminal: TERMINAL_STATUSES.includes(status), // deal closed → FE shows the "closed" summary
@@ -109,16 +144,187 @@ function computeHealth(bundle) {
     stageIndex: maxIdx, // 0-based index of the current stage; -1 = NOT_INITIATED
     stageCount: STAGE_ORDER.length,
     hasAcceptedPriceOffer: arr(bundle.priceOffers).some((p) => p.isAccepted === true),
+    // Contract track (null pre-contract): reconciles the misleading sales "N/10" post-finalize.
+    contract: contract
+      ? {
+          status: contract.status,
+          sessionStatus: contract.sessionStatus ?? null,
+          ...contractStageProgress(contract.stages),
+        }
+      : null,
   };
 }
 
+// ── SALES rule set ───────────────────────────────────────────────────────────
+// The pre-sale FUNNEL rules (1-8) run only while the deal is NOT closed-won, so a
+// finalized deal is never nagged to "advance the sales funnel" (the §0 bug). The
+// CONTRACT signals run whenever a contract exists (before or after close).
+function computeSalesActions(bundle, now, health, status) {
+  const actions = [];
+  const contract = firstContract(bundle);
+
+  if (!CLOSED_WON.includes(status)) {
+    const callReminders = arr(bundle.callReminders);
+    const meetingReminders = arr(bundle.meetingReminders);
+    const priceOffers = arr(bundle.priceOffers);
+    const sessionQuestions = arr(bundle.sessionQuestions);
+    const versaModels = arr(bundle.versaModels);
+
+    // 1. CALL_OVERDUE (critical) — an active call reminder is in the past.
+    const overdueCalls = callReminders.filter(
+      (c) => c.status === "IN_PROGRESS" && c.time != null && toDate(c.time) < now,
+    );
+    if (overdueCalls.length) {
+      const mostOverdueAt = overdueCalls
+        .map((c) => toDate(c.time))
+        .reduce((a, b) => (a < b ? a : b));
+      actions.push(
+        action(
+          "CALL_OVERDUE",
+          "critical",
+          { count: overdueCalls.length, mostOverdueAt: mostOverdueAt.toISOString(), overdueDays: daysBetween(mostOverdueAt, now) },
+          { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" },
+        ),
+      );
+    }
+
+    // 2. MEETING_OVERDUE (critical) — an active meeting reminder is in the past.
+    const overdueMeetings = meetingReminders.filter(
+      (m) => m.status === "IN_PROGRESS" && m.time != null && toDate(m.time) < now,
+    );
+    if (overdueMeetings.length) {
+      const mostOverdueAt = overdueMeetings
+        .map((m) => toDate(m.time))
+        .reduce((a, b) => (a < b ? a : b));
+      actions.push(
+        action(
+          "MEETING_OVERDUE",
+          "critical",
+          { count: overdueMeetings.length, mostOverdueAt: mostOverdueAt.toISOString(), overdueDays: daysBetween(mostOverdueAt, now) },
+          { kind: "OPEN_MEETING", capability: "canAddMeeting", tabKey: "meetings" },
+        ),
+      );
+    }
+
+    // 3. PAYMENT_OVERDUE (critical).
+    if (bundle.paymentStatus === "OVERDUE") {
+      actions.push(
+        action("PAYMENT_OVERDUE", "critical", {}, { kind: "OPEN_PAYMENT", capability: "canAddPayment", tabKey: "payments" }),
+      );
+    }
+
+    // 4. DISCOVERY_INCOMPLETE (warning) — unanswered SPIN questions while still early.
+    const unansweredDiscovery = sessionQuestions.filter((q) => q.answer == null);
+    if (unansweredDiscovery.length && EARLY_STATUSES.includes(status)) {
+      actions.push(
+        action(
+          "DISCOVERY_INCOMPLETE",
+          "warning",
+          { unansweredCount: unansweredDiscovery.length },
+          { kind: "GOTO_TAB", capability: null, tabKey: "analysis" },
+        ),
+      );
+    }
+
+    // 5. OBJECTION_UNHANDLED (warning) — a VERSA step poses a question with no response.
+    const unhandledObjections = countUnhandledObjections(versaModels);
+    if (unhandledObjections > 0) {
+      actions.push(
+        action(
+          "OBJECTION_UNHANDLED",
+          "warning",
+          { count: unhandledObjections },
+          { kind: "GOTO_TAB", capability: null, tabKey: "analysis" },
+        ),
+      );
+    }
+
+    // 6. NO_PRICE_OFFER (warning) — no offer sent while the deal expects one.
+    if (priceOffers.length === 0 && PRICE_OFFER_STATUSES.includes(status)) {
+      actions.push(
+        action("NO_PRICE_OFFER", "warning", {}, { kind: "OPEN_PRICE_OFFER", capability: "canAddPriceOffer", tabKey: "priceOffers" }),
+      );
+    }
+
+    // 7. NO_UPCOMING_TOUCH (warning) — no future call/meeting on an active deal.
+    const hasFutureCall = callReminders.some(
+      (c) => c.status === "IN_PROGRESS" && c.time != null && toDate(c.time) >= now,
+    );
+    const hasFutureMeeting = meetingReminders.some(
+      (m) => m.status === "IN_PROGRESS" && m.time != null && toDate(m.time) >= now,
+    );
+    if (!hasFutureCall && !hasFutureMeeting && ACTIVE_STATUSES.includes(status)) {
+      actions.push(
+        action("NO_UPCOMING_TOUCH", "warning", {}, { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" }),
+      );
+    }
+
+    // A critical/warning funnel action above "blocks" the (info) advance suggestion.
+    const hasBlocking = actions.length > 0;
+
+    // 8. ADVANCE_STAGE (info) — a stage is complete, a next stage exists, nothing blocks.
+    if (!hasBlocking && health.currentStage != null && health.nextStage != null) {
+      actions.push(
+        action(
+          "ADVANCE_STAGE",
+          "info",
+          { currentStage: health.currentStage, nextStage: health.nextStage },
+          { kind: "OPEN_STATUS", capability: "canChangeStatus", tabKey: null },
+        ),
+      );
+    }
+  }
+
+  // ── Contract signals (run whenever a contract exists; survive into FINALIZED) ──
+  if (contract) {
+    // SIGNING_AWAITED (warning) — the contract is out for signing (real sessionStatus,
+    // not the old accepted-offer proxy).
+    if (contract.sessionStatus === "SIGNING") {
+      actions.push(
+        action("SIGNING_AWAITED", "warning", {}, { kind: "GOTO_TAB", capability: null, tabKey: "contracts" }),
+      );
+    }
+    if (contract.status === "COMPLETED") {
+      const afterSalesDone = arr(bundle.salesStages).some((s) => s.stage === "AFTER_SALES_FOLLOWUP");
+      if (!afterSalesDone) {
+        // AFTER_SALES_DUE (info) — delivery done, after-sales follow-up not yet logged.
+        actions.push(
+          action("AFTER_SALES_DUE", "info", {}, { kind: "OPEN_STATUS", capability: "canChangeStatus", tabKey: null }),
+        );
+      } else {
+        // CONTRACT_COMPLETED (info) — fully delivered + followed up.
+        actions.push(
+          action("CONTRACT_COMPLETED", "info", {}, { kind: "GOTO_TAB", capability: null, tabKey: "contracts" }),
+        );
+      }
+    } else {
+      // CONTRACT_STAGE_IN_PROGRESS (info) — production is at LEVEL_N/7.
+      const p = contractStageProgress(contract.stages);
+      if (p.currentLevel) {
+        actions.push(
+          action(
+            "CONTRACT_STAGE_IN_PROGRESS",
+            "info",
+            { level: p.currentLevel, levelsDone: p.levelsDone, levelsTotal: p.levelsTotal },
+            { kind: "GOTO_TAB", capability: null, tabKey: "contracts" },
+          ),
+        );
+      }
+    }
+  }
+
+  return actions;
+}
+
 /**
- * Compute the prioritized next-best-action list + deal-health summary for one lead.
+ * Compute the prioritized next-best-action list + deal-health summary for one lead,
+ * scoped to the caller's ACTIVE profile.
  * @param {object} bundle  language-neutral lead state (see lead.repo.findCockpitBundle)
  * @param {Date}   now     the reference clock (REQUIRED, injected — never read internally)
+ * @param {{ profileKey?: string }} [opts]  the caller's active profile key; missing → SALES set.
  * @returns {{ health: object, actions: Array<{type,severity,params,cta}> }}
  */
-export function computeCockpit(bundle = {}, now) {
+export function computeCockpit(bundle = {}, now, { profileKey } = {}) {
   // Determinism contract: the clock must be injected. No `new Date()` default here —
   // an omitted `now` fails loudly instead of silently reading the wall clock.
   if (!(now instanceof Date)) {
@@ -127,129 +333,17 @@ export function computeCockpit(bundle = {}, now) {
   const health = computeHealth(bundle);
   const status = bundle.status ?? null;
 
-  // Terminal statuses → health-only; the FE renders the "deal closed" summary from
-  // `health` (status/payment chips). No nagging actions.
-  if (TERMINAL_STATUSES.includes(status)) {
+  // Dead statuses (lost deals) → health-only, no actions.
+  if (DEAD_STATUSES.includes(status)) {
     return { health, actions: [] };
   }
 
-  const actions = [];
-  const callReminders = arr(bundle.callReminders);
-  const meetingReminders = arr(bundle.meetingReminders);
-  const priceOffers = arr(bundle.priceOffers);
-  const sessionQuestions = arr(bundle.sessionQuestions);
-  const versaModels = arr(bundle.versaModels);
-
-  // 1. CALL_OVERDUE (critical) — an active call reminder is in the past.
-  const overdueCalls = callReminders.filter(
-    (c) => c.status === "IN_PROGRESS" && c.time != null && toDate(c.time) < now,
-  );
-  if (overdueCalls.length) {
-    const mostOverdueAt = overdueCalls
-      .map((c) => toDate(c.time))
-      .reduce((a, b) => (a < b ? a : b));
-    actions.push(
-      action(
-        "CALL_OVERDUE",
-        "critical",
-        { count: overdueCalls.length, mostOverdueAt: mostOverdueAt.toISOString(), overdueDays: daysBetween(mostOverdueAt, now) },
-        { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" },
-      ),
-    );
+  const ruleSet = PROFILE_TO_RULESET[profileKey] ?? "SALES";
+  let actions = [];
+  if (ruleSet === "SALES") {
+    actions = computeSalesActions(bundle, now, health, status);
   }
-
-  // 2. MEETING_OVERDUE (critical) — an active meeting reminder is in the past.
-  const overdueMeetings = meetingReminders.filter(
-    (m) => m.status === "IN_PROGRESS" && m.time != null && toDate(m.time) < now,
-  );
-  if (overdueMeetings.length) {
-    const mostOverdueAt = overdueMeetings
-      .map((m) => toDate(m.time))
-      .reduce((a, b) => (a < b ? a : b));
-    actions.push(
-      action(
-        "MEETING_OVERDUE",
-        "critical",
-        { count: overdueMeetings.length, mostOverdueAt: mostOverdueAt.toISOString(), overdueDays: daysBetween(mostOverdueAt, now) },
-        { kind: "OPEN_MEETING", capability: "canAddMeeting", tabKey: "meetings" },
-      ),
-    );
-  }
-
-  // 3. PAYMENT_OVERDUE (critical).
-  if (bundle.paymentStatus === "OVERDUE") {
-    actions.push(
-      action("PAYMENT_OVERDUE", "critical", {}, { kind: "OPEN_PAYMENT", capability: "canAddPayment", tabKey: "payments" }),
-    );
-  }
-
-  // 4. DISCOVERY_INCOMPLETE (warning) — unanswered SPIN questions while still early.
-  const unansweredDiscovery = sessionQuestions.filter((q) => q.answer == null);
-  if (unansweredDiscovery.length && EARLY_STATUSES.includes(status)) {
-    actions.push(
-      action(
-        "DISCOVERY_INCOMPLETE",
-        "warning",
-        { unansweredCount: unansweredDiscovery.length },
-        { kind: "GOTO_TAB", capability: null, tabKey: "analysis" },
-      ),
-    );
-  }
-
-  // 5. OBJECTION_UNHANDLED (warning) — a VERSA step poses a question with no response.
-  const unhandledObjections = countUnhandledObjections(versaModels);
-  if (unhandledObjections > 0) {
-    actions.push(
-      action(
-        "OBJECTION_UNHANDLED",
-        "warning",
-        { count: unhandledObjections },
-        { kind: "GOTO_TAB", capability: null, tabKey: "analysis" },
-      ),
-    );
-  }
-
-  // 6. NO_PRICE_OFFER (warning) — no offer sent while the deal expects one.
-  if (priceOffers.length === 0 && PRICE_OFFER_STATUSES.includes(status)) {
-    actions.push(
-      action("NO_PRICE_OFFER", "warning", {}, { kind: "OPEN_PRICE_OFFER", capability: "canAddPriceOffer", tabKey: "priceOffers" }),
-    );
-  }
-
-  // 7. NO_UPCOMING_TOUCH (warning) — no future call/meeting on an active deal.
-  const hasFutureCall = callReminders.some(
-    (c) => c.status === "IN_PROGRESS" && c.time != null && toDate(c.time) >= now,
-  );
-  const hasFutureMeeting = meetingReminders.some(
-    (m) => m.status === "IN_PROGRESS" && m.time != null && toDate(m.time) >= now,
-  );
-  if (!hasFutureCall && !hasFutureMeeting && ACTIVE_STATUSES.includes(status)) {
-    actions.push(
-      action("NO_UPCOMING_TOUCH", "warning", {}, { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" }),
-    );
-  }
-
-  // A critical/warning action above "blocks" the (info) advance suggestion.
-  const hasBlocking = actions.length > 0;
-
-  // 8. ADVANCE_STAGE (info) — a stage is complete, a next stage exists, nothing blocks.
-  if (!hasBlocking && health.currentStage != null && health.nextStage != null) {
-    actions.push(
-      action(
-        "ADVANCE_STAGE",
-        "info",
-        { currentStage: health.currentStage, nextStage: health.nextStage },
-        { kind: "OPEN_STATUS", capability: "canChangeStatus", tabKey: null },
-      ),
-    );
-  }
-
-  // 9. AWAIT_SIGNATURE (info) — an offer was accepted but the deal isn't finalized.
-  if (health.hasAcceptedPriceOffer && status !== "FINALIZED") {
-    actions.push(
-      action("AWAIT_SIGNATURE", "info", {}, { kind: "GOTO_TAB", capability: null, tabKey: "contracts" }),
-    );
-  }
+  // ACCOUNTANT rule set is wired in Phase 2.
 
   return { health, actions: sortActions(actions) };
 }
@@ -257,3 +351,4 @@ export function computeCockpit(bundle = {}, now) {
 // Exported for the repo/usecase select + tests to stay in lock-step with the enum.
 export const COCKPIT_STAGE_ORDER = STAGE_ORDER;
 export const COCKPIT_TERMINAL_STATUSES = TERMINAL_STATUSES;
+export const COCKPIT_DEAD_STATUSES = DEAD_STATUSES;
