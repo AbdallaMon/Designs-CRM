@@ -146,6 +146,20 @@ export const COCKPIT_ACTION_CONFIG = {
     description: () => "This contract is fully delivered.",
     ctaLabel: "View contract",
   },
+  DOWNPAYMENT_DUE: {
+    icon: <FaMoneyBillWave />,
+    severity: "critical",
+    title: () => "Down-payment due",
+    description: () => "The signature/down-payment hasn't been recorded yet.",
+    ctaLabel: "Record payment",
+  },
+  PAYMENT_DUE: {
+    icon: <PiCurrencyDollarSimpleLight />,
+    severity: "warning",
+    title: () => "Payment due",
+    description: (p = {}) => `${p.count || 0} payment(s) awaiting collection`,
+    ctaLabel: "Record payment",
+  },
 };
 
 // Severity → theme palette key (color of the accent rail, icon tile, and CTA).
