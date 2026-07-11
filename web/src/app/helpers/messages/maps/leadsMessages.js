@@ -39,6 +39,7 @@ export const leadsMessages = {
   // ── errors / scope / guards ────────────────────────────────────────────────────
   LEAD_NOT_FOUND: "Lead not found",
   LEAD_ACCESS_DENIED: "You do not have access to this lead",
+  LEAD_CLAIM_REQUIRED: "This lead is new — claim it as a deal to open it",
   LEAD_MUTATE_DENIED: "You do not have permission to edit this lead",
   CALL_REMINDER_NOT_FOUND: "Call reminder not found",
   MEETING_REMINDER_NOT_FOUND: "Meeting reminder not found",

@@ -1,6 +1,8 @@
 import { getData } from "@/app/helpers/functions/getData";
+import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { useAuth } from "@/app/providers/AuthProvider";
+import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { usePermission } from "@/app/hooks/usePermission";
 import { LEAD_CODES } from "@/app/helpers/permissionCodes";
 import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
@@ -30,6 +32,7 @@ import {
   MdInfoOutline,
   MdOutlineLaunch,
   MdPersonOutline,
+  MdWork,
 } from "react-icons/md";
 
 export const PreviewLead = ({
@@ -70,27 +73,54 @@ export const PreviewLead = ({
   const { fullscreen, setFullscreen } = useLeadViewPreferences();
   const [loading, setLoading] = useState(true);
   const [lead, setLead] = useState(null);
+  const [errorInfo, setErrorInfo] = useState(null);
   const { user } = useAuth();
   const { hasPermission } = usePermission();
+  const { setLoading: setToastLoading } = useToastContext() || {};
   // admin-tier lead operator = holds lead.assign.other (== checkIfAdminOrSuperSales); honors subRoles per the profiles model
   const isAdmin = hasPermission(LEAD_CODES.ASSIGN_OTHER);
   const LeadContent = leadContent;
-  useEffect(() => {
-    async function getALeadDetails() {
-      if (open) {
-        const leadDetails = await getData({
-          url,
 
-          // url: `shared/client-leads/projects/designers/${id}?type=${type}&`,
-          setLoading,
+  async function getALeadDetails() {
+    if (open) {
+      const leadDetails = await getData({
+        url,
+
+        // url: `shared/client-leads/projects/designers/${id}?type=${type}&`,
+        setLoading,
+      });
+      if (leadDetails && leadDetails.status === 200) {
+        setLead(leadDetails.data);
+        setErrorInfo(null);
+      } else if (leadDetails) {
+        // getData attaches `error` (resolved message + redirect meta) on non-2xx.
+        setErrorInfo({
+          code: leadDetails.message || null,
+          message: leadDetails.error?.message || null,
         });
-        if (leadDetails && leadDetails.status === 200) {
-          setLead(leadDetails.data);
-        }
       }
     }
+  }
+
+  useEffect(() => {
     getALeadDetails();
   }, [id, open]);
+
+  async function handleClaim() {
+    const res = await handleRequestSubmit(
+      { id },
+      setToastLoading || setLoading,
+      `shared/client-leads`,
+      false,
+      "Assigning",
+      false,
+      "PUT"
+    );
+    if (res.status === 200) {
+      setErrorInfo(null);
+      await getALeadDetails();
+    }
+  }
 
   const handlePageClose = (isPage) => {
     if (isPage) {
@@ -173,42 +203,82 @@ export const PreviewLead = ({
       (lead?.status === "CONVERTED" ||
         (lead.status === "ON_HOLD" && user.id === lead.userId)))
   ) {
-    return (
-      <Container maxWidth="sm" sx={{ mt: 6 }}>
-        <Paper
-          elevation={0}
+    const resolvedErrorMessage =
+      errorInfo?.message ||
+      "You are not allowed to access this page or the lead doesn't exist";
+    const canClaim = errorInfo?.code === "LEAD_CLAIM_REQUIRED";
+    const body = (
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexDirection: "column",
+          textAlign: "center",
+          gap: 1.5,
+          p: 5,
+        }}
+      >
+        <Box
           sx={{
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            flexDirection: "column",
-            textAlign: "center",
-            gap: 1.5,
-            p: 5,
-            borderRadius: 4,
-            border: `1px solid ${alpha(theme.palette.error.main, 0.25)}`,
-            bgcolor: alpha(theme.palette.error.main, 0.05),
+            bgcolor: alpha(theme.palette.error.main, 0.12),
           }}
         >
-          <Box
+          <FaExclamationTriangle size={28} color={theme.palette.error.dark} />
+        </Box>
+        <Typography variant="h6" sx={{ color: theme.palette.error.dark }}>
+          {resolvedErrorMessage}
+        </Typography>
+        {canClaim && (
+          <Button
+            variant="contained"
+            startIcon={<MdWork />}
+            onClick={handleClaim}
+          >
+            Start Deal
+          </Button>
+        )}
+      </Box>
+    );
+
+    if (page) {
+      return (
+        <Container maxWidth="sm" sx={{ mt: 6 }}>
+          <Paper
+            elevation={0}
             sx={{
-              width: 64,
-              height: 64,
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              bgcolor: alpha(theme.palette.error.main, 0.12),
+              borderRadius: 4,
+              border: `1px solid ${alpha(theme.palette.error.main, 0.25)}`,
+              bgcolor: alpha(theme.palette.error.main, 0.05),
             }}
           >
-            <FaExclamationTriangle size={28} color={theme.palette.error.dark} />
-          </Box>
-          <Typography variant="h6" sx={{ color: theme.palette.error.dark }}>
-            You are not allowed to access this page or the lead doesn&apos;t
-            exist
-          </Typography>
-        </Paper>
-      </Container>
+            {body}
+          </Paper>
+        </Container>
+      );
+    }
+
+    return (
+      <Dialog
+        open={open}
+        onClose={onClose}
+        fullWidth
+        maxWidth="sm"
+        fullScreen={isMobile}
+      >
+        {body}
+        <DialogActions sx={{ p: 2, borderTop: 1, borderColor: "divider" }}>
+          <Button onClick={onClose} variant="outlined">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     );
   }
 
