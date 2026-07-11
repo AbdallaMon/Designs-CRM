@@ -113,6 +113,11 @@ export class LeadUsecase {
     );
   }
 
+  // Profile-key ONLY, by design (spec decision D4): do NOT fall back to isAdminTier or
+  // the legacy isSuperSales/isPrimary flags. PRIMARY_SALES is not admin-tier, so it can
+  // only be identified by the active profile — which the boot backfill guarantees for
+  // every migrated session. The <15-min stale-token window is intentionally out of scope.
+
   // Full read-scope over ALL leads (the super-sales pool), by active profile.
   #isSuperSalesScope(authUser) {
     return authUser?.currentProfileKey === "SUPER_SALES";

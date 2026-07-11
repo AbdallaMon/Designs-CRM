@@ -42,6 +42,22 @@ export async function compressImageBuffer(buffer) {
   }
 }
 
+// Uploaded assets are stored as domain-relative paths (e.g. "/uploads/xyz.png").
+// Node's fetch() requires an absolute URL, so resolve relative paths against the
+// CRM domain (same base used for signature/upload URLs elsewhere in the PDF flow).
+function toAbsoluteAssetUrl(url) {
+  if (typeof url !== "string" || !url) return url;
+  if (/^https?:\/\//i.test(url)) return url; // already absolute
+  if (url.startsWith("/")) {
+    const base = (process.env.CRM_DOMAIN || process.env.SERVER_URL || "").replace(
+      /\/+$/,
+      ""
+    );
+    if (base) return `${base}${url}`;
+  }
+  return url;
+}
+
 export async function fetchImageBuffer(url, options = {}) {
   const {
     retries = 3,
@@ -49,6 +65,7 @@ export async function fetchImageBuffer(url, options = {}) {
     timeoutMs = 15000, // Default timeout for each fetch attempt
   } = options;
 
+  url = toAbsoluteAssetUrl(url);
   const errors = [];
 
   for (let i = 0; i < retries; i++) {
