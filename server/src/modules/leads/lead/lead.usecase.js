@@ -14,7 +14,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
 import timezone from "dayjs/plugin/timezone.js";
 import { AppError } from "../../../shared/errors/AppError.js";
-import { leadsMessagesCodes as C, AUDIT_MODULES, AUDIT_ACTIONS } from "@dms/shared";
+import { leadsMessagesCodes as C, AUDIT_MODULES, AUDIT_ACTIONS, messagesNames } from "@dms/shared";
 import { recordAction } from "../../../infra/audit/record-action.js";
 import { leadRepository } from "./lead.repo.js";
 import { computeLeadCapabilities } from "./lead.dto.js";
@@ -392,7 +392,24 @@ export class LeadUsecase {
     const initialConsultWhere = searchParams.checkConsult ? { initialConsult: true } : {};
     const fullWhere = { id: Number(clientLeadId), ...initialConsultWhere, ...where, ...leadWhere };
     const clientLead = await this.repo.findLeadDetail({ where: fullWhere, fileWhere: where });
-    if (!clientLead) throw new AppError(C.LEAD_NOT_FOUND, 404);
+    if (!clientLead) {
+      // The gate allowed the read (owned OR NEW-claimable pool), but the staff status
+      // carve-out filtered the row out. Turn the misleading 404 into a meaningful,
+      // closeable domain error the FE can act on.
+      if (isNew) {
+        throw new AppError(C.LEAD_CLAIM_REQUIRED, 409, null, {
+          translationKey: messagesNames.leadsMessages,
+          reason: "This lead is new — claim it as a deal to open it.",
+          redirectText: C.LEAD_CLAIM_REQUIRED,
+          dontRedirect: true,
+        });
+      }
+      const owner = await this.repo.findLeadOwner({ id: Number(clientLeadId) });
+      if (owner && owner.userId != null && Number(owner.userId) !== Number(userId)) {
+        throw new AppError(C.LEAD_ACCESS_DENIED, 403);
+      }
+      throw new AppError(C.LEAD_NOT_FOUND, 404);
+    }
 
     clientLead.callReminders = [
       ...clientLead.callReminders.filter((c) => c.status === "IN_PROGRESS"),

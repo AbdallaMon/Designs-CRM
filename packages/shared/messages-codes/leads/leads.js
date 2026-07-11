@@ -37,6 +37,7 @@ export const leadsMessagesCodes = {
   // ── errors / scope / guards ────────────────────────────────────────────────────
   LEAD_NOT_FOUND: "LEAD_NOT_FOUND",
   LEAD_ACCESS_DENIED: "LEAD_ACCESS_DENIED", // outside the user's scope (scope / IDOR)
+  LEAD_CLAIM_REQUIRED: "LEAD_CLAIM_REQUIRED", // NEW/unassigned lead — must be claimed as a deal to view
   LEAD_MUTATE_DENIED: "LEAD_MUTATE_DENIED", // visible but not writable by this user
   CALL_REMINDER_NOT_FOUND: "CALL_REMINDER_NOT_FOUND",
   MEETING_REMINDER_NOT_FOUND: "MEETING_REMINDER_NOT_FOUND",
