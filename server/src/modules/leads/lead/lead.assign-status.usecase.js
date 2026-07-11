@@ -369,9 +369,10 @@ export async function getClientLeadsByDateRange({ searchParams, isAdmin, user })
 export async function getClientLeadsColumnStatus({ searchParams, isAdmin, user }) {
   try {
     const filters =
-      searchParams.filters &&
-      searchParams.filters !== "undefined" &&
-      JSON.parse(searchParams.filters);
+      (searchParams.filters &&
+        searchParams.filters !== "undefined" &&
+        JSON.parse(searchParams.filters)) ||
+      {};
 
     let where = {
       assignedTo: { isNot: null },
