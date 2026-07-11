@@ -1,6 +1,8 @@
 // image-sessions/admin color repository — Prisma I/O ONLY. Reference-data CRUD for color
 // palettes, moved verbatim from the legacy `image-session-services.js` service.
 import prisma from "../../../infra/prisma/prisma.js";
+import { AppError } from "../../../shared/errors/AppError.js";
+import { imageSessionsMessagesCodes as M } from "@dms/shared";
 import {
   createTextAndConnect,
   deserializeTemplatesDeep,
@@ -55,16 +57,16 @@ export async function createColorPallete({ data }) {
   const titles = Object.values(data.titles);
   const descriptions = Object.values(data.descriptions);
   if (!data.colors || data.colors.length === 0) {
-    throw new Error("Please add colors.");
+    throw new AppError(M.IMAGE_SESSION_COLORS_REQUIRED, 400);
   }
   if (!data.templateId) {
-    throw new Error("Please select a template");
+    throw new AppError(M.IMAGE_SESSION_TEMPLATE_REQUIRED, 400);
   }
   if (!data.titles || titles.length === 0) {
-    throw new Error("Please select a title.");
+    throw new AppError(M.IMAGE_SESSION_TITLE_REQUIRED, 400);
   }
   if (!data.background) {
-    throw new Error("Please select a background.");
+    throw new AppError(M.IMAGE_SESSION_BACKGROUND_REQUIRED, 400);
   }
 
   const titlesToCreate = createTextAndConnect(titles, "text");

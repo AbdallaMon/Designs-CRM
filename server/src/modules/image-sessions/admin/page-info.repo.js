@@ -2,6 +2,8 @@
 // page-info blocks, moved verbatim from the legacy `image-session-services.js` service.
 // `getPageInfo` (singular) is also consumed by the public client flow.
 import prisma from "../../../infra/prisma/prisma.js";
+import { AppError } from "../../../shared/errors/AppError.js";
+import { imageSessionsMessagesCodes as M } from "@dms/shared";
 import { createTextAndConnect } from "../image-sessions.helpers.js";
 import { createAListOfText, editAListOftext } from "./text.repo.js";
 
@@ -110,13 +112,13 @@ export async function createPageInfo({ data }) {
   const titles = Object.values(data.titles);
   const descriptions = Object.values(data.descriptions);
   if (!data.type) {
-    throw new Error("Please select a type");
+    throw new AppError(M.IMAGE_SESSION_TYPE_REQUIRED, 400);
   }
   if (!data.titles || titles.length === 0) {
-    throw new Error("Please Fill all titles.");
+    throw new AppError(M.IMAGE_SESSION_TITLES_REQUIRED, 400);
   }
   if (!data.descriptions || descriptions.length === 0) {
-    throw new Error("Please Fill all descripitons.");
+    throw new AppError(M.IMAGE_SESSION_DESCRIPTIONS_REQUIRED, 400);
   }
 
   const titlesToCreate = createTextAndConnect(titles, "text");

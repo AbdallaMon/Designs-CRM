@@ -29,7 +29,7 @@ import {
   FiEdit3,
 } from "react-icons/fi";
 import PaginationWithLimit from "@/shared/components/PaginationWithLimit.jsx";
-import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
+import { getData } from "@/app/helpers/functions/getData";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
@@ -429,10 +429,12 @@ export default function ContractPaymentsPage() {
   });
 
   const fetchList = React.useCallback(async () => {
-    await getDataAndSet({
+    // getData returns master's FLAT shape: `data` is the items ARRAY (the paginated
+    // envelope was unwrapped in normalizeEnvelope), plus `total`/`totalPages`/`page`.
+    // This page's UI reads an object with `.items`, so re-wrap the array back into it.
+    const res = await getData({
       url: "shared/contracts/payments/all",
       setLoading,
-      setData,
       page,
       limit,
       filters: {},
@@ -440,6 +442,15 @@ export default function ContractPaymentsPage() {
       sort: {},
       others: `status=${status}`,
     });
+    if (res) {
+      setData({
+        items: Array.isArray(res.data) ? res.data : [],
+        page: res.page || page,
+        limit,
+        totalPages: res.totalPages || 1,
+        total: res.total || 0,
+      });
+    }
   }, [page, limit, status]);
 
   useEffect(() => {

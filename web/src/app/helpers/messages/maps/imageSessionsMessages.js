@@ -32,6 +32,19 @@ export const imageSessionsMessages = {
   IMAGE_SESSION_PRO_CON_REORDERED: "Items reordered",
   IMAGE_SESSION_PAGE_INFO_TYPE_EXISTS: "This page info type already exists",
 
+  // ── ADMIN reference-data validation ─────────────────────────────────────────────────
+  IMAGE_SESSION_TEMPLATE_REQUIRED: "Please select a template",
+  IMAGE_SESSION_TITLE_REQUIRED: "Please add a title",
+  IMAGE_SESSION_TITLES_REQUIRED: "Please fill all titles",
+  IMAGE_SESSION_DESCRIPTIONS_REQUIRED: "Please fill all descriptions",
+  IMAGE_SESSION_BACKGROUND_REQUIRED: "Please select a background",
+  IMAGE_SESSION_COLORS_REQUIRED: "Please add at least one color",
+  IMAGE_SESSION_STYLE_REQUIRED: "Please select at least one style",
+  IMAGE_SESSION_SPACE_REQUIRED: "Please select at least one space",
+  IMAGE_SESSION_IMAGE_REQUIRED: "Please add at least one image",
+  IMAGE_SESSION_TYPE_REQUIRED: "Please select a type",
+  IMAGE_SESSION_FIELDS_REQUIRED: "Please fill all required fields",
+
   // ── SHARED session-management (lead-scoped) ─────────────────────────────────────────
   IMAGE_SESSIONS_FETCHED: "Sessions fetched",
   IMAGE_SESSION_CREATED: "Session created",

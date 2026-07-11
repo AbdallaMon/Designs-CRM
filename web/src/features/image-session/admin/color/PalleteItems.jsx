@@ -130,6 +130,15 @@ export function CreateColorPattern({ data, setData }) {
     ]
   );
 
+  // Seed the parent form's `data.colors` with the default palette on mount. Without this,
+  // the defaults live only in local state and `data.colors` stays undefined unless the user
+  // edits a swatch — so submitting the untouched form was rejected ("Please add colors").
+  useEffect(() => {
+    setData((prev) =>
+      prev?.colors && prev.colors.length ? prev : { ...(prev || {}), colors }
+    );
+  }, []);
+
   const updateDataWithColors = (newColors) => {
     setColors(newColors);
     setData((prev) => ({

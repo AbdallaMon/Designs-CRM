@@ -1,6 +1,8 @@
 // image-sessions/admin style repository — Prisma I/O ONLY. Reference-data CRUD for styles,
 // moved verbatim from the legacy `image-session-services.js` service.
 import prisma from "../../../infra/prisma/prisma.js";
+import { AppError } from "../../../shared/errors/AppError.js";
+import { imageSessionsMessagesCodes as M } from "@dms/shared";
 import {
   createTextAndConnect,
   deserializeTemplatesDeep,
@@ -51,10 +53,10 @@ export async function createStyle({ data }) {
   const titles = Object.values(data.titles);
   const descriptions = Object.values(data.descriptions);
   if (!data.templateId) {
-    throw new Error("Please select a template");
+    throw new AppError(M.IMAGE_SESSION_TEMPLATE_REQUIRED, 400);
   }
   if (!data.titles || titles.length === 0) {
-    throw new Error("Please Fill all data.");
+    throw new AppError(M.IMAGE_SESSION_FIELDS_REQUIRED, 400);
   }
 
   const titlesToCreate = createTextAndConnect(titles, "text");

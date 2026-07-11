@@ -1,6 +1,8 @@
 // image-sessions/admin design-image repository — Prisma I/O ONLY. Reference-data CRUD for
 // design images, moved verbatim from the legacy `image-session-services.js` service.
 import prisma from "../../../infra/prisma/prisma.js";
+import { AppError } from "../../../shared/errors/AppError.js";
+import { imageSessionsMessagesCodes as M } from "@dms/shared";
 
 export async function getDesignImages({ notArchived, skip, limit }) {
   const where = {};
@@ -42,18 +44,22 @@ export async function getDesignImages({ notArchived, skip, limit }) {
   const total = await prisma.designImage.count({ where });
 
   const totalPages = Math.ceil(total / limit);
-  return { data, total, totalPages };
+  // Return the standardized paginated list shape `{ items, total, ... }` so the FE envelope
+  // normalizer (isPaginatedData → Array.isArray(items)) unwraps `data` to the array. The old
+  // `{ data, ... }` shape was NOT recognized as a list, so the FE received an object and
+  // crashed on `.map` ("h.map is not a function") when the gallery tab first loaded.
+  return { items: data, total, totalPages };
 }
 
 export async function createDesignImage({ data }) {
   if (!data.styleId) {
-    throw new Error("Select at least one style");
+    throw new AppError(M.IMAGE_SESSION_STYLE_REQUIRED, 400);
   }
   if (!data.spaceIds || data.spaceIds.length === 0) {
-    throw new Error("Select at least one spce");
+    throw new AppError(M.IMAGE_SESSION_SPACE_REQUIRED, 400);
   }
   if (!data.imageUrl) {
-    throw new Error("Upload an image");
+    throw new AppError(M.IMAGE_SESSION_IMAGE_REQUIRED, 400);
   }
   await prisma.designImage.create({
     data: {
@@ -73,14 +79,14 @@ export async function createDesignImage({ data }) {
 
 export async function createBulkDesignImage({ data }) {
   if (!data.styleId) {
-    throw new Error("Select at least one style");
+    throw new AppError(M.IMAGE_SESSION_STYLE_REQUIRED, 400);
   }
   if (!data.spaceIds || data.spaceIds.length === 0) {
-    throw new Error("Select at least one spce");
+    throw new AppError(M.IMAGE_SESSION_SPACE_REQUIRED, 400);
   }
   const images = data.imagesUrls;
   if (!images || images.length === 0) {
-    throw new Error("Please add at least one image");
+    throw new AppError(M.IMAGE_SESSION_IMAGE_REQUIRED, 400);
   }
   images.forEach(async (image) => {
     await createDesignImage({

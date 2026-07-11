@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import SimpleFileInput from "@/shared/components/formComponents/SimpleFileInput";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { Box, Typography } from "@mui/material";
@@ -68,6 +69,14 @@ export function CreateColor({ onUpdate }) {
   );
 }
 function CreateColorForm({ data, setData, setValid }) {
+  // Seed the default background into the form data on mount. The ColorSelector below only
+  // fires onChange when the value CHANGES, so an untouched default (#000000) was never
+  // written to `data.background` and the backend rejected it ("Please select a background").
+  useEffect(() => {
+    setData((old) =>
+      old?.background ? old : { ...(old || {}), background: "#000000" }
+    );
+  }, []);
   return (
     <>
       <CreateTitleOrDesc

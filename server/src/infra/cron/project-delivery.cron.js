@@ -21,6 +21,7 @@ export function startProjectDeliveryCron() {
   if (task) return task;
 
   task = cron.schedule("0 */2 * * *", async () => {
+    try {
     const now = dayjs.utc().startOf("day");
 
     const in1Day = now.add(1, "day");
@@ -114,6 +115,9 @@ export function startProjectDeliveryCron() {
         clientLeadId: project.clientLeadId,
         type: project.type,
       });
+    }
+    } catch (err) {
+      console.error("❌ Failed to send project-delivery reminders:", err);
     }
   });
 
