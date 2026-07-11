@@ -299,3 +299,18 @@ Commits on `server-migration`: foundation `3c84d5a` → chat `d980950` → site-
 ## 8. Next step
 
 The planning + documentation phase is **done and awaiting the user's direction**. The user said they will state the next step. The natural next move is: settle open decisions 1–6 (§5), then produce a detailed implementation plan starting with **Backend Phase 0** (monorepo skeleton + `packages/db` + `packages/shared`) in lockstep with **Frontend Phase 0**.
+
+---
+
+## Update 2026-07-11 — Lead access, profile signals & claim/kanban fixes
+
+Fixed 7 lead defects (spec/plan: `docs/superpowers/{specs,plans}/2026-07-11-lead-access-profile-signals-and-claim-fixes.*`):
+- **Leads scoping moved onto profiles.** The leads module no longer reads the legacy `isSuperSales`/`isPrimary` flags — it reads the active profile (`currentProfileKey` / `isAdminTier`, backfilled for every account at boot). `#isSuperSalesScope`/`#isPrimaryScope`/`isAdminUser` helpers.
+- **#6:** `deals()` no longer self-scopes a SUPER_SALES profile (they now see all deals/leads), aligned with `columns()`/`getById`.
+- **#7:** kanban `columns` 500 fixed (`filters` defaults to `{}`); the same hardening also landed in `getClientLeadsByDateRange`.
+- **#4:** self-claim `assign` schema tolerates `null/0/""` `userId`; FE self-claim posts `{ id }` only.
+- **#5:** NEW/ON_HOLD → IN_PROGRESS on claim (extracted `claimStatus`, tested).
+- **#1/#2:** `#getStaffDetail` returns `LEAD_CLAIM_REQUIRED` (409) / `LEAD_ACCESS_DENIED` (403) instead of a misleading 404; the preview renders the error in a **closeable dialog** with a Start Deal CTA when claimable.
+- **#3:** assign/claim action added to the New Leads card for `ASSIGN_OTHER` holders.
+
+**Follow-up (phase-2, tracked):** a codebase-wide `isSuperSales`/`isPrimary` flag purge across the other modules (`projects`, `dashboard`, `image-sessions`, `auth.dto` display fields, FE role helpers). The boot backfill already makes profiles authoritative for every user, so this is low-risk hygiene, not a correctness gap.
