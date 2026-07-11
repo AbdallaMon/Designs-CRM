@@ -187,10 +187,11 @@ export const checkIfStaff = (user) => {
   );
 };
 export const checkIfPrimaryStaff = (user) => {
+  // Primary-tier includes super-sales (super ⊇ primary), matching backend #isPrimaryScope.
   return (
     (user.role === "STAFF" ||
       user.subRoles?.some((r) => r.subRole === "STAFF")) &&
-    user.profile === "PRIMARY_SALES"
+    (user.profile === "PRIMARY_SALES" || user.profile === "SUPER_SALES")
   );
 };
 export const checkIfAdmin = (user) => {
