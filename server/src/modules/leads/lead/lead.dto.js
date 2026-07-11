@@ -10,18 +10,18 @@ const LOCKED_FROM_STATUSES_FOR_NON_ADMIN = ["FINALIZED", "REJECTED", "ARCHIVED",
 
 /**
  * Decide whether `authUser` writes this lead, mirroring the scope checker:
- * full-scope roles (ADMIN/SUPER_ADMIN/ACCOUNTANT/isSuperSales) may mutate any lead;
- * everyone else only their own assigned lead.
+ * full-scope roles (ADMIN/SUPER_ADMIN/ACCOUNTANT/SUPER_SALES profile) may mutate any
+ * lead; everyone else only their own assigned lead.
  */
 function canMutateLead({ record, authUser }) {
-  if (authUser?.isSuperSales) return true;
-  if (["ADMIN", "SUPER_ADMIN", "ACCOUNTANT"].includes(authUser?.role)) return true;
+  if (isFullScope(authUser)) return true;
   return record?.userId != null && Number(record.userId) === Number(authUser?.id);
 }
 
 function isFullScope(authUser) {
   return (
-    Boolean(authUser?.isSuperSales) ||
+    Boolean(authUser?.isAdminTier) ||
+    authUser?.currentProfileKey === "SUPER_SALES" ||
     ["ADMIN", "SUPER_ADMIN", "ACCOUNTANT"].includes(authUser?.role)
   );
 }

@@ -34,8 +34,8 @@ class LeadRepository {
   // (no narrowing); a scoped user is restricted to leads assigned to them, PLUS the
   // unassigned NEW pool that legacy let anyone view/claim (status NEW, userId null).
   // `mode: "view"` includes the claimable pool; `mode: "mutate"` is owned-only.
-  hasFullScope({ role, isSuperSales, includeContactInitiator = false }) {
-    if (isSuperSales) return true;
+  hasFullScope({ role, currentProfileKey, isAdminTier, includeContactInitiator = false }) {
+    if (currentProfileKey === "SUPER_SALES" || isAdminTier) return true;
     if (FULL_SCOPE_ROLES.includes(role)) return true;
     if (includeContactInitiator && role === "CONTACT_INITIATOR") return true;
     return false;

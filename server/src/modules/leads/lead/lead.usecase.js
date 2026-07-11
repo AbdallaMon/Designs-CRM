@@ -103,11 +103,26 @@ export class LeadUsecase {
     this.legacy = { ...legacyDefaults, ...legacy };
   }
 
+  // Admin-tier lead operator = ADMIN/SUPER_ADMIN base role OR an admin-tier profile
+  // (SUPER_SALES). Profile-authoritative — the legacy isSuperSales flag is NOT read.
   isAdminUser(authUser) {
     return (
+      Boolean(authUser?.isAdminTier) ||
       authUser?.role === "ADMIN" ||
-      authUser?.role === "SUPER_ADMIN" ||
-      Boolean(authUser?.isSuperSales)
+      authUser?.role === "SUPER_ADMIN"
+    );
+  }
+
+  // Full read-scope over ALL leads (the super-sales pool), by active profile.
+  #isSuperSalesScope(authUser) {
+    return authUser?.currentProfileKey === "SUPER_SALES";
+  }
+
+  // Primary-tier lead-visibility carve-out (SUPER_SALES ⊇ PRIMARY_SALES).
+  #isPrimaryScope(authUser) {
+    return (
+      authUser?.currentProfileKey === "SUPER_SALES" ||
+      authUser?.currentProfileKey === "PRIMARY_SALES"
     );
   }
 
@@ -253,7 +268,7 @@ export class LeadUsecase {
       authUser.role !== "ADMIN" &&
       authUser.role !== "SUPER_ADMIN" &&
       authUser.role !== "ACCOUNTANT" &&
-      authUser.role !== "SUPER_SALES"
+      !this.#isSuperSalesScope(authUser)
     ) {
       searchParams.selfId = authUser.id;
       searchParams.userId = authUser.id;
@@ -272,13 +287,13 @@ export class LeadUsecase {
       authUser.role !== "ADMIN" &&
       authUser.role !== "SUPER_ADMIN" &&
       authUser.role !== "ACCOUNTANT" &&
-      !authUser.isSuperSales
+      !this.#isSuperSalesScope(authUser)
     ) {
       searchParams.selfId = authUser.id;
       searchParams.userId = authUser.id;
     }
     const isAdmin =
-      authUser.role === "ADMIN" || authUser.role === "SUPER_ADMIN" || Boolean(authUser.isSuperSales);
+      authUser.role === "ADMIN" || authUser.role === "SUPER_ADMIN" || this.#isSuperSalesScope(authUser);
     return this.legacy.getClientLeadsColumnStatus({ searchParams, isAdmin, user: authUser });
   }
 
@@ -298,12 +313,12 @@ export class LeadUsecase {
     const role = authUser.role;
     const searchParams = { ...query };
     const privileged =
-      role === "ADMIN" || role === "SUPER_ADMIN" || authUser.isSuperSales || role === "CONTACT_INITIATOR";
+      role === "ADMIN" || role === "SUPER_ADMIN" || this.#isSuperSalesScope(authUser) || role === "CONTACT_INITIATOR";
 
-    if (role !== "ADMIN" && role !== "SUPER_ADMIN" && role !== "ACCOUNTANT" && !authUser.isSuperSales) {
+    if (role !== "ADMIN" && role !== "SUPER_ADMIN" && role !== "ACCOUNTANT" && !this.#isSuperSalesScope(authUser)) {
       searchParams.userId = authUser.id;
     }
-    if (role !== "ADMIN" && role !== "CONTACT_INITIATOR" && role !== "SUPER_ADMIN" && !authUser.isSuperSales) {
+    if (role !== "ADMIN" && role !== "CONTACT_INITIATOR" && role !== "SUPER_ADMIN" && !this.#isSuperSalesScope(authUser)) {
       searchParams.checkConsult = true;
     }
 
@@ -362,7 +377,7 @@ export class LeadUsecase {
       const shuffle = await this.repo.findOnHoldOwner({ id: Number(clientLeadId) });
       if (shuffle && shuffle.userId !== Number(userId)) {
         where = {};
-      } else if (!user.isPrimary) {
+      } else if (!this.#isPrimaryScope(user)) {
         leadWhere.status = { notIn: ["NEW", "ARCHIVED", "ON_HOLD", "FINALIZED", "REJECTED", "CONVERTED"] };
       }
     }

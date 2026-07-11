@@ -283,7 +283,7 @@ export async function getClientLeadsByDateRange({ searchParams, isAdmin, user })
   if (searchParams.userId) {
     where.userId = searchParams.userId;
 
-    if (!user.isPrimary) {
+    if (user?.currentProfileKey !== "PRIMARY_SALES" && user?.currentProfileKey !== "SUPER_SALES") {
       where.status = {
         notIn: [
           "NEW",
@@ -419,7 +419,7 @@ export async function getClientLeadsColumnStatus({ searchParams, isAdmin, user }
         lte: end.toDate(),
       };
     }
-    if (filters.id && filters.id !== "all") {
+    if (filters?.id && filters.id !== "all") {
       where.id = Number(filters.id);
     }
     if (filters?.clientId && filters.clientId !== "all") {
