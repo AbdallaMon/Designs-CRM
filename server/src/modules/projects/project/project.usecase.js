@@ -18,6 +18,7 @@
 // are re-exported here unchanged so their existing deep importers keep working.
 import { AppError } from "../../../shared/errors/AppError.js";
 import { projectsMessagesCodes as C } from "@dms/shared";
+import { workStageActionsForLead } from "../../leads/lead/lead.workstage-cockpit.js";
 import { projectRepository } from "./project.repo.js";
 import { groupProjects } from "./project.dto.js";
 import { LOCKED_FROM_STATUSES_FOR_NON_ADMIN } from "./project.constants.js";
@@ -135,7 +136,12 @@ export class ProjectUsecase {
       searchParams.userId = authUser.id;
     }
     if (role === "ADMIN" || role === "SUPER_ADMIN") searchParams.isAdmin = true;
-    return this.legacy.getLeadDetailsByProject(Number(id), searchParams);
+    const lead = await this.legacy.getLeadDetailsByProject(Number(id), searchParams);
+    // Attach the caller's own "what do I do next" work-stage actions (designers/executor).
+    // Assignment-scoped, computed from the already-scoped lead.projects — no extra query,
+    // no lead-IDOR widening.
+    if (lead) lead.workStageActions = workStageActionsForLead(lead, authUser.id);
+    return lead;
   }
 
   // ════════════════════════════════════════════════════════════════════════════
