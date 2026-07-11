@@ -8,21 +8,7 @@ import {
   authMessagesCodes,
   getEffectivePermissions,
   messagesNames,
-  USER_ROLES,
 } from "@dms/shared";
-
-// Legacy admin-tier predicate — used ONLY in the transitional fallback path
-// (tokens minted before currentProfileId existed, or an unmigrated user). Mirrors
-// the OLD isAdminTier union 1:1 (role ADMIN/SUPER_ADMIN ∪ isSuperSales ∪ an
-// ADMIN/SUPER_ADMIN sub-role) so the fallback preserves master behavior exactly.
-// The authoritative source is the current profile's `isAdminTier` (see requireAuth).
-const ADMIN_TIER_ROLES = [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN];
-function legacyIsAdminTier(payload) {
-  if (payload?.isSuperSales) return true;
-  if (ADMIN_TIER_ROLES.includes(payload?.role)) return true;
-  const subRoles = Array.isArray(payload?.subRoles) ? payload.subRoles : [];
-  return subRoles.some((e) => ADMIN_TIER_ROLES.includes(typeof e === "string" ? e : e?.subRole));
-}
 
 // Authorization = authentication + permission code + object scope (+ status).
 // `requireAuth` runs once per router; `requirePermissions` is the coarse code
@@ -107,13 +93,15 @@ class AuthMiddleware {
       }
 
       // TRANSITIONAL fallback: a token minted before `currentProfileId` existed, an
-      // unmigrated user, or a deleted profile. Resolve from the legacy code-map so
-      // access is never broken during rollout; the next refresh mints a
-      // currentProfile-bearing token. (Removed once the migration is complete.)
+      // unmigrated user, or a deleted profile. Resolve permission CODES from the
+      // legacy code-map so access is never broken during rollout; the next refresh
+      // mints a currentProfile-bearing token. Profiles are the sole source of
+      // admin-tier now — an unresolved profile is waived as non-admin-tier (owner
+      // decision; un-migrated sessions do not get admin-tier access here).
       const { permissions, permissionsByModule } = getEffectivePermissions(payload);
       req.auth = {
         ...payload,
-        isAdminTier: legacyIsAdminTier(payload),
+        isAdminTier: false,
         permissions,
         permissionsByModule,
       };

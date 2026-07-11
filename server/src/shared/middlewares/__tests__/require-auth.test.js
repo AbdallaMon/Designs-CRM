@@ -45,19 +45,21 @@ describe("requireAuth resolves via the profile cache", () => {
     expect(req.auth.baseRole).toBe("ADMIN");
   });
 
-  it("falls back to the legacy code-map when the profile is unresolved (old token / unmigrated user)", () => {
+  it("falls back to the legacy code-map for permission codes when the profile is unresolved (old token / unmigrated user), but is waived to non-admin-tier", () => {
     const { req, nextArg } = run(
-      { id: 5, currentProfileId: null, role: "ADMIN", isSuperSales: false, subRoles: [] },
+      { id: 5, currentProfileId: null, role: "ADMIN", subRoles: [] },
       null,
     );
     expect(nextArg).toBeUndefined();
     expect(req.auth.permissions.length).toBeGreaterThan(0); // real ADMIN code-map perms
-    expect(req.auth.isAdminTier).toBe(true); // ADMIN role → admin-tier in the fallback
+    // Profiles are the sole source of admin-tier now; an unresolved profile is
+    // waived to non-admin-tier (owner decision) — no flag/role read here.
+    expect(req.auth.isAdminTier).toBe(false);
   });
 
   it("fallback marks a plain STAFF user as non-admin-tier", () => {
     const { req } = run(
-      { id: 9, currentProfileId: null, role: "STAFF", isSuperSales: false, subRoles: [] },
+      { id: 9, currentProfileId: null, role: "STAFF", subRoles: [] },
       null,
     );
     expect(req.auth.isAdminTier).toBe(false);

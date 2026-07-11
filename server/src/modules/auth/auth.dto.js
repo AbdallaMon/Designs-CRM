@@ -74,7 +74,9 @@ class AuthSchema {
   /**
    * Shape the `/auth/me` payload: the user's display fields PLUS the flattened
    * effective `permissions[]` + `permissionsByModule{}`. The FE gates on the
-   * permission CODES; role/subRoles/isSuperSales/activeRole are DISPLAY-only.
+   * permission CODES; role/subRoles/activeRole are DISPLAY-only. `profile` (the
+   * resolved profile key) is the single source of the user's tier — the legacy
+   * `isSuperSales`/`isPrimary` flags are no longer exposed here.
    * `subRoles` is normalized to a plain string[] for the client.
    *
    * @param {object} user  the auth payload on `req.auth` (already has effective
@@ -115,7 +117,8 @@ class AuthSchema {
     // Nav follows the ACTIVE profile: the SUPER_SALES profile (baseRole STAFF)
     // renders the super-sales sidebar; every other profile renders its baseRole
     // sidebar. Undefined only when there's truly no active profile → buildNavigationTabs
-    // falls back to the legacy role rule (unmigrated parity).
+    // falls back to the plain role (un-migrated users are waived onto the base-role nav;
+    // no flag read here).
     const navRole =
       user.currentProfile || user.currentProfileKey || user.baseRole
         ? currentProfileKey === "SUPER_SALES"
@@ -126,7 +129,6 @@ class AuthSchema {
     const navigationTabs = buildNavigationTabs({
       role: user.role,
       activeRole: user.activeRole,
-      isSuperSales: user.isSuperSales,
       navRole,
       subRoles,
       permissions,
@@ -139,8 +141,6 @@ class AuthSchema {
       role: user.role,
       activeRole: user.activeRole ?? user.role,
       subRoles,
-      isSuperSales: Boolean(user.isSuperSales),
-      isPrimary: Boolean(user.isPrimary),
       profile: currentProfileKey,
       currentProfileId,
       profiles,
@@ -156,8 +156,9 @@ class AuthSchema {
   /**
    * Builds the minimal payload embedded in every token. `currentProfileId` is the
    * AUTHORITATIVE source of effective permissions (resolved via the profile cache
-   * in requireAuth, no DB hit). role/subRoles/isSuperSales are retained for
-   * display + the transitional legacy fallback only.
+   * in requireAuth, no DB hit). role/subRoles are retained for display + the
+   * transitional legacy-code-map fallback only (`isSuperSales`/`isPrimary` are
+   * NOT carried in the token — profiles only).
    */
   static toTokenPayload(user) {
     const subRoles = Array.isArray(user.subRoles)
@@ -170,8 +171,6 @@ class AuthSchema {
       role: user.role,
       activeRole: user.role,
       isActive: user.isActive,
-      isPrimary: user.isPrimary,
-      isSuperSales: user.isSuperSales,
       subRoles,
       currentProfileId: user.currentProfileId ?? user.currentProfile?.id ?? null,
       // The ids of the profiles the user holds — so /auth/me can build the switcher
