@@ -13,7 +13,7 @@ describe("isAdminTier follows the current-profile flag", () => {
   it("falls back to the legacy role/flags/subRoles union when no flag is present", () => {
     expect(isAdminTier({ role: "ADMIN" })).toBe(true);
     expect(isAdminTier({ role: "STAFF" })).toBe(false);
-    expect(isAdminTier({ role: "STAFF", isSuperSales: true })).toBe(true);
+    expect(isAdminTier({ role: "STAFF", currentProfileKey: "SUPER_SALES" })).toBe(true);
     expect(isAdminTier({ role: "STAFF", subRoles: [{ subRole: "ADMIN" }] })).toBe(true);
   });
 });

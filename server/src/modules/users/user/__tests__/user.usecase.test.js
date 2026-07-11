@@ -30,7 +30,7 @@ function makeRepo(overrides = {}) {
 }
 
 const admin = { id: 1, role: "ADMIN", permissions: [] };
-const superSales = { id: 2, role: "STAFF", isSuperSales: true, permissions: [] };
+const superSales = { id: 2, role: "STAFF", currentProfileKey: "SUPER_SALES", permissions: [] };
 const staff = { id: 3, role: "STAFF", permissions: [] };
 // A user whose BASE role is non-admin but who holds an ADMIN sub-role (string[] shape,
 // as carried on req.auth from the token payload).
