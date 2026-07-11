@@ -299,6 +299,47 @@ describe("computeCockpit — contract health + post-finalize (Phase 1)", () => {
   });
 });
 
+describe("computeCockpit — accountant (Phase 2)", () => {
+  const acc = (payments) =>
+    baseBundle({
+      status: "FINALIZED",
+      contracts: [{ id: 1, status: "IN_PROGRESS", sessionStatus: "REGISTERED", stages: [], payments }],
+    });
+
+  it("DOWNPAYMENT_DUE (critical) when the SIGNATURE payment is not yet received", () => {
+    const r = computeCockpit(acc([{ status: "DUE", paymentCondition: "SIGNATURE" }]), NOW, { profileKey: "ACCOUNTANT" });
+    const a = r.actions.find((x) => x.type === "DOWNPAYMENT_DUE");
+    expect(a.severity).toBe("critical");
+    expect(a.cta).toMatchObject({ kind: "OPEN_PAYMENT", capability: "canAddPayment", tabKey: "payments" });
+  });
+
+  it("PAYMENT_DUE (warning) for a non-signature DUE payment", () => {
+    const r = computeCockpit(acc([{ status: "DUE", paymentCondition: "INSTALLMENT" }]), NOW, { profileKey: "ACCOUNTANT" });
+    const a = r.actions.find((x) => x.type === "PAYMENT_DUE");
+    expect(a).toBeTruthy();
+    expect(a.params).toEqual({ count: 1 });
+  });
+
+  it("no payment actions when nothing is DUE", () => {
+    const r = computeCockpit(acc([{ status: "RECEIVED", paymentCondition: "SIGNATURE" }]), NOW, { profileKey: "ACCOUNTANT" });
+    expect(r.actions).toEqual([]);
+  });
+
+  it("health.payment reflects outstanding + downpayment state", () => {
+    const { health } = computeCockpit(
+      acc([{ status: "RECEIVED", paymentCondition: "SIGNATURE" }, { status: "DUE", paymentCondition: "INSTALLMENT" }]),
+      NOW,
+      { profileKey: "ACCOUNTANT" },
+    );
+    expect(health.payment).toMatchObject({ outstandingCount: 1, hasDue: true, downpaymentReceived: true });
+  });
+
+  it("a SALES profile does NOT see accountant signals on the same bundle", () => {
+    const r = computeCockpit(acc([{ status: "DUE", paymentCondition: "SIGNATURE" }]), NOW, { profileKey: "NORMAL_SALES" });
+    expect(types(r)).not.toContain("DOWNPAYMENT_DUE");
+  });
+});
+
 describe("computeCockpit — sorting & suppression", () => {
   it("sorts critical > warning > info, ties kept in rule order", () => {
     const bundle = baseBundle({

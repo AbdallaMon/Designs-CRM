@@ -152,7 +152,46 @@ function computeHealth(bundle) {
           ...contractStageProgress(contract.stages),
         }
       : null,
+    // Payment track — derived from ContractPayment (ClientLead.paymentStatus is inert).
+    payment: paymentHealth(contract),
   };
+}
+
+// Payment summary derived from the contract's ContractPayment rows (not ClientLead.paymentStatus).
+function paymentHealth(contract) {
+  const pays = arr(contract?.payments);
+  return {
+    outstandingCount: pays.filter((p) => p.status === "DUE").length,
+    hasDue: pays.some((p) => p.status === "DUE"),
+    downpaymentReceived: pays.some(
+      (p) => p.paymentCondition === "SIGNATURE" && (p.status === "RECEIVED" || p.status === "TRANSFERRED"),
+    ),
+  };
+}
+
+// ── ACCOUNTANT rule set ──────────────────────────────────────────────────────
+// Payment collection, derived live from ContractPayment.status. The down-payment
+// (SIGNATURE condition) is the critical gate that unblocks production.
+function computeAccountantActions(bundle) {
+  const actions = [];
+  const payments = arr(firstContract(bundle)?.payments);
+
+  const sigDue = payments.find(
+    (p) => p.paymentCondition === "SIGNATURE" && (p.status === "DUE" || p.status === "NOT_DUE"),
+  );
+  if (sigDue) {
+    actions.push(
+      action("DOWNPAYMENT_DUE", "critical", {}, { kind: "OPEN_PAYMENT", capability: "canAddPayment", tabKey: "payments" }),
+    );
+  }
+
+  const otherDue = payments.filter((p) => p.status === "DUE" && p.paymentCondition !== "SIGNATURE");
+  if (otherDue.length) {
+    actions.push(
+      action("PAYMENT_DUE", "warning", { count: otherDue.length }, { kind: "OPEN_PAYMENT", capability: "canAddPayment", tabKey: "payments" }),
+    );
+  }
+  return actions;
 }
 
 // ── SALES rule set ───────────────────────────────────────────────────────────
@@ -342,8 +381,9 @@ export function computeCockpit(bundle = {}, now, { profileKey } = {}) {
   let actions = [];
   if (ruleSet === "SALES") {
     actions = computeSalesActions(bundle, now, health, status);
+  } else if (ruleSet === "ACCOUNTANT") {
+    actions = computeAccountantActions(bundle);
   }
-  // ACCOUNTANT rule set is wired in Phase 2.
 
   return { health, actions: sortActions(actions) };
 }

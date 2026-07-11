@@ -1004,6 +1004,8 @@ const COCKPIT_BUNDLE_SELECT = {
       status: true,
       sessionStatus: true,
       stages: { select: { title: true, stageStatus: true, order: true } },
+      // Payment truth (accountant signals) — derived at compute-time, no DB migration.
+      payments: { select: { status: true, paymentCondition: true } },
     },
   },
   salesStages: { select: { stage: true } },
