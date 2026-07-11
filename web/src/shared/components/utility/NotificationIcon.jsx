@@ -37,9 +37,11 @@ const NotificationsIcon = () => {
   const notificationSound =
     typeof Audio !== "undefined" && new Audio("/notification-sound.mp3");
   useEffect(() => {
-    const fetchUnreadNotifications = async () => {
+    // Show the LATEST notifications regardless of read/unread state (the dropdown is a
+    // recent-activity feed, not just an unread inbox). The badge still reflects unread.
+    const fetchLatestNotifications = async () => {
       try {
-        const response = await apiRequest("notifications/unread");
+        const response = await apiRequest("notifications?limit=10");
         const res = await response.json();
         const list = Array.isArray(res?.data)
           ? res.data
@@ -47,12 +49,12 @@ const NotificationsIcon = () => {
         setNotifications(list);
         setUnreadCount(list.filter((notification) => !notification.isRead).length);
       } catch (error) {
-        // Error fetching unread notifications
+        // Error fetching notifications
       }
     };
 
     if (user) {
-      fetchUnreadNotifications();
+      fetchLatestNotifications();
     }
   }, [user]);
 
@@ -145,7 +147,7 @@ const NotificationsIcon = () => {
         >
           {notifications?.length === 0 ? (
             <Typography textAlign="center" sx={{ padding: "16px" }}>
-              No new Notification
+              No notifications yet
             </Typography>
           ) : (
             <>
@@ -213,22 +215,21 @@ const NotificationsIcon = () => {
             </>
           )}
         </List>
-        {notifications.length > 0 && (
-          <Button
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              p: "8px 16px",
-              color: "#1a73e8",
-              fontWeight: "bold",
-              backgroundColor: "white",
-            }}
-            component={Link}
-            href="/dashboard/notifications"
-          >
-            View all notification
-          </Button>
-        )}
+        <Button
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            p: "8px 16px",
+            color: "#1a73e8",
+            fontWeight: "bold",
+            backgroundColor: "white",
+          }}
+          component={Link}
+          href="/dashboard/notifications"
+          onClick={handleClose}
+        >
+          View all notifications
+        </Button>
       </Menu>
     </>
   );

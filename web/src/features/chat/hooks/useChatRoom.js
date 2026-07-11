@@ -3,7 +3,7 @@ import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useEffect, useState } from "react";
 import { useSocket } from "@/features/chat/hooks/useSocket.js";
 
-export function useChatRoom(roomId, clientId) {
+export function useChatRoom(roomId, clientId, token) {
   const [chatRoom, setChatRoom] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -13,7 +13,7 @@ export function useChatRoom(roomId, clientId) {
     if (!roomId) return;
     await getDataAndSet({
       url: clientId
-        ? `client/chat/rooms/${roomId}?clientId=${clientId}&`
+        ? `client/chat/rooms/${roomId}?clientId=${clientId}&token=${token}&`
         : `shared/chat/rooms/${roomId}`,
       setData: setChatRoom,
       setLoading,

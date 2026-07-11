@@ -106,6 +106,7 @@ const LazyImageComponent = ({
   index,
   canDelete,
   setImages,
+  token,
 }) => {
   const [ref, isIntersecting] = useIntersectionObserver();
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -127,6 +128,7 @@ const LazyImageComponent = ({
           type={type}
           setImages={setImages}
           canDelete={canDelete}
+          token={token}
         />
       ) : (
         // Placeholder while loading
@@ -158,6 +160,7 @@ const VirtualGrid = ({
   cardsRef,
   canDelete,
   setImages,
+  token,
 }) => {
   const containerRef = useRef(null);
   const theme = useTheme();
@@ -248,6 +251,7 @@ const VirtualGrid = ({
                       index={index}
                       canDelete={canDelete}
                       setImages={setImages}
+                      token={token}
                     />
                   </Grid>
                 );
@@ -270,6 +274,7 @@ export function ImageGroup({
   hidetitle,
   canDelete,
   setImages,
+  token,
 }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
@@ -351,6 +356,7 @@ export function ImageGroup({
           cardsRef={cardsRef}
           canDelete={canDelete}
           setImages={setImages}
+          token={token}
         />
       ) : (
         // Use regular grid for smaller datasets
@@ -380,6 +386,7 @@ export function ImageGroup({
                     index={index}
                     setImages={setImages}
                     canDelete={canDelete}
+                    token={token}
                   />
                 </Grid>
               );

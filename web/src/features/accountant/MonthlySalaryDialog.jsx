@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { FaMoneyBillWave } from "react-icons/fa";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
+import { useAlertContext } from "@/app/providers/MuiAlert";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { getData } from "@/app/helpers/functions/getData";
 import {
@@ -24,6 +25,7 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
   const [open, setOpen] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(false);
   const { setLoading } = useToastContext();
+  const { setAlertError } = useAlertContext();
   const [monthlyData, setMonthlyData] = useState();
   const [formData, setFormData] = useState({
     totalHoursWorked: 0,
@@ -107,6 +109,18 @@ const ProcessMonthlySalaryButton = ({ salaryData, setSalaryData }) => {
   };
 
   const handleSubmit = async () => {
+    if (!(parseFloat(formData.totalHoursWorked) > 0)) {
+      setAlertError("Total hours worked must be greater than 0");
+      return;
+    }
+    if (!(parseFloat(formData.netSalary) > 0)) {
+      setAlertError("Net salary must be greater than 0");
+      return;
+    }
+    if (!formData.paymentDate) {
+      setAlertError("Please select a payment date");
+      return;
+    }
     const request = await handleRequestSubmit(
       { ...formData, baseSalaryId: salaryData.id },
       setLoading,

@@ -1,4 +1,4 @@
-import { reverseString } from "../../../infra/pdf/pdf-fonts.js";
+import { reverseString } from "../../../infra/pdf/pdf-helpers.js";
 
 // wittenBlocksData.js  (only the requested edits)
 export const FIXED_TEXT = {

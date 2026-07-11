@@ -326,7 +326,8 @@ const ClientImageSessionManager = ({ clientLeadId }) => {
                 const request = await handleRequestSubmit(
                   {
                     sessionData: session,
-                    signatureUrl: session.signature,
+                    signatureUrl: session.signatureUrl,
+                    sessionStatus: session.sessionStatus,
                   },
                   setToastLoading,
                   `client/image-session/generate-pdf`,

@@ -90,7 +90,7 @@ function LeadChatGroupForm({ clientLeadId, onCreate, onClose }) {
   const [step, setStep] = useState(0);
 
   const [data, setData] = useState({
-    groupType: null, // CHAT_ROOM_TYPES.CLIENT_TO_STAFF || CHAT_ROOM_TYPES.MULTI_PROJECT
+    groupType: null, // CHAT_ROOM_TYPES.CLIENT_TO_STAFF || CHAT_ROOM_TYPES.STAFF_GROUP
 
     // ✅ multi-select group ids
     projectGroupIds: [],
@@ -109,7 +109,7 @@ function LeadChatGroupForm({ clientLeadId, onCreate, onClose }) {
   const steps = useMemo(() => ["Chat type", "Configure"], []);
 
   const isClientToStaff = data.groupType === CHAT_ROOM_TYPES.CLIENT_TO_STAFF;
-  const isMultiProject = data.groupType === CHAT_ROOM_TYPES.MULTI_PROJECT;
+  const isMultiProject = data.groupType === CHAT_ROOM_TYPES.STAFF_GROUP;
 
   function update(field, value) {
     setData((prev) => ({ ...prev, [field]: value }));
@@ -254,7 +254,7 @@ function LeadGroupTypeSelect({ value, onChange }) {
       desc: "Private chat between client and internal team.",
     },
     {
-      type: CHAT_ROOM_TYPES.MULTI_PROJECT,
+      type: CHAT_ROOM_TYPES.STAFF_GROUP,
       title: "Multi Project Chat",
       desc: "Group chat linked to project group + project types.",
     },

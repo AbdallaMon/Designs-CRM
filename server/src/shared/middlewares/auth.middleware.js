@@ -1,8 +1,10 @@
 import { AppError } from "../errors/AppError.js";
 import { JwtService } from "../../infra/security/jwt.js";
 import { profileCache } from "../../infra/auth/profile-cache.js";
+import { AuthUseCase } from "../../modules/auth/auth.usecase.js";
 import {
   AUTH_COOKIE_NAME,
+  AUTH_REFRESH_TOKEN_COOKIE_NAME,
   authMessagesCodes,
   getEffectivePermissions,
   messagesNames,
@@ -30,53 +32,95 @@ class AuthMiddleware {
    * Verify the session and attach `req.auth` with flattened effective
    * permissions. Single unified JWT scheme: only the `access_token` cookie is
    * accepted (the legacy `"token"` read-shim was removed at cutover).
+   *
+   * SILENT REFRESH: a missing/expired/malformed access token is NOT an immediate
+   * 401. If a valid `refresh_token` cookie is present, we transparently mint a
+   * fresh token pair (via AuthUseCase.refreshTokens — which re-loads and
+   * re-validates the user), set the new cookies on the response, and let the
+   * request proceed with the new payload. This keeps the session alive across
+   * the 15-min access-token expiry for EVERY request — not only those routed
+   * through the frontend refresh-retry wrapper. It cannot widen access: a
+   * cryptographically valid refresh token is still required and the user is
+   * re-checked for `isActive`. Only when there is neither a valid access token
+   * nor a usable refresh token does the request 401.
    */
-  static requireAuth(req, res, next) {
+  static async requireAuth(req, res, next) {
     const accessToken = req.cookies?.[AUTH_COOKIE_NAME];
 
-    if (!accessToken) {
-      return next(new AppError(authMessagesCodes.UNAUTHORIZED, 401));
+    let payload = null;
+    if (accessToken) {
+      try {
+        payload = JwtService.verifyAccess(accessToken);
+      } catch {
+        payload = null; // expired/malformed → fall through to silent refresh
+      }
     }
 
-    let payload;
-    try {
-      payload = JwtService.verifyAccess(accessToken);
-    } catch {
-      return next(new AppError(authMessagesCodes.INVALID_TOKEN, 401));
+    // No valid access token: try a silent refresh from the refresh cookie.
+    if (!payload) {
+      const refreshToken = req.cookies?.[AUTH_REFRESH_TOKEN_COOKIE_NAME];
+      if (!refreshToken) {
+        return next(new AppError(authMessagesCodes.UNAUTHORIZED, 401));
+      }
+      try {
+        const { accessToken: newAccess, refreshToken: newRefresh } =
+          await AuthUseCase.refreshTokens(refreshToken);
+        res
+          .cookie(AUTH_COOKIE_NAME, newAccess, JwtService.cookies.access)
+          .cookie(
+            AUTH_REFRESH_TOKEN_COOKIE_NAME,
+            newRefresh,
+            JwtService.cookies.refresh,
+          );
+        payload = JwtService.verifyAccess(newAccess);
+      } catch (err) {
+        // Refresh token missing/expired/invalid, or the user is gone/inactive.
+        return next(
+          err instanceof AppError
+            ? err
+            : new AppError(authMessagesCodes.INVALID_TOKEN, 401),
+        );
+      }
     }
 
     // Authoritative resolution: the current profile's codes, from the in-process
-    // cache (zero DB hit). The token carries `currentProfileId`.
-    const resolved = profileCache.resolve(payload.currentProfileId);
-    if (resolved) {
-      // Build the switcher list from the cache (the token carries the ids only).
-      const profiles = Array.isArray(payload.profileIds)
-        ? payload.profileIds.map((id) => profileCache.resolveMeta(id)).filter(Boolean)
-        : [];
+    // cache (zero DB hit). The token carries `currentProfileId`. Wrapped so any
+    // unexpected throw is forwarded to the error handler rather than becoming an
+    // unhandled rejection (this method is async for the silent-refresh path).
+    try {
+      const resolved = profileCache.resolve(payload.currentProfileId);
+      if (resolved) {
+        // Build the switcher list from the cache (the token carries the ids only).
+        const profiles = Array.isArray(payload.profileIds)
+          ? payload.profileIds.map((id) => profileCache.resolveMeta(id)).filter(Boolean)
+          : [];
+        req.auth = {
+          ...payload,
+          currentProfileKey: resolved.key,
+          baseRole: resolved.baseRole,
+          isAdminTier: Boolean(resolved.isAdminTier),
+          permissions: resolved.permissions,
+          permissionsByModule: resolved.permissionsByModule,
+          profiles,
+        };
+        return next();
+      }
+
+      // TRANSITIONAL fallback: a token minted before `currentProfileId` existed, an
+      // unmigrated user, or a deleted profile. Resolve from the legacy code-map so
+      // access is never broken during rollout; the next refresh mints a
+      // currentProfile-bearing token. (Removed once the migration is complete.)
+      const { permissions, permissionsByModule } = getEffectivePermissions(payload);
       req.auth = {
         ...payload,
-        currentProfileKey: resolved.key,
-        baseRole: resolved.baseRole,
-        isAdminTier: Boolean(resolved.isAdminTier),
-        permissions: resolved.permissions,
-        permissionsByModule: resolved.permissionsByModule,
-        profiles,
+        isAdminTier: legacyIsAdminTier(payload),
+        permissions,
+        permissionsByModule,
       };
       return next();
+    } catch (err) {
+      return next(err);
     }
-
-    // TRANSITIONAL fallback: a token minted before `currentProfileId` existed, an
-    // unmigrated user, or a deleted profile. Resolve from the legacy code-map so
-    // access is never broken during rollout; the next refresh mints a
-    // currentProfile-bearing token. (Removed once the migration is complete.)
-    const { permissions, permissionsByModule } = getEffectivePermissions(payload);
-    req.auth = {
-      ...payload,
-      isAdminTier: legacyIsAdminTier(payload),
-      permissions,
-      permissionsByModule,
-    };
-    return next();
   }
 
   /**

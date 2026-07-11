@@ -69,6 +69,7 @@ export function ChatWindow({
   reFetchRooms = () => {},
   clientId,
   client,
+  token,
 }) {
   const { user } = useAuth();
   const { setLoading: setToastLoading } = useToastContext();
@@ -94,15 +95,15 @@ export function ChatWindow({
     loading: loadingRoom,
     fetchChatRoom,
     error,
-  } = useChatRoom(roomId, clientId);
+  } = useChatRoom(roomId, clientId, token);
   const [loadingPinnedMessages, setLoadingPinnedMessages] = useState(false);
   const fetchPinnedMessages = async () => {
     if (!roomId) return;
 
     const response = await getData({
       url: clientId
-        ? `client/chat/${roomId}/pinned-messages?clientId=${clientId}&`
-        : `shared/chat/${roomId}/pinned-messages`,
+        ? `client/chat/${roomId}/pinned-messages?clientId=${clientId}&token=${token}&`
+        : `shared/chat/rooms/${roomId}/pinned-messages`,
       setLoading: setLoadingPinnedMessages,
     });
 
@@ -171,12 +172,12 @@ export function ChatWindow({
     setNewMessagesCount,
     loadMore,
     deleteSelectedMessages,
-  } = useChatMessages(roomId, 0, clientId);
+  } = useChatMessages(roomId, 0, clientId, token);
   const {
     members,
     loading: membersLoading,
     fetchMembers,
-  } = useChatMembers(roomId, clientId, showAddMembers);
+  } = useChatMembers(roomId, clientId, showAddMembers, token);
   const cantLoad = !hasMore || loadingMore || initialLoading || loading;
   const currentUserMember = members?.find(
     (m) => m.userId === user?.id || m.clientId == clientId
@@ -709,6 +710,7 @@ export function ChatWindow({
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
         clientId={clientId}
+        token={token}
       />
 
       {/* Add Members Dialog */}

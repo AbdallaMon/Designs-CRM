@@ -93,10 +93,6 @@ const inputs = [
     },
     pattern: { required: { value: true, message: "Attatchment is required" } },
   },
-  {
-    data: { id: "paymentId", key: "id", type: "number" },
-    sx: { display: "none" },
-  },
 ];
 
 const AccountantKanbanLeadCard = ({

@@ -7,7 +7,7 @@ export async function addADesginerToAllRelatedProjectsRooms({
 }) {
   const projectRooms = await prisma.chatRoom.findMany({
     where: {
-      type: "MULTI_PROJECT",
+      type: "STAFF_GROUP",
       clientLeadId: parseInt(clientLeadId),
       multiProjectRooms: {
         some: {

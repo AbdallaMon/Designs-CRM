@@ -41,7 +41,7 @@ import { RenderListOfFiles } from "@/shared/components/media/MediaRender.jsx";
 
 /* ================= Main Component ================= */
 
-export function ChatFilesTab({ roomId, currentTab, setCurrentTab, clientId }) {
+export function ChatFilesTab({ roomId, currentTab, setCurrentTab, clientId, token }) {
   const [selectedType, setSelectedType] = useState([]);
 
   const {
@@ -60,6 +60,7 @@ export function ChatFilesTab({ roomId, currentTab, setCurrentTab, clientId }) {
   } = useChatFiles(roomId, {
     fileType: selectedType,
     clientId,
+    token,
   });
   const canLoadMore = hasMore && !loadingMore && !initialLoading && !loading;
   return (

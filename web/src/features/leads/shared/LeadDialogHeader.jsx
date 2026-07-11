@@ -14,7 +14,14 @@ import {
 import dayjs from "dayjs";
 import { BsArrowRight, BsFileText } from "react-icons/bs";
 import { AiOutlineSwap } from "react-icons/ai";
-import { MdWork, MdTag, MdSchedule, MdOpenInNew } from "react-icons/md";
+import {
+  MdWork,
+  MdTag,
+  MdSchedule,
+  MdOpenInNew,
+  MdFullscreen,
+  MdFullscreenExit,
+} from "react-icons/md";
 import { IoMdContract } from "react-icons/io";
 import {
   ClientLeadStatus,
@@ -54,6 +61,8 @@ export const LeadDialogHeader = ({
   createADeal,
   MoreActionsComponent,
   additionalHeaderContent,
+  fullscreen,
+  onToggleFullscreen,
 }) => {
   const currentContract =
     lead.contracts && lead.contracts.length > 0 && lead.contracts[0];
@@ -337,7 +346,16 @@ export const LeadDialogHeader = ({
           <ClientImageSessionManager clientLeadId={lead.id} />
 
           {lead.status !== "NEW" && (
-            <UpdateInitialConsultButton clientLead={lead} />
+            <UpdateInitialConsultButton
+              clientLead={lead}
+              onSuccess={(updated) =>
+                setLead((old) => ({
+                  ...old,
+                  ...(updated || {}),
+                  initialConsult: true,
+                }))
+              }
+            />
           )}
 
           <Button
@@ -354,6 +372,35 @@ export const LeadDialogHeader = ({
 
           {/* push the right-aligned cluster to the end */}
           <Box sx={{ flex: 1, minWidth: 8 }} />
+
+          {/* Fullscreen toggle — modal mode only (the standalone page is already
+              full-bleed). The choice is remembered per-browser, so the next lead
+              opened restores the same mode. */}
+          {!isPage && onToggleFullscreen && (
+            <Tooltip title={fullscreen ? "Exit fullscreen" : "Fullscreen"}>
+              <IconButton
+                onClick={() => onToggleFullscreen()}
+                sx={(t) => ({
+                  width: 40,
+                  height: 40,
+                  borderRadius: 2,
+                  border: `1px solid ${t.palette.divider}`,
+                  bgcolor: t.palette.background.paper,
+                  boxShadow: t.shadows[1],
+                  "&:hover": {
+                    bgcolor: t.palette.action.hover,
+                    borderColor: t.palette.primary.main,
+                  },
+                })}
+              >
+                {fullscreen ? (
+                  <MdFullscreenExit size={20} />
+                ) : (
+                  <MdFullscreen size={20} />
+                )}
+              </IconButton>
+            </Tooltip>
+          )}
 
           {/* Open this lead in its own page, in a new browser tab — only meaningful
               from the kanban modal (on the standalone page you are already here). */}

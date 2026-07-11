@@ -31,6 +31,7 @@ function ImageComponentBase({
   isSelected,
   canDelete,
   setImages,
+  token,
 }) {
   const theme = useTheme();
   const { setLoading } = useToastContext();
@@ -41,7 +42,7 @@ function ImageComponentBase({
   const { lng } = useLanguageSwitcherContext();
   async function handleImageDelete(image) {
     const req = await handleRequestSubmit(
-      {},
+      { token },
       setLoading,
       `client/image-session/images/${image.id}`,
       false,

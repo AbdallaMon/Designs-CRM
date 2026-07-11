@@ -107,6 +107,32 @@ export const memberMethods = {
     return { code: chatMessagesCodes.MEMBER_REMOVED };
   },
 
+  async leaveRoom(roomId, userId) {
+    // The acting user is the authenticated caller (never a body/param id). Find
+    // the caller's OWN membership row and remove it. The room scope checker has
+    // already run, so this membership normally exists; guard defensively with the
+    // same "not a member" scope code used across this module.
+    const member = await this.repository.getMember({ roomId, userId });
+    if (!member) throw new AppError(chatMessagesCodes.ROOM_ACCESS_DENIED, 403);
+
+    await this.repository.removeMember(member.id);
+
+    const io = await getIo();
+    io.to(`room:${roomId}`).emit("member:removed", {
+      roomId: Number(roomId),
+      memberId: Number(member.id),
+      userId: member.userId,
+    });
+
+    if (member.userId) {
+      io.to(`user:${member.userId}`).emit("notification:room_removed", {
+        roomId: Number(roomId),
+      });
+    }
+
+    return { code: chatMessagesCodes.MEMBER_REMOVED };
+  },
+
   async updateMemberRole(roomId, userId, memberId, role) {
     const requester = await this.repository.getAdminOrModeratorMember({
       roomId,

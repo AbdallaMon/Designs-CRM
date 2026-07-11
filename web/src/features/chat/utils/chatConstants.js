@@ -4,7 +4,7 @@ export const CHAT_ROOM_TYPES = {
   STAFF_TO_STAFF: "STAFF_TO_STAFF",
   PROJECT_GROUP: "PROJECT_GROUP",
   CLIENT_TO_STAFF: "CLIENT_TO_STAFF",
-  MULTI_PROJECT: "MULTI_PROJECT",
+  STAFF_GROUP: "STAFF_GROUP",
   GROUP: "GROUP",
 };
 
@@ -47,7 +47,7 @@ export const CHAT_ROOM_TYPE_LABELS = {
   STAFF_TO_STAFF: "Direct",
   PROJECT_GROUP: "Project Group",
   CLIENT_TO_STAFF: "Client lead",
-  MULTI_PROJECT: "Multi-Project",
+  STAFF_GROUP: "Multi-Project",
   GROUP: "Group",
 };
 

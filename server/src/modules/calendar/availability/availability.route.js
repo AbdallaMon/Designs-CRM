@@ -65,6 +65,13 @@ router.post(
   validate(AvailabilityValidation.createDay),
   asyncHandler(availabilityController.createDay),
 );
+router.post(
+  "/add-custom/:dayId",
+  AuthMiddleware.requirePermissions([P.MANAGE]),
+  validate(AvailabilityValidation.dayIdParams, "params"),
+  validate(AvailabilityValidation.addCustomSlot),
+  asyncHandler(availabilityController.addCustomSlot),
+);
 router.delete(
   "/days/:id",
   AuthMiddleware.requirePermissions([P.MANAGE]),

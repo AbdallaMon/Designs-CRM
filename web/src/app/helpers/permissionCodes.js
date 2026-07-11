@@ -33,3 +33,12 @@ export const ADMIN_RESIDUAL_CODES = {
   PROJECT_GROUP_CREATE: "admin_residual.project.group_create",
   TELEGRAM_MANAGE: "admin_residual.telegram.manage",
 };
+
+// Mirror of packages/shared/constants/access/permissions.constants.js
+// TELEGRAM_PERMISSIONS. MANAGE ("telegram.manage") gates the Telegram userbot login
+// flow — viewing the current auth and running the connection steps. Granted only to
+// ADMIN/SUPER_ADMIN, matching the backend v2/telegram/* routes which require this same
+// code. Distinct from ADMIN_RESIDUAL_CODES.TELEGRAM_MANAGE (lead-scoped channel actions).
+export const TELEGRAM_CODES = {
+  MANAGE: "telegram.manage",
+};

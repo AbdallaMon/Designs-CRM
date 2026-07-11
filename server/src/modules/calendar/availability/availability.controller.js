@@ -41,6 +41,16 @@ export class AvailabilityController {
     return created(res, data, C.AVAILABLE_DAYS_SAVED, TK);
   };
 
+  addCustomSlot = async (req, res) => {
+    const data = await this.usecase.addCustomSlot({
+      dayId: req.params.dayId,
+      body: req.body,
+      timezone: req.query.timezone,
+      authUser: req.auth,
+    });
+    return created(res, data, C.CUSTOM_SLOT_ADDED, TK);
+  };
+
   deleteDay = async (req, res) => {
     await this.usecase.deleteDay({ dayId: req.params.id });
     return deleted(res, C.AVAILABLE_DAY_DELETED, TK);

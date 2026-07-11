@@ -24,6 +24,7 @@ import {
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { LeadDetailsProvider } from "@/features/leads/context/LeadDetailsContext.jsx";
+import { useLeadViewPreferences } from "@/features/leads/hooks/useLeadViewPreferences.js";
 import { FaExclamationTriangle } from "react-icons/fa";
 import {
   MdInfoOutline,
@@ -64,6 +65,9 @@ export const PreviewLead = ({
   };
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  // Remembered fullscreen preference (modal mode only — the full-page route is already
+  // full-bleed). Persisted per-browser so the next lead opens the same way.
+  const { fullscreen, setFullscreen } = useLeadViewPreferences();
   const [loading, setLoading] = useState(true);
   const [lead, setLead] = useState(null);
   const { user } = useAuth();
@@ -229,6 +233,8 @@ export const PreviewLead = ({
         type={type}
         dontCheckIfNotUser={dontCheckIfNotUser}
         setRerenderColumns={setRerenderColumns}
+        fullscreen={fullscreen}
+        onToggleFullscreen={page ? undefined : () => setFullscreen()}
       />
     </LeadDetailsProvider>
   );
@@ -267,10 +273,10 @@ export const PreviewLead = ({
               // viewport so tall tab content always scrolls instead of being clipped.
               display: "flex",
               flexDirection: "column",
-              maxHeight: { xs: "100%", sm: "92vh" },
+              maxHeight: { xs: "100%", sm: fullscreen ? "100%" : "92vh" },
             },
           }}
-          fullScreen={isMobile}
+          fullScreen={isMobile || fullscreen}
         >
           {loading ? (
             <FullScreenLoader />

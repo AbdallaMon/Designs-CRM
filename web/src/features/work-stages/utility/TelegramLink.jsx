@@ -32,6 +32,7 @@ const TelegramLink = ({ lead, setLead, setleads }) => {
     try {
       const response = await handleRequestSubmit(
         {
+          field: "telegramLink",
           telegramLink: tempLink,
         },
         setLoading,

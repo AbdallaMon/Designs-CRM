@@ -55,6 +55,7 @@ export function ClientSelectedImages({
         type="not-select"
         cardsRef={cardsRef}
         canDelete={canDelete}
+        token={session?.token}
       />
       {withActions && (
         <Paper

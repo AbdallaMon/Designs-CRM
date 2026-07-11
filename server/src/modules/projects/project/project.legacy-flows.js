@@ -450,7 +450,7 @@ async function getLeadByPorjects({ searchParams, isAdmin }) {
   if (filters?.clientId && filters.clientId !== "all") {
     where.clientId = Number(filters.clientId);
   }
-  if (filters.id && filters.id !== "all") {
+  if (filters?.id && filters.id !== "all") {
     where.id = Number(filters.id);
   }
   if (
@@ -625,7 +625,7 @@ async function getLeadByPorjectsColumn({ searchParams, isAdmin }) {
   if (filters?.clientId && filters.clientId !== "all") {
     where.clientId = Number(filters.clientId);
   }
-  if (filters.id && filters.id !== "all") {
+  if (filters?.id && filters.id !== "all") {
     where.id = Number(filters.id);
   }
   if (

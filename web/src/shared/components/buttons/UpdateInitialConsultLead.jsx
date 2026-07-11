@@ -17,7 +17,7 @@ import { useToastContext } from "@/app/providers/ToastLoadingProvider";
  * value keyed by it. Sending just `{ initialConsult: true }` (the old legacy shape) is
  * rejected with 422.
  */
-function UpdateInitialConsultButton({ clientLead, fullWidth }) {
+function UpdateInitialConsultButton({ clientLead, fullWidth, onSuccess }) {
   const { user } = useAuth();
   const { setLoading } = useToastContext();
 
@@ -33,7 +33,13 @@ function UpdateInitialConsultButton({ clientLead, fullWidth }) {
       "Updating"
     );
     if (response.status === 200) {
-      window.location.reload();
+      // Prefer a live, in-place update when the caller wires one; only fall back to a
+      // hard reload when no callback is supplied (keeps standalone usages working).
+      if (onSuccess) {
+        onSuccess(response.data, clientLead);
+      } else {
+        window.location.reload();
+      }
     }
     return response;
   }

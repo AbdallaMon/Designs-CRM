@@ -58,6 +58,23 @@ export async function deleteAModel({ id, isAdmin, data, isSuperSales }) {
       });
     }
   }
+
+  // Contract has RESTRICT foreign keys (projects, notes, delivery-schedule stage links)
+  // that make a plain delete fail (P2003). Tear it down in FK-safe order, keeping projects
+  // (contractId nulled) and delivery schedules (stage link nulled). See the repo method.
+  if (model === "contract" || model === "Contract") {
+    await genericDeleteRepository.deleteContractWithDependents({ id });
+    return { data: item, message: `${data.model} deleted successfully` };
+  }
+
+  // ClientLeadUpdate has RESTRICT foreign keys (its SharedUpdates + Notes) that make a plain
+  // delete fail (P2003). Tear down the update's own scoped children first, server-side, so we
+  // never rely on a client-supplied cascade. See the repo method.
+  if (model === "ClientLeadUpdate") {
+    await genericDeleteRepository.deleteClientLeadUpdateWithDependents({ id });
+    return { data: item, message: `${data.model} deleted successfully` };
+  }
+
   await genericDeleteRepository.deleteModel({ model, id });
   return { data: item, message: `${data.model} deleted successfully` };
 }

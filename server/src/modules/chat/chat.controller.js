@@ -168,6 +168,13 @@ export class ChatController {
     return ok(res, null, result.code, TK);
   };
 
+  leaveRoom = async (req, res) => {
+    const userId = req.auth.id;
+    const { roomId } = req.params;
+    const result = await this.usecase.leaveRoom(roomId, userId);
+    return ok(res, null, result.code, TK);
+  };
+
   updateMemberRole = async (req, res) => {
     const userId = req.auth.id;
     const { roomId, memberId } = req.params;

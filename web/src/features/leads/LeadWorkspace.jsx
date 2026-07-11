@@ -6,9 +6,24 @@
 // has been opened, falling back to the core lead's bundled counts.
 //
 // Responsive: a vertical grouped rail on md+, a horizontal chip scroller on xs.
-import { alpha, Badge, Box, Stack, Typography, useMediaQuery, useTheme } from "@mui/material";
+import {
+  alpha,
+  Badge,
+  Box,
+  IconButton,
+  Stack,
+  Tooltip,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import {
+  MdKeyboardDoubleArrowLeft,
+  MdKeyboardDoubleArrowRight,
+} from "react-icons/md";
 import { useLeadDetails } from "@/features/leads/context/LeadDetailsContext.jsx";
 import { LEAD_SECTION_GROUPS } from "@/features/leads/config/leadSections.jsx";
+import { useLeadViewPreferences } from "@/features/leads/hooks/useLeadViewPreferences.js";
 
 function useSectionCount(section, ctx) {
   const ld = useLeadDetails();
@@ -19,22 +34,23 @@ function useSectionCount(section, ctx) {
   return section.count ? section.count(ctx) : undefined;
 }
 
-function NavItem({ section, ctx, active, onClick, horizontal }) {
+function NavItem({ section, ctx, active, onClick, horizontal, collapsed }) {
   const theme = useTheme();
   const count = useSectionCount(section, ctx);
   const hasCount = typeof count === "number";
 
-  return (
+  const row = (
     <Stack
       role="tab"
       aria-selected={active}
       direction="row"
-      spacing={1.25}
+      spacing={collapsed ? 0 : 1.25}
       alignItems="center"
+      justifyContent={collapsed ? "center" : "flex-start"}
       onClick={onClick}
       sx={{
         cursor: "pointer",
-        px: 1.5,
+        px: collapsed ? 0 : 1.5,
         py: 1,
         borderRadius: 2,
         userSelect: "none",
@@ -54,31 +70,47 @@ function NavItem({ section, ctx, active, onClick, horizontal }) {
         },
       }}
     >
-      <Box
+      {/* Icon — in collapsed mode the live count is shown as a small dot overlay so the
+          "has items" signal survives without the numeric badge. */}
+      <Badge
+        variant="dot"
+        color="primary"
+        invisible={!collapsed || !hasCount || count <= 0}
+        overlap="circular"
         sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "inherit",
-          flexShrink: 0,
+          "& .MuiBadge-badge": {
+            bgcolor: active ? "primary.main" : alpha(theme.palette.text.primary, 0.45),
+          },
         }}
       >
-        {section.icon}
-      </Box>
-      <Typography
-        variant="body2"
-        sx={{
-          fontWeight: active ? 700 : 600,
-          color: "inherit",
-          flex: horizontal ? "0 0 auto" : 1,
-          minWidth: 0,
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
-      >
-        {section.label}
-      </Typography>
-      {hasCount && count > 0 && (
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "inherit",
+            flexShrink: 0,
+          }}
+        >
+          {section.icon}
+        </Box>
+      </Badge>
+      {!collapsed && (
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: active ? 700 : 600,
+            color: "inherit",
+            flex: horizontal ? "0 0 auto" : 1,
+            minWidth: 0,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {section.label}
+        </Typography>
+      )}
+      {!collapsed && hasCount && count > 0 && (
         <Badge
           badgeContent={count}
           color={active ? "primary" : "default"}
@@ -97,11 +129,25 @@ function NavItem({ section, ctx, active, onClick, horizontal }) {
       )}
     </Stack>
   );
+
+  // Collapsed: the label lives in a tooltip (mirrors the sidenav collapsed behavior).
+  return collapsed ? (
+    <Tooltip title={section.label} placement="right">
+      {row}
+    </Tooltip>
+  ) : (
+    row
+  );
 }
 
 export function LeadWorkspace({ sections, activeKey, onChange, ctx }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  // Remembered rail-collapse preference (md+ only). Persisted per-browser so the next
+  // lead opens with the same rail state.
+  const { railCollapsed, setRailCollapsed } = useLeadViewPreferences();
+  // Collapse only applies to the md+ vertical rail, never the xs chip scroller.
+  const collapsed = !isMobile && railCollapsed;
 
   const active =
     sections.find((s) => s.key === activeKey) || sections[0] || null;
@@ -139,26 +185,57 @@ export function LeadWorkspace({ sections, activeKey, onChange, ctx }) {
         </Stack>
       );
     }
-    // md+: grouped vertical rail.
+    // md+: grouped vertical rail (collapses to an icons-only strip + tooltips).
     return (
-      <Stack spacing={2} sx={{ p: 1.5 }}>
+      <Stack spacing={collapsed ? 1 : 2} sx={{ p: 1.5 }}>
+        {/* Collapse / expand toggle — pinned at the top of the rail. */}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: collapsed ? "center" : "flex-end",
+          }}
+        >
+          <Tooltip
+            title={collapsed ? "Expand" : "Collapse"}
+            placement="right"
+          >
+            <IconButton
+              size="small"
+              onClick={() => setRailCollapsed()}
+              sx={{
+                border: `1px solid ${theme.palette.divider}`,
+                borderRadius: 2,
+                color: "text.secondary",
+                "&:hover": { color: "primary.main" },
+              }}
+            >
+              {collapsed ? (
+                <MdKeyboardDoubleArrowRight size={18} />
+              ) : (
+                <MdKeyboardDoubleArrowLeft size={18} />
+              )}
+            </IconButton>
+          </Tooltip>
+        </Box>
         {LEAD_SECTION_GROUPS.map((group) => {
           const groupSections = sections.filter((s) => s.group === group.key);
           if (!groupSections.length) return null;
           return (
             <Box key={group.key}>
-              <Typography
-                variant="overline"
-                sx={{
-                  px: 1.5,
-                  color: "text.disabled",
-                  fontWeight: 700,
-                  letterSpacing: 0.6,
-                }}
-              >
-                {group.label}
-              </Typography>
-              <Stack spacing={0.5} sx={{ mt: 0.5 }}>
+              {!collapsed && (
+                <Typography
+                  variant="overline"
+                  sx={{
+                    px: 1.5,
+                    color: "text.disabled",
+                    fontWeight: 700,
+                    letterSpacing: 0.6,
+                  }}
+                >
+                  {group.label}
+                </Typography>
+              )}
+              <Stack spacing={0.5} sx={{ mt: collapsed ? 0 : 0.5 }}>
                 {groupSections.map((s) => (
                   <NavItem
                     key={s.key}
@@ -166,6 +243,7 @@ export function LeadWorkspace({ sections, activeKey, onChange, ctx }) {
                     ctx={ctx}
                     active={s.key === active.key}
                     onClick={() => onChange(s.key)}
+                    collapsed={collapsed}
                   />
                 ))}
               </Stack>
@@ -188,7 +266,8 @@ export function LeadWorkspace({ sections, activeKey, onChange, ctx }) {
       <Box
         sx={{
           flexShrink: 0,
-          width: { xs: "100%", md: 256 },
+          width: { xs: "100%", md: collapsed ? 76 : 256 },
+          transition: "width .15s ease",
           borderRight: { md: `1px solid ${theme.palette.divider}` },
           borderBottom: { xs: `1px solid ${theme.palette.divider}`, md: "none" },
           bgcolor: alpha(theme.palette.background.paper, 0.6),

@@ -171,12 +171,14 @@ export function OurCostAndContractorCost({ lead, setLead }) {
 
       const updateData = {
         [type]: fileUrl,
+        field: type,
+        inputType: "text",
       };
 
       const updateResponse = await handleRequestSubmit(
         updateData,
         setLoading,
-        `shared/work-stages/${lead.id}/cost`,
+        `shared/client-leads/update/${lead.id}`,
         false,
         "Updating Lead",
         false,

@@ -24,6 +24,7 @@ export const calendarMessagesCodes = {
   AVAILABLE_DAYS_SAVED: "AVAILABLE_DAYS_SAVED",
   AVAILABLE_DAY_DELETED: "AVAILABLE_DAY_DELETED",
   SLOT_DELETED: "SLOT_DELETED",
+  CUSTOM_SLOT_ADDED: "CUSTOM_SLOT_ADDED",
 
   // ── client booking ───────────────────────────────────────────────────────────────
   MEETING_BOOKED: "MEETING_BOOKED",

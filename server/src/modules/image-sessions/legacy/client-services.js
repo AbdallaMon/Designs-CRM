@@ -22,7 +22,7 @@ import {
   isArabicText,
   reText,
   splitTextIntoLines,
-} from "../../../infra/pdf/pdf-fonts.js";
+} from "../../../infra/pdf/pdf-helpers.js";
 const __dirname = path.dirname(__filename);
 const fontPath = path.join(__dirname, "../../../infra/pdf/fonts/Ya-ModernPro-Bold.otf");
 const fontBase64 = fs.readFileSync(fontPath);
@@ -88,7 +88,9 @@ export async function uploadPdfAndApproveSession({
     });
     const pdfBytes = await generateImageSessionPdf({
       sessionData,
-      signatureUrl: `${process.env.CRM_DOMAIN}${signatureUrl}`,
+      // Resolved to absolute in fetchImageBuffer (toAbsoluteAssetUrl): relative
+      // "/uploads/…" gets the CRM domain prepended, full URLs pass through.
+      signatureUrl,
       lng,
       name: client.clientLead.client.name,
     });

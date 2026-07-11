@@ -65,7 +65,9 @@ export function NotesComponent({
       url: `${slug}/notes?idKey=${idKey}&id=${id}&`,
       setLoading,
     });
-    setNotes(data.data);
+    // On a failed request getData returns undefined (or an envelope with no `data`);
+    // guard so the list falls back to the empty state instead of crashing on `.length`.
+    setNotes(Array.isArray(data?.data) ? data.data : []);
     setLoading(false);
   }
 

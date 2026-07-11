@@ -31,6 +31,7 @@ export function ClientChatPage({ token, roomId }) {
             reFetchRooms={() => {}}
             clientId={tokenData.chatMember.clientId}
             client={tokenData.chatMember.client}
+            token={token}
           />
         </SocketProvider>
       ) : (

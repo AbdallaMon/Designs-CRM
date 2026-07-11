@@ -1,14 +1,14 @@
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useCallback, useEffect, useState } from "react";
 
-export function useChatMembers(roomId, clientId, showAddMembers) {
+export function useChatMembers(roomId, clientId, showAddMembers, token) {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const fetchMembers = useCallback(async () => {
     await getDataAndSet({
       url: clientId
-        ? `client/chat/rooms/${roomId}/members?clientId=${clientId}&`
+        ? `client/chat/rooms/${roomId}/members?clientId=${clientId}&token=${token}&`
         : `shared/chat/rooms/${roomId}/members`,
       setLoading,
       setData: setMembers,

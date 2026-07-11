@@ -14,7 +14,7 @@ import {
   formatNumber,
   formatDate,
   reverseString,
-} from "../../../infra/pdf/pdf-fonts.js";
+} from "../../../infra/pdf/pdf-helpers.js";
 import { uploadToFTPHttpAsBuffer } from "../../../infra/upload/ftp-upload.js";
 import prisma from "../../../infra/prisma/prisma.js";
 import { v4 as uuidv4 } from "uuid";
@@ -671,7 +671,7 @@ async function renderPartyOneWithPayments(
     lng === "ar"
       ? defaultContractUtilityData?.obligationsPartyOneAr
       : defaultContractUtilityData?.obligationsPartyOneEn;
-  const items = base
+  const items = (base || "")
     .split(/\r?\n/)
     .map((s) => s.trim())
     .filter(Boolean)
@@ -1263,11 +1263,11 @@ async function renderStagesTable(
           ? `${formatNumber(deliveryDays, "ar")} يوم`
           : `${deliveryDays} days`
         : "—";
-    const currentDetails = defaultContractUtilityData?.levelClauses.find(
+    const currentDetails = defaultContractUtilityData?.levelClauses?.find(
       (clause) => clause.order === s.order
     );
     const details =
-      (lng === "ar" ? currentDetails.textAr : currentDetails.textEn)?.split(
+      (lng === "ar" ? currentDetails?.textAr : currentDetails?.textEn)?.split(
         "\n"
       ) || [];
     if (stData?.notes) details.push(String(stData.notes));
@@ -1481,10 +1481,12 @@ async function renderDrawingsSection(
   { lng, contract, defaultDrawingUrl, fonts, colors }
 ) {
   const drawings = contract?.drawings || [];
+  // URLs are resolved to absolute in fetchImageBuffer (toAbsoluteAssetUrl):
+  // relative "/uploads/…" paths get the CRM domain prepended, full URLs pass through.
   const toRender = drawings.length
-    ? drawings.map((d) => `${process.env.CRM_DOMAIN}${d.url}`)
+    ? drawings.map((d) => d.url)
     : defaultDrawingUrl
-    ? [`${process.env.CRM_DOMAIN}${defaultDrawingUrl}`]
+    ? [defaultDrawingUrl]
     : [];
   if (!toRender.length) {
     return;
@@ -2262,7 +2264,7 @@ export async function buildAndUploadContractPdf({
     contract,
     lng: "ar",
     clientName,
-    signatureUrl: `${process.env.CRM_DOMAIN}${signatureUrl}`,
+    signatureUrl,
     backgroundImageUrl,
     introImageUrl,
     defaultDrawingUrl,
@@ -2279,7 +2281,7 @@ export async function buildAndUploadContractPdf({
     contract,
     lng: "en",
     clientName,
-    signatureUrl: `${process.env.CRM_DOMAIN}${signatureUrl}`,
+    signatureUrl,
     backgroundImageUrl,
     introImageUrl,
     defaultDrawingUrl,

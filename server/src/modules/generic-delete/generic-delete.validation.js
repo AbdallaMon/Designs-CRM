@@ -20,8 +20,10 @@ export const DELETABLE_MODELS = [
 
 class GenericDeleteSchemas {
   // Only `model` is accepted. Any other key (e.g. a client-supplied `deleteModelesBeforeMain`
-  // cascade — which the frontend never sends) is stripped by Zod, so this endpoint can never
-  // cascade-delete other models.
+  // cascade — which some legacy callers like the lead UpdateCard still send) is stripped by
+  // Zod, so this endpoint can never cascade-delete client-chosen models. Models that legitimately
+  // need dependents removed (contract, ClientLeadUpdate) do it via a server-decided teardown in
+  // the usecase/repo, not via the client payload.
   remove = z.object({
     model: z.string().refine((m) => DELETABLE_MODELS.includes(m), {
       message: "MODEL_NOT_DELETABLE",

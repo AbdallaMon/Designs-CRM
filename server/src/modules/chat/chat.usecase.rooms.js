@@ -162,7 +162,7 @@ export const roomMethods = {
       isChatEnabled,
     });
 
-    if (type === "MULTI_PROJECT" && projectIds?.length) {
+    if (type === "STAFF_GROUP" && projectIds?.length) {
       await this.repository.addRoomProjects(room.id, projectIds);
     }
 
@@ -221,7 +221,7 @@ export const roomMethods = {
     } = body;
 
     const projectWhere =
-      groupType === "MULTI_PROJECT"
+      groupType === "STAFF_GROUP"
         ? {
             type: { in: selectedProjectsTypes || [] },
             groupId: { in: (projectGroupIds || []).map(Number) },
@@ -251,7 +251,7 @@ export const roomMethods = {
       chatAccessToken: token,
     });
 
-    if (groupType === "MULTI_PROJECT") {
+    if (groupType === "STAFF_GROUP") {
       const pIds = clientLead.projects.map((p) => p.id);
       if (!pIds.length)
         throw new AppError(chatMessagesCodes.NO_PROJECTS_FOR_CRITERIA, 400);
@@ -271,7 +271,7 @@ export const roomMethods = {
     }
     if (
       (groupType === "CLIENT_TO_STAFF" && addRelatedDesigners) ||
-      groupType === "MULTI_PROJECT"
+      groupType === "STAFF_GROUP"
     ) {
       const staffIds = [
         ...new Set(

@@ -400,6 +400,7 @@ const legacyDefaults = {
     }),
   getCalendarDataForMonth: (a) => getCalendarDataForMonth(a),
   getRemindersForDay: (a) => getRemindersForDayImpl(a),
+  addCustomDate: (a) => addCutsomDateImpl(a),
 };
 
 // Reproduce the legacy role gate used inside the month-view route handlers verbatim:
@@ -469,6 +470,19 @@ export class AvailabilityUsecase {
       toTime: toHour,
       duration,
       breakMinutes,
+      timeZone: timezone || DEFAULT_TZ,
+    });
+  }
+
+  // POST add-custom/:dayId — legacy mapped body {startTime,toTime} + query.timezone → the
+  // custom-slot service (fromHour/toHour + timeZone). dayId comes from the route param; the
+  // service combines the day's date + HH:mm in the caller's timezone → UTC before inserting.
+  addCustomSlot({ dayId, body, timezone }) {
+    const { startTime, endTime } = body;
+    return this.legacy.addCustomDate({
+      dayId,
+      fromHour: startTime,
+      toHour: endTime,
       timeZone: timezone || DEFAULT_TZ,
     });
   }

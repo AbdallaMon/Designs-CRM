@@ -33,15 +33,19 @@ export class ProjectValidation {
   }).passthrough();
 
   // ── bodies ─────────────────────────────────────────────────────────────────────
-  // PUT /:id — plain field/status edit. STRICT whitelist (mass-assignment fix): only the
-  // genuinely client-editable scalar fields are accepted; any other key (id, userId,
-  // clientLeadId, contractId, startedAt, createdAt/updatedAt, notified*, relations such as
-  // assignments/tasks/clientLead/contract/deliverySchedules) is rejected with 422. The
-  // whitelist is the union of (a) fields the legacy updateProject left through after its
-  // denylist — see services/main/shared/projectServices.js ~408-416 which deletes only
-  // id,userId,startedAt,user,clientLeadId,clientLead,assignments,tasks — and (b) the
-  // fields the project-edit form sends. `oldStatus` is accepted but server-overridden in
-  // the usecase from the scoped row.
+  // PUT /:id — plain field/status edit. Whitelist (mass-assignment fix): only the
+  // genuinely client-editable scalar fields reach the usecase/repo; any other key (id,
+  // userId, clientLeadId, contractId, startedAt, createdAt/updatedAt, notified*, relations
+  // such as assignments/tasks/clientLead/contract/deliverySchedules) is silently STRIPPED
+  // by Zod's default `.strip()`. The project-edit form (ProjectDetails.jsx) submits the
+  // whole `{...project}` object, exactly as master did — master used a denylist and passed
+  // the rest, so it never 422'd; `.strict()` (reject-on-extra-key) broke that observable
+  // behavior. Stripping preserves both: the extra keys never touch Prisma, and the edit
+  // still succeeds. The whitelist is the union of (a) fields the legacy updateProject left
+  // through after its denylist — see services/main/shared/projectServices.js ~408-416 which
+  // deletes only id,userId,startedAt,user,clientLeadId,clientLead,assignments,tasks — and
+  // (b) the fields the project-edit form sends. `oldStatus` is accepted but server-overridden
+  // in the usecase from the scoped row.
   static updateProject = z.object({
     status: z.string().optional(),
     priority: z.string().optional(),
@@ -54,7 +58,7 @@ export class ProjectValidation {
     groupTitle: z.string().optional(),
     isModification: z.boolean().optional(),
     endedAt: z.union([z.string(), z.date()]).nullish(),
-  }).strict();
+  }).strip();
 
   // POST /:id/actions/assign-designer.
   static assignDesigner = z.object({

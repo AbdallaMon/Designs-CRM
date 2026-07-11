@@ -176,6 +176,17 @@ chatRouter.put(
   validate(chatSchemas.updateMemberRole),
   asyncHandler(chatController.updateMemberRole),
 );
+// Self-service: the authenticated caller leaves the room (removes their OWN
+// membership). Available to every authenticated member (MESSAGE_SEND, granted to
+// all chat roles); object scope is enforced by the same room checker. The acting
+// user is derived from req.auth in the usecase — never from body/param.
+chatRouter.post(
+  "/rooms/:roomId/leave",
+  AuthMiddleware.requirePermissions([P.MESSAGE_SEND]),
+  validate(chatSchemas.roomIdParams, "params"),
+  AuthMiddleware.requireSpecialChecker(chatController.checkIfUserCanAccessRoom),
+  asyncHandler(chatController.leaveRoom),
+);
 
 // ── Files ─────────────────────────────────────────────────────────────────────
 chatRouter.get(

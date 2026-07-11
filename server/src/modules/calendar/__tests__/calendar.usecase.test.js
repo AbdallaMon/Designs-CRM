@@ -269,12 +269,23 @@ describe("ClientCalendarUsecase (public, token-based)", () => {
     expect(arg.clientLeadId).toBe(20);
   });
 
-  it("book validation (.strict) rejects body fields outside selectedSlot/selectedTimezone", () => {
+  it("book validation STRIPS body fields outside selectedSlot/selectedTimezone (parity: FE posts its whole session object)", () => {
+    // The FE posts its entire booking session (selectedDate, dayId, token, reminderId, ...).
+    // These are dropped, not rejected — a 422 here would break the public booking flow.
     const r = ClientCalendarValidation.book.safeParse({
       selectedSlot: { id: 5, startTime: "2026-06-10T09:00:00Z" },
+      selectedDate: "2026-06-10",
+      dayId: 3,
+      token: "tok",
       reminderId: 999,
+      clientLeadId: 888,
+      userTimezone: "Asia/Dubai",
     });
-    expect(r.success).toBe(false);
+    expect(r.success).toBe(true);
+    // The mass-assignment vector is closed by stripping: those keys never reach the usecase.
+    expect(r.data).not.toHaveProperty("reminderId");
+    expect(r.data).not.toHaveProperty("clientLeadId");
+    expect(Object.keys(r.data)).toEqual(["selectedSlot"]);
   });
 
   it("book validation accepts the legitimate slot + timezone body", () => {

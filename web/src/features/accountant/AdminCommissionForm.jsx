@@ -31,7 +31,7 @@ const AdminCommissionForm = ({ userId, onUpdate }) => {
     setOpen(true);
   }
   const handleSubmit = async () => {
-    if (!amount || !leadId) {
+    if (!amount || !leadId || !commissionReason.trim()) {
       setAlertError("Please fill in all required fields");
       return;
     }

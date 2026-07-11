@@ -16,6 +16,7 @@ export function useChatFiles(
     searchQuery = "",
     fileType = {},
     clientId = null,
+    token = null,
   } = {}
 ) {
   const [files, setFiles] = useState([]);
@@ -47,7 +48,7 @@ export function useChatFiles(
       // Build query string
       let queryParams = ``;
       if (searchQuery?.trim()) {
-        queryParams += `q=${encodeURIComponent(searchQuery.trim())}&`;
+        queryParams += `search=${encodeURIComponent(searchQuery.trim())}&`;
       }
       if (fileType?.length > 0) {
         queryParams += `type=${fileType}&`;
@@ -55,7 +56,7 @@ export function useChatFiles(
 
       const response = await getData({
         url: clientId
-          ? `client/chat/rooms/${roomId}/files?clientId=${clientId}&${queryParams}&uniqueMonths=${JSON.stringify(
+          ? `client/chat/rooms/${roomId}/files?clientId=${clientId}&token=${token}&${queryParams}&uniqueMonths=${JSON.stringify(
               uniqueMonths
             )}&`
           : `shared/chat/rooms/${roomId}/files?${queryParams}&uniqueMonths=${JSON.stringify(

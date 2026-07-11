@@ -36,6 +36,8 @@ const LeadContent = ({
   setLead,
   isPage,
   setRerenderColumns,
+  fullscreen,
+  onToggleFullscreen,
 }) => {
   const { user } = useAuth();
   const isPrimaryStaff = checkIfPrimaryStaff(user);
@@ -195,6 +197,8 @@ const LeadContent = ({
         handleClick={handleClick}
         setLead={setLead}
         createADeal={createADeal}
+        fullscreen={fullscreen}
+        onToggleFullscreen={onToggleFullscreen}
         MoreActionsComponent={
           <MoreActionsMenu
             lead={lead}

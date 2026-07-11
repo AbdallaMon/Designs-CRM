@@ -181,7 +181,14 @@ export const ProjectDetails = ({
       "POST"
     );
     if (request.status === 200) {
-      window.location.reload();
+      // Live, in-place update: reflect the new status on the project the parent holds
+      // instead of a full page reload. Construct the updated project locally so we don't
+      // depend on the change-status endpoint's response shape.
+      if (onUpdate) {
+        onUpdate({ ...project, status: value });
+      } else {
+        window.location.reload();
+      }
       setAnchorEl(null);
     }
   };

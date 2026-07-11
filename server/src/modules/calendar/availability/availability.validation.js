@@ -26,6 +26,8 @@ const timeStr = z.string().min(1);
 export class AvailabilityValidation {
   // ── params ───────────────────────────────────────────────────────────────────────
   static idParams = z.object({ id: idParam });
+  // POST add-custom/:dayId — the route param carries the day id.
+  static dayIdParams = z.object({ dayId: idParam });
 
   // ── bodies ─────────────────────────────────────────────────────────────────────────
   // POST available-days (single day)
@@ -47,6 +49,17 @@ export class AvailabilityValidation {
       toHour: timeStr,
       duration: positiveMinutes,
       breakMinutes: nonNegativeMinutes,
+    })
+    .strict();
+
+  // POST add-custom/:dayId — single custom slot. The FE sends { dayId, startTime, endTime }
+  // where startTime/endTime are "HH:mm" (mapped to fromHour/toHour in the usecase). dayId is
+  // echoed in the body but the authoritative id is the :dayId route param.
+  static addCustomSlot = z
+    .object({
+      dayId: idParam,
+      startTime: timeStr,
+      endTime: timeStr,
     })
     .strict();
 }

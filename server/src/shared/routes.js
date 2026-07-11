@@ -39,6 +39,7 @@ import { auditRouter } from "../modules/audit/audit.route.js";
 import { commandCenterRouter } from "../modules/command-center/command-center.route.js";
 
 import { genericDeleteRouter } from "../modules/generic-delete/generic-delete.route.js";
+import { noteRouter } from "../modules/notes/note.route.js";
 
 import authRoutes from "../modules/auth/auth.route.js";
 const router = Router();
@@ -50,6 +51,13 @@ router.use("/auth", authRoutes);
 // (notes, files, price-offers, reminders, extra-services, …) depends on it. Auth + model
 // allow-list; the frozen deleteAModel service keeps the exact delete behavior.
 router.use("/delete", genericDeleteRouter);
+
+// Generic AUTHENTICATED notes (legacy `shared/notes`, FE-mapped `shared/notes` → `/notes`).
+// The single polymorphic note endpoint (keyed by `idKey`) master served for every owner. The
+// shared `NotesComponent` (slug="shared") drives task / delivery / commission / lead-update /
+// sales-stage notes through it; owners with a dedicated scoped surface (accounting, client)
+// keep their own. Auth-only, matching master; `idKey` constrained to real Note columns.
+router.use("/notes", noteRouter);
 
 router.use("/client/booking-leads", bookingLeadsRouter);
 // Authenticated leads-management surface (legacy `/shared/client-leads`, kept mounted

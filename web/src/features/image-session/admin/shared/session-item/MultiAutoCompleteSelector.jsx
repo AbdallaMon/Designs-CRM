@@ -1,4 +1,5 @@
 import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
+import { resolvePickListUrl } from "./pickListUrl";
 import {
   Autocomplete,
   Box,
@@ -25,15 +26,13 @@ export const MultiAutoCompleteSelector = ({
   useEffect(() => {
     const fetchItems = async () => {
       const response = await getDataAndSet({
-        url: `shared/utilities/ids?where=${JSON.stringify(
-          where
-        )}&model=${model}&select=${select}&isLanguage=${isLanguage}&`,
+        url: resolvePickListUrl({ model, where }),
         setLoading,
-        setData: setAllItems,
+        setData: (d) => setAllItems(Array.isArray(d) ? d : []),
       });
 
       // After fetching all items, determine the initial selection.
-      if (initialSelectedIds.length > 0 && response.data) {
+      if (initialSelectedIds.length > 0 && Array.isArray(response?.data)) {
         const initialItems = response.data.filter((item) =>
           initialSelectedIds.includes(item.id)
         );

@@ -84,7 +84,7 @@ export function ChatMessage({
   const isGroupChat =
     room?.type === "PROJECT_GROUP" ||
     room?.type === "GROUP" ||
-    room?.type === "MULTI_PROJECT";
+    room?.type === "STAFF_GROUP";
 
   const canPin = isGroupChat
     ? currentUserRole === "ADMIN" || currentUserRole === "MODERATOR"

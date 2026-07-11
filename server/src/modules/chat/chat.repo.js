@@ -70,7 +70,7 @@ export class ChatRepository {
     if (chatType === "DIRECT") where.type = "STAFF_TO_STAFF";
     else if (chatType === "GROUP") where.type = "GROUP";
     else if (chatType === "PROJECT")
-      where.type = { in: ["PROJECT_GROUP", "MULTI_PROJECT"] };
+      where.type = { in: ["PROJECT_GROUP", "STAFF_GROUP"] };
     else if (chatType === "CLIENT_LEADS") where.type = "CLIENT_TO_STAFF";
     else if (chatType === "ARCHIVED") {
       where.members.some = {
@@ -96,7 +96,7 @@ export class ChatRepository {
     } else if (category === "DIRECT") {
       where.type = "STAFF_TO_STAFF";
     } else if (category === "PROJECT") {
-      where.type = { in: ["PROJECT_GROUP", "MULTI_PROJECT"] };
+      where.type = { in: ["PROJECT_GROUP", "STAFF_GROUP"] };
     }
 
     if (search) {

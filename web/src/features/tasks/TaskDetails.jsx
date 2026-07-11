@@ -31,22 +31,56 @@ import { NotesComponent } from "@/shared/components/common/Notes.jsx";
 export default function TaskDetails({ id, showBackButton = true }) {
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    if (!id) return;
+    // No id (e.g. rendered from a modal before its task is ready): don't strand the
+    // loader spinning forever — resolve to the empty state instead.
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setError(null);
+    setLoading(true);
+
+    // Watchdog: if the request never comes back (server not responding, a stalled
+    // token refresh, a hung query) the `finally` in getData never runs and the page
+    // would spin forever. Cap the wait and surface an actionable error + retry instead.
+    const watchdog = setTimeout(() => {
+      if (cancelled) return;
+      setLoading(false);
+      setError(
+        "The server didn't respond in time. Please retry — if this keeps happening the tasks service may be down."
+      );
+    }, 20000);
 
     async function fetchTaskData() {
       const res = await getData({
         url: `shared/tasks/${id}`,
         setLoading,
       });
+      if (cancelled) return;
+      clearTimeout(watchdog);
       if (res && res.status === 200) {
         setTask(res.data);
+      } else if (res) {
+        // Settled but failed (403/404/500…): show the real reason, not a blank spinner.
+        setError(res.error?.reason || res.message || "Unable to load this task.");
+      } else {
+        // getData swallowed a network error and returned undefined.
+        setError("Couldn't reach the server. Check your connection and retry.");
       }
     }
 
     fetchTaskData();
-  }, [id]);
+    return () => {
+      cancelled = true;
+      clearTimeout(watchdog);
+    };
+  }, [id, reloadKey]);
 
   if (loading) {
     return (
@@ -59,6 +93,40 @@ export default function TaskDetails({ id, showBackButton = true }) {
         }}
       >
         <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert
+          severity="error"
+          sx={{
+            mb: 2,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            py: 2,
+            boxShadow: 1,
+            fontSize: "1.05rem",
+          }}
+        >
+          {error}
+        </Alert>
+        <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mt: 2 }}>
+          <Button
+            variant="contained"
+            onClick={() => setReloadKey((k) => k + 1)}
+          >
+            Retry
+          </Button>
+          {showBackButton && (
+            <Button variant="outlined" onClick={() => window.history.back()}>
+              Go Back
+            </Button>
+          )}
+        </Box>
       </Box>
     );
   }

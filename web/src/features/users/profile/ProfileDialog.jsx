@@ -33,9 +33,17 @@ import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { getData } from "@/app/helpers/functions/getData";
 import TelegramAuth from "@/features/users/profile/TelegramAuth.jsx";
 import GoogleRedirectStatus from "@/features/users/profile/GoogleRedirectStatus.jsx";
+import { usePermission } from "@/app/hooks/usePermission";
+import { TELEGRAM_CODES } from "@/app/helpers/permissionCodes";
 
 export default function ProfileDialog({ open, onClose, userId }) {
   const { loading, setLoading } = useToastContext();
+
+  // Telegram userbot connection is an admin-only capability. Gate the whole section on
+  // the same permission the backend v2/telegram/* routes require, so non-admins never
+  // see (nor hit the 403-ing status call for) the connection flow.
+  const { hasPermission } = usePermission();
+  const canManageTelegram = hasPermission(TELEGRAM_CODES.MANAGE);
 
   const router = useRouter();
   const pathname = usePathname();
@@ -597,7 +605,7 @@ export default function ProfileDialog({ open, onClose, userId }) {
                   </Stack>
                 </Paper>
 
-                <TelegramAuth />
+                {canManageTelegram && <TelegramAuth />}
               </Box>
             </>
           )}

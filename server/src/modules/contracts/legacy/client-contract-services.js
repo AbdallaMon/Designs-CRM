@@ -13,8 +13,11 @@ export async function getDefaultContractUtilityData(lng) {
 }
 export async function getContractSessionByToken({ token }) {
   console.log(token, " token in service");
-  const session = await prisma.contract.findUnique({
-    where: { arToken: token },
+  // arToken/enToken are not declared @unique on the (prod-reconciled) schema, so
+  // findUnique on them is rejected by Prisma. Tokens are per-contract UUIDs, so
+  // findFirst on either token is equivalent — resolve by whichever token matches.
+  const session = await prisma.contract.findFirst({
+    where: { OR: [{ arToken: token }, { enToken: token }] },
     include: {
       stages: {
         orderBy: { order: "asc" },
@@ -48,12 +51,21 @@ export async function changeContractSessionStatus({
   sessionStatus,
   extra,
 }) {
-  const key = token ? "arToken" : "id";
-  const keyId = token || Number(id);
+  // arToken/enToken are not @unique on the reconciled schema, so update-by-token
+  // must resolve the row id first (findFirst on the token), then update by id.
+  let contractId = Number(id);
+  if (token) {
+    const found = await prisma.contract.findFirst({
+      where: { OR: [{ arToken: token }, { enToken: token }] },
+      select: { id: true },
+    });
+    if (!found) throw new Error("Session not found or expired");
+    contractId = found.id;
+  }
 
   return await prisma.contract.update({
     where: {
-      [key]: keyId,
+      id: contractId,
     },
     data: {
       sessionStatus,

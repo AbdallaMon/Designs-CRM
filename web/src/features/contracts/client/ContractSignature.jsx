@@ -325,7 +325,6 @@ const ContractSignature = ({
       {
         sessionData: session,
         signatureUrl: url, // ONLINE path
-        sessionStatus: nextStatus,
         lng,
       },
       setToastLoading,
@@ -404,7 +403,6 @@ const ContractSignature = ({
       {
         sessionData: session,
         signatureUrl: url, // same signatureUrl field
-        sessionStatus: nextStatus,
         lng,
       },
       setToastLoading,

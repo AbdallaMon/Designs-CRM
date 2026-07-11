@@ -125,7 +125,13 @@ export function LeadSliderCard({ lead, setData }) {
                 variant="contained"
               />
             )}
-            <UpdateInitialConsultButton clientLead={lead} fullWidth />
+            <UpdateInitialConsultButton
+              clientLead={lead}
+              fullWidth
+              onSuccess={() =>
+                setData((data) => data.filter((l) => l.id !== lead.id))
+              }
+            />
             {user.role !== "CONTACT_INITIATOR" && (
               <Button
                 fullWidth

@@ -16,8 +16,12 @@ export const inputs = [
     pattern: { required: { value: true, message: "Date is required" } },
   },
   {
-    data: { id: "paymentId", key: "id", type: "number" },
-    sx: { display: "none" },
+    data: {
+      id: "file",
+      label: "Attachment",
+      type: "file",
+    },
+    pattern: { required: { value: true, message: "Attachment is required" } },
   },
 ];
 
