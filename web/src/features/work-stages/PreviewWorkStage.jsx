@@ -44,6 +44,7 @@ import { CallReminders } from "@/features/leads/tabs/CallReminders.jsx";
 import { FileList } from "@/features/leads/tabs/Files.jsx";
 import { TabPanel } from "@/features/leads/shared/TabPanel.jsx";
 import { WorkStageDialogHeader } from "@/features/leads/shared/WorkStageDialogHeader.jsx";
+import { WorkStageCockpit } from "@/features/leads/cockpit/WorkStageCockpit.jsx";
 
 // LeadContent Component (Extracted Shared Content)
 const LeadContent = ({
@@ -142,6 +143,9 @@ const LeadContent = ({
           lead.twoDDesignerId ? `/dashboard/work-stages/two-d/${lead.id}` : null
         }
       />
+
+      {/* Designer "what do I do next" — backend-computed, assignment-scoped */}
+      <WorkStageCockpit actions={lead.workStageActions} />
 
       {/* Project Status Menu */}
       {lead.projects?.map((project) => (
