@@ -21,8 +21,21 @@ export class LeadValidation {
   // ── bodies ─────────────────────────────────────────────────────────────────────
   static countryCheck = z.object({ country: z.string().nullish() }).passthrough();
 
-  // PUT / — assign / convert. `userId` only honored for admin-tier (enforced in usecase).
-  static assign = z.object({ id: z.coerce.number().int().positive(), userId: z.coerce.number().int().positive().optional() }).passthrough();
+  // PUT / — assign / convert. Self-claim (the FE Start-Deal buttons POST the whole
+  // lead, whose userId is null for a NEW lead) must NOT 422: coerce absent/empty/
+  // non-positive userId to undefined. A real positive id = admin assign-to-other.
+  static assign = z
+    .object({
+      id: z.coerce.number().int().positive(),
+      userId: z.preprocess(
+        (v) =>
+          v === "" || v === null || v === undefined || Number(v) <= 0 || Number.isNaN(Number(v))
+            ? undefined
+            : v,
+        z.coerce.number().int().positive().optional(),
+      ),
+    })
+    .passthrough();
 
   static bulkConvert = z.object({
     ids: z.array(z.coerce.number().int().positive()).min(1),

@@ -28,6 +28,14 @@ import { leadsMessagesCodes as C } from "@dms/shared";
 //  and are wired into the `legacyDefaults` DI seam below — mirroring the migrated
 //  delivery/update/task usecases. Behavior, error strings, and typos are preserved verbatim.
 // ════════════════════════════════════════════════════════════════════════════════
+
+// Claim status rule: a NEW or ON_HOLD lead (or a missing record) becomes IN_PROGRESS
+// on assignment; any other status is preserved. Extracted verbatim from the previous
+// inline ternary so behavior is identical — exported for direct testing (#5).
+export function claimStatus(lead) {
+  return !lead || lead.status === "ON_HOLD" || lead.status === "NEW" ? "IN_PROGRESS" : lead.status;
+}
+
 export async function checkIfUserAllowedToTakeALead(userId, country) {
   const user = await leadRepository.getUserAllowedCountries({ userId });
   const notAllowed = user?.notAllowedCountries ?? [];
@@ -102,12 +110,7 @@ export async function assignLeadToAUser(clientLeadId, userId, isAdmin) {
     data: {
       userId: userId,
       assignedAt: new Date(),
-      status:
-        !clientLead ||
-        clientLead.status === "ON_HOLD" ||
-        clientLead.status === "NEW"
-          ? "IN_PROGRESS"
-          : clientLead.status,
+      status: claimStatus(clientLead),
     },
   });
   await assignLeadNotification(clientLeadId, userId, updatedClientLead);
@@ -246,7 +249,11 @@ export async function markClientLeadAsConverted(
 }
 
 export async function getClientLeadsByDateRange({ searchParams, isAdmin, user }) {
-  const filters = JSON.parse(searchParams.filters);
+  const filters =
+    (searchParams.filters &&
+      searchParams.filters !== "undefined" &&
+      JSON.parse(searchParams.filters)) ||
+    {};
   const where = {
     assignedTo: { isNot: null },
     status: { notIn: ["NEW", "CONVERTED"] },
