@@ -32,7 +32,7 @@ export class LeadCockpitUsecase {
   async getLeadCockpit({ clientLeadId, authUser, now = new Date() }) {
     const bundle = await this.repo.findCockpitBundle({ clientLeadId: Number(clientLeadId) });
     if (!bundle) throw new AppError(C.LEAD_NOT_FOUND, 404);
-    const computed = computeCockpit(normalizeBundle(bundle), now);
+    const computed = computeCockpit(normalizeBundle(bundle), now, { profileKey: authUser?.currentProfileKey });
     return toCockpitDto(computed, bundle, authUser);
   }
 }

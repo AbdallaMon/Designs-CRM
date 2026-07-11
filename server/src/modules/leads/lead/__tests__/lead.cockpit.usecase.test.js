@@ -84,6 +84,23 @@ describe("LeadCockpitUsecase.getLeadCockpit", () => {
     expect(data.capabilities.canAddCall).toBe(false);
   });
 
+  it("forwards the caller's active profileKey to the engine (post-finalize contract signal)", async () => {
+    const finalizedWithContract = bundle({
+      status: "FINALIZED",
+      callReminders: [],
+      contracts: [{ id: 1, status: "IN_PROGRESS", sessionStatus: "SIGNING", stages: [] }],
+    });
+    // A SALES owner sees the contract signal post-finalize…
+    const sales = { ...OWNER, currentProfileKey: "NORMAL_SALES" };
+    const salesData = await makeUsecase(finalizedWithContract).uc.getLeadCockpit({ clientLeadId: 5, authUser: sales, now: NOW });
+    expect(salesData.actions.map((a) => a.type)).toContain("SIGNING_AWAITED");
+
+    // …but an ACCOUNTANT active profile does NOT get the SALES rule set.
+    const accountant = { ...OWNER, currentProfileKey: "ACCOUNTANT" };
+    const accData = await makeUsecase(finalizedWithContract).uc.getLeadCockpit({ clientLeadId: 5, authUser: accountant, now: NOW });
+    expect(accData.actions.map((a) => a.type)).not.toContain("SIGNING_AWAITED");
+  });
+
   it("throws LEAD_NOT_FOUND (404) when the bundle is missing", async () => {
     const { uc } = makeUsecase(null);
     await expect(uc.getLeadCockpit({ clientLeadId: 999, authUser: OWNER, now: NOW })).rejects.toMatchObject({
