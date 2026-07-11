@@ -52,8 +52,8 @@ const FULL_MUTATE_ROLES = ["ADMIN", "SUPER_ADMIN"];
 class ProjectRepository {
   model = prisma.project;
 
-  hasFullScope({ role, isSuperSales }, mode) {
-    if (isSuperSales) return true;
+  hasFullScope({ role, currentProfileKey, isAdminTier }, mode) {
+    if (currentProfileKey === "SUPER_SALES" || isAdminTier) return true;
     const roles = mode === "mutate" ? FULL_MUTATE_ROLES : FULL_READ_ROLES;
     return roles.includes(role);
   }

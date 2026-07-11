@@ -14,15 +14,15 @@ import { projectsMessagesCodes } from "@dms/shared";
 const C = projectsMessagesCodes;
 
 const admin = { id: 1, role: "ADMIN", permissions: [] };
-const superSales = { id: 2, role: "STAFF", isSuperSales: true, permissions: [] };
+const superSales = { id: 2, role: "STAFF", currentProfileKey: "SUPER_SALES", isAdminTier: true, permissions: [] };
 const accountant = { id: 3, role: "ACCOUNTANT", permissions: [] };
 const designer = { id: 4, role: "THREE_D_DESIGNER", permissions: [] };
 
 // Real hasFullScope (the admin-tier definition reused by the user-profile checker).
 function makeProjectRepo(overrides = {}) {
   return {
-    hasFullScope({ role, isSuperSales }, mode) {
-      if (isSuperSales) return true;
+    hasFullScope({ role, currentProfileKey, isAdminTier }, mode) {
+      if (currentProfileKey === "SUPER_SALES" || isAdminTier) return true;
       const roles = mode === "mutate" ? ["ADMIN", "SUPER_ADMIN"] : ["ADMIN", "SUPER_ADMIN", "ACCOUNTANT"];
       return roles.includes(role);
     },
@@ -108,7 +108,7 @@ describe("FIX 2 — ProjectUsecase.checkIfUserCanAccessUserProfile", () => {
     ).resolves.toEqual({ userId: 999 });
   });
 
-  it("admin-tier sub-roles (isSuperSales, ACCOUNTANT) may query ANY userId", async () => {
+  it("admin-tier sub-roles (SUPER_SALES profile, ACCOUNTANT) may query ANY userId", async () => {
     const usecase = new ProjectUsecase(makeProjectRepo());
     await expect(
       usecase.checkIfUserCanAccessUserProfile({ userId: 999, authUser: superSales }),

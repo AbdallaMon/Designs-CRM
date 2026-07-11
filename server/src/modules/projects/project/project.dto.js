@@ -47,13 +47,13 @@ export function sortProjectsByTypeOrder(projects, order = PROJECT_TYPES) {
 
 function isFullScope(authUser) {
   return (
-    Boolean(authUser?.isSuperSales) ||
+    authUser?.currentProfileKey === "SUPER_SALES" ||
     ["ADMIN", "SUPER_ADMIN"].includes(authUser?.role)
   );
 }
 
 // Whether `authUser` may mutate this project, mirroring the scope checker: admin-tier
-// (ADMIN/SUPER_ADMIN/isSuperSales) may mutate any; everyone else only a project they
+// (ADMIN/SUPER_ADMIN/SUPER_SALES profile) may mutate any; everyone else only a project they
 // are assigned to. `record.assignments` may carry `{ user: { id } }` or `{ userId }`.
 function canMutateProject({ record, authUser }) {
   if (isFullScope(authUser)) return true;

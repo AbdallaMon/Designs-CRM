@@ -45,14 +45,14 @@ export class ProjectUsecase {
     return (
       authUser?.role === "ADMIN" ||
       authUser?.role === "SUPER_ADMIN" ||
-      Boolean(authUser?.isSuperSales)
+      authUser?.currentProfileKey === "SUPER_SALES"
     );
   }
 
   // ════════════════════════════════════════════════════════════════════════════
   //  SCOPE CHECKERS — the keystone IDOR fix (shared by task/update/delivery)
   // ════════════════════════════════════════════════════════════════════════════
-  // Read scope: full-read roles (ADMIN/SUPER_ADMIN/ACCOUNTANT/isSuperSales) see all;
+  // Read scope: full-read roles (ADMIN/SUPER_ADMIN/ACCOUNTANT/SUPER_SALES profile) see all;
   // everyone else only projects they are ASSIGNED to. Throws 403 PROJECT_ACCESS_DENIED
   // when the project is outside scope (or does not exist — we do not leak existence to
   // an unauthorized caller).
@@ -83,7 +83,7 @@ export class ProjectUsecase {
   // user-profile READ scope: GET /user-profile/:userId returns a user's assigned projects
   // INCLUDING full client PII (clientLead.client). Legacy had NO object check — any authed
   // user with PROJECT.LIST could enumerate another employee's projects + client PII (IDOR).
-  // Fix: admin-tier callers (the SAME FULL_READ_ROLES/isSuperSales set the module uses via
+  // Fix: admin-tier callers (the SAME FULL_READ_ROLES/SUPER_SALES-profile set the module uses via
   // repo.hasFullScope) may query ANY userId; everyone else may only query their OWN id.
   async checkIfUserCanAccessUserProfile({ userId, authUser }) {
     const targetId = Number(userId);

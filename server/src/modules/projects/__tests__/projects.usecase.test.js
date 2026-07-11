@@ -10,7 +10,7 @@ const C = projectsMessagesCodes;
 
 // ── auth-user fixtures (shape carried on req.auth) ───────────────────────────────
 const admin = { id: 1, role: "ADMIN", permissions: [] };
-const superSales = { id: 2, role: "STAFF", isSuperSales: true, permissions: [] };
+const superSales = { id: 2, role: "STAFF", currentProfileKey: "SUPER_SALES", isAdminTier: true, permissions: [] };
 const accountant = { id: 3, role: "ACCOUNTANT", permissions: [] };
 const designer = { id: 4, role: "THREE_D_DESIGNER", permissions: [] };
 
@@ -19,8 +19,8 @@ const designer = { id: 4, role: "THREE_D_DESIGNER", permissions: [] };
  *  keystone) so the tests exercise the actual scope translation. */
 function makeProjectRepo(overrides = {}) {
   const real = {
-    hasFullScope({ role, isSuperSales }, mode) {
-      if (isSuperSales) return true;
+    hasFullScope({ role, currentProfileKey, isAdminTier }, mode) {
+      if (currentProfileKey === "SUPER_SALES" || isAdminTier) return true;
       const roles = mode === "mutate" ? ["ADMIN", "SUPER_ADMIN"] : ["ADMIN", "SUPER_ADMIN", "ACCOUNTANT"];
       return roles.includes(role);
     },
@@ -78,7 +78,7 @@ describe("ProjectUsecase scope checkers (IDOR keystone)", () => {
     expect(where).toEqual({ id: 7 }); // no AND/assignment narrowing
   });
 
-  it("ACCESS: isSuperSales is full-scope (legacy isAdmin union)", async () => {
+  it("ACCESS: SUPER_SALES active profile is full-scope (legacy isAdmin union)", async () => {
     const repo = makeProjectRepo({
       findScopedProject: vi.fn().mockResolvedValue({ id: 8, clientLeadId: 1 }),
     });
