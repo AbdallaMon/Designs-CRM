@@ -137,7 +137,7 @@ function checkIsAllowedToSearchAll(user) {
   const adminRoles = ["ADMIN", "SUPER_ADMIN"];
   if (
     adminRoles.includes(user.role) ||
-    user.isSuperSales ||
+    user.currentProfile?.key === "SUPER_SALES" ||
     (user.subRoles && user.subRoles.some((r) => adminRoles.includes(r.subRole)))
   ) {
     return true;

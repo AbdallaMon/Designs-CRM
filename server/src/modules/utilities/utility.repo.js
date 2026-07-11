@@ -112,7 +112,7 @@ class UtilityRepository {
   findUserForSearchScope({ staffId }) {
     return prisma.user.findUnique({
       where: { id: Number(staffId) },
-      select: { role: true, subRoles: true, isSuperSales: true },
+      select: { role: true, subRoles: true, currentProfile: { select: { key: true } } },
     });
   }
 
