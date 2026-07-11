@@ -1154,7 +1154,7 @@ export async function getContractPaymentsGroupedService({
     user &&
     user.role !== "ADMIN" &&
     user.role !== "SUPER_ADMIN" &&
-    !user.isSuperSales
+    user.currentProfileKey !== "SUPER_SALES"
   ) {
     whereForCount.clientLead = {
       userId: user.id,

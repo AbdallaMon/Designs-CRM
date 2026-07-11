@@ -153,7 +153,7 @@ export async function searchData(body, currentUser) {
     ? model
     : "user";
   const isSuperSales =
-    currentUser.isSuperSales &&
+    currentUser.currentProfileKey === "SUPER_SALES" &&
     currentUser.role !== "ADMIN" &&
     currentUser.role !== "SUPER_ADMIN";
   let where = {};

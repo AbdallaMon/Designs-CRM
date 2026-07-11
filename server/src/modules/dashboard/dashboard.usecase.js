@@ -806,7 +806,10 @@ export class DashboardUsecase {
 
   // Admin-tier predicate — the legacy `isAdmin` union, read from the TOKEN (req.auth).
   #isAdminTier(authUser) {
-    return ADMIN_TIER_ROLES.includes(authUser?.role) || Boolean(authUser?.isSuperSales);
+    return (
+      ADMIN_TIER_ROLES.includes(authUser?.role) ||
+      authUser?.currentProfileKey === "SUPER_SALES"
+    );
   }
 
   // Resolve the effective staffId scope from the authenticated caller. Admin-tier may

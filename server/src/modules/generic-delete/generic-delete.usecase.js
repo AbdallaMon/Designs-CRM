@@ -99,7 +99,7 @@ export class GenericDeleteUsecase {
     return this.legacy.deleteAModel({
       id: Number(id),
       isAdmin: this.isAdminUser(authUser),
-      isSuperSales: Boolean(authUser?.isSuperSales),
+      isSuperSales: authUser?.currentProfileKey === "SUPER_SALES",
       data: { model: body.model },
     });
   }

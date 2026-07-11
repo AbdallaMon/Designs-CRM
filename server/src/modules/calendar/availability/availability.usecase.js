@@ -503,12 +503,13 @@ export class AvailabilityUsecase {
   // + superSalesId passed through.
   getCalendarMonth({ query, authUser }) {
     const isAdmin = isAdminRole(authUser.role);
+    const isSuperSales = authUser.currentProfileKey === "SUPER_SALES";
     return this.legacy.getCalendarDataForMonth({
       year: query.year,
       month: query.month,
-      userId: !isAdmin && !authUser.isSuperSales && authUser.id,
+      userId: !isAdmin && !isSuperSales && authUser.id,
       adminId: query.isAdmin === "true" ? authUser.id : null,
-      isSuperSales: authUser.isSuperSales,
+      isSuperSales,
       superSalesId: authUser.id,
     });
   }

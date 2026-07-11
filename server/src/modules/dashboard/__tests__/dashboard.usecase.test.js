@@ -19,7 +19,13 @@ const PD = PERMISSIONS.DASHBOARD;
 
 function authFor(role, id = 1, isSuperSales = false) {
   const { permissions, permissionsByModule } = getEffectivePermissions({ role, isSuperSales });
-  return { id, role, isSuperSales, permissions, permissionsByModule };
+  return {
+    id,
+    role,
+    currentProfileKey: isSuperSales ? "SUPER_SALES" : undefined,
+    permissions,
+    permissionsByModule,
+  };
 }
 
 // Every authed role behind the legacy SHARED gate.
