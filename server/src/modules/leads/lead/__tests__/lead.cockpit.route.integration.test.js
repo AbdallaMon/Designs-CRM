@@ -41,11 +41,14 @@ const findFirst = vi.fn(async ({ where }) => {
   return LEAD_ROW.userId === callerId ? LEAD_ROW : null;
 });
 
+// findCockpitBundle — exposed so a test can override it for one call (finalized bundle).
+const findUnique = vi.fn(async () => COCKPIT_BUNDLE);
+
 vi.mock("@dms/db", () => ({
   default: {
     clientLead: {
       findFirst, // findScopedLead (object-scope checker)
-      findUnique: vi.fn(async () => COCKPIT_BUNDLE), // findCockpitBundle
+      findUnique, // findCockpitBundle
     },
   },
 }));
@@ -140,5 +143,34 @@ describe("GET /v2/leads/:clientLeadId/cockpit — object-scoped read (real HTTP)
   it("invalid id param -> 422", async () => {
     const { status } = await getJson("/leads/abc/cockpit", signFor({ id: 1, role: "ADMIN" }));
     expect(status).toBe(422);
+  });
+
+  it("FINALIZED deal with an active contract still returns actions (no blackout)", async () => {
+    // Override the cockpit bundle for THIS request only: finalized, but the contract is
+    // mid-production at LEVEL_2 — the old engine returned []; the new one must not.
+    findUnique.mockResolvedValueOnce({
+      ...COCKPIT_BUNDLE,
+      status: "FINALIZED",
+      callReminders: [],
+      contracts: [
+        {
+          id: 1,
+          status: "IN_PROGRESS",
+          sessionStatus: "SIGNING",
+          stages: [
+            { title: "LEVEL_1", stageStatus: "COMPLETED", order: 1 },
+            { title: "LEVEL_2", stageStatus: "IN_PROGRESS", order: 2 },
+          ],
+        },
+      ],
+    });
+    const { status, body } = await getJson("/leads/5/cockpit", signFor({ id: 7, role: "STAFF" }));
+    expect(status).toBe(200);
+    expect(body.data.health.isTerminal).toBe(true);
+    expect(body.data.health.contract).toMatchObject({ currentLevel: "LEVEL_2", levelsDone: 1, levelsTotal: 2 });
+    const t = body.data.actions.map((a) => a.type);
+    expect(t).toContain("SIGNING_AWAITED");
+    expect(t).toContain("CONTRACT_STAGE_IN_PROGRESS");
+    expect(t).not.toContain("ADVANCE_STAGE");
   });
 });
