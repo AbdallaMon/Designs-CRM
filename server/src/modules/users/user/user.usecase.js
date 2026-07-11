@@ -314,7 +314,7 @@ export class UserUsecase {
     // (PUT /users/:id/profiles). Legacy guard: an isSuperSales (non-admin) creator may
     // only create STAFF — enforced ONLY if a non-STAFF role is explicitly provided.
     if (
-      authUser.isSuperSales &&
+      authUser.currentProfileKey === "SUPER_SALES" &&
       authUser.role !== "ADMIN" &&
       authUser.role !== "SUPER_ADMIN" &&
       body.role &&
@@ -347,7 +347,7 @@ export class UserUsecase {
     if (
       authUser.role !== "ADMIN" &&
       authUser.role !== "SUPER_ADMIN" &&
-      authUser.isSuperSales &&
+      authUser.currentProfileKey === "SUPER_SALES" &&
       body.role &&
       body.role !== "STAFF"
     ) {

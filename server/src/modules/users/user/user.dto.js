@@ -40,7 +40,7 @@ export function isAdminTier(authUser) {
   // admin who switched to a sales profile is no longer admin-tier.
   if (typeof authUser.isAdminTier === "boolean") return authUser.isAdminTier;
   // Legacy fallback for raw user rows / callers without a resolved profile.
-  if (authUser.isSuperSales) return true;
+  if (authUser.currentProfileKey === "SUPER_SALES") return true;
   if (ADMIN_TIER_ROLES.includes(authUser.role)) return true;
   const subRoles = Array.isArray(authUser.subRoles) ? authUser.subRoles : [];
   return subRoles.some((entry) =>

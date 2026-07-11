@@ -137,7 +137,7 @@ class UserRepository {
     if (
       currentUser.role !== "ADMIN" &&
       currentUser.role !== "SUPER_ADMIN" &&
-      currentUser.isSuperSales
+      currentUser.currentProfileKey === "SUPER_SALES"
     ) {
       where.OR = [
         { role: "STAFF" },
