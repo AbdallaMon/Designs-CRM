@@ -2,7 +2,12 @@ import { v4 as uuidv4 } from "uuid";
 import prisma from "../../infra/prisma/prisma.js";
 import { AppError } from "../../shared/errors/AppError.js";
 import { chatMessagesCodes } from "@dms/shared";
-import { memberSelect, messageInclude, buildRoomInclude } from "./chat.dto.js";
+import {
+  memberSelect,
+  messageInclude,
+  buildRoomInclude,
+  senderSelect,
+} from "./chat.dto.js";
 
 // ── File type filter ─────────────────────────────────────────────────────────
 
