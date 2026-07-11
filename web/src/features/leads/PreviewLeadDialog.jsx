@@ -131,7 +131,7 @@ const LeadContent = ({
   if (!lead) return;
 
   const leadStatus = enumToKeyValueArray(
-    user.role === "STAFF" && !user.isPrimary
+    user.role === "STAFF" && user.profile !== "PRIMARY_SALES"
       ? KanbanBeginerLeadsStatus
       : KanbanLeadsStatus,
   );

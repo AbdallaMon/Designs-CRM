@@ -9,7 +9,7 @@ export default function Notification() {
   if (!user?.role) return null;
   const role = user.role;
 
-  if (role === "STAFF" && !user.isSuperSales) {
+  if (role === "STAFF" && user.profile !== "SUPER_SALES") {
     return <NotificationPage />;
   }
   const searchParams = Object.fromEntries(sp.entries());

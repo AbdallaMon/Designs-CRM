@@ -21,7 +21,7 @@ function UpdateInitialConsultButton({ clientLead, fullWidth, onSuccess }) {
   const { user } = useAuth();
   const { setLoading } = useToastContext();
 
-  if (user.role !== "ADMIN" && !user.isSuperSales) return null;
+  if (user.role !== "ADMIN" && user.profile !== "SUPER_SALES") return null;
   if (clientLead.initialConsult !== false) return null;
 
   async function handleConfirm() {

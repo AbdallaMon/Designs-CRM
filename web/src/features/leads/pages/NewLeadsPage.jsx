@@ -65,7 +65,7 @@ const TAB_DEFS = [
     show: (user) =>
       user.role === "ADMIN" ||
       user.role === "CONTACT_INITIATOR" ||
-      user.isSuperSales,
+      user.profile === "SUPER_SALES",
   },
   {
     key: "stale",
@@ -106,7 +106,7 @@ const SECTION_DEFS = [
 ];
 
 function defaultTabFor(user) {
-  if (user.role === "STAFF" && !user.isSuperSales) return "new";
+  if (user.role === "STAFF" && user.profile !== "SUPER_SALES") return "new";
   // CONTACT_INITIATOR, SUPER_SALES, ADMIN â†’ non-consulted (falls back to new
   // if the role can't see non-consulted, e.g. plain STAFF).
   return "non-consulted";

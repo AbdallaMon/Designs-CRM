@@ -24,5 +24,5 @@ export default function Page() {
   if (role === "TWO_D_DESIGNER") {
     return <Dashboard staff={true} userRole="TWO_D_DESIGNER" />;
   }
-  return <Dashboard staff={role === "STAFF" && !user.isSuperSales} />;
+  return <Dashboard staff={role === "STAFF" && user.profile !== "SUPER_SALES"} />;
 }

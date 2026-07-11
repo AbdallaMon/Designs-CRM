@@ -9,7 +9,7 @@ export default function Page() {
   if (!user?.role) return null;
   const role = user.role;
 
-  if (role === "STAFF" && !user.isSuperSales) {
+  if (role === "STAFF" && user.profile !== "SUPER_SALES") {
     return <StaffLeadsKanbanBoard />;
   }
   return <StaffLeadsKanbanBoard staffId={sp.get("staffId") ?? undefined} />;

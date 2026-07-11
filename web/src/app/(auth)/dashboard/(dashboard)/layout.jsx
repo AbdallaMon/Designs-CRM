@@ -306,7 +306,8 @@ export const accountantLinks = [
 export function linksForRole(user) {
   const role = user?.role;
   if (role === "ADMIN") return adminLinks;
-  if (role === "STAFF") return user.isSuperSales ? superSalesLinks : staffLinks;
+  if (role === "STAFF")
+    return user.profile === "SUPER_SALES" ? superSalesLinks : staffLinks;
   if (role === "THREE_D_DESIGNER") return threeDLinks;
   if (role === "TWO_D_DESIGNER") return twoDLinks;
   if (role === "ACCOUNTANT") return accountantLinks;
@@ -479,7 +480,8 @@ const ROLE_LABELS = {
 };
 
 function roleLabel(user) {
-  if (user?.role === "STAFF") return user.isSuperSales ? "Super Sales" : "Sales";
+  if (user?.role === "STAFF")
+    return user.profile === "SUPER_SALES" ? "Super Sales" : "Sales";
   return ROLE_LABELS[user?.role] || user?.role || "";
 }
 

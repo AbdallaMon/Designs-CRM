@@ -308,7 +308,7 @@ export default function Leads() {
   if (!user?.role) return null;
   const role = user.role;
 
-  if (role === "STAFF" && !user.isSuperSales) {
+  if (role === "STAFF" && user.profile !== "SUPER_SALES") {
     return <StaffOnHoldDeals />;
   }
   if (role === "ADMIN") {

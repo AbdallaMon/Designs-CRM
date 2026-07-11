@@ -49,7 +49,7 @@ export function LeadSliderCard({ lead, setData }) {
     user.role === "ADMIN" ||
     user.role === "SUPER_ADMIN" ||
     user.role === "CONTACT_INITIATOR" ||
-    user.isSuperSales;
+    user.profile === "SUPER_SALES";
 
   async function createADeal(lead) {
     const assign = await handleRequestSubmit(

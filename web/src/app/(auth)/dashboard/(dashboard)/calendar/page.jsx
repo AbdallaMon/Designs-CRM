@@ -11,7 +11,10 @@ export default function Page() {
   if (role === "ADMIN" || role === "SUPER_ADMIN") {
     return <CalendarBookingSystem />;
   }
-  if (role === "SUPER_SALES" || (role === "STAFF" && user.isSuperSales)) {
+  if (
+    role === "SUPER_SALES" ||
+    (role === "STAFF" && user.profile === "SUPER_SALES")
+  ) {
     return <StaffCalendarPanel isAdmin={true} />;
   }
   return <StaffCalendarPanel />;

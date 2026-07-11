@@ -140,7 +140,7 @@ export function SalesToolsTabs({ lead, setLead, setleads }) {
           </ToolCard>
         </Grid>
 
-        {user.role === "STAFF" && !user.isPrimary ? null : (
+        {user.role === "STAFF" && user.profile !== "PRIMARY_SALES" ? null : (
           <Grid size={{ xs: 12, md: 6 }}>
             <ToolCard
               icon={<MdTouchApp />}
