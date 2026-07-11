@@ -253,6 +253,7 @@ git commit -m "fix(leads): kanban columns 500 when no filters param (default fil
 
 **Files:**
 - Modify: `server/src/modules/leads/lead/lead.validation.js` (`assign` ~L25)
+- Modify: `server/src/modules/leads/lead/lead.assign-status.usecase.js` (extract `claimStatus`, use it in `assignLeadToAUser` ~L105-110)
 - Test: `server/src/modules/leads/lead/__tests__/lead.assign-validation.test.js` (create)
 
 **Interfaces:**
@@ -321,26 +322,35 @@ In `lead.validation.js` replace the `assign` schema (~L25):
 Run: `npx vitest run server/src/modules/leads/lead/__tests__/lead.assign-validation.test.js`
 Expected: PASS.
 
-- [ ] **Step 5: Write the #5 verification test (NEW→IN_PROGRESS status derivation)**
+- [ ] **Step 5: Extract `claimStatus` and cover it (behavior-preserving, gives #5 a real test)**
 
-Append to the same test file a focused check on the status rule used by `assignLeadUpdate` (pure derivation, mirrors `assignLeadToAUser` L105-110):
+The claim status rule is currently an inline ternary in `assignLeadToAUser`. Extract it to a named export so the test exercises the REAL production code (no re-implementation). In `lead.assign-status.usecase.js`, add near the top (after imports):
 
 ```js
-import { describe as d2, it as i2, expect as e2 } from "vitest";
-
-// The claim status rule: NEW/ON_HOLD → IN_PROGRESS, any other status unchanged.
-function claimStatus(current) {
-  return current === "ON_HOLD" || current === "NEW" ? "IN_PROGRESS" : current;
+// Claim status rule: a NEW or ON_HOLD lead (or a missing record) becomes IN_PROGRESS
+// on assignment; any other status is preserved. Extracted verbatim from the previous
+// inline ternary so behavior is identical — exported for direct testing (#5).
+export function claimStatus(lead) {
+  return !lead || lead.status === "ON_HOLD" || lead.status === "NEW" ? "IN_PROGRESS" : lead.status;
 }
+```
 
-d2("claim status transition (#5)", () => {
-  i2("NEW → IN_PROGRESS", () => e2(claimStatus("NEW")).toBe("IN_PROGRESS"));
-  i2("ON_HOLD → IN_PROGRESS", () => e2(claimStatus("ON_HOLD")).toBe("IN_PROGRESS"));
-  i2("NEGOTIATING stays", () => e2(claimStatus("NEGOTIATING")).toBe("NEGOTIATING"));
+Then replace the inline `status:` ternary in the `assignLeadUpdate` call (~L105-110) with `status: claimStatus(clientLead),`. Verify the surrounding `data` object is otherwise unchanged.
+
+Add to the test file a check that imports the real function:
+
+```js
+import { claimStatus } from "../lead.assign-status.usecase.js";
+
+describe("claimStatus rule (#5)", () => {
+  it("NEW → IN_PROGRESS", () => expect(claimStatus({ status: "NEW" })).toBe("IN_PROGRESS"));
+  it("ON_HOLD → IN_PROGRESS", () => expect(claimStatus({ status: "ON_HOLD" })).toBe("IN_PROGRESS"));
+  it("missing record → IN_PROGRESS", () => expect(claimStatus(null)).toBe("IN_PROGRESS"));
+  it("NEGOTIATING preserved", () => expect(claimStatus({ status: "NEGOTIATING" })).toBe("NEGOTIATING"));
 });
 ```
 
-> Note: this asserts the rule the production code already applies (no code change for #5). If you prefer, extract `claimStatus` into `lead.assign-status.usecase.js` and import it here instead of duplicating — but only if it reads cleanly; otherwise keep the local mirror.
+> `lead.assign-status.usecase.js` imports side-effectful modules; if importing it into the test pulls in heavy deps, they are already mocked by the existing lead tests' patterns — if a bare import fails, add `vi.mock("../lead.repo.js", () => ({ leadRepository: {} }))` at the top of the test (mirroring Task 2's mock) so the module loads without a DB.
 
 - [ ] **Step 6: Run the file; commit**
 
@@ -348,8 +358,8 @@ Run: `npx vitest run server/src/modules/leads/lead/__tests__/lead.assign-validat
 Expected: PASS.
 
 ```bash
-git add server/src/modules/leads/lead/lead.validation.js server/src/modules/leads/lead/__tests__/lead.assign-validation.test.js
-git commit -m "fix(leads): tolerate self-claim userId (null/0) in assign schema; verify NEW->IN_PROGRESS"
+git add server/src/modules/leads/lead/lead.validation.js server/src/modules/leads/lead/lead.assign-status.usecase.js server/src/modules/leads/lead/__tests__/lead.assign-validation.test.js
+git commit -m "fix(leads): tolerate self-claim userId (null/0) in assign schema; extract+test claimStatus (NEW->IN_PROGRESS)"
 ```
 
 ---
