@@ -993,6 +993,19 @@ const COCKPIT_BUNDLE_SELECT = {
   userId: true, // capability scope (canMutateLead)
   status: true, // health + rules + capability status guard
   paymentStatus: true,
+  // Active contract (latest IN_PROGRESS or COMPLETED) — read-only, drives the post-finalize
+  // signals + health.contract/payment. Language-neutral primitives only (no free text).
+  contracts: {
+    where: { status: { in: ["IN_PROGRESS", "COMPLETED"] } },
+    orderBy: { id: "desc" },
+    take: 1,
+    select: {
+      id: true,
+      status: true,
+      sessionStatus: true,
+      stages: { select: { title: true, stageStatus: true, order: true } },
+    },
+  },
   salesStages: { select: { stage: true } },
   callReminders: { select: { time: true, status: true } },
   meetingReminders: { select: { time: true, status: true } },
