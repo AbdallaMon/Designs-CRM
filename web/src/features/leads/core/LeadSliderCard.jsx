@@ -22,6 +22,9 @@ import PreviewDialog from "@/features/leads/PreviewLeadDialog.jsx";
 import { checkIfAdmin } from "@/app/helpers/functions/utility";
 import { RecordCard, MetaItem, StatusPill, NameAvatar } from "@/features/leads/shared/tabKit.jsx";
 import { LeadCategory } from "@/app/helpers/constants";
+import { usePermission } from "@/app/hooks/usePermission";
+import { LEAD_CODES } from "@/app/helpers/permissionCodes";
+import { AssignNewStaffModal } from "@/features/leads/AssignNewStaffModal.jsx";
 
 dayjs.extend(relativeTime);
 
@@ -36,6 +39,8 @@ export function LeadSliderCard({ lead, setData }) {
   const [previewDialogOpen, setPreviewDialogOpen] = React.useState(false);
   const admin = checkIfAdmin(user);
   const isFullyPaid = lead.paymentStatus === "FULLY_PAID";
+  const { hasPermission } = usePermission();
+  const canAssignOther = hasPermission(LEAD_CODES.ASSIGN_OTHER);
 
   const relative = dayjs(lead.createdAt).locale("ar").fromNow();
   const idLabel = `#${lead?.id.toString().padStart(7, "0")}`;
@@ -48,7 +53,7 @@ export function LeadSliderCard({ lead, setData }) {
 
   async function createADeal(lead) {
     const assign = await handleRequestSubmit(
-      lead,
+      { id: lead.id },
       setLoading,
       `shared/client-leads`,
       false,
@@ -115,6 +120,12 @@ export function LeadSliderCard({ lead, setData }) {
         }
         actions={
           <Stack spacing={1} sx={{ width: "100%" }}>
+            {canAssignOther && (
+              <AssignNewStaffModal
+                lead={lead}
+                onUpdate={() => setData((data) => data.filter((l) => l.id !== lead.id))}
+              />
+            )}
             {user.role === "STAFF" && !user.isSuperSales && (
               <ConfirmWithActionModel
                 title="Are you sure you want to get this lead and assign it to you as a new deal?"

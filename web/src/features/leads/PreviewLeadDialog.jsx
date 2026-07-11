@@ -57,7 +57,7 @@ const LeadContent = ({
 
   async function createADeal(lead) {
     const assign = await handleRequestSubmit(
-      lead,
+      { id: lead.id },
       setLoading,
       `shared/client-leads`,
       false,
