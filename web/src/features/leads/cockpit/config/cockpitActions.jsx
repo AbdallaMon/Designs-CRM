@@ -16,6 +16,7 @@ import { IoMdCall, IoMdContract } from "react-icons/io";
 import { PiCurrencyDollarSimpleLight } from "react-icons/pi";
 import {
   MdAnalytics,
+  MdCheckCircle,
   MdOutlineQuestionAnswer,
   MdSchedule,
   MdTimeline,
@@ -116,11 +117,33 @@ export const COCKPIT_ACTION_CONFIG = {
       )}"`,
     ctaLabel: "Change status",
   },
-  AWAIT_SIGNATURE: {
+  SIGNING_AWAITED: {
     icon: <IoMdContract />,
-    severity: "info",
+    severity: "warning",
     title: () => "Awaiting signature",
-    description: () => "An offer was accepted — follow up on the contract.",
+    description: () => "The contract is out for signing — follow it up.",
+    ctaLabel: "View contract",
+  },
+  CONTRACT_STAGE_IN_PROGRESS: {
+    icon: <MdTimeline />,
+    severity: "info",
+    title: () => "Contract in production",
+    description: (p = {}) =>
+      `Stage ${p.level || "—"} (${p.levelsDone ?? 0}/${p.levelsTotal ?? 0}) in progress`,
+    ctaLabel: "View contract",
+  },
+  AFTER_SALES_DUE: {
+    icon: <RiAlarmLine />,
+    severity: "info",
+    title: () => "After-sales follow-up due",
+    description: () => "Delivery is complete — do the after-sales follow-up.",
+    ctaLabel: "Change status",
+  },
+  CONTRACT_COMPLETED: {
+    icon: <MdCheckCircle />,
+    severity: "info",
+    title: () => "Delivery complete",
+    description: () => "This contract is fully delivered.",
     ctaLabel: "View contract",
   },
 };

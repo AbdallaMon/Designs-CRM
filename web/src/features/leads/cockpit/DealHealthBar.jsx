@@ -75,6 +75,13 @@ export function DealHealthBar({ health }) {
           <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
             {nextStage ? `Next: ${stageLabel(nextStage)}` : "Final stage reached"}
           </Typography>
+          {health.contract && (
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.25, display: "block" }}>
+              {health.contract.status === "COMPLETED"
+                ? "Contract: delivered"
+                : `Contract: ${health.contract.currentLevel || "—"} (${health.contract.levelsDone}/${health.contract.levelsTotal})`}
+            </Typography>
+          )}
         </Box>
 
         {/* Status / payment chips */}
