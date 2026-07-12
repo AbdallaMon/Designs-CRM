@@ -1,0 +1,178 @@
+// Real HTTP integration test for /v2/my-day — the permission matrix IS the feature's
+// security story (spec §10): sales get the personal queue but not /team; ADMINS have NO
+// personal queue (403 on /); SUPER_SALES gets /team without the designers block and is
+// scope-blocked from drilling into a designer; admin drills into anyone. JWT secrets set
+// BEFORE importing env-reading modules; Prisma mocked (no DB).
+import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import express from "express";
+import cookieParser from "cookie-parser";
+
+process.env.JWT_ACCESS_SECRET = "test-access-secret";
+process.env.JWT_REFRESH_SECRET = "test-refresh-secret";
+process.env.ISLOCAL = "true";
+
+const STALE_UPDATED = new Date("2026-01-01T00:00:00.000Z");
+
+// One stale owned lead → the STAFF caller's queue has ≥1 item.
+const BUNDLE = {
+  id: 5,
+  userId: 7,
+  status: "IN_PROGRESS",
+  paymentStatus: "PENDING",
+  updatedAt: STALE_UPDATED,
+  client: { name: "Aisha" },
+  contracts: [],
+  salesStages: [],
+  callReminders: [{ time: new Date("2020-01-01T00:00:00.000Z"), status: "IN_PROGRESS" }],
+  meetingReminders: [],
+  priceOffers: [],
+  sessionQuestions: [],
+  versaModel: [],
+};
+
+const userFindUnique = vi.fn(async ({ where }) => {
+  if (where.id === 9) return { id: 9, name: "Rep", isActive: true, role: "STAFF", profile: null, currentProfile: { key: "NORMAL_SALES" } };
+  if (where.id === 42) return { id: 42, name: "Sara", isActive: true, role: "THREE_D_DESIGNER", profile: null, currentProfile: { key: "DESIGNER_3D" } };
+  return null;
+});
+
+vi.mock("@dms/db", () => ({
+  default: {
+    clientLead: {
+      findMany: vi.fn(async ({ where }) => (where.userId === 7 || where.userId === 9 ? [BUNDLE] : [])),
+      count: vi.fn().mockResolvedValue(1),
+      groupBy: vi.fn().mockResolvedValue([]),
+    },
+    callReminder: { groupBy: vi.fn().mockResolvedValue([]) },
+    contract: { findMany: vi.fn().mockResolvedValue([]) },
+    deliverySchedule: { findMany: vi.fn().mockResolvedValue([]) },
+    assignment: { findMany: vi.fn().mockResolvedValue([]) },
+    user: { findUnique: userFindUnique, findMany: vi.fn().mockResolvedValue([]) },
+    project: { count: vi.fn().mockResolvedValue(0) },
+  },
+}));
+
+let server;
+let baseUrl;
+let JwtService;
+let myDayRouter;
+let errorHandler;
+let AUTH_COOKIE_NAME;
+let authMessagesCodes;
+let myDayMessagesCodes;
+
+beforeAll(async () => {
+  ({ JwtService } = await import("../../../infra/security/jwt.js"));
+  ({ myDayRouter } = await import("../my-day.route.js"));
+  ({ errorHandler } = await import("../../../shared/errors/error-handler.js"));
+  ({ AUTH_COOKIE_NAME, authMessagesCodes, myDayMessagesCodes } = await import("@dms/shared"));
+
+  const app = express();
+  app.use(cookieParser());
+  app.use("/my-day", myDayRouter);
+  app.use(errorHandler);
+
+  server = app.listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  baseUrl = `http://127.0.0.1:${server.address().port}`;
+});
+
+afterAll(async () => {
+  await new Promise((resolve) => server.close(resolve));
+});
+
+function signFor({ id, role }) {
+  return JwtService.signAccess({
+    id,
+    role,
+    activeRole: role,
+    isActive: true,
+    isPrimary: false,
+    isSuperSales: false,
+    subRoles: [],
+  });
+}
+
+async function getJson(path, token) {
+  const headers = token ? { cookie: `${AUTH_COOKIE_NAME}=${token}` } : {};
+  const res = await fetch(`${baseUrl}${path}`, { headers });
+  return { status: res.status, body: await res.json() };
+}
+
+describe("GET /v2/my-day — personal queue", () => {
+  it("no cookie -> 401", async () => {
+    const { status } = await getJson("/my-day");
+    expect(status).toBe(401);
+  });
+
+  it("sales (STAFF) -> 200 with own queue items", async () => {
+    const { status, body } = await getJson("/my-day", signFor({ id: 7, role: "STAFF" }));
+    expect(status).toBe(200);
+    expect(body.success).toBe(true);
+    expect(body.message).toBe(myDayMessagesCodes.MY_DAY_FETCHED);
+    expect(body.data.family).toBe("SALES");
+    expect(body.data.items.length).toBeGreaterThan(0);
+    expect(body.data.items[0]).toMatchObject({ kind: "LEAD", leadId: 5, clientName: "Aisha" });
+  });
+
+  it("ADMIN -> 403 (admins hold no my_day.view — team lens only)", async () => {
+    const { status, body } = await getJson("/my-day", signFor({ id: 1, role: "ADMIN" }));
+    expect(status).toBe(403);
+    expect(body.message).toBe(authMessagesCodes.PERMISSION_DENIED);
+    expect(body.details.requiredPermissions).toContain("my_day.view");
+  });
+});
+
+describe("GET /v2/my-day/team — supervisor rollup", () => {
+  it("STAFF -> 403 PERMISSION_DENIED", async () => {
+    const { status, body } = await getJson("/my-day/team", signFor({ id: 7, role: "STAFF" }));
+    expect(status).toBe(403);
+    expect(body.details.requiredPermissions).toContain("my_day.team.view");
+  });
+
+  it("SUPER_SALES -> 200, sales domain ONLY (no designers block)", async () => {
+    const { status, body } = await getJson("/my-day/team", signFor({ id: 8, role: "SUPER_SALES" }));
+    expect(status).toBe(200);
+    expect(body.data.domains.sales).toBeTruthy();
+    expect(body.data.domains.designers).toBeUndefined();
+  });
+
+  it("ADMIN -> 200 with sales + designers domains", async () => {
+    const { status, body } = await getJson("/my-day/team", signFor({ id: 1, role: "ADMIN" }));
+    expect(status).toBe(200);
+    expect(body.data.domains.sales).toBeTruthy();
+    expect(body.data.domains.designers).toBeTruthy();
+  });
+});
+
+describe("GET /v2/my-day/users/:userId — supervisor drill-down", () => {
+  it("SUPER_SALES -> sales target 200", async () => {
+    const { status, body } = await getJson("/my-day/users/9", signFor({ id: 8, role: "SUPER_SALES" }));
+    expect(status).toBe(200);
+    expect(body.data.family).toBe("SALES");
+  });
+
+  it("SUPER_SALES -> designer target 403 MY_DAY_TEAM_SCOPE_DENIED", async () => {
+    const { status, body } = await getJson("/my-day/users/42", signFor({ id: 8, role: "SUPER_SALES" }));
+    expect(status).toBe(403);
+    expect(body.message).toBe(myDayMessagesCodes.MY_DAY_TEAM_SCOPE_DENIED);
+  });
+
+  it("ADMIN -> designer target 200 (designer family queue)", async () => {
+    const { status, body } = await getJson("/my-day/users/42", signFor({ id: 1, role: "ADMIN" }));
+    expect(status).toBe(200);
+    expect(body.data.family).toBe("DESIGNER");
+  });
+
+  it("unknown target -> 404; invalid param -> 422", async () => {
+    const notFound = await getJson("/my-day/users/999", signFor({ id: 1, role: "ADMIN" }));
+    expect(notFound.status).toBe(404);
+    const invalid = await getJson("/my-day/users/abc", signFor({ id: 1, role: "ADMIN" }));
+    expect(invalid.status).toBe(422);
+  });
+
+  it("STAFF -> 403 (no team code)", async () => {
+    const { status } = await getJson("/my-day/users/9", signFor({ id: 7, role: "STAFF" }));
+    expect(status).toBe(403);
+  });
+});

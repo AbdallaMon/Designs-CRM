@@ -37,6 +37,7 @@ import { clientLanguagesRouter } from "../modules/client-portal/languages/langua
 
 import { auditRouter } from "../modules/audit/audit.route.js";
 import { commandCenterRouter } from "../modules/command-center/command-center.route.js";
+import { myDayRouter } from "../modules/my-day/my-day.route.js";
 
 import { genericDeleteRouter } from "../modules/generic-delete/generic-delete.route.js";
 import { noteRouter } from "../modules/notes/note.route.js";
@@ -278,6 +279,9 @@ router.use("/audit-logs", auditRouter);
 // checker. 🔒 Money figures reuse ONLY already-admin-visible sources (Invoice/Commission/
 // ClientLead.averagePrice) — NO Payment/ContractPayment/Outcome (the ACCOUNTANT-only boundary).
 router.use("/command-center", commandCenterRouter);
+
+// My Day — profile-scoped work queue + supervisor team lens (additive, 2026-07-12).
+router.use("/my-day", myDayRouter);
 
 // ── PUBLIC client-portal standalone surfaces ─────────────────────────────────────────────
 // The remaining client-facing sub-routers the legacy `routes/clients/clients.js` aggregated
