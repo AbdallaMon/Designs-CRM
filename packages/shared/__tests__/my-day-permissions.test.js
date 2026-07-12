@@ -1,0 +1,88 @@
+// my_day.view / my_day.team.view wiring — additive codes for the My Day work queue.
+// Sales tiers + designers get the personal queue; SUPER_SALES + ADMIN/SUPER_ADMIN get
+// the team lens; admins deliberately have NO personal queue (spec §3).
+import { describe, it, expect } from "vitest";
+import {
+  PERMISSIONS,
+  ALL_PERMISSIONS,
+  ROLE_PERMISSIONS,
+  PROFILES,
+  USER_ROLES,
+  NAVIGATION,
+  myDayMessagesCodes,
+  messagesNames,
+} from "../index.js";
+
+const P = PERMISSIONS;
+const VIEW = P.MY_DAY.VIEW;
+const TEAM = P.MY_DAY.TEAM_VIEW;
+const R = USER_ROLES;
+
+describe("my_day permission wiring", () => {
+  it("registers both codes in the aggregate + ALL_PERMISSIONS", () => {
+    expect(VIEW).toBe("my_day.view");
+    expect(TEAM).toBe("my_day.team.view");
+    expect(ALL_PERMISSIONS).toContain(VIEW);
+    expect(ALL_PERMISSIONS).toContain(TEAM);
+  });
+
+  it("grants the personal queue to sales + designer base roles (legacy fallback map)", () => {
+    for (const role of [R.STAFF, R.SUPER_SALES, R.THREE_D_DESIGNER, R.TWO_D_DESIGNER, R.TWO_D_EXECUTOR]) {
+      expect(ROLE_PERMISSIONS[role]).toContain(VIEW);
+    }
+  });
+
+  it("grants the team lens to ADMIN/SUPER_ADMIN/SUPER_SALES roles ONLY", () => {
+    for (const role of [R.ADMIN, R.SUPER_ADMIN, R.SUPER_SALES]) {
+      expect(ROLE_PERMISSIONS[role]).toContain(TEAM);
+    }
+    for (const role of [R.STAFF, R.THREE_D_DESIGNER, R.TWO_D_DESIGNER, R.TWO_D_EXECUTOR, R.ACCOUNTANT, R.CONTACT_INITIATOR]) {
+      expect(ROLE_PERMISSIONS[role]).not.toContain(TEAM);
+    }
+  });
+
+  it("admins have NO personal queue (team lens only)", () => {
+    expect(ROLE_PERMISSIONS[R.ADMIN]).not.toContain(VIEW);
+    expect(ROLE_PERMISSIONS[R.SUPER_ADMIN]).not.toContain(VIEW);
+    expect(PROFILES.ADMIN).not.toContain(VIEW);
+    expect(PROFILES.SUPER_ADMIN).not.toContain(VIEW);
+    expect(PROFILES.ADMIN).toContain(TEAM);
+  });
+
+  it("profiles: sales tiers + designers hold the personal queue", () => {
+    for (const key of ["NORMAL_SALES", "PRIMARY_SALES", "SUPER_SALES", "SUPER_SALES_BASE", "DESIGNER_3D", "DESIGNER_2D", "EXECUTOR_2D"]) {
+      expect(PROFILES[key]).toContain(VIEW);
+    }
+  });
+
+  it("profiles: only SUPER_SALES tiers + admins hold the team lens", () => {
+    for (const key of ["SUPER_SALES", "SUPER_SALES_BASE", "ADMIN", "SUPER_ADMIN"]) {
+      expect(PROFILES[key]).toContain(TEAM);
+    }
+    for (const key of ["NORMAL_SALES", "PRIMARY_SALES", "DESIGNER_3D", "DESIGNER_2D", "EXECUTOR_2D", "ACCOUNTANT", "CONTACT_INITIATOR"]) {
+      expect(PROFILES[key]).not.toContain(TEAM);
+    }
+  });
+
+  it("accountant + contact-initiator are out of scope (v1)", () => {
+    expect(PROFILES.ACCOUNTANT).not.toContain(VIEW);
+    expect(PROFILES.CONTACT_INITIATOR).not.toContain(VIEW);
+  });
+
+  it("NAVIGATION carries the My Day tab for the five in-scope roles", () => {
+    const tab = NAVIGATION.find((t) => t.key === "my-day");
+    expect(tab).toBeTruthy();
+    expect(tab.href).toBe("/dashboard/my-day");
+    expect(tab.allowedRoles).toEqual(
+      expect.arrayContaining([R.ADMIN, R.SUPER_ADMIN, R.STAFF, R.SUPER_SALES, R.THREE_D_DESIGNER, R.TWO_D_DESIGNER, R.TWO_D_EXECUTOR]),
+    );
+    expect(tab.allowedRoles).not.toContain(R.ACCOUNTANT);
+    expect(tab.allowedRoles).not.toContain(R.CONTACT_INITIATOR);
+  });
+
+  it("registers the my-day message codes + translation bucket", () => {
+    expect(myDayMessagesCodes.MY_DAY_FETCHED).toBe("MY_DAY_FETCHED");
+    expect(myDayMessagesCodes.MY_DAY_TEAM_SCOPE_DENIED).toBe("MY_DAY_TEAM_SCOPE_DENIED");
+    expect(messagesNames.myDayMessages).toBe("myDayMessages");
+  });
+});

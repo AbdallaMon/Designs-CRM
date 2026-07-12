@@ -84,9 +84,21 @@ function oldEffective(user) {
 }
 
 describe("getEffectivePermissions parity (old universe)", () => {
+  // NOTE: my_day.team.view is a special case — unlike the LEAD.*.view codes below
+  // (pure profile-only additions never present in ROLE_PERMISSIONS), it IS part of
+  // the "old" role-based universe for ADMIN/SUPER_ADMIN/SUPER_SALES (added directly
+  // to their ROLE_PERMISSIONS arrays as the legacy fallback map — see
+  // role-permissions.js). It is ONLY a genuinely new addition for STAFF+isSuperSales,
+  // where the profile path resolves to the SUPER_SALES profile (which carries the
+  // team lens) while the old role-only formula's SUPER_SALES_EXTRA_PERMISSIONS
+  // deliberately does not include it. The filter below accounts for this: a
+  // NEW_CODES entry is only stripped from `got` when `old` doesn't already contain it
+  // — so it stays a no-op wherever old legitimately has the code, and only trims the
+  // genuine profile-only extra.
   const NEW_CODES = new Set([
     "lead.price_offer.view","lead.projects.view","lead.modifications.view",
     "lead.updates.view","lead.analysis.view",
+    "my_day.team.view",
   ]);
   const roles = ["ADMIN","SUPER_ADMIN","STAFF","THREE_D_DESIGNER","TWO_D_DESIGNER",
     "TWO_D_EXECUTOR","ACCOUNTANT","SUPER_SALES","CONTACT_INITIATOR"];
@@ -101,8 +113,9 @@ describe("getEffectivePermissions parity (old universe)", () => {
   it.each(combos)("effective ∩ oldUniverse === old formula for %o", (user) => {
     const got = new Set(getEffectivePermissions(user).permissions);
     const old = oldEffective(user);
-    // 1) restricting new to old codes equals the old formula:
-    const gotOld = new Set([...got].filter((c) => !NEW_CODES.has(c)));
+    // 1) restricting new to old codes equals the old formula (a NEW_CODES entry is
+    //    only stripped when `old` doesn't already legitimately contain it):
+    const gotOld = new Set([...got].filter((c) => !NEW_CODES.has(c) || old.has(c)));
     expect(gotOld).toEqual(old);
     // 2) new grants only ever ADD new codes (never remove an old one):
     for (const c of old) expect(got.has(c)).toBe(true);

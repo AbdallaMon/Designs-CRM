@@ -187,6 +187,10 @@ describe("getEffectivePermissions", () => {
         PERMISSIONS.ADMIN_RESIDUAL.PROJECT_VIEW,
         PERMISSIONS.ADMIN_RESIDUAL.PROJECT_GROUP_CREATE,
         PERMISSIONS.ADMIN_RESIDUAL.MODEL_ARCHIVE,
+        // My Day: isSuperSales resolves to the SUPER_SALES profile, which adds the
+        // team lens (my_day.team.view) on top of the personal queue STAFF already
+        // holds via its base role array (see profiles.js / role-permissions.js).
+        PERMISSIONS.MY_DAY.TEAM_VIEW,
       ].sort(),
     );
   });

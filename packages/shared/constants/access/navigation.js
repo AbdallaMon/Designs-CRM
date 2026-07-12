@@ -237,6 +237,26 @@ export const NAVIGATION = [
     allowedRoles: [...ADMIN_SET],
   },
 
+  // My Day — profile-scoped work queue (additive screen, 2026-07-12). Sales tiers +
+  // designers get the personal queue; SUPER_SALES + admins additionally get the Team tab
+  // (tab visibility inside the page is permission-gated; this row only lists the roles
+  // that can reach the screen at all).
+  {
+    key: "my-day",
+    label: "My Day",
+    href: "/dashboard/my-day",
+    icon: "FiSunrise",
+    allowedRoles: [
+      R.ADMIN,
+      R.SUPER_ADMIN,
+      R.STAFF,
+      R.SUPER_SALES,
+      R.THREE_D_DESIGNER,
+      R.TWO_D_DESIGNER,
+      R.TWO_D_EXECUTOR,
+    ],
+  },
+
   // 7) Images session gallery — ADMIN/SUPER_ADMIN only.
   {
     key: "image-sessions",

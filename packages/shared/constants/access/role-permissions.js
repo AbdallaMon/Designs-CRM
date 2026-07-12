@@ -177,6 +177,11 @@ export const AUDIT_ADMIN = [P.AUDIT.LOG_VIEW];
 // AUDIT_ADMIN exactly.
 export const COMMAND_CENTER_ADMIN = [P.COMMAND_CENTER.VIEW];
 
+// My Day — personal queue for the working tiers; team lens for supervisors. Additive
+// (new surface, no legacy equivalent). Admins get TEAM only (no personal queue).
+export const MY_DAY_PERSONAL = [P.MY_DAY.VIEW];
+export const MY_DAY_TEAM = [P.MY_DAY.TEAM_VIEW];
+
 // ── leads / lead ────────────────────────────────────────────────────────────────
 // Legacy `/shared/client-leads` sat behind SHARED authentication only — EVERY
 // authenticated role could call every route; object scope was enforced ad-hoc inside
@@ -390,6 +395,7 @@ export const ROLE_PERMISSIONS = {
     ...ADMIN_RESIDUAL,
     ...AUDIT_ADMIN,
     ...COMMAND_CENTER_ADMIN,
+    ...MY_DAY_TEAM,
   ],
   [USER_ROLES.SUPER_ADMIN]: [
     ...SHARED_AUTHED,
@@ -405,6 +411,7 @@ export const ROLE_PERMISSIONS = {
     ...ADMIN_RESIDUAL,
     ...AUDIT_ADMIN,
     ...COMMAND_CENTER_ADMIN,
+    ...MY_DAY_TEAM,
   ],
 
   // All other roles currently have the shared authenticated surface (chat, authed
@@ -415,12 +422,12 @@ export const ROLE_PERMISSIONS = {
   // admits, so each gets STAFF_GATE (the latest-calls reminder list). ADMIN/SUPER_ADMIN/
   // SUPER_SALES/CONTACT_INITIATOR do NOT (the STAFF gate keys off the base role and does
   // not admit them).
-  [USER_ROLES.STAFF]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE],
-  [USER_ROLES.THREE_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE],
-  [USER_ROLES.TWO_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE],
-  [USER_ROLES.TWO_D_EXECUTOR]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE],
+  [USER_ROLES.STAFF]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE, ...MY_DAY_PERSONAL],
+  [USER_ROLES.THREE_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE, ...MY_DAY_PERSONAL],
+  [USER_ROLES.TWO_D_DESIGNER]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE, ...MY_DAY_PERSONAL],
+  [USER_ROLES.TWO_D_EXECUTOR]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE, ...MY_DAY_PERSONAL],
   [USER_ROLES.ACCOUNTANT]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...ACCOUNTING_ALL, ...STAFF_GATE],
-  [USER_ROLES.SUPER_SALES]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
+  [USER_ROLES.SUPER_SALES]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...MY_DAY_PERSONAL, ...MY_DAY_TEAM],
   [USER_ROLES.CONTACT_INITIATOR]: [...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED],
 };
 

@@ -26,5 +26,6 @@ export const messagesNames = {
   clientPortalMessages: "clientPortalMessages",
   auditMessages: "auditMessages",
   commandCenterMessages: "commandCenterMessages",
+  myDayMessages: "myDayMessages",
   prismaKnowMessages: "prismaKnowMessages",
 };

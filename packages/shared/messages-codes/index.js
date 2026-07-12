@@ -21,3 +21,4 @@ export * from "./admin-residual/index.js";
 export * from "./client-portal/index.js";
 export * from "./audit/index.js";
 export * from "./command-center/index.js";
+export * from "./my-day/index.js";

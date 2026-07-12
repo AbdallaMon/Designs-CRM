@@ -20,10 +20,10 @@ describe("buildNavigationTabs matches master's per-role nav", () => {
     expect(h).not.toContain("/dashboard/leads");
     expect(h).not.toContain("/dashboard/users");
   });
-  it("STAFF (sales) sees dashboard/leads/deals/calendar/payments, NOT users", () => {
+  it("STAFF (sales) sees dashboard/leads/deals/my-day/calendar/payments, NOT users", () => {
     const h = hrefs({ role: "STAFF" });
     expect(h).toEqual([
-      "/dashboard", "/dashboard/leads", "/dashboard/deals",
+      "/dashboard", "/dashboard/leads", "/dashboard/deals", "/dashboard/my-day",
       "/dashboard/calendar", "/dashboard/payments",
     ]);
   });
@@ -136,6 +136,7 @@ const MASTER = {
     },
     { label: "Audit Log", href: "/dashboard/audit-logs", subLinks: undefined },
     { label: "Command Center", href: "/dashboard/command-center", subLinks: undefined },
+    { label: "My Day", href: "/dashboard/my-day", subLinks: undefined },
     { label: "Images session gallery", href: "/dashboard/image-sessions", subLinks: undefined },
     { label: "Calendar", href: "/dashboard/calendar", subLinks: undefined },
     { label: "Payments", href: "/dashboard/payments", subLinks: undefined },
@@ -145,6 +146,7 @@ const MASTER = {
     { label: "Dashboard", href: "/dashboard", subLinks: undefined },
     { label: "Leads", href: "/dashboard/leads", subLinks: undefined },
     { label: "Deals", href: "/dashboard/deals", subLinks: DEALS_SUBS },
+    { label: "My Day", href: "/dashboard/my-day", subLinks: undefined },
     { label: "Calendar", href: "/dashboard/calendar", subLinks: undefined },
     { label: "Payments", href: "/dashboard/payments", subLinks: undefined },
   ],
@@ -152,6 +154,7 @@ const MASTER = {
     { label: "Dashboard", href: "/dashboard", subLinks: undefined },
     { label: "Leads", href: "/dashboard/leads", subLinks: undefined },
     { label: "Deals", href: "/dashboard/deals", subLinks: DEALS_SUBS },
+    { label: "My Day", href: "/dashboard/my-day", subLinks: undefined },
     { label: "Calendar", href: "/dashboard/calendar", subLinks: undefined },
     { label: "Payments", href: "/dashboard/payments", subLinks: undefined },
     { label: "Users", href: "/dashboard/users", subLinks: undefined },
@@ -167,6 +170,7 @@ const MASTER = {
         { label: "Archived projects", href: "/dashboard/archived" },
       ],
     },
+    { label: "My Day", href: "/dashboard/my-day", subLinks: undefined },
   ],
   TWO_D_DESIGNER: [
     { label: "Dashboard", href: "/dashboard", subLinks: undefined },
@@ -180,8 +184,10 @@ const MASTER = {
         { label: "Archived projects", href: "/dashboard/archived" },
       ],
     },
+    { label: "My Day", href: "/dashboard/my-day", subLinks: undefined },
   ],
   TWO_D_EXECUTOR: [
+    { label: "My Day", href: "/dashboard/my-day", subLinks: undefined },
     { label: "Leads", href: "/dashboard", subLinks: undefined },
     { label: "Work stage", href: "/dashboard/work-stages", subLinks: undefined },
   ],

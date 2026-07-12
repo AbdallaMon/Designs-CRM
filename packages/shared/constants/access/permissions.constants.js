@@ -717,10 +717,21 @@ export const COMMAND_CENTER_PERMISSIONS = {
   VIEW: "command_center.view", // GET /v2/command-center/overview (composite admin cockpit)
 };
 
+// ── my-day (profile-scoped work queue + supervisor team lens) ─────────────────
+// VIEW = the personal "what needs my action" queue (sales tiers + designers).
+// TEAM_VIEW = the supervisor rollup + drill-down (SUPER_SALES sales-domain-only;
+// ADMIN/SUPER_ADMIN all domains). Admins deliberately do NOT hold VIEW — they take
+// no assigned leads (spec 2026-07-12-my-day-work-queue-design.md §3).
+export const MY_DAY_PERMISSIONS = {
+  VIEW: "my_day.view", // GET /v2/my-day (own queue)
+  TEAM_VIEW: "my_day.team.view", // GET /v2/my-day/team + /v2/my-day/users/:userId
+};
+
 // ── nested aggregate (canonical reference for app code) ───────────────────────
 export const PERMISSIONS = {
   AUDIT: AUDIT_PERMISSIONS,
   COMMAND_CENTER: COMMAND_CENTER_PERMISSIONS,
+  MY_DAY: MY_DAY_PERMISSIONS,
   AUTH: AUTH_PERMISSIONS,
   CHAT: CHAT_PERMISSIONS,
   TELEGRAM: TELEGRAM_PERMISSIONS,

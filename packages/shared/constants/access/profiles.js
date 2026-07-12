@@ -6,15 +6,16 @@ import {
   USER_ADMIN, ACCOUNTING_ALL, STAFF_GATE, TELEGRAM_ADMIN, SITE_UTILITY_ADMIN,
   COURSE_ADMIN, IMAGE_SESSION_ADMIN, ADMIN_RESIDUAL, AUDIT_ADMIN, COMMAND_CENTER_ADMIN,
   SUPER_SALES_EXTRA_PERMISSIONS, LEAD_SECTION_PRIMARY, LEAD_SECTION_ANALYSIS,
+  MY_DAY_PERSONAL, MY_DAY_TEAM,
 } from "./role-permissions.js";
 import { USER_ROLES } from "./roles.constants.js";
 
 const dedupe = (arr) => Array.from(new Set(arr));
 
 // Sales family (STAFF base role + the retained flags → three profiles).
-const NORMAL_SALES = dedupe([...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE, ...LEAD_SECTION_ANALYSIS]);
+const NORMAL_SALES = dedupe([...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE, ...LEAD_SECTION_ANALYSIS, ...MY_DAY_PERSONAL]);
 const PRIMARY_SALES = dedupe([...NORMAL_SALES, ...LEAD_SECTION_PRIMARY]);
-const SUPER_SALES = dedupe([...PRIMARY_SALES, ...SUPER_SALES_EXTRA_PERMISSIONS]);
+const SUPER_SALES = dedupe([...PRIMARY_SALES, ...SUPER_SALES_EXTRA_PERMISSIONS, ...MY_DAY_TEAM]);
 
 // Admin tier (mirror ROLE_PERMISSIONS.ADMIN / SUPER_ADMIN exactly + the new view codes,
 // which admins would obviously hold — additive, no parity impact).
@@ -22,14 +23,14 @@ const ADMIN = dedupe([
   ...SHARED_AUTHED, ...TELEGRAM_ADMIN, ...SITE_UTILITY_ADMIN, ...COURSE_ADMIN,
   ...LEAD_AUTHED, ...LEAD_ADMIN, ...USER_ADMIN, ...PROJECT_AUTHED, ...PROJECT_ADMIN,
   ...IMAGE_SESSION_ADMIN, ...ADMIN_RESIDUAL, ...AUDIT_ADMIN, ...COMMAND_CENTER_ADMIN,
-  ...LEAD_SECTION_PRIMARY, ...LEAD_SECTION_ANALYSIS,
+  ...LEAD_SECTION_PRIMARY, ...LEAD_SECTION_ANALYSIS, ...MY_DAY_TEAM,
 ]);
 
 // Designers/executor (mirror their role codes; the 3D-only MODIFICATION-task
 // visibility stays role-derived via baseRole in the frozen service — see spec §5.1).
-const DESIGNER = dedupe([...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE]);
+const DESIGNER = dedupe([...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...STAFF_GATE, ...MY_DAY_PERSONAL]);
 const ACCOUNTANT = dedupe([...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...ACCOUNTING_ALL, ...STAFF_GATE]);
-const SUPER_SALES_BASE = dedupe([...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED]);
+const SUPER_SALES_BASE = dedupe([...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED, ...MY_DAY_PERSONAL, ...MY_DAY_TEAM]);
 const CONTACT_INITIATOR = dedupe([...SHARED_AUTHED, ...LEAD_AUTHED, ...PROJECT_AUTHED]);
 
 export const PROFILES = {
