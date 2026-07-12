@@ -5,7 +5,25 @@
 >
 > Last updated: **2026-07-12** · Branch: `frontend-redesign` (reorg work on `reorg/ref-alignment`; Sales/Admin feature work on `feat/audit-log-sales-admin`)
 >
-> **LATEST (2026-07-12) — My Day work queue + supervisor team lens on branch `feat/audit-log-sales-admin`.**
+> **LATEST (2026-07-12) — PDF assets from SiteUtility + full elimination of `legacy`-named code (branch `feat/audit-log-sales-admin`).**
+> Two-phase effort (`docs/superpowers/specs/2026-07-12-pdf-assets-from-site-utility-design.md`).
+> **Phase 1 (feature):** both PDF subsystems (contract + image-session) now source their **intro page, company
+> signature, and full-page background** from the `SiteUtility` singleton (`introPage`/`pdfSignaturePart`/`pdfFrame`),
+> each with a shared `PDF_ASSET_DEFAULTS` fallback resolved against `CRM_DOMAIN`. The image-session PDF **drops its
+> per-page banner** and draws a full-page background behind the border like the contract PDF. The company signature is
+> **validated at save** (`site-utility` `updatePdfConfig`): must be a PNG cropped tight to content and a safe
+> root-relative CRM path — SSRF-guarded — else `422` (`SIGNATURE_MUST_BE_PNG` / `_CROPPED` / `_INVALID_PATH`).
+> ⚠️ Prod check pending: confirm `CRM_DOMAIN` serves `/Pdf-intro.png` + `/dream-signature.png` (or set real `/uploads/…`
+> paths), since intro/signature previously came from `dreamstudiio.com`/`COOKIE_DOMAIN`.
+> **Phase 2 (cleanup):** every `legacy`-named file/folder under `server/src` was relocated to its proper home and the
+> `legacy` marker dropped — `infra/config/enums.js`, `infra/notifications/senders/*` + `index.js` barrel,
+> `accounting/accounting.errors.js`, `admin-residual/reports/report-{pdf,excel}.js`,
+> `contracts/services/*` (frozen PDF), `image-sessions/services/client-services.js`, `projects/project/project.flows.js`.
+> Behavior-preserving (same-depth moves → frozen-PDF fonts + internal imports untouched); **968 tests unchanged + all
+> moved modules import at runtime.** The `legacyDefaults`/`this.legacy` DI-seam name (~40 usecases) was left intact — it
+> is the repo's dominant convention, not a stray legacy file. Commits path-isolated from the concurrent session's tree.
+>
+> **PRIOR (2026-07-12) — My Day work queue + supervisor team lens on branch `feat/audit-log-sales-admin`.**
 > A new `/dashboard/my-day` screen that inverts the per-lead Deal Cockpit into a prioritized, profile-scoped
 > "what needs my action today" queue. Full spec→plan→subagent-driven TDD build
 > (`docs/superpowers/specs/2026-07-12-my-day-work-queue-design.md`, `docs/superpowers/plans/2026-07-12-my-day-work-queue.md`).
