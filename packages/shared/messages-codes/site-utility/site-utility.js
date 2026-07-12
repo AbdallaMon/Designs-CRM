@@ -19,6 +19,11 @@ export const siteUtilityMessagesCodes = {
   PAYMENT_CONDITION_RESERVED_VALUE: "PAYMENT_CONDITION_RESERVED_VALUE",
   // Legacy invariant: cannot delete a condition still linked to contract payments.
   PAYMENT_CONDITION_IN_USE: "PAYMENT_CONDITION_IN_USE",
+  // The uploaded company PDF signature (pdfSignaturePart) must be a PNG.
+  SIGNATURE_MUST_BE_PNG: "SIGNATURE_MUST_BE_PNG",
+  // The uploaded company PDF signature must be cropped tight to its content (no
+  // excess transparent margins — sharp.trim() must not change its dimensions).
+  SIGNATURE_MUST_BE_CROPPED: "SIGNATURE_MUST_BE_CROPPED",
 
   // ── contract utility (obligations + stage/special/level clause templates) ──
   CONTRACT_UTILITY_FETCHED: "CONTRACT_UTILITY_FETCHED",

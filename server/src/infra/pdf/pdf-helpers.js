@@ -49,10 +49,11 @@ function toAbsoluteAssetUrl(url) {
   if (typeof url !== "string" || !url) return url;
   if (/^https?:\/\//i.test(url)) return url; // already absolute
   if (url.startsWith("/")) {
-    const base = (process.env.CRM_DOMAIN || process.env.SERVER_URL || "").replace(
-      /\/+$/,
+    const base = (
+      process.env.CRM_DOMAIN ||
+      process.env.SERVER_URL ||
       ""
-    );
+    ).replace(/\/+$/, "");
     if (base) return `${base}${url}`;
   }
   return url;
@@ -79,7 +80,7 @@ export async function fetchImageBuffer(url, options = {}) {
 
       if (!res.ok) {
         throw new Error(
-          `HTTP Error ${res.status}: ${res.statusText} for URL: ${url}`
+          `HTTP Error ${res.status}: ${res.statusText} for URL: ${url}`,
         );
       }
 
@@ -104,7 +105,7 @@ export async function fetchImageBuffer(url, options = {}) {
       // Only retry if it's not the last attempt
       if (i < retries - 1) {
         console.warn(
-          `Retrying fetch for ${url} in ${retryDelayMs}ms... (Error: ${errorMessage})`
+          `Retrying fetch for ${url} in ${retryDelayMs}ms... (Error: ${errorMessage})`,
         );
         await new Promise((resolve) => setTimeout(resolve, retryDelayMs));
       }
@@ -113,10 +114,65 @@ export async function fetchImageBuffer(url, options = {}) {
 
   // If all retries fail, throw a comprehensive error message
   const detailedErrorMessage = `Failed to fetch image from ${url} after ${retries} attempts.\nDetailed Errors:\n${errors.join(
-    "\n"
+    "\n",
   )}`;
   console.error(detailedErrorMessage);
   throw new Error(`Could not load image: ${url}. See console for details.`);
+}
+
+// Validate a company PDF-signature image referenced by `url` (a stored SiteUtility
+// value \u2014 root-relative "/\u2026", "/uploads/\u2026", or an absolute http(s) URL). Unlike
+// fetchImageBuffer, this does NOT run compressImageBuffer (which resizes to width
+// 1000) \u2014 it inspects the ORIGINAL bytes so the crop check is meaningful.
+//
+// Returns null when valid; otherwise a validation code string:
+//   "SIGNATURE_MUST_BE_PNG"     \u2014 not a PNG
+//   "SIGNATURE_MUST_BE_CROPPED" \u2014 has excess uniform margins (sharp.trim shrinks it)
+// Network/decode failures are thrown (they are infra errors, not validation results).
+export async function validatePdfSignatureImage(url, { timeoutMs = 15000 } = {}) {
+  const absolute = toAbsoluteAssetUrl(url);
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  let buffer;
+  try {
+    const res = await fetch(absolute, { signal: controller.signal });
+    if (!res.ok) {
+      throw new Error(`HTTP Error ${res.status}: ${res.statusText} for ${absolute}`);
+    }
+    buffer = Buffer.from(await res.arrayBuffer());
+  } finally {
+    clearTimeout(id);
+  }
+
+  return validateSignatureBuffer(buffer);
+}
+
+// Buffer-level signature validation (no network) \u2014 split out so it can be unit
+// tested with sharp-generated PNGs. Returns null when valid, otherwise a code.
+export async function validateSignatureBuffer(buffer) {
+  const metadata = await sharp(buffer).metadata();
+
+  if (metadata.format !== "png") return "SIGNATURE_MUST_BE_PNG";
+
+  // "Cropped" = tight to content: trimming uniform (transparent) margins must not
+  // shrink the image. sharp.trim() reports the trimmed dimensions; allow a small
+  // tolerance for anti-aliased edges.
+  const TOLERANCE_PX = 2;
+  const origW = metadata.width || 0;
+  const origH = metadata.height || 0;
+  let trimmed;
+  try {
+    trimmed = await sharp(buffer).trim().toBuffer({ resolveWithObject: true });
+  } catch {
+    // trim throws if the whole image is uniform (nothing to keep) \u2014 treat as not cropped.
+    return "SIGNATURE_MUST_BE_CROPPED";
+  }
+  const trimmedW = trimmed.info.width || 0;
+  const trimmedH = trimmed.info.height || 0;
+  if (origW - trimmedW > TOLERANCE_PX || origH - trimmedH > TOLERANCE_PX) {
+    return "SIGNATURE_MUST_BE_CROPPED";
+  }
+  return null;
 }
 
 export function isArabicText(t = "") {

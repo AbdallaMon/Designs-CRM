@@ -1,5 +1,6 @@
 import { AppError } from "../../shared/errors/AppError.js";
 import { PERMISSIONS, siteUtilityMessagesCodes } from "@dms/shared";
+import { validatePdfSignatureImage } from "../../infra/pdf/pdf-helpers.js";
 import { siteUtilityRepository } from "./site-utility.repo.js";
 import {
   computePaymentConditionCapabilities,
@@ -35,6 +36,17 @@ export class SiteUtilityUsecase {
   // persisted config (legacy returned `true`; returning the row is more useful and
   // does not change the success outcome).
   async updatePdfConfig({ input }) {
+    // The company signature (pdfSignaturePart) is drawn onto every generated PDF.
+    // Enforce at save time that a newly-supplied signature is a PNG cropped tight to
+    // its content, so the PDF generators never embed a mis-sized or non-PNG stamp.
+    if (input.pdfSignaturePart) {
+      const validationCode = await validatePdfSignatureImage(
+        input.pdfSignaturePart,
+      );
+      if (validationCode) {
+        throw new AppError(siteUtilityMessagesCodes[validationCode], 422);
+      }
+    }
     const existing = await this.repository.getPdfConfig();
     const config = existing
       ? await this.repository.updatePdfConfig({ data: input })

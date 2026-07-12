@@ -42,6 +42,7 @@ import { notifyUsersThatAContractWasSigned } from "../../../infra/telegram/teleg
 import { sendSuccessEmailAfterContractSigned } from "./pdf-utilities.js";
 import { updateContractPaymentOnContractSign } from "./contract-services.js";
 import { getDefaultContractUtilityData } from "./client-contract-services.js";
+import { PDF_ASSET_DEFAULTS } from "../../../infra/pdf/pdf-asset-defaults.js";
 
 // ===== Helpers =====
 const ASCII_RE = /^[\x00-\x7F\s.,:;@!?#%&*()+\-\/\\\[\]{}"'<>=|]+$/; // latin-ish
@@ -171,7 +172,7 @@ async function writeBolxParagraphOrList(ctx, text, { fonts, colors, fs = 11 }) {
       fs,
       true,
       colors.textColor,
-      forceLatin ? "ltr" : ctx.lng === "ar" ? "rtl" : null
+      forceLatin ? "ltr" : ctx.lng === "ar" ? "rtl" : null,
     );
     return;
   }
@@ -224,7 +225,7 @@ async function writeBolxParagraphOrList(ctx, text, { fonts, colors, fs = 11 }) {
           fs,
           useFont,
           ctx.margin.left,
-          contentW - indent
+          contentW - indent,
         );
         ctx.page.drawText(line, {
           x: tx,
@@ -279,7 +280,7 @@ async function writeParagraphOrList(ctx, text, { fonts, colors, fs = 11 }) {
       fs,
       false,
       colors.textColor,
-      forceLatin ? "ltr" : ctx.lng === "ar" ? "rtl" : null
+      forceLatin ? "ltr" : ctx.lng === "ar" ? "rtl" : null,
     );
     return;
   }
@@ -332,7 +333,7 @@ async function writeParagraphOrList(ctx, text, { fonts, colors, fs = 11 }) {
           fs,
           useFont,
           ctx.margin.left,
-          contentW - indent
+          contentW - indent,
         );
         ctx.page.drawText(line, {
           x: tx,
@@ -371,6 +372,7 @@ async function writeParagraphOrList(ctx, text, { fonts, colors, fs = 11 }) {
 // ===== Section renderers =====
 async function renderIntroPage(ctx, { introImageUrl, title, fonts, colors }) {
   const { pdfDoc, pageWidth, pageHeight } = ctx;
+  console.log("introImageUrl", introImageUrl);
   const page = pdfDoc.addPage([pageWidth, pageHeight]);
   await drawFullBackgroundImage(page, pdfDoc, introImageUrl);
   if (!title) return;
@@ -491,7 +493,7 @@ async function renderClientSection(ctx, { lng, contract, fonts, colors }) {
       shapedValue,
       maxTextW,
       vFont,
-      valueFS
+      valueFS,
     );
 
     // Heights with asymmetric padding
@@ -575,35 +577,35 @@ async function renderAmountSection(ctx, { lng, contract }) {
     await ctx.writeLineAuto(
       `اتفق الفريقان علي أن تكون تكلفة التصميم الداخلي للمشروع هي: ${formatAED(
         amount,
-        "ar"
+        "ar",
       )}`,
       11,
-      false
+      false,
     );
     await ctx.writeLineAuto(
       `مع ضريبة ${vatRate || 0}% تصبح تكلفة التصميم ${formatAED(
         total,
-        "ar"
+        "ar",
       )} .`,
       11,
-      false
+      false,
     );
   } else {
     await ctx.writeLineAuto(
       `Both parties agreed that the interior design cost is: ${formatAED(
         amount,
-        "en"
+        "en",
       )}.`,
       11,
-      false
+      false,
     );
     await ctx.writeLineAuto(
       `With VAT ${vatRate || 0}%, the total design cost becomes ${formatAED(
         total,
-        "en"
+        "en",
       )}.`,
       11,
-      false
+      false,
     );
   }
 }
@@ -643,7 +645,7 @@ function buildPaymentLine({ payment, index, lng, taxRate }) {
 
 async function renderDbSpecialItems(
   ctx,
-  { lng, contract, fonts, colors, defaultContractUtilityData }
+  { lng, contract, fonts, colors, defaultContractUtilityData },
 ) {
   if (!defaultContractUtilityData?.specialClauses?.length) return;
   const items = (contract?.specialItems || [])
@@ -660,10 +662,10 @@ async function renderDbSpecialItems(
 
 async function renderPartyOneWithPayments(
   ctx,
-  { lng, contract, fonts, colors, defaultContractUtilityData }
+  { lng, contract, fonts, colors, defaultContractUtilityData },
 ) {
   await ctx.writeTitle(
-    lng === "ar" ? "التزامات الفريق الأول" : "Party One Obligations"
+    lng === "ar" ? "التزامات الفريق الأول" : "Party One Obligations",
   );
 
   const taxRate = Number(contract?.taxRate || 5);
@@ -681,7 +683,7 @@ async function renderPartyOneWithPayments(
     items
       .map((t) => (t.match(/^(\u2022|•|-|–|\d+[).])/) ? t : `${t}`))
       .join("\n"),
-    { fonts, colors, fs: 11 }
+    { fonts, colors, fs: 11 },
   );
 
   const payments = contract?.paymentsNew || contract?.payments || [];
@@ -689,10 +691,10 @@ async function renderPartyOneWithPayments(
     await writeSubhead(
       ctx,
       lng === "ar" ? "جدول الدفعات" : "Payment schedule",
-      { fonts, colors, fs: 12 }
+      { fonts, colors, fs: 12 },
     );
     const paymentLines = payments.map((p, i) =>
-      buildPaymentLine({ payment: p, index: i + 1, lng, taxRate })
+      buildPaymentLine({ payment: p, index: i + 1, lng, taxRate }),
     );
     await writeParagraphOrList(ctx, paymentLines.join("\n"), {
       fonts,
@@ -746,7 +748,7 @@ async function renderStagesCards(ctx, { lng, contract, fonts, colors }) {
         isRTL(t) ? reText(t) : t,
         maxTextW,
         font,
-        11
+        11,
       );
       detailsHeight += lines.length * (11 + 2) + 4;
     }
@@ -757,8 +759,8 @@ async function renderStagesCards(ctx, { lng, contract, fonts, colors }) {
           ? `أيام التسليم: ${formatNumber(deliveryDays, "ar")} يوم`
           : `Delivery days: ${formatNumber(deliveryDays, lng)}`
         : lng === "ar"
-        ? "غير محدد"
-        : "Not specified";
+          ? "غير محدد"
+          : "Not specified";
 
     const bodyBlocks = detailsHeight + 14 + 8;
     const cardH = headerH + bodyBlocks + 4;
@@ -814,8 +816,8 @@ async function renderStagesCards(ctx, { lng, contract, fonts, colors }) {
           ? "يشمل العقد"
           : "Included"
         : lng === "ar"
-        ? "لا يشمل"
-        : "Not included";
+          ? "لا يشمل"
+          : "Not included";
       const leftLine = (lng === "ar" ? "الحالة: " : "Status: ") + statusLabel;
       const rightLine = (lng === "ar" ? "الشمول: " : "Scope: ") + includedLabel;
 
@@ -908,7 +910,7 @@ async function renderStagesCards(ctx, { lng, contract, fonts, colors }) {
             11,
             font,
             x + pad,
-            contentW - pad * 2 - 14
+            contentW - pad * 2 - 14,
           );
           ctx.page.drawText(ln, {
             x: tx,
@@ -947,7 +949,7 @@ async function renderStagesCards(ctx, { lng, contract, fonts, colors }) {
 
 async function renderStagesTable(
   ctx,
-  { lng, contract, fonts, colors, defaultContractUtilityData }
+  { lng, contract, fonts, colors, defaultContractUtilityData },
 ) {
   // ===== Data =====
   const allStages = CONTRACT_LEVELSENUM.map((s, i) => ({
@@ -1110,7 +1112,7 @@ async function renderStagesTable(
   // Wrap into maxLines; last line ellipsized if needed
   const wrapWithHardClamp = (
     text,
-    { maxW, fs, bold = false, maxLines = 2 }
+    { maxW, fs, bold = false, maxLines = 2 },
   ) => {
     const f = pickFont(text, { bold });
     const shaped =
@@ -1139,7 +1141,7 @@ async function renderStagesTable(
       color = colors.textColor,
       padOverride = null,
       maxLines = 2,
-    }
+    },
   ) => {
     const innerPad = padOverride == null ? pad : padOverride;
     const maxTextW = Math.max(0, w - innerPad * 2);
@@ -1152,7 +1154,7 @@ async function renderStagesTable(
     const lineHeight = fs + lineGap;
     const blockH = Math.min(
       lines.length * lineHeight,
-      Math.max(lineHeight, h - innerPad * 2)
+      Math.max(lineHeight, h - innerPad * 2),
     );
     let cy = yTop - (h - blockH) / 2 - fs;
     for (let i = 0; i < lines.length; i++) {
@@ -1169,7 +1171,7 @@ async function renderStagesTable(
   // details with bullets (NOT bold)
   const drawBulletsClipped = (
     items,
-    { x, yTop, w, h, fs = fsDet, color = colors.textColor }
+    { x, yTop, w, h, fs = fsDet, color = colors.textColor },
   ) => {
     const bulletGap = 3;
     const innerPad = padDetails;
@@ -1177,7 +1179,7 @@ async function renderStagesTable(
     const lineHeight = fs + bulletGap;
     const maxLines = Math.max(
       1,
-      Math.floor((h - innerPad * 2 + bulletGap) / lineHeight)
+      Math.floor((h - innerPad * 2 + bulletGap) / lineHeight),
     );
     let linesUsed = 0;
     let cy = yTop - innerPad - fs;
@@ -1254,8 +1256,8 @@ async function renderStagesTable(
         ? "يشمل العقد"
         : "Included"
       : rtl
-      ? "لا يشمل العقد"
-      : "Not included";
+        ? "لا يشمل العقد"
+        : "Not included";
 
     const daysStr =
       included && deliveryDays != null
@@ -1264,11 +1266,11 @@ async function renderStagesTable(
           : `${deliveryDays} days`
         : "—";
     const currentDetails = defaultContractUtilityData?.levelClauses?.find(
-      (clause) => clause.order === s.order
+      (clause) => clause.order === s.order,
     );
     const details =
       (lng === "ar" ? currentDetails?.textAr : currentDetails?.textEn)?.split(
-        "\n"
+        "\n",
       ) || [];
     if (stData?.notes) details.push(String(stData.notes));
 
@@ -1394,7 +1396,7 @@ async function renderStagesTable(
 // === PAGE-SPACE GUARDS ADDED HERE ===
 async function renderStageClauses(
   ctx,
-  { lng, fonts, colors, defaultContractUtilityData }
+  { lng, fonts, colors, defaultContractUtilityData },
 ) {
   if (!defaultContractUtilityData?.stageClauses?.length) return;
   // Require at least 20% of page; otherwise new page
@@ -1412,7 +1414,7 @@ async function renderStageClauses(
   for (const i of [1, 2, 3, 4, 5, 6]) {
     // const text = STAGE_CLAUSES_DEFAULT?.[i]?.[lng];
     const data = defaultContractUtilityData?.stageClauses.find(
-      (clause) => clause.order === i
+      (clause) => clause.order === i,
     );
 
     const head = lng === "ar" ? data.headingAr : data.headingEn;
@@ -1428,7 +1430,7 @@ async function renderStageClauses(
 
 async function renderPartyTwoObligations(
   ctx,
-  { lng, fonts, colors, defaultContractUtilityData }
+  { lng, fonts, colors, defaultContractUtilityData },
 ) {
   // Require at least 20% of page; otherwise new page
   const usableHeight = ctx.pageHeight - ctx.margin.top - ctx.margin.bottom;
@@ -1439,7 +1441,7 @@ async function renderPartyTwoObligations(
   }
 
   await ctx.writeTitle(
-    lng === "ar" ? "التزامات الفريق الثاني" : "Party Two Obligations"
+    lng === "ar" ? "التزامات الفريق الثاني" : "Party Two Obligations",
   );
   // const text = OBLIGATIONS_TEXT.partyTwo[lng] || "";
   const text =
@@ -1451,7 +1453,7 @@ async function renderPartyTwoObligations(
 
 async function renderHandwrittenSpecialClauses(
   ctx,
-  { lng, fonts, colors, defaultContractUtilityData }
+  { lng, fonts, colors, defaultContractUtilityData },
 ) {
   // Require at least 30% of page; otherwise new page
   if (!defaultContractUtilityData?.specialClauses?.length) return;
@@ -1472,13 +1474,13 @@ async function renderHandwrittenSpecialClauses(
       fonts,
       colors,
       fs: 11,
-    }
+    },
   );
 }
 
 async function renderDrawingsSection(
   ctx,
-  { lng, contract, defaultDrawingUrl, fonts, colors }
+  { lng, contract, defaultDrawingUrl, fonts, colors },
 ) {
   const drawings = contract?.drawings || [];
   // URLs are resolved to absolute in fetchImageBuffer (toAbsoluteAssetUrl):
@@ -1486,8 +1488,8 @@ async function renderDrawingsSection(
   const toRender = drawings.length
     ? drawings.map((d) => d.url)
     : defaultDrawingUrl
-    ? [defaultDrawingUrl]
-    : [];
+      ? [defaultDrawingUrl]
+      : [];
   if (!toRender.length) {
     return;
   }
@@ -1677,7 +1679,7 @@ async function renderDrawingsSection(
 
 async function renderConfirmationAndSignaturePage(
   ctx,
-  { lng, clientName, signatureUrl, fonts, colors }
+  { lng, clientName, signatureUrl, signaturePartUrl, fonts, colors },
 ) {
   await ctx.newPage();
 
@@ -1695,7 +1697,7 @@ async function renderConfirmationAndSignaturePage(
     "التوقيع والاعتماد :\n" +
     "قام الطرف الاولي بالاطلاع علي جميع بنود الإتفاقية بالتفصيل , وعليها يوقع ويلتزم.\n" +
     `وقعت هذه الاتفاقية يوم : ${weekday} بتاريخ ${reverseString(
-      todayDate.toString()
+      todayDate.toString(),
     )}\n`;
   const approvalEn =
     "Signature & Approval:\n" +
@@ -1709,14 +1711,14 @@ async function renderConfirmationAndSignaturePage(
         : "I confirm that I have read and agree to all terms"),
     12,
     false,
-    colors.textColor
+    colors.textColor,
   );
   ctx.y -= 8;
   await ctx.writeLineAuto(
     lng === "ar" ? approvalAr : approvalEn,
     11,
     false,
-    colors.textColor
+    colors.textColor,
   );
   ctx.y -= 10;
 
@@ -1832,10 +1834,11 @@ async function renderConfirmationAndSignaturePage(
     rightY -= 60;
   }
 
-  // Stamp/signature (Team Two)
+  // Stamp/signature (Team Two) — company signature from SiteUtility.pdfSignaturePart
+  // (resolved with the shared default upstream), fetched via CRM_DOMAIN.
   try {
     const stampBytes = await fetchImageBuffer(
-      "https://dreamstudiio.com/dream-signature.png"
+      signaturePartUrl || PDF_ASSET_DEFAULTS.pdfSignaturePart,
     );
     let stamp;
     try {
@@ -1887,7 +1890,7 @@ async function renderConfirmationAndSignaturePage(
           : "Note: Signature image could not be loaded.",
         11,
         false,
-        colors.red
+        colors.red,
       );
     }
   }
@@ -1895,7 +1898,7 @@ async function renderConfirmationAndSignaturePage(
 
 async function renderFooterPageNumbers(
   pdfDoc,
-  { lng, fonts, colors, pageWidth }
+  { lng, fonts, colors, pageWidth },
 ) {
   const total = pdfDoc.getPageCount();
   const pages = pdfDoc.getPages();
@@ -1952,7 +1955,7 @@ async function drawCancelledWatermarkOnAllPages(
     opacity = 0.06, // شفافية العلامة المائية الأساسية (قابلة للتعديل)
     angleDeg = 33, // زاوية الميل
     gap = 180, // المسافة الرأسية بين السطور (قابلة للتعديل)
-  } = {}
+  } = {},
 ) {
   const wantAr = lng === "ar";
 
@@ -2016,6 +2019,7 @@ export async function generateContractPdf({
   contract,
   lng = "ar",
   signatureUrl,
+  signaturePartUrl,
   backgroundImageUrl,
   introImageUrl,
   // layout
@@ -2028,6 +2032,7 @@ export async function generateContractPdf({
   cancelWatermarkTextEn = "THIS CONTRACT HAS BEEN CANCELLED",
   defaultContractUtilityData,
 }) {
+  console.log(introImageUrl, "introImageUrl");
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
   const owner = contract?.clientLead?.client;
@@ -2106,7 +2111,7 @@ export async function generateContractPdf({
     isBold = false,
     color = colors.textColor,
     overrideDir = null,
-    forceFont = null
+    forceFont = null,
   ) => {
     const raw = String(t ?? "");
     const contentW = pageWidth - margin.left - margin.right;
@@ -2197,6 +2202,7 @@ export async function generateContractPdf({
     lng,
     clientName,
     signatureUrl,
+    signaturePartUrl,
     fonts,
     colors,
   });
@@ -2228,8 +2234,12 @@ export async function buildAndUploadContractPdf({
   id,
 }) {
   const siteUtility = await prisma.siteUtility.findFirst();
-  const backgroundImageUrl = siteUtility?.pdfFrame || null;
-  const introImageUrl = siteUtility?.introPage || null;
+  const backgroundImageUrl =
+    siteUtility?.pdfFrame || PDF_ASSET_DEFAULTS.pdfFrame;
+  const introImageUrl =
+    siteUtility?.introPage || PDF_ASSET_DEFAULTS.introPage;
+  const signaturePartUrl =
+    siteUtility?.pdfSignaturePart || PDF_ASSET_DEFAULTS.pdfSignaturePart;
   const OR = [{ arToken: token }];
   if (id && !isNaN(Number(id))) {
     OR.push({ id: Number(id) });
@@ -2265,6 +2275,7 @@ export async function buildAndUploadContractPdf({
     lng: "ar",
     clientName,
     signatureUrl,
+    signaturePartUrl,
     backgroundImageUrl,
     introImageUrl,
     defaultDrawingUrl,
@@ -2282,6 +2293,7 @@ export async function buildAndUploadContractPdf({
     lng: "en",
     clientName,
     signatureUrl,
+    signaturePartUrl,
     backgroundImageUrl,
     introImageUrl,
     defaultDrawingUrl,

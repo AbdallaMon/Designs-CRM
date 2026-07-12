@@ -23,20 +23,27 @@ import {
   reText,
   splitTextIntoLines,
 } from "../../../infra/pdf/pdf-helpers.js";
+import { PDF_ASSET_DEFAULTS } from "../../../infra/pdf/pdf-asset-defaults.js";
 const __dirname = path.dirname(__filename);
-const fontPath = path.join(__dirname, "../../../infra/pdf/fonts/Ya-ModernPro-Bold.otf");
+const fontPath = path.join(
+  __dirname,
+  "../../../infra/pdf/fonts/Ya-ModernPro-Bold.otf",
+);
 const fontBase64 = fs.readFileSync(fontPath);
-const fontBoldPath = path.join(__dirname, "../../../infra/pdf/fonts/Ya-ModernPro-Bold.otf");
+const fontBoldPath = path.join(
+  __dirname,
+  "../../../infra/pdf/fonts/Ya-ModernPro-Bold.otf",
+);
 const fontBoldBase64 = fs.readFileSync(fontBoldPath);
 
 const enfontPath = path.join(
   __dirname,
-  "../../../infra/pdf/fonts/NotoSansArabic-Regular.ttf"
+  "../../../infra/pdf/fonts/NotoSansArabic-Regular.ttf",
 );
 const enfontBase64 = fs.readFileSync(enfontPath);
 const enfontBoldPath = path.join(
   __dirname,
-  "../../../infra/pdf/fonts/NotoSansArabic-Bold.ttf"
+  "../../../infra/pdf/fonts/NotoSansArabic-Bold.ttf",
 );
 const enfontBoldBase64 = fs.readFileSync(enfontBoldPath);
 export async function getSessionByToken(token) {
@@ -120,6 +127,15 @@ export async function generateImageSessionPdf({
   name,
 }) {
   try {
+    // Branding assets come from the SiteUtility singleton (shared with the contract
+    // PDF), each falling back to the shared default. Stored root-relative so
+    // fetchImageBuffer resolves them against CRM_DOMAIN.
+    const siteUtility = await prisma.siteUtility.findFirst();
+    const introUrl = siteUtility?.introPage || PDF_ASSET_DEFAULTS.introPage;
+    const backgroundUrl = siteUtility?.pdfFrame || PDF_ASSET_DEFAULTS.pdfFrame;
+    const signaturePartUrl =
+      siteUtility?.pdfSignaturePart || PDF_ASSET_DEFAULTS.pdfSignaturePart;
+
     const pdfDoc = await PDFDocument.create();
     pdfDoc.registerFontkit(fontkit);
 
@@ -206,7 +222,7 @@ export async function generateImageSessionPdf({
     const getTextByLanguage = (textArray, languageCode) => {
       if (!textArray || !Array.isArray(textArray)) return "";
       const textItem = textArray.find(
-        (item) => item.language?.code === languageCode
+        (item) => item.language?.code === languageCode,
       );
       return textItem?.text || "";
     };
@@ -253,30 +269,28 @@ export async function generateImageSessionPdf({
       });
     };
 
-    const drawFixedHeader = async (isWide = false) => {
-      const widePageWidth = page.getWidth();
-      const pageHeight = page.getHeight();
-      const contentWidth = pageWidth - margin * 2;
-      const headerImageWidth = contentWidth;
-
-      const contentX = (page.getWidth() - headerImageWidth) / 2;
-      const headerY = pageHeight - headerHeight;
-
+    // Full-page background (SiteUtility.pdfFrame), replacing the old per-page banner
+    // header. Drawn BEFORE the border/content so it sits behind them — mirroring the
+    // contract PDF's drawFullBackgroundImage.
+    const drawPageBackground = async () => {
+      if (!backgroundUrl) return;
       try {
-        const headerImageBuffer = await fetchImageBuffer(
-          "https://dreamstudiio.com/pdf-banner.jpg"
-        );
-        const headerImage = await pdfDoc.embedJpg(headerImageBuffer);
-
-        // Just stretch the image to fit the border area exactly
-        page.drawImage(headerImage, {
-          x: contentX,
-          y: headerY + 10 - marginY + 2,
-          width: contentWidth,
-          height: headerHeight + marginY - 20 - 2,
+        const bgBuffer = await fetchImageBuffer(backgroundUrl);
+        let bgImage;
+        try {
+          bgImage = await pdfDoc.embedPng(bgBuffer);
+        } catch {
+          bgImage = await pdfDoc.embedJpg(bgBuffer);
+        }
+        if (!bgImage) return;
+        page.drawImage(bgImage, {
+          x: 0,
+          y: 0,
+          width: page.getWidth(),
+          height: page.getHeight(),
         });
       } catch (err) {
-        console.warn("Header image load error:", err.message);
+        console.warn("Background image load error:", err.message);
       }
     };
 
@@ -284,7 +298,7 @@ export async function generateImageSessionPdf({
     const drawFixedFooter = (
       isWide = false,
       currentPageIndex = 0,
-      totalPages = 1
+      totalPages = 1,
     ) => {
       const pageW = page.getWidth();
       const contentWidth = pageW - margin * 2;
@@ -385,10 +399,8 @@ export async function generateImageSessionPdf({
 
     const drawIntroPage = async () => {
       try {
-        // Load and draw full-page image
-        const imageBuffer = await fetchImageBuffer(
-          "https://dreamstudiio.com/Pdf-intro.png"
-        );
+        // Load and draw full-page image (SiteUtility.introPage, with shared default)
+        const imageBuffer = await fetchImageBuffer(introUrl);
         const embeddedImage = await pdfDoc.embedPng(imageBuffer);
 
         page.drawImage(embeddedImage, {
@@ -414,7 +426,7 @@ export async function generateImageSessionPdf({
         titleText,
         maxTextWidth,
         isArabic ? arBoldFont : enBoldFont,
-        fontSize
+        fontSize,
       );
 
       // Starting Y based on number of lines
@@ -462,7 +474,7 @@ export async function generateImageSessionPdf({
       customColors,
       startX,
       startY,
-      circleSize = 32
+      circleSize = 32,
     ) => {
       if (!customColors || !Array.isArray(customColors)) return startY;
 
@@ -518,7 +530,7 @@ export async function generateImageSessionPdf({
       materialRelation,
       index,
       totalMaterials,
-      { x, y, width, height }
+      { x, y, width, height },
     ) => {
       const materialData = materialRelation.material;
       const materialName =
@@ -622,7 +634,7 @@ export async function generateImageSessionPdf({
                     titleSize,
                     boldFont,
                     imageX + 10,
-                    imageWidth - 20
+                    imageWidth - 20,
                   )
                 : imageX + 10;
 
@@ -650,8 +662,8 @@ export async function generateImageSessionPdf({
               ? cardX + 15
               : cardX + 20
             : imageEmbedded
-            ? cardX + imageWidth + 30
-            : cardX + 20;
+              ? cardX + imageWidth + 30
+              : cardX + 20;
         const textWidth = cardWidth - (imageEmbedded ? imageWidth + 60 : 40);
 
         const titleX =
@@ -661,7 +673,7 @@ export async function generateImageSessionPdf({
                 titleSize,
                 boldFont,
                 textStartX,
-                textWidth
+                textWidth,
               )
             : textStartX;
 
@@ -788,7 +800,7 @@ export async function generateImageSessionPdf({
                     titleSize,
                     boldFont,
                     imageX + 10,
-                    desiredWidth - 20
+                    desiredWidth - 20,
                   )
                 : imageX + 10;
 
@@ -819,8 +831,8 @@ export async function generateImageSessionPdf({
               ? cardX + 15
               : cardX + 20
             : imageEmbedded
-            ? cardX + imageMaxWidth + 30
-            : cardX + 20;
+              ? cardX + imageMaxWidth + 30
+              : cardX + 20;
 
         const textWidth = cardWidth - (imageEmbedded ? imageMaxWidth + 60 : 40);
 
@@ -845,8 +857,8 @@ export async function generateImageSessionPdf({
       const availableSpace = y - margin - footerHeight;
       if (availableSpace < requiredSpace) {
         page = pdfDoc.addPage([pageWidth, pageHeight]);
+        await drawPageBackground();
         drawPageBorder();
-        await drawFixedHeader();
         // drawFixedFooter();
         y = pageHeight - headerHeight - marginY - 20;
         return true;
@@ -866,11 +878,11 @@ export async function generateImageSessionPdf({
       while (itemsDrawn < materials.length) {
         // Count how many rows can fit on the current page
         const availableRows = Math.floor(
-          (y - margin - footerHeight - 40) / rowHeight
+          (y - margin - footerHeight - 40) / rowHeight,
         );
         const rowsThisPage = Math.min(
           availableRows,
-          Math.ceil((materials.length - itemsDrawn) / itemsPerRow)
+          Math.ceil((materials.length - itemsDrawn) / itemsPerRow),
         );
 
         const itemsThisPage = rowsThisPage * itemsPerRow;
@@ -926,7 +938,7 @@ export async function generateImageSessionPdf({
       title,
       items,
       itemRenderer,
-      isGridSection = false
+      isGridSection = false,
     ) => {
       await checkNewPage(100);
 
@@ -1010,7 +1022,7 @@ export async function generateImageSessionPdf({
                 fallbackFontSize,
                 font,
                 margin + 40,
-                contentWidth - 80
+                contentWidth - 80,
               )
             : margin + 40;
 
@@ -1033,8 +1045,8 @@ export async function generateImageSessionPdf({
 
     // Create second page for content
     page = pdfDoc.addPage([pageWidth, pageHeight]);
+    await drawPageBackground();
     drawPageBorder();
-    await drawFixedHeader();
     // drawFixedFooter();
     y = pageHeight - headerHeight - marginY - 20;
 
@@ -1047,7 +1059,7 @@ export async function generateImageSessionPdf({
           await checkNewPage(160);
           await drawStyleItem(style);
         },
-        true
+        true,
       );
     }
     if (
@@ -1064,13 +1076,13 @@ export async function generateImageSessionPdf({
           const newY = drawCustomColors(customColors, startX, y + 10);
           y = newY;
         },
-        true
+        true,
       );
     }
 
     page = pdfDoc.addPage([pageWidth, pageHeight]);
+    await drawPageBackground();
     drawPageBorder();
-    await drawFixedHeader();
     // drawFixedFooter();
     y = pageHeight - headerHeight - marginY - 20;
 
@@ -1080,7 +1092,7 @@ export async function generateImageSessionPdf({
         lng === "ar" ? reText("الخامات المحددة") : "Selected Materials",
         sessionData.materials,
         drawMaterialGridItems,
-        true
+        true,
       );
     }
 
@@ -1109,8 +1121,8 @@ export async function generateImageSessionPdf({
 
           page = pdfDoc.addPage(pageSize);
 
+          await drawPageBackground();
           drawPageBorder(isWide);
-          await drawFixedHeader(isWide);
 
           let img;
           try {
@@ -1182,7 +1194,7 @@ export async function generateImageSessionPdf({
                       noteFontSize,
                       fontUsed,
                       margin,
-                      frameWidth
+                      frameWidth,
                     )
                   : margin;
 
@@ -1218,7 +1230,7 @@ export async function generateImageSessionPdf({
         noteText.slice(0, maxChars),
         maxCharsPerLine,
         maxChars,
-        20
+        20,
       );
       const noteHeight = noteLines.length * lineSpacing;
 
@@ -1251,15 +1263,15 @@ export async function generateImageSessionPdf({
           }
         } catch (err) {
           console.warn(
-            `Failed to fetch or embed attachment image: ${err.message}`
+            `Failed to fetch or embed attachment image: ${err.message}`,
           );
         }
       }
 
       // 🔹 Set up a new full page
       page = pdfDoc.addPage([pageWidth, pageHeight]);
+      await drawPageBackground();
       drawPageBorder();
-      await drawFixedHeader();
       y = pageHeight - headerHeight - marginY - 20;
 
       const frameX = margin;
@@ -1282,7 +1294,7 @@ export async function generateImageSessionPdf({
             noteFontSize,
             headerFontUsed,
             margin,
-            frameWidth
+            frameWidth,
           )
         : margin;
 
@@ -1353,8 +1365,8 @@ export async function generateImageSessionPdf({
     // await generateNotePage();
     if (signatureUrl) {
       page = pdfDoc.addPage([pageWidth, pageHeight]);
+      await drawPageBackground();
       drawPageBorder();
-      await drawFixedHeader();
 
       const columnGap = 40;
       const columnWidth = (contentWidth - columnGap) / 2;
@@ -1376,7 +1388,7 @@ export async function generateImageSessionPdf({
         : "Rashid Abu Ouda";
       const signatureLabel = isArabic ? reText("التوقيع:") : "Signature:";
       const nameLabel = isArabic ? reText("الاسم:") : "Name:";
-      const stampImageUrl = "https://dreamstudiio.com/dream-signature.png";
+      const stampImageUrl = signaturePartUrl;
 
       const isArabicName = isArabicText(name);
       const clientName = isArabicName ? reText(name) : name;
@@ -1445,7 +1457,7 @@ export async function generateImageSessionPdf({
         x,
         y,
         fontUsed = font,
-        size = labelFontSize
+        size = labelFontSize,
       ) => {
         page.drawText(text, {
           x,
@@ -1473,7 +1485,7 @@ export async function generateImageSessionPdf({
         clientName,
         columnWidth - 20,
         nameFont,
-        labelFontSize
+        labelFontSize,
       );
 
       for (const line of nameLines) {
@@ -1514,7 +1526,7 @@ export async function generateImageSessionPdf({
 
           const sigLabelWidth = font.widthOfTextAtSize(
             signatureLabel,
-            labelFontSize
+            labelFontSize,
           );
           const sigX = isArabic
             ? rightXWithMargin + columnWidth - sigLabelWidth - sigW - 10
@@ -1524,7 +1536,7 @@ export async function generateImageSessionPdf({
           drawRightText(
             signatureLabel,
             isArabic ? sigX + sigW + 5 : rightXWithMargin,
-            sigY + sigH / 2 - 6
+            sigY + sigH / 2 - 6,
           );
 
           page.drawImage(sigImage, {
