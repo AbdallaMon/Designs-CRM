@@ -346,3 +346,14 @@ cache resolver, the middleware fallback, and the switch/assign authorization tes
 end-to-end check confirmed a STAFF+subRole(ACCOUNTANT) user migrates to `[PRIMARY_SALES,
 ACCOUNTANT]` (current PRIMARY_SALES, 91 codes) and switching to ACCOUNTANT yields 105 codes incl.
 `accounting.salary.view`.
+
+---
+
+## Addendum 2026-07-12 — My Day work queue (additive; no parity impact)
+
+Two NEW permission codes were added for the My Day feature (`docs/superpowers/specs/2026-07-12-my-day-work-queue-design.md`). Both are **purely additive** — a brand-new surface with no master equivalent — so they do not change any existing role's access:
+
+- **`my_day.view`** — the personal action queue. Granted to NORMAL_SALES, PRIMARY_SALES, SUPER_SALES (+ SUPER_SALES_BASE) and the three designer profiles (DESIGNER_3D / DESIGNER_2D / EXECUTOR_2D). **NOT granted to ADMIN/SUPER_ADMIN** (admins take no assigned leads → no personal queue), nor to ACCOUNTANT / CONTACT_INITIATOR.
+- **`my_day.team.view`** — the supervisor team lens + drill-down. Granted to SUPER_SALES (+ SUPER_SALES_BASE) and ADMIN / SUPER_ADMIN only.
+
+Object scope on the drill-down (`GET /v2/my-day/users/:userId`): a `requireSpecialChecker` throws `MY_DAY_TEAM_SCOPE_DENIED` (403) when a SUPER_SALES supervisor targets a non-sales-tier user; admins may target anyone. No existing route's guard changed. Money boundary preserved (the team lens never reads Payment/ContractPayment/Outcome — same as command-center).

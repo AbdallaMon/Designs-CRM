@@ -3,9 +3,33 @@
 > **Open this file in any new chat.** It tells you what we are doing and where we have reached.
 > To resume: *"Read `PROJECT_STATE.md`, `CLAUDE.md`, and `docs/migration/`, then tell me where we are and what's next."*
 >
-> Last updated: **2026-07-11** · Branch: `frontend-redesign` (reorg work on `reorg/ref-alignment`; Sales/Admin feature work on `feat/audit-log-sales-admin`)
+> Last updated: **2026-07-12** · Branch: `frontend-redesign` (reorg work on `reorg/ref-alignment`; Sales/Admin feature work on `feat/audit-log-sales-admin`)
 >
-> **LATEST (2026-07-11) — Profile-Aware Deal Cockpit on branch `feat/audit-log-sales-admin`.**
+> **LATEST (2026-07-12) — My Day work queue + supervisor team lens on branch `feat/audit-log-sales-admin`.**
+> A new `/dashboard/my-day` screen that inverts the per-lead Deal Cockpit into a prioritized, profile-scoped
+> "what needs my action today" queue. Full spec→plan→subagent-driven TDD build
+> (`docs/superpowers/specs/2026-07-12-my-day-work-queue-design.md`, `docs/superpowers/plans/2026-07-12-my-day-work-queue.md`).
+> **(1) New `my-day` backend module** (six-file, command-center-style) with 3 read endpoints: `GET /v2/my-day`
+> (personal queue, `my_day.view`), `GET /v2/my-day/team` (supervisor exception rollup, `my_day.team.view`),
+> `GET /v2/my-day/users/:userId` (drill-down, `my_day.team.view` + object-scope checker). The personal queue
+> **reuses the real pure engines** (`computeCockpit` per batched lead, `computeWorkStageActions` per designer
+> assignment) so the queue can never disagree with the lead detail; the team lens is aggregate exception SQL.
+> **(2) Two additive permission codes** (`my_day.view` = sales tiers + designers; `my_day.team.view` = super-sales
+> + admins — **admins have NO personal queue**, team lens only). Super-sales supervises the sales domain only;
+> admins see sales + designers and can drill into anyone (super-sales→designer drill-down is 403-scoped).
+> **(3) Three new pure-rule signals** on the existing engines: `LEAD_STALE` (5 days no activity + no future touch,
+> in `lead.cockpit.js`), `DELIVERY_OVERDUE` + `STAGE_DUE_SOON` (48h window, in `lead.workstage-cockpit.js`).
+> Money boundary preserved (team lens never reads Payment/ContractPayment/Outcome, like command-center).
+> **(4) FE `/dashboard/my-day`** — two permission-gated tabs (My work / Team) + drill-down drawer, reusing the
+> cockpit signal copy. **Verified: feature-scoped suite 289/289 green (my-day 30 + leads/lead + shared); `next build`
+> exit 0.** Each of the 9 tasks was subagent-implemented + independently reviewed (all Spec✅/Approved). Additive —
+> parity unchanged (`permissions-parity-matrix.md` addendum 2026-07-12). **Prereq fix landed first:** the pre-existing
+> cockpit bundle selected the nonexistent `Contract.payments` relation (runtime PrismaClientValidationError) — corrected
+> to `paymentsNew` across the repo select + engine reads + test fixtures.
+> **NOTE:** built on a working tree **shared with a concurrent session**; every commit was path-isolated + hunk-checked.
+> Integration (merge/PR) deferred to the user.
+>
+> **PRIOR (2026-07-11) — Profile-Aware Deal Cockpit on branch `feat/audit-log-sales-admin`.**
 > The Sales Deal Cockpit now speaks to EVERY person by their **active profile** instead of going dark at `FINALIZED`.
 > Full spec→plan→build→TDD (`docs/superpowers/specs/2026-07-11-*`, `docs/superpowers/plans/2026-07-11-profile-aware-deal-cockpit.md`).
 > **(1)** The pure `computeCockpit` engine gained a `profileKey` input + a widened language-neutral bundle (active
