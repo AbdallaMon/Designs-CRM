@@ -21,7 +21,7 @@ import {
   newPriceOffer,
   updateCallNotification,
   updateMettingNotification,
-} from "../../../infra/notifications/legacy-notification.js";
+} from "../../../infra/notifications/index.js";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { leadsMessagesCodes as C } from "@dms/shared";
 

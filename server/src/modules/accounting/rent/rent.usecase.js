@@ -10,7 +10,7 @@ import { AppError } from "../../../shared/errors/AppError.js";
 import { accountingMessagesCodes as C } from "@dms/shared";
 import { rentRepository } from "./rent.repo.js";
 import { shapeRentRow, shapeRentList } from "./rent.dto.js";
-import { translateLegacyAccountingError } from "../accounting.legacy-errors.js";
+import { translateLegacyAccountingError } from "../accounting.errors.js";
 
 export class RentUsecase {
   /**

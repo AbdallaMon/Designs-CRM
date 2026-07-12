@@ -22,7 +22,6 @@ export async function getDefaultContractDataAndGenerateIfNotFound({
       },
     },
   });
-  console.log("contractUtilityData", contractUtilityData);
   if (dontGenerate) return contractUtilityData;
   if (
     contractUtilityData?.stageClauses?.length < 1 ||
@@ -64,10 +63,10 @@ async function generateDefaultContractData() {
   });
   const stageClauses = await generateDefaultStagesClauses(contractUtility.id);
   const contractLevelClauses = await generateDefaultContractLevelClauseTemplate(
-    contractUtility.id
+    contractUtility.id,
   );
   const specialClauses = await generateDefaultContractSpecialClauses(
-    contractUtility.id
+    contractUtility.id,
   );
   return contractUtility;
 }

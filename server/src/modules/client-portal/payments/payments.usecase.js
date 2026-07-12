@@ -9,7 +9,7 @@
 //
 // 🔒 The Stripe SDK calls are FROZEN (relocated verbatim into payments.stripe.js); the billing
 // normalization (`first`/`asKV`) lives in payments.dto.js and is imported directly. The email
-// side effects use the frozen `src/infra/notifications/legacy-notification.js` via lazy adapters.
+// side effects use the frozen `src/infra/notifications/index.js` via lazy adapters.
 //
 // IDOR CLOSE (vs legacy): legacy `/payment-status` marked the lead identified by the
 // CLIENT-SUPPLIED `clientLeadId` as FULLY_PAID once ANY `sessionId` came back `paid` — a
@@ -32,15 +32,15 @@ const C = clientPortalMessagesCodes;
 
 const legacyDefaults = {
   sendPaymentReminderEmail: (...a) =>
-    import("../../../infra/notifications/legacy-notification.js").then((m) =>
+    import("../../../infra/notifications/index.js").then((m) =>
       m.sendPaymentReminderEmail(...a),
     ),
   sendPaymentSuccessEmail: (...a) =>
-    import("../../../infra/notifications/legacy-notification.js").then((m) =>
+    import("../../../infra/notifications/index.js").then((m) =>
       m.sendPaymentSuccessEmail(...a),
     ),
   leadPaymentSuccessed: (id) =>
-    import("../../../infra/notifications/legacy-notification.js").then((m) =>
+    import("../../../infra/notifications/index.js").then((m) =>
       m.leadPaymentSuccessed(id),
     ),
 };

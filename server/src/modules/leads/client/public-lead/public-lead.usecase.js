@@ -12,7 +12,7 @@
 //
 // Heavy/side-effecting legacy logic is invoked via LAZY ADAPTERS (never duplicated): the lead
 // code generator + file attach (`services/main/client/leads.js`), the notifications
-// (`src/infra/notifications/legacy-notification.js`), and the cooperation email (`src/infra/mail/send-mail.js`). The
+// (`src/infra/notifications/index.js`), and the cooperation email (`src/infra/mail/send-mail.js`). The
 // price-mapping tables and the data-shape assembly are PURE and moved here verbatim.
 //
 // All Arabic/English PROSE responses are REPLACED with language-neutral CODES (AppError for
@@ -57,15 +57,15 @@ const legacyDefaults = {
       m.leadRepository.uploadFile(body, leadId),
     ),
   newLeadNotification: (leadId, client, isAdmin) =>
-    import("../../../../infra/notifications/legacy-notification.js").then((m) =>
+    import("../../../../infra/notifications/index.js").then((m) =>
       m.newLeadNotification(leadId, client, isAdmin),
     ),
   newClientLeadNotification: (leadId, client, isAdmin) =>
-    import("../../../../infra/notifications/legacy-notification.js").then((m) =>
+    import("../../../../infra/notifications/index.js").then((m) =>
       m.newClientLeadNotification(leadId, client, isAdmin),
     ),
   newLeadCompletedNotification: (leadId, client, isAdmin) =>
-    import("../../../../infra/notifications/legacy-notification.js").then((m) =>
+    import("../../../../infra/notifications/index.js").then((m) =>
       m.newLeadCompletedNotification(leadId, client, isAdmin),
     ),
   sendEmail: (to, subject, html) =>

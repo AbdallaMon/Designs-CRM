@@ -14,7 +14,7 @@
 // pattern used by the migrated courses + leads modules.
 //
 // The raw legacy flow functions this facade delegates to (via `legacyDefaults`) live in
-// ./project.legacy-flows.js (structure-only split). createGroupProjects / assignProjectToUser
+// ./project.flows.js (structure-only split). createGroupProjects / assignProjectToUser
 // are re-exported here unchanged so their existing deep importers keep working.
 import { AppError } from "../../../shared/errors/AppError.js";
 import { projectsMessagesCodes as C } from "@dms/shared";
@@ -22,11 +22,11 @@ import { workStageActionsForLead } from "../../leads/lead/lead.workstage-cockpit
 import { projectRepository } from "./project.repo.js";
 import { groupProjects } from "./project.dto.js";
 import { LOCKED_FROM_STATUSES_FOR_NON_ADMIN } from "./project.constants.js";
-import { legacyDefaults } from "./project.legacy-flows.js";
+import { legacyDefaults } from "./project.flows.js";
 export {
   createGroupProjects,
   assignProjectToUser,
-} from "./project.legacy-flows.js";
+} from "./project.flows.js";
 
 export class ProjectUsecase {
   /**

@@ -17,7 +17,7 @@ import { RentValidation } from "../rent/rent.validation.js";
 import { SalaryValidation } from "../salary/salary.validation.js";
 import { RentUsecase } from "../rent/rent.usecase.js";
 import { SalaryUsecase } from "../salary/salary.usecase.js";
-import { mapLegacyError } from "../accounting.legacy-errors.js";
+import { mapLegacyError } from "../accounting.errors.js";
 
 const C = accountingMessagesCodes;
 const P = PERMISSIONS.ACCOUNTING;

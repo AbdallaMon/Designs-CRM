@@ -31,7 +31,7 @@ const SESSION_REPO = "../session/image-session.repo.js";
 const CLIENT_REPO = "./client-image-session.repo.js";
 const PAGE_INFO_REPO = "../admin/page-info.repo.js";
 const PROS_CONS_REPO = "../admin/pros-cons.repo.js";
-const CLIENT_SVC = "../legacy/client-services.js";
+const CLIENT_SVC = "../services/client-services.js";
 
 const load = (path, fn) => (a) => import(path).then((m) => m[fn](a));
 

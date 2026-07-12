@@ -14,8 +14,8 @@ import {
   assignMultipleLeadsNotification,
   convertALeadNotification,
   updateLeadStatusNotification,
-} from "../../../infra/notifications/legacy-notification.js";
-import { ClientLeadStatus } from "../../../infra/config/legacy-enums.js";
+} from "../../../infra/notifications/index.js";
+import { ClientLeadStatus } from "../../../infra/config/enums.js";
 import { telegramChannelQueue } from "../../../infra/queues/telegram-channel.queue.js";
 import { AppError } from "../../../shared/errors/AppError.js";
 import { leadsMessagesCodes as C } from "@dms/shared";

@@ -127,7 +127,7 @@ const legacyDefaults = {
   uploadFile: (body, clientLeadId) =>
     import("../../leads/lead/lead.repo.js").then((m) => m.leadRepository.uploadFile(body, clientLeadId)),
   newLeadNotification: (leadId, client, isAdmin) =>
-    import("../../../infra/notifications/legacy-notification.js").then((m) => m.newLeadNotification(leadId, client, isAdmin)),
+    import("../../../infra/notifications/index.js").then((m) => m.newLeadNotification(leadId, client, isAdmin)),
 };
 
 export class AdminLeadsUsecase {

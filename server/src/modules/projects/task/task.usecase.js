@@ -13,7 +13,7 @@ import { projectUsecase } from "../shared/project-scope.js";
 import {
   updateTaskNotification,
   newTaskCreatedNotification,
-} from "../../../infra/notifications/legacy-notification.js";
+} from "../../../infra/notifications/index.js";
 
 // ── task flows ported 1:1 from the legacy shared/legacy/task-services.js. Prisma I/O is
 // delegated to taskRepository; the notification fan-out stays here. The note helpers

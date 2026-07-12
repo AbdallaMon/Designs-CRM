@@ -9,7 +9,7 @@ import { paymentRepository } from "./payment.repo.js";
 import {
   sendPaymentReminderEmailByStaff,
   sendPaymentSuccessEmail,
-} from "../../../infra/notifications/legacy-notification.js";
+} from "../../../infra/notifications/index.js";
 
 export async function makePayments(data, leadId) {
   data.map((payment) => {

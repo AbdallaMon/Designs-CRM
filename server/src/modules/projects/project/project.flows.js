@@ -14,7 +14,7 @@ import { groupProjects, sortProjectsByTypeOrder } from "./project.dto.js";
 import {
   newProjectAssingmentNotification,
   updateProjectNotification,
-} from "../../../infra/notifications/legacy-notification.js";
+} from "../../../infra/notifications/index.js";
 import {
   addUsersToATeleChannelUsingQueue,
   notifyUsersAddedToProject,
@@ -316,7 +316,7 @@ async function updateProject({ data, isAdmin }) {
     await updateProjectNotification(project.id, null, content + extra, isAdmin);
   }
   const { checkIfProjectHasStagesAndUpdateNextAndPrevious, checkIfProjectHasPaymentAndUpdate } =
-    await import("../../contracts/legacy/contract-services.js");
+    await import("../../contracts/services/contract-services.js");
   await checkIfProjectHasStagesAndUpdateNextAndPrevious({
     projectId: project.id,
     status: project.status,

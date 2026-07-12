@@ -13,7 +13,7 @@ import { staffCourseRepository } from "./staff-course.repo.js";
 // migration — we call the existing implementation rather than duplicate it.
 async function defaultNotifyAttemptFailed({ testId, userId }) {
   const { attemptFailedByUser } = await import(
-    "../../../infra/notifications/legacy-notification.js"
+    "../../../infra/notifications/index.js"
   );
   return attemptFailedByUser({ testId, userId });
 }

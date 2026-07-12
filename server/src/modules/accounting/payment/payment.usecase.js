@@ -17,7 +17,7 @@
 import { AppError } from "../../../shared/errors/AppError.js";
 import { accountingMessagesCodes as C } from "@dms/shared";
 import { paymentRepository } from "./payment.repo.js";
-import { translateLegacyAccountingError } from "../accounting.legacy-errors.js";
+import { translateLegacyAccountingError } from "../accounting.errors.js";
 
 export class PaymentUsecase {
   /**
@@ -38,7 +38,7 @@ export class PaymentUsecase {
 
   // ── relocated money orchestration (guards preserved byte-identical) ──────────────
   // Formerly legacy processPayment. Guards throw the exact legacy strings (consumed by
-  // accounting.legacy-errors.js); the three writes are delegated to the repo.
+  // accounting.errors.js); the three writes are delegated to the repo.
   async _processPayment(paymentId, amount, issuedDate, file, userId) {
     if (!amount || !issuedDate) {
       throw new Error("Please fill all data");

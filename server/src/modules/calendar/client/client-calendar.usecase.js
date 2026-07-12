@@ -13,7 +13,7 @@
 //
 // The `this.legacy` seam is retained so tests can inject stubs; production defaults to the
 // relocated impls below.
-import { newMeetingNotification } from "../../../infra/notifications/legacy-notification.js";
+import { newMeetingNotification } from "../../../infra/notifications/index.js";
 import { sendReminderCreatedToClient } from "../../../infra/mail/email-templates.js";
 import { createCalendarEvent } from "../../../infra/google/google-calendar.client.js";
 import { clientCalendarRepository } from "./client-calendar.repo.js";

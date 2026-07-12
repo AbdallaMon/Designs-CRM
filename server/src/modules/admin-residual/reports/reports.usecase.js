@@ -1,7 +1,7 @@
 // admin-residual/reports usecase — legacy `/admin/reports/*`.
 //
 // TWO kinds of endpoints:
-//  - 🔒 FROZEN excel/pdf generators (report-excel.legacy.js / report-pdf.legacy.js): they
+//  - 🔒 FROZEN excel/pdf generators (report-excel.js / report-pdf.js): they
 //    read `req.body` and WRITE the HTTP response themselves (streamed xlsx/pdf). We do NOT
 //    re-implement them — each is invoked via a lazy import adapter and handed a minimal
 //    `{ body }` shim plus the real `res`, so the observable output is preserved exactly.
@@ -18,13 +18,13 @@ import {
 
 const legacyDefaults = {
   generateExcelReport: (req, res) =>
-    import("./report-excel.legacy.js").then((m) => m.generateExcelReport(req, res)),
+    import("./report-excel.js").then((m) => m.generateExcelReport(req, res)),
   generatePDFReport: (req, res) =>
-    import("./report-pdf.legacy.js").then((m) => m.generatePDFReport(req, res)),
+    import("./report-pdf.js").then((m) => m.generatePDFReport(req, res)),
   generateStaffExcelReport: (req, res) =>
-    import("./report-excel.legacy.js").then((m) => m.generateStaffExcelReport(req, res)),
+    import("./report-excel.js").then((m) => m.generateStaffExcelReport(req, res)),
   generateStaffPDFReport: (req, res) =>
-    import("./report-pdf.legacy.js").then((m) => m.generateStaffPDFReport(req, res)),
+    import("./report-pdf.js").then((m) => m.generateStaffPDFReport(req, res)),
 };
 
 export class ReportsUsecase {

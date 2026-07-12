@@ -18,7 +18,7 @@
 // at the relocated repo/usecase code instead of the deleted accountant service.
 import dayjs from "dayjs";
 import { salaryRepository } from "./salary.repo.js";
-import { translateLegacyAccountingError } from "../accounting.legacy-errors.js";
+import { translateLegacyAccountingError } from "../accounting.errors.js";
 
 async function createBaseSalary({ userId, taxAmount, baseSalary, baseWorkHours }) {
   // Force all number fields to be numbers, even if undefined or null
