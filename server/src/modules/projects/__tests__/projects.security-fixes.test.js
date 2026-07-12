@@ -146,14 +146,31 @@ describe("FIX 3 — strict update schemas reject ownership/relation injection", 
     expect(r.success).toBe(true);
   });
 
-  it("project updateProject: rejects an injected id", () => {
-    expect(ProjectValidation.updateProject.safeParse({ status: "x", id: 5 }).success).toBe(false);
+  // NOTE: `updateProject` uses `.strip()` (NOT `.strict()`) ON PURPOSE — the project-edit
+  // form (ProjectDetails.jsx) submits the whole `{...project}` object, so `.strict()` would
+  // 422 every edit and break master parity. The mass-assignment guarantee is still enforced:
+  // the validate middleware forwards the STRIPPED `result.data`, so injected ownership/relation
+  // keys are dropped before they can reach Prisma. These tests assert that stripping (they fail
+  // if the schema is ever weakened to `.passthrough()`, which WOULD leak the injected keys).
+  it("project updateProject: strips an injected id (never reaches Prisma)", () => {
+    const r = ProjectValidation.updateProject.safeParse({ status: "x", id: 5 });
+    expect(r.success).toBe(true);
+    expect(r.data).toEqual({ status: "x" });
+    expect(r.data).not.toHaveProperty("id");
   });
 
-  it("project updateProject: rejects an injected clientLeadId / relation", () => {
-    expect(ProjectValidation.updateProject.safeParse({ clientLeadId: 9 }).success).toBe(false);
-    expect(ProjectValidation.updateProject.safeParse({ assignments: [] }).success).toBe(false);
-    expect(ProjectValidation.updateProject.safeParse({ userId: 3 }).success).toBe(false);
+  it("project updateProject: strips injected clientLeadId / relations / userId", () => {
+    const r = ProjectValidation.updateProject.safeParse({
+      status: "x",
+      clientLeadId: 9,
+      assignments: [],
+      userId: 3,
+    });
+    expect(r.success).toBe(true);
+    expect(r.data).toEqual({ status: "x" });
+    expect(r.data).not.toHaveProperty("clientLeadId");
+    expect(r.data).not.toHaveProperty("assignments");
+    expect(r.data).not.toHaveProperty("userId");
   });
 
   it("task updateTask: accepts the editable whitelist", () => {
