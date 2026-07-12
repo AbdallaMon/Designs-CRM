@@ -16,30 +16,62 @@ function arr(v) {
   return Array.isArray(v) ? v : [];
 }
 
+// My Day deadline window (spec §5.3/§6): a stage due within this many hours is "due soon".
+// Single source — the my-day team-lens SQL imports this so both lenses agree.
+export const DELIVERY_SOON_HOURS = 48;
+
+const MS_PER_HOUR = 3600_000;
+const MS_PER_DAY = 24 * MS_PER_HOUR;
+
 /**
  * Next-action list for a designer/executor on ONE lead, scoped to their own assignments.
- * @param {{ assignments?: Array<{ projectType: string, contractLevel: string, projectStatus: string, stageStatus: string }> }} input
+ * @param {{ assignments?: Array<{ projectType: string, contractLevel: string, projectStatus: string, stageStatus: string, deliveryAt?: Date|string|null }> }} input
  *   `assignments` — the CALLER's own project assignments on this lead (already scoped by userId).
  * @param {Date} now  reference clock (REQUIRED, injected — never read internally).
- * @returns {Array<{ type: 'WORK_STAGE_ASSIGNED_TO_YOU', severity: string, params: { projectType, level }, cta: object }>}
+ * @returns {Array<{ type: 'DELIVERY_OVERDUE'|'STAGE_DUE_SOON'|'WORK_STAGE_ASSIGNED_TO_YOU', severity: string, params: object, cta: object }>}
  */
 export function computeWorkStageActions({ assignments } = {}, now) {
   if (!(now instanceof Date)) {
     throw new TypeError("computeWorkStageActions: `now` (a Date) is required — inject the clock for determinism.");
   }
+  const cta = { kind: "GOTO_WORKSTAGE", capability: null, tabKey: null };
   return arr(assignments)
     .filter((a) => a && (a.projectStatus === "IN_PROGRESS" || a.stageStatus === "IN_PROGRESS"))
-    .map((a) => ({
-      type: "WORK_STAGE_ASSIGNED_TO_YOU",
-      severity: "warning",
-      params: { projectType: a.projectType, level: a.contractLevel },
-      cta: { kind: "GOTO_WORKSTAGE", capability: null, tabKey: null },
-    }));
+    .map((a) => {
+      const deliveryAt = a.deliveryAt ? new Date(a.deliveryAt) : null;
+      const baseParams = { projectType: a.projectType, level: a.contractLevel };
+      // ONE signal per assignment, most-severe-first precedence.
+      if (deliveryAt && deliveryAt.getTime() < now.getTime()) {
+        return {
+          type: "DELIVERY_OVERDUE",
+          severity: "critical",
+          params: {
+            ...baseParams,
+            deliveryAt: deliveryAt.toISOString(),
+            overdueDays: Math.floor((now.getTime() - deliveryAt.getTime()) / MS_PER_DAY),
+          },
+          cta,
+        };
+      }
+      if (deliveryAt && deliveryAt.getTime() - now.getTime() <= DELIVERY_SOON_HOURS * MS_PER_HOUR) {
+        return {
+          type: "STAGE_DUE_SOON",
+          severity: "warning",
+          params: {
+            ...baseParams,
+            deliveryAt: deliveryAt.toISOString(),
+            hoursLeft: Math.ceil((deliveryAt.getTime() - now.getTime()) / MS_PER_HOUR),
+          },
+          cta,
+        };
+      }
+      return { type: "WORK_STAGE_ASSIGNED_TO_YOU", severity: "warning", params: baseParams, cta };
+    });
 }
 
 // Contract LEVEL_N → production project type (mirrors the frozen contract service's
 // `stageLevelRelatedProject`; used here only to label the signal, inverted).
-const PROJECT_TYPE_TO_LEVEL = {
+export const PROJECT_TYPE_TO_LEVEL = {
   "2D_Study": "LEVEL_2",
   "3D_Designer": "LEVEL_3",
   "2D_Final_Plans": "LEVEL_4",

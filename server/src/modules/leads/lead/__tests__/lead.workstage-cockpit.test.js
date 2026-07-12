@@ -1,7 +1,12 @@
 // Unit tests for the PURE work-stage next-action engine (designers/executor). No Prisma,
 // no clock — `now` is injected. The engine trusts a caller-scoped `assignments` input.
 import { describe, it, expect } from "vitest";
-import { computeWorkStageActions, workStageActionsForLead } from "../lead.workstage-cockpit.js";
+import {
+  computeWorkStageActions,
+  workStageActionsForLead,
+  DELIVERY_SOON_HOURS,
+  PROJECT_TYPE_TO_LEVEL,
+} from "../lead.workstage-cockpit.js";
 
 const NOW = new Date("2026-07-10T12:00:00.000Z");
 
@@ -72,5 +77,67 @@ describe("workStageActionsForLead (legacy lead.projects adapter)", () => {
   it("returns [] for a lead with no projects", () => {
     expect(workStageActionsForLead(lead([]), 42, NOW)).toEqual([]);
     expect(workStageActionsForLead(null, 42, NOW)).toEqual([]);
+  });
+});
+
+describe("computeWorkStageActions — deadline rules (My Day)", () => {
+  const hoursFromNow = (h) => new Date(NOW.getTime() + h * 3600_000);
+  const base = {
+    projectType: "3D_Designer",
+    contractLevel: "LEVEL_3",
+    projectStatus: "IN_PROGRESS",
+    stageStatus: "IN_PROGRESS",
+  };
+
+  it("DELIVERY_OVERDUE (critical) when the deadline passed", () => {
+    expect(DELIVERY_SOON_HOURS).toBe(48);
+    expect(PROJECT_TYPE_TO_LEVEL["3D_Designer"]).toBe("LEVEL_3");
+    const r = computeWorkStageActions(
+      { assignments: [{ ...base, deliveryAt: hoursFromNow(-72) }] },
+      NOW,
+    );
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({
+      type: "DELIVERY_OVERDUE",
+      severity: "critical",
+      params: { projectType: "3D_Designer", level: "LEVEL_3", overdueDays: 3 },
+    });
+    expect(r[0].params.deliveryAt).toBe(hoursFromNow(-72).toISOString());
+  });
+
+  it("STAGE_DUE_SOON (warning) inside the 48h window", () => {
+    const r = computeWorkStageActions(
+      { assignments: [{ ...base, deliveryAt: hoursFromNow(24) }] },
+      NOW,
+    );
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({
+      type: "STAGE_DUE_SOON",
+      severity: "warning",
+      params: { projectType: "3D_Designer", level: "LEVEL_3", hoursLeft: 24 },
+    });
+  });
+
+  it("falls back to WORK_STAGE_ASSIGNED_TO_YOU beyond the window", () => {
+    const r = computeWorkStageActions(
+      { assignments: [{ ...base, deliveryAt: hoursFromNow(49) }] },
+      NOW,
+    );
+    expect(r).toHaveLength(1);
+    expect(r[0].type).toBe("WORK_STAGE_ASSIGNED_TO_YOU");
+  });
+
+  it("no deliveryAt → unchanged legacy behavior (one ASSIGNED signal)", () => {
+    const r = computeWorkStageActions({ assignments: [{ ...base }] }, NOW);
+    expect(r).toHaveLength(1);
+    expect(r[0].type).toBe("WORK_STAGE_ASSIGNED_TO_YOU");
+  });
+
+  it("completed assignments stay silent even when overdue", () => {
+    const r = computeWorkStageActions(
+      { assignments: [{ ...base, projectStatus: "COMPLETED", stageStatus: "COMPLETED", deliveryAt: hoursFromNow(-72) }] },
+      NOW,
+    );
+    expect(r).toEqual([]);
   });
 });
