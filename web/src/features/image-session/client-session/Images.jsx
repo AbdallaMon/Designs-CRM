@@ -1,16 +1,17 @@
 "use client";
-import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
-import { useEffect, useState, useRef, useCallback } from "react";
-import { PreviewItem } from "@/features/image-session/client-session/PreviewItem.jsx";
+import { useEffect, useState, useRef } from "react";
 import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
-import { Box, Grid, Typography } from "@mui/material";
-import { FloatingActionButton } from "@/features/image-session/client-session/Utility.jsx";
-import { gsap } from "gsap";
+import { Box } from "@mui/material";
+import {
+  StepActionBar,
+  StepNav,
+  STEP_ACTION_BAR_SPACE,
+} from "@/features/image-session/client-session/Utility.jsx";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
 import { ImageGroup } from "@/features/image-session/client-session/ImageGroup.jsx";
-import { debounce } from "lodash";
+import { getCachedStepData } from "@/features/image-session/client-session/helpers.js";
 
 export function Images({
   session,
@@ -22,33 +23,21 @@ export function Images({
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedImages, setSelectedImages] = useState([]);
-  const [isDebouncing, setIsDebouncing] = useState(false);
 
   const { loading: toastLoading, setLoading: setToastLoading } =
     useToastContext();
   const { lng } = useLanguageSwitcherContext();
   const cardsRef = useRef([]);
-  const debouncedSelect = useRef();
-
-  useEffect(() => {
-    debouncedSelect.current = debounce((image, isSelected) => {
-      setSelectedImages((old) =>
-        isSelected ? old.filter((img) => img.id !== image.id) : [...old, image]
-      );
-      setIsDebouncing(false); // done
-    }, 100);
-  }, []);
 
   const handleImageSelect = (image, isSelected) => {
-    setIsDebouncing(true);
-    debouncedSelect.current(image, isSelected);
+    setSelectedImages((old) =>
+      isSelected ? old.filter((img) => img.id !== image.id) : [...old, image]
+    );
   };
-  async function getImages() {
-    const spaceIds = session.selectedSpaces.map((space) => {
-      return space.space.id;
-    });
 
-    await getDataAndSet({
+  async function getImages() {
+    const spaceIds = session.selectedSpaces.map((space) => space.space.id);
+    await getCachedStepData({
       url: `client/image-session/images?styleId=${
         session.styleId
       }&spaceIds=${spaceIds.join(",")}&`,
@@ -73,8 +62,9 @@ export function Images({
       await onUpdate();
     }
   }
+
   return (
-    <>
+    <Box sx={{ pb: STEP_ACTION_BAR_SPACE }}>
       {loading && <FullScreenLoader />}
 
       <ImageGroup
@@ -86,35 +76,15 @@ export function Images({
         hidetitle={true}
         handleImageSelect={handleImageSelect}
       />
-      <Box
-        sx={{
-          pt: 2,
-        }}
-      >
-        {selectedImages && selectedImages.length > 0 ? (
-          <>
-            <FloatingActionButton
-              disabled={toastLoading || isDebouncing}
-              handleClick={handleSaveImages}
-              type="NEXT"
-              isText={true}
-              label={lng === "ar" ? "التالي" : "Next"}
-            />
-            <FloatingActionButton
-              disabled={disabled}
-              handleClick={handleBack}
-              type="BACK"
-              sx={{ position: "fixed", bottom: "15px", left: "15px" }}
-            />
-          </>
-        ) : (
-          <FloatingActionButton
-            disabled={disabled}
-            handleClick={handleBack}
-            type="BACK"
-          />
-        )}
-      </Box>
-    </>
+
+      <StepActionBar>
+        <StepNav
+          onBack={handleBack}
+          onNext={selectedImages.length > 0 ? handleSaveImages : undefined}
+          backDisabled={disabled}
+          disabled={toastLoading}
+        />
+      </StepActionBar>
+    </Box>
   );
 }

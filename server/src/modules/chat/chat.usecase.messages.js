@@ -61,7 +61,7 @@ export const messageMethods = {
     await this.markRoomRead(roomId, userId, clientId);
 
     return {
-      data: messagesWithGrouping,
+      items: messagesWithGrouping,
       total,
       totalPages: Math.ceil(total / parsedLimit),
     };

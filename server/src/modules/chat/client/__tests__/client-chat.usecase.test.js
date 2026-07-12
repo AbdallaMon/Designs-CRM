@@ -112,13 +112,13 @@ describe("ClientChatUsecase reads derive the room from the token, not the param"
     expect(members).toHaveLength(2);
   });
 
-  it("getMessages preserves the { data, total, totalPages } cursor shape", async () => {
+  it("getMessages returns the contract { items, total, totalPages } paginated shape", async () => {
     const repo = makeRepo({
       countMessages: vi.fn(async () => 120),
     });
     const uc = makeUsecase(repo);
     const res = await uc.getMessages({ token: TOKEN, roomId: 42, limit: 50 });
-    expect(res).toHaveProperty("data");
+    expect(res).toHaveProperty("items");
     expect(res.total).toBe(120);
     expect(res.totalPages).toBe(Math.ceil(120 / 50));
     // it derives the client scope from the token member, not a client-supplied id

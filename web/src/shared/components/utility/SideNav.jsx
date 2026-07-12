@@ -47,32 +47,36 @@ function isExactActive(l, pathname) {
 
 /**
  * Sectioned, collapsible side navigation.
- * - Desktop: permanent drawer anchored to the inline-start side (right for RTL).
- * - Collapsed: slim icon-only rail with tooltips.
+ * - `groups`: ordered display groups [{ key, label, items }] (items are links).
+ * - Desktop: permanent drawer; collapsed = slim icon-only rail with tooltips.
  * - Mobile: temporary drawer toggled by the layout's hamburger.
+ * - `footer`: optional node pinned at the bottom (identity footer).
  */
 const SideNav = ({
-  links,
+  groups,
   collapsed,
   onToggleCollapsed,
   mobileOpen,
   onMobileClose,
   isMobile,
+  footer,
 }) => {
   const pathname = usePathname();
   const [openSections, setOpenSections] = useState({});
 
+  const allLinks = useMemo(() => groups.flatMap((g) => g.items), [groups]);
+
   // Auto-open the section that contains the active route.
   useEffect(() => {
     const next = {};
-    links.forEach((link) => {
+    allLinks.forEach((link) => {
       if (link.subLinks?.length && isLinkActive(link, pathname)) {
         next[link.name] = true;
       }
     });
     setOpenSections((prev) => ({ ...next, ...prev }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, links]);
+  }, [pathname, allLinks]);
 
   const toggleSection = (name) =>
     setOpenSections((prev) => ({ ...prev, [name]: !prev[name] }));
@@ -80,6 +84,10 @@ const SideNav = ({
   // When collapsed on desktop there are no labels, so sections behave as
   // flyout-less icon groups: clicking the header expands the rail first.
   const railCollapsed = !isMobile && collapsed;
+
+  // Group labels only earn their space when there is more than one group
+  // (an accountant whose links are all Finance needs no label).
+  const showGroupLabels = !railCollapsed && groups.length >= 2;
 
   const itemBaseSx = {
     borderRadius: 2,
@@ -206,35 +214,63 @@ const SideNav = ({
         )}
         {!railCollapsed && (
           <Collapse in={open} timeout="auto" unmountOnExit>
-            <List component="ul" disablePadding sx={{ pl: 0 }}>
+            {/* Tree-style sub-list: vertical guide line + dot markers instead
+                of repeated icons. Logical properties keep it RTL-safe. */}
+            <Box
+              component="ul"
+              sx={{
+                listStyle: "none",
+                m: 0,
+                p: 0,
+                mb: 0.5,
+                marginInlineStart: "34px",
+                marginInlineEnd: "10px",
+                borderInlineStart: `1px solid ${colors.borderLight}`,
+                paddingInlineStart: "6px",
+              }}
+            >
               {link.subLinks.map((sub) => {
                 const subActive = isExactActive(sub, pathname);
                 return (
-                  <Box
-                    component="li"
-                    key={sub.href}
-                    sx={{ listStyle: "none" }}
-                  >
+                  <Box component="li" key={sub.href}>
                     <ListItemButton
                       component="a"
                       href={sub.href}
                       selected={subActive}
-                      sx={{
-                        ...itemBaseSx,
-                        // inset to read as a child of the section (RTL-safe)
-                        ms: 2.5,
-                        me: 1.25,
-                        mx: 0,
-                        minHeight: 38,
-                        ...(subActive ? activeSx : {}),
-                      }}
                       aria-label={sub.name}
+                      sx={{
+                        borderRadius: 2,
+                        minHeight: 36,
+                        px: 1.25,
+                        my: 0.25,
+                        gap: 1.25,
+                        color: subActive
+                          ? colors.primaryDark
+                          : colors.textSecondary,
+                        transition:
+                          "background-color .15s ease, color .15s ease",
+                        "&:hover": {
+                          backgroundColor: colors.primaryAlt,
+                          color: colors.primaryDark,
+                        },
+                        "&.Mui-selected": {
+                          backgroundColor: colors.primaryAlt,
+                          "&:hover": { backgroundColor: colors.primaryAlt },
+                        },
+                      }}
                     >
-                      {sub.icon && (
-                        <ListItemIcon sx={iconSx(subActive)}>
-                          {sub.icon}
-                        </ListItemIcon>
-                      )}
+                      <Box
+                        component="span"
+                        sx={{
+                          width: 5,
+                          height: 5,
+                          borderRadius: "50%",
+                          flexShrink: 0,
+                          backgroundColor: subActive
+                            ? colors.primary
+                            : colors.textMuted,
+                        }}
+                      />
                       <ListItemText
                         primary={sub.name}
                         primaryTypographyProps={{
@@ -247,7 +283,7 @@ const SideNav = ({
                   </Box>
                 );
               })}
-            </List>
+            </Box>
           </Collapse>
         )}
       </Box>
@@ -256,17 +292,46 @@ const SideNav = ({
 
   const navList = useMemo(
     () => (
-      <List
-        component="ul"
-        sx={{ px: 0, py: 1, flexGrow: 1, overflowY: "auto", overflowX: "hidden" }}
-      >
-        {links.map((link) =>
-          link.subLinks?.length ? renderSection(link) : renderStandalone(link)
-        )}
-      </List>
+      <Box sx={{ flexGrow: 1, overflowY: "auto", overflowX: "hidden", py: 1 }}>
+        {groups.map((group, index) => (
+          <Box key={group.key}>
+            {railCollapsed
+              ? index > 0 && (
+                  <Divider
+                    sx={{ my: 1, mx: 1.5, borderColor: colors.borderLight }}
+                  />
+                )
+              : showGroupLabels && (
+                  <Typography
+                    component="div"
+                    sx={{
+                      mt: index > 0 ? 1.5 : 0.25,
+                      mb: 0.25,
+                      paddingInlineStart: "25px",
+                      paddingInlineEnd: "10px",
+                      fontSize: "0.6875rem",
+                      fontWeight: 600,
+                      letterSpacing: "0.08em",
+                      textTransform: "uppercase",
+                      color: colors.textMuted,
+                    }}
+                  >
+                    {group.label}
+                  </Typography>
+                )}
+            <List component="ul" disablePadding>
+              {group.items.map((link) =>
+                link.subLinks?.length
+                  ? renderSection(link)
+                  : renderStandalone(link)
+              )}
+            </List>
+          </Box>
+        ))}
+      </Box>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [links, pathname, openSections, railCollapsed]
+    [groups, pathname, openSections, railCollapsed, showGroupLabels]
   );
 
   const header = (
@@ -312,7 +377,11 @@ const SideNav = ({
             sx={{ color: colors.textSecondary }}
           >
             {/* RTL: collapsing pushes the drawer toward the start (right) */}
-            {collapsed ? <FiChevronsLeft size={18} /> : <FiChevronsRight size={18} />}
+            {collapsed ? (
+              <FiChevronsLeft size={18} />
+            ) : (
+              <FiChevronsRight size={18} />
+            )}
           </IconButton>
         </Tooltip>
       )}
@@ -330,7 +399,16 @@ const SideNav = ({
     >
       {header}
       {navList}
-      <Divider sx={{ borderColor: colors.borderLight }} />
+      {footer && (
+        <Box
+          sx={{
+            borderTop: `1px solid ${colors.borderLight}`,
+            p: railCollapsed ? 0.75 : 1.25,
+          }}
+        >
+          {footer}
+        </Box>
+      )}
     </Box>
   );
 

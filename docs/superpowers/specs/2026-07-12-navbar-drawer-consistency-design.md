@@ -23,7 +23,7 @@ Rejected alternative: adding a `section` field to backend `navigationTabs` — a
 
 ### 1. Grouped sections (client map in `layout.jsx`)
 
-`SECTION_BY_KEY` assigns each `navigationTabs.key` to a display group; group order = first appearance in the backend-ordered tab list (no reordering of links):
+`SECTION_BY_KEY` assigns each `navigationTabs.key` to a display group; groups render in a fixed order — Overview → Sales → Projects → Finance → Admin (day-to-day work first, admin utilities last; user decision 2026-07-12). Links inside a group keep their backend order:
 
 - **Overview**: `dashboard`, `command-center`
 - **Sales**: `leads`, `contact-initiator-leads`, `executor-leads`, `deals`

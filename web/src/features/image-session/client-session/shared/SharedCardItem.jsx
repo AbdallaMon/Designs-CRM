@@ -81,7 +81,7 @@ export function SharedCardItem({
     : lng === "ar"
     ? "اختار"
     : "Select";
-  const [word1, word2] = item.title[0].text.split(" ");
+  const [word1, word2] = (item.title?.[0]?.text ?? "").split(" ");
 
   return (
     <Card

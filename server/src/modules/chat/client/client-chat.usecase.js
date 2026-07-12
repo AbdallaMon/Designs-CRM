@@ -147,7 +147,7 @@ export class ClientChatUsecase {
     await this.markRoomRead({ resolved });
 
     return {
-      data: messagesWithGrouping,
+      items: messagesWithGrouping,
       total,
       totalPages: Math.ceil(total / parsedLimit),
     };

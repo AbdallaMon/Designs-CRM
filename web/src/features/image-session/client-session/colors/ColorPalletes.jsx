@@ -1,18 +1,21 @@
 "use client";
-import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { useEffect, useState, useRef } from "react";
 import { PreviewItem } from "@/features/image-session/client-session/PreviewItem.jsx";
 import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
 import { Box, Grid } from "@mui/material";
-import { FloatingActionButton } from "@/features/image-session/client-session/Utility.jsx";
+import {
+  FloatingActionButton,
+  StepActionBar,
+  StepNav,
+  STEP_ACTION_BAR_SPACE,
+} from "@/features/image-session/client-session/Utility.jsx";
 import { ColorPalleteItem } from "@/features/image-session/client-session/colors/ColorPalleteItem.jsx";
 import { gsap } from "gsap";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { getCachedStepData } from "@/features/image-session/client-session/helpers.js";
 
-gsap.registerPlugin(ScrollTrigger);
 export function ColorPalletes({
   session,
   handleBack,
@@ -32,7 +35,7 @@ export function ColorPalletes({
   const cardsRef = useRef([]);
   const containerRef = useRef(null);
   async function getColorsPalletes() {
-    await getDataAndSet({
+    await getCachedStepData({
       url: `client/image-session/colors?lng=${lng}&`,
       setLoading,
       setData: setColors,
@@ -42,30 +45,6 @@ export function ColorPalletes({
   useEffect(() => {
     getColorsPalletes();
   }, [lng]);
-
-  // Animate cards on enter
-  useEffect(() => {
-    if (colors.length > 0 && !loading) {
-      // Animate cards with stagger
-      gsap.fromTo(
-        cardsRef.current,
-        {
-          opacity: 0,
-          y: 50,
-          scale: 0.8,
-        },
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          duration: 0.6,
-          stagger: 0.1,
-          ease: "back.out(1.7)",
-          delay: 0.3,
-        }
-      );
-    }
-  }, [colors, loading]);
 
   function handleClickAnimationBack() {
     setSelectedColor(null);
@@ -161,7 +140,6 @@ export function ColorPalletes({
       });
     }
     timeline.eventCallback("onComplete", () => {
-      console.log("what?");
       gsap.set(currentCard.querySelector(".color-card"), {
         zIndex: -1,
       });
@@ -321,7 +299,7 @@ export function ColorPalletes({
   }
 
   return (
-    <>
+    <Box sx={{ pb: STEP_ACTION_BAR_SPACE }}>
       {loading && <FullScreenLoader />}
 
       {currentCard && (
@@ -329,7 +307,7 @@ export function ColorPalletes({
           disabled={disabled}
           handleClick={handleClickAnimationBack}
           type="BACK"
-          sx={{ position: "fixed", top: "15px", left: "15px" }}
+          sx={{ position: "fixed", top: "15px", left: "15px", zIndex: 1300 }}
         />
       )}
       <Grid container ref={containerRef} sx={{ overflow: "hidden" }}>
@@ -364,7 +342,6 @@ export function ColorPalletes({
                 cursor: "pointer",
                 transition: "transform 0.2s ease",
                 overflow: "hidden",
-                opacity: 0,
                 maxHeight: "300px",
                 position: "relative",
               }}
@@ -406,27 +383,17 @@ export function ColorPalletes({
           );
         })}
       </Grid>
-      <Box
-        sx={{
-          pt: 2,
-        }}
-      >
-        {selectedColor ? (
-          <FloatingActionButton
-            disabled={toastLoading}
-            handleClick={handleSubmitColor}
-            type="NEXT"
-            isText={true}
-            label={lng === "ar" ? "التالي" : "Next"}
-          />
-        ) : (
-          <FloatingActionButton
-            disabled={disabled}
-            handleClick={handleBack}
-            type="BACK"
-          />
-        )}
-      </Box>
-    </>
+
+      <StepActionBar>
+        <StepNav
+          // While a color card is open the morph's own top-left button handles
+          // closing, so we only expose step-level Back on the grid view.
+          onBack={currentCard ? undefined : handleBack}
+          onNext={selectedColor ? handleSubmitColor : undefined}
+          backDisabled={disabled}
+          disabled={toastLoading}
+        />
+      </StepActionBar>
+    </Box>
   );
 }

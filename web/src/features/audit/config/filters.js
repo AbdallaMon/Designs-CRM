@@ -12,9 +12,8 @@ import {
 export const auditFilters = [
   {
     key: "actorUserId",
-    label: "Actor (user id)",
-    type: "number",
-    placeholder: "e.g. 42",
+    label: "Actor",
+    type: "userSearch",
   },
   {
     key: "module",

@@ -1,22 +1,18 @@
 "use client";
-import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { useEffect, useState, useRef } from "react";
 import FullScreenLoader from "@/shared/components/feedback/loaders/FullscreenLoader";
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Grid,
-  Typography,
-} from "@mui/material";
-import { gsap } from "gsap";
+import { Box, Grid } from "@mui/material";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
 import { useToastContext } from "@/app/providers/ToastLoadingProvider";
-import { FloatingActionButton } from "@/features/image-session/client-session/Utility.jsx";
+import {
+  StepActionBar,
+  StepNav,
+  STEP_ACTION_BAR_SPACE,
+} from "@/features/image-session/client-session/Utility.jsx";
 import { SharedCardItem } from "@/features/image-session/client-session/shared/SharedCardItem.jsx";
 import { PreviewItemDialog } from "@/features/image-session/client-session/shared/PreviewItemDialog.jsx";
+import { getCachedStepData } from "@/features/image-session/client-session/helpers.js";
 
 export function Materials({
   session,
@@ -39,10 +35,10 @@ export function Materials({
   const { loading: toastLoading, setLoading: setToastLoading } =
     useToastContext();
   const { lng } = useLanguageSwitcherContext();
-  const cardsRef = useRef([]);
   const containerRef = useRef(null);
+
   async function getMaterials() {
-    await getDataAndSet({
+    await getCachedStepData({
       url: `client/image-session/materials?lng=${lng}&`,
       setLoading,
       setData: setMaterials,
@@ -52,43 +48,15 @@ export function Materials({
   useEffect(() => {
     getMaterials();
   }, [lng]);
-  useEffect(() => {
-    if (materials.length > 0 && !loading) {
-      // Create a timeline for better control
-      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
-      tl.fromTo(
-        cardsRef.current,
-        {
-          opacity: 0,
-          y: 60,
-          scale: 0.8,
-          rotationX: 15,
-          filter: "blur(8px) brightness(0.7)",
-          transformOrigin: "center bottom",
-        },
-        {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          rotationX: 0,
-          filter: "blur(0px) brightness(1)",
-          duration: 0.6,
-          stagger: {
-            amount: 0.2,
-            from: "start",
-            ease: "power2.out",
-          },
-          ease: "back.out(1.2)",
-        },
-        "-=0.2"
-      );
-
-      return () => {
-        tl.kill();
-      };
-    }
-  }, [materials, loading]);
+  const toggleMaterial = (material) => {
+    setSelectedMaterials((prev) => {
+      const exists = prev.find((m) => m.id === material.id);
+      return exists
+        ? prev.filter((m) => m.id !== material.id)
+        : [...prev, material];
+    });
+  };
 
   async function handleMaterialSubmit() {
     const req = await handleRequestSubmit(
@@ -104,7 +72,7 @@ export function Materials({
   }
 
   return (
-    <>
+    <Box sx={{ pb: STEP_ACTION_BAR_SPACE }}>
       {loading && <FullScreenLoader />}
       <PreviewItemDialog
         open={previewOpen}
@@ -115,28 +83,17 @@ export function Materials({
         selectedItems={selectedMaterials}
         type={"SELECT"}
         itemType="MATERIAL"
-        onItemSelect={(material) => {
-          setSelectedMaterials((prev) => {
-            const exists = prev.find((m) => m.id === material.id);
-            if (exists) {
-              return prev.filter((m) => m.id !== material.id);
-            } else {
-              return [...prev, material];
-            }
-          });
-        }}
+        onItemSelect={toggleMaterial}
       />
-      <Grid container ref={containerRef} sx={{ overflow: "hidden" }}>
+      <Grid container ref={containerRef}>
         {materials.map((material, index) => {
           let isFullWidth = false;
-
           if (index === 0) {
             isFullWidth = true;
           } else {
             const indexInGrid = index - 1;
             const isLast = index === materials.length - 1;
             const isFirstInRow = indexInGrid % 2 === 0;
-
             if (isLast && isFirstInRow) {
               isFullWidth = true;
             }
@@ -145,17 +102,9 @@ export function Materials({
             <Grid
               size={isFullWidth ? 12 : 6}
               key={material.id}
-              ref={(el) => (cardsRef.current[index] = el)}
               sx={{
-                opacity: 0,
-
                 cursor: "pointer",
-                transition: "transform 0.2s ease",
-                "& .MuiPaper-root": {
-                  height: "100%",
-                },
-                overflow: "hidden",
-                maxHeight: "300px",
+                "& .MuiPaper-root": { height: "100%" },
                 position: "relative",
               }}
             >
@@ -166,58 +115,26 @@ export function Materials({
                 canSelect={true}
                 isFullWidth={isFullWidth}
                 canPreview={true}
-                handlePreviewClick={() => {
-                  handlePreviewOpen(index);
-                }}
+                handlePreviewClick={() => handlePreviewOpen(index)}
                 height={"300px"}
-                isSelected={selectedMaterials?.find(
-                  (m) => m.id === material.id
-                )}
-                onSelect={() => {
-                  setSelectedMaterials((prev) => {
-                    const exists = prev.find((m) => m.id === material.id);
-                    if (exists) {
-                      return prev.filter((m) => m.id !== material.id);
-                    } else {
-                      return [...prev, material];
-                    }
-                  });
-                }}
+                isSelected={selectedMaterials?.find((m) => m.id === material.id)}
+                onSelect={() => toggleMaterial(material)}
               />
             </Grid>
           );
         })}
       </Grid>
-      <Box
-        sx={{
-          pt: 2,
-        }}
-      >
-        {selectedMaterials && selectedMaterials.length > 0 ? (
-          <>
-            <FloatingActionButton
-              disabled={toastLoading}
-              handleClick={handleMaterialSubmit}
-              type="NEXT"
-              isText={true}
-              label={lng === "ar" ? "التالي" : "Next"}
-              isOverItems={true}
-            />
-            <FloatingActionButton
-              disabled={disabled}
-              handleClick={handleBack}
-              type="BACK"
-              sx={{ position: "fixed", bottom: "15px", left: "15px" }}
-            />
-          </>
-        ) : (
-          <FloatingActionButton
-            disabled={disabled}
-            handleClick={handleBack}
-            type="BACK"
-          />
-        )}
-      </Box>
-    </>
+
+      <StepActionBar>
+        <StepNav
+          onBack={handleBack}
+          onNext={
+            selectedMaterials.length > 0 ? handleMaterialSubmit : undefined
+          }
+          backDisabled={disabled}
+          disabled={toastLoading}
+        />
+      </StepActionBar>
+    </Box>
   );
 }

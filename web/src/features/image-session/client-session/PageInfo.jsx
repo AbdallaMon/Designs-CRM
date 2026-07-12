@@ -10,10 +10,10 @@ import {
   Fade,
   useTheme,
 } from "@mui/material";
-import { getDataAndSet } from "@/app/helpers/functions/getDataAndSet";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { PageInfoType } from "@/app/helpers/constants";
 import { ActionButtons } from "@/features/image-session/client-session/Utility.jsx";
+import { getCachedStepData } from "@/features/image-session/client-session/helpers.js";
 
 const PageInfoComponent = ({
   session,
@@ -31,7 +31,7 @@ const PageInfoComponent = ({
 
   useEffect(() => {
     const loadPageInfo = async () => {
-      await getDataAndSet({
+      await getCachedStepData({
         url: `client/image-session/page-info?type=${type}&lng=${lng}&`,
         setData: setPageInfo,
         setLoading,
@@ -40,6 +40,12 @@ const PageInfoComponent = ({
 
     loadPageInfo();
   }, [type, lng]);
+
+  // Content may legitimately be empty (a page-info the admin hasn't filled in).
+  // Read defensively so an empty title/content array can't crash the whole
+  // client wizard on a blank step.
+  const titleText = pageInfo?.title?.[0]?.text ?? "";
+  const contentText = pageInfo?.content?.[0]?.content ?? "";
 
   if (loading) {
     return (
@@ -132,7 +138,7 @@ const PageInfoComponent = ({
                   lineHeight: 1.2,
                 }}
               >
-                {pageInfo?.title[0].text}
+                {titleText}
               </Typography>
             </Box>
 
@@ -183,7 +189,7 @@ const PageInfoComponent = ({
                   direction: isRTL ? "rtl" : "ltr",
                 }}
               >
-                {pageInfo?.content[0].content}
+                {contentText}
               </Typography>
             </Box>
 

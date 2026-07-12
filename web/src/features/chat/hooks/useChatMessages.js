@@ -180,7 +180,7 @@ export function useChatMessages(roomId, initialPage = 0, clientId, token) {
       let lastReq;
       if (req?.status === 200) {
         // lets loop starting from current page till the messagePage loop and make a samll time out then we we finsih we jump
-        const messagePage = req?.page;
+        const messagePage = req?.data?.page;
         for (let p = pageRef.current + 1; p <= messagePage; p++) {
           lastReq = await fetchMessages(p, true);
           // scroll to top to load more smoothly

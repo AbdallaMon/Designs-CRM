@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   Alert,
   Button,
@@ -28,21 +28,18 @@ import {
 } from "react-icons/md";
 
 import { ClientSelectedImages } from "@/features/image-session/client-session/ClientSelectedImages.jsx";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 import { PreviewItem } from "@/features/image-session/client-session/PreviewItem.jsx";
 import { SiMaterialformkdocs } from "react-icons/si";
 import { ClientSessionSubmittedSkeleton } from "@/features/image-session/client-session/ClientSessionSubmittedSkeleton.jsx";
 
-// Register ScrollTrigger plugin
-gsap.registerPlugin(ScrollTrigger);
-
 export function ClientSessionSubmitted({ session, loading }) {
   const { lng } = useLanguageSwitcherContext();
   const theme = useTheme();
 
-  const [isVisible, setIsVisible] = useState(false);
+  // Content is visible by default now — no animation gates it. (The success
+  // ripple is a pure-CSS flourish shown once the screen mounts.)
+  const [isVisible] = useState(true);
 
   const PDF_GENERATION_ALERT = {
     en: "An error occurred while generating the PDF, or you may have closed the page during the process. Please contact customer support.",
@@ -80,118 +77,13 @@ export function ClientSessionSubmitted({ session, loading }) {
     },
   };
 
-  const cardsRef = useRef([]);
-  const titleRef = useRef();
-  const selectionCardsRef = useRef([]);
-  const containerRef = useRef();
-
-  // Enhanced animation with scroll trigger
-  useEffect(() => {
-    if (session && !loading && containerRef.current) {
-      const ctx = gsap.context(() => {
-        gsap.set([...cardsRef.current, ...selectionCardsRef.current], {
-          opacity: 0,
-          y: 60,
-          scale: 0.95,
-          rotationX: 10,
-          transformOrigin: "center bottom",
-          filter: "blur(5px)",
-        });
-
-        gsap.set(titleRef.current, {
-          opacity: 0,
-          y: -40,
-          scale: 0.9,
-          filter: "blur(3px)",
-        });
-
-        // Title animation with scroll trigger
-        gsap.to(titleRef.current, {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          filter: "blur(0px)",
-          duration: 0.8,
-          ease: "back.out(1.4)",
-          scrollTrigger: {
-            trigger: titleRef.current,
-            start: "top 80%",
-            end: "bottom 20%",
-            toggleActions: "play none none reverse",
-            onEnter: () => setIsVisible(true),
-          },
-        });
-
-        // Selection cards with staggered scroll animation
-        selectionCardsRef.current.forEach((card, index) => {
-          if (card) {
-            gsap.to(card, {
-              opacity: 1,
-              y: 0,
-              scale: 1,
-              rotationX: 0,
-              filter: "blur(0px)",
-              duration: 0.7,
-              delay: index * 0.15,
-              ease: "power3.out",
-              scrollTrigger: {
-                trigger: card,
-                start: "top 85%",
-                end: "bottom 15%",
-                toggleActions: "play none none reverse",
-              },
-            });
-          }
-        });
-
-        // Main cards animation
-        cardsRef.current.forEach((card, index) => {
-          if (card) {
-            gsap.to(card, {
-              opacity: 1,
-              y: 0,
-              scale: 1,
-              rotationX: 0,
-              filter: "blur(0px)",
-              duration: 0.6,
-              delay: index * 0.1,
-              ease: "power2.out",
-              scrollTrigger: {
-                trigger: card,
-                start: "top 90%",
-                end: "bottom 10%",
-                toggleActions: "play none none reverse",
-              },
-            });
-          }
-        });
-      }, containerRef);
-
-      return () => ctx.revert();
-    }
-  }, [session, loading]);
-
-  const addToRefs = (el, refsArray) => {
-    if (el && !refsArray.current.includes(el)) {
-      refsArray.current.push(el);
-    }
-  };
-
-  const handleDownload = async () => {
-    if (!session.pdfUrl) return;
-
-    // Actual download
-    window.open(session.pdfUrl, "_blank");
-  };
-
   if (loading) {
     return <ClientSessionSubmittedSkeleton />;
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }} ref={containerRef}>
+    <Container maxWidth="lg" sx={{ py: 4 }}>
       <Paper
-        ref={titleRef}
         elevation={6}
         sx={{
           p: 4,
@@ -277,57 +169,11 @@ export function ClientSessionSubmitted({ session, loading }) {
         >
           {TEXTS[lng].selectionsSuccessful}
         </Typography>
-        {/* <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          justifyContent="center"
-          alignItems="center"
-          sx={{ mt: 3 }}
-        >
-          {session.pdfUrl ? (
-            <Button
-              variant="contained"
-              startIcon={<DownloadOutlined />}
-              onClick={handleDownload}
-              size="large"
-              sx={{
-                px: 4,
-                py: 1.5,
-                borderRadius: 2,
-                textTransform: "none",
-                fontSize: "1.1rem",
-                background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-                boxShadow: theme.shadows[4],
-                "&:hover": {
-                  transform: "translateY(-2px)",
-                  boxShadow: theme.shadows[8],
-                },
-              }}
-            >
-              {TEXTS[lng].downloadPDF}
-            </Button>
-          ) : (
-            <Alert
-              severity="error"
-              sx={{
-                maxWidth: 600,
-                mx: "auto",
-                borderRadius: 2,
-                "& .MuiAlert-icon": {
-                  fontSize: 24,
-                },
-              }}
-            >
-              {PDF_GENERATION_ALERT[lng]}
-            </Alert>
-          )}
-        </Stack> */}
       </Paper>
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {session.selectedSpaces && session.selectedSpaces.length > 0 && (
           <Grid size={{ xs: 12, md: 6 }}>
             <Card
-              ref={(el) => addToRefs(el, selectionCardsRef)}
               elevation={3}
               sx={{
                 height: "100%",
@@ -402,7 +248,6 @@ export function ClientSessionSubmitted({ session, loading }) {
         {session.customColors && (
           <Grid size={{ xs: 12, md: 6 }}>
             <Card
-              ref={(el) => addToRefs(el, selectionCardsRef)}
               elevation={3}
               sx={{
                 height: "100%",
@@ -483,7 +328,6 @@ export function ClientSessionSubmitted({ session, loading }) {
         {session.materials && session.materials.length > 0 && (
           <Grid size={{ xs: 12, md: 6 }}>
             <Card
-              ref={(el) => addToRefs(el, selectionCardsRef)}
               elevation={3}
               sx={{
                 height: "100%",
@@ -544,7 +388,6 @@ export function ClientSessionSubmitted({ session, loading }) {
         {session.style && (
           <Grid size={{ xs: 12, md: 6 }}>
             <Card
-              ref={(el) => addToRefs(el, selectionCardsRef)}
               elevation={3}
               sx={{
                 height: "100%",
@@ -604,8 +447,6 @@ export function ClientSessionSubmitted({ session, loading }) {
         <Box>
           <ClientSelectedImages
             session={session}
-            cardsRef={cardsRef}
-            titleRef={titleRef}
             loading={loading}
             withActions={false}
           />

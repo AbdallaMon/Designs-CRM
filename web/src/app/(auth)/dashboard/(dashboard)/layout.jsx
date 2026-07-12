@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/app/providers/AuthProvider";
 import {
   AppBar,
+  Avatar,
   Box,
+  ButtonBase,
   Chip,
   Divider,
   IconButton,
   Toolbar,
+  Tooltip,
   Typography,
   useMediaQuery,
   useTheme,
@@ -31,6 +34,10 @@ import {
   FiImage,
   FiCalendar,
   FiActivity,
+  FiLayers,
+  FiCreditCard,
+  FiGlobe,
+  FiUserCheck,
 } from "react-icons/fi";
 
 import SideNav, {
@@ -41,6 +48,7 @@ import RouteGuard from "@/shared/components/utility/RouteGuard.jsx";
 import NotificationsIcon from "@/shared/components/utility/NotificationIcon.jsx";
 import SignInWithDifferentUserRole from "@/features/users/UserRoles";
 import ProfileDialogTrigger from "@/features/users/profile/ProfileDialogTrigger";
+import ProfileDialog from "@/features/users/profile/ProfileDialog.jsx";
 import Logout from "@/shared/components/buttons/Logout.jsx";
 import SocketProvider from "@/app/providers/SocketProvider";
 import ChatWidget from "@/features/chat/components/chat/ChatWidget";
@@ -319,8 +327,9 @@ export function linksForRole(user) {
 
 // Client-side icon lookup for the backend-driven nav (`navigationTabs` carries
 // no icons — see packages/shared/constants/access/navigation.js). Keyed by the
-// same `key` NAVIGATION emits; icons are the exact ones master's link arrays
-// above use for the equivalent item.
+// same `key` NAVIGATION emits. Every key gets a DISTINCT icon so the rail is
+// scannable (work-stages/payments no longer share the deals dollar sign;
+// website-utilities no longer shares the rents home).
 const ICON_BY_KEY = {
   dashboard: <FiGrid size={20} />,
   "command-center": <FiActivity size={20} />,
@@ -328,21 +337,91 @@ const ICON_BY_KEY = {
   "users-super-sales": <FiUsers size={20} />,
   leads: <FiTarget size={20} />,
   deals: <FiDollarSign size={20} />,
-  "work-stages": <FiDollarSign size={20} />,
+  "work-stages": <FiLayers size={20} />,
   reports: <FiFileText size={20} />,
   "image-sessions": <FiImage size={20} />,
   calendar: <FiCalendar size={20} />,
-  payments: <FiDollarSign size={20} />,
-  "website-utilities": <FiHome size={20} />,
+  payments: <FiCreditCard size={20} />,
+  "website-utilities": <FiGlobe size={20} />,
   "executor-leads": <FiTarget size={20} />,
   "executor-work-stage": <FiBriefcase size={20} />,
-  "accountant-payments": <FiDollarSign size={20} />,
+  "accountant-payments": <FiCreditCard size={20} />,
   "operational-expenses": <FiShoppingCart size={20} />,
   rents: <FiHome size={20} />,
-  salaries: <FiUsers size={20} />,
+  salaries: <FiUserCheck size={20} />,
   outcome: <FiTrendingDown size={20} />,
   "contact-initiator-leads": <FiTarget size={20} />,
 };
+
+// Display-only grouping of nav tabs by `key`. Purely presentational — the
+// backend `navigationTabs` stays the single source of WHICH links exist and
+// in what order; this map only decides which section label a link renders
+// under. Group order = first appearance in the backend-ordered tab list.
+const SECTION_BY_KEY = {
+  dashboard: "overview",
+  "command-center": "overview",
+  leads: "sales",
+  "contact-initiator-leads": "sales",
+  "executor-leads": "sales",
+  deals: "sales",
+  "work-stages": "projects",
+  "image-sessions": "projects",
+  calendar: "projects",
+  "executor-work-stage": "projects",
+  payments: "finance",
+  "accountant-payments": "finance",
+  "operational-expenses": "finance",
+  rents: "finance",
+  salaries: "finance",
+  outcome: "finance",
+  "users-admin": "admin",
+  "users-super-sales": "admin",
+  reports: "admin",
+  "website-utilities": "admin",
+};
+
+const SECTION_LABELS = {
+  overview: "Overview",
+  sales: "Sales",
+  projects: "Projects",
+  finance: "Finance",
+  admin: "Admin",
+  general: "General",
+};
+
+// Fixed display order of the groups: day-to-day work (sales, projects) right
+// after the dashboard; admin utilities last. Links inside a group keep their
+// backend order.
+const GROUP_ORDER = [
+  "overview",
+  "sales",
+  "projects",
+  "finance",
+  "admin",
+  "general",
+];
+
+// Bucket the flat (already-mapped) links into display groups for SideNav,
+// ordered by GROUP_ORDER.
+function groupLinks(links) {
+  const bySection = new Map();
+  for (const link of links) {
+    const sectionKey = SECTION_BY_KEY[link.key] ?? "general";
+    let group = bySection.get(sectionKey);
+    if (!group) {
+      group = {
+        key: sectionKey,
+        label: SECTION_LABELS[sectionKey],
+        items: [],
+      };
+      bySection.set(sectionKey, group);
+    }
+    group.items.push(link);
+  }
+  return GROUP_ORDER.filter((key) => bySection.has(key)).map((key) =>
+    bySection.get(key)
+  );
+}
 
 // Roles whose legacy "Dashboard" top-level link renders FiTarget instead of
 // FiGrid (threeDLinks / twoDLinks in the pre-change arrays above).
@@ -358,36 +437,24 @@ function resolveTopIcon(key, role) {
   return ICON_BY_KEY[key];
 }
 
-// Sub-link icon lookup by href (navigationTabs sub-links carry no icons
-// either). Mirrors the legacy sub-link icons exactly; any href not listed
-// here is a work-stage item and falls back to FiBriefcase.
-const SUB_ICON_BY_HREF = {
-  "/dashboard/deals": <FiDollarSign size={20} />,
-  "/dashboard/on-hold-deals": <FiClock size={18} />,
-  "/dashboard/all-deals": <FiList size={18} />,
-  "/dashboard/report": <FiTrendingUp size={20} />,
-  "/dashboard/report/staff": <FiUsers size={18} />,
-};
-
-function resolveSubIcon(href) {
-  return SUB_ICON_BY_HREF[href] ?? <FiBriefcase size={20} />;
-}
-
-// Map a sub-link { label, href, active } (from navigationTabs) to SideNav's shape.
+// Map a sub-link { label, href, active } (from navigationTabs) to SideNav's
+// shape. Sub-links render as icon-less tree rows (dot marker) in SideNav, so
+// no icon is attached.
 function mapSubLink(s) {
   return {
     name: s.label,
     href: s.href,
-    icon: resolveSubIcon(s.href),
     ...(s.active ? { active: s.active } : {}),
   };
 }
 
 // Map a top-level nav tab { key, label, href, active, subLinks } (from
-// navigationTabs) to the { name, href, icon, active, subLinks } shape SideNav
-// expects, attaching the client-only icon by `key` (role-aware for "dashboard").
+// navigationTabs) to the { key, name, href, icon, active, subLinks } shape
+// SideNav expects, attaching the client-only icon by `key` (role-aware for
+// "dashboard"). `key` is kept for section grouping (groupLinks).
 function mapNavigationTab(tab, role) {
   return {
+    key: tab.key,
     name: tab.label,
     href: tab.href,
     icon: resolveTopIcon(tab.key, role),
@@ -485,6 +552,114 @@ function roleLabel(user) {
   return ROLE_LABELS[user?.role] || user?.role || "";
 }
 
+function userInitials(user) {
+  const source = user?.name || user?.email || "";
+  const parts = source.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  const first = parts[0][0] || "";
+  const last = parts.length > 1 ? parts[parts.length - 1][0] || "" : "";
+  return (first + last).toUpperCase();
+}
+
+// Identity footer pinned at the bottom of the drawer: avatar + name + role.
+// Clicking opens the same ProfileDialog as the AppBar trigger, with the same
+// `profileOpen` query-param behavior (the AppBar trigger stays untouched).
+// Lives here (not in SideNav) because SideNav is a shared utility and must
+// not import from features/users.
+function DrawerUserFooter({ user, label, collapsed }) {
+  const [open, setOpen] = useState(false);
+
+  const openProfile = () => {
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.set("profileOpen", "true");
+    window.history.replaceState({}, "", newUrl);
+    setOpen(true);
+  };
+
+  const closeProfile = () => {
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.delete("profileOpen");
+    window.history.replaceState({}, "", newUrl);
+    setOpen(false);
+  };
+
+  const button = (
+    <ButtonBase
+      onClick={openProfile}
+      aria-label="Profile"
+      sx={{
+        width: "100%",
+        borderRadius: 2,
+        p: 0.75,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: collapsed ? "center" : "flex-start",
+        gap: 1,
+        textAlign: "start",
+        transition: "background-color .15s ease",
+        "&:hover": { backgroundColor: colors.primaryAlt },
+      }}
+    >
+      <Avatar
+        sx={{
+          width: 32,
+          height: 32,
+          fontSize: "0.8rem",
+          fontWeight: 600,
+          bgcolor: colors.primary,
+          color: colors.textOnPrimary,
+        }}
+      >
+        {userInitials(user)}
+      </Avatar>
+      {!collapsed && (
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            noWrap
+            sx={{
+              fontSize: "0.85rem",
+              fontWeight: 600,
+              color: colors.textPrimary,
+              lineHeight: 1.3,
+            }}
+          >
+            {user.name || user.email}
+          </Typography>
+          {label && (
+            <Typography
+              noWrap
+              sx={{
+                fontSize: "0.72rem",
+                color: colors.textTertiary,
+                lineHeight: 1.3,
+              }}
+            >
+              {label}
+            </Typography>
+          )}
+        </Box>
+      )}
+    </ButtonBase>
+  );
+
+  return (
+    <>
+      {collapsed ? (
+        <Tooltip
+          title={`${user.name || user.email} — Profile`}
+          placement="right"
+          arrow
+        >
+          {button}
+        </Tooltip>
+      ) : (
+        button
+      )}
+      <ProfileDialog open={open} onClose={closeProfile} userId={user.id} />
+    </>
+  );
+}
+
 export default function Layout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -525,6 +700,7 @@ export default function Layout({ children }) {
   if (!user || !user.role) return null;
 
   const links = resolveLinks(user);
+  const navGroups = groupLinks(links);
   const currentPage = resolveCurrentPage(links, pathname);
   const userRoleLabel = roleLabel(user);
   // Desktop content sits next to the permanent drawer; mobile has none.
@@ -538,12 +714,19 @@ export default function Layout({ children }) {
     <SocketProvider>
       <Box sx={{ display: "flex", backgroundColor: colors.bgSecondary }}>
         <SideNav
-          links={links}
+          groups={navGroups}
           collapsed={collapsed}
           onToggleCollapsed={handleToggleCollapsed}
           mobileOpen={mobileOpen}
           onMobileClose={() => setMobileOpen(false)}
           isMobile={isMobile}
+          footer={
+            <DrawerUserFooter
+              user={user}
+              label={userRoleLabel}
+              collapsed={!isMobile && collapsed}
+            />
+          }
         />
 
         <Box

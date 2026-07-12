@@ -1,7 +1,7 @@
 import { Card, CardContent, Typography } from "@mui/material";
 
 export function ColorPalleteItem({ color, isFullWidth }) {
-  const [word1, word2] = color.title[0].text.split(" ");
+  const [word1, word2] = (color.title?.[0]?.text ?? "").split(" ");
   return (
     <Card
       sx={{

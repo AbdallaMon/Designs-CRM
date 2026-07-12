@@ -1,9 +1,12 @@
-import { Box, Paper, Typography, Grid } from "@mui/material";
-import { ImagePreviewDialog } from "@/features/image-session/client-session/ImagePreviewDialog.jsx";
+import { Box, Paper, Typography } from "@mui/material";
 import { useState } from "react";
 import { ImageGroup } from "@/features/image-session/client-session/ImageGroup.jsx";
 import { NotesComponent } from "@/shared/components/common/Notes.jsx";
-import { ActionButtons } from "@/features/image-session/client-session/Utility.jsx";
+import {
+  StepActionBar,
+  StepNav,
+  STEP_ACTION_BAR_SPACE,
+} from "@/features/image-session/client-session/Utility.jsx";
 import { useLanguageSwitcherContext } from "@/app/providers/LanguageSwitcherProvider";
 
 export function ClientSelectedImages({
@@ -27,7 +30,7 @@ export function ClientSelectedImages({
   };
   const [images, setImages] = useState(session?.selectedImages);
   return (
-    <Box sx={{ p: 0 }}>
+    <Box sx={{ p: 0, pb: withActions ? STEP_ACTION_BAR_SPACE : 0 }}>
       <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
         <Box display="flex" alignItems="center" justifyContent="space-between">
           <Typography
@@ -58,25 +61,14 @@ export function ClientSelectedImages({
         token={session?.token}
       />
       {withActions && (
-        <Paper
-          elevation={2}
-          sx={{
-            position: "fixed",
-            bottom: 0,
-            py: 2,
-            px: 2,
-            backgroundColor: "white",
-            width: "100%",
-            left: 0,
-          }}
-        >
-          <ActionButtons
-            session={session}
-            handleNext={handleNext}
-            handleBack={handleBack}
+        <StepActionBar>
+          <StepNav
+            onBack={handleBack}
+            onNext={handleNext}
+            backDisabled={disabled}
             disabled={disabled}
           />
-        </Paper>
+        </StepActionBar>
       )}
     </Box>
   );

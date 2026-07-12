@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Box, Button, Typography, Slide } from "@mui/material";
 import SignatureCanvas from "react-signature-canvas";
 import { handleRequestSubmit } from "@/app/helpers/functions/handleSubmit";
@@ -24,6 +24,20 @@ const SignatureComponent = ({
 }) => {
   const { lng } = useLanguageSwitcherContext();
   const sigCanvas = useRef({});
+  const containerRef = useRef(null);
+  // Measure the actual container instead of reading window.innerWidth during
+  // render (which mismatches on SSR hydration and never reacts to rotation/
+  // resize). Start with a safe default, then measure on mount + on resize.
+  const [canvasWidth, setCanvasWidth] = useState(560);
+  useEffect(() => {
+    const update = () => {
+      const w = containerRef.current?.clientWidth;
+      if (w) setCanvasWidth(Math.min(600, Math.max(240, w - 32)));
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
   const { setProgress, setOverlay } = useUploadContext();
   const { setLoading: setToastLoading } = useToastContext();
   const { setAlertError } = useAlertContext();
@@ -90,6 +104,7 @@ const SignatureComponent = ({
       </Typography>
 
       <Box
+        ref={containerRef}
         sx={{
           display: "flex",
           flexDirection: "column",
@@ -106,7 +121,7 @@ const SignatureComponent = ({
         <SignatureCanvas
           penColor="black"
           canvasProps={{
-            width: window.innerWidth > 600 ? 600 : window.innerWidth - 40,
+            width: canvasWidth,
             height: 200,
             className: "sigCanvas",
             style: { border: "2px solid #000" },

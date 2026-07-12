@@ -1,6 +1,7 @@
 "use client";
 import { useCallback, useState } from "react";
 import {
+  Box,
   Button,
   FormControl,
   InputLabel,
@@ -11,6 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import { FiEye, FiRefreshCw } from "react-icons/fi";
+import SearchComponent from "@/shared/components/formComponents/SearchComponent.jsx";
 import useDataFetcher from "@/app/helpers/hooks/useDataFetcher";
 import AdminTable from "@/shared/components/AdminTable";
 import { auditColumns } from "@/features/audit/config/columns.jsx";
@@ -50,9 +52,32 @@ function ViewAction({ item, onView }) {
   );
 }
 
-// One filter control, rendered by its config `type` (select | number | date). Fully
-// config-driven — the fields come from config/filters.js, not inline JSX.
-function FilterField({ config, value, onChange }) {
+// One filter control, rendered by its config `type` (userSearch | select | number |
+// date). Fully config-driven — the fields come from config/filters.js, not inline JSX.
+function FilterField({ config, value, onChange, resetTrigger }) {
+  if (config.type === "userSearch") {
+    // Same user autocomplete as the Users page search. SearchComponent reports the
+    // pick through a setFilters(updater) callback; only the selected id is kept —
+    // it lands in the draft under this filter's key (actorUserId) and reaches the
+    // backend as the same flat query param the number field used to fill.
+    return (
+      <Box sx={{ width: 300 }}>
+        <SearchComponent
+          apiEndpoint="search?model=all-users"
+          setFilters={(updater) => {
+            const next = typeof updater === "function" ? updater({}) : updater;
+            onChange(config.key, next?.[config.key] ?? "");
+          }}
+          inputLabel={config.label}
+          renderKeys={["name", "email"]}
+          mainKey="name"
+          searchKey={config.key}
+          resetTrigger={resetTrigger}
+          size="small"
+        />
+      </Box>
+    );
+  }
   if (config.type === "select") {
     return (
       <FormControl size="small" sx={{ minWidth: 170 }}>
@@ -124,6 +149,8 @@ export default function AuditLogTable() {
   // `draft` = the values currently in the bar. The Apply button commits draft → the
   // hook's `others` so typing doesn't refetch on every keystroke.
   const [draft, setDraft] = useState({});
+  // Bumped on Reset so uncontrolled inner widgets (the actor autocomplete) clear too.
+  const [resetTick, setResetTick] = useState(null);
 
   const [selected, setSelected] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -139,6 +166,7 @@ export default function AuditLogTable() {
 
   const resetFilters = useCallback(() => {
     setDraft({});
+    setResetTick((t) => (t ?? 0) + 1);
     setPage(1);
     setOthers("");
   }, [setPage, setOthers]);
@@ -179,6 +207,7 @@ export default function AuditLogTable() {
                 config={config}
                 value={draft[config.key]}
                 onChange={handleDraftChange}
+                resetTrigger={resetTick}
               />
             ))}
             <Button

@@ -21,6 +21,7 @@ const SearchComponent = ({
   localFilters,
   restOtherFilters = false,
   withParamsChange = false,
+  size,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -98,6 +99,7 @@ const SearchComponent = ({
         }}
         loading={loading}
         value={selectedItem}
+        size={size}
         sx={{
           minWidth: 300,
           width: "100%",
