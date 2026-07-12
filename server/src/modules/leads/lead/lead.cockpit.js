@@ -67,6 +67,11 @@ const PRICE_OFFER_STATUSES = ["INTERESTED", "NEEDS_IDENTIFIED", "NEGOTIATING"];
 
 const SEVERITY_RANK = { critical: 0, warning: 1, info: 2 };
 
+// My Day staleness threshold (spec §5.3/§6): an ACTIVE deal with no future touch and no
+// activity for this many days is "dying silently". Single source — the my-day team-lens
+// SQL imports this so both lenses breach at the same moment.
+export const STALE_LEAD_DAYS = 5;
+
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 function arr(v) {
@@ -374,6 +379,29 @@ function computeSalesActions(bundle, now, health, status) {
           { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" },
         ),
       );
+    }
+
+    // 7b. LEAD_STALE (warning) — active deal, nothing scheduled, and no activity for
+    // STALE_LEAD_DAYS+. Complements NO_UPCOMING_TOUCH with the AGE dimension (My Day
+    // ranks on it). Skipped when the bundle has no `updatedAt` (older callers) so
+    // legacy bundles stay signal-identical.
+    if (
+      bundle.updatedAt != null &&
+      !hasFutureCall &&
+      !hasFutureMeeting &&
+      ACTIVE_STATUSES.includes(status)
+    ) {
+      const daysSinceActivity = daysBetween(toDate(bundle.updatedAt), now);
+      if (daysSinceActivity >= STALE_LEAD_DAYS) {
+        actions.push(
+          action(
+            "LEAD_STALE",
+            "warning",
+            { daysSinceActivity },
+            { kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" },
+          ),
+        );
+      }
     }
 
     // A critical/warning funnel action above "blocks" the (info) advance suggestion.

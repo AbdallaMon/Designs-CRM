@@ -3,7 +3,7 @@
 // table (each rule ≤1 action), the severity+order sort, terminal-status suppression,
 // and the `health` derivation.
 import { describe, it, expect } from "vitest";
-import { computeCockpit, COCKPIT_STAGE_ORDER } from "../lead.cockpit.js";
+import { computeCockpit, COCKPIT_STAGE_ORDER, STALE_LEAD_DAYS } from "../lead.cockpit.js";
 
 const NOW = new Date("2026-07-10T12:00:00.000Z");
 const past = (h) => new Date(NOW.getTime() - h * 3600_000);
@@ -399,5 +399,50 @@ describe("computeCockpit — sorting & suppression", () => {
     const snapshot = JSON.parse(JSON.stringify(bundle));
     computeCockpit(bundle, NOW);
     expect(JSON.parse(JSON.stringify(bundle))).toEqual(snapshot);
+  });
+});
+
+describe("computeCockpit — LEAD_STALE (My Day)", () => {
+  const daysAgo = (d) => new Date(NOW.getTime() - d * 24 * 3600_000);
+
+  it("fires at exactly STALE_LEAD_DAYS with the age in params", () => {
+    expect(STALE_LEAD_DAYS).toBe(5);
+    const r = computeCockpit(baseBundle({ updatedAt: daysAgo(5) }), NOW);
+    const stale = r.actions.find((a) => a.type === "LEAD_STALE");
+    expect(stale).toBeTruthy();
+    expect(stale.severity).toBe("warning");
+    expect(stale.params).toEqual({ daysSinceActivity: 5 });
+    expect(stale.cta).toMatchObject({ kind: "OPEN_CALL", capability: "canAddCall", tabKey: "calls" });
+  });
+
+  it("does NOT fire below the threshold", () => {
+    const r = computeCockpit(baseBundle({ updatedAt: daysAgo(4) }), NOW);
+    expect(types(r)).not.toContain("LEAD_STALE");
+  });
+
+  it("suppressed when a future touch is scheduled", () => {
+    const r = computeCockpit(
+      baseBundle({
+        updatedAt: daysAgo(10),
+        callReminders: [{ time: new Date(NOW.getTime() + 3600_000), status: "IN_PROGRESS" }],
+      }),
+      NOW,
+    );
+    expect(types(r)).not.toContain("LEAD_STALE");
+  });
+
+  it("skipped when the bundle carries no updatedAt (legacy callers)", () => {
+    const r = computeCockpit(baseBundle({ updatedAt: undefined }), NOW);
+    expect(types(r)).not.toContain("LEAD_STALE");
+  });
+
+  it("suppressed on closed-won (funnel rules off)", () => {
+    const r = computeCockpit(baseBundle({ status: "FINALIZED", updatedAt: daysAgo(30) }), NOW);
+    expect(types(r)).not.toContain("LEAD_STALE");
+  });
+
+  it("still emits NO_UPCOMING_TOUCH alongside (both dimensions kept)", () => {
+    const r = computeCockpit(baseBundle({ updatedAt: daysAgo(6) }), NOW);
+    expect(types(r)).toEqual(expect.arrayContaining(["NO_UPCOMING_TOUCH", "LEAD_STALE"]));
   });
 });

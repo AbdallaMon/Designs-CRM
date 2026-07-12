@@ -1101,6 +1101,7 @@ const COCKPIT_BUNDLE_SELECT = {
   userId: true, // capability scope (canMutateLead)
   status: true, // health + rules + capability status guard
   paymentStatus: true,
+  updatedAt: true, // LEAD_STALE age input (7b) — safe scalar, no free text
   // Active contract (latest IN_PROGRESS or COMPLETED) — read-only, drives the post-finalize
   // signals + health.contract/payment. Language-neutral primitives only (no free text).
   contracts: {
