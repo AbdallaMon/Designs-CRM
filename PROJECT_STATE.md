@@ -22,6 +22,14 @@
 > Behavior-preserving (same-depth moves → frozen-PDF fonts + internal imports untouched); **968 tests unchanged + all
 > moved modules import at runtime.** The `legacyDefaults`/`this.legacy` DI-seam name (~40 usecases) was left intact — it
 > is the repo's dominant convention, not a stray legacy file. Commits path-isolated from the concurrent session's tree.
+> **Phase 3 (deeper split, behaviour-preserving):** the relocated PDF code was split by concern with better names —
+> shared `PDF_COLORS` (`infra/pdf/pdf-theme.js`) + `drawFullBackgroundImage` (`infra/pdf/pdf-draw.js`) extracted from
+> both PDFs (were duplicated verbatim); `image-sessions/services/client-services.js` → `generate-image-session-pdf.js`
+> + `session-approval.js` + `languages.js`; `contracts/services/generate-contract-pdf.js` (2346 lines) →
+> `contract-pdf-context.js` + `sections/*.js` (one file per render section) + a slim orchestrator. Functions moved
+> **verbatim** (each file's imports auto-derived from the exact symbols it references); **font-embed approach untouched.**
+> Added structural smoke tests that actually generate a contract PDF (ar+en) and an image-session PDF. **Verified: full
+> suite 970 green + all split modules import at runtime.** ⚠️ Final byte/visual PDF diff (§4) still needs a real DB/render.
 >
 > **PRIOR (2026-07-12) — My Day work queue + supervisor team lens on branch `feat/audit-log-sales-admin`.**
 > A new `/dashboard/my-day` screen that inverts the per-lead Deal Cockpit into a prioritized, profile-scoped
