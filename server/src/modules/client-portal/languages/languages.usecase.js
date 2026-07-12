@@ -4,7 +4,7 @@
 // wrapped via a lazy adapter rather than duplicated.
 const legacyDefaults = {
   getLanguages: (args) =>
-    import("../../image-sessions/services/client-services.js").then((m) =>
+    import("../../image-sessions/services/languages.js").then((m) =>
       m.getLanguages(args),
     ),
 };

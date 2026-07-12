@@ -21,7 +21,7 @@ vi.mock("../../../infra/pdf/pdf-helpers.js", async (importOriginal) => {
 let generateImageSessionPdf;
 beforeAll(async () => {
   ({ generateImageSessionPdf } = await import(
-    "../services/client-services.js"
+    "../services/generate-image-session-pdf.js"
   ));
 });
 
