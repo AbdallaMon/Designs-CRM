@@ -13,7 +13,7 @@ import { toCockpitDto } from "./lead.dto.js";
 
 // The Prisma relation is `versaModel` (schema name); the pure engine expects
 // `versaModels`. Normalize here so `computeCockpit` stays framework-agnostic.
-function normalizeBundle(bundle) {
+export function normalizeBundle(bundle) {
   return { ...bundle, versaModels: bundle.versaModel ?? [] };
 }
 

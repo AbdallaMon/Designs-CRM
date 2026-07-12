@@ -250,6 +250,26 @@ class LeadRepository {
     };
   }
 
+  // My Day batch variant of findCockpitBundle: the caller's OWN leads (personal-queue
+  // scope — ClientLead.userId), oldest-touched first so the most-at-risk survive the cap.
+  // Same select + the two display/rank fields (client.name, updatedAt); same VERSA
+  // free-text reduction — nothing leaves this repo that the single fetch wouldn't emit.
+  async findCockpitBundlesForUser({ userId, take = 50 }) {
+    const rows = await prisma.clientLead.findMany({
+      where: { userId: Number(userId), status: { in: [...MY_DAY_LEAD_STATUSES] } },
+      orderBy: { updatedAt: "asc" },
+      take,
+      select: { ...COCKPIT_BUNDLE_SELECT, client: { select: { name: true } } },
+    });
+    return rows.map((b) => ({ ...b, versaModel: (b.versaModel ?? []).map(reduceVersaModel) }));
+  }
+
+  countMyDayLeads({ userId }) {
+    return prisma.clientLead.count({
+      where: { userId: Number(userId), status: { in: [...MY_DAY_LEAD_STATUSES] } },
+    });
+  }
+
   // ── Calls / meetings lists ────────────────────────────────────────────────────
   async findNextCalls({ where, countWhere, skip, take }) {
     const [items, total] = await Promise.all([
@@ -1096,6 +1116,19 @@ function detailSelect(fileWhere) {
 // step to `{ hasQuestion, hasResponse }` (see `reduceVersaModel`) so the text never
 // leaves the repo. `meetingReminders.type` and `versaModel.categoryId` are NOT
 // selected — the engine never reads them.
+// My Day personal-queue statuses (spec §5.2): the active pipeline + closed-won (contract
+// signals survive into FINALIZED/CONVERTED). Dead (REJECTED/ARCHIVED — action-silent in
+// the engine anyway) and parked (ON_HOLD/LEADEXCHANGE) are excluded.
+export const MY_DAY_LEAD_STATUSES = Object.freeze([
+  "NEW",
+  "IN_PROGRESS",
+  "INTERESTED",
+  "NEEDS_IDENTIFIED",
+  "NEGOTIATING",
+  "FINALIZED",
+  "CONVERTED",
+]);
+
 const COCKPIT_BUNDLE_SELECT = {
   id: true,
   userId: true, // capability scope (canMutateLead)
