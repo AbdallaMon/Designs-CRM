@@ -43,31 +43,14 @@ import { sendSuccessEmailAfterContractSigned } from "./pdf-utilities.js";
 import { updateContractPaymentOnContractSign } from "./contract-services.js";
 import { getDefaultContractUtilityData } from "./client-contract-services.js";
 import { PDF_ASSET_DEFAULTS } from "../../../infra/pdf/pdf-asset-defaults.js";
+import { PDF_COLORS } from "../../../infra/pdf/pdf-theme.js";
+import { drawFullBackgroundImage } from "../../../infra/pdf/pdf-draw.js";
 
 // ===== Helpers =====
 const ASCII_RE = /^[\x00-\x7F\s.,:;@!?#%&*()+\-\/\\\[\]{}"'<>=|]+$/; // latin-ish
 
 function widthOf(text, size, font) {
   return font.widthOfTextAtSize(String(text || ""), size);
-}
-
-async function drawFullBackgroundImage(page, pdfDoc, backgroundImageUrl) {
-  if (!backgroundImageUrl) return;
-  try {
-    const bytes = await fetchImageBuffer(backgroundImageUrl);
-    let img;
-    try {
-      img = await pdfDoc.embedPng(bytes);
-    } catch {
-      img = await pdfDoc.embedJpg(bytes);
-    }
-    if (!img) return;
-    const pw = page.getWidth();
-    const ph = page.getHeight();
-    page.drawImage(img, { x: 0, y: 0, width: pw, height: ph });
-  } catch (e) {
-    console.warn("Background image error:", e.message);
-  }
 }
 
 function createPdfContext({
@@ -2046,21 +2029,7 @@ export async function generateContractPdf({
   const fonts = { arFont, arBold, enFont, enBold };
 
   // Palette
-  const colors = {
-    primary: rgb(0.827, 0.675, 0.443),
-    primaryDark: rgb(0.745, 0.592, 0.361),
-    primaryLight: rgb(0.95, 0.92, 0.88),
-    heading: rgb(0.22, 0.188, 0.157),
-    textColor: rgb(0.345, 0.302, 0.247),
-    bgPrimary: rgb(0.918, 0.906, 0.886),
-    accentBg: rgb(0.98, 0.97, 0.95),
-    success: rgb(0.518, 0.569, 0.471),
-    borderColor: rgb(0.7, 0.7, 0.7),
-    white: rgb(1, 1, 1),
-    lightGray: rgb(0.95, 0.95, 0.95),
-    shadowColor: rgb(0.85, 0.85, 0.85),
-    red: rgb(1, 0, 0),
-  };
+  const colors = PDF_COLORS;
 
   const margin = {
     top: padding.top,

@@ -24,6 +24,8 @@ import {
   splitTextIntoLines,
 } from "../../../infra/pdf/pdf-helpers.js";
 import { PDF_ASSET_DEFAULTS } from "../../../infra/pdf/pdf-asset-defaults.js";
+import { PDF_COLORS } from "../../../infra/pdf/pdf-theme.js";
+import { drawFullBackgroundImage } from "../../../infra/pdf/pdf-draw.js";
 const __dirname = path.dirname(__filename);
 const fontPath = path.join(
   __dirname,
@@ -156,21 +158,7 @@ export async function generateImageSessionPdf({
     //   return /[\u0600-\u06FF]/.test(text);
     // };
     // Enhanced Color Palette
-    const colors = {
-      primary: rgb(0.827, 0.675, 0.443),
-      primaryDark: rgb(0.745, 0.592, 0.361),
-      primaryLight: rgb(0.95, 0.92, 0.88),
-      heading: rgb(0.22, 0.188, 0.157),
-      textColor: rgb(0.345, 0.302, 0.247),
-      bgPrimary: rgb(0.918, 0.906, 0.886),
-      accentBg: rgb(0.98, 0.97, 0.95),
-      success: rgb(0.518, 0.569, 0.471),
-      borderColor: rgb(0.7, 0.7, 0.7),
-      white: rgb(1, 1, 1),
-      lightGray: rgb(0.95, 0.95, 0.95),
-      shadowColor: rgb(0.85, 0.85, 0.85),
-      red: rgb(1, 0, 0),
-    };
+    const colors = PDF_COLORS;
 
     // Page dimensions and margins
     const pageWidth = 600;
@@ -269,30 +257,9 @@ export async function generateImageSessionPdf({
       });
     };
 
-    // Full-page background (SiteUtility.pdfFrame), replacing the old per-page banner
-    // header. Drawn BEFORE the border/content so it sits behind them — mirroring the
-    // contract PDF's drawFullBackgroundImage.
-    const drawPageBackground = async () => {
-      if (!backgroundUrl) return;
-      try {
-        const bgBuffer = await fetchImageBuffer(backgroundUrl);
-        let bgImage;
-        try {
-          bgImage = await pdfDoc.embedPng(bgBuffer);
-        } catch {
-          bgImage = await pdfDoc.embedJpg(bgBuffer);
-        }
-        if (!bgImage) return;
-        page.drawImage(bgImage, {
-          x: 0,
-          y: 0,
-          width: page.getWidth(),
-          height: page.getHeight(),
-        });
-      } catch (err) {
-        console.warn("Background image load error:", err.message);
-      }
-    };
+    // Full-page background (SiteUtility.pdfFrame) is drawn per page via the shared
+    // drawFullBackgroundImage(page, pdfDoc, backgroundUrl) — replacing the old
+    // per-page banner header. Drawn BEFORE the border/content so it sits behind them.
 
     // Draw fixed footerf
     const drawFixedFooter = (
@@ -857,7 +824,7 @@ export async function generateImageSessionPdf({
       const availableSpace = y - margin - footerHeight;
       if (availableSpace < requiredSpace) {
         page = pdfDoc.addPage([pageWidth, pageHeight]);
-        await drawPageBackground();
+        await drawFullBackgroundImage(page, pdfDoc, backgroundUrl);
         drawPageBorder();
         // drawFixedFooter();
         y = pageHeight - headerHeight - marginY - 20;
@@ -1045,7 +1012,7 @@ export async function generateImageSessionPdf({
 
     // Create second page for content
     page = pdfDoc.addPage([pageWidth, pageHeight]);
-    await drawPageBackground();
+    await drawFullBackgroundImage(page, pdfDoc, backgroundUrl);
     drawPageBorder();
     // drawFixedFooter();
     y = pageHeight - headerHeight - marginY - 20;
@@ -1081,7 +1048,7 @@ export async function generateImageSessionPdf({
     }
 
     page = pdfDoc.addPage([pageWidth, pageHeight]);
-    await drawPageBackground();
+    await drawFullBackgroundImage(page, pdfDoc, backgroundUrl);
     drawPageBorder();
     // drawFixedFooter();
     y = pageHeight - headerHeight - marginY - 20;
@@ -1121,7 +1088,7 @@ export async function generateImageSessionPdf({
 
           page = pdfDoc.addPage(pageSize);
 
-          await drawPageBackground();
+          await drawFullBackgroundImage(page, pdfDoc, backgroundUrl);
           drawPageBorder(isWide);
 
           let img;
@@ -1270,7 +1237,7 @@ export async function generateImageSessionPdf({
 
       // 🔹 Set up a new full page
       page = pdfDoc.addPage([pageWidth, pageHeight]);
-      await drawPageBackground();
+      await drawFullBackgroundImage(page, pdfDoc, backgroundUrl);
       drawPageBorder();
       y = pageHeight - headerHeight - marginY - 20;
 
@@ -1365,7 +1332,7 @@ export async function generateImageSessionPdf({
     // await generateNotePage();
     if (signatureUrl) {
       page = pdfDoc.addPage([pageWidth, pageHeight]);
-      await drawPageBackground();
+      await drawFullBackgroundImage(page, pdfDoc, backgroundUrl);
       drawPageBorder();
 
       const columnGap = 40;
