@@ -126,10 +126,26 @@ export async function fetchImageBuffer(url, options = {}) {
 // 1000) \u2014 it inspects the ORIGINAL bytes so the crop check is meaningful.
 //
 // Returns null when valid; otherwise a validation code string:
+//   "SIGNATURE_INVALID_PATH"    \u2014 not a safe root-relative CRM path (see below)
 //   "SIGNATURE_MUST_BE_PNG"     \u2014 not a PNG
 //   "SIGNATURE_MUST_BE_CROPPED" \u2014 has excess uniform margins (sharp.trim shrinks it)
 // Network/decode failures are thrown (they are infra errors, not validation results).
+//
+// SSRF guard: the signature is an admin-supplied value that we fetch server-side.
+// Its only intended shape is a root-relative path resolved under CRM_DOMAIN, so we
+// require exactly that \u2014 "/\u2026" but not "//\u2026" (protocol-relative), no backslashes, no
+// embedded scheme. This guarantees the fetch below can only ever hit CRM_DOMAIN and
+// never an attacker-chosen host (e.g. cloud metadata / internal services).
 export async function validatePdfSignatureImage(url, { timeoutMs = 15000 } = {}) {
+  if (
+    typeof url !== "string" ||
+    !url.startsWith("/") ||
+    url.startsWith("//") ||
+    url.includes("\\") ||
+    url.includes("://")
+  ) {
+    return "SIGNATURE_INVALID_PATH";
+  }
   const absolute = toAbsoluteAssetUrl(url);
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);

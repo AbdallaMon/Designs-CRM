@@ -13,6 +13,8 @@ export const siteUtilityMessages = {
   CONTRACT_PAYMENT_CONDITION_NOT_FOUND: "Payment condition not found",
   CONTRACT_PAYMENT_CONDITION_ALREADY_EXISTS: "Payment condition already exists",
   // pdf signature validation
+  SIGNATURE_INVALID_PATH:
+    "The signature must be an uploaded image path on this site (starting with /)",
   SIGNATURE_MUST_BE_PNG: "The signature image must be a PNG file",
   SIGNATURE_MUST_BE_CROPPED:
     "The signature image must be cropped tight to its content (no empty margins)",

@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import sharp from "sharp";
-import { validateSignatureBuffer } from "../pdf-helpers.js";
+import {
+  validateSignatureBuffer,
+  validatePdfSignatureImage,
+} from "../pdf-helpers.js";
 
 // Build a PNG with a solid-color content block of `content` px centered in a
 // transparent canvas of `canvas` px. When canvas > content there are transparent
@@ -60,5 +63,19 @@ describe("validateSignatureBuffer", () => {
     expect(await validateSignatureBuffer(buf)).toBe(
       "SIGNATURE_MUST_BE_CROPPED",
     );
+  });
+});
+
+describe("validatePdfSignatureImage SSRF guard", () => {
+  // These return before any network fetch, so no request is made.
+  it.each([
+    "http://169.254.169.254/latest/meta-data/",
+    "https://evil.example.com/x.png",
+    "//evil.example.com/x.png",
+    "/\\evil.example.com/x.png",
+    "relative.png",
+    "",
+  ])("rejects non-root-relative value %j", async (bad) => {
+    expect(await validatePdfSignatureImage(bad)).toBe("SIGNATURE_INVALID_PATH");
   });
 });

@@ -19,6 +19,9 @@ export const siteUtilityMessagesCodes = {
   PAYMENT_CONDITION_RESERVED_VALUE: "PAYMENT_CONDITION_RESERVED_VALUE",
   // Legacy invariant: cannot delete a condition still linked to contract payments.
   PAYMENT_CONDITION_IN_USE: "PAYMENT_CONDITION_IN_USE",
+  // The company PDF signature (pdfSignaturePart) must be a safe root-relative path
+  // ("/…") that resolves under CRM_DOMAIN — not an absolute/external URL (SSRF guard).
+  SIGNATURE_INVALID_PATH: "SIGNATURE_INVALID_PATH",
   // The uploaded company PDF signature (pdfSignaturePart) must be a PNG.
   SIGNATURE_MUST_BE_PNG: "SIGNATURE_MUST_BE_PNG",
   // The uploaded company PDF signature must be cropped tight to its content (no
